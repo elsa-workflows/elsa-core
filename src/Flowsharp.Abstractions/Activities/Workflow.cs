@@ -14,10 +14,13 @@ namespace Flowsharp.Activities
         public Workflow(IEnumerable<IActivity> activities, IEnumerable<Connection> connections)
         {
             Activities = activities.ToList();
-            Connections = connections.ToList();    
+            Connections = connections.ToList();
+            Scopes = new Stack<WorkflowExecutionScope>();
         }
         
         public IList<IActivity> Activities { get; set; } = new List<IActivity>();
         public IList<Connection> Connections { get; set; } = new List<Connection>();
+        public Stack<WorkflowExecutionScope> Scopes { get; set; }
+        public WorkflowExecutionScope CurrentScope { get; set; }
     }
 }

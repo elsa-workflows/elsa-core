@@ -16,30 +16,32 @@ namespace Flowsharp.Models
             Status = status;
             IsFirstPass = true;            
             scheduledActivities = new Stack<IActivity>();
-            scopes = new Stack<WorkflowExecutionScope>();
             
             BeginScope();
         }
         
         private readonly Stack<IActivity> scheduledActivities;
-        private readonly Stack<WorkflowExecutionScope> scopes;
 
         public Workflow Workflow { get; }
         public WorkflowStatus Status { get; set; }
         public bool HasScheduledActivities => scheduledActivities.Any();
         public bool IsFirstPass { get; set; }
         public IActivity CurrentActivity { get; private set; }
-        public WorkflowExecutionScope CurrentScope { get; private set; }
+        public WorkflowExecutionScope CurrentScope
+        {
+            get => Workflow.CurrentScope;
+            set => Workflow.CurrentScope = value;
+        }
 
         public void BeginScope()
         { 
-            scopes.Push(CurrentScope = new WorkflowExecutionScope());
+            Workflow.Scopes.Push(CurrentScope = new WorkflowExecutionScope());
         }
 
         public void EndScope()
         {
-            scopes.Pop();
-            CurrentScope = scopes.Peek();
+            Workflow.Scopes.Pop();
+            CurrentScope = Workflow.Scopes.Peek();
         }
 
         public void ScheduleActivity(IActivity activity)

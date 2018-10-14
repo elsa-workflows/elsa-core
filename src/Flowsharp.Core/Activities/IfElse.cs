@@ -12,26 +12,17 @@ namespace Flowsharp.Activities
         {
         }
 
-        public IfElse(Func<WorkflowExecutionContext, ActivityExecutionContext, bool> condition, IActivity trueBranch, IActivity falseBranch)
+        public IfElse(Func<WorkflowExecutionContext, ActivityExecutionContext, bool> condition)
         {
             this.condition = condition;
-            TrueBranch = trueBranch;
-            FalseBranch = falseBranch;
         }
         
-        public IActivity TrueBranch { get; set; }
-        public IActivity FalseBranch { get; set;}
 
         protected override ActivityExecutionResult Execute(WorkflowExecutionContext workflowContext, ActivityExecutionContext activityContext)
         {
             var result = condition(workflowContext, activityContext);
-            if (TrueBranch != null && result)
-                return ScheduleActivity(TrueBranch);
             
-            if(FalseBranch != null && !result)
-                return ScheduleActivity(FalseBranch);
-
-            return Noop();
+            return ActivateEndpoint(result ? "True" : "False");
         }
     }
 }

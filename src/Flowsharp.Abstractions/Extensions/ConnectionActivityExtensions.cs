@@ -3,7 +3,7 @@ using Flowsharp.Models;
 
 namespace Flowsharp.Extensions
 {
-    public static class ConnectionActivityExtensions
+    public static class ConnectionExtensions
     {
     }
 }
