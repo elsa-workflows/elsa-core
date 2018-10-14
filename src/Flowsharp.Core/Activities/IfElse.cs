@@ -1,26 +1,25 @@
-﻿using System;
+﻿using System.Threading;
+using System.Threading.Tasks;
 using Flowsharp.ActivityResults;
 using Flowsharp.Models;
+using Flowsharp.Scripting;
 
 namespace Flowsharp.Activities
 {
     public class IfElse : Activity
     {
-        private readonly Func<WorkflowExecutionContext, ActivityExecutionContext, bool> condition;
+        private readonly IScriptEvaluator scriptEvaluator;
 
-        public IfElse()
+        public IfElse(IScriptEvaluator scriptEvaluator)
         {
+            this.scriptEvaluator = scriptEvaluator;
         }
 
-        public IfElse(Func<WorkflowExecutionContext, ActivityExecutionContext, bool> condition)
-        {
-            this.condition = condition;
-        }
-        
+        public ScriptExpression<bool> ConditionExpression { get; set; }
 
-        protected override ActivityExecutionResult Execute(WorkflowExecutionContext workflowContext, ActivityExecutionContext activityContext)
+        public override async Task<ActivityExecutionResult> ExecuteAsync(WorkflowExecutionContext workflowContext, ActivityExecutionContext activityContext, CancellationToken cancellationToken)
         {
-            var result = condition(workflowContext, activityContext);
+            var result = await scriptEvaluator.EvaluateAsync(ConditionExpression, workflowContext, cancellationToken);
             
             return ActivateEndpoint(result ? "True" : "False");
         }

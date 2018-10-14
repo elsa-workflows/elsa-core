@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Flowsharp.Models;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace Flowsharp.Activities
 {
@@ -20,6 +22,7 @@ namespace Flowsharp.Activities
             HaltedActivities = new List<IActivity>();
         }
         
+        [JsonConverter(typeof(StringEnumConverter))]
         public WorkflowStatus Status { get; set; }
         public IList<IActivity> Activities { get; set; } = new List<IActivity>();
         public IList<Connection> Connections { get; set; } = new List<Connection>();

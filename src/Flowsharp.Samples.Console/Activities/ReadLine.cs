@@ -9,7 +9,6 @@ namespace Flowsharp.Samples.Console.Activities
 {
     public class ReadLine : Activity
     {
-        private readonly string argumentName;
         private readonly TextReader input;
         
         public ReadLine() : this(System.Console.In)
@@ -23,25 +22,26 @@ namespace Flowsharp.Samples.Console.Activities
 
         public ReadLine(string argumentName)
         {
-            this.argumentName = argumentName;
+            ArgumentName = argumentName;
             input = null;
         }
+
+        public string ArgumentName { get; set; }
         
         public override async Task<ActivityExecutionResult> ExecuteAsync(WorkflowExecutionContext workflowContext, ActivityExecutionContext activityContext, CancellationToken cancellationToken)
         {
-            if (input != null)
-            {
-                var value = await input.ReadLineAsync();
-                workflowContext.SetLastResult(value);
-                return ActivateEndpoint();
-            }
+            if (input == null) 
+                return Halt();
+            
+            var value = await input.ReadLineAsync();
+            workflowContext.SetLastResult(value);
+            return ActivateEndpoint();
 
-            return Halt();
         }
 
         protected override ActivityExecutionResult Resume(WorkflowExecutionContext workflowContext, ActivityExecutionContext activityContext)
         {
-            var receivedInput = workflowContext.Workflow.Arguments[argumentName];
+            var receivedInput = workflowContext.Workflow.Arguments[ArgumentName];
             workflowContext.SetLastResult(receivedInput);
             return ActivateEndpoint();
         }

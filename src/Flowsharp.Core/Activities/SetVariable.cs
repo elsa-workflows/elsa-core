@@ -1,35 +1,26 @@
-﻿using System;
+﻿using System.Threading;
+using System.Threading.Tasks;
 using Flowsharp.ActivityResults;
 using Flowsharp.Models;
+using Flowsharp.Scripting;
 
 namespace Flowsharp.Activities
 {
     public class SetVariable : Activity
     {
-        private readonly Func<WorkflowExecutionContext, ActivityExecutionContext, object> valueProvider;
+        private readonly IScriptEvaluator scriptEvaluator;
 
-        public SetVariable()
+        public SetVariable(IScriptEvaluator scriptEvaluator)
         {
+            this.scriptEvaluator = scriptEvaluator;
         }
-
-        public SetVariable(string name, Func<WorkflowExecutionContext, ActivityExecutionContext, object> valueProvider) : this(name, default(object))
-        {
-            VariableName = name;
-            this.valueProvider = valueProvider;
-        }
-        
-        public SetVariable(string name, object value)
-        {
-            VariableName = name;
-            Value = value;
-        }
-        
+   
         public string VariableName { get; set; }
-        public object Value { get; set; }
+        public ScriptExpression<object> ValueExpression { get; set; }
 
-        protected override ActivityExecutionResult Execute(WorkflowExecutionContext workflowContext, ActivityExecutionContext activityContext)
+        public override async Task<ActivityExecutionResult> ExecuteAsync(WorkflowExecutionContext workflowContext, ActivityExecutionContext activityContext, CancellationToken cancellationToken)
         {
-            var value = valueProvider(workflowContext, activityContext);
+            var value = await scriptEvaluator.EvaluateAsync(ValueExpression, workflowContext, cancellationToken);
             workflowContext.CurrentScope.SetVariable(VariableName, value);
             return ActivateEndpoint();
         }

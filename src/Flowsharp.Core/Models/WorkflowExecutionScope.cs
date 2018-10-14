@@ -22,6 +22,11 @@ namespace Flowsharp.Models
         {
             return Variables.ContainsKey(name) ? (T)Variables[name] : default(T);
         }
+        
+        public object GetVariable(string name)
+        {
+            return Variables.ContainsKey(name) ? Variables[name] : null;
+        }
     }
 
     [JsonDictionary(ItemTypeNameHandling = TypeNameHandling.None)]

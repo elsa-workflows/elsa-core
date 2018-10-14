@@ -20,7 +20,7 @@ namespace Flowsharp.Serialization
             return Task.FromResult(json);
         }
 
-        public Task<Workflow> DeserializeAsync(string json, CancellationToken none)
+        public Task<Workflow> DeserializeAsync(string json, CancellationToken cancellationToken)
         {
             var workflow = JsonConvert.DeserializeObject<Workflow>(json, settings);
             return Task.FromResult(workflow);

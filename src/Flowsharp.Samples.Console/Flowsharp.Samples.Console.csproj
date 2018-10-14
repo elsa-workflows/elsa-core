@@ -7,7 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Flowsharp.Abstractions\Flowsharp.Abstractions.csproj" />
     <ProjectReference Include="..\Flowsharp.Core\Flowsharp.Core.csproj" />
   </ItemGroup>
 
