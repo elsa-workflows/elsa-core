@@ -1,19 +1,14 @@
-﻿using Flowsharp.Descriptors;
-using Newtonsoft.Json.Linq;
+﻿using Flowsharp.Activities;
 
 namespace Flowsharp.Models
 {
     public class ActivityExecutionContext
     {
-        public ActivityExecutionContext(ActivityType activityType, ActivityDescriptor activityDescriptor)
+        public ActivityExecutionContext(IActivity activity)
         {
-            ActivityType = activityType;
-            ActivityDescriptor = activityDescriptor;
-            State = new JObject(activityType.State);
+            Activity = activity;
         }
 
-        public ActivityType ActivityType { get; }
-        public ActivityDescriptor ActivityDescriptor { get; }
-        public JObject State { get; set; }
+        public IActivity Activity { get; private set; }
     }
 }

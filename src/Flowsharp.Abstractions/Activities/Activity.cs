@@ -1,26 +1,16 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Flowsharp.ActivityResults;
 using Flowsharp.Models;
-using Microsoft.Extensions.Localization;
 
 namespace Flowsharp.Activities
 {
     public abstract class Activity : IActivity
     {
-        public virtual string Name => GetType().Name;
-
-        public Task ProvideMetadataAsync(ActivityMetadataContext context, CancellationToken cancellationToken)
-        {
-            ProvideMetadata(context);
-            return Task.CompletedTask;
-        }
-
         public virtual Task<bool> CanExecuteAsync(WorkflowExecutionContext workflowContext, ActivityExecutionContext activityContext, CancellationToken cancellationToken)
         {
-            return Task.FromResult(true);
+            return Task.FromResult(CanExecute(workflowContext, activityContext));
         }
 
         public virtual Task<ActivityExecutionResult> ExecuteAsync(WorkflowExecutionContext workflowContext, ActivityExecutionContext activityContext, CancellationToken cancellationToken)
@@ -31,11 +21,6 @@ namespace Flowsharp.Activities
         public virtual Task<ActivityExecutionResult> ResumeAsync(WorkflowExecutionContext workflowContext, ActivityExecutionContext activityContext, CancellationToken cancellationToken)
         {
             return Task.FromResult(Resume(workflowContext, activityContext));
-        }
-
-        public virtual IEnumerable<Outcome> GetOutcomes(WorkflowExecutionContext workflowContext, ActivityExecutionContext activityContext)
-        {
-            return Enumerable.Empty<Outcome>();
         }
 
         public virtual Task OnActivityExecutedAsync(WorkflowExecutionContext workflowContext, ActivityExecutionContext activityContext, CancellationToken cancellationToken)
@@ -80,20 +65,17 @@ namespace Flowsharp.Activities
             return Task.CompletedTask;
         }
 
-        protected virtual void ProvideMetadata(ActivityMetadataContext context)
-        {
-        }
-        
         protected virtual ActivityExecutionResult Execute(WorkflowExecutionContext workflowContext, ActivityExecutionContext activityContext)
         {
-            return Noop();
+            return ActivateEndpoint();
         }
         
         protected virtual ActivityExecutionResult Resume(WorkflowExecutionContext workflowContext, ActivityExecutionContext activityContext)
         {
-            return Noop();
+            return ActivateEndpoint();
         }
-        
+
+        protected virtual bool CanExecute(WorkflowExecutionContext workflowContext, ActivityExecutionContext activityContext) => true;
         protected virtual void OnActivityExecuted(WorkflowExecutionContext workflowContext, ActivityExecutionContext activityContext) {}
         protected virtual void OnActivityExecuting(WorkflowExecutionContext workflowContext, ActivityExecutionContext activityContext) {}
         protected virtual void ReceiveInput(WorkflowExecutionContext workflowContext, IDictionary<string, object> input) {}
@@ -102,32 +84,32 @@ namespace Flowsharp.Activities
         protected virtual void WorkflowStarted(WorkflowExecutionContext workflowContext) {}
         protected virtual void WorkflowStarting(WorkflowExecutionContext workflowContext) {}
         
-        protected IEnumerable<Outcome> Outcomes(params LocalizedString[] names)
-        {
-            return names.Select(x => new Outcome(x));
-        }
-
-        protected IEnumerable<Outcome> Outcomes(IEnumerable<LocalizedString> names)
-        {
-            return names.Select(x => new Outcome(x));
-        }
-
-        protected ActivityExecutionResult Outcomes(params string[] names)
-        {
-            return Outcomes((IEnumerable<string>)names);
-        }
-
-        protected ActivityExecutionResult Outcomes(IEnumerable<string> names)
-        {
-            return new OutcomeResult(names);
-        }
-
-        protected ActivityExecutionResult Halt()
+        protected HaltResult Halt()
         {
             return new HaltResult();
         }
 
-        protected ActivityExecutionResult Noop()
+        protected ActivateEndpointResult ActivateEndpoint(string name = null)
+        {
+            return new ActivateEndpointResult(new SourceEndpoint(this, name));
+        }
+
+        protected ScheduleActivityResult ScheduleActivity(IActivity activity)
+        {
+            return new ScheduleActivityResult(activity);
+        }
+        
+        protected ReturnValueResult SetReturnValue(object value)
+        {
+            return new ReturnValueResult(value);
+        }
+
+        protected FinishWorkflowResult Finish()
+        {
+            return new FinishWorkflowResult();
+        }
+        
+        protected NoopResult Noop()
         {
             return new NoopResult();
         }

@@ -11,20 +11,19 @@ namespace Flowsharp.ActivityResults
     {
         public override async Task ExecuteAsync(WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
         {
-            var currentActivity = workflowContext.CurrentExecutingActivity;
+            var currentActivity = workflowContext.CurrentActivity;
             
             if (workflowContext.IsFirstPass)
             {
                 // Resume immediately when this is the first pass.
-                var result = await currentActivity.ActivityDescriptor.ResumeActivityAsync(workflowContext, currentActivity, cancellationToken);
+                var result = await currentActivity.ResumeAsync(workflowContext, new ActivityExecutionContext(currentActivity), cancellationToken);
                 workflowContext.IsFirstPass = false;
 
                 await result.ExecuteAsync(workflowContext, cancellationToken);
             }
             else
             {
-                // Block on this activity.
-                workflowContext.BlockingActivities.Add(currentActivity);
+                await workflowContext.HaltAsync(cancellationToken);
             }
         }
     }

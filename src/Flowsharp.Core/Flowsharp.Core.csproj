@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <RootNamespace>Flowsharp</RootNamespace>
+    <LangVersion>7.1</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,6 +13,10 @@
   <ItemGroup>
     <Folder Include="ActivityResults" />
     <Folder Include="Models\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="YamlDotNet.NetStandard" Version="4.0.0" />
   </ItemGroup>
 
 </Project>

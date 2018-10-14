@@ -1,7 +1,18 @@
-﻿namespace Flowsharp.Models
+using Flowsharp.Activities;
+
+namespace Flowsharp.Models
 {
-    public class Endpoint
+    public abstract class Endpoint
     {
-        public string ActivityId { get; set; }
+        protected Endpoint()
+        {
+        }
+
+        protected Endpoint(IActivity activity)
+        {
+            Activity = activity;
+        }
+        
+        public IActivity Activity { get; set; }
     }
 }

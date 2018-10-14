@@ -1,8 +1,9 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Flowsharp.Activities;
-using Flowsharp.ActivityProviders;
-using Flowsharp.Models;
+using Flowsharp.Builders;
+using Flowsharp.Serialization;
 using Flowsharp.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -13,22 +14,30 @@ namespace Flowsharp.Samples.Console
     {
         static async Task Main()
         {
-            var workflowType = new WorkflowType
-            {
-                Activities = new[]
-                {
-                    new ActivityType("1", "WriteLine")
-                },
-                Transitions = new Transition[0]
-            };
-
-            var typedActivityProvider = new TypedActivityProvider(() => new IActivity[] { new WriteLine() } );
-            var activityLibrary = new ActivityLibrary(new[]{ typedActivityProvider });
-            var dictionary = await activityLibrary.GetActivityDescriptorDictionaryAsync(CancellationToken.None);
-            var workflowContext = new WorkflowExecutionContext(dictionary, workflowType, WorkflowStatus.Idle);
             var invoker = new WorkflowInvoker(new Logger<WorkflowInvoker>(new NullLoggerFactory()));
+
+            var workflow = new WorkflowBuilder()
+                .AddActivity(new WriteLine("You have now transitioned into a networked workflow."), helloWorld => 
+                    helloWorld.Connect(new WriteLine("Let's run a program."), runProgram => 
+                        runProgram.Connect(new WriteLine("Enter first value:"), firstValue => 
+                            firstValue.Connect(new ReadLine(), value1 => 
+                                value1.Connect(new SetVariable("x", (w, a) => int.Parse((string)w.CurrentScope.ReturnValue)), setX => 
+                                    setX.Connect(new WriteLine("Enter second value:"), secondValue => 
+                                        secondValue.Connect(new ReadLine(), value2 =>
+                                            value2.Connect(new SetVariable("y", (w, a) => int.Parse((string)w.CurrentScope.ReturnValue)), setY => 
+                                            setY.Connect(new WriteLine((w, a) =>
+                                            {
+                                                var x = w.CurrentScope.GetVariable<int>("x");
+                                                var y = w.CurrentScope.GetVariable<int>("y");
+                                                var z = x + y;
+                                                return $"{x} + {y} = {z}";
+                                            }))))))))))
+                .Build();
             
-            await invoker.InvokeAsync(workflowContext, "1", CancellationToken.None);
+            await invoker.InvokeAsync(workflow);
+            
+            var serializer = new JsonWorkflowSerializer();
+            var json = await serializer.SerializeAsync(workflow, CancellationToken.None);
         }
     }
 }

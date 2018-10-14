@@ -1,46 +1,87 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Flowsharp.Descriptors;
+using System.Threading;
+using System.Threading.Tasks;
+using Flowsharp.Activities;
 
 namespace Flowsharp.Models
 {
     public class WorkflowExecutionContext
     {
-        public WorkflowExecutionContext(IDictionary<string, ActivityDescriptor> activityDescriptorDictionary, WorkflowType workflowType, WorkflowStatus status)
+        public WorkflowExecutionContext(Workflow workflow, WorkflowStatus status = WorkflowStatus.Idle)
         {
-            WorkflowType = workflowType;
-            Activities = workflowType.Activities.ToDictionary(x => x.Id, x => new ActivityExecutionContext(x, activityDescriptorDictionary[x.Name]));
-            BlockingActivities = new List<ActivityExecutionContext>();
+            Workflow = workflow;
             Status = status;
-            IsFirstPass = true;
+            IsFirstPass = true;            
+            scheduledActivities = new Stack<IActivity>();
+            scopes = new Stack<WorkflowExecutionScope>();
             
-            scheduledActivities = new Stack<ActivityExecutionContext>();
+            BeginScope();
         }
         
-        private readonly Stack<ActivityExecutionContext> scheduledActivities;
+        private readonly Stack<IActivity> scheduledActivities;
+        private readonly Stack<WorkflowExecutionScope> scopes;
 
-        public WorkflowType WorkflowType { get; }
-        public IDictionary<string, ActivityExecutionContext> Activities { get; }
-        public ICollection<ActivityExecutionContext> BlockingActivities { get; }
+        public Workflow Workflow { get; }
         public WorkflowStatus Status { get; set; }
         public bool HasScheduledActivities => scheduledActivities.Any();
         public bool IsFirstPass { get; set; }
-        public ActivityExecutionContext CurrentExecutingActivity { get; private set; }
+        public IActivity CurrentActivity { get; private set; }
+        public WorkflowExecutionScope CurrentScope { get; private set; }
 
-        public void PushScheduledActivity(ActivityExecutionContext activityExecutionContext)
+        public void BeginScope()
+        { 
+            scopes.Push(CurrentScope = new WorkflowExecutionScope());
+        }
+
+        public void EndScope()
         {
-            scheduledActivities.Push(activityExecutionContext);
+            scopes.Pop();
+            CurrentScope = scopes.Peek();
+        }
+
+        public void ScheduleActivity(IActivity activity)
+        {
+            scheduledActivities.Push(activity);
         }
         
-        public ActivityExecutionContext PopScheduledActivity()
+        public IActivity PopScheduledActivity()
         {
-            return CurrentExecutingActivity = scheduledActivities.Pop();
+            CurrentActivity = scheduledActivities.Pop();
+            return CurrentActivity;
+        }
+        
+        public void SetReturnValue(object value)
+        {
+            CurrentScope.ReturnValue = value;
         }
 
-        public void Fault(Exception exception, ActivityExecutionContext activity)
+        public void Fault(Exception exception, IActivity activity)
         {
             throw new NotImplementedException();
+        }
+
+        public Task HaltAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Finish()
+        {
+            Status = WorkflowStatus.Finished;
+        }
+        
+        public virtual void ScheduleNextActivities(WorkflowExecutionContext workflowContext, SourceEndpoint endpoint)
+        {
+            var completedActivity = workflowContext.CurrentActivity;
+            var connections = Workflow.Connections.Where(x => x.Source.Activity == completedActivity && x.Source.Name == endpoint.Name);
+
+            foreach (var connection in connections)
+            {
+                workflowContext.ScheduleActivity(connection.Target.Activity);
+            }
         }
     }
 }

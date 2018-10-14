@@ -9,22 +9,6 @@ namespace Flowsharp.Activities
     public interface IActivity
     {
         /// <summary>
-        /// The system name of the activity.
-        /// </summary>
-        /// <remarks>The Name is used to identify a given activity type and must be unique.</remarks>
-        string Name { get; }
-        
-        /// <summary>
-        /// Provides metadata about the specified activity.
-        /// </summary>
-        Task ProvideMetadataAsync(ActivityMetadataContext context, CancellationToken cancellationToken);
-
-        /// <summary>
-        /// Returns a list of possible outcomes when the activity is executed.
-        /// </summary>
-        IEnumerable<Outcome> GetOutcomes(WorkflowExecutionContext workflowContext, ActivityExecutionContext activityContext);
-
-        /// <summary>
         /// Returns a value of whether the specified activity can execute.
         /// </summary>
         Task<bool> CanExecuteAsync(WorkflowExecutionContext workflowContext, ActivityExecutionContext activityContext, CancellationToken cancellationToken);

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Flowsharp.Activities;
 using Microsoft.Extensions.Logging;
 
 namespace Flowsharp.Extensions
@@ -10,7 +11,7 @@ namespace Flowsharp.Extensions
         /// <summary>
         /// Safely invoke methods by catching non fatal exceptions and logging them.
         /// </summary>
-        public static void Invoke<TEvents>(this IEnumerable<TEvents> events, Action<TEvents> dispatch, ILogger logger)
+        public static void Invoke<T>(this IEnumerable<T> events, Action<T> dispatch, ILogger logger)
         {
             foreach (var sink in events)
             {
@@ -20,7 +21,7 @@ namespace Flowsharp.Extensions
                 }
                 catch (Exception ex)
                 {
-                    HandleException(ex, logger, typeof(TEvents).Name, sink.GetType().FullName);
+                    HandleException(ex, logger, typeof(T).Name, sink.GetType().FullName);
                 }
             }
         }
@@ -28,7 +29,7 @@ namespace Flowsharp.Extensions
         /// <summary>
         /// Safely invoke methods by catching non fatal exceptions and logging them.
         /// </summary>
-        public static async Task InvokeAsync<TEvents>(this IEnumerable<TEvents> events, Func<TEvents, Task> dispatch, ILogger logger)
+        public static async Task InvokeAsync<T>(this IEnumerable<T> events, Func<T, Task> dispatch, ILogger logger)
         {
             foreach (var sink in events)
             {
@@ -38,12 +39,12 @@ namespace Flowsharp.Extensions
                 }
                 catch (Exception ex)
                 {
-                    HandleException(ex, logger, typeof(TEvents).Name, sink.GetType().FullName);
+                    HandleException(ex, logger, typeof(T).Name, sink.GetType().FullName);
                 }
             }
         }
 
-        public static void HandleException(Exception ex, ILogger logger, string sourceType, string method)
+        private static void HandleException(Exception ex, ILogger logger, string sourceType, string method)
         {
             if (ex.IsFatal())
                 throw ex;
