@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace Flowsharp.Models
 {
@@ -6,11 +7,11 @@ namespace Flowsharp.Models
     {
         public WorkflowExecutionScope()
         {
-            Variables = new Dictionary<string, object>();
+            Variables = new Variables();
         }
         
-        public object ReturnValue { get; set; }
-        public IDictionary<string, object> Variables { get; }
+        public object LastResult { get; set; }
+        public Variables Variables { get; }
 
         public void SetVariable(string variableName, object value)
         {
@@ -21,5 +22,11 @@ namespace Flowsharp.Models
         {
             return Variables.ContainsKey(name) ? (T)Variables[name] : default(T);
         }
+    }
+
+    [JsonDictionary(ItemTypeNameHandling = TypeNameHandling.None)]
+    public class Variables : Dictionary<string, object>
+    {
+        
     }
 }

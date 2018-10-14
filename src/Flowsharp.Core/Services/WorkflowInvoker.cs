@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -23,12 +22,14 @@ namespace Flowsharp.Services
         public async Task<WorkflowExecutionContext> InvokeAsync(Workflow workflow, IActivity startActivity = default, CancellationToken cancellationToken = default)
         {
             var workflowExecutionContext = new WorkflowExecutionContext(workflow);
-            var isResuming = workflowExecutionContext.Status == WorkflowStatus.Resuming;
+            var isResuming = workflowExecutionContext.Workflow.Status == WorkflowStatus.Resuming;
 
-            if (startActivity == null)
+            if (startActivity != null)
+                workflow.HaltedActivities.Remove(startActivity);
+            else
                 startActivity = workflow.Activities.First();
             
-            workflowExecutionContext.Status = WorkflowStatus.Executing;
+            workflowExecutionContext.Workflow.Status = WorkflowStatus.Executing;
             workflowExecutionContext.ScheduleActivity(startActivity);
             await InvokeActivitiesAsync(workflowExecutionContext, x => x.WorkflowStartingAsync(workflowExecutionContext, cancellationToken));
             
@@ -46,7 +47,8 @@ namespace Flowsharp.Services
                 isResuming = false;
             }
 
-            workflowExecutionContext.Status = WorkflowStatus.Finished;
+            if(workflowExecutionContext.Workflow.Status != WorkflowStatus.Halted)
+                workflowExecutionContext.Finish();
             
             return workflowExecutionContext;
         }
@@ -59,7 +61,7 @@ namespace Flowsharp.Services
 
                 if (cancellationToken.IsCancellationRequested)
                 {
-                    workflowContext.Status = WorkflowStatus.Aborted;
+                    workflowContext.Workflow.Status = WorkflowStatus.Aborted;
                     return null;
                 }
                 

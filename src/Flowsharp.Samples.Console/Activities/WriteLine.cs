@@ -1,12 +1,12 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Flowsharp.ActivityResults;
 using Flowsharp.Models;
+using Activity = Flowsharp.Activities.Activity;
 
-namespace Flowsharp.Activities 
+namespace Flowsharp.Samples.Console.Activities 
 {
     /// <summary>
     /// Writes a text string to the specified stream.
@@ -16,15 +16,15 @@ namespace Flowsharp.Activities
         private readonly TextWriter output;
         private readonly Func<WorkflowExecutionContext, ActivityExecutionContext, string> textProvider;
         
-        public WriteLine() : this(Console.Out, null)
+        public WriteLine() : this(System.Console.Out, null)
         {
         }
 
-        public WriteLine(string text) : this(Console.Out, text)
+        public WriteLine(string text) : this(System.Console.Out, text)
         {
         }
         
-        public WriteLine(Func<WorkflowExecutionContext, ActivityExecutionContext, string> textProvider) : this(Console.Out, null)
+        public WriteLine(Func<WorkflowExecutionContext, ActivityExecutionContext, string> textProvider) : this(System.Console.Out, null)
         {
             this.textProvider = textProvider;
         }

@@ -13,7 +13,7 @@ namespace Flowsharp.ActivityResults
         
         protected override void Execute(WorkflowExecutionContext workflowContext)
         {
-            workflowContext.SetReturnValue(value);
+            workflowContext.SetLastResult(value);
         }
     }
 }

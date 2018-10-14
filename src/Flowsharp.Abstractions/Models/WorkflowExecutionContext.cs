@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -10,20 +9,16 @@ namespace Flowsharp.Models
 {
     public class WorkflowExecutionContext
     {
-        public WorkflowExecutionContext(Workflow workflow, WorkflowStatus status = WorkflowStatus.Idle)
+        public WorkflowExecutionContext(Workflow workflow)
         {
             Workflow = workflow;
-            Status = status;
             IsFirstPass = true;            
             scheduledActivities = new Stack<IActivity>();
-            
-            BeginScope();
         }
         
         private readonly Stack<IActivity> scheduledActivities;
 
         public Workflow Workflow { get; }
-        public WorkflowStatus Status { get; set; }
         public bool HasScheduledActivities => scheduledActivities.Any();
         public bool IsFirstPass { get; set; }
         public IActivity CurrentActivity { get; private set; }
@@ -55,9 +50,9 @@ namespace Flowsharp.Models
             return CurrentActivity;
         }
         
-        public void SetReturnValue(object value)
+        public void SetLastResult(object value)
         {
-            CurrentScope.ReturnValue = value;
+            CurrentScope.LastResult = value;
         }
 
         public void Fault(Exception exception, IActivity activity)
@@ -67,12 +62,19 @@ namespace Flowsharp.Models
 
         public Task HaltAsync(CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            var activity = CurrentActivity;
+            if (!Workflow.HaltedActivities.Contains(activity))
+            {
+                Workflow.HaltedActivities.Add(activity);
+            }
+
+            Workflow.Status = WorkflowStatus.Halted;
+            return Task.CompletedTask;
         }
 
         public void Finish()
         {
-            Status = WorkflowStatus.Finished;
+            Workflow.Status = WorkflowStatus.Finished;
         }
         
         public virtual void ScheduleNextActivities(WorkflowExecutionContext workflowContext, SourceEndpoint endpoint)
