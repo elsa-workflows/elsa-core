@@ -5,6 +5,9 @@ using Flowsharp.Handlers;
 using Flowsharp.Samples.Console.Handlers;
 using Flowsharp.Samples.Console.Programs;
 using Flowsharp.Serialization;
+using Flowsharp.Serialization.Formatters;
+using Flowsharp.Serialization.Json;
+using Flowsharp.Serialization.Tokenizers;
 using Flowsharp.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -21,7 +24,12 @@ namespace Flowsharp.Samples.Console
                 .AddSingleton<IWorkflowExpressionEvaluator, WorkflowExpressionEvaluator>()
                 .AddSingleton<IWorkflowInvoker, WorkflowInvoker>()
                 .AddSingleton<IActivityInvoker, ActivityInvoker>()
-                .AddSingleton<IWorkflowSerializer, JsonWorkflowSerializer>()
+                .AddSingleton<IWorkflowSerializer, WorkflowSerializer>()
+                .AddSingleton<ITokenFormatter, JsonTokenFormatter>()
+                .AddSingleton<IWorkflowTokenizer, WorkflowTokenizer>()
+                .AddSingleton<ITokenizerInvoker, TokenizerInvoker>()
+                .AddSingleton<ITokenizer, DefaultTokenizer>()
+                .AddSingleton<ITokenizer, ActivityTokenizer>()
                 .AddLogging(logging => logging.AddConsole());
 
             services

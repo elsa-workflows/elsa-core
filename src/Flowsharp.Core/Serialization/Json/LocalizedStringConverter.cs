@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Localization;
 using Newtonsoft.Json;
 
-namespace Flowsharp.Json
+namespace Flowsharp.Serialization.Json
 {
     /// <summary>
     /// Serializes the <see cref="LocalizedString"/> to a simple string using the translated text.

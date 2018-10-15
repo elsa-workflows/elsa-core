@@ -30,7 +30,7 @@ namespace Flowsharp.Samples.Console.Workflows
             var ifElse1 = new IfElse{ ConditionExpression = new WorkflowExpression<bool>(JavaScriptEvaluator.SyntaxName, "workflow.getVariable('tryAgain')")};
             var writeLine7 = new WriteLine("Bye!");
 
-            Activities = new IActivity[] { writeLine1, writeLine2, writeLine3, writeLine4, writeLine5, writeLine6, readLine1, readLine2, readLine3, setVariable1, setVariable2, setVariable3, ifElse1 };
+            Activities = new IActivity[] { writeLine1, writeLine2, writeLine3, writeLine4, writeLine5, writeLine6, writeLine7, readLine1, readLine2, readLine3, setVariable1, setVariable2, setVariable3, ifElse1 };
             Connections = new[]
             {
                 new Connection(writeLine1, writeLine2),

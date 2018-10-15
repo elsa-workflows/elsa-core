@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using Newtonsoft.Json;
-
-namespace Flowsharp.Models
+﻿namespace Flowsharp.Models
 {
     public class WorkflowExecutionScope
     {
@@ -27,11 +24,5 @@ namespace Flowsharp.Models
         {
             return Variables.ContainsKey(name) ? Variables[name] : null;
         }
-    }
-
-    [JsonDictionary(ItemTypeNameHandling = TypeNameHandling.None)]
-    public class Variables : Dictionary<string, object>
-    {
-        
     }
 }

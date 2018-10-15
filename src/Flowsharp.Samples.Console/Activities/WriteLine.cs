@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Flowsharp.Expressions;
 using Flowsharp.Models;
 using Flowsharp.Results;
+using Newtonsoft.Json;
 using Activity = Flowsharp.Models.Activity;
 
 namespace Flowsharp.Samples.Console.Activities 
