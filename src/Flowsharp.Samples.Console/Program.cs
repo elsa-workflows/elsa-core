@@ -24,7 +24,8 @@ namespace Flowsharp.Samples.Console
                 .AddSingleton<IWorkflowInvoker, WorkflowInvoker>()
                 .AddSingleton<IActivityInvoker, ActivityInvoker>()
                 .AddSingleton<IWorkflowSerializer, WorkflowSerializer>()
-                .AddSingleton<ITokenFormatter, JsonTokenFormatter>()
+                //.AddSingleton<ITokenFormatter, JsonTokenFormatter>()
+                .AddSingleton<ITokenFormatter, YamlTokenFormatter>()
                 .AddSingleton<IWorkflowTokenizer, WorkflowTokenizer>()
                 .AddSingleton<ITokenizerInvoker, TokenizerInvoker>()
                 .AddSingleton<ITokenizer, DefaultTokenizer>()
@@ -43,7 +44,8 @@ namespace Flowsharp.Samples.Console
                 .AddSingleton<FileBasedWorkflowProgramLongRunning>();
 
             var serviceProvider = services.BuildServiceProvider();
-            var program = serviceProvider.GetRequiredService<FileBasedWorkflowProgramLongRunning>();
+            var program = serviceProvider.GetRequiredService<AdditionWorkflowProgramLongRunning>();
+            //var program = serviceProvider.GetRequiredService<FileBasedWorkflowProgramLongRunning>();
             
             await program.RunAsync(CancellationToken.None);
         }

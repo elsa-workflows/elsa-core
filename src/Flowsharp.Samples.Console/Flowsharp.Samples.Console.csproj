@@ -13,6 +13,8 @@
   <ItemGroup>
     <None Remove="SampleWorkflow.json" />
     <EmbeddedResource Include="SampleWorkflow.json" />
+    <None Remove="SampleWorkflow.yaml" />
+    <EmbeddedResource Include="SampleWorkflow.yaml" />
   </ItemGroup>
 
 </Project>
