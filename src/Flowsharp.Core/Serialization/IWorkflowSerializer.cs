@@ -1,6 +1,7 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using Flowsharp.Activities;
+using Flowsharp.Models;
 
 namespace Flowsharp.Serialization
 {

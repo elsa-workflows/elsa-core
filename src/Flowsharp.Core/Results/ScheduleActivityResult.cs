@@ -1,7 +1,8 @@
 ﻿using Flowsharp.Activities;
 using Flowsharp.Models;
+using Flowsharp.Services;
 
-namespace Flowsharp.ActivityResults
+namespace Flowsharp.Results
 {
     public class ScheduleActivityResult : ActivityExecutionResult
     {
@@ -12,7 +13,7 @@ namespace Flowsharp.ActivityResults
             this.activity = activity;
         }
         
-        protected override void Execute(WorkflowExecutionContext workflowContext)
+        protected override void Execute(IWorkflowInvoker invoker, WorkflowExecutionContext workflowContext)
         {
             workflowContext.ScheduleActivity(activity);
         }

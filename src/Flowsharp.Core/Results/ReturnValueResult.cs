@@ -1,6 +1,7 @@
 ﻿using Flowsharp.Models;
+using Flowsharp.Services;
 
-namespace Flowsharp.ActivityResults
+namespace Flowsharp.Results
 {
     public class ReturnValueResult : ActivityExecutionResult
     {
@@ -11,7 +12,7 @@ namespace Flowsharp.ActivityResults
             this.value = value;
         }
         
-        protected override void Execute(WorkflowExecutionContext workflowContext)
+        protected override void Execute(IWorkflowInvoker invoker, WorkflowExecutionContext workflowContext)
         {
             workflowContext.SetLastResult(value);
         }

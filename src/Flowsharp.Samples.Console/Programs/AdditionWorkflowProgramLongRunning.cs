@@ -2,7 +2,10 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Flowsharp.Activities;
+using Flowsharp.Expressions;
+using Flowsharp.Handlers;
 using Flowsharp.Models;
+using Flowsharp.Samples.Console.Handlers;
 using Flowsharp.Samples.Console.Workflows;
 using Flowsharp.Serialization;
 using Flowsharp.Services;
@@ -13,13 +16,13 @@ namespace Flowsharp.Samples.Console.Programs
 {
     public class AdditionWorkflowProgramLongRunning
     {
-        private readonly WorkflowInvoker workflowInvoker;
+        private readonly IWorkflowInvoker workflowInvoker;
         private readonly IWorkflowSerializer serializer;
 
-        public AdditionWorkflowProgramLongRunning()
+        public AdditionWorkflowProgramLongRunning(IWorkflowInvoker workflowInvoker, IWorkflowSerializer serializer)
         {
-            workflowInvoker = new WorkflowInvoker(new Logger<WorkflowInvoker>(new NullLoggerFactory()));
-            serializer = new JsonWorkflowSerializer();
+            this.workflowInvoker = workflowInvoker;
+            this.serializer = serializer;
         }
         
         public async Task RunAsync(CancellationToken cancellationToken)
@@ -33,6 +36,9 @@ namespace Flowsharp.Samples.Console.Programs
                 workflowContext = await ReadAndResumeAsync(workflowContext.Workflow, "y", cancellationToken);
                 workflowContext = await ReadAndResumeAsync(workflowContext.Workflow, "tryAgain", cancellationToken);    
             }
+            
+            var json = await serializer.SerializeAsync(workflowContext.Workflow, cancellationToken);
+            System.Console.WriteLine(json);
         }
 
         private async Task<WorkflowExecutionContext> ReadAndResumeAsync(Workflow workflow, string argumentName, CancellationToken cancellationToken)

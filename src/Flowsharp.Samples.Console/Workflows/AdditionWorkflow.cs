@@ -1,8 +1,8 @@
 using System;
 using Flowsharp.Activities;
+using Flowsharp.Expressions;
 using Flowsharp.Models;
 using Flowsharp.Samples.Console.Activities;
-using Flowsharp.Scripting;
 
 namespace Flowsharp.Samples.Console.Workflows
 {
@@ -10,26 +10,24 @@ namespace Flowsharp.Samples.Console.Workflows
     {
         public AdditionWorkflow()
         {
-            var scriptEvaluator = new JintEvaluator();
             var writeLine1 = new WriteLine("Welcome to Addition Workflow!");
             var writeLine2 = new WriteLine("Let's run an interactive program.");
             var writeLine3 = new WriteLine("Enter first value:");
             var readLine1 = new ReadLine();
-            var setVariable1 = new SetVariable(scriptEvaluator){ VariableName = "x", ValueExpression = "workflow.getLastResult()"};
+            var setVariable1 = new SetVariable{ VariableName = "x", ValueExpression = new WorkflowExpression<object>(JavaScriptEvaluator.SyntaxName, "workflow.getLastResult()")};
             var writeLine4 = new WriteLine("Enter second value:");
             var readLine2 = new ReadLine();
-            var setVariable2 = new SetVariable(scriptEvaluator){ VariableName = "y", ValueExpression = "workflow.getLastResult()"};
-            var writeLine5 = new WriteLine((w, a) =>
-            {
-                var x = w.CurrentScope.GetVariable<int>("x");
-                var y = w.CurrentScope.GetVariable<int>("y");
-                var z = x + y;
-                return $"{x} + {y} = {z}";
-            });
+            var setVariable2 = new SetVariable{ VariableName = "y", ValueExpression = new WorkflowExpression<object>(JavaScriptEvaluator.SyntaxName, "workflow.getLastResult()")};
+            var writeLine5 = new WriteLine {TextExpression = new WorkflowExpression<string>(JavaScriptEvaluator.SyntaxName, 
+                "var x = workflow.getVariable('x');\r\n" + 
+                "var y = workflow.getVariable('y');\r\n" + 
+                "var sum = parseInt(x) + parseInt(y);\r\n" +
+                "x + ' + ' + y + ' = ' + sum;"
+            )};
             var writeLine6 = new WriteLine("Try again? (Y/N)");
             var readLine3 = new ReadLine();
-            var setVariable3 = new SetVariable(scriptEvaluator){ VariableName = "tryAgain", ValueExpression = "'y' === workflow.getLastResult().toLowerCase()"};
-            var ifElse1 = new IfElse(scriptEvaluator){ ConditionExpression = "workflow.getVariable('tryAgain')"};
+            var setVariable3 = new SetVariable{ VariableName = "tryAgain", ValueExpression = new WorkflowExpression<object>(JavaScriptEvaluator.SyntaxName, "'y' === workflow.getLastResult().toLowerCase()")};
+            var ifElse1 = new IfElse{ ConditionExpression = new WorkflowExpression<bool>(JavaScriptEvaluator.SyntaxName, "workflow.getVariable('tryAgain')")};
             var writeLine7 = new WriteLine("Bye!");
 
             Activities = new IActivity[] { writeLine1, writeLine2, writeLine3, writeLine4, writeLine5, writeLine6, readLine1, readLine2, readLine3, setVariable1, setVariable2, setVariable3, ifElse1 };

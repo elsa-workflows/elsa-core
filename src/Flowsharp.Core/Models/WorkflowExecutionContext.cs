@@ -77,7 +77,7 @@ namespace Flowsharp.Models
             Workflow.Status = WorkflowStatus.Finished;
         }
         
-        public virtual void ScheduleNextActivities(WorkflowExecutionContext workflowContext, SourceEndpoint endpoint)
+        public void ScheduleNextActivities(WorkflowExecutionContext workflowContext, SourceEndpoint endpoint)
         {
             var completedActivity = workflowContext.CurrentActivity;
             var connections = Workflow.Connections.Where(x => x.Source.Activity == completedActivity && x.Source.Name == endpoint.Name);

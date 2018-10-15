@@ -1,11 +1,12 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using Flowsharp.Models;
+using Flowsharp.Services;
 
-namespace Flowsharp.ActivityResults
+namespace Flowsharp.Results
 {
     public interface IActivityExecutionResult
     {
-        Task ExecuteAsync(WorkflowExecutionContext workflowContext, CancellationToken cancellationToken);
+        Task ExecuteAsync(IWorkflowInvoker invoker, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken);
     }
 }

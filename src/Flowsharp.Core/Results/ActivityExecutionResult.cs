@@ -2,20 +2,20 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Flowsharp.Models;
+using Flowsharp.Services;
 
-namespace Flowsharp.ActivityResults
+namespace Flowsharp.Results
 {
     public abstract class ActivityExecutionResult : IActivityExecutionResult
     {
-        public virtual Task ExecuteAsync(WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
+        public virtual Task ExecuteAsync(IWorkflowInvoker invoker, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
         {
-            Execute(workflowContext);
+            Execute(invoker, workflowContext);
             return Task.CompletedTask;
         }
 
-        protected virtual void Execute(WorkflowExecutionContext workflowContext)
+        protected virtual void Execute(IWorkflowInvoker invoker, WorkflowExecutionContext workflowContext)
         {
-            throw new NotImplementedException("You must either implement ExecuteAsync or Execute");
         }
     }
 }

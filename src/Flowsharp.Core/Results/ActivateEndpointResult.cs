@@ -1,22 +1,24 @@
 ﻿using Flowsharp.Models;
+using Flowsharp.Services;
 
-namespace Flowsharp.ActivityResults
+namespace Flowsharp.Results
 {
     /// <summary>
     /// A result that carries information about the next activity to execute.
     /// </summary>
     public class ActivateEndpointResult : ActivityExecutionResult
     {
-        public ActivateEndpointResult(SourceEndpoint endpoint)
+        public ActivateEndpointResult(string endpointName = null)
         {
-            Endpoint = endpoint;
+            EndpointName = endpointName;
         }
 
-        public SourceEndpoint Endpoint { get; }
+        public string EndpointName { get; }
 
-        protected override void Execute(WorkflowExecutionContext workflowContext)
+        protected override void Execute(IWorkflowInvoker invoker, WorkflowExecutionContext workflowContext)
         {
-            workflowContext.ScheduleNextActivities(workflowContext, Endpoint);
+            var currentActivity = workflowContext.CurrentActivity;
+            workflowContext.ScheduleNextActivities(workflowContext, new SourceEndpoint(currentActivity, EndpointName));
         }
     }
 }
