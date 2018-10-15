@@ -1,11 +1,4 @@
-﻿using System;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
-using Flowsharp.Expressions;
-using Flowsharp.Models;
-using Flowsharp.Results;
-using Newtonsoft.Json;
+﻿using Flowsharp.Expressions;
 using Activity = Flowsharp.Models.Activity;
 
 namespace Flowsharp.Samples.Console.Activities 

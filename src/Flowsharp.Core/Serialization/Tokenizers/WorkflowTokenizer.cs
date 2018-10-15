@@ -147,8 +147,8 @@ namespace Flowsharp.Serialization.Tokenizers
                 var activityId = item.Value;
                 var activityModel = JObject.FromObject(activity, new JsonSerializer { ContractResolver = new CamelCasePropertyNamesContractResolver()});
                 
-                activityModel.Add("name", activity.GetType().Name);
-                activityModel.Add("id", activityId);
+                activityModel.AddFirst(new JProperty("name", activity.GetType().Name));
+                activityModel.AddFirst(new JProperty("id", activityId));
                 activityModels.Add(activityModel);
             }
 

@@ -10,4 +10,9 @@
     <ProjectReference Include="..\Flowsharp.Core\Flowsharp.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Remove="SampleWorkflow.json" />
+    <EmbeddedResource Include="SampleWorkflow.json" />
+  </ItemGroup>
+
 </Project>

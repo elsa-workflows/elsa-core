@@ -1,18 +1,18 @@
-﻿using System.Linq;
+﻿using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Flowsharp.Models;
-using Flowsharp.Samples.Console.Workflows;
 using Flowsharp.Services;
 
 namespace Flowsharp.Samples.Console.Programs
 {
-    public class AdditionWorkflowProgramLongRunning
+    public class FileBasedWorkflowProgramLongRunning
     {
         private readonly IWorkflowInvoker workflowInvoker;
         private readonly IWorkflowSerializer serializer;
 
-        public AdditionWorkflowProgramLongRunning(IWorkflowInvoker workflowInvoker, IWorkflowSerializer serializer)
+        public FileBasedWorkflowProgramLongRunning(IWorkflowInvoker workflowInvoker, IWorkflowSerializer serializer)
         {
             this.workflowInvoker = workflowInvoker;
             this.serializer = serializer;
@@ -20,7 +20,11 @@ namespace Flowsharp.Samples.Console.Programs
         
         public async Task RunAsync(CancellationToken cancellationToken)
         {
-            var workflow = new AdditionWorkflowLongRunning();
+            var assembly = typeof(FileBasedWorkflowProgramLongRunning).Assembly;
+            var resource = assembly.GetManifestResourceStream("Flowsharp.Samples.Console.SampleWorkflow.json");
+            var resourceReader = new StreamReader(resource);
+            var json = await resourceReader.ReadToEndAsync();
+            var workflow = serializer.Deserialize(json);
             var workflowContext = await workflowInvoker.InvokeAsync(workflow, null, cancellationToken);
 
             while (workflowContext.Workflow.Status == WorkflowStatus.Halted)
@@ -30,14 +34,11 @@ namespace Flowsharp.Samples.Console.Programs
                 workflowContext = await ReadAndResumeAsync(workflowContext.Workflow, "tryAgain", cancellationToken);    
             }
             
-            var json = serializer.Serialize(workflowContext.Workflow);
             System.Console.WriteLine(json);
         }
 
         private async Task<WorkflowExecutionContext> ReadAndResumeAsync(Workflow workflow, string argumentName, CancellationToken cancellationToken)
         {
-            var json = serializer.Serialize(workflow);
-            workflow = serializer.Deserialize(json);
             var haltedActivity = workflow.HaltedActivities.Single();
             workflow.Arguments[argumentName] = System.Console.ReadLine();
             workflow.Status = WorkflowStatus.Resuming;

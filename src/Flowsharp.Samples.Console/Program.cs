@@ -6,7 +6,6 @@ using Flowsharp.Samples.Console.Handlers;
 using Flowsharp.Samples.Console.Programs;
 using Flowsharp.Serialization;
 using Flowsharp.Serialization.Formatters;
-using Flowsharp.Serialization.Json;
 using Flowsharp.Serialization.Tokenizers;
 using Flowsharp.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -40,10 +39,11 @@ namespace Flowsharp.Samples.Console
 
             services
                 .AddSingleton<AdditionWorkflowProgram>()
-                .AddSingleton<AdditionWorkflowProgramLongRunning>();
+                .AddSingleton<AdditionWorkflowProgramLongRunning>()
+                .AddSingleton<FileBasedWorkflowProgramLongRunning>();
 
             var serviceProvider = services.BuildServiceProvider();
-            var program = serviceProvider.GetRequiredService<AdditionWorkflowProgramLongRunning>();
+            var program = serviceProvider.GetRequiredService<FileBasedWorkflowProgramLongRunning>();
             
             await program.RunAsync(CancellationToken.None);
         }
