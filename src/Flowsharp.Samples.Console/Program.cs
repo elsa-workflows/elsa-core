@@ -44,8 +44,8 @@ namespace Flowsharp.Samples.Console
                 .AddSingleton<FileBasedWorkflowProgramLongRunning>();
 
             var serviceProvider = services.BuildServiceProvider();
-            var program = serviceProvider.GetRequiredService<AdditionWorkflowProgramLongRunning>();
-            //var program = serviceProvider.GetRequiredService<FileBasedWorkflowProgramLongRunning>();
+            //var program = serviceProvider.GetRequiredService<AdditionWorkflowProgramLongRunning>();
+            var program = serviceProvider.GetRequiredService<FileBasedWorkflowProgramLongRunning>();
             
             await program.RunAsync(CancellationToken.None);
         }

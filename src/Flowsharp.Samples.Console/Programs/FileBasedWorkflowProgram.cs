@@ -21,10 +21,10 @@ namespace Flowsharp.Samples.Console.Programs
         public async Task RunAsync(CancellationToken cancellationToken)
         {
             var assembly = typeof(FileBasedWorkflowProgramLongRunning).Assembly;
-            var resource = assembly.GetManifestResourceStream("Flowsharp.Samples.Console.SampleWorkflow.json");
+            var resource = assembly.GetManifestResourceStream("Flowsharp.Samples.Console.SampleWorkflow.yaml");
             var resourceReader = new StreamReader(resource);
-            var json = await resourceReader.ReadToEndAsync();
-            var workflow = serializer.Deserialize(json);
+            var data = await resourceReader.ReadToEndAsync();
+            var workflow = serializer.Deserialize(data);
             var workflowContext = await workflowInvoker.InvokeAsync(workflow, null, cancellationToken);
 
             while (workflowContext.Workflow.Status == WorkflowStatus.Halted)
@@ -34,7 +34,7 @@ namespace Flowsharp.Samples.Console.Programs
                 workflowContext = await ReadAndResumeAsync(workflowContext.Workflow, "tryAgain", cancellationToken);    
             }
             
-            System.Console.WriteLine(json);
+            System.Console.WriteLine(data);
         }
 
         private async Task<WorkflowExecutionContext> ReadAndResumeAsync(Workflow workflow, string argumentName, CancellationToken cancellationToken)

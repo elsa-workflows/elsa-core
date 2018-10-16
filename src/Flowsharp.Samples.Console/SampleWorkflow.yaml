@@ -26,11 +26,8 @@ activities:
       syntax: JavaScript
       expression: >-
           var x = workflow.getVariable('x');
-
           var y = workflow.getVariable('y');
-
           var sum = parseInt(x) + parseInt(y);
-
           x + ' + ' + y + ' = ' + sum;
 - id: 6
   name: WriteLine
