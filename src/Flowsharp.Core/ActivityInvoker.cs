@@ -8,7 +8,7 @@ using Flowsharp.Handlers;
 using Flowsharp.Models;
 using Flowsharp.Results;
 
-namespace Flowsharp.Services
+namespace Flowsharp
 {
     public class ActivityInvoker : IActivityInvoker
     {

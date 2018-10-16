@@ -1,4 +1,5 @@
-﻿using Flowsharp.Models;
+﻿using Flowsharp.Activities;
+using Flowsharp.Models;
 
 namespace Flowsharp.Samples.Console.Activities
 {

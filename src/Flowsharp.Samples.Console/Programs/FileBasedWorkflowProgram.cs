@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Flowsharp.Models;
 using Flowsharp.Samples.Console.Activities;
 using Flowsharp.Serialization;
-using Flowsharp.Services;
 
 namespace Flowsharp.Samples.Console.Programs
 {

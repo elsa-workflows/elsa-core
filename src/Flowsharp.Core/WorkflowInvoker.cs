@@ -3,12 +3,11 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Flowsharp.Activities;
-using Flowsharp.Extensions;
 using Flowsharp.Models;
 using Flowsharp.Results;
 using Microsoft.Extensions.Logging;
 
-namespace Flowsharp.Services
+namespace Flowsharp
 {
     public class WorkflowInvoker : IWorkflowInvoker
     {

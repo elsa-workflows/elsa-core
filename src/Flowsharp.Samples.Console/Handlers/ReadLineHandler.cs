@@ -5,7 +5,6 @@ using Flowsharp.Handlers;
 using Flowsharp.Models;
 using Flowsharp.Results;
 using Flowsharp.Samples.Console.Activities;
-using Flowsharp.Services;
 
 namespace Flowsharp.Samples.Console.Handlers
 {
