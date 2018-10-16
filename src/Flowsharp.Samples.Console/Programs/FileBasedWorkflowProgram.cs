@@ -26,7 +26,7 @@ namespace Flowsharp.Samples.Console.Programs
             var resourceReader = new StreamReader(resource);
             var data = await resourceReader.ReadToEndAsync();
             var workflow = serializer.Deserialize(data);
-            var workflowContext = await workflowInvoker.InvokeAsync(workflow, null, cancellationToken);
+            var workflowContext = await workflowInvoker.InvokeAsync(workflow, null, Variables.Empty, cancellationToken);
 
             while (workflowContext.Workflow.Status == WorkflowStatus.Halted)
             {
@@ -41,8 +41,8 @@ namespace Flowsharp.Samples.Console.Programs
         private async Task<WorkflowExecutionContext> ReadAndResumeAsync(Workflow workflow, CancellationToken cancellationToken)
         {
             var haltedActivity = (ReadLine)workflow.HaltedActivities.Single();
-            workflow.Arguments[haltedActivity.ArgumentName] = System.Console.ReadLine();
-            return await workflowInvoker.ResumeAsync(workflow, haltedActivity, cancellationToken);
+            var args = new Variables {{ haltedActivity.ArgumentName, System.Console.ReadLine() }};
+            return await workflowInvoker.ResumeAsync(workflow, haltedActivity, args, cancellationToken);
         }
     }
 }

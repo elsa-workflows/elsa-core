@@ -20,8 +20,9 @@ namespace Flowsharp
         private readonly ILogger logger;
         public IActivityInvoker ActivityInvoker { get; }
 
-        public async Task<WorkflowExecutionContext> InvokeAsync(Workflow workflow, IActivity startActivity = default, CancellationToken cancellationToken = default)
+        public async Task<WorkflowExecutionContext> InvokeAsync(Workflow workflow, IActivity startActivity = default, Variables arguments = default, CancellationToken cancellationToken = default)
         {
+            workflow.Arguments = arguments ?? new Variables();
             var workflowExecutionContext = new WorkflowExecutionContext(workflow);
             var isResuming = workflowExecutionContext.Workflow.Status == WorkflowStatus.Resuming;
 
@@ -53,10 +54,10 @@ namespace Flowsharp
             return workflowExecutionContext;
         }
 
-        public Task<WorkflowExecutionContext> ResumeAsync(Workflow workflow, IActivity startActivity = default, CancellationToken cancellationToken = default)
+        public Task<WorkflowExecutionContext> ResumeAsync(Workflow workflow, IActivity startActivity = default, Variables arguments = default, CancellationToken cancellationToken = default)
         {
             workflow.Status = WorkflowStatus.Resuming;
-            return InvokeAsync(workflow, startActivity, cancellationToken);
+            return InvokeAsync(workflow, startActivity, arguments, cancellationToken);
         }
 
         private async Task<ActivityExecutionResult> ExecuteActivityAsync(WorkflowExecutionContext workflowContext, IActivity activity, bool isResuming, CancellationToken cancellationToken)
