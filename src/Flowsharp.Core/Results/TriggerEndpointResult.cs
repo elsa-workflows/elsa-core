@@ -6,9 +6,9 @@ namespace Flowsharp.Results
     /// <summary>
     /// A result that carries information about the next activity to execute.
     /// </summary>
-    public class ActivateEndpointResult : ActivityExecutionResult
+    public class TriggerEndpointResult : ActivityExecutionResult
     {
-        public ActivateEndpointResult(string endpointName = null)
+        public TriggerEndpointResult(string endpointName = null)
         {
             EndpointName = endpointName;
         }

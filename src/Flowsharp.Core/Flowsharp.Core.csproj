@@ -18,8 +18,4 @@
     <PackageReference Include="YamlDotNet.NetStandard" Version="4.0.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Serialization\Converters" />
-  </ItemGroup>
-
 </Project>

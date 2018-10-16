@@ -20,7 +20,7 @@ namespace Flowsharp.Handlers
         protected override async Task<ActivityExecutionResult> OnExecuteAsync(IfElse activity, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
         {
             var result = await expressionEvaluator.EvaluateAsync(activity.ConditionExpression, workflowContext, cancellationToken);
-            return ActivateEndpoint(result ? "True" : "False");
+            return TriggerEndpoint(result ? "True" : "False");
         }
     }
 }

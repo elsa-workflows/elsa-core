@@ -53,6 +53,12 @@ namespace Flowsharp.Services
             return workflowExecutionContext;
         }
 
+        public Task<WorkflowExecutionContext> ResumeAsync(Workflow workflow, IActivity startActivity = default, CancellationToken cancellationToken = default)
+        {
+            workflow.Status = WorkflowStatus.Resuming;
+            return InvokeAsync(workflow, startActivity, cancellationToken);
+        }
+
         private async Task<ActivityExecutionResult> ExecuteActivityAsync(WorkflowExecutionContext workflowContext, IActivity activity, bool isResuming, CancellationToken cancellationToken)
         {
             try

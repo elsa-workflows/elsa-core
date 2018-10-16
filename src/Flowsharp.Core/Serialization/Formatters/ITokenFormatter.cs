@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json.Linq;
 
-namespace Flowsharp.Services
+namespace Flowsharp.Serialization.Formatters
 {
     public interface ITokenFormatter
     {

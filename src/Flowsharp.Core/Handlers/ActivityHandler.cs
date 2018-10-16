@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Flowsharp.Models;
 using Flowsharp.Results;
 
-namespace Flowsharp.Services
+namespace Flowsharp.Handlers
 {
     public abstract class ActivityHandler<T> : IActivityHandler where T : IActivity
     {
@@ -23,7 +23,7 @@ namespace Flowsharp.Services
         protected virtual ActivityExecutionResult OnResume(T activity, WorkflowExecutionContext workflowContext) => Noop();
 
         protected HaltResult Halt() => new HaltResult();
-        protected ActivateEndpointResult ActivateEndpoint(string name = null) => new ActivateEndpointResult(name);
+        protected TriggerEndpointResult TriggerEndpoint(string name = null) => new TriggerEndpointResult(name);
         protected ScheduleActivityResult ScheduleActivity(IActivity activity) => new ScheduleActivityResult(activity);
         protected ReturnValueResult SetReturnValue(object value) => new ReturnValueResult(value);
         protected FinishWorkflowResult Finish() => new FinishWorkflowResult();

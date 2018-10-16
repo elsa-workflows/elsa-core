@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Flowsharp.Models;
 using Flowsharp.Results;
 
-namespace Flowsharp.Services
+namespace Flowsharp.Handlers
 {
     public interface IActivityHandler
     {

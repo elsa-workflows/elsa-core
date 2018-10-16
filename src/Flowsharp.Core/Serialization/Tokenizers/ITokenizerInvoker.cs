@@ -1,7 +1,6 @@
-﻿using Flowsharp.Serialization;
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Linq;
 
-namespace Flowsharp.Services
+namespace Flowsharp.Serialization.Tokenizers
 {
     public interface ITokenizerInvoker
     {

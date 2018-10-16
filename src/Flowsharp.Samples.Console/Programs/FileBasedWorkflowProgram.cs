@@ -3,6 +3,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Flowsharp.Models;
+using Flowsharp.Samples.Console.Activities;
+using Flowsharp.Serialization;
 using Flowsharp.Services;
 
 namespace Flowsharp.Samples.Console.Programs
@@ -29,20 +31,19 @@ namespace Flowsharp.Samples.Console.Programs
 
             while (workflowContext.Workflow.Status == WorkflowStatus.Halted)
             {
-                workflowContext = await ReadAndResumeAsync(workflowContext.Workflow, "x", cancellationToken);
-                workflowContext = await ReadAndResumeAsync(workflowContext.Workflow, "y", cancellationToken);
-                workflowContext = await ReadAndResumeAsync(workflowContext.Workflow, "tryAgain", cancellationToken);    
+                workflowContext = await ReadAndResumeAsync(workflowContext.Workflow, cancellationToken);
+                workflowContext = await ReadAndResumeAsync(workflowContext.Workflow, cancellationToken);
+                workflowContext = await ReadAndResumeAsync(workflowContext.Workflow, cancellationToken);    
             }
             
             System.Console.WriteLine(data);
         }
 
-        private async Task<WorkflowExecutionContext> ReadAndResumeAsync(Workflow workflow, string argumentName, CancellationToken cancellationToken)
+        private async Task<WorkflowExecutionContext> ReadAndResumeAsync(Workflow workflow, CancellationToken cancellationToken)
         {
-            var haltedActivity = workflow.HaltedActivities.Single();
-            workflow.Arguments[argumentName] = System.Console.ReadLine();
-            workflow.Status = WorkflowStatus.Resuming;
-            return await workflowInvoker.InvokeAsync(workflow, haltedActivity, cancellationToken);
+            var haltedActivity = (ReadLine)workflow.HaltedActivities.Single();
+            workflow.Arguments[haltedActivity.ArgumentName] = System.Console.ReadLine();
+            return await workflowInvoker.ResumeAsync(workflow, haltedActivity, cancellationToken);
         }
     }
 }

@@ -1,9 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using Flowsharp.Serialization;
 using Newtonsoft.Json.Linq;
 
-namespace Flowsharp.Services
+namespace Flowsharp.Serialization.Tokenizers
 {
     public class TokenizerInvoker : ITokenizerInvoker
     {

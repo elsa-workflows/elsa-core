@@ -1,7 +1,6 @@
 ﻿using Flowsharp.Models;
-using Newtonsoft.Json.Linq;
 
-namespace Flowsharp.Services
+namespace Flowsharp.Serialization
 {
     public interface IWorkflowSerializer
     {

@@ -21,7 +21,7 @@ namespace Flowsharp.Handlers
         {
             var value = await expressionEvaluator.EvaluateAsync(activity.ValueExpression, workflowContext, cancellationToken);
             workflowContext.CurrentScope.SetVariable(activity.VariableName, value);
-            return ActivateEndpoint();
+            return TriggerEndpoint();
         }
     }
 }

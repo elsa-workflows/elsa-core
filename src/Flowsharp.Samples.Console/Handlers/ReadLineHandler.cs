@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Flowsharp.Handlers;
 using Flowsharp.Models;
 using Flowsharp.Results;
 using Flowsharp.Samples.Console.Activities;
@@ -28,7 +29,7 @@ namespace Flowsharp.Samples.Console.Handlers
             
             var value = await input.ReadLineAsync();
             workflowContext.SetLastResult(value);
-            return ActivateEndpoint();
+            return TriggerEndpoint();
 
         }
 
@@ -36,7 +37,7 @@ namespace Flowsharp.Samples.Console.Handlers
         {
             var receivedInput = workflowContext.Workflow.Arguments[activity.ArgumentName];
             workflowContext.SetLastResult(receivedInput);
-            return ActivateEndpoint();
+            return TriggerEndpoint();
         }
     }
 }
