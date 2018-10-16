@@ -63,9 +63,9 @@ namespace Flowsharp.Models
         public Task HaltAsync(CancellationToken cancellationToken)
         {
             var activity = CurrentActivity;
-            if (!Workflow.HaltedActivities.Contains(activity))
+            if (!Workflow.BlockingActivities.Contains(activity))
             {
-                Workflow.HaltedActivities.Add(activity);
+                Workflow.BlockingActivities.Add(activity);
             }
 
             Workflow.Status = WorkflowStatus.Halted;

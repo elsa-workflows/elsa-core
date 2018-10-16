@@ -39,7 +39,7 @@ namespace Flowsharp.Samples.Console.Programs
         {
             var json = serializer.Serialize(workflow);
             workflow = serializer.Deserialize(json);
-            var haltedActivity = (ReadLine)workflow.HaltedActivities.Single();
+            var haltedActivity = (ReadLine)workflow.BlockingActivities.Single();
             var args = new Variables {{ haltedActivity.ArgumentName, System.Console.ReadLine() }};
             
             return await workflowInvoker.ResumeAsync(workflow, haltedActivity, args, cancellationToken);

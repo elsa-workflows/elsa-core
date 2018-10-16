@@ -19,16 +19,15 @@ namespace Flowsharp.Models
             CurrentScope = new WorkflowExecutionScope();
             Scopes = new Stack<WorkflowExecutionScope>(new[]{ CurrentScope });
             Arguments = new Variables();
-            HaltedActivities = new List<IActivity>();
+            BlockingActivities = new List<IActivity>();
         }
         
-        [JsonConverter(typeof(StringEnumConverter))]
         public WorkflowStatus Status { get; set; }
         public IList<IActivity> Activities { get; set; } = new List<IActivity>();
         public IList<Connection> Connections { get; set; } = new List<Connection>();
         public Stack<WorkflowExecutionScope> Scopes { get; set; }
         public WorkflowExecutionScope CurrentScope { get; set; }
         public Variables Arguments { get; set; }
-        public IList<IActivity> HaltedActivities { get; set; }
+        public IList<IActivity> BlockingActivities { get; set; }
     }
 }

@@ -2,5 +2,6 @@
 {
     public interface IActivity
     {
+        string Name { get; }
     }
 }

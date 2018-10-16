@@ -8,6 +8,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Flowsharp.Core\Flowsharp.Core.csproj" />
+    <ProjectReference Include="..\Flowsharp.Persistence.Abstractions\Flowsharp.Persistence.Abstractions.csproj" />
+    <ProjectReference Include="..\Flowsharp.Persistence.InMemory\Flowsharp.Persistence.InMemory.csproj" />
+    <ProjectReference Include="..\Flowsharp.Runtime.Abstractions\Flowsharp.Runtime.Abstractions.csproj" />
+    <ProjectReference Include="..\Flowsharp.Runtime\Flowsharp.Runtime.csproj" />
   </ItemGroup>
 
   <ItemGroup>

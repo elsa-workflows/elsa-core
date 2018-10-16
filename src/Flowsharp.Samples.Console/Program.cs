@@ -2,6 +2,10 @@
 using System.Threading.Tasks;
 using Flowsharp.Expressions;
 using Flowsharp.Handlers;
+using Flowsharp.Persistence;
+using Flowsharp.Persistence.InMemory;
+using Flowsharp.Runtime;
+using Flowsharp.Runtime.Abstractions;
 using Flowsharp.Samples.Console.Handlers;
 using Flowsharp.Samples.Console.Programs;
 using Flowsharp.Serialization;
@@ -23,12 +27,13 @@ namespace Flowsharp.Samples.Console
                 .AddSingleton<IWorkflowInvoker, WorkflowInvoker>()
                 .AddSingleton<IActivityInvoker, ActivityInvoker>()
                 .AddSingleton<IWorkflowSerializer, WorkflowSerializer>()
-                .AddSingleton<ITokenFormatter, JsonTokenFormatter>()
+                //.AddSingleton<ITokenFormatter, JsonTokenFormatter>()
                 .AddSingleton<ITokenFormatter, YamlTokenFormatter>()
                 .AddSingleton<IWorkflowTokenizer, WorkflowTokenizer>()
                 .AddSingleton<ITokenizerInvoker, TokenizerInvoker>()
                 .AddSingleton<ITokenizer, DefaultTokenizer>()
                 .AddSingleton<ITokenizer, ActivityTokenizer>()
+                .AddSingleton<IWorkflowHost, WorkflowHost>()
                 .AddLogging(logging => logging.AddConsole());
 
             services
@@ -38,13 +43,19 @@ namespace Flowsharp.Samples.Console
                 .AddSingleton<IActivityHandler, WriteLineHandler>();
 
             services
+                .AddSingleton<IWorkflowDefinitionStore, InMemoryWorkflowDefinitionStore>()
+                .AddSingleton<IWorkflowInstanceStore, InMemoryWorkflowInstanceStore>();
+
+            services
                 .AddSingleton<AdditionWorkflowProgram>()
                 .AddSingleton<AdditionWorkflowProgramLongRunning>()
-                .AddSingleton<FileBasedWorkflowProgramLongRunning>();
+                .AddSingleton<FileBasedWorkflowProgramLongRunning>()
+                .AddSingleton<WorkflowHostProgram>();
 
             var serviceProvider = services.BuildServiceProvider();
             //var program = serviceProvider.GetRequiredService<AdditionWorkflowProgramLongRunning>();
-            var program = serviceProvider.GetRequiredService<FileBasedWorkflowProgramLongRunning>();
+            //var program = serviceProvider.GetRequiredService<FileBasedWorkflowProgramLongRunning>();
+            var program = serviceProvider.GetRequiredService<WorkflowHostProgram>();
             
             await program.RunAsync(CancellationToken.None);
         }

@@ -61,7 +61,7 @@ namespace Flowsharp.Serialization.Tokenizers
                 Status = (WorkflowStatus)Enum.Parse(typeof(WorkflowStatus), token["status"].Value<string>()),
                 Activities = activityDictionary.Values.ToList(),
                 Connections = DeserializeConnections(token, activityDictionary).ToList(),
-                HaltedActivities = DeserializeHaltedActivities(token, activityDictionary).ToList(),
+                BlockingActivities = DeserializeHaltedActivities(token, activityDictionary).ToList(),
                 Scopes = new Stack<WorkflowExecutionScope>(scopeLookup.Values),
                 CurrentScope = scopeLookup[currentScopeId]
             };
@@ -110,7 +110,7 @@ namespace Flowsharp.Serialization.Tokenizers
         {
             var haltedActivityModels = new JArray();
             
-            foreach (var activity in workflow.HaltedActivities)
+            foreach (var activity in workflow.BlockingActivities)
             {
                 var activityId = context.ActivityIdLookup[activity];
                 haltedActivityModels.Add(activityId);

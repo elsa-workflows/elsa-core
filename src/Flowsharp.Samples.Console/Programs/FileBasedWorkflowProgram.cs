@@ -40,7 +40,7 @@ namespace Flowsharp.Samples.Console.Programs
 
         private async Task<WorkflowExecutionContext> ReadAndResumeAsync(Workflow workflow, CancellationToken cancellationToken)
         {
-            var haltedActivity = (ReadLine)workflow.HaltedActivities.Single();
+            var haltedActivity = (ReadLine)workflow.BlockingActivities.Single();
             var args = new Variables {{ haltedActivity.ArgumentName, System.Console.ReadLine() }};
             return await workflowInvoker.ResumeAsync(workflow, haltedActivity, args, cancellationToken);
         }

@@ -27,7 +27,7 @@ namespace Flowsharp
             var isResuming = workflowExecutionContext.Workflow.Status == WorkflowStatus.Resuming;
 
             if (startActivity != null)
-                workflow.HaltedActivities.Remove(startActivity);
+                workflow.BlockingActivities.Remove(startActivity);
             else
                 startActivity = workflow.Activities.First();
             
