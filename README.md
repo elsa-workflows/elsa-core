@@ -1,6 +1,6 @@
 ## FlowSharp
 
-You can use the [editor on GitHub](https://github.com/sfmskywalker/FlowSharp/edit/master/README.md) to maintain and preview the content for your website in Markdown files.
+FlowSharp is a visual programming language implemented as a lean & mean set of components that you can use in your own .NET Core applications.
 
 Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
 
