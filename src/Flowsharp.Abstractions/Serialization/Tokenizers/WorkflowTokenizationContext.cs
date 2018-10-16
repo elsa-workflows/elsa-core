@@ -1,7 +1,7 @@
 using System.Collections.Generic;
-using Flowsharp.Models;
+using Flowsharp.Activities;
 
-namespace Flowsharp.Serialization
+namespace Flowsharp.Serialization.Tokenizers
 {
     public class WorkflowTokenizationContext
     {

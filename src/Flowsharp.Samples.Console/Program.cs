@@ -24,7 +24,7 @@ namespace Flowsharp.Samples.Console
                 .AddSingleton<IWorkflowInvoker, WorkflowInvoker>()
                 .AddSingleton<IActivityInvoker, ActivityInvoker>()
                 .AddSingleton<IWorkflowSerializer, WorkflowSerializer>()
-                //.AddSingleton<ITokenFormatter, JsonTokenFormatter>()
+                .AddSingleton<ITokenFormatter, JsonTokenFormatter>()
                 .AddSingleton<ITokenFormatter, YamlTokenFormatter>()
                 .AddSingleton<IWorkflowTokenizer, WorkflowTokenizer>()
                 .AddSingleton<ITokenizerInvoker, TokenizerInvoker>()

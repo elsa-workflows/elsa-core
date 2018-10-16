@@ -18,4 +18,8 @@
     <PackageReference Include="YamlDotNet.NetStandard" Version="4.0.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Flowsharp.Abstractions\Flowsharp.Abstractions.csproj" />
+  </ItemGroup>
+
 </Project>

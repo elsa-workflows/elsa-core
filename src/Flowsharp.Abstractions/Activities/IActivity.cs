@@ -1,4 +1,4 @@
-﻿namespace Flowsharp.Models
+﻿namespace Flowsharp.Activities
 {
     public interface IActivity
     {

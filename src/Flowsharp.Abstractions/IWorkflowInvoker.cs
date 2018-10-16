@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Flowsharp.Activities;
 using Flowsharp.Models;
 
-namespace Flowsharp.Services
+namespace Flowsharp
 {
     public interface IWorkflowInvoker
     {
