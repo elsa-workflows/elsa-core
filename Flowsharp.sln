@@ -5,31 +5,37 @@ VisualStudioVersion = 15.0.28010.2036
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Flowsharp.Core", "src\Flowsharp.Core\Flowsharp.Core.csproj", "{300EE2D5-54C5-46F2-AD03-BB43589EA074}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Flowsharp.Samples.Console", "src\Flowsharp.Samples.Console\Flowsharp.Samples.Console.csproj", "{48EDB976-3227-4DFD-BBB3-3BC9AEA19A88}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Flowsharp.Samples.Console", "src\Flowsharp.Samples.Console\Flowsharp.Samples.Console.csproj", "{48EDB976-3227-4DFD-BBB3-3BC9AEA19A88}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{DA71CDAA-8DD3-4D5F-9FBD-8E4B37A2D925}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "items", "items", "{7165BB9E-F22C-40D2-B7B1-CA3EFA2529A0}"
-ProjectSection(SolutionItems) = preProject
-	.editorconfig = .editorconfig
-	.gitignore = .gitignore
-	README.md = README.md
-	Nuget.Config = Nuget.Config
-EndProjectSection
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		.gitignore = .gitignore
+		Nuget.Config = Nuget.Config
+		README.md = README.md
+	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Flowsharp.Abstractions", "src\Flowsharp.Abstractions\Flowsharp.Abstractions.csproj", "{3130C574-557C-4DA2-933E-AED7A9EBE48A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Flowsharp.Abstractions", "src\Flowsharp.Abstractions\Flowsharp.Abstractions.csproj", "{3130C574-557C-4DA2-933E-AED7A9EBE48A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Flowsharp.Persistence.Abstractions", "src\Flowsharp.Persistence.Abstractions\Flowsharp.Persistence.Abstractions.csproj", "{A5829896-89C5-4C4E-ADC7-C806C8077316}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Flowsharp.Persistence.Abstractions", "src\Flowsharp.Persistence.Abstractions\Flowsharp.Persistence.Abstractions.csproj", "{A5829896-89C5-4C4E-ADC7-C806C8077316}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Flowsharp.Persistence.InMemory", "src\Flowsharp.Persistence.InMemory\Flowsharp.Persistence.InMemory.csproj", "{E93A1A6B-708F-4DCC-A399-1B8EC7682F92}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Flowsharp.Persistence.InMemory", "src\Flowsharp.Persistence.InMemory\Flowsharp.Persistence.InMemory.csproj", "{E93A1A6B-708F-4DCC-A399-1B8EC7682F92}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Flowsharp.Runtime", "src\Flowsharp.Runtime\Flowsharp.Runtime.csproj", "{3C1DCAA2-D77E-4F96-9899-DA8E0E0C757F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Flowsharp.Runtime", "src\Flowsharp.Runtime\Flowsharp.Runtime.csproj", "{3C1DCAA2-D77E-4F96-9899-DA8E0E0C757F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Flowsharp.Runtime.Abstractions", "src\Flowsharp.Runtime.Abstractions\Flowsharp.Runtime.Abstractions.csproj", "{792362BF-D26D-46E9-8970-E5668941AA75}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Flowsharp.Runtime.Abstractions", "src\Flowsharp.Runtime.Abstractions\Flowsharp.Runtime.Abstractions.csproj", "{792362BF-D26D-46E9-8970-E5668941AA75}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Flowsharp.Web.Dashboard", "src\Flowsharp.Web.Dashboard\Flowsharp.Web.Dashboard.csproj", "{11836D0B-9EFF-4C84-A075-90DCB4B48EB6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Flowsharp.Web.Dashboard", "src\Flowsharp.Web.Dashboard\Flowsharp.Web.Dashboard.csproj", "{11836D0B-9EFF-4C84-A075-90DCB4B48EB6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Flowsharp.Web.Components", "src\Flowsharp.Web.Components\Flowsharp.Web.Components.csproj", "{61F479BD-6DE3-4E2F-A980-80EC121E159B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Flowsharp.Web.Components", "src\Flowsharp.Web.Components\Flowsharp.Web.Components.csproj", "{61F479BD-6DE3-4E2F-A980-80EC121E159B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Core", "Core", "{35F44BE9-13D0-417C-A01A-F0787BEE6DC3}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Web", "Web", "{B33F1927-FF0A-4826-80C6-F480E9C43892}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{D15B5282-5CBE-4DFB-AF3B-F4B28CFA55AB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -77,18 +83,21 @@ Global
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{300EE2D5-54C5-46F2-AD03-BB43589EA074} = {35F44BE9-13D0-417C-A01A-F0787BEE6DC3}
+		{48EDB976-3227-4DFD-BBB3-3BC9AEA19A88} = {D15B5282-5CBE-4DFB-AF3B-F4B28CFA55AB}
+		{3130C574-557C-4DA2-933E-AED7A9EBE48A} = {35F44BE9-13D0-417C-A01A-F0787BEE6DC3}
+		{A5829896-89C5-4C4E-ADC7-C806C8077316} = {35F44BE9-13D0-417C-A01A-F0787BEE6DC3}
+		{E93A1A6B-708F-4DCC-A399-1B8EC7682F92} = {35F44BE9-13D0-417C-A01A-F0787BEE6DC3}
+		{3C1DCAA2-D77E-4F96-9899-DA8E0E0C757F} = {35F44BE9-13D0-417C-A01A-F0787BEE6DC3}
+		{792362BF-D26D-46E9-8970-E5668941AA75} = {35F44BE9-13D0-417C-A01A-F0787BEE6DC3}
+		{11836D0B-9EFF-4C84-A075-90DCB4B48EB6} = {B33F1927-FF0A-4826-80C6-F480E9C43892}
+		{61F479BD-6DE3-4E2F-A980-80EC121E159B} = {B33F1927-FF0A-4826-80C6-F480E9C43892}
+		{35F44BE9-13D0-417C-A01A-F0787BEE6DC3} = {DA71CDAA-8DD3-4D5F-9FBD-8E4B37A2D925}
+		{B33F1927-FF0A-4826-80C6-F480E9C43892} = {DA71CDAA-8DD3-4D5F-9FBD-8E4B37A2D925}
+		{D15B5282-5CBE-4DFB-AF3B-F4B28CFA55AB} = {DA71CDAA-8DD3-4D5F-9FBD-8E4B37A2D925}
+	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}
-	EndGlobalSection
-	GlobalSection(NestedProjects) = preSolution
-		{300EE2D5-54C5-46F2-AD03-BB43589EA074} = {DA71CDAA-8DD3-4D5F-9FBD-8E4B37A2D925}
-		{48EDB976-3227-4DFD-BBB3-3BC9AEA19A88} = {DA71CDAA-8DD3-4D5F-9FBD-8E4B37A2D925}
-		{3130C574-557C-4DA2-933E-AED7A9EBE48A} = {DA71CDAA-8DD3-4D5F-9FBD-8E4B37A2D925}
-		{A5829896-89C5-4C4E-ADC7-C806C8077316} = {DA71CDAA-8DD3-4D5F-9FBD-8E4B37A2D925}
-		{E93A1A6B-708F-4DCC-A399-1B8EC7682F92} = {DA71CDAA-8DD3-4D5F-9FBD-8E4B37A2D925}
-		{3C1DCAA2-D77E-4F96-9899-DA8E0E0C757F} = {DA71CDAA-8DD3-4D5F-9FBD-8E4B37A2D925}
-		{792362BF-D26D-46E9-8970-E5668941AA75} = {DA71CDAA-8DD3-4D5F-9FBD-8E4B37A2D925}
-		{11836D0B-9EFF-4C84-A075-90DCB4B48EB6} = {DA71CDAA-8DD3-4D5F-9FBD-8E4B37A2D925}
-		{61F479BD-6DE3-4E2F-A980-80EC121E159B} = {DA71CDAA-8DD3-4D5F-9FBD-8E4B37A2D925}
 	EndGlobalSection
 EndGlobal
