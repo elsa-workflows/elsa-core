@@ -1,0 +1,448 @@
+// ---------------------------------------------------------
+// @TOC
+// ---------------------------------------------------------
+
+// + @Sidebar
+// + @Sidebar Inner
+// + @Sidebar Header
+// + @Sidebar Menu
+// + @Sidebar Collapsed
+
+// ---------------------------------------------------------
+// @Sidebar
+// ---------------------------------------------------------
+
+.sidebar {
+  background-color: $default-white;
+  bottom: 0;
+  overflow: hidden;
+  position: fixed;
+  top: 0;
+  transition: all 0.2s ease;
+  width: $offscreen-size;
+  z-index: 1000;
+
+  ul {
+    list-style-type: none;
+  }
+
+  @include between($breakpoint-md, $breakpoint-xl) {
+    width: $collapsed-size;
+
+    .sidebar-inner {
+      .sidebar-logo {
+        border-bottom: 1px solid transparent;
+        padding: 0;
+
+        a {
+          .logo {
+            background-position: center center;
+            width: $collapsed-size;
+          }
+        }
+      }
+
+      .sidebar-menu {
+        overflow-x: hidden;
+
+        > li {
+          > a {
+            .title {
+              display: none;
+            }
+          }
+        }
+
+        li {
+          &.dropdown {
+            .arrow {
+              opacity: 0;
+            }
+
+            &.open {
+              ul.dropdown-menu {
+                display: none !important;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    &:hover {
+      width: $offscreen-size;
+
+      .sidebar-inner {
+        .sidebar-logo {
+          border-bottom: 1px solid $border-color;
+          padding: 0 20px;
+        }
+
+        .sidebar-menu {
+          > li {
+            > a {
+              .title {
+                display: inline-block;
+              }
+            }
+          }
+
+          li {
+            &.dropdown {
+              .arrow {
+                opacity: 1;
+              }
+            }
+
+            &.open {
+              > ul.dropdown-menu {
+                display: block !important;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  @include to($breakpoint-md) {
+    left: -$offscreen-size;
+    width: calc(#{$offscreen-size} - 30px);
+  }
+}
+
+// ---------------------------------------------------------
+// @Sidebar Inner
+// ---------------------------------------------------------
+
+.sidebar-inner {
+  position: relative;
+  height: 100%;
+}
+
+// ---------------------------------------------------------
+// @Sidebar Header
+// ---------------------------------------------------------
+
+.sidebar-logo {
+  border-bottom: 1px solid $border-color;
+  border-right: 1px solid $border-color;
+  line-height: 0;
+  padding: 0 20px;
+  transition: all 0.2s ease;
+
+  a {
+    display: inline-block;
+    width: 100%;
+
+    .logo {
+      background-position: center left;
+      background-repeat: no-repeat;
+      display: inline-block;
+      min-height: calc(#{$header-height} - 1px);
+      width: 100%;
+      width: 70px;
+    }
+
+    .logo-text {
+      color: $grey-900;
+    }
+  }
+
+  .mobile-toggle {
+    display: none;
+    float: right;
+    font-size: 18px;
+    line-height: calc(#{$header-height} - 1px);
+
+    a {
+      color: $default-text-color;
+    }
+
+    @include to($breakpoint-md) {
+      display: inline-block;
+    }
+
+    @include between($breakpoint-md, $breakpoint-xl) {
+      display: none;
+    }
+  }
+}
+
+// ---------------------------------------------------------
+// @Sidebar Menu
+// ---------------------------------------------------------
+
+.sidebar-menu {
+  @include clearfix;
+  border-right: 1px solid $border-color;
+  height: calc(100vh - #{$header-height});
+  list-style: none;
+  margin: 0;
+  overflow: auto;
+  padding: 0;
+  position: relative;
+
+  .dropdown-toggle::after {
+    display: none;
+  }
+
+  .sidebar-link {
+    &.active::before {
+      background: $md-blue-500;
+      border-radius: 50%;
+      content: '';
+      display: block;
+      height: 8px;
+      left: -4px;
+      position: absolute;
+      top: calc(50% - 4px);
+      width: 8px;
+    }
+  }
+
+  li {
+    position: relative;
+
+    &.dropdown {
+      .arrow {
+        font-size: 10px;
+        line-height: 40px;
+        position: absolute;
+        right: 30px;
+        transition: all 0.05s ease-in;
+
+        @include to($breakpoint-md) {
+          right: 25px;
+        }
+      }
+
+      &.open {
+        > a {
+          color: $default-dark;
+
+          .icon-holder {
+            color: $default-info;
+          }
+
+          > .arrow {
+            transform: rotate(90deg);
+          }
+        }
+
+        > .dropdown-menu {
+          display: block;
+
+          .dropdown-menu {
+            padding-left: 20px;
+          }
+
+          .arrow {
+            line-height: 25px;
+          }
+        }
+      }
+    }
+
+    a {
+      color: $default-text-color;
+      transition: all 0.3s ease;
+
+      &:hover,
+      &:focus {
+        color: $default-dark;
+        text-decoration: none;
+
+        .icon-holder {
+          color: $default-info;
+        }
+      }
+    }
+  }
+
+  > li {
+    &.dropdown {
+      ul {
+        &.dropdown-menu {
+          background-color: transparent;
+          border-radius: 0;
+          border: 0;
+          box-shadow: none;
+          float: none;
+          padding-left: 50px;
+          padding-top: 0;
+          position: relative;
+          width: 100%;
+
+          > li {
+            > a {
+              display: block;
+              padding: 10px 15px;
+
+              &:hover,
+              &:focus {
+                background-color: transparent;
+                color: $default-dark;
+              }
+            }
+
+            &.active {
+              a {
+                color: $default-dark;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    > a {
+      display: block;
+      font-size: 15px;
+      font-weight: 500;
+      padding: 5px 15px;
+      position: relative;
+      white-space: nowrap;
+
+      .icon-holder {
+        border-radius: 6px;
+        display: inline-block;
+        font-size: 17px;
+        height: 35px;
+        left: 0;
+        line-height: 35px;
+        margin-right: 14px;
+        position: relative;
+        text-align: center;
+        transition: all 0.3s ease;
+        width: 35px;
+      }
+    }
+  }
+}
+
+// ---------------------------------------------------------
+// @Sidebar Collapsed
+// ---------------------------------------------------------
+
+.is-collapsed {
+  .sidebar {
+    @include from($breakpoint-xl) {
+      width: $collapsed-size;
+
+      .sidebar-inner {
+        .sidebar-logo {
+          border-bottom: 1px solid transparent;
+          padding: 0;
+        }
+
+        .sidebar-menu {
+          overflow-x: hidden;
+
+          > li {
+            > a {
+              .title {
+                display: none;
+              }
+            }
+          }
+
+          li {
+            &.dropdown {
+              .arrow {
+                opacity: 0;
+              }
+
+              &.open {
+                ul.dropdown-menu {
+                  display: none !important;
+                }
+              }
+            }
+          }
+        }
+      }
+
+      &:hover {
+        width: $offscreen-size;
+
+        .sidebar-inner {
+          .sidebar-logo {
+            border-bottom: 1px solid $border-color;
+            padding: 0 20px;
+          }
+
+          .sidebar-menu {
+            > li {
+              > a {
+                .title {
+                  display: inline-block;
+                }
+              }
+            }
+
+            li {
+              &.dropdown {
+                .arrow {
+                  opacity: 1;
+                }
+              }
+
+              &.open {
+                > ul.dropdown-menu {
+                  display: block !important;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    @include between($breakpoint-md, $breakpoint-xl) {
+      width: $offscreen-size;
+
+      .sidebar-inner {
+        .sidebar-logo {
+          border-bottom: 1px solid $border-color;
+          padding: 0 20px;
+
+          > a {
+            .logo {
+              background-position: center left;
+              width: 150px;
+            }
+          }
+        }
+
+        .sidebar-menu {
+          > li {
+            > a {
+              .title {
+                display: inline-block;
+              }
+            }
+          }
+
+          li {
+            &.dropdown {
+              .arrow {
+                opacity: 1;
+              }
+            }
+
+            &.open {
+              > ul.dropdown-menu {
+                display: block !important;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    @include to($breakpoint-md) {
+      left: 0;
+    }
+  }
+}

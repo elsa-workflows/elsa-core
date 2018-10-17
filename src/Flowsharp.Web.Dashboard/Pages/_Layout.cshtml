@@ -1,12 +1,144 @@
 <!DOCTYPE html>
-
 <html>
-<head>
-    <title>FlowSharp Dashboard - @ViewBag.Title</title>
-</head>
-<body>
-<div>
-@RenderBody()      
-</div>
-</body>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="~/style.css" />
+    <style>
+      #loader {
+        transition: all 0.3s ease-in-out;
+        opacity: 1;
+        visibility: visible;
+        position: fixed;
+        height: 100vh;
+        width: 100%;
+        background: #fff;
+        z-index: 90000;
+      }
+
+      #loader.fadeOut {
+        opacity: 0;
+        visibility: hidden;
+      }
+
+      .spinner {
+        width: 40px;
+        height: 40px;
+        position: absolute;
+        top: calc(50% - 20px);
+        left: calc(50% - 20px);
+        background-color: #333;
+        border-radius: 100%;
+        -webkit-animation: sk-scaleout 1.0s infinite ease-in-out;
+        animation: sk-scaleout 1.0s infinite ease-in-out;
+      }
+
+      @@-webkit-keyframes sk-scaleout {
+        0% { -webkit-transform: scale(0) }
+        100% {
+          -webkit-transform: scale(1.0);
+          opacity: 0;
+        }
+      }
+
+      @@keyframes sk-scaleout {
+        0% {
+          -webkit-transform: scale(0);
+          transform: scale(0);
+        } 100% {
+          -webkit-transform: scale(1.0);
+          transform: scale(1.0);
+          opacity: 0;
+        }
+      }
+    </style>
+  </head>
+  <body class="app">
+    <!-- @@TOC -->
+    <!-- =================================================== -->
+    <!--
+      + @@Page Loader
+      + @@App Content
+          - #Left Sidebar
+              > $Sidebar Header
+              > $Sidebar Menu
+
+          - #Main
+              > $Topbar
+              > $App Screen Content
+    -->
+
+    <!-- @@Page Loader -->
+    <!-- =================================================== -->
+    <div id='loader'>
+      <div class="spinner"></div>
+    </div>
+
+    <script>
+      window.addEventListener('load', () => {
+        const loader = document.getElementById('loader');
+        setTimeout(() => {
+          loader.classList.add('fadeOut');
+        }, 300);
+      });
+    </script>
+
+    <!-- App Content -->
+    <!-- =================================================== -->
+  <div>
+  <!-- #Left Sidebar ==================== -->
+  <div class="sidebar">
+      <div class="sidebar-inner">
+          <!-- ### $Sidebar Header ### -->
+          <div class="sidebar-logo">
+              <div class="peers ai-c fxw-nw">
+                  <div class="peer peer-greed">
+                      <a class="sidebar-link td-n" href="~/">
+                          <div class="peers ai-c fxw-nw">
+                              <div class="peer">
+                                  <div class="logo">
+                                      <img src="assets/static/images/logo.png" alt="">
+                                  </div>
+                              </div>
+                              <div class="peer peer-greed">
+                                  <h5 class="lh-1 mB-0 logo-text">FlowSharp</h5>
+                              </div>
+                          </div>
+                      </a>
+                  </div>
+                  <div class="peer">
+                      <div class="mobile-toggle sidebar-toggle">
+                          <a href="" class="td-n">
+                              <i class="ti-arrow-circle-left"></i>
+                          </a>
+                      </div>
+                  </div>
+              </div>
+          </div>
+
+          @{ await Html.RenderPartialAsync("Shared/SidebarMenu");}
+      </div>
+  </div>
+
+  <!-- #Main ============================ -->
+  <div class="page-container">
+  @{ await Html.RenderPartialAsync("Shared/Topbar");}
+
+  <!-- ### $App Screen Content ### -->
+  <main class='main-content bgc-grey-100'>
+  <div id='mainContent'>
+  @RenderBody()
+  </div>
+  </main>
+
+  <!-- ### $App Screen Footer ### -->
+  <footer class="bdT ta-c p-30 lh-0 fsz-sm c-grey-600">
+      <span>Copyright © 2017 Designed by <a href="https://colorlib.com" target='_blank' title="Colorlib">Colorlib</a>. All rights reserved.</span>
+  </footer>
+  </div>
+  </div>
+  <script src="vendor.js"></script>
+  <script src="bundle.js"></script>
+  </body>
 </html>

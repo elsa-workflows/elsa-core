@@ -1,0 +1,15 @@
+@page
+@{
+    ViewBag.Title = "Index";
+}
+
+<div class="masonry-item col-md-12">
+    <div class="bgc-white p-20 bd"><h6 class="c-grey-900">Workflow 1</h6>
+        <div class="mT-30">
+            <form>
+                <div class="form-group">@await Component.InvokeAsync("WorkflowEditor")</div>
+                <button type="submit" class="btn btn-primary">Save</button>
+            </form>
+        </div>
+    </div>
+</div>

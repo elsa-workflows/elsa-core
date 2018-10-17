@@ -1,0 +1,218 @@
+// ---------------------------------------------------------
+// @TOC
+// ---------------------------------------------------------
+
+// + @Variables
+// + @Flex Wrap
+// + @Flex Direction
+// + @Flex
+// + @Flex Basis
+// + @Flex Grow
+// + @Flex Shrink
+// + @Flex Order
+
+// ---------------------------------------------------------
+// @Variables
+// ---------------------------------------------------------
+
+$responsive: true;
+
+// ---------------------------------------------------------
+// @Display
+// ---------------------------------------------------------
+
+.d-f     { display: flex; }
+.d-if    { display: inline-flex; }
+
+@if ($responsive == true) {
+  @include generateResponsive() {
+    .d-f\@#{$breakpointAlias}     { display: flex; }
+    .d-if\@#{$breakpointAlias}    { display: inline-flex; }
+  }
+}
+
+// ---------------------------------------------------------
+// @Flex Wrap
+// ---------------------------------------------------------
+
+.fxw-w   { flex-wrap: wrap; }
+.fxw-wr  { flex-wrap: wrap-reverse; }
+.fxw-nw  { flex-wrap: nowrap; }
+
+@if ($responsive == true) {
+  @include generateResponsive() {
+    .fxw-w\@#{$breakpointAlias}   { flex-wrap: wrap; }
+    .fxw-wr\@#{$breakpointAlias}  { flex-wrap: wrap-reverse; }
+    .fxw-nw\@#{$breakpointAlias}  { flex-wrap: nowrap; }
+  }
+}
+
+// ---------------------------------------------------------
+// @Flex Direction
+// ---------------------------------------------------------
+
+.fxd-c   { flex-direction: column; }
+.fxd-cr  { flex-direction: column-reverse; }
+.fxd-r   { flex-direction: row; }
+.fxd-rr  { flex-direction: row-reverse; }
+
+@if ($responsive == true) {
+  @include generateResponsive() {
+    .fxd-c\@#{$breakpointAlias}   { flex-direction: column; }
+    .fxd-cr\@#{$breakpointAlias}  { flex-direction: column-reverse; }
+    .fxd-r\@#{$breakpointAlias}   { flex-direction: row; }
+    .fxd-rr\@#{$breakpointAlias}  { flex-direction: row-reverse; }
+  }
+}
+
+// ---------------------------------------------------------
+// @Align Items
+// ---------------------------------------------------------
+
+.ai-fs   { align-items: flex-start; }
+.ai-fe   { align-items: flex-end; }
+.ai-c    { align-items: center; }
+.ai-b    { align-items: baseline; }
+.ai-s    { align-items: stretch; }
+
+@if ($responsive == true) {
+  @include generateResponsive() {
+    .ai-fs\@#{$breakpointAlias}   { align-items: flex-start; }
+    .ai-fe\@#{$breakpointAlias}   { align-items: flex-end; }
+    .ai-c\@#{$breakpointAlias}    { align-items: center; }
+    .ai-b\@#{$breakpointAlias}    { align-items: baseline; }
+    .ai-s\@#{$breakpointAlias}    { align-items: stretch; }
+  }
+}
+
+// ---------------------------------------------------------
+// @Align Self
+// ---------------------------------------------------------
+
+.as-fs   { align-self: flex-start; }
+.as-fe   { align-self: flex-end; }
+.as-c    { align-self: center; }
+.as-b    { align-self: baseline; }
+.as-s    { align-self: stretch; }
+
+@if ($responsive == true) {
+  @include generateResponsive() {
+    .as-fs\@#{$breakpointAlias}   { align-self: flex-start; }
+    .as-fe\@#{$breakpointAlias}   { align-self: flex-end; }
+    .as-c\@#{$breakpointAlias}    { align-self: center; }
+    .as-b\@#{$breakpointAlias}    { align-self: baseline; }
+    .as-s\@#{$breakpointAlias}    { align-self: stretch; }
+  }
+}
+
+// ---------------------------------------------------------
+// @Align Content
+// ---------------------------------------------------------
+
+.ac-fs   { align-content: flex-start; }
+.ac-fe   { align-content: flex-end; }
+.ac-c    { align-content: center; }
+.ac-s    { align-content: stretch; }
+.ac-sb   { align-content: space-between; }
+.ac-sa   { align-content: space-around; }
+
+@if ($responsive == true) {
+  @include generateResponsive() {
+    .ac-fs\@#{$breakpointAlias}   { align-content: flex-start; }
+    .ac-fe\@#{$breakpointAlias}   { align-content: flex-end; }
+    .ac-c\@#{$breakpointAlias}    { align-content: center; }
+    .ac-s\@#{$breakpointAlias}    { align-content: stretch; }
+    .ac-sb\@#{$breakpointAlias}   { align-content: space-between; }
+    .ac-sa\@#{$breakpointAlias}   { align-content: space-around; }
+  }
+}
+
+// ---------------------------------------------------------
+// @Justify Content
+// ---------------------------------------------------------
+
+.jc-fs   { justify-content: flex-start; }
+.jc-fe   { justify-content: flex-end; }
+.jc-c    { justify-content: center; }
+.jc-sb   { justify-content: space-between; }
+.jc-sa   { justify-content: space-around; }
+
+@if ($responsive == true) {
+  @include generateResponsive() {
+    .jc-fs\@#{$breakpointAlias}   { justify-content: flex-start; }
+    .jc-fe\@#{$breakpointAlias}   { justify-content: flex-end; }
+    .jc-c\@#{$breakpointAlias}    { justify-content: center; }
+    .jc-sb\@#{$breakpointAlias}   { justify-content: space-between; }
+    .jc-sa\@#{$breakpointAlias}   { justify-content: space-around; }
+  }
+}
+
+// ---------------------------------------------------------
+// @Flex
+// ---------------------------------------------------------
+
+.fx-n    { flex: none; }
+.fx-1    { flex: 1; }
+
+@if ($responsive == true) {
+  @include generateResponsive() {
+    .fx-n\@#{$breakpointAlias}    { flex: none; }
+    .fx-1\@#{$breakpointAlias}    { flex: 1; }
+  }
+}
+
+// ---------------------------------------------------------
+// @Flex Basis
+// ---------------------------------------------------------
+
+.fxb-a   { flex-basis: auto; }
+.fxb-0   { flex-basis: 0; }
+
+@if ($responsive == true) {
+  @include generateResponsive() {
+    .fxb-a\@#{$breakpointAlias}   { flex-basis: auto; }
+    .fxb-0\@#{$breakpointAlias}   { flex-basis: 0; }
+  }
+}
+
+// ---------------------------------------------------------
+// @Flex Grow
+// ---------------------------------------------------------
+
+.fxg-1   { flex-grow: 1; }
+.fxg-0   { flex-grow: 0; }
+
+@if ($responsive == true) {
+  @include generateResponsive() {
+    .fxg-1\@#{$breakpointAlias}   { flex-grow: 1; }
+    .fxg-0\@#{$breakpointAlias}   { flex-grow: 0; }
+  }
+}
+
+// ---------------------------------------------------------
+// @Flex Shrink
+// ---------------------------------------------------------
+
+.fxs-1   { flex-shrink: 1; }
+.fxs-0   { flex-shrink: 0; }
+
+@if ($responsive == true) {
+  @include generateResponsive() {
+    .fxs-1\@#{$breakpointAlias}   { flex-shrink: 1; }
+    .fxs-0\@#{$breakpointAlias}   { flex-shrink: 0; }
+  }
+}
+
+// ---------------------------------------------------------
+// @Flex Order
+// ---------------------------------------------------------
+
+@for $i from 0 through 12 {
+  .ord-#{$i} { order: $i; }
+
+  @if ($responsive == true) {
+    @include generateResponsive() {
+      .ord-#{$i}\@#{$breakpointAlias} { order: $i; }
+    }
+  }
+}

@@ -37,3 +37,6 @@ packages/
 
 #Rider
 .idea
+
+#wwwroot
+wwwroot/

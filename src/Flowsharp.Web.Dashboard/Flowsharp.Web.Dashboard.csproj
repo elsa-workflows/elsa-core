@@ -16,4 +16,8 @@
       <ProjectReference Include="..\Flowsharp.Web.Components\Flowsharp.Web.Components.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Remove="Adminator\node_modules\**" />
+    </ItemGroup>
+
 </Project>

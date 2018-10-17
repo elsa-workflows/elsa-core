@@ -1,0 +1,23 @@
+// ---------------------------------------------------------
+// @TOC
+// ---------------------------------------------------------
+
+// + @List Style Position
+// + @List Style Type
+
+// ---------------------------------------------------------
+// @List Style Position
+// ---------------------------------------------------------
+
+.lisp-i { list-style-position: inside; }
+.lisp-o { list-style-position: outside; }
+
+// ---------------------------------------------------------
+// @List Style Type
+// ---------------------------------------------------------
+
+.lis-n  { list-style: none; }
+.list-c { list-style-type: circle; }
+.list-s { list-style-type: square; }
+.list-u { list-style-type: upper-roman; }
+.list-l { list-style-type: lower-alpha; }

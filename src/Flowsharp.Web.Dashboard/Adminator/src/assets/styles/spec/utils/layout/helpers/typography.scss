@@ -1,0 +1,126 @@
+
+// ---------------------------------------------------------
+// @TOC
+// ---------------------------------------------------------
+
+// + @Variables
+// + @Text Align
+// + @Text Transform
+// + @Font Style
+// + @Text Decoration
+// + @White Space
+// + @Word Break
+// + @Word Wrap
+// + @Text Overflow
+// + @Font Size
+// + @Font Weight
+// + @Line Height
+
+// ---------------------------------------------------------
+// @Variables
+// ---------------------------------------------------------
+
+$responsive: true;
+
+// ---------------------------------------------------------
+// @Text Align
+// ---------------------------------------------------------
+
+.ta-c { text-align: center !important; }
+.ta-l { text-align: left !important; }
+.ta-r { text-align: right !important; }
+
+@if ($responsive == true) {
+  @include generateResponsive() {
+    .ta-c\@#{$breakpointAlias} { text-align: center !important; }
+    .ta-l\@#{$breakpointAlias} { text-align: left !important; }
+    .ta-r\@#{$breakpointAlias} { text-align: right !important; }
+  }
+}
+
+// ---------------------------------------------------------
+// @Text Transform
+// ---------------------------------------------------------
+
+.tt-n { text-transform: none !important; }
+.tt-u { text-transform: uppercase !important; }
+.tt-l { text-transform: lowercase !important; }
+.tt-c { text-transform: capitalize !important; }
+
+// ---------------------------------------------------------
+// @Font Style
+// ---------------------------------------------------------
+
+.fs-i { font-style: italic !important; }
+.fs-o { font-style: oblique !important; }
+
+// ---------------------------------------------------------
+// @Text Decoration
+// ---------------------------------------------------------
+
+.td-n { text-decoration: none !important; }
+.td-o { text-decoration: overline !important; }
+.td-lt { text-decoration: line-through !important; }
+.td-u { text-decoration: underline !important; }
+
+// ---------------------------------------------------------
+// @White Space
+// ---------------------------------------------------------
+
+.whs-nw { white-space: nowrap !important; }
+.whs-p { white-space: pre !important; }
+.whs-n { white-space: normal !important; }
+
+// ---------------------------------------------------------
+// @Word Break
+// ---------------------------------------------------------
+
+.wob-n { word-break: normal !important; }
+.wob-ba { word-break: break-all !important; }
+.wob-k { word-break: keep-all !important; }
+
+// ---------------------------------------------------------
+// @Word Wrap
+// ---------------------------------------------------------
+
+.wow-bw { word-wrap: break-word !important; }
+.wow-n { word-wrap: normal !important; }
+
+// ---------------------------------------------------------
+// @Text Overflow
+// ---------------------------------------------------------
+
+.tov-e { text-overflow: ellipsis !important; }
+
+// ---------------------------------------------------------
+// @Font Size
+// ---------------------------------------------------------
+
+.fsz-xs   { font-size: 0.75rem !important; }
+.fsz-sm   { font-size: 0.87rem !important; }
+.fsz-def  { font-size: 1rem !important; }
+.fsz-md   { font-size: 1.15rem !important; }
+.fsz-lg   { font-size: 1.4rem !important; }
+.fsz-xl   { font-size: 1.7rem !important; }
+
+// ---------------------------------------------------------
+// @Font Weight
+// ---------------------------------------------------------
+
+.fw-100 { font-weight: 100 !important; }
+.fw-200 { font-weight: 200 !important; }
+.fw-300 { font-weight: 300 !important; }
+.fw-400 { font-weight: 400 !important; }
+.fw-500 { font-weight: 500 !important; }
+.fw-600 { font-weight: 600 !important; }
+.fw-700 { font-weight: 700 !important; }
+.fw-800 { font-weight: 800 !important; }
+.fw-900 { font-weight: 900 !important; }
+
+// ---------------------------------------------------------
+// @Line Height
+// ---------------------------------------------------------
+
+.lh-0    { line-height: 0 !important; }
+.lh-1    { line-height: 1 !important; }
+.lh-3\/2 { line-height: 1.5 !important; }

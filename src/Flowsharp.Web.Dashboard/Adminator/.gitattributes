@@ -1,0 +1,74 @@
+# -----------------------------
+# General
+# -----------------------------
+
+# AUTO-DETECT - Handle line endings automatically for files detected
+# as text and leave all files detected as binary untouched.
+# This will handle all files NOT defined below.
+
+* text=auto
+
+
+
+# -----------------------------
+# Source Code
+# -----------------------------
+
+*.css    text
+*.html   text
+*.js     text
+*.json   text
+*.scss   text
+
+
+
+# -----------------------------
+# Documentation
+# -----------------------------
+
+*.md         text
+CHANGELOG    text
+LICENSE      text
+
+
+
+# -----------------------------
+# Configs
+# -----------------------------
+
+.editorconfig  text
+.gitattributes text
+.gitconfig     text
+.gitignore     text
+.babelrc       text
+.stylelintrc   text
+.eslintrc      text
+.yarnclean     text
+*.yml          text
+browserlist    text
+yarn.lock      text
+
+
+
+# -----------------------------
+# Graphics
+# -----------------------------
+
+*.gif  binary
+*.ico  binary
+*.jpg  binary
+*.jpeg binary
+*.png  binary
+*.svg  text
+
+
+
+# -----------------------------
+# Fonts
+# -----------------------------
+
+*.ttf   binary
+*.eot   binary
+*.otf   binary
+*.woff  binary
+*.woff2 binary
