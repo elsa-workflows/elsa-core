@@ -1,4 +1,3 @@
-using Flowsharp.Models;
 using Flowsharp.Persistence.Models;
 
 namespace Flowsharp.Persistence.Specifications

@@ -1,6 +1,6 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using System.Collections.Generic;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SpaServices.Webpack;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,6 +11,7 @@ namespace Flowsharp.Web.Dashboard
     {
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddFlowsharpComponents();
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
         }
 
@@ -19,9 +20,14 @@ namespace Flowsharp.Web.Dashboard
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
-                //app.UseWebpackDevMiddleware();
+                app.UseWebpackDevMiddleware(new WebpackDevMiddlewareOptions
+                {
+                    HotModuleReplacement = true,
+                    HotModuleReplacementClientOptions = new Dictionary<string, string> { { "reload", "true" } },
+                });
             }
 
+            app.UseFlowsharpComponents();
             app.UseStaticFiles();
             app.UseMvc();
         }

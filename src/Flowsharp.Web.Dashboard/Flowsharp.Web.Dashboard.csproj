@@ -3,11 +3,6 @@
     <PropertyGroup>
         <TargetFramework>netcoreapp2.1</TargetFramework>
     </PropertyGroup>
-
-    <ItemGroup>
-        <Folder Include="wwwroot\" />
-    </ItemGroup>
-
     <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore.App" />
     </ItemGroup>
@@ -17,7 +12,11 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Remove="Adminator\node_modules\**" />
+        <Folder Remove="ClientApp\node_modules\"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Folder Remove="wwwroot\"/>
     </ItemGroup>
 
 </Project>

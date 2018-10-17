@@ -1,5 +1,4 @@
 ﻿using System.Linq;
-using Flowsharp.Models;
 using Flowsharp.Persistence.Models;
 
 namespace Flowsharp.Persistence.Specifications

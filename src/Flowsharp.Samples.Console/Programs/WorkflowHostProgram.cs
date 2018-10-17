@@ -1,12 +1,10 @@
 ﻿using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Flowsharp.Models;
 using Flowsharp.Persistence;
 using Flowsharp.Persistence.Models;
 using Flowsharp.Runtime.Abstractions;
-using Flowsharp.Samples.Console.Activities;
 using Flowsharp.Serialization;
 
 namespace Flowsharp.Samples.Console.Programs

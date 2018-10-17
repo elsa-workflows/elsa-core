@@ -1,5 +1,4 @@
 ﻿using Flowsharp.Expressions;
-using Activity = Flowsharp.Activities.Activity;
 
 namespace Flowsharp.Samples.Console.Activities 
 {
