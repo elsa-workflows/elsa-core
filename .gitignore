@@ -34,9 +34,19 @@ packages/
 
 #Ignore git-related files
 *.orig
+.gitattributes
 
 #Rider
 .idea
 
 #wwwroot
 wwwroot/
+
+#npm
+node_modules/
+.babelrc
+.stylelintrc.yml
+.eslintrc.yml
+
+#github
+.github/

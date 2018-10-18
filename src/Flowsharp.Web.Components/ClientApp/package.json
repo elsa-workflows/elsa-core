@@ -1,0 +1,32 @@
+{
+    "name": "flowsharp-components",
+    "scripts": {
+        "build": "webpack"
+    },
+    "babel": {
+        "presets": [
+            "env",
+            "react"
+        ]
+    },
+    "dependencies": {
+        "dotnetify": "~3.0.3",
+        "react": "~16.5.0",
+        "react-dom": "~16.5.0",
+        "jsplumb": "^2.8.0"
+    },
+    "devDependencies": {
+        "aspnet-webpack": "^3.0.0",
+        "babel-core": "~6.26.3",
+        "babel-loader": "~7.1.4",
+        "babel-preset-env": "~1.7.0",
+        "babel-preset-react": "~6.24.1",
+        "open-browser-webpack-plugin": "0.0.5",
+        "webpack": "^4.21.0",
+        "webpack-cli": "^3.1.0",
+        "webpack-dev-middleware": "^3.4.0",
+        "webpack-dev-server": "^3.1.9",
+        "webpack-hot-middleware": "^2.24.3",
+        "html-webpack-plugin": "^3.2.0"
+    }
+}

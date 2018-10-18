@@ -1,0 +1,26 @@
+// ---------------------------------------------------------
+// @Breakpoints
+// ---------------------------------------------------------
+
+$breakpoint-xl : 1440px;
+$breakpoint-lg : 1200px;
+$breakpoint-md : 992px;
+$breakpoint-sm : 768px;
+$breakpoint-xs : 0;
+
+$breakpoints: (
+  "xl\\+" "screen and (min-width: #{$breakpoint-xl})",
+  "lg\\+" "screen and (min-width: #{$breakpoint-lg})",
+  "md\\+" "screen and (min-width: #{$breakpoint-md})",
+  "sm\\+" "screen and (min-width: #{$breakpoint-sm})",
+  "xs\\+" "screen and (min-width: #{$breakpoint-xs})",
+
+  "xl-" "screen and (max-width: #{$breakpoint-xl - 1px})",
+  "lg-" "screen and (max-width: #{$breakpoint-lg - 1px})",
+  "md-" "screen and (max-width: #{$breakpoint-md - 1px})",
+  "sm-" "screen and (max-width: #{$breakpoint-sm - 1px})",
+
+  "lg" "screen and (min-width: #{$breakpoint-lg - 1px}) and (max-width: #{$breakpoint-xl - 1px})",
+  "md" "screen and (min-width: #{$breakpoint-md - 1px}) and (max-width: #{$breakpoint-lg - 1px})",
+  "sm" "screen and (min-width: #{$breakpoint-sm - 1px}) and (max-width: #{$breakpoint-md - 1px})",
+);

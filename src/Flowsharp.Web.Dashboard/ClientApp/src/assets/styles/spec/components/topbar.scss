@@ -1,0 +1,207 @@
+// ---------------------------------------------------------
+// @TOC
+
+// + @Topbar
+// + @Collapsed State
+
+// ---------------------------------------------------------
+// @Topbar
+// ---------------------------------------------------------
+
+.header {
+  background-color: $default-white;
+  border-bottom: 1px solid $border-color;
+  display: block;
+  margin-bottom: 0;
+  padding: 0;
+  position: fixed;
+  transition: all 0.2s ease;
+  width: calc(100% - #{$offscreen-size});
+  z-index: 800;
+
+  @include to($breakpoint-md) {
+    width: 100%;
+  }
+
+  @include between($breakpoint-md, $breakpoint-xl) {
+    width: calc(100% - #{$collapsed-size});
+  }
+
+  .header-container {
+    @include clearfix;
+
+    height: $header-height;
+
+    .nav-left,
+    .nav-right {
+      list-style: none;
+      margin-bottom: 0;
+      padding-left: 0;
+      position: relative;
+
+      > li {
+        float: left;
+
+        > a {
+          color: $default-text-color;
+          display: block;
+          line-height: $header-height;
+          min-height: $header-height;
+          padding: 0 15px;
+          transition: all 0.2s ease-in-out;
+
+          i {
+            font-size: 17px;
+          }
+
+          &:hover,
+          &:focus {
+            color: $default-dark;
+            text-decoration: none;
+          }
+
+          @include to($breakpoint-md) {
+            padding: 0 15px;
+          }
+        }
+      }
+
+      .notifications {
+        position: relative;
+
+        .counter {
+          background-color: $default-danger;
+          border-radius: 50px;
+          color: $default-white;
+          font-size: 10px;
+          line-height: 1;
+          padding: 3px 5.5px;
+          position: absolute;
+          right: 6px;
+          top: 12px;
+        }
+
+        .dropdown-menu {
+          min-width: 350px;
+          padding: 0;
+
+          @include to($breakpoint-sm) {
+            max-width: 300px;
+          }
+        }
+      }
+    }
+
+    .dropdown-menu {
+      display: block;
+      margin: 0;
+      transform-origin: top right;
+      transform: scale(0, 0);
+      transition: transform 0.15s ease-out;
+
+      .divider {
+        border-bottom: 1px solid $border-color;
+        height: 1px;
+        overflow: hidden;
+      }
+
+      > li {
+        > a {
+          transition: all 0.2s ease-out;
+        }
+      }
+    }
+
+    .show {
+      .dropdown-menu {
+        transform: scale(1, 1);
+      }
+    }
+
+    .nav-left {
+      float: left;
+      margin-left: 15px;
+    }
+
+    .nav-right {
+      float: right;
+
+      .dropdown-menu {
+        left: auto;
+        right: 0;
+
+        > li {
+          width: 100%;
+
+          > a {
+            line-height: 1.5;
+            min-height: auto;
+            padding: 10px 15px;
+          }
+        }
+      }
+    }
+  }
+
+  .search-box {
+    .search-icon-close {
+      display: none;
+    }
+
+    &.active {
+      .search-icon {
+        display: none;
+      }
+
+      .search-icon-close {
+        display: inline-block;
+      }
+    }
+  }
+
+  .search-input {
+    display: none;
+
+    &.active {
+      display: inline-block;
+    }
+
+    input {
+      background-color: transparent;
+      border: 0;
+      box-shadow: none;
+      font-size: 18px;
+      height: 40px;
+      margin-top: 12px;
+      outline: none;
+      padding: 5px;
+
+      @include to($breakpoint-sm) {
+        width: 85px;
+      }
+
+      @include placeholder {
+        color: lighten($default-text-color, 20%);
+        font-style: italic;
+      }
+    }
+  }
+}
+
+// ---------------------------------------------------------
+// @Collapsed State
+// ---------------------------------------------------------
+
+.is-collapsed {
+  .header {
+    width: calc(100% - #{$collapsed-size});
+
+    @include to($breakpoint-md) {
+      width: 100%;
+    }
+
+    @include between($breakpoint-md, $breakpoint-xl) {
+      width: calc(100% - #{$offscreen-size});
+    }
+  }
+}

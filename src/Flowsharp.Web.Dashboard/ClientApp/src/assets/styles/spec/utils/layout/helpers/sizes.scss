@@ -1,0 +1,155 @@
+// ---------------------------------------------------------
+// @TOC
+// ---------------------------------------------------------
+
+// + @Variables
+// + @Fixed Width
+// + @Relative Width
+// + @Fixed Height
+// + @Max Size
+
+// ---------------------------------------------------------
+// @Variables
+// ---------------------------------------------------------
+
+$responsive: true;
+
+// ---------------------------------------------------------
+// @Fixed Width
+// ---------------------------------------------------------
+
+.w-1\/4r, .sz-1\/4r    { width: 0.25rem; }
+.w-1\/2r, .sz-1\/2r    { width: 0.5rem; }
+.w-3\/4r, .sz-3\/4r    { width: 0.75rem; }
+.w-1r, .sz-1r          { width: 1rem; }
+.w-3\/2r, .sz-3\/2r    { width: 1.5rem; }
+.w-2r, .sz-2r          { width: 2rem; }
+.w-5\/2r, .sz-5\/2r    { width: 2.5rem; }
+.w-3r, .sz-3r          { width: 3rem; }
+.w-7\/2r, .sz-7\/2r    { width: 3.5rem; }
+.w-4r, .sz-4r          { width: 4rem; }
+.w-9\/2r, .sz-9\/2r    { width: 4.5rem; }
+.w-5r, .sz-5r          { width: 5rem; }
+.w-11\/2r, .sz-11\/2r  { width: 5.5rem; }
+.w-6r, .sz-6r          { width: 6rem; }
+
+@if ($responsive == true) {
+  @include generateResponsive() {
+    .w-1\/4r\@#{$breakpointAlias}, .sz-1\/4r\@#{$breakpointAlias}    { width: 0.25rem; }
+    .w-1\/2r\@#{$breakpointAlias}, .sz-1\/2r\@#{$breakpointAlias}    { width: 0.5rem; }
+    .w-3\/4r\@#{$breakpointAlias}, .sz-3\/4r\@#{$breakpointAlias}    { width: 0.75rem; }
+    .w-1r\@#{$breakpointAlias}, .sz-1r\@#{$breakpointAlias}          { width: 1rem; }
+    .w-3\/2r\@#{$breakpointAlias}, .sz-3\/2r\@#{$breakpointAlias}    { width: 1.5rem; }
+    .w-2r\@#{$breakpointAlias}, .sz-2r\@#{$breakpointAlias}          { width: 2rem; }
+    .w-5\/2r\@#{$breakpointAlias}, .sz-5\/2r\@#{$breakpointAlias}    { width: 2.5rem; }
+    .w-3r\@#{$breakpointAlias}, .sz-3r\@#{$breakpointAlias}          { width: 3rem; }
+    .w-7\/2r\@#{$breakpointAlias}, .sz-7\/2r\@#{$breakpointAlias}    { width: 3.5rem; }
+    .w-4r\@#{$breakpointAlias}, .sz-4r\@#{$breakpointAlias}          { width: 4rem; }
+    .w-9\/2r\@#{$breakpointAlias}, .sz-9\/2r\@#{$breakpointAlias}    { width: 4.5rem; }
+    .w-5r\@#{$breakpointAlias}, .sz-5r\@#{$breakpointAlias}          { width: 5rem; }
+    .w-11\/2r\@#{$breakpointAlias}, .sz-11\/2r\@#{$breakpointAlias}  { width: 5.5rem; }
+    .w-6r\@#{$breakpointAlias}, .sz-6r\@#{$breakpointAlias}          { width: 6rem; }
+  }
+}
+
+// ---------------------------------------------------------
+// @Relative Width
+// ---------------------------------------------------------
+
+.w-0     { width: 0px; }
+.w-10p   { width: 10%; }
+.w-20p   { width: 20%; }
+.w-30p   { width: 30%; }
+.w-40p   { width: 40%; }
+.w-50p   { width: 50%; }
+.w-60p   { width: 60%; }
+.w-70p   { width: 70%; }
+.w-80p   { width: 80%; }
+.w-90p   { width: 90%; }
+.w-100p  { width: 100%; }
+.w-1px   { width: 1px; }
+.w-a     { width: auto; }
+
+@if ($responsive == true) {
+  @include generateResponsive() {
+    .w-0\@#{$breakpointAlias}     { width: 0px; }
+    .w-10p\@#{$breakpointAlias}   { width: 10%; }
+    .w-20p\@#{$breakpointAlias}   { width: 20%; }
+    .w-30p\@#{$breakpointAlias}   { width: 30%; }
+    .w-40p\@#{$breakpointAlias}   { width: 40%; }
+    .w-50p\@#{$breakpointAlias}   { width: 50%; }
+    .w-60p\@#{$breakpointAlias}   { width: 60%; }
+    .w-70p\@#{$breakpointAlias}   { width: 70%; }
+    .w-80p\@#{$breakpointAlias}   { width: 80%; }
+    .w-90p\@#{$breakpointAlias}   { width: 90%; }
+    .w-100p\@#{$breakpointAlias}  { width: 100%; }
+    .w-1px\@#{$breakpointAlias}   { width: 1px; }
+    .w-a\@#{$breakpointAlias}     { width: auto; }
+  }
+}
+
+// ---------------------------------------------------------
+// @Fixed Height
+// ---------------------------------------------------------
+
+.h-1\/4r, .sz-1\/4r    { height: 0.25rem; }
+.h-1\/2r, .sz-1\/2r    { height: 0.5rem; }
+.h-3\/4r, .sz-3\/4r    { height: 0.75rem; }
+.h-1r, .sz-1r          { height: 1rem; }
+.h-3\/2r, .sz-3\/2r    { height: 1.5rem; }
+.h-2r, .sz-2r          { height: 2rem; }
+.h-5\/2r, .sz-5\/2r    { height: 2.5rem; }
+.h-3r, .sz-3r          { height: 3rem; }
+.h-7\/2r, .sz-7\/2r    { height: 3.5rem; }
+.h-4r, .sz-4r          { height: 4rem; }
+.h-9\/2r, .sz-9\/2r    { height: 4.5rem; }
+.h-5r, .sz-5r          { height: 5rem; }
+.h-11\/2r, .sz-11\/2r  { height: 5.5rem; }
+.h-6r, .sz-6r          { height: 6rem; }
+
+@if ($responsive == true) {
+  @include generateResponsive() {
+    .h-1\/4r\@#{$breakpointAlias}, .sz-1\/4r\@#{$breakpointAlias}    { height: 0.25rem; }
+    .h-1\/2r\@#{$breakpointAlias}, .sz-1\/2r\@#{$breakpointAlias}    { height: 0.5rem; }
+    .h-3\/4r\@#{$breakpointAlias}, .sz-3\/4r\@#{$breakpointAlias}    { height: 0.75rem; }
+    .h-1r\@#{$breakpointAlias}, .sz-1r\@#{$breakpointAlias}          { height: 1rem; }
+    .h-3\/2r\@#{$breakpointAlias}, .sz-3\/2r\@#{$breakpointAlias}    { height: 1.5rem; }
+    .h-2r\@#{$breakpointAlias}, .sz-2r\@#{$breakpointAlias}          { height: 2rem; }
+    .h-5\/2r\@#{$breakpointAlias}, .sz-5\/2r\@#{$breakpointAlias}    { height: 2.5rem; }
+    .h-3r\@#{$breakpointAlias}, .sz-3r\@#{$breakpointAlias}          { height: 3rem; }
+    .h-7\/2r\@#{$breakpointAlias}, .sz-7\/2r\@#{$breakpointAlias}    { height: 3.5rem; }
+    .h-4r\@#{$breakpointAlias}, .sz-4r\@#{$breakpointAlias}          { height: 4rem; }
+    .h-9\/2r\@#{$breakpointAlias}, .sz-9\/2r\@#{$breakpointAlias}    { height: 4.5rem; }
+    .h-5r\@#{$breakpointAlias}, .sz-5r\@#{$breakpointAlias}          { height: 5rem; }
+    .h-11\/2r\@#{$breakpointAlias}, .sz-11\/2r\@#{$breakpointAlias}  { height: 5.5rem; }
+    .h-6r\@#{$breakpointAlias}, .sz-6r\@#{$breakpointAlias}          { height: 6rem; }
+  }
+}
+
+.h-0     { height: 0; }
+.h-auto  { height: auto; }
+.h-100p  { height: 100%; }
+.h-100vh { height: 100vh; }
+
+@if ($responsive == true) {
+  @include generateResponsive() {
+    .h-0\@#{$breakpointAlias}     { height: 0; }
+    .h-auto\@#{$breakpointAlias}  { height: auto; }
+    .h-100p\@#{$breakpointAlias}  { height: 100%; }
+    .h-100vh\@#{$breakpointAlias} { height: 100vh; }
+  }
+}
+
+// ---------------------------------------------------------
+// @Max Size
+// ---------------------------------------------------------
+
+.mw-100p { max-width: 100%; }
+.mh-100p { max-height: 100%; }
+
+@if ($responsive == true) {
+  @include generateResponsive() {
+    .mw-100p\@#{$breakpointAlias} { max-width: 100%; }
+    .mh-100p\@#{$breakpointAlias} { max-height: 100%; }
+  }
+}

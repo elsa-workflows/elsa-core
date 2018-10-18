@@ -1,0 +1,100 @@
+// ---------------------------------------------------------
+// @TOC
+// ---------------------------------------------------------
+
+// + @Greyscale Colors
+// + @Bootstrap Color System
+// + @Default Colors
+// + @Inverted Colors
+// + @Others
+// + @Header Themes
+// + @Social Networks Colors
+
+// ---------------------------------------------------------
+// @Greyscale Colors
+// ---------------------------------------------------------
+
+// Colors below are ordered from lightest to darkest
+
+$grey-100             : #f9fafb;
+$grey-200             : #f2f3f5;
+$grey-300             : #e6eaf0;
+$grey-400             : #d3d9e3;
+$grey-500             : #b9c2d0;
+$grey-600             : #7c8695;
+$grey-700             : #72777a;
+$grey-800             : #565a5c;
+$grey-900             : #313435;
+
+$grey-colors-alt: (
+  grey-100 : #f9fafb,
+  grey-200 : #f2f3f5,
+  grey-300 : #e6eaf0,
+  grey-400 : #d3d9e3,
+  grey-500 : #b9c2d0,
+  grey-600 : #7c8695,
+  grey-700 : #72777a,
+  grey-800 : #565a5c,
+  grey-900 : #313435,
+);
+
+// ---------------------------------------------------------
+// @Bootstrap Color System
+// ---------------------------------------------------------
+
+$blue   : $md-blue-500;
+$indigo : $md-indigo-500;
+$purple : $md-purple-500;
+$pink   : $md-pink-500;
+$red    : $md-red-500;
+$orange : $md-orange-500;
+$yellow : $md-yellow-500;
+$green  : $md-green-500;
+$teal   : $md-teal-500;
+$cyan   : $md-cyan-500;
+
+// ---------------------------------------------------------
+// @Default Colors
+// ---------------------------------------------------------
+
+$default-danger       : #ff3c7e;
+$default-dark         : #313435;
+$default-grey         : #565a5c;
+$default-info         : #0f9aee;
+$default-primary      : #7774e7;
+$default-success      : #37c936;
+$default-text-color   : #72777a;
+$default-warning      : #fc0;
+$default-white        : #fff;
+
+// ---------------------------------------------------------
+// @Inverted Colors
+// ---------------------------------------------------------
+
+$inverse-danger       : lighten($default-danger, 35%);
+$inverse-info         : lighten($default-info, 45%);
+$inverse-primary      : lighten($default-primary, 30%);
+$inverse-success      : lighten($default-success, 45%);
+$inverse-warning      : lighten($default-warning, 45%);
+
+// ---------------------------------------------------------
+// @Others
+// ---------------------------------------------------------
+
+$border-color         : #e6ecf5;
+$collapsed-size       : 70px;
+$header-height        : 65px;
+$offscreen-size       : 280px;
+$side-nav-dark        : #313644;
+$side-nav-dark-border : rgba(120, 130, 140, 0.3);
+$side-nav-dark-font   : #99abb4;
+
+// ---------------------------------------------------------
+// @Header Themes
+// ---------------------------------------------------------
+
+$theme-danger         : #f53f61;
+$theme-dark           : lighten($side-nav-dark, 10%);
+$theme-info           : $default-info;
+$theme-primary        : $default-primary;
+$theme-success        : desaturate($default-success, 5%);

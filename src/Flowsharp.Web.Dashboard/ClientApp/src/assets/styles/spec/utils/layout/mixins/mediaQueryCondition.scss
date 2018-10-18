@@ -1,0 +1,26 @@
+// ---------------------------------------------------------
+// @Media Queries Generator
+// ---------------------------------------------------------
+
+// Mixin used to generate responsive versions of css rules.
+
+@mixin mediaQueryCondition($mq) {
+  $breakpointFound: false;
+
+  @each $breakpoint in $breakpoints {
+    $alias: nth($breakpoint, 1);
+    $condition: nth($breakpoint, 2);
+
+    @if $mq == $alias and $condition {
+      $breakpointFound: true;
+
+      @media #{$condition} {
+        @content;
+      }
+    }
+  }
+
+  @if $breakpointFound == false {
+    @warn "Oops! Breakpoint ‘#{$mq}’ does not exist \:";
+  }
+}
