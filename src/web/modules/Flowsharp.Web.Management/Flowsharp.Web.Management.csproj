@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netcoreapp2.1</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <Content Include="Views\Home\Index.cshtml" />
+      <Content Include="Views\Workflows\Edit.cshtml" />
+      <Content Include="Views\Workflows\Index.cshtml" />
+      <Content Include="Views\_ViewImports.cshtml" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="OrchardCore.Module.Targets" Version="1.0.0-beta3-69004" />
+      <PackageReference Include="OrchardCore.Mvc.Core" Version="1.0.0-beta3-69004" />
+      <PackageReference Include="OrchardCore.DisplayManagement" Version="1.0.0-beta3-69004" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Flowsharp.Web.ViewComponents\Flowsharp.Web.ViewComponents.csproj" />
+    </ItemGroup>
+
+</Project>

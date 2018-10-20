@@ -1,0 +1,12 @@
+@model WorkflowEditorViewModel
+
+<div>
+    <h2>Workflow Editor</h2>
+    <div class="flowsharp-canvas">
+        @foreach (var activityShape in Model.ActivityShapes)
+        {
+            @await DisplayAsync(activityShape)
+        } 
+    </div>
+</div>
+<script src="~/main.js" charset="UTF-8"></script>

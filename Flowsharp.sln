@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28010.2036
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Flowsharp.Core", "src\Flowsharp.Core\Flowsharp.Core.csproj", "{300EE2D5-54C5-46F2-AD03-BB43589EA074}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Flowsharp.Core", "src\core\Flowsharp.Core\Flowsharp.Core.csproj", "{300EE2D5-54C5-46F2-AD03-BB43589EA074}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Flowsharp.Samples.Console", "src\Flowsharp.Samples.Console\Flowsharp.Samples.Console.csproj", "{48EDB976-3227-4DFD-BBB3-3BC9AEA19A88}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Flowsharp.Samples.Console", "src\samples\Flowsharp.Samples.Console\Flowsharp.Samples.Console.csproj", "{48EDB976-3227-4DFD-BBB3-3BC9AEA19A88}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{DA71CDAA-8DD3-4D5F-9FBD-8E4B37A2D925}"
 EndProject
@@ -17,25 +17,39 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "items", "items", "{7165BB9E
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Flowsharp.Abstractions", "src\Flowsharp.Abstractions\Flowsharp.Abstractions.csproj", "{3130C574-557C-4DA2-933E-AED7A9EBE48A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Flowsharp.Abstractions", "src\core\Flowsharp.Abstractions\Flowsharp.Abstractions.csproj", "{3130C574-557C-4DA2-933E-AED7A9EBE48A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Flowsharp.Persistence.Abstractions", "src\Flowsharp.Persistence.Abstractions\Flowsharp.Persistence.Abstractions.csproj", "{A5829896-89C5-4C4E-ADC7-C806C8077316}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Flowsharp.Persistence.Abstractions", "src\core\Flowsharp.Persistence.Abstractions\Flowsharp.Persistence.Abstractions.csproj", "{A5829896-89C5-4C4E-ADC7-C806C8077316}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Flowsharp.Persistence.InMemory", "src\Flowsharp.Persistence.InMemory\Flowsharp.Persistence.InMemory.csproj", "{E93A1A6B-708F-4DCC-A399-1B8EC7682F92}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Flowsharp.Persistence.InMemory", "src\core\Flowsharp.Persistence.InMemory\Flowsharp.Persistence.InMemory.csproj", "{E93A1A6B-708F-4DCC-A399-1B8EC7682F92}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Flowsharp.Runtime", "src\Flowsharp.Runtime\Flowsharp.Runtime.csproj", "{3C1DCAA2-D77E-4F96-9899-DA8E0E0C757F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Flowsharp.Runtime", "src\core\Flowsharp.Runtime\Flowsharp.Runtime.csproj", "{3C1DCAA2-D77E-4F96-9899-DA8E0E0C757F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Flowsharp.Runtime.Abstractions", "src\Flowsharp.Runtime.Abstractions\Flowsharp.Runtime.Abstractions.csproj", "{792362BF-D26D-46E9-8970-E5668941AA75}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Flowsharp.Web.Dashboard", "src\Flowsharp.Web.Dashboard\Flowsharp.Web.Dashboard.csproj", "{11836D0B-9EFF-4C84-A075-90DCB4B48EB6}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Flowsharp.Web.Components", "src\Flowsharp.Web.Components\Flowsharp.Web.Components.csproj", "{61F479BD-6DE3-4E2F-A980-80EC121E159B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Flowsharp.Runtime.Abstractions", "src\core\Flowsharp.Runtime.Abstractions\Flowsharp.Runtime.Abstractions.csproj", "{792362BF-D26D-46E9-8970-E5668941AA75}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Core", "Core", "{35F44BE9-13D0-417C-A01A-F0787BEE6DC3}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Web", "Web", "{B33F1927-FF0A-4826-80C6-F480E9C43892}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{D15B5282-5CBE-4DFB-AF3B-F4B28CFA55AB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Flowsharp.Web.OrchardCore", "src\web\modules\Flowsharp.Web.OrchardCore\Flowsharp.Web.OrchardCore.csproj", "{34812116-2B6D-4B6E-9F03-E40F7A082D74}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TheAdminatorTheme", "src\web\themes\TheAdminatorTheme\TheAdminatorTheme.csproj", "{BFA6473C-809D-42F6-ADD3-80A3118B999C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Flowsharp.Web.Management", "src\web\modules\Flowsharp.Web.Management\Flowsharp.Web.Management.csproj", "{A00D0A17-CD30-49DF-908E-85744FA55A1A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Modules", "Modules", "{DE9B2BDA-F1C3-44EB-9B13-9A59A14F2018}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Themes", "Themes", "{38C559D5-F121-482B-BBD7-8FAFDB63B2F1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Flowsharp.Web.ViewComponents", "src\web\modules\Flowsharp.Web.ViewComponents\Flowsharp.Web.ViewComponents.csproj", "{71687B0E-37D1-4AEB-A620-1F884CAC4C8E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Flowsharp.Web.Persistence.FileSystem", "src\web\modules\Flowsharp.Web.Persistence.FileSystem\Flowsharp.Web.Persistence.FileSystem.csproj", "{7A30960A-1B95-4564-B2C8-2DFDDB06C594}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Flowsharp.Persistence.FileSystem", "src\core\Flowsharp.Persistence.FileSystem\Flowsharp.Persistence.FileSystem.csproj", "{1579117E-229F-4E48-812B-7A235A4DB7E5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Flowsharp.Web", "src\web\portal\Flowsharp.Web.csproj", "{597099E3-F287-4947-9C32-5362A64C8C44}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -71,14 +85,34 @@ Global
 		{792362BF-D26D-46E9-8970-E5668941AA75}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{792362BF-D26D-46E9-8970-E5668941AA75}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{792362BF-D26D-46E9-8970-E5668941AA75}.Release|Any CPU.Build.0 = Release|Any CPU
-		{11836D0B-9EFF-4C84-A075-90DCB4B48EB6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{11836D0B-9EFF-4C84-A075-90DCB4B48EB6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{11836D0B-9EFF-4C84-A075-90DCB4B48EB6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{11836D0B-9EFF-4C84-A075-90DCB4B48EB6}.Release|Any CPU.Build.0 = Release|Any CPU
-		{61F479BD-6DE3-4E2F-A980-80EC121E159B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{61F479BD-6DE3-4E2F-A980-80EC121E159B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{61F479BD-6DE3-4E2F-A980-80EC121E159B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{61F479BD-6DE3-4E2F-A980-80EC121E159B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{34812116-2B6D-4B6E-9F03-E40F7A082D74}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{34812116-2B6D-4B6E-9F03-E40F7A082D74}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{34812116-2B6D-4B6E-9F03-E40F7A082D74}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{34812116-2B6D-4B6E-9F03-E40F7A082D74}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BFA6473C-809D-42F6-ADD3-80A3118B999C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BFA6473C-809D-42F6-ADD3-80A3118B999C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BFA6473C-809D-42F6-ADD3-80A3118B999C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BFA6473C-809D-42F6-ADD3-80A3118B999C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A00D0A17-CD30-49DF-908E-85744FA55A1A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A00D0A17-CD30-49DF-908E-85744FA55A1A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A00D0A17-CD30-49DF-908E-85744FA55A1A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A00D0A17-CD30-49DF-908E-85744FA55A1A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{71687B0E-37D1-4AEB-A620-1F884CAC4C8E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{71687B0E-37D1-4AEB-A620-1F884CAC4C8E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{71687B0E-37D1-4AEB-A620-1F884CAC4C8E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{71687B0E-37D1-4AEB-A620-1F884CAC4C8E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7A30960A-1B95-4564-B2C8-2DFDDB06C594}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7A30960A-1B95-4564-B2C8-2DFDDB06C594}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7A30960A-1B95-4564-B2C8-2DFDDB06C594}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7A30960A-1B95-4564-B2C8-2DFDDB06C594}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1579117E-229F-4E48-812B-7A235A4DB7E5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1579117E-229F-4E48-812B-7A235A4DB7E5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1579117E-229F-4E48-812B-7A235A4DB7E5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1579117E-229F-4E48-812B-7A235A4DB7E5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{597099E3-F287-4947-9C32-5362A64C8C44}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{597099E3-F287-4947-9C32-5362A64C8C44}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{597099E3-F287-4947-9C32-5362A64C8C44}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{597099E3-F287-4947-9C32-5362A64C8C44}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -91,11 +125,18 @@ Global
 		{E93A1A6B-708F-4DCC-A399-1B8EC7682F92} = {35F44BE9-13D0-417C-A01A-F0787BEE6DC3}
 		{3C1DCAA2-D77E-4F96-9899-DA8E0E0C757F} = {35F44BE9-13D0-417C-A01A-F0787BEE6DC3}
 		{792362BF-D26D-46E9-8970-E5668941AA75} = {35F44BE9-13D0-417C-A01A-F0787BEE6DC3}
-		{11836D0B-9EFF-4C84-A075-90DCB4B48EB6} = {B33F1927-FF0A-4826-80C6-F480E9C43892}
-		{61F479BD-6DE3-4E2F-A980-80EC121E159B} = {B33F1927-FF0A-4826-80C6-F480E9C43892}
 		{35F44BE9-13D0-417C-A01A-F0787BEE6DC3} = {DA71CDAA-8DD3-4D5F-9FBD-8E4B37A2D925}
 		{B33F1927-FF0A-4826-80C6-F480E9C43892} = {DA71CDAA-8DD3-4D5F-9FBD-8E4B37A2D925}
 		{D15B5282-5CBE-4DFB-AF3B-F4B28CFA55AB} = {DA71CDAA-8DD3-4D5F-9FBD-8E4B37A2D925}
+		{DE9B2BDA-F1C3-44EB-9B13-9A59A14F2018} = {B33F1927-FF0A-4826-80C6-F480E9C43892}
+		{38C559D5-F121-482B-BBD7-8FAFDB63B2F1} = {B33F1927-FF0A-4826-80C6-F480E9C43892}
+		{A00D0A17-CD30-49DF-908E-85744FA55A1A} = {DE9B2BDA-F1C3-44EB-9B13-9A59A14F2018}
+		{34812116-2B6D-4B6E-9F03-E40F7A082D74} = {DE9B2BDA-F1C3-44EB-9B13-9A59A14F2018}
+		{BFA6473C-809D-42F6-ADD3-80A3118B999C} = {38C559D5-F121-482B-BBD7-8FAFDB63B2F1}
+		{71687B0E-37D1-4AEB-A620-1F884CAC4C8E} = {DE9B2BDA-F1C3-44EB-9B13-9A59A14F2018}
+		{7A30960A-1B95-4564-B2C8-2DFDDB06C594} = {DE9B2BDA-F1C3-44EB-9B13-9A59A14F2018}
+		{1579117E-229F-4E48-812B-7A235A4DB7E5} = {35F44BE9-13D0-417C-A01A-F0787BEE6DC3}
+		{597099E3-F287-4947-9C32-5362A64C8C44} = {B33F1927-FF0A-4826-80C6-F480E9C43892}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}

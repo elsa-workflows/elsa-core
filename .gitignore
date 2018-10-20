@@ -50,3 +50,5 @@ node_modules/
 
 #github
 .github/
+
+App_Data/

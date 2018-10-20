@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netcoreapp2.1</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="OrchardCore.Module.Targets" Version="1.0.0-beta3-69004" />
+        <PackageReference Include="OrchardCore.DisplayManagement" Version="1.0.0-beta3-69004" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="Views\Shared\Components\WorkflowEditor\Default.cshtml">
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+        <Pack>false</Pack>
+      </Content>
+      <Content Include="Views\_ViewImports.cshtml">
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+        <Pack>false</Pack>
+      </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="ClientApp\src\js" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Include="ClientApp\package-lock.json" />
+      <None Include="ClientApp\package.json" />
+      <None Include="ClientApp\webpack.config.js" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\core\Flowsharp.Abstractions\Flowsharp.Abstractions.csproj" />
+      <ProjectReference Include="..\..\..\core\Flowsharp.Core\Flowsharp.Core.csproj" />
+      <ProjectReference Include="..\..\..\core\Flowsharp.Persistence.Abstractions\Flowsharp.Persistence.Abstractions.csproj" />
+    </ItemGroup>
+
+</Project>

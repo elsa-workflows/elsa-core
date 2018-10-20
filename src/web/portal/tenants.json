@@ -1,0 +1,13 @@
+{
+    "Default": {
+        "State": "Running",
+        "RequestUrlHost": null,
+        "RequestUrlPrefix": null,
+        "CurrentTheme" : "TheAdminatorTheme",
+        "Features": [
+            "TheAdminatorTheme", 
+            "Flowsharp.Web.Management",
+            "Flowsharp.Web.Persistence.FileSystem"
+        ] 
+    }
+}
