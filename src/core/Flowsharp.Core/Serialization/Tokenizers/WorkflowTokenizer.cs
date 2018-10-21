@@ -53,17 +53,25 @@ namespace Flowsharp.Serialization.Tokenizers
             };
             
             var scopeLookup = DeserializeScopes(token, serializationContext);
-            var currentScopeId = token["currentScope"].Value<int>();
-            
             var workflow = new Workflow
             {
                 Status = (WorkflowStatus)Enum.Parse(typeof(WorkflowStatus), token["status"].Value<string>()),
                 Activities = activityDictionary.Values.ToList(),
                 Connections = DeserializeConnections(token, activityDictionary).ToList(),
                 BlockingActivities = DeserializeHaltedActivities(token, activityDictionary).ToList(),
-                Scopes = new Stack<WorkflowExecutionScope>(scopeLookup.Values),
-                CurrentScope = scopeLookup[currentScopeId]
+                Scopes = new Stack<WorkflowExecutionScope>(scopeLookup.Values)
             };
+
+            if (!workflow.Scopes.Any())
+            {
+                workflow.CurrentScope = new WorkflowExecutionScope();
+                workflow.Scopes.Push(workflow.CurrentScope);
+            }
+            else
+            {
+                var currentScopeId = token["currentScope"].Value<int>();
+                workflow.CurrentScope = scopeLookup[currentScopeId];
+            }
             
             return workflow;
         }
@@ -158,7 +166,7 @@ namespace Flowsharp.Serialization.Tokenizers
         private IDictionary<int, WorkflowExecutionScope> DeserializeScopes(JToken token, WorkflowTokenizationContext context)
         {
             var scopeLookup = new Dictionary<int, WorkflowExecutionScope>();
-            var scopeModels = token["scopes"];
+            var scopeModels = token["scopes"] ?? new JArray();
 
             foreach (var scopeModel in scopeModels)
             {
@@ -186,7 +194,7 @@ namespace Flowsharp.Serialization.Tokenizers
 
         private IEnumerable<IActivity> DeserializeHaltedActivities(JToken token, IDictionary<int, IActivity> activityDictionary)
         {
-            var haltedActivityModels = (JArray) token["haltedActivities"];
+            var haltedActivityModels = (JArray) token["haltedActivities"] ?? new JArray();
 
             foreach (var haltedActivityModel in haltedActivityModels)
             {
@@ -198,7 +206,7 @@ namespace Flowsharp.Serialization.Tokenizers
 
         private IEnumerable<Connection> DeserializeConnections(JToken token, IDictionary<int, IActivity> activityDictionary)
         {
-            var connectionModels = (JArray) token["connections"];
+            var connectionModels = (JArray) token["connections"] ?? new JArray();
 
             foreach (var connectionModel in connectionModels)
             { 
@@ -214,7 +222,7 @@ namespace Flowsharp.Serialization.Tokenizers
 
         private IDictionary<int, IActivity> DeserializeActivities(JToken token)
         {
-            var activityModels = (JArray)token["activities"];
+            var activityModels = (JArray)token["activities"] ?? new JArray();
             var dictionary = new Dictionary<int, IActivity>();
 
             foreach (var activityModel in activityModels)
@@ -222,7 +230,7 @@ namespace Flowsharp.Serialization.Tokenizers
                 var id = activityModel["id"].Value<int>();
                 var name = activityModel["name"].Value<string>();
                 var activityType = GetActivityType(name);
-                var activity = (IActivity)activityModel.ToObject(activityType);
+                var activity = activityType != null ? (IActivity)activityModel.ToObject(activityType) : new UnknownActivity();
 
                 dictionary.Add(id, activity);
             }
@@ -232,7 +240,7 @@ namespace Flowsharp.Serialization.Tokenizers
 
         private Type GetActivityType(string activityName)
         {
-            return activityHandlers.Single(x => x.ActivityType.Name == activityName).ActivityType;
+            return activityHandlers.SingleOrDefault(x => x.ActivityType.Name == activityName)?.ActivityType;
         }
     }
 }

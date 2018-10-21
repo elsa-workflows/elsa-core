@@ -12,13 +12,20 @@
     </ItemGroup>
 
     <ItemGroup>
+      <PackageReference Include="OrchardCore.FileStorage.FileSystem" Version="1.0.0-beta2-67846" />
       <PackageReference Include="OrchardCore.Module.Targets" Version="1.0.0-beta3-69004" />
       <PackageReference Include="OrchardCore.Mvc.Core" Version="1.0.0-beta3-69004" />
       <PackageReference Include="OrchardCore.DisplayManagement" Version="1.0.0-beta3-69004" />
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\Flowsharp.Web.Persistence.Abstractions\Flowsharp.Web.Persistence.Abstractions.csproj" />
       <ProjectReference Include="..\Flowsharp.Web.ViewComponents\Flowsharp.Web.ViewComponents.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Configuration" />
+      <Folder Include="Data" />
     </ItemGroup>
 
 </Project>

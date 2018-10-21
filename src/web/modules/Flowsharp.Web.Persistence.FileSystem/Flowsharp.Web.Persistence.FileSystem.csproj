@@ -6,11 +6,13 @@
 
     <ItemGroup>
         <PackageReference Include="OrchardCore.Module.Targets" Version="1.0.0-beta3-69004" />
+        <PackageReference Include="OrchardCore.FileStorage.FileSystem" Version="1.0.0-beta2-67846" />
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\..\..\core\Flowsharp.Persistence.Abstractions\Flowsharp.Persistence.Abstractions.csproj" />
       <ProjectReference Include="..\..\..\core\Flowsharp.Persistence.FileSystem\Flowsharp.Persistence.FileSystem.csproj" />
+      <ProjectReference Include="..\Flowsharp.Web.Persistence.Abstractions\Flowsharp.Web.Persistence.Abstractions.csproj" />
     </ItemGroup>
 
 </Project>

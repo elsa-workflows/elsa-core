@@ -1,3 +1,7 @@
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Flowsharp.Web.Persistence.Abstractions.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Flowsharp.Web.Management.Controllers
@@ -5,22 +9,25 @@ namespace Flowsharp.Web.Management.Controllers
     [Route("[controller]")]
     public class WorkflowsController : Controller
     {
-        public IActionResult Index()
+        private readonly IWorkflowDefinitionStore workflowDefinitionStore;
+
+        public WorkflowsController(IWorkflowDefinitionStore workflowDefinitionStore)
         {
-            return View();
+            this.workflowDefinitionStore = workflowDefinitionStore;
+        }
+        
+        public async Task<IActionResult> Index(CancellationToken cancellationToken)
+        {
+            var workflowDefinitions = await workflowDefinitionStore.ListAsync(cancellationToken);
+            return View(workflowDefinitions.ToList());
         }
         
         
         [HttpGet("edit/{id}")]
-        public IActionResult Edit(string id)
+        public async Task<IActionResult> Edit(string id, CancellationToken cancellationToken)
         {
-            return View();
-        }
-        
-        [HttpGet("edit2/edit3")]
-        public IActionResult Edit2()
-        {
-            return View();
+            var workflowDefinition = await workflowDefinitionStore.GetAsync(id, cancellationToken);
+            return View(workflowDefinition);
         }
     }
 }

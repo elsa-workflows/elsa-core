@@ -8,6 +8,6 @@
             "TheAdminatorTheme", 
             "Flowsharp.Web.Management",
             "Flowsharp.Web.Persistence.FileSystem"
-        ] 
+        ]
     }
 }
