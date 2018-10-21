@@ -18,6 +18,7 @@ namespace Flowsharp.Models
             Scopes = new Stack<WorkflowExecutionScope>(new[]{ CurrentScope });
             Arguments = new Variables();
             BlockingActivities = new List<IActivity>();
+            Metadata = new WorkflowMetadata();
         }
         
         public WorkflowStatus Status { get; set; }
@@ -27,5 +28,6 @@ namespace Flowsharp.Models
         public WorkflowExecutionScope CurrentScope { get; set; }
         public Variables Arguments { get; set; }
         public IList<IActivity> BlockingActivities { get; set; }
+        public WorkflowMetadata Metadata { get; set; } 
     }
 }

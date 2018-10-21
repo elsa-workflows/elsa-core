@@ -19,7 +19,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Flowsharp.Web.Persistence.Abstractions\Flowsharp.Web.Persistence.Abstractions.csproj" />
       <ProjectReference Include="..\Flowsharp.Web.ViewComponents\Flowsharp.Web.ViewComponents.csproj" />
     </ItemGroup>
 

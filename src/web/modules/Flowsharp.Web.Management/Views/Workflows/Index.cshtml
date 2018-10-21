@@ -1,4 +1,4 @@
-@model ICollection<WorkflowDefinition>
+@model ICollection<Workflow>
 
 <div class="container-fluid">
     <div class="row">
@@ -31,10 +31,10 @@
                         index++;
                         
                         <tr role="row" class="@rowClass">
-                            <td><a asp-action="Edit" asp-route-id="@workflowDefinition.Id">@workflowDefinition.Id</a></td>
-                            <td class="sorting_1">@workflowDefinition.Name</td>
-                            <td>@workflowDefinition.Description</td>
-                            <td><a asp-action="Edit" asp-route-id="@workflowDefinition.Id">edit</a> | delete | enable</td>
+                            <td><a asp-action="Edit" asp-route-id="@workflowDefinition.Metadata.Id">@workflowDefinition.Metadata.Id</a></td>
+                            <td class="sorting_1">@workflowDefinition.Metadata.Name</td>
+                            <td>@workflowDefinition.Metadata.Description</td>
+                            <td><a asp-action="Edit" asp-route-id="@workflowDefinition.Metadata.Id">edit</a> | delete | enable</td>
                         </tr>
                     }
                     </tbody>

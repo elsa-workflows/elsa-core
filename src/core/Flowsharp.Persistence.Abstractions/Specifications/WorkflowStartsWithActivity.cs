@@ -1,9 +1,9 @@
 ﻿using System.Linq;
-using Flowsharp.Persistence.Models;
+using Flowsharp.Models;
 
 namespace Flowsharp.Persistence.Specifications
 {
-    public class WorkflowStartsWithActivity : ISpecification<WorkflowDefinition, IWorkflowDefinitionSpecificationVisitor>
+    public class WorkflowStartsWithActivity : ISpecification<Workflow, IWorkflowSpecificationVisitor>
     {
         public WorkflowStartsWithActivity(string activityName)
         {
@@ -12,18 +12,18 @@ namespace Flowsharp.Persistence.Specifications
 
         public string ActivityName { get; }
 
-        public bool IsSatisfiedBy(WorkflowDefinition value)
+        public bool IsSatisfiedBy(Workflow value)
         {
             var query =
-                from activity in value.Workflow.Activities 
+                from activity in value.Activities 
                 where activity.Name == ActivityName
-                where !value.Workflow.Connections.Select(x => x.Target.Activity).Contains(activity)
+                where !value.Connections.Select(x => x.Target.Activity).Contains(activity)
                 select activity;
 
             return query.Any();
         }
 
-        public void Accept(IWorkflowDefinitionSpecificationVisitor visitor)
+        public void Accept(IWorkflowSpecificationVisitor visitor)
         {
             visitor.Visit(this);
         }

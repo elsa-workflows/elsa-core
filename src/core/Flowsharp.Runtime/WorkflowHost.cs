@@ -1,26 +1,27 @@
-using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Flowsharp.Models;
 using Flowsharp.Persistence;
-using Flowsharp.Persistence.Models;
+using Flowsharp.Persistence.Extensions;
 using Flowsharp.Persistence.Specifications;
 using Flowsharp.Runtime.Abstractions;
+using Flowsharp.Serialization;
+using Flowsharp.Serialization.Extensions;
 
 namespace Flowsharp.Runtime
 {
     public class WorkflowHost : IWorkflowHost
     {
         private readonly IWorkflowInvoker invoker;
-        private readonly IWorkflowDefinitionStore workflowDefinitionStore;
-        private readonly IWorkflowInstanceStore workflowInstanceStore;
+        private readonly IWorkflowStore workflowStore;
+        private readonly IWorkflowSerializer workflowSerializer;
 
-        public WorkflowHost(IWorkflowInvoker invoker, IWorkflowDefinitionStore workflowDefinitionStore, IWorkflowInstanceStore workflowInstanceStore)
+        public WorkflowHost(IWorkflowInvoker invoker, IWorkflowStore workflowStore, IWorkflowSerializer workflowSerializer)
         {
             this.invoker = invoker;
-            this.workflowDefinitionStore = workflowDefinitionStore;
-            this.workflowInstanceStore = workflowInstanceStore;
+            this.workflowStore = workflowStore;
+            this.workflowSerializer = workflowSerializer;
         }
         
         public async Task TriggerWorkflowAsync(string activityName, Variables arguments, CancellationToken cancellationToken)
@@ -31,39 +32,34 @@ namespace Flowsharp.Runtime
 
         private async Task StartNewWorkflowsAsync(string activityName, Variables arguments, CancellationToken cancellationToken)
         {
-            var workflowDefinitions = await workflowDefinitionStore.GetManyAsync(new WorkflowStartsWithActivity(activityName), cancellationToken);
+            var workflows = await workflowStore.GetManyAsync(new WorkflowIsDefinition().And(new WorkflowStartsWithActivity(activityName)), cancellationToken);
 
-            foreach (var workflowDefinition in workflowDefinitions)
+            foreach (var workflow in workflows)
             {
-                var startActivities = workflowDefinition.Workflow.Activities.Where(x => x.Name == activityName && !workflowDefinition.Workflow.Connections.Select(c => c.Target.Activity).Contains(x));
+                var startActivities = workflow.Activities.Where(x => x.Name == activityName && !workflow.Connections.Select(c => c.Target.Activity).Contains(x));
 
                 foreach (var activity in startActivities)
                 {
-                    var workflowContext = await invoker.InvokeAsync(workflowDefinition.Workflow, activity, arguments, cancellationToken);
-                    var workflowInstance = new WorkflowInstance
-                    {
-                        WorkflowDefinitionId = workflowDefinition.Id,
-                        Id = Guid.NewGuid().ToString(),
-                        Workflow = workflowContext.Workflow
-                    };
-
-                    await workflowInstanceStore.AddAsync(workflowInstance, cancellationToken);
+                    var workflowInstance = workflowSerializer.CreateOffspring(workflow);
+                    var workflowContext = await invoker.InvokeAsync(workflowInstance, activity, arguments, cancellationToken);
+                    
+                    await workflowStore.AddAsync(workflowInstance, cancellationToken);
                 }
             }
         }
         
         private async Task ResumeExistingWorkflowsAsync(string activityName, Variables arguments, CancellationToken cancellationToken)
         {
-            var workflowInstances = await workflowInstanceStore.GetManyAsync(new WorkflowIsBlockedOnActivity(activityName), cancellationToken);
+            var workflows = await workflowStore.GetManyAsync(new WorkflowIsInstance().And(new WorkflowIsBlockedOnActivity(activityName)), cancellationToken);
 
-            foreach (var workflowInstance in workflowInstances)
+            foreach (var workflow in workflows)
             {
-                var blockingActivities = workflowInstance.Workflow.BlockingActivities.Where(x => x.Name == activityName).ToList();
+                var blockingActivities = workflow.BlockingActivities.Where(x => x.Name == activityName).ToList();
                 
                 foreach (var activity in blockingActivities)
                 {
-                    await invoker.ResumeAsync(workflowInstance.Workflow, activity, arguments, cancellationToken);
-                    await workflowInstanceStore.UpdateAsync(workflowInstance, cancellationToken);
+                    await invoker.ResumeAsync(workflow, activity, arguments, cancellationToken);
+                    await workflowStore.UpdateAsync(workflow, cancellationToken);
                 }
             }
         }

@@ -1,12 +1,13 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
+using Flowsharp.Activities.Console.Handlers;
+using Flowsharp.Activities.Primitives.Handlers;
 using Flowsharp.Expressions;
 using Flowsharp.Handlers;
 using Flowsharp.Persistence;
 using Flowsharp.Persistence.InMemory;
 using Flowsharp.Runtime;
 using Flowsharp.Runtime.Abstractions;
-using Flowsharp.Samples.Console.Handlers;
 using Flowsharp.Samples.Console.Programs;
 using Flowsharp.Serialization;
 using Flowsharp.Serialization.Formatters;
@@ -27,7 +28,6 @@ namespace Flowsharp.Samples.Console
                 .AddSingleton<IWorkflowInvoker, WorkflowInvoker>()
                 .AddSingleton<IActivityInvoker, ActivityInvoker>()
                 .AddSingleton<IWorkflowSerializer, WorkflowSerializer>()
-                //.AddSingleton<ITokenFormatter, JsonTokenFormatter>()
                 .AddSingleton<ITokenFormatter, YamlTokenFormatter>()
                 .AddSingleton<IWorkflowTokenizer, WorkflowTokenizer>()
                 .AddSingleton<ITokenizerInvoker, TokenizerInvoker>()
@@ -43,8 +43,7 @@ namespace Flowsharp.Samples.Console
                 .AddSingleton<IActivityHandler, WriteLineHandler>();
 
             services
-                .AddSingleton<IWorkflowDefinitionStore, InMemoryWorkflowDefinitionStore>()
-                .AddSingleton<IWorkflowInstanceStore, InMemoryWorkflowInstanceStore>();
+                .AddSingleton<IWorkflowStore, InMemoryWorkflowStore>();
 
             services
                 .AddSingleton<AdditionWorkflowProgram>()

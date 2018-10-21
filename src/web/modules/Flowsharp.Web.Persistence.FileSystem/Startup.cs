@@ -1,6 +1,6 @@
 ﻿using System;
 using System.IO;
-using Flowsharp.Web.Persistence.Abstractions.Services;
+using Flowsharp.Persistence;
 using Flowsharp.Web.Persistence.FileSystem.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
@@ -26,7 +26,7 @@ namespace Flowsharp.Web.Persistence.FileSystem
                 return new WorkflowsFileStore(fileStore);
             });
 
-            services.AddSingleton<IWorkflowDefinitionStore, FileSystemWorkflowDefinitionStore>();
+            services.AddScoped<IWorkflowStore, FileSystemWorkflowStore>();
         }
 
         public override void Configure(IApplicationBuilder builder, IRouteBuilder routes, IServiceProvider serviceProvider)

@@ -1,2 +1,4 @@
-@model WorkflowDefinition
-<h2>@Model.Name</h2>
+@model Workflow
+<h2>@Model.Metadata.Name</h2>
+
+@await Component.InvokeAsync("WorkflowEditor", new { workflowId = Model.Metadata.Id })

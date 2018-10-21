@@ -10,6 +10,8 @@
     </ItemGroup>
 
     <ItemGroup>
+      <Content Include="Assets\css\workflow-editor-canvas.scss" />
+      <Content Include="Assets\js\index.js" />
       <Content Include="Views\Shared\Components\WorkflowEditor\Default.cshtml">
         <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
         <Pack>false</Pack>
@@ -21,13 +23,10 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="ClientApp\src\js" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <None Include="ClientApp\package-lock.json" />
-      <None Include="ClientApp\package.json" />
-      <None Include="ClientApp\webpack.config.js" />
+      <None Include="Assets\package-lock.json" />
+      <None Include="Assets\package.json" />
+      <None Include="Assets\webpack.config.js" />
+      <None Include="Views\Activity.Design.cshtml" />
     </ItemGroup>
 
     <ItemGroup>

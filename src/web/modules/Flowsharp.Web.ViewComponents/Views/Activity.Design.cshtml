@@ -1,0 +1,7 @@
+@using System.Drawing
+@{
+    var position = new Point(50, 50);
+}
+<div class="activity" style="left:@(position.X)px; top:@(position.Y)px;" id="@($"activity-1")" data-activity-id="1" >
+    @await DisplayAsync(Model.Content)
+</div>

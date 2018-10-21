@@ -1,8 +1,8 @@
 ﻿using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Flowsharp.Activities.Console.Activities;
 using Flowsharp.Models;
-using Flowsharp.Samples.Console.Activities;
 using Flowsharp.Samples.Console.Workflows;
 using Flowsharp.Serialization;
 

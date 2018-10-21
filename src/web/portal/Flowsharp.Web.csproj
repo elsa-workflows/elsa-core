@@ -40,8 +40,10 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\..\Flowsharp.Activities.Console.Web\Flowsharp.Activities.Console.Web.csproj" />
+      <ProjectReference Include="..\..\Flowsharp.Activities.Primitives.Web\Flowsharp.Activities.Primitives.Web.csproj" />
       <ProjectReference Include="..\modules\Flowsharp.Web.Management\Flowsharp.Web.Management.csproj" />
-      <ProjectReference Include="..\modules\Flowsharp.Web.OrchardCore\Flowsharp.Web.OrchardCore.csproj" />
+      <ProjectReference Include="..\modules\Flowsharp.Web.OrchardCoreLite\Flowsharp.Web.OrchardCoreLite.csproj" />
       <ProjectReference Include="..\modules\Flowsharp.Web.Persistence.FileSystem\Flowsharp.Web.Persistence.FileSystem.csproj" />
       <ProjectReference Include="..\modules\Flowsharp.Web.ViewComponents\Flowsharp.Web.ViewComponents.csproj" />
       <ProjectReference Include="..\themes\TheAdminatorTheme\TheAdminatorTheme.csproj" />

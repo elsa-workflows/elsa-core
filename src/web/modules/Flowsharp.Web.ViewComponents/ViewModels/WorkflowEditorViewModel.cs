@@ -1,18 +1,18 @@
 using System.Collections.Generic;
 using System.Linq;
-using Flowsharp.Persistence.Models;
+using Flowsharp.Models;
 
 namespace Flowsharp.Web.ViewComponents.ViewModels
 {
     public class WorkflowEditorViewModel
     {
-        public WorkflowEditorViewModel(WorkflowDefinition workflowDefinition, IEnumerable<dynamic> activityShapes)
+        public WorkflowEditorViewModel(Workflow workflow, IEnumerable<dynamic> activityShapes)
         {
-            WorkflowDefinition = workflowDefinition;
+            Workflow = workflow;
             ActivityShapes = activityShapes.ToList();
         }
         
-        public WorkflowDefinition WorkflowDefinition { get; }
+        public Workflow Workflow { get; }
         public ICollection<dynamic> ActivityShapes { get; }
     }
 }

@@ -1,7 +1,7 @@
-﻿using System;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Routing;
+﻿using Flowsharp.Activities;
+using Flowsharp.Extensions;
 using Microsoft.Extensions.DependencyInjection;
+using OrchardCore.DisplayManagement;
 using OrchardCore.Modules;
 
 namespace Flowsharp.Web.ViewComponents
@@ -10,11 +10,9 @@ namespace Flowsharp.Web.ViewComponents
     {
         public override void ConfigureServices(IServiceCollection services)
         {
-        }
-
-        public override void Configure(IApplicationBuilder builder, IRouteBuilder routes, IServiceProvider serviceProvider)
-        {
-            
+            services
+                .AddFlowsharpCore()
+                .AddScoped<IDisplayManager<IActivity>, DisplayManager<IActivity>>();
         }
     }
 }

@@ -1,7 +1,8 @@
 using Flowsharp.Activities;
+using Flowsharp.Activities.Console.Activities;
+using Flowsharp.Activities.Primitives.Activities;
 using Flowsharp.Expressions;
 using Flowsharp.Models;
-using Flowsharp.Samples.Console.Activities;
 
 namespace Flowsharp.Samples.Console.Workflows
 {

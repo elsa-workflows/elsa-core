@@ -3,7 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Flowsharp.Models;
 using Flowsharp.Persistence;
-using Flowsharp.Persistence.Models;
 using Flowsharp.Runtime.Abstractions;
 using Flowsharp.Serialization;
 
@@ -13,9 +12,9 @@ namespace Flowsharp.Samples.Console.Programs
     {
         private readonly IWorkflowHost workflowHost;
         private readonly IWorkflowSerializer serializer;
-        private readonly IWorkflowDefinitionStore workflowStore;
+        private readonly IWorkflowStore workflowStore;
 
-        public WorkflowHostProgram(IWorkflowHost workflowHost, IWorkflowSerializer serializer, IWorkflowDefinitionStore workflowStore)
+        public WorkflowHostProgram(IWorkflowHost workflowHost, IWorkflowSerializer serializer, IWorkflowStore workflowStore)
         {
             this.workflowHost = workflowHost;
             this.serializer = serializer;
@@ -29,9 +28,8 @@ namespace Flowsharp.Samples.Console.Programs
             var resourceReader = new StreamReader(resource);
             var data = await resourceReader.ReadToEndAsync();
             var workflow = serializer.Deserialize(data);
-            var workflowDefinition = new WorkflowDefinition { Id = "1", Workflow = workflow};
 
-            await workflowStore.AddAsync(workflowDefinition, cancellationToken);
+            await workflowStore.AddAsync(workflow, cancellationToken);
             await workflowHost.TriggerWorkflowAsync("WriteLine", Variables.Empty, cancellationToken);
             await ReadAndResumeAsync("x", cancellationToken);
             await ReadAndResumeAsync("y", cancellationToken);
