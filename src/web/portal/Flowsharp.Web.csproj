@@ -5,9 +5,8 @@
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore.App" />
-        <PackageReference Include="OrchardCore.Application.Mvc.Targets">
-          <Version>1.0.0-beta3-69004</Version>
-        </PackageReference>
+        <PackageReference Include="OrchardCore.Application.Mvc.Targets" Version="1.0.0-beta3-69230" />
+        <PackageReference Include="OrchardCore.Resources" Version="1.0.0-beta3-69230" />
     </ItemGroup>
 
     <ItemGroup>

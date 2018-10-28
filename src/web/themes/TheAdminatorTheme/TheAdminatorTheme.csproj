@@ -5,38 +5,15 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="OrchardCore.DisplayManagement" Version="1.0.0-beta3-69004" />
-      <PackageReference Include="OrchardCore.ResourceManagement" Version="1.0.0-beta3-69004" />
-      <PackageReference Include="OrchardCore.Theme.Targets" Version="1.0.0-beta3-69004" />
-    </ItemGroup>
-    <ItemGroup>
-      <Content Include="Views\Layout.cshtml">
-        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-        <Pack>false</Pack>
-      </Content>
-      <Content Include="Views\Shared\SidebarNav.cshtml" />
-      <Content Include="Views\Shared\Topbar.cshtml" />
-      <Content Include="Views\_ViewImports.cshtml">
-        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-        <Pack>false</Pack>
-      </Content>
+      <PackageReference Include="OrchardCore.DisplayManagement" Version="1.0.0-beta3-69230" />
+      <PackageReference Include="OrchardCore.ResourceManagement" Version="1.0.0-beta3-69230" />
+      <PackageReference Include="OrchardCore.Theme.Targets" Version="1.0.0-beta3-69230" />
     </ItemGroup>
 
     <ItemGroup>
-      <RazorGenerate Remove="Views\Workflows\Index.cshtml" />
-      <RazorGenerate Remove="Pages\Shared\SidebarMenu.cshtml" />
-      <RazorGenerate Remove="Pages\Shared\Topbar.cshtml" />
-      <RazorGenerate Remove="Pages\Index.cshtml" />
-      <RazorGenerate Remove="Pages\Workflows.cshtml" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <EmbeddedResource Remove="ClientApp\node_modules\**" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Compile Remove="ClientApp\node_modules\**" />
-      <Folder Remove="ClientApp\node_modules\**" />
+        <EmbeddedResource Remove="Assets\node_modules\**" />
+      <Compile Remove="Assets\node_modules\**" />
+      <Folder Remove="Assets\node_modules\**" />
     </ItemGroup>
 
 </Project>

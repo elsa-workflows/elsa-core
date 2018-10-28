@@ -5,34 +5,37 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="OrchardCore.Module.Targets" Version="1.0.0-beta3-69004" />
-        <PackageReference Include="OrchardCore.DisplayManagement" Version="1.0.0-beta3-69004" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Content Include="Assets\css\workflow-editor-canvas.scss" />
-      <Content Include="Assets\js\index.js" />
-      <Content Include="Views\Shared\Components\WorkflowEditor\Default.cshtml">
-        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-        <Pack>false</Pack>
-      </Content>
-      <Content Include="Views\_ViewImports.cshtml">
-        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-        <Pack>false</Pack>
-      </Content>
-    </ItemGroup>
-
-    <ItemGroup>
-      <None Include="Assets\package-lock.json" />
-      <None Include="Assets\package.json" />
-      <None Include="Assets\webpack.config.js" />
-      <None Include="Views\Activity.Design.cshtml" />
+        <PackageReference Include="OrchardCore.Module.Targets" Version="1.0.0-beta3-69230" />
+        <PackageReference Include="OrchardCore.DisplayManagement" Version="1.0.0-beta3-69230" />
+        <PackageReference Include="OrchardCore.Resources" Version="1.0.0-beta3-69230" />
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\..\..\core\Flowsharp.Abstractions\Flowsharp.Abstractions.csproj" />
       <ProjectReference Include="..\..\..\core\Flowsharp.Core\Flowsharp.Core.csproj" />
       <ProjectReference Include="..\..\..\core\Flowsharp.Persistence.Abstractions\Flowsharp.Persistence.Abstractions.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="Assets\package.json" />
+      <Content Include="Assets\src\scripts\index.js" />
+      <Content Include="Assets\src\scripts\workflow-models.js" />
+      <Content Include="Assets\src\styles\index.scss" />
+      <Content Include="Assets\src\styles\postcss.config.js" />
+      <Content Include="Assets\webpack\config.base.js" />
+      <Content Include="Assets\webpack\config.dev.js" />
+      <Content Include="Assets\webpack\config.prod.js" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="Assets\scripts\workflow-editor.js" />
+      <None Include="Assets\src\scripts\workflow-editor.js" />
+      <None Remove="Assets\styles\workflow-editor.scss" />
+      <None Include="Assets\src\styles\workflow-editor.scss" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="wwwroot" />
     </ItemGroup>
 
 </Project>

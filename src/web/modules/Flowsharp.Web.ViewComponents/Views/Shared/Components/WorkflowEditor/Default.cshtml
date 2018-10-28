@@ -1,12 +1,11 @@
 @model WorkflowEditorViewModel
 
 <div>
-    <h2>Workflow Editor</h2>
-    <div class="flowsharp-canvas">
+    <div class="workflow-canvas">
         @foreach (var activityShape in Model.ActivityShapes)
         {
             @await DisplayAsync(activityShape)
         } 
     </div>
 </div>
-<script src="~/main.js" charset="UTF-8"></script>
+<script asp-name="flowsharpeditor" asp-src="~/Flowsharp.Web.ViewComponents/bundle.js" depends-on="jQuery" at="Foot"></script>

@@ -11,7 +11,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="OrchardCore.Module.Targets" Version="1.0.0-beta3-69004" />
+        <PackageReference Include="OrchardCore.Module.Targets" Version="1.0.0-beta3-69230" />
     </ItemGroup>
 
     <ItemGroup>

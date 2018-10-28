@@ -1,7 +1,13 @@
 @using System.Drawing
+@using Flowsharp.Activities
+@using Newtonsoft.Json
+@using Newtonsoft.Json.Serialization
+@model dynamic
 @{
+    var activity = (IActivity)Model.Activity;
+    var activityJson = JsonConvert.SerializeObject(activity, new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver()});
     var position = new Point(50, 50);
 }
-<div class="activity" style="left:@(position.X)px; top:@(position.Y)px;" id="@($"activity-1")" data-activity-id="1" >
+<div class="activity" style="left:@(position.X)px; top:@(position.Y)px;" id="@($"activity-1")" data-activity-id="1" data-activity-json="@activityJson">
     @await DisplayAsync(Model.Content)
 </div>
