@@ -1,4 +1,4 @@
-using Flowsharp.Activities;
+using System;
 using Flowsharp.Results;
 
 namespace Flowsharp.Handlers
@@ -10,5 +10,7 @@ namespace Flowsharp.Handlers
         protected ScheduleActivityResult ScheduleActivity(IActivity activity) => new ScheduleActivityResult(activity);
         protected ReturnValueResult SetReturnValue(object value) => new ReturnValueResult(value);
         protected FinishWorkflowResult Finish() => new FinishWorkflowResult();
+        protected FaultWorkflowResult Fault(string errorMessage) => new FaultWorkflowResult(errorMessage);
+        protected FaultWorkflowResult Fault(Exception exception) => new FaultWorkflowResult(exception);
     }
 }

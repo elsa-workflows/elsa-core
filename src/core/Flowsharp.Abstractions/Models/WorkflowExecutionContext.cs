@@ -11,16 +11,17 @@ namespace Flowsharp.Models
         public WorkflowExecutionContext(Workflow workflow)
         {
             Workflow = workflow;
-            IsFirstPass = true;            
+            IsFirstPass = true;
             scheduledActivities = new Stack<IActivity>();
         }
-        
+
         private readonly Stack<IActivity> scheduledActivities;
 
         public Workflow Workflow { get; }
         public bool HasScheduledActivities => scheduledActivities.Any();
         public bool IsFirstPass { get; set; }
         public IActivity CurrentActivity { get; private set; }
+
         public WorkflowExecutionScope CurrentScope
         {
             get => Workflow.CurrentScope;
@@ -28,7 +29,7 @@ namespace Flowsharp.Models
         }
 
         public void BeginScope()
-        { 
+        {
             Workflow.Scopes.Push(CurrentScope = new WorkflowExecutionScope());
         }
 
@@ -42,24 +43,30 @@ namespace Flowsharp.Models
         {
             scheduledActivities.Push(activity);
         }
-        
+
         public IActivity PopScheduledActivity()
         {
             CurrentActivity = scheduledActivities.Pop();
             return CurrentActivity;
         }
-        
+
         public void SetLastResult(object value)
         {
             CurrentScope.LastResult = value;
         }
 
-        public void Fault(Exception exception, IActivity activity)
+        public void Fault(Exception exception, IActivity activity) => Fault(exception.Message, activity);
+        
+        public void Fault(string errorMessage, IActivity activity)
         {
-            throw new NotImplementedException();
+            Workflow.Fault = new WorkflowFault
+            {
+                Message = errorMessage,
+                FaultedActivity = activity
+            };
         }
 
-        public Task HaltAsync(CancellationToken cancellationToken)
+        public void Halt()
         {
             var activity = CurrentActivity;
             if (!Workflow.BlockingActivities.Contains(activity))
@@ -68,14 +75,13 @@ namespace Flowsharp.Models
             }
 
             Workflow.Status = WorkflowStatus.Halted;
-            return Task.CompletedTask;
         }
 
         public void Finish()
         {
             Workflow.Status = WorkflowStatus.Finished;
         }
-        
+
         public void ScheduleNextActivities(WorkflowExecutionContext workflowContext, SourceEndpoint endpoint)
         {
             var completedActivity = workflowContext.CurrentActivity;

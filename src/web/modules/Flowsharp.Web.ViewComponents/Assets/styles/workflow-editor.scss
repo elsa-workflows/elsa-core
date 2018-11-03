@@ -19,8 +19,8 @@
         text-align: left;
         z-index: 20;
         position: absolute;
-        background-color: #eeeeef;
-        color: #000000;
+        background-color: #2196f3;
+        color: #ffffff;
         font-family: helvetica, sans-serif;
         padding: 1em;
         font-size: 0.7em;
@@ -28,15 +28,7 @@
         -moz-transition: -moz-box-shadow 0.15s ease-in;
         -o-transition: -o-box-shadow 0.15s ease-in;
         transition: box-shadow 0.15s ease-in;
-
-        &.activity-task {
-            border: 1px solid #7ab02c;
-        }
-
-        &.activity-event {
-            border: 1px solid #3a8acd;
-        }
-
+        
         &.activity-start, &.activity-blocking {
             background-color: #7ab02c;
             color: #ffffff;

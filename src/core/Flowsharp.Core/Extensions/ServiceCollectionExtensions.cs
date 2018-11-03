@@ -12,10 +12,10 @@ namespace Flowsharp.Extensions
         {
             return services
                 .AddScoped<IWorkflowSerializer, WorkflowSerializer>()
-                .AddSingleton<ITokenFormatter, YamlTokenFormatter>()
                 .AddScoped<IWorkflowTokenizer, WorkflowTokenizer>()
-                .AddSingleton<IWorkflowInvoker, WorkflowInvoker>()
-                .AddSingleton<IActivityInvoker, ActivityInvoker>()
+                .AddScoped<IWorkflowInvoker, WorkflowInvoker>()
+                .AddScoped<IActivityInvoker, ActivityInvoker>()
+                .AddSingleton<ITokenFormatter, YamlTokenFormatter>()
                 .AddSingleton<ITokenizerInvoker, TokenizerInvoker>()
                 .AddSingleton<ITokenizer, DefaultTokenizer>()
                 .AddSingleton<ITokenizer, ActivityTokenizer>()

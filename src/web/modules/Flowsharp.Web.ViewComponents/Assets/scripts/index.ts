@@ -2,7 +2,7 @@
 ///<reference path='./workflow-editor.ts' />
 
 $(function(){
-    $('.workflow-canvas').each((e, i) => {
+    $('.workflow-canvas').each((i, e) => {
         const editor=  new WorkflowEditor(e);
     });
 });

@@ -11,22 +11,19 @@ using OrchardCore.DisplayManagement;
 
 namespace Flowsharp.Web.ViewComponents.ViewComponents
 {
-    public class WorkflowEditor : ViewComponent
+    public class ActivityLibrary : ViewComponent
     {
-        private readonly IWorkflowStore workflowStore;
         private readonly IDisplayManager<IActivity> displayManager;
         private readonly IActivityInvoker activityInvoker;
 
-        public WorkflowEditor(IWorkflowStore workflowStore, IDisplayManager<IActivity> displayManager, IActivityInvoker activityInvoker)
+        public ActivityLibrary(IDisplayManager<IActivity> displayManager, IActivityInvoker activityInvoker)
         {
-            this.workflowStore = workflowStore;
             this.displayManager = displayManager;
             this.activityInvoker = activityInvoker;
         }
         
-        public async Task<IViewComponentResult> InvokeAsync(string workflowId, CancellationToken cancellationToken)
+        public async Task<IViewComponentResult> InvokeAsync(CancellationToken cancellationToken)
         {
-            var workflow = await workflowStore.GetAsync(workflowId, cancellationToken);
             var activities = workflow.Activities;
             var activityShapes = await BuildActivityShapesAsync(activities, workflow.Metadata.Id, "Design");
             var viewModel = new WorkflowEditorViewModel(workflow, activityShapes);

@@ -21,7 +21,7 @@ namespace Flowsharp.Results
             }
             else
             {
-                await workflowContext.HaltAsync(cancellationToken);
+                workflowContext.Halt();
             }
         }
     }

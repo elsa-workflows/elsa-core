@@ -27,6 +27,7 @@ namespace Flowsharp.Models
         public WorkflowExecutionScope CurrentScope { get; set; }
         public Variables Arguments { get; set; }
         public IList<IActivity> BlockingActivities { get; set; }
-        public WorkflowMetadata Metadata { get; set; } 
+        public WorkflowMetadata Metadata { get; set; }
+        public WorkflowFault Fault { get; set; }
     }
 }
