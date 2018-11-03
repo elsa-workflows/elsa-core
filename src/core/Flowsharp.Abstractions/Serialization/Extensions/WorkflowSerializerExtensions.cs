@@ -11,7 +11,7 @@ namespace Flowsharp.Serialization.Extensions
             return workflowSerializer.Deserialize(json);
         }
         
-        public static Workflow CreateOffspring(this IWorkflowSerializer workflowSerializer, Workflow parent)
+        public static Workflow Derive(this IWorkflowSerializer workflowSerializer, Workflow parent)
         {
             var child = workflowSerializer.Clone(parent);
             child.Metadata.ParentId = parent.Metadata.Id;

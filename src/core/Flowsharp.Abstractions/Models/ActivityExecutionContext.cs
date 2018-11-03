@@ -1,6 +1,4 @@
-﻿using Flowsharp.Activities;
-
-namespace Flowsharp.Models
+﻿namespace Flowsharp.Models
 {
     public class ActivityExecutionContext
     {

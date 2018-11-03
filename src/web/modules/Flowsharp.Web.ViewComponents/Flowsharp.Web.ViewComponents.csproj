@@ -17,25 +17,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Content Include="Assets\package.json" />
-      <Content Include="Assets\src\scripts\index.js" />
-      <Content Include="Assets\src\scripts\workflow-models.js" />
-      <Content Include="Assets\src\styles\index.scss" />
-      <Content Include="Assets\src\styles\postcss.config.js" />
-      <Content Include="Assets\webpack\config.base.js" />
-      <Content Include="Assets\webpack\config.dev.js" />
-      <Content Include="Assets\webpack\config.prod.js" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <None Remove="Assets\scripts\workflow-editor.js" />
-      <None Include="Assets\src\scripts\workflow-editor.js" />
-      <None Remove="Assets\styles\workflow-editor.scss" />
-      <None Include="Assets\src\styles\workflow-editor.scss" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="wwwroot" />
+      <Content Include="Assets\scripts\typings.d.ts" />
     </ItemGroup>
 
 </Project>

@@ -1,0 +1,17 @@
+[
+    {
+        "inputs": [
+            "assets/node_modules/jsplumb/css/jsplumbtoolkit-defaults.css",
+            "assets/styles/index.scss" 
+        ],
+        "output": "wwwroot/styles.css"
+    },
+    {
+        "inputs": [
+            "assets/node_modules/jsplumb/dist/js/jsplumb.js",
+            "assets/scripts/workflow-editor.ts",
+            "assets/scripts/index.ts"
+        ],
+        "output": "wwwroot/scripts.js"
+    }
+]

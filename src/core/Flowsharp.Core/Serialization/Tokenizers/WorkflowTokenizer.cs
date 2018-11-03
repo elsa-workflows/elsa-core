@@ -154,11 +154,9 @@ namespace Flowsharp.Serialization.Tokenizers
             foreach (var item in context.ActivityIdLookup)
             {
                 var activity = item.Key;
-                var activityId = item.Value;
                 var activityModel = JObject.FromObject(activity, new JsonSerializer { ContractResolver = new CamelCasePropertyNamesContractResolver()});
                 
-                activityModel.AddFirst(new JProperty("name", activity.GetType().Name));
-                activityModel.AddFirst(new JProperty("id", activityId));
+                activityModel.AddFirst(new JProperty("name", activity.Name));
                 activityModels.Add(activityModel);
             }
 
@@ -229,12 +227,11 @@ namespace Flowsharp.Serialization.Tokenizers
 
             foreach (var activityModel in activityModels)
             {
-                var id = activityModel["id"].Value<int>();
                 var name = activityModel["name"].Value<string>();
                 var activityType = GetActivityType(name);
                 var activity = activityType != null ? (IActivity)activityModel.ToObject(activityType) : new UnknownActivity();
 
-                dictionary.Add(id, activity);
+                dictionary.Add(activity.Id, activity);
             }
 
             return dictionary;

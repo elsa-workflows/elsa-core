@@ -1,13 +1,25 @@
-@using System.Drawing
-@using Flowsharp.Activities
+@using Flowsharp.Web.ViewComponents.Models
+@using Microsoft.Extensions.Localization
 @using Newtonsoft.Json
 @using Newtonsoft.Json.Serialization
 @model dynamic
 @{
     var activity = (IActivity)Model.Activity;
-    var activityJson = JsonConvert.SerializeObject(activity, new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver()});
-    var position = new Point(50, 50);
+    var id = activity.Id;
+    var endpoints = (IList<LocalizedString>)Model.Endpoints;
+    var serializerSettings = new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver() };
+    var activityJson = JsonConvert.SerializeObject(activity, serializerSettings);
+    var activityEndpoints = JsonConvert.SerializeObject(endpoints);
+    var designer = (ActivityDesignerMetadata)Model.Designer;
+    var x = designer.X;
+    var y = designer.Y;
 }
-<div class="activity" style="left:@(position.X)px; top:@(position.Y)px;" id="@($"activity-1")" data-activity-id="1" data-activity-json="@activityJson">
+<div 
+    class="activity" 
+    style="left:@(x)px; top:@(y)px;" 
+    id="@($"activity-{id}")" 
+    data-activity-id="@id" 
+    data-activity="@activityJson"
+    data-activity-endpoints="@activityEndpoints">
     @await DisplayAsync(Model.Content)
 </div>

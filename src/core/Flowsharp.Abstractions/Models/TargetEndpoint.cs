@@ -1,5 +1,3 @@
-using Flowsharp.Activities;
-
 namespace Flowsharp.Models
 {
     public class TargetEndpoint : Endpoint

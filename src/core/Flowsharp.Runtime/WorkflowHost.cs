@@ -40,7 +40,7 @@ namespace Flowsharp.Runtime
 
                 foreach (var activity in startActivities)
                 {
-                    var workflowInstance = workflowSerializer.CreateOffspring(workflow);
+                    var workflowInstance = workflowSerializer.Derive(workflow);
                     var workflowContext = await invoker.InvokeAsync(workflowInstance, activity, arguments, cancellationToken);
                     
                     await workflowStore.AddAsync(workflowInstance, cancellationToken);

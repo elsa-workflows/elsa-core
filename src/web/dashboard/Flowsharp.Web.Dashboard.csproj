@@ -1,0 +1,51 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>netcoreapp2.1</TargetFramework>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.App" />
+        <PackageReference Include="OrchardCore.Application.Mvc.Targets" Version="1.0.0-beta3-69230" />
+        <PackageReference Include="OrchardCore.Resources" Version="1.0.0-beta3-69230" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Folder Remove="ClientApp\node_modules\" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Folder Remove="wwwroot\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Remove="App_Data\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <EmbeddedResource Remove="App_Data\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="App_Data\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Remove="App_Data\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <_ContentIncludedByDefault Remove="Views\Home\Index.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\_ViewImports.cshtml" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\modules\Flowsharp.Web.Activities.Console\Flowsharp.Web.Activities.Console.csproj" />
+      <ProjectReference Include="..\modules\Flowsharp.Web.Activities.Primitives\Flowsharp.Web.Activities.Primitives.csproj" />
+      <ProjectReference Include="..\modules\Flowsharp.Web.Management\Flowsharp.Web.Management.csproj" />
+      <ProjectReference Include="..\modules\Flowsharp.Web.OrchardCoreLite\Flowsharp.Web.OrchardCoreLite.csproj" />
+      <ProjectReference Include="..\modules\Flowsharp.Web.Persistence.FileSystem\Flowsharp.Web.Persistence.FileSystem.csproj" />
+      <ProjectReference Include="..\modules\Flowsharp.Web.ViewComponents\Flowsharp.Web.ViewComponents.csproj" />
+      <ProjectReference Include="..\themes\TheAdminatorTheme\TheAdminatorTheme.csproj" />
+    </ItemGroup>
+
+</Project>

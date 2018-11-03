@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netcoreapp2.1</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="OrchardCore.Module.Targets" Version="1.0.0-beta3-69230" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\activities\Flowsharp.Activities.Primitives\Flowsharp.Activities.Primitives.csproj" />
+      <ProjectReference Include="..\Flowsharp.Web.Abstractions\Flowsharp.Web.Abstractions.csproj" />
+    </ItemGroup>
+
+</Project>

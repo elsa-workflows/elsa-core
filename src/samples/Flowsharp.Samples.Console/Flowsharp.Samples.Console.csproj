@@ -14,11 +14,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\core\Flowsharp.Activities.Primitives\Flowsharp.Activities.Primitives.csproj" />
+    <ProjectReference Include="..\..\activities\Flowsharp.Activities.Console\Flowsharp.Activities.Console.csproj" />
+    <ProjectReference Include="..\..\activities\Flowsharp.Activities.Primitives\Flowsharp.Activities.Primitives.csproj" />
     <ProjectReference Include="..\..\core\Flowsharp.Core\Flowsharp.Core.csproj" />
     <ProjectReference Include="..\..\core\Flowsharp.Persistence.InMemory\Flowsharp.Persistence.InMemory.csproj" />
     <ProjectReference Include="..\..\core\Flowsharp.Runtime\Flowsharp.Runtime.csproj" />
-    <ProjectReference Include="..\..\Flowsharp.Activities.Console\Flowsharp.Activities.Console.csproj" />
   </ItemGroup>
 
 </Project>

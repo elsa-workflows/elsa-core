@@ -1,10 +1,9 @@
-
-using Flowsharp.Activities;
 using Flowsharp.Handlers;
+using Microsoft.Extensions.DependencyInjection;
 using OrchardCore.DisplayManagement.Handlers;
 
 // ReSharper disable once CheckNamespace
-namespace Microsoft.Extensions.DependencyInjection
+namespace Flowsharp.Web.Abstractions.Extensions
 {
     public static class ServiceCollectionExtensions
     {

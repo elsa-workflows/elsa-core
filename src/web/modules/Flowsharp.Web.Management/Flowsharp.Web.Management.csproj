@@ -22,9 +22,4 @@
       <ProjectReference Include="..\Flowsharp.Web.ViewComponents\Flowsharp.Web.ViewComponents.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Configuration" />
-      <Folder Include="Data" />
-    </ItemGroup>
-
 </Project>
