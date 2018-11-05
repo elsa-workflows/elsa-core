@@ -1,22 +1,59 @@
 @model Workflow
 
-<div class="full-container">
-<div class="peers fxw-nw pos-r">
-    <div class="peer bdR" id="chat-sidebar">
-        <div class="layers h-100">
-            <div class="bdB layer w-100">
-                <input type="text" placeholder="Search activities..." name="chatSearch" class="p-15 bdrs-0 w-100 bdw-0">
-            </div>
-            <div class="layer w-100 fxg-1 scrollable pos-r ps">
-                @for (var i = 0; i < 20; i++)
-                {
-                    <div class="fxw-nw ai-c p-20 bdB bgc-white bgcH-grey-50 cur-p">
-                        <div class="peers">
-                            <div class="peer"><i class="mR-10 lh-2 ti-email"></i></div>
-                            <div class="peer"><h5 class="fw-300 c-grey-800">Write Line</h5></div>
+<script
+    asp-name="test"
+    asp-src="https://cdnjs.cloudflare.com/ajax/libs/systemjs/0.20.13/system.js"
+    at="Head">
+</script>
 
+<div class="full-container">
+    <div class="peers fxw-nw pos-r">
+        <div class="peer bdR" id="chat-sidebar">
+            <div class="layers h-100">
+                <div class="bdB layer w-100">
+                    <input type="text" placeholder="Search activities..." name="chatSearch" class="p-15 bdrs-0 w-100 bdw-0">
+                </div>
+                <div class="layer w-100 fxg-1 scrollable pos-r ps">
+                    @await Component.InvokeAsync("ActivityLibrary")
+                    <div class="ps__rail-x" style="left: 0px; bottom: 0px;">
+                        <div class="ps__thumb-x" tabindex="0" style="left: 0px; width: 0px;"></div>
+                    </div>
+                    <div class="ps__rail-y" style="top: 0px; right: 0px;">
+                        <div class="ps__thumb-y" tabindex="0" style="top: 0px; height: 0px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="peer peer-greed" id="chat-box">
+            <div class="layers h-100">
+                <div class="layer w-100">
+                    <div class="peers fxw-nw jc-sb ai-c pY-20 pX-30 bgc-white">
+                        <div class="peers ai-c">
+                            <div class="peer d-n@md+">
+                                <a href="" title="" id="chat-sidebar-toggle" class="td-n c-grey-900 cH-blue-500 mR-30">
+                                    <i class="ti-menu"></i>
+                                </a>
+                            </div>
+                            <div class="peer">
+                                <h5 class="c-grey-900 mB-5">Sample Workflow</h5><i class="fsz-sm lh-1">This workflow is a sample workflow demonstrating core workflow functionality</i>
+                            </div>
                         </div>
-                        <small class="fsz-sm lh-0 c-grey-500">Writes a line of text to the out stream.</small>
+                        <div class="peers">
+                            <a href="" class="peer td-n c-grey-900 cH-blue-500 fsz-md mR-30" title="">
+                                <i class="ti-video-camera"></i>
+                            </a>
+                            <a href="" class="peer td-n c-grey-900 cH-blue-500 fsz-md mR-30" title="">
+                                <i class="ti-headphone"></i>
+                            </a>
+                            <a href="" class="peer td-n c-grey-900 cH-blue-500 fsz-md" title="">
+                                <i class="ti-more"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="layer w-100 fxg-1 bgc-grey-200 scrollable pos-r ps">
+                    <div class="p-20 gapY-15">
+                        @await Component.InvokeAsync("WorkflowDesigner", new { workflowId = Model.Metadata.Id })
                     </div>
                     <div class="ps__rail-x" style="left: 0px; bottom: 0px;">
                         <div class="ps__thumb-x" tabindex="0" style="left: 0px; width: 0px;"></div>
@@ -24,59 +61,18 @@
                     <div class="ps__rail-y" style="top: 0px; right: 0px;">
                         <div class="ps__thumb-y" tabindex="0" style="top: 0px; height: 0px;"></div>
                     </div>
-                }
-            </div>
-        </div>
-    </div>
-    <div class="peer peer-greed" id="chat-box">
-        <div class="layers h-100">
-            <div class="layer w-100">
-                <div class="peers fxw-nw jc-sb ai-c pY-20 pX-30 bgc-white">
-                    <div class="peers ai-c">
-                        <div class="peer d-n@md+">
-                            <a href="" title="" id="chat-sidebar-toggle" class="td-n c-grey-900 cH-blue-500 mR-30">
-                                <i class="ti-menu"></i>
-                            </a>
+                </div>
+                <div class="layer w-100">
+                    <div class="p-20 bdT bgc-white">
+                        <div class="pos-r">
+                            <input type="text" class="form-control bdrs-10em m-0" placeholder="Say something...">
+                            <button type="button" class="btn btn-primary bdrs-50p w-2r p-0 h-2r pos-a r-1 t-1">
+                                <i class="fa fa-paper-plane-o"></i>
+                            </button>
                         </div>
-                        <div class="peer">
-                            <h5 class="c-grey-900 mB-5">Sample Workflow</h5><i class="fsz-sm lh-1">This workflow is a sample workflow demonstrating core workflow functionality</i>
-                        </div>
-                    </div>
-                    <div class="peers">
-                        <a href="" class="peer td-n c-grey-900 cH-blue-500 fsz-md mR-30" title="">
-                            <i class="ti-video-camera"></i>
-                        </a>
-                        <a href="" class="peer td-n c-grey-900 cH-blue-500 fsz-md mR-30" title="">
-                            <i class="ti-headphone"></i>
-                        </a>
-                        <a href="" class="peer td-n c-grey-900 cH-blue-500 fsz-md" title="">
-                            <i class="ti-more"></i>
-                        </a>
-                    </div>
-                </div>
-            </div>
-            <div class="layer w-100 fxg-1 bgc-grey-200 scrollable pos-r ps">
-                <div class="p-20 gapY-15">
-                    @await Component.InvokeAsync("WorkflowEditor", new { workflowId = Model.Metadata.Id })
-                </div>
-                <div class="ps__rail-x" style="left: 0px; bottom: 0px;">
-                    <div class="ps__thumb-x" tabindex="0" style="left: 0px; width: 0px;"></div>
-                </div>
-                <div class="ps__rail-y" style="top: 0px; right: 0px;">
-                    <div class="ps__thumb-y" tabindex="0" style="top: 0px; height: 0px;"></div>
-                </div>
-            </div>
-            <div class="layer w-100">
-                <div class="p-20 bdT bgc-white">
-                    <div class="pos-r">
-                        <input type="text" class="form-control bdrs-10em m-0" placeholder="Say something...">
-                        <button type="button" class="btn btn-primary bdrs-50p w-2r p-0 h-2r pos-a r-1 t-1">
-                            <i class="fa fa-paper-plane-o"></i>
-                        </button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 </div>

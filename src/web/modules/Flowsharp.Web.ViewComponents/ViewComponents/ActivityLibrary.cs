@@ -2,53 +2,45 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Flowsharp.Extensions;
-using Flowsharp.Persistence;
-using Flowsharp.Web.ViewComponents.Models;
+using Flowsharp.Models;
 using Flowsharp.Web.ViewComponents.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using OrchardCore.DisplayManagement;
+using OrchardCore.DisplayManagement.Views;
 
 namespace Flowsharp.Web.ViewComponents.ViewComponents
 {
     public class ActivityLibrary : ViewComponent
     {
-        private readonly IDisplayManager<IActivity> displayManager;
-        private readonly IActivityInvoker activityInvoker;
+        private readonly IActivityLibrary activityLibrary;
+        private readonly IShapeFactory shapeFactory;
 
-        public ActivityLibrary(IDisplayManager<IActivity> displayManager, IActivityInvoker activityInvoker)
+        public ActivityLibrary(IActivityLibrary activityLibrary,
+            IShapeFactory shapeFactory)
         {
-            this.displayManager = displayManager;
-            this.activityInvoker = activityInvoker;
+            this.activityLibrary = activityLibrary;
+            this.shapeFactory = shapeFactory;
         }
         
         public async Task<IViewComponentResult> InvokeAsync(CancellationToken cancellationToken)
         {
-            var activities = workflow.Activities;
-            var activityShapes = await BuildActivityShapesAsync(activities, workflow.Metadata.Id, "Design");
-            var viewModel = new WorkflowEditorViewModel(workflow, activityShapes);
+            var descriptors = await activityLibrary.GetActivitiesAsync(cancellationToken);
+            var activityShapes = await BuildActivityShapesAsync(descriptors);
+            var viewModel = new ActivityLibraryViewModel(activityShapes);
             
             return View(viewModel);
         }
 
-        private async Task<ICollection<dynamic>> BuildActivityShapesAsync(IEnumerable<IActivity> activities, string workflowId, string displayType)
+        private async Task<ICollection<IShape>> BuildActivityShapesAsync(IEnumerable<ActivityDescriptor> descriptors)
         {
-            return await Task.WhenAll(activities.Select((x, i) => BuildActivityShapeAsync(x, i, workflowId, displayType)));
+            return await Task.WhenAll(descriptors.Select(BuildActivityShapeAsync));
         }
         
-        private async Task<dynamic> BuildActivityShapeAsync(IActivity activity, int index, string workflowId, string displayType)
+        private async Task<IShape> BuildActivityShapeAsync(ActivityDescriptor descriptor)
         {
-            dynamic activityShape = await displayManager.BuildDisplayAsync(activity, null, displayType);
-            var customFields = activity.Metadata.CustomFields;
-            var designerMetadata = customFields.Get("Designer", () => new ActivityDesignerMetadata());
-            
-            activityShape.Metadata.Type = $"Activity_{displayType}";
-            activityShape.Endpoints = activityInvoker.GetEndpoints(activity).ToList();
-            activityShape.Activity = activity;
-            activityShape.WorkflowId = workflowId;
-            activityShape.Index = index;
-            activityShape.Designer = designerMetadata;
-            
+            var activityShape = await shapeFactory.CreateAsync("Activity_Card", () => Task.FromResult<IShape>(new ActivityDescriptorViewModel(descriptor)));
+            activityShape.Metadata.Alternates.Add($"Activity_Card__{descriptor.Name}");
+            activityShape.Metadata.Type = "Activity_Card";
             return activityShape;
         }
     }

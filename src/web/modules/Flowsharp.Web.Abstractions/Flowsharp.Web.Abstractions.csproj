@@ -5,7 +5,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="OrchardCore.DisplayManagement" Version="1.0.0-beta3-69230" />
+      <PackageReference Include="OrchardCore.DisplayManagement" Version="1.0.0-beta3-69369" />
     </ItemGroup>
 
     <ItemGroup>

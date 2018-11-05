@@ -12,15 +12,11 @@ namespace Flowsharp.Web.Abstractions.Drivers
     /// </summary>
     public abstract class ActivityDisplayDriver<TActivity> : DisplayDriver<IActivity, TActivity> where TActivity : class, IActivity
     {
-        private static readonly string ThumbnailShapeType = $"{typeof(TActivity).Name}_Thumbnail";
         private static readonly string DesignShapeType = $"{typeof(TActivity).Name}_Design";
 
         public override IDisplayResult Display(TActivity model)
         {
-            return Combine(
-                Shape(ThumbnailShapeType, new ActivityViewModel<TActivity>(model)).Location("Thumbnail", "Content"),
-                Shape(DesignShapeType, new ActivityViewModel<TActivity>(model)).Location("Design", "Content")
-            );
+            return Shape(DesignShapeType, new ActivityViewModel<TActivity>(model)).Location("Design", "Content");
         }
     }
 

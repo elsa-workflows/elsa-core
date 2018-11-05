@@ -1,17 +1,37 @@
 [
     {
         "inputs": [
-            "assets/node_modules/jsplumb/css/jsplumbtoolkit-defaults.css",
-            "assets/styles/index.scss" 
+            "assets/scripts/decode-html/decode-html.ts"
         ],
-        "output": "wwwroot/styles.css"
+        "output": "wwwroot/shared.js"
+    },
+    {
+        "inputs": [
+            "assets/node_modules/jsplumb/css/jsplumbtoolkit-defaults.css",
+            "assets/styles/workflow-designer.scss"
+        ],
+        "output": "wwwroot/workflow-designer.css"
     },
     {
         "inputs": [
             "assets/node_modules/jsplumb/dist/js/jsplumb.js",
-            "assets/scripts/workflow-editor.ts",
-            "assets/scripts/index.ts"
+            "assets/scripts/flowsharp/workflow-designer/config.ts",
+            "assets/scripts/flowsharp/workflow-designer/designer.ts",
+            "assets/scripts/flowsharp/workflow-designer/index.ts"
         ],
-        "output": "wwwroot/scripts.js"
+        "output": "wwwroot/workflow-designer.js"
+    },
+    {
+        "inputs": [
+            "assets/styles/activity-library.scss"
+        ],
+        "output": "wwwroot/activity-library.css"
+    },
+    {
+        "inputs": [
+            "assets/scripts/flowsharp/activity-library/activity-library.ts",
+            "assets/scripts/flowsharp/activity-library/index.ts" 
+        ],
+        "output": "wwwroot/activity-library.js"
     }
 ]

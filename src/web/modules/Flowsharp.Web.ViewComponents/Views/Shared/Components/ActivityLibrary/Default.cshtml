@@ -1,0 +1,12 @@
+@model ActivityLibraryViewModel
+
+<div id="flowsharp-activity-library">
+    @foreach (var activityShape in Model.ActivityShapes)
+    {
+        @await DisplayAsync(activityShape)
+    } 
+</div>
+
+<style asp-name="flowsharp-activity-library-style" asp-src="~/Flowsharp.Web.ViewComponents/activity-library.css"></style>
+<script asp-name="flowsharp-shared-script" asp-src="~/Flowsharp.Web.ViewComponents/shared.js" depends-on="jQuery" at="Foot"></script>
+<script asp-name="flowsharp-activity-library-script" asp-src="~/Flowsharp.Web.ViewComponents/activity-library.js" depends-on="jQuery, flowsharp-shared-script" at="Foot"></script>

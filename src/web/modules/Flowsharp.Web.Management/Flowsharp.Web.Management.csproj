@@ -5,21 +5,21 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Content Include="Views\Home\Index.cshtml" />
-      <Content Include="Views\Workflows\Edit.cshtml" />
-      <Content Include="Views\Workflows\Index.cshtml" />
-      <Content Include="Views\_ViewImports.cshtml" />
+        <Content Include="Views\Home\Index.cshtml" />
+        <Content Include="Views\Workflows\Edit.cshtml" />
+        <Content Include="Views\Workflows\Index.cshtml" />
+        <Content Include="Views\_ViewImports.cshtml" />
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="OrchardCore.FileStorage.FileSystem" Version="1.0.0-beta3-69230" />
-      <PackageReference Include="OrchardCore.Module.Targets" Version="1.0.0-beta3-69230" />
-      <PackageReference Include="OrchardCore.Mvc.Core" Version="1.0.0-beta3-69230" />
-      <PackageReference Include="OrchardCore.DisplayManagement" Version="1.0.0-beta3-69230" />
+        <PackageReference Include="OrchardCore.FileStorage.FileSystem" Version="1.0.0-beta3-69369" />
+        <PackageReference Include="OrchardCore.Module.Targets" Version="1.0.0-beta3-69369" />
+        <PackageReference Include="OrchardCore.Mvc.Core" Version="1.0.0-beta3-69369" />
+        <PackageReference Include="OrchardCore.DisplayManagement" Version="1.0.0-beta3-69369" />
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Flowsharp.Web.ViewComponents\Flowsharp.Web.ViewComponents.csproj" />
+        <ProjectReference Include="..\Flowsharp.Web.ViewComponents\Flowsharp.Web.ViewComponents.csproj" />
     </ItemGroup>
 
 </Project>

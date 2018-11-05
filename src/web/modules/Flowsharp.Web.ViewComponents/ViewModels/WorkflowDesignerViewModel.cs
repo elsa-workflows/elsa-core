@@ -4,9 +4,9 @@ using Flowsharp.Models;
 
 namespace Flowsharp.Web.ViewComponents.ViewModels
 {
-    public class WorkflowEditorViewModel
+    public class WorkflowDesignerViewModel
     {
-        public WorkflowEditorViewModel(Workflow workflow, IEnumerable<dynamic> activityShapes)
+        public WorkflowDesignerViewModel(Workflow workflow, IEnumerable<dynamic> activityShapes)
         {
             Workflow = workflow;
             ActivityShapes = activityShapes.ToList();

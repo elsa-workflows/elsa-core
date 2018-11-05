@@ -16,7 +16,7 @@ namespace Flowsharp.Web.Persistence.FileSystem.Services
 
         public Task<IFileStoreEntry> GetFileInfoAsync(string path) => fileStore.GetFileInfoAsync(path);
         public Task<IFileStoreEntry> GetDirectoryInfoAsync(string path) => fileStore.GetDirectoryInfoAsync(path);
-        public Task<IEnumerable<IFileStoreEntry>> GetDirectoryContentAsync(string path = null) => fileStore.GetDirectoryContentAsync(path);
+        public Task<IEnumerable<IFileStoreEntry>> GetDirectoryContentAsync(string path = null, bool includeSubDirectories = false) => fileStore.GetDirectoryContentAsync(path, includeSubDirectories);
         public Task<bool> TryCreateDirectoryAsync(string path) => fileStore.TryCreateDirectoryAsync(path);
         public Task<bool> TryDeleteFileAsync(string path) => fileStore.TryDeleteFileAsync(path);
         public Task<bool> TryDeleteDirectoryAsync(string path) => fileStore.TryDeleteDirectoryAsync(path);

@@ -2,9 +2,12 @@
     "private": true,
     "version": "1.0.0",
     "devDependencies": {
-        "@types/jquery": "^3.3.22"
+        "@types/jquery": "^3.3.22",
+        "@types/node": "^10.12.2"
     },
     "dependencies": {
-        "jsplumb": "^2.8.3"
+        "decode-html": "^2.0.0",
+        "jsplumb": "^2.8.3",
+        "requirejs": "^2.3.6"
     }
 }

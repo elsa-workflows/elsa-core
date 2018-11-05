@@ -5,19 +5,15 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="OrchardCore.Module.Targets" Version="1.0.0-beta3-69230" />
-        <PackageReference Include="OrchardCore.DisplayManagement" Version="1.0.0-beta3-69230" />
-        <PackageReference Include="OrchardCore.Resources" Version="1.0.0-beta3-69230" />
+        <PackageReference Include="OrchardCore.Module.Targets" Version="1.0.0-beta3-69369" />
+        <PackageReference Include="OrchardCore.DisplayManagement" Version="1.0.0-beta3-69369" />
+        <PackageReference Include="OrchardCore.Resources" Version="1.0.0-beta3-69369" />
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\..\core\Flowsharp.Abstractions\Flowsharp.Abstractions.csproj" />
-      <ProjectReference Include="..\..\..\core\Flowsharp.Core\Flowsharp.Core.csproj" />
-      <ProjectReference Include="..\..\..\core\Flowsharp.Persistence.Abstractions\Flowsharp.Persistence.Abstractions.csproj" />
+        <ProjectReference Include="..\..\..\core\Flowsharp.Abstractions\Flowsharp.Abstractions.csproj" />
+        <ProjectReference Include="..\..\..\core\Flowsharp.Core\Flowsharp.Core.csproj" />
+        <ProjectReference Include="..\..\..\core\Flowsharp.Persistence.Abstractions\Flowsharp.Persistence.Abstractions.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Content Include="Assets\scripts\typings.d.ts" />
-    </ItemGroup>
-
-</Project>
+</Project> 

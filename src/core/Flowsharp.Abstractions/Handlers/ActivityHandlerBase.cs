@@ -11,6 +11,8 @@ namespace Flowsharp.Handlers
     public abstract class ActivityHandlerBase<T> : IActivityHandler where T : IActivity
     {
         public Type ActivityType => typeof(T);
+        public virtual LocalizedString DisplayText => new LocalizedString(ActivityType.Name, ActivityType.Name);
+        public virtual LocalizedString Description => new LocalizedString("", "");
         public Task<bool> CanExecuteAsync(IActivity activity, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken) => OnCanExecuteAsync((T)activity, workflowContext, cancellationToken);
         public Task<ActivityExecutionResult> ExecuteAsync(IActivity activity, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken) => OnExecuteAsync((T) activity, workflowContext, cancellationToken); 
         public Task<ActivityExecutionResult> ResumeAsync(IActivity activity, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken) => OnResumeAsync((T)activity, workflowContext, cancellationToken);
@@ -22,12 +24,7 @@ namespace Flowsharp.Handlers
         protected virtual ActivityExecutionResult OnResume(T activity, WorkflowExecutionContext workflowContext) => Noop();
         protected NoopResult Noop() => new NoopResult();
         protected IEnumerable<LocalizedString> Endpoints(params LocalizedString[] endpoints) => endpoints;
-        
-        public virtual IEnumerable<LocalizedString> GetEndpoints()
-        {
-            return Endpoints(GetEndpoint());
-        }
-        
+        public virtual IEnumerable<LocalizedString> GetEndpoints() => Endpoints(GetEndpoint());
         protected virtual LocalizedString GetEndpoint() => throw new NotImplementedException("At least GetEndpoints or GetEndpoint must be overridden.");
     }
 }

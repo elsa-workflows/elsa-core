@@ -3,5 +3,5 @@
 [assembly: Module(
     Name = "Flowsharp Workflows Management",
     Description = "Provides admin screens to manage workflows.",
-    Dependencies = new[]{ "Flowsharp.Web.ViewComponents" }
+    Dependencies = new[] { "Flowsharp.Web.ViewComponents" }
 )]

@@ -16,14 +16,14 @@ namespace Flowsharp.Web.Management.Controllers
         {
             this.workflowStore = workflowStore;
         }
-        
+
         public async Task<IActionResult> Index(CancellationToken cancellationToken)
         {
             var workflowDefinitions = await workflowStore.GetManyAsync(new AllWorkflows(), cancellationToken);
             return View(workflowDefinitions.ToList());
         }
-        
-        
+
+
         [HttpGet("edit/{id}")]
         public async Task<IActionResult> Edit(string id, CancellationToken cancellationToken)
         {

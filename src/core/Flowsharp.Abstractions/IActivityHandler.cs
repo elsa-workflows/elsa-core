@@ -14,6 +14,16 @@ namespace Flowsharp
         /// The type of activity handled by this handler.
         /// </summary>
         Type ActivityType { get; }
+        
+        /// <summary>
+        /// The friendly name of the activity.
+        /// </summary>
+        LocalizedString DisplayText { get; }
+        
+        /// <summary>
+        /// A brief description of the activity. Used by tooling.
+        /// </summary>
+        LocalizedString Description { get; }
 
         /// <summary>
         /// Returns the available endpoints that can be triggered.

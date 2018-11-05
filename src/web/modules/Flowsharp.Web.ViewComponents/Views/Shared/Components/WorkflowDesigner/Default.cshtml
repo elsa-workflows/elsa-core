@@ -1,0 +1,11 @@
+@model WorkflowDesignerViewModel
+
+<div class="workflow-canvas">
+    @foreach (var activityShape in Model.ActivityShapes)
+    {
+        @await DisplayAsync(activityShape)
+    } 
+</div>
+
+<style asp-name="flowsharp-workflow-editor-style" asp-src="~/Flowsharp.Web.ViewComponents/workflow-designer.css"></style>
+<script asp-name="flowsharp-workflow-script" asp-src="~/Flowsharp.Web.ViewComponents/workflow-designer.js" depends-on="jQuery" at="Foot"></script>

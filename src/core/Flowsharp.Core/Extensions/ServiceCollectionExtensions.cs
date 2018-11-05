@@ -1,3 +1,4 @@
+using Flowsharp.ActivityProviders;
 using Flowsharp.Expressions;
 using Flowsharp.Serialization;
 using Flowsharp.Serialization.Formatters;
@@ -15,6 +16,8 @@ namespace Flowsharp.Extensions
                 .AddScoped<IWorkflowTokenizer, WorkflowTokenizer>()
                 .AddScoped<IWorkflowInvoker, WorkflowInvoker>()
                 .AddScoped<IActivityInvoker, ActivityInvoker>()
+                .AddScoped<IActivityProvider, TypedActivityProvider>()
+                .AddScoped<IActivityLibrary, ActivityLibrary>()
                 .AddSingleton<ITokenFormatter, YamlTokenFormatter>()
                 .AddSingleton<ITokenizerInvoker, TokenizerInvoker>()
                 .AddSingleton<ITokenizer, DefaultTokenizer>()

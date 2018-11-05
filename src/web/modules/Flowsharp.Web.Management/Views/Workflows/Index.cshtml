@@ -3,7 +3,8 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-md-12">
-            <div class="bgc-white bd bdrs-3 p-20 mB-20"><h4 class="c-grey-900 mB-20">Workflow Definitions</h4>
+            <div class="bgc-white bd bdrs-3 p-20 mB-20">
+                <h4 class="c-grey-900 mB-20">Workflow Definitions</h4>
                 <table id="dataTable" class="table table-striped table-bordered dataTable" cellspacing="0" width="100%" role="grid" aria-describedby="dataTable_info" style="width: 100%;" data-turbolinks="false">
                     <thead>
                     <tr role="row">
@@ -29,9 +30,11 @@
                     {
                         var rowClass = index % 2 == 0 ? "even" : "odd";
                         index++;
-                        
+
                         <tr role="row" class="@rowClass">
-                            <td><a asp-action="Edit" asp-route-id="@workflowDefinition.Metadata.Id">@workflowDefinition.Metadata.Id</a></td>
+                            <td>
+                                <a asp-action="Edit" asp-route-id="@workflowDefinition.Metadata.Id">@workflowDefinition.Metadata.Id</a>
+                            </td>
                             <td class="sorting_1">@workflowDefinition.Metadata.Name</td>
                             <td>@workflowDefinition.Metadata.Description</td>
                             <td><a asp-action="Edit" asp-route-id="@workflowDefinition.Metadata.Id">edit</a> | delete | enable</td>
