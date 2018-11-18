@@ -3,7 +3,7 @@ using Flowsharp.Web.Abstractions.Drivers;
 
 namespace Flowsharp.Web.Activities.Primitives.Drivers
 {
-    public class UnknownActivityDriver : TypedActivityDisplayDriver<UnknownActivity>
+    public class UnknownActivityDriver : ActivityDisplayDriver<UnknownActivity>
     {
     }
 }

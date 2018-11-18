@@ -11,11 +11,11 @@ namespace Flowsharp.Web.Abstractions.Drivers
     /// <summary>
     /// Base class for activity drivers.
     /// </summary>
-    public abstract class ActivityDisplayDriver : DisplayDriver<IActivity>
+    public abstract class ActivityDisplayDriver<TActivity> : DisplayDriver<IActivity, TActivity> where TActivity : class, IActivity
     {
-        public override IDisplayResult Display(IActivity model)
+        public override IDisplayResult Display(TActivity model)
         {
-            return Shape(GetDesignShapeType(model), new ActivityViewModel(model)).Location("Design", "Content");
+            return Shape(GetDesignShapeType(model), new ActivityViewModel<TActivity>(model)).Location("Design", "Content");
         }
 
         protected string GetDesignShapeType(IActivity activity) => $"{activity.Name}_Design";
@@ -24,14 +24,14 @@ namespace Flowsharp.Web.Abstractions.Drivers
     /// <summary>
     /// Base class for activity drivers using a strongly typed view model.
     /// </summary>
-    public abstract class ActivityDisplayDriver<TEditViewModel> : ActivityDisplayDriver where TEditViewModel : class, new()
+    public abstract class ActivityDisplayDriver<TActivity, TEditViewModel> : ActivityDisplayDriver<TActivity> where TEditViewModel : class, new() where TActivity : class, IActivity
     {
-        public override IDisplayResult Edit(IActivity model)
+        public override IDisplayResult Edit(TActivity model)
         {
             return Initialize(GetEditorShapeType(model), (Func<TEditViewModel, Task>)(viewModel => EditActivityAsync(model, viewModel))).Location("Content");
         }
 
-        public override async Task<IDisplayResult> UpdateAsync(IActivity model, IUpdateModel updater)
+        public override async Task<IDisplayResult> UpdateAsync(TActivity model, IUpdateModel updater)
         {
             var viewModel = new TEditViewModel();
 

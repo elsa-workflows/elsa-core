@@ -233,7 +233,7 @@ namespace Flowsharp.Serialization.Tokenizers
             {
                 var name = activityModel["name"].Value<string>();
                 var activityDescriptor = await GetActivityDescriptorAsync(name, cancellationToken);
-                var activity = activityDescriptor != null ? (IActivity)activityModel.ToObject(activityDescriptor.Type) : new UnknownActivity();
+                var activity = activityDescriptor != null ? (IActivity)activityModel.ToObject(activityDescriptor.ActivityType) : new UnknownActivity();
 
                 dictionary.Add(activity.Id, activity);
             }

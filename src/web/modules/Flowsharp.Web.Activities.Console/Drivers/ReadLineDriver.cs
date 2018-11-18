@@ -3,7 +3,7 @@ using Flowsharp.Web.Abstractions.Drivers;
 
 namespace Flowsharp.Web.Activities.Console.Drivers
 {
-    public class ReadLineDriver : TypedActivityDisplayDriver<ReadLine>
+    public class ReadLineDriver : ActivityDisplayDriver<ReadLine>
     {
     }
 }
