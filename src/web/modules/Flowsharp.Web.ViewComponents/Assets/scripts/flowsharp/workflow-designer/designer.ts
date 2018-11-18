@@ -2,24 +2,38 @@
 ///<reference path='../../@types/jsplumb.d.ts' />
 ///<reference path='../models/index.d.ts' />
 ///<reference path='./config.ts' />
-
-import {Activity} from "../models/activity";
+///<reference path='./activity-editor.ts' />
 
 namespace Flowsharp {
     export class WorkflowDesigner {
-        private readonly container: any;
         private plumber: any;
         private activityElements: any;
         private activities: any[];
+        private static onDragOver = (e: JQuery.Event) => {
+            e.preventDefault();
+        };
+        private activityEditor: ActivityEditor;
+        private onDrop = (e: JQuery.Event) => {
+            e.preventDefault();
 
-        constructor(container: any) {
-            this.container = container;
-            this.readActivities();
-            this.plumber = createJsPlumbInstance();
-            this.initializeNodes();
+            const dragEvent = <DragEvent>e.originalEvent;
+            const activityDescriptor: ActivityDescriptor = JSON.parse(dragEvent.dataTransfer.getData('activity-descriptor-json'));
+            const activityName = activityDescriptor.name;
+
+            this.activityEditor.title = `Add ${activityDescriptor.displayText}`;
+            this.activityEditor.display(activityName);
+            this.activityEditor.show();
         }
 
-        readActivities() {
+        constructor(private readonly container: HTMLElement, private readonly activityEditorContainer: HTMLElement) {
+            this.readActivities();
+            this.plumber = WorkflowDesignerConfig.createJsPlumbInstance(container);
+            this.initializeNodes();
+            this.initializeDropTarget();
+            this.activityEditor = new ActivityEditor(activityEditorContainer);
+        }
+
+        private readActivities() {
             const activityElements: any = $(this.container).find('.activity');
             const activities = [];
 
@@ -34,7 +48,7 @@ namespace Flowsharp {
             this.activities = activities;
         }
 
-        initializeNodes() {
+        private initializeNodes() {
             // Suspend drawing and initialize.
             this.plumber.batch(() => {
                 let activityElements = this.activityElements;
@@ -42,7 +56,7 @@ namespace Flowsharp {
                 for (let index = 0; index < activityElements.length; index++) {
                     const activityElement = activityElements[index];
                     const activity = this.activities[index];
-                    
+
                     this.initializeElement(activityElement, activity);
                 }
 
@@ -53,11 +67,11 @@ namespace Flowsharp {
                 activityElements.show();
             });
         }
-        
-        initializeElement(activityElement: HTMLElement, activity: Activity){
-            
+
+        private initializeElement(activityElement: HTMLElement, activity: Activity) {
+
             const $activityElement = $(activityElement);
-            
+
             this.plumber.draggable(activityElement, {
                 grid: [10, 10],
                 containment: true,
@@ -80,10 +94,10 @@ namespace Flowsharp {
             this.addSourceEndpoints(activity, activityElement);
         }
 
-        addSourceEndpoints(activity: any, activityElement: any) {
+        private addSourceEndpoints(activity: any, activityElement: any) {
             for (let i = 0; i < activity.endpoints.length; i++) {
                 const endpoint: any = activity.endpoints[i];
-                const sourceEndpointOptions: any = getSourceEndpointOptions(activity.id, endpoint.name);
+                const sourceEndpointOptions: any = WorkflowDesignerConfig.getSourceEndpointOptions(activity.id, endpoint.name);
                 this.plumber.addEndpoint(activityElement, {
                     connectorOverlays: [['Label', {
                         label: endpoint.name,
@@ -91,6 +105,11 @@ namespace Flowsharp {
                     }]]
                 }, sourceEndpointOptions);
             }
+        }
+
+        private initializeDropTarget() {
+            $(this.container).on('dragover', WorkflowDesigner.onDragOver);
+            $(this.container).on('drop', this.onDrop)
         }
     }
 }

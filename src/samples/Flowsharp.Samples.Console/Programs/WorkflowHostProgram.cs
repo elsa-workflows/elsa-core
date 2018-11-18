@@ -27,7 +27,7 @@ namespace Flowsharp.Samples.Console.Programs
             var resource = assembly.GetManifestResourceStream("Flowsharp.Samples.Console.SampleWorkflow.yaml");
             var resourceReader = new StreamReader(resource);
             var data = await resourceReader.ReadToEndAsync();
-            var workflow = serializer.Deserialize(data);
+            var workflow = await serializer.DeserializeAsync(data, cancellationToken);
 
             await workflowStore.AddAsync(workflow, cancellationToken);
             await workflowHost.TriggerWorkflowAsync("WriteLine", Variables.Empty, cancellationToken);

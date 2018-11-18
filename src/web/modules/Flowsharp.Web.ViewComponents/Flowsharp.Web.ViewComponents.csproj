@@ -14,6 +14,11 @@
         <ProjectReference Include="..\..\..\core\Flowsharp.Abstractions\Flowsharp.Abstractions.csproj" />
         <ProjectReference Include="..\..\..\core\Flowsharp.Core\Flowsharp.Core.csproj" />
         <ProjectReference Include="..\..\..\core\Flowsharp.Persistence.Abstractions\Flowsharp.Persistence.Abstractions.csproj" />
+        <ProjectReference Include="..\Flowsharp.Web.Abstractions\Flowsharp.Web.Abstractions.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Include="Assets\scripts\flowsharp\workflow-designer\activity-editor.ts"/>
     </ItemGroup>
 
 </Project> 

@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Flowsharp.Activities;
-using Flowsharp.Handlers;
 using Flowsharp.Models;
+using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
@@ -13,15 +15,15 @@ namespace Flowsharp.Serialization.Tokenizers
     public class WorkflowTokenizer : IWorkflowTokenizer
     {
         private readonly ITokenizerInvoker tokenizerInvoker;
-        private readonly IEnumerable<IActivityHandler> activityHandlers;
+        private readonly IActivityLibrary activityLibrary;
 
-        public WorkflowTokenizer(ITokenizerInvoker tokenizerInvoker, IEnumerable<IActivityHandler> activityHandlers)
+        public WorkflowTokenizer(ITokenizerInvoker tokenizerInvoker, IActivityLibrary activityLibrary)
         {
             this.tokenizerInvoker = tokenizerInvoker;
-            this.activityHandlers = activityHandlers;
+            this.activityLibrary = activityLibrary;
         }
 
-        public JToken Tokenize(Workflow value)
+        public Task<JToken> TokenizeAsync(Workflow value, CancellationToken cancellationToken)
         {
             var workflow = value;
             var activityTuples = workflow.Activities.Select((x, i) => new {Activity = x, Id = i + 1}).ToList();
@@ -32,7 +34,7 @@ namespace Flowsharp.Serialization.Tokenizers
             };
             var scopeIdLookup = workflow.Scopes.Select((x, i) => new {Id = i + 1, Scope = x}).ToDictionary(x => x.Scope, x => x.Id);
 
-            return new JObject
+            var token = new JObject
             {
                 {"metadata", JToken.FromObject(workflow.Metadata, JsonSerializer.Create(new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver()}))},
                 {"status", workflow.Status.ToString()},
@@ -42,11 +44,13 @@ namespace Flowsharp.Serialization.Tokenizers
                 {"scopes", SerializeScopes(context, scopeIdLookup)},
                 {"currentScope", SerializeCurrentScope(workflow, scopeIdLookup)}
             };
+
+            return Task.FromResult<JToken>(token);
         }
 
-        public Workflow Detokenize(JToken token)
+        public async Task<Workflow> DetokenizeAsync(JToken token, CancellationToken cancellationToken)
         {
-            var activityDictionary = DeserializeActivities(token);            
+            var activityDictionary = await DeserializeActivitiesAsync(token, cancellationToken);            
             var serializationContext = new WorkflowTokenizationContext
             {
                 ActivityIdLookup = activityDictionary.ToDictionary(x => x.Value, x => x.Key),
@@ -220,7 +224,7 @@ namespace Flowsharp.Serialization.Tokenizers
             }
         }
 
-        private IDictionary<int, IActivity> DeserializeActivities(JToken token)
+        private async Task<IDictionary<int, IActivity>> DeserializeActivitiesAsync(JToken token, CancellationToken cancellationToken)
         {
             var activityModels = (JArray)token["activities"] ?? new JArray();
             var dictionary = new Dictionary<int, IActivity>();
@@ -228,8 +232,8 @@ namespace Flowsharp.Serialization.Tokenizers
             foreach (var activityModel in activityModels)
             {
                 var name = activityModel["name"].Value<string>();
-                var activityType = GetActivityType(name);
-                var activity = activityType != null ? (IActivity)activityModel.ToObject(activityType) : new UnknownActivity();
+                var activityDescriptor = await GetActivityDescriptorAsync(name, cancellationToken);
+                var activity = activityDescriptor != null ? (IActivity)activityModel.ToObject(activityDescriptor.Type) : new UnknownActivity();
 
                 dictionary.Add(activity.Id, activity);
             }
@@ -237,9 +241,9 @@ namespace Flowsharp.Serialization.Tokenizers
             return dictionary;
         }
 
-        private Type GetActivityType(string activityName)
+        private Task<Models.IActivity> GetActivityDescriptorAsync(string activityName, CancellationToken cancellationToken)
         {
-            return activityHandlers.SingleOrDefault(x => x.ActivityType.Name == activityName)?.ActivityType;
+            return activityLibrary.GetActivityByNameAsync(activityName, cancellationToken);
         }
     }
 }

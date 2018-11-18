@@ -31,14 +31,14 @@ namespace Flowsharp.Samples.Console.Programs
                 workflowContext = await ReadAndResumeAsync(workflowContext.Workflow, cancellationToken);    
             }
             
-            var json = serializer.Serialize(workflowContext.Workflow);
+            var json = serializer.SerializeAsync(workflowContext.Workflow, cancellationToken);
             System.Console.WriteLine(json);
         }
 
         private async Task<WorkflowExecutionContext> ReadAndResumeAsync(Workflow workflow, CancellationToken cancellationToken)
         {
-            var json = serializer.Serialize(workflow);
-            workflow = serializer.Deserialize(json);
+            var json = await serializer.SerializeAsync(workflow, cancellationToken);
+            workflow = await serializer.DeserializeAsync(json, cancellationToken);
             var haltedActivity = (ReadLine)workflow.BlockingActivities.Single();
             var args = new Variables {{ haltedActivity.ArgumentName, System.Console.ReadLine() }};
             

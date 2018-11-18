@@ -1,8 +1,7 @@
-﻿using Flowsharp.Activities;
-using Flowsharp.Extensions;
-using Flowsharp.Handlers;
+﻿using Flowsharp.Extensions;
+using Flowsharp.Web.Abstractions.Services;
+using Flowsharp.Web.ViewComponents.Services;
 using Microsoft.Extensions.DependencyInjection;
-using OrchardCore.DisplayManagement;
 using OrchardCore.Modules;
 
 namespace Flowsharp.Web.ViewComponents
@@ -13,7 +12,7 @@ namespace Flowsharp.Web.ViewComponents
         {
             services
                 .AddFlowsharpCore()
-                .AddScoped<IDisplayManager<IActivity>, DisplayManager<IActivity>>();
+                .AddScoped<IActivityDisplayManager, ActivityDisplayManager>();
         }
     }
 }

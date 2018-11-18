@@ -3,8 +3,10 @@
 
 namespace Flowsharp {
     $(function () {
-        $('.workflow-canvas').each((i, e) => {
-            const editor = new WorkflowDesigner(e);
+        $('.workflow-designer-container').each((i, e) => {
+            const canvasContainer = $(e).find('.workflow-canvas')[0];
+            const activityEditorContainer = $(e).find('.activity-editor-modal')[0];
+            const editor = new WorkflowDesigner(canvasContainer, activityEditorContainer);
         });
     });
 }

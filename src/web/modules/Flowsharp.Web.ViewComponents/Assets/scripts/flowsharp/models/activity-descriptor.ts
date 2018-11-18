@@ -1,5 +1,7 @@
-interface ActivityDescriptor {
-    name: string;
-    displayText: string;
-    description: string;
+namespace Flowsharp {
+    export interface ActivityDescriptor {
+        name: string;
+        displayText: string;
+        description: string;
+    }
 }

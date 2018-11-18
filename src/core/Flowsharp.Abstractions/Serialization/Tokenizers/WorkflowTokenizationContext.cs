@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Flowsharp.Models;
 
 namespace Flowsharp.Serialization.Tokenizers
 {

@@ -1,32 +1,35 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Flowsharp.Models
 {
     public class WorkflowExecutionContext
     {
-        public WorkflowExecutionContext(Workflow workflow)
+        private readonly IDictionary<string, IActivity> activityDescriptors;
+        private readonly Stack<Flowsharp.IActivity> scheduledActivities;
+
+        public WorkflowExecutionContext(Workflow workflow, IDictionary<string, IActivity> activityDescriptors)
         {
+            this.activityDescriptors = activityDescriptors;
             Workflow = workflow;
             IsFirstPass = true;
-            scheduledActivities = new Stack<IActivity>();
+            scheduledActivities = new Stack<Flowsharp.IActivity>();
         }
-
-        private readonly Stack<IActivity> scheduledActivities;
 
         public Workflow Workflow { get; }
         public bool HasScheduledActivities => scheduledActivities.Any();
         public bool IsFirstPass { get; set; }
-        public IActivity CurrentActivity { get; private set; }
+        public Flowsharp.IActivity CurrentActivity { get; private set; }
 
         public WorkflowExecutionScope CurrentScope
         {
             get => Workflow.CurrentScope;
             set => Workflow.CurrentScope = value;
         }
+        
+        public ActivityExecutionContext CreateActivityExecutionContext(Flowsharp.IActivity activity) => 
+            new ActivityExecutionContext(activity, activityDescriptors[activity.Name]);
 
         public void BeginScope()
         {
@@ -39,12 +42,12 @@ namespace Flowsharp.Models
             CurrentScope = Workflow.Scopes.Peek();
         }
 
-        public void ScheduleActivity(IActivity activity)
+        public void ScheduleActivity(Flowsharp.IActivity activity)
         {
             scheduledActivities.Push(activity);
         }
 
-        public IActivity PopScheduledActivity()
+        public Flowsharp.IActivity PopScheduledActivity()
         {
             CurrentActivity = scheduledActivities.Pop();
             return CurrentActivity;
@@ -55,9 +58,9 @@ namespace Flowsharp.Models
             CurrentScope.LastResult = value;
         }
 
-        public void Fault(Exception exception, IActivity activity) => Fault(exception.Message, activity);
+        public void Fault(Exception exception, Flowsharp.IActivity activity) => Fault(exception.Message, activity);
         
-        public void Fault(string errorMessage, IActivity activity)
+        public void Fault(string errorMessage, Flowsharp.IActivity activity)
         {
             Workflow.Fault = new WorkflowFault
             {

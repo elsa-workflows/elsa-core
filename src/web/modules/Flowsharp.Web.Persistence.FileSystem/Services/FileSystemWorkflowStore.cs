@@ -59,7 +59,7 @@ namespace Flowsharp.Web.Persistence.FileSystem.Services
         private async Task<Workflow> LoadWorkflowDefinitionAsync(IFileStoreEntry file, CancellationToken cancellationToken)
         {
             var data = await fileStore.ReadToEndAsync(file.Path);
-            var workflow = workflowSerializer.Deserialize(data);
+            var workflow = await workflowSerializer.DeserializeAsync(data, cancellationToken);
             workflow.Metadata.Id = file.Name;
             return workflow;
         }

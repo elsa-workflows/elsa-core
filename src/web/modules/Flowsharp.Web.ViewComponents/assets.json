@@ -15,6 +15,7 @@
     {
         "inputs": [
             "assets/node_modules/jsplumb/dist/js/jsplumb.js",
+            "assets/scripts/flowsharp/workflow-designer/activity-editor.ts",
             "assets/scripts/flowsharp/workflow-designer/config.ts",
             "assets/scripts/flowsharp/workflow-designer/designer.ts",
             "assets/scripts/flowsharp/workflow-designer/index.ts"

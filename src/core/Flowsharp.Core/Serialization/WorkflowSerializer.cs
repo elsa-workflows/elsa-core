@@ -1,4 +1,6 @@
-﻿using Flowsharp.Models;
+﻿using System.Threading;
+using System.Threading.Tasks;
+using Flowsharp.Models;
 using Flowsharp.Serialization.Formatters;
 using Flowsharp.Serialization.Tokenizers;
 using Newtonsoft.Json.Linq;
@@ -16,26 +18,27 @@ namespace Flowsharp.Serialization
             this.tokenFormatter = tokenFormatter;
         }
         
-        public string Serialize(Workflow workflow)
+        public async Task<string> SerializeAsync(Workflow workflow, CancellationToken cancellationToken)
         {
-            var token = workflowTokenizer.Tokenize(workflow);
-            return Serialize(token);
+            var token = await workflowTokenizer.TokenizeAsync(workflow, cancellationToken);
+            return await SerializeAsync(token, cancellationToken);
         }
         
-        public string Serialize(JToken token)
+        public Task<string> SerializeAsync(JToken token, CancellationToken cancellationToken)
         {
-            return tokenFormatter.ToString(token);
+            var text = tokenFormatter.ToString(token);
+            return Task.FromResult(text);
         }
 
-        public Workflow Deserialize(string data)
+        public Task<Workflow> DeserializeAsync(string data, CancellationToken cancellationToken)
         {
             var token = tokenFormatter.FromString(data);
-            return Deserialize(token);
+            return DeserializeAsync(token, cancellationToken);
         }
         
-        public Workflow Deserialize(JToken token)
+        public Task<Workflow> DeserializeAsync(JToken token, CancellationToken cancellationToken)
         {
-            return workflowTokenizer.Detokenize(token);
+            return workflowTokenizer.DetokenizeAsync(token, cancellationToken);
         }
     }
 }

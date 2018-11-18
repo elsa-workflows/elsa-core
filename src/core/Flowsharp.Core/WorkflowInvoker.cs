@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Flowsharp.Activities;
 using Flowsharp.Models;
 using Flowsharp.Results;
 using Microsoft.Extensions.Logging;
@@ -11,19 +10,21 @@ namespace Flowsharp
 {
     public class WorkflowInvoker : IWorkflowInvoker
     {
-        public WorkflowInvoker(IActivityInvoker activityInvoker, ILogger<WorkflowInvoker> logger)
+        public WorkflowInvoker(IActivityLibrary activityLibrary, ILogger<WorkflowInvoker> logger)
         {
-            ActivityInvoker = activityInvoker;
+            this.activityLibrary = activityLibrary;
             this.logger = logger;
         }
 
+        private readonly IActivityLibrary activityLibrary;
         private readonly ILogger logger;
-        public IActivityInvoker ActivityInvoker { get; }
 
         public async Task<WorkflowExecutionContext> InvokeAsync(Workflow workflow, IActivity startActivity = default, Variables arguments = default, CancellationToken cancellationToken = default)
         {
             workflow.Arguments = arguments ?? new Variables();
-            var workflowExecutionContext = new WorkflowExecutionContext(workflow);
+            var activityDescriptors = await activityLibrary.GetActivitiesAsync(cancellationToken);
+            var activityDescriptorsDictionary = activityDescriptors.ToDictionary(x => x.Name);
+            var workflowExecutionContext = new WorkflowExecutionContext(workflow, activityDescriptorsDictionary);
             var isResuming = workflowExecutionContext.Workflow.Status == WorkflowStatus.Resuming;
 
             if (startActivity != null)
@@ -90,11 +91,12 @@ namespace Flowsharp
             workflowContext.Fault(ex, activity);
         }
 
-        private async Task<ActivityExecutionResult> ExecuteOrResumeActivityAsync(WorkflowExecutionContext workflowContext, IActivity activity, bool isResuming, CancellationToken cancellationToken)
+        private static async Task<ActivityExecutionResult> ExecuteOrResumeActivityAsync(WorkflowExecutionContext workflowContext, IActivity activity, bool isResuming, CancellationToken cancellationToken)
         {
+            var activityContext = workflowContext.CreateActivityExecutionContext(activity);
             return isResuming
-                ? await ActivityInvoker.ResumeAsync(activity, workflowContext, cancellationToken)
-                : await ActivityInvoker.ExecuteAsync(activity, workflowContext, cancellationToken);
+                ? await activityContext.Descriptor.ResumeAsync(activityContext, workflowContext, cancellationToken)
+                : await activityContext.Descriptor.ExecuteAsync(activityContext, workflowContext, cancellationToken);
         }
     }
 }

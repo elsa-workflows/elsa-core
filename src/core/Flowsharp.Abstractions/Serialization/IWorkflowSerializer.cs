@@ -1,13 +1,15 @@
-﻿using Flowsharp.Models;
+﻿using System.Threading;
+using System.Threading.Tasks;
+using Flowsharp.Models;
 using Newtonsoft.Json.Linq;
 
 namespace Flowsharp.Serialization
 {
     public interface IWorkflowSerializer
     {
-        string Serialize(Workflow workflow);
-        string Serialize(JToken  token);
-        Workflow Deserialize(string data);
-        Workflow Deserialize(JToken token);
+        Task<string> SerializeAsync(Workflow workflow, CancellationToken cancellationToken);
+        Task<string> SerializeAsync(JToken  token, CancellationToken cancellationToken);
+        Task<Workflow> DeserializeAsync(string data, CancellationToken cancellationToken);
+        Task<Workflow> DeserializeAsync(JToken token, CancellationToken cancellationToken);
     }
 }

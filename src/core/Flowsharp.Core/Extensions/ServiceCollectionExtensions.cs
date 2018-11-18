@@ -15,7 +15,6 @@ namespace Flowsharp.Extensions
                 .AddScoped<IWorkflowSerializer, WorkflowSerializer>()
                 .AddScoped<IWorkflowTokenizer, WorkflowTokenizer>()
                 .AddScoped<IWorkflowInvoker, WorkflowInvoker>()
-                .AddScoped<IActivityInvoker, ActivityInvoker>()
                 .AddScoped<IActivityProvider, TypedActivityProvider>()
                 .AddScoped<IActivityLibrary, ActivityLibrary>()
                 .AddSingleton<ITokenFormatter, YamlTokenFormatter>()

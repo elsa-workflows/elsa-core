@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Flowsharp.Activities.Console.Handlers;
 using Flowsharp.Activities.Primitives.Handlers;
 using Flowsharp.Expressions;
-using Flowsharp.Handlers;
 using Flowsharp.Persistence;
 using Flowsharp.Persistence.InMemory;
 using Flowsharp.Runtime;
@@ -26,7 +25,6 @@ namespace Flowsharp.Samples.Console
                 .AddSingleton<IExpressionEvaluator, PlainTextEvaluator>()
                 .AddSingleton<IWorkflowExpressionEvaluator, WorkflowExpressionEvaluator>()
                 .AddSingleton<IWorkflowInvoker, WorkflowInvoker>()
-                .AddSingleton<IActivityInvoker, ActivityInvoker>()
                 .AddSingleton<IWorkflowSerializer, WorkflowSerializer>()
                 .AddSingleton<ITokenFormatter, YamlTokenFormatter>()
                 .AddSingleton<IWorkflowTokenizer, WorkflowTokenizer>()

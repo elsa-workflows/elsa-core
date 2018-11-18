@@ -15,13 +15,19 @@ namespace Flowsharp
             this.providers = providers;
         }
         
-        public async Task<IEnumerable<ActivityDescriptor>> GetActivitiesAsync(CancellationToken cancellationToken)
+        public async Task<IEnumerable<Models.IActivity>> GetActivitiesAsync(CancellationToken cancellationToken)
         {
             var tasks = providers.Select(x => x.GetActivitiesAsync(cancellationToken));
             var descriptorsList = await Task.WhenAll(tasks);
             var descriptors = descriptorsList.SelectMany(x => x);
 
             return descriptors;
+        }
+
+        public async Task<Models.IActivity> GetActivityByNameAsync(string name, CancellationToken cancellationToken)
+        {
+            var descriptors = await GetActivitiesAsync(cancellationToken);
+            return descriptors.SingleOrDefault(x => x.Name == name);
         }
     }
 }

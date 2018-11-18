@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using Flowsharp.Models;
 using Flowsharp.Web.Abstractions.ViewModels;
 using OrchardCore.DisplayManagement.Handlers;
 using OrchardCore.DisplayManagement.ModelBinding;
@@ -10,29 +11,27 @@ namespace Flowsharp.Web.Abstractions.Drivers
     /// <summary>
     /// Base class for activity drivers.
     /// </summary>
-    public abstract class ActivityDisplayDriver<TActivity> : DisplayDriver<IActivity, TActivity> where TActivity : class, IActivity
+    public abstract class ActivityDisplayDriver : DisplayDriver<IActivity>
     {
-        private static readonly string DesignShapeType = $"{typeof(TActivity).Name}_Design";
-
-        public override IDisplayResult Display(TActivity model)
+        public override IDisplayResult Display(IActivity model)
         {
-            return Shape(DesignShapeType, new ActivityViewModel<TActivity>(model)).Location("Design", "Content");
+            return Shape(GetDesignShapeType(model), new ActivityViewModel(model)).Location("Design", "Content");
         }
-    }
 
+        protected string GetDesignShapeType(IActivity activity) => $"{activity.Name}_Design";
+    }
+    
     /// <summary>
     /// Base class for activity drivers using a strongly typed view model.
     /// </summary>
-    public abstract class ActivityDisplayDriver<TActivity, TEditViewModel> : ActivityDisplayDriver<TActivity> where TActivity : class, IActivity where TEditViewModel : class, new()
+    public abstract class ActivityDisplayDriver<TEditViewModel> : ActivityDisplayDriver where TEditViewModel : class, new()
     {
-        private static readonly string EditShapeType = $"{typeof(TActivity).Name}_Fields_Edit";
-
-        public override IDisplayResult Edit(TActivity model)
+        public override IDisplayResult Edit(IActivity model)
         {
-            return Initialize(EditShapeType, (Func<TEditViewModel, Task>)(viewModel => EditActivityAsync(model, viewModel))).Location("Content");
+            return Initialize(GetEditorShapeType(model), (Func<TEditViewModel, Task>)(viewModel => EditActivityAsync(model, viewModel))).Location("Content");
         }
 
-        public override async Task<IDisplayResult> UpdateAsync(TActivity model, IUpdateModel updater)
+        public override async Task<IDisplayResult> UpdateAsync(IActivity model, IUpdateModel updater)
         {
             var viewModel = new TEditViewModel();
 
@@ -45,7 +44,7 @@ namespace Flowsharp.Web.Abstractions.Drivers
         /// <summary>
         /// Edit the view model before it's used in the editor.
         /// </summary>
-        protected virtual Task EditActivityAsync(TActivity activity, TEditViewModel model)
+        protected virtual Task EditActivityAsync(IActivity activity, TEditViewModel model)
         {
             EditActivity(activity, model);
 
@@ -55,14 +54,14 @@ namespace Flowsharp.Web.Abstractions.Drivers
         /// <summary>
         /// Edit the view model before it's used in the editor.
         /// </summary>
-        protected virtual void EditActivity(TActivity activity, TEditViewModel model)
+        protected virtual void EditActivity(IActivity activity, TEditViewModel model)
         {
         }
 
         /// <summary>
         /// Updates the activity when the view model is validated.
         /// </summary>
-        protected virtual Task UpdateActivityAsync(TEditViewModel model, TActivity activity)
+        protected virtual Task UpdateActivityAsync(TEditViewModel model, IActivity activity)
         {
             UpdateActivity(model, activity);
 
@@ -72,8 +71,10 @@ namespace Flowsharp.Web.Abstractions.Drivers
         /// <summary>
         /// Updates the activity when the view model is validated.
         /// </summary>
-        protected virtual void UpdateActivity(TEditViewModel model, TActivity activity)
+        protected virtual void UpdateActivity(TEditViewModel model, IActivity activity)
         {
         }
+        
+        protected string GetEditorShapeType(IActivity activity) => $"{activity.Name}_Edit";
     }
 }

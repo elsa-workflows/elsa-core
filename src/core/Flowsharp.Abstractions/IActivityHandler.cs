@@ -13,7 +13,7 @@ namespace Flowsharp
         /// <summary>
         /// The type of activity handled by this handler.
         /// </summary>
-        Type ActivityType { get; }
+        string ActivityName { get; }
         
         /// <summary>
         /// The friendly name of the activity.
@@ -34,16 +34,16 @@ namespace Flowsharp
         /// <summary>
         /// Returns a value of whether the specified activity can execute.
         /// </summary>
-        Task<bool> CanExecuteAsync(IActivity activity, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken);
+        Task<bool> CanExecuteAsync(ActivityExecutionContext activityContext, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken);
 
         /// <summary>
         /// Executes the specified activity.
         /// </summary>
-        Task<ActivityExecutionResult> ExecuteAsync(IActivity activity, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken);
+        Task<ActivityExecutionResult> ExecuteAsync(ActivityExecutionContext activityContext, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken);
 
         /// <summary>
         /// Resumes the specified activity.
         /// </summary>
-        Task<ActivityExecutionResult> ResumeAsync(IActivity activity, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken);
+        Task<ActivityExecutionResult> ResumeAsync(ActivityExecutionContext activityContext, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken);
     }
 }

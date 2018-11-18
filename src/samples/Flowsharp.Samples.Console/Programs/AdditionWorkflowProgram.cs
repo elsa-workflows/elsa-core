@@ -21,7 +21,7 @@ namespace Flowsharp.Samples.Console.Programs
         {
             var workflow = new AdditionWorkflow();
             var workflowContext = await workflowInvoker.InvokeAsync(workflow, null, Variables.Empty, cancellationToken);
-            var json = serializer.Serialize(workflow);
+            var json = serializer.SerializeAsync(workflow, cancellationToken);
 
             System.Console.WriteLine(json);
         }

@@ -1,1 +1,2 @@
-///<reference path='activity-descriptor.ts' />
+///<reference path='./activity.ts' />
+///<reference path='./activity-descriptor.ts' />

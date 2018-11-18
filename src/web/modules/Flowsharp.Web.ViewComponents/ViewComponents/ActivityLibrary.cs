@@ -6,7 +6,6 @@ using Flowsharp.Models;
 using Flowsharp.Web.ViewComponents.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using OrchardCore.DisplayManagement;
-using OrchardCore.DisplayManagement.Views;
 
 namespace Flowsharp.Web.ViewComponents.ViewComponents
 {
@@ -31,12 +30,12 @@ namespace Flowsharp.Web.ViewComponents.ViewComponents
             return View(viewModel);
         }
 
-        private async Task<ICollection<IShape>> BuildActivityShapesAsync(IEnumerable<ActivityDescriptor> descriptors)
+        private async Task<ICollection<IShape>> BuildActivityShapesAsync(IEnumerable<Flowsharp.Models.IActivity> descriptors)
         {
             return await Task.WhenAll(descriptors.Select(BuildActivityShapeAsync));
         }
         
-        private async Task<IShape> BuildActivityShapeAsync(ActivityDescriptor descriptor)
+        private async Task<IShape> BuildActivityShapeAsync(Flowsharp.Models.IActivity descriptor)
         {
             var activityShape = await shapeFactory.CreateAsync("Activity_Card", () => Task.FromResult<IShape>(new ActivityDescriptorViewModel(descriptor)));
             activityShape.Metadata.Alternates.Add($"Activity_Card__{descriptor.Name}");
