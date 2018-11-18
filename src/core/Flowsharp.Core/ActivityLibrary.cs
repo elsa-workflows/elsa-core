@@ -15,7 +15,7 @@ namespace Flowsharp
             this.providers = providers;
         }
         
-        public async Task<IEnumerable<Models.IActivity>> GetActivitiesAsync(CancellationToken cancellationToken)
+        public async Task<IEnumerable<Models.ActivityDescriptor>> GetActivitiesAsync(CancellationToken cancellationToken)
         {
             var tasks = providers.Select(x => x.GetActivitiesAsync(cancellationToken));
             var descriptorsList = await Task.WhenAll(tasks);
@@ -24,7 +24,7 @@ namespace Flowsharp
             return descriptors;
         }
 
-        public async Task<Models.IActivity> GetActivityByNameAsync(string name, CancellationToken cancellationToken)
+        public async Task<Models.ActivityDescriptor> GetActivityByNameAsync(string name, CancellationToken cancellationToken)
         {
             var descriptors = await GetActivitiesAsync(cancellationToken);
             return descriptors.SingleOrDefault(x => x.Name == name);

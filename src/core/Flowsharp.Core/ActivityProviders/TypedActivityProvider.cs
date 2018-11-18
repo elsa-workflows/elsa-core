@@ -15,11 +15,12 @@ namespace Flowsharp.ActivityProviders
             this.handlers = handlers;
         }
         
-        public Task<IEnumerable<Models.IActivity>> GetActivitiesAsync(CancellationToken cancellationToken)
+        public Task<IEnumerable<ActivityDescriptor>> GetActivitiesAsync(CancellationToken cancellationToken)
         {
-            var descriptors = handlers.Select(x => new Models.IActivity
+            var descriptors = handlers.Select(x => new ActivityDescriptor
             {
-                Name = x.ActivityName,
+                Name = x.ActivityType.Name,
+                Type = x.ActivityType,
                 DisplayText = x.DisplayText,
                 Description = x.Description,
                 GetEndpoints = x.GetEndpoints,

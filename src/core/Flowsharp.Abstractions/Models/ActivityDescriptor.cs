@@ -7,7 +7,7 @@ using Microsoft.Extensions.Localization;
 
 namespace Flowsharp.Models
 {
-    public class IActivity
+    public class ActivityDescriptor
     {
         public string Name { get; set; }
         public Type Type { get; set; }

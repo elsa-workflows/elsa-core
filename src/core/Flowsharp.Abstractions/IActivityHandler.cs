@@ -13,7 +13,7 @@ namespace Flowsharp
         /// <summary>
         /// The type of activity handled by this handler.
         /// </summary>
-        string ActivityName { get; }
+        Type ActivityType { get; }
         
         /// <summary>
         /// The friendly name of the activity.

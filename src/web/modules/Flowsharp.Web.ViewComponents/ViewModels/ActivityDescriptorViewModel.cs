@@ -3,9 +3,9 @@ using OrchardCore.DisplayManagement.Views;
 
 namespace Flowsharp.Web.ViewComponents.ViewModels
 {
-    public class ActivityDescriptorViewModel : ShapeViewModel<Flowsharp.Models.IActivity>
+    public class ActivityDescriptorViewModel : ShapeViewModel<Flowsharp.Models.ActivityDescriptor>
     {
-        public ActivityDescriptorViewModel(Flowsharp.Models.IActivity value) : base(value)
+        public ActivityDescriptorViewModel(Flowsharp.Models.ActivityDescriptor value) : base(value)
         {
         }
     }

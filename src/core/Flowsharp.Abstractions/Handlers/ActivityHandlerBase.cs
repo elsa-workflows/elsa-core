@@ -10,8 +10,8 @@ namespace Flowsharp.Handlers
 {
     public abstract class ActivityHandlerBase<T> : IActivityHandler where T : IActivity
     {
-        public string ActivityName => typeof(T).Name;
-        public virtual LocalizedString DisplayText => new LocalizedString(ActivityName, ActivityName);
+        public Type ActivityType => typeof(T);
+        public virtual LocalizedString DisplayText => new LocalizedString(ActivityType.Name, ActivityType.Name);
         public virtual LocalizedString Description => new LocalizedString("", "");
         public Task<bool> CanExecuteAsync(ActivityExecutionContext activityContext, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken) => OnCanExecuteAsync((ActivityExecutionContext<T>) activityContext, workflowContext, cancellationToken);
         public Task<ActivityExecutionResult> ExecuteAsync(ActivityExecutionContext activityContext, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken) => OnExecuteAsync((ActivityExecutionContext<T>) activityContext, workflowContext, cancellationToken); 

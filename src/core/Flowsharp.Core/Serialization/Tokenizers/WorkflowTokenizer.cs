@@ -241,7 +241,7 @@ namespace Flowsharp.Serialization.Tokenizers
             return dictionary;
         }
 
-        private Task<Models.IActivity> GetActivityDescriptorAsync(string activityName, CancellationToken cancellationToken)
+        private Task<Models.ActivityDescriptor> GetActivityDescriptorAsync(string activityName, CancellationToken cancellationToken)
         {
             return activityLibrary.GetActivityByNameAsync(activityName, cancellationToken);
         }

@@ -6,10 +6,10 @@ namespace Flowsharp.Models
 {
     public class WorkflowExecutionContext
     {
-        private readonly IDictionary<string, IActivity> activityDescriptors;
+        private readonly IDictionary<string, ActivityDescriptor> activityDescriptors;
         private readonly Stack<Flowsharp.IActivity> scheduledActivities;
 
-        public WorkflowExecutionContext(Workflow workflow, IDictionary<string, IActivity> activityDescriptors)
+        public WorkflowExecutionContext(Workflow workflow, IDictionary<string, ActivityDescriptor> activityDescriptors)
         {
             this.activityDescriptors = activityDescriptors;
             Workflow = workflow;
