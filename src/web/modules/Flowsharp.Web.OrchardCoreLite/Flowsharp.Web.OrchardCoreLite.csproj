@@ -5,11 +5,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="OrchardCore" Version="1.0.0-beta3-69369"/>
-        <PackageReference Include="OrchardCore.DisplayManagement" Version="1.0.0-beta3-69230"/>
-        <PackageReference Include="OrchardCore.Module.Targets" Version="1.0.0-beta3-69230"/>
-        <PackageReference Include="OrchardCore.ResourceManagement" Version="1.0.0-beta3-69369"/>
-        <PackageReference Include="OrchardCore.Infrastructure" Version="1.0.0-beta3-69369"/>
+        <PackageReference Include="OrchardCore" Version="1.0.0-beta3-69736" />
+        <PackageReference Include="OrchardCore.DisplayManagement" Version="1.0.0-beta3-69736" />
+        <PackageReference Include="OrchardCore.Module.Targets" Version="1.0.0-beta3-69736" />
+        <PackageReference Include="OrchardCore.ResourceManagement" Version="1.0.0-beta3-69736" />
+        <PackageReference Include="OrchardCore.Infrastructure" Version="1.0.0-beta3-69736" />
+        <PackageReference Include="OrchardCore.Settings" Version="1.0.0-beta3-69736" />
     </ItemGroup>
 
 </Project>

@@ -1,3 +1,4 @@
+///<reference path="../@types/jsplumb.d.ts"/>
 namespace Flowsharp {
     export class WorkflowDesignerConfig {
 

@@ -12,7 +12,8 @@ namespace Flowsharp.Web.ViewComponents
         {
             services
                 .AddFlowsharpCore()
-                .AddScoped<IActivityDisplayManager, ActivityDisplayManager>();
+                .AddScoped<IActivityDisplayManager, ActivityDisplayManager>()
+                .AddScoped<IActivityShapeFactory, ActivityShapeFactory>();
         }
     }
 }

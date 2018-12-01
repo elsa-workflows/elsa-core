@@ -15,10 +15,9 @@
     {
         "inputs": [
             "assets/node_modules/jsplumb/dist/js/jsplumb.js",
-            "assets/scripts/flowsharp/workflow-designer/activity-editor.ts",
-            "assets/scripts/flowsharp/workflow-designer/config.ts",
-            "assets/scripts/flowsharp/workflow-designer/designer.ts",
-            "assets/scripts/flowsharp/workflow-designer/index.ts"
+            "assets/scripts/flowsharp/activity-editor.ts",
+            "assets/scripts/flowsharp/workflow-designer-config.ts",
+            "assets/scripts/flowsharp/workflow-designer.ts"
         ],
         "output": "wwwroot/workflow-designer.js"
     },
@@ -30,8 +29,7 @@
     },
     {
         "inputs": [
-            "assets/scripts/flowsharp/activity-library/activity-library.ts",
-            "assets/scripts/flowsharp/activity-library/index.ts" 
+            "assets/scripts/flowsharp/activity-library/activity-library.ts"
         ],
         "output": "wwwroot/activity-library.js"
     }

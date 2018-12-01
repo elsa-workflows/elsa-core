@@ -1,6 +1,5 @@
-///<reference path='../../../node_modules/@types/jquery/index.d.ts' />
-///<reference path='../models/index.d.ts' />
-///<reference path='../../decode-html/decode-html.ts' />
+///<reference path='../../node_modules/@types/jquery/index.d.ts' />
+///<reference path='../decode-html/decode-html.ts' />
 
 namespace Flowsharp {
     export class ActivityLibrary {
@@ -24,4 +23,9 @@ namespace Flowsharp {
             this.activities.on('dragstart', ActivityLibrary.onDragStart)
         }
     }
+
+    $(function () {
+        const activityLibraryContainer: HTMLDivElement = <HTMLDivElement>document.getElementById('flowsharp-activity-library');
+        const activityLibrary = new ActivityLibrary(activityLibraryContainer);
+    });
 }

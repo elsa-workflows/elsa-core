@@ -6,6 +6,7 @@
 @model dynamic
 @{
     var activity = (IActivity)Model.Activity;
+    var descriptor = (ActivityDescriptor) Model.ActivityDescriptor;
     var id = activity.Id;
     var endpoints = (IList<LocalizedString>)Model.Endpoints;
     var serializerSettings = new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver() };
@@ -18,9 +19,11 @@
 <div 
     class="activity" 
     style="left:@(x)px; top:@(y)px;" 
-    id="@($"activity-{id}")" 
+    id="@($"activity-{id}")"
+    title="@descriptor.DisplayText"
+    data-activity-name="@descriptor.Name"
     data-activity-id="@id" 
-    data-activity="@activityJson"
+    data-activity-model="@activityJson"
     data-activity-endpoints="@activityEndpoints">
     @await DisplayAsync(Model.Content)
 </div>

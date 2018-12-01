@@ -8,7 +8,7 @@ namespace Flowsharp.Activities.Console.Activities
     /// </summary>
     public class WriteLine : Activity
     {
-        public WriteLine()
+        public WriteLine() : this(null)
         {
         }
 

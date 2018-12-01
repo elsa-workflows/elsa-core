@@ -16,49 +16,34 @@ namespace Flowsharp.Web.ViewComponents.ViewComponents
     public class WorkflowDesigner : ViewComponent
     {
         private readonly IWorkflowStore workflowStore;
-        private readonly IActivityLibrary activityLibrary;
-        private readonly IActivityDisplayManager displayManager;
+        private readonly IActivityShapeFactory activityShapeFactory;
 
         public WorkflowDesigner(
             IWorkflowStore workflowStore, 
-            IActivityLibrary activityLibrary,
-            IActivityDisplayManager displayManager)
+            IActivityShapeFactory activityShapeFactory)
         {
             this.workflowStore = workflowStore;
-            this.activityLibrary = activityLibrary;
-            this.displayManager = displayManager;
+            this.activityShapeFactory = activityShapeFactory;
         }
         
         public async Task<IViewComponentResult> InvokeAsync(string workflowId, CancellationToken cancellationToken)
         {
             var workflow = await workflowStore.GetAsync(workflowId, cancellationToken);
             var activities = workflow.Activities;
-            var activityShapes = await BuildActivityShapesAsync(activities, workflow.Metadata.Id, "Design", cancellationToken);
+            var activityShapes = await BuildActivityShapesAsync(activities, cancellationToken);
             var viewModel = new WorkflowDesignerViewModel(workflow, activityShapes);
             
             return View(viewModel);
         }
 
-        private async Task<ICollection<dynamic>> BuildActivityShapesAsync(IEnumerable<IActivity> activities, string workflowId, string displayType, CancellationToken cancellationToken)
+        private async Task<ICollection<dynamic>> BuildActivityShapesAsync(IEnumerable<IActivity> activities, CancellationToken cancellationToken)
         {
-            return await Task.WhenAll(activities.Select((x, i) => BuildActivityShapeAsync(x, i, workflowId, displayType, cancellationToken)));
+            return await Task.WhenAll(activities.Select((x, i) => BuildActivityShapeAsync(x, cancellationToken)));
         }
         
-        private async Task<dynamic> BuildActivityShapeAsync(IActivity activity, int index, string workflowId, string displayType, CancellationToken cancellationToken)
+        private async Task<dynamic> BuildActivityShapeAsync(IActivity activity, CancellationToken cancellationToken)
         {
-            var activityDescriptor = await activityLibrary.GetActivityByNameAsync(activity.Name, cancellationToken);
-            dynamic activityShape = await displayManager.BuildDisplayAsync(activity, null, displayType);
-            var customFields = activity.Metadata.CustomFields;
-            var designerMetadata = customFields.Get("Designer", () => new ActivityDesignerMetadata());
-            
-            activityShape.Metadata.Type = $"Activity_{displayType}";
-            activityShape.Endpoints = activityDescriptor.GetEndpoints().ToList();
-            activityShape.Activity = activity;
-            activityShape.WorkflowId = workflowId;
-            activityShape.Index = index;
-            activityShape.Designer = designerMetadata;
-            
-            return activityShape;
+            return await activityShapeFactory.BuildDesignShapeAsync(activity, cancellationToken);
         }
     }
 }

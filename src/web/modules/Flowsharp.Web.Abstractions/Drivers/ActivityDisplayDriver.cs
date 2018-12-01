@@ -24,11 +24,18 @@ namespace Flowsharp.Web.Abstractions.Drivers
     /// <summary>
     /// Base class for activity drivers using a strongly typed view model.
     /// </summary>
-    public abstract class ActivityDisplayDriver<TActivity, TEditViewModel> : ActivityDisplayDriver<TActivity> where TEditViewModel : class, new() where TActivity : class, IActivity
+    public abstract class ActivityDisplayDriver<TActivity, TEditViewModel> : ActivityDisplayDriver<TActivity>
+        where TActivity : class, IActivity
+        where TEditViewModel : class, new() 
     {
         public override IDisplayResult Edit(TActivity model)
         {
-            return Initialize(GetEditorShapeType(model), (Func<TEditViewModel, Task>)(viewModel => EditActivityAsync(model, viewModel))).Location("Content");
+            var result = Initialize(
+                GetEditorShapeType(model), 
+                (Func<TEditViewModel, Task>)(viewModel => EditActivityAsync(model, viewModel)))
+            .Location("Content");
+
+            return result;
         }
 
         public override async Task<IDisplayResult> UpdateAsync(TActivity model, IUpdateModel updater)
@@ -44,7 +51,7 @@ namespace Flowsharp.Web.Abstractions.Drivers
         /// <summary>
         /// Edit the view model before it's used in the editor.
         /// </summary>
-        protected virtual Task EditActivityAsync(IActivity activity, TEditViewModel model)
+        protected virtual Task EditActivityAsync(TActivity activity, TEditViewModel model)
         {
             EditActivity(activity, model);
 
@@ -54,14 +61,14 @@ namespace Flowsharp.Web.Abstractions.Drivers
         /// <summary>
         /// Edit the view model before it's used in the editor.
         /// </summary>
-        protected virtual void EditActivity(IActivity activity, TEditViewModel model)
+        protected virtual void EditActivity(TActivity activity, TEditViewModel model)
         {
         }
 
         /// <summary>
         /// Updates the activity when the view model is validated.
         /// </summary>
-        protected virtual Task UpdateActivityAsync(TEditViewModel model, IActivity activity)
+        protected virtual Task UpdateActivityAsync(TEditViewModel model, TActivity activity)
         {
             UpdateActivity(model, activity);
 
@@ -71,10 +78,10 @@ namespace Flowsharp.Web.Abstractions.Drivers
         /// <summary>
         /// Updates the activity when the view model is validated.
         /// </summary>
-        protected virtual void UpdateActivity(TEditViewModel model, IActivity activity)
+        protected virtual void UpdateActivity(TEditViewModel model, TActivity activity)
         {
         }
         
-        protected string GetEditorShapeType(IActivity activity) => $"{activity.Name}_Edit";
+        protected virtual string GetEditorShapeType(TActivity activity) => $"{activity.Name}_Edit";
     }
 }
