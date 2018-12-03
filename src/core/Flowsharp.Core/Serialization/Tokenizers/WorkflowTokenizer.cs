@@ -26,7 +26,7 @@ namespace Flowsharp.Serialization.Tokenizers
         public Task<JToken> TokenizeAsync(Workflow value, CancellationToken cancellationToken)
         {
             var workflow = value;
-            var activityTuples = workflow.Activities.Select((x, i) => new {Activity = x, Id = i + 1}).ToList();
+            var activityTuples = workflow.Activities.Select(x => new {Activity = x, Id = Guid.NewGuid().ToString()}).ToList();
             var context = new WorkflowTokenizationContext
             {
                 ActivityIdLookup = activityTuples.ToDictionary(x => x.Activity, x => x.Id),
@@ -160,7 +160,7 @@ namespace Flowsharp.Serialization.Tokenizers
                 var activity = item.Key;
                 var activityModel = JObject.FromObject(activity, new JsonSerializer { ContractResolver = new CamelCasePropertyNamesContractResolver()});
                 
-                activityModel.AddFirst(new JProperty("name", activity.Name));
+                activityModel["name"] = activity.Name;
                 activityModels.Add(activityModel);
             }
 
@@ -196,27 +196,27 @@ namespace Flowsharp.Serialization.Tokenizers
             return scopeLookup;
         }
 
-        private IEnumerable<IActivity> DeserializeHaltedActivities(JToken token, IDictionary<int, IActivity> activityDictionary)
+        private IEnumerable<IActivity> DeserializeHaltedActivities(JToken token, IDictionary<string, IActivity> activityDictionary)
         {
             var haltedActivityModels = (JArray) token["haltedActivities"] ?? new JArray();
 
             foreach (var haltedActivityModel in haltedActivityModels)
             {
-                var activityId = haltedActivityModel.Value<int>();
+                var activityId = haltedActivityModel.Value<string>();
                 var activity = activityDictionary[activityId];
                 yield return activity;
             }
         }
 
-        private IEnumerable<Connection> DeserializeConnections(JToken token, IDictionary<int, IActivity> activityDictionary)
+        private IEnumerable<Connection> DeserializeConnections(JToken token, IDictionary<string, IActivity> activityDictionary)
         {
             var connectionModels = (JArray) token["connections"] ?? new JArray();
 
             foreach (var connectionModel in connectionModels)
             { 
-                var sourceActivityId = connectionModel["source"]["activityId"].Value<int>();
+                var sourceActivityId = connectionModel["source"]["activityId"].Value<string>();
                 var sourceEndpointName = connectionModel["source"]["endpoint"].Value<string>();
-                var targetActivityId = connectionModel["target"]["activityId"].Value<int>();
+                var targetActivityId = connectionModel["target"]["activityId"].Value<string>();
                 var sourceActivity = activityDictionary[sourceActivityId];
                 var targetActivity = activityDictionary[targetActivityId];
                 
@@ -224,10 +224,10 @@ namespace Flowsharp.Serialization.Tokenizers
             }
         }
 
-        private async Task<IDictionary<int, IActivity>> DeserializeActivitiesAsync(JToken token, CancellationToken cancellationToken)
+        private async Task<IDictionary<string, IActivity>> DeserializeActivitiesAsync(JToken token, CancellationToken cancellationToken)
         {
             var activityModels = (JArray)token["activities"] ?? new JArray();
-            var dictionary = new Dictionary<int, IActivity>();
+            var dictionary = new Dictionary<string, IActivity>();
 
             foreach (var activityModel in activityModels)
             {
@@ -241,7 +241,7 @@ namespace Flowsharp.Serialization.Tokenizers
             return dictionary;
         }
 
-        private Task<Models.ActivityDescriptor> GetActivityDescriptorAsync(string activityName, CancellationToken cancellationToken)
+        private Task<ActivityDescriptor> GetActivityDescriptorAsync(string activityName, CancellationToken cancellationToken)
         {
             return activityLibrary.GetActivityByNameAsync(activityName, cancellationToken);
         }

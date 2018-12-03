@@ -1,4 +1,4 @@
-﻿using System.Dynamic;
+﻿using Newtonsoft.Json.Linq;
 
 namespace Flowsharp.Models
 {
@@ -8,6 +8,6 @@ namespace Flowsharp.Models
         public string ParentId { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
-        public ExpandoObject CustomFields { get; set; }
+        public JObject CustomFields { get; set; }
     }
 }

@@ -30,12 +30,12 @@ namespace Flowsharp.Web.ViewComponents.ViewComponents
             return View(viewModel);
         }
 
-        private async Task<ICollection<IShape>> BuildActivityShapesAsync(IEnumerable<Flowsharp.Models.ActivityDescriptor> descriptors)
+        private async Task<ICollection<IShape>> BuildActivityShapesAsync(IEnumerable<ActivityDescriptor> descriptors)
         {
             return await Task.WhenAll(descriptors.Select(BuildActivityShapeAsync));
         }
         
-        private async Task<IShape> BuildActivityShapeAsync(Flowsharp.Models.ActivityDescriptor descriptor)
+        private async Task<IShape> BuildActivityShapeAsync(ActivityDescriptor descriptor)
         {
             var activityShape = await shapeFactory.CreateAsync("Activity_Card", () => Task.FromResult<IShape>(new ActivityDescriptorViewModel(descriptor)));
             activityShape.Metadata.Alternates.Add($"Activity_Card__{descriptor.Name}");

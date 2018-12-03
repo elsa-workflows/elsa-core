@@ -15,7 +15,7 @@ namespace Flowsharp.Serialization.Tokenizers
         protected override IActivity Detokenize(WorkflowTokenizationContext context, JToken value)
         {
             var obj = (JObject) value;
-            var activityId = obj["activityId"].Value<int>();
+            var activityId = obj["activityId"].Value<string>();
             return context.ActivityLookup[activityId];
         }
     }

@@ -1,0 +1,8 @@
+[
+    {
+        "inputs": [
+            "assets/scripts/workflow-editor.ts"
+        ],
+        "output": "wwwroot/workflow-editor.js"
+    }
+]

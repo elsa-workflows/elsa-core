@@ -6,7 +6,7 @@ namespace Flowsharp.Models
         {
         }
 
-        public SourceEndpoint(Flowsharp.IActivity activity, string name = null) : base(activity)
+        public SourceEndpoint(IActivity activity, string name = null) : base(activity)
         {
             Name = name;
         }

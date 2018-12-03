@@ -4,9 +4,10 @@
         <TargetFramework>netcoreapp2.1</TargetFramework>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Microsoft.AspNetCore.App" />
-        <PackageReference Include="OrchardCore.Application.Mvc.Targets" Version="1.0.0-beta3-69736" />
-        <PackageReference Include="OrchardCore.Resources" Version="1.0.0-beta3-69736" />
+        <PackageReference Include="Microsoft.AspNetCore.App" Version="2.1.4" />
+        <PackageReference Include="OrchardCore.Application.Mvc.Targets" Version="1.0.0-beta3-69807" />
+        <PackageReference Include="OrchardCore.Resources" Version="1.0.0-beta3-69807" />
+        <PackageReference Include="OrchardCore.Settings" Version="1.0.0-beta3-69807" />
     </ItemGroup>
 
     <ItemGroup>

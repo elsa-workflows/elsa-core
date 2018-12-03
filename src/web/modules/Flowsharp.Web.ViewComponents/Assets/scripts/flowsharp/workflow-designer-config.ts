@@ -16,15 +16,16 @@ namespace Flowsharp {
         }
 
         static getSourceEndpointOptions(activityId: any, endpointName: any): any {
-            const paintColor = '#7ab02c';
+            const fill = '#ffeb3b';
+            const stroke = '#ffeb3b';
             return {
                 endpoint: 'Dot',
                 anchor: 'Continuous',
                 paintStyle: {
-                    stroke: paintColor,
-                    fill: paintColor,
+                    stroke: stroke,
+                    fill: fill,
                     radius: 7,
-                    strokeWidth: 1
+                    strokeWidth: 5
                 },
                 isSource: true,
                 connector: ['Flowchart', {stub: [40, 60], gap: 0, cornerRadius: 5, alwaysRespectStubs: true}],
@@ -36,12 +37,12 @@ namespace Flowsharp {
                     outlineWidth: 2
                 },
                 hoverPaintStyle: {
-                    fill: '#216477',
-                    stroke: '#216477'
+                    fill: stroke,
+                    stroke: fill
                 },
                 connectorHoverStyle: {
                     strokeWidth: 3,
-                    stroke: '#216477',
+                    stroke: stroke,
                     outlineWidth: 5,
                     outlineStroke: 'white'
                 },

@@ -5,7 +5,6 @@
 namespace Flowsharp {
 
     export class ActivityEditor {
-        private baseUrl: string;
         private containerElement: JQuery<HTMLElement>;
         private titleElement: JQuery<HTMLElement>;
         private contentElement: JQuery<HTMLElement>;
@@ -18,7 +17,6 @@ namespace Flowsharp {
             this.titleElement = this.containerElement.find('.modal-title');
             this.contentElement = this.containerElement.find('.modal-body');
             this.formElement = <JQuery<HTMLFormElement>>this.containerElement.find('form');
-            this.baseUrl = this.containerElement.data('base-url');
 
             this.formElement.on('submit', this.onFormSubmit);
         }
@@ -29,11 +27,13 @@ namespace Flowsharp {
         public display = (activityName: string, activity: IActivity): JQuery.Promise<any> => {
             this.activityName = activityName;
             this.deferred = jQuery.Deferred<any>();
+            const action = activity.id == null ? 'create' : 'edit';
+            const activityJson: string = JSON.stringify(activity);
 
             $.ajax({
                 type: 'POST',
-                url: `/activity/edit/${activityName}`,
-                data: activity,
+                url: `/activity/${action}/${activityName}`,
+                data: activityJson,
                 contentType: 'application/json',
                 dataType: 'html'
             }).done(this.displayActivity);

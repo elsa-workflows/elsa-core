@@ -25,8 +25,8 @@ namespace Flowsharp.Web.ViewComponents.Controllers
         private readonly IActivityShapeFactory activityShapeFactory;
 
         public ActivityController(
-            IActivityDisplayManager displayManager, 
-            IActivityLibrary activityLibrary, 
+            IActivityDisplayManager displayManager,
+            IActivityLibrary activityLibrary,
             IActivityShapeFactory activityShapeFactory)
         {
             this.displayManager = displayManager;
@@ -34,15 +34,32 @@ namespace Flowsharp.Web.ViewComponents.Controllers
             this.activityShapeFactory = activityShapeFactory;
         }
 
+        [HttpPost("create/{activityName}")]
+        public async Task<IActionResult> Create(string activityName, [FromBody] JToken json, CancellationToken cancellationToken)
+        {
+            var activityDescriptor = await activityLibrary.GetActivityByNameAsync(activityName, cancellationToken);
+            var activityModel = activityDescriptor.InstantiateActivity(json);
+
+            activityModel.Id = Guid.NewGuid().ToString();
+
+            var editorShape = await displayManager.BuildEditorAsync(activityModel, this, false);
+            var model = new ActivityEditorViewModel
+            {
+                ActivityJson = JsonConvert.SerializeObject(activityModel),
+                ActivityEditorShape = editorShape,
+            };
+            return View("Edit", model);
+        }
+
         [HttpPost("edit/{activityName}")]
-        public async Task<IActionResult> Edit(string activityName, [FromBody] string json, CancellationToken cancellationToken)
+        public async Task<IActionResult> Edit(string activityName, [FromBody] JToken json, CancellationToken cancellationToken)
         {
             var activityDescriptor = await activityLibrary.GetActivityByNameAsync(activityName, cancellationToken);
             var activityModel = activityDescriptor.InstantiateActivity(json);
             var editorShape = await displayManager.BuildEditorAsync(activityModel, this, false);
             var model = new ActivityEditorViewModel
             {
-                ActivityJson = json,
+                ActivityJson = json.ToString(),
                 ActivityEditorShape = editorShape,
             };
             return View(model);

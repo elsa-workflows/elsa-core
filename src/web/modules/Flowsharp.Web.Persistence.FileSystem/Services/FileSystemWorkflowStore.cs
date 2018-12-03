@@ -1,10 +1,12 @@
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Flowsharp.Models;
 using Flowsharp.Persistence;
 using Flowsharp.Serialization;
+using Flowsharp.Serialization.Extensions;
 using Flowsharp.Serialization.Formatters;
 using Flowsharp.Web.Persistence.FileSystem.Extensions;
 using OrchardCore.FileStorage;
@@ -43,15 +45,22 @@ namespace Flowsharp.Web.Persistence.FileSystem.Services
             throw new System.NotImplementedException();
         }
 
-        public Task UpdateAsync(Workflow value, CancellationToken cancellationToken)
+        public async Task UpdateAsync(Workflow value, CancellationToken cancellationToken)
         {
-            throw new System.NotImplementedException();
+            await fileStore.TryCreateDirectoryAsync("workflows");
+            var data = await workflowSerializer.SerializeAsync(value, cancellationToken);
+            var path = fileStore.Combine("workflows", value.Metadata.Id);
+
+            using (var stream = data.ToStream())
+            {
+                await fileStore.CreateFileFromStream(path, stream, true);
+            }
         }
         
         private async Task<IEnumerable<Workflow>> ListAsync(CancellationToken cancellationToken)
         {
-            await fileStore.TryCreateDirectoryAsync("definitions");
-            var files = await fileStore.GetDirectoryContentAsync("definitions");
+            await fileStore.TryCreateDirectoryAsync("workflows");
+            var files = await fileStore.GetDirectoryContentAsync("workflows");
             var loadTasks = files.Select(x => LoadWorkflowDefinitionAsync(x, cancellationToken));
             return await Task.WhenAll(loadTasks);
         }

@@ -6,7 +6,7 @@ namespace Flowsharp.Models
         {
         }
 
-        public TargetEndpoint(Flowsharp.IActivity activity) : base(activity)
+        public TargetEndpoint(IActivity activity) : base(activity)
         {
         }
     }

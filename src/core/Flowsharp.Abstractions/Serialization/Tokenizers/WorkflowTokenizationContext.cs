@@ -5,7 +5,7 @@ namespace Flowsharp.Serialization.Tokenizers
 {
     public class WorkflowTokenizationContext
     {
-        public IDictionary<IActivity, int> ActivityIdLookup { get; set; }
-        public IDictionary<int, IActivity> ActivityLookup { get; set; }
+        public IDictionary<IActivity, string> ActivityIdLookup { get; set; }
+        public IDictionary<string, IActivity> ActivityLookup { get; set; }
     }
 }

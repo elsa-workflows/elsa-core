@@ -1,5 +1,5 @@
 namespace Flowsharp {
-    export interface ITransition {
+    export interface IConnection {
         sourceActivityId: string;
         sourceOutcomeName: string;
         destinationActivityId: null;

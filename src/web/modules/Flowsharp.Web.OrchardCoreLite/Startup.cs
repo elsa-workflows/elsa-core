@@ -23,7 +23,7 @@ namespace Flowsharp.Web.OrchardCoreLite
             services.AddScoped<IShellDescriptorFeaturesManager, ShellDescriptorFeaturesManager>();
             services.AddScoped<IShellStateManager, NullShellStateManager>();
             services.AddScoped<IThemeSelector, SettingsThemeSelector>();
-            services.AddScoped<ISiteService, NullSiteService>();
+            services.AddSingleton<ISiteService, NullSiteService>();
             
             services.AddResourceManagement();
             

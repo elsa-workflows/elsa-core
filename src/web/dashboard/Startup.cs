@@ -1,7 +1,10 @@
-﻿using Flowsharp.Web.OrchardCoreLite.Extensions;
+﻿using System.Linq;
+using System.Reflection;
+using Flowsharp.Web.OrchardCoreLite.Extensions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
+using OrchardCore.Modules.Manifest;
 
 namespace Flowsharp.Web.Dashboard
 {
@@ -21,7 +24,7 @@ namespace Flowsharp.Web.Dashboard
                 app.UseDeveloperExceptionPage();
             }
 
-            app.UseOrchardCore();;
+            app.UseOrchardCore();
         }
     }
 }

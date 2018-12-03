@@ -6,11 +6,11 @@ namespace Flowsharp.Models
         {
         }
 
-        protected Endpoint(Flowsharp.IActivity activity)
+        protected Endpoint(IActivity activity)
         {
             Activity = activity;
         }
         
-        public Flowsharp.IActivity Activity { get; set; }
+        public IActivity Activity { get; set; }
     }
 }

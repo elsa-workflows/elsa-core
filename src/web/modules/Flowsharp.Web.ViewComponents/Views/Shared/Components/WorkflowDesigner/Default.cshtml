@@ -1,13 +1,16 @@
 @model WorkflowDesignerViewModel
-
+@{
+    var serializerSettings = new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver() };
+    var workflowMetadataJson = JsonConvert.SerializeObject(Model.Workflow.Metadata, serializerSettings);
+}
 <div class="workflow-designer-container">
-    <div class="workflow-canvas">
+    <div class="workflow-canvas" data-workflow-metadata="@workflowMetadataJson" data-workflow-status="@Model.Workflow.Status">
         @foreach (var activityShape in Model.ActivityShapes)
         {
             @await DisplayAsync(activityShape)
         }
     </div>
-    <div data-base-url="@Url.Content("~/")" class="modal fade activity-editor-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true" style="display: none;">
+    <div class="modal fade activity-editor-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true" style="display: none;">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">

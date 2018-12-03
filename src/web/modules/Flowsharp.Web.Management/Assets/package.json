@@ -6,8 +6,5 @@
         "@types/node": "^10.12.2",
         "@types/bootstrap": "^4.1.2"
     },
-    "dependencies": {
-        "decode-html": "^2.0.0",
-        "jsplumb": "^2.8.3"
-    }
+    "dependencies": {}
 }

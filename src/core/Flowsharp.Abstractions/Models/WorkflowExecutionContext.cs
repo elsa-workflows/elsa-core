@@ -7,20 +7,20 @@ namespace Flowsharp.Models
     public class WorkflowExecutionContext
     {
         private readonly IDictionary<string, ActivityDescriptor> activityDescriptors;
-        private readonly Stack<Flowsharp.IActivity> scheduledActivities;
+        private readonly Stack<IActivity> scheduledActivities;
 
         public WorkflowExecutionContext(Workflow workflow, IDictionary<string, ActivityDescriptor> activityDescriptors)
         {
             this.activityDescriptors = activityDescriptors;
             Workflow = workflow;
             IsFirstPass = true;
-            scheduledActivities = new Stack<Flowsharp.IActivity>();
+            scheduledActivities = new Stack<IActivity>();
         }
 
         public Workflow Workflow { get; }
         public bool HasScheduledActivities => scheduledActivities.Any();
         public bool IsFirstPass { get; set; }
-        public Flowsharp.IActivity CurrentActivity { get; private set; }
+        public IActivity CurrentActivity { get; private set; }
 
         public WorkflowExecutionScope CurrentScope
         {
@@ -28,7 +28,7 @@ namespace Flowsharp.Models
             set => Workflow.CurrentScope = value;
         }
         
-        public ActivityExecutionContext CreateActivityExecutionContext(Flowsharp.IActivity activity) => 
+        public ActivityExecutionContext CreateActivityExecutionContext(IActivity activity) => 
             new ActivityExecutionContext(activity, activityDescriptors[activity.Name]);
 
         public void BeginScope()
@@ -42,12 +42,12 @@ namespace Flowsharp.Models
             CurrentScope = Workflow.Scopes.Peek();
         }
 
-        public void ScheduleActivity(Flowsharp.IActivity activity)
+        public void ScheduleActivity(IActivity activity)
         {
             scheduledActivities.Push(activity);
         }
 
-        public Flowsharp.IActivity PopScheduledActivity()
+        public IActivity PopScheduledActivity()
         {
             CurrentActivity = scheduledActivities.Pop();
             return CurrentActivity;
@@ -58,9 +58,9 @@ namespace Flowsharp.Models
             CurrentScope.LastResult = value;
         }
 
-        public void Fault(Exception exception, Flowsharp.IActivity activity) => Fault(exception.Message, activity);
+        public void Fault(Exception exception, IActivity activity) => Fault(exception.Message, activity);
         
-        public void Fault(string errorMessage, Flowsharp.IActivity activity)
+        public void Fault(string errorMessage, IActivity activity)
         {
             Workflow.Fault = new WorkflowFault
             {

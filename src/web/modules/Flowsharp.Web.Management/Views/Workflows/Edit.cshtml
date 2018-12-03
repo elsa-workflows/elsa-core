@@ -1,12 +1,6 @@
 @model Workflow
 
-<script
-    asp-name="test"
-    asp-src="https://cdnjs.cloudflare.com/ajax/libs/systemjs/0.20.13/system.js"
-    at="Head">
-</script>
-
-<div class="full-container">
+<div class="full-container workflow-editor-container" data-workflow-id="@Model.Metadata.Id">
     <div class="peers fxw-nw pos-r">
         <div class="peer bdR" id="chat-sidebar">
             <div class="layers h-100">
@@ -35,18 +29,15 @@
                                 </a>
                             </div>
                             <div class="peer">
-                                <h5 class="c-grey-900 mB-5">Sample Workflow</h5><i class="fsz-sm lh-1">This workflow is a sample workflow demonstrating core workflow functionality</i>
+                                <h5 class="c-grey-900 mB-5">@Model.Metadata.Name</h5><i class="fsz-sm lh-1">@Model.Metadata.Description</i>
                             </div>
                         </div>
                         <div class="peers">
-                            <a href="" class="peer td-n c-grey-900 cH-blue-500 fsz-md mR-30" title="">
-                                <i class="ti-video-camera"></i>
+                            <a href="" class="save-workflow-button peer td-n c-grey-900 cH-blue-500 fsz-md mR-30" title="@T["Save Workflow"]">
+                                <i class="ti-save"></i>
                             </a>
-                            <a href="" class="peer td-n c-grey-900 cH-blue-500 fsz-md mR-30" title="">
-                                <i class="ti-headphone"></i>
-                            </a>
-                            <a href="" class="peer td-n c-grey-900 cH-blue-500 fsz-md" title="">
-                                <i class="ti-more"></i>
+                            <a href="" class="download-workflow-button peer td-n c-grey-900 cH-blue-500 fsz-md" title="@T["Download"]">
+                                <i class="ti-download"></i>
                             </a>
                         </div>
                     </div>
@@ -62,17 +53,9 @@
                         <div class="ps__thumb-y" tabindex="0" style="top: 0px; height: 0px;"></div>
                     </div>
                 </div>
-                <div class="layer w-100">
-                    <div class="p-20 bdT bgc-white">
-                        <div class="pos-r">
-                            <input type="text" class="form-control bdrs-10em m-0" placeholder="Say something...">
-                            <button type="button" class="btn btn-primary bdrs-50p w-2r p-0 h-2r pos-a r-1 t-1">
-                                <i class="fa fa-paper-plane-o"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
 </div>
+
+<script asp-name="flowsharp-workflow-editor-script" asp-src="~/Flowsharp.Web.Management/workflow-editor.js" depends-on="jQuery" at="Foot"></script>
