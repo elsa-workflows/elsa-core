@@ -1,7 +1,8 @@
+///<reference path="source-endpoint.ts"/>
+///<reference path="target-endpoint.ts"/>
 namespace Flowsharp {
     export interface IConnection {
-        sourceActivityId: string;
-        sourceOutcomeName: string;
-        destinationActivityId: null;
+        source: ISourceEndpoint;
+        target: ITargetEndpoint;
     }
 }

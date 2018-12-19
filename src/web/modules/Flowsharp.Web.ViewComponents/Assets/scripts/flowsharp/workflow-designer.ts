@@ -7,8 +7,8 @@
 
 namespace Flowsharp {
     export class WorkflowDesigner {
-        private plumber: any;
-        private activityEditor: ActivityEditor;
+        private readonly plumber: any;
+        private readonly activityEditor: ActivityEditor;
         private dragStart: { left: number; top: number };
         private hasDragged: boolean;
 
@@ -25,6 +25,7 @@ namespace Flowsharp {
             const workflowStatus: WorkflowStatus = containerElement.data('workflow-status');
             const activityElements = containerElement.find('.activity');
             const activities: IActivity[] = [];
+            const connections: IConnection[] = [];
 
             for (let index = 0; index < activityElements.length; index++) {
                 const activityElement = $(activityElements[index]);
@@ -32,11 +33,28 @@ namespace Flowsharp {
 
                 activities.push(activity);
             }
+            
+            for (let connection of this.plumber.getConnections()) {
+                const sourceEndpoint: Endpoint = connection.endpoints[0];
+                const sourceEndpointName = sourceEndpoint.getParameters().endpointName;
+                const sourceActivityId: string = $(connection.source).data('activity-id');
+                const targetActivityId: string = $(connection.target).data('activity-id');
+
+                connections.push({
+                    source: {
+                        name: sourceEndpointName,
+                        activityId: sourceActivityId
+                    },
+                    target: {
+                        activityId: targetActivityId
+                    }
+                });
+            }
 
             return {
                 metadata: workflowMetadata,
                 activities: activities,
-                connections: [],
+                connections: connections,
                 status: workflowStatus
             };
         };
@@ -83,9 +101,8 @@ namespace Flowsharp {
                     const activityElement = $(activityElements[index]);
                     this.initializeElement(activityElement);
                 }
-
-                //this.updateConnections();
-
+                
+                this.createConnections();
                 activityElements.show();
             });
         };
@@ -129,9 +146,24 @@ namespace Flowsharp {
             this.plumber.revalidate(activityElement[0]);
         };
 
+        private createConnections = () => {
+            const connections: IConnection[] = $(this.container).data('workflow-connections');
+            const plumber = this.plumber;
+            
+            for (let connection of connections) {
+                const sourceEndpointUuid: string = `${connection.source.activityId}-${connection.source.name}`;
+                const sourceEndpoint: Endpoint = plumber.getEndpoint(sourceEndpointUuid);
+                const destinationElementId: string = `activity-${connection.target.activityId}`;
+
+                plumber.connect({
+                    source: sourceEndpoint,
+                    target: destinationElementId
+                });
+            }
+        };
+
         private addSourceEndpoints = (activityElement: HTMLElement, activityId: string, endpoints: any[]) => {
-            for (let i = 0; i < endpoints.length; i++) {
-                const endpoint: any = endpoints[i];
+            for (let endpoint of endpoints) {
                 const sourceEndpointOptions: any = WorkflowDesignerConfig.getSourceEndpointOptions(activityId, endpoint.name);
                 this.plumber.addEndpoint(activityElement, {
                     connectorOverlays: [['Label', {
@@ -161,7 +193,6 @@ namespace Flowsharp {
             const y = dragEvent.offsetY;
             const activity: IActivity = {
                 id: null,
-                endpoints: [],
                 metadata: {
                     customFields: {
                         designer: {x: x, y: y}

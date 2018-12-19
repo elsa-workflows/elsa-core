@@ -2,9 +2,13 @@
 @{
     var serializerSettings = new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver() };
     var workflowMetadataJson = JsonConvert.SerializeObject(Model.Workflow.Metadata, serializerSettings);
+    var connectionsJson = JsonConvert.SerializeObject(Model.Connections, serializerSettings);
 }
 <div class="workflow-designer-container">
-    <div class="workflow-canvas" data-workflow-metadata="@workflowMetadataJson" data-workflow-status="@Model.Workflow.Status">
+    <div class="workflow-canvas" 
+         data-workflow-metadata="@workflowMetadataJson" 
+         data-workflow-status="@Model.Workflow.Status"
+         data-workflow-connections="@connectionsJson">
         @foreach (var activityShape in Model.ActivityShapes)
         {
             @await DisplayAsync(activityShape)

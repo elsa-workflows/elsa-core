@@ -6,7 +6,7 @@
         {
             Variables = new Variables();
         }
-        
+
         public object LastResult { get; set; }
         public Variables Variables { get; }
 
@@ -14,15 +14,8 @@
         {
             Variables[variableName] = value;
         }
-        
-        public T GetVariable<T>(string name)
-        {
-            return Variables.ContainsKey(name) ? (T)Variables[name] : default(T);
-        }
-        
-        public object GetVariable(string name)
-        {
-            return Variables.ContainsKey(name) ? Variables[name] : null;
-        }
+
+        public T GetVariable<T>(string name) => Variables.GetVariable<T>(name);
+        public object GetVariable(string name) => Variables.GetVariable(name);
     }
 }

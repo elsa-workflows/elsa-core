@@ -22,6 +22,7 @@ namespace Flowsharp.Expressions
         {
             var workflowApi = new
             {
+                getArgument = (Func<string, object>) (name => workflowExecutionContext.Workflow.Arguments.GetVariable(name)),
                 getVariable = (Func<string, object>) (name => workflowExecutionContext.CurrentScope.GetVariable(name)),
                 getLastResult = (Func<object>)(() => workflowExecutionContext.CurrentScope.LastResult)
             };

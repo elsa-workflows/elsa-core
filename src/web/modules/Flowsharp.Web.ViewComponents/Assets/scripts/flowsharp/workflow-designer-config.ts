@@ -48,7 +48,10 @@ namespace Flowsharp {
                 },
                 connectorOverlays: [['Label', {location: [3, -1.5], cssClass: 'endpointSourceLabel'}]],
                 dragOptions: {},
-                uuid: `${activityId}-${endpointName}`
+                uuid: `${activityId}-${endpointName}`,
+                parameters: {
+                    endpointName: endpointName
+                }
             };
         }
     }

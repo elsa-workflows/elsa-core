@@ -10,9 +10,11 @@ namespace Flowsharp.Web.ViewComponents.ViewModels
         {
             Workflow = workflow;
             ActivityShapes = activityShapes.ToList();
+            Connections = workflow.Connections.Select(x => new ConnectionModel(x)).ToList();
         }
         
         public Workflow Workflow { get; }
+        public IReadOnlyCollection<ConnectionModel> Connections { get; }
         public ICollection<dynamic> ActivityShapes { get; }
     }
 }
