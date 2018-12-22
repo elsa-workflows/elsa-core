@@ -79,7 +79,7 @@ gulp.task("watch", function () {
 */
 
 function getAssetGroups() {
-    var assetManifestPaths = glob.sync("./src/web/modules/*/assets.json", {});
+    var assetManifestPaths = glob.sync("./src/web/*/*/assets.json", {});
     var assetGroups = [];
     assetManifestPaths.forEach(function (assetManifestPath) {
         var assetManifest = require("./" + assetManifestPath);

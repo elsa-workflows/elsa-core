@@ -16,8 +16,8 @@ namespace Flowsharp {
         }
 
         static getSourceEndpointOptions(activityId: any, endpointName: any): any {
-            const fill = '#ffeb3b';
-            const stroke = '#ffeb3b';
+            const fill = '#7da7f2';
+            const stroke = '#7da7f2';
             return {
                 endpoint: 'Dot',
                 anchor: 'Continuous',

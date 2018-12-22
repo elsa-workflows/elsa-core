@@ -1,0 +1,14 @@
+[
+    {
+        "inputs": [
+            "assets/scripts/dashboard.ts"
+        ],
+        "output": "wwwroot/dashboard.js"
+    },
+    {
+        "inputs": [
+            "assets/styles/dashboard.scss"
+        ],
+        "output": "wwwroot/dashboard.css"
+    }
+]

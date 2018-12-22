@@ -3,9 +3,9 @@
         "State": "Running",
         "RequestUrlHost": null,
         "RequestUrlPrefix": null,
-        "CurrentTheme" : "TheAdminatorTheme",
+        "CurrentTheme" : "Flowsharp.Themes.Bootstrap",
         "Features": [
-            "TheAdminatorTheme", 
+            "Flowsharp.Themes.Bootstrap", 
             "Flowsharp.Web.Management",
             "Flowsharp.Web.Persistence.FileSystem",
             "Flowsharp.Web.ViewComponents",

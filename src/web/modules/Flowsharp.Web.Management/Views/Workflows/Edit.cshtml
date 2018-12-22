@@ -1,61 +1,14 @@
 @model Workflow
 
-<div class="full-container workflow-editor-container" data-workflow-id="@Model.Metadata.Id">
-    <div class="peers fxw-nw pos-r">
-        <div class="peer bdR" id="chat-sidebar">
-            <div class="layers h-100">
-                <div class="bdB layer w-100">
-                    <input type="text" placeholder="Search activities..." name="chatSearch" class="p-15 bdrs-0 w-100 bdw-0">
-                </div>
-                <div class="layer w-100 fxg-1 scrollable pos-r ps">
-                    @await Component.InvokeAsync("ActivityLibrary")
-                    <div class="ps__rail-x" style="left: 0px; bottom: 0px;">
-                        <div class="ps__thumb-x" tabindex="0" style="left: 0px; width: 0px;"></div>
-                    </div>
-                    <div class="ps__rail-y" style="top: 0px; right: 0px;">
-                        <div class="ps__thumb-y" tabindex="0" style="top: 0px; height: 0px;"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="peer peer-greed" id="chat-box">
-            <div class="layers h-100">
-                <div class="layer w-100">
-                    <div class="peers fxw-nw jc-sb ai-c pY-20 pX-30 bgc-white">
-                        <div class="peers ai-c">
-                            <div class="peer d-n@md+">
-                                <a href="" title="" id="chat-sidebar-toggle" class="td-n c-grey-900 cH-blue-500 mR-30">
-                                    <i class="ti-menu"></i>
-                                </a>
-                            </div>
-                            <div class="peer">
-                                <h5 class="c-grey-900 mB-5">@Model.Metadata.Name</h5><i class="fsz-sm lh-1">@Model.Metadata.Description</i>
-                            </div>
-                        </div>
-                        <div class="peers">
-                            <a href="" class="save-workflow-button peer td-n c-grey-900 cH-blue-500 fsz-md mR-30" title="@T["Save Workflow"]">
-                                <i class="ti-save"></i>
-                            </a>
-                            <a href="" class="download-workflow-button peer td-n c-grey-900 cH-blue-500 fsz-md" title="@T["Download"]">
-                                <i class="ti-download"></i>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                <div class="layer w-100 fxg-1 bgc-grey-200 scrollable pos-r ps">
-                    <div class="p-20 gapY-15">
-                        @await Component.InvokeAsync("WorkflowDesigner", new { workflowId = Model.Metadata.Id })
-                    </div>
-                    <div class="ps__rail-x" style="left: 0px; bottom: 0px;">
-                        <div class="ps__thumb-x" tabindex="0" style="left: 0px; width: 0px;"></div>
-                    </div>
-                    <div class="ps__rail-y" style="top: 0px; right: 0px;">
-                        <div class="ps__thumb-y" tabindex="0" style="top: 0px; height: 0px;"></div>
-                    </div>
-                </div>
+<div class="workflow-editor-container" data-workflow-id="@Model.Metadata.Id">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">@T["Edit {0}", Model.Metadata.Name]</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <div class="btn-group mr-2">
+                <button type="button" class="btn btn-sm btn-primary">Save</button>
             </div>
         </div>
     </div>
+    @await Component.InvokeAsync("WorkflowDesigner", new { workflowId = Model.Metadata.Id })
 </div>
-
-<script asp-name="flowsharp-workflow-editor-script" asp-src="~/Flowsharp.Web.Management/workflow-editor.js" depends-on="jQuery" at="Foot"></script>
+<script asp-name="flowsharp-workflow-editor-script" asp-src="~/Flowsharp.Web.Management/workflow-editor.js" at="Foot"></script>

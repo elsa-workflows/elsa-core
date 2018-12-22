@@ -2,11 +2,11 @@
     overflow: auto !important;
     position: relative;
     touch-action: none;
-    min-height: 4000px;
+    min-height: 1000px;
 
     .activity {
-        //display: none;
-        border: 1px solid #346789;
+        display: none;
+        border: 1px solid #5a8fee;
         box-shadow: 2px 2px 19px #aaa;
         -o-box-shadow: 2px 2px 9px #aaa;
         -webkit-box-shadow: 2px 2px 9px #aaa;
@@ -19,8 +19,8 @@
         text-align: left;
         z-index: 20;
         position: absolute;
-        background-color: #2196f3;
-        color: #ffffff;
+        background-color: #f1f1f1;
+        color: #3d3d3d;
         font-family: helvetica, sans-serif;
         padding: 1em;
         font-size: 0.7em;
@@ -30,9 +30,9 @@
         transition: box-shadow 0.15s ease-in;
         
         &.activity-start, &.activity-blocking {
-            background-color: #7ab02c;
-            color: #ffffff;
-            border: 1px solid #507b11;
+            background-color: #f1f1f1;
+            color: #3d3d3d;
+            border: 1px solid #5a8fee;
         }
 
         header {
