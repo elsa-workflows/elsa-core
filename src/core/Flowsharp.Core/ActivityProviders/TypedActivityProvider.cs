@@ -20,6 +20,7 @@ namespace Flowsharp.ActivityProviders
             var descriptors = handlers.Select(x => new ActivityDescriptor
             {
                 Name = x.ActivityType.Name,
+                Category = x.Category,
                 ActivityType = x.ActivityType,
                 DisplayText = x.DisplayText,
                 Description = x.Description,

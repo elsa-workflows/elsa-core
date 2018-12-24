@@ -11,6 +11,7 @@ namespace Flowsharp.Handlers
     public abstract class ActivityHandlerBase<T> : IActivityHandler where T : IActivity
     {
         public Type ActivityType => typeof(T);
+        public abstract LocalizedString Category { get; }
         public virtual LocalizedString DisplayText => new LocalizedString(ActivityType.Name, ActivityType.Name);
         public virtual LocalizedString Description => new LocalizedString("", "");
         public Task<bool> CanExecuteAsync(ActivityExecutionContext activityContext, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken) => OnCanExecuteAsync((ActivityExecutionContext<T>) activityContext, workflowContext, cancellationToken);

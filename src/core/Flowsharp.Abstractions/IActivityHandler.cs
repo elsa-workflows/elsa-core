@@ -14,6 +14,11 @@ namespace Flowsharp
         /// The type of activity handled by this handler.
         /// </summary>
         Type ActivityType { get; }
+
+        /// <summary>
+        /// The category of the activity.
+        /// </summary>
+        LocalizedString Category { get; }
         
         /// <summary>
         /// The friendly name of the activity.

@@ -14,6 +14,7 @@ namespace Flowsharp.Web.Activities.Primitives
         {
             services
                 .AddActivity<IfElseHandler, IfElseDriver>()
+                .AddActivity<ForEachHandler, ForEachDriver>()
                 .AddActivity<UnknownActivityHandler, UnknownActivityDriver>();
         }
     }

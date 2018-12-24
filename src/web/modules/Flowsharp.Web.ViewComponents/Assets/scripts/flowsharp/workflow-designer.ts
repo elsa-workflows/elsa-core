@@ -7,23 +7,27 @@
 
 namespace Flowsharp {
     export class WorkflowDesigner {
+        private readonly container: JQuery<HTMLElement>;
+        private readonly canvasContainer: JQuery<HTMLElement>;
         private readonly plumber: any;
         private readonly activityEditor: ActivityEditor;
         private dragStart: { left: number; top: number };
         private hasDragged: boolean;
 
-        constructor(private readonly container: HTMLElement, private readonly activityEditorContainer: HTMLElement) {
-            this.plumber = WorkflowDesignerConfig.createJsPlumbInstance(container);
+        constructor(containerElement: HTMLElement) {
+            this.container = $(containerElement);
+            this.canvasContainer = this.container.find('.workflow-canvas');
+            const activityEditorContainer = this.container.find('.activity-editor-modal');
+            this.plumber = WorkflowDesignerConfig.createJsPlumbInstance(containerElement);
             this.initializeNodes();
             this.initializeDropTarget();
-            this.activityEditor = new ActivityEditor(activityEditorContainer);
+            this.activityEditor = new ActivityEditor(activityEditorContainer[0]);
         }
 
         public getWorkflow = (): IWorkflow => {
-            const containerElement = $(this.container);
-            const workflowMetadata: IWorkflowMetadata = containerElement.data('workflow-metadata');
-            const workflowStatus: WorkflowStatus = containerElement.data('workflow-status');
-            const activityElements = containerElement.find('.activity');
+            const workflowMetadata: IWorkflowMetadata = this.canvasContainer.data('workflow-metadata');
+            const workflowStatus: WorkflowStatus = this.canvasContainer.data('workflow-status');
+            const activityElements = this.canvasContainer.find('.activity');
             const activities: IActivity[] = [];
             const connections: IConnection[] = [];
 
@@ -73,7 +77,7 @@ namespace Flowsharp {
         private addActivity = (activityHtml: string) => {
             const activityElement = $(activityHtml);
 
-            this.container.appendChild(activityElement[0]);
+            this.canvasContainer[0].appendChild(activityElement[0]);
             this.initializeElement(activityElement);
         };
 
@@ -83,7 +87,7 @@ namespace Flowsharp {
             activityElement.remove();
 
             const updatedActivityElement = $(updatedHtml);
-            this.container.appendChild(updatedActivityElement[0]);
+            this.canvasContainer[0].appendChild(updatedActivityElement[0]);
             this.initializeElement(updatedActivityElement);
         };
 
@@ -95,7 +99,7 @@ namespace Flowsharp {
 
         private initializeNodes = () => {
             this.plumber.batch(() => {
-                const activityElements = $(this.container).find('.activity');
+                const activityElements = $(this.canvasContainer).find('.activity');
 
                 for (let index = 0; index < activityElements.length; index++) {
                     const activityElement = $(activityElements[index]);
@@ -147,7 +151,7 @@ namespace Flowsharp {
         };
 
         private createConnections = () => {
-            const connections: IConnection[] = $(this.container).data('workflow-connections');
+            const connections: IConnection[] = $(this.canvasContainer).data('workflow-connections');
             const plumber = this.plumber;
             
             for (let connection of connections) {
@@ -175,8 +179,8 @@ namespace Flowsharp {
         };
 
         private initializeDropTarget = () => {
-            $(this.container).on('dragover', WorkflowDesigner.onDragOver);
-            $(this.container).on('drop', this.onDrop)
+            $(this.canvasContainer).on('dragover', WorkflowDesigner.onDragOver);
+            $(this.canvasContainer).on('drop', this.onDrop)
         };
 
         private static onDragOver = (e: JQuery.Event) => {
@@ -213,15 +217,15 @@ namespace Flowsharp {
         };
     }
 
-    $(() => {
-        $('.workflow-designer-container').each((i, e) => {
-            const canvasContainer = $(e).find('.workflow-canvas')[0];
-            const activityEditorContainer = $(e).find('.activity-editor-modal')[0];
-            const workflowDesigner = new WorkflowDesigner(canvasContainer, activityEditorContainer);
-
-            const win = <any>window;
-            win.Flowsharp = win.Flowsharp || {};
-            win.Flowsharp.workflowDesigner = workflowDesigner;
-        });
-    });
+    // $(() => {
+    //     $('.workflow-designer-container').each((i, e) => {
+    //         const canvasContainer = $(e).find('.workflow-canvas')[0];
+    //         const activityEditorContainer = $(e).find('.activity-editor-modal')[0];
+    //         const workflowDesigner = new WorkflowDesigner(canvasContainer, activityEditorContainer);
+    //
+    //         const win = <any>window;
+    //         win.Flowsharp = win.Flowsharp || {};
+    //         win.Flowsharp.workflowDesigner = workflowDesigner;
+    //     });
+    // });
 }

@@ -23,14 +23,8 @@
     },
     {
         "inputs": [
-            "assets/styles/activity-library.scss"
+            "assets/scripts/flowsharp/activity-picker.ts"
         ],
-        "output": "wwwroot/activity-library.css"
-    },
-    {
-        "inputs": [
-            "assets/scripts/flowsharp/activity-library/activity-library.ts"
-        ],
-        "output": "wwwroot/activity-library.js"
+        "output": "wwwroot/activity-picker.js"
     }
 ]

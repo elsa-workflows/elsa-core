@@ -1,19 +1,14 @@
-@model ActivityDescriptorViewModel
+@model dynamic
 @{
-    var descriptor = Model.Value;
-    var descriptorModel = new
-    {
-        name = descriptor.Name,
-        displayText = descriptor.DisplayText.Value,
-        description = descriptor.Description.Value
-    };
-    var descriptorJson = Json.Serialize(descriptorModel);
+    var descriptor = (ActivityDescriptor)Model.Value;
 }
-<div class="activity fxw-nw ai-c p-20 bdB bgc-white bgcH-grey-50 cur-p" draggable="true" data-activity-descriptor-json="@Html.Encode(descriptorJson)">
-    <div class="peers">
-        <div class="peer"><i class="mR-10 lh-2 ti-email"></i></div>
-        <div class="peer"><h5 class="fw-300 c-grey-800">@descriptor.Name</h5></div>
 
+<div class="card activity" data-category="@descriptor.Category.Name.HtmlClassify()" data-activity-type="Action">
+    <div class="card-body">
+        <h4 class="card-title">@descriptor.DisplayText</h4>
+        <p>@descriptor.Description</p>
     </div>
-    <small class="fsz-sm lh-0 c-grey-500">@descriptor.Description</small>
+    <div class="card-footer text-muted text-xs-right">
+        <a class="btn btn-primary btn-sm" href="#" data-activity-name="@descriptor.Name">@T["Add"]</a>
+    </div>
 </div>

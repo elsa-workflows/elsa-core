@@ -33,6 +33,10 @@ namespace Flowsharp.Activities.Console.Handlers
         
         protected override LocalizedString GetEndpoint() => T["Done"];
         
+        public override LocalizedString Category => T["Console"];
+        public override LocalizedString DisplayText => T["Write Line"];
+        public override LocalizedString Description => T["Write a line to the console"];
+        
         protected override async Task<ActivityExecutionResult> OnExecuteAsync(WriteLine activity, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
         {
             var text = await evaluator.EvaluateAsync(activity.TextExpression, workflowContext, cancellationToken);

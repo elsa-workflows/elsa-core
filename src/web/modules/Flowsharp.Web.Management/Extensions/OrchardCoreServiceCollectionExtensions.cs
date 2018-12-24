@@ -1,7 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using OrchardCore.Environment.Shell;
 
-namespace Flowsharp.Web.OrchardCoreLite.Extensions
+namespace Flowsharp.Web.Management.Extensions
 {
     public static class OrchardCoreServiceCollectionExtensions
     {
@@ -11,7 +11,6 @@ namespace Flowsharp.Web.OrchardCoreLite.Extensions
             services
                 .AddOrchardCore()
                 .AddMvc()
-                .AddTenantFeatures("Flowsharp.Web.OrchardCoreLite")
                 .WithTenants()
                 .AddTheming()
                 .AddCaching();

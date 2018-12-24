@@ -2,7 +2,7 @@
 using OrchardCore.DisplayManagement.Theming;
 using OrchardCore.Environment.Shell;
 
-namespace Flowsharp.Web.OrchardCoreLite.Theming
+namespace Flowsharp.Web.Management.Theming
 {
     public class SettingsThemeSelector : IThemeSelector
     {

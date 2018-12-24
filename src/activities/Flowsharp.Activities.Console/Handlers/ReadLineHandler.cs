@@ -12,7 +12,7 @@ namespace Flowsharp.Activities.Console.Handlers
     public class ReadLineHandler : ActivityHandler<ReadLine>
     {
         private readonly TextReader input;
-        
+
         public ReadLineHandler(IStringLocalizer<ReadLineHandler> localizer)
         {
             T = localizer;
@@ -24,18 +24,21 @@ namespace Flowsharp.Activities.Console.Handlers
         }
 
         private IStringLocalizer<ReadLineHandler> T { get; }
-        
+
         protected override LocalizedString GetEndpoint() => T["Done"];
+
+        public override LocalizedString Category => T["Console"];
+        public override LocalizedString DisplayText => T["Read Line"];
+        public override LocalizedString Description => T["Read a line from the console"];
 
         protected override async Task<ActivityExecutionResult> OnExecuteAsync(ReadLine activity, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
         {
-            if (input == null) 
+            if (input == null)
                 return Halt();
-            
+
             var value = await input.ReadLineAsync();
             workflowContext.SetLastResult(value);
             return TriggerEndpoint("Done");
-
         }
 
         protected override ActivityExecutionResult OnResume(ReadLine activity, WorkflowExecutionContext workflowContext)

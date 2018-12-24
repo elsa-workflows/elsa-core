@@ -1,12 +1,11 @@
 ///<reference path="../../../Flowsharp.Web.ViewComponents/Assets/scripts/flowsharp/workflow-designer.ts"/>
+///<reference path="../../../Flowsharp.Web.ViewComponents/Assets/scripts/flowsharp/activity-picker.ts"/>
 
 namespace Flowsharp {
-    const win: any = window;
-
     export class WorkflowEditor {
-        private workflowDesigner: WorkflowDesigner;
-        private containerElement: JQuery<HTMLElement>;
-        private workflowId: string;
+        private readonly workflowId: string;
+        private readonly workflowDesigner: WorkflowDesigner;
+        private readonly containerElement: JQuery<HTMLElement>;
 
         constructor(container: HTMLElement,) {
             this.containerElement = $(container);
@@ -14,14 +13,15 @@ namespace Flowsharp {
             const saveButton = this.containerElement.find('.save-workflow-button');
             const downloadButton = this.containerElement.find('.download-workflow-button');
             
-            this.workflowDesigner = (<any>window).Flowsharp.workflowDesigner;
+            //this.workflowDesigner = (<any>window).Flowsharp.workflowDesigner;
+            this.workflowDesigner = new WorkflowDesigner($('.workflow-designer-container')[0]);
             this.workflowId = this.containerElement.data('workflow-id');
 
-            saveButton.on('click', this.onSaveButtonClick);
-            downloadButton.on('click', this.onDownloadButtonClick);
+            saveButton.on('click', this.onSaveClick);
+            downloadButton.on('click', this.onDownloadClick);
         }
 
-        private onSaveButtonClick = (e: JQuery.Event) => {
+        private onSaveClick = (e: JQuery.Event) => {
             e.preventDefault();
             const workflow = this.workflowDesigner.getWorkflow();
             const workflowJson = JSON.stringify(workflow);
@@ -35,7 +35,7 @@ namespace Flowsharp {
             }).done(this.displayNotification);
         };
 
-        private onDownloadButtonClick = (e: JQuery.Event) => {
+        private onDownloadClick = (e: JQuery.Event) => {
             e.preventDefault();
             const workflowJson = this.serializeWorkflow(false);
             

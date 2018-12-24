@@ -19,6 +19,12 @@
     <ItemGroup>
       <Content Include="Assets\scripts\dashboard.ts" />
       <Content Include="Assets\styles\dashboard.scss" />
+      <Content Include="Views\Flowsharp.Web.Management\Workflows\Edit.cshtml" />
+      <Content Include="Views\Flowsharp.Web.Management\Workflows\Index.cshtml" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\modules\Flowsharp.Web.Management\Flowsharp.Web.Management.csproj" />
     </ItemGroup>
 
 </Project>

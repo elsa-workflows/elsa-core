@@ -18,6 +18,9 @@ namespace Flowsharp.Activities.Primitives.Handlers
             this.expressionEvaluator = expressionEvaluator;
         }
 
+        public override LocalizedString Category => T["Primitives"];
+        public override LocalizedString DisplayText => T["Set Variable"];
+        public override LocalizedString Description => T["Set a custom variable on the workflow."];
         public IStringLocalizer<SetVariableHandler> T { get; }
 
         protected override LocalizedString GetEndpoint() => T["Done"];

@@ -19,6 +19,9 @@ namespace Flowsharp.Activities.Primitives.Handlers
             this.expressionEvaluator = expressionEvaluator;
         }
 
+        public override LocalizedString Category => T["Control Flow"];
+        public override LocalizedString DisplayText => T["If/Else Branch"];
+        public override LocalizedString Description => T["Evaluate a boolean condition and continues execution based on the outcome."];
         public IStringLocalizer<IfElseHandler> T { get; }
 
         public override IEnumerable<LocalizedString> GetEndpoints() => Endpoints(T["True"], T["False"]);

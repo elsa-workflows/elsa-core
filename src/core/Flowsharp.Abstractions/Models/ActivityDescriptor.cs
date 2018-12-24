@@ -10,6 +10,7 @@ namespace Flowsharp.Models
     public class ActivityDescriptor
     {
         public string Name { get; set; }
+        public LocalizedString Category { get; set; }
         public Type ActivityType { get; set; }
         public LocalizedString DisplayText { get; set; }
         public LocalizedString Description { get; set; }

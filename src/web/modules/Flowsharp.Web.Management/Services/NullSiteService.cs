@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Primitives;
 using OrchardCore.Settings;
 
-namespace Flowsharp.Web.OrchardCoreLite.Services
+namespace Flowsharp.Web.Management.Services
 {
     public class NullSiteService : ISiteService
     {
