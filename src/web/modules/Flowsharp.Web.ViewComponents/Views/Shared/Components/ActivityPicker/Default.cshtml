@@ -29,17 +29,9 @@
                     </div>
                     <div class="col-sm-9 col-md-9 col-lg-10">
                         <div class="card-columns tab-content">
-                            @foreach (var activityDescriptor in Model.ActivityDescriptors)
+                            @foreach (var cardShape in Model.ActivityCardShapes)
                             {
-                                <div class="card activity" data-category="@activityDescriptor.Category.Name.HtmlClassify()" data-activity-type="Action">
-                                    <div class="card-body">
-                                        <h4 class="card-title">@activityDescriptor.DisplayText</h4>
-                                        <p>@activityDescriptor.Description</p>
-                                    </div>
-                                    <div class="card-footer text-muted text-xs-right">
-                                        <a class="btn btn-primary btn-sm" href="#" data-activity-name="@activityDescriptor.Name" data-activity-display-text="@activityDescriptor.DisplayText">@T["Select"]</a>
-                                    </div>
-                                </div>
+                                @await DisplayAsync(cardShape)
                             }
                         </div>
                     </div>

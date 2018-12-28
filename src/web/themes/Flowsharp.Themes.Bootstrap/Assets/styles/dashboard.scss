@@ -104,3 +104,12 @@ body {
     border-color: transparent;
     box-shadow: 0 0 0 3px rgba(255, 255, 255, .25);
 }
+
+/* Widgets */
+.card-body {
+    h4.card-title {
+        i {
+            margin-right: 0.4em;
+        }
+    }
+}

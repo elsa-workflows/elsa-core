@@ -11,16 +11,21 @@ namespace Flowsharp.Serialization
     {
         private readonly IWorkflowTokenizer workflowTokenizer;
         private readonly ITokenFormatterProvider tokenFormatterProvider;
+        private readonly IActivityLibrary activityLibrary;
 
-        public WorkflowSerializer(IWorkflowTokenizer workflowTokenizer, ITokenFormatterProvider tokenFormatterProvider)
+        public WorkflowSerializer(
+            IWorkflowTokenizer workflowTokenizer, 
+            ITokenFormatterProvider tokenFormatterProvider,
+            IActivityLibrary activityLibrary)
         {
             this.workflowTokenizer = workflowTokenizer;
             this.tokenFormatterProvider = tokenFormatterProvider;
+            this.activityLibrary = activityLibrary;
         }
         
         public async Task<string> SerializeAsync(Workflow workflow, string format, CancellationToken cancellationToken)
         {
-            var token = await workflowTokenizer.TokenizeAsync(workflow, cancellationToken);
+            var token = await workflowTokenizer.TokenizeWorkflowAsync(workflow, cancellationToken);
             return await SerializeAsync(token, format, cancellationToken);
         }
         
@@ -36,9 +41,17 @@ namespace Flowsharp.Serialization
             return DeserializeAsync(token, cancellationToken);
         }
         
-        public Task<Workflow> DeserializeAsync(JToken token, CancellationToken cancellationToken)
+        public async Task<Workflow> DeserializeAsync(JToken token, CancellationToken cancellationToken)
         {
-            return workflowTokenizer.DetokenizeAsync(token, cancellationToken);
+            var workflow = await workflowTokenizer.DetokenizeWorkflowAsync(token, cancellationToken);
+            var descriptors = await activityLibrary.ListAsync(cancellationToken).ToDictionaryAsync(x => x.Name);
+
+            foreach (var activity in workflow.Activities)
+            {
+                activity.Descriptor = descriptors[activity.Name];
+            }
+            
+            return workflow;
         }
     }
 }

@@ -7,7 +7,6 @@ namespace Flowsharp
 {
     public interface IActivityLibrary
     {
-        Task<IEnumerable<ActivityDescriptor>> GetActivitiesAsync(CancellationToken cancellationToken);
-        Task<ActivityDescriptor> GetActivityByNameAsync(string name, CancellationToken cancellationToken);
+        Task<IEnumerable<ActivityDescriptor>> ListAsync(CancellationToken cancellationToken);
     }
 }

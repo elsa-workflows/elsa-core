@@ -13,28 +13,28 @@ namespace Flowsharp.Web.ViewComponents.ViewComponents
     public class ActivityPicker : ViewComponent
     {
         private readonly IActivityLibrary activityLibrary;
-        private readonly IActivityDisplayManager activityDisplayManager;
+        private readonly IActivityShapeFactory activityShapeFactory;
 
-        public ActivityPicker(IActivityLibrary activityLibrary, IActivityDisplayManager activityDisplayManager)
+        public ActivityPicker(IActivityLibrary activityLibrary, IActivityShapeFactory activityShapeFactory)
         {
             this.activityLibrary = activityLibrary;
-            this.activityDisplayManager = activityDisplayManager;
+            this.activityShapeFactory = activityShapeFactory;
         }
 
         public async Task<IViewComponentResult> InvokeAsync(CancellationToken cancellationToken)
         {
-            var activityDescriptors = await activityLibrary.GetActivitiesAsync(cancellationToken).ToListAsync();
+            var descriptors = await activityLibrary.ListBrowsableAsync(cancellationToken).ToListAsync();
             var categories = await activityLibrary.GetCategoriesAsync(cancellationToken);
-            var cardShapes = await Task.WhenAll(activityDescriptors.Select(CreateCardShapeAsync));
-            var viewModel = new ActivityPickerViewModel(categories, activityDescriptors, cardShapes);
+            var cardShapes = await Task.WhenAll(descriptors.Select(x => CreateCardShapeAsync(x, cancellationToken)));
+            var viewModel = new ActivityPickerViewModel(categories, descriptors, cardShapes);
 
             return View(viewModel);
         }
 
-        private Task<IShape> CreateCardShapeAsync(ActivityDescriptor descriptor)
+        private Task<IShape> CreateCardShapeAsync(ActivityDescriptor descriptor, CancellationToken cancellationToken)
         {
             var activity = descriptor.InstantiateActivity();
-            return activityDisplayManager.BuildDisplayAsync(activity, null, "Card");
+            return activityShapeFactory.BuildCardShapeAsync(activity, cancellationToken);
         }
     }
 }

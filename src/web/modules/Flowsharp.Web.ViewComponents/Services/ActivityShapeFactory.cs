@@ -11,17 +11,15 @@ namespace Flowsharp.Web.ViewComponents.Services
     public class ActivityShapeFactory : IActivityShapeFactory
     {
         private readonly IActivityDisplayManager displayManager;
-        private readonly IActivityLibrary activityLibrary;
 
-        public ActivityShapeFactory(IActivityDisplayManager displayManager, IActivityLibrary activityLibrary)
+        public ActivityShapeFactory(IActivityDisplayManager displayManager)
         {
             this.displayManager = displayManager;
-            this.activityLibrary = activityLibrary;
         }
         
         public async Task<IShape> BuildDesignShapeAsync(IActivity activity, CancellationToken cancellationToken)
         {
-            var descriptor = await activityLibrary.GetActivityByNameAsync(activity.Name, cancellationToken);
+            var descriptor = activity.Descriptor;
             dynamic shape = await displayManager.BuildDisplayAsync(activity, null, "Design");
             var customFields = activity.Metadata.CustomFields;
             var designerMetadata = customFields.GetValue("Designer", StringComparison.OrdinalIgnoreCase)?.ToObject<ActivityDesignerMetadata>() ?? new ActivityDesignerMetadata();
@@ -31,6 +29,17 @@ namespace Flowsharp.Web.ViewComponents.Services
             shape.ActivityDescriptor = descriptor;
             shape.Activity = activity;
             shape.Designer = designerMetadata;
+
+            return shape;
+        }
+
+        public async Task<IShape> BuildCardShapeAsync(IActivity activity, CancellationToken cancellationToken)
+        {
+            var descriptor = activity.Descriptor;
+            dynamic shape = await displayManager.BuildDisplayAsync(activity, null, "Card");
+            
+            shape.Metadata.Type = $"Activity_Card";
+            shape.ActivityDescriptor = descriptor;
 
             return shape;
         }

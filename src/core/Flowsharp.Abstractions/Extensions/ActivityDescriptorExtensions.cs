@@ -16,14 +16,17 @@ namespace Flowsharp.Extensions
 
         public static IActivity InstantiateActivity(this ActivityDescriptor descriptor, JToken token = default)
         {
-            var activity = token == null
+            var activityObject = token == null
                 ? Activator.CreateInstance(descriptor.ActivityType)
                 : token.ToObject(descriptor.ActivityType, JsonSerializer.Create(new JsonSerializerSettings
                 {
                     ContractResolver = new CamelCasePropertyNamesContractResolver()
                 }));
 
-            return (IActivity) activity;
+            var activity = (IActivity) activityObject;
+
+            activity.Descriptor = descriptor;
+            return activity;
         }
     }
 }

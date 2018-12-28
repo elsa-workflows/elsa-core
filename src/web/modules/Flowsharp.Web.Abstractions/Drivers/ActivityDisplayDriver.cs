@@ -15,8 +15,8 @@ namespace Flowsharp.Web.Abstractions.Drivers
         public override IDisplayResult Display(TActivity model)
         {
             return Combine(
-                Shape(GetDesignShapeType(model), new ActivityViewModel<TActivity>(model)).Location("Design", "Content"),
-                Shape(GetCardShapeType(model), new ActivityViewModel<TActivity>(model)).Location("Card", "Content")
+                Shape(GetDesignShapeType(model), new ActivityShapeModel<TActivity>(model)).Location("Design", "Content"),
+                Shape(GetCardShapeType(model), new ActivityShapeModel<TActivity>(model)).Location("Card", "Content")
             );
         }
 

@@ -7,7 +7,8 @@ namespace Flowsharp.Serialization.Tokenizers
 {
     public interface IWorkflowTokenizer
     {
-        Task<JToken> TokenizeAsync(Workflow value, CancellationToken cancellationToken);
-        Task<Workflow> DetokenizeAsync(JToken token, CancellationToken cancellationToken);
+        Task<JToken> TokenizeWorkflowAsync(Workflow value, CancellationToken cancellationToken);
+        Task<Workflow> DetokenizeWorkflowAsync(JToken token, CancellationToken cancellationToken);
+        Task<IActivity> DetokenizeActivityAsync(JToken token, CancellationToken cancellationToken);
     }
 }

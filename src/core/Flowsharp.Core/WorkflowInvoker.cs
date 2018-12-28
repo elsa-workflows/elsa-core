@@ -22,7 +22,7 @@ namespace Flowsharp
         public async Task<WorkflowExecutionContext> InvokeAsync(Workflow workflow, IActivity startActivity = default, Variables arguments = default, CancellationToken cancellationToken = default)
         {
             workflow.Arguments = arguments ?? new Variables();
-            var activityDescriptors = await activityLibrary.GetActivitiesAsync(cancellationToken);
+            var activityDescriptors = await activityLibrary.ListAsync(cancellationToken);
             var activityDescriptorsDictionary = activityDescriptors.ToDictionary(x => x.Name);
             var workflowExecutionContext = new WorkflowExecutionContext(workflow, activityDescriptorsDictionary);
             var isResuming = workflowExecutionContext.Workflow.Status == WorkflowStatus.Resuming;

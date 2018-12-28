@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Flowsharp.Models;
@@ -20,6 +22,7 @@ namespace Flowsharp.ActivityProviders
             var descriptors = handlers.Select(x => new ActivityDescriptor
             {
                 Name = x.ActivityType.Name,
+                Browsable = x.ActivityType.GetCustomAttribute<BrowsableAttribute>()?.Browsable ?? true,
                 Category = x.Category,
                 ActivityType = x.ActivityType,
                 DisplayText = x.DisplayText,

@@ -7,5 +7,6 @@ namespace Flowsharp.Web.Abstractions.Services
     public interface IActivityShapeFactory
     {
         Task<IShape> BuildDesignShapeAsync(IActivity activity, CancellationToken cancellationToken);
+        Task<IShape> BuildCardShapeAsync(IActivity activity, CancellationToken cancellationToken);
     }
 }

@@ -1,5 +1,6 @@
-@model ActivityViewModel<WriteLine>
-
-<header>
-    <h4><i class="fa fa-code-fork"></i>@Model.Activity.Descriptor.DisplayText</h4>
-</header>
+@model ActivityShapeModel<WriteLine>
+@{
+    var activityDescriptor = Model.Activity.Descriptor;
+}
+<h4 class="card-title"><i class="fa fa-pen"></i>@activityDescriptor.DisplayText</h4>
+<p>@activityDescriptor.Description</p>

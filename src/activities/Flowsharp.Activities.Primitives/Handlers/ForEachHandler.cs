@@ -30,6 +30,5 @@ namespace Flowsharp.Activities.Primitives.Handlers
         {
             return TriggerEndpoint("Done");
         }
-    
     }
 }

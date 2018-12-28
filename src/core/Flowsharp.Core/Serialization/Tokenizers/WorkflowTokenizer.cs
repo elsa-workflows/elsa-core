@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Flowsharp.Activities;
+using Flowsharp.Extensions;
 using Flowsharp.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -24,7 +25,7 @@ namespace Flowsharp.Serialization.Tokenizers
             jsonSerializer = JsonSerializer.Create(new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver() });
         }
 
-        public Task<JToken> TokenizeAsync(Workflow value, CancellationToken cancellationToken)
+        public Task<JToken> TokenizeWorkflowAsync(Workflow value, CancellationToken cancellationToken)
         {
             var workflow = value;
             var activityTuples = workflow.Activities.Select(x => new { Activity = x, Id = x.Id }).ToList();
@@ -49,7 +50,7 @@ namespace Flowsharp.Serialization.Tokenizers
             return Task.FromResult<JToken>(token);
         }
 
-        public async Task<Workflow> DetokenizeAsync(JToken token, CancellationToken cancellationToken)
+        public async Task<Workflow> DetokenizeWorkflowAsync(JToken token, CancellationToken cancellationToken)
         {
             var activityDictionary = await DeserializeActivitiesAsync(token, cancellationToken);
             var serializationContext = new WorkflowTokenizationContext
@@ -81,6 +82,16 @@ namespace Flowsharp.Serialization.Tokenizers
             }
 
             return workflow;
+        }
+        
+        public async Task<IActivity> DetokenizeActivityAsync(JToken token, CancellationToken cancellationToken)
+        {
+            var name = token["name"].Value<string>();
+            var descriptor = await GetActivityDescriptorAsync(name, cancellationToken);
+            var activity = descriptor != null ? (IActivity) token.ToObject(descriptor.ActivityType) : new UnknownActivity();
+
+            activity.Descriptor = descriptor;
+            return activity;
         }
 
         private JToken SerializeCurrentScope(Workflow workflow, IDictionary<WorkflowExecutionScope, int> scopeIdLookup)
@@ -232,10 +243,7 @@ namespace Flowsharp.Serialization.Tokenizers
 
             foreach (var activityModel in activityModels)
             {
-                var name = activityModel["name"].Value<string>();
-                var activityDescriptor = await GetActivityDescriptorAsync(name, cancellationToken);
-                var activity = activityDescriptor != null ? (IActivity) activityModel.ToObject(activityDescriptor.ActivityType) : new UnknownActivity();
-
+                var activity = await DetokenizeActivityAsync(activityModel, cancellationToken);
                 dictionary.Add(activity.Id, activity);
             }
 
@@ -244,7 +252,7 @@ namespace Flowsharp.Serialization.Tokenizers
 
         private Task<ActivityDescriptor> GetActivityDescriptorAsync(string activityName, CancellationToken cancellationToken)
         {
-            return activityLibrary.GetActivityByNameAsync(activityName, cancellationToken);
+            return activityLibrary.GetByNameAsync(activityName, cancellationToken);
         }
     }
 }
