@@ -1,10 +1,11 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
     </PropertyGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\Flowsharp.Core\Flowsharp.Core.csproj" />
       <ProjectReference Include="..\Flowsharp.Persistence.Abstractions\Flowsharp.Persistence.Abstractions.csproj" />
       <ProjectReference Include="..\Flowsharp.Runtime.Abstractions\Flowsharp.Runtime.Abstractions.csproj" />
     </ItemGroup>

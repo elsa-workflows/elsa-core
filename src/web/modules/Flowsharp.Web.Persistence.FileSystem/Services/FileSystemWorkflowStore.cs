@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,13 +16,12 @@ namespace Flowsharp.Web.Persistence.FileSystem.Services
     {
         private readonly IWorkflowsFileStore fileStore;
         private readonly IWorkflowSerializer workflowSerializer;
-        private readonly ITokenFormatter formatter;
+        private const string Format = YamlTokenFormatter.FormatName;
 
-        public FileSystemWorkflowStore(IWorkflowsFileStore fileStore, IWorkflowSerializer workflowSerializer, ITokenFormatter formatter)
+        public FileSystemWorkflowStore(IWorkflowsFileStore fileStore, IWorkflowSerializer workflowSerializer)
         {
             this.fileStore = fileStore;
             this.workflowSerializer = workflowSerializer;
-            this.formatter = formatter;
         }
 
         public async Task<IEnumerable<Workflow>> GetManyAsync(ISpecification<Workflow, IWorkflowSpecificationVisitor> specification, CancellationToken cancellationToken)
@@ -48,7 +46,7 @@ namespace Flowsharp.Web.Persistence.FileSystem.Services
         public async Task UpdateAsync(Workflow value, CancellationToken cancellationToken)
         {
             await fileStore.TryCreateDirectoryAsync("workflows");
-            var data = await workflowSerializer.SerializeAsync(value, cancellationToken);
+            var data = await workflowSerializer.SerializeAsync(value, Format, cancellationToken);
             var path = fileStore.Combine("workflows", value.Metadata.Id);
 
             using (var stream = data.ToStream())
@@ -68,7 +66,7 @@ namespace Flowsharp.Web.Persistence.FileSystem.Services
         private async Task<Workflow> LoadWorkflowDefinitionAsync(IFileStoreEntry file, CancellationToken cancellationToken)
         {
             var data = await fileStore.ReadToEndAsync(file.Path);
-            var workflow = await workflowSerializer.DeserializeAsync(data, cancellationToken);
+            var workflow = await workflowSerializer.DeserializeAsync(data, Format, cancellationToken);
             workflow.Metadata.Id = file.Name;
             return workflow;
         }

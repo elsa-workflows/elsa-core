@@ -27,8 +27,8 @@ namespace Flowsharp {
         public display = (activityName: string, activity: IActivity): JQuery.Promise<any> => {
             this.activityName = activityName;
             this.deferred = jQuery.Deferred<any>();
-            const action = activity.id == null ? 'create' : 'edit';
-            const activityJson: string = JSON.stringify(activity);
+            const action = activity == null ? 'create' : 'edit';
+            const activityJson: string = activity == null ? null : JSON.stringify(activity);
 
             $.ajax({
                 type: 'POST',

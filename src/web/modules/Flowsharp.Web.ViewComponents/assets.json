@@ -26,5 +26,11 @@
             "assets/scripts/flowsharp/activity-picker.ts"
         ],
         "output": "wwwroot/activity-picker.js"
+    },
+    {
+        "inputs": [
+            "assets/scripts/flowsharp/activity-editor.ts"
+        ],
+        "output": "wwwroot/activity-editor.js"
     }
 ]

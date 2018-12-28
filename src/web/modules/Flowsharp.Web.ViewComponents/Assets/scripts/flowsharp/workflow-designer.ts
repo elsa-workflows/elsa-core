@@ -1,27 +1,30 @@
 ///<reference path='../../node_modules/@types/jquery/index.d.ts' />
 ///<reference path='../@types/jsplumb.d.ts' />
+///<reference path='../@types/popper.d.ts' />
 ///<reference path='./workflow-designer-config.ts' />
 ///<reference path='./activity-editor.ts' />
 ///<reference path="activity-descriptor.ts"/>
 ///<reference path="workflow.ts"/>
+///<reference path="activity-info.ts"/>
 
 namespace Flowsharp {
     export class WorkflowDesigner {
         private readonly container: JQuery<HTMLElement>;
         private readonly canvasContainer: JQuery<HTMLElement>;
         private readonly plumber: any;
-        private readonly activityEditor: ActivityEditor;
         private dragStart: { left: number; top: number };
         private hasDragged: boolean;
 
         constructor(containerElement: HTMLElement) {
             this.container = $(containerElement);
             this.canvasContainer = this.container.find('.workflow-canvas');
-            const activityEditorContainer = this.container.find('.activity-editor-modal');
-            this.plumber = WorkflowDesignerConfig.createJsPlumbInstance(containerElement);
+            this.plumber = WorkflowDesignerConfig.createJsPlumbInstance(this.canvasContainer[0]);
             this.initializeNodes();
-            this.initializeDropTarget();
-            this.activityEditor = new ActivityEditor(activityEditorContainer[0]);
+            this.container.on('contextmenu', '.workflow-canvas', this.onCanvasContextMenu);
+            this.canvasContainer.on('contextmenu', '.activity', this.onActivityContextMenu);
+            this.canvasContainer.on('dblclick', '.activity', this.onActivityDoubleClick);
+            this.canvasContainer.on('click', '.activity .context-menu .dropdown-item', this.onActivityContextMenuItemClick);
+            $(document).on('click', 'body', this.hideContextMenu);
         }
 
         public getWorkflow = (): IWorkflow => {
@@ -37,7 +40,7 @@ namespace Flowsharp {
 
                 activities.push(activity);
             }
-            
+
             for (let connection of this.plumber.getConnections()) {
                 const sourceEndpoint: Endpoint = connection.endpoints[0];
                 const sourceEndpointName = sourceEndpoint.getParameters().endpointName;
@@ -63,32 +66,46 @@ namespace Flowsharp {
             };
         };
 
+        public addActivity = (activityHtml: string): HTMLElement => {
+            const $activityElement = $(activityHtml);
+
+            this.plumber.batch(() => {
+
+                $activityElement.css({left: '300px', top: '80px'});
+                this.canvasContainer[0].appendChild($activityElement[0]);
+                this.initializeElement($activityElement);
+                $activityElement.show();
+            });
+
+            return $activityElement[0];
+        };
+
+        public updateActivityElement = (activityElement: HTMLElement, updatedHtml: string) => {
+            this.plumber.batch(() => {
+                this.plumber.remove(activityElement);
+
+                const $updatedActivityElement = $(updatedHtml);
+                const updatedActivityElement = $updatedActivityElement[0];
+                this.canvasContainer[0].appendChild(updatedActivityElement);
+                this.initializeElement($updatedActivityElement);
+                this.restoreConnections(updatedActivityElement);
+                $updatedActivityElement.show();
+            });
+        };
+
+        public addEventListener = (type: string, listener: EventListenerOrEventListenerObject): void => {
+            this.container[0].addEventListener(type, listener);
+        };
+
         private editActivity = (activityElement: JQuery<HTMLElement>) => {
-            const displayText = activityElement.attr('title');
-            const activityName = activityElement.data('activity-name');
-            const activity: IActivity = activityElement.data('activity-model');
-            this.activityEditor.title = `Edit ${displayText}`;
-            this.activityEditor.show();
-            this.activityEditor
-                .display(activityName, activity)
-                .done((updatedHtml: string) => this.updateActivityElement(activityElement, updatedHtml));
-        };
+            const activityInfo: ActivityInfo = {
+                activityElement: activityElement[0],
+                activityName: activityElement.data('activity-name'),
+                activityDisplayText: activityElement.attr('title'),
+                activity: activityElement.data('activity-model')
+            };
 
-        private addActivity = (activityHtml: string) => {
-            const activityElement = $(activityHtml);
-
-            this.canvasContainer[0].appendChild(activityElement[0]);
-            this.initializeElement(activityElement);
-        };
-
-        private updateActivityElement = (activityElement: JQuery<HTMLElement>, updatedHtml: string) => {
-            this.plumber.deleteConnectionsForElement(activityElement);
-            this.plumber.removeAllEndpoints(activityElement);
-            activityElement.remove();
-
-            const updatedActivityElement = $(updatedHtml);
-            this.canvasContainer[0].appendChild(updatedActivityElement[0]);
-            this.initializeElement(updatedActivityElement);
+            this.container[0].dispatchEvent(new CustomEvent('edit-activity', {detail: {activityInfo: activityInfo}}));
         };
 
         private updateActivityModel = (activityElement: JQuery<HTMLElement>, update: (activity: IActivity) => any) => {
@@ -98,17 +115,46 @@ namespace Flowsharp {
         };
 
         private initializeNodes = () => {
+
             this.plumber.batch(() => {
                 const activityElements = $(this.canvasContainer).find('.activity');
-
                 for (let index = 0; index < activityElements.length; index++) {
                     const activityElement = $(activityElements[index]);
                     this.initializeElement(activityElement);
                 }
-                
+
                 this.createConnections();
                 activityElements.show();
             });
+        };
+
+        private showContextMenu = (menu: JQuery<HTMLElement>, e: JQuery.Event<HTMLElement>) => {
+            if (e.isDefaultPrevented())
+                return;
+
+            e.preventDefault();
+            this.hideContextMenu();
+
+            const element: HTMLElement = e.currentTarget;
+            const offset = $(element).offset();
+            const relX = e.pageX - offset.left;
+            const relY = e.pageY - offset.top;
+            
+            menu
+                .css({
+                    display: 'block',
+                    left: relX,
+                    top: relY
+                })
+                .addClass('show')
+                .off('click')
+                .on('click', 'a', (e) => {
+                    this.hideContextMenu();
+                });
+        };
+        
+        private hideContextMenu = () => {
+            $('.context-menu').hide().removeClass('show');
         };
 
         private initializeElement = (activityElement: JQuery<HTMLElement>) => {
@@ -145,15 +191,31 @@ namespace Flowsharp {
             });
 
             this.addSourceEndpoints(activityElement[0], activityId, activityEndpoints);
-
-            activityElement.on('dblclick', this.onDoubleClick);
             this.plumber.revalidate(activityElement[0]);
+        };
+
+        private restoreConnections = (activityElement: HTMLElement) => {
+            const activity: IActivity = $(activityElement).data('activity-model');
+            const connections: IConnection[] = $(this.canvasContainer).data('workflow-connections');
+            const plumber = this.plumber;
+            const activityConnections = connections.filter(x => x.target.activityId == activity.id || x.source.activityId == activity.id);
+
+            for (let connection of activityConnections) {
+                const sourceEndpointUuid: string = `${connection.source.activityId}-${connection.source.name}`;
+                const sourceEndpoint: Endpoint = plumber.getEndpoint(sourceEndpointUuid);
+                const destinationElementId: string = `activity-${connection.target.activityId}`;
+
+                plumber.connect({
+                    source: sourceEndpoint,
+                    target: destinationElementId
+                });
+            }
         };
 
         private createConnections = () => {
             const connections: IConnection[] = $(this.canvasContainer).data('workflow-connections');
             const plumber = this.plumber;
-            
+
             for (let connection of connections) {
                 const sourceEndpointUuid: string = `${connection.source.activityId}-${connection.source.name}`;
                 const sourceEndpoint: Endpoint = plumber.getEndpoint(sourceEndpointUuid);
@@ -178,54 +240,38 @@ namespace Flowsharp {
             }
         };
 
-        private initializeDropTarget = () => {
-            $(this.canvasContainer).on('dragover', WorkflowDesigner.onDragOver);
-            $(this.canvasContainer).on('drop', this.onDrop)
+        private onCanvasContextMenu = (e: JQuery.Event<HTMLElement>) => {
+            const menu = $(e.currentTarget).find('.canvas-context-menu');
+            this.showContextMenu(menu, e);
         };
 
-        private static onDragOver = (e: JQuery.Event) => {
-            e.preventDefault();
+        private onActivityContextMenu = (e: JQuery.Event<HTMLElement>) => {
+            const menu = $(e.currentTarget).find('.activity-context-menu');
+            this.showContextMenu(menu, e);
         };
 
-        private onDrop = (e: JQuery.Event) => {
+        private onActivityContextMenuItemClick = (e: JQuery.Event<HTMLElement>) => {
             e.preventDefault();
 
-            const dragEvent = <DragEvent>e.originalEvent;
-            const activityDescriptor: ActivityDescriptor = JSON.parse(dragEvent.dataTransfer.getData('activity-descriptor-json'));
-            const activityName = activityDescriptor.name;
-            const x = dragEvent.offsetX;
-            const y = dragEvent.offsetY;
-            const activity: IActivity = {
-                id: null,
-                metadata: {
-                    customFields: {
-                        designer: {x: x, y: y}
-                    }
-                }
-            };
-
-            this.activityEditor.title = `Add ${activityDescriptor.displayText}`;
-            this.activityEditor.show();
-            this.activityEditor.display(activityName, activity).done((data: string) => this.addActivity(data));
+            const $activityElement: JQuery<HTMLElement> = $(e.currentTarget).parents('.activity');
+            const action = $(e.currentTarget).attr('href').substr(1);
+            
+            switch(action)
+            {
+                case 'edit':
+                    this.editActivity($activityElement);
+                    break;
+                case 'delete':
+                    this.plumber.remove($activityElement);
+                    break;
+            }
         };
 
-        private onDoubleClick = (e: JQuery.Event) => {
+        private onActivityDoubleClick = (e: JQuery.Event<HTMLElement>) => {
             e.preventDefault();
 
-            const activityElement: JQuery<HTMLElement> = $(<HTMLElement>e.originalEvent.currentTarget);
+            const activityElement: JQuery<HTMLElement> = $(e.currentTarget);
             this.editActivity(activityElement);
         };
     }
-
-    // $(() => {
-    //     $('.workflow-designer-container').each((i, e) => {
-    //         const canvasContainer = $(e).find('.workflow-canvas')[0];
-    //         const activityEditorContainer = $(e).find('.activity-editor-modal')[0];
-    //         const workflowDesigner = new WorkflowDesigner(canvasContainer, activityEditorContainer);
-    //
-    //         const win = <any>window;
-    //         win.Flowsharp = win.Flowsharp || {};
-    //         win.Flowsharp.workflowDesigner = workflowDesigner;
-    //     });
-    // });
 }

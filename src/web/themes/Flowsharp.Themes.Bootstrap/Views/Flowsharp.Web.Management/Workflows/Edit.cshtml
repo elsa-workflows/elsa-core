@@ -14,10 +14,24 @@
             </nav>
         </div>
     </div>
-    @await Component.InvokeAsync("ActivityPicker")
     @await Component.InvokeAsync("WorkflowDesigner", new { workflowId = Model.Metadata.Id })
-</div>
-<div class="fixed-bottom p-3 m-3 clearfix">
-    <button type="button" class="btn btn-sm btn-primary float-right">Save</button>
+    @await Component.InvokeAsync("ActivityPicker")
+    @await Component.InvokeAsync("ActivityEditor")
+    
+    <div class="fixed-bottom p-3 m-3 clearfix">
+        <div class="float-right">
+            <button id="save-workflow-button" type="button" class="btn btn-sm btn-primary">Save</button>
+            <div class="btn-group btn-group-sm" role="group">
+                <button type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    @T["Export"]
+                </button>
+                <div class="dropdown-menu">
+                    <a class="dropdown-item export-workflow-button" href="#json">json</a>
+                    <a class="dropdown-item export-workflow-button" href="#yaml">yaml</a>
+                    <a class="dropdown-item export-workflow-button" href="#xml">xml</a>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 <script asp-name="flowsharp-workflow-editor-script" asp-src="~/Flowsharp.Web.Management/workflow-editor.js" at="Foot"></script>

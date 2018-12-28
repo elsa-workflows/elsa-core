@@ -8,6 +8,7 @@ namespace Flowsharp.Serialization.Formatters
 {
     public class YamlTokenFormatter : ITokenFormatter
     {
+        public const string FormatName = "YAML";
         private readonly ExpandoObjectConverter expandoObjectConverter;
         private readonly Serializer serializer;
         private readonly Deserializer deserializer;
@@ -18,6 +19,9 @@ namespace Flowsharp.Serialization.Formatters
             serializer = new SerializerBuilder().Build();
             deserializer = new DeserializerBuilder().Build();
         }
+
+        public string Format => FormatName;
+        public string ContentType => "application/x-yaml";
 
         public string ToString(JToken token)
         {

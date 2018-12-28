@@ -13,32 +13,7 @@
     <ItemGroup>
         <Folder Remove="ClientApp\node_modules\" />
     </ItemGroup>
-
-    <ItemGroup>
-        <Folder Remove="wwwroot\" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Compile Remove="App_Data\**" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <EmbeddedResource Remove="App_Data\**" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <None Remove="App_Data\**" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Content Remove="App_Data\**" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <_ContentIncludedByDefault Remove="Views\Home\Index.cshtml" />
-      <_ContentIncludedByDefault Remove="Views\_ViewImports.cshtml" />
-    </ItemGroup>
-
+    
     <ItemGroup>
       <ProjectReference Include="..\modules\Flowsharp.Web.Activities.Console\Flowsharp.Web.Activities.Console.csproj" />
       <ProjectReference Include="..\modules\Flowsharp.Web.Activities.Primitives\Flowsharp.Web.Activities.Primitives.csproj" />

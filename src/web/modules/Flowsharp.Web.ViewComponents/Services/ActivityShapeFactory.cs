@@ -2,11 +2,8 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Flowsharp.Extensions;
-using Flowsharp.Models;
 using Flowsharp.Web.Abstractions.Services;
 using Flowsharp.Web.ViewComponents.Models;
-using Newtonsoft.Json.Linq;
 using OrchardCore.DisplayManagement;
 
 namespace Flowsharp.Web.ViewComponents.Services
@@ -24,10 +21,10 @@ namespace Flowsharp.Web.ViewComponents.Services
         
         public async Task<IShape> BuildDesignShapeAsync(IActivity activity, CancellationToken cancellationToken)
         {
+            var descriptor = await activityLibrary.GetActivityByNameAsync(activity.Name, cancellationToken);
             dynamic shape = await displayManager.BuildDisplayAsync(activity, null, "Design");
             var customFields = activity.Metadata.CustomFields;
             var designerMetadata = customFields.GetValue("Designer", StringComparison.OrdinalIgnoreCase)?.ToObject<ActivityDesignerMetadata>() ?? new ActivityDesignerMetadata();
-            var descriptor = await activityLibrary.GetActivityByNameAsync(activity.Name, CancellationToken.None);
             
             shape.Metadata.Type = $"Activity_Design";
             shape.Endpoints = descriptor.GetEndpoints().ToList();

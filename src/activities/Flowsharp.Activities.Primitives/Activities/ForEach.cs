@@ -1,5 +1,4 @@
-﻿using Flowsharp.Expressions;
-using Flowsharp.Models;
+﻿using Flowsharp.Models;
 
 namespace Flowsharp.Activities.Primitives.Activities
 {

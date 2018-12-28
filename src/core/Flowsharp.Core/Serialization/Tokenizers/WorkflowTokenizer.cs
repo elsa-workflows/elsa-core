@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Flowsharp.Activities;
 using Flowsharp.Models;
-using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
@@ -16,11 +15,13 @@ namespace Flowsharp.Serialization.Tokenizers
     {
         private readonly ITokenizerInvoker tokenizerInvoker;
         private readonly IActivityLibrary activityLibrary;
+        private readonly JsonSerializer jsonSerializer;
 
         public WorkflowTokenizer(ITokenizerInvoker tokenizerInvoker, IActivityLibrary activityLibrary)
         {
             this.tokenizerInvoker = tokenizerInvoker;
             this.activityLibrary = activityLibrary;
+            jsonSerializer = JsonSerializer.Create(new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver() });
         }
 
         public Task<JToken> TokenizeAsync(Workflow value, CancellationToken cancellationToken)
@@ -36,7 +37,7 @@ namespace Flowsharp.Serialization.Tokenizers
 
             var token = new JObject
             {
-                { "metadata", JToken.FromObject(workflow.Metadata, JsonSerializer.Create(new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver() })) },
+                { "metadata", JToken.FromObject(workflow.Metadata, jsonSerializer) },
                 { "status", workflow.Status.ToString() },
                 { "activities", SerializeActivities(context) },
                 { "connections", SerializeConnections(context, workflow) },
@@ -60,7 +61,7 @@ namespace Flowsharp.Serialization.Tokenizers
             var scopeLookup = DeserializeScopes(token, serializationContext);
             var workflow = new Workflow
             {
-                Metadata = token["metadata"].ToObject<WorkflowMetadata>(new JsonSerializer() { ContractResolver = new CamelCasePropertyNamesContractResolver() }),
+                Metadata = token["metadata"].ToObject<WorkflowMetadata>(jsonSerializer),
                 Status = (WorkflowStatus) Enum.Parse(typeof(WorkflowStatus), token["status"].Value<string>()),
                 Activities = activityDictionary.Values.ToList(),
                 Connections = DeserializeConnections(token, activityDictionary).ToList(),

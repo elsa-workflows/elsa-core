@@ -5,14 +5,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Content Include="Assets\scripts\workflow-editor.ts" />
-        <Content Include="Views\Home\Index.cshtml" />
-        <Content Include="Views\Workflows\Edit.cshtml" />
-        <Content Include="Views\Workflows\Index.cshtml" />
-        <Content Include="Views\_ViewImports.cshtml" />
-    </ItemGroup>
-
-    <ItemGroup>
         <PackageReference Include="OrchardCore" Version="1.0.0-beta3-69807" />
         <PackageReference Include="OrchardCore.FileStorage.FileSystem" Version="1.0.0-beta3-69807" />
         <PackageReference Include="OrchardCore.Module.Targets" Version="1.0.0-beta3-69807" />

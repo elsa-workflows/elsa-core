@@ -21,4 +21,8 @@
     data-activity-model="@activityJson"
     data-activity-endpoints="@activityEndpoints">
     @await DisplayAsync(Model.Content)
+    <div class="dropdown-menu context-menu activity-context-menu">
+        <a class="dropdown-item" href="#edit">Edit</a>
+        <a class="dropdown-item" href="#delete">Delete</a>
+    </div>
 </div>

@@ -5,7 +5,10 @@ namespace Flowsharp.Serialization.Formatters
 {
     public class JsonTokenFormatter : ITokenFormatter
     {
-        public string ToString(JToken token) => token.ToString(Formatting.None);
+        public const string FormatName = "JSON";
+        public string Format => FormatName;
+        public string ContentType => "application/json";
+        public string ToString(JToken token) => token.ToString(Formatting.Indented);
         public JToken FromString(string data) => JToken.Parse(data);
     }
 }

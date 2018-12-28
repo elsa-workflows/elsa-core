@@ -1,10 +1,7 @@
-﻿using System.Linq;
-using System.Reflection;
-using Flowsharp.Web.Management.Extensions;
+﻿using Flowsharp.Web.Management.Extensions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
-using OrchardCore.Modules.Manifest;
 
 namespace Flowsharp.Web.Dashboard
 {

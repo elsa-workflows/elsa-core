@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>netcoreapp2.1</TargetFramework>
@@ -15,10 +15,10 @@
 
     <ItemGroup>
       <Content Include="Views\ReadLine.Design.cshtml" />
-      <Content Include="Views\ReadLine.Thumbnail.cshtml" />
+      <Content Include="Views\ReadLine.Card.cshtml" />
       <Content Include="Views\WriteLine.Design.cshtml" />
       <Content Include="Views\WriteLine.Edit.cshtml" />
-      <Content Include="Views\WriteLine.Thumbnail.cshtml" />
+      <Content Include="Views\WriteLine.Card.cshtml" />
       <Content Include="Views\_ViewImports.cshtml" />
     </ItemGroup>
 

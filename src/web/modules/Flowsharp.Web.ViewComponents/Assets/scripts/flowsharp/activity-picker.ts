@@ -1,5 +1,6 @@
 ///<reference path='../../node_modules/@types/jquery/index.d.ts' />
 ///<reference path='../../node_modules/@types/bootstrap/index.d.ts' />
+///<reference path="selected-activity-info.ts"/>
 
 namespace Flowsharp {
     export class ActivityPicker {
@@ -8,7 +9,7 @@ namespace Flowsharp {
 
         constructor(private containerElement: HTMLElement) {
             this.container = $(containerElement);
-            this.container.find('a[data-activity-name]').on('click', this.onAddActivityClick);
+            this.container.find('a[data-activity-name]').on('click', this.onSelectActivityClick);
 
             this.container.find('.activity-picker-categories').on('click', '.nav-link', e => {
                 this.applyFilter($(e.target).attr('href').substr(1), null);
@@ -33,11 +34,18 @@ namespace Flowsharp {
         public show = () => this.container.modal('show');
         public hide = () => this.container.modal('hide');
 
-        private onAddActivityClick = (e: JQuery.Event): void => {
+        public addEventListener = (eventName: string, listener: EventListenerOrEventListenerObject): void => {
+            return this.container[0].addEventListener(eventName, listener);
+        };
+
+        private onSelectActivityClick = (e: JQuery.Event): void => {
             e.preventDefault();
 
-            var activityName: string = $(e.target).data('activity-name');
-            const event = new CustomEvent("activity-selected", {detail: {activityName: activityName}});
+            const selectedActivityInfo: SelectedActivityInfo = {
+                activityName: $(e.target).data('activity-name'),
+                activityDisplayText: $(e.target).data('activity-display-text')
+            };
+            const event = new CustomEvent('activity-selected', {detail: selectedActivityInfo});
             this.container[0].dispatchEvent(event);
         };
 
@@ -76,13 +84,4 @@ namespace Flowsharp {
             });
         };
     }
-
-    $(function () {
-        const activityPickerContainer: HTMLDivElement = <HTMLDivElement>document.getElementById('flowsharp-activity-picker');
-        const activityPicker = new ActivityPicker(activityPickerContainer);
-
-        const win = <any>window;
-        win.Flowsharp = win.Flowsharp || {};
-        win.Flowsharp.activityPicker = activityPicker;
-    });
 }

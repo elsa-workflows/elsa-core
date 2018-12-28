@@ -4,7 +4,7 @@
     var workflowMetadataJson = JsonConvert.SerializeObject(Model.Workflow.Metadata, serializerSettings);
     var connectionsJson = JsonConvert.SerializeObject(Model.Connections, serializerSettings);
 }
-<div class="workflow-designer-container">
+<div id="flowsharp-workflow-designer">
     <div class="workflow-canvas" 
          data-workflow-metadata="@workflowMetadataJson" 
          data-workflow-status="@Model.Workflow.Status"
@@ -13,24 +13,10 @@
         {
             @await DisplayAsync(activityShape)
         }
-    </div>
-    <div class="modal fade activity-editor-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true" style="display: none;">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Modal title</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
-                    </button>
-                </div>
-                <form method="post">
-                    <div class="modal-body"></div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                        <button type="submit" class="btn btn-primary">Save changes</button>
-                    </div>
-                </form>
-            </div>
+        <div class="dropdown-menu context-menu canvas-context-menu">
+            <a class="dropdown-item" href="#add-trigger">Add Trigger</a>
+            <a class="dropdown-item" href="#add-action">Add Action</a>
+            <a class="dropdown-item" href="#export">Export</a>
         </div>
     </div>
 </div>

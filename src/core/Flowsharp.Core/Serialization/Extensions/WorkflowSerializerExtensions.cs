@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Flowsharp.Models;
+using Flowsharp.Serialization.Formatters;
 
 namespace Flowsharp.Serialization.Extensions
 {
@@ -9,8 +10,9 @@ namespace Flowsharp.Serialization.Extensions
     {
         public static async Task<Workflow> CloneAsync(this IWorkflowSerializer workflowSerializer, Workflow workflow, CancellationToken cancellationToken)
         {
-            var json = await workflowSerializer.SerializeAsync(workflow, cancellationToken);
-            return await workflowSerializer.DeserializeAsync(json, cancellationToken);
+            var format = JsonTokenFormatter.FormatName;
+            var json = await workflowSerializer.SerializeAsync(workflow, format, cancellationToken);
+            return await workflowSerializer.DeserializeAsync(json, format, cancellationToken);
         }
         
         public static async Task<Workflow> DeriveAsync(this IWorkflowSerializer workflowSerializer, Workflow parent, CancellationToken cancellationToken)

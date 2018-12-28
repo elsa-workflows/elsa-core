@@ -1,0 +1,6 @@
+@model ActivityViewModel<ReadLine>
+@{
+    var activityDescriptor = Model.Activity.Descriptor;
+}
+<h4 class="card-title"><i class="fa fa-home"></i>@activityDescriptor.DisplayText</h4>
+<p>@activityDescriptor.Description</p>

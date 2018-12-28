@@ -1,15 +1,13 @@
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Flowsharp.Models;
 using Flowsharp.Persistence;
 using Flowsharp.Persistence.Specifications;
 using Flowsharp.Serialization;
 using Flowsharp.Serialization.Extensions;
-using Flowsharp.Serialization.Formatters;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json.Linq;
-using OrchardCore.Modules;
 
 namespace Flowsharp.Web.Management.Controllers
 {
@@ -19,16 +17,16 @@ namespace Flowsharp.Web.Management.Controllers
     {
         private readonly IWorkflowStore workflowStore;
         private readonly IWorkflowSerializer workflowSerializer;
-        private readonly ITokenFormatter tokenFormatter;
+        private readonly ITokenFormatterProvider tokenFormatterProvider;
 
         public WorkflowsController(
             IWorkflowStore workflowStore, 
             IWorkflowSerializer workflowSerializer, 
-            ITokenFormatter tokenFormatter)
+            ITokenFormatterProvider tokenFormatterProvider)
         {
             this.workflowStore = workflowStore;
             this.workflowSerializer = workflowSerializer;
-            this.tokenFormatter = tokenFormatter;
+            this.tokenFormatterProvider = tokenFormatterProvider;
         }
 
         public async Task<IActionResult> Index(CancellationToken cancellationToken)
@@ -54,11 +52,15 @@ namespace Flowsharp.Web.Management.Controllers
         }
         
         [HttpPost("{id}/download")]
-        public IActionResult Download(string id, [FromBody]JToken workflowData, CancellationToken cancellationToken)
+        public IActionResult Download(string id, [FromQuery]string format, [FromBody]JToken workflowData, CancellationToken cancellationToken)
         {
-            var data = tokenFormatter.ToString(workflowData);
+            var formatter = tokenFormatterProvider.GetFormatter(format);
+            var data = formatter.ToString(workflowData);
             var bytes = data.ToStream();
-            return File(bytes, "application/x-yaml", id);
+            var baseName = Path.GetFileNameWithoutExtension(id);
+            var fileName = $"{baseName}.{format.ToLowerInvariant()}";
+            var contentType = formatter.ContentType;
+            return File(bytes, contentType, fileName);
         }
     }
 }

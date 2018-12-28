@@ -13,7 +13,7 @@ namespace Flowsharp.Extensions
             var token = json != null ? JToken.Parse(json) : default;
             return InstantiateActivity(descriptor, token);
         }
-        
+
         public static IActivity InstantiateActivity(this ActivityDescriptor descriptor, JToken token = default)
         {
             var activity = token == null

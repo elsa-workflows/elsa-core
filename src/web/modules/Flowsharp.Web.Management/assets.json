@@ -1,6 +1,8 @@
 [
     {
         "inputs": [
+            "assets/node_modules/bootstrap4-notify/bootstrap-notify.js",
+            "assets/scripts/ajax-binary-transport.js",
             "assets/scripts/workflow-editor.ts"
         ],
         "output": "wwwroot/workflow-editor.js"

@@ -21,4 +21,8 @@
       <RazorGenerate Remove="Views\Shared\Components\ActivityLibrary\Default.cshtml" />
     </ItemGroup>
 
-</Project> 
+    <ItemGroup>
+      <None Remove="Assets\scripts\contextmenu\contextmenu.js" />
+    </ItemGroup>
+
+</Project>

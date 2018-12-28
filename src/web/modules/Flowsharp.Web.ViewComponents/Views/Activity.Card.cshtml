@@ -1,14 +1,12 @@
 @model dynamic
 @{
-    var descriptor = (ActivityDescriptor)Model.Value;
+    var activityDescriptor = (ActivityDescriptor) Model.ActivityDescriptor;
 }
-
-<div class="card activity" data-category="@descriptor.Category.Name.HtmlClassify()" data-activity-type="Action">
+<div class="card activity" data-category="@activityDescriptor.Category.Name.HtmlClassify()" data-activity-type="Action">
     <div class="card-body">
-        <h4 class="card-title">@descriptor.DisplayText</h4>
-        <p>@descriptor.Description</p>
+        @await DisplayAsync(Model.Content)
     </div>
     <div class="card-footer text-muted text-xs-right">
-        <a class="btn btn-primary btn-sm" href="#" data-activity-name="@descriptor.Name">@T["Add"]</a>
+        <a class="btn btn-primary btn-sm" href="#" data-activity-name="@activityDescriptor.Name" data-activity-display-text="@activityDescriptor.DisplayText">@T["Select"]</a>
     </div>
 </div>

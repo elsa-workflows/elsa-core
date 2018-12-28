@@ -1,6 +1,5 @@
 using System;
 using System.Threading.Tasks;
-using Flowsharp.Models;
 using Flowsharp.Web.Abstractions.ViewModels;
 using OrchardCore.DisplayManagement.Handlers;
 using OrchardCore.DisplayManagement.ModelBinding;
@@ -15,25 +14,29 @@ namespace Flowsharp.Web.Abstractions.Drivers
     {
         public override IDisplayResult Display(TActivity model)
         {
-            return Shape(GetDesignShapeType(model), new ActivityViewModel<TActivity>(model)).Location("Design", "Content");
+            return Combine(
+                Shape(GetDesignShapeType(model), new ActivityViewModel<TActivity>(model)).Location("Design", "Content"),
+                Shape(GetCardShapeType(model), new ActivityViewModel<TActivity>(model)).Location("Card", "Content")
+            );
         }
 
         protected string GetDesignShapeType(IActivity activity) => $"{activity.Name}_Design";
+        protected string GetCardShapeType(IActivity activity) => $"{activity.Name}_Card";
     }
-    
+
     /// <summary>
     /// Base class for activity drivers using a strongly typed view model.
     /// </summary>
     public abstract class ActivityDisplayDriver<TActivity, TEditViewModel> : ActivityDisplayDriver<TActivity>
         where TActivity : class, IActivity
-        where TEditViewModel : class, new() 
+        where TEditViewModel : class, new()
     {
         public override IDisplayResult Edit(TActivity model)
         {
             var result = Initialize(
-                GetEditorShapeType(model), 
-                (Func<TEditViewModel, Task>)(viewModel => EditActivityAsync(model, viewModel)))
-            .Location("Content");
+                    GetEditorShapeType(model),
+                    (Func<TEditViewModel, Task>) (viewModel => EditActivityAsync(model, viewModel)))
+                .Location("Content");
 
             return result;
         }
@@ -81,7 +84,7 @@ namespace Flowsharp.Web.Abstractions.Drivers
         protected virtual void UpdateActivity(TEditViewModel model, TActivity activity)
         {
         }
-        
+
         protected virtual string GetEditorShapeType(TActivity activity) => $"{activity.Name}_Edit";
     }
 }
