@@ -25,7 +25,7 @@ namespace Flowsharp.Serialization.Tokenizers
             jsonSerializer = JsonSerializer.Create(new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver() });
         }
 
-        public Task<JToken> TokenizeWorkflowAsync(Workflow value, CancellationToken cancellationToken)
+        public async Task<JToken> TokenizeWorkflowAsync(Workflow value, CancellationToken cancellationToken)
         {
             var workflow = value;
             var activityTuples = workflow.Activities.Select(x => new { Activity = x, Id = x.Id }).ToList();
@@ -40,14 +40,14 @@ namespace Flowsharp.Serialization.Tokenizers
             {
                 { "metadata", JToken.FromObject(workflow.Metadata, jsonSerializer) },
                 { "status", workflow.Status.ToString() },
-                { "activities", SerializeActivities(context) },
+                { "activities", await SerializeActivitiesAsync(context, cancellationToken) },
                 { "connections", SerializeConnections(context, workflow) },
                 { "haltedActivities", SerializeHaltedActivities(context, workflow) },
                 { "scopes", SerializeScopes(context, scopeIdLookup) },
                 { "currentScope", SerializeCurrentScope(workflow, scopeIdLookup) }
             };
 
-            return Task.FromResult<JToken>(token);
+            return token;
         }
 
         public async Task<Workflow> DetokenizeWorkflowAsync(JToken token, CancellationToken cancellationToken)
@@ -82,6 +82,12 @@ namespace Flowsharp.Serialization.Tokenizers
             }
 
             return workflow;
+        }
+
+        public Task<JToken> TokenizeActivityAsync(IActivity value, CancellationToken cancellationToken)
+        {
+            var activityModel = JObject.FromObject(value, jsonSerializer);
+            return Task.FromResult<JToken>(activityModel);
         }
         
         public async Task<IActivity> DetokenizeActivityAsync(JToken token, CancellationToken cancellationToken)
@@ -163,16 +169,15 @@ namespace Flowsharp.Serialization.Tokenizers
             return connectionModels;
         }
 
-        private JArray SerializeActivities(WorkflowTokenizationContext context)
+        private async Task<JArray> SerializeActivitiesAsync(WorkflowTokenizationContext context, CancellationToken cancellationToken)
         {
             var activityModels = new JArray();
 
             foreach (var item in context.ActivityIdLookup)
             {
                 var activity = item.Key;
-                var activityModel = JObject.FromObject(activity, new JsonSerializer { ContractResolver = new CamelCasePropertyNamesContractResolver() });
+                var activityModel = await TokenizeActivityAsync(activity, cancellationToken);
 
-                activityModel["name"] = activity.Name;
                 activityModels.Add(activityModel);
             }
 

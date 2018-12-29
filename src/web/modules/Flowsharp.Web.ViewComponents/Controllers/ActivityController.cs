@@ -42,11 +42,14 @@ namespace Flowsharp.Web.ViewComponents.Controllers
             activity.Id = Guid.NewGuid().ToString().Replace("-", "");
 
             var editorShape = await displayManager.BuildEditorAsync(activity, this, false);
+            var activityToken = await workflowTokenizer.TokenizeActivityAsync(activity, cancellationToken);
+
             var model = new ActivityEditorEditViewModel
             {
-                ActivityJson = JsonConvert.SerializeObject(activity),
+                ActivityJson = activityToken.ToString(),
                 ActivityEditorShape = editorShape,
             };
+            
             return View("Edit", model);
         }
 

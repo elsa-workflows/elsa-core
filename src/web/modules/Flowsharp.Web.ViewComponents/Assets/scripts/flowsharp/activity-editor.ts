@@ -11,10 +11,12 @@ namespace Flowsharp {
         private formElement: JQuery<HTMLFormElement>;
         private activityName: string;
         private deferred: JQuery.Deferred<any>;
+        private saveButtonElement: JQuery<HTMLElement>;
 
         constructor(container: HTMLElement) {
             this.containerElement = $(container);
             this.titleElement = this.containerElement.find('.modal-title');
+            this.saveButtonElement = this.containerElement.find('.save-button');
             this.contentElement = this.containerElement.find('.modal-body');
             this.formElement = <JQuery<HTMLFormElement>>this.containerElement.find('form');
 
@@ -27,8 +29,12 @@ namespace Flowsharp {
         public display = (activityName: string, activity: IActivity): JQuery.Promise<any> => {
             this.activityName = activityName;
             this.deferred = jQuery.Deferred<any>();
-            const action = activity == null ? 'create' : 'edit';
+            const isNew = activity == null;
+            const action = isNew ? 'create' : 'edit';
+            const saveButtonText = isNew ? 'Add' : 'Save';
             const activityJson: string = activity == null ? null : JSON.stringify(activity);
+
+            this.saveButtonElement.text(saveButtonText);
 
             $.ajax({
                 type: 'POST',

@@ -29,7 +29,7 @@
         -moz-transition: -moz-box-shadow 0.15s ease-in;
         -o-transition: -o-box-shadow 0.15s ease-in;
         transition: box-shadow 0.15s ease-in;
-        
+
         &.activity-start, &.activity-blocking {
             background-color: #f1f1f1;
             color: #3d3d3d;
@@ -40,7 +40,7 @@
             h4 {
                 font-size: 1.4em;
 
-                .fa {
+                .fa, .far {
                     margin-right: 0.5em;
                 }
             }
