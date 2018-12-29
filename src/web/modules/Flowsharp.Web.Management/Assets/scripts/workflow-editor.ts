@@ -55,14 +55,17 @@ namespace Flowsharp {
             e.preventDefault();
             const workflow = this.workflowDesigner.getWorkflow();
             const workflowJson = JSON.stringify(workflow);
+            const isNew = this.workflowId === null || this.workflowId == '';
+            const url = isNew ? '/workflows' :`/workflows/${this.workflowId}`;
+            const method = isNew ? 'POST' : 'PUT';
 
             $.ajax({
-                url: `/workflows/${this.workflowId}`,
-                type: 'PUT',
+                url: url,
+                type: method,
                 data: workflowJson,
                 contentType: 'application/json',
                 dataType: 'json'
-            }).done(this.displayNotification);
+            }).done(this.handleSaveResult);
         };
 
         private onExportClick = (e: JQuery.Event) => {
@@ -98,6 +101,16 @@ namespace Flowsharp {
         private serializeWorkflow = (pretty: boolean): string => {
             const workflow = this.workflowDesigner.getWorkflow();
             return JSON.stringify(workflow, null, pretty ? 2 : null);
+        };
+        
+        private handleSaveResult = (data: any) => {
+          if(data.redirect)
+          {
+              window.location.href = data.redirect;
+          }
+          else{
+              this.displayNotification();
+          }
         };
 
         private displayNotification = () => {

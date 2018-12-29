@@ -1,3 +1,4 @@
+using Flowsharp.Web.Abstractions.Services;
 using Flowsharp.Web.Management.Drivers;
 using Flowsharp.Web.Management.Services;
 using Flowsharp.Web.Management.Theming;
@@ -21,6 +22,7 @@ namespace Flowsharp.Web.Management
                 .AddScoped<IShellStateManager, NullShellStateManager>()
                 .AddScoped<IThemeSelector, SettingsThemeSelector>()
                 .AddSingleton<ISiteService, NullSiteService>()
+                .AddSingleton<IIdGenerator, DefaultIdGenerator>()
                 .AddScoped<IDisplayDriver<IActivity>, CommonActivityDriver>();
 
             services.AddResourceManagement();

@@ -24,6 +24,7 @@ namespace Flowsharp {
             this.canvasContainer.on('contextmenu', '.activity', this.onActivityContextMenu);
             this.canvasContainer.on('dblclick', '.activity', this.onActivityDoubleClick);
             this.canvasContainer.on('click', '.activity .context-menu .dropdown-item', this.onActivityContextMenuItemClick);
+            this.canvasContainer.on('click', '.canvas-context-menu .dropdown-item', this.onCanvasContextMenuItemClick);
             $(document).on('click', 'body', this.hideContextMenu);
         }
 
@@ -71,9 +72,16 @@ namespace Flowsharp {
 
             this.plumber.batch(() => {
 
-                $activityElement.css({left: '300px', top: '80px'});
+                const x = 300;
+                const y = 300;
+                
+                $activityElement.css({left: `${x}px`, top: `${y}px`});
+                
                 this.canvasContainer[0].appendChild($activityElement[0]);
                 this.initializeElement($activityElement);
+                this.updateActivityModel($activityElement, (activity) => {
+                    this.setActivityPosition(activity, x, y);
+                });
                 $activityElement.show();
             });
 
@@ -139,7 +147,7 @@ namespace Flowsharp {
             const offset = $(element).offset();
             const relX = e.pageX - offset.left;
             const relY = e.pageY - offset.top;
-            
+
             menu
                 .css({
                     display: 'block',
@@ -152,7 +160,7 @@ namespace Flowsharp {
                     this.hideContextMenu();
                 });
         };
-        
+
         private hideContextMenu = () => {
             $('.context-menu').hide().removeClass('show');
         };
@@ -174,12 +182,7 @@ namespace Flowsharp {
                     }
 
                     this.updateActivityModel(activityElement, activity => {
-                        const designer = activity.metadata.customFields.designer || {x: 0, y: 0};
-                        jQuery.extend(designer, {
-                            x: args.pos[0],
-                            y: args.pos[1]
-                        });
-                        activity.metadata.customFields.designer = designer;
+                        this.setActivityPosition(activity, args.pos[0], args.pos[1]);
                     });
                 }
             });
@@ -192,6 +195,15 @@ namespace Flowsharp {
 
             this.addSourceEndpoints(activityElement[0], activityId, activityEndpoints);
             this.plumber.revalidate(activityElement[0]);
+        };
+
+        private setActivityPosition = (activity: IActivity, x: number, y: number) => {
+            const designer = activity.metadata.customFields.designer || {x: 0, y: 0};
+            jQuery.extend(designer, {
+                x: x,
+                y: y
+            });
+            activity.metadata.customFields.designer = designer;
         };
 
         private restoreConnections = (activityElement: HTMLElement) => {
@@ -255,14 +267,28 @@ namespace Flowsharp {
 
             const $activityElement: JQuery<HTMLElement> = $(e.currentTarget).parents('.activity');
             const action = $(e.currentTarget).attr('href').substr(1);
-            
-            switch(action)
-            {
+
+            switch (action) {
                 case 'edit':
                     this.editActivity($activityElement);
                     break;
                 case 'delete':
                     this.plumber.remove($activityElement);
+                    break;
+            }
+        };
+
+        private onCanvasContextMenuItemClick = (e: JQuery.Event<HTMLElement>) => {
+            e.preventDefault();
+
+            const action = $(e.currentTarget).attr('href').substr(1);
+
+            switch (action) {
+                case 'add-trigger':
+
+                    break;
+                case 'add-action':
+
                     break;
             }
         };

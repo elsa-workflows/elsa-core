@@ -19,6 +19,7 @@
     <ItemGroup>
       <Content Include="Assets\scripts\dashboard.ts" />
       <Content Include="Assets\styles\dashboard.scss" />
+      <Content Include="Views\Flowsharp.Web.Management\Workflows\New.cshtml" />
       <Content Include="Views\Flowsharp.Web.Management\Workflows\Edit.cshtml" />
       <Content Include="Views\Flowsharp.Web.Management\Workflows\Index.cshtml" />
     </ItemGroup>

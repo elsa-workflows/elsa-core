@@ -13,6 +13,7 @@
       <ProjectReference Include="..\..\..\core\Flowsharp.Core\Flowsharp.Core.csproj" />
       <ProjectReference Include="..\..\..\core\Flowsharp.Persistence.Abstractions\Flowsharp.Persistence.Abstractions.csproj" />
       <ProjectReference Include="..\..\..\core\Flowsharp.Persistence.FileSystem\Flowsharp.Persistence.FileSystem.csproj" />
+      <ProjectReference Include="..\Flowsharp.Web.Abstractions\Flowsharp.Web.Abstractions.csproj" />
     </ItemGroup>
 
 </Project>

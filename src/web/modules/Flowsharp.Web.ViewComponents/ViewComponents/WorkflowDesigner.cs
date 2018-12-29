@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Flowsharp.Models;
 using Flowsharp.Persistence;
 using Flowsharp.Web.Abstractions.Services;
 using Flowsharp.Web.ViewComponents.ViewModels;
@@ -22,9 +23,8 @@ namespace Flowsharp.Web.ViewComponents.ViewComponents
             this.activityShapeFactory = activityShapeFactory;
         }
         
-        public async Task<IViewComponentResult> InvokeAsync(string workflowId, CancellationToken cancellationToken)
+        public async Task<IViewComponentResult> InvokeAsync(Workflow workflow, CancellationToken cancellationToken)
         {
-            var workflow = await workflowStore.GetAsync(workflowId, cancellationToken);
             var activities = workflow.Activities;
             var activityShapes = await BuildActivityShapesAsync(activities, cancellationToken);
             var viewModel = new WorkflowDesignerViewModel(workflow, activityShapes);
