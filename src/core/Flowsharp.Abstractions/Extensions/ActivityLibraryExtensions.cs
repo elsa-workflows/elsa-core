@@ -19,7 +19,7 @@ namespace Flowsharp.Extensions
 
         public static Task<IEnumerable<ActivityDescriptor>> ListBrowsableAsync(this IActivityLibrary activityLibrary, CancellationToken cancellationToken)
         {
-            return activityLibrary.ListAsync(x => x.Browsable, cancellationToken);
+            return activityLibrary.ListAsync(x => x.IsBrowsable, cancellationToken);
         }
 
         public static async Task<IEnumerable<LocalizedString>> GetCategoriesAsync(this IActivityLibrary activityLibrary, CancellationToken cancellationToken)

@@ -1,8 +1,11 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Flowsharp.Extensions;
 using Flowsharp.Models;
+using Flowsharp.Serialization.Formatters;
 using Flowsharp.Serialization.Tokenizers;
+using Flowsharp.Web.Abstractions.Services;
 using Newtonsoft.Json.Linq;
 
 namespace Flowsharp.Serialization
@@ -12,15 +15,18 @@ namespace Flowsharp.Serialization
         private readonly IWorkflowTokenizer workflowTokenizer;
         private readonly ITokenFormatterProvider tokenFormatterProvider;
         private readonly IActivityLibrary activityLibrary;
+        private readonly IIdGenerator idGenerator;
 
         public WorkflowSerializer(
             IWorkflowTokenizer workflowTokenizer, 
             ITokenFormatterProvider tokenFormatterProvider,
-            IActivityLibrary activityLibrary)
+            IActivityLibrary activityLibrary, 
+            IIdGenerator idGenerator)
         {
             this.workflowTokenizer = workflowTokenizer;
             this.tokenFormatterProvider = tokenFormatterProvider;
             this.activityLibrary = activityLibrary;
+            this.idGenerator = idGenerator;
         }
         
         public async Task<string> SerializeAsync(Workflow workflow, string format, CancellationToken cancellationToken)
@@ -52,6 +58,21 @@ namespace Flowsharp.Serialization
             }
             
             return workflow;
+        }
+        
+        public async Task<Workflow> CloneAsync(Workflow workflow, CancellationToken cancellationToken)
+        {
+            var format = JsonTokenFormatter.FormatName;
+            var json = await SerializeAsync(workflow, format, cancellationToken);
+            return await DeserializeAsync(json, format, cancellationToken);
+        }
+        
+        public async Task<Workflow> DeriveAsync(Workflow parent, CancellationToken cancellationToken)
+        {
+            var child = await CloneAsync(parent, cancellationToken);
+            child.Metadata.ParentId = parent.Metadata.Id;
+            child.Metadata.Id = idGenerator.Generate();
+            return child;
         }
     }
 }

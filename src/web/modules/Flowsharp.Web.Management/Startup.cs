@@ -22,7 +22,6 @@ namespace Flowsharp.Web.Management
                 .AddScoped<IShellStateManager, NullShellStateManager>()
                 .AddScoped<IThemeSelector, SettingsThemeSelector>()
                 .AddSingleton<ISiteService, NullSiteService>()
-                .AddSingleton<IIdGenerator, DefaultIdGenerator>()
                 .AddScoped<IDisplayDriver<IActivity>, CommonActivityDriver>();
 
             services.AddResourceManagement();

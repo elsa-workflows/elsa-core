@@ -11,6 +11,11 @@ namespace Flowsharp
     public interface IActivityHandler
     {
         /// <summary>
+        /// A value indicating whether this activity can trigger the execution of the workflow.
+        /// </summary>
+        bool IsTrigger { get; }
+        
+        /// <summary>
         /// The type of activity handled by this handler.
         /// </summary>
         Type ActivityType { get; }

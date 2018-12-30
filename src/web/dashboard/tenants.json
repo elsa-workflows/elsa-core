@@ -10,7 +10,8 @@
             "Flowsharp.Web.Persistence.FileSystem",
             "Flowsharp.Web.ViewComponents",
             "Flowsharp.Web.Activities.Primitives",
-            "Flowsharp.Web.Activities.Console"
+            "Flowsharp.Web.Activities.Console",
+            "Flowsharp.Web.Activities.Http"
         ]
     }
 }

@@ -16,6 +16,7 @@
     
     <ItemGroup>
       <ProjectReference Include="..\modules\Flowsharp.Web.Activities.Console\Flowsharp.Web.Activities.Console.csproj" />
+      <ProjectReference Include="..\modules\Flowsharp.Web.Activities.Http\Flowsharp.Web.Activities.Http.csproj" />
       <ProjectReference Include="..\modules\Flowsharp.Web.Activities.Primitives\Flowsharp.Web.Activities.Primitives.csproj" />
       <ProjectReference Include="..\modules\Flowsharp.Web.Management\Flowsharp.Web.Management.csproj" />
       <ProjectReference Include="..\modules\Flowsharp.Web.Persistence.FileSystem\Flowsharp.Web.Persistence.FileSystem.csproj" />

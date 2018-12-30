@@ -23,11 +23,27 @@ namespace Flowsharp.Runtime
             this.workflowStore = workflowStore;
             this.workflowSerializer = workflowSerializer;
         }
-        
+
         public async Task TriggerWorkflowAsync(string activityName, Variables arguments, CancellationToken cancellationToken)
         {
             await StartNewWorkflowsAsync(activityName, arguments, cancellationToken);
             await ResumeExistingWorkflowsAsync(activityName, arguments, cancellationToken);
+        }
+
+        public async Task<WorkflowExecutionContext> StartWorkflowAsync(Workflow workflow, IActivity startActivity, Variables arguments, CancellationToken cancellationToken)
+        {
+            var workflowInstance = await workflowSerializer.DeriveAsync(workflow, cancellationToken);
+            var workflowContext = await invoker.InvokeAsync(workflowInstance, startActivity, arguments, cancellationToken);
+
+            await workflowStore.AddAsync(workflowInstance, cancellationToken);
+            return workflowContext;
+        }
+
+        public async Task<WorkflowExecutionContext> ResumeWorkflowAsync(Workflow workflow, IActivity activity, Variables arguments, CancellationToken cancellationToken)
+        {
+            var workflowContext = await invoker.ResumeAsync(workflow, activity, arguments, cancellationToken);
+            await workflowStore.UpdateAsync(workflow, cancellationToken);
+            return workflowContext;
         }
 
         private async Task StartNewWorkflowsAsync(string activityName, Variables arguments, CancellationToken cancellationToken)
@@ -40,14 +56,11 @@ namespace Flowsharp.Runtime
 
                 foreach (var activity in startActivities)
                 {
-                    var workflowInstance = await workflowSerializer.DeriveAsync(workflow, cancellationToken);
-                    var workflowContext = await invoker.InvokeAsync(workflowInstance, activity, arguments, cancellationToken);
-                    
-                    await workflowStore.AddAsync(workflowInstance, cancellationToken);
+                    await StartWorkflowAsync(workflow, activity, arguments, cancellationToken);
                 }
             }
         }
-        
+
         private async Task ResumeExistingWorkflowsAsync(string activityName, Variables arguments, CancellationToken cancellationToken)
         {
             var workflows = await workflowStore.GetManyAsync(new WorkflowIsInstance().And(new WorkflowIsBlockedOnActivity(activityName)), cancellationToken);
@@ -55,11 +68,10 @@ namespace Flowsharp.Runtime
             foreach (var workflow in workflows)
             {
                 var blockingActivities = workflow.BlockingActivities.Where(x => x.Name == activityName).ToList();
-                
+
                 foreach (var activity in blockingActivities)
                 {
-                    await invoker.ResumeAsync(workflow, activity, arguments, cancellationToken);
-                    await workflowStore.UpdateAsync(workflow, cancellationToken);
+                    await ResumeWorkflowAsync(workflow, activity, arguments, cancellationToken);
                 }
             }
         }

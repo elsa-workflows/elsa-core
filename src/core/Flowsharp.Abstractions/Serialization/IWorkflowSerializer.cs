@@ -11,5 +11,7 @@ namespace Flowsharp.Serialization
         Task<string> SerializeAsync(JToken  token, string format, CancellationToken cancellationToken);
         Task<Workflow> DeserializeAsync(string data, string format, CancellationToken cancellationToken);
         Task<Workflow> DeserializeAsync(JToken token, CancellationToken cancellationToken);
+        Task<Workflow> CloneAsync(Workflow workflow, CancellationToken cancellationToken);
+        Task<Workflow> DeriveAsync(Workflow parent, CancellationToken cancellationToken);
     }
 }

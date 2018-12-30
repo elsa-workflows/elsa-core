@@ -2,7 +2,7 @@
 @{
     var activityDescriptor = (ActivityDescriptor) Model.ActivityDescriptor;
 }
-<div class="card activity" data-category="@activityDescriptor.Category.Name.HtmlClassify()" data-activity-type="Action">
+<div class="card activity" data-category="@activityDescriptor.Category.Name.HtmlClassify()" data-activity-trigger="@activityDescriptor.IsTrigger.ToString().ToLower()">
     <div class="card-body">
         @await DisplayAsync(Model.Content)
     </div>

@@ -9,7 +9,8 @@ namespace Flowsharp.Models
 {
     public class ActivityDescriptor
     {
-        public bool Browsable { get; set; }
+        public bool IsBrowsable { get; set; }
+        public bool IsTrigger { get; set; }
         public string Name { get; set; }
         public LocalizedString Category { get; set; }
         public Type ActivityType { get; set; }

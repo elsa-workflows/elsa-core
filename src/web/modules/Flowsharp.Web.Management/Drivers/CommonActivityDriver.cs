@@ -11,7 +11,14 @@ namespace Flowsharp.Web.Management.Drivers
 
         protected override void EditActivity(IActivity activity, CommonActivityViewModel model)
         {
-            model.Title = activity.Metadata.Title;
+            var title = activity.Metadata.Title;
+
+            if (string.IsNullOrWhiteSpace(title))
+            {
+                title = activity.Descriptor.DisplayText.ToString();
+            }
+            
+            model.Title = title;
         }
 
         protected override void UpdateActivity(CommonActivityViewModel model, IActivity activity)

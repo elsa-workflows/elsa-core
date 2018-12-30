@@ -11,7 +11,7 @@ namespace Flowsharp.Web.ViewComponents
         public override void ConfigureServices(IServiceCollection services)
         {
             services
-                .AddFlowsharpCore()
+                .AddWorkflowsCore()
                 .AddScoped<IActivityDisplayManager, ActivityDisplayManager>()
                 .AddScoped<IActivityShapeFactory, ActivityShapeFactory>();
         }

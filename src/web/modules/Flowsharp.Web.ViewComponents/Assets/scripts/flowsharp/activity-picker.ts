@@ -22,11 +22,11 @@ namespace Flowsharp {
             this.container.on('show.bs.modal', (event) => {
                 const button = $(event.relatedTarget); // Button that triggered the modal.
                 const title = button.data('picker-title');
-                const type = button.data('activity-type');
+                const trigger = button.data('activity-trigger');
                 const modal = this.container;
                 modal.find('[href="#all"]').click();
                 modal.find('.modal-title').text(title);
-                modal.data('activity-type', type);
+                modal.data('activity-trigger', trigger);
                 this.applyFilter(null, null);
             })
         }
@@ -50,7 +50,7 @@ namespace Flowsharp {
         };
 
         private applyFilter = (category: string, q: string) => {
-            const type = this.container.data('activity-type');
+            const trigger = this.container.data('activity-trigger');
             category = category || $('.activity-picker-categories .nav-link.active').attr('href').substr(1);
             q = q || <string>this.container.find('input[type=search]').val();
 
@@ -58,7 +58,7 @@ namespace Flowsharp {
 
             // Remove activities whose type doesn't match the configured activity type.
             $cards.filter((i, el) => {
-                return $(el).data('activity-type') != type;
+                return $(el).data('activity-trigger') != trigger;
             }).hide();
 
             if (q.length > 0) {
@@ -78,8 +78,8 @@ namespace Flowsharp {
                 const categoryListItem = $(el);
                 const category = categoryListItem.data('category');
 
-                // Count number of activities within this category and for the specified activity type (Event or Task).
-                const activityCount = $(`.activity.card[data-category='${category}'][data-activity-type='${type}']`).length;
+                // Count number of activities within this category and for the specified activity type (Trigger or Action).
+                const activityCount = $(`.activity.card[data-category='${category}'][data-activity-trigger='${trigger}']`).length;
                 activityCount == 0 ? categoryListItem.hide() : categoryListItem.show();
             });
         };
