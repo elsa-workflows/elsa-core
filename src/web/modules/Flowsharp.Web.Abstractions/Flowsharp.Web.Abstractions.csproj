@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="OrchardCore.DisplayManagement" Version="1.0.0-beta3-69807" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\core\Flowsharp.Abstractions\Flowsharp.Abstractions.csproj" />
+    </ItemGroup>
+
+</Project>

@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netcoreapp2.1</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="OrchardCore.Module.Targets" Version="1.0.0-beta3-69807" />
+        <PackageReference Include="OrchardCore.FileStorage.FileSystem" Version="1.0.0-beta3-69807" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\core\Flowsharp.Core\Flowsharp.Core.csproj" />
+      <ProjectReference Include="..\..\..\core\Flowsharp.Persistence.Abstractions\Flowsharp.Persistence.Abstractions.csproj" />
+      <ProjectReference Include="..\..\..\core\Flowsharp.Persistence.FileSystem\Flowsharp.Persistence.FileSystem.csproj" />
+      <ProjectReference Include="..\Flowsharp.Web.Abstractions\Flowsharp.Web.Abstractions.csproj" />
+    </ItemGroup>
+
+</Project>
