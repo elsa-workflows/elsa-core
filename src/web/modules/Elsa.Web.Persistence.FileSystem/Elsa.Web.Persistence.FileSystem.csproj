@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netcoreapp2.1</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="OrchardCore.Module.Targets" Version="1.0.0-beta3-69807" />
+        <PackageReference Include="OrchardCore.FileStorage.FileSystem" Version="1.0.0-beta3-69807" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\core\Elsa.Core\Elsa.Core.csproj" />
+      <ProjectReference Include="..\..\..\core\Elsa.Persistence.Abstractions\Elsa.Persistence.Abstractions.csproj" />
+      <ProjectReference Include="..\..\..\core\Elsa.Persistence.FileSystem\Elsa.Persistence.FileSystem.csproj" />
+      <ProjectReference Include="..\Elsa.Web.Abstractions\Elsa.Web.Abstractions.csproj" />
+    </ItemGroup>
+
+</Project>

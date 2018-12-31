@@ -1,0 +1,17 @@
+{
+    "Default": {
+        "State": "Running",
+        "RequestUrlHost": null,
+        "RequestUrlPrefix": null,
+        "CurrentTheme" : "Elsa",
+        "Features": [
+            "Elsa", 
+            "Elsa.Web.Management",
+            "Elsa.Web.Persistence.FileSystem",
+            "Elsa.Web.Components",
+            "Elsa.Web.Activities.Primitives",
+            "Elsa.Web.Activities.Console",
+            "Elsa.Web.Activities.Http"
+        ]
+    }
+}
