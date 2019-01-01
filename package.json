@@ -1,5 +1,8 @@
 {
     "private": true,
+    "scripts": {
+        "gulp": "gulp"
+    },
     "devDependencies": {
         "@babel/core": "^7.1.2",
         "@babel/polyfill": "^7.0.0",
