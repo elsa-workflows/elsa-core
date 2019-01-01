@@ -14,6 +14,8 @@ namespace Elsa.Web.Activities.Http.ViewModels
         [Required]
         public string Method { get; set; }
 
+        public bool ReadContent { get; set; }
+
         public ICollection<SelectListItem> GetAvailableHttpMethods()
         {
             var availableHttpMethods = new[] { "GET", "POST", "PUT", "DELETE", "OPTIONS" };

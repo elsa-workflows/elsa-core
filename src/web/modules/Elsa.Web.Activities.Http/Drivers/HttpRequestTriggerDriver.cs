@@ -10,12 +10,14 @@ namespace Elsa.Web.Activities.Http.Drivers
         {
             model.Path = activity.Path;
             model.Method = activity.Method;
+            model.ReadContent = activity.ReadContent;
         }
 
         protected override void UpdateActivity(HttpRequestTriggerViewModel model, HttpRequestTrigger activity)
         {
             activity.Path = model.Path;
             activity.Method = model.Method;
+            activity.ReadContent = model.ReadContent;
         }
     }
 }

@@ -23,7 +23,6 @@ namespace Elsa.Activities.Http.Middleware
 
         public async Task InvokeAsync(HttpContext context, IWorkflowHost workflowHost, IHttpWorkflowCache httpWorkflowCache)
         {
-            await workflowHost.TriggerWorkflowAsync("a", Variables.Empty, CancellationToken.None);
             var requestPath = new Uri(context.Request.Path.ToString(), UriKind.Relative);
             var cancellationToken = context.RequestAborted;
             var workflows = await httpWorkflowCache.GetWorkflowsByPathAsync(requestPath, cancellationToken).ToListAsync();

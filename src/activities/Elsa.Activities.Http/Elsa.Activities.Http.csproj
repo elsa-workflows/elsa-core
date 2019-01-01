@@ -13,16 +13,16 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj"/>
-        <ProjectReference Include="..\..\core\Elsa.Persistence.Abstractions\Elsa.Persistence.Abstractions.csproj"/>
-        <ProjectReference Include="..\..\core\Esla.Runtime.Abstractions\Esla.Runtime.Abstractions.csproj"/>
+        <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
+        <ProjectReference Include="..\..\core\Elsa.Persistence.Abstractions\Elsa.Persistence.Abstractions.csproj" />
+        <ProjectReference Include="..\..\core\Elsa.Runtime.Abstractions\Elsa.Runtime.Abstractions.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="AspNetCore.AsyncInitialization" Version="1.1.1"/>
-        <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.2.0"/>
-        <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0"/>
-        <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="2.2.0"/>
+        <PackageReference Include="AspNetCore.AsyncInitialization" Version="1.1.1" />
+        <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.2.0" />
+        <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
+        <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="2.2.0" />
     </ItemGroup>
 
 </Project>

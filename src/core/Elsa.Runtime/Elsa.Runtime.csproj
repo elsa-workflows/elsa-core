@@ -15,7 +15,7 @@
     <ItemGroup>
       <ProjectReference Include="..\Elsa.Core\Elsa.Core.csproj" />
       <ProjectReference Include="..\Elsa.Persistence.Abstractions\Elsa.Persistence.Abstractions.csproj" />
-      <ProjectReference Include="..\Esla.Runtime.Abstractions\Esla.Runtime.Abstractions.csproj" />
+      <ProjectReference Include="..\Elsa.Runtime.Abstractions\Elsa.Runtime.Abstractions.csproj" />
     </ItemGroup>
 
 </Project>

@@ -1,4 +1,10 @@
+using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Elsa.Activities.Http.Activities;
+using Elsa.Activities.Http.Extensions;
+using Elsa.Activities.Http.Models;
 using Elsa.Handlers;
 using Elsa.Models;
 using Elsa.Results;
@@ -29,14 +35,30 @@ namespace Elsa.Activities.Http.Handlers
         public override LocalizedString Description => T["Triggers when an incoming HTTP request is received."];
         protected override LocalizedString GetEndpoint() => T["Done"];
 
-        protected override ActivityExecutionResult OnExecute(HttpRequestTrigger activity, WorkflowExecutionContext workflowContext)
+        protected override async Task<ActivityExecutionResult> OnExecuteAsync(HttpRequestTrigger activity, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
         {
             var request = httpContextAccessor.HttpContext.Request;
-            var requestData = new
+            var model = new HttpRequestModel
             {
-                Path = request.Path
+                Path = new Uri(request.Path.ToString(), UriKind.Relative),
+                QueryString = request.Query.ToDictionary(x => x.Key, x => x.Value),
+                Headers = request.Headers.ToDictionary(x => x.Key, x => x.Value),
+                Method = request.Method
             };
-            workflowContext.CurrentScope.LastResult = requestData;
+
+            if (activity.ReadContent)
+            {
+                if (request.HasFormContentType)
+                {
+                    model.Form = (await request.ReadFormAsync(cancellationToken)).ToDictionary(x => x.Key, x => x.Value);
+                }
+                else
+                {
+                    model.Content = await request.ReadBodyAsync();
+                }
+            }
+            
+            workflowContext.CurrentScope.LastResult = model;
             return TriggerEndpoint("Done");
         }
     }

@@ -11,7 +11,7 @@ namespace Elsa.Persistence.FileSystem.Extensions
         public static IServiceCollection AddWorkflowsFileSystemPersistence(this IServiceCollection services, IConfiguration configuration)
         {
             services.TryAddSingleton<IFileSystem, System.IO.Abstractions.FileSystem>();
-            services.AddSingleton<IWorkflowStore, FileSystemWorkflowStore>();
+            services.AddScoped<IWorkflowStore, FileSystemWorkflowStore>();
             services.Configure<FileSystemStoreOptions>(configuration);
 
             return services;
