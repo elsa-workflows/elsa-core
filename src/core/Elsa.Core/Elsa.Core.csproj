@@ -11,6 +11,7 @@
         <RepositoryUrl>https://github.com/sfmskywalker/Elsa</RepositoryUrl>
         <RepositoryType>GitHub</RepositoryType>
         <PackageTags>elsa, workflows, orchard</PackageTags>
+        <PackageVersion>1.0.0</PackageVersion>
     </PropertyGroup>
 
     <ItemGroup>
