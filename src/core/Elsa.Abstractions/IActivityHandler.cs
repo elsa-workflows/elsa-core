@@ -39,7 +39,7 @@ namespace Elsa
         /// Returns the available endpoints that can be triggered.
         /// </summary>
         /// <returns></returns>
-        IEnumerable<LocalizedString> GetEndpoints();
+        IEnumerable<LocalizedString> GetEndpoints(IActivity activity);
         
         /// <summary>
         /// Returns a value of whether the specified activity can execute.

@@ -25,7 +25,7 @@ namespace Elsa.Web.Components.Services
             var designerMetadata = customFields.GetValue("Designer", StringComparison.OrdinalIgnoreCase)?.ToObject<ActivityDesignerMetadata>() ?? new ActivityDesignerMetadata();
             
             shape.Metadata.Type = $"Activity_Design";
-            shape.Endpoints = descriptor.GetEndpoints().ToList();
+            shape.Endpoints = descriptor.GetEndpoints(activity).ToList();
             shape.ActivityDescriptor = descriptor;
             shape.Activity = activity;
             shape.Designer = designerMetadata;

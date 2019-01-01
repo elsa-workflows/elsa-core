@@ -32,7 +32,9 @@ namespace Elsa.Handlers
         protected virtual ActivityExecutionResult OnResume(T activity, WorkflowExecutionContext workflowContext) => Noop();
         protected NoopResult Noop() => new NoopResult();
         protected IEnumerable<LocalizedString> Endpoints(params LocalizedString[] endpoints) => endpoints;
+        public virtual IEnumerable<LocalizedString> GetEndpoints(IActivity activity) => Endpoints();
         public virtual IEnumerable<LocalizedString> GetEndpoints() => Endpoints(GetEndpoint());
-        protected virtual LocalizedString GetEndpoint() => throw new NotImplementedException("At least GetEndpoints or GetEndpoint must be overridden.");
+        protected virtual LocalizedString GetEndpoint(IActivity activity) => GetEndpoint();
+        protected virtual LocalizedString GetEndpoint() => new LocalizedString("Done", "Done", true);
     }
 }

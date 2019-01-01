@@ -16,7 +16,7 @@ namespace Elsa.Models
         public Type ActivityType { get; set; }
         public LocalizedString DisplayText { get; set; }
         public LocalizedString Description { get; set; }
-        public Func<IEnumerable<LocalizedString>> GetEndpoints { get; set; }
+        public Func<IActivity, IEnumerable<LocalizedString>> GetEndpoints { get; set; }
         public Func<ActivityExecutionContext, WorkflowExecutionContext, CancellationToken, Task<bool>> CanExecuteAsync { get; set; }
         public Func<ActivityExecutionContext, WorkflowExecutionContext, CancellationToken, Task<ActivityExecutionResult>> ExecuteAsync { get; set; }
         public Func<ActivityExecutionContext, WorkflowExecutionContext, CancellationToken, Task<ActivityExecutionResult>> ResumeAsync { get; set; }
