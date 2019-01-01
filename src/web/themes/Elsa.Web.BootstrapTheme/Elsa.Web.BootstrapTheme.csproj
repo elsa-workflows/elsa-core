@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
 
     <PropertyGroup>
         <TargetFramework>netcoreapp2.2</TargetFramework>
@@ -10,7 +10,6 @@
         <RepositoryUrl>https://github.com/sfmskywalker/Elsa</RepositoryUrl>
         <RepositoryType>GitHub</RepositoryType>
         <PackageTags>elsa, workflows, orchard</PackageTags>
-        <RootNamespace>Elsa</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
