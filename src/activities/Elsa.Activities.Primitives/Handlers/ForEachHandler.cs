@@ -24,7 +24,7 @@ namespace Elsa.Activities.Primitives.Handlers
         public override LocalizedString Description => T["Iterate over a list of items."];
         public IStringLocalizer<ForEachHandler> T { get; }
 
-        public override IEnumerable<LocalizedString> GetEndpoints() => Endpoints(T["Next"], T["Done"]);
+        protected override IEnumerable<LocalizedString> GetEndpoints() => Endpoints(T["Next"], T["Done"]);
 
         protected override async Task<ActivityExecutionResult> OnExecuteAsync(ForEach activity, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
         {

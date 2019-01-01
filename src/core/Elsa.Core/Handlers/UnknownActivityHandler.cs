@@ -16,7 +16,7 @@ namespace Elsa.Handlers
 
         public IStringLocalizer<UnknownActivityHandler> T { get; }
         public override LocalizedString Category => T["System"];
-        public override IEnumerable<LocalizedString> GetEndpoints() => Enumerable.Empty<LocalizedString>();
+        protected override IEnumerable<LocalizedString> GetEndpoints() => Enumerable.Empty<LocalizedString>();
         
         protected override ActivityExecutionResult OnExecute(UnknownActivity activity, WorkflowExecutionContext workflowContext)
         {

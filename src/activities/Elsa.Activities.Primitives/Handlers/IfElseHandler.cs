@@ -24,7 +24,7 @@ namespace Elsa.Activities.Primitives.Handlers
         public override LocalizedString Description => T["Evaluate a boolean condition and continues execution based on the outcome."];
         public IStringLocalizer<IfElseHandler> T { get; }
 
-        public override IEnumerable<LocalizedString> GetEndpoints() => Endpoints(T["True"], T["False"]);
+        protected override IEnumerable<LocalizedString> GetEndpoints() => Endpoints(T["True"], T["False"]);
 
         protected override async Task<ActivityExecutionResult> OnExecuteAsync(IfElse activity, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
         {
