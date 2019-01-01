@@ -9,6 +9,7 @@
         <RepositoryUrl>https://github.com/sfmskywalker/Elsa</RepositoryUrl>
         <RepositoryType>GitHub</RepositoryType>
         <PackageTags>elsa, workflows, orchard</PackageTags>
+        <RootNamespace>Elsa</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>

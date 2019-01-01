@@ -3,9 +3,9 @@
         "State": "Running",
         "RequestUrlHost": null,
         "RequestUrlPrefix": null,
-        "CurrentTheme" : "Elsa",
+        "CurrentTheme" : "Elsa.Web.BootstrapTheme",
         "Features": [
-            "Elsa", 
+            "Elsa.Web.BootstrapTheme", 
             "Elsa.Web.Management",
             "Elsa.Web.Persistence.FileSystem",
             "Elsa.Web.Components",

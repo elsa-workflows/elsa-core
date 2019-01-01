@@ -28,7 +28,7 @@
         <ProjectReference Include="..\..\modules\Elsa.Web.Components\Elsa.Web.Components.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Web.Management\Elsa.Web.Management.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Web.Persistence.FileSystem\Elsa.Web.Persistence.FileSystem.csproj" />
-        <ProjectReference Include="..\..\themes\Elsa\Elsa.csproj" />
+        <ProjectReference Include="..\..\themes\Elsa.Web.BootstrapTheme\Elsa.Web.BootstrapTheme.csproj" />
     </ItemGroup>
 
 </Project>

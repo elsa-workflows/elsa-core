@@ -55,7 +55,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Web.Activities.Primiti
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Dashboard", "Dashboard", "{DA45AD45-2F4F-48E0-AF88-8F71082DF866}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa", "src\web\themes\Elsa\Elsa.csproj", "{CEB772E3-0C19-475E-B517-2295C1EF173A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Web.BootstrapTheme", "src\web\themes\Elsa.Web.BootstrapTheme\Elsa.Web.BootstrapTheme.csproj", "{CEB772E3-0C19-475E-B517-2295C1EF173A}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Core", "Core", "{DF7D6DFE-319E-497E-9DBF-AB41C0CF0123}"
 EndProject
