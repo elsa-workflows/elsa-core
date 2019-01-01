@@ -13,11 +13,11 @@ namespace Elsa.Extensions
         {
             return services
                 .AddSingleton<IIdGenerator, DefaultIdGenerator>()
-                .AddSingleton<IWorkflowSerializer, WorkflowSerializer>()
-                .AddSingleton<IWorkflowTokenizer, WorkflowTokenizer>()
-                .AddSingleton<IWorkflowInvoker, WorkflowInvoker>()
-                .AddSingleton<IActivityProvider, TypedActivityProvider>()
-                .AddSingleton<IActivityLibrary, ActivityLibrary>()
+                .AddScoped<IWorkflowSerializer, WorkflowSerializer>()
+                .AddScoped<IWorkflowTokenizer, WorkflowTokenizer>()
+                .AddScoped<IWorkflowInvoker, WorkflowInvoker>()
+                .AddScoped<IActivityProvider, TypedActivityProvider>()
+                .AddScoped<IActivityLibrary, ActivityLibrary>()
                 .AddSingleton<ITokenFormatter, JsonTokenFormatter>()
                 .AddSingleton<ITokenFormatter, YamlTokenFormatter>()
                 .AddSingleton<ITokenFormatter, XmlTokenFormatter>()
