@@ -2,6 +2,7 @@
 
     <PropertyGroup>
         <TargetFramework>netcoreapp2.1</TargetFramework>
+        <PackageVersion>1.0.0</PackageVersion>
         <Authors>Sipke Schoorstra</Authors>
         <Description>Elsa is a set of workflowing libraries and tools to enable super-fast workflowing capabilities in any .NET Core application.</Description>
         <Copyright>2019</Copyright>
@@ -12,15 +13,15 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="OrchardCore.Module.Targets" Version="1.0.0-beta3-70362" />
-        <PackageReference Include="OrchardCore.FileStorage.FileSystem" Version="1.0.0-beta3-70362" />
+        <PackageReference Include="OrchardCore.Module.Targets" Version="1.0.0-beta3-70362"/>
+        <PackageReference Include="OrchardCore.FileStorage.FileSystem" Version="1.0.0-beta3-70362"/>
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\..\core\Elsa.Core\Elsa.Core.csproj" />
-        <ProjectReference Include="..\..\..\core\Elsa.Persistence.Abstractions\Elsa.Persistence.Abstractions.csproj" />
-        <ProjectReference Include="..\..\..\core\Elsa.Persistence.FileSystem\Elsa.Persistence.FileSystem.csproj" />
-        <ProjectReference Include="..\Elsa.Web.Abstractions\Elsa.Web.Abstractions.csproj" />
+        <ProjectReference Include="..\..\..\core\Elsa.Core\Elsa.Core.csproj"/>
+        <ProjectReference Include="..\..\..\core\Elsa.Persistence.Abstractions\Elsa.Persistence.Abstractions.csproj"/>
+        <ProjectReference Include="..\..\..\core\Elsa.Persistence.FileSystem\Elsa.Persistence.FileSystem.csproj"/>
+        <ProjectReference Include="..\Elsa.Web.Abstractions\Elsa.Web.Abstractions.csproj"/>
     </ItemGroup>
 
 </Project>
