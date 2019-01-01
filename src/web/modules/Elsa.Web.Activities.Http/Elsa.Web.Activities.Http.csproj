@@ -12,16 +12,16 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\..\activities\Elsa.Activities.Http\Elsa.Activities.Http.csproj"/>
-        <ProjectReference Include="..\Elsa.Web.Abstractions\Elsa.Web.Abstractions.csproj"/>
+        <ProjectReference Include="..\..\..\activities\Elsa.Activities.Http\Elsa.Activities.Http.csproj" />
+        <ProjectReference Include="..\Elsa.Web.Abstractions\Elsa.Web.Abstractions.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="OrchardCore.Module.Targets" Version="1.0.0-beta3-69807"/>
+        <PackageReference Include="OrchardCore.Module.Targets" Version="1.0.0-beta3-70362" />
     </ItemGroup>
 
     <ItemGroup>
-        <Content Include="Views\_ViewImports.cshtml"/>
+        <Content Include="Views\_ViewImports.cshtml" />
     </ItemGroup>
 
 </Project>
