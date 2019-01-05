@@ -7,36 +7,27 @@ using Elsa.Models;
 using Elsa.Results;
 using Microsoft.Extensions.Localization;
 
-namespace Elsa.Activities.Console.Handlers
+namespace Elsa.Activities.Console.Drivers
 {
     /// <summary>
     /// Writes a text string to the specified stream.
     /// </summary>
-    public class WriteLineHandler : ActivityHandler<WriteLine>
+    public class WriteLineDriver : ActivityDriver<WriteLine>
     {
         private readonly IWorkflowExpressionEvaluator evaluator;
         private readonly TextWriter output;
 
-        public WriteLineHandler(IStringLocalizer<WriteLineHandler> localizer, IWorkflowExpressionEvaluator evaluator) 
-            : this(localizer, evaluator, System.Console.Out)
+        public WriteLineDriver(IWorkflowExpressionEvaluator evaluator) 
+            : this(evaluator, System.Console.Out)
         {
         }
         
-        public WriteLineHandler(IStringLocalizer<WriteLineHandler> localizer, IWorkflowExpressionEvaluator evaluator, TextWriter output)
+        public WriteLineDriver(IWorkflowExpressionEvaluator evaluator, TextWriter output)
         {
-            T = localizer;
             this.evaluator = evaluator;
             this.output = output;
         }
 
-        private IStringLocalizer<WriteLineHandler> T { get; }
-        
-        protected override LocalizedString GetEndpoint() => T["Done"];
-        
-        public override LocalizedString Category => T["Console"];
-        public override LocalizedString DisplayText => T["Write Line"];
-        public override LocalizedString Description => T["Write a line to the console"];
-        
         protected override async Task<ActivityExecutionResult> OnExecuteAsync(WriteLine activity, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
         {
             var text = await evaluator.EvaluateAsync(activity.TextExpression, workflowContext, cancellationToken);

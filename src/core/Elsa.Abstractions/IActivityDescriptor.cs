@@ -8,7 +8,7 @@ using Microsoft.Extensions.Localization;
 
 namespace Elsa
 {
-    public interface IActivityHandler
+    public interface IActivityDescriptor
     {
         /// <summary>
         /// A value indicating whether this activity can trigger the execution of the workflow.
@@ -40,20 +40,5 @@ namespace Elsa
         /// </summary>
         /// <returns></returns>
         IEnumerable<LocalizedString> GetEndpoints(IActivity activity);
-        
-        /// <summary>
-        /// Returns a value of whether the specified activity can execute.
-        /// </summary>
-        Task<bool> CanExecuteAsync(ActivityExecutionContext activityContext, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken);
-
-        /// <summary>
-        /// Executes the specified activity.
-        /// </summary>
-        Task<ActivityExecutionResult> ExecuteAsync(ActivityExecutionContext activityContext, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken);
-
-        /// <summary>
-        /// Resumes the specified activity.
-        /// </summary>
-        Task<ActivityExecutionResult> ResumeAsync(ActivityExecutionContext activityContext, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken);
     }
 }

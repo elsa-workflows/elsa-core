@@ -8,11 +8,11 @@ using Elsa.Models;
 
 namespace Elsa.ActivityProviders
 {
-    public class TypedActivityProvider : IActivityProvider
+    public class TypedActivityHarvester : IActivityHarvester
     {
-        private readonly IEnumerable<IActivityHandler> handlers;
+        private readonly IEnumerable<IActivityDescriptor> handlers;
 
-        public TypedActivityProvider(IEnumerable<IActivityHandler> handlers)
+        public TypedActivityHarvester(IEnumerable<IActivityDescriptor> handlers)
         {
             this.handlers = handlers;
         }
@@ -28,10 +28,7 @@ namespace Elsa.ActivityProviders
                 ActivityType = x.ActivityType,
                 DisplayText = x.DisplayText,
                 Description = x.Description,
-                GetEndpoints = x.GetEndpoints,
-                CanExecuteAsync = x.CanExecuteAsync,
-                ExecuteAsync = x.ExecuteAsync,
-                ResumeAsync = x.ResumeAsync
+                GetEndpoints = x.GetEndpoints
             });
             
             return Task.FromResult(descriptors);

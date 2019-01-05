@@ -1,4 +1,4 @@
-using Elsa.Activities.Primitives.Handlers;
+using Elsa.Activities.Primitives.Descriptors;
 using Elsa.Handlers;
 using Elsa.Web.Activities.Primitives.Drivers;
 using Elsa.Web.Extensions;
@@ -12,9 +12,9 @@ namespace Elsa.Web.Activities.Primitives
         public override void ConfigureServices(IServiceCollection services)
         {
             services
-                .AddActivity<IfElseHandler, IfElseDriver>()
-                .AddActivity<ForEachHandler, ForEachDriver>()
-                .AddActivity<UnknownActivityHandler, UnknownActivityDriver>();
+                .AddActivity<IfElseDescriptor, IfElseDisplay>()
+                .AddActivity<ForEachDescriptor, ForEachDisplay>()
+                .AddActivity<UnknownActivityDescriptor, UnknownActivityDisplay>();
         }
     }
 }

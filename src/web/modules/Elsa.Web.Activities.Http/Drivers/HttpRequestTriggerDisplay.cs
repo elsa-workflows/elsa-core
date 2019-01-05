@@ -4,7 +4,7 @@ using Elsa.Web.Drivers;
 
 namespace Elsa.Web.Activities.Http.Drivers
 {
-    public class HttpRequestTriggerDriver : ActivityDisplayDriver<HttpRequestTrigger, HttpRequestTriggerViewModel>
+    public class HttpRequestTriggerDisplay : ActivityDisplayDriver<HttpRequestTrigger, HttpRequestTriggerViewModel>
     {
         protected override void EditActivity(HttpRequestTrigger activity, HttpRequestTriggerViewModel model)
         {

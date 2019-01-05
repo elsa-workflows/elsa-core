@@ -1,4 +1,4 @@
-using Elsa.Activities.Http.Handlers;
+using Elsa.Activities.Http.Descriptors;
 using Elsa.Web.Activities.Http.Drivers;
 using Elsa.Web.Extensions;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,7 +11,7 @@ namespace Elsa.Web.Activities.Http
         public override void ConfigureServices(IServiceCollection services)
         {
             services
-                .AddActivity<HttpRequestTriggerHandler, HttpRequestTriggerDriver>();
+                .AddActivity<HttpRequestTriggerDescriptor, HttpRequestTriggerDisplay>();
         }
     }
 }

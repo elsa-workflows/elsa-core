@@ -28,9 +28,9 @@ namespace SampleHost.Web
                 .AddWorkflowsCore()
                 .AddWorkflowsHost()
                 .AddWorkflowsFileSystemPersistence(Configuration.GetSection("FileStore"))
-                .AddWorkflowsPrimitives()
-                .AddWorkflowsConsole()
-                .AddWorkflowsHttp();
+                .AddPrimitiveDescriptors()
+                .AddConsoleDescriptors()
+                .AddHttpDescriptors();
             
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Latest);
         }

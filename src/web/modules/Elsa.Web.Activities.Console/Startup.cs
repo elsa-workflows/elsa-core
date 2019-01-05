@@ -1,4 +1,4 @@
-using Elsa.Activities.Console.Handlers;
+using Elsa.Activities.Console.Descriptors;
 using Elsa.Web.Activities.Console.Drivers;
 using Elsa.Web.Extensions;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,8 +11,8 @@ namespace Elsa.Web.Activities.Console
         public override void ConfigureServices(IServiceCollection services)
         {
             services
-                .AddActivity<ReadLineHandler, ReadLineDriver>()
-                .AddActivity<WriteLineHandler, WriteLineDriver>();
+                .AddActivity<ReadLineDescriptor, ReadLineDisplay>()
+                .AddActivity<WriteLineDescriptor, WriteLineDisplay>();
         }
     }
 }

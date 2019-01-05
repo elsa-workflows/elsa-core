@@ -14,8 +14,7 @@ namespace Elsa.Results
             if (workflowContext.IsFirstPass)
             {
                 var activity = workflowContext.CurrentActivity;
-                var activityContext = workflowContext.CreateActivityExecutionContext(activity);
-                var result = await activityContext.Descriptor.ResumeAsync(activityContext, workflowContext, cancellationToken);
+                var result = await invoker.ActivityInvoker.ResumeAsync(workflowContext, activity, cancellationToken);
                 workflowContext.IsFirstPass = false;
 
                 await result.ExecuteAsync(invoker, workflowContext, cancellationToken);

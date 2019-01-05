@@ -3,7 +3,7 @@ using Elsa.Web.Drivers;
 
 namespace Elsa.Web.Activities.Primitives.Drivers
 {
-    public class ForEachDriver : ActivityDisplayDriver<ForEach>
+    public class ForEachDisplay : ActivityDisplayDriver<ForEach>
     {
     }
 }

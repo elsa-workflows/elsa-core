@@ -3,7 +3,7 @@ using Elsa.Web.Drivers;
 
 namespace Elsa.Web.Activities.Console.Drivers
 {
-    public class ReadLineDriver : ActivityDisplayDriver<ReadLine>
+    public class ReadLineDisplay : ActivityDisplayDriver<ReadLine>
     {
     }
 }

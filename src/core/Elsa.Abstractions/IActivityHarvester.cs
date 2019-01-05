@@ -5,7 +5,7 @@ using Elsa.Models;
 
 namespace Elsa
 {
-    public interface IActivityProvider
+    public interface IActivityHarvester
     {
         Task<IEnumerable<ActivityDescriptor>> GetActivitiesAsync(CancellationToken cancellationToken);
     }

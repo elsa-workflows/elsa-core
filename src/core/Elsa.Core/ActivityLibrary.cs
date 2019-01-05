@@ -8,9 +8,9 @@ namespace Elsa
 {
     public class ActivityLibrary : IActivityLibrary
     {
-        private readonly IEnumerable<IActivityProvider> providers;
+        private readonly IEnumerable<IActivityHarvester> providers;
 
-        public ActivityLibrary(IEnumerable<IActivityProvider> providers)
+        public ActivityLibrary(IEnumerable<IActivityHarvester> providers)
         {
             this.providers = providers;
         }

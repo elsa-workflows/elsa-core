@@ -11,29 +11,20 @@ using Elsa.Results;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Localization;
 
-namespace Elsa.Activities.Http.Handlers
+namespace Elsa.Activities.Http.Drivers
 {
-    public class HttpRequestTriggerHandler : ActivityHandler<HttpRequestTrigger>
+    public class HttpRequestTriggerDriver : ActivityDriver<HttpRequestTrigger>
     {
         private readonly IHttpContextAccessor httpContextAccessor;
         private readonly IWorkflowExpressionEvaluator expressionEvaluator;
 
-        public HttpRequestTriggerHandler(
-            IStringLocalizer<HttpRequestTrigger> localizer,
+        public HttpRequestTriggerDriver(
             IHttpContextAccessor httpContextAccessor,
             IWorkflowExpressionEvaluator expressionEvaluator)
         {
-            T = localizer;
             this.httpContextAccessor = httpContextAccessor;
             this.expressionEvaluator = expressionEvaluator;
         }
-
-        public IStringLocalizer<HttpRequestTrigger> T { get; }
-        public override bool IsTrigger => true;
-        public override LocalizedString Category => T["HTTP"];
-        public override LocalizedString DisplayText => T["HTTP Request"];
-        public override LocalizedString Description => T["Triggers when an incoming HTTP request is received."];
-        protected override LocalizedString GetEndpoint() => T["Done"];
 
         protected override async Task<ActivityExecutionResult> OnExecuteAsync(HttpRequestTrigger activity, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
         {

@@ -2,13 +2,11 @@
 {
     public class ActivityExecutionContext
     {
-        public ActivityExecutionContext(IActivity activity, ActivityDescriptor descriptor)
+        public ActivityExecutionContext(IActivity activity)
         {
             Activity = activity;
-            Descriptor = descriptor;
         }
 
         public IActivity Activity { get; }
-        public ActivityDescriptor Descriptor { get; }
     }
 }

@@ -5,7 +5,7 @@ using Elsa.Web.Drivers;
 
 namespace Elsa.Web.Activities.Console.Drivers
 {
-    public class WriteLineDriver : ActivityDisplayDriver<WriteLine, WriteLineViewModel>
+    public class WriteLineDisplay : ActivityDisplayDriver<WriteLine, WriteLineViewModel>
     {
         protected override void EditActivity(WriteLine activity, WriteLineViewModel model)
         {

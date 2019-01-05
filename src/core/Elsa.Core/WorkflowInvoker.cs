@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,21 +11,20 @@ namespace Elsa
 {
     public class WorkflowInvoker : IWorkflowInvoker
     {
-        public WorkflowInvoker(IActivityLibrary activityLibrary, ILogger<WorkflowInvoker> logger)
+        private readonly ILogger logger;
+        
+        public WorkflowInvoker(IActivityInvoker activityInvoker, ILogger<WorkflowInvoker> logger)
         {
-            this.activityLibrary = activityLibrary;
+            ActivityInvoker = activityInvoker;
             this.logger = logger;
         }
 
-        private readonly IActivityLibrary activityLibrary;
-        private readonly ILogger logger;
+        public IActivityInvoker ActivityInvoker { get; }
 
         public async Task<WorkflowExecutionContext> InvokeAsync(Workflow workflow, IActivity startActivity = default, Variables arguments = default, CancellationToken cancellationToken = default)
         {
             workflow.Arguments = arguments ?? new Variables();
-            var activityDescriptors = await activityLibrary.ListAsync(cancellationToken);
-            var activityDescriptorsDictionary = activityDescriptors.ToDictionary(x => x.Name);
-            var workflowExecutionContext = new WorkflowExecutionContext(workflow, activityDescriptorsDictionary);
+            var workflowExecutionContext = new WorkflowExecutionContext(workflow);
             var isResuming = workflowExecutionContext.Workflow.Status == WorkflowStatus.Resuming;
 
             if (startActivity != null)
@@ -91,12 +91,11 @@ namespace Elsa
             workflowContext.Fault(ex, activity);
         }
 
-        private static async Task<ActivityExecutionResult> ExecuteOrResumeActivityAsync(WorkflowExecutionContext workflowContext, IActivity activity, bool isResuming, CancellationToken cancellationToken)
+        private async Task<ActivityExecutionResult> ExecuteOrResumeActivityAsync(WorkflowExecutionContext workflowContext, IActivity activity, bool isResuming, CancellationToken cancellationToken)
         {
-            var activityContext = workflowContext.CreateActivityExecutionContext(activity);
             return isResuming
-                ? await activityContext.Descriptor.ResumeAsync(activityContext, workflowContext, cancellationToken)
-                : await activityContext.Descriptor.ExecuteAsync(activityContext, workflowContext, cancellationToken);
+                ? await ActivityInvoker.ResumeAsync(workflowContext, activity, cancellationToken)
+                : await ActivityInvoker.ExecuteAsync(workflowContext, activity, cancellationToken);
         }
     }
 }

@@ -15,8 +15,7 @@ namespace Elsa.Extensions
                 .AddSingleton<IIdGenerator, DefaultIdGenerator>()
                 .AddScoped<IWorkflowSerializer, WorkflowSerializer>()
                 .AddScoped<IWorkflowTokenizer, WorkflowTokenizer>()
-                .AddScoped<IWorkflowInvoker, WorkflowInvoker>()
-                .AddScoped<IActivityProvider, TypedActivityProvider>()
+                .AddScoped<IActivityHarvester, TypedActivityHarvester>()
                 .AddScoped<IActivityLibrary, ActivityLibrary>()
                 .AddSingleton<ITokenFormatter, JsonTokenFormatter>()
                 .AddSingleton<ITokenFormatter, YamlTokenFormatter>()
@@ -24,7 +23,15 @@ namespace Elsa.Extensions
                 .AddSingleton<ITokenFormatterProvider, TokenFormatterProvider>()
                 .AddSingleton<ITokenizerInvoker, TokenizerInvoker>()
                 .AddSingleton<ITokenizer, DefaultTokenizer>()
-                .AddSingleton<ITokenizer, ActivityTokenizer>()
+                .AddSingleton<ITokenizer, ActivityTokenizer>();
+        }
+
+        public static IServiceCollection AddWorkflowsInvoker(this IServiceCollection services)
+        {
+            return services
+                .AddSingleton<IWorkflowInvoker, WorkflowInvoker>()
+                .AddSingleton<IActivityInvoker, ActivityInvoker>()
+                .AddSingleton<IActivityDriverRegistry, ActivityDriverRegistry>()
                 .AddSingleton<IExpressionEvaluator, PlainTextEvaluator>()
                 .AddSingleton<IExpressionEvaluator, JavaScriptEvaluator>()
                 .AddSingleton<IWorkflowExpressionEvaluator, WorkflowExpressionEvaluator>();

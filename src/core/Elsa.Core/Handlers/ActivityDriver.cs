@@ -4,7 +4,7 @@ using Elsa.Results;
 
 namespace Elsa.Handlers
 {
-    public abstract class ActivityHandler<T> : ActivityHandlerBase<T> where T : IActivity
+    public abstract class ActivityDriver<T> : ActivityDriverBase<T> where T : IActivity
     {
         protected HaltResult Halt() => new HaltResult();
         protected TriggerEndpointsResult TriggerEndpoints(IEnumerable<string> names) => new TriggerEndpointsResult(names);

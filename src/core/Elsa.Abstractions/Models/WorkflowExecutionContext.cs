@@ -6,12 +6,10 @@ namespace Elsa.Models
 {
     public class WorkflowExecutionContext
     {
-        private readonly IDictionary<string, ActivityDescriptor> activityDescriptors;
         private readonly Stack<IActivity> scheduledActivities;
 
-        public WorkflowExecutionContext(Workflow workflow, IDictionary<string, ActivityDescriptor> activityDescriptors)
+        public WorkflowExecutionContext(Workflow workflow)
         {
-            this.activityDescriptors = activityDescriptors;
             Workflow = workflow;
             IsFirstPass = true;
             scheduledActivities = new Stack<IActivity>();
@@ -29,7 +27,7 @@ namespace Elsa.Models
         }
         
         public ActivityExecutionContext CreateActivityExecutionContext(IActivity activity) => 
-            new ActivityExecutionContext(activity, activityDescriptors[activity.Name]);
+            new ActivityExecutionContext(activity);
 
         public void BeginScope()
         {

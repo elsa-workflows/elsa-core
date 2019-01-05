@@ -5,13 +5,13 @@ namespace Elsa.Web.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddActivity<THandler, TDriver>(this IServiceCollection services) 
-            where THandler : class, IActivityHandler 
-            where TDriver : class, IDisplayDriver<IActivity>
+        public static IServiceCollection AddActivity<TDescriptor, TDisplayDriver>(this IServiceCollection services) 
+            where TDescriptor : class, IActivityDescriptor
+            where TDisplayDriver : class, IDisplayDriver<IActivity>
         {
             return services
-                .AddScoped<IActivityHandler, THandler>()
-                .AddScoped<IDisplayDriver<IActivity>, TDriver>();
+                .AddScoped<IActivityDescriptor, TDescriptor>()
+                .AddScoped<IDisplayDriver<IActivity>, TDisplayDriver>();
         }
     }
 }

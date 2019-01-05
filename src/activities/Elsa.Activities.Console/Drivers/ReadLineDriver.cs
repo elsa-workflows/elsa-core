@@ -7,29 +7,20 @@ using Elsa.Models;
 using Elsa.Results;
 using Microsoft.Extensions.Localization;
 
-namespace Elsa.Activities.Console.Handlers
+namespace Elsa.Activities.Console.Drivers
 {
-    public class ReadLineHandler : ActivityHandler<ReadLine>
+    public class ReadLineDriver : ActivityDriver<ReadLine>
     {
         private readonly TextReader input;
 
-        public ReadLineHandler(IStringLocalizer<ReadLineHandler> localizer)
+        public ReadLineDriver()
         {
-            T = localizer;
         }
 
-        public ReadLineHandler(IStringLocalizer<ReadLineHandler> localizer, TextReader input) : this(localizer)
+        public ReadLineDriver(TextReader input) : this()
         {
             this.input = input;
         }
-
-        private IStringLocalizer<ReadLineHandler> T { get; }
-
-        protected override LocalizedString GetEndpoint() => T["Done"];
-
-        public override LocalizedString Category => T["Console"];
-        public override LocalizedString DisplayText => T["Read Line"];
-        public override LocalizedString Description => T["Read a line from the console"];
 
         protected override async Task<ActivityExecutionResult> OnExecuteAsync(ReadLine activity, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
         {
