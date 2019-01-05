@@ -1,5 +1,5 @@
 using Elsa.Activities.Http.Extensions;
-using Elsa.Web.Activities.Http.Drivers;
+using Elsa.Web.Activities.Http.Display;
 using Elsa.Web.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using OrchardCore.Modules;
@@ -12,7 +12,8 @@ namespace Elsa.Web.Activities.Http
         {
             services
                 .AddHttpWorkflowDescriptors()
-                .AddActivityDisplay<HttpRequestTriggerDisplay>();
+                .AddActivityDisplay<HttpRequestTriggerDisplay>()
+                .AddActivityDisplay<HttpRequestActionDisplay>();
         }
     }
 }

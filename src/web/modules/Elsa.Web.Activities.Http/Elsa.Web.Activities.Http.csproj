@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
 
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
@@ -15,6 +15,7 @@
     <ItemGroup>
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.Http\Elsa.Activities.Http.csproj" />
         <ProjectReference Include="..\Elsa.Web.Abstractions\Elsa.Web.Abstractions.csproj" />
+        <ProjectReference Include="..\Elsa.Web.Components\Elsa.Web.Components.csproj" />
     </ItemGroup>
 
     <ItemGroup>

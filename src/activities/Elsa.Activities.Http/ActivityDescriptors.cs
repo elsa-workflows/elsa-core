@@ -22,6 +22,12 @@ namespace Elsa.Activities.Http
                 T["HTTP Request Trigger"],
                 T["Triggers when an incoming HTTP request is received."],
                 T["Done"]);
+            
+            yield return ActivityDescriptor.ForAction<HttpRequestAction>(
+                Category,
+                T["HTTP Request"],
+                T["Execute a HTTP request."],
+                T["Done"]);
         }
     }
 }

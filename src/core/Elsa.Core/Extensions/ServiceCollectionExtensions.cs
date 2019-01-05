@@ -25,7 +25,9 @@ namespace Elsa.Extensions
             services.TryAddSingleton<ITokenizerInvoker, TokenizerInvoker>();
             services.AddSingleton<ITokenizer, DefaultTokenizer>();
             services.AddSingleton<ITokenizer, ActivityTokenizer>();
-
+            services.AddSingleton<IExpressionEvaluator, PlainTextEvaluator>();
+            services.AddSingleton<IExpressionEvaluator, JavaScriptEvaluator>();
+            
             return services;
         }
 
@@ -34,8 +36,6 @@ namespace Elsa.Extensions
             services.TryAddSingleton<IWorkflowInvoker, WorkflowInvoker>();
             services.TryAddSingleton<IActivityInvoker, ActivityInvoker>();
             services.TryAddSingleton<IActivityDriverRegistry, ActivityDriverRegistry>();
-            services.AddSingleton<IExpressionEvaluator, PlainTextEvaluator>();
-            services.AddSingleton<IExpressionEvaluator, JavaScriptEvaluator>();
             services.TryAddSingleton<IWorkflowExpressionEvaluator, WorkflowExpressionEvaluator>();
 
             return services;

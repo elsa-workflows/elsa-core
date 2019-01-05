@@ -2,7 +2,7 @@
 using Elsa.Web.Activities.Http.ViewModels;
 using Elsa.Web.Drivers;
 
-namespace Elsa.Web.Activities.Http.Drivers
+namespace Elsa.Web.Activities.Http.Display
 {
     public class HttpRequestTriggerDisplay : ActivityDisplayDriver<HttpRequestTrigger, HttpRequestTriggerViewModel>
     {
