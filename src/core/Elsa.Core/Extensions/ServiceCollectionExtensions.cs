@@ -1,5 +1,5 @@
-using Elsa.ActivityProviders;
 using Elsa.Expressions;
+using Elsa.Harvesters;
 using Elsa.Serialization;
 using Elsa.Serialization.Formatters;
 using Elsa.Serialization.Tokenizers;
@@ -17,6 +17,7 @@ namespace Elsa.Extensions
                 .AddScoped<IWorkflowTokenizer, WorkflowTokenizer>()
                 .AddScoped<IActivityHarvester, TypedActivityHarvester>()
                 .AddScoped<IActivityLibrary, ActivityLibrary>()
+                .AddActivityDescriptors<ActivityDescriptors>()
                 .AddSingleton<ITokenFormatter, JsonTokenFormatter>()
                 .AddSingleton<ITokenFormatter, YamlTokenFormatter>()
                 .AddSingleton<ITokenFormatter, XmlTokenFormatter>()

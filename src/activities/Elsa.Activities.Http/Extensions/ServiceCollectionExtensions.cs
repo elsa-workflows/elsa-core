@@ -1,4 +1,3 @@
-using Elsa.Activities.Http.Descriptors;
 using Elsa.Activities.Http.Drivers;
 using Elsa.Activities.Http.Initialization;
 using Elsa.Activities.Http.Services;
@@ -14,7 +13,7 @@ namespace Elsa.Activities.Http.Extensions
     {
         public static IServiceCollection AddHttpDescriptors(this IServiceCollection services)
         {
-            return services.AddActivityDescriptor<HttpRequestTriggerDescriptor>();
+            return services.AddActivityDescriptors<ActivityDescriptors>();
         }
         
         public static IServiceCollection AddHttpDrivers(this IServiceCollection services)

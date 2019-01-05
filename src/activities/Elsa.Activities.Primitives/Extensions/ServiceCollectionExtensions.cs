@@ -1,4 +1,3 @@
-using Elsa.Activities.Primitives.Descriptors;
 using Elsa.Activities.Primitives.Drivers;
 using Elsa.Extensions;
 using Microsoft.Extensions.DependencyInjection;
@@ -9,10 +8,7 @@ namespace Elsa.Activities.Primitives.Extensions
     {
         public static IServiceCollection AddPrimitiveDescriptors(this IServiceCollection services)
         {
-            return services
-                .AddActivityDescriptor<SetVariableDescriptor>()
-                .AddActivityDescriptor<ForEachDescriptor>()
-                .AddActivityDescriptor<IfElseDescriptor>();
+            return services.AddActivityDescriptors<ActivityDescriptors>();
         }
         
         public static IServiceCollection AddPrimitiveDrivers(this IServiceCollection services)

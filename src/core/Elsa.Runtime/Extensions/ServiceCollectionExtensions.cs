@@ -1,7 +1,6 @@
-using Elsa.Runtime;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Esla.Runtime.Extensions
+namespace Elsa.Runtime.Extensions
 {
     public static class ServiceCollectionExtensions
     {

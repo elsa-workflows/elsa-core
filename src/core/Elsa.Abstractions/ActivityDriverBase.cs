@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Results;
 
-namespace Elsa.Handlers
+namespace Elsa
 {
     public abstract class ActivityDriverBase<T> : IActivityDriver where T : IActivity
     {

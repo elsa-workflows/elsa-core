@@ -3,7 +3,7 @@ using Elsa.Activities.Http.Extensions;
 using Elsa.Activities.Primitives.Extensions;
 using Elsa.Extensions;
 using Elsa.Persistence.FileSystem.Extensions;
-using Esla.Runtime.Extensions;
+using Elsa.Runtime.Extensions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -26,13 +26,19 @@ namespace SampleHost.Web
             services
                 .AddLocalization()
                 .AddWorkflowsCore()
+                .AddWorkflowsInvoker()
                 .AddWorkflowsHost()
                 .AddWorkflowsFileSystemPersistence(Configuration.GetSection("FileStore"))
+                .AddPrimitiveDrivers()
                 .AddPrimitiveDescriptors()
+                .AddConsoleDrivers()
                 .AddConsoleDescriptors()
+                .AddHttpDrivers()
                 .AddHttpDescriptors();
             
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Latest);
+            services
+                .AddMvc()
+                .SetCompatibilityVersion(CompatibilityVersion.Latest);
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
@@ -42,7 +48,7 @@ namespace SampleHost.Web
                 app.UseDeveloperExceptionPage();
             }
 
-            app.UseHttpActivities();
+            app.UseHttpWorkflows();
             app.UseMvc();
         }
     }

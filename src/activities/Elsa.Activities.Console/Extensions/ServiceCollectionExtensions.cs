@@ -1,4 +1,3 @@
-using Elsa.Activities.Console.Descriptors;
 using Elsa.Activities.Console.Drivers;
 using Elsa.Extensions;
 using Microsoft.Extensions.DependencyInjection;
@@ -9,9 +8,7 @@ namespace Elsa.Activities.Console.Extensions
     {
         public static IServiceCollection AddConsoleDescriptors(this IServiceCollection services)
         {
-            return services
-                .AddActivityDescriptor<ReadLineDescriptor>()
-                .AddActivityDescriptor<WriteLineDescriptor>();
+            return services.AddActivityDescriptors<ActivityDescriptors>();
         }
         
         public static IServiceCollection AddConsoleDrivers(this IServiceCollection services)
