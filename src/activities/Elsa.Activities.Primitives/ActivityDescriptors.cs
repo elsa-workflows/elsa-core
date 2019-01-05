@@ -18,19 +18,19 @@ namespace Elsa.Activities.Primitives
 
         protected override IEnumerable<ActivityDescriptor> Describe()
         {
-            yield return ActivityDescriptor.For<ForEach>(
+            yield return ActivityDescriptor.ForAction<ForEach>(
                 ControlFlowCategory,
                 T["For Each"],
                 T["Iterate over a list of items."],
                 T["Next"], T["Done"]);
             
-            yield return ActivityDescriptor.For<IfElse>(
+            yield return ActivityDescriptor.ForAction<IfElse>(
                 ControlFlowCategory,
                 T["If/Else"],
                 T["Evaluate a boolean condition and continues execution based on the outcome."],
                 T["True"], T["False"]);
             
-            yield return ActivityDescriptor.For<SetVariable>(
+            yield return ActivityDescriptor.ForAction<SetVariable>(
                 PrimitivesFlowCategory,
                 T["Set Variable"],
                 T["Set a custom variable on the workflow."],

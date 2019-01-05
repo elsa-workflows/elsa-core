@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -10,24 +11,40 @@ namespace Elsa.Models
 {
     public class ActivityDescriptor
     {
-        public static ActivityDescriptor For<T>(
-            LocalizedString category, 
-            LocalizedString displayText, 
+        public static ActivityDescriptor ForAction<T>(
+            LocalizedString category,
+            LocalizedString displayText,
             LocalizedString description,
-            params LocalizedString[] endpoints)
-        {
-            return new ActivityDescriptor(typeof(T), category, displayText, description, endpoints);
-        }
+            params LocalizedString[] endpoints) =>
+            For<T>(category, displayText, description, false, true, endpoints);
+
+        public static ActivityDescriptor ForTrigger<T>(
+            LocalizedString category,
+            LocalizedString displayText,
+            LocalizedString description,
+            params LocalizedString[] endpoints) =>
+            For<T>(category, displayText, description, true, true, endpoints);
+
+        public static ActivityDescriptor For<T>(
+            LocalizedString category,
+            LocalizedString displayText,
+            LocalizedString description,
+            bool isTrigger,
+            bool isBrowsable,
+            params LocalizedString[] endpoints) =>
+            new ActivityDescriptor(typeof(T), category, displayText, description, isTrigger, isBrowsable, endpoints);
 
         public ActivityDescriptor()
         {
         }
-        
+
         public ActivityDescriptor(
-            Type activityType, 
-            LocalizedString category, 
-            LocalizedString displayText, 
+            Type activityType,
+            LocalizedString category,
+            LocalizedString displayText,
             LocalizedString description,
+            bool isTrigger,
+            bool isBrowsable,
             params LocalizedString[] endpoints)
         {
             ActivityType = activityType;

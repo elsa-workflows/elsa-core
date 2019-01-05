@@ -17,13 +17,13 @@ namespace Elsa.Activities.Console
 
         protected override IEnumerable<ActivityDescriptor> Describe()
         {
-            yield return ActivityDescriptor.For<ReadLine>(
+            yield return ActivityDescriptor.ForAction<ReadLine>(
                 Category,
                 T["Read Line"],
                 T["Read a line from the console."],
                 T["Done"]);
             
-            yield return ActivityDescriptor.For<WriteLine>(
+            yield return ActivityDescriptor.ForAction<WriteLine>(
                 Category,
                 T["Write Line"],
                 T["Write a line to the console."],
