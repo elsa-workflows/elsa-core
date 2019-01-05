@@ -15,16 +15,16 @@ namespace Elsa.Extensions
             services.TryAddSingleton<IIdGenerator, DefaultIdGenerator>();
             services.TryAddScoped<IWorkflowSerializer, WorkflowSerializer>();
             services.TryAddScoped<IWorkflowTokenizer, WorkflowTokenizer>();
-            services.TryAddScoped<IActivityHarvester, TypedActivityHarvester>();
+            services.AddScoped<IActivityHarvester, TypedActivityHarvester>();
             services.TryAddScoped<IActivityLibrary, ActivityLibrary>();
             services.AddActivityDescriptors<ActivityDescriptors>();
-            services.TryAddSingleton<ITokenFormatter, JsonTokenFormatter>();
-            services.TryAddSingleton<ITokenFormatter, YamlTokenFormatter>();
-            services.TryAddSingleton<ITokenFormatter, XmlTokenFormatter>();
+            services.AddSingleton<ITokenFormatter, JsonTokenFormatter>();
+            services.AddSingleton<ITokenFormatter, YamlTokenFormatter>();
+            services.AddSingleton<ITokenFormatter, XmlTokenFormatter>();
             services.TryAddSingleton<ITokenFormatterProvider, TokenFormatterProvider>();
             services.TryAddSingleton<ITokenizerInvoker, TokenizerInvoker>();
-            services.TryAddSingleton<ITokenizer, DefaultTokenizer>();
-            services.TryAddSingleton<ITokenizer, ActivityTokenizer>();
+            services.AddSingleton<ITokenizer, DefaultTokenizer>();
+            services.AddSingleton<ITokenizer, ActivityTokenizer>();
 
             return services;
         }
@@ -34,8 +34,8 @@ namespace Elsa.Extensions
             services.TryAddSingleton<IWorkflowInvoker, WorkflowInvoker>();
             services.TryAddSingleton<IActivityInvoker, ActivityInvoker>();
             services.TryAddSingleton<IActivityDriverRegistry, ActivityDriverRegistry>();
-            services.TryAddSingleton<IExpressionEvaluator, PlainTextEvaluator>();
-            services.TryAddSingleton<IExpressionEvaluator, JavaScriptEvaluator>();
+            services.AddSingleton<IExpressionEvaluator, PlainTextEvaluator>();
+            services.AddSingleton<IExpressionEvaluator, JavaScriptEvaluator>();
             services.TryAddSingleton<IWorkflowExpressionEvaluator, WorkflowExpressionEvaluator>();
 
             return services;

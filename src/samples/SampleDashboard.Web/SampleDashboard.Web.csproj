@@ -22,13 +22,13 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\modules\Elsa.Web.Activities.Console\Elsa.Web.Activities.Console.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.Web.Activities.Http\Elsa.Web.Activities.Http.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.Web.Activities.Primitives\Elsa.Web.Activities.Primitives.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.Web.Components\Elsa.Web.Components.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.Web.Management\Elsa.Web.Management.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.Web.Persistence.FileSystem\Elsa.Web.Persistence.FileSystem.csproj" />
-        <ProjectReference Include="..\..\themes\Elsa.Web.BootstrapTheme\Elsa.Web.BootstrapTheme.csproj" />
+        <ProjectReference Include="..\..\web\modules\Elsa.Web.Activities.Console\Elsa.Web.Activities.Console.csproj" />
+        <ProjectReference Include="..\..\web\modules\Elsa.Web.Activities.Http\Elsa.Web.Activities.Http.csproj" />
+        <ProjectReference Include="..\..\web\modules\Elsa.Web.Activities.Primitives\Elsa.Web.Activities.Primitives.csproj" />
+        <ProjectReference Include="..\..\web\modules\Elsa.Web.Components\Elsa.Web.Components.csproj" />
+        <ProjectReference Include="..\..\web\modules\Elsa.Web.Management\Elsa.Web.Management.csproj" />
+        <ProjectReference Include="..\..\web\modules\Elsa.Web.Persistence.FileSystem\Elsa.Web.Persistence.FileSystem.csproj" />
+        <ProjectReference Include="..\..\web\themes\Elsa.Web.BootstrapTheme\Elsa.Web.BootstrapTheme.csproj" />
     </ItemGroup>
 
 </Project>

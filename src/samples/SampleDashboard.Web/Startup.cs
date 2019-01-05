@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Web.Dashboard
+namespace SampleDashboard.Web
 {
     public class Startup
     {

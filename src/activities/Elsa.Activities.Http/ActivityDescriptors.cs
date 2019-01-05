@@ -17,7 +17,7 @@ namespace Elsa.Activities.Http
 
         protected override IEnumerable<ActivityDescriptor> Describe()
         {
-            yield return ActivityDescriptor.ForAction<HttpRequestTrigger>(
+            yield return ActivityDescriptor.ForTrigger<HttpRequestTrigger>(
                 Category,
                 T["HTTP Request Trigger"],
                 T["Triggers when an incoming HTTP request is received."],

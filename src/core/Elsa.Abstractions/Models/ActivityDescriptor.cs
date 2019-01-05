@@ -53,6 +53,8 @@ namespace Elsa.Models
             DisplayText = displayText;
             Description = description;
             GetEndpoints = a => endpoints;
+            IsTrigger = isTrigger;
+            IsBrowsable = isBrowsable;
         }
 
         public bool IsBrowsable { get; set; } = true;

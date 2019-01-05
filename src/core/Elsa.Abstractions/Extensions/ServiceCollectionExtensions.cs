@@ -8,14 +8,14 @@ namespace Elsa.Extensions
         public static IServiceCollection AddActivityDescriptors<T>(this IServiceCollection services)
             where T : class, IActivityDescriptorProvider
         {
-            services.TryAddSingleton<IActivityDescriptorProvider, T>();
+            services.AddSingleton<IActivityDescriptorProvider, T>();
             return services;
         }
         
         public static IServiceCollection AddActivityDriver<T>(this IServiceCollection services)
             where T : class, IActivityDriver
         {
-            services.TryAddSingleton<IActivityDriver, T>();
+            services.AddSingleton<IActivityDriver, T>();
             return services;
         }
     }

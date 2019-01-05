@@ -35,7 +35,7 @@ namespace Elsa.Extensions
         {
             return activityLibrary
                 .ListAsync(x => x.Name == name, cancellationToken)
-                .SingleAsync();
+                .SingleOrDefaultAsync();
         }
     }
 }

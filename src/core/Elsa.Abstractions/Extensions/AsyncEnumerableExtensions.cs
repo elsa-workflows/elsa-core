@@ -31,5 +31,10 @@ namespace Elsa.Extensions
         {
             return (await task).Single();
         }
+        
+        public static async Task<T> SingleOrDefaultAsync<T>(this Task<IEnumerable<T>> task)
+        {
+            return (await task).SingleOrDefault();
+        }
     }
 }

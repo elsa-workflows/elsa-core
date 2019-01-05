@@ -94,7 +94,8 @@ namespace Elsa.Serialization.Tokenizers
         {
             var name = token["name"].Value<string>();
             var descriptor = await GetActivityDescriptorAsync(name, cancellationToken);
-            var activity = descriptor != null ? (IActivity) token.ToObject(descriptor.ActivityType) : new UnknownActivity();
+            var activityType = descriptor?.ActivityType ?? typeof(UnknownActivity);
+            var activity = (IActivity)token.ToObject(activityType);
 
             activity.Descriptor = descriptor;
             return activity;

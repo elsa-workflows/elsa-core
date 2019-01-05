@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 
-namespace Elsa.Web.Dashboard
+namespace SampleDashboard.Web
 {
     public class Program
     {
