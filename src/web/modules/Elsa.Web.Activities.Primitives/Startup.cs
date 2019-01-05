@@ -11,7 +11,7 @@ namespace Elsa.Web.Activities.Primitives
         public override void ConfigureServices(IServiceCollection services)
         {
             services
-                .AddPrimitiveDescriptors()
+                .AddPrimitiveWorkflowDescriptors()
                 .AddActivityDisplay<IfElseDisplay>()
                 .AddActivityDisplay<ForEachDisplay>()
                 .AddActivityDisplay<SetVariableDisplay>()

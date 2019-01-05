@@ -1,3 +1,4 @@
+using AspNetCore.AsyncInitialization;
 using Elsa.Activities.Http.Drivers;
 using Elsa.Activities.Http.Initialization;
 using Elsa.Activities.Http.Services;
@@ -11,19 +12,19 @@ namespace Elsa.Activities.Http.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddHttpDescriptors(this IServiceCollection services)
+        public static IServiceCollection AddHttpWorkflowDescriptors(this IServiceCollection services)
         {
             return services.AddActivityDescriptors<ActivityDescriptors>();
         }
-        
-        public static IServiceCollection AddHttpDrivers(this IServiceCollection services)
-        {
-            services
-                .AddSingleton<IHttpWorkflowCache, DefaultHttpWorkflowCache>()
-                .AddAsyncInitializer<HttpWorkflowCacheInitializer>()
-                .AddActivityDriver<HttpRequestTriggerDriver>();
 
+        public static IServiceCollection AddHttpWorkflowDrivers(this IServiceCollection services)
+        {
+            services.TryAddSingleton<IHttpWorkflowCache, DefaultHttpWorkflowCache>();
+            services.AddAsyncInitialization();
+            services.TryAddTransient<IAsyncInitializer, HttpWorkflowCacheInitializer>();
+            services.AddActivityDriver<HttpRequestTriggerDriver>();
             services.TryAddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+            
             return services;
         }
     }

@@ -25,16 +25,11 @@ namespace SampleHost.Web
         {
             services
                 .AddLocalization()
-                .AddWorkflowsCore()
-                .AddWorkflowsInvoker()
                 .AddWorkflowsHost()
                 .AddWorkflowsFileSystemPersistence(Configuration.GetSection("FileStore"))
-                .AddPrimitiveDrivers()
-                .AddPrimitiveDescriptors()
-                .AddConsoleDrivers()
-                .AddConsoleDescriptors()
-                .AddHttpDrivers()
-                .AddHttpDescriptors();
+                .AddPrimitiveWorkflowDrivers()
+                .AddConsoleWorkflowDrivers()
+                .AddHttpWorkflowDrivers();
             
             services
                 .AddMvc()

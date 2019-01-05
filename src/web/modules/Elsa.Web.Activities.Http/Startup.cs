@@ -11,7 +11,7 @@ namespace Elsa.Web.Activities.Http
         public override void ConfigureServices(IServiceCollection services)
         {
             services
-                .AddHttpDescriptors()
+                .AddHttpWorkflowDescriptors()
                 .AddActivityDisplay<HttpRequestTriggerDisplay>();
         }
     }
