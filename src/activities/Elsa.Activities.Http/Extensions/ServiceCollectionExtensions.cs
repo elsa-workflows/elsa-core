@@ -19,6 +19,7 @@ namespace Elsa.Activities.Http.Extensions
 
         public static IServiceCollection AddHttpWorkflowDrivers(this IServiceCollection services)
         {
+            services.AddHttpWorkflowDescriptors();
             services.TryAddSingleton<IHttpWorkflowCache, DefaultHttpWorkflowCache>();
             services.AddAsyncInitialization();
             services.TryAddTransient<IAsyncInitializer, HttpWorkflowCacheInitializer>();
