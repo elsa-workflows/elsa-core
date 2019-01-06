@@ -7,9 +7,11 @@ using Elsa.Activities;
 using Elsa.Extensions;
 using Elsa.Models;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 using NodaTime;
+using NodaTime.Extensions;
 using NodaTime.Serialization.JsonNet;
 
 namespace Elsa.Serialization.Tokenizers
@@ -18,19 +20,23 @@ namespace Elsa.Serialization.Tokenizers
     {
         private readonly ITokenizerInvoker tokenizerInvoker;
         private readonly IActivityLibrary activityLibrary;
+        private readonly IClock clock;
         private readonly JsonSerializer jsonSerializer;
 
-        public WorkflowTokenizer(ITokenizerInvoker tokenizerInvoker, IActivityLibrary activityLibrary)
+        public WorkflowTokenizer(ITokenizerInvoker tokenizerInvoker, IActivityLibrary activityLibrary, IClock clock)
         {
             this.tokenizerInvoker = tokenizerInvoker;
             this.activityLibrary = activityLibrary;
-            
-            jsonSerializer = JsonSerializer.Create(
-                new JsonSerializerSettings
-                    {
-                        ContractResolver = new CamelCasePropertyNamesContractResolver()
-                    }
-                    .ConfigureForNodaTime(DateTimeZoneProviders.Tzdb));
+            this.clock = clock;
+
+            var settings = new JsonSerializerSettings
+                {
+                    ContractResolver = new CamelCasePropertyNamesContractResolver()
+                }
+                .ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
+
+            settings.Converters.Add(new StringEnumConverter());
+            jsonSerializer = JsonSerializer.Create(settings);
         }
 
         public async Task<JToken> TokenizeWorkflowAsync(Workflow value, CancellationToken cancellationToken)
@@ -48,11 +54,15 @@ namespace Elsa.Serialization.Tokenizers
             {
                 { "metadata", JToken.FromObject(workflow.Metadata, jsonSerializer) },
                 { "status", workflow.Status.ToString() },
+                { "createdAt", SerializeInstant(workflow.CreatedAt) },
+                { "startedAt", SerializeInstant(workflow.StartedAt) },
+                { "finishedAt", SerializeInstant(workflow.FinishedAt) },
+                { "haltedAt", SerializeInstant(workflow.HaltedAt) },
                 { "activities", await SerializeActivitiesAsync(context, cancellationToken) },
                 { "connections", SerializeConnections(context, workflow) },
                 { "haltedActivities", SerializeHaltedActivities(context, workflow) },
                 { "scopes", SerializeScopes(context, scopeIdLookup) },
-                { "currentScope", SerializeCurrentScope(workflow, scopeIdLookup) }
+                { "currentScope", SerializeCurrentScope(workflow, scopeIdLookup) },
             };
 
             return token;
@@ -72,6 +82,10 @@ namespace Elsa.Serialization.Tokenizers
             {
                 Metadata = token["metadata"].ToObject<WorkflowMetadata>(jsonSerializer),
                 Status = (WorkflowStatus) Enum.Parse(typeof(WorkflowStatus), token["status"].Value<string>()),
+                CreatedAt = DeserializeInstant(token["createdAt"]) ?? clock.GetCurrentInstant(),
+                StartedAt = DeserializeInstant(token["startedAt"]),
+                FinishedAt = DeserializeInstant(token["finishedAt"]),
+                HaltedAt = DeserializeInstant(token["haltedAt"]),
                 Activities = activityDictionary.Values.ToList(),
                 Connections = DeserializeConnections(token, activityDictionary).ToList(),
                 BlockingActivities = DeserializeHaltedActivities(token, activityDictionary).ToList(),
@@ -262,6 +276,16 @@ namespace Elsa.Serialization.Tokenizers
             }
 
             return dictionary;
+        }
+        
+        private Instant? DeserializeInstant(JToken token)
+        {
+            return token?.ToObject<DateTime?>(jsonSerializer)?.ToInstant();
+        }
+        
+        private JToken SerializeInstant(Instant? value)
+        {
+            return value != null ? JToken.FromObject(value.Value, jsonSerializer) : null;
         }
 
         private Task<ActivityDescriptor> GetActivityDescriptorAsync(string activityName, CancellationToken cancellationToken)

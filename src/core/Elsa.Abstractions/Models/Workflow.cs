@@ -23,14 +23,11 @@ namespace Elsa.Models
             Metadata = new WorkflowMetadata();
         }
 
-        [JsonConverter(typeof(StringEnumConverter))]
         public WorkflowStatus Status { get; set; }
-
         public Instant CreatedAt { get; set; }
         public Instant? StartedAt { get; set; }
         public Instant? HaltedAt { get; set; }
         public Instant? FinishedAt { get; set; }
-
         public IList<IActivity> Activities { get; set; } = new List<IActivity>();
         public IList<Connection> Connections { get; set; } = new List<Connection>();
         public Stack<WorkflowExecutionScope> Scopes { get; set; }
