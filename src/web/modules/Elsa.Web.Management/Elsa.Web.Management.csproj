@@ -13,18 +13,18 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="OrchardCore" Version="1.0.0-beta3-70362"/>
-        <PackageReference Include="OrchardCore.FileStorage.FileSystem" Version="1.0.0-beta3-70362"/>
-        <PackageReference Include="OrchardCore.Module.Targets" Version="1.0.0-beta3-70362"/>
-        <PackageReference Include="OrchardCore.Mvc.Core" Version="1.0.0-beta3-70362"/>
-        <PackageReference Include="OrchardCore.DisplayManagement" Version="1.0.0-beta3-70362"/>
-        <PackageReference Include="OrchardCore.ResourceManagement" Version="1.0.0-beta3-70362"/>
-        <PackageReference Include="OrchardCore.Infrastructure" Version="1.0.0-beta3-70362"/>
-        <PackageReference Include="OrchardCore.Settings" Version="1.0.0-beta3-70362"/>
+        <PackageReference Include="OrchardCore" Version="1.0.0-beta3-70362" />
+        <PackageReference Include="OrchardCore.FileStorage.FileSystem" Version="1.0.0-beta3-70362" />
+        <PackageReference Include="OrchardCore.Module.Targets" Version="1.0.0-beta3-70362" />
+        <PackageReference Include="OrchardCore.Mvc.Core" Version="1.0.0-beta3-70362" />
+        <PackageReference Include="OrchardCore.DisplayManagement" Version="1.0.0-beta3-70362" />
+        <PackageReference Include="OrchardCore.ResourceManagement" Version="1.0.0-beta3-70362" />
+        <PackageReference Include="OrchardCore.Infrastructure" Version="1.0.0-beta3-70362" />
+        <PackageReference Include="OrchardCore.Settings" Version="1.0.0-beta3-70362" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Elsa.Web.Components\Elsa.Web.Components.csproj"/>
+        <ProjectReference Include="..\Elsa.Web.Components\Elsa.Web.Components.csproj" />
     </ItemGroup>
 
 </Project>

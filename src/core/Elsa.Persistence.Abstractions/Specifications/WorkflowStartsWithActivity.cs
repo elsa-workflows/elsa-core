@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using Elsa.Extensions;
 using Elsa.Models;
 
 namespace Elsa.Persistence.Specifications
@@ -15,9 +16,10 @@ namespace Elsa.Persistence.Specifications
         public bool IsSatisfiedBy(Workflow value)
         {
             var query =
-                from activity in value.Activities 
-                where activity.Name == ActivityName
-                where !value.Connections.Select(x => x.Target.Activity).Contains(activity)
+                from activity in value.Activities
+                where value.IsDefinition()
+                      && activity.Name == ActivityName
+                      && !value.Connections.Select(x => x.Target.Activity).Contains(activity)
                 select activity;
 
             return query.Any();

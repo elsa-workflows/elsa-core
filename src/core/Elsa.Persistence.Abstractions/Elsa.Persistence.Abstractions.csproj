@@ -14,7 +14,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Elsa.Abstractions\Elsa.Abstractions.csproj"/>
+        <ProjectReference Include="..\Elsa.Abstractions\Elsa.Abstractions.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="NodaTime" Version="2.4.4" />
     </ItemGroup>
 
 </Project>

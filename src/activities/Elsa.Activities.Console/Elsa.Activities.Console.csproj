@@ -16,8 +16,4 @@
         <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Handlers" />
-    </ItemGroup>
-
 </Project>

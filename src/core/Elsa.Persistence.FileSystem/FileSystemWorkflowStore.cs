@@ -7,6 +7,7 @@ using Elsa.Models;
 using Elsa.Persistence.FileSystem.Options;
 using Elsa.Serialization;
 using Microsoft.Extensions.Options;
+using NodaTime;
 
 namespace Elsa.Persistence.FileSystem
 {
@@ -15,14 +16,21 @@ namespace Elsa.Persistence.FileSystem
         private readonly IFileSystem fileSystem;
         private readonly IIdGenerator idGenerator;
         private readonly IWorkflowSerializer workflowSerializer;
+        private readonly IClock clock;
         private readonly string rootDirectory;
         private readonly string format;
 
-        public FileSystemWorkflowStore(IOptions<FileSystemStoreOptions> options, IFileSystem fileSystem, IIdGenerator idGenerator, IWorkflowSerializer workflowSerializer)
+        public FileSystemWorkflowStore(
+            IOptions<FileSystemStoreOptions> options, 
+            IFileSystem fileSystem, 
+            IIdGenerator idGenerator, 
+            IWorkflowSerializer workflowSerializer,
+            IClock clock)
         {
             this.fileSystem = fileSystem;
             this.idGenerator = idGenerator;
             this.workflowSerializer = workflowSerializer;
+            this.clock = clock;
             rootDirectory = options.Value.RootDirectory;
             format = options.Value.Format;
         }
@@ -47,6 +55,7 @@ namespace Elsa.Persistence.FileSystem
             var id = $"{idGenerator.Generate()}{fileExtension}";
 
             value.Metadata.Id = id;
+            value.CreatedAt = clock.GetCurrentInstant();
 
             await UpdateAsync(value, cancellationToken);
         }

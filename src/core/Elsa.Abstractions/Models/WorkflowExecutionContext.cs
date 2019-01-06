@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using NodaTime;
 
 namespace Elsa.Models
 {
@@ -56,10 +57,11 @@ namespace Elsa.Models
             CurrentScope.LastResult = value;
         }
 
-        public void Fault(Exception exception, IActivity activity) => Fault(exception.Message, activity);
+        public void Fault(Exception exception, IActivity activity, Instant instant) => Fault(exception.Message, activity, instant);
         
-        public void Fault(string errorMessage, IActivity activity)
+        public void Fault(string errorMessage, IActivity activity, Instant instant)
         {
+            Workflow.FinishedAt = instant;
             Workflow.Fault = new WorkflowFault
             {
                 Message = errorMessage,
@@ -67,7 +69,7 @@ namespace Elsa.Models
             };
         }
 
-        public void Halt()
+        public void Halt(Instant instant)
         {
             var activity = CurrentActivity;
             if (!Workflow.BlockingActivities.Contains(activity))
@@ -75,11 +77,13 @@ namespace Elsa.Models
                 Workflow.BlockingActivities.Add(activity);
             }
 
+            Workflow.HaltedAt = instant;
             Workflow.Status = WorkflowStatus.Halted;
         }
 
-        public void Finish()
+        public void Finish(Instant instant)
         {
+            Workflow.FinishedAt = instant;
             Workflow.Status = WorkflowStatus.Finished;
         }
 

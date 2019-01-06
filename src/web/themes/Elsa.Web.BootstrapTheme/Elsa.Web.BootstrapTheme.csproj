@@ -13,27 +13,26 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="OrchardCore.DisplayManagement" Version="1.0.0-beta3-70362"/>
-        <PackageReference Include="OrchardCore.ResourceManagement" Version="1.0.0-beta3-70362"/>
-        <PackageReference Include="OrchardCore.Theme.Targets" Version="1.0.0-beta3-70362"/>
+        <PackageReference Include="OrchardCore.DisplayManagement" Version="1.0.0-beta3-70362" />
+        <PackageReference Include="OrchardCore.ResourceManagement" Version="1.0.0-beta3-70362" />
+        <PackageReference Include="OrchardCore.Theme.Targets" Version="1.0.0-beta3-70362" />
     </ItemGroup>
 
     <ItemGroup>
-        <EmbeddedResource Remove="Assets\node_modules\**"/>
-        <Compile Remove="Assets\node_modules\**"/>
-        <Folder Remove="Assets\node_modules\**"/>
+        <EmbeddedResource Remove="Assets\node_modules\**" />
+        <Compile Remove="Assets\node_modules\**" />
+        <Folder Remove="Assets\node_modules\**" />
     </ItemGroup>
 
     <ItemGroup>
-        <Content Include="Assets\scripts\dashboard.ts"/>
-        <Content Include="Assets\styles\dashboard.scss"/>
-        <Content Include="Views\Elsa.Web.Management\Workflows\New.cshtml"/>
-        <Content Include="Views\Elsa.Web.Management\Workflows\Edit.cshtml"/>
-        <Content Include="Views\Elsa.Web.Management\Workflows\Index.cshtml"/>
+        <Content Include="Assets\scripts\dashboard.ts" />
+        <Content Include="Assets\styles\dashboard.scss" />
+        <Content Include="Views\Elsa.Web.Management\Workflows\New.cshtml" />
+        <Content Include="Views\Elsa.Web.Management\Workflows\Edit.cshtml" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\modules\Elsa.Web.Management\Elsa.Web.Management.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.Web.Management\Elsa.Web.Management.csproj" />
     </ItemGroup>
 
 </Project> 

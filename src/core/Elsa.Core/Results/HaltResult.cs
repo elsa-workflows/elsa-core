@@ -1,6 +1,7 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
+using NodaTime;
 
 namespace Elsa.Results
 {
@@ -9,6 +10,13 @@ namespace Elsa.Results
     /// </summary>
     public class HaltResult : ActivityExecutionResult
     {
+        private readonly Instant instant;
+
+        public HaltResult(Instant instant)
+        {
+            this.instant = instant;
+        }
+        
         public override async Task ExecuteAsync(IWorkflowInvoker invoker, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
         {            
             if (workflowContext.IsFirstPass)
@@ -21,7 +29,7 @@ namespace Elsa.Results
             }
             else
             {
-                workflowContext.Halt();
+                workflowContext.Halt(instant);
             }
         }
     }

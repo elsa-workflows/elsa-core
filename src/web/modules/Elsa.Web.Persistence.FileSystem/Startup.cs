@@ -20,7 +20,7 @@ namespace Elsa.Web.Persistence.FileSystem
             {
                 var shellOptions = serviceProvider.GetRequiredService<IOptions<ShellOptions>>().Value;
                 var shellSettings = serviceProvider.GetRequiredService<ShellSettings>();
-                var mediaPath = Path.Combine(shellOptions.ShellsApplicationDataPath, shellOptions.ShellsContainerName, shellSettings.Name, "elsa");
+                var mediaPath = Path.Combine(shellOptions.ShellsApplicationDataPath, shellOptions.ShellsContainerName, shellSettings.Name, "workflows");
                 var fileStore = new FileSystemStore(mediaPath);
 
                 return new WorkflowsFileStore(fileStore);

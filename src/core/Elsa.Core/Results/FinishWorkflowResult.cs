@@ -1,12 +1,20 @@
 ﻿using Elsa.Models;
+using NodaTime;
 
 namespace Elsa.Results
 {
     public class FinishWorkflowResult : ActivityExecutionResult
     {
+        private readonly Instant instant;
+
+        public FinishWorkflowResult(Instant instant)
+        {
+            this.instant = instant;
+        }
+        
         protected override void Execute(IWorkflowInvoker invoker, WorkflowExecutionContext workflowContext)
         {
-            workflowContext.Finish();
+            workflowContext.Finish(instant);
         }
     }
 }

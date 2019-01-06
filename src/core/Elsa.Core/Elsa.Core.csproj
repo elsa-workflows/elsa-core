@@ -22,6 +22,7 @@
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.1.1" />
         <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="2.1.1" />
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="2.1.1" />
+        <PackageReference Include="NodaTime.Serialization.JsonNet" Version="2.1.0" />
 
         <PackageReference Include="YamlDotNet.NetStandard" Version="4.0.0" />
     </ItemGroup>

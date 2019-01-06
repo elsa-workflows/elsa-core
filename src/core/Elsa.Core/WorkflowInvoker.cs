@@ -6,16 +6,22 @@ using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Results;
 using Microsoft.Extensions.Logging;
+using NodaTime;
 
 namespace Elsa
 {
     public class WorkflowInvoker : IWorkflowInvoker
     {
+        private readonly IClock clock;
         private readonly ILogger logger;
         
-        public WorkflowInvoker(IActivityInvoker activityInvoker, ILogger<WorkflowInvoker> logger)
+        public WorkflowInvoker(
+            IActivityInvoker activityInvoker,
+            IClock clock,
+            ILogger<WorkflowInvoker> logger)
         {
             ActivityInvoker = activityInvoker;
+            this.clock = clock;
             this.logger = logger;
         }
 
@@ -31,6 +37,9 @@ namespace Elsa
                 workflow.BlockingActivities.Remove(startActivity);
             else
                 startActivity = workflow.Activities.First();
+
+            if (!isResuming)
+                workflow.StartedAt = clock.GetCurrentInstant();
             
             workflowExecutionContext.Workflow.Status = WorkflowStatus.Executing;
             workflowExecutionContext.ScheduleActivity(startActivity);
@@ -50,7 +59,7 @@ namespace Elsa
             }
 
             if(workflowExecutionContext.Workflow.Status != WorkflowStatus.Halted)
-                workflowExecutionContext.Finish();
+                workflowExecutionContext.Finish(clock.GetCurrentInstant());
             
             return workflowExecutionContext;
         }
@@ -88,7 +97,7 @@ namespace Elsa
                 ex, 
                 "An unhandled error occurred while executing an activity. Putting the workflow in the faulted state."
             );
-            workflowContext.Fault(ex, activity);
+            workflowContext.Fault(ex, activity, clock.GetCurrentInstant());
         }
 
         private async Task<ActivityExecutionResult> ExecuteOrResumeActivityAsync(WorkflowExecutionContext workflowContext, IActivity activity, bool isResuming, CancellationToken cancellationToken)

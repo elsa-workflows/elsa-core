@@ -3,13 +3,19 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
+using NodaTime;
 
 namespace Elsa.Persistence.InMemory
 {
     public class InMemoryWorkflowStore : IWorkflowStore
     {
-        public InMemoryWorkflowStore()
+        private readonly IIdGenerator idGenerator;
+        private readonly IClock clock;
+
+        public InMemoryWorkflowStore(IIdGenerator idGenerator, IClock clock)
         {
+            this.idGenerator = idGenerator;
+            this.clock = clock;
             Workflows = new List<Workflow>();
         }
 
@@ -31,6 +37,9 @@ namespace Elsa.Persistence.InMemory
 
         public Task AddAsync(Workflow value, CancellationToken cancellationToken)
         {
+            value.Metadata.Id = idGenerator.Generate();
+            value.CreatedAt = clock.GetCurrentInstant();
+            
             Workflows.Add(value);
             return Task.CompletedTask;
         }

@@ -1,4 +1,5 @@
 using System.Linq;
+using Elsa.Extensions;
 using Elsa.Models;
 
 namespace Elsa.Persistence.Specifications
@@ -16,7 +17,7 @@ namespace Elsa.Persistence.Specifications
         {
             var query =
                 from activity in value.BlockingActivities 
-                where activity.Name == ActivityName
+                where value.IsInstance() && activity.Name == ActivityName
                 select activity;
 
             return query.Any();

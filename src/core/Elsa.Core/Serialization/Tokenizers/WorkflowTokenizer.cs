@@ -9,6 +9,8 @@ using Elsa.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
+using NodaTime;
+using NodaTime.Serialization.JsonNet;
 
 namespace Elsa.Serialization.Tokenizers
 {
@@ -22,7 +24,13 @@ namespace Elsa.Serialization.Tokenizers
         {
             this.tokenizerInvoker = tokenizerInvoker;
             this.activityLibrary = activityLibrary;
-            jsonSerializer = JsonSerializer.Create(new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver() });
+            
+            jsonSerializer = JsonSerializer.Create(
+                new JsonSerializerSettings
+                    {
+                        ContractResolver = new CamelCasePropertyNamesContractResolver()
+                    }
+                    .ConfigureForNodaTime(DateTimeZoneProviders.Tzdb));
         }
 
         public async Task<JToken> TokenizeWorkflowAsync(Workflow value, CancellationToken cancellationToken)
@@ -89,13 +97,13 @@ namespace Elsa.Serialization.Tokenizers
             var activityModel = JObject.FromObject(value, jsonSerializer);
             return Task.FromResult<JToken>(activityModel);
         }
-        
+
         public async Task<IActivity> DetokenizeActivityAsync(JToken token, CancellationToken cancellationToken)
         {
             var name = token["name"].Value<string>();
             var descriptor = await GetActivityDescriptorAsync(name, cancellationToken);
             var activityType = descriptor?.ActivityType ?? typeof(UnknownActivity);
-            var activity = (IActivity)token.ToObject(activityType);
+            var activity = (IActivity) token.ToObject(activityType);
 
             activity.Descriptor = descriptor;
             return activity;
