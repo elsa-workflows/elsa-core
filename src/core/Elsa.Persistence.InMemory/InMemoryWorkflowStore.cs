@@ -48,5 +48,13 @@ namespace Elsa.Persistence.InMemory
         {
             return Task.CompletedTask;
         }
+
+        public async Task SaveAsync(Workflow value, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(value.Metadata.Id))
+                await AddAsync(value, cancellationToken);
+            else
+                await UpdateAsync(value, cancellationToken);
+        }
     }
 }

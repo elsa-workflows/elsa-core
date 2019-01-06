@@ -60,7 +60,8 @@ namespace Elsa.Serialization.Tokenizers
                 { "haltedAt", SerializeInstant(workflow.HaltedAt) },
                 { "activities", await SerializeActivitiesAsync(context, cancellationToken) },
                 { "connections", SerializeConnections(context, workflow) },
-                { "haltedActivities", SerializeHaltedActivities(context, workflow) },
+                { "blockingActivities", SerializeBlockingActivities(context, workflow) },
+                { "executionLog", SerializeExecutionLog(workflow) },
                 { "scopes", SerializeScopes(context, scopeIdLookup) },
                 { "currentScope", SerializeCurrentScope(workflow, scopeIdLookup) },
             };
@@ -88,7 +89,8 @@ namespace Elsa.Serialization.Tokenizers
                 HaltedAt = DeserializeInstant(token["haltedAt"]),
                 Activities = activityDictionary.Values.ToList(),
                 Connections = DeserializeConnections(token, activityDictionary).ToList(),
-                BlockingActivities = DeserializeHaltedActivities(token, activityDictionary).ToList(),
+                BlockingActivities = DeserializeBlockingActivities(token, activityDictionary).ToList(),
+                ExecutionLog = DeserializeExecutionLog(token).ToList(),
                 Scopes = new Stack<WorkflowExecutionScope>(scopeLookup.Values)
             };
 
@@ -160,7 +162,7 @@ namespace Elsa.Serialization.Tokenizers
             return scopeModels;
         }
 
-        private JArray SerializeHaltedActivities(WorkflowTokenizationContext context, Workflow workflow)
+        private JArray SerializeBlockingActivities(WorkflowTokenizationContext context, Workflow workflow)
         {
             var haltedActivityModels = new JArray();
 
@@ -206,6 +208,18 @@ namespace Elsa.Serialization.Tokenizers
 
             return activityModels;
         }
+        
+        private JArray SerializeExecutionLog(Workflow workflow)
+        {
+            var models = new JArray();
+
+            foreach (var entry in workflow.ExecutionLog)
+            {
+                models.Add(JToken.FromObject(entry, jsonSerializer));
+            }
+
+            return models;
+        }
 
         private IDictionary<int, WorkflowExecutionScope> DeserializeScopes(JToken token, WorkflowTokenizationContext context)
         {
@@ -236,15 +250,26 @@ namespace Elsa.Serialization.Tokenizers
             return scopeLookup;
         }
 
-        private IEnumerable<IActivity> DeserializeHaltedActivities(JToken token, IDictionary<string, IActivity> activityDictionary)
+        private IEnumerable<IActivity> DeserializeBlockingActivities(JToken token, IDictionary<string, IActivity> activityDictionary)
         {
-            var haltedActivityModels = (JArray) token["haltedActivities"] ?? new JArray();
+            var haltedActivityModels = (JArray) token["blockingActivities"] ?? new JArray();
 
             foreach (var haltedActivityModel in haltedActivityModels)
             {
                 var activityId = haltedActivityModel.Value<string>();
                 var activity = activityDictionary[activityId];
                 yield return activity;
+            }
+        }
+        
+        private IEnumerable<LogEntry> DeserializeExecutionLog(JToken token)
+        {
+            var models = (JArray) token["executionLog"] ?? new JArray();
+
+            foreach (var model in models)
+            {
+                var entry = JsonConvert.DeserializeObject<LogEntry>(model.ToString(), new JsonSerializerSettings().ConfigureForNodaTime(DateTimeZoneProviders.Tzdb));
+                yield return entry;
             }
         }
 

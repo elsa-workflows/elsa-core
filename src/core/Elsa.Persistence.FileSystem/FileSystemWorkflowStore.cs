@@ -21,9 +21,9 @@ namespace Elsa.Persistence.FileSystem
         private readonly string format;
 
         public FileSystemWorkflowStore(
-            IOptions<FileSystemStoreOptions> options, 
-            IFileSystem fileSystem, 
-            IIdGenerator idGenerator, 
+            IOptions<FileSystemStoreOptions> options,
+            IFileSystem fileSystem,
+            IIdGenerator idGenerator,
             IWorkflowSerializer workflowSerializer,
             IClock clock)
         {
@@ -49,10 +49,20 @@ namespace Elsa.Persistence.FileSystem
             return query.Distinct().FirstOrDefault();
         }
 
+        public async Task SaveAsync(Workflow value, CancellationToken cancellationToken)
+        {
+            if(!fileSystem.Path.HasExtension(value.Metadata.Id))
+                await AddAsync(value, cancellationToken);
+            else
+                await UpdateAsync(value, cancellationToken);
+        }
+
         public async Task AddAsync(Workflow value, CancellationToken cancellationToken)
         {
-            var fileExtension = $".{format.ToLower()}";
-            var id = $"{idGenerator.Generate()}{fileExtension}";
+            var id = string.IsNullOrWhiteSpace(value.Metadata.Id) ? idGenerator.Generate() : value.Metadata.Id;
+
+            if (!fileSystem.Path.HasExtension(id))
+                id = $"{id}.{format.ToLower()}";
 
             value.Metadata.Id = id;
             value.CreatedAt = clock.GetCurrentInstant();

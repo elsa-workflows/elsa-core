@@ -19,9 +19,10 @@ namespace Elsa.Results
         
         public override async Task ExecuteAsync(IWorkflowInvoker invoker, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
         {            
+            var activity = workflowContext.CurrentActivity;
+
             if (workflowContext.IsFirstPass)
             {
-                var activity = workflowContext.CurrentActivity;
                 var result = await invoker.ActivityInvoker.ResumeAsync(workflowContext, activity, cancellationToken);
                 workflowContext.IsFirstPass = false;
 
@@ -29,6 +30,7 @@ namespace Elsa.Results
             }
             else
             {
+                workflowContext.ScheduleHaltingActivity(activity);
                 workflowContext.Halt(instant);
             }
         }

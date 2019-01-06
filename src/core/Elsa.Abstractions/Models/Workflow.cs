@@ -20,6 +20,7 @@ namespace Elsa.Models
             Scopes = new Stack<WorkflowExecutionScope>(new[] { CurrentScope });
             Arguments = new Variables();
             BlockingActivities = new List<IActivity>();
+            ExecutionLog = new List<LogEntry>();
             Metadata = new WorkflowMetadata();
         }
 
@@ -34,6 +35,7 @@ namespace Elsa.Models
         public WorkflowExecutionScope CurrentScope { get; set; }
         public Variables Arguments { get; set; }
         public IList<IActivity> BlockingActivities { get; set; }
+        public IList<LogEntry> ExecutionLog { get; set; }
         public WorkflowMetadata Metadata { get; set; }
         public WorkflowFault Fault { get; set; }
     }

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -49,11 +50,13 @@ namespace Elsa.Web.Persistence.FileSystem.Services
 
         public async Task AddAsync(Workflow value, CancellationToken cancellationToken)
         {
-            var fileExtension = $".{Format.ToLower()}";
-            var id = $"{idGenerator.Generate()}{fileExtension}";
+            var id = string.IsNullOrWhiteSpace(value.Metadata.Id) ? idGenerator.Generate() : value.Metadata.Id;
 
-            value.CreatedAt = clock.GetCurrentInstant();
+            if (!Path.HasExtension(id))
+                id = $"{id}.{Format.ToLower()}";
+
             value.Metadata.Id = id;
+            value.CreatedAt = clock.GetCurrentInstant();
             
             await UpdateAsync(value, cancellationToken);
         }
@@ -68,6 +71,14 @@ namespace Elsa.Web.Persistence.FileSystem.Services
             {
                 await fileStore.CreateFileFromStream(path, stream, true);
             }
+        }
+        
+        public async Task SaveAsync(Workflow value, CancellationToken cancellationToken)
+        {
+            if(!Path.HasExtension(value.Metadata.Id))
+                await AddAsync(value, cancellationToken);
+            else
+                await UpdateAsync(value, cancellationToken);
         }
 
         private async Task<IEnumerable<Workflow>> ListAsync(CancellationToken cancellationToken)

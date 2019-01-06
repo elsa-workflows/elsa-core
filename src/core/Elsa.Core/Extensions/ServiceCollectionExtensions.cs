@@ -15,16 +15,16 @@ namespace Elsa.Extensions
         {
             services.TryAddSingleton<IIdGenerator, DefaultIdGenerator>();
             services.TryAddSingleton<IClock>(SystemClock.Instance);
-            services.TryAddScoped<IWorkflowSerializer, WorkflowSerializer>();
-            services.TryAddScoped<IWorkflowTokenizer, WorkflowTokenizer>();
-            services.AddScoped<IActivityHarvester, TypedActivityHarvester>();
-            services.TryAddScoped<IActivityLibrary, ActivityLibrary>();
+            services.TryAddSingleton<IWorkflowSerializer, WorkflowSerializer>();
+            services.TryAddSingleton<IWorkflowTokenizer, WorkflowTokenizer>();
+            services.TryAddSingleton<IActivityHarvester, TypedActivityHarvester>();
+            services.TryAddSingleton<IActivityLibrary, ActivityLibrary>();
+            services.TryAddSingleton<ITokenFormatterProvider, TokenFormatterProvider>();
+            services.TryAddSingleton<ITokenizerInvoker, TokenizerInvoker>();
             services.AddActivityDescriptors<ActivityDescriptors>();
             services.AddSingleton<ITokenFormatter, JsonTokenFormatter>();
             services.AddSingleton<ITokenFormatter, YamlTokenFormatter>();
             services.AddSingleton<ITokenFormatter, XmlTokenFormatter>();
-            services.TryAddSingleton<ITokenFormatterProvider, TokenFormatterProvider>();
-            services.TryAddSingleton<ITokenizerInvoker, TokenizerInvoker>();
             services.AddSingleton<ITokenizer, DefaultTokenizer>();
             services.AddSingleton<ITokenizer, ActivityTokenizer>();
             services.AddSingleton<IExpressionEvaluator, PlainTextEvaluator>();

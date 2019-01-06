@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using Elsa.Models;
 
 namespace Elsa.Results
@@ -10,14 +11,16 @@ namespace Elsa.Results
     {
         public TriggerEndpointsResult(IEnumerable<string> endpointNames)
         {
-            EndpointNames = endpointNames;
+            EndpointNames = endpointNames.ToList();
         }
 
-        public IEnumerable<string> EndpointNames { get; }
+        public IReadOnlyList<string> EndpointNames { get; }
 
         protected override void Execute(IWorkflowInvoker invoker, WorkflowExecutionContext workflowContext)
         {
             var currentActivity = workflowContext.CurrentActivity;
+
+            workflowContext.CurrentLogEntry.TriggeredEndpoints = EndpointNames.ToList();
 
             foreach (var endpointName in EndpointNames)
             {

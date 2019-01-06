@@ -26,5 +26,10 @@ namespace Elsa
         /// Resumes the specified activity.
         /// </summary>
         Task<ActivityExecutionResult> ResumeAsync(ActivityExecutionContext activityContext, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken);
+        
+        /// <summary>
+        /// Invoked when the workflow is halted.
+        /// </summary>
+        Task<ActivityExecutionResult> HaltedAsync(ActivityExecutionContext activityContext, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken);
     }
 }

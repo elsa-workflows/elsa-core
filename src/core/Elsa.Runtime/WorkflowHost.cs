@@ -31,17 +31,12 @@ namespace Elsa.Runtime
         public async Task<WorkflowExecutionContext> StartWorkflowAsync(Workflow workflow, IActivity startActivity, Variables arguments, CancellationToken cancellationToken)
         {
             var workflowInstance = await workflowSerializer.DeriveAsync(workflow, cancellationToken);
-            var workflowContext = await invoker.InvokeAsync(workflowInstance, startActivity, arguments, cancellationToken);
-
-            await workflowStore.AddAsync(workflowInstance, cancellationToken);
-            return workflowContext;
+            return await invoker.InvokeAsync(workflowInstance, startActivity, arguments, cancellationToken);
         }
 
         public async Task<WorkflowExecutionContext> ResumeWorkflowAsync(Workflow workflow, IActivity activity, Variables arguments, CancellationToken cancellationToken)
         {
-            var workflowContext = await invoker.ResumeAsync(workflow, activity, arguments, cancellationToken);
-            await workflowStore.UpdateAsync(workflow, cancellationToken);
-            return workflowContext;
+            return await invoker.ResumeAsync(workflow, activity, arguments, cancellationToken);
         }
 
         private async Task StartNewWorkflowsAsync(string activityName, Variables arguments, CancellationToken cancellationToken)

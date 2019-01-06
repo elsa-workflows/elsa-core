@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using NodaTime;
 
 namespace Elsa.Models
@@ -8,18 +9,22 @@ namespace Elsa.Models
     public class WorkflowExecutionContext
     {
         private readonly Stack<IActivity> scheduledActivities;
+        private readonly Stack<IActivity> scheduledHaltingActivities;
 
         public WorkflowExecutionContext(Workflow workflow)
         {
             Workflow = workflow;
             IsFirstPass = true;
             scheduledActivities = new Stack<IActivity>();
+            scheduledHaltingActivities = new Stack<IActivity>();
         }
 
         public Workflow Workflow { get; }
         public bool HasScheduledActivities => scheduledActivities.Any();
+        public bool HasScheduledHaltingActivities => scheduledHaltingActivities.Any();
         public bool IsFirstPass { get; set; }
         public IActivity CurrentActivity { get; private set; }
+        public LogEntry CurrentLogEntry => Workflow.ExecutionLog.LastOrDefault();
 
         public WorkflowExecutionScope CurrentScope
         {
@@ -50,6 +55,16 @@ namespace Elsa.Models
         {
             CurrentActivity = scheduledActivities.Pop();
             return CurrentActivity;
+        }
+        
+        public void ScheduleHaltingActivity(IActivity activity)
+        {
+            scheduledHaltingActivities.Push(activity);
+        }
+
+        public IActivity PopScheduledHaltingActivity()
+        {
+            return scheduledHaltingActivities.Pop();
         }
 
         public void SetLastResult(object value)

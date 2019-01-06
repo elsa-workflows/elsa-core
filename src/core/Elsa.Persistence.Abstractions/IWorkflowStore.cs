@@ -12,6 +12,7 @@ namespace Elsa.Persistence
         Task<Workflow> GetAsync(ISpecification<Workflow, IWorkflowSpecificationVisitor> specification, CancellationToken cancellationToken);
         Task AddAsync(Workflow value, CancellationToken cancellationToken);
         Task UpdateAsync(Workflow value, CancellationToken cancellationToken);
+        Task SaveAsync(Workflow value, CancellationToken cancellationToken);
     }
 
     public static class WorkflowStoreExtensions

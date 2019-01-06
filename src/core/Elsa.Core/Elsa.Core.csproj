@@ -29,6 +29,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Elsa.Abstractions\Elsa.Abstractions.csproj" />
+        <ProjectReference Include="..\Elsa.Persistence.Abstractions\Elsa.Persistence.Abstractions.csproj" />
     </ItemGroup>
 
 </Project>
