@@ -9,9 +9,12 @@ namespace Elsa.Expressions
     {
         public const string SyntaxName = "PlainText";
         public string Syntax => SyntaxName;
-        
+
         public Task<T> EvaluateAsync<T>(string expression, WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
         {
+            if (string.IsNullOrWhiteSpace(expression))
+                return Task.FromResult(default(T));
+            
             return Task.FromResult((T) Convert.ChangeType(expression, typeof(T)));
         }
     }
