@@ -1,6 +1,6 @@
 ## Elsa Workflows
 
-Elsa Workflows is a set of lean & mean workflowing components that you can use in your own .NET Core applications. It's heavily inspired by Orchard Core Workflows, Azure Logic Apps and Windows Workflow Foundation, but with some key differentiators.
+Elsa Workflows is a set of lean & mean workflowing components that you can use in your own .NET Core applications. It's heavily inspired by [Orchard Core Workflows](https://github.com/OrchardCMS/OrchardCore), [Azure Logic Apps](https://azure.microsoft.com/services/logic-apps/) and [Windows Workflow Foundation](https://docs.microsoft.com/en-us/previous-versions/dotnet/articles/dd851337(v=msdn.10)), but with some key differentiators.
 
 **ALPHA software:** This project not yet ready for actual use, but you are welcome to have a quick peek.
 You can try out the web based designer today by following these steps:
