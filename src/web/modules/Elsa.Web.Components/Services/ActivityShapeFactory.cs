@@ -30,6 +30,10 @@ namespace Elsa.Web.Components.Services
             shape.ActivityDescriptor = descriptor;
             shape.Activity = activity;
             shape.Designer = designerMetadata;
+            shape.IsBlocking = false;
+            shape.HasExecuted = false;
+            shape.HasFaulted = false;
+            shape.WorkflowIsDefinition = true;
 
             return shape;
         }
