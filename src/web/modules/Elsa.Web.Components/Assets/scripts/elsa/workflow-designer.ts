@@ -13,7 +13,6 @@ namespace Elsa {
         private readonly container: JQuery<HTMLElement>;
         private readonly canvasContainer: JQuery<HTMLElement>;
         private readonly isDefinition: boolean;
-        private readonly executionLog: Array<LogEntry>;
         private readonly plumber: any;
         private dragStart: { left: number; top: number };
         private hasDragged: boolean;
@@ -22,7 +21,6 @@ namespace Elsa {
             this.container = $(containerElement);
             this.canvasContainer = this.container.find('.workflow-canvas');
             this.isDefinition = this.canvasContainer.data('workflow-is-definition');
-            this.executionLog = this.canvasContainer.data('workflow-execution-log');
             this.plumber = WorkflowDesignerConfig.createJsPlumbInstance(this.canvasContainer[0]);
             this.initializeNodes();
             this.container.on('contextmenu', '.workflow-canvas', this.onCanvasContextMenu);
@@ -31,6 +29,10 @@ namespace Elsa {
             this.canvasContainer.on('click', '.activity .context-menu .dropdown-item', this.onActivityContextMenuItemClick);
             this.canvasContainer.on('click', '.canvas-context-menu .dropdown-item', this.onCanvasContextMenuItemClick);
             $(document).on('click', 'body', this.hideContextMenu);
+            
+            this.canvasContainer.find('[data-toggle="popover"]').popover({
+                container: '.workflow-canvas'
+            })
         }
 
         public getWorkflow = (): IWorkflow => {
@@ -247,7 +249,8 @@ namespace Elsa {
             for (let endpoint of endpoints) {
                 const hasExecuted: boolean = $activityElement.data('activity-executed');
                 const hasFaulted: boolean = $activityElement.data('activity-faulted');
-                const sourceEndpointOptions: any = WorkflowDesignerConfig.getSourceEndpointOptions(activityId, endpoint.name, hasExecuted, hasFaulted);
+                const isBlocking: boolean = $activityElement.data('activity-blocking');
+                const sourceEndpointOptions: any = WorkflowDesignerConfig.getSourceEndpointOptions(activityId, endpoint.name, hasExecuted, hasFaulted, isBlocking);
                 this.plumber.addEndpoint(activityElement, {
                     connectorOverlays: [['Label', {
                         label: endpoint.name,

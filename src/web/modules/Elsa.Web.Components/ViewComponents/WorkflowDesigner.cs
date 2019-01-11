@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Linq;
+using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Web.Components.ViewModels;
@@ -35,9 +37,14 @@ namespace Elsa.Web.Components.ViewComponents
         private async Task<dynamic> BuildActivityShapeAsync(Workflow workflow, IActivity activity, CancellationToken cancellationToken)
         {
             var shape = (dynamic)await activityShapeFactory.BuildDesignShapeAsync(activity, cancellationToken);
-            var logEntries = workflow.ExecutionLog.Where(x => x.ActivityId == activity.Id).OrderByDescending(x => x.Timestamp).ToList();
+            var logEntries = workflow.ExecutionLog.Where(x => x.ActivityId == activity.Id).OrderBy(x => x.Timestamp).ToList();
 
             shape.LogEntries = logEntries;
+            shape.BlockingActivities = workflow.BlockingActivities;
+            shape.HasExecuted = logEntries.Any();
+            shape.HasFaulted = logEntries.Any(x => x.Faulted);
+            shape.IsBlocking = workflow.BlockingActivities.Any(x => x.Id == activity.Id);
+            shape.WorkflowIsDefinition = workflow.IsDefinition();
 
             return shape;
         }

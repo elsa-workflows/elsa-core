@@ -13,8 +13,8 @@ namespace Elsa {
             });
         }
 
-        static getSourceEndpointOptions(activityId: any, endpointName: any, hasExecuted: boolean, hasFaulted: boolean): any {
-            const fill = hasFaulted ? '#d23c3c' : hasExecuted? '#6faa44' : '#7da7f2';
+        static getSourceEndpointOptions(activityId: any, endpointName: any, hasExecuted: boolean, hasFaulted: boolean, isBlocking: boolean): any {
+            const fill = isBlocking ? '#7da7f2' : hasFaulted ? '#d23c3c' : hasExecuted? '#6faa44' : '#7da7f2';
             const stroke = fill;
             return {
                 endpoint: 'Dot',
@@ -29,19 +29,19 @@ namespace Elsa {
                 connector: ['Flowchart', {stub: [40, 60], gap: 0, cornerRadius: 5, alwaysRespectStubs: true}],
                 connectorStyle: {
                     strokeWidth: 2,
-                    stroke: '#999999',
+                    stroke: !isBlocking && (hasFaulted || hasExecuted) ? fill : '#999999',
                     joinstyle: 'round',
                     outlineStroke: 'white',
-                    outlineWidth: 2
+                    outlineWidth: 1
                 },
                 hoverPaintStyle: {
                     fill: stroke,
                     stroke: fill
                 },
-                connectorHoverStyle: {
+                connectorHoverStyle: isBlocking || hasFaulted || hasExecuted ? null : {
                     strokeWidth: 3,
                     stroke: stroke,
-                    outlineWidth: 5,
+                    outlineWidth: 1,
                     outlineStroke: 'white'
                 },
                 connectorOverlays: [['Label', {location: [3, -1.5], cssClass: 'endpointSourceLabel'}]],
