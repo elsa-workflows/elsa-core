@@ -12,34 +12,34 @@ namespace Elsa.Web.Components.ViewComponents
 {
     public class WorkflowDesigner : ViewComponent
     {
-        private readonly IWorkflowStore workflowStore;
         private readonly IActivityShapeFactory activityShapeFactory;
 
-        public WorkflowDesigner(
-            IWorkflowStore workflowStore, 
-            IActivityShapeFactory activityShapeFactory)
+        public WorkflowDesigner( IActivityShapeFactory activityShapeFactory)
         {
-            this.workflowStore = workflowStore;
             this.activityShapeFactory = activityShapeFactory;
         }
         
         public async Task<IViewComponentResult> InvokeAsync(Workflow workflow, CancellationToken cancellationToken)
         {
-            var activities = workflow.Activities;
-            var activityShapes = await BuildActivityShapesAsync(activities, cancellationToken);
+            var activityShapes = await BuildActivityShapesAsync(workflow, cancellationToken);
             var viewModel = new WorkflowDesignerViewModel(workflow, activityShapes);
             
             return View(viewModel);
         }
 
-        private async Task<ICollection<dynamic>> BuildActivityShapesAsync(IEnumerable<IActivity> activities, CancellationToken cancellationToken)
+        private async Task<ICollection<dynamic>> BuildActivityShapesAsync(Workflow workflow, CancellationToken cancellationToken)
         {
-            return await Task.WhenAll(activities.Select((x, i) => BuildActivityShapeAsync(x, cancellationToken)));
+            return await Task.WhenAll(workflow.Activities.Select((x, i) => BuildActivityShapeAsync(workflow, x, cancellationToken)));
         }
         
-        private async Task<dynamic> BuildActivityShapeAsync(IActivity activity, CancellationToken cancellationToken)
+        private async Task<dynamic> BuildActivityShapeAsync(Workflow workflow, IActivity activity, CancellationToken cancellationToken)
         {
-            return await activityShapeFactory.BuildDesignShapeAsync(activity, cancellationToken);
+            var shape = (dynamic)await activityShapeFactory.BuildDesignShapeAsync(activity, cancellationToken);
+            var logEntries = workflow.ExecutionLog.Where(x => x.ActivityId == activity.Id).OrderByDescending(x => x.Timestamp).ToList();
+
+            shape.LogEntries = logEntries;
+
+            return shape;
         }
     }
 }

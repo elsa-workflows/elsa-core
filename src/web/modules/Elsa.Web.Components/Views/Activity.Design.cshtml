@@ -6,26 +6,46 @@
 @using Newtonsoft.Json.Serialization
 @model dynamic
 @{
-    var activity = (IActivity)Model.Activity;
+    var activity = (IActivity) Model.Activity;
     var descriptor = (ActivityDescriptor) Model.ActivityDescriptor;
     var id = activity.Id;
-    var endpoints = (IList<LocalizedString>)Model.Endpoints;
+    var endpoints = (IList<LocalizedString>) Model.Endpoints;
     var serializerSettings = new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver() };
     var activityJson = JsonConvert.SerializeObject(activity, serializerSettings);
     var activityEndpoints = JsonConvert.SerializeObject(endpoints, serializerSettings);
-    var designer = (ActivityDesignerMetadata)Model.Designer;
-    var x = designer.X;
-    var y = designer.Y;
+    var designer = (ActivityDesignerMetadata) Model.Designer;
+    var logEntries =  Model.LogEntries != null ? (ICollection<LogEntry>)Model.LogEntries : new List<LogEntry>();
+    var logEntriesJson = JsonConvert.SerializeObject(logEntries, serializerSettings);
+    var hasFaulted = logEntries.Any(x => x.Faulted);
+    var hasExecuted = logEntries.Any();
+    var cssClasses = new List<string> { "activity" };
+    var left = designer.X;
+    var top = designer.Y;
+
+    if (hasExecuted)
+    {
+        cssClasses.Add("activity-executed");
+    }
+
+    if (hasFaulted)
+    {
+        cssClasses.Add("activity-faulted");
+    }
+
+    var cssClass = string.Join(" ", cssClasses);
 }
-<div 
-    class="activity" 
-    style="left:@(x)px; top:@(y)px;" 
+<div
+    class="@cssClass"
+    style="left: @(left)px; top: @(top)px;"
     id="@($"activity-{id}")"
     title="@descriptor.DisplayText"
     data-activity-name="@descriptor.Name"
-    data-activity-id="@id" 
+    data-activity-id="@id"
     data-activity-model="@activityJson"
-    data-activity-endpoints="@activityEndpoints">
+    data-activity-endpoints="@activityEndpoints"
+    data-activity-executed="@hasExecuted.ToString().ToLower()"
+    data-activity-faulted="@hasFaulted.ToString().ToLower()"
+    data-activity-log="@logEntriesJson">
     @await DisplayAsync(Model.Content)
     <div class="dropdown-menu context-menu activity-context-menu">
         <a class="dropdown-item" href="#edit">Edit</a>

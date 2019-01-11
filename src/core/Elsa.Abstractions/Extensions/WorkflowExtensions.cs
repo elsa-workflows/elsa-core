@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Elsa.Models;
+using NodaTime;
 
 namespace Elsa.Extensions
 {
@@ -27,6 +28,13 @@ namespace Elsa.Extensions
                 select activity;
 
             return query;
+        }
+
+        public static LogEntry AddLogEntry(this Workflow workflow, string activityId, Instant instant, string message, bool faulted = false)
+        {
+            var entry = new LogEntry(activityId, instant, message, faulted);
+            workflow.ExecutionLog.Add(entry);
+            return entry;
         }
     }
 }

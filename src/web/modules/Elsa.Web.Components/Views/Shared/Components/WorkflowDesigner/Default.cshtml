@@ -1,16 +1,20 @@
+@using Elsa.Extensions
 @using Newtonsoft.Json
 @using Newtonsoft.Json.Serialization
-@model Elsa.Web.Components.ViewModels.WorkflowDesignerViewModel
+@model WorkflowDesignerViewModel
 @{
     var serializerSettings = new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver() };
     var workflowMetadataJson = JsonConvert.SerializeObject(Model.Workflow.Metadata, serializerSettings);
     var connectionsJson = JsonConvert.SerializeObject(Model.Connections, serializerSettings);
+    var executionLogJson = JsonConvert.SerializeObject(Model.Workflow.ExecutionLog);
 }
 <div id="elsa-workflow-designer">
     <div class="workflow-canvas" 
+         data-workflow-is-definition="@Model.Workflow.IsDefinition().ToString().ToLower()"
          data-workflow-metadata="@workflowMetadataJson" 
          data-workflow-status="@Model.Workflow.Status"
-         data-workflow-connections="@connectionsJson">
+         data-workflow-connections="@connectionsJson"
+         data-workflow-execution-log="@executionLogJson">
         @foreach (var activityShape in Model.ActivityShapes)
         {
             @await DisplayAsync(activityShape)

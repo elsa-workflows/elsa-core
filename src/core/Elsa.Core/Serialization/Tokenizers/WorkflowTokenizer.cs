@@ -21,6 +21,7 @@ namespace Elsa.Serialization.Tokenizers
         private readonly ITokenizerInvoker tokenizerInvoker;
         private readonly IActivityLibrary activityLibrary;
         private readonly IClock clock;
+        private readonly JsonSerializerSettings _serializerSettings;
         private readonly JsonSerializer jsonSerializer;
 
         public WorkflowTokenizer(ITokenizerInvoker tokenizerInvoker, IActivityLibrary activityLibrary, IClock clock)
@@ -29,14 +30,14 @@ namespace Elsa.Serialization.Tokenizers
             this.activityLibrary = activityLibrary;
             this.clock = clock;
 
-            var settings = new JsonSerializerSettings
+            _serializerSettings = new JsonSerializerSettings
                 {
                     ContractResolver = new CamelCasePropertyNamesContractResolver()
                 }
                 .ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
 
-            settings.Converters.Add(new StringEnumConverter());
-            jsonSerializer = JsonSerializer.Create(settings);
+            _serializerSettings.Converters.Add(new StringEnumConverter());
+            jsonSerializer = JsonSerializer.Create(_serializerSettings);
         }
 
         public async Task<JToken> TokenizeWorkflowAsync(Workflow value, CancellationToken cancellationToken)
@@ -266,11 +267,7 @@ namespace Elsa.Serialization.Tokenizers
         {
             var models = (JArray) token["executionLog"] ?? new JArray();
 
-            foreach (var model in models)
-            {
-                var entry = JsonConvert.DeserializeObject<LogEntry>(model.ToString(), new JsonSerializerSettings().ConfigureForNodaTime(DateTimeZoneProviders.Tzdb));
-                yield return entry;
-            }
+            return JsonConvert.DeserializeObject<IList<LogEntry>>(models.ToString(), _serializerSettings);
         }
 
         private IEnumerable<Connection> DeserializeConnections(JToken token, IDictionary<string, IActivity> activityDictionary)
