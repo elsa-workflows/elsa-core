@@ -108,7 +108,7 @@ namespace Elsa.Web.Management.Controllers
             return View(workflow);
         }
 
-        [HttpPut("{id}/update")]
+        [HttpPut("{id}")]
         public async Task<IActionResult> Update(string id, [FromBody] JToken workflowData, CancellationToken cancellationToken)
         {
             var workflow = await workflowSerializer.DeserializeAsync(workflowData, cancellationToken);

@@ -6,8 +6,6 @@ namespace Elsa {
             return jsPlumb.getInstance({
                 Anchor: "Continuous",
                 DragOptions: {cursor: 'pointer', zIndex: 2000},
-                //EndpointStyle: [{fillStyle: '#225588'}],
-                //Endpoints: [["Dot", {radius: 7}], ["Blank"]],
                 ConnectionOverlays: [
                     ["Arrow", {width: 12, length: 12, location: -5}],
                 ],
@@ -15,9 +13,9 @@ namespace Elsa {
             });
         }
 
-        static getSourceEndpointOptions(activityId: any, endpointName: any): any {
-            const fill = '#7da7f2';
-            const stroke = '#7da7f2';
+        static getSourceEndpointOptions(activityId: any, endpointName: any, hasExecuted: boolean, hasFaulted: boolean): any {
+            const fill = hasFaulted ? '#d23c3c' : hasExecuted? '#6faa44' : '#7da7f2';
+            const stroke = fill;
             return {
                 endpoint: 'Dot',
                 anchor: 'Continuous',

@@ -20,8 +20,6 @@ namespace Elsa.Results
         {
             var currentActivity = workflowContext.CurrentActivity;
 
-            workflowContext.CurrentLogEntry.TriggeredEndpoints = EndpointNames.ToList();
-
             foreach (var endpointName in EndpointNames)
             {
                 workflowContext.ScheduleNextActivities(workflowContext, new SourceEndpoint(currentActivity, endpointName));

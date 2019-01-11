@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Exceptions;
+using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Results;
 using Microsoft.Extensions.Logging;
@@ -28,9 +29,10 @@ namespace Elsa
         {
             return await InvokeAsync(workflowContext, activity, (context, driver) =>
             {
-                workflowContext.Workflow.ExecutionLog.Add(context.LogEntry);
-                context.LogEntry.ExecutedAt = clock.GetCurrentInstant();
-                return driver.ExecuteAsync(context, workflowContext, cancellationToken);
+                workflowContext.Workflow.AddLogEntry(activity.Id, clock.GetCurrentInstant(), "Executing");
+                var result = driver.ExecuteAsync(context, workflowContext, cancellationToken);
+                workflowContext.Workflow.AddLogEntry(activity.Id, clock.GetCurrentInstant(), "Executed");
+                return result;
             });
         }
 
@@ -38,8 +40,10 @@ namespace Elsa
         {
             return await InvokeAsync(workflowContext, activity, (context, driver) =>
             {
-                context.LogEntry.ResumedAt = clock.GetCurrentInstant();
-                return driver.ResumeAsync(context, workflowContext, cancellationToken);
+                workflowContext.Workflow.AddLogEntry(activity.Id, clock.GetCurrentInstant(), "Resuming");
+                var result = driver.ResumeAsync(context, workflowContext, cancellationToken);
+                workflowContext.Workflow.AddLogEntry(activity.Id, clock.GetCurrentInstant(), "Resumed");
+                return result;
             });
         }
 
@@ -47,8 +51,10 @@ namespace Elsa
         {
             return await InvokeAsync(workflowContext, activity, (context, driver) =>
             {
-                context.LogEntry.HaltedAt = clock.GetCurrentInstant();
-                return driver.HaltedAsync(context, workflowContext, cancellationToken);
+                workflowContext.Workflow.AddLogEntry(activity.Id, clock.GetCurrentInstant(), "Halting");
+                var result = driver.HaltedAsync(context, workflowContext, cancellationToken);
+                workflowContext.Workflow.AddLogEntry(activity.Id, clock.GetCurrentInstant(), "Halted");
+                return result;
             });
         }
 
@@ -70,8 +76,8 @@ namespace Elsa
             catch (Exception e)
             {
                 logger.LogError(e, "Error while invoking activity {ActivityId} of workflow {WorkflowId}", activity.Id, workflowContext.Workflow.Metadata.Id);
-                activityContext.LogEntry.Fault = new ActivityFault(e.Message);
-                return new FaultWorkflowResult(activityContext.LogEntry.Fault.Message, clock.GetCurrentInstant());
+                workflowContext.Workflow.AddLogEntry(activity.Id, clock.GetCurrentInstant(), e.Message, true);
+                return new FaultWorkflowResult(e, clock.GetCurrentInstant());
             }
         }
     }

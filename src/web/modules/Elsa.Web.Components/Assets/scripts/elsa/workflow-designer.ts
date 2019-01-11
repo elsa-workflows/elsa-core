@@ -6,11 +6,14 @@
 ///<reference path="activity-descriptor.ts"/>
 ///<reference path="workflow.ts"/>
 ///<reference path="activity-info.ts"/>
+///<reference path="log-entry.ts"/>
 
 namespace Elsa {
     export class WorkflowDesigner {
         private readonly container: JQuery<HTMLElement>;
         private readonly canvasContainer: JQuery<HTMLElement>;
+        private readonly isDefinition: boolean;
+        private readonly executionLog: Array<LogEntry>;
         private readonly plumber: any;
         private dragStart: { left: number; top: number };
         private hasDragged: boolean;
@@ -18,6 +21,8 @@ namespace Elsa {
         constructor(containerElement: HTMLElement) {
             this.container = $(containerElement);
             this.canvasContainer = this.container.find('.workflow-canvas');
+            this.isDefinition = this.canvasContainer.data('workflow-is-definition');
+            this.executionLog = this.canvasContainer.data('workflow-execution-log');
             this.plumber = WorkflowDesignerConfig.createJsPlumbInstance(this.canvasContainer[0]);
             this.initializeNodes();
             this.container.on('contextmenu', '.workflow-canvas', this.onCanvasContextMenu);
@@ -137,7 +142,7 @@ namespace Elsa {
         };
 
         private showContextMenu = (menu: JQuery<HTMLElement>, e: JQuery.Event<HTMLElement>) => {
-            if (e.isDefaultPrevented())
+            if (e.isDefaultPrevented() || !this.isDefinition)
                 return;
 
             e.preventDefault();
@@ -169,23 +174,25 @@ namespace Elsa {
             const activityId: string = activityElement.data('activity-id');
             const activityEndpoints: any[] = activityElement.data('activity-endpoints');
 
-            this.plumber.draggable(activityElement, {
-                containment: true,
-                start: (args: any) => {
-                    this.dragStart = {left: args.e.screenX, top: args.e.screenY};
-                },
-                stop: (args: any) => {
-                    this.hasDragged = this.dragStart.left !== args.e.screenX || this.dragStart.top !== args.e.screenY;
+            if(this.isDefinition) {
+                this.plumber.draggable(activityElement, {
+                    containment: true,
+                    start: (args: any) => {
+                        this.dragStart = {left: args.e.screenX, top: args.e.screenY};
+                    },
+                    stop: (args: any) => {
+                        this.hasDragged = this.dragStart.left !== args.e.screenX || this.dragStart.top !== args.e.screenY;
 
-                    if (!this.hasDragged) {
-                        return;
+                        if (!this.hasDragged) {
+                            return;
+                        }
+
+                        this.updateActivityModel(activityElement, activity => {
+                            this.setActivityPosition(activity, args.pos[0], args.pos[1]);
+                        });
                     }
-
-                    this.updateActivityModel(activityElement, activity => {
-                        this.setActivityPosition(activity, args.pos[0], args.pos[1]);
-                    });
-                }
-            });
+                }); 
+            }
 
             this.plumber.makeTarget(activityElement, {
                 dropOptions: {hoverClass: 'hover'},
@@ -209,23 +216,17 @@ namespace Elsa {
         private restoreConnections = (activityElement: HTMLElement) => {
             const activity: IActivity = $(activityElement).data('activity-model');
             const connections: IConnection[] = $(this.canvasContainer).data('workflow-connections');
-            const plumber = this.plumber;
             const activityConnections = connections.filter(x => x.target.activityId == activity.id || x.source.activityId == activity.id);
 
-            for (let connection of activityConnections) {
-                const sourceEndpointUuid: string = `${connection.source.activityId}-${connection.source.name}`;
-                const sourceEndpoint: Endpoint = plumber.getEndpoint(sourceEndpointUuid);
-                const destinationElementId: string = `activity-${connection.target.activityId}`;
-
-                plumber.connect({
-                    source: sourceEndpoint,
-                    target: destinationElementId
-                });
-            }
+            this.createConnectionsInternal(activityConnections);
         };
 
         private createConnections = () => {
             const connections: IConnection[] = $(this.canvasContainer).data('workflow-connections');
+            this.createConnectionsInternal(connections);
+        };
+
+        private createConnectionsInternal = (connections: IConnection[]) => {
             const plumber = this.plumber;
 
             for (let connection of connections) {
@@ -241,8 +242,12 @@ namespace Elsa {
         };
 
         private addSourceEndpoints = (activityElement: HTMLElement, activityId: string, endpoints: any[]) => {
+            const $activityElement = $(activityElement);
+            
             for (let endpoint of endpoints) {
-                const sourceEndpointOptions: any = WorkflowDesignerConfig.getSourceEndpointOptions(activityId, endpoint.name);
+                const hasExecuted: boolean = $activityElement.data('activity-executed');
+                const hasFaulted: boolean = $activityElement.data('activity-faulted');
+                const sourceEndpointOptions: any = WorkflowDesignerConfig.getSourceEndpointOptions(activityId, endpoint.name, hasExecuted, hasFaulted);
                 this.plumber.addEndpoint(activityElement, {
                     connectorOverlays: [['Label', {
                         label: endpoint.name,
