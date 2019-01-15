@@ -34,6 +34,15 @@ namespace Elsa.Models
             params LocalizedString[] endpoints) =>
             new ActivityDescriptor(typeof(T), category, displayText, description, isTrigger, isBrowsable, endpoints);
 
+        public static ActivityDescriptor For<T>(
+            LocalizedString category,
+            LocalizedString displayText,
+            LocalizedString description,
+            bool isTrigger,
+            bool isBrowsable,
+            Func<T, IEnumerable<LocalizedString>> getEndpoints) where T : IActivity =>
+            new ActivityDescriptor(typeof(T), category, displayText, description, isTrigger, isBrowsable, a => getEndpoints((T) a));
+
         public ActivityDescriptor()
         {
         }
@@ -46,15 +55,34 @@ namespace Elsa.Models
             bool isTrigger,
             bool isBrowsable,
             params LocalizedString[] endpoints)
+            : this(
+                activityType,
+                category,
+                displayText,
+                description,
+                isTrigger,
+                isBrowsable,
+                a => endpoints)
+        {
+        }
+
+        public ActivityDescriptor(
+            Type activityType,
+            LocalizedString category,
+            LocalizedString displayText,
+            LocalizedString description,
+            bool isTrigger,
+            bool isBrowsable,
+            Func<IActivity, IEnumerable<LocalizedString>> getEndpoints)
         {
             ActivityType = activityType;
             Name = activityType.Name;
             Category = category;
             DisplayText = displayText;
             Description = description;
-            GetEndpoints = a => endpoints;
             IsTrigger = isTrigger;
             IsBrowsable = isBrowsable;
+            GetEndpoints = getEndpoints;
         }
 
         public bool IsBrowsable { get; set; } = true;

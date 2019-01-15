@@ -19,13 +19,18 @@ namespace Elsa.Activities.Http.Activities
         public string Method { get; set; }
 
         /// <summary>
-        /// The body to send along with the request
+        /// The body to send along with the request.
         /// </summary>
         public WorkflowExpression<string> Body { get; set; }
         
         /// <summary>
-        /// The body to send along with the request
+        /// The headers to send along with the request.
         /// </summary>
         public IDictionary<string, string> RequestHeaders { get; set; }
+
+        /// <summary>
+        /// A list of HTTP status codes this activity cam handle.
+        /// </summary>
+        public ICollection<int> SupportedStatusCodes { get; set; }
     }
 }
