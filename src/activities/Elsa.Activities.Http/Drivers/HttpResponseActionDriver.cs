@@ -31,15 +31,19 @@ namespace Elsa.Activities.Http.Drivers
             response.ContentType = await expressionEvaluator.EvaluateAsync(activity.ContentType, workflowContext, cancellationToken);
 
             var headersText = await expressionEvaluator.EvaluateAsync(activity.ResponseHeaders, workflowContext, cancellationToken);
-            var headersQuery =
-                from line in Regex.Split(headersText, "\\n", RegexOptions.Multiline)
-                let pair = line.Split(':', '=')
-                select new KeyValuePair<string, string>(pair[0], pair[1]);
-            
-            foreach (var header in headersQuery)
+
+            if (headersText != null)
             {
-                var headerValueExpression = new WorkflowExpression<string>(activity.ResponseHeaders.Syntax, header.Value);
-                response.Headers[header.Key] = await expressionEvaluator.EvaluateAsync(headerValueExpression, workflowContext, cancellationToken);
+                var headersQuery =
+                    from line in Regex.Split(headersText, "\\n", RegexOptions.Multiline)
+                    let pair = line.Split(':', '=')
+                    select new KeyValuePair<string, string>(pair[0], pair[1]);
+
+                foreach (var header in headersQuery)
+                {
+                    var headerValueExpression = new WorkflowExpression<string>(activity.ResponseHeaders.Syntax, header.Value);
+                    response.Headers[header.Key] = await expressionEvaluator.EvaluateAsync(headerValueExpression, workflowContext, cancellationToken);
+                }
             }
 
             var bodyText = await expressionEvaluator.EvaluateAsync(activity.Body, workflowContext, cancellationToken);

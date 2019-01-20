@@ -24,7 +24,10 @@ namespace Elsa.Activities.Http.Extensions
             services.TryAddSingleton<IHttpWorkflowCache, DefaultHttpWorkflowCache>();
             services.TryAddTransient<IAsyncInitializer, HttpWorkflowCacheInitializer>();
             services.TryAddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-            services.AddActivityDriver<HttpRequestTriggerDriver>();
+            
+            services
+                .AddActivityDriver<HttpRequestTriggerDriver>()
+                .AddActivityDriver<HttpResponseActionDriver>();
             
             return services;
         }
