@@ -116,4 +116,3 @@ In order to run Elsa on your local machine, follow these steps:
 - Implement integration with Orchard Core (separate repo)
 - Detailed documentation
 
-
