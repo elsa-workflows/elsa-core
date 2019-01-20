@@ -15,7 +15,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Jint" Version="3.0.0-beta-1457" />
+        <PackageReference Include="Jint" Version="3.0.0-beta-1466" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.1.1" />
         <PackageReference Include="Microsoft.Extensions.Localization.Abstractions" Version="2.2.0" />
         <PackageReference Include="Microsoft.Extensions.Logging" Version="2.1.1" />

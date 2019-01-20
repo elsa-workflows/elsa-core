@@ -7,11 +7,16 @@ namespace Elsa.Web.Components.ViewModels
         public ExpressionViewModel()
         {
         }
-        
-        public ExpressionViewModel(WorkflowExpression workflowExpression)
+
+        public ExpressionViewModel(string expression, string syntax)
         {
-            Expression = workflowExpression?.Expression;
-            Syntax = workflowExpression?.Syntax;
+            Expression = expression;
+            Syntax = syntax;
+        }
+
+        public ExpressionViewModel(WorkflowExpression workflowExpression)
+            : this(workflowExpression?.Expression, workflowExpression?.Syntax)
+        {
         }
 
         public string Expression { get; set; }
