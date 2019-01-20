@@ -13,7 +13,8 @@ namespace Elsa.Web.Activities.Http
             services
                 .AddHttpWorkflowDescriptors()
                 .AddActivityDisplay<HttpRequestTriggerDisplay>()
-                .AddActivityDisplay<HttpRequestActionDisplay>();
+                .AddActivityDisplay<HttpRequestActionDisplay>()
+                .AddActivityDisplay<HttpResponseActionDisplay>();
         }
     }
 }
