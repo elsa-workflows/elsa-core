@@ -1,10 +1,12 @@
+![Web-based workflow designer](/doc/elsa-cover.png)
+
 ## Elsa Workflows
 
 Elsa Workflows is a set of lean & mean workflow components that you can use in your .NET Core applications.
 With Elsa, you can invoke and trigger workflows from your own application. Workflows can be expressed as JSON, YAML, XML or in code.
 You can manually handcraft workflows or use the web-based workflow designer.
 
-![Web-based workflow designer](/doc/workflow-sample-1.png) 
+![Web-based workflow designer](/doc/workflow-sample-1.png)
 
 ## Why Elsa Workflows?
 
