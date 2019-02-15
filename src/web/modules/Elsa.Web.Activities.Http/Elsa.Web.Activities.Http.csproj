@@ -19,11 +19,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="OrchardCore.Module.Targets" Version="1.0.0-beta3-70362" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <Content Include="Views\_ViewImports.cshtml" />
+        <PackageReference Include="OrchardCore.Module.Targets" Version="1.0.0-beta3-70705" />
     </ItemGroup>
 
 </Project>

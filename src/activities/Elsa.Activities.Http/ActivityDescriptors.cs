@@ -29,7 +29,7 @@ namespace Elsa.Activities.Http
                 Category,
                 T["HTTP Request"],
                 T["Execute a HTTP request."],
-                true,
+                false,
                 true,
                 a => a.SupportedStatusCodes.Select(x => T[x.ToString()]));
             
