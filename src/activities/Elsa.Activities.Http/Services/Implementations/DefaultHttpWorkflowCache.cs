@@ -40,12 +40,5 @@ namespace Elsa.Activities.Http.Services.Implementations
                 ? Task.FromResult<IEnumerable<Workflow>>(workflows) 
                 : Task.FromResult(Enumerable.Empty<Workflow>());
         }
-        
-        public IEnumerable<Workflow> GetWorkflowsByPath(Uri requestPath)
-        {
-            return dictionary.TryGetValue(requestPath, out var workflows) 
-                ? workflows 
-                : Enumerable.Empty<Workflow>();
-        }
     }
 }

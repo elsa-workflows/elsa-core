@@ -53,7 +53,7 @@ namespace Elsa.Activities.Http.Drivers
                 await response.WriteAsync(bodyText, cancellationToken);
             }
 
-            return TriggerEndpoint("Done");
+            return Endpoint("Done");
         }
     }
 }

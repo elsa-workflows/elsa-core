@@ -18,7 +18,7 @@ namespace Elsa.Activities.Primitives.Drivers
 
         protected override async Task<ActivityExecutionResult> OnExecuteAsync(ForEach activity, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
         {
-            return TriggerEndpoint("Done");
+            return Endpoint("Done");
         }
     }
 }

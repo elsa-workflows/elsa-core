@@ -77,7 +77,7 @@ namespace Elsa
             {
                 logger.LogError(e, "Error while invoking activity {ActivityId} of workflow {WorkflowId}", activity.Id, workflowContext.Workflow.Metadata.Id);
                 workflowContext.Workflow.AddLogEntry(activity.Id, clock.GetCurrentInstant(), e.Message, true);
-                return new FaultWorkflowResult(e, clock.GetCurrentInstant());
+                return new FaultWorkflowResult(e);
             }
         }
     }

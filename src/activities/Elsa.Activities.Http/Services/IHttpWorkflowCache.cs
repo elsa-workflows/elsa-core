@@ -11,6 +11,5 @@ namespace Elsa.Activities.Http.Services
         Task AddWorkflowAsync(Uri requestPath, Workflow workflow, CancellationToken cancellationToken);
         Task RemoveWorkflowAsync(Uri requestPath, Workflow workflow, CancellationToken cancellationToken);
         Task<IEnumerable<Workflow>> GetWorkflowsByPathAsync(Uri requestPath, CancellationToken cancellationToken);
-        IEnumerable<Workflow> GetWorkflowsByPath(Uri requestPath);
     }
 }

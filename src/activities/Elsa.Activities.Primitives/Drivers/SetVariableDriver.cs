@@ -21,7 +21,7 @@ namespace Elsa.Activities.Primitives.Drivers
         {
             //var value = await expressionEvaluator.EvaluateAsync(activity.ValueExpression, workflowContext, cancellationToken);
             //workflowContext.CurrentScope.SetVariable(activity.VariableName, value);
-            return TriggerEndpoint("Done");
+            return Endpoint("Done");
         }
     }
 }
