@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Elsa.Activities.Primitives.Activities;
 using Elsa.Models;
 using Microsoft.Extensions.Localization;
@@ -23,6 +24,14 @@ namespace Elsa.Activities.Primitives
                 T["For Each"],
                 T["Iterate over a list of items."],
                 T["Next"], T["Done"]);
+            
+            yield return ActivityDescriptor.For<Fork>(
+                ControlFlowCategory,
+                T["Fork"],
+                T["Fork workflow execution into separate paths of execution."],
+                false,
+                true,
+                a => a.Forks.Select(x => T[x]));
             
             yield return ActivityDescriptor.ForAction<IfElse>(
                 ControlFlowCategory,

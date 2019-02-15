@@ -25,4 +25,8 @@
         <Content Include="Views\_ViewImports.cshtml" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="ViewModels" />
+    </ItemGroup>
+
 </Project>

@@ -17,6 +17,7 @@ namespace Elsa.Activities.Primitives.Extensions
                 .AddPrimitiveWorkflowDescriptors()
                 .AddActivityDriver<SetVariableDriver>()
                 .AddActivityDriver<ForEachDriver>()
+                .AddActivityDriver<ForkDriver>()
                 .AddActivityDriver<IfElseDriver>();
         }
     }
