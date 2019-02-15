@@ -9,9 +9,12 @@ namespace SampleDashboard.Web
     {
         public void ConfigureServices(IServiceCollection services)
         {
-            services
-                .AddRouting(options => options.LowercaseUrls = true)
-                .AddOrchardCoreTheming();
+            services.AddOrchardCms();
+
+//          TODO: Temporarily disabled until I figured out why it's broken. 
+//          services
+//              .AddRouting(options => options.LowercaseUrls = true)
+//              .AddOrchardCoreTheming();
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)

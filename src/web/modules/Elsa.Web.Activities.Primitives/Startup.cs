@@ -14,6 +14,7 @@ namespace Elsa.Web.Activities.Primitives
                 .AddPrimitiveWorkflowDescriptors()
                 .AddActivityDisplay<IfElseDisplay>()
                 .AddActivityDisplay<ForEachDisplay>()
+                .AddActivityDisplay<ForkDisplay>()
                 .AddActivityDisplay<SetVariableDisplay>()
                 .AddActivityDisplay<UnknownActivityDisplay>();
         }

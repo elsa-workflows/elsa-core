@@ -15,7 +15,7 @@ namespace Elsa.Web.Management.Theming
         
         public Task<ThemeSelectorResult> GetThemeAsync()
         {
-            var currentThemeName = shellSettings.Configuration["CurrentTheme"];
+            var currentThemeName = shellSettings["CurrentTheme"];
             
             var result = new ThemeSelectorResult
             {

@@ -13,7 +13,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="OrchardCore.Module.Targets" Version="1.0.0-beta3-70362" />
+        <PackageReference Include="OrchardCore.Module.Targets" Version="1.0.0-beta3-70705" />
     </ItemGroup>
 
     <ItemGroup>
@@ -23,6 +23,10 @@
 
     <ItemGroup>
         <Content Include="Views\_ViewImports.cshtml" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="ViewModels" />
     </ItemGroup>
 
 </Project>

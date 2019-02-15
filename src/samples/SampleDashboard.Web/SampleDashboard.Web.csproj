@@ -12,9 +12,10 @@
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore.App" />
-        <PackageReference Include="OrchardCore.Application.Mvc.Targets" Version="1.0.0-beta3-70362" />
-        <PackageReference Include="OrchardCore.Resources" Version="1.0.0-beta3-70362" />
-        <PackageReference Include="OrchardCore.Settings" Version="1.0.0-beta3-70362" />
+        <!--<PackageReference Include="OrchardCore.Application.Mvc.Targets" Version="1.0.0-beta3-70705" />-->
+        <PackageReference Include="OrchardCore.Application.Cms.Targets" Version="1.0.0-beta3-70705" />
+        <PackageReference Include="OrchardCore.Resources" Version="1.0.0-beta3-70705" />
+        <PackageReference Include="OrchardCore.Settings" Version="1.0.0-beta3-70705" />
     </ItemGroup>
 
     <ItemGroup>
