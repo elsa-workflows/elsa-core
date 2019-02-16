@@ -1,8 +1,4 @@
-using AspNetCore.AsyncInitialization;
 using Elsa.Activities.Http.Drivers;
-using Elsa.Activities.Http.Initialization;
-using Elsa.Activities.Http.Services;
-using Elsa.Activities.Http.Services.Implementations;
 using Elsa.Extensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,8 +17,6 @@ namespace Elsa.Activities.Http.Extensions
         {
             services.AddHttpWorkflowDescriptors();
             services.AddAsyncInitialization();
-            services.TryAddSingleton<IHttpWorkflowCache, DefaultHttpWorkflowCache>();
-            services.TryAddTransient<IAsyncInitializer, HttpWorkflowCacheInitializer>();
             services.TryAddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             
             services
