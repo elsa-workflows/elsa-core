@@ -15,18 +15,24 @@ namespace Elsa
     public class WorkflowInvoker : IWorkflowInvoker
     {
         private readonly IWorkflowStore workflowStore;
+        private readonly IEnumerable<IWorkflowEventHandler> workflowEventHandlers;
         private readonly IClock clock;
+        private readonly IServiceProvider serviceProvider;
         private readonly ILogger logger;
 
         public WorkflowInvoker(
             IActivityInvoker activityInvoker,
             IWorkflowStore workflowStore,
+            IEnumerable<IWorkflowEventHandler> workflowEventHandlers,
             IClock clock,
+            IServiceProvider serviceProvider,
             ILogger<WorkflowInvoker> logger)
         {
             ActivityInvoker = activityInvoker;
             this.workflowStore = workflowStore;
+            this.workflowEventHandlers = workflowEventHandlers;
             this.clock = clock;
+            this.serviceProvider = serviceProvider;
             this.logger = logger;
         }
 
@@ -35,7 +41,7 @@ namespace Elsa
         public async Task<WorkflowExecutionContext> InvokeAsync(Workflow workflow, IActivity startActivity = default, Variables arguments = default, CancellationToken cancellationToken = default)
         {
             workflow.Arguments = arguments ?? new Variables();
-            var workflowExecutionContext = new WorkflowExecutionContext(workflow, clock);
+            var workflowExecutionContext = new WorkflowExecutionContext(workflow, clock, serviceProvider);
             var isResuming = workflowExecutionContext.Workflow.Status == WorkflowStatus.Resuming;
 
             // If a start activity was provided, remove it from the blocking activities list. If not start activity was provided, pick the first one that has no inbound connections.
@@ -68,22 +74,28 @@ namespace Elsa
             }
 
             // Any other status than Halted means the workflow has ended (either because it reached the final activity, was aborted or has faulted).
-            if (workflowExecutionContext.Workflow.Status != WorkflowStatus.Halted)
+            if (!workflowExecutionContext.Workflow.IsHalted() && !workflowExecutionContext.Workflow.IsFaulted())
             {
-                workflowExecutionContext.Finish(clock.GetCurrentInstant());
+                if (workflowExecutionContext.Workflow.BlockingActivities.Any())
+                    workflowExecutionContext.Halt(null);
+                else
+                    workflowExecutionContext.Finish(clock.GetCurrentInstant());
             }
             else
             {
-                // Persist workflow before executing the halted activities.
-                await workflowStore.SaveAsync(workflow, cancellationToken);
-                
-                // Invoke Halted event on activity drivers that halted the workflow.
-                while (workflowExecutionContext.HasScheduledHaltingActivities)
+                if (workflowExecutionContext.HasScheduledHaltingActivities)
                 {
-                    var currentActivity = workflowExecutionContext.PopScheduledHaltingActivity();
-                    var result = await ExecuteActivityHaltedAsync(workflowExecutionContext, currentActivity, cancellationToken);
+                    // Persist workflow before executing the halted activities.
+                    await workflowStore.SaveAsync(workflow, cancellationToken);
 
-                    await result.ExecuteAsync(this, workflowExecutionContext, cancellationToken);
+                    // Invoke Halted event on activity drivers that halted the workflow.
+                    while (workflowExecutionContext.HasScheduledHaltingActivities)
+                    {
+                        var currentActivity = workflowExecutionContext.PopScheduledHaltingActivity();
+                        var result = await ExecuteActivityHaltedAsync(workflowExecutionContext, currentActivity, cancellationToken);
+
+                        await result.ExecuteAsync(this, workflowExecutionContext, cancellationToken);
+                    }
                 }
             }
 

@@ -24,7 +24,7 @@ namespace Elsa.Results
             else
             {
                 workflowContext.ScheduleHaltingActivity(activity);
-                workflowContext.Halt();
+                workflowContext.Halt(activity);
             }
         }
     }

@@ -15,6 +15,7 @@ namespace Elsa.Web.Activities.Primitives
                 .AddActivityDisplay<IfElseDisplay>()
                 .AddActivityDisplay<ForEachDisplay>()
                 .AddActivityDisplay<ForkDisplay>()
+                .AddActivityDisplay<JoinDisplay>()
                 .AddActivityDisplay<SetVariableDisplay>()
                 .AddActivityDisplay<UnknownActivityDisplay>();
         }
