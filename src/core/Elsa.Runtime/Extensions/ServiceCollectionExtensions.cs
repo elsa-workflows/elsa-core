@@ -10,7 +10,7 @@ namespace Elsa.Runtime.Extensions
             return services
                 .AddWorkflowsCore()
                 .AddWorkflowsInvoker()
-                .AddScoped<IWorkflowHost, WorkflowHost>();
+                .AddSingleton<IWorkflowHost, WorkflowHost>();
         }
     }
 }

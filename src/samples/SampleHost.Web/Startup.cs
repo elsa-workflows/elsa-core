@@ -1,4 +1,5 @@
 ﻿using Elsa.Activities.Console.Extensions;
+using Elsa.Activities.Cron.Extensions;
 using Elsa.Activities.Email.Extensions;
 using Elsa.Activities.Http.Extensions;
 using Elsa.Activities.Primitives.Extensions;
@@ -31,7 +32,8 @@ namespace SampleHost.Web
                 .AddPrimitiveWorkflowDrivers()
                 .AddConsoleWorkflowDrivers()
                 .AddHttpWorkflowDrivers()
-                .AddEmailDrivers(Configuration.GetSection("Smtp"));
+                .AddEmailDrivers(Configuration.GetSection("Smtp"))
+                .AddCronDrivers(Configuration.GetSection("Cron"));
             
             services
                 .AddMvc()

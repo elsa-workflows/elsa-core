@@ -31,6 +31,7 @@ namespace Elsa.Runtime
         public async Task<WorkflowExecutionContext> StartWorkflowAsync(Workflow workflow, IActivity startActivity, Variables arguments, CancellationToken cancellationToken)
         {
             var workflowInstance = await workflowSerializer.DeriveAsync(workflow, cancellationToken);
+            startActivity = workflowInstance.Activities.Single(x => x.Id == startActivity.Id);
             return await invoker.InvokeAsync(workflowInstance, startActivity, arguments, cancellationToken);
         }
 

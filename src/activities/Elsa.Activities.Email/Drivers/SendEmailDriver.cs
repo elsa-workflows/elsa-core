@@ -34,7 +34,7 @@ namespace Elsa.Activities.Email.Drivers
             };
 
             mailMessage.To.Add(to);
-            smtpClient.SendAsync(mailMessage, null);
+            await smtpClient.SendMailAsync(mailMessage);
 
             return Endpoint("Done");
         }

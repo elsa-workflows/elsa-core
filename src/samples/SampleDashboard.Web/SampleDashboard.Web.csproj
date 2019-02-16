@@ -24,6 +24,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\web\modules\Elsa.Web.Activities.Console\Elsa.Web.Activities.Console.csproj" />
+        <ProjectReference Include="..\..\web\modules\Elsa.Web.Activities.Cron\Elsa.Web.Activities.Cron.csproj" />
         <ProjectReference Include="..\..\web\modules\Elsa.Web.Activities.Email\Elsa.Web.Activities.Email.csproj" />
         <ProjectReference Include="..\..\web\modules\Elsa.Web.Activities.Http\Elsa.Web.Activities.Http.csproj" />
         <ProjectReference Include="..\..\web\modules\Elsa.Web.Activities.Primitives\Elsa.Web.Activities.Primitives.csproj" />
