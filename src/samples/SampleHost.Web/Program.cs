@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Elsa.Runtime.Hosting.Extensions;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 
@@ -13,7 +14,10 @@ namespace SampleHost.Web
             await host.RunAsync();
         }
 
-        public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
-            WebHost.CreateDefaultBuilder<Startup>(args);
+        public static IWebHostBuilder CreateWebHostBuilder(string[] args)
+        {
+            ProgramExtensions.ConfigureTypeConverters();
+            return WebHost.CreateDefaultBuilder<Startup>(args);
+        }
     }
 }

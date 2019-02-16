@@ -21,7 +21,7 @@ namespace Elsa.Serialization.Tokenizers
         private readonly ITokenizerInvoker tokenizerInvoker;
         private readonly IActivityLibrary activityLibrary;
         private readonly IClock clock;
-        private readonly JsonSerializerSettings _serializerSettings;
+        private readonly JsonSerializerSettings serializerSettings;
         private readonly JsonSerializer jsonSerializer;
 
         public WorkflowTokenizer(ITokenizerInvoker tokenizerInvoker, IActivityLibrary activityLibrary, IClock clock)
@@ -30,14 +30,14 @@ namespace Elsa.Serialization.Tokenizers
             this.activityLibrary = activityLibrary;
             this.clock = clock;
 
-            _serializerSettings = new JsonSerializerSettings
+            serializerSettings = new JsonSerializerSettings
                 {
                     ContractResolver = new CamelCasePropertyNamesContractResolver()
                 }
                 .ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
 
-            _serializerSettings.Converters.Add(new StringEnumConverter());
-            jsonSerializer = JsonSerializer.Create(_serializerSettings);
+            serializerSettings.Converters.Add(new StringEnumConverter());
+            jsonSerializer = JsonSerializer.Create(serializerSettings);
         }
 
         public async Task<JToken> TokenizeWorkflowAsync(Workflow value, CancellationToken cancellationToken)
@@ -120,7 +120,7 @@ namespace Elsa.Serialization.Tokenizers
             var name = token["name"].Value<string>();
             var descriptor = await GetActivityDescriptorAsync(name, cancellationToken);
             var activityType = descriptor?.ActivityType ?? typeof(UnknownActivity);
-            var activity = (IActivity) token.ToObject(activityType);
+            var activity = (IActivity) jsonSerializer.Deserialize(token.CreateReader(), activityType);
 
             activity.Descriptor = descriptor;
             return activity;
@@ -267,7 +267,7 @@ namespace Elsa.Serialization.Tokenizers
         {
             var models = (JArray) token["executionLog"] ?? new JArray();
 
-            return JsonConvert.DeserializeObject<IList<LogEntry>>(models.ToString(), _serializerSettings);
+            return JsonConvert.DeserializeObject<IList<LogEntry>>(models.ToString(), serializerSettings);
         }
 
         private IEnumerable<Connection> DeserializeConnections(JToken token, IDictionary<string, IActivity> activityDictionary)
