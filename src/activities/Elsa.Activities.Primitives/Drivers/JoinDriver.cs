@@ -14,18 +14,18 @@ namespace Elsa.Activities.Primitives.Drivers
     {
         protected override ActivityExecutionResult OnExecute(Join activity, WorkflowExecutionContext workflowContext)
         {
-            var branches = activity.InboundTransitions ?? new List<string>();
+            var recordedInboundTransitions = activity.InboundTransitions ?? new List<string>();
             var workflow = workflowContext.Workflow;
-            var inboundTransitions = workflow.GetInboundConnections(activity.Id);
+            var inboundConnections = workflow.GetInboundConnections(activity.Id);
             var done = false;
 
             switch (activity.Mode)
             {
                 case Join.JoinMode.WaitAll:
-                    done = inboundTransitions.All(x => branches.Contains(GetTransitionKey(x)));
+                    done = inboundConnections.All(x => recordedInboundTransitions.Contains(GetTransitionKey(x)));
                     break;
                 case Join.JoinMode.WaitAny:
-                    done = inboundTransitions.Any(x => branches.Contains(GetTransitionKey(x)));
+                    done = inboundConnections.Any(x => recordedInboundTransitions.Contains(GetTransitionKey(x)));
 
                     if (done)
                     {
