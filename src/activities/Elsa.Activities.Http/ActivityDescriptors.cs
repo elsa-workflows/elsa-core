@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Elsa.Activities.Http.Activities;
 using Elsa.Models;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Localization;
 
 namespace Elsa.Activities.Http

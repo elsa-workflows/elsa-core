@@ -9,7 +9,6 @@ using Elsa.Handlers;
 using Elsa.Models;
 using Elsa.Results;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Localization;
 
 namespace Elsa.Activities.Http.Drivers
 {
@@ -26,7 +25,12 @@ namespace Elsa.Activities.Http.Drivers
             this.expressionEvaluator = expressionEvaluator;
         }
 
-        protected override async Task<ActivityExecutionResult> OnExecuteAsync(HttpRequestTrigger activity, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
+        protected override ActivityExecutionResult OnExecute(HttpRequestTrigger activity, WorkflowExecutionContext workflowContext)
+        {
+            return Halt();
+        }
+
+        protected override async Task<ActivityExecutionResult> OnResumeAsync(HttpRequestTrigger activity, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
         {
             var request = httpContextAccessor.HttpContext.Request;
             var model = new HttpRequestModel
@@ -48,9 +52,10 @@ namespace Elsa.Activities.Http.Drivers
                     model.Content = await request.ReadBodyAsync();
                 }
             }
-            
+
             workflowContext.CurrentScope.LastResult = model;
-            return TriggerEndpoint("Done");
+
+            return Endpoint("Done");
         }
     }
 }

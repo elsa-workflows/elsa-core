@@ -32,7 +32,7 @@ namespace Elsa.Activities.Console.Drivers
         {
             var text = await evaluator.EvaluateAsync(activity.TextExpression, workflowContext, cancellationToken);
             await output.WriteLineAsync(text);
-            return TriggerEndpoint("Done");
+            return Endpoint("Done");
         }
     }
 }

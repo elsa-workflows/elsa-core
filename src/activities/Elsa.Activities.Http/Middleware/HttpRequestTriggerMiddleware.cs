@@ -4,9 +4,11 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Activities;
-using Elsa.Activities.Http.Services;
 using Elsa.Extensions;
 using Elsa.Models;
+using Elsa.Persistence;
+using Elsa.Persistence.Extensions;
+using Elsa.Persistence.Specifications;
 using Elsa.Runtime;
 using Microsoft.AspNetCore.Http;
 
@@ -21,11 +23,11 @@ namespace Elsa.Activities.Http.Middleware
             this.next = next;
         }
 
-        public async Task InvokeAsync(HttpContext context, IWorkflowHost workflowHost, IHttpWorkflowCache httpWorkflowCache)
+        public async Task InvokeAsync(HttpContext context, IWorkflowHost workflowHost, IWorkflowStore workflowStore)
         {
             var requestPath = new Uri(context.Request.Path.ToString(), UriKind.Relative);
             var cancellationToken = context.RequestAborted;
-            var workflows = await httpWorkflowCache.GetWorkflowsByPathAsync(requestPath, cancellationToken).ToListAsync();
+            var workflows = await GetWorkflowsByPathAsync(workflowStore, requestPath, cancellationToken).ToListAsync();
 
             if (!workflows.Any())
             {
@@ -33,45 +35,50 @@ namespace Elsa.Activities.Http.Middleware
             }
             else
             {
-                await InvokeWorkflows(workflowHost, workflows, requestPath, cancellationToken);
+                await InvokeWorkflows(workflowHost, workflows, cancellationToken);
             }
         }
 
-        private async Task InvokeWorkflows(IWorkflowHost workflowHost, IEnumerable<Workflow> workflows, Uri requestPath, CancellationToken cancellationToken)
+        private async Task<IEnumerable<Tuple<Workflow, HttpRequestTrigger>>> GetWorkflowsByPathAsync(IWorkflowStore workflowStore, Uri path, CancellationToken cancellationToken)
+        {
+            var specification = new WorkflowStartsWithActivity(nameof(HttpRequestTrigger)).Or(new WorkflowIsBlockedOnActivity(nameof(HttpRequestTrigger)));
+            var httpWorkflows = await workflowStore.GetManyAsync(specification, CancellationToken.None);
+
+            var query =
+                from workflow in httpWorkflows
+                let activities = workflow.IsDefinition() ? workflow.GetStartActivities() : workflow.BlockingActivities
+                let triggers = FilterByPath(activities, path)
+                select triggers.Select(x => Tuple.Create(workflow, x)); 
+            
+            return query.SelectMany(x => x);
+        }
+
+        private IEnumerable<HttpRequestTrigger> FilterByPath(IEnumerable<IActivity> activities, Uri path)
+        {
+            return activities.Where(x => x is HttpRequestTrigger trigger && trigger.Path == path).Cast<HttpRequestTrigger>();
+        }
+
+        private async Task InvokeWorkflows(IWorkflowHost workflowHost, IEnumerable<Tuple<Workflow, HttpRequestTrigger>> workflows, CancellationToken cancellationToken)
         {
             foreach (var workflow in workflows)
             {
-                await InvokeWorkflowAsync(workflowHost, workflow, requestPath, cancellationToken);
+                await InvokeWorkflowAsync(workflowHost, workflow, cancellationToken);
             }
         }
 
-        private async Task InvokeWorkflowAsync(IWorkflowHost workflowHost, Workflow workflow, Uri requestPath, CancellationToken cancellationToken)
+        private async Task InvokeWorkflowAsync(IWorkflowHost workflowHost, Tuple<Workflow, HttpRequestTrigger> workflowTuple, CancellationToken cancellationToken)
         {
+            var workflow = workflowTuple.Item1;
+            var activity = workflowTuple.Item2;
+
             if (workflow.Status == WorkflowStatus.Idle)
             {
-                await StartHttpWorkflowAsync(workflowHost, workflow, requestPath, cancellationToken);
+                await workflowHost.StartWorkflowAsync(workflow, activity, Variables.Empty, cancellationToken);
             }
             else if (workflow.Status == WorkflowStatus.Halted)
             {
-                await ResumeHttpWorkflowAsync(workflowHost, workflow, requestPath, cancellationToken);
+                await workflowHost.ResumeWorkflowAsync(workflow, activity, Variables.Empty, cancellationToken);
             }
-        }
-        
-        private async Task StartHttpWorkflowAsync(IWorkflowHost workflowHost, Workflow workflow, Uri requestPath, CancellationToken cancellationToken)
-        {
-            var startActivity = GetActivityByRequestPath(workflow, requestPath);
-            await workflowHost.StartWorkflowAsync(workflow, startActivity, Variables.Empty, cancellationToken);
-        }
-
-        private async Task ResumeHttpWorkflowAsync(IWorkflowHost workflowHost, Workflow workflow, Uri requestPath, CancellationToken cancellationToken)
-        {
-            var blockingActivity = GetActivityByRequestPath(workflow, requestPath);
-            await workflowHost.ResumeWorkflowAsync(workflow, blockingActivity, Variables.Empty, cancellationToken);
-        }
-        
-        private static HttpRequestTrigger GetActivityByRequestPath(Workflow workflow, Uri requestPath)
-        {
-            return (HttpRequestTrigger)workflow.Activities.Single(x => x is HttpRequestTrigger activity && activity.Path == requestPath);
         }
     }
 }

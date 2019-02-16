@@ -35,7 +35,7 @@ namespace Elsa
         public async Task<WorkflowExecutionContext> InvokeAsync(Workflow workflow, IActivity startActivity = default, Variables arguments = default, CancellationToken cancellationToken = default)
         {
             workflow.Arguments = arguments ?? new Variables();
-            var workflowExecutionContext = new WorkflowExecutionContext(workflow);
+            var workflowExecutionContext = new WorkflowExecutionContext(workflow, clock);
             var isResuming = workflowExecutionContext.Workflow.Status == WorkflowStatus.Resuming;
 
             // If a start activity was provided, remove it from the blocking activities list. If not start activity was provided, pick the first one that has no inbound connections.
@@ -134,7 +134,7 @@ namespace Elsa
                 ex,
                 "An unhandled error occurred while executing an activity. Putting the workflow in the faulted state."
             );
-            workflowContext.Fault(ex, activity, clock.GetCurrentInstant());
+            workflowContext.Fault(ex, activity);
         }
 
         private async Task<ActivityExecutionResult> ExecuteOrResumeActivityAsync(WorkflowExecutionContext workflowContext, IActivity activity, bool isResuming, CancellationToken cancellationToken)

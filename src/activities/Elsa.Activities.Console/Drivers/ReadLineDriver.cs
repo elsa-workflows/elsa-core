@@ -28,18 +28,18 @@ namespace Elsa.Activities.Console.Drivers
         protected override async Task<ActivityExecutionResult> OnExecuteAsync(ReadLine activity, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
         {
             if (input == null)
-                return Halt(clock.GetCurrentInstant());
+                return Halt();
 
             var value = await input.ReadLineAsync();
             workflowContext.SetLastResult(value);
-            return TriggerEndpoint("Done");
+            return Endpoint("Done");
         }
 
         protected override ActivityExecutionResult OnResume(ReadLine activity, WorkflowExecutionContext workflowContext)
         {
             var receivedInput = workflowContext.Workflow.Arguments[activity.ArgumentName];
             workflowContext.SetLastResult(receivedInput);
-            return TriggerEndpoint("Done");
+            return Endpoint("Done");
         }
     }
 }

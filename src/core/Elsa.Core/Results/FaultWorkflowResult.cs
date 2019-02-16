@@ -7,22 +7,20 @@ namespace Elsa.Results
     public class FaultWorkflowResult : ActivityExecutionResult
     {
         private readonly string errorMessage;
-        private readonly Instant instant;
 
-        public FaultWorkflowResult(Exception exception, Instant instant) : this(exception.Message, instant)
+        public FaultWorkflowResult(Exception exception) : this(exception.Message)
         {
         }
         
-        public FaultWorkflowResult(string errorMessage, Instant instant)
+        public FaultWorkflowResult(string errorMessage)
         {
             this.errorMessage = errorMessage;
-            this.instant = instant;
         }
         
         protected override void Execute(IWorkflowInvoker invoker, WorkflowExecutionContext workflowContext)
         {
             var activity = workflowContext.CurrentActivity;
-            workflowContext.Fault(errorMessage, activity, instant);
+            workflowContext.Fault(errorMessage, activity);
         }
     }
 }

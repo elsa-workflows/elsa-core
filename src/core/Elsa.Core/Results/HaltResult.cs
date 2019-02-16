@@ -10,13 +10,6 @@ namespace Elsa.Results
     /// </summary>
     public class HaltResult : ActivityExecutionResult
     {
-        private readonly Instant instant;
-
-        public HaltResult(Instant instant)
-        {
-            this.instant = instant;
-        }
-        
         public override async Task ExecuteAsync(IWorkflowInvoker invoker, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
         {            
             var activity = workflowContext.CurrentActivity;
@@ -31,7 +24,7 @@ namespace Elsa.Results
             else
             {
                 workflowContext.ScheduleHaltingActivity(activity);
-                workflowContext.Halt(instant);
+                workflowContext.Halt();
             }
         }
     }

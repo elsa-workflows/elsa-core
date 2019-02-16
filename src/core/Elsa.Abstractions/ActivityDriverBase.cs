@@ -18,7 +18,7 @@ namespace Elsa
         protected virtual Task<ActivityExecutionResult> OnExecuteAsync(T activity, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken) => Task.FromResult(OnExecute(activity, workflowContext));
         protected virtual Task<ActivityExecutionResult> OnHaltedAsync(ActivityExecutionContext activityContext, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken) => OnHaltedAsync((T) activityContext.Activity, workflowContext, cancellationToken);
         protected virtual Task<ActivityExecutionResult> OnHaltedAsync(T activity, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken) => Task.FromResult(OnHalted(activity, workflowContext));
-        protected virtual Task<ActivityExecutionResult> OnResumeAsync(ActivityExecutionContext activityContext, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken) => Task.FromResult(OnResume(activityContext, workflowContext));
+        protected virtual Task<ActivityExecutionResult> OnResumeAsync(ActivityExecutionContext activityContext, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken) => OnResumeAsync((T)activityContext.Activity, workflowContext, cancellationToken);
         protected virtual Task<ActivityExecutionResult> OnResumeAsync(T activity, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken) => Task.FromResult(OnResume(activity, workflowContext));
         protected virtual bool OnCanExecute(ActivityExecutionContext activityContext, WorkflowExecutionContext workflowContext) => OnCanExecute((T) activityContext.Activity, workflowContext);
         protected virtual bool OnCanExecute(T activity, WorkflowExecutionContext workflowContext) => true;

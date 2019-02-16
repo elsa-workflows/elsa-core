@@ -18,7 +18,7 @@ namespace Elsa.Activities.Http.Drivers
 
         protected override async Task<ActivityExecutionResult> OnExecuteAsync(HttpRequestAction activity, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
         {
-            return TriggerEndpoint("Done");
+            return Endpoint("Done");
         }
     }
 }

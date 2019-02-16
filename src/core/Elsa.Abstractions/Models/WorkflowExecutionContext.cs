@@ -8,11 +8,13 @@ namespace Elsa.Models
 {
     public class WorkflowExecutionContext
     {
+        private readonly IClock clock;
         private readonly Stack<IActivity> scheduledActivities;
         private readonly Stack<IActivity> scheduledHaltingActivities;
 
-        public WorkflowExecutionContext(Workflow workflow)
+        public WorkflowExecutionContext(Workflow workflow, IClock clock)
         {
+            this.clock = clock;
             Workflow = workflow;
             IsFirstPass = true;
             scheduledActivities = new Stack<IActivity>();
@@ -72,11 +74,11 @@ namespace Elsa.Models
             CurrentScope.LastResult = value;
         }
 
-        public void Fault(Exception exception, IActivity activity, Instant instant) => Fault(exception.Message, activity, instant);
+        public void Fault(Exception exception, IActivity activity) => Fault(exception.Message, activity);
         
-        public void Fault(string errorMessage, IActivity activity, Instant instant)
+        public void Fault(string errorMessage, IActivity activity)
         {
-            Workflow.FinishedAt = instant;
+            Workflow.FinishedAt = clock.GetCurrentInstant();
             Workflow.Fault = new WorkflowFault
             {
                 Message = errorMessage,
@@ -84,7 +86,7 @@ namespace Elsa.Models
             };
         }
 
-        public void Halt(Instant instant)
+        public void Halt()
         {
             var activity = CurrentActivity;
             if (!Workflow.BlockingActivities.Contains(activity))
@@ -92,7 +94,7 @@ namespace Elsa.Models
                 Workflow.BlockingActivities.Add(activity);
             }
 
-            Workflow.HaltedAt = instant;
+            Workflow.HaltedAt = clock.GetCurrentInstant();
             Workflow.Status = WorkflowStatus.Halted;
         }
 

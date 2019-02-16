@@ -19,7 +19,7 @@ namespace Elsa.Activities.Primitives.Drivers
         protected override async Task<ActivityExecutionResult> OnExecuteAsync(IfElse activity, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
         {
             var result = await expressionEvaluator.EvaluateAsync(activity.ConditionExpression, workflowContext, cancellationToken);
-            return TriggerEndpoint(result ? "True" : "False");
+            return Endpoint(result ? "True" : "False");
         }
     
     }
