@@ -1,4 +1,5 @@
 ﻿using Elsa.Activities.Console.Extensions;
+using Elsa.Activities.Email.Extensions;
 using Elsa.Activities.Http.Extensions;
 using Elsa.Activities.Primitives.Extensions;
 using Elsa.Extensions;
@@ -29,7 +30,8 @@ namespace SampleHost.Web
                 .AddWorkflowsFileSystemPersistence(Configuration.GetSection("FileStore"))
                 .AddPrimitiveWorkflowDrivers()
                 .AddConsoleWorkflowDrivers()
-                .AddHttpWorkflowDrivers();
+                .AddHttpWorkflowDrivers()
+                .AddEmailDrivers(Configuration.GetSection("Smtp"));
             
             services
                 .AddMvc()

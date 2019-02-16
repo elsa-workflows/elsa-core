@@ -1,7 +1,7 @@
 ﻿using OrchardCore.Modules.Manifest;
 
 [assembly: Module(
-    Name = "HTTP Activities",
+    Name = "Email Activities",
     Category = "Elsa Workflows",
-    Description = "Provides a set of HTTP activities."
+    Description = "Provides a Send Email activity."
 )]

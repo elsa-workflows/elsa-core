@@ -2,6 +2,6 @@
 
 [assembly: Module(
     Name = "File System Persistence Provider",
-    Category = "Workflows",
+    Category = "Elsa Workflows",
     Description = "Registers a file system based persistence provider."
 )]

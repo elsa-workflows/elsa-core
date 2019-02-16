@@ -2,6 +2,6 @@
 
 [assembly: Module(
     Name = "Console Activities",
-    Category = "Workflows",
+    Category = "Elsa Workflows",
     Description = "Provides a set of primitive activities."
 )]
