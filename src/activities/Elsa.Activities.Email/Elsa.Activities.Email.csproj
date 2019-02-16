@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <PackageVersion>1.0.0</PackageVersion>
+        <Authors>Sipke Schoorstra</Authors>
+        <Description>Elsa is a set of workflowing libraries and tools to enable super-fast workflowing capabilities in any .NET Core application.</Description>
+        <Copyright>2019</Copyright>
+        <PackageProjectUrl>https://github.com/sfmskywalker/Elsa</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/sfmskywalker/Elsa</RepositoryUrl>
+        <RepositoryType>GitHub</RepositoryType>
+        <PackageTags>elsa, workflows, orchard</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
+    </ItemGroup>
+
+</Project>

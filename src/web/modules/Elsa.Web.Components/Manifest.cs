@@ -2,7 +2,7 @@
 
 [assembly: Module(
     Name = "Workflows View Components",
-    Category = "Workflows",
+    Category = "Elsa Workflows",
     Description = "Provides a set of reusable view components such as the Workflow Editor.",
     Dependencies = new[] { "OrchardCore.Resources" }
 )]
