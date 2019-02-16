@@ -12,16 +12,18 @@ namespace Elsa.Models
         private readonly Stack<IActivity> scheduledActivities;
         private readonly Stack<IActivity> scheduledHaltingActivities;
 
-        public WorkflowExecutionContext(Workflow workflow, IClock clock)
+        public WorkflowExecutionContext(Workflow workflow, IClock clock, IServiceProvider serviceProvider)
         {
             this.clock = clock;
             Workflow = workflow;
+            ServiceProvider = serviceProvider;
             IsFirstPass = true;
             scheduledActivities = new Stack<IActivity>();
             scheduledHaltingActivities = new Stack<IActivity>();
         }
 
         public Workflow Workflow { get; }
+        public IServiceProvider ServiceProvider { get; }
         public bool HasScheduledActivities => scheduledActivities.Any();
         public bool HasScheduledHaltingActivities => scheduledHaltingActivities.Any();
         public bool IsFirstPass { get; set; }
@@ -33,8 +35,8 @@ namespace Elsa.Models
             get => Workflow.CurrentScope;
             set => Workflow.CurrentScope = value;
         }
-        
-        public ActivityExecutionContext CreateActivityExecutionContext(IActivity activity) => 
+
+        public ActivityExecutionContext CreateActivityExecutionContext(IActivity activity) =>
             new ActivityExecutionContext(activity);
 
         public void BeginScope()
@@ -58,7 +60,7 @@ namespace Elsa.Models
             CurrentActivity = scheduledActivities.Pop();
             return CurrentActivity;
         }
-        
+
         public void ScheduleHaltingActivity(IActivity activity)
         {
             scheduledHaltingActivities.Push(activity);
@@ -75,7 +77,7 @@ namespace Elsa.Models
         }
 
         public void Fault(Exception exception, IActivity activity) => Fault(exception.Message, activity);
-        
+
         public void Fault(string errorMessage, IActivity activity)
         {
             Workflow.FinishedAt = clock.GetCurrentInstant();
@@ -86,13 +88,11 @@ namespace Elsa.Models
             };
         }
 
-        public void Halt()
+        public void Halt(IActivity activity = null)
         {
-            var activity = CurrentActivity;
-            if (!Workflow.BlockingActivities.Contains(activity))
-            {
-                Workflow.BlockingActivities.Add(activity);
-            }
+            if (activity != null)
+                if (!Workflow.BlockingActivities.Contains(activity))
+                    Workflow.BlockingActivities.Add(activity);
 
             Workflow.HaltedAt = clock.GetCurrentInstant();
             Workflow.Status = WorkflowStatus.Halted;

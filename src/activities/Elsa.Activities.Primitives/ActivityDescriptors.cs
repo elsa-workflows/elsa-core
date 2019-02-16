@@ -33,6 +33,12 @@ namespace Elsa.Activities.Primitives
                 true,
                 a => a.Forks.Select(x => T[x]));
             
+            yield return ActivityDescriptor.ForAction<Join>(
+                ControlFlowCategory,
+                T["Join"],
+                T["Join workflow execution back into a single path of execution."],
+                T["Done"]);
+            
             yield return ActivityDescriptor.ForAction<IfElse>(
                 ControlFlowCategory,
                 T["If/Else"],

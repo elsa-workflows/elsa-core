@@ -9,7 +9,7 @@ namespace Elsa.Activities.Primitives.Drivers
     {
         protected override ActivityExecutionResult OnExecute(Fork activity, WorkflowExecutionContext workflowContext)
         {
-            return TriggerEndpoints(activity.Forks);
+            return Endpoints(activity.Forks);
         }
     }
 }

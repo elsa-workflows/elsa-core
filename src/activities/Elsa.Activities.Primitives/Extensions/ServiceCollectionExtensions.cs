@@ -18,6 +18,8 @@ namespace Elsa.Activities.Primitives.Extensions
                 .AddActivityDriver<SetVariableDriver>()
                 .AddActivityDriver<ForEachDriver>()
                 .AddActivityDriver<ForkDriver>()
+                .AddActivityDriver<JoinDriver>()
+                .AddSingleton<IWorkflowEventHandler>(sp => sp.GetRequiredService<JoinDriver>())
                 .AddActivityDriver<IfElseDriver>();
         }
     }

@@ -115,4 +115,6 @@ In order to run Elsa on your local machine, follow these steps:
 - Implement more activities (fork, join, script, HTTP request, loops, etc.)
 - Implement integration with Orchard Core (separate repo)
 - Detailed documentation
+- Open API Activity Harvester
+- Automatic UI for Activity Editor
 

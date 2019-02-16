@@ -15,7 +15,8 @@ namespace Elsa.Extensions
         public static IServiceCollection AddActivityDriver<T>(this IServiceCollection services)
             where T : class, IActivityDriver
         {
-            services.AddSingleton<IActivityDriver, T>();
+            services.AddSingleton<T>();
+            services.AddSingleton<IActivityDriver>(sp => sp.GetRequiredService<T>());
             return services;
         }
     }
