@@ -19,6 +19,7 @@
     <ItemGroup>
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.Primitives\Elsa.Activities.Primitives.csproj" />
         <ProjectReference Include="..\Elsa.Web.Abstractions\Elsa.Web.Abstractions.csproj" />
+        <ProjectReference Include="..\Elsa.Web.Components\Elsa.Web.Components.csproj" />
     </ItemGroup>
 
     <ItemGroup>
