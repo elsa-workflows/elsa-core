@@ -15,7 +15,7 @@ namespace Elsa.Activities.Http.Activities
         /// The body to send along with the response
         /// </summary>
         public WorkflowExpression<string> Body { get; set; }
-        
+
         /// <summary>
         /// The Content-Type header to send along with the response.
         /// </summary>

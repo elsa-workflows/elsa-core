@@ -1,4 +1,5 @@
 using Elsa.Activities.Http.Drivers;
+using Elsa.Activities.Http.Formatters;
 using Elsa.Extensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,10 +19,16 @@ namespace Elsa.Activities.Http.Extensions
             services.AddHttpWorkflowDescriptors();
             services.AddAsyncInitialization();
             services.TryAddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+            services.AddHttpClient(nameof(HttpRequestActionDriver));
             
             services
                 .AddActivityDriver<HttpRequestTriggerDriver>()
-                .AddActivityDriver<HttpResponseActionDriver>();
+                .AddActivityDriver<HttpResponseActionDriver>()
+                .AddActivityDriver<HttpRequestActionDriver>();
+
+            services
+                .AddSingleton<IContentFormatter, NullContentFormatter>()
+                .AddSingleton<IContentFormatter, JsonContentFormatter>();
             
             return services;
         }
