@@ -1,5 +1,6 @@
 @model ActivityShapeModel<SetVariable>
 
 <header>
-    <h4><i class="fa fa-pencil"></i>@Model.DisplayText</h4>
+    <h4><i class="fas fa-pencil-alt"></i>@Model.DisplayText</h4>
+    <i>&quot;@($"{Model.Activity.VariableName} = {Model.Activity.ValueExpression}")&quot;</i>
 </header>
