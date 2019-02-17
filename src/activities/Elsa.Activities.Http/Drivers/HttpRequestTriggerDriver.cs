@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,13 +17,16 @@ namespace Elsa.Activities.Http.Drivers
     {
         private readonly IHttpContextAccessor httpContextAccessor;
         private readonly IWorkflowExpressionEvaluator expressionEvaluator;
+        private readonly IEnumerable<IContentFormatter> contentFormatters;
 
         public HttpRequestTriggerDriver(
             IHttpContextAccessor httpContextAccessor,
-            IWorkflowExpressionEvaluator expressionEvaluator)
+            IWorkflowExpressionEvaluator expressionEvaluator,
+            IEnumerable<IContentFormatter> contentFormatters)
         {
             this.httpContextAccessor = httpContextAccessor;
             this.expressionEvaluator = expressionEvaluator;
+            this.contentFormatters = contentFormatters;
         }
 
         protected override ActivityExecutionResult OnExecute(HttpRequestTrigger activity, WorkflowExecutionContext workflowContext)
@@ -47,15 +51,22 @@ namespace Elsa.Activities.Http.Drivers
                 {
                     model.Form = (await request.ReadFormAsync(cancellationToken)).ToDictionary(x => x.Key, x => x.Value);
                 }
-                else
-                {
-                    model.Content = await request.ReadBodyAsync();
-                }
+
+                var formatter = SelectContentFormatter(request.ContentType);
+                var content = await request.ReadBodyAsync();
+                model.Content = content;
+                model.FormattedContent = await formatter.FormatAsync(content, request.ContentType);
             }
 
             workflowContext.CurrentScope.LastResult = model;
 
             return Endpoint("Done");
+        }
+
+        private IContentFormatter SelectContentFormatter(string contentType)
+        {
+            var formatters = contentFormatters.OrderByDescending(x => x.Priority).ToList();
+            return formatters.FirstOrDefault(x => x.SupportedContentTypes.Contains(contentType, StringComparer.OrdinalIgnoreCase)) ?? formatters.Last();
         }
     }
 }
