@@ -1,6 +1,6 @@
-@model Elsa.Web.ViewModels.ActivityShapeModel<Elsa.Activities.Primitives.Activities.SetVariable>
+@model ActivityShapeModel<SetVariable>
 @{
     var activityDescriptor = Model.Activity.Descriptor;
 }
-<h4 class="card-title"><i class="fa fa-gem"></i>@activityDescriptor.DisplayText</h4>
+<h4 class="card-title"><i class="fa fa-pencil"></i>@activityDescriptor.DisplayText</h4>
 <p>@activityDescriptor.Description</p>
