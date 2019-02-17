@@ -7,7 +7,7 @@ With Elsa, you can invoke and trigger workflows from your own application. Workf
 
 You can manually handcraft workflows or use the web-based workflow designer.
 
-![Web-based workflow designer](/doc/workflow-sample-1.png)
+![Web-based workflow designer](/doc/workflow-sample-2.png)
 
 ## Why Elsa Workflows?
 
