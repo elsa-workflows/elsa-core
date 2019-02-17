@@ -2,7 +2,8 @@
 
 ## Elsa Workflows
 
-Elsa Workflows is a set of lean & mean workflow components that you can use in your .NET Core applications.
+Elsa is a visual programming tool that allows you to implement parts of your application with workflows as well to implement your entire application using workflows.
+It is implemented as a set NuGet packages that you can use in your .NET Core applications.
 With Elsa, you can invoke and trigger workflows from your own application. Workflows can be expressed as JSON, YAML, XML or in code.
 
 You can manually handcraft workflows or use the web-based workflow designer.
@@ -12,8 +13,7 @@ You can manually handcraft workflows or use the web-based workflow designer.
 ## Why Elsa Workflows?
 
 One of the main goals of Elsa is to **enable workflows in any .NET application** with **minimum effort** and **maximum extensibility**.
-Elsa is not a all-or-nothing proposition. Elsa is a visual programming tool that allows you to implement parts of your application with workflows as well to implement your entire application using workflows.
-    
+This means that it should be easy to integrate workflow capabilities into your own application.
 
 ### What about Azure Logic Apps?
 
