@@ -11,7 +11,9 @@ You can manually handcraft workflows or use the web-based workflow designer.
 
 ## Why Elsa Workflows?
 
-One of the key reasons for Elsa's existence is to **enable workflows in any .NET application** with **minimum effort** and **maximum extensibility**.
+One of the main goals of Elsa is to **enable workflows in any .NET application** with **minimum effort** and **maximum extensibility**.
+Elsa is not a all-or-nothing proposition. Elsa is a visual programming tool that allows you to implement parts of your application with workflows as well to implement your entire application using workflows.
+    
 
 ### What about Azure Logic Apps?
 
@@ -112,9 +114,12 @@ In order to run Elsa on your local machine, follow these steps:
 - Describe how to use.
 - Describe architecture.
 - Describe how to implement (custom host, custom dashboard).
-- Implement more activities (fork, join, script, HTTP request, loops, etc.)
+- Implement more activities
 - Implement integration with Orchard Core (separate repo)
 - Detailed documentation
 - Open API Activity Harvester
+- MassTransit Activity Harvester
+- RabbitMQ Activities
+- Azure Service Bus Activities
 - Automatic UI for Activity Editor
 
