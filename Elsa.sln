@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Core", "src\core\Elsa.
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{DA71CDAA-8DD3-4D5F-9FBD-8E4B37A2D925}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "items", "items", "{7165BB9E-F22C-40D2-B7B1-CA3EFA2529A0}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "solution", "solution", "{7165BB9E-F22C-40D2-B7B1-CA3EFA2529A0}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
 		.gitignore = .gitignore
@@ -72,6 +72,12 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Web.Activities.Cron", "src\web\modules\Elsa.Web.Activities.Cron\Elsa.Web.Activities.Cron.csproj", "{FE6ECF63-D3FC-44EA-8405-C2A73F7C00C8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Runtime.Hosting", "src\core\Elsa.Runtime.Hosting\Elsa.Runtime.Hosting.csproj", "{4728D287-E4F4-4219-8066-924B53E6E17C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HelloWorldProgram", "src\samples\HelloWorldProgram\HelloWorldProgram.csproj", "{92750B10-8DAF-4E4F-8999-33304034EDF4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CalculatorProgram", "src\samples\CalculatorProgram\CalculatorProgram.csproj", "{B22D8641-A012-4942-BC93-EF2451B91959}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PersistenceProgram", "src\samples\PersistenceProgram\PersistenceProgram.csproj", "{A031678D-93D2-435A-9532-D5509C09278B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -179,6 +185,18 @@ Global
 		{4728D287-E4F4-4219-8066-924B53E6E17C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4728D287-E4F4-4219-8066-924B53E6E17C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4728D287-E4F4-4219-8066-924B53E6E17C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{92750B10-8DAF-4E4F-8999-33304034EDF4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{92750B10-8DAF-4E4F-8999-33304034EDF4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{92750B10-8DAF-4E4F-8999-33304034EDF4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{92750B10-8DAF-4E4F-8999-33304034EDF4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B22D8641-A012-4942-BC93-EF2451B91959}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B22D8641-A012-4942-BC93-EF2451B91959}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B22D8641-A012-4942-BC93-EF2451B91959}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B22D8641-A012-4942-BC93-EF2451B91959}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A031678D-93D2-435A-9532-D5509C09278B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A031678D-93D2-435A-9532-D5509C09278B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A031678D-93D2-435A-9532-D5509C09278B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A031678D-93D2-435A-9532-D5509C09278B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -213,6 +231,9 @@ Global
 		{E4B71DC4-3E73-49C3-9B4E-CA13909F222D} = {B43B546E-23F3-46E8-ACB7-D04F05CDA180}
 		{FE6ECF63-D3FC-44EA-8405-C2A73F7C00C8} = {B33F1927-FF0A-4826-80C6-F480E9C43892}
 		{4728D287-E4F4-4219-8066-924B53E6E17C} = {35F44BE9-13D0-417C-A01A-F0787BEE6DC3}
+		{92750B10-8DAF-4E4F-8999-33304034EDF4} = {C55090FE-8506-4FDA-928F-5ACBB9CBE019}
+		{B22D8641-A012-4942-BC93-EF2451B91959} = {C55090FE-8506-4FDA-928F-5ACBB9CBE019}
+		{A031678D-93D2-435A-9532-D5509C09278B} = {C55090FE-8506-4FDA-928F-5ACBB9CBE019}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}

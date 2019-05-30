@@ -53,6 +53,8 @@ namespace Elsa.Serialization.Tokenizers
 
             var token = new JObject
             {
+                { "id", workflow.Id },
+                { "parentId", workflow.ParentId },
                 { "metadata", JToken.FromObject(workflow.Metadata, jsonSerializer) },
                 { "status", workflow.Status.ToString() },
                 { "createdAt", SerializeInstant(workflow.CreatedAt) },
@@ -82,6 +84,8 @@ namespace Elsa.Serialization.Tokenizers
             var scopeLookup = DeserializeScopes(token, serializationContext);
             var workflow = new Workflow
             {
+                Id = token["id"].ToString(),
+                ParentId = token["parentId"].ToString(),
                 Metadata = token["metadata"].ToObject<WorkflowMetadata>(jsonSerializer),
                 Status = (WorkflowStatus) Enum.Parse(typeof(WorkflowStatus), token["status"].Value<string>()),
                 CreatedAt = DeserializeInstant(token["createdAt"]) ?? clock.GetCurrentInstant(),
@@ -282,7 +286,7 @@ namespace Elsa.Serialization.Tokenizers
                 var sourceActivity = activityDictionary[sourceActivityId];
                 var targetActivity = activityDictionary[targetActivityId];
 
-                yield return new Connection(sourceActivity, sourceEndpointName, targetActivity);
+                yield return new Connection(sourceActivity, targetActivity, sourceEndpointName);
             }
         }
 

@@ -21,6 +21,5 @@ namespace Elsa.Activities.Primitives.Drivers
             var result = await expressionEvaluator.EvaluateAsync(activity.ConditionExpression, workflowContext, cancellationToken);
             return Endpoint(result ? "True" : "False");
         }
-    
     }
 }

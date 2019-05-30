@@ -19,8 +19,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="AspNetCore.AsyncInitialization" Version="1.1.1" />
-        <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.2.0" />
+        <PackageReference Include="AspNetCore.AsyncInitialization" Version="1.1.2" />
+        <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.2.2" />
         <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
         <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="2.2.0" />
         <PackageReference Include="Microsoft.Extensions.Http" Version="2.2.0" />

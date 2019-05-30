@@ -8,7 +8,6 @@ namespace Elsa.Runtime.Extensions
         public static IServiceCollection AddWorkflowsHost(this IServiceCollection services)
         {
             return services
-                .AddWorkflowsCore()
                 .AddWorkflowsInvoker()
                 .AddSingleton<IWorkflowHost, WorkflowHost>();
         }

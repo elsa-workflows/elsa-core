@@ -5,7 +5,6 @@ using Elsa.Activities.Console.Activities;
 using Elsa.Handlers;
 using Elsa.Models;
 using Elsa.Results;
-using Microsoft.Extensions.Localization;
 
 namespace Elsa.Activities.Console.Drivers
 {

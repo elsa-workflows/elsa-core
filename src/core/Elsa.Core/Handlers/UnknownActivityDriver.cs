@@ -1,7 +1,6 @@
 using Elsa.Activities;
 using Elsa.Models;
 using Elsa.Results;
-using NodaTime;
 
 namespace Elsa.Handlers
 {

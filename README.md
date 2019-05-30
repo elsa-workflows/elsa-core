@@ -10,6 +10,89 @@ You can manually handcraft workflows or use the web-based workflow designer.
 
 ![Web-based workflow designer](/doc/workflow-sample-3.png)
 
+## Programmatic Workflows
+
+Workflows can be created programmatically and then executed.
+
+### Hello World
+The following code snippet demonstrates creating workflow from code and then invoking it:
+
+```c#
+// Setup a service collection.
+var services = new ServiceCollection()
+    .AddWorkflowsInvoker()
+    .AddConsoleActivities()
+    .BuildServiceProvider();
+
+// Create a workflow invoker.
+var invoker = services.GetService<IWorkflowInvoker>();
+
+// Create a workflow.
+var workflow = new Workflow();
+
+// Add a single activity to execute.
+workflow.Activities.Add(new WriteLine("Hello World!"));
+
+// Invoke the workflow.
+invoker.InvokeAsync(workflow);
+
+// Output: Hello World!
+```
+
+### Calculator
+The following code snippet demonstrates setting up a workflow programmatically using the `WorkflowBuilder`.
+```c#
+private static Workflow CreateSampleWorkflow()
+{
+    // 1. Ask two numbers
+    // 2. Ask operation to apply to the two numbers.
+    // 3. Show the result of the calculation.
+    // 4. Ask user to try again or exit program.
+
+    return new WorkflowBuilder()
+        .Add(new WriteLine("Please enter a number:") { Alias = "Start" })
+        .Next(new ReadLine("a"))
+        .Next(new WriteLine("Please enter another number:"))
+        .Next(new ReadLine("b"))
+        .Next(new WriteLine("Please enter the operation you would like to perform on the two numbers. Allowed operations:\r\n-Add\r\n-Subtract\r\n-Divide\r\n-Multiply"))
+        .Next(new ReadLine("op"))
+        .Next(new Switch(JavaScriptEvaluator.SyntaxName, "op"), @switch =>
+        {
+            @switch.Next(new SetVariable("result", JavaScriptEvaluator.SyntaxName, "parseFloat(a) + parseFloat(b)"), "Add").Next("ShowResult");
+            @switch.Next(new SetVariable("result", JavaScriptEvaluator.SyntaxName, "a - b"), "Subtract").Next("ShowResult");
+            @switch.Next(new SetVariable("result", JavaScriptEvaluator.SyntaxName, "a * b"), "Multiply").Next("ShowResult");
+            @switch.Next(new SetVariable("result", JavaScriptEvaluator.SyntaxName, "a / b"), "Divide").Next("ShowResult");
+        })
+        .Next(new WriteLine(new WorkflowExpression<string>(JavaScriptEvaluator.SyntaxName, "`Result: ${result}`")){ Alias = "ShowResult"})
+        .Next(new WriteLine("Try again? (Y/N)"))
+        .Next(new ReadLine("retry"))
+        .Next(new IfElse(new WorkflowExpression<bool>(JavaScriptEvaluator.SyntaxName, "retry.toLowerCase() === 'y'")), ifElse =>
+        {
+            ifElse.Next("Start", "True");
+            ifElse.Next(new WriteLine("Bye!"), "False");
+        })
+        .BuildWorkflow();
+}
+```
+
+### Persistence
+
+Workflows can be persisted using virtually any storage mechanism.
+Out of the box come the following providers:
+
+- In Memory
+- File System
+- SQL Server
+- MongoDB
+- CosmosDB
+
+Although there are no structural differences between a workflow definition and a workflow instance, Elsa supports storing workflow definitions in store separate from workflow instances.
+This enables scenarios where for example you want to store workflow definition files as part of source control, but leverage a high-performing SQL Server to read and write workflow instances.
+
+The following code snippet demonstrates writing and reading workflows.
+
+
+
 ## Why Elsa Workflows?
 
 One of the main goals of Elsa is to **enable workflows in any .NET application** with **minimum effort** and **maximum extensibility**.

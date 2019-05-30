@@ -4,7 +4,6 @@ using Elsa.Activities.Primitives.Activities;
 using Elsa.Handlers;
 using Elsa.Models;
 using Elsa.Results;
-using Microsoft.Extensions.Localization;
 
 namespace Elsa.Activities.Primitives.Drivers
 {

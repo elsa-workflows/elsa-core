@@ -89,5 +89,8 @@ namespace Elsa.Activities.Primitives.Drivers
 
             return Task.CompletedTask;
         }
+
+        Task IWorkflowEventHandler.InvokingHaltedActivitiesAsync(WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken) => Task.CompletedTask;
+        Task IWorkflowEventHandler.WorkflowInvokedAsync(WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken) => Task.CompletedTask;
     }
 }

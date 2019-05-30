@@ -26,7 +26,7 @@ namespace Elsa.Web.Persistence.FileSystem
                 return new WorkflowsFileStore(fileStore);
             });
 
-            services.AddScoped<IWorkflowStore, FileSystemWorkflowStore>();
+            services.AddScoped<IWorkflowStoreProvider, FileSystemWorkflowStore>();
         }
 
         public override void Configure(IApplicationBuilder builder, IRouteBuilder routes, IServiceProvider serviceProvider)

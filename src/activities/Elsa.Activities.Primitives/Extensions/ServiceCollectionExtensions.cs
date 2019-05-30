@@ -11,7 +11,7 @@ namespace Elsa.Activities.Primitives.Extensions
             return services.AddActivityDescriptors<ActivityDescriptors>();
         }
         
-        public static IServiceCollection AddPrimitiveWorkflowDrivers(this IServiceCollection services)
+        public static IServiceCollection AddPrimitiveActivities(this IServiceCollection services)
         {
             return services
                 .AddPrimitiveWorkflowDescriptors()
@@ -20,7 +20,8 @@ namespace Elsa.Activities.Primitives.Extensions
                 .AddActivityDriver<ForkDriver>()
                 .AddActivityDriver<JoinDriver>()
                 .AddSingleton<IWorkflowEventHandler>(sp => sp.GetRequiredService<JoinDriver>())
-                .AddActivityDriver<IfElseDriver>();
+                .AddActivityDriver<IfElseDriver>()
+                .AddActivityDriver<SwitchDriver>();
         }
     }
 }

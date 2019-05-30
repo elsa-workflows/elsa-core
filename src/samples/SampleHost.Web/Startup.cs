@@ -4,6 +4,8 @@ using Elsa.Activities.Email.Extensions;
 using Elsa.Activities.Http.Extensions;
 using Elsa.Activities.Primitives.Extensions;
 using Elsa.Extensions;
+using Elsa.Persistence;
+using Elsa.Persistence.Core;
 using Elsa.Persistence.FileSystem.Extensions;
 using Elsa.Runtime.Extensions;
 using Microsoft.AspNetCore.Builder;
@@ -28,7 +30,9 @@ namespace SampleHost.Web
             services
                 .AddLocalization()
                 .AddWorkflowsHost()
-                .AddWorkflowsFileSystemPersistence(Configuration.GetSection("FileStore"))
+                .AddFileSystemWorkflowDefinitionStoreProvider(Configuration.GetSection("FileStore"))
+                .AddFileSystemWorkflowInstanceStoreProvider(Configuration.GetSection("FileStore"))
+                .AddSingleton<IWorkflowDefinitionStore, WorkflowDefinitionStore>()
                 .AddPrimitiveWorkflowDrivers()
                 .AddConsoleWorkflowDrivers()
                 .AddHttpWorkflowDrivers()

@@ -8,10 +8,27 @@ namespace Elsa.Persistence.FileSystem.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddWorkflowsFileSystemPersistence(this IServiceCollection services, IConfiguration configuration)
+        public static IServiceCollection AddFileSystemWorkflowDefinitionStoreProvider(this IServiceCollection services, IConfiguration configuration)
         {
+            services.AddFileSystemServices(configuration);
+            services.TryAddSingleton<IWorkflowDefinitionStore, FileSystemWorkflowDefinitionStore>();
+
+            return services;
+        }
+        
+        public static IServiceCollection AddFileSystemWorkflowInstanceStoreProvider(this IServiceCollection services, IConfiguration configuration)
+        {
+            services.AddFileSystemServices(configuration);
+            services.TryAddSingleton<IWorkflowInstanceStore, FileSystemWorkflowInstanceStore>();
+
+            return services;
+        }
+        
+        private static IServiceCollection AddFileSystemServices(this IServiceCollection services, IConfiguration configuration)
+        {
+            services.TryAddSingleton<IWorkflowEventHandler, PersistenceWorkflowEventHandler>();
             services.TryAddSingleton<IFileSystem, System.IO.Abstractions.FileSystem>();
-            services.AddSingleton<IWorkflowStore, FileSystemWorkflowStore>();
+            services.TryAddSingleton<IFileSystemWorkflowProvider, FileSystemWorkflowProvider>();
             services.Configure<FileSystemStoreOptions>(configuration);
 
             return services;

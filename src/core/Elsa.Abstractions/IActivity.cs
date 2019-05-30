@@ -7,6 +7,7 @@ namespace Elsa
     {
         string Id { get; set; }
         string Name { get; }
+        string Alias { get; set; }
         ActivityMetadata Metadata { get; set; }
         
         [JsonIgnore]

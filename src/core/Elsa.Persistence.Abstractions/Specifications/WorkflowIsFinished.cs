@@ -12,7 +12,7 @@ namespace Elsa.Persistence.Specifications
             this.parentId = parentId;
         }
         
-        public bool IsSatisfiedBy(Workflow item) => item.Metadata.ParentId == parentId && item.IsFinished();
+        public bool IsSatisfiedBy(Workflow item) => item.ParentId == parentId && item.IsFinished();
 
         public void Accept(IWorkflowSpecificationVisitor visitor)
         {

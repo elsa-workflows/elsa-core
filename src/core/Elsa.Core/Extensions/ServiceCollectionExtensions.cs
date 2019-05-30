@@ -5,6 +5,7 @@ using Elsa.Serialization.Formatters;
 using Elsa.Serialization.Tokenizers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Localization;
 using NodaTime;
 
 namespace Elsa.Extensions
@@ -13,6 +14,8 @@ namespace Elsa.Extensions
     {
         public static IServiceCollection AddWorkflowsCore(this IServiceCollection services)
         {
+            services.AddLogging();
+            services.AddLocalization();
             services.TryAddSingleton<IIdGenerator, DefaultIdGenerator>();
             services.TryAddSingleton<IClock>(SystemClock.Instance);
             services.TryAddSingleton<IWorkflowSerializer, WorkflowSerializer>();
@@ -35,6 +38,7 @@ namespace Elsa.Extensions
 
         public static IServiceCollection AddWorkflowsInvoker(this IServiceCollection services)
         {
+            services.AddWorkflowsCore();
             services.TryAddSingleton<IWorkflowInvoker, WorkflowInvoker>();
             services.TryAddSingleton<IActivityInvoker, ActivityInvoker>();
             services.TryAddSingleton<IActivityDriverRegistry, ActivityDriverRegistry>();

@@ -6,7 +6,7 @@ namespace Elsa.Models
         {
         }
 
-        public SourceEndpoint(IActivity activity, string name = null) : base(activity)
+        public SourceEndpoint(IActivity activity, string name = EndpointNames.Done) : base(activity)
         {
             Name = name;
         }

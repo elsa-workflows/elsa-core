@@ -68,8 +68,8 @@ namespace Elsa.Serialization
         public async Task<Workflow> DeriveAsync(Workflow parent, CancellationToken cancellationToken)
         {
             var child = await CloneAsync(parent, cancellationToken);
-            child.Metadata.ParentId = parent.Metadata.Id;
-            child.Metadata.Id = idGenerator.Generate();
+            child.ParentId = parent.Id;
+            child.Id = idGenerator.Generate();
             return child;
         }
     }

@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Extensions;
 using Elsa.Models;
-using Elsa.Persistence;
 using Elsa.Results;
 using Microsoft.Extensions.Logging;
 using NodaTime;
@@ -14,7 +13,6 @@ namespace Elsa
 {
     public class WorkflowInvoker : IWorkflowInvoker
     {
-        private readonly IWorkflowStore workflowStore;
         private readonly IEnumerable<IWorkflowEventHandler> workflowEventHandlers;
         private readonly IClock clock;
         private readonly IServiceProvider serviceProvider;
@@ -22,14 +20,12 @@ namespace Elsa
 
         public WorkflowInvoker(
             IActivityInvoker activityInvoker,
-            IWorkflowStore workflowStore,
             IEnumerable<IWorkflowEventHandler> workflowEventHandlers,
             IClock clock,
             IServiceProvider serviceProvider,
             ILogger<WorkflowInvoker> logger)
         {
             ActivityInvoker = activityInvoker;
-            this.workflowStore = workflowStore;
             this.workflowEventHandlers = workflowEventHandlers;
             this.clock = clock;
             this.serviceProvider = serviceProvider;
@@ -73,7 +69,7 @@ namespace Elsa
                 isResuming = false;
             }
 
-            // Any other status than Halted means the workflow has ended (either because it reached the final activity, was aborted or has faulted).
+            // Any other status than Halted means the workflow has ended (because it reached the final activity, was aborted or has faulted).
             if (!workflowExecutionContext.Workflow.IsHalted() && !workflowExecutionContext.Workflow.IsFaulted())
             {
                 if (workflowExecutionContext.Workflow.BlockingActivities.Any())
@@ -85,9 +81,9 @@ namespace Elsa
             {
                 if (workflowExecutionContext.HasScheduledHaltingActivities)
                 {
-                    // Persist workflow before executing the halted activities.
-                    await workflowStore.SaveAsync(workflow, cancellationToken);
-
+                    // Notify event handlers that halting activities are about to be executed.
+                    await workflowEventHandlers.InvokeAsync(async x => await x.InvokingHaltedActivitiesAsync(workflowExecutionContext, cancellationToken), logger);
+                    
                     // Invoke Halted event on activity drivers that halted the workflow.
                     while (workflowExecutionContext.HasScheduledHaltingActivities)
                     {
@@ -99,7 +95,8 @@ namespace Elsa
                 }
             }
 
-            await workflowStore.SaveAsync(workflow, cancellationToken);
+            // Notify event handlers that invocation has ended.
+            await workflowEventHandlers.InvokeAsync(async x => await x.WorkflowInvokedAsync(workflowExecutionContext, cancellationToken), logger);
             return workflowExecutionContext;
         }
 

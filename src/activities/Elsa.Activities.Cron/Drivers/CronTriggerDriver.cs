@@ -6,7 +6,6 @@ using Elsa.Models;
 using Elsa.Results;
 using NCrontab;
 using NodaTime;
-using NodaTime.Extensions;
 
 namespace Elsa.Activities.Cron.Drivers
 {
