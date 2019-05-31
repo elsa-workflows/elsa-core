@@ -17,6 +17,9 @@ namespace Elsa.Expressions
         
         public async Task<T> EvaluateAsync<T>(WorkflowExpression<T> expression, WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
         {
+            if (expression == null)
+                return default;
+            
             var evaluator = evaluators[expression.Syntax];
             return await evaluator.EvaluateAsync<T>(expression.Expression, workflowExecutionContext, cancellationToken);
         }

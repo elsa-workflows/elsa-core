@@ -25,7 +25,7 @@ namespace Elsa.Runtime
             this.workflowSerializer = workflowSerializer;
         }
 
-        public async Task TriggerWorkflowAsync(string activityName, Variables arguments, CancellationToken cancellationToken)
+        public async Task TriggerWorkflowsAsync(string activityName, Variables arguments, CancellationToken cancellationToken)
         {
             await StartNewWorkflowsAsync(activityName, arguments, cancellationToken);
             await ResumeExistingWorkflowsAsync(activityName, arguments, cancellationToken);

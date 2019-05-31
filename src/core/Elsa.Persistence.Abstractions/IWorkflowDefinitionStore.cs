@@ -19,7 +19,7 @@ namespace Elsa.Persistence
     {
         public static async Task<IEnumerable<Tuple<Workflow, TActivity>>> ListByStartActivityAsync<TActivity>(this IWorkflowDefinitionStore store, CancellationToken cancellationToken) where TActivity : IActivity
         {
-            var items = await store.ListByStartActivityAsync(nameof(TActivity), cancellationToken);
+            var items = await store.ListByStartActivityAsync(typeof(TActivity).Name, cancellationToken);
             return items.Select(x => Tuple.Create(x.Item1, (TActivity) x.Item2));
         }
     }

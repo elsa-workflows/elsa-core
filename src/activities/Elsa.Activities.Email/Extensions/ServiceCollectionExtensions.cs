@@ -16,7 +16,7 @@ namespace Elsa.Activities.Email.Extensions
             return services.AddActivityDescriptors<ActivityDescriptors>();
         }
 
-        public static IServiceCollection AddEmailDrivers(this IServiceCollection services, IConfiguration configuration)
+        public static IServiceCollection AddEmailActivities(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddEmailDescriptors();
             

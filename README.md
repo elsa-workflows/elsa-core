@@ -12,7 +12,7 @@ You can manually handcraft workflows or use the web-based workflow designer.
 
 ## Programmatic Workflows
 
-Workflows can be created programmatically and then executed.
+Workflows can be created programmatically and then executed using `IWorkflowInvoker`.
 
 ### Hello World
 The following code snippet demonstrates creating workflow from code and then invoking it:
@@ -89,9 +89,169 @@ Out of the box come the following providers:
 Although there are no structural differences between a workflow definition and a workflow instance, Elsa supports storing workflow definitions in store separate from workflow instances.
 This enables scenarios where for example you want to store workflow definition files as part of source control, but leverage a high-performing SQL Server to read and write workflow instances.
 
-The following code snippet demonstrates writing and reading workflows.
+The following code snippet demonstrates writing and reading workflow definitions and instances using the file system storage provider.
 
+```c#
+// Setup configuration for the file system stores.
+var rootDir = Path.Combine(Path.GetDirectoryName(typeof(Program).Assembly.Location), "workflows");
+var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string>
+    {
+        ["Workflows:Directory"] = rootDir,
+        ["Workflows:Format"] = YamlTokenFormatter.FormatName
+    })
+    .Build();
 
+// Setup a service collection and use the FileSystemProvider for both workflow definitions and workflow instances.
+var services = new ServiceCollection()
+    .AddWorkflowsInvoker()
+    .AddConsoleActivities()
+    .AddFileSystemWorkflowDefinitionStoreProvider(configuration.GetSection("Workflows"))
+    .AddFileSystemWorkflowInstanceStoreProvider(configuration.GetSection("Workflows"))
+    .AddSingleton(Console.In)
+    .BuildServiceProvider();
+
+// Define a workflow.
+var workflowDefinition = new WorkflowBuilder()
+    .Add(new WriteLine("Hi! What's your name?"))
+    .Next(new ReadLine("name"))
+    .Next(new WriteLine(new WorkflowExpression<string>(JavaScriptEvaluator.SyntaxName, "`Nice to meet you, ${name}!`")))
+    .BuildWorkflow();
+
+// Save the workflow definition using IWorkflowDefinitionStore.
+var workflowDefinitionStore = services.GetService<IWorkflowDefinitionStore>();
+await workflowDefinitionStore.SaveAsync(workflowDefinition, CancellationToken.None);
+
+// Load the workflow definition.
+workflowDefinition = await workflowDefinitionStore.GetByIdAsync(workflowDefinition.Id, CancellationToken.None);
+
+// Invoke the workflow.
+var invoker = services.GetService<IWorkflowInvoker>();
+var workflowExecutionContext = await invoker.InvokeAsync(workflowDefinition, workflowDefinition.Activities.First());
+
+// Save the workflow instance using IWorkflowInstanceStore.
+var workflowInstance = workflowExecutionContext.Workflow;
+var workflowInstanceStore = services.GetService<IWorkflowInstanceStore>();
+await workflowInstanceStore.SaveAsync(workflowInstance, CancellationToken.None);
+```
+
+> NOTE: Although the above example demonstrates storing a workflow instance, you don't normally need to do this yourself. When invoking `AddFileSystemWorkflowInstanceStoreProvider` or `AddFileSystemWorkflowDefinitionStoreProvider`, an event handler is registered as well that listens for certain events raised by the workflow invoker.
+> When a workflow is finished executing, an event is raised in response to which the workflow instance is persisted. In a future update, persistence of workflow instances will be configurable on per workflow definition. You may not want to persist all workflow instances. Alternatively, you may want to configure a retention policy that discards or archives older workflow instances that have finished.  
+
+### Formats
+
+Currently, workflows can be stored in YAML or JSON format.
+The following demonstrates a simple workflow expressed in YAML and JSON, respectively:
+
+**YAML**
+```yaml
+activities:
+- name: WriteLine
+  id: hi-activity
+  textExpression:  
+    syntax: PlainText
+    expression: Hi! What's your name?
+- name: ReadLine
+  id: read-name-activity
+  argumentName: name
+- name: WriteLine
+  id: greeting-activity
+  textExpression:
+    syntax: JavaScript
+    expression: '`Nice to meet you, ${name}!`'
+connections:
+- source:
+    activityId: hi-activity
+    name: Done
+  target:
+    activityId: read-name-activity
+- source:
+    activityId: read-name-activity
+    name: Done
+  target:
+    activityId: greeting-activity
+```
+
+**JSON**
+```json
+{
+  "activities": [
+    {
+      "name": "WriteLine",
+      "id": "hi-activity",
+      "textExpression": {
+        "syntax": "PlainText",
+        "expression": "Hi! What's your name?"
+      }
+    },
+    {
+      "id": "read-name-activity",
+      "name": "ReadLine",
+      "argumentName": "name"
+    },
+    {
+      "name": "WriteLine",
+      "id": "greeting-activity",
+      "textExpression": {
+        "syntax": "JavaScript",
+        "expression": "`Nice to meet you, ${name}!`"
+      }
+    }
+  ],
+  "connections": [
+    {
+      "source": {
+        "activityId": "hi-activity",
+        "name": "Done"
+      },
+      "target": {
+        "activityId": "read-name-activity"
+      }
+    },
+    {
+      "source": {
+        "activityId": "read-name-activity",
+        "name": "Done"
+      },
+      "target": {
+        "activityId": "greeting-activity"
+      }
+    }
+  ]
+}
+```
+
+The following demonstrates how to parse a workflow in YAML format:
+
+```c#
+// Setup a service collection and use the FileSystemProvider for both workflow definitions and workflow instances.
+var services = new ServiceCollection()
+    .AddWorkflowsInvoker()
+    .AddConsoleActivities()
+    .AddSingleton(Console.In)
+    .BuildServiceProvider();
+
+// Load the data and specify data format.
+var data = Resources.SampleWorkflowDefinition;
+var format = YamlTokenFormatter.FormatName; // "YAML"
+
+// Deserialize the workflow from data.
+var serializer = services.GetService<IWorkflowSerializer>();
+var workflowDefinition = await serializer.DeserializeAsync(data, format, CancellationToken.None);
+
+// Invoke the workflow.
+var invoker = services.GetService<IWorkflowInvoker>();
+await invoker.InvokeAsync(workflowDefinition, workflowDefinition.Activities.First());
+```
+
+## Workflow Host
+In addition to programmatically invoke specific workflows using `IWorkflowInvoker`, you can instead "trigger" workflows using `IWorkflowHost`.
+For example, if you have a bunch of workflows defined that start with e.g. a `HttpRequestTrigger` activity, you can execute all of these workflows using the following statement:
+
+`await workflowHost.TriggerWorkflowsAsync("HttpRequestTrigger", Variables.Empty, cancellationToken)` 
+
+What this will do is invoke every workflow that either starts with a _HttpRequestTrigger_ activity or is blocked on said activity.
+
+## Long Running Workflows
 
 ## Why Elsa Workflows?
 
@@ -116,13 +276,13 @@ Although there's an effort being made to [port WF to .NET Standard](https://gith
 ### What about Orchard Workflows?
 
 Both [Orchard](http://docs.orchardproject.net/en/latest/Documentation/Workflows/) and [Orchard Core](https://orchardcore.readthedocs.io/en/dev/OrchardCore.Modules/OrchardCore.Workflows/) ship with a powerful workflows module, and both are awesome.
-In fact, Elsa Workflows is taken & adapted from Orchard Core's Workflows module. Elsa uses a similar model, but there are some technical differences:  
+In fact, Elsa Workflows is taken & adapted from Orchard Core's Workflows module. Elsa uses a similar model, but there are some differences:  
 
 - Elsa Workflows is completely decoupled from web, whereas Orchard Core Workflows is coupled to not only the web, but also the Orchard Core Framework itself.
 - Elsa Workflows can execute in any .NET Core application without taking a dependency on any Orchard Core packages (not to be confused with Elsa Workflows Designer, which takes advantage of some Orchard Core packages).
 - Elsa Workflows separates activity models from activity execution logic.
 
-I am a huge fan of Orchard Core, and its Workflows module is one of its biggest gems. In fact, the Elsa Workflows web-based designer depends on Orchard Core Framework packages because Orchard Core is that useful!
+I am a huge fan of Orchard Core, and its Workflows module is in my opinion one of its biggest gems. In fact, the Elsa Workflows web-based designer depends on Orchard Core Framework packages because Orchard Core is that useful!
 An important roadmap item is to provide an Orchard Core module called `OrchardCore.ElsaWorkfows`, which uses Elsa's engine and web-based designer within the context of an Orchard Core application and provides Orchard Core-specific activities such as content-related triggers and actions.
 
 As mentioned earlier: this is one of the main reasons that Elsa exists: to enable workflows in any .NET application. Orchard Core included.
@@ -159,8 +319,6 @@ When working with Elsa, you'll typically want to have at least two applications:
 
 1. An ASP.NET Core application to host the workflows designer.
 2. A .NET application that executed workflows
-
-> Although you can separate the workflow designer from the workflow host, you're free to host both in one and the same ASP.NET Core application.
 
 ### Setting up a Workflow Designer ASP.NET Core Application
 

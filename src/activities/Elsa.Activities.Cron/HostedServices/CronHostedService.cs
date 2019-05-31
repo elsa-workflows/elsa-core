@@ -30,7 +30,7 @@ namespace Elsa.Activities.Cron.HostedServices
             {
                 try
                 {
-                    await workflowHost.TriggerWorkflowAsync(nameof(CronTrigger), Variables.Empty, stoppingToken);
+                    await workflowHost.TriggerWorkflowsAsync(nameof(CronTrigger), Variables.Empty, stoppingToken);
                 }
                 catch (Exception ex)
                 {

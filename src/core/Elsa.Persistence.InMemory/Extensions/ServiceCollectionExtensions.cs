@@ -13,7 +13,7 @@ namespace Elsa.Persistence.InMemory.Extensions
             return services;
         }
 
-        public static IServiceCollection AddFileSystemWorkflowInstanceStoreProvider(this IServiceCollection services)
+        public static IServiceCollection AddInMemoryWorkflowInstanceStoreProvider(this IServiceCollection services)
         {
             services.AddInMemoryServices();
             services.TryAddSingleton<IWorkflowInstanceStore, InMemoryWorkflowInstanceStore>();

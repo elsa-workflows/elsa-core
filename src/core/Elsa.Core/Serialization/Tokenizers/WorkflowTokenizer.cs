@@ -20,14 +20,16 @@ namespace Elsa.Serialization.Tokenizers
     {
         private readonly ITokenizerInvoker tokenizerInvoker;
         private readonly IActivityLibrary activityLibrary;
+        private readonly IIdGenerator idGenerator;
         private readonly IClock clock;
         private readonly JsonSerializerSettings serializerSettings;
         private readonly JsonSerializer jsonSerializer;
 
-        public WorkflowTokenizer(ITokenizerInvoker tokenizerInvoker, IActivityLibrary activityLibrary, IClock clock)
+        public WorkflowTokenizer(ITokenizerInvoker tokenizerInvoker, IActivityLibrary activityLibrary, IIdGenerator idGenerator, IClock clock)
         {
             this.tokenizerInvoker = tokenizerInvoker;
             this.activityLibrary = activityLibrary;
+            this.idGenerator = idGenerator;
             this.clock = clock;
 
             serializerSettings = new JsonSerializerSettings
@@ -55,7 +57,7 @@ namespace Elsa.Serialization.Tokenizers
             {
                 { "id", workflow.Id },
                 { "parentId", workflow.ParentId },
-                { "metadata", JToken.FromObject(workflow.Metadata, jsonSerializer) },
+                { "metadata", JToken.FromObject(workflow.Metadata ?? new WorkflowMetadata(), jsonSerializer) },
                 { "status", workflow.Status.ToString() },
                 { "createdAt", SerializeInstant(workflow.CreatedAt) },
                 { "startedAt", SerializeInstant(workflow.StartedAt) },
@@ -84,10 +86,10 @@ namespace Elsa.Serialization.Tokenizers
             var scopeLookup = DeserializeScopes(token, serializationContext);
             var workflow = new Workflow
             {
-                Id = token["id"].ToString(),
-                ParentId = token["parentId"].ToString(),
-                Metadata = token["metadata"].ToObject<WorkflowMetadata>(jsonSerializer),
-                Status = (WorkflowStatus) Enum.Parse(typeof(WorkflowStatus), token["status"].Value<string>()),
+                Id = token["id"]?.ToString() ?? idGenerator.Generate(),
+                ParentId = token["parentId"]?.ToString(),
+                Metadata = token["metadata"]?.ToObject<WorkflowMetadata>(jsonSerializer),
+                Status = (WorkflowStatus) Enum.Parse(typeof(WorkflowStatus), token["status"]?.Value<string>() ?? "Idle"),
                 CreatedAt = DeserializeInstant(token["createdAt"]) ?? clock.GetCurrentInstant(),
                 StartedAt = DeserializeInstant(token["startedAt"]),
                 FinishedAt = DeserializeInstant(token["finishedAt"]),

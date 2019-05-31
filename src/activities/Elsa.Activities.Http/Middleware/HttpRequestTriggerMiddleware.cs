@@ -35,7 +35,7 @@ namespace Elsa.Activities.Http.Middleware
             else
             {
                 await InvokeWorkflowsToStartAsync(workflowHost, workflowsToStart, cancellationToken);
-                await InvokeWorkflowsToResumeAsync(workflowHost, workflowsToStart, cancellationToken);
+                await InvokeWorkflowsToResumeAsync(workflowHost, workflowsToResume, cancellationToken);
             }
         }
 

@@ -14,7 +14,7 @@ namespace Elsa.Activities.Cron.Extensions
             return services.AddActivityDescriptors<ActivityDescriptors>();
         }
 
-        public static IServiceCollection AddCronDrivers(this IServiceCollection services, IConfiguration configuration)
+        public static IServiceCollection AddCronActivities(this IServiceCollection services, IConfiguration configuration)
         {
             return services
                 .AddCronDescriptors()
