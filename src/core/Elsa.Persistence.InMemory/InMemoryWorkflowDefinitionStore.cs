@@ -8,23 +8,10 @@ using Elsa.Models;
 
 namespace Elsa.Persistence.InMemory
 {
-    public class InMemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
+    public class InMemoryWorkflowDefinitionStore : InMemoryWorkflowStoreBase, IWorkflowDefinitionStore
     {
-        private readonly IInMemoryWorkflowProvider provider;
-
-        public InMemoryWorkflowDefinitionStore(IInMemoryWorkflowProvider provider)
+        public InMemoryWorkflowDefinitionStore(IInMemoryWorkflowProvider provider) : base(provider)
         {
-            this.provider = provider;
-        }
-
-        public async Task<IEnumerable<Workflow>> ListAllAsync(CancellationToken cancellationToken)
-        {
-            return await provider.ListAsync(cancellationToken);
-        }
-
-        public async Task SaveAsync(Workflow value, CancellationToken cancellationToken)
-        {
-            await provider.SaveAsync(value, cancellationToken);
         }
 
         public async Task<IEnumerable<Tuple<Workflow, IActivity>>> ListByStartActivityAsync(string activityType, CancellationToken cancellationToken)
@@ -37,13 +24,6 @@ namespace Elsa.Persistence.InMemory
                 select Tuple.Create(workflow, activity);
 
             return query.Distinct();
-        }
-
-        public async Task<Workflow> GetByIdAsync(string id, CancellationToken cancellationToken)
-        {
-            var workflows = await ListAllAsync(cancellationToken);
-
-            return workflows.FirstOrDefault(x => x.Id == id);
         }
     }
 }

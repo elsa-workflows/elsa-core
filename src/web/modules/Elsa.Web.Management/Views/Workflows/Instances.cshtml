@@ -31,7 +31,7 @@
         }
         @foreach (var workflow in Model.Instances)
         {
-            var workflowId = workflow.Metadata.Id;
+            var workflowId = workflow.Id;
             var rowClass = index % 2 == 0 ? "even" : "odd";
             index++;
 

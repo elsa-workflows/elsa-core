@@ -34,4 +34,8 @@
         <None Remove="Assets\scripts\contextmenu\contextmenu.js" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="wwwroot" />
+    </ItemGroup>
+
 </Project>

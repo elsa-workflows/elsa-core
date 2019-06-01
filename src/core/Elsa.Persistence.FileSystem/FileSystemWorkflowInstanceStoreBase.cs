@@ -5,14 +5,14 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
 
-namespace Elsa.Persistence.InMemory
+namespace Elsa.Persistence.FileSystem
 {
-    public class InMemoryWorkflowInstanceStore : InMemoryWorkflowStoreBase, IWorkflowInstanceStore
+    public class FileSystemWorkflowInstanceStoreBase : FileSystemWorkflowStoreBase, IWorkflowInstanceStore
     {
-        public InMemoryWorkflowInstanceStore(IInMemoryWorkflowProvider provider) : base(provider)
+        public FileSystemWorkflowInstanceStoreBase(IFileSystemWorkflowProvider provider) : base("instances", provider)
         {
         }
-
+        
         public async Task<IEnumerable<Tuple<Workflow, IActivity>>> ListByBlockingActivityAsync(string workflowType, CancellationToken cancellationToken)
         {
             var workflows = await ListAllAsync(cancellationToken);
@@ -24,7 +24,7 @@ namespace Elsa.Persistence.InMemory
 
             return query.Distinct();
         }
-
+        
         public Task<IEnumerable<Workflow>> ListByStatusAsync(WorkflowStatus status, CancellationToken cancellationToken)
         {
             return ListByStatusAsync(null, status, cancellationToken);

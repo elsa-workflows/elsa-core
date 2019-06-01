@@ -10,6 +10,7 @@
 }
 <div id="elsa-workflow-designer">
     <div class="workflow-canvas" 
+         data-workflow-id="@Model.Workflow.Id"
          data-workflow-is-definition="@Model.Workflow.IsDefinition().ToString().ToLower()"
          data-workflow-metadata="@workflowMetadataJson" 
          data-workflow-status="@Model.Workflow.Status"

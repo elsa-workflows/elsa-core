@@ -40,7 +40,7 @@
         @foreach (var workflowSummary in Model)
         {
             var workflowDefinition = workflowSummary.Workflow;
-            var workflowId = workflowDefinition.Metadata.Id;
+            var workflowId = workflowDefinition.Id;
             var rowClass = index % 2 == 0 ? "even" : "odd";
             index++;
 
@@ -64,7 +64,7 @@
                         <a asp-action="Finished" asp-route-parentId="@workflowId" class="btn btn-sm btn-success">@T["Finished"] <span class="badge badge-light">@workflowSummary.NumFinished</span></a>
                     }
                 </td>
-                <td><a asp-action="Edit" asp-route-id="@workflowDefinition.Metadata.Id">@T["edit"]</a> | delete | enable</td>
+                <td><a asp-action="Edit" asp-route-id="@workflowDefinition.Id">@T["edit"]</a> | delete | enable</td>
             </tr>
         }
         </tbody>

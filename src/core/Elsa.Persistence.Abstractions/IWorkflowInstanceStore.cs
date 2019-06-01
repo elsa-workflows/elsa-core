@@ -7,11 +7,11 @@ using Elsa.Models;
 
 namespace Elsa.Persistence
 {
-    public interface IWorkflowInstanceStore
+    public interface IWorkflowInstanceStore : IWorkflowStore
     {   
-        Task SaveAsync(Workflow workflow, CancellationToken cancellationToken);
-        Task<IEnumerable<Workflow>> ListAllAsync(CancellationToken cancellationToken);
         Task<IEnumerable<Tuple<Workflow, IActivity>>> ListByBlockingActivityAsync(string workflowType, CancellationToken cancellationToken);
+        Task<IEnumerable<Workflow>> ListByStatusAsync(string parentId, WorkflowStatus status, CancellationToken cancellationToken);
+        Task<IEnumerable<Workflow>> ListByStatusAsync(WorkflowStatus status, CancellationToken cancellationToken);
     }
     
     public static class WorkflowInstanceStoreExtensions

@@ -19,7 +19,7 @@ namespace Elsa.Persistence.FileSystem.Extensions
         public static IServiceCollection AddFileSystemWorkflowInstanceStoreProvider(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddFileSystemServices(configuration);
-            services.TryAddSingleton<IWorkflowInstanceStore, FileSystemWorkflowInstanceStore>();
+            services.TryAddSingleton<IWorkflowInstanceStore, FileSystemWorkflowInstanceStoreBase>();
 
             return services;
         }

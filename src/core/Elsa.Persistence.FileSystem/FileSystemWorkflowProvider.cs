@@ -57,7 +57,8 @@ namespace Elsa.Persistence.FileSystem
 
         private void EnsureWorkflowsDirectory(string path)
         {
-            fileSystem.Directory.CreateDirectory(Path.GetDirectoryName(path));
+            var directoryPath = Path.HasExtension(path) ? Path.GetDirectoryName(path) : path;
+            fileSystem.Directory.CreateDirectory(directoryPath);
         }
     }
 }

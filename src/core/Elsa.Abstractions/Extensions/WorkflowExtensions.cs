@@ -8,7 +8,7 @@ namespace Elsa.Extensions
 {
     public static class WorkflowExtensions
     {
-        public static bool IsDefinition(this Workflow workflow) => workflow.ParentId == null;
+        public static bool IsDefinition(this Workflow workflow) => string.IsNullOrWhiteSpace(workflow.ParentId);
         public static bool IsInstance(this Workflow workflow) => !workflow.IsDefinition();
 
         public static bool IsHalted(this Workflow workflow) =>

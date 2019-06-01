@@ -282,7 +282,7 @@ In fact, Elsa Workflows is taken & adapted from Orchard Core's Workflows module.
 - Elsa Workflows can execute in any .NET Core application without taking a dependency on any Orchard Core packages (not to be confused with Elsa Workflows Designer, which takes advantage of some Orchard Core packages).
 - Elsa Workflows separates activity models from activity execution logic.
 
-I am a huge fan of Orchard Core, and its Workflows module is in my opinion one of its biggest gems. In fact, the Elsa Workflows web-based designer depends on Orchard Core Framework packages because Orchard Core is that useful!
+I am a big fan of Orchard Core, and its Workflows module is in my opinion one of its biggest gems. In fact, the Elsa Workflows web-based designer depends on Orchard Core Framework packages because Orchard Core is that useful!
 An important roadmap item is to provide an Orchard Core module called `OrchardCore.ElsaWorkfows`, which uses Elsa's engine and web-based designer within the context of an Orchard Core application and provides Orchard Core-specific activities such as content-related triggers and actions.
 
 As mentioned earlier: this is one of the main reasons that Elsa exists: to enable workflows in any .NET application. Orchard Core included.

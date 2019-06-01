@@ -3,6 +3,7 @@
 ///<reference path='../@types/popper.d.ts' />
 ///<reference path='./workflow-designer-config.ts' />
 ///<reference path='./activity-editor.ts' />
+///<reference path='./activity-picker.ts' />
 ///<reference path="activity-descriptor.ts"/>
 ///<reference path="workflow.ts"/>
 ///<reference path="activity-info.ts"/>
@@ -37,6 +38,7 @@ namespace Elsa {
 
         public getWorkflow = (): IWorkflow => {
             const workflowMetadata: IWorkflowMetadata = this.canvasContainer.data('workflow-metadata');
+            const workflowId: string = this.canvasContainer.data('workflow-id');
             const workflowStatus: WorkflowStatus = this.canvasContainer.data('workflow-status');
             const activityElements = this.canvasContainer.find('.activity');
             const activities: IActivity[] = [];
@@ -67,6 +69,8 @@ namespace Elsa {
             }
 
             return {
+                id: workflowId,
+                parentId: null,
                 metadata: workflowMetadata,
                 activities: activities,
                 connections: connections,
