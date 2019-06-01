@@ -328,12 +328,7 @@ TODO: describe all the steps to add packages and register services.
 
 TODO: describe all the steps to add packages and register services.
 
-## Building & Running Elsa Sourcecode
-
-Although Elsa is distributed as NuGet Packages for you to reference from your own .NET applications, when contributing, troubleshooting or see how things work, you'll want to clone the repository and get that up & running.
-Follow below steps to do just thar.
-
-### Running Elsa Workflows Dashboard
+## Running Elsa Workflows Dashboard
 
 In order to run Elsa on your local machine, follow these steps:
 
