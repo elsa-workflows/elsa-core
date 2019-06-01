@@ -18,7 +18,7 @@ namespace Elsa.Persistence.Specifications
             var query =
                 from activity in value.Activities
                 where value.IsDefinition()
-                      && activity.Name == ActivityName
+                      && activity.TypeName == ActivityName
                       && !value.Connections.Select(x => x.Target.Activity).Contains(activity)
                 select activity;
 

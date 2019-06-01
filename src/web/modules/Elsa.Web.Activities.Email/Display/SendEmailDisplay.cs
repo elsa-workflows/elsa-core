@@ -22,5 +22,9 @@ namespace Elsa.Web.Activities.Email.Display
             activity.Subject = model.Subject.ToWorkflowExpression<string>();
             activity.Body = model.Body.ToWorkflowExpression<string>();
         }
+
+        public SendEmailDisplay(IActivityDesignerStore designerStore) : base(designerStore)
+        {
+        }
     }
 }

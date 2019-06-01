@@ -19,7 +19,7 @@ namespace Elsa.Persistence.InMemory
             var query =
                 from workflow in workflows
                 from activity in workflow.BlockingActivities
-                where activity.Name == workflowType
+                where activity.TypeName == workflowType
                 select Tuple.Create(workflow, activity);
 
             return query.Distinct();

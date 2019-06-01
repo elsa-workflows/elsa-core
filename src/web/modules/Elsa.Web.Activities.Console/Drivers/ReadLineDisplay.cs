@@ -5,5 +5,9 @@ namespace Elsa.Web.Activities.Console.Drivers
 {
     public class ReadLineDisplay : ActivityDisplayDriver<ReadLine>
     {
+        public ReadLineDisplay(IActivityDesignerStore designerStore) : base(designerStore)
+        {
+            
+        }
     }
 }

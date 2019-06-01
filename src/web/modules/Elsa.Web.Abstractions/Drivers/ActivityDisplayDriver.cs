@@ -1,5 +1,7 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Extensions;
 using Elsa.Web.ViewModels;
 using OrchardCore.DisplayManagement.Handlers;
 using OrchardCore.DisplayManagement.ModelBinding;
@@ -12,16 +14,25 @@ namespace Elsa.Web.Drivers
     /// </summary>
     public abstract class ActivityDisplayDriver<TActivity> : DisplayDriver<IActivity, TActivity> where TActivity : class, IActivity
     {
-        public override IDisplayResult Display(TActivity model)
+        public IActivityDesignerStore DesignerStore { get; }
+
+        public ActivityDisplayDriver(IActivityDesignerStore designerStore)
         {
+            DesignerStore = designerStore;
+        }
+
+        public override async Task<IDisplayResult> DisplayAsync(TActivity model, IUpdateModel updater)
+        {
+            var designer = await DesignerStore.GetByTypeNameAsync(model.TypeName, CancellationToken.None);
+            
             return Combine(
-                Shape(GetDesignShapeType(model), new ActivityShapeModel<TActivity>(model)).Location("Design", "Content"),
-                Shape(GetCardShapeType(model), new ActivityShapeModel<TActivity>(model)).Location("Card", "Content")
+                Shape(GetDesignShapeType(model), new ActivityShapeModel<TActivity>(model, designer)).Location("Design", "Content"),
+                Shape(GetCardShapeType(model), new ActivityShapeModel<TActivity>(model, designer)).Location("Card", "Content")
             );
         }
 
-        protected string GetDesignShapeType(IActivity activity) => $"{activity.Name}_Design";
-        protected string GetCardShapeType(IActivity activity) => $"{activity.Name}_Card";
+        protected string GetDesignShapeType(IActivity activity) => $"{activity.TypeName}_Design";
+        protected string GetCardShapeType(IActivity activity) => $"{activity.TypeName}_Card";
     }
 
     /// <summary>
@@ -31,6 +42,10 @@ namespace Elsa.Web.Drivers
         where TActivity : class, IActivity
         where TEditViewModel : class, new()
     {
+        protected ActivityDisplayDriver(IActivityDesignerStore designerStore) : base(designerStore)
+        {
+        }
+        
         public override IDisplayResult Edit(TActivity model)
         {
             var result = Initialize(
@@ -85,6 +100,7 @@ namespace Elsa.Web.Drivers
         {
         }
 
-        protected virtual string GetEditorShapeType(TActivity activity) => $"{activity.Name}_Edit";
+        protected virtual string GetEditorShapeType(TActivity activity) => $"{activity.TypeName}_Edit";
+
     }
 }

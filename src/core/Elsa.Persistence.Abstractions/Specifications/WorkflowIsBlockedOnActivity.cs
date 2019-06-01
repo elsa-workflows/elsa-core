@@ -17,7 +17,7 @@ namespace Elsa.Persistence.Specifications
         {
             var query =
                 from activity in value.BlockingActivities 
-                where value.IsInstance() && activity.Name == ActivityName
+                where value.IsInstance() && activity.TypeName == ActivityName
                 select activity;
 
             return query.Any();

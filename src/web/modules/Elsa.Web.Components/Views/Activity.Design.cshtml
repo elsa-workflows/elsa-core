@@ -9,20 +9,21 @@
 @{
     var activity = (IActivity) Model.Activity;
     var descriptor = (ActivityDescriptor) Model.ActivityDescriptor;
+    var designer = (ActivityDesignerDescriptor) Model.ActivityDesigner;
     var id = activity.Id;
     var endpoints = (IList<LocalizedString>) Model.Endpoints;
     var serializerSettings = new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver() };
     var activityJson = JsonConvert.SerializeObject(activity, serializerSettings);
     var activityEndpoints = JsonConvert.SerializeObject(endpoints, serializerSettings);
-    var designer = (ActivityDesignerMetadata) Model.Designer;
+    var designerMetadata = (ActivityDesignerMetadata) Model.Designer;
     var hasFaulted = (bool)Model.HasFaulted;
     var hasExecuted = (bool)Model.HasExecuted;
     var isBlocking = (bool)Model.IsBlocking;
     var isDefinition = (bool)Model.WorkflowIsDefinition;
     var isInstance = !isDefinition;
     var cssClasses = new List<string> { "activity" };
-    var left = designer.X;
-    var top = designer.Y;
+    var left = designerMetadata.X;
+    var top = designerMetadata.Y;
 
     if (isInstance)
     {
@@ -52,8 +53,8 @@
     class="@activityClass"
     style="left: @(left)px; top: @(top)px;"
     id="@($"activity-{id}")"
-    title="@descriptor.DisplayText"
-    data-activity-name="@descriptor.Name"
+    title="@designer.DisplayName"
+    data-activity-name="@descriptor.ActivityTypeName"
     data-activity-id="@id"
     data-activity-model="@activityJson"
     data-activity-endpoints="@activityEndpoints"

@@ -1,8 +1,13 @@
 ﻿using System;
+using Elsa.Attributes;
 using Elsa.Models;
 
 namespace Elsa.Activities.Http.Activities
 {
+    [DisplayName("HTTP Request Trigger")]
+    [Category("HTTP")]
+    [Description("Triggers when an incoming HTTP request is received.")]
+    [IsTrigger]
     public class HttpRequestTrigger : Activity
     {
         /// <summary>

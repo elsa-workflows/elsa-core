@@ -12,18 +12,18 @@ namespace Elsa.Serialization
     {
         private readonly IWorkflowTokenizer workflowTokenizer;
         private readonly ITokenFormatterProvider tokenFormatterProvider;
-        private readonly IActivityLibrary activityLibrary;
+        private readonly IActivityStore activityStore;
         private readonly IIdGenerator idGenerator;
 
         public WorkflowSerializer(
             IWorkflowTokenizer workflowTokenizer, 
             ITokenFormatterProvider tokenFormatterProvider,
-            IActivityLibrary activityLibrary, 
+            IActivityStore activityStore,
             IIdGenerator idGenerator)
         {
             this.workflowTokenizer = workflowTokenizer;
             this.tokenFormatterProvider = tokenFormatterProvider;
-            this.activityLibrary = activityLibrary;
+            this.activityStore = activityStore;
             this.idGenerator = idGenerator;
         }
         
@@ -48,11 +48,11 @@ namespace Elsa.Serialization
         public async Task<Workflow> DeserializeAsync(JToken token, CancellationToken cancellationToken)
         {
             var workflow = await workflowTokenizer.DetokenizeWorkflowAsync(token, cancellationToken);
-            var descriptors = await activityLibrary.ListAsync(cancellationToken).ToDictionaryAsync(x => x.Name);
+            var descriptors = await activityStore.ListAsync(cancellationToken).ToDictionaryAsync(x => x.ActivityTypeName);
 
             foreach (var activity in workflow.Activities)
             {
-                activity.Descriptor = descriptors[activity.Name];
+                activity.Descriptor = descriptors[activity.TypeName];
             }
             
             return workflow;

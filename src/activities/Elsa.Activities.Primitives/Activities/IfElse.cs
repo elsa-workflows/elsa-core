@@ -1,8 +1,13 @@
-﻿using Elsa.Expressions;
+﻿using Elsa.Attributes;
+using Elsa.Expressions;
 using Elsa.Models;
 
 namespace Elsa.Activities.Primitives.Activities
 {
+    [Category("Control Flow")]
+    [DisplayName("If/Else")]
+    [Description("Evaluate a boolean condition and continues execution based on the outcome.")]
+    [Endpoints("True", "False")]
     public class IfElse : Activity
     {
         public IfElse()

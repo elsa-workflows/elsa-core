@@ -5,5 +5,8 @@ namespace Elsa.Web.Activities.Primitives.Drivers
 {
     public class ForEachDisplay : ActivityDisplayDriver<ForEach>
     {
+        public ForEachDisplay(IActivityDesignerStore designerStore) : base(designerStore)
+        {
+        }
     }
 }

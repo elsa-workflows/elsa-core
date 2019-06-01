@@ -62,12 +62,12 @@ namespace Elsa
             Func<ActivityExecutionContext, IActivityDriver, Task<ActivityExecutionResult>> invokeAction)
         {
             var activityContext = workflowContext.CreateActivityExecutionContext(activity);
-            var driver = driverRegistry.GetDriver(activity.Name);
+            var driver = driverRegistry.GetDriver(activity.TypeName);
           
             try
             {
                 if (driver == null)
-                    throw new WorkflowException($"No driver found for activity {activity.Name}");
+                    throw new WorkflowException($"No driver found for activity {activity.TypeName}");
 
                 return await invokeAction(activityContext, driver);
             }

@@ -16,5 +16,9 @@ namespace Elsa.Web.Activities.Cron.Display
         {
             activity.CronExpression = model.CronExpression.ToWorkflowExpression<string>();
         }
+
+        public CronTriggerDisplay(IActivityDesignerStore designerStore) : base(designerStore)
+        {
+        }
     }
 }

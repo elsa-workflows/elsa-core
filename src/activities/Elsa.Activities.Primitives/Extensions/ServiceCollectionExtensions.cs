@@ -8,13 +8,13 @@ namespace Elsa.Activities.Primitives.Extensions
     {
         public static IServiceCollection AddPrimitiveWorkflowDescriptors(this IServiceCollection services)
         {
-            return services.AddActivityDescriptors<ActivityDescriptors>();
+            return services.AddActivityDesigners<ActivityDesignerProvider>();
         }
         
         public static IServiceCollection AddPrimitiveActivities(this IServiceCollection services)
         {
             return services
-                .AddPrimitiveWorkflowDescriptors()
+                .AddActivityProvider<ActivityProvider>()
                 .AddActivityDriver<SetVariableDriver>()
                 .AddActivityDriver<ForEachDriver>()
                 .AddActivityDriver<ForkDriver>()

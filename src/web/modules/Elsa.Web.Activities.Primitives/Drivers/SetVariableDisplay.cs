@@ -18,5 +18,9 @@ namespace Elsa.Web.Activities.Primitives.Drivers
             activity.VariableName = model.VariableName;
             activity.ValueExpression = model.ValueExpression.ToWorkflowExpression<object>();
         }
+
+        public SetVariableDisplay(IActivityDesignerStore designerStore) : base(designerStore)
+        {
+        }
     }
 }

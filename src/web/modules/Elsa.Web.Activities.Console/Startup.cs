@@ -11,7 +11,7 @@ namespace Elsa.Web.Activities.Console
         public override void ConfigureServices(IServiceCollection services)
         {
             services
-                .AddConsoleWorkflowDescriptors()
+                .AddConsoleDesigners()
                 .AddActivityDisplay<ReadLineDisplay>()
                 .AddActivityDisplay<WriteLineDisplay>();
         }

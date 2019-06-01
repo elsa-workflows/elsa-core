@@ -19,16 +19,16 @@ namespace Elsa.Serialization.Tokenizers
     public class WorkflowTokenizer : IWorkflowTokenizer
     {
         private readonly ITokenizerInvoker tokenizerInvoker;
-        private readonly IActivityLibrary activityLibrary;
+        private readonly IActivityStore activityStore;
         private readonly IIdGenerator idGenerator;
         private readonly IClock clock;
         private readonly JsonSerializerSettings serializerSettings;
         private readonly JsonSerializer jsonSerializer;
 
-        public WorkflowTokenizer(ITokenizerInvoker tokenizerInvoker, IActivityLibrary activityLibrary, IIdGenerator idGenerator, IClock clock)
+        public WorkflowTokenizer(ITokenizerInvoker tokenizerInvoker, IActivityStore activityStore, IIdGenerator idGenerator, IClock clock)
         {
             this.tokenizerInvoker = tokenizerInvoker;
-            this.activityLibrary = activityLibrary;
+            this.activityStore = activityStore;
             this.idGenerator = idGenerator;
             this.clock = clock;
 
@@ -125,7 +125,7 @@ namespace Elsa.Serialization.Tokenizers
         {
             var name = token["name"].Value<string>();
             var descriptor = await GetActivityDescriptorAsync(name, cancellationToken);
-            var activityType = descriptor?.ActivityType ?? typeof(UnknownActivity);
+            var activityType = descriptor?.ActivityModelType ?? typeof(UnknownActivity);
             var activity = (IActivity) jsonSerializer.Deserialize(token.CreateReader(), activityType);
 
             activity.Descriptor = descriptor;
@@ -318,7 +318,7 @@ namespace Elsa.Serialization.Tokenizers
 
         private Task<ActivityDescriptor> GetActivityDescriptorAsync(string activityName, CancellationToken cancellationToken)
         {
-            return activityLibrary.GetByNameAsync(activityName, cancellationToken);
+            return activityStore.GetByNameAsync(activityName, cancellationToken);
         }
     }
 }

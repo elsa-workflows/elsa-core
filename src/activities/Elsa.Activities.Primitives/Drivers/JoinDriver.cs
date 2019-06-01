@@ -61,7 +61,7 @@ namespace Elsa.Activities.Primitives.Drivers
             var inboundTransitionsQuery =
                 from connection in outboundConnections
                 let destinationActivity = connection.Target.Activity
-                where destinationActivity.Name == nameof(Join)
+                where destinationActivity.TypeName == nameof(Join)
                 select connection;
 
             var inboundConnections = inboundTransitionsQuery.ToList();

@@ -9,18 +9,18 @@ namespace Elsa.Activities.Cron.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddCronDescriptors(this IServiceCollection services)
+        public static IServiceCollection AddCronDesigners(this IServiceCollection services)
         {
-            return services.AddActivityDescriptors<ActivityDescriptors>();
+            return services.AddActivityDesigners<ActivityProvider>();
         }
 
         public static IServiceCollection AddCronActivities(this IServiceCollection services, IConfiguration configuration)
         {
             return services
-                .AddCronDescriptors()
                 .AddOptions()
                 .Configure<CronOptions>(configuration)
                 .AddHostedService<CronHostedService>()
+                .AddActivityProvider<ActivityProvider>()
                 .AddActivityDriver<CronTriggerDriver>();
         }
     }

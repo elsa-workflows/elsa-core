@@ -1,11 +1,15 @@
-﻿using Elsa.Expressions;
+﻿using Elsa.Attributes;
+using Elsa.Expressions;
 using Elsa.Models;
 
 namespace Elsa.Activities.Console.Activities 
 {
     /// <summary>
-    /// Writes a text string to the specified stream.
+    /// Writes a text string to the console.
     /// </summary>
+    [DisplayName("Write Line")]
+    [Category("Console")]
+    [Description("Write a line to the console")]
     public class WriteLine : Activity
     {
         public WriteLine()

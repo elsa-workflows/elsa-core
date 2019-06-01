@@ -16,5 +16,9 @@ namespace Elsa.Web.Activities.Console.Drivers
         {
             activity.TextExpression = new WorkflowExpression<string>(activity.TextExpression.Syntax, model.TextExpression);
         }
+
+        public WriteLineDisplay(IActivityDesignerStore designerStore) : base(designerStore)
+        {
+        }
     }
 }

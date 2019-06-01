@@ -11,7 +11,7 @@ namespace Elsa.Web.Activities.Cron
         public override void ConfigureServices(IServiceCollection services)
         {
             services
-                .AddCronDescriptors()
+                .AddCronDesigners()
                 .AddActivityDisplay<CronTriggerDisplay>();
         }
     }

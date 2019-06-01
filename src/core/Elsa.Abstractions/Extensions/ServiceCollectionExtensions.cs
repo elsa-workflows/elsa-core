@@ -4,19 +4,15 @@ namespace Elsa.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddActivityDescriptors<T>(this IServiceCollection services)
-            where T : class, IActivityDescriptorProvider
-        {
-            services.AddSingleton<IActivityDescriptorProvider, T>();
-            return services;
-        }
-        
+        public static IServiceCollection AddActivityProvider<T>(this IServiceCollection services) where T : class, IActivityProvider => services.AddSingleton<IActivityProvider, T>();
+        public static IServiceCollection AddActivityDesigners<T>(this IServiceCollection services) where T : class, IActivityDesignerProvider => services.AddSingleton<IActivityDesignerProvider, T>();
+
         public static IServiceCollection AddActivityDriver<T>(this IServiceCollection services)
             where T : class, IActivityDriver
         {
-            services.AddSingleton<T>();
-            services.AddSingleton<IActivityDriver>(sp => sp.GetRequiredService<T>());
-            return services;
+            return services
+                .AddSingleton<T>()
+                .AddSingleton<IActivityDriver>(sp => sp.GetRequiredService<T>());
         }
     }
 }

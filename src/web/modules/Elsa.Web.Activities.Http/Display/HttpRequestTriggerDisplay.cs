@@ -19,5 +19,9 @@ namespace Elsa.Web.Activities.Http.Display
             activity.Method = model.Method;
             activity.ReadContent = model.ReadContent;
         }
+
+        public HttpRequestTriggerDisplay(IActivityDesignerStore designerStore) : base(designerStore)
+        {
+        }
     }
 }

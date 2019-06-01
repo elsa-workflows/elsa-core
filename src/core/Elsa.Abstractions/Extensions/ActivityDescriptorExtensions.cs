@@ -17,8 +17,8 @@ namespace Elsa.Extensions
         public static IActivity InstantiateActivity(this ActivityDescriptor descriptor, JToken token = default)
         {
             var activityObject = token == null
-                ? Activator.CreateInstance(descriptor.ActivityType)
-                : token.ToObject(descriptor.ActivityType, JsonSerializer.Create(new JsonSerializerSettings
+                ? Activator.CreateInstance(descriptor.ActivityModelType)
+                : token.ToObject(descriptor.ActivityModelType, JsonSerializer.Create(new JsonSerializerSettings
                 {
                     ContractResolver = new CamelCasePropertyNamesContractResolver()
                 }));

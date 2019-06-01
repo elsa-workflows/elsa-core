@@ -12,6 +12,7 @@ namespace Elsa.Web.Components
         {
             services
                 .AddWorkflowsCore()
+                .AddWorkflowsDesigner()
                 .AddScoped<IActivityDisplayManager, ActivityDisplayManager>()
                 .AddScoped<IActivityShapeFactory, ActivityShapeFactory>();
         }

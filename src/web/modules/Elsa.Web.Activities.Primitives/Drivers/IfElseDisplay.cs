@@ -16,5 +16,9 @@ namespace Elsa.Web.Activities.Primitives.Drivers
         {
             activity.ConditionExpression = model.ConditionExpression.ToWorkflowExpression<bool>();
         }
+
+        public IfElseDisplay(IActivityDesignerStore designerStore) : base(designerStore)
+        {
+        }
     }
 }

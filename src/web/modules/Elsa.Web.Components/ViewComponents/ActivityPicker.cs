@@ -12,29 +12,32 @@ namespace Elsa.Web.Components.ViewComponents
 {
     public class ActivityPicker : ViewComponent
     {
-        private readonly IActivityLibrary activityLibrary;
+        private readonly IActivityStore activityStore;
+        private readonly IActivityDesignerStore designerStore;
         private readonly IActivityShapeFactory activityShapeFactory;
 
-        public ActivityPicker(IActivityLibrary activityLibrary, IActivityShapeFactory activityShapeFactory)
+        public ActivityPicker(IActivityStore activityStore, IActivityDesignerStore designerStore, IActivityShapeFactory activityShapeFactory)
         {
-            this.activityLibrary = activityLibrary;
+            this.activityStore = activityStore;
+            this.designerStore = designerStore;
             this.activityShapeFactory = activityShapeFactory;
         }
 
         public async Task<IViewComponentResult> InvokeAsync(CancellationToken cancellationToken)
         {
-            var descriptors = await activityLibrary.ListBrowsableAsync(cancellationToken).ToListAsync();
-            var categories = await activityLibrary.GetCategoriesAsync(cancellationToken);
+            var descriptors = await designerStore.ListBrowsableAsync(cancellationToken).ToListAsync();
+            var categories = await designerStore.GetCategoriesAsync(cancellationToken);
             var cardShapes = await Task.WhenAll(descriptors.Select(x => CreateCardShapeAsync(x, cancellationToken)));
             var viewModel = new ActivityPickerViewModel(categories, descriptors, cardShapes);
 
             return View(viewModel);
         }
 
-        private Task<IShape> CreateCardShapeAsync(ActivityDescriptor descriptor, CancellationToken cancellationToken)
+        private async Task<IShape> CreateCardShapeAsync(ActivityDesignerDescriptor designer, CancellationToken cancellationToken)
         {
-            var activity = descriptor.InstantiateActivity();
-            return activityShapeFactory.BuildCardShapeAsync(activity, cancellationToken);
+            var descriptor = await activityStore.GetByNameAsync(designer.ActivityTypeName, cancellationToken); 
+            var activity =  descriptor.InstantiateActivity();
+            return await activityShapeFactory.BuildCardShapeAsync(activity, cancellationToken);
         }
     }
 }

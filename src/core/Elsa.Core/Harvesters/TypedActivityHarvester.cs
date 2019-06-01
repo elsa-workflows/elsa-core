@@ -8,9 +8,9 @@ namespace Elsa.Harvesters
 {
     public class TypedActivityHarvester : IActivityHarvester
     {
-        private readonly IEnumerable<IActivityDescriptorProvider> providers;
+        private readonly IEnumerable<IActivityProvider> providers;
 
-        public TypedActivityHarvester(IEnumerable<IActivityDescriptorProvider> providers)
+        public TypedActivityHarvester(IEnumerable<IActivityProvider> providers)
         {
             this.providers = providers;
         }

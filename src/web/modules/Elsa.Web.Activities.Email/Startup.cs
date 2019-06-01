@@ -11,7 +11,7 @@ namespace Elsa.Web.Activities.Email
         public override void ConfigureServices(IServiceCollection services)
         {
             services
-                .AddEmailDescriptors()
+                .AddEmailDesigners()
                 .AddActivityDisplay<SendEmailDisplay>();
         }
     }

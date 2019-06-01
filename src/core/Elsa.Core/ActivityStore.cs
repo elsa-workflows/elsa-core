@@ -6,11 +6,11 @@ using Elsa.Models;
 
 namespace Elsa
 {
-    public class ActivityLibrary : IActivityLibrary
+    public class ActivityStore : IActivityStore
     {
         private readonly IEnumerable<IActivityHarvester> providers;
 
-        public ActivityLibrary(IEnumerable<IActivityHarvester> providers)
+        public ActivityStore(IEnumerable<IActivityHarvester> providers)
         {
             this.providers = providers;
         }

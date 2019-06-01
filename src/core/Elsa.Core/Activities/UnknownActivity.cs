@@ -4,7 +4,7 @@ using Elsa.Models;
 namespace Elsa.Activities
 {
     [Browsable(false)]
-    public class UnknownActivity : Activity
+    public class UnknownActivity : Models.Activity
     {
     }
 }

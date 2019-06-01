@@ -15,5 +15,9 @@ namespace Elsa.Web.Activities.Primitives.Drivers
         {
             activity.Mode = model.Mode;
         }
+
+        public JoinDisplay(IActivityDesignerStore designerStore) : base(designerStore)
+        {
+        }
     }
 }

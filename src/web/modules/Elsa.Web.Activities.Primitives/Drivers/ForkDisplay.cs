@@ -26,5 +26,9 @@ namespace Elsa.Web.Activities.Primitives.Drivers
                     .ToList()
                 : new string[0];
         }
+
+        public ForkDisplay(IActivityDesignerStore designerStore) : base(designerStore)
+        {
+        }
     }
 }

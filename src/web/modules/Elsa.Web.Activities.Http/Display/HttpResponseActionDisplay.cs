@@ -23,5 +23,9 @@ namespace Elsa.Web.Activities.Http.Display
             activity.ResponseHeaders = model.ResponseHeaders.ToWorkflowExpression<string>();
             activity.ContentType = model.ContentType.ToWorkflowExpression<string>();
         }
+
+        public HttpResponseActionDisplay(IActivityDesignerStore designerStore) : base(designerStore)
+        {
+        }
     }
 }

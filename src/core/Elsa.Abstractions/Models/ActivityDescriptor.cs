@@ -1,93 +1,40 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Reflection;
+using Elsa.Attributes;
 using Microsoft.Extensions.Localization;
 
 namespace Elsa.Models
 {
     public class ActivityDescriptor
     {
-        public static ActivityDescriptor ForAction<T>(
-            LocalizedString category,
-            LocalizedString displayText,
-            LocalizedString description,
-            params LocalizedString[] endpoints) =>
-            For<T>(category, displayText, description, false, true, endpoints);
-
-        public static ActivityDescriptor ForTrigger<T>(
-            LocalizedString category,
-            LocalizedString displayText,
-            LocalizedString description,
-            params LocalizedString[] endpoints) =>
-            For<T>(category, displayText, description, true, true, endpoints);
-
-        public static ActivityDescriptor For<T>(
-            LocalizedString category,
-            LocalizedString displayText,
-            LocalizedString description,
-            bool isTrigger,
-            bool isBrowsable,
-            params LocalizedString[] endpoints) =>
-            new ActivityDescriptor(typeof(T), category, displayText, description, isTrigger, isBrowsable, endpoints);
-
-        public static ActivityDescriptor For<T>(
-            LocalizedString category,
-            LocalizedString displayText,
-            LocalizedString description,
-            bool isTrigger,
-            bool isBrowsable,
-            Func<T, IEnumerable<LocalizedString>> getEndpoints) where T : IActivity =>
-            new ActivityDescriptor(typeof(T), category, displayText, description, isTrigger, isBrowsable, a => getEndpoints((T) a));
+        public static ActivityDescriptor For<T>() where T : IActivity => For(typeof(T));
+        
+        public static ActivityDescriptor For(Type activityModelType)
+        {
+            var isTriggerAttribute = activityModelType.GetCustomAttribute<IsTriggerAttribute>();
+            var isTrigger = isTriggerAttribute?.IsTrigger ?? false;
+            
+            return new ActivityDescriptor(activityModelType.Name, activityModelType, isTrigger);
+        }
 
         public ActivityDescriptor()
         {
         }
 
         public ActivityDescriptor(
-            Type activityType,
-            LocalizedString category,
-            LocalizedString displayText,
-            LocalizedString description,
-            bool isTrigger,
-            bool isBrowsable,
-            params LocalizedString[] endpoints)
-            : this(
-                activityType,
-                category,
-                displayText,
-                description,
-                isTrigger,
-                isBrowsable,
-                a => endpoints)
+            string activityTypeName,
+            Type activityModelType,
+            bool isTrigger)
         {
-        }
-
-        public ActivityDescriptor(
-            Type activityType,
-            LocalizedString category,
-            LocalizedString displayText,
-            LocalizedString description,
-            bool isTrigger,
-            bool isBrowsable,
-            Func<IActivity, IEnumerable<LocalizedString>> getEndpoints)
-        {
-            ActivityType = activityType;
-            Name = activityType.Name;
-            Category = category;
-            DisplayText = displayText;
-            Description = description;
+            ActivityTypeName = activityTypeName;
+            ActivityModelType = activityModelType;
             IsTrigger = isTrigger;
-            IsBrowsable = isBrowsable;
-            GetEndpoints = getEndpoints;
         }
 
-        public bool IsBrowsable { get; set; } = true;
-        public bool IsTrigger { get; set; }
-        public string Name { get; set; }
-        public LocalizedString Category { get; set; }
-        public Type ActivityType { get; set; }
-        public LocalizedString DisplayText { get; set; }
-        public LocalizedString Description { get; set; }
-        public Func<IActivity, IEnumerable<LocalizedString>> GetEndpoints { get; set; } = a => Enumerable.Empty<LocalizedString>();
+        
+        public bool IsTrigger { get; }
+        public string ActivityTypeName { get; }
+        public Type ActivityModelType { get; }
     }
 }

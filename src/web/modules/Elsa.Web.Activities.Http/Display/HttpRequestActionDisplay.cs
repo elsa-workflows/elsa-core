@@ -33,5 +33,9 @@ namespace Elsa.Web.Activities.Http.Display
                 .Where(x => !string.IsNullOrWhiteSpace(x))
                 .Select(int.Parse));
         }
+
+        public HttpRequestActionDisplay(IActivityDesignerStore designerStore) : base(designerStore)
+        {
+        }
     }
 }

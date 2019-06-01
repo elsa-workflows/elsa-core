@@ -8,7 +8,7 @@ namespace Elsa.Handlers
     {
         protected override ActivityExecutionResult OnExecute(UnknownActivity activity, WorkflowExecutionContext workflowContext)
         {
-            return Fault($"Unknown activity: {activity.Name}, ID: {activity.Id}");
+            return Fault($"Unknown activity: {activity.TypeName}, ID: {activity.Id}");
         }
     }
 }

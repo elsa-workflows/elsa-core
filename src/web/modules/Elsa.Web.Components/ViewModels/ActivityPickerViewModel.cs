@@ -10,7 +10,7 @@ namespace Elsa.Web.Components.ViewModels
     {
         public ActivityPickerViewModel(
             IEnumerable<LocalizedString> categories, 
-            IEnumerable<ActivityDescriptor> activityDescriptors, 
+            IEnumerable<ActivityDesignerDescriptor> activityDescriptors, 
             IEnumerable<IShape> cardShapes)
         {
             ActivityCategories = categories.ToList();
@@ -19,7 +19,7 @@ namespace Elsa.Web.Components.ViewModels
         }
 
         public IReadOnlyCollection<LocalizedString> ActivityCategories { get; }
-        public IReadOnlyCollection<ActivityDescriptor> ActivityDescriptors { get; }
+        public IReadOnlyCollection<ActivityDesignerDescriptor> ActivityDescriptors { get; }
         public IReadOnlyCollection<IShape> ActivityCardShapes { get; }
     }
 }

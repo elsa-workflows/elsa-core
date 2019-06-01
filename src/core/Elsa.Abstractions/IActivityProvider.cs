@@ -5,7 +5,7 @@ using Elsa.Models;
 
 namespace Elsa
 {
-    public interface IActivityDescriptorProvider
+    public interface IActivityProvider
     {
         Task<IEnumerable<ActivityDescriptor>> DescribeActivitiesAsync(CancellationToken cancellationToken);
     }
