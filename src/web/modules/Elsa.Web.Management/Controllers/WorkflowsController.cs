@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Persistence;
-using Elsa.Persistence.Specifications;
 using Elsa.Serialization;
 using Elsa.Serialization.Extensions;
 using Elsa.Web.Management.ViewModels;
@@ -19,61 +18,51 @@ namespace Elsa.Web.Management.Controllers
     [IgnoreAntiforgeryToken]
     public class WorkflowsController : Controller
     {
-        private readonly IWorkflowStore workflowStore;
+        private readonly IWorkflowInstanceStore workflowInstanceStore;
+        private readonly IWorkflowDefinitionStore workflowDefinitionStore;
         private readonly IWorkflowSerializer workflowSerializer;
         private readonly ITokenFormatterProvider tokenFormatterProvider;
-        private readonly IIdGenerator idGenerator;
 
         public WorkflowsController(
-            IWorkflowStore workflowStore,
+            IWorkflowInstanceStore workflowInstanceStore,
+            IWorkflowDefinitionStore workflowDefinitionStore,
             IWorkflowSerializer workflowSerializer,
-            ITokenFormatterProvider tokenFormatterProvider,
-            IIdGenerator idGenerator)
+            ITokenFormatterProvider tokenFormatterProvider)
         {
-            this.workflowStore = workflowStore;
+            this.workflowInstanceStore = workflowInstanceStore;
+            this.workflowDefinitionStore = workflowDefinitionStore;
             this.workflowSerializer = workflowSerializer;
             this.tokenFormatterProvider = tokenFormatterProvider;
-            this.idGenerator = idGenerator;
         }
 
         [HttpGet]
         public async Task<IActionResult> Definitions(CancellationToken cancellationToken)
         {
-            var workflows = await workflowStore.GetManyAsync(new WorkflowIsDefinition(), cancellationToken).ToListAsync();
+            var workflows = await workflowDefinitionStore.ListAllAsync(cancellationToken).ToListAsync();
             var viewModels = await Task.WhenAll(workflows.Select(async x => await CreateWorkflowSummaryViewModelAsync(x, cancellationToken)).ToList());
 
             return View(viewModels);
         }
 
         [HttpGet("{parentId}/finished")]
-        public Task<IActionResult> Finished(string parentId, CancellationToken cancellationToken)
+        public async Task<IActionResult> Finished(string parentId, CancellationToken cancellationToken)
         {
-            return Instances(parentId, new WorkflowIsFinished(parentId), cancellationToken);
+            var workflows = await workflowInstanceStore.ListByStatusAsync(parentId, WorkflowStatus.Finished, cancellationToken);
+            return await Instances(parentId, workflows, cancellationToken);
         }
         
         [HttpGet("{parentId}/halted")]
-        public Task<IActionResult> Halted(string parentId, CancellationToken cancellationToken)
+        public async Task<IActionResult> Halted(string parentId, CancellationToken cancellationToken)
         {
-            return Instances(parentId, new WorkflowIsHalted(parentId), cancellationToken);
+            var workflows = await workflowInstanceStore.ListByStatusAsync(parentId, WorkflowStatus.Halted, cancellationToken);
+            return await Instances(parentId, workflows, cancellationToken);
         }
         
         [HttpGet("{parentId}/faulted")]
-        public Task<IActionResult> Faulted(string parentId, CancellationToken cancellationToken)
+        public async Task<IActionResult> Faulted(string parentId, CancellationToken cancellationToken)
         {
-            return Instances(parentId, new WorkflowIsFaulted(parentId), cancellationToken);
-        }
-        
-        private async Task<IActionResult> Instances(string parentId, ISpecification<Workflow, IWorkflowSpecificationVisitor> specification, CancellationToken cancellationToken)
-        {
-            var definition = await workflowStore.GetAsync(parentId, cancellationToken);
-            var workflows = await workflowStore.GetManyAsync(specification, cancellationToken).ToListAsync();
-            var viewModel = new WorkflowInstancesViewModel
-            {
-                Definition = definition,
-                Instances = workflows
-            };
-
-            return View("Instances", viewModel);
+            var workflows = await workflowInstanceStore.ListByStatusAsync(parentId, WorkflowStatus.Faulted, cancellationToken);
+            return await Instances(parentId, workflows, cancellationToken);
         }
 
         [HttpGet("new")]
@@ -93,26 +82,26 @@ namespace Elsa.Web.Management.Controllers
         public async Task<IActionResult> Create([FromBody] JToken workflowData, CancellationToken cancellationToken)
         {
             var workflow = await workflowSerializer.DeserializeAsync(workflowData, cancellationToken);
-            await workflowStore.AddAsync(workflow, cancellationToken);
+            await workflowDefinitionStore.SaveAsync(workflow, cancellationToken);
 
             return Json(new
             {
-                redirect = Url.Action("Edit", new { id = workflow.Metadata.Id })
+                redirect = Url.Action("Edit", new { id = workflow.Id })
             });
         }
 
         [HttpGet("{id}/edit")]
         public async Task<IActionResult> Edit(string id, CancellationToken cancellationToken)
         {
-            var workflow = await workflowStore.GetAsync(id, cancellationToken);
+            var workflow = await workflowDefinitionStore.GetByIdAsync(id, cancellationToken);
             return View(workflow);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(string id, [FromBody] JToken workflowData, CancellationToken cancellationToken)
+        public async Task<IActionResult> Update([FromBody] JToken workflowData, CancellationToken cancellationToken)
         {
             var workflow = await workflowSerializer.DeserializeAsync(workflowData, cancellationToken);
-            await workflowStore.UpdateAsync(workflow, cancellationToken);
+            await workflowDefinitionStore.SaveAsync(workflow, cancellationToken);
             return Ok(workflow);
         }
 
@@ -131,13 +120,25 @@ namespace Elsa.Web.Management.Controllers
         [HttpGet("{id}/details")]
         public async Task<IActionResult> Details(string id, CancellationToken cancellationToken)
         {
-            var workflow = await workflowStore.GetAsync(id, cancellationToken);
+            var workflow = await workflowDefinitionStore.GetByIdAsync(id, cancellationToken);
             return View(workflow);
+        }
+        
+        private async Task<IActionResult> Instances(string parentId, IEnumerable<Workflow> workflows, CancellationToken cancellationToken)
+        {
+            var definition = await workflowDefinitionStore.GetByIdAsync(parentId, cancellationToken);
+            var viewModel = new WorkflowInstancesViewModel
+            {
+                Definition = definition,
+                Instances = workflows.ToList()
+            };
+
+            return View("Instances", viewModel);
         }
 
         private async Task<WorkflowSummaryViewModel> CreateWorkflowSummaryViewModelAsync(Workflow workflow, CancellationToken cancellationToken)
         {
-            var instances = await workflowStore.GetManyAsync(new WorkflowIsInstanceOf(workflow.Metadata.Id), cancellationToken).ToListAsync();
+            var instances = await workflowDefinitionStore.ListAllAsync(workflow.Id, cancellationToken).ToListAsync();
 
             return new WorkflowSummaryViewModel
             {

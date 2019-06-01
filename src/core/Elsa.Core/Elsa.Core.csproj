@@ -15,21 +15,20 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Jint" Version="3.0.0-beta-1466" />
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.1.1" />
-        <PackageReference Include="Microsoft.Extensions.Localization.Abstractions" Version="2.2.0" />
-        <PackageReference Include="Microsoft.Extensions.Logging" Version="2.1.1" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.1.1" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="2.1.1" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="2.1.1" />
-        <PackageReference Include="NodaTime.Serialization.JsonNet" Version="2.1.0" />
+        <PackageReference Include="Jint" Version="3.0.0-beta-1526" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.2.0" />
+        <PackageReference Include="Microsoft.Extensions.Localization" Version="2.2.0" />
+        <PackageReference Include="Microsoft.Extensions.Logging" Version="2.2.0" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.2.0" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="2.2.0" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="2.2.0" />
+        <PackageReference Include="NodaTime.Serialization.JsonNet" Version="2.2.0" />
 
         <PackageReference Include="YamlDotNet.NetStandard" Version="4.0.0" />
     </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\Elsa.Abstractions\Elsa.Abstractions.csproj" />
-        <ProjectReference Include="..\Elsa.Persistence.Abstractions\Elsa.Persistence.Abstractions.csproj" />
     </ItemGroup>
 
 </Project>

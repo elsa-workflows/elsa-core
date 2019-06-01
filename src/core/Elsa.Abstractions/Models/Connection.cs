@@ -11,7 +11,7 @@ namespace Elsa.Models
         {
         }
         
-        public Connection(IActivity source, string sourceEndpointName, IActivity target) 
+        public Connection(IActivity source, IActivity target, string sourceEndpointName) 
             : this(new SourceEndpoint(source, sourceEndpointName), new TargetEndpoint(target))
         {
         }

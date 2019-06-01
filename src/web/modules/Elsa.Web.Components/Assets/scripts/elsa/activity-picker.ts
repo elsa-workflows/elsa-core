@@ -7,7 +7,7 @@ namespace Elsa {
 
         private readonly container: JQuery<HTMLElement>;
 
-        constructor(private containerElement: HTMLElement) {
+        constructor(containerElement: HTMLElement) {
             this.container = $(containerElement);
             this.container.find('a[data-activity-name]').on('click', this.onSelectActivityClick);
 
@@ -39,6 +39,7 @@ namespace Elsa {
         };
 
         private onSelectActivityClick = (e: JQuery.Event): void => {
+            debugger;
             e.preventDefault();
 
             const selectedActivityInfo: SelectedActivityInfo = {

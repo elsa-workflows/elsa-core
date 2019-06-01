@@ -3,7 +3,6 @@ using Elsa.Activities.Cron.Extensions;
 using Elsa.Activities.Email.Extensions;
 using Elsa.Activities.Http.Extensions;
 using Elsa.Activities.Primitives.Extensions;
-using Elsa.Extensions;
 using Elsa.Persistence.FileSystem.Extensions;
 using Elsa.Runtime.Extensions;
 using Microsoft.AspNetCore.Builder;
@@ -28,16 +27,13 @@ namespace SampleHost.Web
             services
                 .AddLocalization()
                 .AddWorkflowsHost()
-                .AddWorkflowsFileSystemPersistence(Configuration.GetSection("FileStore"))
-                .AddPrimitiveWorkflowDrivers()
-                .AddConsoleWorkflowDrivers()
-                .AddHttpWorkflowDrivers()
-                .AddEmailDrivers(Configuration.GetSection("Smtp"))
-                .AddCronDrivers(Configuration.GetSection("Cron"));
-            
-            services
-                .AddMvc()
-                .SetCompatibilityVersion(CompatibilityVersion.Latest);
+                .AddFileSystemWorkflowDefinitionStoreProvider(Configuration.GetSection("FileStore"))
+                .AddFileSystemWorkflowInstanceStoreProvider(Configuration.GetSection("FileStore"))
+                .AddPrimitiveActivities()
+                .AddConsoleActivities()
+                .AddHttpActivities()
+                .AddEmailActivities(Configuration.GetSection("Smtp"))
+                .AddCronActivities(Configuration.GetSection("Crontab"));
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
@@ -47,8 +43,8 @@ namespace SampleHost.Web
                 app.UseDeveloperExceptionPage();
             }
 
-            app.UseHttpWorkflows();
-            app.UseMvc();
+            // Add middleware that intercepts requests to be handled by workflows.
+            app.UseHttpActivities();
         }
     }
 }

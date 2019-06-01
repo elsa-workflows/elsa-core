@@ -13,9 +13,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="OrchardCore.DisplayManagement" Version="1.0.0-beta3-70705" />
-        <PackageReference Include="OrchardCore.ResourceManagement" Version="1.0.0-beta3-70705" />
-        <PackageReference Include="OrchardCore.Theme.Targets" Version="1.0.0-beta3-70705" />
+        <PackageReference Include="OrchardCore.DisplayManagement" Version="1.0.0-beta3-70919" />
+        <PackageReference Include="OrchardCore.ResourceManagement" Version="1.0.0-beta3-70919" />
+        <PackageReference Include="OrchardCore.Theme.Targets" Version="1.0.0-beta3-70919" />
     </ItemGroup>
 
     <ItemGroup>

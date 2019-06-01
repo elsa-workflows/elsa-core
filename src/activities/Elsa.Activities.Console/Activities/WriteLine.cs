@@ -8,13 +8,17 @@ namespace Elsa.Activities.Console.Activities
     /// </summary>
     public class WriteLine : Activity
     {
-        public WriteLine() : this(null)
+        public WriteLine()
         {
         }
 
-        public WriteLine(string text)
+        public WriteLine(string text) : this(new WorkflowExpression<string>(PlainTextEvaluator.SyntaxName, text))
         {
-            TextExpression = new WorkflowExpression<string>(PlainTextEvaluator.SyntaxName, text);
+        }
+        
+        public WriteLine(WorkflowExpression<string> textExpression)
+        {
+            TextExpression = textExpression;
         }
         
         public WorkflowExpression<string> TextExpression { get; set; }

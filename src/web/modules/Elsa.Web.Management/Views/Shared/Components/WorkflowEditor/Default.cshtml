@@ -1,10 +1,10 @@
 @using Elsa.Extensions
 @model Workflow
 @{
-    var title = Model.Metadata.Id == null ? T["New Workflow"] : T["Edit {0}", Model.Metadata.Name];
+    var title = Model.Id == null ? T["New Workflow"] : T["Edit {0}", Model.Metadata.Name];
     var isDefinition = Model.IsDefinition();
 }
-<div class="workflow-editor-container" data-workflow-id="@Model.Metadata.Id">
+<div class="workflow-editor-container" data-workflow-id="@Model.Id">
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
         <h1 class="h2">@title</h1>
         <div class="btn-toolbar mb-2 mb-md-1">

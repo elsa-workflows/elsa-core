@@ -14,7 +14,7 @@ namespace Elsa.Activities.Http.Extensions
             return services.AddActivityDescriptors<ActivityDescriptors>();
         }
 
-        public static IServiceCollection AddHttpWorkflowDrivers(this IServiceCollection services)
+        public static IServiceCollection AddHttpActivities(this IServiceCollection services)
         {
             services.AddHttpWorkflowDescriptors();
             services.AddAsyncInitialization();

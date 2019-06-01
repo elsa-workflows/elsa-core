@@ -50,6 +50,14 @@ namespace Elsa.Activities.Primitives
                 T["Set Variable"],
                 T["Set a custom variable on the workflow."],
                 T["Done"]);
+            
+            yield return ActivityDescriptor.For<Switch>(
+                ControlFlowCategory,
+                T["Switch"],
+                T["Execute a branch based on the outcome of a given condition."],
+                false,
+                true,
+                a => a.Cases.Select(x => T[x]));
         }
     }
 }

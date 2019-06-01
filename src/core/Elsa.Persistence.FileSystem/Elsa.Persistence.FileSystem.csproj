@@ -13,7 +13,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\web\modules\Elsa.Web.Abstractions\Elsa.Web.Abstractions.csproj" />
       <ProjectReference Include="..\Elsa.Persistence.Abstractions\Elsa.Persistence.Abstractions.csproj" />
     </ItemGroup>
 
@@ -21,7 +20,7 @@
       <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="2.2.0" />
       <PackageReference Include="Microsoft.Extensions.Options" Version="2.2.0" />
       <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="2.2.0" />
-      <PackageReference Include="System.IO.Abstractions" Version="3.0.2" />
+      <PackageReference Include="System.IO.Abstractions" Version="4.2.17" />
     </ItemGroup>
 
 </Project>

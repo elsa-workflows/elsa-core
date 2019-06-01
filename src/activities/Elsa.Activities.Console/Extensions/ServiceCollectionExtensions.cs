@@ -11,7 +11,7 @@ namespace Elsa.Activities.Console.Extensions
             return services.AddActivityDescriptors<ActivityDescriptors>();
         }
         
-        public static IServiceCollection AddConsoleWorkflowDrivers(this IServiceCollection services)
+        public static IServiceCollection AddConsoleActivities(this IServiceCollection services)
         {
             return services
                 .AddConsoleWorkflowDescriptors()

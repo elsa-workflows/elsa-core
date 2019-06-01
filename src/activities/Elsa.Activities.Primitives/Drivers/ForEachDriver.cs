@@ -16,9 +16,10 @@ namespace Elsa.Activities.Primitives.Drivers
             this.expressionEvaluator = expressionEvaluator;
         }
 
-        protected override async Task<ActivityExecutionResult> OnExecuteAsync(ForEach activity, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
+        protected override Task<ActivityExecutionResult> OnExecuteAsync(ForEach activity, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
         {
-            return Endpoint("Done");
+            var endpoint = Endpoint("Done");
+            return Task.FromResult<ActivityExecutionResult>(endpoint);
         }
     }
 }

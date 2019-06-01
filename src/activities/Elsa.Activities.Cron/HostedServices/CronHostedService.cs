@@ -5,7 +5,6 @@ using Elsa.Activities.Cron.Activities;
 using Elsa.Activities.Cron.Options;
 using Elsa.Models;
 using Elsa.Runtime;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -31,7 +30,7 @@ namespace Elsa.Activities.Cron.HostedServices
             {
                 try
                 {
-                    await workflowHost.TriggerWorkflowAsync(nameof(CronTrigger), Variables.Empty, stoppingToken);
+                    await workflowHost.TriggerWorkflowsAsync(nameof(CronTrigger), Variables.Empty, stoppingToken);
                 }
                 catch (Exception ex)
                 {

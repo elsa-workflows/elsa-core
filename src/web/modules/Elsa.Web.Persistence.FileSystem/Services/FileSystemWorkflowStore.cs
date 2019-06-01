@@ -14,7 +14,7 @@ using OrchardCore.FileStorage;
 
 namespace Elsa.Web.Persistence.FileSystem.Services
 {
-    public class FileSystemWorkflowStore : IWorkflowStore
+    public class FileSystemWorkflowStore : IWorkflowStoreProvider
     {
         private const string Format = YamlTokenFormatter.FormatName;
         private readonly IWorkflowsFileStore fileStore;

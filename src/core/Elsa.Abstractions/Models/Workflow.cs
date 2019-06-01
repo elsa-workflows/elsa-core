@@ -1,7 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 using NodaTime;
 
 namespace Elsa.Models
@@ -16,6 +15,7 @@ namespace Elsa.Models
 
         public Workflow()
         {
+            Id = Guid.NewGuid().ToString("N");
             CurrentScope = new WorkflowExecutionScope();
             Scopes = new Stack<WorkflowExecutionScope>(new[] { CurrentScope });
             Arguments = new Variables();
@@ -24,12 +24,14 @@ namespace Elsa.Models
             Metadata = new WorkflowMetadata();
         }
 
+        public string Id { get; set; }
+        public string ParentId { get; set; }
         public WorkflowStatus Status { get; set; }
         public Instant CreatedAt { get; set; }
         public Instant? StartedAt { get; set; }
         public Instant? HaltedAt { get; set; }
         public Instant? FinishedAt { get; set; }
-        public IList<IActivity> Activities { get; set; } = new List<IActivity>();
+        public ICollection<IActivity> Activities { get; set; } = new HashSet<IActivity>();
         public IList<Connection> Connections { get; set; } = new List<Connection>();
         public Stack<WorkflowExecutionScope> Scopes { get; set; }
         public WorkflowExecutionScope CurrentScope { get; set; }

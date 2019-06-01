@@ -5,6 +5,8 @@
 
 namespace Elsa {
     export interface IWorkflow {
+        id: string;
+        parentId: string;
         metadata: IWorkflowMetadata;
         activities: IActivity[];
         connections: IConnection[];

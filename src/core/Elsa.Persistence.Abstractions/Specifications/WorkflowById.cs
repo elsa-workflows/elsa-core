@@ -11,7 +11,7 @@ namespace Elsa.Persistence.Specifications
             this.id = id;
         }
         
-        public bool IsSatisfiedBy(Workflow item) => item.Metadata.Id == id;
+        public bool IsSatisfiedBy(Workflow item) => item.Id == id;
 
         public void Accept(IWorkflowSpecificationVisitor visitor)
         {

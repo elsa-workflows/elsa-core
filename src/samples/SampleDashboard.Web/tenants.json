@@ -7,7 +7,6 @@
         "Features": [
             "Elsa.Web.BootstrapTheme", 
             "Elsa.Web.Management",
-            "Elsa.Web.Persistence.FileSystem",
             "Elsa.Web.Components",
             "Elsa.Web.Activities.Primitives",
             "Elsa.Web.Activities.Console",
