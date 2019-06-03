@@ -1,4 +1,5 @@
-﻿using Elsa.Expressions;
+﻿using Elsa.Core.Expressions;
+using Elsa.Expressions;
 using Elsa.Web.Components.ViewModels;
 
 namespace Elsa.Web.Activities.Http.ViewModels

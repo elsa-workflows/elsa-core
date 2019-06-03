@@ -1,0 +1,86 @@
+@using Microsoft.AspNetCore.Html
+@using Microsoft.Extensions.Localization
+@using Newtonsoft.Json
+@using Newtonsoft.Json.Serialization
+@model Elsa.Web.Shapes.ActivityWrapper
+@{
+    var activity = Model.Activity;
+    var descriptor = Model.ActivityDescriptor;
+    var designer = Model.ActivityDesignerDescriptor;
+    var id = activity.Id;
+    var endpoints = (IList<LocalizedString>) designer.EndPoints(activity).ToList();
+    var serializerSettings = new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver() };
+    var activityJson = JsonConvert.SerializeObject(activity, serializerSettings);
+    var activityEndpoints = JsonConvert.SerializeObject(endpoints, serializerSettings);
+    var designerMetadata = Model.ActivityDesignerMetadata;
+    var hasFaulted = Model.HasFaulted;
+    var hasExecuted = Model.HasExecuted;
+    var isBlocking = Model.IsBlocking;
+    var isDefinition = Model.WorkflowIsDefinition;
+    var isInstance = !isDefinition;
+    var cssClasses = new List<string> { "activity" };
+    var left = designerMetadata.X;
+    var top = designerMetadata.Y;
+
+    if (isInstance)
+    {
+        if (hasExecuted)
+        {
+            cssClasses.Add("activity-executed");
+        }
+
+        if (hasFaulted)
+        {
+            cssClasses.Add("activity-faulted");
+        }
+
+        if (isBlocking)
+        {
+            cssClasses.Add("activity-blocking");
+        }
+    }
+    else
+    {
+        cssClasses.Add("activity-definition");        
+    }
+
+    var activityClass = string.Join(" ", cssClasses);
+}
+<div
+    class="@activityClass"
+    style="left: @(left)px; top: @(top)px;"
+    id="@($"activity-{id}")"
+    title="@designer.DisplayName"
+    data-activity-name="@descriptor.ActivityTypeName"
+    data-activity-id="@id"
+    data-activity-model="@activityJson"
+    data-activity-endpoints="@activityEndpoints"
+    data-activity-executed="@hasExecuted.ToString().ToLower()"
+    data-activity-blocking="@isBlocking.ToString().ToLower()"
+    data-activity-faulted="@hasFaulted.ToString().ToLower()">
+    
+    @await DisplayAsync(Model.Content)
+    
+    @if (isDefinition)
+    {
+        <div class="dropdown-menu context-menu activity-context-menu">
+            <a class="dropdown-item" href="#edit">Edit</a>
+            <a class="dropdown-item" href="#delete">Delete</a>
+        </div>
+    }
+    
+    @if (isInstance)
+    {
+        var title = hasFaulted ? T["Faulted"] : isBlocking ? T["Awaiting Input"] : T["Executed"];
+        var statusClass = hasFaulted ? "fas fa-exclamation-circle" : isBlocking ? "fas fa-hourglass-half" : "fas fa-check-circle";
+        var logEntries = Model.LogEntries;
+        var logEntriesText = new HtmlString(string.Join("<br/>", logEntries.Select(x => $"{x.Timestamp}: {x.Message}"))); 
+        
+        <div class="activity-status rounded-circle" tabindex="0" role="button" data-toggle="popover" data-trigger="focus" title="@title" data-content="@logEntriesText" data-html="true">
+            @if (hasFaulted || isBlocking || hasExecuted)
+            {
+                <i class="@statusClass"></i>
+            }
+        </div>
+    }
+</div>

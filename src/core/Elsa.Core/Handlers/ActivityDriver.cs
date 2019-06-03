@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using Elsa.Results;
+using Elsa.Core.Results;
 using NodaTime;
 
-namespace Elsa.Handlers
+namespace Elsa.Core.Handlers
 {
     public abstract class ActivityDriver<T> : ActivityDriverBase<T> where T : IActivity
     {

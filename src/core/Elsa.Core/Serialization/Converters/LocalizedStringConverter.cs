@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Localization;
 using Newtonsoft.Json;
 
-namespace Elsa.Serialization.Json
+namespace Elsa.Core.Serialization.Converters
 {
     /// <summary>
     /// Serializes the <see cref="LocalizedString"/> to a simple string using the translated text.

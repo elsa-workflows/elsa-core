@@ -2,6 +2,7 @@ using System;
 
 namespace Elsa.Attributes
 {
+    [AttributeUsage(AttributeTargets.Class)]
     public class DisplayNameAttribute : Attribute
     {
         public DisplayNameAttribute(string displayName)

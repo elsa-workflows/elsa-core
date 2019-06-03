@@ -8,7 +8,9 @@ namespace Elsa.Activities.Console.Extensions
     {
         public static IServiceCollection AddConsoleDesigners(this IServiceCollection services)
         {
-            return services.AddActivityDesigners<ActivityProvider>();
+            return services
+                .AddActivityProvider<ActivityProvider>()
+                .AddActivityDesigners<ActivityProvider>();
         }
         
         public static IServiceCollection AddConsoleActivities(this IServiceCollection services)

@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Activities;
+using Elsa.Core.Activities;
 using Elsa.Extensions;
 using Elsa.Models;
+using Elsa.Serialization.Tokenizers;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
@@ -14,7 +15,7 @@ using NodaTime;
 using NodaTime.Extensions;
 using NodaTime.Serialization.JsonNet;
 
-namespace Elsa.Serialization.Tokenizers
+namespace Elsa.Core.Serialization.Tokenizers
 {
     public class WorkflowTokenizer : IWorkflowTokenizer
     {
@@ -123,12 +124,11 @@ namespace Elsa.Serialization.Tokenizers
 
         public async Task<IActivity> DetokenizeActivityAsync(JToken token, CancellationToken cancellationToken)
         {
-            var name = token["name"].Value<string>();
+            var name = token["typeName"].Value<string>();
             var descriptor = await GetActivityDescriptorAsync(name, cancellationToken);
             var activityType = descriptor?.ActivityModelType ?? typeof(UnknownActivity);
             var activity = (IActivity) jsonSerializer.Deserialize(token.CreateReader(), activityType);
 
-            activity.Descriptor = descriptor;
             return activity;
         }
 
@@ -318,7 +318,7 @@ namespace Elsa.Serialization.Tokenizers
 
         private Task<ActivityDescriptor> GetActivityDescriptorAsync(string activityName, CancellationToken cancellationToken)
         {
-            return activityStore.GetByNameAsync(activityName, cancellationToken);
+            return activityStore.GetByTypeNameAsync(activityName, cancellationToken);
         }
     }
 }

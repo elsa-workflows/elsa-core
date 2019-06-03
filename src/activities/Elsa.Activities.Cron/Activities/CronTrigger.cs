@@ -9,6 +9,7 @@ namespace Elsa.Activities.Cron.Activities
     [Category("Triggers")]
     [Description("Triggers at specified intervals using CRON expressions.")]
     [IsTrigger]
+    [DefaultEndpoint]
     public class CronTrigger : Activity
     {
         public WorkflowExpression<string> CronExpression { get; set; }

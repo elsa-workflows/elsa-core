@@ -5,6 +5,10 @@ using Elsa.Models;
 
 namespace Elsa.Activities.Http.Activities
 {
+    [DisplayName("HTTP Request Action")]
+    [Category("HTTP")]
+    [Description("Performs an HTTP request.")]
+    [DefaultEndpoint]
     public class HttpRequestAction : Activity
     {
         public HttpRequestAction()

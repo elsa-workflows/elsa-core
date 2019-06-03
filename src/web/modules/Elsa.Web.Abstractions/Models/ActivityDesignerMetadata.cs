@@ -1,4 +1,4 @@
-namespace Elsa.Web.Components.Models
+namespace Elsa.Web.Models
 {
     public class ActivityDesignerMetadata
     {

@@ -12,16 +12,16 @@ namespace Elsa.Models
         public static string GetDisplayName<T>() where T : IActivity => GetDisplayName(typeof(T));
         public static string GetDisplayName(Type type) => type.GetCustomAttribute<DisplayNameAttribute>()?.DisplayName ?? type.Name;
         public static string GetDescription<T>() where T : IActivity => GetDescription(typeof(T));
-        public static string GetDescription(Type type) => type.GetCustomAttribute<DescriptionAttribute>()?.Description;
+        public static string GetDescription(Type type) => type.GetCustomAttribute<DescriptionAttribute>()?.Description ?? "";
         public static string GetCategory<T>() where T : IActivity => GetCategory(typeof(T));
-        public static string GetCategory(Type type) => type.GetCustomAttribute<CategoryAttribute>()?.Category;
+        public static string GetCategory(Type type) => type.GetCustomAttribute<CategoryAttribute>()?.Category ?? "Miscellaneous";
         public static IReadOnlyCollection<string> GetEndpoints<T>() where T : IActivity => GetEndpoints(typeof(T));
         public static IReadOnlyCollection<string> GetEndpoints(Type type) => type.GetCustomAttribute<EndpointsAttribute>()?.Endpoints ?? new[]{ EndpointNames.Done };
         
         public static ActivityDesignerDescriptor For<T>(IStringLocalizer localizer, Func<T, IEnumerable<LocalizedString>> endpointsFactory = null) where T : IActivity =>
             For(typeof(T), localizer, endpointsFactory != null 
                 ? (Func<IActivity, IEnumerable<LocalizedString>>)(a => endpointsFactory((T)a)) : 
-                (a => Enumerable.Empty<LocalizedString>()));
+                (a => GetEndpoints<T>().Select(x => localizer[x])));
 
         public static ActivityDesignerDescriptor For(Type type, IStringLocalizer localizer, Func<IActivity, IEnumerable<LocalizedString>> endpointsFactory = null)
         {

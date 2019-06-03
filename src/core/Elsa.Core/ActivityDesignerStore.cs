@@ -4,7 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
 
-namespace Elsa
+namespace Elsa.Core
 {
     public class ActivityDesignerStore : IActivityDesignerStore
     {

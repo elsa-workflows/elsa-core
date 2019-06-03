@@ -8,7 +8,9 @@ namespace Elsa.Activities.Primitives.Extensions
     {
         public static IServiceCollection AddPrimitiveWorkflowDescriptors(this IServiceCollection services)
         {
-            return services.AddActivityDesigners<ActivityDesignerProvider>();
+            return services
+                .AddActivityProvider<ActivityProvider>()
+                .AddActivityDesigners<ActivityDesignerProvider>();
         }
         
         public static IServiceCollection AddPrimitiveActivities(this IServiceCollection services)

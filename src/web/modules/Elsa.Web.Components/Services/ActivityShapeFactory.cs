@@ -1,58 +1,41 @@
-using System;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Extensions;
-using Elsa.Models;
-using Elsa.Web.Components.Models;
 using Elsa.Web.Services;
-using OrchardCore.DisplayManagement;
+using Elsa.Web.Shapes;
 
 namespace Elsa.Web.Components.Services
 {
     public class ActivityShapeFactory : IActivityShapeFactory
     {
-        private readonly IActivityDisplayManager displayManager;
-        private readonly IShapeFactory shapeFactory;
+        private readonly IActivityStore activityStore;
         private readonly IActivityDesignerStore activityDesignerStore;
 
-        public ActivityShapeFactory(IActivityDisplayManager displayManager, IShapeFactory shapeFactory, IActivityDesignerStore activityDesignerStore)
+        public ActivityShapeFactory(
+            IActivityStore activityStore,
+            IActivityDesignerStore activityDesignerStore)
         {
-            this.displayManager = displayManager;
-            this.shapeFactory = shapeFactory;
+            this.activityStore = activityStore;
             this.activityDesignerStore = activityDesignerStore;
         }
-        
-        public async Task<IShape> BuildDesignShapeAsync(IActivity activity, CancellationToken cancellationToken)
-        {
-            var descriptor = activity.Descriptor;
-            var designer = await activityDesignerStore.GetByTypeNameAsync(activity.TypeName, cancellationToken);
-            dynamic shape = await displayManager.BuildDisplayAsync(activity, null, "Design");
-            var customFields = activity.Metadata.CustomFields;
-            var designerMetadata = customFields.GetValue("Designer", StringComparison.OrdinalIgnoreCase)?.ToObject<ActivityDesignerMetadata>() ?? new ActivityDesignerMetadata();
-            
-            shape.Metadata.Type = $"Activity_Design";
-            shape.Endpoints = designer.EndPoints(activity).ToList();
-            shape.ActivityDescriptor = descriptor;
-            shape.ActivityDesigner = designer;
-            shape.Activity = activity;
-            shape.Designer = designerMetadata;
-            shape.IsBlocking = false;
-            shape.HasExecuted = false;
-            shape.HasFaulted = false;
-            shape.WorkflowIsDefinition = true;
 
-            return shape;
+        public async Task<ActivityWrapper> BuildDesignShapeAsync(IActivity activity, CancellationToken cancellationToken)
+        {
+            var descriptor = await activityStore.GetByTypeNameAsync(activity.TypeName, cancellationToken);
+            var designer = await activityDesignerStore.GetByTypeNameAsync(activity.TypeName, cancellationToken);
+            var shape = new ActivityDesign(activity, descriptor, designer);
+            var wrapper = new ActivityWrapper(activity, descriptor, designer, shape);
+            
+            shape.Metadata.Alternates.Add($"Activity_Design__{descriptor.ActivityTypeName}");
+            
+            return wrapper;
         }
 
-        public async Task<IShape> BuildCardShapeAsync(IActivity activity, CancellationToken cancellationToken)
+        public async Task<ActivityCard> BuildCardShapeAsync(IActivity activity, CancellationToken cancellationToken)
         {
-            dynamic shape = await shapeFactory.New.Activity_Card2();
+            var descriptor = await activityStore.GetByTypeNameAsync(activity.TypeName, cancellationToken);
             var designer = await activityDesignerStore.GetByTypeNameAsync(activity.TypeName, cancellationToken);
-            shape.ActivityDescriptor = activity.Descriptor;
-            shape.ActivityDesigner = designer;
-            shape.Activity = activity;
-            return shape;
+            return new ActivityCard(activity, descriptor, designer);
         }
     }
 }

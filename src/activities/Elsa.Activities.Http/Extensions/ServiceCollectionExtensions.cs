@@ -11,7 +11,9 @@ namespace Elsa.Activities.Http.Extensions
     {
         public static IServiceCollection AddHttpDesigners(this IServiceCollection services)
         {
-            return services.AddActivityDesigners<ActivityDesignerProvider>();
+            return services
+                .AddActivityProvider<ActivityProvider>()
+                .AddActivityDesigners<ActivityDesignerProvider>();
         }
 
         public static IServiceCollection AddHttpActivities(this IServiceCollection services)

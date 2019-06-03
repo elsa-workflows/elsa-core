@@ -36,7 +36,7 @@ namespace Elsa.Web.Components.Controllers
         [HttpPost("create/{activityName}")]
         public async Task<IActionResult> Create(string activityName, [FromBody] JToken json, CancellationToken cancellationToken)
         {
-            var activityDescriptor = await activityStore.GetByNameAsync(activityName, cancellationToken);
+            var activityDescriptor = await activityStore.GetByTypeNameAsync(activityName, cancellationToken);
             var activity = activityDescriptor.InstantiateActivity(json);
 
             activity.Id = Guid.NewGuid().ToString().Replace("-", "");
@@ -56,7 +56,7 @@ namespace Elsa.Web.Components.Controllers
         [HttpPost("edit/{activityName}")]
         public async Task<IActionResult> Edit(string activityName, [FromBody] JToken json, CancellationToken cancellationToken)
         {
-            var activityDescriptor = await activityStore.GetByNameAsync(activityName, cancellationToken);
+            var activityDescriptor = await activityStore.GetByTypeNameAsync(activityName, cancellationToken);
             var activity = activityDescriptor.InstantiateActivity(json);
             var editorShape = await displayManager.BuildEditorAsync(activity, this, false);
             var model = new ActivityEditorEditViewModel

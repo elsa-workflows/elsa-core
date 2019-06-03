@@ -13,7 +13,9 @@ namespace Elsa.Activities.Email.Extensions
     {
         public static IServiceCollection AddEmailDesigners(this IServiceCollection services)
         {
-            return services.AddActivityDesigners<ActivityProvider>();
+            return services
+                .AddActivityProvider<ActivityProvider>()
+                .AddActivityDesigners<ActivityProvider>();
         }
 
         public static IServiceCollection AddEmailActivities(this IServiceCollection services, IConfiguration configuration)

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Core.Results;
 using Elsa.Exceptions;
 using Elsa.Extensions;
 using Elsa.Models;
@@ -8,7 +9,7 @@ using Elsa.Results;
 using Microsoft.Extensions.Logging;
 using NodaTime;
 
-namespace Elsa
+namespace Elsa.Core
 {
     public class ActivityInvoker : IActivityInvoker
     {

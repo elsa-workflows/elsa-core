@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Elsa.Activities.Http.Activities;
 using Elsa.Activities.Http.Extensions;
 using Elsa.Activities.Http.Models;
-using Elsa.Handlers;
+using Elsa.Core.Handlers;
 using Elsa.Models;
 using Elsa.Results;
 using Microsoft.AspNetCore.Http;
@@ -60,7 +60,7 @@ namespace Elsa.Activities.Http.Drivers
 
             workflowContext.CurrentScope.LastResult = model;
 
-            return Endpoint("Done");
+            return Endpoint(EndpointNames.Done);
         }
 
         private IContentFormatter SelectContentFormatter(string contentType)

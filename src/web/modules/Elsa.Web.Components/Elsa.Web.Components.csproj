@@ -14,9 +14,10 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="OrchardCore.Module.Targets" Version="1.0.0-beta3-70919" />
-        <PackageReference Include="OrchardCore.DisplayManagement" Version="1.0.0-beta3-70919" />
-        <PackageReference Include="OrchardCore.Resources" Version="1.0.0-beta3-70919" />
+        <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.2.0" />
+        <PackageReference Include="OrchardCore.Module.Targets" Version="1.0.0-beta3-71567" />
+        <PackageReference Include="OrchardCore.DisplayManagement" Version="1.0.0-beta3-71567" />
+        <PackageReference Include="OrchardCore.Resources" Version="1.0.0-beta3-71567" />
     </ItemGroup>
 
     <ItemGroup>
@@ -35,6 +36,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <Folder Include="Extensions" />
       <Folder Include="wwwroot" />
     </ItemGroup>
 

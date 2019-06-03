@@ -9,6 +9,7 @@ namespace Elsa.Activities.Console.Activities
     [DisplayName("Read Line")]
     [Category("Console")]
     [Description("Read a line from the console")]
+    [DefaultEndpoint]
     public class ReadLine : Activity
     {
         public ReadLine()

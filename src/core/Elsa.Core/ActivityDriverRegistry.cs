@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Elsa
+namespace Elsa.Core
 {
     public class ActivityDriverRegistry : IActivityDriverRegistry
     {

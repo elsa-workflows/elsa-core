@@ -1,4 +1,5 @@
-﻿using Elsa.Extensions;
+﻿using Elsa.Core.Extensions;
+using Elsa.Extensions;
 using Elsa.Web.Components.Services;
 using Elsa.Web.Services;
 using Microsoft.Extensions.DependencyInjection;

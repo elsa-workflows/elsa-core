@@ -8,6 +8,7 @@ namespace Elsa.Activities.Http.Activities
     [Category("HTTP")]
     [Description("Triggers when an incoming HTTP request is received.")]
     [IsTrigger]
+    [DefaultEndpoint]
     public class HttpRequestTrigger : Activity
     {
         /// <summary>

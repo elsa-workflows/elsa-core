@@ -1,14 +1,17 @@
-using Elsa.Expressions;
-using Elsa.Harvesters;
+using Elsa.Core.Expressions;
+using Elsa.Core.Harvesters;
+using Elsa.Core.Serialization;
+using Elsa.Core.Serialization.Formatters;
+using Elsa.Core.Serialization.Tokenizers;
+using Elsa.Extensions;
 using Elsa.Serialization;
 using Elsa.Serialization.Formatters;
 using Elsa.Serialization.Tokenizers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Localization;
 using NodaTime;
 
-namespace Elsa.Extensions
+namespace Elsa.Core.Extensions
 {
     public static class ServiceCollectionExtensions
     {
@@ -49,6 +52,7 @@ namespace Elsa.Extensions
         
         public static IServiceCollection AddWorkflowsDesigner(this IServiceCollection services)
         {
+            services.AddActivityDesigners<ActivityProvider>();
             services.TryAddSingleton<IActivityDesignerStore, ActivityDesignerStore>();
 
             return services;

@@ -4,7 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
 
-namespace Elsa.Harvesters
+namespace Elsa.Core.Harvesters
 {
     public class TypedActivityHarvester : IActivityHarvester
     {

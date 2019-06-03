@@ -11,7 +11,9 @@ namespace Elsa.Activities.Cron.Extensions
     {
         public static IServiceCollection AddCronDesigners(this IServiceCollection services)
         {
-            return services.AddActivityDesigners<ActivityProvider>();
+            return services
+                .AddActivityProvider<ActivityProvider>()
+                .AddActivityDesigners<ActivityProvider>();
         }
 
         public static IServiceCollection AddCronActivities(this IServiceCollection services, IConfiguration configuration)

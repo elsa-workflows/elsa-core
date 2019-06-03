@@ -19,7 +19,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="OrchardCore.Module.Targets" Version="1.0.0-beta3-70919" />
+        <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.2.0" />
+        <PackageReference Include="OrchardCore.Module.Targets" Version="1.0.0-beta3-71567" />
     </ItemGroup>
 
 </Project>

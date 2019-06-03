@@ -23,10 +23,7 @@ namespace Elsa.Extensions
                     ContractResolver = new CamelCasePropertyNamesContractResolver()
                 }));
 
-            var activity = (IActivity) activityObject;
-
-            activity.Descriptor = descriptor;
-            return activity;
+            return (IActivity) activityObject;
         }
     }
 }

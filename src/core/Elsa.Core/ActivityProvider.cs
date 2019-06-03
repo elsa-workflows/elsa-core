@@ -1,15 +1,19 @@
+using System;
 using System.Collections.Generic;
-using Elsa.Activities;
-using Elsa.Models;
+using Elsa.Core.Activities;
 using Microsoft.Extensions.Localization;
 
-namespace Elsa
+namespace Elsa.Core
 {
-    public class ActivityProvider : ActivityProviderBase
+    public class ActivityProvider : CombinedActivityProviderBase
     {
-        protected override IEnumerable<ActivityDescriptor> Describe()
+        public ActivityProvider(IStringLocalizer<ActivityProvider> localizer) : base(localizer)
         {
-            yield return ActivityDescriptor.For<UnknownActivity>();
+        }
+        
+        protected override IEnumerable<Type> Describe()
+        {
+            yield return typeof(UnknownActivity);
         }
     }
 }

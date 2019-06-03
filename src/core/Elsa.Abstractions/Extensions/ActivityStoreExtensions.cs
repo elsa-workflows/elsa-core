@@ -17,7 +17,7 @@ namespace Elsa.Extensions
             return descriptors.Where(predicate);
         }
 
-        public static Task<ActivityDescriptor> GetByNameAsync(this IActivityStore activityStore, string name, CancellationToken cancellationToken)
+        public static Task<ActivityDescriptor> GetByTypeNameAsync(this IActivityStore activityStore, string name, CancellationToken cancellationToken)
         {
             return activityStore
                 .ListAsync(x => x.ActivityTypeName == name, cancellationToken)

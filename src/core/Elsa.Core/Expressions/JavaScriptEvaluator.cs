@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Elsa.Models;
 using Jint;
 
-namespace Elsa.Expressions
+namespace Elsa.Core.Expressions
 {
     public class JavaScriptEvaluator : IExpressionEvaluator
     {

@@ -1,8 +1,8 @@
-using Elsa.Activities;
+using Elsa.Core.Activities;
 using Elsa.Models;
 using Elsa.Results;
 
-namespace Elsa.Handlers
+namespace Elsa.Core.Handlers
 {
     public class UnknownActivityDriver : ActivityDriver<UnknownActivity>
     {

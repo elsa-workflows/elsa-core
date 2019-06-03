@@ -1,9 +1,8 @@
-@using Elsa.Models
 @using OrchardCore.Mvc.Utilities
-@model dynamic
+@model Elsa.Web.Shapes.ActivityCard
 @{
-    var descriptor = (ActivityDescriptor) Model.ActivityDescriptor;
-    var designer = (ActivityDesignerDescriptor) Model.ActivityDesigner;
+    var descriptor = Model.ActivityDescriptor;
+    var designer = Model.ActivityDesignerDescriptor;
 }
 <div class="card activity" data-category="@designer.Category.Name.HtmlClassify()" data-activity-trigger="@descriptor.IsTrigger.ToString().ToLower()">
     <div class="card-body">

@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
 
-namespace Elsa.Expressions
+namespace Elsa.Core.Expressions
 {
     public class PlainTextEvaluator : IExpressionEvaluator
     {

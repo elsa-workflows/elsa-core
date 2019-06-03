@@ -8,6 +8,7 @@ using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Web.Components.ViewModels;
 using Elsa.Web.Services;
+using Elsa.Web.Shapes;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Elsa.Web.Components.ViewComponents
@@ -34,9 +35,9 @@ namespace Elsa.Web.Components.ViewComponents
             return await Task.WhenAll(workflow.Activities.Select((x, i) => BuildActivityShapeAsync(workflow, x, cancellationToken)));
         }
         
-        private async Task<dynamic> BuildActivityShapeAsync(Workflow workflow, IActivity activity, CancellationToken cancellationToken)
+        private async Task<ActivityWrapper> BuildActivityShapeAsync(Workflow workflow, IActivity activity, CancellationToken cancellationToken)
         {
-            var shape = (dynamic)await activityShapeFactory.BuildDesignShapeAsync(activity, cancellationToken);
+            var shape = await activityShapeFactory.BuildDesignShapeAsync(activity, cancellationToken);
             var logEntries = workflow.ExecutionLog.Where(x => x.ActivityId == activity.Id).OrderBy(x => x.Timestamp).ToList();
 
             shape.LogEntries = logEntries;

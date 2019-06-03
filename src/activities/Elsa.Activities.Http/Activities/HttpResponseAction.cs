@@ -8,6 +8,7 @@ namespace Elsa.Activities.Http.Activities
     [DisplayName("HTTP Response")]
     [Category("HTTP")]
     [Description("Write a HTTP response.")]
+    [DefaultEndpoint]
     public class HttpResponseAction : Activity
     {
         /// <summary>

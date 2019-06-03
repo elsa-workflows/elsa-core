@@ -7,6 +7,7 @@ namespace Elsa.Activities.Primitives.Activities
     [Category("Control Flow")]
     [DisplayName("Join")]
     [Description("Join workflow execution back into a single path of execution.")]
+    [DefaultEndpoint]
     public class Join : Activity
     {
         public enum JoinMode

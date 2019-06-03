@@ -35,7 +35,7 @@ namespace Elsa.Web.Components.ViewComponents
 
         private async Task<IShape> CreateCardShapeAsync(ActivityDesignerDescriptor designer, CancellationToken cancellationToken)
         {
-            var descriptor = await activityStore.GetByNameAsync(designer.ActivityTypeName, cancellationToken); 
+            var descriptor = await activityStore.GetByTypeNameAsync(designer.ActivityTypeName, cancellationToken); 
             var activity =  descriptor.InstantiateActivity();
             return await activityShapeFactory.BuildCardShapeAsync(activity, cancellationToken);
         }

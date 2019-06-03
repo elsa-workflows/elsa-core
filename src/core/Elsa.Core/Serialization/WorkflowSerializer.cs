@@ -1,12 +1,13 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Core.Serialization.Formatters;
 using Elsa.Extensions;
 using Elsa.Models;
-using Elsa.Serialization.Formatters;
+using Elsa.Serialization;
 using Elsa.Serialization.Tokenizers;
 using Newtonsoft.Json.Linq;
 
-namespace Elsa.Serialization
+namespace Elsa.Core.Serialization
 {
     public class WorkflowSerializer : IWorkflowSerializer
     {
@@ -47,15 +48,7 @@ namespace Elsa.Serialization
         
         public async Task<Workflow> DeserializeAsync(JToken token, CancellationToken cancellationToken)
         {
-            var workflow = await workflowTokenizer.DetokenizeWorkflowAsync(token, cancellationToken);
-            var descriptors = await activityStore.ListAsync(cancellationToken).ToDictionaryAsync(x => x.ActivityTypeName);
-
-            foreach (var activity in workflow.Activities)
-            {
-                activity.Descriptor = descriptors[activity.TypeName];
-            }
-            
-            return workflow;
+            return await workflowTokenizer.DetokenizeWorkflowAsync(token, cancellationToken);
         }
         
         public async Task<Workflow> CloneAsync(Workflow workflow, CancellationToken cancellationToken)

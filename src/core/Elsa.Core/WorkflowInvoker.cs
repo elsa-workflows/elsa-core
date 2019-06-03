@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Core.Extensions;
 using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Results;
 using Microsoft.Extensions.Logging;
 using NodaTime;
 
-namespace Elsa
+namespace Elsa.Core
 {
     public class WorkflowInvoker : IWorkflowInvoker
     {

@@ -9,6 +9,5 @@ namespace Elsa
         string TypeName { get; }
         string Alias { get; set; }
         ActivityMetadata Metadata { get; set; }
-        [JsonIgnore] ActivityDescriptor Descriptor { get; set; }
     }
 }

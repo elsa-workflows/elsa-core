@@ -3,8 +3,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Primitives.Activities;
+using Elsa.Core.Handlers;
 using Elsa.Extensions;
-using Elsa.Handlers;
 using Elsa.Models;
 using Elsa.Results;
 
