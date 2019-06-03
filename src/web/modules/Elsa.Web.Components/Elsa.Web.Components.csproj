@@ -40,4 +40,12 @@
       <Folder Include="wwwroot" />
     </ItemGroup>
 
+    <ItemGroup>
+      <EmbeddedResource Remove="Views\Shared\EditorTemplates\Boolean.cshtml" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="Views\Shared\EditorTemplates\Boolean.cshtml" />
+    </ItemGroup>
+
 </Project>

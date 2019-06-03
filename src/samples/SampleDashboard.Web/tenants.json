@@ -8,9 +8,9 @@
             "Elsa.Web.BootstrapTheme", 
             "Elsa.Web.Management",
             "Elsa.Web.Components",
-            "Elsa.Web.Activities.Primitives",
-            "Elsa.Web.Activities.Console",
-            "Elsa.Web.Activities.Http"
+            "Elsa.Activities.Primitives.Web",
+            "Elsa.Activities.Console.Web",
+            "Elsa.Activities.Http.Web"
         ]
     }
 }

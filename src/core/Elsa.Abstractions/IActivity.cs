@@ -1,5 +1,4 @@
 ﻿using Elsa.Models;
-using Newtonsoft.Json;
 
 namespace Elsa
 {

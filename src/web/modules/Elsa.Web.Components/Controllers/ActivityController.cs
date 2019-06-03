@@ -39,26 +39,28 @@ namespace Elsa.Web.Components.Controllers
             var activityDescriptor = await activityStore.GetByTypeNameAsync(activityName, cancellationToken);
             var activity = activityDescriptor.InstantiateActivity(json);
 
-            activity.Id = Guid.NewGuid().ToString().Replace("-", "");
+            activity.Id = Guid.NewGuid().ToString("N");
 
+            var editorShape2 = await activityShapeFactory.BuildEditShapeAsync(activity, cancellationToken);
             var editorShape = await displayManager.BuildEditorAsync(activity, this, false);
             var activityToken = await workflowTokenizer.TokenizeActivityAsync(activity, cancellationToken);
 
             var model = new ActivityEditorEditViewModel
             {
                 ActivityJson = activityToken.ToString(),
-                ActivityEditorShape = editorShape,
+                ActivityEditorShape = editorShape2,
             };
             
             return View("Edit", model);
         }
 
-        [HttpPost("edit/{activityName}")]
-        public async Task<IActionResult> Edit(string activityName, [FromBody] JToken json, CancellationToken cancellationToken)
+        [HttpPost("edit/{activityTypeName}")]
+        public async Task<IActionResult> Edit(string activityTypeName, [FromBody] JToken json, CancellationToken cancellationToken)
         {
-            var activityDescriptor = await activityStore.GetByTypeNameAsync(activityName, cancellationToken);
+            var activityDescriptor = await activityStore.GetByTypeNameAsync(activityTypeName, cancellationToken);
             var activity = activityDescriptor.InstantiateActivity(json);
-            var editorShape = await displayManager.BuildEditorAsync(activity, this, false);
+            var editorShape = await activityShapeFactory.BuildEditShapeAsync(activity, cancellationToken);
+            //var editorShape = await displayManager.BuildEditorAsync(activity, this, false);
             var model = new ActivityEditorEditViewModel
             {
                 ActivityJson = json.ToString(),
@@ -67,17 +69,18 @@ namespace Elsa.Web.Components.Controllers
             return View(model);
         }
 
-        [HttpPost("update/{activityName}")]
-        public async Task<IActionResult> Update(string activityName, [FromForm] ActivityEditorUpdateModel model, CancellationToken cancellationToken)
+        [HttpPost("update/{activityTypeName}")]
+        public async Task<IActionResult> Update([FromForm] ActivityEditorUpdateModel model, CancellationToken cancellationToken)
         {
             var activity = await workflowTokenizer.DetokenizeActivityAsync(JToken.Parse(model.ActivityJson ?? "{}"), cancellationToken);
-            var editorShape = await displayManager.UpdateEditorAsync(activity, this, false);
+            //var editorShape = await displayManager.UpdateEditorAsync(activity, this, false);
+            await TryUpdateModelAsync(activity, activity.GetType(), activity.TypeName);
 
             if (!ModelState.IsValid)
                 return View("Edit", new ActivityEditorEditViewModel
                 {
                     ActivityJson = JsonConvert.SerializeObject(activity),
-                    ActivityEditorShape = editorShape
+                    ActivityEditorShape = await activityShapeFactory.BuildEditShapeAsync(activity, cancellationToken)
                 });
 
             dynamic designShape = await activityShapeFactory.BuildDesignShapeAsync(activity, cancellationToken);

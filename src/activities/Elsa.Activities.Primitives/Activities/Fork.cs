@@ -4,9 +4,9 @@ using Elsa.Models;
 
 namespace Elsa.Activities.Primitives.Activities
 {
-    [Category("Control Flow")]
-    [DisplayName("Fork")]
-    [Description("Fork workflow execution into separate paths of execution.")]
+    [ActivityCategory("Control Flow")]
+    [ActivityDisplayName("Fork")]
+    [ActivityDescription("Fork workflow execution into separate paths of execution.")]
     [DefaultEndpoint]
     public class Fork : Activity
     {

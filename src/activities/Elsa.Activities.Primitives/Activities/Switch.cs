@@ -5,9 +5,9 @@ using Elsa.Models;
 
 namespace Elsa.Activities.Primitives.Activities
 {
-    [Category("Control Flow")]
-    [DisplayName("Switch")]
-    [Description("Execute a branch based on the outcome of a given condition.")]
+    [ActivityCategory("Control Flow")]
+    [ActivityDisplayName("Switch")]
+    [ActivityDescription("Execute a branch based on the outcome of a given condition.")]
     public class Switch : Activity
     {
         public Switch()

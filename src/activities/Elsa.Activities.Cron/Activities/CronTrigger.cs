@@ -5,9 +5,9 @@ using Elsa.Models;
 
 namespace Elsa.Activities.Cron.Activities
 {
-    [DisplayName("Cron Trigger")]
-    [Category("Triggers")]
-    [Description("Triggers at specified intervals using CRON expressions.")]
+    [ActivityDisplayName("Cron Trigger")]
+    [ActivityCategory("Triggers")]
+    [ActivityDescription("Triggers at specified intervals using CRON expressions.")]
     [IsTrigger]
     [DefaultEndpoint]
     public class CronTrigger : Activity

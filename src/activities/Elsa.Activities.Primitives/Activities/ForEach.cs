@@ -3,9 +3,9 @@ using Elsa.Models;
 
 namespace Elsa.Activities.Primitives.Activities
 {
-    [Category("Control Flow")]
-    [DisplayName("For Each")]
-    [Description("Iterate over a list of items.")]
+    [ActivityCategory("Control Flow")]
+    [ActivityDisplayName("For Each")]
+    [ActivityDescription("Iterate over a list of items.")]
     [Endpoints(EndpointNames.Next, EndpointNames.Done)]
     public class ForEach : Activity
     {

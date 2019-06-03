@@ -8,9 +8,9 @@ namespace Elsa.Activities.Console.Activities
     /// <summary>
     /// Writes a text string to the console.
     /// </summary>
-    [DisplayName("Write Line")]
-    [Category("Console")]
-    [Description("Write a line to the console")]
+    [ActivityDisplayName("Write Line")]
+    [ActivityCategory("Console")]
+    [ActivityDescription("Write a line to the console")]
     [DefaultEndpoint]
     public class WriteLine : Activity
     {

@@ -20,8 +20,7 @@ namespace Elsa.Web.Management
                 .AddScoped<IShellDescriptorFeaturesManager, ShellDescriptorFeaturesManager>()
                 .AddScoped<IShellStateManager, NullShellStateManager>()
                 .AddScoped<IThemeSelector, SettingsThemeSelector>()
-                .AddSingleton<ISiteService, NullSiteService>()
-                .AddScoped<IDisplayDriver<IActivity>, CommonActivityDriver>();
+                .AddSingleton<ISiteService, NullSiteService>();
 
             services.AddResourceManagement();
 

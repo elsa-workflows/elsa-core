@@ -4,9 +4,9 @@ using Elsa.Models;
 
 namespace Elsa.Activities.Primitives.Activities
 {
-    [Category("Primitives")]
-    [DisplayName("Set Variable")]
-    [Description("Set a custom variable on the workflow.")]
+    [ActivityCategory("Primitives")]
+    [ActivityDisplayName("Set Variable")]
+    [ActivityDescription("Set a custom variable on the workflow.")]
     [DefaultEndpoint]
     public class SetVariable : Activity
     {
