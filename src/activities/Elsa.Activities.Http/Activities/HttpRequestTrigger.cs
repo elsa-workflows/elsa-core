@@ -2,6 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 using Elsa.Attributes;
 using Elsa.Models;
+using Elsa.Web.DataAnnotations;
 
 namespace Elsa.Activities.Http.Activities
 {
@@ -16,12 +17,17 @@ namespace Elsa.Activities.Http.Activities
         /// The path that triggers this activity. 
         /// </summary>
         [Display(Description = "The relative path that triggers this activity.")]
+        [Required]
+        [UIHint("RelativePath")]
         public Uri Path { get; set; }
 
         /// <summary>
         /// The HTTP method that triggers this activity.
         /// </summary>
         [Display(Description = "The HTTP method that triggers this activity.")]
+        [Required]
+        [UIHint("Dropdown")]
+        [Options(null, "GET", "POST", "PUT", "DELETE", "HEAD")]
         public string Method { get; set; }
 
         /// <summary>
