@@ -20,6 +20,7 @@ namespace Elsa.Web.Components
             services.AddMvc(options =>
             {
                 options.ModelMetadataDetailsProviders.Add(new OptionsMetadataProvider());
+                options.ModelMetadataDetailsProviders.Add(new WorkflowExpressionDataTypeMetadataProvider());
             });
         }
     }
