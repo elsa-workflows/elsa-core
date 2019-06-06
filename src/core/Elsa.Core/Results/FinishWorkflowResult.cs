@@ -1,7 +1,8 @@
 ﻿using Elsa.Models;
+using Elsa.Results;
 using NodaTime;
 
-namespace Elsa.Results
+namespace Elsa.Core.Results
 {
     public class FinishWorkflowResult : ActivityExecutionResult
     {

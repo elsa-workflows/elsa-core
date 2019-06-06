@@ -2,12 +2,13 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Extensions;
+using Elsa.Core.Extensions;
 using Elsa.Models;
+using Elsa.Results;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace Elsa.Results
+namespace Elsa.Core.Results
 {
     /// <summary>
     /// A result that carries information about the next activity to execute.

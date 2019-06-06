@@ -4,6 +4,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa;
 using Elsa.Activities.Console.Extensions;
+using Elsa.Core.Extensions;
+using Elsa.Core.Serialization.Formatters;
 using Elsa.Extensions;
 using Elsa.Serialization;
 using Elsa.Serialization.Formatters;

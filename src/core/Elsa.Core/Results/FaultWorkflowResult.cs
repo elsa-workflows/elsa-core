@@ -1,7 +1,8 @@
 ﻿using System;
 using Elsa.Models;
+using Elsa.Results;
 
-namespace Elsa.Results
+namespace Elsa.Core.Results
 {
     public class FaultWorkflowResult : ActivityExecutionResult
     {

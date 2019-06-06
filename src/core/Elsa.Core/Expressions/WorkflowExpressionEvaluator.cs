@@ -2,9 +2,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Expressions;
 using Elsa.Models;
 
-namespace Elsa.Expressions
+namespace Elsa.Core.Expressions
 {
     public class WorkflowExpressionEvaluator : IWorkflowExpressionEvaluator
     {

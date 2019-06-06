@@ -1,5 +1,5 @@
 using Elsa.Activities.Primitives.Activities;
-using Elsa.Handlers;
+using Elsa.Core.Handlers;
 using Elsa.Models;
 using Elsa.Results;
 

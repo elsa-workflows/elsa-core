@@ -6,15 +6,17 @@ namespace Elsa.Activities.Console.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddConsoleWorkflowDescriptors(this IServiceCollection services)
+        public static IServiceCollection AddConsoleDesigners(this IServiceCollection services)
         {
-            return services.AddActivityDescriptors<ActivityDescriptors>();
+            return services
+                .AddActivityProvider<ActivityProvider>()
+                .AddActivityDesigners<ActivityProvider>();
         }
         
         public static IServiceCollection AddConsoleActivities(this IServiceCollection services)
         {
             return services
-                .AddConsoleWorkflowDescriptors()
+                .AddActivityProvider<ActivityProvider>()
                 .AddActivityDriver<ReadLineDriver>()
                 .AddActivityDriver<WriteLineDriver>();
         }

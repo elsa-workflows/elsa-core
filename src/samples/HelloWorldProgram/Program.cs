@@ -2,6 +2,7 @@
 using Elsa;
 using Elsa.Activities.Console.Activities;
 using Elsa.Activities.Console.Extensions;
+using Elsa.Core.Extensions;
 using Elsa.Extensions;
 using Elsa.Models;
 using Microsoft.Extensions.DependencyInjection;

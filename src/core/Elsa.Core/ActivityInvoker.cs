@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Core.Results;
 using Elsa.Exceptions;
 using Elsa.Extensions;
 using Elsa.Models;
@@ -8,7 +9,7 @@ using Elsa.Results;
 using Microsoft.Extensions.Logging;
 using NodaTime;
 
-namespace Elsa
+namespace Elsa.Core
 {
     public class ActivityInvoker : IActivityInvoker
     {
@@ -62,12 +63,12 @@ namespace Elsa
             Func<ActivityExecutionContext, IActivityDriver, Task<ActivityExecutionResult>> invokeAction)
         {
             var activityContext = workflowContext.CreateActivityExecutionContext(activity);
-            var driver = driverRegistry.GetDriver(activity.Name);
+            var driver = driverRegistry.GetDriver(activity.TypeName);
           
             try
             {
                 if (driver == null)
-                    throw new WorkflowException($"No driver found for activity {activity.Name}");
+                    throw new WorkflowException($"No driver found for activity {activity.TypeName}");
 
                 return await invokeAction(activityContext, driver);
             }

@@ -12,9 +12,9 @@
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore.App" />
-        <PackageReference Include="OrchardCore.Application.Cms.Targets" Version="1.0.0-beta3-70919" />
-        <PackageReference Include="OrchardCore.Resources" Version="1.0.0-beta3-70919" />
-        <PackageReference Include="OrchardCore.Settings" Version="1.0.0-beta3-70919" />
+        <PackageReference Include="OrchardCore.Application.Cms.Targets" Version="1.0.0-beta3-71567" />
+        <PackageReference Include="OrchardCore.Resources" Version="1.0.0-beta3-71567" />
+        <PackageReference Include="OrchardCore.Settings" Version="1.0.0-beta3-71567" />
     </ItemGroup>
 
     <ItemGroup>
@@ -23,11 +23,11 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\core\Elsa.Persistence.FileSystem\Elsa.Persistence.FileSystem.csproj" />
-        <ProjectReference Include="..\..\web\modules\Elsa.Web.Activities.Console\Elsa.Web.Activities.Console.csproj" />
-        <ProjectReference Include="..\..\web\modules\Elsa.Web.Activities.Cron\Elsa.Web.Activities.Cron.csproj" />
-        <ProjectReference Include="..\..\web\modules\Elsa.Web.Activities.Email\Elsa.Web.Activities.Email.csproj" />
-        <ProjectReference Include="..\..\web\modules\Elsa.Web.Activities.Http\Elsa.Web.Activities.Http.csproj" />
-        <ProjectReference Include="..\..\web\modules\Elsa.Web.Activities.Primitives\Elsa.Web.Activities.Primitives.csproj" />
+        <ProjectReference Include="..\..\web\modules\Elsa.Activities.Console.Web\Elsa.Activities.Console.Web.csproj" />
+        <ProjectReference Include="..\..\web\modules\Elsa.Activities.Cron.Web\Elsa.Activities.Cron.Web.csproj" />
+        <ProjectReference Include="..\..\web\modules\Elsa.Activities.Email.Web\Elsa.Activities.Email.Web.csproj" />
+        <ProjectReference Include="..\..\web\modules\Elsa.Activities.Http.Web\Elsa.Activities.Http.Web.csproj" />
+        <ProjectReference Include="..\..\web\modules\Elsa.Activities.Primitives.Web\Elsa.Activities.Primitives.Web.csproj" />
         <ProjectReference Include="..\..\web\modules\Elsa.Web.Components\Elsa.Web.Components.csproj" />
         <ProjectReference Include="..\..\web\modules\Elsa.Web.Management\Elsa.Web.Management.csproj" />
         <ProjectReference Include="..\..\web\themes\Elsa.Web.BootstrapTheme\Elsa.Web.BootstrapTheme.csproj" />

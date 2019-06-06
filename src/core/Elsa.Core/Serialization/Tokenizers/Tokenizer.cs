@@ -1,6 +1,7 @@
+using Elsa.Serialization.Tokenizers;
 using Newtonsoft.Json.Linq;
 
-namespace Elsa.Serialization.Tokenizers
+namespace Elsa.Core.Serialization.Tokenizers
 {
     public abstract class Tokenizer<T> : ITokenizer
     {

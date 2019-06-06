@@ -1,0 +1,34 @@
+@{
+    var viewData = ViewData;
+    var modelExplorer = viewData.ModelExplorer;
+
+    foreach (var property in modelExplorer.Properties.Where(x => x.Metadata.ShowForEdit))
+    {
+        var metadata = property.Metadata;
+
+        <div class="form-group">
+            @if (metadata.ModelType == typeof(bool))
+            {
+                <div class="custom-control custom-checkbox">
+                    @Html.Editor(metadata.PropertyName)
+                    <label class="form-check-label" for="@Html.Id(metadata.PropertyName)">@metadata.PropertyName</label>
+                </div>
+            }
+            else
+            {
+                <label for="@Html.Id(metadata.PropertyName)">@metadata.PropertyName</label>
+                @Html.Editor(metadata.PropertyName)
+            }
+
+            @if (metadata.HasValidators == true)
+            {
+                @Html.ValidationMessage(metadata.PropertyName, new { @class = "text-danger" })
+            }
+
+            @if (!string.IsNullOrWhiteSpace(metadata.Description))
+            {
+                <small class="form-text text-muted">@metadata.Description</small>
+            }
+        </div>
+    }
+}

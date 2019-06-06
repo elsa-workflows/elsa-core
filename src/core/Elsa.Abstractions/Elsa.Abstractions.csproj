@@ -19,6 +19,7 @@
       <PackageReference Include="Microsoft.Extensions.Localization.Abstractions" Version="2.2.0" />
       <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
       <PackageReference Include="NodaTime" Version="2.4.5" />
+      <PackageReference Include="System.ComponentModel.Annotations" Version="4.5.0" />
     </ItemGroup>
 
 </Project>

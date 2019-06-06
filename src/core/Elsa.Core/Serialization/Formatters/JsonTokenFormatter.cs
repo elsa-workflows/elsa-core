@@ -1,7 +1,8 @@
-﻿using Newtonsoft.Json;
+﻿using Elsa.Serialization.Formatters;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace Elsa.Serialization.Formatters
+namespace Elsa.Core.Serialization.Formatters
 {
     public class JsonTokenFormatter : ITokenFormatter
     {

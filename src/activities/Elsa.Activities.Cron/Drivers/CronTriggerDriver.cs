@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Cron.Activities;
-using Elsa.Handlers;
+using Elsa.Core.Handlers;
 using Elsa.Models;
 using Elsa.Results;
 using NCrontab;
@@ -37,7 +37,7 @@ namespace Elsa.Activities.Cron.Drivers
         {
             var isExpired = await IsExpiredAsync(activity, workflowContext, cancellationToken);
 
-            return isExpired ? (ActivityExecutionResult) Endpoint("Done") : Halt();
+            return isExpired ? (ActivityExecutionResult) Endpoint(EndpointNames.Done) : Halt();
         }
 
         private async Task<bool> IsExpiredAsync(CronTrigger activity, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)

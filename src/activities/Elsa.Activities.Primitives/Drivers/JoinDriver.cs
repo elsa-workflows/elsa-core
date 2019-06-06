@@ -3,8 +3,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Primitives.Activities;
+using Elsa.Core.Handlers;
 using Elsa.Extensions;
-using Elsa.Handlers;
 using Elsa.Models;
 using Elsa.Results;
 
@@ -61,7 +61,7 @@ namespace Elsa.Activities.Primitives.Drivers
             var inboundTransitionsQuery =
                 from connection in outboundConnections
                 let destinationActivity = connection.Target.Activity
-                where destinationActivity.Name == nameof(Join)
+                where destinationActivity.TypeName == nameof(Join)
                 select connection;
 
             var inboundConnections = inboundTransitionsQuery.ToList();

@@ -1,9 +1,14 @@
 ﻿using System.Net;
+using Elsa.Attributes;
 using Elsa.Expressions;
 using Elsa.Models;
 
 namespace Elsa.Activities.Http.Activities
 {
+    [ActivityDisplayName("HTTP Response")]
+    [ActivityCategory("HTTP")]
+    [ActivityDescription("Write a HTTP response.")]
+    [DefaultEndpoint]
     public class HttpResponseAction : Activity
     {
         /// <summary>

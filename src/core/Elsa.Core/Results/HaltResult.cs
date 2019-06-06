@@ -1,8 +1,9 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
+using Elsa.Results;
 
-namespace Elsa.Results
+namespace Elsa.Core.Results
 {
     /// <summary>
     /// Halts workflow execution.

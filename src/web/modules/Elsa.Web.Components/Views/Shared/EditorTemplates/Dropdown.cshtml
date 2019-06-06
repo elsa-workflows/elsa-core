@@ -1,0 +1,7 @@
+@{
+    var additionalValues = ViewData.ModelExplorer.Metadata.AdditionalValues;
+    var options = additionalValues.ContainsKey("Options") ? (ICollection<string>)additionalValues["Options"] : new string[0];
+    var selectListItems = options.Select(x => new SelectListItem(x, x)).ToList();
+    var optionLabel = ViewData.ModelExplorer.Metadata.Placeholder;
+}
+@Html.DropDownList(null, selectListItems, optionLabel, new { @class = "form-control" })

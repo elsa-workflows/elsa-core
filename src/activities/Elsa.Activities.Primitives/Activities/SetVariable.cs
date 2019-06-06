@@ -1,8 +1,13 @@
-﻿using Elsa.Expressions;
+﻿using Elsa.Attributes;
+using Elsa.Expressions;
 using Elsa.Models;
 
 namespace Elsa.Activities.Primitives.Activities
 {
+    [ActivityCategory("Primitives")]
+    [ActivityDisplayName("Set Variable")]
+    [ActivityDescription("Set a custom variable on the workflow.")]
+    [DefaultEndpoint]
     public class SetVariable : Activity
     {
         public SetVariable()

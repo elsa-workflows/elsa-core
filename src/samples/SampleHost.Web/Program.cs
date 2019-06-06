@@ -9,9 +9,7 @@ namespace SampleHost.Web
     {
         public static async Task Main(string[] args)
         {
-            var host = CreateWebHostBuilder(args).Build();
-            await host.InitAsync();
-            await host.RunAsync();
+            await CreateWebHostBuilder(args).Build().RunAsync();
         }
 
         public static IWebHostBuilder CreateWebHostBuilder(string[] args)

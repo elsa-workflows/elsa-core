@@ -6,7 +6,7 @@ namespace Elsa.Activities.Http.Formatters
     public class NullContentFormatter : IContentFormatter
     {
         public int Priority => -1;
-        public IEnumerable<string> SupportedContentTypes => new[] { "", default(string) };
+        public IEnumerable<string> SupportedContentTypes => new[] { "", default };
 
         public Task<object> FormatAsync(string content, string contentType)
         {

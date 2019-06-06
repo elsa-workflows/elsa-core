@@ -1,6 +1,6 @@
 using System;
 
-namespace Elsa
+namespace Elsa.Core
 {
     public class DefaultIdGenerator : IIdGenerator
     {

@@ -1,4 +1,5 @@
-﻿using Elsa.Extensions;
+﻿using Elsa.Core.Extensions;
+using Elsa.Web.Components.Metadata;
 using Elsa.Web.Components.Services;
 using Elsa.Web.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,8 +13,15 @@ namespace Elsa.Web.Components
         {
             services
                 .AddWorkflowsCore()
+                .AddWorkflowsDesigner()
                 .AddScoped<IActivityDisplayManager, ActivityDisplayManager>()
                 .AddScoped<IActivityShapeFactory, ActivityShapeFactory>();
+
+            services.AddMvc(options =>
+            {
+                options.ModelMetadataDetailsProviders.Add(new OptionsMetadataProvider());
+                options.ModelMetadataDetailsProviders.Add(new WorkflowExpressionDataTypeMetadataProvider());
+            });
         }
     }
 }

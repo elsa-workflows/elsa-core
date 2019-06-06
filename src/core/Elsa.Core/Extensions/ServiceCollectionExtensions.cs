@@ -1,14 +1,17 @@
-using Elsa.Expressions;
-using Elsa.Harvesters;
+using Elsa.Core.Expressions;
+using Elsa.Core.Harvesters;
+using Elsa.Core.Serialization;
+using Elsa.Core.Serialization.Formatters;
+using Elsa.Core.Serialization.Tokenizers;
+using Elsa.Extensions;
 using Elsa.Serialization;
 using Elsa.Serialization.Formatters;
 using Elsa.Serialization.Tokenizers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Localization;
 using NodaTime;
 
-namespace Elsa.Extensions
+namespace Elsa.Core.Extensions
 {
     public static class ServiceCollectionExtensions
     {
@@ -21,10 +24,10 @@ namespace Elsa.Extensions
             services.TryAddSingleton<IWorkflowSerializer, WorkflowSerializer>();
             services.TryAddSingleton<IWorkflowTokenizer, WorkflowTokenizer>();
             services.TryAddSingleton<IActivityHarvester, TypedActivityHarvester>();
-            services.TryAddSingleton<IActivityLibrary, ActivityLibrary>();
+            services.TryAddSingleton<IActivityStore, ActivityStore>();
             services.TryAddSingleton<ITokenFormatterProvider, TokenFormatterProvider>();
             services.TryAddSingleton<ITokenizerInvoker, TokenizerInvoker>();
-            services.AddActivityDescriptors<ActivityDescriptors>();
+            services.AddActivityProvider<ActivityProvider>();
             services.AddSingleton<ITokenFormatter, JsonTokenFormatter>();
             services.AddSingleton<ITokenFormatter, YamlTokenFormatter>();
             services.AddSingleton<ITokenFormatter, XmlTokenFormatter>();
@@ -43,6 +46,14 @@ namespace Elsa.Extensions
             services.TryAddSingleton<IActivityInvoker, ActivityInvoker>();
             services.TryAddSingleton<IActivityDriverRegistry, ActivityDriverRegistry>();
             services.TryAddSingleton<IWorkflowExpressionEvaluator, WorkflowExpressionEvaluator>();
+
+            return services;
+        }
+        
+        public static IServiceCollection AddWorkflowsDesigner(this IServiceCollection services)
+        {
+            services.AddActivityDesigners<ActivityProvider>();
+            services.TryAddSingleton<IActivityDesignerStore, ActivityDesignerStore>();
 
             return services;
         }
