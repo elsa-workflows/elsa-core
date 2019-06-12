@@ -1,7 +1,0 @@
-@model CronTriggerViewModel
-<div class="form-group">
-    <label asp-for="CronExpression">@T["Cron Expression"]</label>
-    <vc:expression-editor model="@Model.CronExpression" prefix="@Html.NameFor(m => m.CronExpression)"></vc:expression-editor>
-    <span asp-validation-for="CronExpression" class="text-danger"></span>
-    <small class="form-text text-muted">@T["Enter a crontab expression. See https://crontab.guru/."]</small>
-</div>

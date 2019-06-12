@@ -1,7 +1,0 @@
-@model IfElseViewModel
-<div class="form-group">
-    <label asp-for="ConditionExpression">@T["Expression"]</label>
-    <vc:expression-editor model="@Model.ConditionExpression" prefix="@Html.NameFor(m => m.ConditionExpression)"></vc:expression-editor>
-    <span asp-validation-for="ConditionExpression" class="text-danger"></span>
-    <small class="form-text text-muted">@T["Enter an expression that evaluates to a boolean value."]</small>
-</div>

@@ -1,7 +1,0 @@
-@model JoinViewModel
-<div class="form-group">
-    <label asp-for="Mode">@T["Mode"]</label>
-    <select asp-for="Mode" asp-items="@Html.GetEnumSelectList(Model.Mode.GetType())" class="form-control"></select>
-    <span asp-validation-for="Mode" class="text-danger"></span>
-    <small class="form-text text-muted">@T["Controls whether the Join task should wait for <strong>all</strong> or <strong>any</strong> inbound transitions to be completed."]</small>
-</div>

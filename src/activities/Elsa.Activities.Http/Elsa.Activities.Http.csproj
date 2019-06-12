@@ -16,7 +16,6 @@
         <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
         <ProjectReference Include="..\..\core\Elsa.Persistence.Abstractions\Elsa.Persistence.Abstractions.csproj" />
         <ProjectReference Include="..\..\core\Elsa.Runtime.Abstractions\Elsa.Runtime.Abstractions.csproj" />
-        <ProjectReference Include="..\..\web\modules\Elsa.Web.Abstractions\Elsa.Web.Abstractions.csproj" />
     </ItemGroup>
 
     <ItemGroup>
