@@ -9,20 +9,12 @@ namespace Elsa.Activities.Http.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddHttpDesigners(this IServiceCollection services)
-        {
-            return services
-                .AddActivityProvider<ActivityProvider>()
-                .AddActivityDesigners<ActivityDesignerProvider>();
-        }
-
         public static IServiceCollection AddHttpActivities(this IServiceCollection services)
         {
             services.TryAddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddHttpClient(nameof(HttpRequestActionDriver));
             
             services
-                .AddActivityProvider<ActivityProvider>()
                 .AddActivityDriver<HttpRequestTriggerDriver>()
                 .AddActivityDriver<HttpResponseActionDriver>()
                 .AddActivityDriver<HttpRequestActionDriver>();

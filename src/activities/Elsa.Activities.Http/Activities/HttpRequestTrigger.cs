@@ -1,15 +1,9 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
-using Elsa.Attributes;
 using Elsa.Models;
 
 namespace Elsa.Activities.Http.Activities
 {
-    [ActivityDisplayName("HTTP Request Trigger")]
-    [ActivityCategory("HTTP")]
-    [ActivityDescription("Triggers when an incoming HTTP request is received.")]
-    [IsTrigger]
-    [DefaultEndpoint]
     public class HttpRequestTrigger : Activity
     {
         /// <summary>

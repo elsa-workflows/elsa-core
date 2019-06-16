@@ -11,20 +11,12 @@ namespace Elsa.Activities.Email.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddEmailDesigners(this IServiceCollection services)
-        {
-            return services
-                .AddActivityProvider<ActivityProvider>()
-                .AddActivityDesigners<ActivityProvider>();
-        }
-
         public static IServiceCollection AddEmailActivities(this IServiceCollection services, IConfiguration configuration)
         {
             return services
                 .AddOptions()
                 .Configure<SmtpOptions>(configuration)
                 .AddSingleton(CreateSmtpClient)
-                .AddActivityProvider<ActivityProvider>()
                 .AddActivityDriver<SendEmailDriver>();
         }
 

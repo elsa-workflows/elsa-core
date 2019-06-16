@@ -1,5 +1,4 @@
-﻿using Elsa.Attributes;
-using Elsa.Core.Expressions;
+﻿using Elsa.Core.Expressions;
 using Elsa.Expressions;
 using Elsa.Models;
 
@@ -8,10 +7,6 @@ namespace Elsa.Activities.Console.Activities
     /// <summary>
     /// Writes a text string to the console.
     /// </summary>
-    [ActivityDisplayName("Write Line")]
-    [ActivityCategory("Console")]
-    [ActivityDescription("Write a line to the console")]
-    [DefaultEndpoint]
     public class WriteLine : Activity
     {
         public WriteLine()

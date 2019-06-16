@@ -1,14 +1,9 @@
 ﻿using System.Collections.Generic;
-using Elsa.Attributes;
 using Elsa.Expressions;
 using Elsa.Models;
 
 namespace Elsa.Activities.Http.Activities
 {
-    [ActivityDisplayName("HTTP Request Action")]
-    [ActivityCategory("HTTP")]
-    [ActivityDescription("Performs an HTTP request.")]
-    [DefaultEndpoint]
     public class HttpRequestAction : Activity
     {
         public HttpRequestAction()
