@@ -4,7 +4,7 @@ using Elsa.Models;
 
 namespace Elsa.Activities.Http.Activities
 {
-    public class HttpRequestAction : Activity
+    public class HttpRequestAction : ActivityBase
     {
         public HttpRequestAction()
         {

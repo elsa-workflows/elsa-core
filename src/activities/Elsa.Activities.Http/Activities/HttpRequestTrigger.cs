@@ -4,7 +4,7 @@ using Elsa.Models;
 
 namespace Elsa.Activities.Http.Activities
 {
-    public class HttpRequestTrigger : Activity
+    public class HttpRequestTrigger : ActivityBase
     {
         /// <summary>
         /// The path that triggers this activity. 

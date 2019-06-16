@@ -3,7 +3,7 @@ using Elsa.Models;
 
 namespace Elsa.Activities.Primitives.Activities
 {
-    public class Join : Activity
+    public class Join : ActivityBase
     {
         public enum JoinMode
         {

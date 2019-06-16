@@ -1,11 +1,12 @@
 using System;
 using System.Collections.Generic;
 using Elsa.Core.Results;
+using Elsa.Models;
 using NodaTime;
 
-namespace Elsa.Core.Handlers
+namespace Elsa.Core
 {
-    public abstract class ActivityDriver<T> : ActivityDriverBase<T> where T : IActivity
+    public abstract class Activity : ActivityBase
     {
         protected HaltResult Halt() => new HaltResult();
         protected TriggerEndpointsResult Endpoints(IEnumerable<string> names) => new TriggerEndpointsResult(names);

@@ -15,9 +15,9 @@ namespace Elsa.Activities.Http.Extensions
             services.AddHttpClient(nameof(HttpRequestActionDriver));
             
             services
-                .AddActivityDriver<HttpRequestTriggerDriver>()
-                .AddActivityDriver<HttpResponseActionDriver>()
-                .AddActivityDriver<HttpRequestActionDriver>();
+                .AddActivity<HttpRequestTriggerDriver>()
+                .AddActivity<HttpResponseActionDriver>()
+                .AddActivity<HttpRequestActionDriver>();
 
             services
                 .AddSingleton<IContentFormatter, NullContentFormatter>()

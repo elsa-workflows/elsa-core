@@ -17,7 +17,7 @@ namespace Elsa.Activities.Email.Extensions
                 .AddOptions()
                 .Configure<SmtpOptions>(configuration)
                 .AddSingleton(CreateSmtpClient)
-                .AddActivityDriver<SendEmailDriver>();
+                .AddActivity<SendEmailDriver>();
         }
 
         private static SmtpClient CreateSmtpClient(IServiceProvider serviceProvider)

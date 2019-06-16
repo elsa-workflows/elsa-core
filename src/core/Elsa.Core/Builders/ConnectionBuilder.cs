@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Elsa.Core.Builders;
 using Elsa.Extensions;
 using Elsa.Models;
 
@@ -38,12 +39,6 @@ namespace Elsa.Builders
             return WorkflowBuilder.Add(connectionBuilder);
         }
 
-        public ConnectionBuilder Next(string activityName, string sourceEndpointName = EndpointNames.Done)
-        {
-            return WorkflowBuilder.Add(
-                new ConnectionBuilder(WorkflowBuilder, TargetActivity, sourceEndpointName, activityName));
-        }
-        
         public override void ApplyTo(Workflow workflow)
         {
             var sourceActivity = SourceActivity;

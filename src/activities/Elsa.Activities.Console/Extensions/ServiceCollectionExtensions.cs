@@ -1,4 +1,4 @@
-using Elsa.Activities.Console.Drivers;
+using Elsa.Activities.Console.Activities;
 using Elsa.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -9,8 +9,8 @@ namespace Elsa.Activities.Console.Extensions
         public static IServiceCollection AddConsoleActivities(this IServiceCollection services)
         {
             return services
-                .AddActivityDriver<ReadLineDriver>()
-                .AddActivityDriver<WriteLineDriver>();
+                .AddActivity<ReadLine>()
+                .AddActivity<WriteLine>();
         }
     }
 }

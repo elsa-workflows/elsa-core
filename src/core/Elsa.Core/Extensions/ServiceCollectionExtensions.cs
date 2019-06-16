@@ -1,3 +1,4 @@
+using Elsa.Core.Builders;
 using Elsa.Core.Expressions;
 using Elsa.Core.Serialization;
 using Elsa.Core.Serialization.Formatters;
@@ -21,20 +22,18 @@ namespace Elsa.Core.Extensions
             services.AddSingleton<ITokenFormatter, JsonTokenFormatter>();
             services.AddSingleton<ITokenFormatter, YamlTokenFormatter>();
             services.AddSingleton<ITokenFormatter, XmlTokenFormatter>();
-            services.AddSingleton<IExpressionEvaluator, PlainTextEvaluator>();
-            services.AddSingleton<IExpressionEvaluator, JavaScriptEvaluator>();
+            services.AddSingleton<IExpressionEvaluator, PlainText>();
+            services.AddSingleton<IExpressionEvaluator, JavaScript>();
+            services.TryAddSingleton<IWorkflowInvoker, WorkflowInvoker>();
+            services.TryAddSingleton<IActivityInvoker, ActivityInvoker>();
+            services.TryAddSingleton<IWorkflowExpressionEvaluator, WorkflowExpressionEvaluator>();
             
             return services;
         }
 
-        public static IServiceCollection AddWorkflowsInvoker(this IServiceCollection services)
+        public static IServiceCollection AddWorkflowBuilder(this IServiceCollection services)
         {
-            services.AddWorkflowsCore();
-            services.TryAddSingleton<IWorkflowInvoker, WorkflowInvoker>();
-            services.TryAddSingleton<IActivityInvoker, ActivityInvoker>();
-            services.TryAddSingleton<IActivityDriverRegistry, ActivityDriverRegistry>();
-            services.TryAddSingleton<IWorkflowExpressionEvaluator, WorkflowExpressionEvaluator>();
-
+            services.AddSingleton<WorkflowBuilder>();
             return services;
         }
     }

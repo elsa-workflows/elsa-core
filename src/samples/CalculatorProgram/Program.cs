@@ -10,7 +10,6 @@ using Elsa.Builders;
 using Elsa.Core.Expressions;
 using Elsa.Core.Extensions;
 using Elsa.Expressions;
-using Elsa.Extensions;
 using Elsa.Models;
 using Microsoft.Extensions.DependencyInjection;
 

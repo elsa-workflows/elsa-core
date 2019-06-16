@@ -1,3 +1,4 @@
+using Elsa.Core.Builders;
 using Elsa.Models;
 
 namespace Elsa.Builders

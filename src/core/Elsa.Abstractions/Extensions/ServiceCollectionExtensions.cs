@@ -4,12 +4,12 @@ namespace Elsa.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddActivityDriver<T>(this IServiceCollection services)
-            where T : class, IActivityDriver
+        public static IServiceCollection AddActivity<T>(this IServiceCollection services)
+            where T : class, IActivity
         {
             return services
                 .AddTransient<T>()
-                .AddTransient<IActivityDriver>(sp => sp.GetRequiredService<T>());
+                .AddTransient<IActivity>(sp => sp.GetRequiredService<T>());
         }
     }
 }

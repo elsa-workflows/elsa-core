@@ -9,13 +9,13 @@ namespace Elsa.Activities.Primitives.Extensions
         public static IServiceCollection AddPrimitiveActivities(this IServiceCollection services)
         {
             return services
-                .AddActivityDriver<SetVariableDriver>()
-                .AddActivityDriver<ForEachDriver>()
-                .AddActivityDriver<ForkDriver>()
-                .AddActivityDriver<JoinDriver>()
+                .AddActivity<SetVariableDriver>()
+                .AddActivity<ForEachDriver>()
+                .AddActivity<ForkDriver>()
+                .AddActivity<JoinDriver>()
                 .AddSingleton<IWorkflowEventHandler>(sp => sp.GetRequiredService<JoinDriver>())
-                .AddActivityDriver<IfElseDriver>()
-                .AddActivityDriver<SwitchDriver>();
+                .AddActivity<IfElseDriver>()
+                .AddActivity<SwitchDriver>();
         }
     }
 }

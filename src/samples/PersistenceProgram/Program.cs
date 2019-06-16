@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,10 +11,8 @@ using Elsa.Core.Expressions;
 using Elsa.Core.Extensions;
 using Elsa.Core.Serialization.Formatters;
 using Elsa.Expressions;
-using Elsa.Extensions;
 using Elsa.Persistence;
 using Elsa.Persistence.FileSystem.Extensions;
-using Elsa.Serialization.Formatters;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 

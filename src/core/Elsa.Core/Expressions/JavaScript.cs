@@ -2,17 +2,23 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Expressions;
 using Elsa.Models;
 using Jint;
 
 namespace Elsa.Core.Expressions
 {
-    public class JavaScriptEvaluator : IExpressionEvaluator
+    public class JavaScript : IExpressionEvaluator
     {
+        public static WorkflowExpression<T> CreateExpression<T>(string expression)
+        {
+            return new WorkflowExpression<T>(SyntaxName, expression);
+        }
+        
         public const string SyntaxName = "JavaScript";
         private readonly Engine engine;
 
-        public JavaScriptEvaluator()
+        public JavaScript()
         {
             engine = new Engine(options => { options.AllowClr(); });
         }

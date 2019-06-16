@@ -3,7 +3,7 @@ using Elsa.Models;
 
 namespace Elsa.Activities.Primitives.Activities
 {
-    public class SetVariable : Activity
+    public class SetVariable : ActivityBase
     {
         public SetVariable()
         {

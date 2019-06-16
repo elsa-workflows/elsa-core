@@ -4,7 +4,7 @@ using Elsa.Models;
 
 namespace Elsa.Activities.Primitives.Activities
 {
-    public class Switch : Activity
+    public class Switch : ActivityBase
     {
         public Switch()
         {

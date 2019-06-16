@@ -2,7 +2,7 @@
 
 namespace Elsa.Activities.Primitives.Activities
 {
-    public class ForEach : Activity
+    public class ForEach : ActivityBase
     {
     }
 }

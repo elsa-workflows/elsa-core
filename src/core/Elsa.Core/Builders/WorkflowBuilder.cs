@@ -1,12 +1,28 @@
+using System;
 using System.Collections.Generic;
+using Elsa.Builders;
+using Elsa.Extensions;
 using Elsa.Models;
 
-namespace Elsa.Builders
+namespace Elsa.Core.Builders
 {
     public class WorkflowBuilder
     {
+        public WorkflowBuilder(IServiceProvider serviceProvider)
+        {
+            ServiceProvider = serviceProvider;
+        }
+
+        public IServiceProvider ServiceProvider { get; }
         private readonly ICollection<BuilderNode> nodes = new List<BuilderNode>();
         internal IEnumerable<BuilderNode> Nodes => nodes;
+
+        public ActivityBuilder Add<T>(Action<T> configureActivity = null) where T : IActivity
+        {
+            var activity = ServiceProvider.CreateActivity<T>();
+            configureActivity?.Invoke(activity);
+            return Add((IActivity)activity);
+        }
 
         public ActivityBuilder Add(IActivity activity)
         {
@@ -21,7 +37,7 @@ namespace Elsa.Builders
             {
                 node.ApplyTo(workflow);
             }
-            
+
             return workflow;
         }
 

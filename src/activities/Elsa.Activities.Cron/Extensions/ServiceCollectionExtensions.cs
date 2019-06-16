@@ -15,7 +15,7 @@ namespace Elsa.Activities.Cron.Extensions
                 .AddOptions()
                 .Configure<CronOptions>(configuration)
                 .AddHostedService<CronHostedService>()
-                .AddActivityDriver<CronTriggerDriver>();
+                .AddActivity<CronTriggerDriver>();
         }
     }
 }

@@ -4,7 +4,7 @@ using Elsa.Models;
 
 namespace Elsa.Activities.Http.Activities
 {
-    public class HttpResponseAction : Activity
+    public class HttpResponseAction : ActivityBase
     {
         /// <summary>
         /// The HTTP status code to return.

@@ -1,12 +1,18 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Expressions;
 using Elsa.Models;
 
 namespace Elsa.Core.Expressions
 {
-    public class PlainTextEvaluator : IExpressionEvaluator
+    public class PlainText : IExpressionEvaluator
     {
+        public static WorkflowExpression<T> Expression<T>(string expression)
+        {
+            return new WorkflowExpression<T>(SyntaxName, expression);
+        }
+        
         public const string SyntaxName = "PlainText";
         public string Syntax => SyntaxName;
 

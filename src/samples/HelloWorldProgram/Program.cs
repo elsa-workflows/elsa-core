@@ -2,8 +2,11 @@
 using Elsa;
 using Elsa.Activities.Console.Activities;
 using Elsa.Activities.Console.Extensions;
+using Elsa.Builders;
+using Elsa.Core.Builders;
+using Elsa.Core.Expressions;
 using Elsa.Core.Extensions;
-using Elsa.Extensions;
+using Elsa.Expressions;
 using Elsa.Models;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -18,20 +21,19 @@ namespace HelloWorldProgram
         {
             // Setup a service collection.
             var services = new ServiceCollection()
-                .AddWorkflowsInvoker()
+                .AddWorkflowBuilder()
+                .AddWorkflowsCore()
                 .AddConsoleActivities()
                 .BuildServiceProvider();
 
-            // Create a workflow invoker.
-            var invoker = services.GetService<IWorkflowInvoker>();
-
             // Create a workflow.
-            var workflow = new Workflow();
-
-            // Add a single activity to execute.
-            workflow.Activities.Add(new WriteLine("Hello World!"));
-
+            var workflow = services.GetService<WorkflowBuilder>()
+                .Add<WriteLine>(x => x.TextExpression = PlainText.Expression<string>("Hello World!"))
+                .Next<WriteLine>(x => x.TextExpression = PlainText.Expression<string>("Goodbye!"))
+                .BuildWorkflow();
+            
             // Invoke the workflow.
+            var invoker = services.GetService<IWorkflowInvoker>();
             invoker.InvokeAsync(workflow);
             
             // Output: Hello World!

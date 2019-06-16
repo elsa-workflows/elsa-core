@@ -3,7 +3,7 @@ using Elsa.Models;
 
 namespace Elsa.Activities.Primitives.Activities
 {
-    public class IfElse : Activity
+    public class IfElse : ActivityBase
     {
         public IfElse()
         {

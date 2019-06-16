@@ -1,4 +1,9 @@
-﻿using Elsa.Models;
+﻿using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
+using Elsa.Core;
+using Elsa.Models;
+using Elsa.Results;
 
 namespace Elsa.Activities.Console.Activities
 {
@@ -7,15 +12,43 @@ namespace Elsa.Activities.Console.Activities
     /// </summary>
     public class ReadLine : Activity
     {
-        public ReadLine()
+        private readonly TextReader input;
+
+        public ReadLine() : this(System.Console.In)
         {
         }
 
-        public ReadLine(string argumentName)
+        public ReadLine(TextReader input)
         {
-            ArgumentName = argumentName;
+            this.input = input;
         }
         
-        public string ArgumentName { get; set; }
+        public string ArgumentName 
+        {
+            get => GetState<string>();
+            set => SetState(value);
+        }
+        
+        protected override async Task<ActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
+        {
+            if (input == null)
+                return Halt();
+
+            var receivedInput = await input.ReadLineAsync();
+            return Execute(context, receivedInput);
+        }
+
+        protected override ActivityExecutionResult OnResume(WorkflowExecutionContext context)
+        {
+            var receivedInput = (string)context.Workflow.Arguments[ArgumentName];
+            return Execute(context, receivedInput);
+        }
+
+        private ActivityExecutionResult Execute(WorkflowExecutionContext workflowContext, string receivedInput)
+        {
+            workflowContext.Workflow.CurrentScope.SetVariable(ArgumentName, receivedInput);
+            workflowContext.SetLastResult(receivedInput);
+            return Endpoint("Done");
+        }
     }
 }
