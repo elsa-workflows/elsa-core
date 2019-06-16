@@ -31,7 +31,7 @@ namespace Elsa.Persistence.FileSystem
 
         public async Task SaveAsync(string directory, Workflow value, CancellationToken cancellationToken)
         {
-            var data = await workflowSerializer.SerializeAsync(value, format, cancellationToken);
+            var data = workflowSerializer.Serialize(value, format);
             var fileName = Path.HasExtension(value.Id) ? value.Id : $"{value.Id}.{format.ToLower()}";
             var path = fileSystem.Path.Combine(rootDirectory, directory, fileName);
 
@@ -52,7 +52,7 @@ namespace Elsa.Persistence.FileSystem
         private async Task<Workflow> LoadWorkflowAsync(string path, CancellationToken cancellationToken)
         {
             var data = fileSystem.File.ReadAllText(path);
-            return await workflowSerializer.DeserializeAsync(data, format, cancellationToken);
+            return workflowSerializer.Deserialize(data, format);
         }
 
         private void EnsureWorkflowsDirectory(string path)

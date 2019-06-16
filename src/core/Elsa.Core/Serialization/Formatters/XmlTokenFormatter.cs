@@ -9,7 +9,7 @@ namespace Elsa.Core.Serialization.Formatters
     {
         public const string FormatName = "XML";
         public string Format => FormatName;
-        public string ContentType => "text/xml";
+        public string ContentType => "application/xml";
 
         public string ToString(JToken token)
         {

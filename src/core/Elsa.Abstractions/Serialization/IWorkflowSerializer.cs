@@ -1,17 +1,15 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
-using Elsa.Models;
+﻿using Elsa.Models;
 using Newtonsoft.Json.Linq;
 
 namespace Elsa.Serialization
 {
     public interface IWorkflowSerializer
     {
-        Task<string> SerializeAsync(Workflow workflow, string format, CancellationToken cancellationToken);
-        Task<string> SerializeAsync(JToken  token, string format, CancellationToken cancellationToken);
-        Task<Workflow> DeserializeAsync(string data, string format, CancellationToken cancellationToken);
-        Task<Workflow> DeserializeAsync(JToken token, CancellationToken cancellationToken);
-        Task<Workflow> CloneAsync(Workflow workflow, CancellationToken cancellationToken);
-        Task<Workflow> DeriveAsync(Workflow parent, CancellationToken cancellationToken);
+        string Serialize(Workflow workflow, string format);
+        string Serialize(JToken  token, string format);
+        Workflow Deserialize(string data, string format);
+        Workflow Deserialize(JToken token);
+        Workflow Clone(Workflow workflow);
+        Workflow Derive(Workflow parent);
     }
 }

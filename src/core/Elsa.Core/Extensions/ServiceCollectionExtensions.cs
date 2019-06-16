@@ -16,19 +16,27 @@ namespace Elsa.Core.Extensions
         {
             services.AddLogging();
             services.AddLocalization();
-            services.TryAddSingleton<IIdGenerator, DefaultIdGenerator>();
             services.TryAddSingleton<IClock>(SystemClock.Instance);
-            services.TryAddSingleton<ITokenFormatterProvider, TokenFormatterProvider>();
+            services.AddSingleton<IIdGenerator, DefaultIdGenerator>();
+            services.AddSingleton<IWorkflowSerializer, WorkflowSerializer>();
             services.AddSingleton<ITokenFormatter, JsonTokenFormatter>();
             services.AddSingleton<ITokenFormatter, YamlTokenFormatter>();
             services.AddSingleton<ITokenFormatter, XmlTokenFormatter>();
             services.AddSingleton<IExpressionEvaluator, PlainText>();
             services.AddSingleton<IExpressionEvaluator, JavaScript>();
-            services.TryAddSingleton<IWorkflowInvoker, WorkflowInvoker>();
-            services.TryAddSingleton<IActivityInvoker, ActivityInvoker>();
-            services.TryAddSingleton<IWorkflowExpressionEvaluator, WorkflowExpressionEvaluator>();
+            services.AddSingleton<IWorkflowInvoker, WorkflowInvoker>();
+            services.AddSingleton<IActivityInvoker, ActivityInvoker>();
+            services.AddSingleton<IWorkflowExpressionEvaluator, WorkflowExpressionEvaluator>();
             
             return services;
+        }
+        
+        public static IServiceCollection AddActivity<T>(this IServiceCollection services)
+            where T : class, IActivity
+        {
+            return services
+                .AddTransient<T>()
+                .AddTransient<IActivity>(sp => sp.GetRequiredService<T>());
         }
 
         public static IServiceCollection AddWorkflowBuilder(this IServiceCollection services)
