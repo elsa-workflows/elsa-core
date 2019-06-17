@@ -47,6 +47,10 @@ namespace HelloWorldProgram
             
             Console.WriteLine("Serialized workflow instance:");
             Console.WriteLine(data);
+            
+            // Deserialize the workflow.
+            workflow = serializer.Deserialize(data, JsonTokenFormatter.FormatName);
+            await invoker.InvokeAsync(workflow);
 
             Console.ReadLine();
         }

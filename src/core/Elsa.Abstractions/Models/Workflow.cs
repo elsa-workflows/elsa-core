@@ -21,7 +21,6 @@ namespace Elsa.Models
             Arguments = new Variables();
             BlockingActivities = new List<IActivity>();
             ExecutionLog = new List<LogEntry>();
-            Metadata = new WorkflowMetadata();
         }
 
         public string Id { get; set; }
@@ -38,7 +37,6 @@ namespace Elsa.Models
         public Variables Arguments { get; set; }
         public IList<IActivity> BlockingActivities { get; set; }
         public IList<LogEntry> ExecutionLog { get; set; }
-        public WorkflowMetadata Metadata { get; set; }
         public WorkflowFault Fault { get; set; }
     }
 }

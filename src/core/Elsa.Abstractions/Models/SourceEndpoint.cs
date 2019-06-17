@@ -6,11 +6,11 @@ namespace Elsa.Models
         {
         }
 
-        public SourceEndpoint(IActivity activity, string name = EndpointNames.Done) : base(activity)
+        public SourceEndpoint(IActivity activity, string outcome = EndpointNames.Done) : base(activity)
         {
-            Name = name;
+            Outcome = outcome;
         }
 
-        public string Name { get; set; }
+        public string Outcome { get; set; }
     }
 }

@@ -1,11 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Elsa.Core.Extensions;
 using Elsa.Models;
 using Elsa.Serialization;
 using Elsa.Serialization.Formatters;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using NodaTime;
+using NodaTime.Serialization.JsonNet;
 
 namespace Elsa.Core.Serialization
 {
@@ -17,7 +20,7 @@ namespace Elsa.Core.Serialization
         public WorkflowSerializer(IEnumerable<ITokenFormatter> formatters)
         {
             this.formatters = formatters.ToDictionary(x => x.Format, StringComparer.OrdinalIgnoreCase);
-            jsonSerializer = new JsonSerializer();
+            jsonSerializer = new JsonSerializer().ConfigureForWorkflows();
         }
         
         public string Serialize(Workflow workflow, string format)

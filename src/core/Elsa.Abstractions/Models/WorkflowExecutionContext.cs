@@ -106,7 +106,7 @@ namespace Elsa.Models
         public void ScheduleNextActivities(WorkflowExecutionContext workflowContext, SourceEndpoint endpoint)
         {
             var completedActivity = workflowContext.CurrentActivity;
-            var connections = Workflow.Connections.Where(x => x.Source.Activity.Id == completedActivity.Id && x.Source.Name == endpoint.Name);
+            var connections = Workflow.Connections.Where(x => x.Source.Activity.Id == completedActivity.Id && x.Source.Outcome == endpoint.Outcome);
 
             foreach (var connection in connections)
             {
