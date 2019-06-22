@@ -7,7 +7,7 @@ using Elsa.Services.Models;
 
 namespace Elsa.Core.Expressions
 {
-    public class PlainText : IExpressionEvaluator
+    public class PlainTextEvaluator : IExpressionEvaluator
     {
         public static WorkflowExpression<T> Expression<T>(string expression)
         {

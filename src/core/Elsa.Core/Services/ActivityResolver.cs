@@ -19,7 +19,7 @@ namespace Elsa.Core.Services
             activityTypeLookup = activities.Select(x => x.GetType()).ToDictionary(x => x.Name);
         }
         
-        public IActivity ResolveActivity(string activityTypeName)
+        public IActivity ResolveActivity(string activityTypeName, Action<IActivity> setup = null)
         {
             if (!activityTypeLookup.ContainsKey(activityTypeName))
             {
@@ -29,6 +29,7 @@ namespace Elsa.Core.Services
             var type = activityTypeLookup[activityTypeName];
             var activity = (IActivity)serviceProvider.GetRequiredService(type);
 
+            setup?.Invoke(activity);
             return activity;
         }
     }

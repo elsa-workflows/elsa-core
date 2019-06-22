@@ -1,4 +1,6 @@
-﻿namespace Elsa.Expressions
+﻿using Elsa.Expressions;
+
+namespace Elsa.Core.Expressions
 {
     public class WorkflowExpression
     {
@@ -13,8 +15,8 @@
 
         public override string ToString() => Expression;
     }
-    
-    public class WorkflowExpression<T> : WorkflowExpression
+
+    public class WorkflowExpression<T> : WorkflowExpression, IWorkflowExpression<T>
     {   
         public WorkflowExpression(string syntax, string expression) : base(syntax, expression)
         {

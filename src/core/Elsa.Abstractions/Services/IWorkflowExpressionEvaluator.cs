@@ -7,6 +7,6 @@ namespace Elsa.Services
 {
     public interface IWorkflowExpressionEvaluator
     {
-        Task<T> EvaluateAsync<T>(WorkflowExpression<T> expression, WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken);
+        Task<T> EvaluateAsync<T>(IWorkflowExpression<T> expression, WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken);
     }
 }

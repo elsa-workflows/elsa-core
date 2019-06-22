@@ -7,6 +7,7 @@ using Elsa.Services;
 using Elsa.Services.Extensions;
 using Elsa.Services.Models;
 using Esprima.Ast;
+using Newtonsoft.Json.Linq;
 using Connection = Elsa.Services.Models.Connection;
 
 namespace Elsa.Core.Services.WorkflowBuilders
@@ -62,14 +63,25 @@ namespace Elsa.Core.Services.WorkflowBuilders
 
         public Workflow Build(WorkflowDefinition definition)
         {
-            var activities = definition.Activities.Select(x => activityResolver.ResolveActivity(x.TypeName)).ToDictionary(x => x.Id);
+            var activities =
+                from activityDefinition in definition.Activities
+                let activity = activityResolver.ResolveActivity(activityDefinition.TypeName, x =>
+                    {
+                        x.Id = activityDefinition.Id;
+                        x.State = new JObject(activityDefinition.State);
+                    }
+                )
+                select activity;
+            
+            var activityDictionary = activities.ToDictionary(x => x.Id);
+            
             var connections =
                 from connection in definition.Connections
-                let source = activities[connection.Source.ActivityId]
-                let target = activities[connection.Target.ActivityId]
+                let source = activityDictionary[connection.Source.ActivityId]
+                let target = activityDictionary[connection.Target.ActivityId]
                 select new Connection(source, target, connection.Source.Outcome);
 
-            return new Workflow(activities.Values, connections, Variables.Empty);
+            return new Workflow(activityDictionary.Values, connections, Variables.Empty);
         }
     }
 }

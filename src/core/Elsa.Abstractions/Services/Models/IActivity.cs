@@ -21,10 +21,6 @@ namespace Elsa.Services.Models
         /// Unique identifier of this activity
         /// </summary>
         string Id { get; set; }
-        string Alias { get; set; }
-        /// <summary>
-        /// The activity type of this driver.
-        /// </summary>
         
         /// <summary>
         /// Returns a value of whether the specified activity can execute.

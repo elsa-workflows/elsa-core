@@ -17,7 +17,7 @@ namespace Elsa.Core.Expressions
             this.evaluators = evaluators.ToDictionary(x => x.Syntax);
         }
         
-        public async Task<T> EvaluateAsync<T>(WorkflowExpression<T> expression, WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
+        public async Task<T> EvaluateAsync<T>(IWorkflowExpression<T> expression, WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
         {
             if (expression == null)
                 return default;

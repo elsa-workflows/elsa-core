@@ -9,7 +9,7 @@ using Jint;
 
 namespace Elsa.Core.Expressions
 {
-    public class JavaScript : IExpressionEvaluator
+    public class JavaScriptEvaluator : IExpressionEvaluator
     {
         public static WorkflowExpression<T> CreateExpression<T>(string expression)
         {
@@ -19,7 +19,7 @@ namespace Elsa.Core.Expressions
         public const string SyntaxName = "JavaScript";
         private readonly Engine engine;
 
-        public JavaScript()
+        public JavaScriptEvaluator()
         {
             engine = new Engine(options => { options.AllowClr(); });
         }

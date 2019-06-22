@@ -13,17 +13,7 @@ namespace Elsa.Services
         public JObject State { get; set; } = new JObject();
         public virtual string TypeName => GetType().Name;
 
-        public string Id
-        {
-            get => GetState<string>();
-            set => SetState(value);
-        }
-        
-        public string Alias 
-        {
-            get => GetState<string>();
-            set => SetState(value);
-        }
+        public string Id { get; set; }
         
         public Task<bool> CanExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken) => OnCanExecuteAsync(context, cancellationToken);
         public Task<ActivityExecutionResult> ExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken) => OnExecuteAsync(context, cancellationToken);
