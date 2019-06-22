@@ -14,9 +14,9 @@ namespace Elsa.Core.Results
     /// <summary>
     /// A result that carries information about the next activity to execute.
     /// </summary>
-    public class TriggerEndpointsResult : ActivityExecutionResult
+    public class OutcomeResult : ActivityExecutionResult
     {
-        public TriggerEndpointsResult(IEnumerable<string> endpointNames)
+        public OutcomeResult(IEnumerable<string> endpointNames)
         {
             EndpointNames = endpointNames.ToList();
         }
@@ -33,14 +33,14 @@ namespace Elsa.Core.Results
             }
 
             var eventHandlers = workflowContext.ServiceProvider.GetServices<IWorkflowEventHandler>();
-            var logger = workflowContext.ServiceProvider.GetRequiredService<ILogger<TriggerEndpointsResult>>();
+            var logger = workflowContext.ServiceProvider.GetRequiredService<ILogger<OutcomeResult>>();
             await eventHandlers.InvokeAsync(x => x.ActivityExecutedAsync(workflowContext, currentActivity, cancellationToken), logger);
         }
         
         private void ScheduleNextActivities(WorkflowExecutionContext workflowContext, SourceEndpoint endpoint)
         {
             var completedActivity = workflowContext.CurrentActivity;
-            var connections = workflowContext.Workflow.Connections.Where(x => x.Source.Activity == completedActivity && (x.Source.Outcome ?? Elsa.EndpointNames.Done) == endpoint.Outcome);
+            var connections = workflowContext.Workflow.Connections.Where(x => x.Source.Activity == completedActivity && (x.Source.Outcome ?? OutcomeNames.Done) == endpoint.Outcome);
 
             foreach (var connection in connections)
             {

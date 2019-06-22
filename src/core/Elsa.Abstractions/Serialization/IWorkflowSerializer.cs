@@ -1,5 +1,4 @@
-﻿using Elsa.Models;
-using Elsa.Serialization.Models;
+﻿using Elsa.Serialization.Models;
 using Newtonsoft.Json.Linq;
 
 namespace Elsa.Serialization
@@ -10,6 +9,5 @@ namespace Elsa.Serialization
         string Serialize(JToken  token, string format);
         WorkflowInstance Deserialize(string data, string format);
         WorkflowInstance Deserialize(JToken token);
-        WorkflowInstance Clone(WorkflowInstance workflowInstance);
     }
 }

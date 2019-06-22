@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Serialization;
-using Elsa.Serialization.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
 

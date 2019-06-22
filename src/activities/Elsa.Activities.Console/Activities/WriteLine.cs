@@ -1,11 +1,9 @@
 ﻿using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Core;
 using Elsa.Core.Expressions;
 using Elsa.Core.Services;
 using Elsa.Expressions;
-using Elsa.Models;
 using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -41,7 +39,7 @@ namespace Elsa.Activities.Console.Activities
         {
             var text = await evaluator.EvaluateAsync(TextExpression, context, cancellationToken);
             await output.WriteLineAsync(text);
-            return Endpoint(EndpointNames.Done);
+            return Outcome(OutcomeNames.Done);
         }
     }
 }

@@ -1,8 +1,7 @@
 using System;
-using Elsa.Services;
-using Microsoft.Extensions.DependencyInjection;
+using Elsa.Services.Models;
 
-namespace Elsa.Extensions
+namespace Elsa.Services.Extensions
 {
     public static class ActivityResolverExtensions
     {
@@ -10,6 +9,9 @@ namespace Elsa.Extensions
         {
             var activity = (T) resolver.ResolveActivity(typeof(T).Name);
 
+            if (activity == null)
+                activity = Activator.CreateInstance<T>();
+            
             configure?.Invoke(activity);
             return activity;
         }

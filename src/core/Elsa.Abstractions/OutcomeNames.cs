@@ -1,6 +1,6 @@
 namespace Elsa
 {
-    public class EndpointNames
+    public class OutcomeNames
     {
         public const string Done = "Done";
         public const string Next = "Next";

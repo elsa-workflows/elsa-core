@@ -1,3 +1,5 @@
+using Elsa.Services.Models;
+
 namespace Elsa.Services
 {
     public interface IActivityResolver

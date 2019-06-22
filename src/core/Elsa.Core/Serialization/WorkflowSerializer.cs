@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Elsa.Models;
 using Elsa.Serialization;
 using Elsa.Serialization.Formatters;
 using Elsa.Serialization.Models;
@@ -43,13 +42,6 @@ namespace Elsa.Core.Serialization
         public WorkflowInstance Deserialize(JToken token)
         {
             return token.ToObject<WorkflowInstance>(jsonSerializer);
-        }
-
-        public WorkflowInstance Clone(WorkflowInstance workflowInstance)
-        {
-            var token = JObject.FromObject(workflowInstance, jsonSerializer);
-            var clonedToken = token.DeepClone();
-            return clonedToken.ToObject<WorkflowInstance>(jsonSerializer);
         }
     }
 }

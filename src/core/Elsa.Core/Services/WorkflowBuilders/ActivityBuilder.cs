@@ -1,44 +1,30 @@
 using System;
-using System.Collections.Generic;
 using Elsa.Services;
 using Elsa.Services.Models;
 
 namespace Elsa.Core.Services.WorkflowBuilders
 {
-    public class ActivityBuilder : Builder
+    public class ActivityBuilder : IActivityBuilder
     {
-        public ActivityBuilder(WorkflowBuilder workflowBuilder, IActivity activity) : base(workflowBuilder)
+        public ActivityBuilder(WorkflowBuilder workflowBuilder, IActivity activity)
         {
+            WorkflowBuilder = workflowBuilder;
             Activity = activity;
-            Connections = new List<ConnectionBuilder>();
         }
+
+        public WorkflowBuilder WorkflowBuilder { get; }
         public IActivity Activity { get; }
-        public IList<ConnectionBuilder> Connections { get; }
 
-        public Workflow Build()
+        public IOutcomeBuilder When(string outcome)
         {
-            return WorkflowBuilder.Build();
-        }
-    }
-    
-    public class ActivityBuilder<T> : ActivityBuilder where T:IActivity
-    {
-        public ActivityBuilder(WorkflowBuilder workflowBuilder, T activity) : base(workflowBuilder, activity)
-        {
-        }
-        
-        public ActivityBuilder<TNext> Add<TNext>(Action<TNext> configure) where TNext : IActivity
-        {
-            return WorkflowBuilder.Add(configure);
+            return new OutcomeBuilder(WorkflowBuilder, this, outcome);
         }
 
-        public ActivityBuilder<TNext> Connect<TNext>(Action<TNext> configure, string outcome = null) where TNext : IActivity
+        public IActivityBuilder Then<T>(Action<T> setup = null) where T : IActivity
         {
-            var activity = Add(configure);
-            var connection = new ConnectionBuilder(WorkflowBuilder, this, activity, outcome);
-
-            Connections.Add(connection);
-            return activity;
+            return When(null).Then(setup);
         }
+
+        public Workflow Build() => WorkflowBuilder.Build();
     }
 }

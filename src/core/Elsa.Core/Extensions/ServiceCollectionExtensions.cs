@@ -1,3 +1,4 @@
+using Elsa.Core.Activities;
 using Elsa.Core.Expressions;
 using Elsa.Core.Serialization;
 using Elsa.Core.Serialization.Formatters;
@@ -6,6 +7,7 @@ using Elsa.Core.Services.WorkflowBuilders;
 using Elsa.Serialization;
 using Elsa.Serialization.Formatters;
 using Elsa.Services;
+using Elsa.Services.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using NodaTime;
@@ -14,7 +16,7 @@ namespace Elsa.Core.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddWorkflowsCore(this IServiceCollection services)
+        public static IServiceCollection AddWorkflows(this IServiceCollection services)
         {
             services.TryAddSingleton<IClock>(SystemClock.Instance);
 
@@ -32,7 +34,9 @@ namespace Elsa.Core.Extensions
                 .AddSingleton<IActivityInvoker, ActivityInvoker>()
                 .AddSingleton<IActivityResolver, ActivityResolver>()
                 .AddSingleton<IWorkflowExpressionEvaluator, WorkflowExpressionEvaluator>()
-                .AddSingleton<IWorkflowSerializerProvider, WorkflowSerializerProvider>();
+                .AddSingleton<IWorkflowSerializerProvider, WorkflowSerializerProvider>()
+                .AddTransient<IWorkflowBuilder, WorkflowBuilder>()
+                .AddActivity<UnknownActivity>();
         }
 
         public static IServiceCollection AddActivity<T>(this IServiceCollection services)
@@ -41,11 +45,6 @@ namespace Elsa.Core.Extensions
             return services
                 .AddTransient<T>()
                 .AddTransient<IActivity>(sp => sp.GetRequiredService<T>());
-        }
-
-        public static IServiceCollection AddWorkflowBuilder(this IServiceCollection services)
-        {
-            return services.AddTransient<WorkflowBuilder>();
         }
     }
 }

@@ -1,4 +1,3 @@
-using Elsa.Core.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Runtime.Extensions

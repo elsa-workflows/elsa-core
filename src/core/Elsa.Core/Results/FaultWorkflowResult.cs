@@ -1,5 +1,4 @@
 ﻿using System;
-using Elsa.Models;
 using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;

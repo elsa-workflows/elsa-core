@@ -1,10 +1,9 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Results;
-using Elsa.Services.Models;
 using Newtonsoft.Json.Linq;
 
-namespace Elsa.Services
+namespace Elsa.Services.Models
 {
     public interface IActivity
     {

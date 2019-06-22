@@ -1,6 +1,4 @@
-﻿using Elsa.Services;
-
-namespace Elsa.Serialization.Models
+﻿namespace Elsa.Serialization.Models
 {
     public class WorkflowFault
     {

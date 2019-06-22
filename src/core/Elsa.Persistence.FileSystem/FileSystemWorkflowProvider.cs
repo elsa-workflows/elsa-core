@@ -4,7 +4,6 @@ using System.IO.Abstractions;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Models;
 using Elsa.Persistence.FileSystem.Options;
 using Elsa.Serialization;
 using Elsa.Serialization.Models;

@@ -2,6 +2,7 @@
 using System.Linq;
 using Elsa.Models;
 using Elsa.Serialization.Models;
+using Newtonsoft.Json.Linq;
 using NodaTime;
 
 namespace Elsa.Services.Models
@@ -9,7 +10,7 @@ namespace Elsa.Services.Models
     public class Workflow
     {
         public Workflow(
-            IEnumerable<IActivity> activities, 
+            IEnumerable<IActivity> activities,
             IEnumerable<Connection> connections,
             Variables input) : this()
         {
@@ -40,9 +41,40 @@ namespace Elsa.Services.Models
         public IList<LogEntry> ExecutionLog { get; set; }
         public WorkflowFault Fault { get; set; }
 
-        public WorkflowInstance Serialize()
+        public WorkflowInstance ToInstance()
         {
-            return new WorkflowInstance();
+            var activities = Activities.ToDictionary(x => x.Id, x => x.State);
+
+            return new WorkflowInstance
+            {
+                Id = Id,
+                Status = Status,
+                CreatedAt = CreatedAt,
+                StartedAt = StartedAt,
+                HaltedAt = HaltedAt,
+                FinishedAt = FinishedAt,
+                Activities = activities,
+                Scopes = new Stack<WorkflowExecutionScope>(Scopes),
+                Input = new Variables(Input),
+                BlockingActivities = new HashSet<string>(BlockingActivities.Select(x => x.Id)),
+                ExecutionLog = ExecutionLog.ToList(),
+                Fault = Fault?.ToInstance() 
+            };
+        }
+
+        public void FromInstance(WorkflowInstance instance)
+        {
+            Id = instance.Id;
+            Status = instance.Status;
+            CreatedAt = instance.CreatedAt;
+            StartedAt = instance.StartedAt;
+            HaltedAt = instance.HaltedAt;
+            FinishedAt = instance.FinishedAt;
+
+            foreach (var activity in Activities)
+            {
+                activity.State = new JObject(instance.Activities[activity.Id]);
+            }
         }
     }
 }

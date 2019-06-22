@@ -47,7 +47,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Activities.Cron", "src
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Runtime.Hosting", "src\core\Elsa.Runtime.Hosting\Elsa.Runtime.Hosting.csproj", "{4728D287-E4F4-4219-8066-924B53E6E17C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HelloWorldProgram", "src\samples\HelloWorldProgram\HelloWorldProgram.csproj", "{92750B10-8DAF-4E4F-8999-33304034EDF4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sample01", "src\samples\Sample01\Sample01.csproj", "{92750B10-8DAF-4E4F-8999-33304034EDF4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CalculatorProgram", "src\samples\CalculatorProgram\CalculatorProgram.csproj", "{B22D8641-A012-4942-BC93-EF2451B91959}"
 EndProject

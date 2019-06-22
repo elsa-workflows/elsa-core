@@ -1,12 +1,10 @@
 using System.Collections.Generic;
 using System.Linq;
-using Elsa.Comparers;
 using Elsa.Models;
-using Elsa.Services;
 using Elsa.Services.Models;
 using NodaTime;
 
-namespace Elsa.Extensions
+namespace Elsa.Services.Extensions
 {
     public static class WorkflowExtensions
     {

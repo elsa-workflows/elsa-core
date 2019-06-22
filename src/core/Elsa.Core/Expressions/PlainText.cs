@@ -2,7 +2,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Expressions;
-using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
 

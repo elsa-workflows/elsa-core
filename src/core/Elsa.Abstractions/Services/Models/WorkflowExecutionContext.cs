@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using Elsa.Models;
-using Elsa.Serialization.Models;
 using NodaTime;
 
 namespace Elsa.Services.Models

@@ -1,11 +1,8 @@
 ﻿using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Core;
 using Elsa.Core.Services;
-using Elsa.Models;
 using Elsa.Results;
-using Elsa.Services;
 using Elsa.Services.Models;
 
 namespace Elsa.Activities.Console.Activities
@@ -51,7 +48,7 @@ namespace Elsa.Activities.Console.Activities
         {
             workflowContext.CurrentScope.SetVariable(ArgumentName, receivedInput);
             workflowContext.SetLastResult(receivedInput);
-            return Endpoint(EndpointNames.Done);
+            return Outcome(OutcomeNames.Done);
         }
     }
 }

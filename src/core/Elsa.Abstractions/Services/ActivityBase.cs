@@ -39,19 +39,19 @@ namespace Elsa.Services
         protected virtual ActivityExecutionResult OnResume(WorkflowExecutionContext context) => Noop();
         protected NoopResult Noop() => new NoopResult();
         
-        protected virtual T GetState<T>(Func<T> defaultValue = null, [CallerMemberName]string name = null)
+        protected T GetState<T>(Func<T> defaultValue = null, [CallerMemberName]string name = null)
         {
             var item = State[name];
             return item != null ? item.ToObject<T>() : defaultValue != null ? defaultValue() : default;
         }
 
-        protected virtual T GetState<T>(Type type, Func<T> defaultValue = null, [CallerMemberName]string name = null)
+        protected T GetState<T>(Type type, Func<T> defaultValue = null, [CallerMemberName]string name = null)
         {
             var item = State[name];
             return item != null ? (T)item.ToObject(type) : defaultValue != null ? defaultValue() : default;
         }
 
-        protected virtual void SetState(object value, [CallerMemberName]string name = null)
+        protected void SetState(object value, [CallerMemberName]string name = null)
         {
             State[name] = JToken.FromObject(value);
         }
