@@ -7,11 +7,12 @@ using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Persistence.FileSystem.Options;
 using Elsa.Serialization;
+using Elsa.Serialization.Models;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Persistence.FileSystem
 {
-    public class FileSystemWorkflowProvider : IFileSystemWorkflowProvider
+    public class FileSystemWorkflowProvider
     {
         private readonly IFileSystem fileSystem;
         private readonly IWorkflowSerializer workflowSerializer;
@@ -29,7 +30,7 @@ namespace Elsa.Persistence.FileSystem
             format = options.Value.Format;
         }
 
-        public async Task SaveAsync(string directory, Workflow value, CancellationToken cancellationToken)
+        public async Task SaveAsync(string directory, WorkflowInstance value, CancellationToken cancellationToken)
         {
             var data = workflowSerializer.Serialize(value, format);
             var fileName = Path.HasExtension(value.Id) ? value.Id : $"{value.Id}.{format.ToLower()}";
@@ -39,7 +40,7 @@ namespace Elsa.Persistence.FileSystem
             fileSystem.File.WriteAllText(path, data);
         }
 
-        public async Task<IEnumerable<Workflow>> ListAsync(string directory, CancellationToken cancellationToken)
+        public async Task<IEnumerable<WorkflowInstance>> ListAsync(string directory, CancellationToken cancellationToken)
         {
             var path = fileSystem.Path.Combine(rootDirectory, directory);
             EnsureWorkflowsDirectory(path);
@@ -49,7 +50,7 @@ namespace Elsa.Persistence.FileSystem
             return await Task.WhenAll(loadTasks);
         }
 
-        private async Task<Workflow> LoadWorkflowAsync(string path, CancellationToken cancellationToken)
+        private async Task<WorkflowInstance> LoadWorkflowAsync(string path, CancellationToken cancellationToken)
         {
             var data = fileSystem.File.ReadAllText(path);
             return workflowSerializer.Deserialize(data, format);

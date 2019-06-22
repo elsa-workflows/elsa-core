@@ -4,6 +4,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Expressions;
 using Elsa.Models;
+using Elsa.Services;
+using Elsa.Services.Models;
 using Jint;
 
 namespace Elsa.Core.Expressions
@@ -34,11 +36,11 @@ namespace Elsa.Core.Expressions
 
             var workflowApi = new Dictionary<string, object>
             {
-                ["getArgument"] = (Func<string, object>) (name => workflowExecutionContext.Workflow.Arguments.GetVariable(name)),
-                ["getVariable"] = (Func<string, object>) (name => workflowExecutionContext.CurrentScope.GetVariable(name)),
-                ["getFloat"] = (Func<string, float>) (name => GetFloat(workflowExecutionContext.CurrentScope.GetVariable(name))),
-                ["getInt"] = (Func<string, int>) (name => GetInt(workflowExecutionContext.CurrentScope.GetVariable(name))),
-                ["getLastResult"] = (Func<object>) (() => workflowExecutionContext.CurrentScope.LastResult)
+                ["input"] = (Func<string, object>) (name => workflowExecutionContext.Workflow.Input.GetVariable(name)),
+                ["variable"] = (Func<string, object>) (name => workflowExecutionContext.CurrentScope.GetVariable(name)),
+                ["float"] = (Func<string, float>) (name => GetFloat(workflowExecutionContext.CurrentScope.GetVariable(name))),
+                ["int"] = (Func<string, int>) (name => GetInt(workflowExecutionContext.CurrentScope.GetVariable(name))),
+                ["lastResult"] = (Func<object>) (() => workflowExecutionContext.CurrentScope.LastResult)
             };
 
             engine.SetValue("wf", workflowApi);

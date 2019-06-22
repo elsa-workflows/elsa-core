@@ -1,6 +1,9 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
+using Elsa.Serialization.Models;
+using Elsa.Services;
+using Elsa.Services.Models;
 
 namespace Elsa.Runtime
 {
@@ -14,11 +17,6 @@ namespace Elsa.Runtime
         /// <summary>
         /// Starts a new instance of the specified workflow using the specified starting activity.
         /// </summary>
-        Task<WorkflowExecutionContext> StartWorkflowAsync(Workflow workflow, IActivity startActivity, Variables arguments, CancellationToken cancellationToken);
-        
-        /// <summary>
-        /// Resumes the specified workflow instance using th specified blocking activity.
-        /// </summary>
-        Task<WorkflowExecutionContext> ResumeWorkflowAsync(Workflow workflow, IActivity activity, Variables arguments, CancellationToken cancellationToken);
+        Task<WorkflowExecutionContext> ExecuteWorkflowAsync(Workflow workflow, IActivity startActivity, CancellationToken cancellationToken);
     }
 }

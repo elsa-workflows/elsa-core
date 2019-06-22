@@ -3,8 +3,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Core.Extensions;
-using Elsa.Models;
 using Elsa.Results;
+using Elsa.Services;
+using Elsa.Services.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -28,12 +29,23 @@ namespace Elsa.Core.Results
 
             foreach (var endpointName in EndpointNames)
             {
-                workflowContext.ScheduleNextActivities(workflowContext, new SourceEndpoint(currentActivity, endpointName));
+                ScheduleNextActivities(workflowContext, new SourceEndpoint(currentActivity, endpointName));
             }
 
             var eventHandlers = workflowContext.ServiceProvider.GetServices<IWorkflowEventHandler>();
             var logger = workflowContext.ServiceProvider.GetRequiredService<ILogger<TriggerEndpointsResult>>();
             await eventHandlers.InvokeAsync(x => x.ActivityExecutedAsync(workflowContext, currentActivity, cancellationToken), logger);
+        }
+        
+        private void ScheduleNextActivities(WorkflowExecutionContext workflowContext, SourceEndpoint endpoint)
+        {
+            var completedActivity = workflowContext.CurrentActivity;
+            var connections = workflowContext.Workflow.Connections.Where(x => x.Source.Activity == completedActivity && (x.Source.Outcome ?? Elsa.EndpointNames.Done) == endpoint.Outcome);
+
+            foreach (var connection in connections)
+            {
+                workflowContext.ScheduleActivity(connection.Target.Activity);
+            }
         }
     }
 }

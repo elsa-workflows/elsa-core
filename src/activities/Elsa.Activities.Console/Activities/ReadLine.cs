@@ -2,8 +2,11 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Core;
+using Elsa.Core.Services;
 using Elsa.Models;
 using Elsa.Results;
+using Elsa.Services;
+using Elsa.Services.Models;
 
 namespace Elsa.Activities.Console.Activities
 {
@@ -40,15 +43,15 @@ namespace Elsa.Activities.Console.Activities
 
         protected override ActivityExecutionResult OnResume(WorkflowExecutionContext context)
         {
-            var receivedInput = (string)context.Workflow.Arguments[ArgumentName];
+            var receivedInput = (string)context.Workflow.Input[ArgumentName];
             return Execute(context, receivedInput);
         }
 
         private ActivityExecutionResult Execute(WorkflowExecutionContext workflowContext, string receivedInput)
         {
-            workflowContext.Workflow.CurrentScope.SetVariable(ArgumentName, receivedInput);
+            workflowContext.CurrentScope.SetVariable(ArgumentName, receivedInput);
             workflowContext.SetLastResult(receivedInput);
-            return Endpoint("Done");
+            return Endpoint(EndpointNames.Done);
         }
     }
 }

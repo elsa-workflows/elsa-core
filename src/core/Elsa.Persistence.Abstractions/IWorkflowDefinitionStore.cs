@@ -4,20 +4,33 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
+using Elsa.Serialization.Models;
+using Elsa.Services;
 
 namespace Elsa.Persistence
 {
-    public interface IWorkflowDefinitionStore : IWorkflowStore
+    public interface IWorkflowDefinitionStore
     {
-        Task<IEnumerable<Tuple<Workflow, IActivity>>> ListByStartActivityAsync(string activityType, CancellationToken cancellationToken);
+        Task<IEnumerable<Tuple<WorkflowDefinition, ActivityDefinition>>> ListByStartActivityAsync(string activityType, CancellationToken cancellationToken);
     }
 
     public static class WorkflowDefinitionStoreExtensions
     {
-        public static async Task<IEnumerable<Tuple<Workflow, TActivity>>> ListByStartActivityAsync<TActivity>(this IWorkflowDefinitionStore store, CancellationToken cancellationToken) where TActivity : IActivity
+        public static Task<IEnumerable<Tuple<WorkflowDefinition, ActivityDefinition>>> ListByStartActivityAsync<TActivity>(
+            this IWorkflowDefinitionStore store, 
+            CancellationToken cancellationToken) 
+            where TActivity : IActivity
         {
-            var items = await store.ListByStartActivityAsync(typeof(TActivity).Name, cancellationToken);
-            return items.Select(x => Tuple.Create(x.Item1, (TActivity) x.Item2));
+            return store.ListByStartActivityAsync(typeof(TActivity).Name, cancellationToken);
+        }
+        
+        public static async Task<IEnumerable<Tuple<WorkflowDefinition, ActivityDefinition>>> ListByStartActivityAsync(
+            this IWorkflowDefinitionStore store, 
+            string activityTypeName,
+            CancellationToken cancellationToken) 
+        {
+            var items = await store.ListByStartActivityAsync(activityTypeName, cancellationToken);
+            return items.Select(x => Tuple.Create(x.Item1, x.Item2));
         }
     }
 }

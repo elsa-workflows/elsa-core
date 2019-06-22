@@ -1,6 +1,9 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
+using Elsa.Serialization.Models;
+using Elsa.Services;
+using Elsa.Services.Models;
 
 namespace Elsa.Persistence
 {
@@ -25,7 +28,8 @@ namespace Elsa.Persistence
 
         private async Task SaveWorkflowAsync(Workflow workflow, CancellationToken cancellationToken)
         {
-            await workflowInstanceStore.SaveAsync(workflow, cancellationToken);
+            var workflowInstance = workflow.Serialize();
+            await workflowInstanceStore.SaveAsync(workflowInstance, cancellationToken);
         }
     }
 }

@@ -1,9 +1,11 @@
-using Elsa.Core.Builders;
 using Elsa.Core.Expressions;
 using Elsa.Core.Serialization;
 using Elsa.Core.Serialization.Formatters;
+using Elsa.Core.Services;
+using Elsa.Core.Services.WorkflowBuilders;
 using Elsa.Serialization;
 using Elsa.Serialization.Formatters;
+using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using NodaTime;
@@ -14,23 +16,25 @@ namespace Elsa.Core.Extensions
     {
         public static IServiceCollection AddWorkflowsCore(this IServiceCollection services)
         {
-            services.AddLogging();
-            services.AddLocalization();
             services.TryAddSingleton<IClock>(SystemClock.Instance);
-            services.AddSingleton<IIdGenerator, DefaultIdGenerator>();
-            services.AddSingleton<IWorkflowSerializer, WorkflowSerializer>();
-            services.AddSingleton<ITokenFormatter, JsonTokenFormatter>();
-            services.AddSingleton<ITokenFormatter, YamlTokenFormatter>();
-            services.AddSingleton<ITokenFormatter, XmlTokenFormatter>();
-            services.AddSingleton<IExpressionEvaluator, PlainText>();
-            services.AddSingleton<IExpressionEvaluator, JavaScript>();
-            services.AddSingleton<IWorkflowInvoker, WorkflowInvoker>();
-            services.AddSingleton<IActivityInvoker, ActivityInvoker>();
-            services.AddSingleton<IWorkflowExpressionEvaluator, WorkflowExpressionEvaluator>();
-            
-            return services;
+
+            return services
+                .AddLogging()
+                .AddLocalization()
+                .AddSingleton<IIdGenerator, IdGenerator>()
+                .AddSingleton<IWorkflowSerializer, WorkflowSerializer>()
+                .AddSingleton<ITokenFormatter, JsonTokenFormatter>()
+                .AddSingleton<ITokenFormatter, YamlTokenFormatter>()
+                .AddSingleton<ITokenFormatter, XmlTokenFormatter>()
+                .AddSingleton<IExpressionEvaluator, PlainText>()
+                .AddSingleton<IExpressionEvaluator, JavaScript>()
+                .AddSingleton<IWorkflowInvoker, WorkflowInvoker>()
+                .AddSingleton<IActivityInvoker, ActivityInvoker>()
+                .AddSingleton<IActivityResolver, ActivityResolver>()
+                .AddSingleton<IWorkflowExpressionEvaluator, WorkflowExpressionEvaluator>()
+                .AddSingleton<IWorkflowSerializerProvider, WorkflowSerializerProvider>();
         }
-        
+
         public static IServiceCollection AddActivity<T>(this IServiceCollection services)
             where T : class, IActivity
         {
@@ -41,8 +45,7 @@ namespace Elsa.Core.Extensions
 
         public static IServiceCollection AddWorkflowBuilder(this IServiceCollection services)
         {
-            services.AddSingleton<WorkflowBuilder>();
-            return services;
+            return services.AddTransient<WorkflowBuilder>();
         }
     }
 }

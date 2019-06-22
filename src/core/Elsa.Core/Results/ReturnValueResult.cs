@@ -1,5 +1,7 @@
 ﻿using Elsa.Models;
 using Elsa.Results;
+using Elsa.Services;
+using Elsa.Services.Models;
 
 namespace Elsa.Core.Results
 {

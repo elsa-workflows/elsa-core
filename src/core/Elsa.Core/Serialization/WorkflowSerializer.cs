@@ -1,14 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Elsa.Core.Extensions;
 using Elsa.Models;
 using Elsa.Serialization;
 using Elsa.Serialization.Formatters;
+using Elsa.Serialization.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using NodaTime;
-using NodaTime.Serialization.JsonNet;
 
 namespace Elsa.Core.Serialization
 {
@@ -17,15 +15,15 @@ namespace Elsa.Core.Serialization
         private readonly IDictionary<string, ITokenFormatter> formatters;
         private readonly JsonSerializer jsonSerializer;
 
-        public WorkflowSerializer(IEnumerable<ITokenFormatter> formatters)
+        public WorkflowSerializer(IEnumerable<ITokenFormatter> formatters, IWorkflowSerializerProvider serializerProvider)
         {
             this.formatters = formatters.ToDictionary(x => x.Format, StringComparer.OrdinalIgnoreCase);
-            jsonSerializer = new JsonSerializer().ConfigureForWorkflows();
+            jsonSerializer = serializerProvider.CreateJsonSerializer();
         }
         
-        public string Serialize(Workflow workflow, string format)
+        public string Serialize(WorkflowInstance workflowInstance, string format)
         {
-            var token = JObject.FromObject(workflow, jsonSerializer);
+            var token = JObject.FromObject(workflowInstance, jsonSerializer);
             return Serialize(token, format);
         }
 
@@ -35,30 +33,23 @@ namespace Elsa.Core.Serialization
             return formatter.ToString(token);
         }
 
-        public Workflow Deserialize(string data, string format)
+        public WorkflowInstance Deserialize(string data, string format)
         {
             var formatter = formatters[format];
             var token = formatter.FromString(data);
             return Deserialize(token);
         }
 
-        public Workflow Deserialize(JToken token)
+        public WorkflowInstance Deserialize(JToken token)
         {
-            return token.ToObject<Workflow>(jsonSerializer);
+            return token.ToObject<WorkflowInstance>(jsonSerializer);
         }
 
-        public Workflow Clone(Workflow workflow)
+        public WorkflowInstance Clone(WorkflowInstance workflowInstance)
         {
-            var token = JObject.FromObject(workflow, jsonSerializer);
+            var token = JObject.FromObject(workflowInstance, jsonSerializer);
             var clonedToken = token.DeepClone();
-            return clonedToken.ToObject<Workflow>(jsonSerializer);
-        }
-
-        public Workflow Derive(Workflow parent)
-        {
-            var instance = Clone(parent);
-            instance.ParentId = instance.Id;
-            return instance;
+            return clonedToken.ToObject<WorkflowInstance>(jsonSerializer);
         }
     }
 }

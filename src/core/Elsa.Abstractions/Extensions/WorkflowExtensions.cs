@@ -2,43 +2,39 @@ using System.Collections.Generic;
 using System.Linq;
 using Elsa.Comparers;
 using Elsa.Models;
+using Elsa.Services;
+using Elsa.Services.Models;
 using NodaTime;
 
 namespace Elsa.Extensions
 {
     public static class WorkflowExtensions
     {
-        public static bool IsDefinition(this Workflow workflow) => string.IsNullOrWhiteSpace(workflow.ParentId);
-        public static bool IsInstance(this Workflow workflow) => !workflow.IsDefinition();
-
-        public static bool IsHalted(this Workflow workflow) =>
-            workflow.Status == WorkflowStatus.Halted;
+        public static bool IsHalted(this Workflow workflow) => workflow.Status == WorkflowStatus.Halted;
 
         public static bool IsFaulted(this Workflow workflow) =>
             workflow.Status == WorkflowStatus.Aborted ||
             workflow.Status == WorkflowStatus.Faulted;
 
-        public static bool IsFinished(this Workflow workflow) =>
-            workflow.Status == WorkflowStatus.Finished;
+        public static bool IsFinished(this Workflow workflow) => workflow.Status == WorkflowStatus.Finished;
 
         public static IEnumerable<IActivity> GetStartActivities(this Workflow workflow)
         {
-            var targetActivities = workflow.Connections.Select(x => x.Target.Activity).Distinct(new ActivityEqualityComparer()).ToDictionary(x => x.Id);
+            var targetActivityIds = workflow.Connections.Select(x => x.Target.Activity.Id).Distinct().ToLookup(x => x);
             
             var query =
                 from activity in workflow.Activities
-                where !targetActivities.ContainsKey(activity.Id)
+                where !targetActivityIds.Contains(activity.Id)
                 select activity;
 
             return query;
         }
 
-        public static IActivity GetActivity(this Workflow workflow, string id) => workflow.Activities.SingleOrDefault(x => x.Id == id);
-        public static T GetActivity<T>(this Workflow workflow, string id) where T : IActivity => (T) workflow.GetActivity(id);
+        public static IActivity GetActivity(this Workflow workflow, string id) => workflow.Activities.FirstOrDefault(x => x.Id == id);
 
-        public static LogEntry AddLogEntry(this Workflow workflow, string activityId, Instant instant, string message, bool faulted = false)
+        public static LogEntry AddLogEntry(this Workflow workflow, IActivity activity, Instant instant, string message, bool faulted = false)
         {
-            var entry = new LogEntry(activityId, instant, message, faulted);
+            var entry = new LogEntry(activity.Id, instant, message, faulted);
             workflow.ExecutionLog.Add(entry);
             return entry;
         }
@@ -61,9 +57,9 @@ namespace Elsa.Extensions
             return workflow.GetInboundActivityPathInternal(activityId, activityId).Distinct().ToList();
         }
 
-        private static IEnumerable<string> GetInboundActivityPathInternal(this Workflow workflow, string activityId, string startingPointActivityId)
+        private static IEnumerable<string> GetInboundActivityPathInternal(this Workflow workflowInstance, string activityId, string startingPointActivityId)
         {
-            foreach (var connection in workflow.GetInboundConnections(activityId))
+            foreach (var connection in workflowInstance.GetInboundConnections(activityId))
             {
                 // Circuit breaker: Detect workflows that implement repeating flows to prevent an infinite loop here.
                 if (connection.Source.Activity.Id == startingPointActivityId)
@@ -71,7 +67,7 @@ namespace Elsa.Extensions
 
                 yield return connection.Source.Activity.Id;
 
-                foreach (var parentActivityId in workflow.GetInboundActivityPathInternal(connection.Source.Activity.Id, startingPointActivityId).Distinct())
+                foreach (var parentActivityId in workflowInstance.GetInboundActivityPathInternal(connection.Source.Activity.Id, startingPointActivityId).Distinct())
                     yield return parentActivityId;
             }
         }

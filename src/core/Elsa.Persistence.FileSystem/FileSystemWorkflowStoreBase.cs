@@ -1,46 +1,40 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Models;
+using Elsa.Serialization.Models;
 
 namespace Elsa.Persistence.FileSystem
 {
-    public abstract class FileSystemWorkflowStoreBase : IWorkflowStore
+    public abstract class FileSystemWorkflowStoreBase : IWorkflowDefinitionStore
     {
         protected string Directory { get; }
-        protected IFileSystemWorkflowProvider Provider { get; }
 
-        protected FileSystemWorkflowStoreBase(string directory, IFileSystemWorkflowProvider provider)
+        protected FileSystemWorkflowStoreBase(string directory)
         {
             Directory = directory;
-            Provider = provider;
         }
         
-        public async Task SaveAsync(Workflow workflow, CancellationToken cancellationToken)
+        public Task SaveAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken)
         {
-            await Provider.SaveAsync(Directory, workflow, cancellationToken);
+            throw new NotImplementedException();
         }
 
-        public async Task<Workflow> GetByIdAsync(string id, CancellationToken cancellationToken)
+        public async Task<WorkflowDefinition> GetByIdAsync(string id, CancellationToken cancellationToken)
         {
             var workflows = await ListAllAsync(cancellationToken);
             return workflows.FirstOrDefault(x => x.Id == id);
         }
-
-        public Task<IEnumerable<Workflow>> ListAllAsync(CancellationToken cancellationToken)
-        {
-            return ListAllAsync(null, cancellationToken);
-        }
         
-        public async Task<IEnumerable<Workflow>> ListAllAsync(string parentId, CancellationToken cancellationToken)
+        public Task<IEnumerable<WorkflowDefinition>> ListAllAsync(CancellationToken cancellationToken)
         {
-            var workflows = await Provider.ListAsync(Directory, cancellationToken);
+            throw new NotImplementedException();
+        }
 
-            if (parentId != null)
-                workflows = workflows.Where(x => x.ParentId == parentId);
-
-            return workflows;
+        public Task<IEnumerable<Tuple<WorkflowDefinition, ActivityDefinition>>> ListByStartActivityAsync(string activityType, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
         }
     }
 }

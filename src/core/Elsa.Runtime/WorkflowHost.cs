@@ -3,6 +3,9 @@ using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Serialization;
+using Elsa.Serialization.Models;
+using Elsa.Services;
+using Elsa.Services.Models;
 
 namespace Elsa.Runtime
 {
@@ -31,15 +34,9 @@ namespace Elsa.Runtime
             await ResumeExistingWorkflowsAsync(activityName, arguments, cancellationToken);
         }
 
-        public async Task<WorkflowExecutionContext> StartWorkflowAsync(Workflow workflow, IActivity startActivity, Variables arguments, CancellationToken cancellationToken)
+        public async Task<WorkflowExecutionContext> ExecuteWorkflowAsync(Workflow workflow, IActivity startActivity, CancellationToken cancellationToken)
         {
-            var workflowInstance = workflowSerializer.Derive(workflow);
-            return await invoker.InvokeAsync(workflowInstance, startActivity, arguments, cancellationToken);
-        }
-
-        public async Task<WorkflowExecutionContext> ResumeWorkflowAsync(Workflow workflow, IActivity activity, Variables arguments, CancellationToken cancellationToken)
-        {
-            return await invoker.ResumeAsync(workflow, activity, arguments, cancellationToken);
+            return await invoker.InvokeAsync(workflow, new[]{startActivity}, cancellationToken);
         }
 
         private async Task StartNewWorkflowsAsync(string activityType, Variables arguments, CancellationToken cancellationToken)
@@ -48,7 +45,7 @@ namespace Elsa.Runtime
 
             foreach (var item in items)
             {
-                await StartWorkflowAsync(item.Item1, item.Item2, arguments, cancellationToken);
+                //await ExecuteWorkflowAsync(item.Item1, item.Item2, cancellationToken);
             }
         }
 
@@ -58,7 +55,7 @@ namespace Elsa.Runtime
 
             foreach (var item in items)
             {
-                await ResumeWorkflowAsync(item.Item1, item.Item2, arguments, cancellationToken);
+                //await ResumeWorkflowAsync(item.Item1, item.Item2, arguments, cancellationToken);
             }
         }
     }
