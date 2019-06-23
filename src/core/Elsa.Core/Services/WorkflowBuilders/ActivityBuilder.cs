@@ -7,7 +7,7 @@ namespace Elsa.Core.Services.WorkflowBuilders
 {
     public class ActivityBuilder : IActivityBuilder
     {
-        public ActivityBuilder(WorkflowBuilder workflowBuilder, IActivity activity, string id)
+        public ActivityBuilder(WorkflowBuilder workflowBuilder, ActivityBlueprint activity, string id)
         {
             WorkflowBuilder = workflowBuilder;
             Activity = activity;
@@ -15,7 +15,7 @@ namespace Elsa.Core.Services.WorkflowBuilders
         }
 
         public WorkflowBuilder WorkflowBuilder { get; }
-        public IActivity Activity { get; }
+        public ActivityBlueprint Activity { get; }
         public string Id { get; }
 
         public IActivityBuilder Add<T>(Action<T> setupActivity, string id = null) where T : class, IActivity
@@ -43,12 +43,12 @@ namespace Elsa.Core.Services.WorkflowBuilders
             );
         }
 
-        public IActivity BuildActivity()
+        public ActivityBlueprint BuildActivity()
         {
             Activity.Id = Id;
             return Activity;
         }
 
-        public Workflow Build() => WorkflowBuilder.Build();
+        public WorkflowBlueprint Build() => WorkflowBuilder.Build();
     }
 }

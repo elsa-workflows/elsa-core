@@ -1,21 +1,24 @@
-using Elsa.Activities.Cron.Drivers;
+using System;
+using Elsa.Activities.Cron.Activities;
 using Elsa.Activities.Cron.HostedServices;
 using Elsa.Activities.Cron.Options;
-using Elsa.Extensions;
-using Microsoft.Extensions.Configuration;
+using Elsa.Core.Extensions;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Activities.Cron.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddCronActivities(this IServiceCollection services, IConfiguration configuration)
+        public static IServiceCollection AddCronActivities(this IServiceCollection services, Action<OptionsBuilder<CronOptions>> options = null)
         {
+            var optionsBuilder = services.AddOptions<CronOptions>();
+            options?.Invoke(optionsBuilder);
+            
             return services
                 .AddOptions()
-                .Configure<CronOptions>(configuration)
                 .AddHostedService<CronHostedService>()
-                .AddActivity<CronTriggerDriver>();
+                .AddActivity<CronTrigger>();
         }
     }
 }

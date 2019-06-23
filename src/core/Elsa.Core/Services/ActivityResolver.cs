@@ -18,24 +18,38 @@ namespace Elsa.Core.Services
             activityTypeLookup = activities.Select(x => x.GetType()).ToDictionary(x => x.Name);
         }
         
-        public IActivity ResolveActivity(string activityTypeName, Action<IActivity> setup = null)
+        public Type ResolveActivityType(string activityTypeName)
         {
             if (!activityTypeLookup.ContainsKey(activityTypeName))
             {
-                return null;
+                var activityType = Type.GetType(activityTypeName);
+                
+                if(activityType == null)
+                    throw new ArgumentException("No such activity type");
+                
+                activityTypeLookup[activityTypeName] = activityType;
             }
 
-            var type = activityTypeLookup[activityTypeName];
-            var activity = (IActivity)serviceProvider.GetRequiredService(type);
+            return activityTypeLookup[activityTypeName];    
+
+        }
+        
+        public IActivity ResolveActivity(string activityTypeName, Action<IActivity> setup = null)
+        {
+            var activityType = ResolveActivityType(activityTypeName);
+            var activity = (IActivity) ActivatorUtilities.GetServiceOrCreateInstance(serviceProvider, activityType);
 
             setup?.Invoke(activity);
             return activity;
         }
         
-        public T ResolveActivity<T>(Action<T> configure = null) where T : class, IActivity
+        public T ResolveActivity<T>(Action<T> setup = null) where T : class, IActivity
         {
-            var activity = (T) ResolveActivity(typeof(T).Name) ?? ActivatorUtilities.CreateInstance<T>(serviceProvider);
-            configure?.Invoke(activity);
+            var activityTypeName = typeof(T).AssemblyQualifiedName;
+            var activityType = ResolveActivityType(activityTypeName);
+            var activity = (T) ActivatorUtilities.GetServiceOrCreateInstance(serviceProvider, activityType);
+
+            setup?.Invoke(activity);
             return activity;
         }
     }

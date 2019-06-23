@@ -4,7 +4,6 @@ using System.Linq;
 using Elsa.Models;
 using Elsa.Serialization.Models;
 using Elsa.Services;
-using Elsa.Services.Extensions;
 using Elsa.Services.Models;
 using Newtonsoft.Json.Linq;
 using Connection = Elsa.Services.Models.Connection;
@@ -16,18 +15,28 @@ namespace Elsa.Core.Services.WorkflowBuilders
         private readonly IActivityResolver activityResolver;
         private readonly IList<IActivityBuilder> activityBuilders = new List<IActivityBuilder>();
         private readonly IList<IConnectionBuilder> connectionBuilders = new List<IConnectionBuilder>();
+        private readonly IIdGenerator idGenerator;
 
-        public WorkflowBuilder(IActivityResolver activityResolver)
+        public WorkflowBuilder(IActivityResolver activityResolver, IIdGenerator idGenerator)
         {
             this.activityResolver = activityResolver;
+            this.idGenerator = idGenerator;
         }
 
+        public string Id { get; private set; }
         public IReadOnlyList<IActivityBuilder> Activities => activityBuilders.ToList().AsReadOnly();
 
+        public IWorkflowBuilder WithId(string id)
+        {
+            Id = id;
+            return this;
+        }
+        
         public IActivityBuilder Add<T>(Action<T> setupActivity, string id = null) where T : class, IActivity
         {
             var activity = activityResolver.ResolveActivity(setupActivity);
-            var activityBuilder = new ActivityBuilder(this, activity, id);
+            var activityBlueprint = ActivityBlueprint.FromActivity(activity);
+            var activityBuilder = new ActivityBuilder(this, activityBlueprint, id);
 
             if (id != null)
                 activity.Id = id;
@@ -55,7 +64,7 @@ namespace Elsa.Core.Services.WorkflowBuilders
             return Add(setupActivity, id);
         }
 
-        public Workflow Build()
+        public WorkflowBlueprint Build()
         {
             var activities = activityBuilders.Select(x => x.BuildActivity()).ToList();
             var connections = connectionBuilders.Select(x => x.BuildConnection()).ToList();
@@ -67,31 +76,11 @@ namespace Elsa.Core.Services.WorkflowBuilders
                 if (activity.Id == null)
                     activity.Id = $"activity-{id++}";
             }
-
-            return new Workflow(activities, connections, Variables.Empty);
-        }
-
-        public Workflow Build(WorkflowDefinition definition)
-        {
-            var activities =
-                from activityDefinition in definition.Activities
-                let activity = activityResolver.ResolveActivity(activityDefinition.TypeName, x =>
-                    {
-                        x.Id = activityDefinition.Id;
-                        x.State = new JObject(activityDefinition.State);
-                    }
-                )
-                select activity;
             
-            var activityDictionary = activities.ToDictionary(x => x.Id);
-            
-            var connections =
-                from connection in definition.Connections
-                let source = activityDictionary[connection.Source.ActivityId]
-                let target = activityDictionary[connection.Target.ActivityId]
-                select new Connection(source, target, connection.Source.Outcome);
-
-            return new Workflow(activityDictionary.Values, connections, Variables.Empty);
+            return new WorkflowBlueprint(activities, connections, Variables.Empty)
+            {
+                Id = Id ?? idGenerator.Generate()
+            };
         }
     }
 }

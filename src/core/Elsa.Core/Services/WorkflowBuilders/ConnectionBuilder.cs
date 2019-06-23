@@ -19,13 +19,9 @@ namespace Elsa.Core.Services.WorkflowBuilders
             Outcome = outcome;
         }
 
-        public Connection BuildConnection()
+        public ConnectionBlueprint BuildConnection()
         {
-            return new Connection
-            {
-                Source = new SourceEndpoint(Source().Activity, Outcome),
-                Target = new TargetEndpoint(Target().Activity)
-            };
+            return new ConnectionBlueprint(Source().Activity.Id, Target().Activity.Id, Outcome);
         }
     }
 }

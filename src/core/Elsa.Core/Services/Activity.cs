@@ -10,7 +10,7 @@ namespace Elsa.Core.Services
 {
     public abstract class Activity : ActivityBase
     {
-        protected HaltResult Halt() => new HaltResult();
+        protected HaltResult Halt(bool continueOnFirstPass = false) => new HaltResult(continueOnFirstPass);
         protected ActivityExecutionResult Outcomes(IEnumerable<string> names) => new OutcomeResult(names);
         protected ActivityExecutionResult Outcome(string name) => Outcomes(new[] { name });
         protected ActivityExecutionResult Done() => Outcome(OutcomeNames.Done);

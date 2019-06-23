@@ -1,6 +1,7 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Results;
+using Elsa.Serialization.Models;
 using Newtonsoft.Json.Linq;
 
 namespace Elsa.Services.Models
@@ -41,5 +42,11 @@ namespace Elsa.Services.Models
         /// Invoked when the workflow is halted.
         /// </summary>
         Task<ActivityExecutionResult> HaltedAsync(WorkflowExecutionContext context, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Creates an instance representation of this activity.
+        /// </summary>
+        /// <returns></returns>
+        ActivityInstance ToInstance();
     }
 }

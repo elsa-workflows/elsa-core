@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Elsa.Models;
 using Elsa.Serialization.Models;
@@ -10,24 +11,26 @@ namespace Elsa.Services.Models
     public class Workflow
     {
         public Workflow(
+            string definitionId,
             IEnumerable<IActivity> activities,
-            IEnumerable<Connection> connections,
-            Variables input) : this()
+            Variables input = null,
+            WorkflowInstance workflowInstance = null) : this()
         {
+            DefinitionId = definitionId;
             Activities = activities.ToList();
-            Connections = connections.ToList();
-            Input = input;
+            Input = new Variables(input ?? Variables.Empty);
+            Initialize(workflowInstance);
         }
 
         public Workflow()
         {
             Scopes = new Stack<WorkflowExecutionScope>(new[] { new WorkflowExecutionScope() });
-            Input = new Variables();
             BlockingActivities = new HashSet<IActivity>();
             ExecutionLog = new List<LogEntry>();
         }
 
         public string Id { get; set; }
+        public string DefinitionId { get; }
         public WorkflowStatus Status { get; set; }
         public Instant CreatedAt { get; set; }
         public Instant? StartedAt { get; set; }
@@ -36,18 +39,19 @@ namespace Elsa.Services.Models
         public ICollection<IActivity> Activities { get; } = new List<IActivity>();
         public IList<Connection> Connections { get; } = new List<Connection>();
         public Stack<WorkflowExecutionScope> Scopes { get; }
-        public Variables Input { get; set; }
         public HashSet<IActivity> BlockingActivities { get; set; }
         public IList<LogEntry> ExecutionLog { get; set; }
         public WorkflowFault Fault { get; set; }
+        public Variables Input { get; set; }
 
         public WorkflowInstance ToInstance()
         {
-            var activities = Activities.ToDictionary(x => x.Id, x => x.State);
+            var activities = Activities.ToDictionary(x => x.Id, x => x.ToInstance());
 
             return new WorkflowInstance
             {
-                Id = Id,
+                Id = Guid.NewGuid().ToString("N"),
+                DefinitionId = Id,
                 Status = Status,
                 CreatedAt = CreatedAt,
                 StartedAt = StartedAt,
@@ -55,15 +59,17 @@ namespace Elsa.Services.Models
                 FinishedAt = FinishedAt,
                 Activities = activities,
                 Scopes = new Stack<WorkflowExecutionScope>(Scopes),
-                Input = new Variables(Input),
                 BlockingActivities = new HashSet<string>(BlockingActivities.Select(x => x.Id)),
                 ExecutionLog = ExecutionLog.ToList(),
                 Fault = Fault?.ToInstance() 
             };
         }
 
-        public void FromInstance(WorkflowInstance instance)
+        private void Initialize(WorkflowInstance instance)
         {
+            if(instance == null)
+                return;
+            
             Id = instance.Id;
             Status = instance.Status;
             CreatedAt = instance.CreatedAt;

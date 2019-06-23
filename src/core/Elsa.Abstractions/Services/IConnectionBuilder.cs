@@ -8,6 +8,6 @@ namespace Elsa.Services
         Func<IActivityBuilder> Source { get; }
         Func<IActivityBuilder> Target { get; }
         string Outcome { get; }
-        Connection BuildConnection();
+        ConnectionBlueprint BuildConnection();
     }
 }

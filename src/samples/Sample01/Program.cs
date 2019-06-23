@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Elsa.Core.Extensions;
+using Elsa.Core.Services;
 using Elsa.Services;
 using Elsa.Services.Extensions;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,7 +22,9 @@ namespace Sample01
 
             // Create a workflow.
             var workflowBuilder = services.GetRequiredService<IWorkflowBuilder>();
-            var workflow = workflowBuilder.Build<HelloWorldWorkflow>();
+            var workflowFactory = services.GetRequiredService<IWorkflowFactory>();
+            var workflowBlueprint = workflowBuilder.Build<HelloWorldWorkflow>();
+            var workflow = workflowFactory.CreateWorkflow(workflowBlueprint);
 
             // Invoke the workflow.
             var invoker = services.GetService<IWorkflowInvoker>();

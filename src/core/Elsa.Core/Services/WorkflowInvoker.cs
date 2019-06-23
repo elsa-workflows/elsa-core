@@ -10,6 +10,7 @@ using Elsa.Services;
 using Elsa.Services.Extensions;
 using Elsa.Services.Models;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json.Linq;
 using NodaTime;
 
 namespace Elsa.Core.Services
@@ -41,7 +42,7 @@ namespace Elsa.Core.Services
             IEnumerable<IActivity> startActivities = default,
             CancellationToken cancellationToken = default)
         {
-            var workflowExecutionContext = CreateWorkflowExecutionContext(workflow, startActivities);
+            var workflowExecutionContext = await CreateWorkflowExecutionContextAsync(workflow, startActivities, cancellationToken);
             await RunWorkflowAsync(workflowExecutionContext, cancellationToken);
             await FinalizeWorkflowExecutionAsync(workflowExecutionContext, cancellationToken);
 
@@ -157,23 +158,24 @@ namespace Elsa.Core.Services
                 : await activityInvoker.ExecuteAsync(workflowContext, activity, cancellationToken);
         }
 
-        private WorkflowExecutionContext CreateWorkflowExecutionContext(Workflow workflow, IEnumerable<IActivity> startActivities)
+        private async Task<WorkflowExecutionContext> CreateWorkflowExecutionContextAsync(Workflow workflow, IEnumerable<IActivity> startActivities, CancellationToken cancellationToken)
         {
             var workflowExecutionContext = new WorkflowExecutionContext(workflow, clock, serviceProvider);
 
             // If a start activity was provided, remove it from the blocking activities list. If not start activity was provided, pick the first one that has no inbound connections.
-            var startActivityList = startActivities?.ToList();
+            var startActivityList = startActivities?.ToList() ?? workflow.GetStartActivities().Take(1).ToList();
+            
+            await workflowExecutionContext.ScheduleActivitiesAsync(startActivityList);
 
-            if (startActivities != null)
+            if (workflowExecutionContext.HasScheduledActivities)
+            {
                 workflow.BlockingActivities.RemoveWhere(startActivityList.Contains);
-            else
-                startActivityList = workflow.GetStartActivities().Take(1).ToList();
+                
+                if (workflowExecutionContext.Workflow.Status != WorkflowStatus.Resuming)
+                    workflow.StartedAt = clock.GetCurrentInstant();
 
-            if (workflowExecutionContext.Workflow.Status != WorkflowStatus.Resuming)
-                workflow.StartedAt = clock.GetCurrentInstant();
-
-            workflowExecutionContext.Workflow.Status = WorkflowStatus.Executing;
-            workflowExecutionContext.ScheduleActivities(startActivityList);
+                workflowExecutionContext.Workflow.Status = WorkflowStatus.Executing;
+            }
 
             return workflowExecutionContext;
         }

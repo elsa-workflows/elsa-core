@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Serialization.Models;
 using Elsa.Services.Models;
+using WorkflowInstance = Elsa.Serialization.Models.WorkflowInstance;
 
 namespace Elsa.Persistence
 {
@@ -13,19 +14,19 @@ namespace Elsa.Persistence
     {   
         Task SaveAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken);
         Task<WorkflowInstance> GetByIdAsync(string id, CancellationToken cancellationToken);
-        Task<IEnumerable<WorkflowInstance>> ListAllAsync(string parentId, CancellationToken cancellationToken);
+        Task<IEnumerable<WorkflowInstance>> ListByDefinitionAsync(string definitionId, CancellationToken cancellationToken);
         Task<IEnumerable<WorkflowInstance>> ListAllAsync(CancellationToken cancellationToken);
-        Task<IEnumerable<Tuple<WorkflowInstance, IActivity>>> ListByBlockingActivityAsync(string workflowType, CancellationToken cancellationToken);
-        Task<IEnumerable<WorkflowInstance>> ListByStatusAsync(string parentId, WorkflowStatus status, CancellationToken cancellationToken);
+        Task<IEnumerable<(WorkflowInstance, ActivityInstance)>> ListByBlockingActivityAsync(string activityType, CancellationToken cancellationToken);
+        Task<IEnumerable<WorkflowInstance>> ListByStatusAsync(string definitionId, WorkflowStatus status, CancellationToken cancellationToken);
         Task<IEnumerable<WorkflowInstance>> ListByStatusAsync(WorkflowStatus status, CancellationToken cancellationToken);
     }
-    
+
     public static class WorkflowInstanceStoreExtensions
     {
-        public static async Task<IEnumerable<Tuple<WorkflowInstance, TActivity>>> ListByBlockingActivityAsync<TActivity>(this IWorkflowInstanceStore store, CancellationToken cancellationToken) where TActivity : IActivity
+        public static async Task<IEnumerable<(WorkflowInstance, ActivityInstance)>> ListByBlockingActivityAsync<TActivity>(this IWorkflowInstanceStore store, CancellationToken cancellationToken) where TActivity : IActivity
         {
             var items = await store.ListByBlockingActivityAsync(nameof(TActivity), cancellationToken);
-            return items.Select(x => Tuple.Create(x.Item1, (TActivity) x.Item2));
+            return items.Select(x => (x.Item1, x.Item2));
         }
     }
 }

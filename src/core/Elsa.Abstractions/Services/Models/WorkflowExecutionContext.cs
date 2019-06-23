@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Elsa.Models;
 using NodaTime;
 
@@ -32,19 +33,20 @@ namespace Elsa.Services.Models
         public IActivity CurrentActivity { get; private set; }
 
         public ActivityExecutionContext CreateActivityExecutionContext(IActivity activity) => new ActivityExecutionContext(activity);
+        public Task ScheduleActivitiesAsync(params IActivity[] activities) => ScheduleActivitiesAsync((IEnumerable<IActivity>) activities);
 
-        public void ScheduleActivities(IEnumerable<IActivity> activities)
+        public async Task ScheduleActivitiesAsync(IEnumerable<IActivity> activities)
         {
-            foreach (var activityId in activities)
+            foreach (var activity in activities)
             {
-                ScheduleActivity(activityId);
+                if(await activity.CanExecuteAsync(this))
+                    ScheduleActivity(activity);
             }
         }
 
         public void BeginScope() => Workflow.Scopes.Push(new WorkflowExecutionScope());
         public void EndScope() => Workflow.Scopes.Pop();
         public void ScheduleActivity(IActivity activity) => scheduledActivities.Push(activity);
-        public void ScheduleActivities(params IActivity[] activities) => ScheduleActivities((IEnumerable<IActivity>) activities);
         public IActivity PopScheduledActivity() => CurrentActivity = scheduledActivities.Pop();
         public void ScheduleHaltingActivity(IActivity activity) => scheduledHaltingActivities.Push(activity);
         public IActivity PopScheduledHaltingActivity() => scheduledHaltingActivities.Pop();

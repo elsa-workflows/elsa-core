@@ -26,7 +26,7 @@ namespace Elsa.Core.Services.WorkflowBuilders
             return target;
         }
 
-        public Workflow Build() => WorkflowBuilder.Build();
+        public WorkflowBlueprint Build() => WorkflowBuilder.Build();
 
         public IConnectionBuilder Then(string activityId)
         {

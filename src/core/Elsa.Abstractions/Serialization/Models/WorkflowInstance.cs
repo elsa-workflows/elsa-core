@@ -14,7 +14,7 @@ namespace Elsa.Serialization.Models
         public Instant? StartedAt { get; set; }
         public Instant? HaltedAt { get; set; }
         public Instant? FinishedAt { get; set; }
-        public IDictionary<string, JObject> Activities { get; set; } = new Dictionary<string, JObject>();
+        public IDictionary<string, ActivityInstance> Activities { get; set; } = new Dictionary<string, ActivityInstance>();
         public Stack<WorkflowExecutionScope> Scopes { get; set; }
         public Variables Input { get; set; }
         public HashSet<string> BlockingActivities { get; set; }
