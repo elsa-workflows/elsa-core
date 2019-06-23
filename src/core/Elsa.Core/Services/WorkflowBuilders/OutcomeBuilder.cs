@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -17,14 +18,22 @@ namespace Elsa.Core.Services.WorkflowBuilders
         public IActivityBuilder Source { get; }
         public string Outcome { get; }
 
-        public IActivityBuilder Then<T>(Action<T> setup) where T : IActivity
+        public IActivityBuilder Then<T>(Action<T> setup, string id = null) where T : class, IActivity
         {
-            var target = WorkflowBuilder.Add(setup);
+            var target = WorkflowBuilder.Add(setup, id);
 
             WorkflowBuilder.Connect(Source, target, Outcome);
             return target;
         }
 
         public Workflow Build() => WorkflowBuilder.Build();
+
+        public IConnectionBuilder Then(string activityId)
+        {
+            return WorkflowBuilder.Connect(
+                () => Source, 
+                () => WorkflowBuilder.Activities.First(x => x.Id == activityId), 
+                Outcome);
+        }
     }
 }

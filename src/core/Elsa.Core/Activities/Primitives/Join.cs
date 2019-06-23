@@ -1,36 +1,59 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Activities.Primitives.Activities;
-using Elsa.Core.Handlers;
-using Elsa.Extensions;
-using Elsa.Models;
+using Elsa.Core.Services;
 using Elsa.Results;
+using Elsa.Services;
+using Elsa.Services.Extensions;
+using Elsa.Services.Models;
 
-namespace Elsa.Activities.Primitives.Drivers
+namespace Elsa.Core.Activities.Primitives
 {
-    public class JoinDriver : ActivityDriver<Join>, IWorkflowEventHandler
+    public class Join : Activity, IWorkflowEventHandler
     {
-        protected override ActivityExecutionResult OnExecute(Join activity, WorkflowExecutionContext workflowContext)
+        public Join()
         {
-            var recordedInboundTransitions = activity.InboundTransitions ?? new List<string>();
+            InboundTransitions = new List<string>().AsReadOnly();
+        }
+        
+        public enum JoinMode
+        {
+            WaitAll,
+            WaitAny
+        }
+
+        public JoinMode Mode
+        {
+            get => GetState(() => JoinMode.WaitAll);
+            set => SetState(value);
+        }
+
+        public IReadOnlyCollection<string> InboundTransitions
+        {
+            get => GetState<IReadOnlyCollection<string>>();
+            set => SetState(value);
+        }
+        
+        protected override ActivityExecutionResult OnExecute(WorkflowExecutionContext workflowContext)
+        {
+            var recordedInboundTransitions = InboundTransitions ?? new List<string>();
             var workflow = workflowContext.Workflow;
-            var inboundConnections = workflow.GetInboundConnections(activity.Id);
+            var inboundConnections = workflow.GetInboundConnections(Id);
             var done = false;
 
-            switch (activity.Mode)
+            switch (Mode)
             {
-                case Join.JoinMode.WaitAll:
+                case JoinMode.WaitAll:
                     done = inboundConnections.All(x => recordedInboundTransitions.Contains(GetTransitionKey(x)));
                     break;
-                case Join.JoinMode.WaitAny:
+                case JoinMode.WaitAny:
                     done = inboundConnections.Any(x => recordedInboundTransitions.Contains(GetTransitionKey(x)));
 
                     if (done)
                     {
                         // Remove any inbound blocking activities.
-                        var ancestorActivityIds = workflow.GetInboundActivityPath(activity.Id).ToList();
+                        var ancestorActivityIds = workflow.GetInboundActivityPath(Id).ToList();
                         var blockingActivities = workflow.BlockingActivities.Where(x => ancestorActivityIds.Contains(x.Id)).ToList();
 
                         foreach (var blockingActivity in blockingActivities)
@@ -42,12 +65,7 @@ namespace Elsa.Activities.Primitives.Drivers
                     break;
             }
 
-            if (done)
-            {
-                return Endpoint("Done");
-            }
-
-            return Noop();
+            return done ? Done() : Noop();
         }
 
         private void RecordInboundTransitions(WorkflowExecutionContext workflowContext, IActivity activity)
@@ -78,7 +96,7 @@ namespace Elsa.Activities.Primitives.Drivers
         private string GetTransitionKey(Connection connection)
         {
             var sourceActivityId = connection.Source.Activity.Id;
-            var sourceOutcomeName = connection.Source.Name;
+            var sourceOutcomeName = connection.Source.Outcome;
 
             return $"@{sourceActivityId}_{sourceOutcomeName}";
         }

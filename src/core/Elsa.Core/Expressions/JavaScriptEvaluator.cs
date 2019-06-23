@@ -5,7 +5,9 @@ using System.Threading.Tasks;
 using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
+using Esprima.Ast;
 using Jint;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Core.Expressions
 {
@@ -46,8 +48,29 @@ namespace Elsa.Core.Expressions
             engine.Execute(expression);
             
             var returnValue = engine.GetCompletionValue();
+            T result;
 
-            return Task.FromResult((T) returnValue.ToObject());
+            if (returnValue.IsArray())
+            {
+                var jsArray = returnValue.AsArray();
+                var elementType = typeof(T).GetElementType();
+                var array = Array.CreateInstance(elementType, jsArray.Length);
+
+                for (uint i = 0; i < jsArray.Length; i++)
+                {
+                    var item = jsArray[i].ToObject();
+                    var convertedItem = Convert.ChangeType(item, elementType);
+                    array.SetValue(convertedItem, i);
+                }
+
+                result = (T)(object)array;
+            }
+            else
+            {
+                result = (T) returnValue.ToObject();
+            }
+            
+            return Task.FromResult(result);
         }
 
         private float GetFloat(object value)

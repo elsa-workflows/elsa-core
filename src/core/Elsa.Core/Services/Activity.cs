@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Elsa.Core.Results;
+using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 using NodaTime;
@@ -10,9 +11,9 @@ namespace Elsa.Core.Services
     public abstract class Activity : ActivityBase
     {
         protected HaltResult Halt() => new HaltResult();
-        protected OutcomeResult Outcomes(IEnumerable<string> names) => new OutcomeResult(names);
-        protected OutcomeResult Outcome(string name) => Outcomes(new[] { name });
-        protected OutcomeResult Done() => Outcome(OutcomeNames.Done);
+        protected ActivityExecutionResult Outcomes(IEnumerable<string> names) => new OutcomeResult(names);
+        protected ActivityExecutionResult Outcome(string name) => Outcomes(new[] { name });
+        protected ActivityExecutionResult Done() => Outcome(OutcomeNames.Done);
         protected ScheduleActivityResult ScheduleActivity(IActivity activity) => new ScheduleActivityResult(activity);
         protected ReturnValueResult SetReturnValue(object value) => new ReturnValueResult(value);
         protected FinishWorkflowResult Finish(Instant instant) => new FinishWorkflowResult(instant);

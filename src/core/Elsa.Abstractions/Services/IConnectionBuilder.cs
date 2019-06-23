@@ -1,11 +1,12 @@
+using System;
 using Elsa.Services.Models;
 
 namespace Elsa.Services
 {
     public interface IConnectionBuilder
     {
-        IActivityBuilder Source { get; }
-        IActivityBuilder Target { get; }
+        Func<IActivityBuilder> Source { get; }
+        Func<IActivityBuilder> Target { get; }
         string Outcome { get; }
         Connection BuildConnection();
     }

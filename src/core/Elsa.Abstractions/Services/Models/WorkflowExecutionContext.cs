@@ -31,24 +31,8 @@ namespace Elsa.Services.Models
         public WorkflowExecutionScope CurrentScope => Workflow.Scopes.Peek();
         public IActivity CurrentActivity { get; private set; }
 
-        public ActivityExecutionContext CreateActivityExecutionContext(IActivity activity) =>
-            new ActivityExecutionContext(activity);
+        public ActivityExecutionContext CreateActivityExecutionContext(IActivity activity) => new ActivityExecutionContext(activity);
 
-        public void BeginScope()
-        {
-            Workflow.Scopes.Push(new WorkflowExecutionScope());
-        }
-
-        public void EndScope()
-        {
-            Workflow.Scopes.Pop();
-        }
-
-        public void ScheduleActivity(IActivity activity)
-        {
-            scheduledActivities.Push(activity);
-        }
-        
         public void ScheduleActivities(IEnumerable<IActivity> activities)
         {
             foreach (var activityId in activities)
@@ -56,31 +40,17 @@ namespace Elsa.Services.Models
                 ScheduleActivity(activityId);
             }
         }
-        
-        public void ScheduleActivities(params IActivity[] activities)
-        {
-            ScheduleActivities((IEnumerable<IActivity>)activities);
-        }
 
-        public IActivity PopScheduledActivity()
-        {
-            return CurrentActivity = scheduledActivities.Pop();
-        }
-
-        public void ScheduleHaltingActivity(IActivity activity)
-        {
-            scheduledHaltingActivities.Push(activity);
-        }
-
-        public IActivity PopScheduledHaltingActivity()
-        {
-            return scheduledHaltingActivities.Pop();
-        }
-
-        public void SetLastResult(object value)
-        {
-            CurrentScope.LastResult = value;
-        }
+        public void BeginScope() => Workflow.Scopes.Push(new WorkflowExecutionScope());
+        public void EndScope() => Workflow.Scopes.Pop();
+        public void ScheduleActivity(IActivity activity) => scheduledActivities.Push(activity);
+        public void ScheduleActivities(params IActivity[] activities) => ScheduleActivities((IEnumerable<IActivity>) activities);
+        public IActivity PopScheduledActivity() => CurrentActivity = scheduledActivities.Pop();
+        public void ScheduleHaltingActivity(IActivity activity) => scheduledHaltingActivities.Push(activity);
+        public IActivity PopScheduledHaltingActivity() => scheduledHaltingActivities.Pop();
+        public void SetVariable(string name, object value) => CurrentScope.SetVariable(name, value);
+        public T GetVariable<T>(string name) => CurrentScope.GetVariable<T>(name);
+        public void SetLastResult(object value) => CurrentScope.LastResult = value;
 
         public void Fault(IActivity activity, Exception exception) => Fault(activity, exception.Message);
 

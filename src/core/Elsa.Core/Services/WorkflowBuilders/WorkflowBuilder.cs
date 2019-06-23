@@ -6,7 +6,6 @@ using Elsa.Serialization.Models;
 using Elsa.Services;
 using Elsa.Services.Extensions;
 using Elsa.Services.Models;
-using Esprima.Ast;
 using Newtonsoft.Json.Linq;
 using Connection = Elsa.Services.Models.Connection;
 
@@ -15,39 +14,50 @@ namespace Elsa.Core.Services.WorkflowBuilders
     public class WorkflowBuilder : IWorkflowBuilder
     {
         private readonly IActivityResolver activityResolver;
-        private readonly IList<ActivityBuilder> activityBuilders = new List<ActivityBuilder>();
-        private readonly IList<ConnectionBuilder> connectionBuilders = new List<ConnectionBuilder>();
+        private readonly IList<IActivityBuilder> activityBuilders = new List<IActivityBuilder>();
+        private readonly IList<IConnectionBuilder> connectionBuilders = new List<IConnectionBuilder>();
 
         public WorkflowBuilder(IActivityResolver activityResolver)
         {
             this.activityResolver = activityResolver;
         }
 
-        public IActivityBuilder Add<T>(Action<T> setupActivity) where T : IActivity
+        public IReadOnlyList<IActivityBuilder> Activities => activityBuilders.ToList().AsReadOnly();
+
+        public IActivityBuilder Add<T>(Action<T> setupActivity, string id = null) where T : class, IActivity
         {
             var activity = activityResolver.ResolveActivity(setupActivity);
-            var activityBuilder = new ActivityBuilder(this, activity);
+            var activityBuilder = new ActivityBuilder(this, activity, id);
 
+            if (id != null)
+                activity.Id = id;
+            
             activityBuilders.Add(activityBuilder);
             return activityBuilder;
         }
 
         public IConnectionBuilder Connect(IActivityBuilder source, IActivityBuilder target, string outcome = null)
         {
-            var connectionBuilder = new ConnectionBuilder(source, target, outcome);
+            return Connect(() => source, () => target, outcome);
+        }
+
+        public IConnectionBuilder Connect(Func<IActivityBuilder> source, Func<IActivityBuilder> target, string outcome = null)
+        {
+            var connectionBuilder = new ConnectionBuilder(this, source, target, outcome);
 
             connectionBuilders.Add(connectionBuilder);
             return connectionBuilder;
         }
 
-        public IActivityBuilder StartWith<T>(Action<T> setupActivity) where T : IActivity
+
+        public IActivityBuilder StartWith<T>(Action<T> setupActivity, string id = null) where T : class, IActivity
         {
-            return Add(setupActivity);
+            return Add(setupActivity, id);
         }
 
         public Workflow Build()
         {
-            var activities = activityBuilders.Select(x => x.Activity).ToList();
+            var activities = activityBuilders.Select(x => x.BuildActivity()).ToList();
             var connections = connectionBuilders.Select(x => x.BuildConnection()).ToList();
 
             // Generate deterministic activity ids.

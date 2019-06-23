@@ -1,4 +1,4 @@
-using Elsa.Core.Activities;
+using Elsa.Core.Activities.Primitives;
 using Elsa.Core.Expressions;
 using Elsa.Core.Serialization;
 using Elsa.Core.Serialization.Formatters;
@@ -36,7 +36,7 @@ namespace Elsa.Core.Extensions
                 .AddSingleton<IWorkflowExpressionEvaluator, WorkflowExpressionEvaluator>()
                 .AddSingleton<IWorkflowSerializerProvider, WorkflowSerializerProvider>()
                 .AddTransient<IWorkflowBuilder, WorkflowBuilder>()
-                .AddActivity<UnknownActivity>();
+                .AddPrimitiveActivities();
         }
 
         public static IServiceCollection AddActivity<T>(this IServiceCollection services)
@@ -45,6 +45,18 @@ namespace Elsa.Core.Extensions
             return services
                 .AddTransient<T>()
                 .AddTransient<IActivity>(sp => sp.GetRequiredService<T>());
+        }
+        
+        private static IServiceCollection AddPrimitiveActivities(this IServiceCollection services)
+        {
+            return services
+                .AddActivity<SetVariable>()
+                .AddActivity<ForEach>()
+                .AddActivity<Fork>()
+                .AddActivity<Join>()
+                .AddSingleton<IWorkflowEventHandler>(sp => sp.GetRequiredService<Join>())
+                .AddActivity<IfElse>()
+                .AddActivity<Switch>();
         }
     }
 }
