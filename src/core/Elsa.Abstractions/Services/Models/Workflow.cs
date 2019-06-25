@@ -13,11 +13,13 @@ namespace Elsa.Services.Models
         public Workflow(
             string definitionId,
             IEnumerable<IActivity> activities,
+            IEnumerable<Connection> connections,
             Variables input = null,
             WorkflowInstance workflowInstance = null) : this()
         {
             DefinitionId = definitionId;
             Activities = activities.ToList();
+            Connections = connections.ToList();
             Input = new Variables(input ?? Variables.Empty);
             Initialize(workflowInstance);
         }

@@ -21,17 +21,8 @@ namespace Elsa.Services.Models
             Source = source;
             Target = target;
         }
-        
+
         public SourceEndpoint Source { get; set; }
         public TargetEndpoint Target { get; set; }
-
-        public Serialization.Models.Connection ToInstance()
-        {
-            return new Serialization.Models.Connection
-            {
-                Source = Source.ToInstance(),
-                Target = Target.ToInstance()
-            };
-        }
     }
 }

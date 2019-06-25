@@ -12,14 +12,5 @@ namespace Elsa.Services.Models
         }
 
         public string Outcome { get; set; }
-
-        public Serialization.Models.SourceEndpoint ToInstance()
-        {
-            return new Serialization.Models.SourceEndpoint
-            {
-                ActivityId = Activity.Id,
-                Outcome = Outcome
-            };
-        }
     }
 }

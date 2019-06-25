@@ -1,4 +1,5 @@
 using System;
+using Elsa.Models;
 using Elsa.Services.Models;
 
 namespace Elsa.Services
@@ -8,6 +9,6 @@ namespace Elsa.Services
         Func<IActivityBuilder> Source { get; }
         Func<IActivityBuilder> Target { get; }
         string Outcome { get; }
-        ConnectionBlueprint BuildConnection();
+        ConnectionDefinition BuildConnection();
     }
 }

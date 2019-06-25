@@ -1,4 +1,5 @@
 using System;
+using Elsa.Models;
 using Elsa.Services.Models;
 
 namespace Elsa.Services
@@ -8,7 +9,7 @@ namespace Elsa.Services
         IActivityBuilder Source { get; }
         string Outcome { get; }
         IActivityBuilder Then<T>(Action<T> setup, string id = null) where T : class, IActivity;
-        WorkflowBlueprint Build();
+        WorkflowDefinition Build();
         IConnectionBuilder Then(string activityId);
     }
 }

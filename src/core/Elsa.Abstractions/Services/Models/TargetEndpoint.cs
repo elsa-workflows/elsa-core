@@ -9,13 +9,5 @@ namespace Elsa.Services.Models
         public TargetEndpoint(IActivity activity) : base(activity)
         {
         }
-
-        public Serialization.Models.TargetEndpoint ToInstance()
-        {
-            return new Serialization.Models.TargetEndpoint
-            {
-                ActivityId = Activity.Id
-            };
-        }
     }
 }

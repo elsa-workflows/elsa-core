@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Services.Models;
 
-namespace Elsa.Runtime
+namespace Elsa.Services
 {
     public interface IWorkflowHost
     {

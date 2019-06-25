@@ -5,6 +5,7 @@ using Elsa.Core.Services;
 using Elsa.Services;
 using Elsa.Services.Extensions;
 using Microsoft.Extensions.DependencyInjection;
+using Sample01.Activities;
 
 namespace Sample01
 {
@@ -18,13 +19,13 @@ namespace Sample01
             // Setup a service collection.
             var services = new ServiceCollection()
                 .AddWorkflows()
+                .AddActivity<HelloWorld>()
+                .AddActivity<GoodByeWorld>()
                 .BuildServiceProvider();
 
-            // Create a workflow.
-            var workflowBuilder = services.GetRequiredService<IWorkflowBuilder>();
+            // Instantiate a workflow from code.
             var workflowFactory = services.GetRequiredService<IWorkflowFactory>();
-            var workflowBlueprint = workflowBuilder.Build<HelloWorldWorkflow>();
-            var workflow = workflowFactory.CreateWorkflow(workflowBlueprint);
+            var workflow = workflowFactory.CreateWorkflow<HelloWorldWorkflow>();
 
             // Invoke the workflow.
             var invoker = services.GetService<IWorkflowInvoker>();

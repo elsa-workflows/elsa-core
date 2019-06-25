@@ -2,11 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Elsa.Models;
-using Elsa.Serialization.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Newtonsoft.Json.Linq;
-using Connection = Elsa.Services.Models.Connection;
 
 namespace Elsa.Core.Services.WorkflowBuilders
 {
@@ -15,15 +12,13 @@ namespace Elsa.Core.Services.WorkflowBuilders
         private readonly IActivityResolver activityResolver;
         private readonly IList<IActivityBuilder> activityBuilders = new List<IActivityBuilder>();
         private readonly IList<IConnectionBuilder> connectionBuilders = new List<IConnectionBuilder>();
-        private readonly IIdGenerator idGenerator;
 
-        public WorkflowBuilder(IActivityResolver activityResolver, IIdGenerator idGenerator)
+        public WorkflowBuilder(IActivityResolver activityResolver)
         {
             this.activityResolver = activityResolver;
-            this.idGenerator = idGenerator;
         }
 
-        public string Id { get; private set; }
+        public string Id { get; set; }
         public IReadOnlyList<IActivityBuilder> Activities => activityBuilders.ToList().AsReadOnly();
 
         public IWorkflowBuilder WithId(string id)
@@ -35,7 +30,7 @@ namespace Elsa.Core.Services.WorkflowBuilders
         public IActivityBuilder Add<T>(Action<T> setupActivity, string id = null) where T : class, IActivity
         {
             var activity = activityResolver.ResolveActivity(setupActivity);
-            var activityBlueprint = ActivityBlueprint.FromActivity(activity);
+            var activityBlueprint = ActivityDefinition.FromActivity(activity);
             var activityBuilder = new ActivityBuilder(this, activityBlueprint, id);
 
             if (id != null)
@@ -64,23 +59,20 @@ namespace Elsa.Core.Services.WorkflowBuilders
             return Add(setupActivity, id);
         }
 
-        public WorkflowBlueprint Build()
+        public WorkflowDefinition Build()
         {
+            // Generate deterministic activity ids.
+            var id = 1;
+            foreach (var activityBuilder in activityBuilders)
+            {
+                if (activityBuilder.Id == null)
+                    activityBuilder.Id = $"activity-{id++}";
+            }
+            
             var activities = activityBuilders.Select(x => x.BuildActivity()).ToList();
             var connections = connectionBuilders.Select(x => x.BuildConnection()).ToList();
 
-            // Generate deterministic activity ids.
-            var id = 1;
-            foreach (var activity in activities)
-            {
-                if (activity.Id == null)
-                    activity.Id = $"activity-{id++}";
-            }
-            
-            return new WorkflowBlueprint(activities, connections, Variables.Empty)
-            {
-                Id = Id ?? idGenerator.Generate()
-            };
+            return new WorkflowDefinition(Id, activities, connections, Variables.Empty);
         }
     }
 }

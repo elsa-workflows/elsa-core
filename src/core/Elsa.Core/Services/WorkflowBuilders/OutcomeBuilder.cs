@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -26,7 +27,7 @@ namespace Elsa.Core.Services.WorkflowBuilders
             return target;
         }
 
-        public WorkflowBlueprint Build() => WorkflowBuilder.Build();
+        public WorkflowDefinition Build() => WorkflowBuilder.Build();
 
         public IConnectionBuilder Then(string activityId)
         {

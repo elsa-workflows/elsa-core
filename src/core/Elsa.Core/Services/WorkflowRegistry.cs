@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Extensions;
 using Elsa.Services.Models;
@@ -9,19 +10,19 @@ namespace Elsa.Core.Services
 {
     public class WorkflowRegistry : IWorkflowRegistry
     {
-        private readonly IDictionary<string, WorkflowBlueprint> workflowBlueprints;
+        private readonly IDictionary<string, WorkflowDefinition> workflowBlueprints;
 
         public WorkflowRegistry()
         {
-            workflowBlueprints = new Dictionary<string, WorkflowBlueprint>();
+            workflowBlueprints = new Dictionary<string, WorkflowDefinition>();
         }
         
-        public void RegisterWorkflow(WorkflowBlueprint blueprint)
+        public void RegisterWorkflow(WorkflowDefinition definition)
         {
-            workflowBlueprints[blueprint.Id] = blueprint;
+            workflowBlueprints[definition.Id] = definition;
         }
 
-        public IEnumerable<(WorkflowBlueprint, ActivityBlueprint)> ListByStartActivity(string activityType, CancellationToken cancellationToken)
+        public IEnumerable<(WorkflowDefinition, ActivityDefinition)> ListByStartActivity(string activityType, CancellationToken cancellationToken)
         {
             var query =
                 from workflow in workflowBlueprints.Values
@@ -32,7 +33,7 @@ namespace Elsa.Core.Services
             return query.Distinct();
         }
 
-        public WorkflowBlueprint GetById(string id, CancellationToken cancellationToken = default)
+        public WorkflowDefinition GetById(string id, CancellationToken cancellationToken = default)
         {
             return workflowBlueprints.ContainsKey(id) ? workflowBlueprints[id] : default;
         }

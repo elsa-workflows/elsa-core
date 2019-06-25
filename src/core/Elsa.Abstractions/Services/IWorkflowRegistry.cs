@@ -1,13 +1,14 @@
 using System.Collections.Generic;
 using System.Threading;
+using Elsa.Models;
 using Elsa.Services.Models;
 
 namespace Elsa.Services
 {
     public interface IWorkflowRegistry
     {
-        void RegisterWorkflow(WorkflowBlueprint blueprint);
-        IEnumerable<(WorkflowBlueprint, ActivityBlueprint)> ListByStartActivity(string activityType, CancellationToken cancellationToken = default);
-        WorkflowBlueprint GetById(string id, CancellationToken cancellationToken = default);
+        void RegisterWorkflow(WorkflowDefinition definition);
+        IEnumerable<(WorkflowDefinition, ActivityDefinition)> ListByStartActivity(string activityType, CancellationToken cancellationToken = default);
+        WorkflowDefinition GetById(string id, CancellationToken cancellationToken = default);
     }
 }

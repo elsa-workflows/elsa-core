@@ -8,7 +8,7 @@ namespace Elsa.Services.Extensions
 {
     public static class WorkflowBlueprintExtensions
     {
-        public static IEnumerable<ActivityBlueprint> GetStartActivities(this WorkflowBlueprint workflow)
+        public static IEnumerable<ActivityDefinition> GetStartActivities(this WorkflowDefinition workflow)
         {
             var targetActivityIds = workflow.Connections.Select(x => x.Target.ActivityId).Distinct().ToLookup(x => x);
             
@@ -20,29 +20,29 @@ namespace Elsa.Services.Extensions
             return query;
         }
 
-        public static ActivityBlueprint GetActivity(this WorkflowBlueprint workflowBlueprint, string id) => workflowBlueprint.Activities.FirstOrDefault(x => x.Id == id);
+        public static ActivityDefinition GetActivity(this WorkflowDefinition workflowDefinition, string id) => workflowDefinition.Activities.FirstOrDefault(x => x.Id == id);
 
-        public static IEnumerable<ConnectionBlueprint> GetInboundConnections(this WorkflowBlueprint workflowBlueprint, string activityId)
+        public static IEnumerable<ConnectionDefinition> GetInboundConnections(this WorkflowDefinition workflowDefinition, string activityId)
         {
-            return workflowBlueprint.Connections.Where(x => x.Target.ActivityId == activityId).ToList();
+            return workflowDefinition.Connections.Where(x => x.Target.ActivityId == activityId).ToList();
         }
 
-        public static IEnumerable<ConnectionBlueprint> GetOutboundConnections(this WorkflowBlueprint workflowBlueprint, string activityId)
+        public static IEnumerable<ConnectionDefinition> GetOutboundConnections(this WorkflowDefinition workflowDefinition, string activityId)
         {
-            return workflowBlueprint.Connections.Where(x => x.Source.ActivityId == activityId).ToList();
+            return workflowDefinition.Connections.Where(x => x.Source.ActivityId == activityId).ToList();
         }
 
         /// <summary>
         /// Returns the full path of incoming activities.
         /// </summary>
-        public static IEnumerable<string> GetInboundActivityPath(this WorkflowBlueprint workflowBlueprint, string activityId)
+        public static IEnumerable<string> GetInboundActivityPath(this WorkflowDefinition workflowDefinition, string activityId)
         {
-            return workflowBlueprint.GetInboundActivityPathInternal(activityId, activityId).Distinct().ToList();
+            return workflowDefinition.GetInboundActivityPathInternal(activityId, activityId).Distinct().ToList();
         }
 
-        private static IEnumerable<string> GetInboundActivityPathInternal(this WorkflowBlueprint workflowBlueprint, string activityId, string startingPointActivityId)
+        private static IEnumerable<string> GetInboundActivityPathInternal(this WorkflowDefinition workflowDefinition, string activityId, string startingPointActivityId)
         {
-            foreach (var connection in workflowBlueprint.GetInboundConnections(activityId))
+            foreach (var connection in workflowDefinition.GetInboundConnections(activityId))
             {
                 // Circuit breaker: Detect workflows that implement repeating flows to prevent an infinite loop here.
                 if (connection.Source.ActivityId == startingPointActivityId)
@@ -50,7 +50,7 @@ namespace Elsa.Services.Extensions
 
                 yield return connection.Source.ActivityId;
 
-                foreach (var parentActivityId in workflowBlueprint.GetInboundActivityPathInternal(connection.Source.ActivityId, startingPointActivityId).Distinct())
+                foreach (var parentActivityId in workflowDefinition.GetInboundActivityPathInternal(connection.Source.ActivityId, startingPointActivityId).Distinct())
                     yield return parentActivityId;
             }
         }

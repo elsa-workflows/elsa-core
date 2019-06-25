@@ -45,12 +45,7 @@ namespace Elsa.Core.Services
         
         public T ResolveActivity<T>(Action<T> setup = null) where T : class, IActivity
         {
-            var activityTypeName = typeof(T).AssemblyQualifiedName;
-            var activityType = ResolveActivityType(activityTypeName);
-            var activity = (T) ActivatorUtilities.GetServiceOrCreateInstance(serviceProvider, activityType);
-
-            setup?.Invoke(activity);
-            return activity;
+            return (T) ResolveActivity(typeof(T).Name, setup != null ? x => setup((T) x) : default(Action<IActivity>));
         }
     }
 }

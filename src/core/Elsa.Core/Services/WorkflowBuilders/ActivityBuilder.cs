@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -7,7 +8,7 @@ namespace Elsa.Core.Services.WorkflowBuilders
 {
     public class ActivityBuilder : IActivityBuilder
     {
-        public ActivityBuilder(WorkflowBuilder workflowBuilder, ActivityBlueprint activity, string id)
+        public ActivityBuilder(WorkflowBuilder workflowBuilder, ActivityDefinition activity, string id)
         {
             WorkflowBuilder = workflowBuilder;
             Activity = activity;
@@ -15,8 +16,8 @@ namespace Elsa.Core.Services.WorkflowBuilders
         }
 
         public WorkflowBuilder WorkflowBuilder { get; }
-        public ActivityBlueprint Activity { get; }
-        public string Id { get; }
+        public ActivityDefinition Activity { get; }
+        public string Id { get; set; }
 
         public IActivityBuilder Add<T>(Action<T> setupActivity, string id = null) where T : class, IActivity
         {
@@ -43,12 +44,12 @@ namespace Elsa.Core.Services.WorkflowBuilders
             );
         }
 
-        public ActivityBlueprint BuildActivity()
+        public ActivityDefinition BuildActivity()
         {
             Activity.Id = Id;
             return Activity;
         }
 
-        public WorkflowBlueprint Build() => WorkflowBuilder.Build();
+        public WorkflowDefinition Build() => WorkflowBuilder.Build();
     }
 }

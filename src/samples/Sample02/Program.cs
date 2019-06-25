@@ -24,13 +24,17 @@ namespace Sample02
                 .AddConsoleActivities()
                 .BuildServiceProvider();
 
-            // Create a workflow.
+            // Define a workflow.
             var workflowBuilder = services.GetRequiredService<IWorkflowBuilder>();
-            var workflow = workflowBuilder
+            var workflowDefinition = workflowBuilder
                 .StartWith<WriteLine>(x => x.TextExpression = new PlainTextExpression("Hello world!"))
                 .Then<WriteLine>(x => x.TextExpression = new PlainTextExpression("Goodbye cruel world..."))
                 .Build();
 
+            // Instantiate the workflow definition.
+            var workflowFactory = services.GetRequiredService<IWorkflowFactory>();
+            var workflow = workflowFactory.CreateWorkflow(workflowDefinition);
+            
             // Invoke the workflow.
             var invoker = services.GetService<IWorkflowInvoker>();
             await invoker.InvokeAsync(workflow);

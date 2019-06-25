@@ -6,6 +6,7 @@ namespace Elsa.Services
 {
     public interface IWorkflowFactory
     {
-        Workflow CreateWorkflow(WorkflowBlueprint blueprint, Variables input = null, WorkflowInstance workflowInstance = null);
+        Workflow CreateWorkflow<T>(Variables input = null, WorkflowInstance workflowInstance = null) where T : IWorkflow, new();
+        Workflow CreateWorkflow(WorkflowDefinition definition, Variables input = null, WorkflowInstance workflowInstance = null);
     }
 }

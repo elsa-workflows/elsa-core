@@ -1,4 +1,5 @@
 using System;
+using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -19,9 +20,9 @@ namespace Elsa.Core.Services.WorkflowBuilders
             Outcome = outcome;
         }
 
-        public ConnectionBlueprint BuildConnection()
+        public ConnectionDefinition BuildConnection()
         {
-            return new ConnectionBlueprint(Source().Activity.Id, Target().Activity.Id, Outcome);
+            return new ConnectionDefinition(Source().Activity.Id, Target().Activity.Id, Outcome);
         }
     }
 }

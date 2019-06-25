@@ -4,8 +4,10 @@ using Elsa.Activities.Console.Activities;
 using Elsa.Activities.Console.Extensions;
 using Elsa.Core.Expressions;
 using Elsa.Core.Extensions;
+using Elsa.Models;
 using Elsa.Serialization.Models;
 using Elsa.Services;
+using Elsa.Services.Models;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Sample03
@@ -33,13 +35,13 @@ namespace Sample03
                 },
                 Connections = new []
                 {
-                    new Connection("activity-1", "activity-2")
+                    new ConnectionDefinition("activity-1", "activity-2"), 
                 }
             };
             
             // Create a workflow from the definition.
-            var workflowBuilder = services.GetRequiredService<IWorkflowBuilder>();
-            var workflow = workflowBuilder.Build(workflowDefinition);
+            var workflowFactory = services.GetRequiredService<IWorkflowFactory>();
+            var workflow = workflowFactory.CreateWorkflow(workflowDefinition);
 
             // Invoke the workflow.
             var invoker = services.GetService<IWorkflowInvoker>();
