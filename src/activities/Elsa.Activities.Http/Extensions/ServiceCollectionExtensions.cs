@@ -1,6 +1,6 @@
-using Elsa.Activities.Http.Drivers;
+using Elsa.Activities.Http.Activities;
 using Elsa.Activities.Http.Formatters;
-using Elsa.Extensions;
+using Elsa.Core.Extensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -9,23 +9,15 @@ namespace Elsa.Activities.Http.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddHttpDesigners(this IServiceCollection services)
-        {
-            return services
-                .AddActivityProvider<ActivityProvider>()
-                .AddActivityDesigners<ActivityDesignerProvider>();
-        }
-
         public static IServiceCollection AddHttpActivities(this IServiceCollection services)
         {
             services.TryAddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-            services.AddHttpClient(nameof(HttpRequestActionDriver));
+            services.AddHttpClient(nameof(HttpRequestAction));
             
             services
-                .AddActivityProvider<ActivityProvider>()
-                .AddActivityDriver<HttpRequestTriggerDriver>()
-                .AddActivityDriver<HttpResponseActionDriver>()
-                .AddActivityDriver<HttpRequestActionDriver>();
+                .AddActivity<HttpRequestTrigger>()
+                .AddActivity<HttpResponseAction>()
+                .AddActivity<HttpRequestAction>();
 
             services
                 .AddSingleton<IContentFormatter, NullContentFormatter>()

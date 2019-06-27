@@ -1,69 +1,47 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
-using Elsa.Core.Serialization.Formatters;
-using Elsa.Extensions;
-using Elsa.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using Elsa.Serialization;
-using Elsa.Serialization.Tokenizers;
+using Elsa.Serialization.Formatters;
+using Elsa.Serialization.Models;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Elsa.Core.Serialization
 {
     public class WorkflowSerializer : IWorkflowSerializer
     {
-        private readonly IWorkflowTokenizer workflowTokenizer;
-        private readonly ITokenFormatterProvider tokenFormatterProvider;
-        private readonly IActivityStore activityStore;
-        private readonly IIdGenerator idGenerator;
+        private readonly IDictionary<string, ITokenFormatter> formatters;
+        private readonly JsonSerializer jsonSerializer;
 
-        public WorkflowSerializer(
-            IWorkflowTokenizer workflowTokenizer, 
-            ITokenFormatterProvider tokenFormatterProvider,
-            IActivityStore activityStore,
-            IIdGenerator idGenerator)
+        public WorkflowSerializer(IEnumerable<ITokenFormatter> formatters, IWorkflowSerializerProvider serializerProvider)
         {
-            this.workflowTokenizer = workflowTokenizer;
-            this.tokenFormatterProvider = tokenFormatterProvider;
-            this.activityStore = activityStore;
-            this.idGenerator = idGenerator;
+            this.formatters = formatters.ToDictionary(x => x.Format, StringComparer.OrdinalIgnoreCase);
+            jsonSerializer = serializerProvider.CreateJsonSerializer();
         }
         
-        public async Task<string> SerializeAsync(Workflow workflow, string format, CancellationToken cancellationToken)
+        public string Serialize(WorkflowInstance workflowInstance, string format)
         {
-            var token = await workflowTokenizer.TokenizeWorkflowAsync(workflow, cancellationToken);
-            return await SerializeAsync(token, format, cancellationToken);
-        }
-        
-        public Task<string> SerializeAsync(JToken token, string format, CancellationToken cancellationToken)
-        {
-            var text = tokenFormatterProvider.ToString(token, format);
-            return Task.FromResult(text);
+            var token = JObject.FromObject(workflowInstance, jsonSerializer);
+            return Serialize(token, format);
         }
 
-        public Task<Workflow> DeserializeAsync(string data, string format, CancellationToken cancellationToken)
+        public string Serialize(JToken token, string format)
         {
-            var token = tokenFormatterProvider.FromString(data, format);
-            return DeserializeAsync(token, cancellationToken);
+            var formatter = formatters[format];
+            return formatter.ToString(token);
         }
-        
-        public async Task<Workflow> DeserializeAsync(JToken token, CancellationToken cancellationToken)
+
+        public WorkflowInstance Deserialize(string data, string format)
         {
-            return await workflowTokenizer.DetokenizeWorkflowAsync(token, cancellationToken);
+            var formatter = formatters[format];
+            var token = formatter.FromString(data);
+            return Deserialize(token);
         }
-        
-        public async Task<Workflow> CloneAsync(Workflow workflow, CancellationToken cancellationToken)
+
+        public WorkflowInstance Deserialize(JToken token)
         {
-            var format = JsonTokenFormatter.FormatName;
-            var json = await SerializeAsync(workflow, format, cancellationToken);
-            return await DeserializeAsync(json, format, cancellationToken);
-        }
-        
-        public async Task<Workflow> DeriveAsync(Workflow parent, CancellationToken cancellationToken)
-        {
-            var child = await CloneAsync(parent, cancellationToken);
-            child.ParentId = parent.Id;
-            child.Id = idGenerator.Generate();
-            return child;
+            return token.ToObject<WorkflowInstance>(jsonSerializer);
         }
     }
 }

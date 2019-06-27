@@ -1,32 +1,45 @@
-﻿using Elsa.Attributes;
+﻿using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using Elsa.Core.Expressions;
+using Elsa.Core.Services;
 using Elsa.Expressions;
-using Elsa.Models;
+using Elsa.Results;
+using Elsa.Services;
+using Elsa.Services.Models;
 
-namespace Elsa.Activities.Console.Activities 
+namespace Elsa.Activities.Console.Activities
 {
     /// <summary>
     /// Writes a text string to the console.
     /// </summary>
-    [ActivityDisplayName("Write Line")]
-    [ActivityCategory("Console")]
-    [ActivityDescription("Write a line to the console")]
-    [DefaultEndpoint]
     public class WriteLine : Activity
     {
-        public WriteLine()
+        public WriteLine(IWorkflowExpressionEvaluator evaluator)
+            : this(evaluator, System.Console.Out)
         {
         }
 
-        public WriteLine(string text) : this(new WorkflowExpression<string>(PlainTextEvaluator.SyntaxName, text))
+        public WriteLine(IWorkflowExpressionEvaluator evaluator, TextWriter output)
         {
+            this.evaluator = evaluator;
+            this.output = output;
         }
-        
-        public WriteLine(WorkflowExpression<string> textExpression)
+
+        public WorkflowExpression<string> TextExpression 
         {
-            TextExpression = textExpression;
+            get => GetState(() => PlainTextEvaluator.Expression<string>(null));
+            set => SetState(value);
         }
-        
-        public WorkflowExpression<string> TextExpression { get; set; }
+
+        private readonly IWorkflowExpressionEvaluator evaluator;
+        private readonly TextWriter output;
+
+        protected override async Task<ActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
+        {
+            var text = await evaluator.EvaluateAsync(TextExpression, context, cancellationToken);
+            await output.WriteLineAsync(text);
+            return Outcome(OutcomeNames.Done);
+        }
     }
 }

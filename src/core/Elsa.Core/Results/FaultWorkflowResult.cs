@@ -1,6 +1,7 @@
 ﻿using System;
-using Elsa.Models;
 using Elsa.Results;
+using Elsa.Services;
+using Elsa.Services.Models;
 
 namespace Elsa.Core.Results
 {
@@ -19,8 +20,7 @@ namespace Elsa.Core.Results
         
         protected override void Execute(IWorkflowInvoker invoker, WorkflowExecutionContext workflowContext)
         {
-            var activity = workflowContext.CurrentActivity;
-            workflowContext.Fault(errorMessage, activity);
+            workflowContext.Fault(workflowContext.CurrentActivity, errorMessage);
         }
     }
 }

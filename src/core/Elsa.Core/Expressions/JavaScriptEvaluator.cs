@@ -2,13 +2,22 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Models;
+using Elsa.Expressions;
+using Elsa.Services;
+using Elsa.Services.Models;
+using Esprima.Ast;
 using Jint;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Core.Expressions
 {
     public class JavaScriptEvaluator : IExpressionEvaluator
     {
+        public static WorkflowExpression<T> CreateExpression<T>(string expression)
+        {
+            return new WorkflowExpression<T>(SyntaxName, expression);
+        }
+        
         public const string SyntaxName = "JavaScript";
         private readonly Engine engine;
 
@@ -28,19 +37,40 @@ namespace Elsa.Core.Expressions
 
             var workflowApi = new Dictionary<string, object>
             {
-                ["getArgument"] = (Func<string, object>) (name => workflowExecutionContext.Workflow.Arguments.GetVariable(name)),
-                ["getVariable"] = (Func<string, object>) (name => workflowExecutionContext.CurrentScope.GetVariable(name)),
-                ["getFloat"] = (Func<string, float>) (name => GetFloat(workflowExecutionContext.CurrentScope.GetVariable(name))),
-                ["getInt"] = (Func<string, int>) (name => GetInt(workflowExecutionContext.CurrentScope.GetVariable(name))),
-                ["getLastResult"] = (Func<object>) (() => workflowExecutionContext.CurrentScope.LastResult)
+                ["input"] = (Func<string, object>) (name => workflowExecutionContext.Workflow.Input.GetVariable(name)),
+                ["variable"] = (Func<string, object>) (name => workflowExecutionContext.CurrentScope.GetVariable(name)),
+                ["float"] = (Func<string, float>) (name => GetFloat(workflowExecutionContext.CurrentScope.GetVariable(name))),
+                ["int"] = (Func<string, int>) (name => GetInt(workflowExecutionContext.CurrentScope.GetVariable(name))),
+                ["lastResult"] = (Func<object>) (() => workflowExecutionContext.CurrentScope.LastResult)
             };
 
             engine.SetValue("wf", workflowApi);
             engine.Execute(expression);
             
             var returnValue = engine.GetCompletionValue();
+            T result;
 
-            return Task.FromResult((T) returnValue.ToObject());
+            if (returnValue.IsArray())
+            {
+                var jsArray = returnValue.AsArray();
+                var elementType = typeof(T).GetElementType();
+                var array = Array.CreateInstance(elementType, jsArray.Length);
+
+                for (uint i = 0; i < jsArray.Length; i++)
+                {
+                    var item = jsArray[i].ToObject();
+                    var convertedItem = Convert.ChangeType(item, elementType);
+                    array.SetValue(convertedItem, i);
+                }
+
+                result = (T)(object)array;
+            }
+            else
+            {
+                result = (T) returnValue.ToObject();
+            }
+            
+            return Task.FromResult(result);
         }
 
         private float GetFloat(object value)

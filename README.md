@@ -2,7 +2,7 @@
 
 ## Elsa Workflows
 
-Elsa is a visual programming tool that allows you to implement parts of your application with workflows as well to implement your entire application using workflows.
+Elsa is a visual programming tool that allows you to implement your application with workflows.
 It is implemented as a set NuGet packages that you can use in your .NET Core applications.
 With Elsa, you can invoke and trigger workflows from your own application. Workflows can be expressed as JSON, YAML, XML or in code.
 

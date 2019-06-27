@@ -1,12 +1,13 @@
+using Elsa.Core.Activities.Primitives;
 using Elsa.Core.Expressions;
-using Elsa.Core.Harvesters;
 using Elsa.Core.Serialization;
 using Elsa.Core.Serialization.Formatters;
-using Elsa.Core.Serialization.Tokenizers;
-using Elsa.Extensions;
+using Elsa.Core.Services;
+using Elsa.Core.Services.WorkflowBuilders;
 using Elsa.Serialization;
 using Elsa.Serialization.Formatters;
-using Elsa.Serialization.Tokenizers;
+using Elsa.Services;
+using Elsa.Services.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using NodaTime;
@@ -15,47 +16,50 @@ namespace Elsa.Core.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddWorkflowsCore(this IServiceCollection services)
+        public static IServiceCollection AddWorkflows(this IServiceCollection services)
         {
-            services.AddLogging();
-            services.AddLocalization();
-            services.TryAddSingleton<IIdGenerator, DefaultIdGenerator>();
             services.TryAddSingleton<IClock>(SystemClock.Instance);
-            services.TryAddSingleton<IWorkflowSerializer, WorkflowSerializer>();
-            services.TryAddSingleton<IWorkflowTokenizer, WorkflowTokenizer>();
-            services.TryAddSingleton<IActivityHarvester, TypedActivityHarvester>();
-            services.TryAddSingleton<IActivityStore, ActivityStore>();
-            services.TryAddSingleton<ITokenFormatterProvider, TokenFormatterProvider>();
-            services.TryAddSingleton<ITokenizerInvoker, TokenizerInvoker>();
-            services.AddActivityProvider<ActivityProvider>();
-            services.AddSingleton<ITokenFormatter, JsonTokenFormatter>();
-            services.AddSingleton<ITokenFormatter, YamlTokenFormatter>();
-            services.AddSingleton<ITokenFormatter, XmlTokenFormatter>();
-            services.AddSingleton<ITokenizer, DefaultTokenizer>();
-            services.AddSingleton<ITokenizer, ActivityTokenizer>();
-            services.AddSingleton<IExpressionEvaluator, PlainTextEvaluator>();
-            services.AddSingleton<IExpressionEvaluator, JavaScriptEvaluator>();
-            
-            return services;
+
+            return services
+                .AddLogging()
+                .AddLocalization()
+                .AddSingleton<IIdGenerator, IdGenerator>()
+                .AddSingleton<IWorkflowSerializer, WorkflowSerializer>()
+                .AddSingleton<ITokenFormatter, JsonTokenFormatter>()
+                .AddSingleton<ITokenFormatter, YamlTokenFormatter>()
+                .AddSingleton<ITokenFormatter, XmlTokenFormatter>()
+                .AddSingleton<IExpressionEvaluator, PlainTextEvaluator>()
+                .AddSingleton<IExpressionEvaluator, JavaScriptEvaluator>()
+                .AddSingleton<IWorkflowHost, WorkflowHost>()
+                .AddSingleton<IWorkflowInvoker, WorkflowInvoker>()
+                .AddSingleton<IWorkflowFactory, WorkflowFactory>()
+                .AddSingleton<IActivityInvoker, ActivityInvoker>()
+                .AddSingleton<IActivityResolver, ActivityResolver>()
+                .AddSingleton<IWorkflowExpressionEvaluator, WorkflowExpressionEvaluator>()
+                .AddSingleton<IWorkflowSerializerProvider, WorkflowSerializerProvider>()
+                .AddTransient<IWorkflowBuilder, WorkflowBuilder>()
+                .AddSingleton<IWorkflowRegistry, WorkflowRegistry>()
+                .AddPrimitiveActivities();
         }
 
-        public static IServiceCollection AddWorkflowsInvoker(this IServiceCollection services)
+        public static IServiceCollection AddActivity<T>(this IServiceCollection services)
+            where T : class, IActivity
         {
-            services.AddWorkflowsCore();
-            services.TryAddSingleton<IWorkflowInvoker, WorkflowInvoker>();
-            services.TryAddSingleton<IActivityInvoker, ActivityInvoker>();
-            services.TryAddSingleton<IActivityDriverRegistry, ActivityDriverRegistry>();
-            services.TryAddSingleton<IWorkflowExpressionEvaluator, WorkflowExpressionEvaluator>();
-
-            return services;
+            return services
+                .AddTransient<T>()
+                .AddTransient<IActivity>(sp => sp.GetRequiredService<T>());
         }
-        
-        public static IServiceCollection AddWorkflowsDesigner(this IServiceCollection services)
-        {
-            services.AddActivityDesigners<ActivityProvider>();
-            services.TryAddSingleton<IActivityDesignerStore, ActivityDesignerStore>();
 
-            return services;
+        private static IServiceCollection AddPrimitiveActivities(this IServiceCollection services)
+        {
+            return services
+                .AddActivity<SetVariable>()
+                .AddActivity<ForEach>()
+                .AddActivity<Fork>()
+                .AddActivity<Join>()
+                .AddSingleton<IWorkflowEventHandler>(sp => sp.GetRequiredService<Join>())
+                .AddActivity<IfElse>()
+                .AddActivity<Switch>();
         }
     }
 }
