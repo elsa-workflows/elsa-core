@@ -23,13 +23,9 @@ namespace Sample01
                 .AddActivity<GoodByeWorld>()
                 .BuildServiceProvider();
 
-            // Instantiate a workflow from code.
-            var workflowFactory = services.GetRequiredService<IWorkflowFactory>();
-            var workflow = workflowFactory.CreateWorkflow<HelloWorldWorkflow>();
-
             // Invoke the workflow.
             var invoker = services.GetService<IWorkflowInvoker>();
-            await invoker.InvokeAsync(workflow);
+            await invoker.InvokeAsync<HelloWorldWorkflow>();
 
             Console.ReadLine();
         }

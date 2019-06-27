@@ -10,22 +10,30 @@ namespace Elsa.Core.Services
 {
     public class WorkflowRegistry : IWorkflowRegistry
     {
-        private readonly IDictionary<string, WorkflowDefinition> workflowBlueprints;
+        private readonly IWorkflowBuilder workflowBuilder;
+        private readonly IDictionary<string, WorkflowDefinition> workflowDefinitions;
 
-        public WorkflowRegistry()
+        public WorkflowRegistry(IWorkflowBuilder workflowBuilder)
         {
-            workflowBlueprints = new Dictionary<string, WorkflowDefinition>();
+            this.workflowBuilder = workflowBuilder;
+            workflowDefinitions = new Dictionary<string, WorkflowDefinition>();
         }
         
         public void RegisterWorkflow(WorkflowDefinition definition)
         {
-            workflowBlueprints[definition.Id] = definition;
+            workflowDefinitions[definition.Id] = definition;
         }
 
-        public IEnumerable<(WorkflowDefinition, ActivityDefinition)> ListByStartActivity(string activityType, CancellationToken cancellationToken)
+        public void RegisterWorkflow<T>() where T : IWorkflow, new()
+        {
+            var definition = workflowBuilder.Build<T>();
+            RegisterWorkflow(definition);
+        }
+
+        public IEnumerable<(WorkflowDefinition, ActivityDefinition)> ListByStartActivity(string activityType)
         {
             var query =
-                from workflow in workflowBlueprints.Values
+                from workflow in workflowDefinitions.Values
                 from activity in workflow.GetStartActivities()
                 where activity.TypeName == activityType
                 select (workflow, activity);
@@ -33,9 +41,9 @@ namespace Elsa.Core.Services
             return query.Distinct();
         }
 
-        public WorkflowDefinition GetById(string id, CancellationToken cancellationToken = default)
+        public WorkflowDefinition GetById(string id)
         {
-            return workflowBlueprints.ContainsKey(id) ? workflowBlueprints[id] : default;
+            return workflowDefinitions.ContainsKey(id) ? workflowDefinitions[id] : default;
         }
     }
 }

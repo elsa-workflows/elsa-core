@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Core.Results;
+using Elsa.Models;
 using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -25,20 +26,13 @@ namespace Elsa.Core.Services
         {
             return await InvokeAsync(workflowContext, activity, (a) =>
             {
-                var result = a.ExecuteAsync(workflowContext, cancellationToken);
+                var result = workflowContext.Workflow.Status == WorkflowStatus.Resuming
+                    ? a.ResumeAsync(workflowContext, cancellationToken)
+                    : a.ExecuteAsync(workflowContext, cancellationToken);
+                
                 return result;
             });
         }
-
-        public async Task<ActivityExecutionResult> ResumeAsync(WorkflowExecutionContext workflowContext, IActivity activity, CancellationToken cancellationToken = default)
-        {
-            return await InvokeAsync(workflowContext, activity, (a) =>
-            {
-                var result = a.ResumeAsync(workflowContext, cancellationToken);
-                return result;
-            });
-        }
-
         public async Task<ActivityExecutionResult> HaltedAsync(WorkflowExecutionContext workflowContext, IActivity activity, CancellationToken cancellationToken = default)
         {
             return await InvokeAsync(workflowContext, activity, (a) =>

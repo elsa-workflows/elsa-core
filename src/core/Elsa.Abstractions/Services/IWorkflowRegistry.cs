@@ -8,7 +8,8 @@ namespace Elsa.Services
     public interface IWorkflowRegistry
     {
         void RegisterWorkflow(WorkflowDefinition definition);
-        IEnumerable<(WorkflowDefinition, ActivityDefinition)> ListByStartActivity(string activityType, CancellationToken cancellationToken = default);
-        WorkflowDefinition GetById(string id, CancellationToken cancellationToken = default);
+        void RegisterWorkflow<T>() where T:IWorkflow, new();
+        IEnumerable<(WorkflowDefinition, ActivityDefinition)> ListByStartActivity(string activityType);
+        WorkflowDefinition GetById(string id);
     }
 }

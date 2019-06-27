@@ -31,13 +31,9 @@ namespace Sample02
                 .Then<WriteLine>(x => x.TextExpression = new PlainTextExpression("Goodbye cruel world..."))
                 .Build();
 
-            // Instantiate the workflow definition.
-            var workflowFactory = services.GetRequiredService<IWorkflowFactory>();
-            var workflow = workflowFactory.CreateWorkflow(workflowDefinition);
-            
             // Invoke the workflow.
             var invoker = services.GetService<IWorkflowInvoker>();
-            await invoker.InvokeAsync(workflow);
+            await invoker.InvokeAsync(workflowDefinition);
 
             Console.ReadLine();
         }

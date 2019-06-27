@@ -1,75 +1,58 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Persistence;
-using Elsa.Serialization;
 using Elsa.Services;
-using Elsa.Services.Models;
 
-namespace Elsa.Runtime
+namespace Elsa.Core.Services
 {
     public class WorkflowHost : IWorkflowHost
     {
         private readonly IWorkflowRegistry registry;
-        private readonly IWorkflowFactory workflowFactory;
         private readonly IWorkflowInvoker invoker;
-        private readonly IWorkflowDefinitionStore workflowDefinitionStore;
         private readonly IWorkflowInstanceStore workflowInstanceStore;
-        private readonly IWorkflowSerializer workflowSerializer;
 
         public WorkflowHost(
             IWorkflowRegistry registry,
-            IWorkflowFactory workflowFactory,
             IWorkflowInvoker invoker,
-            IWorkflowDefinitionStore workflowDefinitionStore,
-            IWorkflowInstanceStore workflowInstanceStore,
-            IWorkflowSerializer workflowSerializer)
+            IWorkflowInstanceStore workflowInstanceStore)
         {
             this.registry = registry;
-            this.workflowFactory = workflowFactory;
             this.invoker = invoker;
-            this.workflowDefinitionStore = workflowDefinitionStore;
             this.workflowInstanceStore = workflowInstanceStore;
-            this.workflowSerializer = workflowSerializer;
         }
 
-        public async Task TriggerWorkflowsAsync(string activityName, Variables arguments, CancellationToken cancellationToken)
+        public async Task TriggerWorkflowsAsync(string activityName, Variables input, CancellationToken cancellationToken)
         {
-            await StartNewWorkflowsAsync(activityName, arguments, cancellationToken);
-            await ResumeExistingWorkflowsAsync(activityName, arguments, cancellationToken);
-        }
-
-        public async Task<WorkflowExecutionContext> ExecuteWorkflowAsync(Workflow workflow, IActivity startActivity, CancellationToken cancellationToken)
-        {
-            return await invoker.InvokeAsync(workflow, new[] { startActivity }, cancellationToken);
+            await StartNewWorkflowsAsync(activityName, input, cancellationToken);
+            await ResumeExistingWorkflowsAsync(activityName, input, cancellationToken);
         }
 
         private async Task StartNewWorkflowsAsync(string activityType, Variables input, CancellationToken cancellationToken)
         {
-            var items = registry.ListByStartActivity(activityType, cancellationToken);
+            var items = registry.ListByStartActivity(activityType);
 
-            foreach (var (workflowBlueprint, activityBlueprint) in items)
+            foreach (var (workflowDefinition, activityDefinition) in items)
             {
-                var workflow = workflowFactory.CreateWorkflow(workflowBlueprint, input);
-                var startActivity = workflow.Activities.First(x => x.Id == activityBlueprint.Id);
-                await ExecuteWorkflowAsync(workflow, startActivity, cancellationToken);
+                var startActivities = workflowDefinition.Activities.Where(x => x.Id == activityDefinition.Id).Select(x => x.Id);
+                await invoker.InvokeAsync(workflowDefinition, input, startActivityIds: startActivities, cancellationToken: cancellationToken);
             }
         }
 
         private async Task ResumeExistingWorkflowsAsync(string activityType, Variables input, CancellationToken cancellationToken)
         {
-            var items = await workflowInstanceStore.ListByBlockingActivityAsync(activityType, cancellationToken);
+            var items = await workflowInstanceStore.ListByBlockingActivityAsync(activityType, cancellationToken).ToListAsync();
 
             foreach (var (workflowInstance, startActivityInstance) in items)
             {
-                var workflowBlueprint = registry.GetById(workflowInstance.DefinitionId, cancellationToken);
-                var workflow = workflowFactory.CreateWorkflow(workflowBlueprint, input, workflowInstance);
-                var startActivity = workflow.Activities.First(x => x.Id == startActivityInstance.Id);
+                var workflowDefinition = registry.GetById(workflowInstance.DefinitionId);
+                var startActivityIds = workflowDefinition.Activities.Where(x => x.Id == startActivityInstance.Id).Select(x => x.Id);
 
-                workflow.Status = WorkflowStatus.Resuming;
+                workflowInstance.Status = WorkflowStatus.Resuming;
 
-                await invoker.InvokeAsync(workflow, new[] { startActivity }, cancellationToken);
+                await invoker.InvokeAsync(workflowDefinition, input, workflowInstance, startActivityIds, cancellationToken);
             }
         }
     }

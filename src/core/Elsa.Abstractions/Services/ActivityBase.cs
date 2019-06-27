@@ -2,18 +2,28 @@
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Extensions;
 using Elsa.Results;
 using Elsa.Serialization.Models;
 using Elsa.Services.Models;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using NodaTime;
+using NodaTime.Serialization.JsonNet;
 
 namespace Elsa.Services
 {
     public abstract class ActivityBase : IActivity
     {
-        public JObject State { get; set; } = new JObject();
-        public virtual string TypeName => GetType().AssemblyQualifiedName;
+        private readonly JsonSerializer serializer;
 
+        protected ActivityBase()
+        {
+            serializer = new JsonSerializer().ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
+        }
+        
+        public JObject State { get; set; } = new JObject();
+        public virtual string TypeName => GetType().Name;
         public string Id { get; set; }
 
         public Task<bool> CanExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken) => OnCanExecuteAsync(context, cancellationToken);
@@ -40,19 +50,17 @@ namespace Elsa.Services
 
         protected T GetState<T>(Func<T> defaultValue = null, [CallerMemberName] string name = null)
         {
-            var item = State[name];
-            return item != null ? item.ToObject<T>() : defaultValue != null ? defaultValue() : default;
+            return State.GetState(name, defaultValue);
         }
 
         protected T GetState<T>(Type type, Func<T> defaultValue = null, [CallerMemberName] string name = null)
         {
-            var item = State[name];
-            return item != null ? (T) item.ToObject(type) : defaultValue != null ? defaultValue() : default;
+            return State.GetState(type, name, defaultValue);
         }
 
         protected void SetState(object value, [CallerMemberName] string name = null)
         {
-            State[name] = JToken.FromObject(value);
+            State.SetState(name, value);
         }
     }
 }

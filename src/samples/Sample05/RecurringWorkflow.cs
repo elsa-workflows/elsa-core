@@ -13,7 +13,7 @@ namespace Sample05
             builder
                 .WithId("RecurringWorkflow")
                 .StartWith<CronTrigger>(x => x.CronExpression = new PlainTextExpression("* * * * *"))
-                .Then<WriteLine>(x => x.TextExpression = new JavaScriptExpression<string>("`Trigger received. The time is: ${Date.now()}`"));
+                .Then<WriteLine>(x => x.TextExpression = new JavaScriptExpression<string>("`Trigger received. The time is: ${new Date().toISOString()}`"));
         }
     }
 }

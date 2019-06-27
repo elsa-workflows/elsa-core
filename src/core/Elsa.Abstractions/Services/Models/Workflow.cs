@@ -11,12 +11,14 @@ namespace Elsa.Services.Models
     public class Workflow
     {
         public Workflow(
+            string id,
             string definitionId,
             IEnumerable<IActivity> activities,
             IEnumerable<Connection> connections,
             Variables input = null,
             WorkflowInstance workflowInstance = null) : this()
         {
+            Id = id;
             DefinitionId = definitionId;
             Activities = activities.ToList();
             Connections = connections.ToList();
@@ -52,8 +54,8 @@ namespace Elsa.Services.Models
 
             return new WorkflowInstance
             {
-                Id = Guid.NewGuid().ToString("N"),
-                DefinitionId = Id,
+                Id = Id,
+                DefinitionId = DefinitionId,
                 Status = Status,
                 CreatedAt = CreatedAt,
                 StartedAt = StartedAt,
@@ -81,7 +83,7 @@ namespace Elsa.Services.Models
 
             foreach (var activity in Activities)
             {
-                activity.State = new JObject(instance.Activities[activity.Id]);
+                activity.State = new JObject(instance.Activities[activity.Id].State);
             }
         }
     }

@@ -1,10 +1,7 @@
-﻿using System;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Core.Expressions;
 using Elsa.Core.Services;
-using Elsa.Expressions;
-using Elsa.Models;
 using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -30,21 +27,19 @@ namespace Elsa.Activities.Cron.Activities
             set => SetState(value);
         }
 
-        public DateTime? StartTimestamp
+        public Instant? StartTimestamp
         {
-            get => GetState<DateTime?>();
+            get => GetState<Instant?>();
             set => SetState(value);
-        }
-
-        protected override async Task<bool> OnCanExecuteAsync(WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
-        {
-            return StartTimestamp == null || await IsExpiredAsync(workflowContext, cancellationToken);
         }
 
         protected override ActivityExecutionResult OnExecute(WorkflowExecutionContext workflowContext)
         {
-            StartTimestamp = clock.GetCurrentInstant().ToDateTimeUtc();
-
+            if (StartTimestamp == null)
+            {
+                StartTimestamp = clock.GetCurrentInstant();
+            }
+            
             return Halt();
         }
 
@@ -59,11 +54,11 @@ namespace Elsa.Activities.Cron.Activities
         {
             var cronExpression = await expressionEvaluator.EvaluateAsync(CronExpression, workflowContext, cancellationToken);
             var schedule = CrontabSchedule.Parse(cronExpression);
-            var now = clock.GetCurrentInstant().ToDateTimeUtc();
+            var now = clock.GetCurrentInstant();
             var startTimestamp = StartTimestamp ?? now;
-            var nextOccurrence = schedule.GetNextOccurrence(startTimestamp);
+            var nextOccurrence = schedule.GetNextOccurrence(startTimestamp.ToDateTimeUtc());
 
-            return now >= nextOccurrence;
+            return now.ToDateTimeUtc() >= nextOccurrence;
         }
     }
 }

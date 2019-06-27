@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Elsa.Activities.Console.Extensions;
 using Elsa.Activities.Cron.Extensions;
 using Elsa.Core.Extensions;
 using Elsa.Core.Persistence.Extensions;
-using Elsa.Runtime;
 using Elsa.Services;
 using Elsa.Services.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using NodaTime;
 
 namespace Sample05
@@ -21,6 +22,7 @@ namespace Sample05
         {
             var host = new HostBuilder()
                 .ConfigureServices(ConfigureServices)
+                .ConfigureLogging(logging => logging.AddConsole())
                 .UseConsoleLifetime()
                 .Build();
 
@@ -34,19 +36,16 @@ namespace Sample05
 
         private static void SetupWorkflow(IServiceProvider services)
         {
-            // Create a workflow.
-            var workflowBuilder = services.GetRequiredService<IWorkflowBuilder>();
-            var workflow = workflowBuilder.Build<RecurringWorkflow>();
-
             // Register the workflow.
             var registry = services.GetService<IWorkflowRegistry>();
-            registry.RegisterWorkflow(workflow);
+            registry.RegisterWorkflow<RecurringWorkflow>();
         }
 
         private static void ConfigureServices(IServiceCollection services)
         {
             services
                 .AddWorkflows()
+                .AddConsoleActivities()
                 .AddCronActivities(options => options.Configure(x => x.SweepInterval = Period.FromSeconds(10)))
                 .AddMemoryWorkflowDefinitionStore()
                 .AddMemoryWorkflowInstanceStore();

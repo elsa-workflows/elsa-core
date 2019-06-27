@@ -39,13 +39,9 @@ namespace Sample03
                 }
             };
             
-            // Create a workflow from the definition.
-            var workflowFactory = services.GetRequiredService<IWorkflowFactory>();
-            var workflow = workflowFactory.CreateWorkflow(workflowDefinition);
-
             // Invoke the workflow.
             var invoker = services.GetService<IWorkflowInvoker>();
-            await invoker.InvokeAsync(workflow);
+            await invoker.InvokeAsync(workflowDefinition);
 
             Console.ReadLine();
         }
