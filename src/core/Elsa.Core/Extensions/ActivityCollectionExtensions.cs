@@ -9,7 +9,7 @@ namespace Elsa.Core.Extensions
         public static IEnumerable<IActivity> Find(this IEnumerable<IActivity> collection, IEnumerable<string> ids)
         {
             var idList = ids?.ToList();
-            return idList != null ? collection.Where(x => idList.Contains(x.Id)) : Enumerable.Empty<IActivity>();
+            return idList != null ? collection.Where(x => idList.Contains(x.Id)) : default;
         }
     }
 }
