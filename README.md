@@ -2,11 +2,10 @@
 
 ## Elsa Workflows
 
-Elsa is a visual programming tool that allows you to implement your application with workflows.
-It is implemented as a set NuGet packages that you can use in your .NET Core applications.
-With Elsa, you can invoke and trigger workflows from your own application. Workflows can be expressed as JSON, YAML, XML or in code.
+Elsa Core is a workflows library that enables workflow execution in any .NET Core application.
+Workflows can be defined not only using code but also as JSON, YAML or XML.
 
-You can manually handcraft workflows or use the web-based workflow designer.
+In addition, workflows can be visually designed using [Elsa Designer](https://github.com/elsa-workflows/elsa-designer-html), a reusable & extensible HTML5 web component built with [StencilJS[(https://stenciljs.com/).
 
 ![Web-based workflow designer](/doc/workflow-sample-3.png)
 
@@ -15,127 +14,47 @@ You can manually handcraft workflows or use the web-based workflow designer.
 Workflows can be created programmatically and then executed using `IWorkflowInvoker`.
 
 ### Hello World
-The following code snippet demonstrates creating workflow from code and then invoking it:
+The following code snippet demonstrates creating a workflow with two custom activities from code and then invoking it:
 
 ```c#
+
+// Define a strongly-typed workflow.
+public class HelloWorldWorkflow : IWorkflow
+{
+    public void Build(IWorkflowBuilder builder)
+    {
+        builder
+            .StartWith<HelloWorld>()
+            .Then<GoodByeWorld>();
+    }
+}
+
 // Setup a service collection.
 var services = new ServiceCollection()
-    .AddWorkflowsInvoker()
-    .AddConsoleActivities()
+    .AddWorkflows()
+    .AddActivity<HelloWorld>()
+    .AddActivity<GoodByeWorld>()
     .BuildServiceProvider();
 
-// Create a workflow invoker.
-var invoker = services.GetService<IWorkflowInvoker>();
-
-// Create a workflow.
-var workflow = new Workflow();
-
-// Add a single activity to execute.
-workflow.Activities.Add(new WriteLine("Hello World!"));
-
 // Invoke the workflow.
-invoker.InvokeAsync(workflow);
+var invoker = services.GetService<IWorkflowInvoker>();
+await invoker.InvokeAsync<HelloWorldWorkflow>();
 
-// Output: Hello World!
-```
-
-### Calculator
-The following code snippet demonstrates setting up a workflow programmatically using the `WorkflowBuilder`.
-```c#
-private static Workflow CreateSampleWorkflow()
-{
-    // 1. Ask two numbers
-    // 2. Ask operation to apply to the two numbers.
-    // 3. Show the result of the calculation.
-    // 4. Ask user to try again or exit program.
-
-    return new WorkflowBuilder()
-        .Add(new WriteLine("Please enter a number:") { Alias = "Start" })
-        .Next(new ReadLine("a"))
-        .Next(new WriteLine("Please enter another number:"))
-        .Next(new ReadLine("b"))
-        .Next(new WriteLine("Please enter the operation you would like to perform on the two numbers. Allowed operations:\r\n-Add\r\n-Subtract\r\n-Divide\r\n-Multiply"))
-        .Next(new ReadLine("op"))
-        .Next(new Switch(JavaScriptEvaluator.SyntaxName, "op"), @switch =>
-        {
-            @switch.Next(new SetVariable("result", JavaScriptEvaluator.SyntaxName, "parseFloat(a) + parseFloat(b)"), "Add").Next("ShowResult");
-            @switch.Next(new SetVariable("result", JavaScriptEvaluator.SyntaxName, "a - b"), "Subtract").Next("ShowResult");
-            @switch.Next(new SetVariable("result", JavaScriptEvaluator.SyntaxName, "a * b"), "Multiply").Next("ShowResult");
-            @switch.Next(new SetVariable("result", JavaScriptEvaluator.SyntaxName, "a / b"), "Divide").Next("ShowResult");
-        })
-        .Next(new WriteLine(new WorkflowExpression<string>(JavaScriptEvaluator.SyntaxName, "`Result: ${result}`")){ Alias = "ShowResult"})
-        .Next(new WriteLine("Try again? (Y/N)"))
-        .Next(new ReadLine("retry"))
-        .Next(new IfElse(new WorkflowExpression<bool>(JavaScriptEvaluator.SyntaxName, "retry.toLowerCase() === 'y'")), ifElse =>
-        {
-            ifElse.Next("Start", "True");
-            ifElse.Next(new WriteLine("Bye!"), "False");
-        })
-        .BuildWorkflow();
-}
+// Output:
+// /> Hello World!
+// /> Goodbye cruel World...
 ```
 
 ### Persistence
 
 Workflows can be persisted using virtually any storage mechanism.
-Out of the box come the following providers:
+The following providers will be supported:
 
 - In Memory
 - File System
 - SQL Server
 - MongoDB
 - CosmosDB
-
-Although there are no structural differences between a workflow definition and a workflow instance, Elsa supports storing workflow definitions in store separate from workflow instances.
-This enables scenarios where for example you want to store workflow definition files as part of source control, but leverage a high-performing SQL Server to read and write workflow instances.
-
-The following code snippet demonstrates writing and reading workflow definitions and instances using the file system storage provider.
-
-```c#
-// Setup configuration for the file system stores.
-var rootDir = Path.Combine(Path.GetDirectoryName(typeof(Program).Assembly.Location), "workflows");
-var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string>
-    {
-        ["Workflows:Directory"] = rootDir,
-        ["Workflows:Format"] = YamlTokenFormatter.FormatName
-    })
-    .Build();
-
-// Setup a service collection and use the FileSystemProvider for both workflow definitions and workflow instances.
-var services = new ServiceCollection()
-    .AddWorkflowsInvoker()
-    .AddConsoleActivities()
-    .AddFileSystemWorkflowDefinitionStoreProvider(configuration.GetSection("Workflows"))
-    .AddFileSystemWorkflowInstanceStoreProvider(configuration.GetSection("Workflows"))
-    .AddSingleton(Console.In)
-    .BuildServiceProvider();
-
-// Define a workflow.
-var workflowDefinition = new WorkflowBuilder()
-    .Add(new WriteLine("Hi! What's your name?"))
-    .Next(new ReadLine("name"))
-    .Next(new WriteLine(new WorkflowExpression<string>(JavaScriptEvaluator.SyntaxName, "`Nice to meet you, ${name}!`")))
-    .BuildWorkflow();
-
-// Save the workflow definition using IWorkflowDefinitionStore.
-var workflowDefinitionStore = services.GetService<IWorkflowDefinitionStore>();
-await workflowDefinitionStore.SaveAsync(workflowDefinition, CancellationToken.None);
-
-// Load the workflow definition.
-workflowDefinition = await workflowDefinitionStore.GetByIdAsync(workflowDefinition.Id, CancellationToken.None);
-
-// Invoke the workflow.
-var invoker = services.GetService<IWorkflowInvoker>();
-var workflowExecutionContext = await invoker.InvokeAsync(workflowDefinition, workflowDefinition.Activities.First());
-
-// Save the workflow instance using IWorkflowInstanceStore.
-var workflowInstance = workflowExecutionContext.Workflow;
-var workflowInstanceStore = services.GetService<IWorkflowInstanceStore>();
-await workflowInstanceStore.SaveAsync(workflowInstance, CancellationToken.None);
-```
-
-> NOTE: Although the above example demonstrates storing a workflow instance, you don't normally need to do this yourself. When invoking `AddFileSystemWorkflowInstanceStoreProvider` or `AddFileSystemWorkflowDefinitionStoreProvider`, an event handler is registered as well that listens for certain events raised by the workflow invoker.
-> When a workflow is finished executing, an event is raised in response to which the workflow instance is persisted. In a future update, persistence of workflow instances will be configurable on per workflow definition. You may not want to persist all workflow instances. Alternatively, you may want to configure a retention policy that discards or archives older workflow instances that have finished.  
 
 ### Formats
 
