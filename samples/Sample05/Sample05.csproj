@@ -6,9 +6,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\activities\Elsa.Activities.Console\Elsa.Activities.Console.csproj" />
-      <ProjectReference Include="..\..\activities\Elsa.Activities.Cron\Elsa.Activities.Cron.csproj" />
-      <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
+      <ProjectReference Include="..\..\src\activities\Elsa.Activities.Console\Elsa.Activities.Console.csproj" />
+      <ProjectReference Include="..\..\src\activities\Elsa.Activities.Cron\Elsa.Activities.Cron.csproj" />
+      <ProjectReference Include="..\..\src\core\Elsa.Core\Elsa.Core.csproj" />
     </ItemGroup>
 
     <ItemGroup>
