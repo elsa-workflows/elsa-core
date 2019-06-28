@@ -13,10 +13,12 @@ namespace Elsa.Models
             string id,
             IEnumerable<ActivityDefinition> activities,
             IEnumerable<ConnectionDefinition> connections,
+            bool isSingleton,
             Variables variables) : this(id)
         {
             Activities = activities.ToList();
             Connections = connections.ToList();
+            IsSingleton = isSingleton;
             Variables = variables;
         }
 
@@ -30,5 +32,6 @@ namespace Elsa.Models
         public ICollection<ActivityDefinition> Activities { get; set; }
         public IList<ConnectionDefinition> Connections { get; set; }
         public Variables Variables { get; }
+        public bool IsSingleton { get; set; }
     }
 }
