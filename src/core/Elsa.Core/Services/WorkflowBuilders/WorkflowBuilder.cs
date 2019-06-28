@@ -19,6 +19,7 @@ namespace Elsa.Core.Services.WorkflowBuilders
         }
 
         public string Id { get; set; }
+        public bool IsSingleton { get; set; }
         public IReadOnlyList<IActivityBuilder> Activities => activityBuilders.ToList().AsReadOnly();
 
         public IWorkflowBuilder WithId(string id)
@@ -26,7 +27,13 @@ namespace Elsa.Core.Services.WorkflowBuilders
             Id = id;
             return this;
         }
-        
+
+        public IWorkflowBuilder AsSingleton(bool value)
+        {
+            IsSingleton = value;
+            return this;
+        }
+
         public IActivityBuilder Add<T>(Action<T> setupActivity, string id = null) where T : class, IActivity
         {
             var activity = activityResolver.ResolveActivity(setupActivity);
@@ -72,7 +79,7 @@ namespace Elsa.Core.Services.WorkflowBuilders
             var activities = activityBuilders.Select(x => x.BuildActivity()).ToList();
             var connections = connectionBuilders.Select(x => x.BuildConnection()).ToList();
 
-            return new WorkflowDefinition(Id, activities, connections, Variables.Empty);
+            return new WorkflowDefinition(Id, activities, connections, IsSingleton, Variables.Empty);
         }
     }
 }

@@ -10,6 +10,6 @@ namespace Elsa.Services
         /// <summary>
         /// Starts new workflows that start with the specified activity name and resumes halted workflows that are blocked on activities with the specified activity name.
         /// </summary>
-        Task TriggerWorkflowsAsync(string activityName, Variables input, CancellationToken cancellationToken = default);
+        Task TriggerWorkflowsAsync(string activityType, Variables input, CancellationToken cancellationToken = default);
     }
 }
