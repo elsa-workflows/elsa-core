@@ -30,7 +30,6 @@ namespace Elsa.Core.Extensions
                 .AddSingleton<ITokenFormatter, XmlTokenFormatter>()
                 .AddSingleton<IExpressionEvaluator, PlainTextEvaluator>()
                 .AddSingleton<IExpressionEvaluator, JavaScriptEvaluator>()
-                .AddSingleton<IWorkflowHost, WorkflowHost>()
                 .AddSingleton<IWorkflowInvoker, WorkflowInvoker>()
                 .AddSingleton<IWorkflowFactory, WorkflowFactory>()
                 .AddSingleton<IActivityInvoker, ActivityInvoker>()

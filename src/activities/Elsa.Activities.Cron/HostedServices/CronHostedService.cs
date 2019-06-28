@@ -13,13 +13,13 @@ namespace Elsa.Activities.Cron.HostedServices
 {
     public class CronHostedService : BackgroundService
     {
-        private readonly IWorkflowHost workflowHost;
+        private readonly IWorkflowInvoker workflowInvoker;
         private readonly IOptions<CronOptions> options;
         private readonly ILogger<CronHostedService> logger;
 
-        public CronHostedService(IWorkflowHost workflowHost, IOptions<CronOptions> options, ILogger<CronHostedService> logger)
+        public CronHostedService(IWorkflowInvoker workflowInvoker, IOptions<CronOptions> options, ILogger<CronHostedService> logger)
         {
-            this.workflowHost = workflowHost;
+            this.workflowInvoker = workflowInvoker;
             this.options = options;
             this.logger = logger;
         }
@@ -30,7 +30,7 @@ namespace Elsa.Activities.Cron.HostedServices
             {
                 try
                 {
-                    await workflowHost.TriggerWorkflowsAsync(nameof(CronTrigger), Variables.Empty, stoppingToken);
+                    await workflowInvoker.TriggerAsync(nameof(CronTrigger), Variables.Empty, stoppingToken);
                 }
                 catch (Exception ex)
                 {

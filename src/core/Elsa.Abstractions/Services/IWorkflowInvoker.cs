@@ -36,5 +36,10 @@ namespace Elsa.Services
             IEnumerable<string> startActivityIds = default,
             CancellationToken cancellationToken = default
         );
+        
+        /// <summary>
+        /// Starts new workflows that start with the specified activity name and resumes halted workflows that are blocked on activities with the specified activity name.
+        /// </summary>
+        Task TriggerAsync(string activityType, Variables input, CancellationToken cancellationToken = default);
     }
 }

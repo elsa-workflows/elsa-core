@@ -26,10 +26,8 @@ namespace Elsa.Activities.Http.Middleware
 
         public async Task InvokeAsync(
             HttpContext context, 
-            IWorkflowHost workflowHost,
             IWorkflowInvoker workflowInvoker,
             IWorkflowRegistry registry, 
-            IWorkflowDefinitionStore workflowDefinitionStore, 
             IWorkflowInstanceStore workflowInstanceStore)
         {
             var requestPath = new Uri(context.Request.Path.ToString(), UriKind.Relative);
@@ -43,8 +41,8 @@ namespace Elsa.Activities.Http.Middleware
             }
             else
             {
-                await InvokeWorkflowsToStartAsync(workflowHost, workflowInvoker, workflowsToStart, cancellationToken);
-                await InvokeWorkflowsToResumeAsync(workflowHost, workflowInvoker, workflowsToResume, cancellationToken);
+                await InvokeWorkflowsToStartAsync(workflowInvoker, workflowsToStart, cancellationToken);
+                await InvokeWorkflowsToResumeAsync(workflowInvoker, workflowsToResume, cancellationToken);
             }
         }
 
@@ -58,7 +56,7 @@ namespace Elsa.Activities.Http.Middleware
             return items.Where(x => x.Item2.State.GetState<Uri>(nameof(HttpRequestTrigger.Path)) == path);
         }
 
-        private async Task InvokeWorkflowsToStartAsync(IWorkflowHost workflowHost, IWorkflowInvoker workflowInvoker, IEnumerable<(WorkflowDefinition, ActivityDefinition)> items, CancellationToken cancellationToken)
+        private async Task InvokeWorkflowsToStartAsync(IWorkflowInvoker workflowInvoker, IEnumerable<(WorkflowDefinition, ActivityDefinition)> items, CancellationToken cancellationToken)
         {
             foreach (var item in items)
             {
@@ -66,7 +64,7 @@ namespace Elsa.Activities.Http.Middleware
             }
         }
         
-        private async Task InvokeWorkflowsToResumeAsync(IWorkflowHost workflowHost, IWorkflowInvoker workflowInvoker, IEnumerable<(WorkflowInstance, ActivityInstance)> items, CancellationToken cancellationToken)
+        private async Task InvokeWorkflowsToResumeAsync(IWorkflowInvoker workflowInvoker, IEnumerable<(WorkflowInstance, ActivityInstance)> items, CancellationToken cancellationToken)
         {
             foreach (var item in items)
             {
