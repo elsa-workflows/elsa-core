@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Elsa.Activities.Http.Services;
 using Newtonsoft.Json.Linq;
 
 namespace Elsa.Activities.Http.Formatters

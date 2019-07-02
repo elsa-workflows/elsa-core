@@ -6,17 +6,30 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Extensions;
 using Elsa.Activities.Http.Models;
+using Elsa.Activities.Http.Services;
 using Elsa.Core.Services;
+using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
+using Newtonsoft.Json.Linq;
 
 namespace Elsa.Activities.Http.Activities
 {
     public class HttpRequestTrigger : Activity
     {
+        public static Uri GetPath(JObject state)
+        {
+            return state.GetState<Uri>(nameof(Path));
+        }
+        
+        public static string GetMethod(JObject state)
+        {
+            return state.GetState<string>(nameof(Method));
+        }
+        
         private readonly IHttpContextAccessor httpContextAccessor;
         private readonly IEnumerable<IContentFormatter> contentFormatters;
 

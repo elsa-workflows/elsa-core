@@ -1,5 +1,6 @@
 using Elsa.Activities.Http.Activities;
 using Elsa.Activities.Http.Formatters;
+using Elsa.Activities.Http.Services;
 using Elsa.Core.Extensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,6 +21,7 @@ namespace Elsa.Activities.Http.Extensions
                 .AddActivity<HttpRequestAction>();
 
             services
+                .AddSingleton<ISharedAccessSignatureService, SharedAccessSignatureService>()
                 .AddSingleton<IContentFormatter, NullContentFormatter>()
                 .AddSingleton<IContentFormatter, JsonContentFormatter>();
             

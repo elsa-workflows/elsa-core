@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Elsa.Activities.Http.Services;
 
 namespace Elsa.Activities.Http.Formatters
 {
@@ -10,7 +11,7 @@ namespace Elsa.Activities.Http.Formatters
 
         public Task<object> FormatAsync(string content, string contentType)
         {
-            return null;
+            return Task.FromResult<object>(content);
         }
     }
 }

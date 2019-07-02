@@ -1,58 +1,61 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Expressions;
+using Elsa.Scripting;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Esprima.Ast;
 using Jint;
+using Jint.Native;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Core.Expressions
 {
     public class JavaScriptEvaluator : IExpressionEvaluator
     {
+        private readonly IEnumerable<IScriptEngineConfigurator> configurators;
+        public const string SyntaxName = "JavaScript";
+
         public static WorkflowExpression<T> CreateExpression<T>(string expression)
         {
             return new WorkflowExpression<T>(SyntaxName, expression);
         }
-        
-        public const string SyntaxName = "JavaScript";
-        private readonly Engine engine;
 
-        public JavaScriptEvaluator()
+        public JavaScriptEvaluator(IEnumerable<IScriptEngineConfigurator> configurators)
         {
-            engine = new Engine(options => { options.AllowClr(); });
+            this.configurators = configurators;
         }
-
+        
         public string Syntax => SyntaxName;
 
         public Task<T> EvaluateAsync<T>(string expression, WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
         {
-            foreach (var variable in workflowExecutionContext.CurrentScope.Variables)
-            {
-                engine.SetValue(variable.Key, variable.Value);
-            }
-
-            var workflowApi = new Dictionary<string, object>
-            {
-                ["input"] = (Func<string, object>) (name => workflowExecutionContext.Workflow.Input.GetVariable(name)),
-                ["variable"] = (Func<string, object>) (name => workflowExecutionContext.CurrentScope.GetVariable(name)),
-                ["float"] = (Func<string, float>) (name => GetFloat(workflowExecutionContext.CurrentScope.GetVariable(name))),
-                ["int"] = (Func<string, int>) (name => GetInt(workflowExecutionContext.CurrentScope.GetVariable(name))),
-                ["lastResult"] = (Func<object>) (() => workflowExecutionContext.CurrentScope.LastResult)
-            };
-
-            engine.SetValue("wf", workflowApi);
+            var engine = new Engine(options => { options.AllowClr(); });
+            
+            ConfigureEngine(engine, workflowExecutionContext);
             engine.Execute(expression);
             
-            var returnValue = engine.GetCompletionValue();
-            T result;
+            var result = ConvertValue<T>(engine.GetCompletionValue());
+            
+            return Task.FromResult(result);
+        }
 
-            if (returnValue.IsArray())
+        private void ConfigureEngine(Engine engine, WorkflowExecutionContext workflowExecutionContext)
+        {
+            foreach (var configurator in configurators)
             {
-                var jsArray = returnValue.AsArray();
+                configurator.Configure(engine, workflowExecutionContext);
+            }
+        }
+
+        private T ConvertValue<T>(JsValue value)
+        {
+            if (value.IsArray())
+            {
+                var jsArray = value.AsArray();
                 var elementType = typeof(T).GetElementType();
                 var array = Array.CreateInstance(elementType, jsArray.Length);
 
@@ -63,38 +66,10 @@ namespace Elsa.Core.Expressions
                     array.SetValue(convertedItem, i);
                 }
 
-                result = (T)(object)array;
+                return (T)(object)array;
             }
-            else
-            {
-                result = (T) returnValue.ToObject();
-            }
-            
-            return Task.FromResult(result);
-        }
 
-        private float GetFloat(object value)
-        {
-            if (value is float f1)
-                return f1;
-            
-            if(value is string s)
-                if (float.TryParse(s, out var f2))
-                    return f2;
-
-            return float.NaN;
-        }
-        
-        private int GetInt(object value)
-        {
-            if (value is int i1)
-                return i1;
-            
-            if(value is string s)
-                if (int.TryParse(s, out var i2))
-                    return i2;
-
-            return int.MinValue;
+            return (T) value.ToObject();
         }
     }
 }

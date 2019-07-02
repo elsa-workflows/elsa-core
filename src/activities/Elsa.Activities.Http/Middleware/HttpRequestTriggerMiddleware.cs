@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Activities;
+using Elsa.Core.Expressions;
 using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Persistence;
@@ -12,6 +13,7 @@ using Elsa.Services;
 using Elsa.Services.Models;
 using Esprima.Ast;
 using Microsoft.AspNetCore.Http;
+using Newtonsoft.Json.Linq;
 
 namespace Elsa.Activities.Http.Middleware
 {
@@ -31,9 +33,10 @@ namespace Elsa.Activities.Http.Middleware
             IWorkflowInstanceStore workflowInstanceStore)
         {
             var requestPath = new Uri(context.Request.Path.ToString(), UriKind.Relative);
+            var method = context.Request.Method;
             var cancellationToken = context.RequestAborted;
-            var workflowsToStart = FilterByPath(registry.ListByStartActivity(nameof(HttpRequestTrigger)), requestPath).ToList();
-            var workflowsToResume = FilterByPath(await workflowInstanceStore.ListByBlockingActivityAsync<HttpRequestTrigger>(cancellationToken), requestPath).ToList();
+            var workflowsToStart = Filter(registry.ListByStartActivity(nameof(HttpRequestTrigger)), requestPath, method).ToList();
+            var workflowsToResume = Filter(await workflowInstanceStore.ListByBlockingActivityAsync<HttpRequestTrigger>(cancellationToken), requestPath, method).ToList();
 
             if (!workflowsToStart.Any() && !workflowsToResume.Any())
             {
@@ -45,15 +48,22 @@ namespace Elsa.Activities.Http.Middleware
                 await InvokeWorkflowsToResumeAsync(workflowInvoker, workflowsToResume, cancellationToken);
             }
         }
-
-        private IEnumerable<(WorkflowDefinition, ActivityDefinition)> FilterByPath(IEnumerable<(WorkflowDefinition, ActivityDefinition)> items, Uri path)
+        
+        private IEnumerable<(WorkflowInstance, ActivityInstance)> Filter(IEnumerable<(WorkflowInstance, ActivityInstance)> items, Uri path, string method)
         {
-            return items.Where(x => x.Item2.State.GetState<Uri>(nameof(HttpRequestTrigger.Path)) == path);
+            return items.Where(x => IsMatch(x.Item2.State, path, method));
         }
         
-        private IEnumerable<(WorkflowInstance, ActivityInstance)> FilterByPath(IEnumerable<(WorkflowInstance, ActivityInstance)> items, Uri path)
+        private IEnumerable<(WorkflowDefinition, ActivityDefinition)> Filter(IEnumerable<(WorkflowDefinition, ActivityDefinition)> items, Uri path, string method)
         {
-            return items.Where(x => x.Item2.State.GetState<Uri>(nameof(HttpRequestTrigger.Path)) == path);
+            return items.Where(x => IsMatch(x.Item2.State, path, method));
+        }
+        
+        private bool IsMatch(JObject state, Uri path, string method)
+        {
+            var m = HttpRequestTrigger.GetMethod(state);
+            var p = HttpRequestTrigger.GetPath(state);
+            return (string.IsNullOrWhiteSpace(m) || m == method) && p == path;
         }
 
         private async Task InvokeWorkflowsToStartAsync(IWorkflowInvoker workflowInvoker, IEnumerable<(WorkflowDefinition, ActivityDefinition)> items, CancellationToken cancellationToken)
