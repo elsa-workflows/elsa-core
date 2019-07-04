@@ -19,6 +19,11 @@ namespace Elsa.Activities.Http.Activities
 
         protected override ActivityExecutionResult OnExecute(WorkflowExecutionContext context)
         {
+            return Halt();
+        }
+
+        protected override ActivityExecutionResult OnResume(WorkflowExecutionContext context)
+        {
             return Done();
         }
     }

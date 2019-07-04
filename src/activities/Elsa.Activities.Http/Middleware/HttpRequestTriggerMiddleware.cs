@@ -32,6 +32,7 @@ namespace Elsa.Activities.Http.Middleware
             IWorkflowRegistry registry, 
             IWorkflowInstanceStore workflowInstanceStore)
         {
+            // TODO: Optimize this by building up a hash of routes and workflows to execute.
             var requestPath = new Uri(context.Request.Path.ToString(), UriKind.Relative);
             var method = context.Request.Method;
             var cancellationToken = context.RequestAborted;

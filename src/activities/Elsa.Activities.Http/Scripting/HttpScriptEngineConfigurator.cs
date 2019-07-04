@@ -5,18 +5,17 @@ using Elsa.Scripting;
 using Elsa.Services.Models;
 using Jint;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
 
 namespace Elsa.Activities.Http.Scripting
 {
     public class HttpScriptEngineConfigurator : IScriptEngineConfigurator
     {
         private readonly ISharedAccessSignatureService sharedAccessSignatureService;
-        private readonly IUrlHelper urlHelper;
 
-        public HttpScriptEngineConfigurator(ISharedAccessSignatureService sharedAccessSignatureService, IUrlHelper urlHelper)
+        public HttpScriptEngineConfigurator(ISharedAccessSignatureService sharedAccessSignatureService)
         {
             this.sharedAccessSignatureService = sharedAccessSignatureService;
-            this.urlHelper = urlHelper;
         }
         
         public void Configure(Engine engine, WorkflowExecutionContext workflowExecutionContext)
@@ -30,7 +29,7 @@ namespace Elsa.Activities.Http.Scripting
             var activityId = workflowExecutionContext.CurrentActivity.Id;
             var payload = new Signal(signal, workflowInstanceId, activityId);
             var token = sharedAccessSignatureService.CreateToken(payload);
-            var url = urlHelper.Action("Trigger", "HttpWorkflows", new { token });
+            var url = $"workflows/signal?token={token}";
 
             return url;
         }

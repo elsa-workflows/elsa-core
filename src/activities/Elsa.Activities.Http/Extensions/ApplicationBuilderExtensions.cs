@@ -7,7 +7,9 @@ namespace Elsa.Activities.Http.Extensions
     {
         public static IApplicationBuilder UseHttpActivities(this IApplicationBuilder app)
         {
-            return app.UseMiddleware<HttpRequestTriggerMiddleware>();
+            return app
+                .UseMiddleware<HttpRequestTriggerMiddleware>()
+                .Map("/workflows/signal", branch => branch.UseMiddleware<SignalMiddleware>());
         }
     }
 }

@@ -1,6 +1,8 @@
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Services;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Elsa.Activities.Http.Formatters
@@ -12,7 +14,7 @@ namespace Elsa.Activities.Http.Formatters
 
         public Task<object> FormatAsync(string content, string contentType)
         {
-            return Task.FromResult<object>(JToken.Parse(content));
+            return Task.FromResult<object>(JsonConvert.DeserializeObject<ExpandoObject>(content));
         }
     }
 }

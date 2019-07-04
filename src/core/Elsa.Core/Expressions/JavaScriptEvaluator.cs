@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -28,18 +29,18 @@ namespace Elsa.Core.Expressions
         {
             this.configurators = configurators;
         }
-        
+
         public string Syntax => SyntaxName;
 
         public Task<T> EvaluateAsync<T>(string expression, WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
         {
             var engine = new Engine(options => { options.AllowClr(); });
-            
+
             ConfigureEngine(engine, workflowExecutionContext);
             engine.Execute(expression);
-            
+
             var result = ConvertValue<T>(engine.GetCompletionValue());
-            
+
             return Task.FromResult(result);
         }
 
@@ -53,23 +54,46 @@ namespace Elsa.Core.Expressions
 
         private T ConvertValue<T>(JsValue value)
         {
+            return (T)ConvertValue(value, typeof(T));
+        }
+
+        private object ConvertValue(JsValue value, Type targetType)
+        {
+            if (value.IsNull())
+                return default;
+
+            if (value.IsBoolean())
+                return value.AsBoolean();
+
+            if (value.IsDate())
+                return value.AsDate().ToDateTime();
+
+            if (value.IsNumber())
+                return value.AsNumber();
+
+            if (value.IsString())
+                return value.AsString();
+
+            if (value.IsObject())
+                return value.AsObject().ToObject();
+
             if (value.IsArray())
             {
-                var jsArray = value.AsArray();
-                var elementType = typeof(T).GetElementType();
-                var array = Array.CreateInstance(elementType, jsArray.Length);
+                var arrayInstance = value.AsArray();
+                var elementType = targetType.GetElementType();
+                var array = Array.CreateInstance(elementType, arrayInstance.Length);
 
-                for (uint i = 0; i < jsArray.Length; i++)
+                for (uint i = 0; i < array.Length; i++)
                 {
-                    var item = jsArray[i].ToObject();
-                    var convertedItem = Convert.ChangeType(item, elementType);
-                    array.SetValue(convertedItem, i);
+                    var jsValue = arrayInstance[i];
+                    var convertedValue = ConvertValue(jsValue, elementType);
+                    array.SetValue(convertedValue, i);
                 }
 
-                return (T)(object)array;
+                return array;
             }
 
-            return (T) value.ToObject();
+            throw new ArgumentException($"Value type {value.Type} is not supported.", nameof(value));
         }
     }
 }

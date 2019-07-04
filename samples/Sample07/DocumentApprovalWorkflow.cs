@@ -28,7 +28,7 @@ namespace Sample07
                     activity =>
                     {
                         activity.VariableName = "document";
-                        activity.ValueExpression = new JavaScriptExpression<object>("lastResult()");
+                        activity.ValueExpression = new JavaScriptExpression<object>("lastResult().FormattedContent");
                     }
                 )
                 .Then<SendEmail>(

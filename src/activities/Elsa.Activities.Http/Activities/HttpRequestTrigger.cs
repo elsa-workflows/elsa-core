@@ -59,14 +59,21 @@ namespace Elsa.Activities.Http.Activities
         [Display(Description = "The HTTP method that triggers this activity.")]
         [Required]
         [UIHint("Dropdown")]
-        public string Method { get; set; }
+        public string Method {
+            get => GetState<string>();
+            set => SetState(value);
+        }
 
         /// <summary>
         /// A value indicating whether the HTTP request content body should be read and stored as part of the HTTP request model.
         /// The stored format depends on the content-type header.
         /// </summary>
         [Display(Description = "A value indicating whether the HTTP request content body should be read and stored as part of the HTTP request model. The stored format depends on the content-type header.")]
-        public bool ReadContent { get; set; }
+        public bool ReadContent
+        {
+            get => GetState<bool>();
+            set => SetState(value);
+        }
 
         protected override ActivityExecutionResult OnExecute(WorkflowExecutionContext workflowContext)
         {

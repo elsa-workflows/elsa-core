@@ -25,7 +25,7 @@ namespace Elsa.Core.Services
                 var activityType = Type.GetType(activityTypeName);
                 
                 if(activityType == null)
-                    throw new ArgumentException("No such activity type");
+                    throw new ArgumentException($"No such activity type: {activityTypeName}", nameof(activityTypeName));
                 
                 activityTypeLookup[activityTypeName] = activityType;
             }
