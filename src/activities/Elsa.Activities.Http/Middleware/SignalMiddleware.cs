@@ -1,7 +1,10 @@
+using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using Elsa.Activities.Http.Activities;
 using Elsa.Activities.Http.Models;
 using Elsa.Activities.Http.Services;
+using Elsa.Core.Extensions;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services;
@@ -18,7 +21,9 @@ namespace Elsa.Activities.Http.Middleware
         public async Task InvokeAsync(
             HttpContext context, 
             ISharedAccessSignatureService sharedAccessSignatureService,
-            IWorkflowInvoker workflowInvoker, 
+            IWorkflowInvoker workflowInvoker,
+            IWorkflowRegistry workflowRegistry,
+            IWorkflowFactory workflowFactory,
             IWorkflowInstanceStore workflowInstanceStore)
         {
             var cancellationToken = context.RequestAborted;
@@ -43,7 +48,10 @@ namespace Elsa.Activities.Http.Middleware
                 ["signal"] = signal.Name
             };
 
-            await workflowInvoker.InvokeAsync(workflowInstance, input, new[] { signal.ActivityId }, cancellationToken);
+            var workflowDefinition = workflowRegistry.GetById(workflowInstance.DefinitionId);
+            var workflow = workflowFactory.CreateWorkflow(workflowDefinition, input, workflowInstance);
+            var blockingSignalActivities = workflow.BlockingActivities.Where(x => x is SignalEvent).Cast<SignalEvent>().Where(x => x.SignalName == signal.Name).ToList();
+            await workflowInvoker.ResumeAsync(workflow, blockingSignalActivities, cancellationToken);
 
             if (!context.Items.ContainsKey(WorkflowHttpResult.Instance))
             {

@@ -64,8 +64,8 @@ namespace Sample07
                                 {
                                     activity.From = new PlainTextExpression("approval@acme.com");
                                     activity.To = new JavaScriptExpression<string>("document.author.email");
-                                    activity.Subject = new JavaScriptExpression<string>("`Document {document.id} approved!`");
-                                    activity.Body = new JavaScriptExpression<string>("`Great job {document.author.name}, that document is perfect! Keep it up.`");
+                                    activity.Subject = new JavaScriptExpression<string>("`Document ${document.id} approved!`");
+                                    activity.Body = new JavaScriptExpression<string>("`Great job ${document.author.name}, that document is perfect! Keep it up.`");
                                 });
 
                         fork
@@ -76,8 +76,8 @@ namespace Sample07
                                 {
                                     activity.From = new PlainTextExpression("approval@acme.com");
                                     activity.To = new JavaScriptExpression<string>("document.author.email");
-                                    activity.Subject = new JavaScriptExpression<string>("`Document {document.id} rejected`");
-                                    activity.Body = new JavaScriptExpression<string>("`Sorry {document.author.name}, that document isn't good enough. Please try again.`");
+                                    activity.Subject = new JavaScriptExpression<string>("`Document ${document.id} rejected`");
+                                    activity.Body = new JavaScriptExpression<string>("`Sorry ${document.author.name}, that document isn't good enough. Please try again.`");
                                 });
                     }
                 );

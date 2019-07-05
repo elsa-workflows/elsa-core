@@ -34,6 +34,7 @@ namespace Elsa.Activities.Http.Extensions
                 .AddSingleton<IContentFormatter, JsonContentFormatter>()
                 .AddSingleton<IScriptEngineConfigurator, HttpScriptEngineConfigurator>()
                 .AddSingleton<IActionContextAccessor, ActionContextAccessor>()
+                .AddSingleton<IAbsoluteUrlProvider, DefaultAbsoluteUrlProvider>()
                 .AddDataProtection();
             
             return services;

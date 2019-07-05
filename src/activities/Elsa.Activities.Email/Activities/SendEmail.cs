@@ -55,7 +55,8 @@ namespace Elsa.Activities.Email.Activities
             {
                 From = new MailAddress(@from),
                 Body = body,
-                Subject = subject
+                Subject = subject,
+                IsBodyHtml = true
             };
 
             mailMessage.To.Add(to);

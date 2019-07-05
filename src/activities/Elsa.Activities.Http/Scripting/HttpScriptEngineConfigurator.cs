@@ -4,18 +4,18 @@ using Elsa.Activities.Http.Services;
 using Elsa.Scripting;
 using Elsa.Services.Models;
 using Jint;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Routing;
 
 namespace Elsa.Activities.Http.Scripting
 {
     public class HttpScriptEngineConfigurator : IScriptEngineConfigurator
     {
         private readonly ISharedAccessSignatureService sharedAccessSignatureService;
+        private readonly IAbsoluteUrlProvider absoluteUrlProvider;
 
-        public HttpScriptEngineConfigurator(ISharedAccessSignatureService sharedAccessSignatureService)
+        public HttpScriptEngineConfigurator(ISharedAccessSignatureService sharedAccessSignatureService, IAbsoluteUrlProvider absoluteUrlProvider)
         {
             this.sharedAccessSignatureService = sharedAccessSignatureService;
+            this.absoluteUrlProvider = absoluteUrlProvider;
         }
         
         public void Configure(Engine engine, WorkflowExecutionContext workflowExecutionContext)
@@ -26,12 +26,11 @@ namespace Elsa.Activities.Http.Scripting
         private string GenerateUrl(string signal, WorkflowExecutionContext workflowExecutionContext)
         {
             var workflowInstanceId = workflowExecutionContext.Workflow.Id;
-            var activityId = workflowExecutionContext.CurrentActivity.Id;
-            var payload = new Signal(signal, workflowInstanceId, activityId);
+            var payload = new Signal(signal, workflowInstanceId);
             var token = sharedAccessSignatureService.CreateToken(payload);
-            var url = $"workflows/signal?token={token}";
+            var url = $"/workflows/signal?token={token}";
 
-            return url;
+            return absoluteUrlProvider.ToAbsoluteUrl(url).ToString();
         }
     }
 }
