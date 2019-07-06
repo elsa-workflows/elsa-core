@@ -1,10 +1,10 @@
 using NodaTime;
 
-namespace Elsa.Activities.Cron.Options
+namespace Elsa.Activities.Timers.Options
 {
-    public class CronOptions
+    public class TimersOptions
     {
-        public CronOptions()
+        public TimersOptions()
         {
             SweepInterval = Period.FromMinutes(1);
         }

@@ -1,5 +1,6 @@
 using Elsa.Core.Activities.Primitives;
 using Elsa.Core.Expressions;
+using Elsa.Core.Scripting;
 using Elsa.Core.Serialization;
 using Elsa.Core.Serialization.Formatters;
 using Elsa.Core.Services;

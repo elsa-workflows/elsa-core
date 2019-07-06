@@ -1,23 +1,23 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Activities.Cron.Activities;
-using Elsa.Activities.Cron.Options;
+using Elsa.Activities.Timers.Activities;
+using Elsa.Activities.Timers.Options;
 using Elsa.Models;
 using Elsa.Services;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace Elsa.Activities.Cron.HostedServices
+namespace Elsa.Activities.Timers.HostedServices
 {
-    public class CronHostedService : BackgroundService
+    public class TimersHostedService : BackgroundService
     {
         private readonly IWorkflowInvoker workflowInvoker;
-        private readonly IOptions<CronOptions> options;
-        private readonly ILogger<CronHostedService> logger;
+        private readonly IOptions<TimersOptions> options;
+        private readonly ILogger<TimersHostedService> logger;
 
-        public CronHostedService(IWorkflowInvoker workflowInvoker, IOptions<CronOptions> options, ILogger<CronHostedService> logger)
+        public TimersHostedService(IWorkflowInvoker workflowInvoker, IOptions<TimersOptions> options, ILogger<TimersHostedService> logger)
         {
             this.workflowInvoker = workflowInvoker;
             this.options = options;
@@ -30,7 +30,8 @@ namespace Elsa.Activities.Cron.HostedServices
             {
                 try
                 {
-                    await workflowInvoker.TriggerAsync(nameof(CronTrigger), Variables.Empty, stoppingToken);
+                    await workflowInvoker.TriggerAsync(nameof(TimerEvent), Variables.Empty, stoppingToken);
+                    await workflowInvoker.TriggerAsync(nameof(CronEvent), Variables.Empty, stoppingToken);
                 }
                 catch (Exception ex)
                 {

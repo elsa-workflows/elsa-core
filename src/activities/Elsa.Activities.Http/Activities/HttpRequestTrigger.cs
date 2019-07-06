@@ -98,10 +98,10 @@ namespace Elsa.Activities.Http.Activities
                     model.Form = (await request.ReadFormAsync(cancellationToken)).ToDictionary(x => x.Key, x => x.Value);
                 }
 
-                var formatter = SelectContentFormatter(request.ContentType);
+                var parser = SelectContentParser(request.ContentType);
                 var content = await request.ReadBodyAsync();
                 model.Content = content;
-                model.FormattedContent = await formatter.FormatAsync(content, request.ContentType);
+                model.ParsedContent = await parser.ParseAsync(content, request.ContentType);
             }
 
             workflowContext.CurrentScope.LastResult = model;
@@ -109,7 +109,7 @@ namespace Elsa.Activities.Http.Activities
             return Done();
         }
 
-        private IContentFormatter SelectContentFormatter(string contentType)
+        private IContentFormatter SelectContentParser(string contentType)
         {
             var formatters = contentFormatters.OrderByDescending(x => x.Priority).ToList();
             return formatters.FirstOrDefault(x => x.SupportedContentTypes.Contains(contentType, StringComparer.OrdinalIgnoreCase)) ?? formatters.Last();

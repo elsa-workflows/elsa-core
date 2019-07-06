@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Elsa.Activities.Console.Extensions;
-using Elsa.Activities.Cron.Extensions;
+using Elsa.Activities.Timers.Extensions;
 using Elsa.Core.Extensions;
 using Elsa.Core.Persistence.Extensions;
 using Elsa.Services;
@@ -46,7 +46,7 @@ namespace Sample05
             services
                 .AddWorkflows()
                 .AddConsoleActivities()
-                .AddCronActivities(options => options.Configure(x => x.SweepInterval = Period.FromSeconds(10)))
+                .AddTimerActivities(options => options.Configure(x => x.SweepInterval = Period.FromSeconds(10)))
                 .AddMemoryWorkflowDefinitionStore()
                 .AddMemoryWorkflowInstanceStore();
         }

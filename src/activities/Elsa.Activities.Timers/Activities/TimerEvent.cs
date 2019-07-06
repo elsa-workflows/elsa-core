@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Core.Expressions;
 using Elsa.Core.Services;
@@ -8,26 +9,26 @@ using Elsa.Services.Models;
 using NCrontab;
 using NodaTime;
 
-namespace Elsa.Activities.Cron.Activities
+namespace Elsa.Activities.Timers.Activities
 {
-    public class CronTrigger : Activity
+    public class TimerEvent : Activity
     {
         private readonly IWorkflowExpressionEvaluator expressionEvaluator;
         private readonly IClock clock;
 
-        public CronTrigger(IWorkflowExpressionEvaluator expressionEvaluator, IClock clock)
+        public TimerEvent(IWorkflowExpressionEvaluator expressionEvaluator, IClock clock)
         {
             this.expressionEvaluator = expressionEvaluator;
             this.clock = clock;
         }
 
-        public WorkflowExpression<string> CronExpression
+        public WorkflowExpression<TimeSpan> TimeoutExpression
         {
-            get => GetState(() => new PlainTextExpression("* * * * *"));
+            get => GetState(() => new PlainTextExpression<TimeSpan>("00:01:00"));
             set => SetState(value);
         }
 
-        public Instant? StartTimestamp
+        public Instant? StartTime
         {
             get => GetState<Instant?>();
             set => SetState(value);
@@ -35,9 +36,9 @@ namespace Elsa.Activities.Cron.Activities
 
         protected override ActivityExecutionResult OnExecute(WorkflowExecutionContext workflowContext)
         {
-            if (StartTimestamp == null)
+            if (StartTime == null)
             {
-                StartTimestamp = clock.GetCurrentInstant();
+                StartTime = clock.GetCurrentInstant();
             }
             
             return Halt();
@@ -52,13 +53,12 @@ namespace Elsa.Activities.Cron.Activities
 
         private async Task<bool> IsExpiredAsync(WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
         {
-            var cronExpression = await expressionEvaluator.EvaluateAsync(CronExpression, workflowContext, cancellationToken);
-            var schedule = CrontabSchedule.Parse(cronExpression);
+            var timeSpan = await expressionEvaluator.EvaluateAsync(TimeoutExpression, workflowContext, cancellationToken);
             var now = clock.GetCurrentInstant();
-            var startTimestamp = StartTimestamp ?? now;
-            var nextOccurrence = schedule.GetNextOccurrence(startTimestamp.ToDateTimeUtc());
-
-            return now.ToDateTimeUtc() >= nextOccurrence;
+            var startTime = StartTime ?? now;
+            var expiresAt = startTime.ToDateTimeUtc() + timeSpan;
+            
+            return now.ToDateTimeUtc() >= expiresAt;
         }
     }
 }

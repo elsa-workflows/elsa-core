@@ -5,6 +5,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="MassTransit.AspNetCore" Version="5.5.2" />
         <PackageReference Include="Microsoft.AspNetCore" Version="2.2.0" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.2.0" />
     </ItemGroup>
@@ -12,6 +13,7 @@
     <ItemGroup>
         <ProjectReference Include="..\..\src\activities\Elsa.Activities.Email\Elsa.Activities.Email.csproj" />
         <ProjectReference Include="..\..\src\activities\Elsa.Activities.Http\Elsa.Activities.Http.csproj" />
+        <ProjectReference Include="..\..\src\activities\Elsa.Activities.MassTransit\Elsa.Activities.MassTransit.csproj" />
         <ProjectReference Include="..\..\src\activities\Elsa.Activities.Timers\Elsa.Activities.Timers.csproj" />
         <ProjectReference Include="..\..\src\core\Elsa.Core\Elsa.Core.csproj" />
     </ItemGroup>

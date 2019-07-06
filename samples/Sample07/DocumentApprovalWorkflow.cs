@@ -29,7 +29,7 @@ namespace Sample07
                     activity =>
                     {
                         activity.VariableName = "document";
-                        activity.ValueExpression = new JavaScriptExpression<object>("lastResult().FormattedContent");
+                        activity.ValueExpression = new JavaScriptExpression<object>("lastResult().ParsedContent");
                     }
                 )
                 .Then<SendEmail>(
