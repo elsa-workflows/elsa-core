@@ -1,6 +1,7 @@
 using System;
 using System.Net;
 using System.Net.Http;
+using Elsa;
 using Elsa.Activities.Email.Activities;
 using Elsa.Activities.Http.Activities;
 using Elsa.Core.Activities.Primitives;
@@ -59,6 +60,20 @@ namespace Sample07
                         fork
                             .When("Approve")
                             .Then<SignalEvent>(activity => activity.SignalName = "approve")
+                            .Then("join-signals");
+
+                        fork
+                            .When("Reject")
+                            .Then<SignalEvent>(activity => activity.SignalName = "reject")
+                            .Then("join-signals");
+                    }
+                )
+                .Add<Join>(activity => activity.Mode = Join.JoinMode.WaitAny, "join-signals")
+                .Then<IfElse>(activity => activity.ConditionExpression = new JavaScriptExpression<bool>("input('signal') === 'approve'"),
+                    ifElse =>
+                    {
+                        ifElse
+                            .When(OutcomeNames.True)
                             .Then<SendEmail>(
                                 activity =>
                                 {
@@ -67,10 +82,9 @@ namespace Sample07
                                     activity.Subject = new JavaScriptExpression<string>("`Document ${document.id} approved!`");
                                     activity.Body = new JavaScriptExpression<string>("`Great job ${document.author.name}, that document is perfect! Keep it up.`");
                                 });
-
-                        fork
-                            .When("Reject")
-                            .Then<SignalEvent>(activity => activity.SignalName = "reject")
+                        
+                        ifElse
+                            .When(OutcomeNames.False)
                             .Then<SendEmail>(
                                 activity =>
                                 {
@@ -79,8 +93,7 @@ namespace Sample07
                                     activity.Subject = new JavaScriptExpression<string>("`Document ${document.id} rejected`");
                                     activity.Body = new JavaScriptExpression<string>("`Sorry ${document.author.name}, that document isn't good enough. Please try again.`");
                                 });
-                    }
-                );
+                    });
         }
     }
 }

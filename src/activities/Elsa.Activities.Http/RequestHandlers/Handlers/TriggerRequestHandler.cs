@@ -4,50 +4,57 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Activities;
-using Elsa.Core.Expressions;
-using Elsa.Extensions;
+using Elsa.Activities.Http.RequestHandlers.Results;
+using Elsa.Activities.Http.Services;
+using Elsa.Core.Extensions;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Serialization.Models;
 using Elsa.Services;
-using Elsa.Services.Models;
-using Esprima.Ast;
 using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json.Linq;
 
-namespace Elsa.Activities.Http.Middleware
+namespace Elsa.Activities.Http.RequestHandlers.Handlers
 {
-    public class HttpRequestTriggerMiddleware
+    public class TriggerRequestHandler : IRequestHandler
     {
-        private readonly RequestDelegate next;
+        private readonly HttpContext httpContext;
+        private readonly IWorkflowInvoker workflowInvoker;
+        private readonly IWorkflowRegistry registry;
+        private readonly IWorkflowInstanceStore workflowInstanceStore;
+        private readonly CancellationToken cancellationToken;
 
-        public HttpRequestTriggerMiddleware(RequestDelegate next)
-        {
-            this.next = next;
-        }
-
-        public async Task InvokeAsync(
-            HttpContext context, 
+        public TriggerRequestHandler(HttpContext httpContext, 
             IWorkflowInvoker workflowInvoker,
             IWorkflowRegistry registry, 
             IWorkflowInstanceStore workflowInstanceStore)
         {
+            this.httpContext = httpContext;
+            this.workflowInvoker = workflowInvoker;
+            this.registry = registry;
+            this.workflowInstanceStore = workflowInstanceStore;
+            this.cancellationToken = httpContext.RequestAborted;
+        }
+
+        public async Task<IRequestHandlerResult> HandleRequestAsync()
+        {
             // TODO: Optimize this by building up a hash of routes and workflows to execute.
-            var requestPath = new Uri(context.Request.Path.ToString(), UriKind.Relative);
-            var method = context.Request.Method;
-            var cancellationToken = context.RequestAborted;
+            var requestPath = new Uri(httpContext.Request.Path.ToString(), UriKind.Relative);
+            var method = httpContext.Request.Method;
             var workflowsToStart = Filter(registry.ListByStartActivity(nameof(HttpRequestTrigger)), requestPath, method).ToList();
             var workflowsToResume = Filter(await workflowInstanceStore.ListByBlockingActivityAsync<HttpRequestTrigger>(cancellationToken), requestPath, method).ToList();
 
             if (!workflowsToStart.Any() && !workflowsToResume.Any())
             {
-                await next(context);
+                return new NextResult();
             }
-            else
-            {
-                await InvokeWorkflowsToStartAsync(workflowInvoker, workflowsToStart, cancellationToken);
-                await InvokeWorkflowsToResumeAsync(workflowInvoker, workflowsToResume, cancellationToken);
-            }
+
+            await InvokeWorkflowsToStartAsync(workflowsToStart);
+            await InvokeWorkflowsToResumeAsync(workflowsToResume);
+            
+            return !httpContext.Items.ContainsKey(WorkflowHttpResult.Instance) 
+                ? (IRequestHandlerResult) new AcceptedResult()
+                : new EmptyResult();
         }
         
         private IEnumerable<(WorkflowInstance, ActivityInstance)> Filter(IEnumerable<(WorkflowInstance, ActivityInstance)> items, Uri path, string method)
@@ -67,7 +74,7 @@ namespace Elsa.Activities.Http.Middleware
             return (string.IsNullOrWhiteSpace(m) || m == method) && p == path;
         }
 
-        private async Task InvokeWorkflowsToStartAsync(IWorkflowInvoker workflowInvoker, IEnumerable<(WorkflowDefinition, ActivityDefinition)> items, CancellationToken cancellationToken)
+        private async Task InvokeWorkflowsToStartAsync(IEnumerable<(WorkflowDefinition, ActivityDefinition)> items)
         {
             foreach (var item in items)
             {
@@ -75,14 +82,11 @@ namespace Elsa.Activities.Http.Middleware
             }
         }
         
-        private async Task InvokeWorkflowsToResumeAsync(IWorkflowInvoker workflowInvoker, IEnumerable<(WorkflowInstance, ActivityInstance)> items, CancellationToken cancellationToken)
+        private async Task InvokeWorkflowsToResumeAsync(IEnumerable<(WorkflowInstance, ActivityInstance)> items)
         {
-            foreach (var item in items)
+            foreach (var (workflowInstance, activity) in items)
             {
-                var workflowInstance = item.Item1;
-
-                workflowInstance.Status = WorkflowStatus.Resuming;
-                await workflowInvoker.InvokeAsync(workflowInstance, Variables.Empty, new[]{item.Item2.Id}, cancellationToken);
+                await workflowInvoker.ResumeAsync(workflowInstance, Variables.Empty, new[]{activity.Id}, cancellationToken);
             }
         }
     }

@@ -29,7 +29,7 @@ namespace Elsa.Core.Extensions
             return workflowInvoker.InvokeAsync(workflowInstance, input, startActivityIds, cancellationToken);
         }
 
-        public static Task<WorkflowExecutionContext> InvokeAsync(this IWorkflowInvoker workflowInvoker, 
+        public static Task<WorkflowExecutionContext> ResumeAsync(this IWorkflowInvoker workflowInvoker, 
             WorkflowInstance workflowInstance, 
             Variables input = null, 
             IEnumerable<string> startActivityIds = default,

@@ -1,6 +1,9 @@
 using Elsa.Activities.Http.Activities;
 using Elsa.Activities.Http.Formatters;
+using Elsa.Activities.Http.Middleware;
 using Elsa.Activities.Http.Models;
+using Elsa.Activities.Http.RequestHandlers;
+using Elsa.Activities.Http.RequestHandlers.Handlers;
 using Elsa.Activities.Http.Scripting;
 using Elsa.Activities.Http.Services;
 using Elsa.Core.Extensions;
@@ -35,9 +38,18 @@ namespace Elsa.Activities.Http.Extensions
                 .AddSingleton<IScriptEngineConfigurator, HttpScriptEngineConfigurator>()
                 .AddSingleton<IActionContextAccessor, ActionContextAccessor>()
                 .AddSingleton<IAbsoluteUrlProvider, DefaultAbsoluteUrlProvider>()
+                .AddHttpContextAccessor()
                 .AddDataProtection();
-            
-            return services;
+
+            return services
+                .AddScoped(sp => sp.GetRequiredService<IHttpContextAccessor>().HttpContext)
+                .AddRequestHandler<TriggerRequestHandler>()
+                .AddRequestHandler<SignalRequestHandler>();
+        }
+
+        public static IServiceCollection AddRequestHandler<THandler>(this IServiceCollection services) where THandler : class, IRequestHandler
+        {
+            return services.AddScoped<THandler>();
         }
     }
 }
