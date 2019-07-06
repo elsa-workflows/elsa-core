@@ -5,7 +5,7 @@ using Elsa.Core.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
 
-namespace Sample06.Workflows
+namespace Sample06
 {
     public class HelloWorldWorkflow : IWorkflow
     {
@@ -19,7 +19,7 @@ namespace Sample06.Workflows
                         activity.Body = new PlainTextExpression("<h1>Hello World!</h1><p>Elsa says hi :)</p>");
                         activity.ContentType = new PlainTextExpression("text/html");
                         activity.StatusCode = HttpStatusCode.OK;
-                        activity.ResponseHeaders = new PlainTextExpression("Generator=Elsa Workflows");
+                        activity.ResponseHeaders = new PlainTextExpression("X-Powered-By=Elsa Workflows");
                     }
                 );
         }

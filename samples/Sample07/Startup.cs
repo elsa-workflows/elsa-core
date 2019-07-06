@@ -1,4 +1,5 @@
-﻿using Elsa.Activities.Http.Extensions;
+﻿using Elsa.Activities.Email.Extensions;
+using Elsa.Activities.Http.Extensions;
 using Elsa.Core.Extensions;
 using Elsa.Core.Persistence.Extensions;
 using Elsa.Services;
@@ -7,7 +8,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Sample06
+namespace Sample07
 {
     public class Startup
     {
@@ -23,6 +24,7 @@ namespace Sample06
             services
                 .AddWorkflows()
                 .AddHttpActivities()
+                .AddEmailActivities(options => options.Bind(Configuration.GetSection("Smtp"))) //Tip: use Smtp4Dev for a local SMTP server that displays sent emails without actually sending them.
                 .AddMemoryWorkflowDefinitionStore()
                 .AddMemoryWorkflowInstanceStore();
         }
@@ -37,7 +39,7 @@ namespace Sample06
             app.UseHttpActivities();
             app.UseWelcomePage();
             
-            workflowRegistry.RegisterWorkflow<HelloWorldWorkflow>();
+            workflowRegistry.RegisterWorkflow<DocumentApprovalWorkflow>();
         }
     }
 }

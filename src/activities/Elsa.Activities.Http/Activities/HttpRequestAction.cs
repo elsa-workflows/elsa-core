@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Models;
+using Elsa.Activities.Http.Services;
 using Elsa.Core.Expressions;
 using Elsa.Core.Services;
 using Elsa.Results;

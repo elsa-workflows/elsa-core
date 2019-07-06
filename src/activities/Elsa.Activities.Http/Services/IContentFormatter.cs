@@ -1,7 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Elsa.Activities.Http
+namespace Elsa.Activities.Http.Services
 {
     public interface IContentFormatter
     {

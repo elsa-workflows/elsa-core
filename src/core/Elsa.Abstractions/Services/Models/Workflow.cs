@@ -42,7 +42,7 @@ namespace Elsa.Services.Models
         public Instant? FinishedAt { get; set; }
         public ICollection<IActivity> Activities { get; } = new List<IActivity>();
         public IList<Connection> Connections { get; } = new List<Connection>();
-        public Stack<WorkflowExecutionScope> Scopes { get; }
+        public Stack<WorkflowExecutionScope> Scopes { get; set; }
         public HashSet<IActivity> BlockingActivities { get; set; }
         public IList<LogEntry> ExecutionLog { get; set; }
         public WorkflowFault Fault { get; set; }
@@ -73,6 +73,8 @@ namespace Elsa.Services.Models
         {
             if(instance == null)
                 return;
+
+            var activityLookup = Activities.ToDictionary(x => x.Id);
             
             Id = instance.Id;
             Status = instance.Status;
@@ -80,7 +82,9 @@ namespace Elsa.Services.Models
             StartedAt = instance.StartedAt;
             HaltedAt = instance.HaltedAt;
             FinishedAt = instance.FinishedAt;
-
+            BlockingActivities = new HashSet<IActivity>(instance.BlockingActivities.Select(x => activityLookup[x]));
+            Scopes = new Stack<WorkflowExecutionScope>(instance.Scopes);
+            
             foreach (var activity in Activities)
             {
                 activity.State = new JObject(instance.Activities[activity.Id].State);

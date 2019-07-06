@@ -1,100 +1,99 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Expressions;
+using Elsa.Scripting;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Esprima.Ast;
 using Jint;
+using Jint.Native;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Core.Expressions
 {
     public class JavaScriptEvaluator : IExpressionEvaluator
     {
+        private readonly IEnumerable<IScriptEngineConfigurator> configurators;
+        public const string SyntaxName = "JavaScript";
+
         public static WorkflowExpression<T> CreateExpression<T>(string expression)
         {
             return new WorkflowExpression<T>(SyntaxName, expression);
         }
-        
-        public const string SyntaxName = "JavaScript";
-        private readonly Engine engine;
 
-        public JavaScriptEvaluator()
+        public JavaScriptEvaluator(IEnumerable<IScriptEngineConfigurator> configurators)
         {
-            engine = new Engine(options => { options.AllowClr(); });
+            this.configurators = configurators;
         }
 
         public string Syntax => SyntaxName;
 
         public Task<T> EvaluateAsync<T>(string expression, WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
         {
-            foreach (var variable in workflowExecutionContext.CurrentScope.Variables)
-            {
-                engine.SetValue(variable.Key, variable.Value);
-            }
+            var engine = new Engine(options => { options.AllowClr(); });
 
-            var workflowApi = new Dictionary<string, object>
-            {
-                ["input"] = (Func<string, object>) (name => workflowExecutionContext.Workflow.Input.GetVariable(name)),
-                ["variable"] = (Func<string, object>) (name => workflowExecutionContext.CurrentScope.GetVariable(name)),
-                ["float"] = (Func<string, float>) (name => GetFloat(workflowExecutionContext.CurrentScope.GetVariable(name))),
-                ["int"] = (Func<string, int>) (name => GetInt(workflowExecutionContext.CurrentScope.GetVariable(name))),
-                ["lastResult"] = (Func<object>) (() => workflowExecutionContext.CurrentScope.LastResult)
-            };
-
-            engine.SetValue("wf", workflowApi);
+            ConfigureEngine(engine, workflowExecutionContext);
             engine.Execute(expression);
-            
-            var returnValue = engine.GetCompletionValue();
-            T result;
 
-            if (returnValue.IsArray())
-            {
-                var jsArray = returnValue.AsArray();
-                var elementType = typeof(T).GetElementType();
-                var array = Array.CreateInstance(elementType, jsArray.Length);
+            var result = ConvertValue<T>(engine.GetCompletionValue());
 
-                for (uint i = 0; i < jsArray.Length; i++)
-                {
-                    var item = jsArray[i].ToObject();
-                    var convertedItem = Convert.ChangeType(item, elementType);
-                    array.SetValue(convertedItem, i);
-                }
-
-                result = (T)(object)array;
-            }
-            else
-            {
-                result = (T) returnValue.ToObject();
-            }
-            
             return Task.FromResult(result);
         }
 
-        private float GetFloat(object value)
+        private void ConfigureEngine(Engine engine, WorkflowExecutionContext workflowExecutionContext)
         {
-            if (value is float f1)
-                return f1;
-            
-            if(value is string s)
-                if (float.TryParse(s, out var f2))
-                    return f2;
-
-            return float.NaN;
+            foreach (var configurator in configurators)
+            {
+                configurator.Configure(engine, workflowExecutionContext);
+            }
         }
-        
-        private int GetInt(object value)
-        {
-            if (value is int i1)
-                return i1;
-            
-            if(value is string s)
-                if (int.TryParse(s, out var i2))
-                    return i2;
 
-            return int.MinValue;
+        private T ConvertValue<T>(JsValue value)
+        {
+            return (T)ConvertValue(value, typeof(T));
+        }
+
+        private object ConvertValue(JsValue value, Type targetType)
+        {
+            if (value.IsNull())
+                return default;
+
+            if (value.IsBoolean())
+                return value.AsBoolean();
+
+            if (value.IsDate())
+                return value.AsDate().ToDateTime();
+
+            if (value.IsNumber())
+                return value.AsNumber();
+
+            if (value.IsString())
+                return value.AsString();
+
+            if (value.IsObject())
+                return value.AsObject().ToObject();
+
+            if (value.IsArray())
+            {
+                var arrayInstance = value.AsArray();
+                var elementType = targetType.GetElementType();
+                var array = Array.CreateInstance(elementType, arrayInstance.Length);
+
+                for (uint i = 0; i < array.Length; i++)
+                {
+                    var jsValue = arrayInstance[i];
+                    var convertedValue = ConvertValue(jsValue, elementType);
+                    array.SetValue(convertedValue, i);
+                }
+
+                return array;
+            }
+
+            throw new ArgumentException($"Value type {value.Type} is not supported.", nameof(value));
         }
     }
 }

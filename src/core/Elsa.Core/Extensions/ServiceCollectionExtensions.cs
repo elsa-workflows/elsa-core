@@ -4,6 +4,8 @@ using Elsa.Core.Serialization;
 using Elsa.Core.Serialization.Formatters;
 using Elsa.Core.Services;
 using Elsa.Core.Services.WorkflowBuilders;
+using Elsa.Expressions;
+using Elsa.Scripting;
 using Elsa.Serialization;
 using Elsa.Serialization.Formatters;
 using Elsa.Services;
@@ -30,6 +32,7 @@ namespace Elsa.Core.Extensions
                 .AddSingleton<ITokenFormatter, XmlTokenFormatter>()
                 .AddSingleton<IExpressionEvaluator, PlainTextEvaluator>()
                 .AddSingleton<IExpressionEvaluator, JavaScriptEvaluator>()
+                .AddSingleton<IScriptEngineConfigurator, CommonScriptEngineConfigurator>()
                 .AddSingleton<IWorkflowInvoker, WorkflowInvoker>()
                 .AddSingleton<IWorkflowFactory, WorkflowFactory>()
                 .AddSingleton<IActivityInvoker, ActivityInvoker>()
