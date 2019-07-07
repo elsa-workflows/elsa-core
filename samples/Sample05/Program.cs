@@ -5,7 +5,6 @@ using Elsa.Activities.Timers.Extensions;
 using Elsa.Core.Extensions;
 using Elsa.Core.Persistence.Extensions;
 using Elsa.Services;
-using Elsa.Services.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;

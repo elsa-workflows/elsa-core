@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Elsa.Core.Extensions;
-using Elsa.Core.Services;
 using Elsa.Services;
-using Elsa.Services.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Sample01.Activities;
 

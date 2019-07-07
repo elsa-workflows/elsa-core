@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Core.Expressions;
@@ -7,9 +8,9 @@ using Elsa.Services;
 using Elsa.Services.Models;
 using MassTransit;
 
-namespace Sample08.Activities
+namespace Elsa.Activities.MassTransit.Activities
 {
-    public class SendMassTransitMessage<T> : Activity
+    public class SendMassTransitMessage : Activity
     {
         private readonly ISendEndpointProvider sender;
         private readonly IWorkflowExpressionEvaluator evaluator;
@@ -19,16 +20,31 @@ namespace Sample08.Activities
             this.sender = sender;
             this.evaluator = evaluator;
         }
-        
-        public WorkflowExpression<T> Message
+
+        public Type MessageType
         {
-            get => GetState(() => new WorkflowExpression<T>(JavaScriptEvaluator.SyntaxName, string.Empty));
+            get
+            {
+                var typeName = GetState<string>();
+                return string.IsNullOrWhiteSpace(typeName) ? null : Type.GetType(typeName);
+            }
+            set => SetState(value.AssemblyQualifiedName);
+        }
+
+        public WorkflowExpression Message
+        {
+            get => GetState(() => new WorkflowExpression(JavaScriptEvaluator.SyntaxName, string.Empty));
             set => SetState(value);
+        }
+
+        protected override bool OnCanExecute(WorkflowExecutionContext context)
+        {
+            return MessageType != null;
         }
 
         protected override async Task<ActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
         {
-            var message = evaluator.EvaluateAsync(Message, context, cancellationToken);
+            var message = await evaluator.EvaluateAsync(Message, MessageType, context, cancellationToken);
             await sender.Send(message, cancellationToken);
 
             return Done();

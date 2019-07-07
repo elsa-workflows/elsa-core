@@ -3,7 +3,6 @@ using System.Dynamic;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Services;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace Elsa.Activities.Http.Formatters
 {

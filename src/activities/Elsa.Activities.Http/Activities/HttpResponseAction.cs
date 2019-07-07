@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Core.Expressions;
+using Elsa.Core.Extensions;
 using Elsa.Core.Services;
 using Elsa.Results;
 using Elsa.Services;

@@ -1,14 +1,10 @@
 using System;
-using System.Net;
-using System.Net.Http;
-using Elsa.Activities.Email.Activities;
-using Elsa.Activities.Http.Activities;
+using Elsa.Activities.MassTransit.Activities;
 using Elsa.Activities.Timers.Activities;
 using Elsa.Core.Activities.Primitives;
 using Elsa.Core.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Sample08.Activities;
 using Sample08.Messages;
 
 namespace Sample08.Workflows
@@ -18,16 +14,21 @@ namespace Sample08.Workflows
         public void Build(IWorkflowBuilder builder)
         {
             builder
-                .StartWith<ReceiveMassTransitMessage<CreateOrder>>()
+                .StartWith<ReceiveMassTransitMessage>(activity => activity.MessageType = typeof(CreateOrder))
                 .Then<SetVariable>(
                     activity =>
                     {
                         activity.VariableName = "order";
-                        activity.ValueExpression = new JavaScriptExpression<object>("lastResult()");
+                        activity.ValueExpression = new JavaScriptExpression<object>("lastResult().Order");
                     }
                 )
-                .Then<TimerEvent>(activity => activity.TimeoutExpression = new PlainTextExpression<TimeSpan>("00:00:10"))
-                .Then<SendMassTransitMessage<CreateOrder>>(activity => activity.Message = new JavaScriptExpression<CreateOrder>("order"));
+                .Then<TimerEvent>(activity => activity.TimeoutExpression = new PlainTextExpression<TimeSpan>("00:00:05"))
+                .Then<SendMassTransitMessage>(activity =>
+                    {
+                        activity.Message = new JavaScriptExpression<OrderShipped>("return {order: order}");
+                        activity.MessageType = typeof(OrderShipped);
+                    }
+                );
         }
     }
 }

@@ -5,6 +5,7 @@ using Elsa.Activities.Timers.Activities;
 using Elsa.Activities.Timers.Options;
 using Elsa.Models;
 using Elsa.Services;
+using Elsa.Services.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;

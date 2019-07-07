@@ -1,17 +1,13 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Expressions;
 using Elsa.Scripting;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Esprima.Ast;
 using Jint;
 using Jint.Native;
-using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
 
 namespace Elsa.Core.Expressions
 {
@@ -32,14 +28,14 @@ namespace Elsa.Core.Expressions
 
         public string Syntax => SyntaxName;
 
-        public Task<T> EvaluateAsync<T>(string expression, WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
+        public Task<object> EvaluateAsync(string expression, Type type, WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
         {
             var engine = new Engine(options => { options.AllowClr(); });
 
             ConfigureEngine(engine, workflowExecutionContext);
             engine.Execute(expression);
 
-            var result = ConvertValue<T>(engine.GetCompletionValue());
+            var result = ConvertValue(engine.GetCompletionValue(), type);
 
             return Task.FromResult(result);
         }
@@ -50,11 +46,6 @@ namespace Elsa.Core.Expressions
             {
                 configurator.Configure(engine, workflowExecutionContext);
             }
-        }
-
-        private T ConvertValue<T>(JsValue value)
-        {
-            return (T)ConvertValue(value, typeof(T));
         }
 
         private object ConvertValue(JsValue value, Type targetType)
@@ -75,7 +66,11 @@ namespace Elsa.Core.Expressions
                 return value.AsString();
 
             if (value.IsObject())
-                return value.AsObject().ToObject();
+            {
+                var obj = value.AsObject().ToObject();
+                var json = JsonConvert.SerializeObject(obj);
+                return JsonConvert.DeserializeObject(json, targetType);
+            }
 
             if (value.IsArray())
             {

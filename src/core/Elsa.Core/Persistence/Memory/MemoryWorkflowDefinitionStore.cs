@@ -3,7 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Persistence;
-using Elsa.Serialization.Models;
 
 namespace Elsa.Core.Persistence.Memory
 {

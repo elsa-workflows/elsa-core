@@ -13,6 +13,7 @@ using Elsa.Services;
 using Elsa.Services.Extensions;
 using Elsa.Services.Models;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json.Linq;
 using NodaTime;
 
 namespace Elsa.Core.Services
@@ -89,15 +90,23 @@ namespace Elsa.Core.Services
             return InvokeAsync(definition, input, workflowInstance, startActivityIds, cancellationToken);
         }
         
-        public async Task TriggerAsync(string activityType, Variables input, CancellationToken cancellationToken)
+        public async Task TriggerAsync(
+            string activityType, 
+            Variables input, 
+            Func<JObject, bool> activityStatePredicate = default,
+            CancellationToken cancellationToken = default)
         {
-            var workflowDefinitions = workflowRegistry.ListByStartActivity(activityType).ToDictionary(x => x.Item1.Id);
             var workflowInstances = await workflowInstanceStore.ListByBlockingActivityAsync(activityType, cancellationToken).ToListAsync();
-            var workflowInstancesByDefinitionId = workflowInstances.ToDictionary(x => x.Item1.DefinitionId);
-            var workflowsToStart = workflowDefinitions.Values.Where(x => !workflowInstancesByDefinitionId.ContainsKey(x.Item1.Id));
+            var workflowDefinitions = workflowRegistry.ListByStartActivity(activityType).ToList();
 
-            await StartWorkflowsAsync(workflowsToStart, input, cancellationToken);
-            await ResumeWorkflowsAsync(workflowDefinitions, workflowInstances, input, cancellationToken);
+            if (activityStatePredicate != null)
+                workflowDefinitions = workflowDefinitions.Where(x => activityStatePredicate(x.Item2.State)).ToList();
+
+            if (activityStatePredicate != null)
+                workflowInstances = workflowInstances.Where(x => activityStatePredicate(x.Item2.State)).ToList();
+
+            await StartWorkflowsAsync(workflowDefinitions, input, cancellationToken);
+            await ResumeWorkflowsAsync(workflowInstances, input, cancellationToken);
         }
         
         private async Task StartWorkflowsAsync(IEnumerable<(WorkflowDefinition, ActivityDefinition)> workflowDefinitions, Variables variables, CancellationToken cancellationToken1)
@@ -109,15 +118,15 @@ namespace Elsa.Core.Services
             }
         }
         
-        private async Task ResumeWorkflowsAsync(IReadOnlyDictionary<string, (WorkflowDefinition, ActivityDefinition)> workflowDefinitions, IList<(WorkflowInstance, ActivityInstance)> workflowInstances, Variables input, CancellationToken cancellationToken)
+        private async Task ResumeWorkflowsAsync(IEnumerable<(WorkflowInstance, ActivityInstance)> workflowInstances, Variables input, CancellationToken cancellationToken)
         {
             foreach (var (workflowInstance, startActivityInstance) in workflowInstances)
             {
-                var workflowDefinition = workflowDefinitions[workflowInstance.DefinitionId];
+                var workflowDefinition = workflowRegistry.GetById(workflowInstance.DefinitionId);
 
                 workflowInstance.Status = WorkflowStatus.Resuming;
 
-                await InvokeAsync(workflowDefinition.Item1, input, workflowInstance, new[] { startActivityInstance.Id }, cancellationToken);
+                await InvokeAsync(workflowDefinition, input, workflowInstance, new[] { startActivityInstance.Id }, cancellationToken);
             }
         }
 

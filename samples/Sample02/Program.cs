@@ -4,9 +4,7 @@ using Elsa.Activities.Console.Activities;
 using Elsa.Activities.Console.Extensions;
 using Elsa.Core.Expressions;
 using Elsa.Core.Extensions;
-using Elsa.Expressions;
 using Elsa.Services;
-using Elsa.Services.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Sample02

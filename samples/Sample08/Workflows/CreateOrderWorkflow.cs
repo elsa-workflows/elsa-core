@@ -3,11 +3,11 @@ using System.Net;
 using System.Net.Http;
 using Elsa.Activities.Email.Activities;
 using Elsa.Activities.Http.Activities;
+using Elsa.Activities.MassTransit.Activities;
 using Elsa.Core.Activities.Primitives;
 using Elsa.Core.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Sample08.Activities;
 using Sample08.Messages;
 
 namespace Sample08.Workflows
@@ -32,7 +32,12 @@ namespace Sample08.Workflows
                         activity.ValueExpression = new JavaScriptExpression<object>("lastResult().ParsedContent");
                     }
                 )
-                .Then<SendMassTransitMessage<CreateOrder>>(activity => activity.Message = new JavaScriptExpression<CreateOrder>("order"))
+                .Then<SendMassTransitMessage>(activity =>
+                    {
+                        activity.Message = new JavaScriptExpression<CreateOrder>("return {order: order};");
+                        activity.MessageType = typeof(CreateOrder);
+                    }
+                )
                 .Then<Fork>(
                     activity => activity.Forks = new[] { "Write-Response", "Await-Shipment" },
                     fork =>
@@ -50,7 +55,7 @@ namespace Sample08.Workflows
 
                         fork
                             .When("Await-Shipment")
-                            .Then<ReceiveMassTransitMessage<OrderShipped>>()
+                            .Then<ReceiveMassTransitMessage>(activity => activity.MessageType = typeof(OrderShipped))
                             .Then<SendEmail>(
                                 activity =>
                                 {

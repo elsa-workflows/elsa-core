@@ -1,3 +1,4 @@
+using System;
 using Elsa.Core.Activities.Primitives;
 using Elsa.Core.Expressions;
 using Elsa.Core.Scripting;
@@ -5,7 +6,6 @@ using Elsa.Core.Serialization;
 using Elsa.Core.Serialization.Formatters;
 using Elsa.Core.Services;
 using Elsa.Core.Services.WorkflowBuilders;
-using Elsa.Expressions;
 using Elsa.Scripting;
 using Elsa.Serialization;
 using Elsa.Serialization.Formatters;
@@ -41,6 +41,7 @@ namespace Elsa.Core.Extensions
                 .AddSingleton<IWorkflowExpressionEvaluator, WorkflowExpressionEvaluator>()
                 .AddSingleton<IWorkflowSerializerProvider, WorkflowSerializerProvider>()
                 .AddTransient<IWorkflowBuilder, WorkflowBuilder>()
+                .AddSingleton<Func<IWorkflowBuilder>>(sp => sp.GetRequiredService<IWorkflowBuilder>)
                 .AddSingleton<IWorkflowRegistry, WorkflowRegistry>()
                 .AddPrimitiveActivities();
         }

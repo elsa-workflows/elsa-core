@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Expressions;
@@ -7,6 +8,6 @@ namespace Elsa.Services
 {
     public interface IWorkflowExpressionEvaluator
     {
-        Task<T> EvaluateAsync<T>(IWorkflowExpression<T> expression, WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken);
+        Task<object> EvaluateAsync(IWorkflowExpression expression, Type type, WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken);
     }
 }
