@@ -1,8 +1,5 @@
 using System.Threading.Tasks;
-using Elsa.Activities.Http.RequestHandlers;
 using Elsa.Activities.Http.Services;
-using Elsa.Persistence;
-using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Activities.Http.Middleware

@@ -6,7 +6,6 @@ using Elsa.Activities.Email.Activities;
 using Elsa.Activities.Http.Activities;
 using Elsa.Core.Activities.Primitives;
 using Elsa.Core.Expressions;
-using Elsa.Core.Services;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -29,7 +28,7 @@ namespace Sample07
                     activity =>
                     {
                         activity.VariableName = "document";
-                        activity.ValueExpression = new JavaScriptExpression<object>("lastResult().FormattedContent");
+                        activity.ValueExpression = new JavaScriptExpression<object>("lastResult().ParsedContent");
                     }
                 )
                 .Then<SendEmail>(

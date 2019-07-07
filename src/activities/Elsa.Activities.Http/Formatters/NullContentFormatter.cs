@@ -9,7 +9,7 @@ namespace Elsa.Activities.Http.Formatters
         public int Priority => -1;
         public IEnumerable<string> SupportedContentTypes => new[] { "", default };
 
-        public Task<object> FormatAsync(string content, string contentType)
+        public Task<object> ParseAsync(string content, string contentType)
         {
             return Task.FromResult<object>(content);
         }

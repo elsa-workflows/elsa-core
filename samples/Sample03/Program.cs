@@ -5,9 +5,7 @@ using Elsa.Activities.Console.Extensions;
 using Elsa.Core.Expressions;
 using Elsa.Core.Extensions;
 using Elsa.Models;
-using Elsa.Serialization.Models;
 using Elsa.Services;
-using Elsa.Services.Models;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Sample03

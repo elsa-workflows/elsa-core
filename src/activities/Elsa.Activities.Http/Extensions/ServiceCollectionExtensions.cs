@@ -1,18 +1,12 @@
 using Elsa.Activities.Http.Activities;
 using Elsa.Activities.Http.Formatters;
-using Elsa.Activities.Http.Middleware;
-using Elsa.Activities.Http.Models;
-using Elsa.Activities.Http.RequestHandlers;
 using Elsa.Activities.Http.RequestHandlers.Handlers;
 using Elsa.Activities.Http.Scripting;
 using Elsa.Activities.Http.Services;
 using Elsa.Core.Extensions;
 using Elsa.Scripting;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
-using Microsoft.AspNetCore.Mvc.Routing;
-using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 

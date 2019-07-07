@@ -1,7 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Expressions;
+using Elsa.Core.Extensions;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -17,12 +17,12 @@ namespace Elsa.Core.Expressions
         public const string SyntaxName = "PlainText";
         public string Syntax => SyntaxName;
 
-        public Task<T> EvaluateAsync<T>(string expression, WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
+        public Task<object> EvaluateAsync(string expression, Type type, WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(expression))
-                return Task.FromResult(default(T));
+                return Task.FromResult(default(object));
             
-            return Task.FromResult((T) Convert.ChangeType(expression, typeof(T)));
+            return Task.FromResult(expression.Parse(type));
         }
     }
 }

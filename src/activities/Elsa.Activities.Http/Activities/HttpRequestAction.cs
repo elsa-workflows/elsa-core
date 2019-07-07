@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Elsa.Activities.Http.Models;
 using Elsa.Activities.Http.Services;
 using Elsa.Core.Expressions;
+using Elsa.Core.Extensions;
 using Elsa.Core.Services;
 using Elsa.Results;
 using Elsa.Services;
@@ -111,7 +112,7 @@ namespace Elsa.Activities.Http.Activities
                 StatusCode = response.StatusCode,
                 Headers = new HeaderDictionary(response.Headers.ToDictionary(x => x.Key, x => new StringValues(x.Value.ToArray()))),
                 Content = content,
-                FormattedContent = await formatter.FormatAsync(content, contentType)
+                FormattedContent = await formatter.ParseAsync(content, contentType)
             };
 
             workflowContext.SetLastResult(responseModel);

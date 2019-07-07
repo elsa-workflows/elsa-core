@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -8,6 +7,6 @@ namespace Elsa.Activities.Http.Services
     {
         int Priority { get; }
         IEnumerable<string> SupportedContentTypes { get; }
-        Task<object> FormatAsync(string content, string contentType);
+        Task<object> ParseAsync(string content, string contentType);
     }
 }

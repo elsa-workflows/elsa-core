@@ -34,7 +34,7 @@ namespace Elsa.Core.Services.WorkflowBuilders
             return this;
         }
 
-        public IActivityBuilder Add<T>(Action<T> setupActivity, string id = null) where T : class, IActivity
+        public IActivityBuilder Add<T>(Action<T> setupActivity = default, string id = default) where T : class, IActivity
         {
             var activity = activityResolver.ResolveActivity(setupActivity);
             var activityBlueprint = ActivityDefinition.FromActivity(activity);
@@ -47,12 +47,12 @@ namespace Elsa.Core.Services.WorkflowBuilders
             return activityBuilder;
         }
 
-        public IConnectionBuilder Connect(IActivityBuilder source, IActivityBuilder target, string outcome = null)
+        public IConnectionBuilder Connect(IActivityBuilder source, IActivityBuilder target, string outcome = default)
         {
             return Connect(() => source, () => target, outcome);
         }
 
-        public IConnectionBuilder Connect(Func<IActivityBuilder> source, Func<IActivityBuilder> target, string outcome = null)
+        public IConnectionBuilder Connect(Func<IActivityBuilder> source, Func<IActivityBuilder> target, string outcome = default)
         {
             var connectionBuilder = new ConnectionBuilder(this, source, target, outcome);
 

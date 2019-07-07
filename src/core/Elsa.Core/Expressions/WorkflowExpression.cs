@@ -2,9 +2,9 @@
 
 namespace Elsa.Core.Expressions
 {
-    public class WorkflowExpression
+    public class WorkflowExpression : IWorkflowExpression
     {
-        protected WorkflowExpression(string syntax, string expression)
+        public WorkflowExpression(string syntax, string expression)
         {
             Syntax = syntax;
             Expression = expression;

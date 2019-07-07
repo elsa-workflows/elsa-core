@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using Elsa.Models;
-using Newtonsoft.Json.Linq;
 using NodaTime;
 
 namespace Elsa.Serialization.Models

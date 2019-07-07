@@ -1,6 +1,6 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Extensions;
@@ -10,12 +10,12 @@ namespace Elsa.Core.Services
 {
     public class WorkflowRegistry : IWorkflowRegistry
     {
-        private readonly IWorkflowBuilder workflowBuilder;
+        private readonly Func<IWorkflowBuilder> workflowBuilderFactory;
         private readonly IDictionary<string, WorkflowDefinition> workflowDefinitions;
 
-        public WorkflowRegistry(IWorkflowBuilder workflowBuilder)
+        public WorkflowRegistry(Func<IWorkflowBuilder> workflowBuilderFactory)
         {
-            this.workflowBuilder = workflowBuilder;
+            this.workflowBuilderFactory = workflowBuilderFactory;
             workflowDefinitions = new Dictionary<string, WorkflowDefinition>();
         }
         
@@ -26,7 +26,7 @@ namespace Elsa.Core.Services
 
         public void RegisterWorkflow<T>() where T : IWorkflow, new()
         {
-            var definition = workflowBuilder.Build<T>();
+            var definition = workflowBuilderFactory().Build<T>();
             RegisterWorkflow(definition);
         }
 

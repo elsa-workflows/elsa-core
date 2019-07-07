@@ -3,7 +3,6 @@ using System.Dynamic;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Services;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace Elsa.Activities.Http.Formatters
 {
@@ -12,7 +11,7 @@ namespace Elsa.Activities.Http.Formatters
         public int Priority => 0;
         public IEnumerable<string> SupportedContentTypes => new[] { "application/json", "text/json" };
 
-        public Task<object> FormatAsync(string content, string contentType)
+        public Task<object> ParseAsync(string content, string contentType)
         {
             return Task.FromResult<object>(JsonConvert.DeserializeObject<ExpandoObject>(content));
         }

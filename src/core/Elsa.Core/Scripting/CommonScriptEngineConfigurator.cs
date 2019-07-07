@@ -1,11 +1,9 @@
 using System;
-using System.Collections.Generic;
-using Elsa.Expressions;
 using Elsa.Scripting;
 using Elsa.Services.Models;
 using Jint;
 
-namespace Elsa.Core.Expressions
+namespace Elsa.Core.Scripting
 {
     public class CommonScriptEngineConfigurator : IScriptEngineConfigurator
     {

@@ -1,5 +1,4 @@
 using Elsa.Activities.Http.Middleware;
-using Elsa.Activities.Http.RequestHandlers;
 using Elsa.Activities.Http.RequestHandlers.Handlers;
 using Elsa.Activities.Http.Services;
 using Microsoft.AspNetCore.Builder;
