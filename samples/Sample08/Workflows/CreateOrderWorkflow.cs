@@ -4,6 +4,7 @@ using System.Net.Http;
 using Elsa.Activities.Email.Activities;
 using Elsa.Activities.Http.Activities;
 using Elsa.Activities.MassTransit.Activities;
+using Elsa.Core.Activities.ControlFlow;
 using Elsa.Core.Activities.Primitives;
 using Elsa.Core.Expressions;
 using Elsa.Services;
@@ -17,7 +18,7 @@ namespace Sample08.Workflows
         public void Build(IWorkflowBuilder builder)
         {
             builder
-                .StartWith<HttpRequestTrigger>(
+                .StartWith<HttpRequestEvent>(
                     activity =>
                     {
                         activity.Method = HttpMethod.Post.Method;
@@ -39,15 +40,15 @@ namespace Sample08.Workflows
                     }
                 )
                 .Then<Fork>(
-                    activity => activity.Forks = new[] { "Write-Response", "Await-Shipment" },
+                    activity => activity.Branches = new[] { "Write-Response", "Await-Shipment" },
                     fork =>
                     {
                         fork
                             .When("Write-Response")
-                            .Then<HttpResponseAction>(
+                            .Then<HttpResponseTask>(
                                 activity =>
                                 {
-                                    activity.Body = new PlainTextExpression("<h1>Order Received</h1><p>Your order has been received. Waiting for shipment.</p>");
+                                    activity.Content = new PlainTextExpression("<h1>Order Received</h1><p>Your order has been received. Waiting for shipment.</p>");
                                     activity.ContentType = new PlainTextExpression("text/html");
                                     activity.StatusCode = HttpStatusCode.Accepted;
                                 }

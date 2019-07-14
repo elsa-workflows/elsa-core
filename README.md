@@ -65,29 +65,29 @@ The following demonstrates a simple workflow expressed in YAML and JSON, respect
 ```yaml
 activities:
 - name: WriteLine
-  id: hi-activity
+  id: activity-1
   textExpression:  
     syntax: PlainText
     expression: Hi! What's your name?
 - name: ReadLine
-  id: read-name-activity
+  id: activity-2
   argumentName: name
 - name: WriteLine
-  id: greeting-activity
+  id: activity-3
   textExpression:
     syntax: JavaScript
     expression: '`Nice to meet you, ${name}!`'
 connections:
 - source:
-    activityId: hi-activity
+    activityId: activity-1
     name: Done
   target:
-    activityId: read-name-activity
+    activityId: activity-2
 - source:
-    activityId: read-name-activity
+    activityId: activity-2
     name: Done
   target:
-    activityId: greeting-activity
+    activityId: activity-3
 ```
 
 **JSON**
@@ -96,20 +96,20 @@ connections:
   "activities": [
     {
       "name": "WriteLine",
-      "id": "hi-activity",
+      "id": "activity-1",
       "textExpression": {
         "syntax": "PlainText",
         "expression": "Hi! What's your name?"
       }
     },
     {
-      "id": "read-name-activity",
+      "id": "activity-2",
       "name": "ReadLine",
       "argumentName": "name"
     },
     {
       "name": "WriteLine",
-      "id": "greeting-activity",
+      "id": "activity-3",
       "textExpression": {
         "syntax": "JavaScript",
         "expression": "`Nice to meet you, ${name}!`"
@@ -119,27 +119,27 @@ connections:
   "connections": [
     {
       "source": {
-        "activityId": "hi-activity",
+        "activityId": "activity-1",
         "name": "Done"
       },
       "target": {
-        "activityId": "read-name-activity"
+        "activityId": "activity-2"
       }
     },
     {
       "source": {
-        "activityId": "read-name-activity",
+        "activityId": "activity-2",
         "name": "Done"
       },
       "target": {
-        "activityId": "greeting-activity"
+        "activityId": "activity-3"
       }
     }
   ]
 }
 ```
 
-The following demonstrates how to parse a workflow in YAML format:
+The following demonstrates loading a workflow from a YAML string:
 
 ```c#
 // Setup a service collection and use the FileSystemProvider for both workflow definitions and workflow instances.
@@ -159,18 +159,13 @@ var workflowDefinition = await serializer.DeserializeAsync(data, format, Cancell
 
 // Invoke the workflow.
 var invoker = services.GetService<IWorkflowInvoker>();
-await invoker.InvokeAsync(workflowDefinition, workflowDefinition.Activities.First());
+await invoker.InvokeAsync(workflowDefinition);
 ```
 
-## Workflow Host
-In addition to programmatically invoke specific workflows using `IWorkflowInvoker`, you can instead "trigger" workflows using `IWorkflowHost`.
-For example, if you have a bunch of workflows defined that start with e.g. a `HttpRequestTrigger` activity, you can execute all of these workflows using the following statement:
-
-`await workflowHost.TriggerWorkflowsAsync("HttpRequestTrigger", Variables.Empty, cancellationToken)` 
-
-What this will do is invoke every workflow that either starts with a _HttpRequestTrigger_ activity or is blocked on said activity.
-
 ## Long Running Workflows
+
+Elsa has native support for long-running workflows. As soon as a workflow is halted because of some blocking activity, the workflow is persisted.
+When the appropriate event occurs, the workflow is loaded from the store and resumed. 
 
 ## Why Elsa Workflows?
 

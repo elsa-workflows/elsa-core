@@ -20,8 +20,8 @@ namespace Elsa.Activities.Http.Extensions
             services.AddHttpClient(nameof(HttpRequestAction));
             
             services
-                .AddActivity<HttpRequestTrigger>()
-                .AddActivity<HttpResponseAction>()
+                .AddActivity<HttpRequestEvent>()
+                .AddActivity<HttpResponseTask>()
                 .AddActivity<HttpRequestAction>()
                 .AddActivity<SignalEvent>();
 

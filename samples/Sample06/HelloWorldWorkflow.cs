@@ -12,11 +12,11 @@ namespace Sample06
         public void Build(IWorkflowBuilder builder)
         {
             builder
-                .StartWith<HttpRequestTrigger>(activity => activity.Path = new Uri("/hello-world", UriKind.RelativeOrAbsolute))
-                .Then<HttpResponseAction>(
+                .StartWith<HttpRequestEvent>(activity => activity.Path = new Uri("/hello-world", UriKind.RelativeOrAbsolute))
+                .Then<HttpResponseTask>(
                     activity =>
                     {
-                        activity.Body = new PlainTextExpression("<h1>Hello World!</h1><p>Elsa says hi :)</p>");
+                        activity.Content = new PlainTextExpression("<h1>Hello World!</h1><p>Elsa says hi :)</p>");
                         activity.ContentType = new PlainTextExpression("text/html");
                         activity.StatusCode = HttpStatusCode.OK;
                         activity.ResponseHeaders = new PlainTextExpression("X-Powered-By=Elsa Workflows");

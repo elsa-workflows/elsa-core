@@ -4,6 +4,7 @@ using System.Net.Http;
 using Elsa;
 using Elsa.Activities.Email.Activities;
 using Elsa.Activities.Http.Activities;
+using Elsa.Core.Activities.ControlFlow;
 using Elsa.Core.Activities.Primitives;
 using Elsa.Core.Expressions;
 using Elsa.Services;
@@ -16,7 +17,7 @@ namespace Sample07
         public void Build(IWorkflowBuilder builder)
         {
             builder
-                .StartWith<HttpRequestTrigger>(
+                .StartWith<HttpRequestEvent>(
                     activity =>
                     {
                         activity.Method = HttpMethod.Post.Method;
@@ -43,17 +44,17 @@ namespace Sample07
                         );
                     }
                 )
-                .Then<HttpResponseAction>(
+                .Then<HttpResponseTask>(
                     activity =>
                     {
-                        activity.Body = new PlainTextExpression("<h1>Request for Approval Sent</h1><p>Your document has been received and will be reviewed shortly.</p>");
+                        activity.Content = new PlainTextExpression("<h1>Request for Approval Sent</h1><p>Your document has been received and will be reviewed shortly.</p>");
                         activity.ContentType = new PlainTextExpression("text/html");
                         activity.StatusCode = HttpStatusCode.OK;
                         activity.ResponseHeaders = new PlainTextExpression("X-Powered-By=Elsa Workflows");
                     }
                 )
                 .Then<Fork>(
-                    activity => { activity.Forks = new[] { "Approve", "Reject" }; },
+                    activity => { activity.Branches = new[] { "Approve", "Reject" }; },
                     fork =>
                     {
                         fork
