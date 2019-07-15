@@ -2,7 +2,7 @@
 
 ## Elsa Workflows
 
-![MyGet (with prereleases)](https://img.shields.io/myget/elsa/vpre/Elsa.Core.svg)
+[![MyGet (with prereleases)](https://img.shields.io/myget/elsa/vpre/Elsa.Core.svg?label=myget)](https://www.myget.org/gallery/elsa)
 
 Elsa Core is a workflows library that enables workflow execution in any .NET Core application.
 Workflows can be defined not only using code but also as JSON, YAML or XML.
