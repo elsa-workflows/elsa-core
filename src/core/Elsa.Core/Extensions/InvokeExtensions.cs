@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
-namespace Elsa.Core.Extensions
+namespace Elsa.Extensions
 {
     public static class InvokeExtensions
     {

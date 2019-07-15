@@ -2,9 +2,8 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
-using Elsa.Persistence;
 
-namespace Elsa.Core.Persistence.Memory
+namespace Elsa.Persistence.Memory
 {
     public class MemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
     {

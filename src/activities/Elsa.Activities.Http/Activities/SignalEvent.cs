@@ -1,5 +1,5 @@
-using Elsa.Core.Services;
 using Elsa.Results;
+using Elsa.Services;
 using Elsa.Services.Models;
 
 namespace Elsa.Activities.Http.Activities

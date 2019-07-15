@@ -2,7 +2,7 @@ using Newtonsoft.Json;
 using NodaTime;
 using NodaTime.Serialization.JsonNet;
 
-namespace Elsa.Core.Serialization
+namespace Elsa.Serialization
 {
     public class WorkflowSerializerProvider : IWorkflowSerializerProvider
     {

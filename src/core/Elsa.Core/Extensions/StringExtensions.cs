@@ -2,7 +2,7 @@ using System;
 using System.ComponentModel;
 using System.Globalization;
 
-namespace Elsa.Core.Extensions
+namespace Elsa.Extensions
 {
     public static class StringExtensions
     {

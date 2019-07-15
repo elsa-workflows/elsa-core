@@ -1,12 +1,11 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
-using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Core.Results
+namespace Elsa.Results
 {
     /// <summary>
     /// Halts workflow execution.

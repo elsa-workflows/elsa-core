@@ -1,11 +1,10 @@
 ﻿using System.Dynamic;
-using Elsa.Serialization.Formatters;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
 using YamlDotNet.Serialization;
 
-namespace Elsa.Core.Serialization.Formatters
+namespace Elsa.Serialization.Formatters
 {
     public class YamlTokenFormatter : ITokenFormatter
     {

@@ -1,9 +1,8 @@
 using System;
-using Elsa.Scripting;
 using Elsa.Services.Models;
 using Jint;
 
-namespace Elsa.Core.Scripting
+namespace Elsa.Scripting
 {
     public class CommonScriptEngineConfigurator : IScriptEngineConfigurator
     {

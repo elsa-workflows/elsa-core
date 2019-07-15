@@ -2,7 +2,7 @@ using System;
 using System.Net.Mail;
 using Elsa.Activities.Email.Activities;
 using Elsa.Activities.Email.Options;
-using Elsa.Core.Extensions;
+using Elsa.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 

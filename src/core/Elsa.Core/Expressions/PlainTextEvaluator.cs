@@ -1,11 +1,11 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Core.Extensions;
+using Elsa.Extensions;
 using Elsa.Services;
 using Elsa.Services.Models;
 
-namespace Elsa.Core.Expressions
+namespace Elsa.Expressions
 {
     public class PlainTextEvaluator : IExpressionEvaluator
     {

@@ -4,10 +4,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
-using Elsa.Persistence;
 using Elsa.Serialization.Models;
 
-namespace Elsa.Core.Persistence.Memory
+namespace Elsa.Persistence.Memory
 {
     public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
     {

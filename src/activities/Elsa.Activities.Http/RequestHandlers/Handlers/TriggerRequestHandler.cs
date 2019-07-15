@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Elsa.Activities.Http.Activities;
 using Elsa.Activities.Http.RequestHandlers.Results;
 using Elsa.Activities.Http.Services;
-using Elsa.Core.Extensions;
+using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Serialization.Models;

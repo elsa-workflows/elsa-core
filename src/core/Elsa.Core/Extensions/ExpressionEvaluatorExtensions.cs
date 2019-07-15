@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Elsa.Services;
 using Elsa.Services.Models;
 
-namespace Elsa.Core.Extensions
+namespace Elsa.Extensions
 {
     public static class ExpressionEvaluatorExtensions
     {

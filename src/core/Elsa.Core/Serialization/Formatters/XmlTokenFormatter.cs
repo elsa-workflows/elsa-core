@@ -1,9 +1,8 @@
 using System.Xml.Linq;
-using Elsa.Serialization.Formatters;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace Elsa.Core.Serialization.Formatters
+namespace Elsa.Serialization.Formatters
 {
     public class XmlTokenFormatter : ITokenFormatter
     {

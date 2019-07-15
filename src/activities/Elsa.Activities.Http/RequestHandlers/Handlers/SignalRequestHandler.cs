@@ -6,7 +6,7 @@ using CSharpFunctionalExtensions;
 using Elsa.Activities.Http.Activities;
 using Elsa.Activities.Http.Models;
 using Elsa.Activities.Http.Services;
-using Elsa.Core.Extensions;
+using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Serialization.Models;

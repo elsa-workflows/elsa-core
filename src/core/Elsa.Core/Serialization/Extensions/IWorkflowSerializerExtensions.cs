@@ -1,7 +1,6 @@
-using Elsa.Serialization;
 using Elsa.Services.Models;
 
-namespace Elsa.Core.Serialization.Extensions
+namespace Elsa.Serialization.Extensions
 {
     public static class WorkflowSerializerExtensions
     {

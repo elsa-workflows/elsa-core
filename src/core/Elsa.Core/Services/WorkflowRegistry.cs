@@ -2,11 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Elsa.Models;
-using Elsa.Services;
 using Elsa.Services.Extensions;
 using Elsa.Services.Models;
 
-namespace Elsa.Core.Services
+namespace Elsa.Services
 {
     public class WorkflowRegistry : IWorkflowRegistry
     {

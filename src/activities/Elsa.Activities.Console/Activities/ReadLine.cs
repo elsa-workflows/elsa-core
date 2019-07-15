@@ -1,8 +1,8 @@
 ﻿using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Core.Services;
 using Elsa.Results;
+using Elsa.Services;
 using Elsa.Services.Models;
 
 namespace Elsa.Activities.Console.Activities

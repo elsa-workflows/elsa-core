@@ -9,7 +9,7 @@ using Jint;
 using Jint.Native;
 using Newtonsoft.Json;
 
-namespace Elsa.Core.Expressions
+namespace Elsa.Expressions
 {
     public class JavaScriptEvaluator : IExpressionEvaluator
     {

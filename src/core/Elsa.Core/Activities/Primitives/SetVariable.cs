@@ -1,13 +1,12 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Core.Expressions;
-using Elsa.Core.Extensions;
-using Elsa.Core.Services;
+using Elsa.Expressions;
+using Elsa.Extensions;
 using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 
-namespace Elsa.Core.Activities.Primitives
+namespace Elsa.Activities.Primitives
 {
     public class SetVariable : Activity
     {

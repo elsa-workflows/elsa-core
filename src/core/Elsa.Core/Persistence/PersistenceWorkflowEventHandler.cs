@@ -1,10 +1,9 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Persistence;
 using Elsa.Services;
 using Elsa.Services.Models;
 
-namespace Elsa.Core.Persistence
+namespace Elsa.Persistence
 {
     public class PersistenceWorkflowEventHandler : WorkflowEventHandlerBase
     {

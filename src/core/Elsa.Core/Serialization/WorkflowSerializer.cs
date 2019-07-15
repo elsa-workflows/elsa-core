@@ -1,13 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Elsa.Serialization;
 using Elsa.Serialization.Formatters;
 using Elsa.Serialization.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace Elsa.Core.Serialization
+namespace Elsa.Serialization
 {
     public class WorkflowSerializer : IWorkflowSerializer
     {

@@ -1,8 +1,7 @@
 using System;
 using Elsa.Models;
-using Elsa.Services;
 
-namespace Elsa.Core.Services.WorkflowBuilders
+namespace Elsa.Services.WorkflowBuilders
 {
     public class ConnectionBuilder : IConnectionBuilder
     {

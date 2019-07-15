@@ -1,9 +1,8 @@
-﻿using Elsa.Core.Services;
-using Elsa.Results;
+﻿using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 
-namespace Elsa.Core.Activities.ControlFlow
+namespace Elsa.Activities.ControlFlow
 {
     public class ForEach : Activity
     {

@@ -2,13 +2,12 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Core.Services;
 using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Extensions;
 using Elsa.Services.Models;
 
-namespace Elsa.Core.Activities.ControlFlow
+namespace Elsa.Activities.ControlFlow
 {
     public class Join : Activity, IWorkflowEventHandler
     {

@@ -1,10 +1,9 @@
 using System;
 using System.Linq;
 using Elsa.Models;
-using Elsa.Services;
 using Elsa.Services.Models;
 
-namespace Elsa.Core.Services.WorkflowBuilders
+namespace Elsa.Services.WorkflowBuilders
 {
     public class OutcomeBuilder : IOutcomeBuilder
     {

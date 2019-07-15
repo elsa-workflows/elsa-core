@@ -1,9 +1,9 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Core.Services;
 using Elsa.Extensions;
 using Elsa.Results;
+using Elsa.Services;
 using Elsa.Services.Models;
 using Newtonsoft.Json.Linq;
 

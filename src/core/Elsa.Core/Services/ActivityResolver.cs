@@ -1,11 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Core.Services
+namespace Elsa.Services
 {
     public class ActivityResolver : IActivityResolver
     {

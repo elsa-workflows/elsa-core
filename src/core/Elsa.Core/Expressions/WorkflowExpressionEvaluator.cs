@@ -3,11 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
 
-namespace Elsa.Core.Expressions
+namespace Elsa.Expressions
 {
     public class WorkflowExpressionEvaluator : IWorkflowExpressionEvaluator
     {

@@ -3,20 +3,18 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Core.Extensions;
 using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Results;
 using Elsa.Serialization.Models;
-using Elsa.Services;
 using Elsa.Services.Extensions;
 using Elsa.Services.Models;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using NodaTime;
 
-namespace Elsa.Core.Services
+namespace Elsa.Services
 {
     public class WorkflowInvoker : IWorkflowInvoker
     {

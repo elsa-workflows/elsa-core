@@ -1,6 +1,4 @@
-﻿using Elsa.Expressions;
-
-namespace Elsa.Core.Expressions
+﻿namespace Elsa.Expressions
 {
     public class WorkflowExpression : IWorkflowExpression
     {

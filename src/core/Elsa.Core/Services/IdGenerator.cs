@@ -1,7 +1,6 @@
 using System;
-using Elsa.Services;
 
-namespace Elsa.Core.Services
+namespace Elsa.Services
 {
     public class IdGenerator : IIdGenerator
     {

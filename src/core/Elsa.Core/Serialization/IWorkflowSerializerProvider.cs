@@ -1,6 +1,6 @@
 using Newtonsoft.Json;
 
-namespace Elsa.Core.Serialization
+namespace Elsa.Serialization
 {
     public interface IWorkflowSerializerProvider
     {

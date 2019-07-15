@@ -1,22 +1,18 @@
 using System;
-using Elsa.Core.Activities.ControlFlow;
-using Elsa.Core.Activities.Primitives;
-using Elsa.Core.Expressions;
-using Elsa.Core.Scripting;
-using Elsa.Core.Serialization;
-using Elsa.Core.Serialization.Formatters;
-using Elsa.Core.Services;
-using Elsa.Core.Services.WorkflowBuilders;
+using Elsa.Activities.ControlFlow;
+using Elsa.Activities.Primitives;
+using Elsa.Expressions;
 using Elsa.Scripting;
 using Elsa.Serialization;
 using Elsa.Serialization.Formatters;
 using Elsa.Services;
 using Elsa.Services.Models;
+using Elsa.Services.WorkflowBuilders;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using NodaTime;
 
-namespace Elsa.Core.Extensions
+namespace Elsa.Extensions
 {
     public static class ServiceCollectionExtensions
     {

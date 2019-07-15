@@ -1,12 +1,10 @@
 using System;
 using System.Collections.Generic;
-using Elsa.Core.Results;
 using Elsa.Results;
-using Elsa.Services;
 using Elsa.Services.Models;
 using NodaTime;
 
-namespace Elsa.Core.Services
+namespace Elsa.Services
 {
     public abstract class Activity : ActivityBase
     {

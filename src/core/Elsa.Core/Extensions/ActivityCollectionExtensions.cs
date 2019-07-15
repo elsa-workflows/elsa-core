@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Elsa.Services.Models;
 
-namespace Elsa.Core.Extensions
+namespace Elsa.Extensions
 {
     public static class ActivityCollectionExtensions
     {

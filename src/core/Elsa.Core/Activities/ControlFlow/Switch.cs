@@ -1,14 +1,13 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Core.Expressions;
-using Elsa.Core.Extensions;
-using Elsa.Core.Services;
+using Elsa.Expressions;
+using Elsa.Extensions;
 using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 
-namespace Elsa.Core.Activities.ControlFlow
+namespace Elsa.Activities.ControlFlow
 {
     public class Switch : Activity
     {

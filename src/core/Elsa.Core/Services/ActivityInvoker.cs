@@ -1,15 +1,13 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Core.Results;
 using Elsa.Models;
 using Elsa.Results;
-using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.Logging;
 using NodaTime;
 
-namespace Elsa.Core.Services
+namespace Elsa.Services
 {
     public class ActivityInvoker : IActivityInvoker
     {

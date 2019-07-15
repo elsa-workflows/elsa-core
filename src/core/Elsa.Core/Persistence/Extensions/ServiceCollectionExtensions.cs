@@ -1,9 +1,8 @@
-using Elsa.Core.Persistence.Memory;
-using Elsa.Persistence;
+using Elsa.Persistence.Memory;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Core.Persistence.Extensions
+namespace Elsa.Persistence.Extensions
 {
     public static class ServiceCollectionExtensions
     {
