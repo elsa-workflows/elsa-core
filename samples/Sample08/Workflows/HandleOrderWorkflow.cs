@@ -1,8 +1,8 @@
 using System;
 using Elsa.Activities.MassTransit.Activities;
 using Elsa.Activities.Timers.Activities;
-using Elsa.Core.Activities.Primitives;
-using Elsa.Core.Expressions;
+using Elsa.Activities.Primitives;
+using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Sample08.Messages;

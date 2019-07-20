@@ -1,10 +1,9 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Core.Expressions;
-using Elsa.Core.Extensions;
-using Elsa.Core.Services;
-using Elsa.Results;
+using Elsa.Expressions;
+using Elsa.Extensions;
 using Elsa.Services;
+using Elsa.Results;
 using Elsa.Services.Models;
 
 namespace Sample04.Activities

@@ -1,7 +1,7 @@
 using System;
 using System.Net;
 using Elsa.Activities.Http.Activities;
-using Elsa.Core.Expressions;
+using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
 

@@ -1,9 +1,10 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Elsa.Activities.Console.Activities;
 using Elsa.Activities.Console.Extensions;
-using Elsa.Core.Expressions;
-using Elsa.Core.Extensions;
+using Elsa.Expressions;
+using Elsa.Extensions;
+using Elsa.Persistence.Extensions;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -19,6 +20,7 @@ namespace Sample02
             // Setup a service collection.
             var services = new ServiceCollection()
                 .AddWorkflows()
+                .AddMemoryWorkflowInstanceStore()
                 .AddConsoleActivities()
                 .BuildServiceProvider();
 
