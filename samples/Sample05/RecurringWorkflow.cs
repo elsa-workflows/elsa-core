@@ -1,6 +1,6 @@
 using Elsa.Activities.Console.Activities;
 using Elsa.Activities.Timers.Activities;
-using Elsa.Core.Expressions;
+using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
 

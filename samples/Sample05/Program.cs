@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Elsa.Activities.Console.Extensions;
 using Elsa.Activities.Timers.Extensions;
-using Elsa.Core.Extensions;
-using Elsa.Core.Persistence.Extensions;
+using Elsa.Extensions;
+using Elsa.Persistence.Extensions;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

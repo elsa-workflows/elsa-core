@@ -1,6 +1,6 @@
-﻿using Elsa.Activities.Http.Extensions;
-using Elsa.Core.Extensions;
-using Elsa.Core.Persistence.Extensions;
+using Elsa.Activities.Http.Extensions;
+using Elsa.Extensions;
+using Elsa.Persistence.Extensions;
 using Elsa.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
