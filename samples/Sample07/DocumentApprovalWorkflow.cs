@@ -29,7 +29,7 @@ namespace Sample07
                     activity =>
                     {
                         activity.VariableName = "document";
-                        activity.ValueExpression = new JavaScriptExpression<object>("lastResult().ParsedContent");
+                        activity.Expression = new JavaScriptExpression<object>("lastResult().ParsedContent");
                     }
                 )
                 .Then<SendEmail>(
@@ -69,7 +69,7 @@ namespace Sample07
                     }
                 )
                 .Add<Join>(activity => activity.Mode = Join.JoinMode.WaitAny, "join-signals")
-                .Then<IfElse>(activity => activity.ConditionExpression = new JavaScriptExpression<bool>("input('signal') === 'approve'"),
+                .Then<IfElse>(activity => activity.Expression = new JavaScriptExpression<bool>("input('signal') === 'approve'"),
                     ifElse =>
                     {
                         ifElse

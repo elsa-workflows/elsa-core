@@ -23,7 +23,7 @@ namespace Elsa.Activities.Primitives
             set => SetState(value);
         }
 
-        public WorkflowExpression<object> ValueExpression
+        public WorkflowExpression<object> Expression
         {
             get => GetState<WorkflowExpression<object>>();
             set => SetState(value);
@@ -31,7 +31,7 @@ namespace Elsa.Activities.Primitives
 
         protected override async Task<ActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
         {
-            var value = await expressionEvaluator.EvaluateAsync(ValueExpression, workflowContext, cancellationToken);
+            var value = await expressionEvaluator.EvaluateAsync(Expression, workflowContext, cancellationToken);
             workflowContext.CurrentScope.SetVariable(VariableName, value);
             return Done();
         }

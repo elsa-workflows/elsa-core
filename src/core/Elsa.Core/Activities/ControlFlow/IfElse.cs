@@ -17,7 +17,7 @@ namespace Elsa.Activities.ControlFlow
             this.expressionEvaluator = expressionEvaluator;
         }
 
-        public WorkflowExpression<bool> ConditionExpression
+        public WorkflowExpression<bool> Expression
         {
             get => GetState(() => new JavaScriptExpression<bool>("true"));
             set => SetState(value);
@@ -25,7 +25,7 @@ namespace Elsa.Activities.ControlFlow
 
         protected override async Task<ActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
         {
-            var result = await expressionEvaluator.EvaluateAsync(ConditionExpression, workflowContext, cancellationToken);
+            var result = await expressionEvaluator.EvaluateAsync(Expression, workflowContext, cancellationToken);
             return Outcome(result ? OutcomeNames.True: OutcomeNames.False);
         }
     }
