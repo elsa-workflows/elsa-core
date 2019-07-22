@@ -8,11 +8,11 @@ namespace Elsa.Services.Extensions
     {
         public static IEnumerable<ActivityDefinition> GetStartActivities(this WorkflowDefinition workflow)
         {
-            var targetActivityIds = workflow.Connections.Select(x => x.Target.ActivityId).Distinct().ToLookup(x => x);
+            var destinationActivityIds = workflow.Connections.Select(x => x.DestinationActivityId).Distinct().ToLookup(x => x);
             
             var query =
                 from activity in workflow.Activities
-                where !targetActivityIds.Contains(activity.Id)
+                where !destinationActivityIds.Contains(activity.Id)
                 select activity;
 
             return query;
@@ -22,12 +22,12 @@ namespace Elsa.Services.Extensions
 
         public static IEnumerable<ConnectionDefinition> GetInboundConnections(this WorkflowDefinition workflowDefinition, string activityId)
         {
-            return workflowDefinition.Connections.Where(x => x.Target.ActivityId == activityId).ToList();
+            return workflowDefinition.Connections.Where(x => x.DestinationActivityId == activityId).ToList();
         }
 
         public static IEnumerable<ConnectionDefinition> GetOutboundConnections(this WorkflowDefinition workflowDefinition, string activityId)
         {
-            return workflowDefinition.Connections.Where(x => x.Source.ActivityId == activityId).ToList();
+            return workflowDefinition.Connections.Where(x => x.SourceActivityId == activityId).ToList();
         }
 
         /// <summary>
@@ -43,12 +43,12 @@ namespace Elsa.Services.Extensions
             foreach (var connection in workflowDefinition.GetInboundConnections(activityId))
             {
                 // Circuit breaker: Detect workflows that implement repeating flows to prevent an infinite loop here.
-                if (connection.Source.ActivityId == startingPointActivityId)
+                if (connection.SourceActivityId == startingPointActivityId)
                     yield break;
 
-                yield return connection.Source.ActivityId;
+                yield return connection.SourceActivityId;
 
-                foreach (var parentActivityId in workflowDefinition.GetInboundActivityPathInternal(connection.Source.ActivityId, startingPointActivityId).Distinct())
+                foreach (var parentActivityId in workflowDefinition.GetInboundActivityPathInternal(connection.SourceActivityId, startingPointActivityId).Distinct())
                     yield return parentActivityId;
             }
         }

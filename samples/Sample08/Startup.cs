@@ -1,4 +1,4 @@
-using Elsa.Activities.Email.Extensions;
+﻿using Elsa.Activities.Email.Extensions;
 using Elsa.Activities.Http.Extensions;
 using Elsa.Activities.MassTransit.Extensions;
 using Elsa.Activities.Timers.Extensions;

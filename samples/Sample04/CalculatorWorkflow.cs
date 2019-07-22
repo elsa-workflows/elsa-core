@@ -16,11 +16,11 @@ namespace Sample04
             builder
                 .StartWith<WriteLine>(x => x.TextExpression = new PlainTextExpression("Welcome to Calculator Workflow!"))
                 .Then<WriteLine>(x => x.TextExpression = new PlainTextExpression("Enter number 1:"), id: "start")
-                .Then<ReadLine>(x => x.ArgumentName = "number1")
+                .Then<ReadLine>(x => x.VariableName = "number1")
                 .Then<WriteLine>(x => x.TextExpression = new PlainTextExpression("Enter number 2:"))
-                .Then<ReadLine>(x => x.ArgumentName = "number2")
+                .Then<ReadLine>(x => x.VariableName = "number2")
                 .Then<WriteLine>(x => x.TextExpression = new PlainTextExpression("Now enter the operation you wish to apply. Options are: add, subtract, multiply or divide:"))
-                .Then<ReadLine>(x => x.ArgumentName = "operation")
+                .Then<ReadLine>(x => x.VariableName = "operation")
                 .Then<Switch>(@switch =>
                     {
                         @switch.Expression = new JavaScriptExpression<string>("operation");
@@ -51,7 +51,7 @@ namespace Sample04
                 )
                 .Add<WriteLine>(x => x.TextExpression = new JavaScriptExpression<string>("`Result: ${result}`"), "showResult")
                 .Then<WriteLine>(x => x.TextExpression = new PlainTextExpression("Try again? (y/n)"))
-                .Then<ReadLine>(x => x.ArgumentName = "retry")
+                .Then<ReadLine>(x => x.VariableName = "retry")
                 .Then<IfElse>(
                     x => x.ConditionExpression = new JavaScriptExpression<bool>("retry.toLowerCase() === 'y'"),
                     ifElse =>

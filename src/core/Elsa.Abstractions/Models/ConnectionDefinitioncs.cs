@@ -2,21 +2,19 @@ namespace Elsa.Models
 {
     public class ConnectionDefinition
     {
-        public ConnectionDefinition(string sourceActivityId, string targetActivityId, string outcome = null)
-            : this(
-                new SourceEndpointDefinition(sourceActivityId, outcome),
-                new TargetEndpointDefinition(targetActivityId)
-            )
+        public ConnectionDefinition()
         {
         }
 
-        public ConnectionDefinition(SourceEndpointDefinition source, TargetEndpointDefinition target)
+        public ConnectionDefinition(string sourceActivityId, string destinationActivityId, string outcome)
         {
-            Source = source;
-            Target = target;
+            SourceActivityId = sourceActivityId;
+            DestinationActivityId = destinationActivityId;
+            Outcome = outcome;
         }
-
-        public SourceEndpointDefinition Source { get; }
-        public TargetEndpointDefinition Target { get; }
+        
+        public string SourceActivityId { get; set; }
+        public string DestinationActivityId { get; set; }
+        public string Outcome { get; set; }
     }
 }

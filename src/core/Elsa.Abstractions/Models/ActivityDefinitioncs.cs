@@ -9,16 +9,20 @@ namespace Elsa.Models
         {
             return new ActivityDefinition(activity.Id, activity.TypeName, activity.State);
         }
+
+        public ActivityDefinition()
+        {
+        }
         
-        public ActivityDefinition(string id, string typeName, JObject state)
+        public ActivityDefinition(string id, string type, JObject state)
         {
             Id = id;
-            TypeName = typeName;
+            Type = type;
             State = new JObject(state);
         }
         
         public string Id { get; set; }
-        public string TypeName { get; set; }
+        public string Type { get; set; }
         public JObject State { get; set; }
     }
 

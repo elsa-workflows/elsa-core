@@ -1,5 +1,6 @@
-using System;
+﻿using System;
 using System.Threading.Tasks;
+using Elsa;
 using Elsa.Activities.Console.Activities;
 using Elsa.Activities.Console.Extensions;
 using Elsa.Expressions;
@@ -35,7 +36,7 @@ namespace Sample03
                 },
                 Connections = new []
                 {
-                    new ConnectionDefinition("activity-1", "activity-2"), 
+                    new ConnectionDefinition("activity-1", "activity-2", OutcomeNames.Done), 
                 }
             };
             

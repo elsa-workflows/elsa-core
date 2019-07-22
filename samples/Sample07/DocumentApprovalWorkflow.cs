@@ -4,9 +4,9 @@ using System.Net.Http;
 using Elsa;
 using Elsa.Activities.Email.Activities;
 using Elsa.Activities.Http.Activities;
-using Elsa.Core.Activities.ControlFlow;
-using Elsa.Core.Activities.Primitives;
-using Elsa.Core.Expressions;
+using Elsa.Activities.ControlFlow;
+using Elsa.Activities.Primitives;
+using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
 

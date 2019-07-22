@@ -34,7 +34,7 @@ namespace Elsa.Services
             var query =
                 from workflow in workflowDefinitions.Values
                 from activity in workflow.GetStartActivities()
-                where activity.TypeName == activityType
+                where activity.Type == activityType
                 select (workflow, activity);
 
             return query.Distinct();

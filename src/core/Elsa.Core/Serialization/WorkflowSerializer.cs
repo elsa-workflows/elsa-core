@@ -19,10 +19,10 @@ namespace Elsa.Serialization
             jsonSerializer = serializerProvider.CreateJsonSerializer();
         }
         
-        public string Serialize(WorkflowInstance workflowInstance, string format)
+        public string Serialize<T>(T workflowInstance, string format)
         {
             var token = JObject.FromObject(workflowInstance, jsonSerializer);
-            return Serialize(token, format);
+            return Serialize((JToken)token, format);
         }
 
         public string Serialize(JToken token, string format)
@@ -31,16 +31,16 @@ namespace Elsa.Serialization
             return formatter.ToString(token);
         }
 
-        public WorkflowInstance Deserialize(string data, string format)
+        public T Deserialize<T>(string data, string format)
         {
             var formatter = formatters[format];
             var token = formatter.FromString(data);
-            return Deserialize(token);
+            return Deserialize<T>(token);
         }
 
-        public WorkflowInstance Deserialize(JToken token)
+        public T Deserialize<T>(JToken token)
         {
-            return token.ToObject<WorkflowInstance>(jsonSerializer);
+            return token.ToObject<T>(jsonSerializer);
         }
     }
 }

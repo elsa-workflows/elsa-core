@@ -49,7 +49,7 @@ namespace Elsa.Services
 
         private IActivity CreateActivity(ActivityDefinition definition)
         {
-            var activity = activityResolver.ResolveActivity(definition.TypeName);
+            var activity = activityResolver.ResolveActivity(definition.Type);
 
             activity.State = new JObject(definition.State);
             activity.Id = definition.Id;
@@ -59,9 +59,9 @@ namespace Elsa.Services
         
         private Connection CreateConnection(ConnectionDefinition connectionDefinition, IDictionary<string, IActivity> activityDictionary)
         {
-            var source = activityDictionary[connectionDefinition.Source.ActivityId];
-            var target = activityDictionary[connectionDefinition.Target.ActivityId];
-            return new Connection(source, target, connectionDefinition.Source.Outcome);   
+            var source = activityDictionary[connectionDefinition.SourceActivityId];
+            var target = activityDictionary[connectionDefinition.DestinationActivityId];
+            return new Connection(source, target, connectionDefinition.Outcome);   
         }
     }
 }

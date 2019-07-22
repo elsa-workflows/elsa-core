@@ -1,0 +1,255 @@
+{
+    "activities": [
+        {
+            "id": "cb5bc5c3-c8a2-4e13-b469-3780af6f1502",
+            "top": 156,
+            "left": 322,
+            "type": "ReadLine",
+            "state": {
+                "variableName": "a"
+            }
+        },
+        {
+            "id": "caa8b05f-d355-49f5-95b1-9782e7408635",
+            "top": 49,
+            "left": 29,
+            "type": "WriteLine",
+            "state": {
+                "textExpression": "Welcome to Calculator!"
+            }
+        },
+        {
+            "id": "c06feed1-c9f7-407e-820f-68dd045788c0",
+            "top": 295,
+            "left": 46,
+            "type": "WriteLine",
+            "state": {
+                "textExpression": "Enter a number:"
+            }
+        },
+        {
+            "id": "b9e1aa68-bb4c-4775-966f-2080b1b21a9e",
+            "top": 23,
+            "left": 613,
+            "type": "WriteLine",
+            "state": {
+                "textExpression": "Enter another number:"
+            }
+        },
+        {
+            "id": "b05e7717-39f2-4bf1-a13f-ee30295287c3",
+            "top": 188,
+            "left": 789,
+            "type": "ReadLine",
+            "state": {
+                "variableName": "b"
+            }
+        },
+        {
+            "id": "e5edc24d-59ca-4682-8af0-a464de2b2725",
+            "top": 338,
+            "left": 545,
+            "type": "WriteLine",
+            "state": {
+                "textExpression": "Enter an operation. Options: add, subtract, multiply, divide"
+            }
+        },
+        {
+            "id": "cf9f8965-5765-482e-a280-000c7105e378",
+            "top": 535,
+            "left": 626,
+            "type": "Switch",
+            "state": {
+                "expression": "parseFloat(operation)",
+                "cases": [
+                    "Add",
+                    "Subtract",
+                    "Multiply",
+                    "Divide"
+                ]
+            }
+        },
+        {
+            "id": "2ef2fc1e-c439-482f-a9a7-9ec0fec7d868",
+            "top": 17,
+            "left": 1258,
+            "type": "SetVariable",
+            "state": {
+                "variableName": "result",
+                "variableExpression": "a + b"
+            }
+        },
+        {
+            "id": "47396ebe-8e62-432b-bd28-4260c07d1ffe",
+            "top": 172,
+            "left": 1259,
+            "type": "SetVariable",
+            "state": {
+                "variableName": "result",
+                "variableExpression": "a - b"
+            }
+        },
+        {
+            "id": "f700f606-6995-4e80-b30e-c6bbfba91c81",
+            "top": 365,
+            "left": 1258,
+            "type": "SetVariable",
+            "state": {
+                "variableName": "result",
+                "variableExpression": "a * b"
+            }
+        },
+        {
+            "id": "80c41881-edc6-4d3f-8f1b-9cc3fc9cbfc1",
+            "top": 526,
+            "left": 1263,
+            "type": "SetVariable",
+            "state": {
+                "variableName": "result",
+                "variableExpression": "a / b"
+            }
+        },
+        {
+            "id": "3343d0cc-eea0-4f28-a370-c182ae74b007",
+            "top": 266,
+            "left": 1607,
+            "type": "WriteLine",
+            "state": {
+                "textExpression": "`Result: ${result}`"
+            }
+        },
+        {
+            "id": "be435fd5-1740-40ee-98e1-7843da139e9a",
+            "top": 465,
+            "left": 1611,
+            "type": "WriteLine",
+            "state": {
+                "textExpression": "Try again? (y/n)"
+            }
+        },
+        {
+            "id": "b3f5818e-9a24-4621-9d15-07af7de4da32",
+            "top": 821,
+            "left": 1591,
+            "type": "ReadLine",
+            "state": {
+                "variableName": "retry"
+            }
+        },
+        {
+            "id": "701a7580-2b6a-42ff-9f18-82ca1910b192",
+            "top": 735,
+            "left": 568,
+            "type": "IfElse",
+            "state": {
+                "expression": "retry === 'y'"
+            }
+        },
+        {
+            "id": "9e0f75ca-d599-4bf7-8132-ffb305004c2d",
+            "top": 846,
+            "left": 83,
+            "type": "WriteLine",
+            "state": {
+                "textExpression": "Bye!"
+            }
+        }
+    ],
+    "connections": [
+        {
+            "sourceActivityId": "caa8b05f-d355-49f5-95b1-9782e7408635",
+            "destinationActivityId": "c06feed1-c9f7-407e-820f-68dd045788c0",
+            "outcome": "Done"
+        },
+        {
+            "sourceActivityId": "c06feed1-c9f7-407e-820f-68dd045788c0",
+            "destinationActivityId": "cb5bc5c3-c8a2-4e13-b469-3780af6f1502",
+            "outcome": "Done"
+        },
+        {
+            "sourceActivityId": "cb5bc5c3-c8a2-4e13-b469-3780af6f1502",
+            "destinationActivityId": "b9e1aa68-bb4c-4775-966f-2080b1b21a9e",
+            "outcome": "Done"
+        },
+        {
+            "sourceActivityId": "b9e1aa68-bb4c-4775-966f-2080b1b21a9e",
+            "destinationActivityId": "b05e7717-39f2-4bf1-a13f-ee30295287c3",
+            "outcome": "Done"
+        },
+        {
+            "sourceActivityId": "b05e7717-39f2-4bf1-a13f-ee30295287c3",
+            "destinationActivityId": "e5edc24d-59ca-4682-8af0-a464de2b2725",
+            "outcome": "Done"
+        },
+        {
+            "sourceActivityId": "e5edc24d-59ca-4682-8af0-a464de2b2725",
+            "destinationActivityId": "cf9f8965-5765-482e-a280-000c7105e378",
+            "outcome": "Done"
+        },
+        {
+            "sourceActivityId": "cf9f8965-5765-482e-a280-000c7105e378",
+            "destinationActivityId": "2ef2fc1e-c439-482f-a9a7-9ec0fec7d868",
+            "outcome": "Add"
+        },
+        {
+            "sourceActivityId": "cf9f8965-5765-482e-a280-000c7105e378",
+            "destinationActivityId": "47396ebe-8e62-432b-bd28-4260c07d1ffe",
+            "outcome": "Subtract"
+        },
+        {
+            "sourceActivityId": "cf9f8965-5765-482e-a280-000c7105e378",
+            "destinationActivityId": "f700f606-6995-4e80-b30e-c6bbfba91c81",
+            "outcome": "Multiply"
+        },
+        {
+            "sourceActivityId": "cf9f8965-5765-482e-a280-000c7105e378",
+            "destinationActivityId": "80c41881-edc6-4d3f-8f1b-9cc3fc9cbfc1",
+            "outcome": "Divide"
+        },
+        {
+            "sourceActivityId": "2ef2fc1e-c439-482f-a9a7-9ec0fec7d868",
+            "destinationActivityId": "3343d0cc-eea0-4f28-a370-c182ae74b007",
+            "outcome": "Done"
+        },
+        {
+            "sourceActivityId": "47396ebe-8e62-432b-bd28-4260c07d1ffe",
+            "destinationActivityId": "3343d0cc-eea0-4f28-a370-c182ae74b007",
+            "outcome": "Done"
+        },
+        {
+            "sourceActivityId": "f700f606-6995-4e80-b30e-c6bbfba91c81",
+            "destinationActivityId": "3343d0cc-eea0-4f28-a370-c182ae74b007",
+            "outcome": "Done"
+        },
+        {
+            "sourceActivityId": "80c41881-edc6-4d3f-8f1b-9cc3fc9cbfc1",
+            "destinationActivityId": "3343d0cc-eea0-4f28-a370-c182ae74b007",
+            "outcome": "Done"
+        },
+        {
+            "sourceActivityId": "3343d0cc-eea0-4f28-a370-c182ae74b007",
+            "destinationActivityId": "be435fd5-1740-40ee-98e1-7843da139e9a",
+            "outcome": "Done"
+        },
+        {
+            "sourceActivityId": "be435fd5-1740-40ee-98e1-7843da139e9a",
+            "destinationActivityId": "b3f5818e-9a24-4621-9d15-07af7de4da32",
+            "outcome": "Done"
+        },
+        {
+            "sourceActivityId": "b3f5818e-9a24-4621-9d15-07af7de4da32",
+            "destinationActivityId": "701a7580-2b6a-42ff-9f18-82ca1910b192",
+            "outcome": "Done"
+        },
+        {
+            "sourceActivityId": "701a7580-2b6a-42ff-9f18-82ca1910b192",
+            "destinationActivityId": "c06feed1-c9f7-407e-820f-68dd045788c0",
+            "outcome": "True"
+        },
+        {
+            "sourceActivityId": "701a7580-2b6a-42ff-9f18-82ca1910b192",
+            "destinationActivityId": "9e0f75ca-d599-4bf7-8132-ffb305004c2d",
+            "outcome": "False"
+        }
+    ]
+}
