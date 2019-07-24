@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Elsa.Comparers;
 using Elsa.Models;
 using Elsa.Serialization.Models;
 using Newtonsoft.Json.Linq;
@@ -62,7 +63,7 @@ namespace Elsa.Services.Models
                 FinishedAt = FinishedAt,
                 Activities = activities,
                 Scopes = new Stack<WorkflowExecutionScope>(Scopes),
-                BlockingActivities = new HashSet<string>(BlockingActivities.Select(x => x.Id)),
+                BlockingActivities = new HashSet<BlockingActivity>(BlockingActivities.Select(x => new BlockingActivity(x.Id, x.Type)), new BlockingActivityEqualityComparer()),
                 ExecutionLog = ExecutionLog.ToList(),
                 Fault = Fault?.ToInstance() 
             };
@@ -81,7 +82,7 @@ namespace Elsa.Services.Models
             StartedAt = instance.StartedAt;
             HaltedAt = instance.HaltedAt;
             FinishedAt = instance.FinishedAt;
-            BlockingActivities = new HashSet<IActivity>(instance.BlockingActivities.Select(x => activityLookup[x]));
+            BlockingActivities = new HashSet<IActivity>(instance.BlockingActivities.Select(x => activityLookup[x.ActivityId]));
             Scopes = new Stack<WorkflowExecutionScope>(instance.Scopes);
             
             foreach (var activity in Activities)

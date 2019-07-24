@@ -2,6 +2,7 @@ using System;
 using Elsa.Activities.ControlFlow;
 using Elsa.Activities.Primitives;
 using Elsa.Expressions;
+using Elsa.Persistence;
 using Elsa.Scripting;
 using Elsa.Serialization;
 using Elsa.Serialization.Formatters;
@@ -40,6 +41,7 @@ namespace Elsa.Extensions
                 .AddTransient<IWorkflowBuilder, WorkflowBuilder>()
                 .AddSingleton<Func<IWorkflowBuilder>>(sp => sp.GetRequiredService<IWorkflowBuilder>)
                 .AddSingleton<IWorkflowRegistry, WorkflowRegistry>()
+                .AddSingleton<IWorkflowEventHandler, PersistenceWorkflowEventHandler>()
                 .AddPrimitiveActivities();
         }
 

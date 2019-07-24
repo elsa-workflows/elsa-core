@@ -3,7 +3,7 @@ using Elsa.Activities.Http.Extensions;
 using Elsa.Activities.MassTransit.Extensions;
 using Elsa.Activities.Timers.Extensions;
 using Elsa.Extensions;
-using Elsa.Persistence.Extensions;
+using Elsa.Persistence.Memory;
 using Elsa.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;

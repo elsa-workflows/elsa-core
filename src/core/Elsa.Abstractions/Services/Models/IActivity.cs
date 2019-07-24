@@ -16,7 +16,7 @@ namespace Elsa.Services.Models
         /// <summary>
         /// The type name of this activity.
         /// </summary>
-        string TypeName { get; }
+        string Type { get; }
         
         /// <summary>
         /// Unique identifier of this activity

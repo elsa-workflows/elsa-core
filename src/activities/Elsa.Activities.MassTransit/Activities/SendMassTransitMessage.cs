@@ -25,7 +25,7 @@ namespace Elsa.Activities.MassTransit.Activities
             get
             {
                 var typeName = GetState<string>();
-                return string.IsNullOrWhiteSpace(typeName) ? null : Type.GetType(typeName);
+                return string.IsNullOrWhiteSpace(typeName) ? null : System.Type.GetType(typeName);
             }
             set => SetState(value.AssemblyQualifiedName);
         }
