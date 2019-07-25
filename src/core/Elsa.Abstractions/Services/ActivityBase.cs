@@ -14,15 +14,9 @@ using NodaTime.Serialization.JsonNet;
 namespace Elsa.Services
 {
     public abstract class ActivityBase : IActivity
-    {
-        private readonly JsonSerializer serializer;
-
-        protected ActivityBase()
-        {
-            serializer = new JsonSerializer().ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
-        }
-        
+    {   
         public JObject State { get; set; } = new JObject();
+        public JObject Output { get; set; } = new JObject();
         public virtual string Type => GetType().Name;
         public string Id { get; set; }
 

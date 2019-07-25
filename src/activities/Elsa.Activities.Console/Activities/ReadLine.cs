@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
+using Newtonsoft.Json.Linq;
 
 namespace Elsa.Activities.Console.Activities
 {
@@ -22,13 +23,13 @@ namespace Elsa.Activities.Console.Activities
         {
             this.input = input;
         }
-        
-        public string VariableName 
+
+        public string VariableName
         {
             get => GetState<string>();
             set => SetState(value);
         }
-        
+
         protected override async Task<ActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
         {
             if (input == null)
@@ -40,14 +41,18 @@ namespace Elsa.Activities.Console.Activities
 
         protected override ActivityExecutionResult OnResume(WorkflowExecutionContext context)
         {
-            var receivedInput = (string)context.Workflow.Input[VariableName];
+            var receivedInput = (string) context.Workflow.Input[VariableName];
             return Execute(context, receivedInput);
         }
 
         private ActivityExecutionResult Execute(WorkflowExecutionContext workflowContext, string receivedInput)
         {
-            workflowContext.CurrentScope.SetVariable(VariableName, receivedInput);
+            if (!string.IsNullOrWhiteSpace(VariableName))
+                workflowContext.CurrentScope.SetVariable(VariableName, receivedInput);
+
             workflowContext.SetLastResult(receivedInput);
+            Output = JObject.FromObject(new { text = receivedInput });
+
             return Outcome(OutcomeNames.Done);
         }
     }

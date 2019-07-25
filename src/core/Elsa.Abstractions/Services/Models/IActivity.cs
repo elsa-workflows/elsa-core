@@ -14,6 +14,11 @@ namespace Elsa.Services.Models
         JObject State { get; set; }
         
         /// <summary>
+        /// Holds activity output.
+        /// </summary>
+        JObject Output { get; set; }
+        
+        /// <summary>
         /// The type name of this activity.
         /// </summary>
         string Type { get; }
