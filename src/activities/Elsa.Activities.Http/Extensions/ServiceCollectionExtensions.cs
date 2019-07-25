@@ -21,7 +21,7 @@ namespace Elsa.Activities.Http.Extensions
             
             services
                 .AddActivity<HttpRequestEvent>()
-                .AddActivity<HttpResponseTask>()
+                .AddActivity<HttpResponseAction>()
                 .AddActivity<HttpRequestAction>();
 
             services

@@ -44,7 +44,7 @@ namespace Sample07
                         );
                     }
                 )
-                .Then<HttpResponseTask>(
+                .Then<HttpResponseAction>(
                     activity =>
                     {
                         activity.Content = new PlainTextExpression("<h1>Request for Approval Sent</h1><p>Your document has been received and will be reviewed shortly.</p>");

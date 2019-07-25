@@ -6,7 +6,6 @@ using Elsa.Activities.Primitives;
 using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Persistence.Memory;
-using Elsa.Runtime;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -54,7 +53,6 @@ namespace Sample11
         {
             return new ServiceCollection()
                 .AddWorkflows()
-                .AddStartupRunner()
                 .AddConsoleActivities()
                 .AddMemoryWorkflowDefinitionStore()
                 .AddMemoryWorkflowInstanceStore()

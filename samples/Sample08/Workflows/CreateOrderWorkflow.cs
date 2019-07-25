@@ -45,7 +45,7 @@ namespace Sample08.Workflows
                     {
                         fork
                             .When("Write-Response")
-                            .Then<HttpResponseTask>(
+                            .Then<HttpResponseAction>(
                                 activity =>
                                 {
                                     activity.Content = new PlainTextExpression("<h1>Order Received</h1><p>Your order has been received. Waiting for shipment.</p>");
