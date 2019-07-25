@@ -1,5 +1,6 @@
 using System;
 using System.Data;
+using System.Linq;
 using System.Reflection;
 using Elsa.Persistence.YesSql.Options;
 using Elsa.Persistence.YesSql.Services;
@@ -25,7 +26,7 @@ namespace Elsa.Persistence.YesSql.Extensions
             var connectionString = options.ConnectionString;
             IConfiguration configuration = new Configuration();
 
-            switch (options.DatabaseProvider)
+            switch (options.Provider)
             {
                 case DatabaseProvider.SqlConnection:
                     configuration
@@ -54,18 +55,11 @@ namespace Elsa.Persistence.YesSql.Extensions
                 configuration = configuration.SetTablePrefix($"{options.TablePrefix}_");
             }
 
-            var store = ActivateStore(configuration);
+            var store = global::YesSql.StoreFactory.CreateAsync(configuration).GetAwaiter().GetResult();
             var indexes = services.GetServices<IIndexProvider>();
 
             store.RegisterIndexes(indexes);
-
             return store;
-        }
-
-        private static Store ActivateStore(IConfiguration configuration)
-        {
-            // Workaround, see: https://github.com/sebastienros/yessql/issues/188
-            return (Store) Activator.CreateInstance(typeof(Store), BindingFlags.NonPublic | BindingFlags.Instance, null, configuration);
         }
     }
 }

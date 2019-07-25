@@ -1,4 +1,4 @@
-namespace Elsa.Serialization.Models
+namespace Elsa.Models
 {
     public class BlockingActivity
     {

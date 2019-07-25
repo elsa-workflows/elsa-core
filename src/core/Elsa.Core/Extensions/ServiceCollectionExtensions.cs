@@ -19,6 +19,14 @@ namespace Elsa.Extensions
     {
         public static IServiceCollection AddWorkflows(this IServiceCollection services)
         {
+            services.AddWorkflowsCore();
+
+            return services
+                .AddSingleton<IWorkflowEventHandler, PersistenceWorkflowEventHandler>();
+        }
+        
+        public static IServiceCollection AddWorkflowsCore(this IServiceCollection services)
+        {
             services.TryAddSingleton<IClock>(SystemClock.Instance);
 
             return services
@@ -41,7 +49,6 @@ namespace Elsa.Extensions
                 .AddTransient<IWorkflowBuilder, WorkflowBuilder>()
                 .AddSingleton<Func<IWorkflowBuilder>>(sp => sp.GetRequiredService<IWorkflowBuilder>)
                 .AddSingleton<IWorkflowRegistry, WorkflowRegistry>()
-                .AddSingleton<IWorkflowEventHandler, PersistenceWorkflowEventHandler>()
                 .AddPrimitiveActivities();
         }
 

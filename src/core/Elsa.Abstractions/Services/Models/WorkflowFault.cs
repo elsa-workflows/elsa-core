@@ -5,9 +5,9 @@
         public IActivity FaultedActivity { get; set; }
         public string Message { get; set; }
 
-        public Serialization.Models.WorkflowFault ToInstance()
+        public Elsa.Models.WorkflowFault ToInstance()
         {
-            return new Serialization.Models.WorkflowFault
+            return new Elsa.Models.WorkflowFault
             {
                 FaultedActivityId = FaultedActivity?.Id,
                 Message = Message

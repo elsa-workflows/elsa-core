@@ -2,9 +2,9 @@ using System.Collections.Generic;
 using System.Linq;
 using Elsa.Models;
 
-namespace Elsa.Services.Extensions
+namespace Elsa.Extensions
 {
-    public static class WorkflowBlueprintExtensions
+    public static class WorkflowDefinitionExtensions
     {
         public static IEnumerable<ActivityDefinition> GetStartActivities(this WorkflowDefinition workflow)
         {

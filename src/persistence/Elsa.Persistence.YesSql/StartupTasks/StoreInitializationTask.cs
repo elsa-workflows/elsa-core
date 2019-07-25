@@ -1,8 +1,9 @@
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Persistence.YesSql.Indexes;
 using Elsa.Runtime;
 using YesSql;
+using YesSql.Sql;
 
 namespace Elsa.Persistence.YesSql.StartupTasks
 {
@@ -15,16 +16,45 @@ namespace Elsa.Persistence.YesSql.StartupTasks
             this.store = store;
         }
         
-        public async Task ExecuteAsync(CancellationToken cancellationToken = default)
+        public Task ExecuteAsync(CancellationToken cancellationToken = default)
         {
-            await InitializeAsync();
+            CreateTables();
+            return Task.CompletedTask;
         }
 
-        private Task InitializeAsync()
+        private void CreateTables()
         {
-            // Workaround, see: https://github.com/sebastienros/yessql/issues/188
-            var method = typeof(Store).GetMethod("InitializeAsync", BindingFlags.NonPublic | BindingFlags.Instance);
-            return (Task) method.Invoke(store, null);
+            using (var connection = store.Configuration.ConnectionFactory.CreateConnection())
+            {
+                connection.Open();
+
+                using (var transaction = connection.BeginTransaction(store.Configuration.IsolationLevel))
+                {
+                    new SchemaBuilder(store.Configuration, transaction, false)
+                        .CreateMapIndexTable(nameof(WorkflowDefinitionIndex), table => table
+                            .Column<string>("WorkflowDefinitionId")
+                        )
+                        .CreateMapIndexTable(nameof(WorkflowDefinitionStartActivitiesIndex), table => table
+                            .Column<string>("WorkflowDefinitionId")
+                            .Column<string>("StartActivityId")
+                            .Column<string>("StartActivityType")
+                        )
+                        .CreateMapIndexTable(nameof(WorkflowInstanceIndex), table => table
+                            .Column<string>("WorkflowInstanceId")
+                            .Column<string>("WorkflowDefinitionId")
+                            .Column<string>("WorkflowStatus")
+                        )
+                        .CreateMapIndexTable(nameof(WorkflowInstanceBlockingActivitiesIndex), table => table
+                            .Column<string>("WorkflowInstanceId")
+                            .Column<string>("WorkflowDefinitionId")
+                            .Column<string>("WorkflowStatus")
+                            .Column<string>("ActivityId")
+                            .Column<string>("ActivityType")
+                        );
+
+                    transaction.Commit();
+                }
+            }
         }
     }
 }

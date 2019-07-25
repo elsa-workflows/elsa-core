@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Services.Extensions;
 using Elsa.Services.Models;
@@ -23,10 +24,11 @@ namespace Elsa.Services
             workflowDefinitions[definition.Id] = definition;
         }
 
-        public void RegisterWorkflow<T>() where T : IWorkflow, new()
+        public WorkflowDefinition RegisterWorkflow<T>() where T : IWorkflow, new()
         {
             var definition = workflowBuilderFactory().Build<T>();
             RegisterWorkflow(definition);
+            return definition;
         }
 
         public IEnumerable<(WorkflowDefinition, ActivityDefinition)> ListByStartActivity(string activityType)

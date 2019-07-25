@@ -2,7 +2,6 @@
 using System.Linq;
 using Elsa.Comparers;
 using Elsa.Models;
-using Elsa.Serialization.Models;
 using Newtonsoft.Json.Linq;
 using NodaTime;
 

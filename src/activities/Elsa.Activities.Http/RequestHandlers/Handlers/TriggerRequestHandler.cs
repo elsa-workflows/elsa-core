@@ -9,7 +9,6 @@ using Elsa.Activities.Http.Services;
 using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Persistence;
-using Elsa.Serialization.Models;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json.Linq;

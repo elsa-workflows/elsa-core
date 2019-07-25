@@ -1,6 +1,5 @@
 using System.Linq;
 using Elsa.Models;
-using Elsa.Serialization.Models;
 using Elsa.Services.Extensions;
 using YesSql;
 using YesSql.Indexes;

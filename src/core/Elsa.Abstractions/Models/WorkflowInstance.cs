@@ -1,8 +1,7 @@
 ﻿using System.Collections.Generic;
-using Elsa.Models;
 using NodaTime;
 
-namespace Elsa.Serialization.Models
+namespace Elsa.Models
 {
     public class WorkflowInstance
     {

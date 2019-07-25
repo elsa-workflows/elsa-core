@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting.Server;
@@ -10,23 +9,19 @@ namespace Elsa.Runtime
     public class TaskExecutingServer : IServer
     {
         private readonly IServer server;
-        private readonly IEnumerable<IStartupTask> startupTasks;
+        private readonly IStartupRunner startupRunner;
 
-        public TaskExecutingServer(IServer server, IEnumerable<IStartupTask> startupTasks)
+        public TaskExecutingServer(IServer server, IStartupRunner startupRunner)
         {
             this.server = server;
-            this.startupTasks = startupTasks;
+            this.startupRunner = startupRunner;
         }
 
         public IFeatureCollection Features => server.Features;
         
         public async Task StartAsync<TContext>(IHttpApplication<TContext> application, CancellationToken cancellationToken)
         {
-            foreach (var startupTask in startupTasks)
-            {
-                await startupTask.ExecuteAsync(cancellationToken);
-            }
-
+            await startupRunner.StartupAsync(cancellationToken);
             await server.StartAsync(application, cancellationToken);
         }
 

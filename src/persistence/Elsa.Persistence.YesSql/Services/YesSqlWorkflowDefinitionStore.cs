@@ -1,6 +1,8 @@
 using System.Threading;
 using System.Threading.Tasks;
+using AutoMapper;
 using Elsa.Models;
+using Elsa.Persistence.YesSql.Documents;
 using Elsa.Persistence.YesSql.Indexes;
 using YesSql;
 
@@ -8,22 +10,35 @@ namespace Elsa.Persistence.YesSql.Services
 {
     public class YesSqlWorkflowDefinitionStore : IWorkflowDefinitionStore
     {
-        private readonly ISession session;
+        private readonly ISessionProvider sessionProvider;
+        private readonly IMapper mapper;
 
-        public YesSqlWorkflowDefinitionStore(ISession session)
+        public YesSqlWorkflowDefinitionStore(ISessionProvider sessionProvider, IMapper mapper)
         {
-            this.session = session;
+            this.sessionProvider = sessionProvider;
+            this.mapper = mapper;
         }
         
         public Task AddAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
         {
-            session.Save(definition);
+            var document = mapper.Map<WorkflowDefinitionDocument>(definition);
+
+            using (var session = sessionProvider.GetSession())
+            {
+                session.Save(document);
+            }
+
             return Task.CompletedTask;
         }
 
-        public Task<WorkflowDefinition> GetByIdAsync(string id, CancellationToken cancellationToken = default)
+        public async Task<WorkflowDefinition> GetByIdAsync(string id, CancellationToken cancellationToken = default)
         {
-            return session.Query<WorkflowDefinition, WorkflowDefinitionIndex>(x => x.WorkflowDefinitionId == id).FirstOrDefaultAsync();
+            using (var session = sessionProvider.GetSession())
+            {
+                var document = await session.Query<WorkflowDefinitionDocument, WorkflowDefinitionIndex>(x => x.WorkflowDefinitionId == id).FirstOrDefaultAsync();
+
+                return mapper.Map<WorkflowDefinition>(document);
+            }
         }
     }
 }

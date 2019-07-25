@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
-using Elsa.Serialization.Models;
+using Elsa.Models;
 using Elsa.Services.Models;
 
 namespace Elsa.Extensions

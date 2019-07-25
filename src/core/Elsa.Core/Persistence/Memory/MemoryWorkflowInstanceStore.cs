@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Extensions;
 using Elsa.Models;
-using Elsa.Serialization.Models;
 
 namespace Elsa.Persistence.Memory
 {
