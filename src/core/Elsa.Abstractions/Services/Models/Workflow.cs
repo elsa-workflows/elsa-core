@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Elsa.Comparers;
 using Elsa.Models;
@@ -14,15 +15,14 @@ namespace Elsa.Services.Models
             string definitionId,
             IEnumerable<IActivity> activities,
             IEnumerable<Connection> connections,
-            Variables input = null,
-            WorkflowInstance workflowInstance = null) : this()
+            Variables input = default,
+            string correlationId = default) : this()
         {
             Id = id;
             DefinitionId = definitionId;
             Activities = activities.ToList();
             Connections = connections.ToList();
             Input = new Variables(input ?? Variables.Empty);
-            Initialize(workflowInstance);
         }
 
         public Workflow()
@@ -34,6 +34,7 @@ namespace Elsa.Services.Models
 
         public string Id { get; set; }
         public string DefinitionId { get; }
+        public string CorrelationId { get; set; }
         public WorkflowStatus Status { get; set; }
         public Instant CreatedAt { get; set; }
         public Instant? StartedAt { get; set; }
@@ -55,6 +56,7 @@ namespace Elsa.Services.Models
             {
                 Id = Id,
                 DefinitionId = DefinitionId,
+                CorrelationId = CorrelationId,
                 Status = Status,
                 CreatedAt = CreatedAt,
                 StartedAt = StartedAt,
@@ -68,14 +70,15 @@ namespace Elsa.Services.Models
             };
         }
 
-        private void Initialize(WorkflowInstance instance)
+        public void Initialize(WorkflowInstance instance)
         {
             if(instance == null)
-                return;
+                throw new ArgumentNullException(nameof(instance));
 
             var activityLookup = Activities.ToDictionary(x => x.Id);
             
             Id = instance.Id;
+            CorrelationId = instance.CorrelationId;
             Status = instance.Status;
             CreatedAt = instance.CreatedAt;
             StartedAt = instance.StartedAt;

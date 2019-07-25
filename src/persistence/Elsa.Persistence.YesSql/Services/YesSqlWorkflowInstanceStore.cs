@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -41,6 +40,15 @@ namespace Elsa.Persistence.YesSql.Services
             }
         }
 
+        public async Task<WorkflowInstance> GetByCorrelationIdAsync(string correlationId, CancellationToken cancellationToken = default)
+        {
+            using (var session = sessionProvider.GetSession())
+            {
+                var document = await session.Query<WorkflowInstanceDocument, WorkflowInstanceIndex>(x => x.CorrelationId == correlationId).FirstOrDefaultAsync();
+                return mapper.Map<WorkflowInstance>(document);
+            }
+        }
+
         public async Task<IEnumerable<WorkflowInstance>> ListByDefinitionAsync(string definitionId, CancellationToken cancellationToken)
         {
             using (var session = sessionProvider.GetSession())
@@ -59,11 +67,16 @@ namespace Elsa.Persistence.YesSql.Services
             }
         }
 
-        public async Task<IEnumerable<(WorkflowInstance, ActivityInstance)>> ListByBlockingActivityAsync(string activityType, CancellationToken cancellationToken)
+        public async Task<IEnumerable<(WorkflowInstance, ActivityInstance)>> ListByBlockingActivityAsync(string activityType, string correlationId = default, CancellationToken cancellationToken = default)
         {
             using (var session = sessionProvider.GetSession())
             {
-                var documents = await session.Query<WorkflowInstanceDocument, WorkflowInstanceBlockingActivitiesIndex>(x => x.ActivityType == activityType).ListAsync();
+                var query = session.Query<WorkflowInstanceDocument, WorkflowInstanceBlockingActivitiesIndex>(x => x.ActivityType == activityType);
+
+                if (string.IsNullOrWhiteSpace(correlationId))
+                    query = query.Where(x => x.CorrelationId == correlationId);
+
+                var documents = await query.ListAsync();
                 var instances = mapper.Map<IEnumerable<WorkflowInstance>>(documents);
 
                 return instances.GetBlockingActivities();

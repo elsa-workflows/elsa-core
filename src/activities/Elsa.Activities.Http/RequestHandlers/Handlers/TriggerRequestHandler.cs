@@ -41,7 +41,7 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
             var requestPath = new Uri(httpContext.Request.Path.ToString(), UriKind.Relative);
             var method = httpContext.Request.Method;
             var workflowsToStart = Filter(registry.ListByStartActivity(nameof(HttpRequestEvent)), requestPath, method).ToList();
-            var workflowsToResume = Filter(await workflowInstanceStore.ListByBlockingActivityAsync<HttpRequestEvent>(cancellationToken), requestPath, method).ToList();
+            var workflowsToResume = Filter(await workflowInstanceStore.ListByBlockingActivityAsync<HttpRequestEvent>(cancellationToken: cancellationToken), requestPath, method).ToList();
 
             if (!workflowsToStart.Any() && !workflowsToResume.Any())
             {

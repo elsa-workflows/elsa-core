@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -24,6 +23,12 @@ namespace Elsa.Persistence.Memory
             return Task.FromResult(instance);
         }
 
+        public Task<WorkflowInstance> GetByCorrelationIdAsync(string correlationId, CancellationToken cancellationToken = default)
+        {
+            var instance = workflowInstances.Values.FirstOrDefault(x => x.CorrelationId == correlationId);
+            return Task.FromResult(instance);
+        }
+
         public Task<IEnumerable<WorkflowInstance>> ListByDefinitionAsync(string definitionId, CancellationToken cancellationToken)
         {
             var workflows = workflowInstances.Values.Where(x => x.DefinitionId == definitionId);
@@ -36,21 +41,26 @@ namespace Elsa.Persistence.Memory
             return Task.FromResult(workflows);
         }
 
-        public Task<IEnumerable<(WorkflowInstance, ActivityInstance)>> ListByBlockingActivityAsync(string activityType, CancellationToken cancellationToken)
+        public Task<IEnumerable<(WorkflowInstance, ActivityInstance)>> ListByBlockingActivityAsync(string activityType, string correlationId = default, CancellationToken cancellationToken = default)
         {
             var query = workflowInstances.Values.GetBlockingActivities().Where(x => x.Item2.TypeName == activityType);
+
+            if (!string.IsNullOrWhiteSpace(correlationId))
+                query = query.Where(x => x.Item1.CorrelationId == correlationId);
 
             return Task.FromResult(query);
         }
 
         public Task<IEnumerable<WorkflowInstance>> ListByStatusAsync(string definitionId, WorkflowStatus status, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            var query = workflowInstances.Values.Where(x => x.DefinitionId == definitionId && x.Status == status);
+            return Task.FromResult(query);
         }
 
         public Task<IEnumerable<WorkflowInstance>> ListByStatusAsync(WorkflowStatus status, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            var query = workflowInstances.Values.Where(x => x.Status == status);
+            return Task.FromResult(query);
         }
     }
 }

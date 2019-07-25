@@ -27,5 +27,15 @@ namespace Elsa.Models
         {
             return ContainsKey(name) ? (T)this[name] : default(T); 
         }
+        
+        public bool HasVariable(string name, object value)
+        {
+            return GetVariable(name) == value; 
+        }
+        
+        public bool HasVariable(string name)
+        {
+            return ContainsKey(name);
+        }
     }
 }

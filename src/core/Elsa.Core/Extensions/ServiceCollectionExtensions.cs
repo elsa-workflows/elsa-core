@@ -2,7 +2,6 @@ using System;
 using Elsa.Activities.ControlFlow;
 using Elsa.Activities.Primitives;
 using Elsa.Expressions;
-using Elsa.Persistence;
 using Elsa.Scripting;
 using Elsa.Serialization;
 using Elsa.Serialization.Formatters;
@@ -49,7 +48,8 @@ namespace Elsa.Extensions
                 .AddTransient<IWorkflowBuilder, WorkflowBuilder>()
                 .AddSingleton<Func<IWorkflowBuilder>>(sp => sp.GetRequiredService<IWorkflowBuilder>)
                 .AddSingleton<IWorkflowRegistry, WorkflowRegistry>()
-                .AddPrimitiveActivities();
+                .AddPrimitiveActivities()
+                .AddControlFlowActivities();
         }
 
         public static IServiceCollection AddActivity<T>(this IServiceCollection services)
@@ -64,6 +64,13 @@ namespace Elsa.Extensions
         {
             return services
                 .AddActivity<SetVariable>()
+                .AddActivity<Correlate>()
+                .AddActivity<SignalEvent>();
+        }
+        
+        private static IServiceCollection AddControlFlowActivities(this IServiceCollection services)
+        {
+            return services
                 .AddActivity<ForEach>()
                 .AddActivity<Fork>()
                 .AddActivity<Join>()

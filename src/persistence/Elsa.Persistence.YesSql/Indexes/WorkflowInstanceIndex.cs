@@ -1,7 +1,5 @@
 using System.Linq;
 using Elsa.Models;
-using Elsa.Services.Extensions;
-using YesSql;
 using YesSql.Indexes;
 
 namespace Elsa.Persistence.YesSql.Indexes
@@ -10,6 +8,7 @@ namespace Elsa.Persistence.YesSql.Indexes
     {
         public string WorkflowInstanceId { get; set; }
         public string WorkflowDefinitionId { get; set; }
+        public string CorrelationId { get; set; }
         public WorkflowStatus WorkflowStatus { get; set; }
     }
 
@@ -28,7 +27,8 @@ namespace Elsa.Persistence.YesSql.Indexes
                     workflowInstance => new WorkflowInstanceIndex
                     {
                         WorkflowDefinitionId = workflowInstance.Id,
-                        WorkflowStatus = workflowInstance.Status
+                        WorkflowStatus = workflowInstance.Status,
+                        CorrelationId = workflowInstance.CorrelationId
                     }
                 );
 
@@ -40,6 +40,7 @@ namespace Elsa.Persistence.YesSql.Indexes
                             {
                                 WorkflowInstanceId = workflowInstance.Id,
                                 WorkflowDefinitionId = workflowInstance.Id,
+                                CorrelationId = workflowInstance.CorrelationId,
                                 ActivityId = activity.ActivityId,
                                 ActivityType = activity.ActivityType
                             }

@@ -6,6 +6,7 @@ using CSharpFunctionalExtensions;
 using Elsa.Activities.Http.Activities;
 using Elsa.Activities.Http.Models;
 using Elsa.Activities.Http.Services;
+using Elsa.Activities.Primitives;
 using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Persistence;
@@ -94,12 +95,12 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
             
             var input = new Variables
             {
-                ["signal"] = signal.Name
+                ["Signal"] = signal.Name
             };
 
             var workflowDefinition = workflowRegistry.GetById(workflowInstance.DefinitionId);
             var workflow = workflowFactory.CreateWorkflow(workflowDefinition, input, workflowInstance);
-            var blockingSignalActivities = workflow.BlockingActivities.Where(x => x is SignalEvent).Cast<SignalEvent>().Where(x => x.SignalName == signal.Name).ToList();
+            var blockingSignalActivities = workflow.BlockingActivities.ToList();
             await workflowInvoker.ResumeAsync(workflow, blockingSignalActivities, cancellationToken);
 
             if (!httpContext.Response.HasStarted)

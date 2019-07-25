@@ -32,7 +32,12 @@ namespace Elsa.Services
             var activities = CreateActivities(definition.Activities).ToList();
             var connections = CreateConnections(definition.Connections, activities);
             var id = idGenerator.Generate();
-            return new Workflow(id, definition.Id, activities, connections, input, workflowInstance);
+            var workflow = new Workflow(id, definition.Id, activities, connections, input);
+
+            if(workflowInstance != null)
+                workflow.Initialize(workflowInstance);
+            
+            return workflow;
         }
 
         private IEnumerable<Connection> CreateConnections(IEnumerable<ConnectionDefinition> connectionBlueprints, IEnumerable<IActivity> activities)

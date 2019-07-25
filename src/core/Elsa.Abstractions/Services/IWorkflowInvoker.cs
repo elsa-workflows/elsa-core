@@ -15,35 +15,36 @@ namespace Elsa.Services
             IEnumerable<IActivity> startActivityIds = default,
             CancellationToken cancellationToken = default
         );
-        
+
         Task<WorkflowExecutionContext> InvokeAsync(
             WorkflowDefinition workflowDefinition,
-            Variables input = null,
-            WorkflowInstance workflowInstance = null,
+            Variables input = default,
+            WorkflowInstance workflowInstance = default,
             IEnumerable<string> startActivityIds = default,
+            string correlationId = default,
             CancellationToken cancellationToken = default
         );
-        
+
         Task<WorkflowExecutionContext> InvokeAsync<T>(
-            WorkflowInstance workflowInstance = null,
-            Variables input = null,
+            WorkflowInstance workflowInstance = default,
+            Variables input = default,
             IEnumerable<string> startActivityIds = default,
             CancellationToken cancellationToken = default
-        ) where T:IWorkflow, new();
+        ) where T : IWorkflow, new();
 
         Task<WorkflowExecutionContext> InvokeAsync(
             WorkflowInstance workflowInstance,
-            Variables input = null,
+            Variables input = default,
             IEnumerable<string> startActivityIds = default,
             CancellationToken cancellationToken = default
         );
-        
+
         /// <summary>
         /// Starts new workflows that start with the specified activity name and resumes halted workflows that are blocked on activities with the specified activity name.
         /// </summary>
-        Task TriggerAsync(
-            string activityType, 
-            Variables input, 
+        Task<IEnumerable<WorkflowExecutionContext>> TriggerAsync(string activityType,
+            Variables input = default,
+            string correlationId = default,
             Func<JObject, bool> activityStatePredicate = default,
             CancellationToken cancellationToken = default);
     }
