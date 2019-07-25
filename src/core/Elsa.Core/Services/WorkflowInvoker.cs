@@ -90,7 +90,7 @@ namespace Elsa.Services
             IEnumerable<string> startActivityIds = default,
             CancellationToken cancellationToken = default)
         {
-            var definition = workflowRegistry.GetById(workflowInstance.DefinitionId);
+            var definition = workflowRegistry.GetById(workflowInstance.DefinitionId, workflowInstance.Version);
             return InvokeAsync(definition, input, workflowInstance, startActivityIds, workflowInstance.CorrelationId, cancellationToken);
         }
 
@@ -149,7 +149,7 @@ namespace Elsa.Services
 
             foreach (var (workflowInstance, startActivityInstance) in workflowInstances)
             {
-                var workflowDefinition = workflowRegistry.GetById(workflowInstance.DefinitionId);
+                var workflowDefinition = workflowRegistry.GetById(workflowInstance.DefinitionId, workflowInstance.Version);
 
                 workflowInstance.Status = WorkflowStatus.Resuming;
 

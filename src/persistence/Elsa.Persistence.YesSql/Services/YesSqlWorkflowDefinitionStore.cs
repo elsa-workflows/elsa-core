@@ -31,11 +31,22 @@ namespace Elsa.Persistence.YesSql.Services
             return Task.CompletedTask;
         }
 
-        public async Task<WorkflowDefinition> GetByIdAsync(string id, CancellationToken cancellationToken = default)
+        public async Task<WorkflowDefinition> GetByIdAsync(string id, VersionOptions version, CancellationToken cancellationToken = default)
         {
             using (var session = sessionProvider.GetSession())
             {
-                var document = await session.Query<WorkflowDefinitionDocument, WorkflowDefinitionIndex>(x => x.WorkflowDefinitionId == id).FirstOrDefaultAsync();
+                var query = session.Query<WorkflowDefinitionDocument, WorkflowDefinitionIndex>();
+                
+                if (version.IsDraft)
+                    query = query.Where(x => !x.IsPublished).OrderByDescending(x => x.Version);
+                else if(version.IsLatest)
+                    query = query.OrderByDescending(x => x.Version);
+                else if(version.IsPublished)
+                    query = query.Where(x => x.IsPublished).OrderByDescending(x => x.Version);
+                else if(version.Version > 0)
+                    query = query.Where(x => x.Version == version.Version);
+                
+                var document = await query.FirstOrDefaultAsync();
 
                 return mapper.Map<WorkflowDefinition>(document);
             }

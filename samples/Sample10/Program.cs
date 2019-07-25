@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Elsa.Activities.Console.Extensions;
 using Elsa.Extensions;
+using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.YesSql.Extensions;
 using Elsa.Persistence.YesSql.Options;
@@ -31,7 +32,7 @@ namespace Sample10
             await definitionStore.AddAsync(workflowDefinition);
             
             // Load the workflow definition.
-            workflowDefinition = await definitionStore.GetByIdAsync(workflowDefinition.Id);
+            workflowDefinition = await definitionStore.GetByIdAsync(workflowDefinition.Id, VersionOptions.Latest);
             
             // Execute the workflow.
             var invoker = services.GetRequiredService<IWorkflowInvoker>();

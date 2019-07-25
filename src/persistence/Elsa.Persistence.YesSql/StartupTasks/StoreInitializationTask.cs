@@ -33,9 +33,10 @@ namespace Elsa.Persistence.YesSql.StartupTasks
                     new SchemaBuilder(store.Configuration, transaction, false)
                         .CreateMapIndexTable(nameof(WorkflowDefinitionIndex), table => table
                             .Column<string>("WorkflowDefinitionId")
+                            .Column<int>("Version")
+                            .Column<bool>("IsPublished")
                         )
                         .CreateMapIndexTable(nameof(WorkflowDefinitionStartActivitiesIndex), table => table
-                            .Column<string>("WorkflowDefinitionId")
                             .Column<string>("StartActivityId")
                             .Column<string>("StartActivityType")
                         )
@@ -46,12 +47,9 @@ namespace Elsa.Persistence.YesSql.StartupTasks
                             .Column<string>("WorkflowStatus")
                         )
                         .CreateMapIndexTable(nameof(WorkflowInstanceBlockingActivitiesIndex), table => table
-                            .Column<string>("WorkflowInstanceId")
-                            .Column<string>("WorkflowDefinitionId")
-                            .Column<string>("CorrelationId")
-                            .Column<string>("WorkflowStatus")
                             .Column<string>("ActivityId")
                             .Column<string>("ActivityType")
+                            .Column<string>("CorrelationId")
                         );
 
                     transaction.Commit();
