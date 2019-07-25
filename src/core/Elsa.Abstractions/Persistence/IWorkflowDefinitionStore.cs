@@ -7,6 +7,6 @@ namespace Elsa.Persistence
     public interface IWorkflowDefinitionStore
     {
         Task AddAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default);
-        Task<WorkflowDefinition> GetByIdAsync(string id, CancellationToken cancellationToken = default);
+        Task<WorkflowDefinition> GetByIdAsync(string id, VersionOptions version, CancellationToken cancellationToken = default);
     }
 }

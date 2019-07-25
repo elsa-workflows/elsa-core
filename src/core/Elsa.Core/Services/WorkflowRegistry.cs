@@ -11,17 +11,17 @@ namespace Elsa.Services
     public class WorkflowRegistry : IWorkflowRegistry
     {
         private readonly Func<IWorkflowBuilder> workflowBuilderFactory;
-        private readonly IDictionary<string, WorkflowDefinition> workflowDefinitions;
+        private readonly IDictionary<(string, int), WorkflowDefinition> workflowDefinitions;
 
         public WorkflowRegistry(Func<IWorkflowBuilder> workflowBuilderFactory)
         {
             this.workflowBuilderFactory = workflowBuilderFactory;
-            workflowDefinitions = new Dictionary<string, WorkflowDefinition>();
+            workflowDefinitions = new Dictionary<(string, int), WorkflowDefinition>();
         }
         
         public void RegisterWorkflow(WorkflowDefinition definition)
         {
-            workflowDefinitions[definition.Id] = definition;
+            workflowDefinitions[(definition.Id, definition.Version)] = definition;
         }
 
         public WorkflowDefinition RegisterWorkflow<T>() where T : IWorkflow, new()
@@ -42,9 +42,10 @@ namespace Elsa.Services
             return query.Distinct();
         }
 
-        public WorkflowDefinition GetById(string id)
+        public WorkflowDefinition GetById(string id, int version)
         {
-            return workflowDefinitions.ContainsKey(id) ? workflowDefinitions[id] : default;
+            var identifier = (id, version);
+            return workflowDefinitions.ContainsKey(identifier) ? workflowDefinitions[identifier] : default;
         }
     }
 }

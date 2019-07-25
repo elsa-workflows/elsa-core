@@ -9,9 +9,11 @@ namespace Elsa.Persistence.YesSql.Indexes
     public class WorkflowDefinitionIndex : MapIndex
     {
         public string WorkflowDefinitionId { get; set; }
+        public int Version { get; set; }
+        public bool IsPublished { get; set; }
     }
 
-    public class WorkflowDefinitionStartActivitiesIndex : WorkflowDefinitionIndex
+    public class WorkflowDefinitionStartActivitiesIndex : MapIndex
     {
         public string StartActivityId { get; set; }
         public string StartActivityType { get; set; }
@@ -23,19 +25,20 @@ namespace Elsa.Persistence.YesSql.Indexes
         {
             context.For<WorkflowDefinitionIndex>()
                 .Map(
-                    workflowDefinition => new WorkflowDefinitionIndex
+                    document => new WorkflowDefinitionIndex
                     {
-                        WorkflowDefinitionId = workflowDefinition.WorkflowDefinitionId
+                        WorkflowDefinitionId = document.WorkflowDefinitionId,
+                        Version = document.Version,
+                        IsPublished = document.IsPublished
                     }
                 );
 
             context.For<WorkflowDefinitionStartActivitiesIndex>()
                 .Map(
-                    workflowDefinition => GetStartActivities(workflowDefinition)
+                    document => GetStartActivities(document)
                         .Select(
                             activity => new WorkflowDefinitionStartActivitiesIndex
                             {
-                                WorkflowDefinitionId = workflowDefinition.WorkflowDefinitionId,
                                 StartActivityId = activity.Id,
                                 StartActivityType = activity.Type
                             }

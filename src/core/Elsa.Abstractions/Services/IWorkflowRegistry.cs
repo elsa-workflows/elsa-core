@@ -9,6 +9,6 @@ namespace Elsa.Services
         void RegisterWorkflow(WorkflowDefinition definition);
         WorkflowDefinition RegisterWorkflow<T>() where T:IWorkflow, new();
         IEnumerable<(WorkflowDefinition, ActivityDefinition)> ListByStartActivity(string activityType);
-        WorkflowDefinition GetById(string id);
+        WorkflowDefinition GetById(string id, int version);
     }
 }

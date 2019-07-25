@@ -11,11 +11,13 @@ namespace Elsa.Models
         
         public WorkflowDefinition(
             string id,
+            int version,
             IEnumerable<ActivityDefinition> activities,
             IEnumerable<ConnectionDefinition> connections,
             bool isSingleton,
             Variables variables) : this(id)
         {
+            Version = version;
             Activities = activities.ToList();
             Connections = connections.ToList();
             IsSingleton = isSingleton;
@@ -29,9 +31,11 @@ namespace Elsa.Models
         }
 
         public string Id { get; }
+        public int Version { get; }
         public ICollection<ActivityDefinition> Activities { get; set; }
         public IList<ConnectionDefinition> Connections { get; set; }
         public Variables Variables { get; }
         public bool IsSingleton { get; set; }
+        public bool IsPublished { get; set; }
     }
 }

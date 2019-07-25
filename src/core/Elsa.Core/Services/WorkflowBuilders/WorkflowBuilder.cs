@@ -18,12 +18,19 @@ namespace Elsa.Services.WorkflowBuilders
         }
 
         public string Id { get; set; }
+        public int Version { get; set; } = 1;
         public bool IsSingleton { get; set; }
         public IReadOnlyList<IActivityBuilder> Activities => activityBuilders.ToList().AsReadOnly();
 
         public IWorkflowBuilder WithId(string id)
         {
             Id = id;
+            return this;
+        }
+        
+        public IWorkflowBuilder WithVersion(int version)
+        {
+            Version = version;
             return this;
         }
 
@@ -78,7 +85,7 @@ namespace Elsa.Services.WorkflowBuilders
             var activities = activityBuilders.Select(x => x.BuildActivity()).ToList();
             var connections = connectionBuilders.Select(x => x.BuildConnection()).ToList();
 
-            return new WorkflowDefinition(Id, activities, connections, IsSingleton, Variables.Empty);
+            return new WorkflowDefinition(Id, Version, activities, connections, IsSingleton, Variables.Empty);
         }
     }
 }

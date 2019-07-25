@@ -98,7 +98,7 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
                 ["Signal"] = signal.Name
             };
 
-            var workflowDefinition = workflowRegistry.GetById(workflowInstance.DefinitionId);
+            var workflowDefinition = workflowRegistry.GetById(workflowInstance.DefinitionId, workflowInstance.Version);
             var workflow = workflowFactory.CreateWorkflow(workflowDefinition, input, workflowInstance);
             var blockingSignalActivities = workflow.BlockingActivities.ToList();
             await workflowInvoker.ResumeAsync(workflow, blockingSignalActivities, cancellationToken);

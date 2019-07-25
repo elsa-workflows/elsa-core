@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Elsa.Activities.Console.Extensions;
 using Elsa.Activities.Primitives;
+using Elsa.Activities.UserTask.Activities;
 using Elsa.Activities.UserTask.Extensions;
 using Elsa.Extensions;
 using Elsa.Models;
@@ -10,6 +11,7 @@ using Elsa.Persistence.Memory;
 using Elsa.Runtime;
 using Elsa.Services;
 using Elsa.Services.Extensions;
+using Elsa.Services.Models;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Sample12
@@ -27,8 +29,10 @@ namespace Sample12
             var invoker = services.GetRequiredService<IWorkflowInvoker>();
 
             // Invoke the workflow.
-            var executionContext = await invoker.InvokeAsync(workflowDefinition);
-
+            var correlationId = Guid.NewGuid().ToString("N");
+            await invoker.InvokeAsync(workflowDefinition, correlationId: correlationId);
+            WorkflowExecutionContext executionContext;
+            
             do
             {
                 // Workflow is now halted on the user task activity. Ask user for input:
@@ -36,9 +40,9 @@ namespace Sample12
                 var userAction = Console.ReadLine();
 
                 // Resume the workflow with the received stimulus.
-                var blockingActivities = executionContext.Workflow.BlockingActivities.Select(x => x.Id);
-                executionContext = await invoker.ResumeAsync(executionContext.Workflow.ToInstance(), new Variables { ["UserAction"] = userAction }, blockingActivities);
-                
+                var triggeredExecutionContexts = await invoker.TriggerAsync(nameof(UserTask), new Variables { ["UserAction"] = userAction}, correlationId);
+                executionContext = triggeredExecutionContexts.First();
+
             } while (executionContext.Workflow.IsHalted());
         }
 
