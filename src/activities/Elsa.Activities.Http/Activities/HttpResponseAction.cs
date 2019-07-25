@@ -13,12 +13,12 @@ using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Activities.Http.Activities
 {
-    public class HttpResponseTask : Activity
+    public class HttpResponseAction : Activity
     {
         private readonly IWorkflowExpressionEvaluator expressionEvaluator;
         private readonly IHttpContextAccessor httpContextAccessor;
 
-        public HttpResponseTask(IWorkflowExpressionEvaluator expressionEvaluator, IHttpContextAccessor httpContextAccessor)
+        public HttpResponseAction(IWorkflowExpressionEvaluator expressionEvaluator, IHttpContextAccessor httpContextAccessor)
         {
             this.expressionEvaluator = expressionEvaluator;
             this.httpContextAccessor = httpContextAccessor;

@@ -13,7 +13,7 @@ namespace Sample06
         {
             builder
                 .StartWith<HttpRequestEvent>(activity => activity.Path = new Uri("/hello-world", UriKind.RelativeOrAbsolute))
-                .Then<HttpResponseTask>(
+                .Then<HttpResponseAction>(
                     activity =>
                     {
                         activity.Content = new PlainTextExpression("<h1>Hello World!</h1><p>Elsa says hi :)</p>");

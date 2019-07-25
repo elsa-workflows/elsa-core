@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>netcoreapp2.2</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\activities\Elsa.Activities.Console\Elsa.Activities.Console.csproj" />
+        <ProjectReference Include="..\..\src\activities\Elsa.Activities.UserTask\Elsa.Activities.UserTask.csproj" />
+        <ProjectReference Include="..\..\src\core\Elsa.Core\Elsa.Core.csproj" />
+    </ItemGroup>
+
+</Project>
