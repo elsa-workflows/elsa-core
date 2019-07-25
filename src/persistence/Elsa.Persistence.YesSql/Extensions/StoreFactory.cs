@@ -1,13 +1,7 @@
 using System;
 using System.Data;
-using System.Linq;
-using System.Reflection;
 using Elsa.Persistence.YesSql.Options;
-using Elsa.Persistence.YesSql.Services;
-using Elsa.Persistence.YesSql.StartupTasks;
-using Elsa.Runtime;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using YesSql;
 using YesSql.Indexes;

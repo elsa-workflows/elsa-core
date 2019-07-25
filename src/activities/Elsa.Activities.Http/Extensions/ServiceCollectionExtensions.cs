@@ -22,8 +22,7 @@ namespace Elsa.Activities.Http.Extensions
             services
                 .AddActivity<HttpRequestEvent>()
                 .AddActivity<HttpResponseTask>()
-                .AddActivity<HttpRequestAction>()
-                .AddActivity<SignalEvent>();
+                .AddActivity<HttpRequestAction>();
 
             services
                 .AddSingleton<ISharedAccessSignatureService, SharedAccessSignatureService>()

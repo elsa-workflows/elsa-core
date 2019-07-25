@@ -20,10 +20,12 @@ namespace Elsa.Activities.MassTransit.Consumers
             var message = context.Message;
             var activityType = nameof(ReceiveMassTransitMessage);
             var input = new Variables { ["message"] = message };
+            var correlationId = context.CorrelationId?.ToString();
             
             await workflowInvoker.TriggerAsync(
                 activityType, 
                 input,
+                correlationId,
                 x => ReceiveMassTransitMessage.GetMessageType(x) == message.GetType(),
                 context.CancellationToken);
         }

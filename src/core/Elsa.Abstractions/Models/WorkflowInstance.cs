@@ -8,6 +8,7 @@ namespace Elsa.Models
         public string Id { get; set; }
         public string DefinitionId { get; set; }
         public WorkflowStatus Status { get; set; }
+        public string CorrelationId { get; set; }
         public Instant CreatedAt { get; set; }
         public Instant? StartedAt { get; set; }
         public Instant? HaltedAt { get; set; }

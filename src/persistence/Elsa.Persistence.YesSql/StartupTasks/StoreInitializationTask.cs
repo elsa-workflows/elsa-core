@@ -42,11 +42,13 @@ namespace Elsa.Persistence.YesSql.StartupTasks
                         .CreateMapIndexTable(nameof(WorkflowInstanceIndex), table => table
                             .Column<string>("WorkflowInstanceId")
                             .Column<string>("WorkflowDefinitionId")
+                            .Column<string>("CorrelationId")
                             .Column<string>("WorkflowStatus")
                         )
                         .CreateMapIndexTable(nameof(WorkflowInstanceBlockingActivitiesIndex), table => table
                             .Column<string>("WorkflowInstanceId")
                             .Column<string>("WorkflowDefinitionId")
+                            .Column<string>("CorrelationId")
                             .Column<string>("WorkflowStatus")
                             .Column<string>("ActivityId")
                             .Column<string>("ActivityType")

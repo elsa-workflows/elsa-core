@@ -59,12 +59,12 @@ namespace Sample07
                     {
                         fork
                             .When("Approve")
-                            .Then<SignalEvent>(activity => activity.SignalName = "approve")
+                            .Then<SignalEvent>(activity => activity.Signal = new PlainTextExpression("approve"))
                             .Then("join-signals");
 
                         fork
                             .When("Reject")
-                            .Then<SignalEvent>(activity => activity.SignalName = "reject")
+                            .Then<SignalEvent>(activity => activity.Signal = new PlainTextExpression("reject"))
                             .Then("join-signals");
                     }
                 )

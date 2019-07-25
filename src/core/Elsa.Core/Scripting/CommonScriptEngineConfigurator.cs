@@ -14,6 +14,7 @@ namespace Elsa.Scripting
             engine.SetValue("input", (Func<string, object>) (name => workflow.Input.GetVariable(name)));
             engine.SetValue("variable", (Func<string, object>) (name => context.CurrentScope.GetVariable(name)));
             engine.SetValue("lastResult", (Func<string, object>) (name => context.CurrentScope.LastResult));
+            engine.SetValue("correlationId", (Func<string, object>) (name => context.Workflow.CorrelationId));
             
             foreach (var variable in workflowExecutionContext.CurrentScope.Variables)
             {
