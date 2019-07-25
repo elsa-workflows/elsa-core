@@ -78,7 +78,7 @@ namespace Elsa.Activities.ControlFlow
             var inboundTransitionsQuery =
                 from connection in outboundConnections
                 let destinationActivity = connection.Target.Activity
-                where destinationActivity.TypeName == nameof(Join)
+                where destinationActivity.Type == nameof(Join)
                 select connection;
 
             var inboundConnections = inboundTransitionsQuery.ToList();

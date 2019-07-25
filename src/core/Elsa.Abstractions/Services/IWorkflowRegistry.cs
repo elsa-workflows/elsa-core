@@ -7,7 +7,7 @@ namespace Elsa.Services
     public interface IWorkflowRegistry
     {
         void RegisterWorkflow(WorkflowDefinition definition);
-        void RegisterWorkflow<T>() where T:IWorkflow, new();
+        WorkflowDefinition RegisterWorkflow<T>() where T:IWorkflow, new();
         IEnumerable<(WorkflowDefinition, ActivityDefinition)> ListByStartActivity(string activityType);
         WorkflowDefinition GetById(string id);
     }

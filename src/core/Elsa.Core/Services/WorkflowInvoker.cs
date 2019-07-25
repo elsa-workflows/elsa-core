@@ -7,7 +7,6 @@ using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Results;
-using Elsa.Serialization.Models;
 using Elsa.Services.Extensions;
 using Elsa.Services.Models;
 using Microsoft.Extensions.Logging;

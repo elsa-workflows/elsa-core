@@ -14,7 +14,7 @@ namespace Elsa.Activities.MassTransit.Activities
         public static Type GetMessageType(JObject state)
         {
             var typeName = state.GetState<string>(nameof(MessageType));
-            return string.IsNullOrWhiteSpace(typeName) ? null : Type.GetType(typeName);
+            return string.IsNullOrWhiteSpace(typeName) ? null : System.Type.GetType(typeName);
         }
         
         public Type MessageType

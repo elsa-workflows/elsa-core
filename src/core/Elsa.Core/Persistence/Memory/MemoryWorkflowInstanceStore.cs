@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Extensions;
 using Elsa.Models;
-using Elsa.Serialization.Models;
 
 namespace Elsa.Persistence.Memory
 {
@@ -12,9 +12,9 @@ namespace Elsa.Persistence.Memory
     {
         private readonly IDictionary<string, WorkflowInstance> workflowInstances = new Dictionary<string, WorkflowInstance>();
         
-        public Task SaveAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken)
+        public Task SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken)
         {
-            workflowInstances[workflowInstance.Id] = workflowInstance;
+            workflowInstances[instance.Id] = instance;
             return Task.CompletedTask;
         }
 
@@ -38,14 +38,9 @@ namespace Elsa.Persistence.Memory
 
         public Task<IEnumerable<(WorkflowInstance, ActivityInstance)>> ListByBlockingActivityAsync(string activityType, CancellationToken cancellationToken)
         {
-            var query =
-                from workflowInstance in workflowInstances.Values
-                from blockingActivityId in workflowInstance.BlockingActivities
-                let blockingActivity = workflowInstance.Activities[blockingActivityId]
-                where blockingActivity.TypeName == activityType
-                select (workflowInstance, blockingActivity);
+            var query = workflowInstances.Values.GetBlockingActivities().Where(x => x.Item2.TypeName == activityType);
 
-            return Task.FromResult(query.Distinct());
+            return Task.FromResult(query);
         }
 
         public Task<IEnumerable<WorkflowInstance>> ListByStatusAsync(string definitionId, WorkflowStatus status, CancellationToken cancellationToken)

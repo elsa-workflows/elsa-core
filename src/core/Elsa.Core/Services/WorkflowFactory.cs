@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using Elsa.Models;
-using Elsa.Serialization.Models;
 using Elsa.Services.Extensions;
 using Elsa.Services.Models;
 using Newtonsoft.Json.Linq;

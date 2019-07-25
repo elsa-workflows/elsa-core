@@ -2,6 +2,7 @@ using System;
 using Elsa.Activities.ControlFlow;
 using Elsa.Activities.Primitives;
 using Elsa.Expressions;
+using Elsa.Persistence;
 using Elsa.Scripting;
 using Elsa.Serialization;
 using Elsa.Serialization.Formatters;
@@ -17,6 +18,14 @@ namespace Elsa.Extensions
     public static class ServiceCollectionExtensions
     {
         public static IServiceCollection AddWorkflows(this IServiceCollection services)
+        {
+            services.AddWorkflowsCore();
+
+            return services
+                .AddSingleton<IWorkflowEventHandler, PersistenceWorkflowEventHandler>();
+        }
+        
+        public static IServiceCollection AddWorkflowsCore(this IServiceCollection services)
         {
             services.TryAddSingleton<IClock>(SystemClock.Instance);
 

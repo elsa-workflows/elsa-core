@@ -1,7 +1,7 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Models;
 using Elsa.Results;
-using Elsa.Serialization.Models;
 using Newtonsoft.Json.Linq;
 
 namespace Elsa.Services.Models
@@ -16,7 +16,7 @@ namespace Elsa.Services.Models
         /// <summary>
         /// The type name of this activity.
         /// </summary>
-        string TypeName { get; }
+        string Type { get; }
         
         /// <summary>
         /// Unique identifier of this activity

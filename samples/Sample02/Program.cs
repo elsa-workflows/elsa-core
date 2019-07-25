@@ -4,7 +4,7 @@ using Elsa.Activities.Console.Activities;
 using Elsa.Activities.Console.Extensions;
 using Elsa.Expressions;
 using Elsa.Extensions;
-using Elsa.Persistence.Extensions;
+using Elsa.Persistence.Memory;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 

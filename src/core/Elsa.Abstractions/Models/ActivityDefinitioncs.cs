@@ -7,7 +7,7 @@ namespace Elsa.Models
     {
         public static ActivityDefinition FromActivity(IActivity activity)
         {
-            return new ActivityDefinition(activity.Id, activity.TypeName, activity.State);
+            return new ActivityDefinition(activity.Id, activity.Type, activity.State);
         }
 
         public ActivityDefinition()

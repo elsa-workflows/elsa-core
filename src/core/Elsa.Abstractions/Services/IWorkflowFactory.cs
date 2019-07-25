@@ -1,5 +1,4 @@
 using Elsa.Models;
-using Elsa.Serialization.Models;
 using Elsa.Services.Models;
 
 namespace Elsa.Services
