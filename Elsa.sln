@@ -39,6 +39,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Activities.UserTask", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.AutoMapper.Extensions", "src\core\Elsa.AutoMapper.Extensions\Elsa.AutoMapper.Extensions.csproj", "{6CEF6AFB-635D-4FB4-B9EC-0806DD95E1BC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.EntityFrameworkCore", "src\persistence\Elsa.Persistence.EntityFrameworkCore\Elsa.Persistence.EntityFrameworkCore.csproj", "{349D4C87-E17F-4F51-B493-1994BF631D37}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -85,6 +87,10 @@ Global
 		{6CEF6AFB-635D-4FB4-B9EC-0806DD95E1BC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6CEF6AFB-635D-4FB4-B9EC-0806DD95E1BC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6CEF6AFB-635D-4FB4-B9EC-0806DD95E1BC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{349D4C87-E17F-4F51-B493-1994BF631D37}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{349D4C87-E17F-4F51-B493-1994BF631D37}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{349D4C87-E17F-4F51-B493-1994BF631D37}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{349D4C87-E17F-4F51-B493-1994BF631D37}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -103,6 +109,7 @@ Global
 		{4DB0741F-EAD9-4E37-862D-A1DA12462B7D} = {76710230-AC6D-4E54-9A06-15F34C155118}
 		{BC0F57E2-AB64-4026-B6E3-E03D9133DB26} = {B43B546E-23F3-46E8-ACB7-D04F05CDA180}
 		{6CEF6AFB-635D-4FB4-B9EC-0806DD95E1BC} = {35F44BE9-13D0-417C-A01A-F0787BEE6DC3}
+		{349D4C87-E17F-4F51-B493-1994BF631D37} = {76710230-AC6D-4E54-9A06-15F34C155118}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}
