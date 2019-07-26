@@ -27,7 +27,7 @@ namespace Elsa.Services
         public ActivityInstance ToInstance() => new ActivityInstance
         {
             Id = Id,
-            TypeName = Type,
+            Type = Type,
             State = new JObject(State)
         };
 

@@ -30,11 +30,11 @@ namespace Elsa.Models
             Variables = new Variables();
         }
 
-        public string Id { get; }
-        public int Version { get; }
-        public ICollection<ActivityDefinition> Activities { get; set; }
-        public IList<ConnectionDefinition> Connections { get; set; }
-        public Variables Variables { get; }
+        public string Id { get; set; }
+        public int Version { get; set;}
+        public IReadOnlyCollection<ActivityDefinition> Activities { get; set; }
+        public IReadOnlyCollection<ConnectionDefinition> Connections { get; set; }
+        public Variables Variables { get; set; }
         public bool IsSingleton { get; set; }
         public bool IsPublished { get; set; }
     }

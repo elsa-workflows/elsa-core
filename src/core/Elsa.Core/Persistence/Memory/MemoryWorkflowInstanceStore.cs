@@ -43,7 +43,7 @@ namespace Elsa.Persistence.Memory
 
         public Task<IEnumerable<(WorkflowInstance, ActivityInstance)>> ListByBlockingActivityAsync(string activityType, string correlationId = default, CancellationToken cancellationToken = default)
         {
-            var query = workflowInstances.Values.GetBlockingActivities().Where(x => x.Item2.TypeName == activityType);
+            var query = workflowInstances.Values.GetBlockingActivities().Where(x => x.Item2.Type == activityType);
 
             if (!string.IsNullOrWhiteSpace(correlationId))
                 query = query.Where(x => x.Item1.CorrelationId == correlationId);
