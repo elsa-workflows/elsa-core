@@ -17,7 +17,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Sample12
 {
     /// <summary>
-    /// Demonstrates workflow correlation.
+    /// Demonstrates workflow correlation & user tasks.
     /// </summary>
     public class Program
     {

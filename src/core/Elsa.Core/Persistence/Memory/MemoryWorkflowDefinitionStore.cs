@@ -1,41 +1,54 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Extensions;
 using Elsa.Models;
 
 namespace Elsa.Persistence.Memory
 {
     public class MemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
     {
-        private readonly IDictionary<string, WorkflowDefinition> definitions;
+        private readonly IList<WorkflowDefinition> definitions;
 
         public MemoryWorkflowDefinitionStore()
         {
-            definitions = new Dictionary<string, WorkflowDefinition>();
+            definitions = new List<WorkflowDefinition>();
         }
-        
-        public Task AddAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
+
+        public async Task AddAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
         {
-            definitions[definition.Id] = definition;
-            return Task.CompletedTask;
+            var existingDefinition = await GetByIdAsync(definition.Id, VersionOptions.SpecificVersion(definition.Version), cancellationToken);
+
+            if (existingDefinition != null)
+            {
+                throw new ArgumentException($"A workflow definition with ID '{definition.Id}' and version '{definition.Version}' already exists.");
+            }
+
+            definitions.Add(definition);
         }
 
         public Task<WorkflowDefinition> GetByIdAsync(string id, VersionOptions version, CancellationToken cancellationToken = default)
         {
-            var query = definitions.Values.Where(x => x.Id == id).AsQueryable();
-
-            if (version.IsDraft)
-                query = query.Where(x => !x.IsPublished).OrderByDescending(x => x.Version);
-            else if(version.IsLatest)
-                query = query.OrderByDescending(x => x.Version);
-            else if(version.IsPublished)
-                query = query.Where(x => x.IsPublished).OrderByDescending(x => x.Version);
-            else if(version.Version > 0)
-                query = query.Where(x => x.Version == version.Version);
-            
+            var query = definitions.Where(x => x.Id == id).AsQueryable().WithVersion(version);
             var definition = query.FirstOrDefault();
             return Task.FromResult(definition);
+        }
+
+        public Task<IEnumerable<WorkflowDefinition>> ListAsync(VersionOptions version, CancellationToken cancellationToken = default)
+        {
+            var query = definitions.AsQueryable().WithVersion(version);
+            return Task.FromResult(query.AsEnumerable());
+        }
+
+        public async Task<WorkflowDefinition> UpdateAsync(WorkflowDefinition definition, CancellationToken cancellationToken)
+        {
+            var existingDefinition = await GetByIdAsync(definition.Id, VersionOptions.SpecificVersion(definition.Version), cancellationToken);
+            var index = definitions.IndexOf(existingDefinition);
+
+            definitions[index] = definition;
+            return definition;
         }
     }
 }

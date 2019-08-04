@@ -1,6 +1,8 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Extensions;
 using Elsa.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -22,18 +24,21 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
 
         public async Task<WorkflowDefinition> GetByIdAsync(string id, VersionOptions version, CancellationToken cancellationToken = default)
         {
-            var query = dbContext.WorkflowDefinitions.AsQueryable();
-            
-            if (version.IsDraft)
-                query = query.Where(x => !x.IsPublished).OrderByDescending(x => x.Version);
-            else if(version.IsLatest)
-                query = query.OrderByDescending(x => x.Version);
-            else if(version.IsPublished)
-                query = query.Where(x => x.IsPublished).OrderByDescending(x => x.Version);
-            else if(version.Version > 0)
-                query = query.Where(x => x.Version == version.Version);
+            var query = dbContext.WorkflowDefinitions.AsQueryable().WithVersion(version);
             
             return await query.FirstOrDefaultAsync(cancellationToken);
+        }
+
+        public async Task<IEnumerable<WorkflowDefinition>> ListAsync(VersionOptions version, CancellationToken cancellationToken = default)
+        {
+            var query = dbContext.WorkflowDefinitions.AsQueryable().WithVersion(version);
+            return await query.ToListAsync(cancellationToken);
+        }
+
+        public Task<WorkflowDefinition> UpdateAsync(WorkflowDefinition definition, CancellationToken cancellationToken)
+        {
+            dbContext.WorkflowDefinitions.Update(definition);
+            return Task.FromResult(definition);
         }
     }
 }
