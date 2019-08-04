@@ -7,12 +7,15 @@ namespace Elsa.Models
     {
         public WorkflowDefinition()
         {
+            Activities = new List<ActivityDefinition>();
+            Connections = new List<ConnectionDefinition>();
+            Variables = new Variables();
         }
-        
+
         public WorkflowDefinition(
             string id,
             int version,
-            string name, 
+            string name,
             string description,
             IEnumerable<ActivityDefinition> activities,
             IEnumerable<ConnectionDefinition> connections,
@@ -28,18 +31,17 @@ namespace Elsa.Models
             Variables = variables;
         }
 
-        public WorkflowDefinition(string id)
+        public WorkflowDefinition(string id) : this()
         {
             Id = id;
-            Variables = new Variables();
         }
 
         public string Id { get; set; }
-        public int Version { get; set;}
+        public int Version { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
-        public IReadOnlyCollection<ActivityDefinition> Activities { get; set; }
-        public IReadOnlyCollection<ConnectionDefinition> Connections { get; set; }
+        public ICollection<ActivityDefinition> Activities { get; set; }
+        public ICollection<ConnectionDefinition> Connections { get; set; }
         public Variables Variables { get; set; }
         public bool IsSingleton { get; set; }
         public bool IsPublished { get; set; }

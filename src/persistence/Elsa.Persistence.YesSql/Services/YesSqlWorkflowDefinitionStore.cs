@@ -46,10 +46,15 @@ namespace Elsa.Persistence.YesSql.Services
             return mapper.Map<IEnumerable<WorkflowDefinition>>(documents);
         }
 
-        public Task<WorkflowDefinition> UpdateAsync(WorkflowDefinition definition, CancellationToken cancellationToken)
+        public async Task<WorkflowDefinition> UpdateAsync(WorkflowDefinition definition, CancellationToken cancellationToken)
         {
-            session.Save(definition);
-            return Task.FromResult(definition);
+            var query = session.Query<WorkflowDefinitionDocument, WorkflowDefinitionIndex>().WithVersion(VersionOptions.SpecificVersion(definition.Version));
+            var document = await query.FirstOrDefaultAsync();
+
+            document = mapper.Map(definition, document);
+            session.Save(document);
+
+            return mapper.Map<WorkflowDefinition>(document);
         }
     }
 }

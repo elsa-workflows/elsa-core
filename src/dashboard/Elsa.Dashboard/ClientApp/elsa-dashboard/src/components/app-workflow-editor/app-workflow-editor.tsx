@@ -3,6 +3,7 @@ import '@elsa-workflows/elsa-workflow-designer';
 import workflowDefinitionsApi from '../../services/workflow-definitions-api';
 import { MatchResults } from "@stencil/router";
 import jsonPatch from 'fast-json-patch';
+import * as Ladda from 'ladda';
 import {
   Workflow,
   WorkflowFormatDescriptor,
@@ -17,7 +18,7 @@ import {
 export class AppWorkflowEditor {
 
   designer: HTMLWfDesignerHostElement;
-  workflow: Workflow;
+  saveButton: HTMLButtonElement;
 
   @Prop() match: MatchResults;
 
@@ -57,19 +58,40 @@ export class AppWorkflowEditor {
   };
 
   @State()
+  workflow: Workflow;
+
+  @State()
   workflowName: string;
 
   @State()
   workflowDescription: string;
 
+  @State()
+  isDirty: boolean;
+
   async componentWillLoad() {
     const id = this.match.params.id;
     this.workflow = await workflowDefinitionsApi.getById(id);
     this.workflowName = this.workflow.name;
+    this.workflowDescription = this.workflow.description;
+  }
+
+  componentDidLoad() {
+    this.workflow = { ...this.workflow };
   }
 
   export = async (descriptor: WorkflowFormatDescriptor) => {
     await this.designer.export(descriptor);
+  };
+
+  setIsDirty = (workflow: Workflow) => {
+    const patch = jsonPatch.compare(this.workflow, workflow);
+    this.isDirty = patch.length > 0;
+    console.debug(`dirty: ${ this.isDirty }`);
+  };
+
+  onWorkflowChanged = (e: CustomEvent<Workflow>) => {
+    this.setIsDirty(e.detail);
   };
 
   onExportClick = async (e: Event, descriptor: WorkflowFormatDescriptor) => {
@@ -99,8 +121,17 @@ export class AppWorkflowEditor {
     };
 
     const patch = jsonPatch.compare(this.workflow, updatedWorkflow);
-    await workflowDefinitionsApi.patch(updatedWorkflow.id, patch);
+
+    if (patch.length === 0)
+      return;
+
+    const laddaButton = Ladda.create(this.saveButton).start();
+
+    await workflowDefinitionsApi.patch(updatedWorkflow.id, updatedWorkflow.version, patch);
     this.workflow = updatedWorkflow;
+
+    laddaButton.stop();
+    this.setIsDirty(this.workflow);
   };
 
   render() {
@@ -147,8 +178,16 @@ export class AppWorkflowEditor {
                     </li>
                     <li class="nav-item">
                       <div class="dropdown d-inline-block mb-1">
-                        <button class="btn btn-success dropdown-toggle" type="button" id="saveButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" data-display="static">
-                          Save
+                        <button class="btn btn-success dropdown-toggle ladda-button"
+                                type="button" id="saveButton"
+                                data-toggle="dropdown"
+                                data-style="expand-right"
+                                aria-haspopup="true"
+                                aria-expanded="false"
+                                data-display="static"
+                                disabled={ !this.isDirty }
+                                ref={ el => this.saveButton = el }>
+                          <span class="ladda-label">Save</span>
                         </button>
                         <div class="dropdown-menu" aria-labelledby="saveButton">
                           <a class="dropdown-item" href="#" onClick={ this.onSaveDraftClick }>Draft</a>
@@ -159,7 +198,7 @@ export class AppWorkflowEditor {
                   </ul>
                 </div>
                 <div class="m-2">
-                  <wf-designer-host workflow={ workflow } ref={ el => this.designer = el } />
+                  <wf-designer-host workflow={ workflow } ref={ el => this.designer = el } onWorkflowChanged={ this.onWorkflowChanged } canvasHeight={ '300vh' } />
                 </div>
               </div>
             </div>

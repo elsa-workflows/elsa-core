@@ -11,7 +11,8 @@ export class WorkflowDefinitionsApi {
     this.client = AxiosFactory.createDefaultClient();
   }
 
-  list = async (): Promise<Array<Workflow>> => await this.get<Array<Workflow>>();
+  list = async (): Promise<Array<Workflow>> => await this.get<Array<Workflow>>(this.getUrl());
+
   getById = async (id: string, version?: number): Promise<Workflow> => {
     return await this.get<Workflow>(this.getVersionUrl(id, version));
   };
@@ -28,8 +29,8 @@ export class WorkflowDefinitionsApi {
 
   delete = async (id: string) => await this.client.delete(this.getUrl(id));
 
-  private get = async <T = any>(relativePath: string = ''): Promise<T> => {
-    const response = await this.client.get<T>(this.getUrl(relativePath));
+  private get = async <T = any>(url): Promise<T> => {
+    const response = await this.client.get<T>(url);
     return response.data;
   };
 

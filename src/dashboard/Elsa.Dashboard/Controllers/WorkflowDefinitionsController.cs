@@ -28,15 +28,15 @@ namespace Elsa.Dashboard.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(string id, CancellationToken cancellationToken)
+        public async Task<IActionResult> GetById(string id, int? version = default, CancellationToken cancellationToken = default)
         {
-            var definition = await store.GetByIdAsync(id, VersionOptions.Latest, cancellationToken);
+            var versionOptions = version != null ? VersionOptions.SpecificVersion(version.Value) : VersionOptions.Latest;
+            var definition = await store.GetByIdAsync(id, versionOptions, cancellationToken);
             return definition != null ? (IActionResult) Ok(definition) : NotFound();
         }
 
         [HttpPatch("{id}")]
-        public virtual async Task<IActionResult> Patch(string id, JsonPatchDocument<WorkflowDefinition> patch, int? version = default,
-            CancellationToken cancellationToken = default)
+        public async Task<IActionResult> Patch(string id, JsonPatchDocument<WorkflowDefinition> patch, int? version = default, CancellationToken cancellationToken = default)
         {
             var versionOptions = version != null ? VersionOptions.SpecificVersion(version.Value) : VersionOptions.Latest;
             var document = await store.GetByIdAsync(id, versionOptions, cancellationToken);
