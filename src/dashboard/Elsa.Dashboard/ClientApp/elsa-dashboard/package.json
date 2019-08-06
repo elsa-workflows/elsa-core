@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "axios": "^0.19.0",
-    "@elsa-workflows/elsa-workflow-designer": "^0.0.30",
+    "@elsa-workflows/elsa-workflow-designer": "^0.0.36",
     "fast-json-patch": "^2.2.0",
     "@stencil/router": "^1.0.1",
     "js-joda": "latest",

@@ -1,4 +1,4 @@
-import { Component, h, Prop, State } from '@stencil/core';
+import { Component, h, Prop, State, Watch } from '@stencil/core';
 import '@elsa-workflows/elsa-workflow-designer';
 import workflowDefinitionsApi from '../../services/workflow-definitions-api';
 import { MatchResults } from "@stencil/router";
@@ -19,6 +19,7 @@ export class AppWorkflowEditor {
 
   designer: HTMLWfDesignerHostElement;
   saveButton: HTMLButtonElement;
+  publishButton: HTMLButtonElement;
 
   @Prop() match: MatchResults;
 
@@ -61,37 +62,64 @@ export class AppWorkflowEditor {
   workflow: Workflow;
 
   @State()
-  workflowName: string;
-
-  @State()
-  workflowDescription: string;
-
-  @State()
   isDirty: boolean;
 
+  oldWorkflow: Workflow;
+  workflowId: string;
+
   async componentWillLoad() {
-    const id = this.match.params.id;
-    this.workflow = await workflowDefinitionsApi.getById(id);
-    this.workflowName = this.workflow.name;
-    this.workflowDescription = this.workflow.description;
   }
 
-  componentDidLoad() {
-    this.workflow = { ...this.workflow };
+  async componentDidLoad() {
+    const id = this.match.params.id;
+
+    if (id === 'new') {
+      this.workflowId = null;
+      this.workflow = {
+        name: 'New Workflow',
+        activities: [],
+        connections: []
+      };
+    } else {
+      this.workflowId = id;
+      this.workflow = await workflowDefinitionsApi.getById(id);
+    }
+
+    this.oldWorkflow = this.workflow;
+
   }
 
   export = async (descriptor: WorkflowFormatDescriptor) => {
     await this.designer.export(descriptor);
   };
 
-  setIsDirty = (workflow: Workflow) => {
-    const patch = jsonPatch.compare(this.workflow, workflow);
-    this.isDirty = patch.length > 0;
-    console.debug(`dirty: ${ this.isDirty }`);
+  save = async () => {
+    const workflow = await this.designer.getWorkflow();
+
+    if (!!this.workflowId) {
+      const patch = jsonPatch.compare(this.oldWorkflow, workflow);
+
+      if (patch.length > 0) {
+        const updatedWorkflow = await workflowDefinitionsApi.patch(this.workflowId, patch);
+        this.workflow = this.oldWorkflow = updatedWorkflow;
+      }
+    } else {
+      const createdWorkflow = await workflowDefinitionsApi.post(workflow);
+      this.workflow = this.oldWorkflow = createdWorkflow;
+      this.workflowId = createdWorkflow.id;
+    }
+  };
+
+  publish = async (id: string): Promise<Workflow> => {
+    return workflowDefinitionsApi.publish(id)
   };
 
   onWorkflowChanged = (e: CustomEvent<Workflow>) => {
-    this.setIsDirty(e.detail);
+    const workflow = e.detail;
+    const patch = jsonPatch.compare(this.oldWorkflow, workflow);
+    this.isDirty = patch.length > 0;
+
+    console.debug(`dirty: ${ this.isDirty }`);
   };
 
   onExportClick = async (e: Event, descriptor: WorkflowFormatDescriptor) => {
@@ -101,43 +129,47 @@ export class AppWorkflowEditor {
 
   onNameKeyUp = (e: Event) => {
     const input = e.target as HTMLInputElement;
-    this.workflowName = input.value;
+    this.workflow = { ...this.workflow, name: input.value };
   };
 
   onDescriptionKeyUp = (e: Event) => {
     const input = e.target as HTMLTextAreaElement;
-    this.workflowDescription = input.value;
+    this.workflow = { ...this.workflow, description: input.value };
   };
 
   onSaveDraftClick = async (e: Event) => {
     e.preventDefault();
 
-    const workflow = await this.designer.readWorkflow();
-
-    let updatedWorkflow: Workflow = {
-      ...workflow,
-      name: this.workflowName,
-      description: this.workflowDescription
-    };
-
-    const patch = jsonPatch.compare(this.workflow, updatedWorkflow);
-
-    if (patch.length === 0)
-      return;
-
     const laddaButton = Ladda.create(this.saveButton).start();
 
-    await workflowDefinitionsApi.patch(updatedWorkflow.id, updatedWorkflow.version, patch);
-    this.workflow = updatedWorkflow;
+    try {
+      await this.save();
+    } finally {
+      laddaButton.stop();
+    }
+  };
 
-    laddaButton.stop();
-    this.setIsDirty(this.workflow);
+  onPublishClick = async (e: Event) => {
+    e.preventDefault();
+
+    const laddaButton = Ladda.create(this.publishButton).start();
+
+    try {
+      await this.save();
+      await this.publish(this.workflowId);
+    } finally {
+      laddaButton.stop();
+    }
   };
 
   render() {
     const workflow = this.workflow || {
       activities: [],
-      connections: []
+      connections: [],
+      isPublished: false,
+      name: null,
+      description: null,
+      version: 0
     };
 
     const descriptors = this.workflowFormats;
@@ -146,7 +178,7 @@ export class AppWorkflowEditor {
       <div class="content-wrapper">
         <div class="content">
           <div class="breadcrumb-wrapper">
-            <h1>{ this.workflowName }</h1>
+            <h1>{ workflow.name }</h1>
           </div>
           <div class="row mt-2">
             <div class="col-9">
@@ -174,26 +206,24 @@ export class AppWorkflowEditor {
                       <button class="btn btn-secondary" onClick={ () => this.importWorkflow() }>Import</button>
                     </li>
                     <li class="nav-item">
-                      <button class="btn btn-secondary" onClick={ () => this.createNewWorkflow() }>New Workflow</button>
+                      <button class="btn btn-success ladda-button"
+                              type="button" id="saveButton"
+                              data-style="expand-right"
+                              disabled={ !this.isDirty }
+                              onClick={ this.onSaveDraftClick }
+                              ref={ el => this.saveButton = el }>
+                        <span class="ladda-label">Save Draft</span>
+                      </button>
                     </li>
                     <li class="nav-item">
-                      <div class="dropdown d-inline-block mb-1">
-                        <button class="btn btn-success dropdown-toggle ladda-button"
-                                type="button" id="saveButton"
-                                data-toggle="dropdown"
-                                data-style="expand-right"
-                                aria-haspopup="true"
-                                aria-expanded="false"
-                                data-display="static"
-                                disabled={ !this.isDirty }
-                                ref={ el => this.saveButton = el }>
-                          <span class="ladda-label">Save</span>
-                        </button>
-                        <div class="dropdown-menu" aria-labelledby="saveButton">
-                          <a class="dropdown-item" href="#" onClick={ this.onSaveDraftClick }>Draft</a>
-                          <a class="dropdown-item" href="#">Publish</a>
-                        </div>
-                      </div>
+                      <button class="btn btn-success ladda-button"
+                              type="button" id="publishButton"
+                              data-style="expand-right"
+                              disabled={ !this.isDirty && workflow.isPublished }
+                              onClick={ this.onPublishClick }
+                              ref={ el => this.publishButton = el }>
+                        <span class="ladda-label">Publish</span>
+                      </button>
                     </li>
                   </ul>
                 </div>
@@ -223,11 +253,11 @@ export class AppWorkflowEditor {
                         </div>
                         <div class="form-group">
                           <label>Name</label>
-                          <input type="text" class="form-control" value={ this.workflowName } onKeyUp={ this.onNameKeyUp } />
+                          <input type="text" class="form-control" value={ workflow.name } onKeyUp={ this.onNameKeyUp } />
                         </div>
                         <div class="form-group">
                           <label>Description</label>
-                          <textarea class="form-control" rows={ 9 } onKeyUp={ this.onDescriptionKeyUp }>{ this.workflowDescription }</textarea>
+                          <textarea class="form-control" rows={ 9 } onKeyUp={ this.onDescriptionKeyUp }>{ workflow.description }</textarea>
                         </div>
                       </form>
                     </div>

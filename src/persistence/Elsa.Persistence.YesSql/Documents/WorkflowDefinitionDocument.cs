@@ -14,5 +14,6 @@ namespace Elsa.Persistence.YesSql.Documents
         public Variables Variables { get; set; }
         public bool IsSingleton { get; set; }
         public bool IsPublished { get; set; }
+        public bool IsLatest { get; set; }
     }
 }

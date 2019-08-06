@@ -13,8 +13,8 @@ export class WorkflowDefinitionsApi {
 
   list = async (): Promise<Array<Workflow>> => await this.get<Array<Workflow>>(this.getUrl());
 
-  getById = async (id: string, version?: number): Promise<Workflow> => {
-    return await this.get<Workflow>(this.getVersionUrl(id, version));
+  getById = async (id: string): Promise<Workflow> => {
+    return await this.get<Workflow>(this.getUrl(id));
   };
 
   post = async (workflow: Workflow): Promise<Workflow> => {
@@ -22,8 +22,13 @@ export class WorkflowDefinitionsApi {
     return response.data;
   };
 
-  patch = async (id: string, version: number, patch: Array<Operation>): Promise<Workflow> => {
-    const response = await this.client.patch<Workflow>(this.getVersionUrl(id, version), patch);
+  patch = async (id: string, patch: Array<Operation>): Promise<Workflow> => {
+    const response = await this.client.patch<Workflow>(this.getUrl(id), patch);
+    return response.data;
+  };
+
+  publish = async (id: string): Promise<Workflow> => {
+    const response = await this.client.post(this.getUrl(`${id}/publish`));
     return response.data;
   };
 
@@ -32,15 +37,6 @@ export class WorkflowDefinitionsApi {
   private get = async <T = any>(url): Promise<T> => {
     const response = await this.client.get<T>(url);
     return response.data;
-  };
-
-  private getVersionUrl = (id: string, version: number): string => {
-    let url = this.getUrl(id);
-
-    if(!!version)
-      url = `${url}?version=${ version }`;
-
-    return url;
   };
 
   private getUrl = (relativePath: string = ''): string => {

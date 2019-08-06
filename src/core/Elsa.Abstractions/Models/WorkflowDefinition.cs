@@ -20,8 +20,9 @@ namespace Elsa.Models
             IEnumerable<ActivityDefinition> activities,
             IEnumerable<ConnectionDefinition> connections,
             bool isSingleton,
-            Variables variables) : this(id)
+            Variables variables)
         {
+            Id = id;
             Version = version;
             Name = name;
             Description = description;
@@ -29,11 +30,6 @@ namespace Elsa.Models
             Connections = connections.ToList();
             IsSingleton = isSingleton;
             Variables = variables;
-        }
-
-        public WorkflowDefinition(string id) : this()
-        {
-            Id = id;
         }
 
         public string Id { get; set; }
@@ -45,5 +41,6 @@ namespace Elsa.Models
         public Variables Variables { get; set; }
         public bool IsSingleton { get; set; }
         public bool IsPublished { get; set; }
+        public bool IsLatest { get; set; }
     }
 }

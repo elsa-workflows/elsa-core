@@ -35,6 +35,7 @@ namespace Elsa.Persistence.YesSql.StartupTasks
                             .Column<string>("WorkflowDefinitionId")
                             .Column<int>("Version")
                             .Column<bool>("IsPublished")
+                            .Column<bool>("IsLatest")
                         )
                         .CreateMapIndexTable(nameof(WorkflowDefinitionStartActivitiesIndex), table => table
                             .Column<string>("StartActivityId")

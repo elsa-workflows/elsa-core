@@ -29,7 +29,7 @@ namespace Elsa.Dashboard.Web
                     options => options
                         .UseSqLite(@"Data Source=c:\data\elsa.yessql.db;Cache=Shared", IsolationLevel.ReadUncommitted)
                         .UseDefaultIdGenerator()
-                        .SetTablePrefix("elsa")
+                        .SetTablePrefix("elsa_")
                 )
                 .AddYesSqlWorkflowDefinitionStore()
                 .AddYesSqlWorkflowInstanceStore()

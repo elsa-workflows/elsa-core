@@ -1,4 +1,4 @@
-import { Component, h } from '@stencil/core';
+import { Component, h, State } from '@stencil/core';
 import workflowDefinitionsApi from '../../services/workflow-definitions-api';
 import { Workflow } from "@elsa-workflows/elsa-workflow-designer/dist/types/models";
 
@@ -8,10 +8,37 @@ import { Workflow } from "@elsa-workflows/elsa-workflow-designer/dist/types/mode
 })
 export class AppWorkflowDefinitions {
 
+  @State()
   workflows: Array<Workflow> = [];
 
   componentWillLoad = async () => {
     this.workflows = await workflowDefinitionsApi.list();
+  };
+
+  onPublishClick = async (e: Event, workflow: Workflow) => {
+    e.preventDefault();
+    await workflowDefinitionsApi.publish(workflow.id);
+  };
+
+  onDeleteClick = async (e: Event, workflow: Workflow) => {
+    e.preventDefault();
+
+    if(!confirm('Are you sure you want to delete this workflow?'))
+      return;
+
+    await workflowDefinitionsApi.delete(workflow.id);
+    this.workflows = this.workflows.filter(x => x.id !== workflow.id);
+  };
+
+  renderPublishAction = (workflow: Workflow) => {
+    if (workflow.isPublished)
+      return null;
+
+    return (
+      <li class="dropdown-item">
+        <a href="#" onClick={ e => this.onPublishClick(e, workflow) }>Publish</a>
+      </li>
+    );
   };
 
   render() {
@@ -23,7 +50,9 @@ export class AppWorkflowDefinitions {
           <div class="row">
             <div class="col-12">
               <div class="float-right">
-                <a href="#" class="btn btn-primary btn-default">New Workflow</a>
+                <stencil-route-link url="/elsa-dashboard/workflow-definitions/new" class="btn btn-primary btn-default">New
+                  Workflow
+                </stencil-route-link>
               </div>
             </div>
           </div>
@@ -48,15 +77,15 @@ export class AppWorkflowDefinitions {
                     </tr>
                     </thead>
                     <tbody>
-                    { workflows.map(definition => {
-                      const editUrl = `/elsa-dashboard/workflow-definitions/${definition.id}`;
+                    { workflows.map(workflow => {
+                      const editUrl = `/elsa-dashboard/workflow-definitions/${ workflow.id }`;
                       return (
                         <tr>
                           <td>
-                            <stencil-route-link class="text-dark" url={ editUrl }>{ definition.id }</stencil-route-link>
+                            <stencil-route-link class="text-dark" url={ editUrl }>{ workflow.id }</stencil-route-link>
                           </td>
                           <td>
-                            <stencil-route-link class="text-dark" url={ editUrl }>{ definition.name }</stencil-route-link>
+                            <stencil-route-link class="text-dark" url={ editUrl }>{ workflow.name }</stencil-route-link>
                           </td>
                           <td><a href="#" class="badge badge-info">0</a></td>
                           <td><a href="#" class="badge badge-danger">0</a></td>
@@ -67,13 +96,11 @@ export class AppWorkflowDefinitions {
                               <a class="dropdown-toggle icon-burger-mini" href="javascript:void(0)" role="button" id="dropdown-recent-order1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" data-display="static" />
                               <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdown-recent-order1">
                                 <li class="dropdown-item">
-                                  <stencil-route-link url={ editUrl }>{ definition.name }</stencil-route-link>
+                                  <stencil-route-link url={ editUrl }>Edit</stencil-route-link>
                                 </li>
+                                { this.renderPublishAction(workflow) }
                                 <li class="dropdown-item">
-                                  <a href="#">Publish</a>
-                                </li>
-                                <li class="dropdown-item">
-                                  <a href="#">Remove</a>
+                                  <a href="#" onClick={ e => this.onDeleteClick(e, workflow) }>Delete</a>
                                 </li>
                               </ul>
                             </div>

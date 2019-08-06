@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
@@ -32,7 +33,11 @@ namespace Elsa.Persistence.YesSql.Services
 
         public async Task<WorkflowDefinition> GetByIdAsync(string id, VersionOptions version, CancellationToken cancellationToken = default)
         {
-            var query = session.Query<WorkflowDefinitionDocument, WorkflowDefinitionIndex>().WithVersion(version);
+            var query = session
+                .Query<WorkflowDefinitionDocument, WorkflowDefinitionIndex>()
+                .Where(x => x.WorkflowDefinitionId == id)
+                .WithVersion(version);
+
             var document = await query.FirstOrDefaultAsync();
 
             return mapper.Map<WorkflowDefinition>(document);
@@ -48,13 +53,33 @@ namespace Elsa.Persistence.YesSql.Services
 
         public async Task<WorkflowDefinition> UpdateAsync(WorkflowDefinition definition, CancellationToken cancellationToken)
         {
-            var query = session.Query<WorkflowDefinitionDocument, WorkflowDefinitionIndex>().WithVersion(VersionOptions.SpecificVersion(definition.Version));
+            var query = session
+                .Query<WorkflowDefinitionDocument, WorkflowDefinitionIndex>()
+                .Where(x => x.WorkflowDefinitionId == definition.Id)
+                .WithVersion(VersionOptions.SpecificVersion(definition.Version));
+            
             var document = await query.FirstOrDefaultAsync();
 
             document = mapper.Map(definition, document);
             session.Save(document);
 
             return mapper.Map<WorkflowDefinition>(document);
+        }
+
+        public async Task<int> DeleteAsync(string id, CancellationToken cancellationToken = default)
+        {
+            var documents = (await session
+                    .Query<WorkflowDefinitionDocument, WorkflowDefinitionIndex>()
+                    .Where(x => x.WorkflowDefinitionId == id)
+                    .ListAsync())
+                .ToList();
+
+            foreach (var document in documents)
+            {
+                session.Delete(document);
+            }
+
+            return documents.Count;
         }
     }
 }

@@ -10,7 +10,7 @@ namespace Elsa.Persistence.Memory
 {
     public class MemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
     {
-        private readonly IList<WorkflowDefinition> definitions;
+        private readonly List<WorkflowDefinition> definitions;
 
         public MemoryWorkflowDefinitionStore()
         {
@@ -49,6 +49,12 @@ namespace Elsa.Persistence.Memory
 
             definitions[index] = definition;
             return definition;
+        }
+
+        public Task<int> DeleteAsync(string id, CancellationToken cancellationToken = default)
+        {
+            var count = definitions.RemoveAll(x => x.Id == id);
+            return Task.FromResult<int>(count);
         }
     }
 }

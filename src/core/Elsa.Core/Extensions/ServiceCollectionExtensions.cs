@@ -1,13 +1,16 @@
 using System;
 using Elsa.Activities.ControlFlow;
 using Elsa.Activities.Primitives;
+using Elsa.AutoMapper.Extensions;
 using Elsa.Expressions;
+using Elsa.Mapping;
+using Elsa.Models;
 using Elsa.Scripting;
 using Elsa.Serialization;
 using Elsa.Serialization.Formatters;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Elsa.Services.WorkflowBuilders;
+using Elsa.WorkflowBuilders;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using NodaTime;
@@ -45,9 +48,11 @@ namespace Elsa.Extensions
                 .AddSingleton<IActivityResolver, ActivityResolver>()
                 .AddSingleton<IWorkflowExpressionEvaluator, WorkflowExpressionEvaluator>()
                 .AddSingleton<IWorkflowSerializerProvider, WorkflowSerializerProvider>()
+                .AddSingleton<IWorkflowRegistry, WorkflowRegistry>()
+                .AddSingleton<IWorkflowPublisher, WorkflowPublisher>()
                 .AddTransient<IWorkflowBuilder, WorkflowBuilder>()
                 .AddSingleton<Func<IWorkflowBuilder>>(sp => sp.GetRequiredService<IWorkflowBuilder>)
-                .AddSingleton<IWorkflowRegistry, WorkflowRegistry>()
+                .AddAutoMapperProfile<WorkflowDefinitionProfile>(ServiceLifetime.Singleton)
                 .AddPrimitiveActivities()
                 .AddControlFlowActivities();
         }
