@@ -17,13 +17,18 @@ export class AppWorkflowDefinitions {
 
   onPublishClick = async (e: Event, workflow: Workflow) => {
     e.preventDefault();
-    await workflowDefinitionsApi.publish(workflow.id);
+    const publishedWorkflow = await workflowDefinitionsApi.publish(workflow.id);
+    const index = this.workflows.findIndex(x => x.id == publishedWorkflow.id);
+    const workflows = [...this.workflows];
+
+    workflows[index] = publishedWorkflow;
+    this.workflows = workflows;
   };
 
   onDeleteClick = async (e: Event, workflow: Workflow) => {
     e.preventDefault();
 
-    if(!confirm('Are you sure you want to delete this workflow?'))
+    if (!confirm('Are you sure you want to delete this workflow?'))
       return;
 
     await workflowDefinitionsApi.delete(workflow.id);
@@ -90,7 +95,7 @@ export class AppWorkflowDefinitions {
                           <td><a href="#" class="badge badge-info">0</a></td>
                           <td><a href="#" class="badge badge-danger">0</a></td>
                           <td><a href="#" class="badge badge-success">0</a></td>
-                          <td><span>Published</span></td>
+                          <td><span>{ workflow.isPublished ? 'Published' : 'Draft' }</span></td>
                           <td class="text-right">
                             <div class="dropdown show d-inline-block widget-dropdown">
                               <a class="dropdown-toggle icon-burger-mini" href="javascript:void(0)" role="button" id="dropdown-recent-order1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" data-display="static" />
