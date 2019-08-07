@@ -10,6 +10,7 @@ namespace Elsa.Persistence.YesSql.Indexes
     {
         public string WorkflowDefinitionId { get; set; }
         public int Version { get; set; }
+        public bool IsLatest { get; set; }
         public bool IsPublished { get; set; }
     }
 
@@ -29,7 +30,8 @@ namespace Elsa.Persistence.YesSql.Indexes
                     {
                         WorkflowDefinitionId = document.WorkflowDefinitionId,
                         Version = document.Version,
-                        IsPublished = document.IsPublished
+                        IsPublished = document.IsPublished,
+                        IsLatest = document.IsLatest
                     }
                 );
 

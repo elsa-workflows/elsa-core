@@ -15,6 +15,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="AutoMapper" Version="8.1.1" />
         <PackageReference Include="Microsoft.AspNetCore.Hosting.Server.Abstractions" Version="2.2.0" />
         <PackageReference Include="Microsoft.CSharp" Version="4.5.0" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.2.0" />
@@ -31,6 +32,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Elsa.Abstractions\Elsa.Abstractions.csproj" />
+        <ProjectReference Include="..\Elsa.AutoMapper.Extensions\Elsa.AutoMapper.Extensions.csproj" />
     </ItemGroup>
 
 </Project>
