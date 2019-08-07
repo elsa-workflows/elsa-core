@@ -8,6 +8,7 @@
 import { HTMLStencilElement, JSXBase } from '@stencil/core/internal';
 import {
   MatchResults,
+  RouterHistory,
 } from '@stencil/router';
 import {
   WorkflowFormatDescriptorDictionary,
@@ -15,12 +16,15 @@ import {
 
 export namespace Components {
   interface AppGithubLink {}
-  interface AppHome {}
+  interface AppHome {
+    'history': RouterHistory;
+  }
   interface AppRoot {}
   interface AppSidebar {}
   interface AppTest {}
   interface AppWorkflowDefinitions {}
   interface AppWorkflowEditor {
+    'history': RouterHistory;
     'match': MatchResults;
     'workflowFormats': WorkflowFormatDescriptorDictionary;
   }
@@ -83,12 +87,15 @@ declare global {
 
 declare namespace LocalJSX {
   interface AppGithubLink extends JSXBase.HTMLAttributes<HTMLAppGithubLinkElement> {}
-  interface AppHome extends JSXBase.HTMLAttributes<HTMLAppHomeElement> {}
+  interface AppHome extends JSXBase.HTMLAttributes<HTMLAppHomeElement> {
+    'history'?: RouterHistory;
+  }
   interface AppRoot extends JSXBase.HTMLAttributes<HTMLAppRootElement> {}
   interface AppSidebar extends JSXBase.HTMLAttributes<HTMLAppSidebarElement> {}
   interface AppTest extends JSXBase.HTMLAttributes<HTMLAppTestElement> {}
   interface AppWorkflowDefinitions extends JSXBase.HTMLAttributes<HTMLAppWorkflowDefinitionsElement> {}
   interface AppWorkflowEditor extends JSXBase.HTMLAttributes<HTMLAppWorkflowEditorElement> {
+    'history'?: RouterHistory;
     'match'?: MatchResults;
     'workflowFormats'?: WorkflowFormatDescriptorDictionary;
   }

@@ -1,7 +1,7 @@
 import { Component, h, Prop, State, Watch } from '@stencil/core';
 import '@elsa-workflows/elsa-workflow-designer';
 import workflowDefinitionsApi from '../../services/workflow-definitions-api';
-import { MatchResults } from "@stencil/router";
+import { MatchResults, RouterHistory } from "@stencil/router";
 import jsonPatch from 'fast-json-patch';
 import * as Ladda from 'ladda';
 import {
@@ -22,6 +22,7 @@ export class AppWorkflowEditor {
   publishButton: HTMLButtonElement;
 
   @Prop() match: MatchResults;
+  @Prop() history: RouterHistory;
 
   @Prop()
   workflowFormats: WorkflowFormatDescriptorDictionary = {
@@ -107,6 +108,7 @@ export class AppWorkflowEditor {
       const createdWorkflow = await workflowDefinitionsApi.post(workflow);
       this.workflow = this.oldWorkflow = createdWorkflow;
       this.workflowId = createdWorkflow.id;
+      this.history.replace(`/elsa-dashboard/workflow-definitions/${createdWorkflow.id}`);
     }
   };
 
