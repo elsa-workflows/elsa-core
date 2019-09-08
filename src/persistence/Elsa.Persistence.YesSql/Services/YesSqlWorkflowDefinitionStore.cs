@@ -22,12 +22,18 @@ namespace Elsa.Persistence.YesSql.Services
             this.mapper = mapper;
         }
 
+        public Task<WorkflowDefinition> SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
+        {
+            var document = mapper.Map<WorkflowDefinitionDocument>(definition);
+            session.Save(document);
+            return Task.FromResult(mapper.Map<WorkflowDefinition>(document));
+        }
+
         public Task AddAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
         {
             var document = mapper.Map<WorkflowDefinitionDocument>(definition);
 
             session.Save(document);
-
             return Task.CompletedTask;
         }
 

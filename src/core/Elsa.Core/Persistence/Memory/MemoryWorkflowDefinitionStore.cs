@@ -17,6 +17,18 @@ namespace Elsa.Persistence.Memory
             definitions = new List<WorkflowDefinition>();
         }
 
+        public async Task<WorkflowDefinition> SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
+        {
+            var existingDefinition = await GetByIdAsync(definition.Id, VersionOptions.SpecificVersion(definition.Version), cancellationToken);
+
+            if (existingDefinition == null)
+                await AddAsync(existingDefinition, cancellationToken);
+            else
+                await UpdateAsync(definition, cancellationToken);
+
+            return definition;
+        }
+
         public async Task AddAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
         {
             var existingDefinition = await GetByIdAsync(definition.Id, VersionOptions.SpecificVersion(definition.Version), cancellationToken);

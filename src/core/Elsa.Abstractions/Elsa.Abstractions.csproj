@@ -11,7 +11,7 @@
         <PackageProjectUrl>https://github.com/elsa-workflows/elsa-core</PackageProjectUrl>
         <RepositoryUrl>https://github.com/elsa-workflows/elsa-core</RepositoryUrl>
         <RepositoryType>GitHub</RepositoryType>
-        <PackageTags>elsa, workflows, orchard</PackageTags>
+        <PackageTags>elsa, workflows</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>

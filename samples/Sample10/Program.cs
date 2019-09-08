@@ -28,12 +28,18 @@ namespace Sample10
             // Create a workflow definition.
             var registry = services.GetService<IWorkflowRegistry>();
             var workflowDefinition = registry.RegisterWorkflow<HelloWorldWorkflow>();
+            
+            // Mark this definition as the "latest" version.
+            workflowDefinition.IsLatest = true;
+            workflowDefinition.Version = 1;
 
             using (var scope = services.CreateScope())
             {
+                var session = services.GetRequiredService<ISession>();
+                
                 // Persist the workflow definition.
                 var definitionStore = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionStore>();
-                await definitionStore.AddAsync(workflowDefinition);
+                await definitionStore.SaveAsync(workflowDefinition);
 
                 // Load the workflow definition.
                 workflowDefinition = await definitionStore.GetByIdAsync(workflowDefinition.Id, VersionOptions.Latest);
