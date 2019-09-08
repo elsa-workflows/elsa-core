@@ -17,6 +17,15 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             this.dbContext = dbContext;
         }
 
+        public async Task<WorkflowDefinition> SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
+        {
+            await dbContext.WorkflowDefinitions.Upsert(definition)
+                .On(x => new { x.Id, x.Version })
+                .RunAsync(cancellationToken);
+
+            return definition;
+        }
+
         public async Task AddAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
         {
             await dbContext.WorkflowDefinitions.AddAsync(definition, cancellationToken);

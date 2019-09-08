@@ -13,7 +13,10 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Sample14
 {
-    // A simple demonstration of using Entity Framework Core persistence providers.
+    /// <summary>
+    /// A simple demonstration of using Entity Framework Core persistence providers.
+    /// To run the EF migration, first run the following command: `dotnet ef database update`.
+    /// </summary>
     public class Program
     {
         public static async Task Main(string[] args)
@@ -27,6 +30,10 @@ namespace Sample14
             // Create a workflow definition.
             var registry = services.GetService<IWorkflowRegistry>();
             var workflowDefinition = registry.RegisterWorkflow<HelloWorldWorkflow>();
+            
+            // Mark this definition as the "latest" version.
+            workflowDefinition.IsLatest = true;
+            workflowDefinition.Version = 1;
 
             using (var scope = services.CreateScope())
             {
@@ -37,7 +44,7 @@ namespace Sample14
                 
                 // Persist the workflow definition.
                 var definitionStore = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionStore>();
-                await definitionStore.AddAsync(workflowDefinition);
+                await definitionStore.SaveAsync(workflowDefinition);
 
                 // Flush to DB.
                 await dbContext.SaveChangesAsync();

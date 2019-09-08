@@ -32,7 +32,7 @@ namespace Elsa.Persistence.EntityFrameworkCore
         {
             var entity = modelBuilder.Entity<WorkflowDefinition>();
 
-            entity.HasKey(x => x.Id);
+            entity.HasKey("Id", "Version");
             entity.Property(x => x.Id).ValueGeneratedNever();
             entity.Property(x => x.Variables).HasConversion(x => Serialize(x), x => Deserialize<Variables>(x));
             entity.Property(x => x.Activities).HasConversion(x => Serialize(x), x => Deserialize<ICollection<ActivityDefinition>>(x));
