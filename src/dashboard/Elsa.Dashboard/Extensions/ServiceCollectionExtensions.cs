@@ -1,8 +1,6 @@
-using Elsa.Dashboard.Middleware;
 using Elsa.Dashboard.Options;
 using Elsa.Runtime;
 using Elsa.Services;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Dashboard.Extensions
@@ -14,8 +12,7 @@ namespace Elsa.Dashboard.Extensions
             services
                 .AddTaskExecutingServer()
                 .AddSingleton<IIdGenerator, IdGenerator>()
-                .AddScoped<IWorkflowPublisher, WorkflowPublisher>()
-                .AddTransient<DashboardMiddleware>();
+                .AddScoped<IWorkflowPublisher, WorkflowPublisher>();
             
             services.ConfigureOptions<StaticAssetsConfigureOptions>();
 

@@ -1,6 +1,8 @@
 ﻿using System.Data;
+using Elsa.Dashboard.Conventions;
 using Elsa.Dashboard.Extensions;
 using Elsa.Persistence.YesSql.Extensions;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -22,7 +24,9 @@ namespace Elsa.Dashboard.Web
 
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Latest);
+            services
+                .AddMvc(options => options.Conventions.Add(new AddLocalhostFilterConvention()))
+                .SetCompatibilityVersion(CompatibilityVersion.Latest);
 
             services
                 .AddYesSql(
@@ -38,10 +42,7 @@ namespace Elsa.Dashboard.Web
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
-            app
-                .UseCors(x => x.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod())
-                .UseMvcWithDefaultRoute()
-                .UseElsaDashboard();
+            app.UseMvcWithDefaultRoute();
         }
     }
 }

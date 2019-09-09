@@ -9,23 +9,23 @@ namespace Elsa.Dashboard.Options
 {
     internal class StaticAssetsConfigureOptions : IPostConfigureOptions<StaticFileOptions>
     {
-        private readonly IHostingEnvironment _environment;
+        private readonly IHostingEnvironment environment;
 
         public StaticAssetsConfigureOptions(IHostingEnvironment environment)
         {
-            _environment = environment;
+            this.environment = environment;
         }
 
         public void PostConfigure(string name, StaticFileOptions options)
         {
             options.ContentTypeProvider = options.ContentTypeProvider ?? new FileExtensionContentTypeProvider();
 
-            if (options.FileProvider == null && _environment.WebRootFileProvider == null)
+            if (options.FileProvider == null && environment.WebRootFileProvider == null)
             {
                 throw new InvalidOperationException("Missing FileProvider.");
             }
 
-            options.FileProvider = options.FileProvider ?? _environment.WebRootFileProvider;
+            options.FileProvider = options.FileProvider ?? environment.WebRootFileProvider;
 
             var filesProvider = new ManifestEmbeddedFileProvider(GetType().Assembly, "wwwroot");
             options.FileProvider = new CompositeFileProvider(options.FileProvider, filesProvider);

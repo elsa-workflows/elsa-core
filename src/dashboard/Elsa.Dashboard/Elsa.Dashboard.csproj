@@ -16,16 +16,12 @@
     </ItemGroup>
 
     <ItemGroup>
-      <UpToDateCheckInput Remove="Views\Home\Index.cshtml" />
-    </ItemGroup>
-
-    <ItemGroup>
       <ProjectReference Include="..\..\core\Elsa.Abstractions\Elsa.Abstractions.csproj" />
       <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-      <TypeScriptCompile Include="ClientApp\elsa-dashboard\src\services\workflow-definitions-api.ts" />
+      <Folder Include="Areas\Elsa" />
     </ItemGroup>
 
 </Project>
