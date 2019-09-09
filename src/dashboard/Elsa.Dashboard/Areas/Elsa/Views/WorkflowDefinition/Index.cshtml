@@ -1,0 +1,43 @@
+@{
+    ViewBag.Title = "Workflows";
+}
+
+@section ContentHeader
+{
+    <div class="container-fluid align-items-center">
+        <div class="row">
+            <div class="col-lg-7 col-md-10">
+                <h1 class="display-2 text-white">Sample Workflow</h1>
+                <p class="text-white mt-0 mb-5">This is a description. </p>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="container-fluid mt--7">
+    <div class="row">
+        <div class="col">
+            <div class="card bg-secondary shadow">
+                <div class="card-header bg-white border-0">
+                    <div class="row align-items-center">
+                        <div class="col-8">
+                            <h3 class="mb-0">Workflow Designer</h3>
+                        </div>
+                        <div class="col-4 text-right">
+                            <a href="#!" class="btn btn-sm btn-secondary"><i class="fa fa-cog"></i></a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form>
+                        <div class="text-right">
+                            <button type="submit" class="btn btn-primary mt-4">Save Draft</button>
+                            <button type="submit" class="btn btn-success mt-4">Publish</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    @await Html.PartialAsync("Footer")
+</div>

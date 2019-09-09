@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.StaticFiles;
@@ -27,8 +28,9 @@ namespace Elsa.Dashboard.Options
 
             options.FileProvider = options.FileProvider ?? environment.WebRootFileProvider;
 
-            var filesProvider = new ManifestEmbeddedFileProvider(GetType().Assembly, "wwwroot");
-            options.FileProvider = new CompositeFileProvider(options.FileProvider, filesProvider);
+            var embeddedFileProvider = new ManifestEmbeddedFileProvider(GetType().Assembly, "wwwroot");
+
+            options.FileProvider = new CompositeFileProvider(options.FileProvider, embeddedFileProvider);
         }
     }
 }

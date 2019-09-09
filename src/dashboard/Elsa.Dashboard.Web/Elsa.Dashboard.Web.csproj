@@ -22,4 +22,9 @@
       <_ContentIncludedByDefault Remove="wwwroot\.placeholder" />
     </ItemGroup>
 
+    <ItemGroup>
+        <!-- extends watching group to include *.cshtml files for all projects -->
+        <Watch Include="..\Elsa.Dashboard\**\*.cshtml" />
+    </ItemGroup>
+
 </Project>

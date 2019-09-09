@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Elsa.Dashboard.Areas.Elsa.Controllers
@@ -10,7 +9,7 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
         [HttpGet]
         public IActionResult Index()
         {
-            return Content("Workflow Definitions");
+            return View();
         }
     }
 }

@@ -6,6 +6,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="GravatarHelper.AspNetCore" Version="1.1.0" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.2.0" />
         <PackageReference Include="Microsoft.AspNetCore.StaticFiles" Version="2.2.0" />
         <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="2.2.0" />
@@ -21,7 +22,15 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Areas\Elsa" />
+      <Reference Include="Microsoft.Extensions.FileProviders.Physical, Version=2.2.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60">
+        <HintPath>..\..\..\..\..\..\Program Files\dotnet\sdk\NuGetFallbackFolder\microsoft.extensions.fileproviders.physical\2.2.0\lib\netstandard2.0\Microsoft.Extensions.FileProviders.Physical.dll</HintPath>
+      </Reference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <_ContentIncludedByDefault Remove="wwwroot\assets\css\argon-dashboard.css" />
+      <_ContentIncludedByDefault Remove="wwwroot\assets\css\argon-dashboard.css.map" />
+      <_ContentIncludedByDefault Remove="wwwroot\assets\css\argon-dashboard.min.css" />
     </ItemGroup>
 
 </Project>
