@@ -8,6 +8,7 @@ using Elsa.Persistence;
 using Elsa.Serialization;
 using Elsa.Serialization.Formatters;
 using Elsa.Services;
+using Elsa.Services.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Elsa.Dashboard.Areas.Elsa.Controllers
@@ -64,7 +65,7 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
             workflow.Version = 1;
             
             await store.SaveAsync(workflow, cancellationToken);
-            
+
             return RedirectToAction(nameof(Index));
         }
         
@@ -83,6 +84,18 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
             };
             
             return View(model);
+        }
+        
+        [HttpPost("edit/{id}")]
+        public async Task<IActionResult> Edit(string id, WorkflowDefinitionViewModel model, CancellationToken cancellationToken)
+        {
+            var workflow = serializer.Deserialize<WorkflowDefinition>(model.Json, JsonTokenFormatter.FormatName);
+
+            workflow.Id = id;
+            await store.SaveAsync(workflow, cancellationToken);
+            await store.CommitAsync(cancellationToken);
+            
+            return RedirectToAction(nameof(Index));
         }
     }
 }

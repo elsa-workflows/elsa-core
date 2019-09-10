@@ -68,5 +68,10 @@ namespace Elsa.Persistence.Memory
             var count = definitions.RemoveAll(x => x.Id == id);
             return Task.FromResult<int>(count);
         }
+
+        public Task CommitAsync(CancellationToken cancellationToken = default)
+        {
+            return Task.CompletedTask;
+        }
     }
 }

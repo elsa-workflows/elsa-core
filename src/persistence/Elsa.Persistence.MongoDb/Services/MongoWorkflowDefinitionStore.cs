@@ -76,5 +76,10 @@ namespace Elsa.Persistence.MongoDb.Services
 
             return (int) result.DeletedCount;
         }
+
+        public Task CommitAsync(CancellationToken cancellationToken = default)
+        {
+            return Task.CompletedTask;
+        }
     }
 }

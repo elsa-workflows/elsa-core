@@ -13,5 +13,6 @@ namespace Elsa.Persistence
         Task<IEnumerable<WorkflowDefinition>> ListAsync(VersionOptions version, CancellationToken cancellationToken = default);
         Task<WorkflowDefinition> UpdateAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default);
         Task<int> DeleteAsync(string id, CancellationToken cancellationToken = default);
+        Task CommitAsync(CancellationToken cancellationToken = default);
     }
 }

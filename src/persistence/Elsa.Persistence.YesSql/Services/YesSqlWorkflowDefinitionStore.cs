@@ -88,5 +88,10 @@ namespace Elsa.Persistence.YesSql.Services
 
             return documents.Count;
         }
+
+        public Task CommitAsync(CancellationToken cancellationToken = default)
+        {
+            return session.CommitAsync();
+        }
     }
 }
