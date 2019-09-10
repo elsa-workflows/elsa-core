@@ -10,7 +10,7 @@ var Paths = {
     DIST: '../../wwwroot/',
     ASSETS: './assets/',
     CSS: './assets/css/',
-    SCSS_TOOLKIT_SOURCES: './assets/scss/argon-dashboard.scss',
+    SCSS_TOOLKIT_SOURCES: './assets/scss/**/**',
     SCSS: './assets/scss/**/**'
 };
 

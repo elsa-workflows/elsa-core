@@ -11,5 +11,17 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
         {
             return View();
         }
+        
+        [HttpGet("create")]
+        public IActionResult Create()
+        {
+            return View();
+        }
+        
+        [HttpGet("edit/{id}")]
+        public IActionResult Edit(string id)
+        {
+            return View();
+        }
     }
 }
