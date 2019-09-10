@@ -22,7 +22,7 @@ namespace Elsa.Persistence.Memory
             var existingDefinition = await GetByIdAsync(definition.Id, VersionOptions.SpecificVersion(definition.Version), cancellationToken);
 
             if (existingDefinition == null)
-                await AddAsync(existingDefinition, cancellationToken);
+                await AddAsync(definition, cancellationToken);
             else
                 await UpdateAsync(definition, cancellationToken);
 

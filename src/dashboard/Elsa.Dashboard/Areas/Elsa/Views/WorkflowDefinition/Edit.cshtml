@@ -1,6 +1,6 @@
 @model WorkflowDefinitionViewModel
 @{
-    ViewBag.Title = "New Workflow";
+    ViewBag.Title = Model.WorkflowDefinition.Name;
 }
 
 @await Html.PartialAsync("EditWorkflowDefinition")

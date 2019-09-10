@@ -1,3 +1,4 @@
+@model WorkflowDefinitionListViewModel
 @{
     ViewBag.Title = "Workflows";
 }
@@ -29,17 +30,20 @@
                         </tr>
                         </thead>
                         <tbody>
-                        @for (var i = 0; i < 10; i++)
+                        @foreach(var grouping in Model.WorkflowDefinitions)
                         {
+                            var latest = grouping.First(x => x.IsLatest);
+                            var published = grouping.FirstOrDefault(x => x.IsPublished);
+                            var publishedVersion = published?.Version.ToString() ?? "-";
                             <tr>
                                 <th scope="row">
                                     <div class="media align-items-center">
                                         <div class="media-body">
-                                            <a asp-action="Edit" asp-route-id="@i" class="mb-0 text-sm">Sample Workflow @(i + 1)</a>
+                                            <a asp-action="Edit" asp-route-id="@latest.Id" class="mb-0 text-sm">@latest.Name</a>
                                         </div>
                                     </div>
                                 </th>
-                                <td>This is a sample workflow.</td>
+                                <td>@latest.Description</td>
                                 <td>
                                     <ul class="list-unstyled">
                                         <li>
@@ -60,10 +64,10 @@
                                     </ul>
                                 </td>
                                 <td>
-                                    2
+                                    @latest.Version
                                 </td>
                                 <td>
-                                    1
+                                    @publishedVersion
                                 </td>
                                 <td class="text-right">
                                     <div class="dropdown">
@@ -73,6 +77,8 @@
                                         <div class="dropdown-menu dropdown-menu-right dropdown-menu-arrow">
                                             <a class="dropdown-item" href="#">Edit</a>
                                             <a class="dropdown-item" href="#">Publish Draft</a>
+                                            <a class="dropdown-item" href="#">Unpublish</a>
+                                            <a class="dropdown-item" href="#">History</a>
                                             <a class="dropdown-item" href="#">Delete</a>
                                         </div>
                                     </div>

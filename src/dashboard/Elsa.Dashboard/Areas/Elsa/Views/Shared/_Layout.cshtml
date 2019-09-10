@@ -32,6 +32,7 @@
     <!-- CSS Files -->
     <link href="~/assets/css/argon-dashboard.css?v=1.1.0" rel="stylesheet"/>
     <link href="~/assets/css/elsa.css?v=1.1.0" rel="stylesheet"/>
+    @await RenderSectionAsync("HeadScripts", false)
 </head>
 
 <body>
@@ -52,6 +53,7 @@
 <!--   Core   -->
 <script src="~/assets/js/plugins/jquery/dist/jquery.min.js"></script>
 <script src="~/assets/js/plugins/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+@await RenderSectionAsync("FootScripts", false)
 </body>
 
 </html>

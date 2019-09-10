@@ -1,5 +1,9 @@
+using Elsa.AutoMapper.Extensions;
 using Elsa.Dashboard.Options;
+using Elsa.Mapping;
 using Elsa.Runtime;
+using Elsa.Serialization;
+using Elsa.Serialization.Formatters;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -12,7 +16,13 @@ namespace Elsa.Dashboard.Extensions
             services
                 .AddTaskExecutingServer()
                 .AddSingleton<IIdGenerator, IdGenerator>()
-                .AddScoped<IWorkflowPublisher, WorkflowPublisher>();
+                .AddSingleton<IWorkflowSerializerProvider, WorkflowSerializerProvider>()
+                .AddSingleton<IWorkflowSerializer, WorkflowSerializer>()
+                .AddSingleton<ITokenFormatter, JsonTokenFormatter>()
+                .AddSingleton<ITokenFormatter, YamlTokenFormatter>()
+                .AddSingleton<ITokenFormatter, XmlTokenFormatter>()
+                .AddScoped<IWorkflowPublisher, WorkflowPublisher>()
+                .AddAutoMapperProfile<WorkflowDefinitionProfile>(ServiceLifetime.Singleton);
             
             services.ConfigureOptions<StaticAssetsConfigureOptions>();
 

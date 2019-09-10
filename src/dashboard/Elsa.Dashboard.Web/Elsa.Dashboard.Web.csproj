@@ -11,10 +11,12 @@
         <PackageReference Include="Microsoft.AspNetCore.HttpsPolicy" Version="2.2.0" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.2.0" />
         <PackageReference Include="Microsoft.AspNetCore.StaticFiles" Version="2.2.0" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="2.2.6" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="2.2.6" />
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\persistence\Elsa.Persistence.YesSql\Elsa.Persistence.YesSql.csproj" />
+      <ProjectReference Include="..\..\persistence\Elsa.Persistence.EntityFrameworkCore\Elsa.Persistence.EntityFrameworkCore.csproj" />
       <ProjectReference Include="..\Elsa.Dashboard\Elsa.Dashboard.csproj" />
     </ItemGroup>
 

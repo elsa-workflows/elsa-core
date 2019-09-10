@@ -34,7 +34,7 @@ gulp.task('open', function () {
 
 gulp.task('copy-styles', function () {
     gulp.src(`${Paths.ASSETS}css/**/*.*`)
-        .pipe(gulp.dest(`${Paths.DIST}assets/css/`));
+        .pipe(gulp.dest(`${Paths.DIST}assets/css/`, {overwrite: true}));
 });
 
 gulp.task('copy-fonts', function () {
@@ -44,13 +44,14 @@ gulp.task('copy-fonts', function () {
 
 gulp.task('copy-images', function () {
     gulp.src(`${Paths.ASSETS}img/**/*.*`)
-        .pipe(gulp.dest(`${Paths.DIST}assets/img/`));
+        .pipe(gulp.dest(`${Paths.DIST}assets/img/`, {overwrite: true}));
 });
 
 gulp.task('copy-scripts', function () {
     gulp.src(`${Paths.ASSETS}js/**/*.*`)
-        .pipe(gulp.dest(`${Paths.DIST}assets/js/`));
+        .pipe(gulp.dest(`${Paths.DIST}assets/js/`, {overwrite: true}));
 });
 
 gulp.task('open-app', ['open', 'watch']);
-gulp.task('build-theme', ['compile-scss', 'copy-styles', 'copy-scripts', 'copy-fonts', 'copy-images']);
+gulp.task('build', ['compile-scss', 'copy-styles', 'copy-scripts', 'copy-fonts', 'copy-images']);
+gulp.task('build-styles', ['compile-scss', 'copy-styles']);

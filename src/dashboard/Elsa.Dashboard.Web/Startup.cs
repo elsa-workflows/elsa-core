@@ -1,17 +1,14 @@
-﻿using System.Data;
-using System.IO;
+﻿using System.IO;
 using Elsa.Dashboard.Conventions;
 using Elsa.Dashboard.Extensions;
-using Elsa.Persistence.YesSql.Extensions;
-using Microsoft.AspNetCore.Authorization;
+using Elsa.Persistence.EntityFrameworkCore.Extensions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
-using YesSql.Provider.Sqlite;
-using YesSql;
-using IConfiguration = Microsoft.Extensions.Configuration.IConfiguration;
 
 namespace Elsa.Dashboard.Web
 {
@@ -40,14 +37,12 @@ namespace Elsa.Dashboard.Web
                 );
 
             services
-                .AddYesSql(
+                .AddEntityFrameworkCore(
                     options => options
-                        .UseSqLite(@"Data Source=c:\data\elsa.yessql.db;Cache=Shared", IsolationLevel.ReadUncommitted)
-                        .UseDefaultIdGenerator()
-                        .SetTablePrefix("elsa_")
+                        .UseSqlite(Configuration.GetConnectionString("Sqlite"))
                 )
-                .AddYesSqlWorkflowDefinitionStore()
-                .AddYesSqlWorkflowInstanceStore()
+                .AddEntityFrameworkCoreWorkflowDefinitionStore()
+                .AddEntityFrameworkCoreWorkflowInstanceStore()
                 .AddElsaDashboard();
         }
 
