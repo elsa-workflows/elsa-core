@@ -19,7 +19,6 @@ namespace Elsa.Dashboard.ActionFilters
         {
             await next();
             await workflowDefinitionStore.CommitAsync(context.HttpContext.RequestAborted);
-            
         }
     }
 }
