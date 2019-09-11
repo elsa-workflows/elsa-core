@@ -33,7 +33,10 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
 
         public async Task<WorkflowDefinition> GetByIdAsync(string id, VersionOptions version, CancellationToken cancellationToken = default)
         {
-            var query = dbContext.WorkflowDefinitions.AsQueryable().WithVersion(version);
+            var query = dbContext.WorkflowDefinitions
+                .AsQueryable()
+                .Where(x => x.Id == id)
+                .WithVersion(version);
 
             return await query.FirstOrDefaultAsync(cancellationToken);
         }
@@ -56,6 +59,11 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
 
             dbContext.WorkflowDefinitions.RemoveRange(records);
             return records.Count;
+        }
+
+        public Task CommitAsync(CancellationToken cancellationToken = default)
+        {
+            return dbContext.SaveChangesAsync(cancellationToken);
         }
     }
 }

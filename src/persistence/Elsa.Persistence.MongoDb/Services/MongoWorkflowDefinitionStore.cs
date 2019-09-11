@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Persistence.MongoDb.Extensions;
 using MongoDB.Driver;
@@ -41,7 +42,7 @@ namespace Elsa.Persistence.MongoDb.Services
             VersionOptions version,
             CancellationToken cancellationToken = default)
         {
-            var query = collection.AsQueryable()
+            var query = (IMongoQueryable<WorkflowDefinition>)collection.AsQueryable()
                 .Where(x => x.Id == id)
                 .WithVersion(version);
 
@@ -52,7 +53,7 @@ namespace Elsa.Persistence.MongoDb.Services
             VersionOptions version,
             CancellationToken cancellationToken = default)
         {
-            var query = collection.AsQueryable().WithVersion(version);
+            var query = (IMongoQueryable<WorkflowDefinition>)collection.AsQueryable().WithVersion(version);
             return await query.ToListAsync(cancellationToken);
         }
 
@@ -74,6 +75,11 @@ namespace Elsa.Persistence.MongoDb.Services
             var result = await collection.DeleteManyAsync(x => x.Id == id, cancellationToken);
 
             return (int) result.DeletedCount;
+        }
+
+        public Task CommitAsync(CancellationToken cancellationToken = default)
+        {
+            return Task.CompletedTask;
         }
     }
 }

@@ -1,47 +1,55 @@
-﻿using System.Data;
+﻿using System.IO;
+using Elsa.Dashboard.Conventions;
 using Elsa.Dashboard.Extensions;
-using Elsa.Persistence.YesSql.Extensions;
+using Elsa.Persistence.EntityFrameworkCore.Extensions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using YesSql.Provider.Sqlite;
-using YesSql;
-using IConfiguration = Microsoft.Extensions.Configuration.IConfiguration;
+using Microsoft.Extensions.FileProviders;
 
 namespace Elsa.Dashboard.Web
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
+        public Startup(IConfiguration configuration, IHostingEnvironment environment)
         {
             Configuration = configuration;
+            Environment = environment;
         }
 
         public IConfiguration Configuration { get; }
+        public IHostingEnvironment Environment { get; }
 
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Latest);
+            services
+                .AddMvc(options => options.Conventions.Add(new AddLocalhostFilterConvention()))
+                .SetCompatibilityVersion(CompatibilityVersion.Latest)
+                .AddRazorOptions(options =>
+                    {
+                        // Workaround to get Razor views in Elsa.Dashboard recompiled when changing .cshtml.
+                        if(Environment.IsDevelopment())
+                            options.FileProviders.Add(new PhysicalFileProvider(Path.Combine(Environment.ContentRootPath, @"..\Elsa.Dashboard")));
+                    }
+                );
 
             services
-                .AddYesSql(
+                .AddEntityFrameworkCore(
                     options => options
-                        .UseSqLite(@"Data Source=c:\data\elsa.yessql.db;Cache=Shared", IsolationLevel.ReadUncommitted)
-                        .UseDefaultIdGenerator()
-                        .SetTablePrefix("elsa_")
+                        .UseSqlite(Configuration.GetConnectionString("Sqlite"))
                 )
-                .AddYesSqlWorkflowDefinitionStore()
-                .AddYesSqlWorkflowInstanceStore()
+                .AddEntityFrameworkCoreWorkflowDefinitionStore()
+                .AddEntityFrameworkCoreWorkflowInstanceStore()
                 .AddElsaDashboard();
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
-            app
-                .UseCors(x => x.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod())
-                .UseMvcWithDefaultRoute()
-                .UseElsaDashboard();
+            app.UseStaticFiles();
+            app.UseMvcWithDefaultRoute();
         }
     }
 }

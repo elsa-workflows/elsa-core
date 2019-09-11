@@ -2,7 +2,6 @@
 
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
-        <RootNamespace>Elsa</RootNamespace>
         <LangVersion>latest</LangVersion>
         <PackageVersion>1.0.0</PackageVersion>
         <Authors>Sipke Schoorstra</Authors>

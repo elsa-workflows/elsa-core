@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
+using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Persistence.YesSql.Documents;
 using Elsa.Persistence.YesSql.Extensions;
@@ -86,6 +87,11 @@ namespace Elsa.Persistence.YesSql.Services
             }
 
             return documents.Count;
+        }
+
+        public Task CommitAsync(CancellationToken cancellationToken = default)
+        {
+            return session.CommitAsync();
         }
     }
 }

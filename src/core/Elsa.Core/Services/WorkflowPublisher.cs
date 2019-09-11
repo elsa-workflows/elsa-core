@@ -9,12 +9,28 @@ namespace Elsa.Services
     public class WorkflowPublisher : IWorkflowPublisher
     {
         private readonly IWorkflowDefinitionStore store;
+        private readonly IIdGenerator idGenerator;
         private readonly IMapper mapper;
 
-        public WorkflowPublisher(IWorkflowDefinitionStore store, IMapper mapper)
+        public WorkflowPublisher(IWorkflowDefinitionStore store, IIdGenerator idGenerator, IMapper mapper)
         {
             this.store = store;
+            this.idGenerator = idGenerator;
             this.mapper = mapper;
+        }
+
+        public WorkflowDefinition New(bool publish)
+        {
+            var definition = new WorkflowDefinition
+            {
+                Id = idGenerator.Generate(),
+                Name = "New Workflow",
+                Version = 1,
+                IsLatest = true,
+                IsPublished = false
+            };
+
+            return definition;
         }
 
         public async Task<WorkflowDefinition> PublishAsync(string id, CancellationToken cancellationToken)
@@ -23,11 +39,12 @@ namespace Elsa.Services
 
             if (definition == null)
                 return null;
-            
+
             return await PublishAsync(definition, cancellationToken);
         }
 
-        public async Task<WorkflowDefinition> PublishAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken)
+        public async Task<WorkflowDefinition> PublishAsync(WorkflowDefinition workflowDefinition,
+            CancellationToken cancellationToken)
         {
             var definition = mapper.Map<WorkflowDefinition>(workflowDefinition);
 
@@ -47,7 +64,11 @@ namespace Elsa.Services
                 return clone;
             }
 
-            var publishedDefinition = await store.GetByIdAsync(definition.Id, VersionOptions.Published, cancellationToken);
+            var publishedDefinition = await store.GetByIdAsync(
+                definition.Id,
+                VersionOptions.Published,
+                cancellationToken
+            );
 
             if (publishedDefinition != null)
             {
@@ -65,17 +86,22 @@ namespace Elsa.Services
 
         public async Task<WorkflowDefinition> GetDraftAsync(string id, CancellationToken cancellationToken)
         {
-            var definition = await store.GetByIdAsync(id, VersionOptions.Latest, cancellationToken);
+            var definition =
+                await store.GetByIdAsync(id, VersionOptions.Latest, cancellationToken) ??
+                new WorkflowDefinition
+                {
+                    Id = idGenerator.Generate(),
+                    Version = 1,
+                    IsLatest = true,
+                    IsPublished = false
+                };
 
-            if (definition == null)
-                return null;
-            
             if (!definition.IsPublished)
                 return definition;
 
             definition.IsLatest = false;
             await store.UpdateAsync(definition, cancellationToken);
-            
+
             var draft = mapper.Map<WorkflowDefinition>(definition);
             draft.IsPublished = false;
             draft.IsLatest = true;

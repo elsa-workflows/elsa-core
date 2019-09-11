@@ -1,0 +1,125 @@
+//
+// Navabar collapse
+//
+
+// Collapse
+
+.navbar-collapse-header {
+    display: none;
+}
+
+@include media-breakpoint-down(sm) {
+    .navbar-nav {
+        .nav-link {
+            padding: .625rem 0;
+            color: theme-color("default") !important;
+        }
+
+        .dropdown-menu {
+            box-shadow: none;
+            min-width: auto;
+
+            .media {
+                svg {
+                    width: 30px;
+                }
+            }
+        }
+    }
+
+    .navbar-collapse {
+        width: calc(100% - 1.4rem);
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1050;
+        margin: .7rem;
+        overflow-y: auto;
+        height: auto !important;
+        opacity: 0;
+
+        .navbar-toggler {
+            width: 20px;
+            height: 20px;
+            position: relative;
+            cursor: pointer;
+            display: inline-block;
+            padding: 0;
+
+            span {
+                display: block;
+                position: absolute;
+                width: 100%;
+                height: 2px;
+                border-radius: 2px;
+                opacity: 1;
+                background: #283448;
+            }
+
+            :nth-child(1) {
+                transform: rotate(135deg);
+            }
+
+            :nth-child(2) {
+                transform: rotate(-135deg);
+            }
+        }
+
+        .navbar-collapse-header {
+            display: block;
+            padding-bottom: 1rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid rgba(0, 0, 0, .1);
+        }
+
+        .collapse-brand {
+            img {
+                height: 36px;
+            }
+        }
+
+        .collapse-close {
+            text-align: right;
+        }
+    }
+
+    .navbar-collapse.collapsing,
+    .navbar-collapse.show {
+        padding: 1.5rem;
+        border-radius: $border-radius;
+        background: #FFF;
+        box-shadow: 0 50px 100px rgba(50,50,93,.1),0 15px 35px rgba(50,50,93,.15),0 5px 15px rgba(0,0,0,.1);
+        animation: show-navbar-collapse .2s ease forwards;
+    }
+
+    .navbar-collapse.collapsing-out {
+        animation: hide-navbar-collapse .2s ease forwards;
+    }
+}
+
+@keyframes show-navbar-collapse {
+    0% {
+        opacity: 0;
+        transform: scale(.95);
+        transform-origin: 100% 0;
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes hide-navbar-collapse {
+    from {
+        opacity: 1;
+        transform: scale(1);
+        transform-origin: 100% 0;
+    }
+
+    to {
+        opacity: 0;
+        transform: scale(.95);
+    }
+}
