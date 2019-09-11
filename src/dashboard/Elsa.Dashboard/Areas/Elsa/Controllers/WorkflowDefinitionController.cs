@@ -2,13 +2,14 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Dashboard.Areas.Elsa.ViewModels;
-using Elsa.Extensions;
+using Elsa.Dashboard.Extensions;
+using Elsa.Dashboard.Models;
+using Elsa.Dashboard.Services;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Serialization;
 using Elsa.Serialization.Formatters;
 using Elsa.Services;
-using Elsa.Services.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Elsa.Dashboard.Areas.Elsa.Controllers
@@ -21,19 +22,22 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
         private readonly IWorkflowPublisher publisher;
         private readonly IWorkflowSerializer serializer;
         private readonly IIdGenerator idGenerator;
+        private readonly INotifier notifier;
 
         public WorkflowDefinitionController(
             IWorkflowDefinitionStore store,
             IWorkflowPublisher publisher,
             IWorkflowSerializer serializer,
-            IIdGenerator idGenerator)
+            IIdGenerator idGenerator,
+            INotifier notifier)
         {
             this.publisher = publisher;
             this.store = store;
             this.serializer = serializer;
             this.idGenerator = idGenerator;
+            this.notifier = notifier;
         }
-        
+
         [HttpGet]
         public async Task<IActionResult> Index(CancellationToken cancellationToken)
         {
@@ -45,30 +49,34 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
             };
             return View(model);
         }
-        
+
         [HttpGet("create")]
         public IActionResult Create()
         {
-            var model = new WorkflowDefinitionViewModel();
+            var model = new WorkflowDefinitionViewModel
+            {
+                Name = "New Workflow"
+            };
             return View(model);
         }
-        
+
         [HttpPost("create")]
         public async Task<IActionResult> Create(WorkflowDefinitionViewModel model, CancellationToken cancellationToken)
         {
-            var workflow = !string.IsNullOrWhiteSpace(model.Json) ?
-                serializer.Deserialize<WorkflowDefinition>(model.Json, JsonTokenFormatter.FormatName)
+            var workflow = !string.IsNullOrWhiteSpace(model.Json)
+                ? serializer.Deserialize<WorkflowDefinition>(model.Json, JsonTokenFormatter.FormatName)
                 : new WorkflowDefinition();
 
             workflow.Id = idGenerator.Generate();
             workflow.IsLatest = true;
             workflow.Version = 1;
-            
+
             await store.SaveAsync(workflow, cancellationToken);
 
+            notifier.Notify("New workflow successfully created.", NotificationType.Success);
             return RedirectToAction(nameof(Index));
         }
-        
+
         [HttpGet("edit/{id}")]
         public async Task<IActionResult> Edit(string id, CancellationToken cancellationToken)
         {
@@ -79,22 +87,35 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
 
             var model = new WorkflowDefinitionViewModel
             {
-                WorkflowDefinition = workflow,
+                Id = workflow.Id,
+                Name = workflow.Name,
+                Description = workflow.Description,
                 Json = serializer.Serialize(workflow, JsonTokenFormatter.FormatName)
             };
-            
+
             return View(model);
         }
-        
+
         [HttpPost("edit/{id}")]
-        public async Task<IActionResult> Edit(string id, WorkflowDefinitionViewModel model, CancellationToken cancellationToken)
+        public async Task<IActionResult> Edit(
+            string id, 
+            WorkflowDefinitionViewModel model,
+            CancellationToken cancellationToken)
         {
             var workflow = serializer.Deserialize<WorkflowDefinition>(model.Json, JsonTokenFormatter.FormatName);
 
             workflow.Id = id;
             await store.SaveAsync(workflow, cancellationToken);
-            await store.CommitAsync(cancellationToken);
-            
+
+            notifier.Notify("Workflow successfully saved.", NotificationType.Success);
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost("delete/{id}")]
+        public async Task<IActionResult> Delete(string id, CancellationToken cancellationToken)
+        {
+            await store.DeleteAsync(id, cancellationToken);
+            notifier.Notify("Workflow successfully deleted.", NotificationType.Success);
             return RedirectToAction(nameof(Index));
         }
     }

@@ -45,6 +45,8 @@
         <!-- Mask -->
         <span class="mask bg-gradient-default opacity-8"></span>
         <!-- Header container -->
+
+        @await Html.PartialAsync("Notifications")
         @await RenderSectionAsync("ContentHeader", false)
     </div>
     <!-- Page content -->

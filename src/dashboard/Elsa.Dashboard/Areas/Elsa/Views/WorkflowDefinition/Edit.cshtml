@@ -1,9 +1,9 @@
 @model WorkflowDefinitionViewModel
 @{
-    ViewBag.Title = Model.WorkflowDefinition.Name;
+    ViewBag.Title = Model.Name;
 }
 
-@await Html.PartialAsync("EditWorkflowDefinition")
+@await Html.PartialAsync("WorkflowDefinitionEditor")
 
 @section HeadScripts{
     <script src='https://unpkg.com/@@elsa-workflows/elsa-workflow-designer@0.0.37/dist/elsa-workflow-designer.js'></script>
