@@ -30,6 +30,7 @@ namespace Elsa.Services.Models
         public bool IsFirstPass { get; set; }
         public LogEntry CurrentLogEntry => Workflow.ExecutionLog.LastOrDefault();
         public WorkflowExecutionScope CurrentScope => Workflow.Scopes.Peek();
+        public Variables TransientState { get; } = new Variables();
         public IActivity CurrentActivity { get; private set; }
 
         public ActivityExecutionContext CreateActivityExecutionContext(IActivity activity) => new ActivityExecutionContext(activity);

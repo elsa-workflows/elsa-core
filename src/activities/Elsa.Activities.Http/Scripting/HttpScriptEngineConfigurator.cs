@@ -4,6 +4,7 @@ using Elsa.Activities.Http.Services;
 using Elsa.Scripting;
 using Elsa.Services.Models;
 using Jint;
+using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Activities.Http.Scripting
 {
@@ -11,16 +12,28 @@ namespace Elsa.Activities.Http.Scripting
     {
         private readonly ISharedAccessSignatureService sharedAccessSignatureService;
         private readonly IAbsoluteUrlProvider absoluteUrlProvider;
+        private readonly IHttpContextAccessor httpContextAccessor;
 
-        public HttpScriptEngineConfigurator(ISharedAccessSignatureService sharedAccessSignatureService, IAbsoluteUrlProvider absoluteUrlProvider)
+        public HttpScriptEngineConfigurator(
+            ISharedAccessSignatureService sharedAccessSignatureService,
+            IAbsoluteUrlProvider absoluteUrlProvider,
+            IHttpContextAccessor httpContextAccessor)
         {
             this.sharedAccessSignatureService = sharedAccessSignatureService;
             this.absoluteUrlProvider = absoluteUrlProvider;
+            this.httpContextAccessor = httpContextAccessor;
         }
-        
+
         public void Configure(Engine engine, WorkflowExecutionContext workflowExecutionContext)
         {
-            engine.SetValue("signalUrl", (Func<string, string>) (signal => GenerateUrl(signal, workflowExecutionContext)));
+            engine.SetValue(
+                "queryString",
+                (Func<string, string>) (key => httpContextAccessor.HttpContext.Request.Query[key].ToString())
+            );
+            engine.SetValue(
+                "signalUrl",
+                (Func<string, string>) (signal => GenerateUrl(signal, workflowExecutionContext))
+            );
         }
 
         private string GenerateUrl(string signal, WorkflowExecutionContext workflowExecutionContext)

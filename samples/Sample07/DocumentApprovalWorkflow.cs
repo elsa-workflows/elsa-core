@@ -48,7 +48,7 @@ namespace Sample07
                     activity =>
                     {
                         activity.Content = new PlainTextExpression("<h1>Request for Approval Sent</h1><p>Your document has been received and will be reviewed shortly.</p>");
-                        activity.ContentType = new PlainTextExpression("text/html");
+                        activity.ContentType = "text/html";
                         activity.StatusCode = HttpStatusCode.OK;
                         activity.ResponseHeaders = new PlainTextExpression("X-Powered-By=Elsa Workflows");
                     }

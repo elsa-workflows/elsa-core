@@ -17,6 +17,10 @@ namespace Elsa.Services
     {   
         public JObject State { get; set; } = new JObject();
         public JObject Output { get; set; } = new JObject();
+        
+        [JsonIgnore]
+        public Variables TransientOutput { get; } = new Variables();
+        
         public virtual string Type => GetType().Name;
         public string Id { get; set; }
 

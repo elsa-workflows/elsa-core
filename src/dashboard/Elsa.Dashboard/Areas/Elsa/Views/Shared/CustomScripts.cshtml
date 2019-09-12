@@ -1,0 +1,15 @@
+@using Elsa.Dashboard.Options
+@using Microsoft.Extensions.Options
+@inject IOptions<ElsaDashboardOptions> Options;
+
+@{
+    var scripts = Options.Value.Scripts;
+    
+    if (scripts.Any())
+    {
+        foreach (var script in scripts)
+        {
+            <script type="text/javascript" src="@script"></script>
+        }
+    }
+}

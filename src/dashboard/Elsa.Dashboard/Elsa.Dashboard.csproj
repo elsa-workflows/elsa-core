@@ -33,8 +33,4 @@
       <_ContentIncludedByDefault Remove="wwwroot\assets\css\argon-dashboard.min.css" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Theme\argon-dashboard\assets\es" />
-    </ItemGroup>
-
 </Project>

@@ -49,4 +49,16 @@ wf-activity-picker {
 
 .workflow-designer-wrapper {
     height: 50vh;
+
+    .workflow-canvas {
+        .activity {
+            p {
+                font-size: 1em;
+            }
+        }
+
+        .connection-label {
+            font-size: 0.8em;
+        }
+    }
 }

@@ -1,3 +1,4 @@
+using System;
 using Elsa.AutoMapper.Extensions;
 using Elsa.Dashboard.ActionFilters;
 using Elsa.Dashboard.Options;
@@ -11,14 +12,17 @@ using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Dashboard.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddElsaDashboard(this IServiceCollection services)
+        public static IServiceCollection AddElsaDashboard(this IServiceCollection services, Action<OptionsBuilder<ElsaDashboardOptions>> options = null)
         {
+            var optionsBuilder = services.AddOptions<ElsaDashboardOptions>();
+            options?.Invoke(optionsBuilder);
+            
             services
                 .AddTaskExecutingServer()
                 .AddSingleton<IIdGenerator, IdGenerator>()

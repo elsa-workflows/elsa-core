@@ -49,7 +49,7 @@ namespace Sample08.Workflows
                                 activity =>
                                 {
                                     activity.Content = new PlainTextExpression("<h1>Order Received</h1><p>Your order has been received. Waiting for shipment.</p>");
-                                    activity.ContentType = new PlainTextExpression("text/html");
+                                    activity.ContentType = "text/html";
                                     activity.StatusCode = HttpStatusCode.Accepted;
                                 }
                             );
