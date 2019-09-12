@@ -84,7 +84,7 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
 
             if (workflow == null)
                 return NotFound();
-
+            
             var model = new WorkflowDefinitionViewModel
             {
                 Id = workflow.Id,
@@ -105,6 +105,15 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
             var workflow = serializer.Deserialize<WorkflowDefinition>(model.Json, JsonTokenFormatter.FormatName);
 
             workflow.Id = id;
+
+            var publish = model.SubmitAction == "publish";
+
+            if (publish && !workflow.IsPublished)
+            {
+                workflow.IsPublished = true;
+                workflow.Version++;
+            }
+            
             await store.SaveAsync(workflow, cancellationToken);
 
             notifier.Notify("Workflow successfully saved.", NotificationType.Success);

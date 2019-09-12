@@ -2,6 +2,7 @@ using Elsa.AutoMapper.Extensions;
 using Elsa.Dashboard.ActionFilters;
 using Elsa.Dashboard.Options;
 using Elsa.Dashboard.Services;
+using Elsa.Extensions;
 using Elsa.Mapping;
 using Elsa.Runtime;
 using Elsa.Serialization;
@@ -10,6 +11,7 @@ using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Elsa.Dashboard.Extensions
 {
@@ -22,9 +24,9 @@ namespace Elsa.Dashboard.Extensions
                 .AddSingleton<IIdGenerator, IdGenerator>()
                 .AddSingleton<IWorkflowSerializerProvider, WorkflowSerializerProvider>()
                 .AddSingleton<IWorkflowSerializer, WorkflowSerializer>()
-                .AddSingleton<ITokenFormatter, JsonTokenFormatter>()
-                .AddSingleton<ITokenFormatter, YamlTokenFormatter>()
-                .AddSingleton<ITokenFormatter, XmlTokenFormatter>()
+                .TryAddProvider<ITokenFormatter, JsonTokenFormatter>(ServiceLifetime.Singleton)
+                .TryAddProvider<ITokenFormatter, YamlTokenFormatter>(ServiceLifetime.Singleton)
+                .TryAddProvider<ITokenFormatter, XmlTokenFormatter>(ServiceLifetime.Singleton)
                 .AddSingleton<ITempDataProvider, CookieTempDataProvider>()
                 .AddHttpContextAccessor()
                 .AddScoped<IWorkflowPublisher, WorkflowPublisher>()
@@ -32,7 +34,7 @@ namespace Elsa.Dashboard.Extensions
                 .AddScoped<NotifierFilter>()
                 .AddScoped<CommitFilter>()
                 .AddAutoMapperProfile<WorkflowDefinitionProfile>(ServiceLifetime.Singleton);
-
+            
             services.AddScoped(
                 sp =>
                 {

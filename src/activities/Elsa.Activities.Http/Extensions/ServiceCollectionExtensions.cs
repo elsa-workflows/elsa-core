@@ -4,6 +4,7 @@ using Elsa.Activities.Http.RequestHandlers.Handlers;
 using Elsa.Activities.Http.Scripting;
 using Elsa.Activities.Http.Services;
 using Elsa.Extensions;
+using Elsa.Runtime;
 using Elsa.Scripting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
@@ -25,6 +26,7 @@ namespace Elsa.Activities.Http.Extensions
                 .AddActivity<HttpRequestAction>();
 
             services
+                .AddTaskExecutingServer()
                 .AddSingleton<ISharedAccessSignatureService, SharedAccessSignatureService>()
                 .AddSingleton<IContentFormatter, NullContentFormatter>()
                 .AddSingleton<IContentFormatter, JsonContentFormatter>()

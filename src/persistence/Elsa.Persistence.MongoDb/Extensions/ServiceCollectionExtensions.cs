@@ -33,14 +33,14 @@ namespace Elsa.Persistence.MongoDb.Extensions
         {
             return services
                 .AddMongoDbCollection<WorkflowInstance>("WorkflowInstances")
-                .AddScoped<IWorkflowInstanceStore, MongoWorkflowInstanceStore>();
+                .AddSingleton<IWorkflowInstanceStore, MongoWorkflowInstanceStore>();
         }
 
         public static IServiceCollection AddMongoDbWorkflowDefinitionStore(this IServiceCollection services)
         {
             return services
                 .AddMongoDbCollection<WorkflowDefinition>("WorkflowDefinitions")
-                .AddScoped<IWorkflowDefinitionStore, MongoWorkflowDefinitionStore>();
+                .AddSingleton<IWorkflowDefinitionStore, MongoWorkflowDefinitionStore>();
         }
         
         public static IServiceCollection AddMongoDbCollection<T>(this IServiceCollection services, string collectionName)
