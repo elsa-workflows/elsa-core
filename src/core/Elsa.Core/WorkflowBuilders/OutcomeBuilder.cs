@@ -27,7 +27,7 @@ namespace Elsa.WorkflowBuilders
             return target;
         }
 
-        public WorkflowDefinition Build() => WorkflowBuilder.Build();
+        public WorkflowDefinitionVersion Build() => WorkflowBuilder.Build();
 
         public IConnectionBuilder Then(string activityId)
         {

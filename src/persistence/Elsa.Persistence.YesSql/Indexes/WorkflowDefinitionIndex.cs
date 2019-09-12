@@ -20,9 +20,9 @@ namespace Elsa.Persistence.YesSql.Indexes
         public string StartActivityType { get; set; }
     }
 
-    public class WorkflowDefinitionIndexProvider : IndexProvider<WorkflowDefinitionDocument>
+    public class WorkflowDefinitionIndexProvider : IndexProvider<WorkflowDefinitionVersionDocument>
     {
-        public override void Describe(DescribeContext<WorkflowDefinitionDocument> context)
+        public override void Describe(DescribeContext<WorkflowDefinitionVersionDocument> context)
         {
             context.For<WorkflowDefinitionIndex>()
                 .Map(
@@ -48,7 +48,7 @@ namespace Elsa.Persistence.YesSql.Indexes
                 );
         }
         
-        private static IEnumerable<ActivityDefinition> GetStartActivities(WorkflowDefinitionDocument workflow)
+        private static IEnumerable<ActivityDefinition> GetStartActivities(WorkflowDefinitionVersionDocument workflow)
         {
             var destinationActivityIds = workflow.Connections.Select(x => x.DestinationActivityId).Distinct().ToLookup(x => x);
             

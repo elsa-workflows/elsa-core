@@ -12,7 +12,7 @@ namespace Elsa.Services
         IOutcomeBuilder When(string outcome);
         IActivityBuilder Then<T>(Action<T> setup = null, Action<IActivityBuilder> branch = null, string id = null) where T : class, IActivity;
         IConnectionBuilder Then(string activityId);
-        WorkflowDefinition Build();
+        WorkflowDefinitionVersion Build();
         ActivityDefinition BuildActivity();
     }
 }

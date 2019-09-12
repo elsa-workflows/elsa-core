@@ -7,7 +7,7 @@ namespace Elsa.Extensions
     public static class WorkflowRegistryExtensions
     {
         public static void RegisterWorkflows(this IWorkflowRegistry registry,
-            IEnumerable<WorkflowDefinition> workflowDefinitions)
+            IEnumerable<WorkflowDefinitionVersion> workflowDefinitions)
         {
             foreach (var workflowDefinition in workflowDefinitions)
             {

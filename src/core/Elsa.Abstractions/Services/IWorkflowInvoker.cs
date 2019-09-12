@@ -17,7 +17,7 @@ namespace Elsa.Services
         );
 
         Task<WorkflowExecutionContext> InvokeAsync(
-            WorkflowDefinition workflowDefinition,
+            WorkflowDefinitionVersion workflowDefinition,
             Variables input = default,
             WorkflowInstance workflowInstance = default,
             IEnumerable<string> startActivityIds = default,

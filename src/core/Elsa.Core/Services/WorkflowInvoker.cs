@@ -59,7 +59,7 @@ namespace Elsa.Services
         }
 
         public Task<WorkflowExecutionContext> InvokeAsync(
-            WorkflowDefinition workflowDefinition,
+            WorkflowDefinitionVersion workflowDefinition,
             Variables input = default,
             WorkflowInstance workflowInstance = default,
             IEnumerable<string> startActivityIds = default,
@@ -116,7 +116,7 @@ namespace Elsa.Services
         }
 
         private async Task<IEnumerable<WorkflowExecutionContext>> StartWorkflowsAsync(
-            IEnumerable<(WorkflowDefinition, ActivityDefinition)> workflowDefinitions,
+            IEnumerable<(WorkflowDefinitionVersion, ActivityDefinition)> workflowDefinitions,
             Variables variables,
             string correlationId,
             CancellationToken cancellationToken1)

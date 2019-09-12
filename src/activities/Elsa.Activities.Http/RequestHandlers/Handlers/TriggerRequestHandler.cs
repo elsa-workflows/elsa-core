@@ -61,7 +61,7 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
             return items.Where(x => IsMatch(x.Item2.State, path, method));
         }
         
-        private IEnumerable<(WorkflowDefinition, ActivityDefinition)> Filter(IEnumerable<(WorkflowDefinition, ActivityDefinition)> items, Uri path, string method)
+        private IEnumerable<(WorkflowDefinitionVersion, ActivityDefinition)> Filter(IEnumerable<(WorkflowDefinitionVersion, ActivityDefinition)> items, Uri path, string method)
         {
             return items.Where(x => IsMatch(x.Item2.State, path, method));
         }
@@ -73,7 +73,7 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
             return (string.IsNullOrWhiteSpace(m) || m == method) && p == path;
         }
 
-        private async Task InvokeWorkflowsToStartAsync(IEnumerable<(WorkflowDefinition, ActivityDefinition)> items)
+        private async Task InvokeWorkflowsToStartAsync(IEnumerable<(WorkflowDefinitionVersion, ActivityDefinition)> items)
         {
             foreach (var item in items)
             {

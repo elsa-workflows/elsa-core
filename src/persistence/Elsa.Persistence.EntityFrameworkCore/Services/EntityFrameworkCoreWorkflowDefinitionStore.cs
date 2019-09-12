@@ -17,47 +17,47 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             this.dbContext = dbContext;
         }
 
-        public async Task<WorkflowDefinition> SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
+        public async Task<WorkflowDefinitionVersion> SaveAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken = default)
         {
-            await dbContext.WorkflowDefinitions.Upsert(definition)
+            await dbContext.WorkflowDefinitionVersions.Upsert(definition)
                 .On(x => new { x.Id, x.Version })
                 .RunAsync(cancellationToken);
 
             return definition;
         }
 
-        public async Task AddAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
+        public async Task AddAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken = default)
         {
-            await dbContext.WorkflowDefinitions.AddAsync(definition, cancellationToken);
+            await dbContext.WorkflowDefinitionVersions.AddAsync(definition, cancellationToken);
         }
 
-        public async Task<WorkflowDefinition> GetByIdAsync(string id, VersionOptions version, CancellationToken cancellationToken = default)
+        public async Task<WorkflowDefinitionVersion> GetByIdAsync(string id, VersionOptions version, CancellationToken cancellationToken = default)
         {
-            var query = dbContext.WorkflowDefinitions
+            var query = dbContext.WorkflowDefinitionVersions
                 .AsQueryable()
-                .Where(x => x.Id == id)
+                .Where(x => x.DefinitionId == id)
                 .WithVersion(version);
 
             return await query.FirstOrDefaultAsync(cancellationToken);
         }
 
-        public async Task<IEnumerable<WorkflowDefinition>> ListAsync(VersionOptions version, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<WorkflowDefinitionVersion>> ListAsync(VersionOptions version, CancellationToken cancellationToken = default)
         {
-            var query = dbContext.WorkflowDefinitions.AsQueryable().WithVersion(version);
+            var query = dbContext.WorkflowDefinitionVersions.AsQueryable().WithVersion(version);
             return await query.ToListAsync(cancellationToken);
         }
 
-        public Task<WorkflowDefinition> UpdateAsync(WorkflowDefinition definition, CancellationToken cancellationToken)
+        public Task<WorkflowDefinitionVersion> UpdateAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken)
         {
-            dbContext.WorkflowDefinitions.Update(definition);
+            dbContext.WorkflowDefinitionVersions.Update(definition);
             return Task.FromResult(definition);
         }
 
         public async Task<int> DeleteAsync(string id, CancellationToken cancellationToken = default)
         {
-            var records = await dbContext.WorkflowDefinitions.Where(x => x.Id == id).ToListAsync(cancellationToken);
-
-            dbContext.WorkflowDefinitions.RemoveRange(records);
+            var records = await dbContext.WorkflowDefinitionVersions.Where(x => x.DefinitionId == id).ToListAsync(cancellationToken);
+            
+            dbContext.WorkflowDefinitionVersions.RemoveRange(records);
             return records.Count;
         }
 

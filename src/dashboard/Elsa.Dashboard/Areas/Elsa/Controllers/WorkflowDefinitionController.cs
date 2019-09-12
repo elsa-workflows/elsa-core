@@ -42,7 +42,7 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
         public async Task<IActionResult> Index(CancellationToken cancellationToken)
         {
             var workflows = await store.ListAsync(VersionOptions.LatestOrPublished, cancellationToken);
-            var groups = workflows.GroupBy(x => x.Id);
+            var groups = workflows.GroupBy(x => x.DefinitionId);
             var model = new WorkflowDefinitionListViewModel
             {
                 WorkflowDefinitions = groups.ToList()
@@ -64,10 +64,11 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
         public async Task<IActionResult> Create(WorkflowDefinitionViewModel model, CancellationToken cancellationToken)
         {
             var workflow = !string.IsNullOrWhiteSpace(model.Json)
-                ? serializer.Deserialize<WorkflowDefinition>(model.Json, JsonTokenFormatter.FormatName)
-                : new WorkflowDefinition();
+                ? serializer.Deserialize<WorkflowDefinitionVersion>(model.Json, JsonTokenFormatter.FormatName)
+                : new WorkflowDefinitionVersion();
 
             workflow.Id = idGenerator.Generate();
+            workflow.DefinitionId = idGenerator.Generate();
             workflow.IsLatest = true;
             workflow.Version = 1;
 
@@ -102,7 +103,7 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
             WorkflowDefinitionViewModel model,
             CancellationToken cancellationToken)
         {
-            var workflow = serializer.Deserialize<WorkflowDefinition>(model.Json, JsonTokenFormatter.FormatName);
+            var workflow = serializer.Deserialize<WorkflowDefinitionVersion>(model.Json, JsonTokenFormatter.FormatName);
 
             workflow.Id = id;
 

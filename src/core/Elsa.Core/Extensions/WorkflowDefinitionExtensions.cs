@@ -5,8 +5,8 @@ namespace Elsa.Extensions
 {
     public static class WorkflowDefinitionExtensions
     {
-        public static IQueryable<WorkflowDefinition> WithVersion(
-            this IQueryable<WorkflowDefinition> query,
+        public static IQueryable<WorkflowDefinitionVersion> WithVersion(
+            this IQueryable<WorkflowDefinitionVersion> query,
             VersionOptions version)
         {
 

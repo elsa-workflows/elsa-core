@@ -8,10 +8,10 @@ namespace Elsa.Activities.Http.Models
     {
         public Uri Path { get; set; }
         public string Method { get; set; }
-        public IDictionary<string, StringValues> QueryString { get; set; }
-        public IDictionary<string, StringValues> Headers { get; set; }
+        public IDictionary<string, StringValuesModel> QueryString { get; set; }
+        public IDictionary<string, StringValuesModel> Headers { get; set; }
         public string Content { get; set; }
         public object ParsedContent { get; set; }
-        public IDictionary<string, StringValues> Form { get; set; }
+        public IDictionary<string, StringValuesModel> Form { get; set; }
     }
 }

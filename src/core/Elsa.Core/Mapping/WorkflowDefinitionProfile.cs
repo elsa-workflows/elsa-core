@@ -7,7 +7,7 @@ namespace Elsa.Mapping
     {
         public WorkflowDefinitionProfile()
         {
-            CreateMap<WorkflowDefinition, WorkflowDefinition>();
+            CreateMap<WorkflowDefinitionVersion, WorkflowDefinitionVersion>();
         }
     }
 }

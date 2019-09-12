@@ -39,7 +39,7 @@ namespace Elsa.Persistence.MongoDb.Extensions
         public static IServiceCollection AddMongoDbWorkflowDefinitionStore(this IServiceCollection services)
         {
             return services
-                .AddMongoDbCollection<WorkflowDefinition>("WorkflowDefinitions")
+                .AddMongoDbCollection<WorkflowDefinitionVersion>("WorkflowDefinitions")
                 .AddSingleton<IWorkflowDefinitionStore, MongoWorkflowDefinitionStore>();
         }
         

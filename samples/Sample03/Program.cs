@@ -27,7 +27,7 @@ namespace Sample03
                 .BuildServiceProvider();
 
             // Define a workflow as data so we can store it somewhere (file, database, etc.).
-            var workflowDefinition = new WorkflowDefinition
+            var workflowDefinition = new WorkflowDefinitionVersion
             {
                 Activities = new[]
                 {

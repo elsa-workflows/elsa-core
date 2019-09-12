@@ -7,11 +7,11 @@ namespace Elsa.Persistence
 {
     public interface IWorkflowDefinitionStore
     {
-        Task<WorkflowDefinition> SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default);
-        Task AddAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default);
-        Task<WorkflowDefinition> GetByIdAsync(string id, VersionOptions version, CancellationToken cancellationToken = default);
-        Task<IEnumerable<WorkflowDefinition>> ListAsync(VersionOptions version, CancellationToken cancellationToken = default);
-        Task<WorkflowDefinition> UpdateAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default);
+        Task<WorkflowDefinitionVersion> SaveAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken = default);
+        Task AddAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken = default);
+        Task<WorkflowDefinitionVersion> GetByIdAsync(string id, VersionOptions version, CancellationToken cancellationToken = default);
+        Task<IEnumerable<WorkflowDefinitionVersion>> ListAsync(VersionOptions version, CancellationToken cancellationToken = default);
+        Task<WorkflowDefinitionVersion> UpdateAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken = default);
         Task<int> DeleteAsync(string id, CancellationToken cancellationToken = default);
         Task CommitAsync(CancellationToken cancellationToken = default);
     }

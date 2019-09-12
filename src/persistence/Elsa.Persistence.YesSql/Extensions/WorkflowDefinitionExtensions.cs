@@ -9,16 +9,16 @@ namespace Elsa.Extensions
 {
     public static class WorkflowDefinitionExtensions
     {
-        public static IQuery<WorkflowDefinitionDocument, WorkflowDefinitionIndex> WithVersion(
-            this IQuery<WorkflowDefinitionDocument, WorkflowDefinitionIndex> query,
+        public static IQuery<WorkflowDefinitionVersionDocument, WorkflowDefinitionIndex> WithVersion(
+            this IQuery<WorkflowDefinitionVersionDocument, WorkflowDefinitionIndex> query,
             VersionOptions version)
         {
             return query.WithVersion(new[] { version });
         }
         
 
-        public static IQuery<WorkflowDefinitionDocument, WorkflowDefinitionIndex> WithVersion(
-            this IQuery<WorkflowDefinitionDocument, WorkflowDefinitionIndex> query, 
+        public static IQuery<WorkflowDefinitionVersionDocument, WorkflowDefinitionIndex> WithVersion(
+            this IQuery<WorkflowDefinitionVersionDocument, WorkflowDefinitionIndex> query, 
             IEnumerable<VersionOptions> versions)
         {
             // TODO: Reimplement this to be the same as the generic IQueryable extension.

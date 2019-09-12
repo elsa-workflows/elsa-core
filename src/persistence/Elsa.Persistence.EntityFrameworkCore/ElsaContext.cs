@@ -17,23 +17,23 @@ namespace Elsa.Persistence.EntityFrameworkCore
         {
             serializerSettings = new JsonSerializerSettings().ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
         }
-
-        public DbSet<WorkflowDefinition> WorkflowDefinitions { get; set; }
+        
+        public DbSet<WorkflowDefinitionVersion> WorkflowDefinitionVersions { get; set; }
         public DbSet<WorkflowInstance> WorkflowInstances { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-            ConfigureWorkflowDefinition(modelBuilder);
+            ConfigureWorkflowDefinitionVersion(modelBuilder);
             ConfigureWorkflowInstance(modelBuilder);
         }
 
-        private void ConfigureWorkflowDefinition(ModelBuilder modelBuilder)
+        private void ConfigureWorkflowDefinitionVersion(ModelBuilder modelBuilder)
         {
-            var entity = modelBuilder.Entity<WorkflowDefinition>();
+            var entity = modelBuilder.Entity<WorkflowDefinitionVersion>();
 
-            entity.HasKey("Id", "Version");
-            entity.Property(x => x.Id).ValueGeneratedNever();
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.DefinitionId);
             entity.Property(x => x.Variables).HasConversion(x => Serialize(x), x => Deserialize<Variables>(x));
             entity.Property(x => x.Activities).HasConversion(x => Serialize(x), x => Deserialize<ICollection<ActivityDefinition>>(x));
             entity.Property(x => x.Connections).HasConversion(x => Serialize(x), x => Deserialize<ICollection<ConnectionDefinition>>(x));

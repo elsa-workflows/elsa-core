@@ -27,7 +27,7 @@ namespace Elsa.Services
             return CreateWorkflow(workflowDefinition, input, workflowInstance);
         }
 
-        public Workflow CreateWorkflow(WorkflowDefinition definition, Variables input = null, WorkflowInstance workflowInstance = null)
+        public Workflow CreateWorkflow(WorkflowDefinitionVersion definition, Variables input = null, WorkflowInstance workflowInstance = null)
         {
             var activities = CreateActivities(definition.Activities).ToList();
             var connections = CreateConnections(definition.Connections, activities);

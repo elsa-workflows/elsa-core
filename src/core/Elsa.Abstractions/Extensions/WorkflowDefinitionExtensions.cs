@@ -6,7 +6,7 @@ namespace Elsa.Extensions
 {
     public static class WorkflowDefinitionExtensions
     {
-        public static IEnumerable<ActivityDefinition> GetStartActivities(this WorkflowDefinition workflow)
+        public static IEnumerable<ActivityDefinition> GetStartActivities(this WorkflowDefinitionVersion workflow)
         {
             var destinationActivityIds = workflow.Connections.Select(x => x.DestinationActivityId).Distinct().ToLookup(x => x);
             
@@ -18,14 +18,14 @@ namespace Elsa.Extensions
             return query;
         }
 
-        public static ActivityDefinition GetActivity(this WorkflowDefinition workflowDefinition, string id) => workflowDefinition.Activities.FirstOrDefault(x => x.Id == id);
+        public static ActivityDefinition GetActivity(this WorkflowDefinitionVersion workflowDefinition, string id) => workflowDefinition.Activities.FirstOrDefault(x => x.Id == id);
 
-        public static IEnumerable<ConnectionDefinition> GetInboundConnections(this WorkflowDefinition workflowDefinition, string activityId)
+        public static IEnumerable<ConnectionDefinition> GetInboundConnections(this WorkflowDefinitionVersion workflowDefinition, string activityId)
         {
             return workflowDefinition.Connections.Where(x => x.DestinationActivityId == activityId).ToList();
         }
 
-        public static IEnumerable<ConnectionDefinition> GetOutboundConnections(this WorkflowDefinition workflowDefinition, string activityId)
+        public static IEnumerable<ConnectionDefinition> GetOutboundConnections(this WorkflowDefinitionVersion workflowDefinition, string activityId)
         {
             return workflowDefinition.Connections.Where(x => x.SourceActivityId == activityId).ToList();
         }
@@ -33,12 +33,12 @@ namespace Elsa.Extensions
         /// <summary>
         /// Returns the full path of incoming activities.
         /// </summary>
-        public static IEnumerable<string> GetInboundActivityPath(this WorkflowDefinition workflowDefinition, string activityId)
+        public static IEnumerable<string> GetInboundActivityPath(this WorkflowDefinitionVersion workflowDefinition, string activityId)
         {
             return workflowDefinition.GetInboundActivityPathInternal(activityId, activityId).Distinct().ToList();
         }
 
-        private static IEnumerable<string> GetInboundActivityPathInternal(this WorkflowDefinition workflowDefinition, string activityId, string startingPointActivityId)
+        private static IEnumerable<string> GetInboundActivityPathInternal(this WorkflowDefinitionVersion workflowDefinition, string activityId, string startingPointActivityId)
         {
             foreach (var connection in workflowDefinition.GetInboundConnections(activityId))
             {
