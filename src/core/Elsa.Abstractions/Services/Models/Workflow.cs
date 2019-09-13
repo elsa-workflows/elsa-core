@@ -51,6 +51,7 @@ namespace Elsa.Services.Models
         public IList<LogEntry> ExecutionLog { get; set; }
         public WorkflowFault Fault { get; set; }
         public Variables Input { get; set; }
+        public Variables Output { get; set; }
 
         public WorkflowInstance ToInstance()
         {

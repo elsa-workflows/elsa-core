@@ -2,8 +2,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Extensions;
+using AutoMapper;
 using Elsa.Models;
+using Elsa.Persistence.EntityFrameworkCore.Documents;
+using Elsa.Persistence.EntityFrameworkCore.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Services
@@ -11,16 +13,20 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
     public class EntityFrameworkCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
     {
         private readonly ElsaContext dbContext;
+        private readonly IMapper mapper;
 
-        public EntityFrameworkCoreWorkflowDefinitionStore(ElsaContext dbContext)
+        public EntityFrameworkCoreWorkflowDefinitionStore(ElsaContext dbContext, IMapper mapper)
         {
             this.dbContext = dbContext;
+            this.mapper = mapper;
         }
 
         public async Task<WorkflowDefinitionVersion> SaveAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken = default)
         {
-            await dbContext.WorkflowDefinitionVersions.Upsert(definition)
-                .On(x => new { x.Id, x.Version })
+            var document = Map(definition);
+            
+            await dbContext.WorkflowDefinitionVersions.Upsert(document)
+                .On(x => new { x.Id })
                 .RunAsync(cancellationToken);
 
             return definition;
@@ -28,7 +34,8 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
 
         public async Task AddAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken = default)
         {
-            await dbContext.WorkflowDefinitionVersions.AddAsync(definition, cancellationToken);
+            var document = Map(definition);
+            await dbContext.WorkflowDefinitionVersions.AddAsync(document, cancellationToken);
         }
 
         public async Task<WorkflowDefinitionVersion> GetByIdAsync(string id, VersionOptions version, CancellationToken cancellationToken = default)
@@ -38,19 +45,23 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
                 .Where(x => x.DefinitionId == id)
                 .WithVersion(version);
 
-            return await query.FirstOrDefaultAsync(cancellationToken);
+            var document = await query.FirstOrDefaultAsync(cancellationToken);
+            return Map(document);
         }
 
         public async Task<IEnumerable<WorkflowDefinitionVersion>> ListAsync(VersionOptions version, CancellationToken cancellationToken = default)
         {
             var query = dbContext.WorkflowDefinitionVersions.AsQueryable().WithVersion(version);
-            return await query.ToListAsync(cancellationToken);
+            var documents = await query.ToListAsync(cancellationToken);
+
+            return mapper.Map<IEnumerable<WorkflowDefinitionVersion>>(documents);
         }
 
         public Task<WorkflowDefinitionVersion> UpdateAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken)
         {
-            dbContext.WorkflowDefinitionVersions.Update(definition);
-            return Task.FromResult(definition);
+            var document = Map(definition);
+            dbContext.WorkflowDefinitionVersions.Update(document);
+            return Task.FromResult(Map(document));
         }
 
         public async Task<int> DeleteAsync(string id, CancellationToken cancellationToken = default)
@@ -64,6 +75,16 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
         public Task CommitAsync(CancellationToken cancellationToken = default)
         {
             return dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        private WorkflowDefinitionVersionDocument Map(WorkflowDefinitionVersion source)
+        {
+            return mapper.Map<WorkflowDefinitionVersionDocument>(source);
+        }
+        
+        private WorkflowDefinitionVersion Map(WorkflowDefinitionVersionDocument source)
+        {
+            return mapper.Map<WorkflowDefinitionVersion>(source);
         }
     }
 }

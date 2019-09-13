@@ -173,7 +173,11 @@ namespace Elsa.Services
                 await result.ExecuteAsync(this, workflowExecutionContext, cancellationToken);
 
                 workflowExecutionContext.IsFirstPass = false;
-                workflowExecutionContext.Workflow.Status = WorkflowStatus.Executing;
+
+                var status = workflowExecutionContext.Workflow.Status;
+                
+                if(status == WorkflowStatus.Starting || status == WorkflowStatus.Resuming)
+                    workflowExecutionContext.Workflow.Status = WorkflowStatus.Executing;
             }
         }
 

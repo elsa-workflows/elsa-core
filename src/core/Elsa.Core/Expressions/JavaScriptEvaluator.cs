@@ -50,6 +50,9 @@ namespace Elsa.Expressions
 
         private object ConvertValue(JsValue value, Type targetType)
         {
+            if (value.IsUndefined())
+                return null;
+            
             if (value.IsNull())
                 return default;
 

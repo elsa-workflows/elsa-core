@@ -1,5 +1,6 @@
 ﻿using System;
 using AutoMapper;
+using Elsa.AutoMapper.Extensions.NodaTime;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -25,13 +26,15 @@ namespace Elsa.AutoMapper.Extensions
         {
             var profiles = serviceProvider.GetServices<Profile>();
 
-            return new MapperConfiguration(
+            var configuration = new MapperConfiguration(
                 x =>
                 {
                     foreach (var profile in profiles)
                         x.AddProfile(profile);
                 }
             );
+
+            return configuration;
         }
     }
 }

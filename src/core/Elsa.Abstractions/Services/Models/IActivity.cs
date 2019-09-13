@@ -17,7 +17,7 @@ namespace Elsa.Services.Models
         /// <summary>
         /// Holds activity output.
         /// </summary>
-        JObject Output { get; set; }
+        Variables Output { get; set; }
         
         [JsonIgnore]
         Variables TransientOutput { get; }

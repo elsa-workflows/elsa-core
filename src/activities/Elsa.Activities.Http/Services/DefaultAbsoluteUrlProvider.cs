@@ -12,10 +12,11 @@ namespace Elsa.Activities.Http.Services
         {
             this.httpContextAccessor = httpContextAccessor;
         }
-        
+
         public Uri ToAbsoluteUrl(string relativePath)
         {
-            return httpContextAccessor.HttpContext.Request.ToAbsoluteUrl(relativePath);
+            return httpContextAccessor.HttpContext?.Request.ToAbsoluteUrl(relativePath) ??
+                   new Uri(relativePath, UriKind.Relative);
         }
     }
 }

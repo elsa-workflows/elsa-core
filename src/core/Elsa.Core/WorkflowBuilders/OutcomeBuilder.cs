@@ -19,9 +19,10 @@ namespace Elsa.WorkflowBuilders
         public IActivityBuilder Source { get; }
         public string Outcome { get; }
 
-        public IActivityBuilder Then<T>(Action<T> setup = default, string id = default) where T : class, IActivity
+        public IActivityBuilder Then<T>(Action<T> setup = default, Action<IActivityBuilder> branch = null, string id = default) where T : class, IActivity
         {
             var target = WorkflowBuilder.Add(setup, id);
+            branch?.Invoke(target);
 
             WorkflowBuilder.Connect(Source, target, Outcome);
             return target;

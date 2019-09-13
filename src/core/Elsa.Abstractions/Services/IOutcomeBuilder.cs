@@ -8,7 +8,7 @@ namespace Elsa.Services
     {
         IActivityBuilder Source { get; }
         string Outcome { get; }
-        IActivityBuilder Then<T>(Action<T> setup = default, string id = default) where T : class, IActivity;
+        IActivityBuilder Then<T>(Action<T> setup = default, Action<IActivityBuilder> branch = null, string id = default) where T : class, IActivity;
         WorkflowDefinitionVersion Build();
         IConnectionBuilder Then(string activityId);
     }

@@ -9,7 +9,7 @@
     {
         foreach (var script in scripts)
         {
-            <script type="text/javascript" src="@script"></script>
+            <script type="text/javascript" src="@Url.Content(script)"></script>
         }
     }
 }

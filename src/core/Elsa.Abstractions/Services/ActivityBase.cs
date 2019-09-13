@@ -8,15 +8,13 @@ using Elsa.Results;
 using Elsa.Services.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using NodaTime;
-using NodaTime.Serialization.JsonNet;
 
 namespace Elsa.Services
 {
     public abstract class ActivityBase : IActivity
     {   
         public JObject State { get; set; } = new JObject();
-        public JObject Output { get; set; } = new JObject();
+        public Variables Output { get; set; } = new Variables();
         
         [JsonIgnore]
         public Variables TransientOutput { get; } = new Variables();

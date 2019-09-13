@@ -31,6 +31,10 @@ namespace Elsa.Activities.Http.Scripting
                 (Func<string, string>) (key => httpContextAccessor.HttpContext.Request.Query[key].ToString())
             );
             engine.SetValue(
+                "absoluteUrl",
+                (Func<string, string>) (url => absoluteUrlProvider.ToAbsoluteUrl(url).ToString())
+            );
+            engine.SetValue(
                 "signalUrl",
                 (Func<string, string>) (signal => GenerateUrl(signal, workflowExecutionContext))
             );

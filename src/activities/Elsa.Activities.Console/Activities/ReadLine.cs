@@ -30,7 +30,8 @@ namespace Elsa.Activities.Console.Activities
             set => SetState(value);
         }
 
-        protected override async Task<ActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
+        protected override async Task<ActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext context,
+            CancellationToken cancellationToken)
         {
             if (input == null)
                 return Halt();
@@ -51,7 +52,7 @@ namespace Elsa.Activities.Console.Activities
                 workflowContext.CurrentScope.SetVariable(VariableName, receivedInput);
 
             workflowContext.SetLastResult(receivedInput);
-            Output = JObject.FromObject(new { text = receivedInput });
+            Output["Input"] = receivedInput;
 
             return Outcome(OutcomeNames.Done);
         }

@@ -31,8 +31,7 @@ namespace Elsa.WorkflowBuilders
 
         public IActivityBuilder Then<T>(Action<T> setup = null, Action<IActivityBuilder> branch = null, string id = null) where T : class, IActivity
         {
-            var activityBuilder = When(null).Then(setup, id);
-            branch?.Invoke(activityBuilder);
+            var activityBuilder = When(null).Then(setup, branch, id);
             return activityBuilder;
         }
 

@@ -19,7 +19,8 @@ namespace Elsa.Activities.Timers.Extensions
                 .AddOptions()
                 .AddHostedService<TimersHostedService>()
                 .AddActivity<CronEvent>()
-                .AddActivity<TimerEvent>();
+                .AddActivity<TimerEvent>()
+                .AddActivity<InstantEvent>();
         }
     }
 }

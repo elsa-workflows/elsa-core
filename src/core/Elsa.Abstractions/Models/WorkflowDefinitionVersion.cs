@@ -24,6 +24,7 @@ namespace Elsa.Models
             Variables variables)
         {
             Id = id;
+            DefinitionId = definitionId;
             Version = version;
             Name = name;
             Description = description;

@@ -21,7 +21,7 @@ namespace Elsa.Services
         
         public void RegisterWorkflow(WorkflowDefinitionVersion definition)
         {
-            workflowDefinitions[(definition.Id, definition.Version)] = definition;
+            workflowDefinitions[(definition.DefinitionId, definition.Version)] = definition;
         }
 
         public WorkflowDefinitionVersion RegisterWorkflow<T>() where T : IWorkflow, new()

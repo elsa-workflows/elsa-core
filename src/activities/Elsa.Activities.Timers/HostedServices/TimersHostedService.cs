@@ -33,6 +33,7 @@ namespace Elsa.Activities.Timers.HostedServices
                 {
                     await workflowInvoker.TriggerAsync(nameof(TimerEvent), Variables.Empty, stoppingToken);
                     await workflowInvoker.TriggerAsync(nameof(CronEvent), Variables.Empty, stoppingToken);
+                    await workflowInvoker.TriggerAsync(nameof(InstantEvent), Variables.Empty, stoppingToken);
                 }
                 catch (Exception ex)
                 {
