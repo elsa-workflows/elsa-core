@@ -10,7 +10,10 @@ namespace Elsa.Scripting
     {
         public void Configure(Engine engine, WorkflowExecutionContext workflowExecutionContext)
         {
-            engine.SetValue("localDateToInstant", (Func<JToken, Instant>) (value => GetInstant(value.ToObject<LocalDate>())));
+            engine.SetValue(
+                "localDateToInstant",
+                (Func<LocalDate, Instant>) (value => value.AtStartOfDayInZone(DateTimeZone.Utc).ToInstant())
+            );
         }
 
         private Instant GetInstant(LocalDate localDate)
