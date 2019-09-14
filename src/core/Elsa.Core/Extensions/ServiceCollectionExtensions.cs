@@ -107,10 +107,7 @@ namespace Elsa.Extensions
         private static IServiceCollection AddPrimitiveActivities(this IServiceCollection services)
         {
             return services
-                .AddActivity<SetVariable>()
-                .AddActivity<Correlate>()
-                .AddActivity<SignalEvent>()
-                .AddActivity<Finish>();
+                .AddActivity<SetVariable>();
         }
 
         private static IServiceCollection AddControlFlowActivities(this IServiceCollection services)
@@ -127,7 +124,11 @@ namespace Elsa.Extensions
         private static IServiceCollection AddWorkflowActivities(this IServiceCollection services)
         {
             return services
-                .AddActivity<TriggerWorkflow>();
+                .AddActivity<TriggerWorkflow>()
+                .AddActivity<Correlate>()
+                .AddActivity<Signaled>()
+                .AddActivity<Trigger>()
+                .AddActivity<Finish>();
         }
     }
 }

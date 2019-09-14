@@ -40,9 +40,9 @@ namespace Sample03
                 }
             };
             
-            // Invoke the workflow.
+            // Run the workflow.
             var invoker = services.GetService<IWorkflowInvoker>();
-            await invoker.InvokeAsync(workflowDefinition);
+            await invoker.StartAsync(workflowDefinition);
 
             Console.ReadLine();
         }

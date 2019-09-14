@@ -16,18 +16,15 @@ namespace Elsa.Activities.Timers.HostedServices
     public class TimersHostedService : BackgroundService
     {
         private readonly IServiceProvider serviceProvider;
-        private readonly IWorkflowInvoker workflowInvoker;
         private readonly IOptions<TimersOptions> options;
         private readonly ILogger<TimersHostedService> logger;
 
         public TimersHostedService(
-            IServiceProvider serviceProvider, 
-            IWorkflowInvoker workflowInvoker,
+            IServiceProvider serviceProvider,
             IOptions<TimersOptions> options, 
             ILogger<TimersHostedService> logger)
         {
             this.serviceProvider = serviceProvider;
-            this.workflowInvoker = workflowInvoker;
             this.options = options;
             this.logger = logger;
         }
@@ -40,6 +37,7 @@ namespace Elsa.Activities.Timers.HostedServices
                 {
                     using (var scope = serviceProvider.CreateScope())
                     {
+                        var workflowInvoker = scope.ServiceProvider.GetRequiredService<IWorkflowInvoker>(); 
                         await workflowInvoker.TriggerAsync(nameof(TimerEvent), Variables.Empty, stoppingToken);
                         await workflowInvoker.TriggerAsync(nameof(CronEvent), Variables.Empty, stoppingToken);
                         await workflowInvoker.TriggerAsync(nameof(InstantEvent), Variables.Empty, stoppingToken);

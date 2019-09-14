@@ -26,27 +26,33 @@ namespace Elsa.Activities.Workflows
             get => GetState(() => new PlainTextExpression(""));
             set => SetState(value);
         }
-        
+
         public WorkflowExpression<Variables> Input
         {
             get => GetState(() => new JavaScriptExpression<Variables>("{}"));
             set => SetState(value);
         }
-        
+
         public WorkflowExpression<string> CorrelationId
         {
             get => GetState(() => new PlainTextExpression(Guid.NewGuid().ToString()));
             set => SetState(value);
         }
 
-        protected override async Task<ActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
+        protected override async Task<ActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext context,
+            CancellationToken cancellationToken)
         {
             var activityType = await expressionEvaluator.EvaluateAsync(ActivityType, context, cancellationToken);
             var input = await expressionEvaluator.EvaluateAsync(Input, context, cancellationToken);
             var correlationId = await expressionEvaluator.EvaluateAsync(CorrelationId, context, cancellationToken);
 
-            await workflowInvoker.TriggerAsync(activityType, input, correlationId, cancellationToken: cancellationToken);
-            
+            await workflowInvoker.TriggerAsync(
+                activityType,
+                input,
+                correlationId,
+                cancellationToken: cancellationToken
+            );
+
             return Done();
         }
     }

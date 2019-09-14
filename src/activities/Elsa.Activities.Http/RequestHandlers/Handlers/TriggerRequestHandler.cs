@@ -32,7 +32,7 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
             this.workflowInvoker = workflowInvoker;
             this.registry = registry;
             this.workflowInstanceStore = workflowInstanceStore;
-            this.cancellationToken = httpContext.RequestAborted;
+            cancellationToken = httpContext.RequestAborted;
         }
 
         public async Task<IRequestHandlerResult> HandleRequestAsync()
@@ -77,7 +77,7 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
         {
             foreach (var item in items)
             {
-                await workflowInvoker.InvokeAsync(item.Item1, Variables.Empty, startActivityIds: new[] { item.Item2.Id }, cancellationToken: cancellationToken);
+                await workflowInvoker.StartAsync(item.Item1, Variables.Empty, new[] { item.Item2.Id }, cancellationToken: cancellationToken);
             }
         }
         

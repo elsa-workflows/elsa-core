@@ -31,9 +31,9 @@ namespace Sample04
             var workflowFactory = services.GetRequiredService<IWorkflowFactory>();
             var workflow = workflowFactory.CreateWorkflow<CalculatorWorkflow>();
 
-            // Invoke the workflow.
+            // Start the workflow.
             var invoker = services.GetService<IWorkflowInvoker>();
-            await invoker.InvokeAsync(workflow);
+            await invoker.StartAsync(workflow);
 
             Console.ReadLine();
         }

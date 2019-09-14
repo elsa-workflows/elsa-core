@@ -34,7 +34,7 @@ namespace Elsa.Activities.Http.Extensions
 
             services
                 .AddTaskExecutingServer()
-                .AddSingleton<ISharedAccessSignatureService, SharedAccessSignatureService>()
+                .AddSingleton<ITokenService, TokenService>()
                 .AddSingleton<IContentFormatter, NullContentFormatter>()
                 .AddSingleton<IContentFormatter, JsonContentFormatter>()
                 .AddSingleton<IScriptEngineConfigurator, HttpScriptEngineConfigurator>()

@@ -16,7 +16,7 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
     public class SignalRequestHandler : IRequestHandler
     {
         private readonly HttpContext httpContext;
-        private readonly ISharedAccessSignatureService sharedAccessSignatureService;
+        private readonly ITokenService tokenService;
         private readonly IWorkflowInvoker workflowInvoker;
         private readonly IWorkflowRegistry workflowRegistry;
         private readonly IWorkflowFactory workflowFactory;
@@ -25,14 +25,14 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
 
         public SignalRequestHandler(
             HttpContext httpContext,
-            ISharedAccessSignatureService sharedAccessSignatureService,
+            ITokenService tokenService,
             IWorkflowInvoker workflowInvoker,
             IWorkflowRegistry workflowRegistry,
             IWorkflowFactory workflowFactory,
             IWorkflowInstanceStore workflowInstanceStore)
         {
             this.httpContext = httpContext;
-            this.sharedAccessSignatureService = sharedAccessSignatureService;
+            this.tokenService = tokenService;
             this.workflowInvoker = workflowInvoker;
             this.workflowRegistry = workflowRegistry;
             this.workflowFactory = workflowFactory;
@@ -42,10 +42,9 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
         
         public async Task<IRequestHandlerResult> HandleRequestAsync()
         {
-            // TODO: Use functional extensions supporting an Either monad.
             await DecryptToken()
                 .OnSuccess(GetWorkflowInstanceAsync)
-                .OnSuccess(CheckIfHaltedAsync)
+                .OnSuccess(CheckIfExecutingAsync)
                 .OnSuccess(ResumeWorkflowAsync);
 
             return default;
@@ -55,7 +54,7 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
         {
             var token = httpContext.Request.Query["token"];
             
-            if (sharedAccessSignatureService.TryDecryptToken(token, out Signal signal))
+            if (tokenService.TryDecryptToken(token, out Signal signal))
             {
                 return Result.Ok(signal);
             }
@@ -75,16 +74,16 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
             return Result.Fail<(WorkflowInstance, Signal)>("Workflow not found");
         }
 
-        private async Task<Result<(WorkflowInstance, Signal)>> CheckIfHaltedAsync((WorkflowInstance, Signal) tuple)
+        private async Task<Result<(WorkflowInstance, Signal)>> CheckIfExecutingAsync((WorkflowInstance, Signal) tuple)
         {
             var (workflowInstance, signal) = tuple;
             
-            if (workflowInstance.Status == WorkflowStatus.Halted) 
+            if (workflowInstance.Status == WorkflowStatus.Executing) 
                 return Result.Ok((workflowInstance, signal));
             
             httpContext.Response.StatusCode = (int) HttpStatusCode.BadRequest;
-            await httpContext.Response.WriteAsync($"Cannot signal a workflow with status other than {WorkflowStatus.Halted}. Actual workflow status: {workflowInstance.Status}", cancellationToken);
-            return Result.Fail<(WorkflowInstance, Signal)>("Cannot resume workflow that is not halted");
+            await httpContext.Response.WriteAsync($"Cannot signal a workflow with status other than {WorkflowStatus.Executing}. Actual workflow status: {workflowInstance.Status}.", cancellationToken);
+            return Result.Fail<(WorkflowInstance, Signal)>("Cannot resume workflow that is not executing.");
         }
 
         private async Task ResumeWorkflowAsync((WorkflowInstance, Signal) tuple)

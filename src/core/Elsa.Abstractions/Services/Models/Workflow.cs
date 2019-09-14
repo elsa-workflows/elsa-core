@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Elsa.Comparers;
 using Elsa.Models;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NodaTime;
 
@@ -42,8 +43,9 @@ namespace Elsa.Services.Models
         public WorkflowStatus Status { get; set; }
         public Instant CreatedAt { get; set; }
         public Instant? StartedAt { get; set; }
-        public Instant? HaltedAt { get; set; }
         public Instant? FinishedAt { get; set; }
+        public Instant? FaultedAt { get; set; }
+        public Instant? AbortedAt { get; set; }
         public ICollection<IActivity> Activities { get; } = new List<IActivity>();
         public IList<Connection> Connections { get; } = new List<Connection>();
         public Stack<WorkflowExecutionScope> Scopes { get; set; }
@@ -66,36 +68,47 @@ namespace Elsa.Services.Models
                 Status = Status,
                 CreatedAt = CreatedAt,
                 StartedAt = StartedAt,
-                HaltedAt = HaltedAt,
                 FinishedAt = FinishedAt,
+                FaultedAt = FaultedAt,
+                AbortedAt = AbortedAt,
                 Activities = activities,
                 Scopes = new Stack<WorkflowExecutionScope>(Scopes),
-                BlockingActivities = new HashSet<BlockingActivity>(BlockingActivities.Select(x => new BlockingActivity(x.Id, x.Type)), new BlockingActivityEqualityComparer()),
+                
+                BlockingActivities = new HashSet<BlockingActivity>(
+                    BlockingActivities.Select(x => new BlockingActivity(x.Id, x.Type)),
+                    new BlockingActivityEqualityComparer()
+                ),
+                
                 ExecutionLog = ExecutionLog.ToList(),
-                Fault = Fault?.ToInstance() 
+                Fault = Fault?.ToInstance()
             };
         }
 
         public void Initialize(WorkflowInstance instance)
         {
-            if(instance == null)
+            if (instance == null)
                 throw new ArgumentNullException(nameof(instance));
 
             var activityLookup = Activities.ToDictionary(x => x.Id);
-            
+
             Id = instance.Id;
             CorrelationId = instance.CorrelationId;
             Status = instance.Status;
             CreatedAt = instance.CreatedAt;
             StartedAt = instance.StartedAt;
-            HaltedAt = instance.HaltedAt;
             FinishedAt = instance.FinishedAt;
-            BlockingActivities = new HashSet<IActivity>(instance.BlockingActivities.Select(x => activityLookup[x.ActivityId]));
+            FaultedAt = instance.FaultedAt;
+            AbortedAt = instance.AbortedAt;
+
+            BlockingActivities =
+                new HashSet<IActivity>(instance.BlockingActivities.Select(x => activityLookup[x.ActivityId]));
+
             Scopes = new Stack<WorkflowExecutionScope>(instance.Scopes);
-            
+
             foreach (var activity in Activities)
             {
                 activity.State = new JObject(instance.Activities[activity.Id].State);
+                activity.Output = instance.Activities[activity.Id].Output.ToObject<Variables>();
             }
         }
     }

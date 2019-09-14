@@ -13,16 +13,16 @@ namespace Elsa.Activities.Http.Controllers
     [Route("workflows")]
     public class HttpWorkflowsController : ControllerBase
     {
-        private readonly ISharedAccessSignatureService sharedAccessSignatureService;
+        private readonly ITokenService tokenService;
         private readonly IWorkflowInvoker workflowInvoker;
         private readonly IWorkflowInstanceStore workflowInstanceStore;
 
         public HttpWorkflowsController(
-            ISharedAccessSignatureService sharedAccessSignatureService,
+            ITokenService tokenService,
             IWorkflowInvoker workflowInvoker, 
             IWorkflowInstanceStore workflowInstanceStore)
         {
-            this.sharedAccessSignatureService = sharedAccessSignatureService;
+            this.tokenService = tokenService;
             this.workflowInvoker = workflowInvoker;
             this.workflowInstanceStore = workflowInstanceStore;
         }
@@ -30,7 +30,7 @@ namespace Elsa.Activities.Http.Controllers
         [Route("trigger/{token}")]
         public async Task<IActionResult> Trigger(string token, CancellationToken cancellationToken)
         {
-            if (!sharedAccessSignatureService.TryDecryptToken(token, out Signal signal))
+            if (!tokenService.TryDecryptToken(token, out Signal signal))
                 return NotFound();
 
             var workflowInstance = await workflowInstanceStore.GetByIdAsync(signal.WorkflowInstanceId, cancellationToken);
@@ -43,7 +43,7 @@ namespace Elsa.Activities.Http.Controllers
                 ["signal"] = signal.Name
             };
 
-            await workflowInvoker.InvokeAsync(workflowInstance, input, cancellationToken: cancellationToken);
+            await workflowInvoker.ResumeAsync(workflowInstance, input, cancellationToken: cancellationToken);
 
             return HttpContext.Items.ContainsKey(WorkflowHttpResult.Instance) 
                 ? (IActionResult) new EmptyResult() 

@@ -19,9 +19,14 @@ namespace Elsa.WorkflowBuilders
         public ActivityDefinition Activity { get; }
         public string Id { get; set; }
 
-        public IActivityBuilder Add<T>(Action<T> setupActivity, string id = null) where T : class, IActivity
+        public IActivityBuilder StartWith<T>(Action<T> setup = default, string id = default) where T : class, IActivity
         {
-            return WorkflowBuilder.Add(setupActivity, id);
+            return Add(setup, id);
+        }
+
+        public IActivityBuilder Add<T>(Action<T> setup = default, string id = null) where T : class, IActivity
+        {
+            return WorkflowBuilder.Add(setup, id);
         }
 
         public IOutcomeBuilder When(string outcome)
@@ -35,12 +40,14 @@ namespace Elsa.WorkflowBuilders
             return activityBuilder;
         }
 
-        public IConnectionBuilder Then(string activityId)
+        public IWorkflowBuilder Then(string activityId)
         {
-            return WorkflowBuilder.Connect(
+            WorkflowBuilder.Connect(
                 () => this,
                 () => WorkflowBuilder.Activities.First(x => x.Id == activityId)
             );
+
+            return WorkflowBuilder;
         }
 
         public ActivityDefinition BuildActivity()

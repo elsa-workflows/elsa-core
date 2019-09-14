@@ -28,9 +28,9 @@ namespace Sample12
             var workflowDefinition = registry.RegisterWorkflow<UserTaskWorkflow>();
             var invoker = services.GetRequiredService<IWorkflowInvoker>();
 
-            // Invoke the workflow.
+            // Start the workflow.
             var correlationId = Guid.NewGuid().ToString("N");
-            await invoker.InvokeAsync(workflowDefinition, correlationId: correlationId);
+            await invoker.StartAsync(workflowDefinition, correlationId: correlationId);
             WorkflowExecutionContext executionContext;
             
             do
@@ -43,7 +43,7 @@ namespace Sample12
                 var triggeredExecutionContexts = await invoker.TriggerAsync(nameof(UserTask), new Variables { ["UserAction"] = userAction}, correlationId);
                 executionContext = triggeredExecutionContexts.First();
 
-            } while (executionContext.Workflow.IsHalted());
+            } while (executionContext.Workflow.IsExecuting());
         }
 
         private static IServiceProvider BuildServices()

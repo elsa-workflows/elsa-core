@@ -10,16 +10,16 @@ namespace Elsa.Activities.Http.Scripting
 {
     public class HttpScriptEngineConfigurator : IScriptEngineConfigurator
     {
-        private readonly ISharedAccessSignatureService sharedAccessSignatureService;
+        private readonly ITokenService _tokenService;
         private readonly IAbsoluteUrlProvider absoluteUrlProvider;
         private readonly IHttpContextAccessor httpContextAccessor;
 
         public HttpScriptEngineConfigurator(
-            ISharedAccessSignatureService sharedAccessSignatureService,
+            ITokenService tokenService,
             IAbsoluteUrlProvider absoluteUrlProvider,
             IHttpContextAccessor httpContextAccessor)
         {
-            this.sharedAccessSignatureService = sharedAccessSignatureService;
+            this._tokenService = tokenService;
             this.absoluteUrlProvider = absoluteUrlProvider;
             this.httpContextAccessor = httpContextAccessor;
         }
@@ -44,7 +44,7 @@ namespace Elsa.Activities.Http.Scripting
         {
             var workflowInstanceId = workflowExecutionContext.Workflow.Id;
             var payload = new Signal(signal, workflowInstanceId);
-            var token = sharedAccessSignatureService.CreateToken(payload);
+            var token = _tokenService.CreateToken(payload);
             var url = $"/workflows/signal?token={token}";
 
             return absoluteUrlProvider.ToAbsoluteUrl(url).ToString();

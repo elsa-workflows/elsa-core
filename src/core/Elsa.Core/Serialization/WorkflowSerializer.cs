@@ -10,17 +10,18 @@ namespace Elsa.Serialization
     public class WorkflowSerializer : IWorkflowSerializer
     {
         private readonly IDictionary<string, ITokenFormatter> formatters;
-        private readonly JsonSerializer jsonSerializer;
 
         public WorkflowSerializer(IEnumerable<ITokenFormatter> formatters, IWorkflowSerializerProvider serializerProvider)
         {
             this.formatters = formatters.ToDictionary(x => x.Format, StringComparer.OrdinalIgnoreCase);
-            jsonSerializer = serializerProvider.CreateJsonSerializer();
+            Serializer = serializerProvider.CreateJsonSerializer();
         }
         
+        public JsonSerializer Serializer { get; }
+
         public string Serialize<T>(T workflowInstance, string format)
         {
-            var token = JObject.FromObject(workflowInstance, jsonSerializer);
+            var token = JObject.FromObject(workflowInstance, Serializer);
             return Serialize((JToken)token, format);
         }
 
@@ -39,7 +40,7 @@ namespace Elsa.Serialization
 
         public T Deserialize<T>(JToken token)
         {
-            return token.ToObject<T>(jsonSerializer);
+            return token.ToObject<T>(Serializer);
         }
     }
 }

@@ -25,8 +25,6 @@ namespace Elsa.Results
 
             if (workflowContext.IsFirstPass && ContinueOnFirstPass)
             {
-                workflowContext.Workflow.Status = WorkflowStatus.Resuming;
-                
                 var activityInvoker = workflowContext.ServiceProvider.GetRequiredService<IActivityInvoker>();
                 var result = await activityInvoker.ExecuteAsync(workflowContext, activity, cancellationToken);
                 

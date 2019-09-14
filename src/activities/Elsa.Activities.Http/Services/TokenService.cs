@@ -3,11 +3,11 @@ using Newtonsoft.Json;
 
 namespace Elsa.Activities.Http.Services
 {
-    public class SharedAccessSignatureService : ISharedAccessSignatureService
+    public class TokenService : ITokenService
     {
         private readonly IDataProtector dataProtector;
 
-        public SharedAccessSignatureService(IDataProtectionProvider dataProtectionProvider)
+        public TokenService(IDataProtectionProvider dataProtectionProvider)
         {
             dataProtector = dataProtectionProvider.CreateProtector("HTTP Workflow Tokens");
         }

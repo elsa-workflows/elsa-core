@@ -74,7 +74,7 @@ namespace Elsa.Expressions
                 return value.AsNumber();
 
             if (value.IsString())
-                return value.AsString();
+                return Convert.ChangeType(value.AsString(), targetType);
 
             if (value.IsArray())
             {

@@ -30,7 +30,7 @@ namespace Elsa.Models
         
         public bool HasVariable(string name, object value)
         {
-            return GetVariable(name) == value; 
+            return ContainsKey(name) && this[name].Equals(value);
         }
         
         public bool HasVariable(string name)

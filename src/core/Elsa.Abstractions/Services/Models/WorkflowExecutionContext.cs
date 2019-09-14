@@ -55,11 +55,17 @@ namespace Elsa.Services.Models
         public T GetVariable<T>(string name) => CurrentScope.GetVariable<T>(name);
         public void SetLastResult(object value) => CurrentScope.LastResult = value;
 
+        public void Start()
+        {
+            Workflow.StartedAt = clock.GetCurrentInstant();
+            Workflow.Status = WorkflowStatus.Executing;
+        }
+        
         public void Fault(IActivity activity, Exception exception) => Fault(activity, exception.Message);
 
         public void Fault(IActivity activity, string errorMessage)
         {
-            Workflow.FinishedAt = clock.GetCurrentInstant();
+            Workflow.FaultedAt = clock.GetCurrentInstant();
             Workflow.Fault = new WorkflowFault
             {
                 Message = errorMessage,
@@ -71,15 +77,18 @@ namespace Elsa.Services.Models
         {
             if (activity != null)
                 Workflow.BlockingActivities.Add(activity);
-
-            Workflow.HaltedAt = clock.GetCurrentInstant();
-            Workflow.Status = WorkflowStatus.Halted;
         }
 
-        public void Finish(Instant instant)
+        public void Finish()
         {
-            Workflow.FinishedAt = instant;
+            Workflow.FinishedAt = clock.GetCurrentInstant();
             Workflow.Status = WorkflowStatus.Finished;
+        }
+        
+        public void Abort()
+        {
+            Workflow.AbortedAt = clock.GetCurrentInstant();
+            Workflow.Status = WorkflowStatus.Aborted;
         }
     }
 }

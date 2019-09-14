@@ -8,9 +8,9 @@ namespace Elsa.Services.Extensions
 {
     public static class WorkflowExtensions
     {
-        public static bool IsHalted(this Workflow workflow) => workflow.Status == WorkflowStatus.Halted;
+        public static bool IsExecuting(this Workflow workflow) => workflow.Status == WorkflowStatus.Executing;
 
-        public static bool IsFaulted(this Workflow workflow) =>
+        public static bool IsFaultedOrAborted(this Workflow workflow) =>
             workflow.Status == WorkflowStatus.Aborted ||
             workflow.Status == WorkflowStatus.Faulted;
 
@@ -19,7 +19,7 @@ namespace Elsa.Services.Extensions
         public static IEnumerable<IActivity> GetStartActivities(this Workflow workflow)
         {
             var targetActivityIds = workflow.Connections.Select(x => x.Target.Activity.Id).Distinct().ToLookup(x => x);
-            
+
             var query =
                 from activity in workflow.Activities
                 where !targetActivityIds.Contains(activity.Id)
@@ -28,9 +28,15 @@ namespace Elsa.Services.Extensions
             return query;
         }
 
-        public static IActivity GetActivity(this Workflow workflow, string id) => workflow.Activities.FirstOrDefault(x => x.Id == id);
+        public static IActivity GetActivity(this Workflow workflow, string id) =>
+            workflow.Activities.FirstOrDefault(x => x.Id == id);
 
-        public static LogEntry AddLogEntry(this Workflow workflow, IActivity activity, Instant instant, string message, bool faulted = false)
+        public static LogEntry AddLogEntry(
+            this Workflow workflow, 
+            IActivity activity, 
+            Instant instant, 
+            string message,
+            bool faulted = false)
         {
             var entry = new LogEntry(activity.Id, instant, message, faulted);
             workflow.ExecutionLog.Add(entry);
@@ -55,7 +61,8 @@ namespace Elsa.Services.Extensions
             return workflow.GetInboundActivityPathInternal(activityId, activityId).Distinct().ToList();
         }
 
-        private static IEnumerable<string> GetInboundActivityPathInternal(this Workflow workflowInstance, string activityId, string startingPointActivityId)
+        private static IEnumerable<string> GetInboundActivityPathInternal(this Workflow workflowInstance,
+            string activityId, string startingPointActivityId)
         {
             foreach (var connection in workflowInstance.GetInboundConnections(activityId))
             {
@@ -65,7 +72,9 @@ namespace Elsa.Services.Extensions
 
                 yield return connection.Source.Activity.Id;
 
-                foreach (var parentActivityId in workflowInstance.GetInboundActivityPathInternal(connection.Source.Activity.Id, startingPointActivityId).Distinct())
+                foreach (var parentActivityId in workflowInstance
+                    .GetInboundActivityPathInternal(connection.Source.Activity.Id, startingPointActivityId)
+                    .Distinct())
                     yield return parentActivityId;
             }
         }

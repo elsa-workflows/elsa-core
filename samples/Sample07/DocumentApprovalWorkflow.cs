@@ -6,6 +6,7 @@ using Elsa.Activities.Email.Activities;
 using Elsa.Activities.Http.Activities;
 using Elsa.Activities.ControlFlow;
 using Elsa.Activities.Primitives;
+using Elsa.Activities.Workflows;
 using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -59,12 +60,12 @@ namespace Sample07
                     {
                         fork
                             .When("Approve")
-                            .Then<SignalEvent>(activity => activity.Signal = new PlainTextExpression("approve"))
+                            .Then<Signaled>(activity => activity.Signal = new PlainTextExpression("approve"))
                             .Then("join-signals");
 
                         fork
                             .When("Reject")
-                            .Then<SignalEvent>(activity => activity.Signal = new PlainTextExpression("reject"))
+                            .Then<Signaled>(activity => activity.Signal = new PlainTextExpression("reject"))
                             .Then("join-signals");
                     }
                 )

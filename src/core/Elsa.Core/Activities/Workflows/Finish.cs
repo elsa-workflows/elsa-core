@@ -8,22 +8,20 @@ using Elsa.Services;
 using Elsa.Services.Models;
 using NodaTime;
 
-namespace Elsa.Activities.Primitives
+namespace Elsa.Activities.Workflows
 {
     public class Finish : Activity
     {
         private readonly IWorkflowExpressionEvaluator expressionEvaluator;
-        private readonly IClock clock;
 
-        public Finish(IWorkflowExpressionEvaluator expressionEvaluator, IClock clock)
+        public Finish(IWorkflowExpressionEvaluator expressionEvaluator)
         {
             this.expressionEvaluator = expressionEvaluator;
-            this.clock = clock;
         }
 
         public WorkflowExpression<Variables> WorkflowOutput
         {
-            get => GetState(() => new JavaScriptExpression<Variables>("{}"));
+            get => GetState(() => new JavaScriptExpression<Variables>("({})"));
             set => SetState(value);
         }
 
@@ -39,7 +37,7 @@ namespace Elsa.Activities.Primitives
             
             workflowContext.Workflow.Output = workflowOutput;
 
-            return Finish(clock.GetCurrentInstant());
+            return Finish();
         }
     }
 }

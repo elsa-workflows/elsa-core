@@ -14,7 +14,7 @@ namespace Elsa.Services
         protected ActivityExecutionResult Done() => Outcome(OutcomeNames.Done);
         protected ScheduleActivityResult ScheduleActivity(IActivity activity) => new ScheduleActivityResult(activity);
         protected ReturnValueResult SetReturnValue(object value) => new ReturnValueResult(value);
-        protected FinishWorkflowResult Finish(Instant instant) => new FinishWorkflowResult(instant);
+        protected FinishWorkflowResult Finish() => new FinishWorkflowResult();
         protected FaultWorkflowResult Fault(string errorMessage) => new FaultWorkflowResult(errorMessage);
         protected FaultWorkflowResult Fault(Exception exception) => new FaultWorkflowResult(exception);
     }

@@ -26,7 +26,7 @@ namespace Sample09
             var workflow = serializer.Deserialize<WorkflowDefinitionVersion>(json, JsonTokenFormatter.FormatName);
             var invoker = services.GetRequiredService<IWorkflowInvoker>();
             
-            await invoker.InvokeAsync(workflow);
+            await invoker.StartAsync(workflow);
         }
 
         private static IServiceProvider BuildServices()

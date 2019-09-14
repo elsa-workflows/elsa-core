@@ -18,24 +18,39 @@ namespace Elsa.Services
             this.logger = logger;
         }
 
-        public async Task<ActivityExecutionResult> ExecuteAsync(WorkflowExecutionContext workflowContext, IActivity activity, CancellationToken cancellationToken = default)
+        public async Task<ActivityExecutionResult> ExecuteAsync(
+            WorkflowExecutionContext workflowContext,
+            IActivity activity,
+            CancellationToken cancellationToken = default)
         {
-            return await InvokeAsync(workflowContext, activity, (a) =>
-            {
-                var result = workflowContext.Workflow.Status == WorkflowStatus.Resuming
-                    ? a.ResumeAsync(workflowContext, cancellationToken)
-                    : a.ExecuteAsync(workflowContext, cancellationToken);
-                
-                return result;
-            });
+            return await InvokeAsync(
+                workflowContext,
+                activity,
+                (a) => a.ExecuteAsync(workflowContext, cancellationToken)
+            );
         }
-        public async Task<ActivityExecutionResult> HaltedAsync(WorkflowExecutionContext workflowContext, IActivity activity, CancellationToken cancellationToken = default)
+
+        public async Task<ActivityExecutionResult> ResumeAsync(
+            WorkflowExecutionContext workflowContext,
+            IActivity activity,
+            CancellationToken cancellationToken = default)
         {
-            return await InvokeAsync(workflowContext, activity, (a) =>
-            {
-                var result = a.HaltedAsync(workflowContext, cancellationToken);
-                return result;
-            });
+            return await InvokeAsync(
+                workflowContext,
+                activity,
+                (a) => a.ResumeAsync(workflowContext, cancellationToken)
+            );
+        }
+
+        public async Task<ActivityExecutionResult> HaltedAsync(
+            WorkflowExecutionContext workflowContext,
+            IActivity activity, CancellationToken cancellationToken = default)
+        {
+            return await InvokeAsync(
+                workflowContext,
+                activity,
+                (a) => a.HaltedAsync(workflowContext, cancellationToken)
+            );
         }
 
         private async Task<ActivityExecutionResult> InvokeAsync(
@@ -49,7 +64,12 @@ namespace Elsa.Services
             }
             catch (Exception e)
             {
-                logger.LogError(e, "Error while invoking activity {ActivityId} of workflow {WorkflowId}", activity.Id, workflowContext.Workflow.Id);
+                logger.LogError(
+                    e,
+                    "Error while invoking activity {ActivityId} of workflow {WorkflowId}",
+                    activity.Id,
+                    workflowContext.Workflow.Id
+                );
                 return new FaultWorkflowResult(e);
             }
         }

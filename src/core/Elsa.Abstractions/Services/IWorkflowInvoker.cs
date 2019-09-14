@@ -10,29 +10,40 @@ namespace Elsa.Services
 {
     public interface IWorkflowInvoker
     {
-        Task<WorkflowExecutionContext> InvokeAsync(
+        Task<WorkflowExecutionContext> StartAsync(
             Workflow workflow,
-            IEnumerable<IActivity> startActivityIds = default,
+            IEnumerable<IActivity> startActivities = default,
             CancellationToken cancellationToken = default
         );
-
-        Task<WorkflowExecutionContext> InvokeAsync(
+        
+        Task<WorkflowExecutionContext> StartAsync<T>(
+            Variables input = default,
+            IEnumerable<string> startActivityIds = default,
+            string correlationId = default,
+            CancellationToken cancellationToken = default) where T : IWorkflow, new();
+        
+        Task<WorkflowExecutionContext> StartAsync(
             WorkflowDefinitionVersion workflowDefinition,
             Variables input = default,
-            WorkflowInstance workflowInstance = default,
             IEnumerable<string> startActivityIds = default,
             string correlationId = default,
             CancellationToken cancellationToken = default
         );
 
-        Task<WorkflowExecutionContext> InvokeAsync<T>(
-            WorkflowInstance workflowInstance = default,
+        Task<WorkflowExecutionContext> ResumeAsync(
+            Workflow workflow,
+            IEnumerable<IActivity> startActivities = default,
+            CancellationToken cancellationToken = default
+        );
+
+        Task<WorkflowExecutionContext> ResumeAsync<T>(
+            WorkflowInstance workflowInstance,
             Variables input = default,
             IEnumerable<string> startActivityIds = default,
             CancellationToken cancellationToken = default
         ) where T : IWorkflow, new();
 
-        Task<WorkflowExecutionContext> InvokeAsync(
+        Task<WorkflowExecutionContext> ResumeAsync(
             WorkflowInstance workflowInstance,
             Variables input = default,
             IEnumerable<string> startActivityIds = default,
@@ -42,7 +53,8 @@ namespace Elsa.Services
         /// <summary>
         /// Starts new workflows that start with the specified activity name and resumes halted workflows that are blocked on activities with the specified activity name.
         /// </summary>
-        Task<IEnumerable<WorkflowExecutionContext>> TriggerAsync(string activityType,
+        Task<IEnumerable<WorkflowExecutionContext>> TriggerAsync(
+            string activityType,
             Variables input = default,
             string correlationId = default,
             Func<JObject, bool> activityStatePredicate = default,

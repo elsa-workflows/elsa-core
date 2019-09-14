@@ -34,7 +34,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
 
         public async Task<WorkflowInstance> GetByIdAsync(string id, CancellationToken cancellationToken = default)
         {
-            var document = await dbContext.WorkflowInstances.FindAsync(id, cancellationToken);
+            var document = await dbContext.WorkflowInstances.FindAsync(new object[] { id }, cancellationToken);
 
             return Map(document);
         }
@@ -72,12 +72,12 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             string correlationId = default,
             CancellationToken cancellationToken = default)
         {
-            var query = dbContext.WorkflowInstances.Where(
-                x => x.BlockingActivities.Any(y => y.ActivityType == activityType)
-            );
+            var query = dbContext.WorkflowInstances.AsQueryable();
 
-            if (string.IsNullOrWhiteSpace(correlationId))
+            if (!string.IsNullOrWhiteSpace(correlationId))
                 query = query.Where(x => x.CorrelationId == correlationId);
+
+            query = query.Where(x => x.BlockingActivities.Any(y => y.ActivityType == activityType));
 
             var documents = await query.ToListAsync(cancellationToken);
             var instances = Map(documents);
