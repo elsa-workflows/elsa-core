@@ -67,7 +67,7 @@ namespace Elsa.Services
 
             return ExecuteAsync(workflow, false, startActivities, cancellationToken);
         }
-        
+
         public Task<WorkflowExecutionContext> StartAsync<T>(
             Variables input = default,
             IEnumerable<string> startActivityIds = default,
@@ -123,7 +123,7 @@ namespace Elsa.Services
                 activityStatePredicate,
                 cancellationToken
             );
-            
+
             var resumedExecutionContexts = await ResumeManyAsync(
                 activityType,
                 input,
@@ -202,7 +202,7 @@ namespace Elsa.Services
 
                 var executionContext = await ExecuteAsync(
                     workflow,
-                    true,
+                    false,
                     startActivityIds,
                     cancellationToken1
                 );
@@ -251,12 +251,14 @@ namespace Elsa.Services
                 startActivityIds
             );
 
+            var start = !resume;
+
             while (workflowExecutionContext.HasScheduledActivities)
             {
                 var currentActivity = workflowExecutionContext.PopScheduledActivity();
-                var result = resume
-                    ? await ResumeActivityAsync(workflowExecutionContext, currentActivity, cancellationToken)
-                    : await ExecuteActivityAsync(workflowExecutionContext, currentActivity, cancellationToken);
+                var result = start
+                    ? await ExecuteActivityAsync(workflowExecutionContext, currentActivity, cancellationToken)
+                    : await ResumeActivityAsync(workflowExecutionContext, currentActivity, cancellationToken);
 
                 if (result == null)
                     break;
@@ -264,6 +266,7 @@ namespace Elsa.Services
                 await result.ExecuteAsync(this, workflowExecutionContext, cancellationToken);
 
                 workflowExecutionContext.IsFirstPass = false;
+                start = true;
             }
 
             await FinalizeWorkflowExecutionAsync(workflowExecutionContext, cancellationToken);
@@ -276,7 +279,8 @@ namespace Elsa.Services
             CancellationToken cancellationToken)
         {
             // Any other status than Executing means the workflow has ended (because it reached the final activity, was aborted or has faulted).
-            if (!workflowExecutionContext.Workflow.IsExecuting() && !workflowExecutionContext.Workflow.IsFaultedOrAborted())
+            if (!workflowExecutionContext.Workflow.IsExecuting() &&
+                !workflowExecutionContext.Workflow.IsFaultedOrAborted())
             {
                 workflowExecutionContext.Finish();
             }

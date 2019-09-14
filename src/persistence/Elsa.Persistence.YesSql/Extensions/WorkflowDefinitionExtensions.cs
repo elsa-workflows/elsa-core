@@ -5,7 +5,7 @@ using Elsa.Persistence.YesSql.Documents;
 using Elsa.Persistence.YesSql.Indexes;
 using YesSql;
 
-namespace Elsa.Extensions
+namespace Elsa.Persistence.YesSql.Extensions
 {
     public static class WorkflowDefinitionExtensions
     {

@@ -8,24 +8,30 @@ namespace Elsa.Extensions
     {
         public static IEnumerable<ActivityDefinition> GetStartActivities(this WorkflowDefinitionVersion workflow)
         {
-            var destinationActivityIds = workflow.Connections.Select(x => x.DestinationActivityId).Distinct().ToLookup(x => x);
-            
+            var destinationActivityIds =
+                workflow.Connections.Select(x => x.DestinationActivityId).Distinct().ToLookup(x => x);
+
             var query =
                 from activity in workflow.Activities
                 where !destinationActivityIds.Contains(activity.Id)
                 select activity;
 
-            return query;
+            var activities = query.ToArray();
+            return activities.Any() ? activities : new[] { workflow.Activities.FirstOrDefault() };
         }
 
-        public static ActivityDefinition GetActivity(this WorkflowDefinitionVersion workflowDefinition, string id) => workflowDefinition.Activities.FirstOrDefault(x => x.Id == id);
+        public static ActivityDefinition GetActivity(this WorkflowDefinitionVersion workflowDefinition, string id) =>
+            workflowDefinition.Activities.FirstOrDefault(x => x.Id == id);
 
-        public static IEnumerable<ConnectionDefinition> GetInboundConnections(this WorkflowDefinitionVersion workflowDefinition, string activityId)
+        public static IEnumerable<ConnectionDefinition> GetInboundConnections(
+            this WorkflowDefinitionVersion workflowDefinition,
+            string activityId)
         {
             return workflowDefinition.Connections.Where(x => x.DestinationActivityId == activityId).ToList();
         }
 
-        public static IEnumerable<ConnectionDefinition> GetOutboundConnections(this WorkflowDefinitionVersion workflowDefinition, string activityId)
+        public static IEnumerable<ConnectionDefinition> GetOutboundConnections(
+            this WorkflowDefinitionVersion workflowDefinition, string activityId)
         {
             return workflowDefinition.Connections.Where(x => x.SourceActivityId == activityId).ToList();
         }
@@ -33,12 +39,14 @@ namespace Elsa.Extensions
         /// <summary>
         /// Returns the full path of incoming activities.
         /// </summary>
-        public static IEnumerable<string> GetInboundActivityPath(this WorkflowDefinitionVersion workflowDefinition, string activityId)
+        public static IEnumerable<string> GetInboundActivityPath(this WorkflowDefinitionVersion workflowDefinition,
+            string activityId)
         {
             return workflowDefinition.GetInboundActivityPathInternal(activityId, activityId).Distinct().ToList();
         }
 
-        private static IEnumerable<string> GetInboundActivityPathInternal(this WorkflowDefinitionVersion workflowDefinition, string activityId, string startingPointActivityId)
+        private static IEnumerable<string> GetInboundActivityPathInternal(
+            this WorkflowDefinitionVersion workflowDefinition, string activityId, string startingPointActivityId)
         {
             foreach (var connection in workflowDefinition.GetInboundConnections(activityId))
             {
@@ -48,7 +56,9 @@ namespace Elsa.Extensions
 
                 yield return connection.SourceActivityId;
 
-                foreach (var parentActivityId in workflowDefinition.GetInboundActivityPathInternal(connection.SourceActivityId, startingPointActivityId).Distinct())
+                foreach (var parentActivityId in workflowDefinition
+                    .GetInboundActivityPathInternal(connection.SourceActivityId, startingPointActivityId)
+                    .Distinct())
                     yield return parentActivityId;
             }
         }

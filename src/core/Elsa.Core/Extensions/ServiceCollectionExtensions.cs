@@ -128,6 +128,7 @@ namespace Elsa.Extensions
                 .AddActivity<Correlate>()
                 .AddActivity<Signaled>()
                 .AddActivity<Trigger>()
+                .AddActivity<Start>()
                 .AddActivity<Finish>();
         }
     }

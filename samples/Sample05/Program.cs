@@ -27,8 +27,8 @@ namespace Sample05
 
             using (host)
             {
-                await host.StartAsync();
                 SetupWorkflow(host.Services);
+                await host.StartAsync();
                 await host.WaitForShutdownAsync();
             }
         }
@@ -45,7 +45,7 @@ namespace Sample05
             services
                 .AddWorkflows()
                 .AddConsoleActivities()
-                .AddTimerActivities(options => options.Configure(x => x.SweepInterval = Period.FromSeconds(10)))
+                .AddTimerActivities(options => options.Configure(x => x.SweepInterval = Period.FromSeconds(1)))
                 .AddMemoryWorkflowDefinitionStore()
                 .AddMemoryWorkflowInstanceStore();
         }
