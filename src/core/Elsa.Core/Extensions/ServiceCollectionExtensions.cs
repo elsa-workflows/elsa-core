@@ -28,7 +28,7 @@ namespace Elsa.Extensions
             services.AddWorkflowsCore();
 
             return services
-                .AddSingleton<IWorkflowEventHandler, PersistenceWorkflowEventHandler>();
+                .AddScoped<IWorkflowEventHandler, PersistenceWorkflowEventHandler>();
         }
 
         public static IServiceCollection AddWorkflowsCore(this IServiceCollection services)
@@ -48,7 +48,7 @@ namespace Elsa.Extensions
                 .TryAddProvider<IExpressionEvaluator, JavaScriptEvaluator>(ServiceLifetime.Singleton)
                 .AddSingleton<IScriptEngineConfigurator, CommonScriptEngineConfigurator>()
                 .AddSingleton<IScriptEngineConfigurator, DateTimeScriptEngineConfigurator>()
-                .AddSingleton<IWorkflowInvoker, WorkflowInvoker>()
+                .AddScoped<IWorkflowInvoker, WorkflowInvoker>()
                 .AddSingleton<IWorkflowFactory, WorkflowFactory>()
                 .AddSingleton<IActivityInvoker, ActivityInvoker>()
                 .AddSingleton<IActivityResolver, ActivityResolver>()

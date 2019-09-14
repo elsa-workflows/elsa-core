@@ -28,6 +28,8 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             await dbContext.WorkflowInstances.Upsert(document)
                 .On(x => new { x.Id })
                 .RunAsync(cancellationToken);
+
+            await dbContext.SaveChangesAsync(cancellationToken);
         }
 
         public async Task<WorkflowInstance> GetByIdAsync(string id, CancellationToken cancellationToken = default)
@@ -102,23 +104,14 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             var documents = await dbContext.WorkflowInstances
                 .Where(x => x.Status == status)
                 .ToListAsync(cancellationToken);
-            
+
             return Map(documents);
         }
 
-        private WorkflowInstanceDocument Map(WorkflowInstance source)
-        {
-            return mapper.Map<WorkflowInstanceDocument>(source);
-        }
+        private WorkflowInstanceDocument Map(WorkflowInstance source) => mapper.Map<WorkflowInstanceDocument>(source);
+        private WorkflowInstance Map(WorkflowInstanceDocument source) => mapper.Map<WorkflowInstance>(source);
 
-        private WorkflowInstance Map(WorkflowInstanceDocument source)
-        {
-            return mapper.Map<WorkflowInstance>(source);
-        }
-
-        private IEnumerable<WorkflowInstance> Map(IEnumerable<WorkflowInstanceDocument> source)
-        {
-            return mapper.Map<IEnumerable<WorkflowInstance>>(source);
-        }
+        private IEnumerable<WorkflowInstance> Map(IEnumerable<WorkflowInstanceDocument> source) =>
+            mapper.Map<IEnumerable<WorkflowInstance>>(source);
     }
 }

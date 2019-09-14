@@ -21,14 +21,16 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             this.mapper = mapper;
         }
 
-        public async Task<WorkflowDefinitionVersion> SaveAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken = default)
+        public async Task<WorkflowDefinitionVersion> SaveAsync(WorkflowDefinitionVersion definition,
+            CancellationToken cancellationToken = default)
         {
             var document = Map(definition);
-            
+
             await dbContext.WorkflowDefinitionVersions.Upsert(document)
                 .On(x => new { x.Id })
                 .RunAsync(cancellationToken);
 
+            await dbContext.SaveChangesAsync(cancellationToken);
             return definition;
         }
 
@@ -36,9 +38,11 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
         {
             var document = Map(definition);
             await dbContext.WorkflowDefinitionVersions.AddAsync(document, cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
         }
 
-        public async Task<WorkflowDefinitionVersion> GetByIdAsync(string id, VersionOptions version, CancellationToken cancellationToken = default)
+        public async Task<WorkflowDefinitionVersion> GetByIdAsync(string id, VersionOptions version,
+            CancellationToken cancellationToken = default)
         {
             var query = dbContext.WorkflowDefinitionVersions
                 .AsQueryable()
@@ -49,7 +53,8 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             return Map(document);
         }
 
-        public async Task<IEnumerable<WorkflowDefinitionVersion>> ListAsync(VersionOptions version, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<WorkflowDefinitionVersion>> ListAsync(VersionOptions version,
+            CancellationToken cancellationToken = default)
         {
             var query = dbContext.WorkflowDefinitionVersions.AsQueryable().WithVersion(version);
             var documents = await query.ToListAsync(cancellationToken);
@@ -57,31 +62,34 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             return mapper.Map<IEnumerable<WorkflowDefinitionVersion>>(documents);
         }
 
-        public Task<WorkflowDefinitionVersion> UpdateAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken)
+        public async Task<WorkflowDefinitionVersion> UpdateAsync(
+            WorkflowDefinitionVersion definition,
+            CancellationToken cancellationToken)
         {
             var document = Map(definition);
             dbContext.WorkflowDefinitionVersions.Update(document);
-            return Task.FromResult(Map(document));
+            
+            await dbContext.SaveChangesAsync(cancellationToken);
+
+            return Map(document);
         }
 
         public async Task<int> DeleteAsync(string id, CancellationToken cancellationToken = default)
         {
-            var records = await dbContext.WorkflowDefinitionVersions.Where(x => x.DefinitionId == id).ToListAsync(cancellationToken);
-            
-            dbContext.WorkflowDefinitionVersions.RemoveRange(records);
-            return records.Count;
-        }
+            var records = await dbContext.WorkflowDefinitionVersions.Where(x => x.DefinitionId == id)
+                .ToListAsync(cancellationToken);
 
-        public Task CommitAsync(CancellationToken cancellationToken = default)
-        {
-            return dbContext.SaveChangesAsync(cancellationToken);
+            dbContext.WorkflowDefinitionVersions.RemoveRange(records);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            
+            return records.Count;
         }
 
         private WorkflowDefinitionVersionDocument Map(WorkflowDefinitionVersion source)
         {
             return mapper.Map<WorkflowDefinitionVersionDocument>(source);
         }
-        
+
         private WorkflowDefinitionVersion Map(WorkflowDefinitionVersionDocument source)
         {
             return mapper.Map<WorkflowDefinitionVersion>(source);

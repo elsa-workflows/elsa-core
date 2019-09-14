@@ -18,11 +18,13 @@ namespace Elsa.Dashboard.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddElsaDashboard(this IServiceCollection services, Action<OptionsBuilder<ElsaDashboardOptions>> options = null)
+        public static IServiceCollection AddElsaDashboard(
+            this IServiceCollection services,
+            Action<OptionsBuilder<ElsaDashboardOptions>> options = null)
         {
             var optionsBuilder = services.AddOptions<ElsaDashboardOptions>();
             options?.Invoke(optionsBuilder);
-            
+
             services
                 .AddTaskExecutingServer()
                 .AddSingleton<IIdGenerator, IdGenerator>()
@@ -36,9 +38,8 @@ namespace Elsa.Dashboard.Extensions
                 .AddScoped<IWorkflowPublisher, WorkflowPublisher>()
                 .AddScoped<INotifier, Notifier>()
                 .AddScoped<NotifierFilter>()
-                .AddScoped<CommitFilter>()
                 .AddAutoMapperProfile<WorkflowDefinitionProfile>(ServiceLifetime.Singleton);
-            
+
             services.AddScoped(
                 sp =>
                 {
@@ -47,13 +48,10 @@ namespace Elsa.Dashboard.Extensions
                     return factory.GetTempData(accessor.HttpContext);
                 }
             );
-            
+
             services.ConfigureOptions<StaticAssetsConfigureOptions>();
-            services.AddMvcCore(mvc =>
-                {
-                    mvc.Filters.AddService<NotifierFilter>();
-                    mvc.Filters.AddService<CommitFilter>();
-                }
+            services.AddMvcCore(
+                mvc => { mvc.Filters.AddService<NotifierFilter>(); }
             );
 
             return services;

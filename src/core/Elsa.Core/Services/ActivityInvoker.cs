@@ -11,12 +11,10 @@ namespace Elsa.Services
 {
     public class ActivityInvoker : IActivityInvoker
     {
-        private readonly IClock clock;
         private readonly ILogger logger;
 
-        public ActivityInvoker(IClock clock, ILogger<ActivityInvoker> logger)
+        public ActivityInvoker(ILogger<ActivityInvoker> logger)
         {
-            this.clock = clock;
             this.logger = logger;
         }
 

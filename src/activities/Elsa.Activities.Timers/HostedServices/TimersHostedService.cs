@@ -6,6 +6,7 @@ using Elsa.Activities.Timers.Options;
 using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Extensions;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -14,12 +15,18 @@ namespace Elsa.Activities.Timers.HostedServices
 {
     public class TimersHostedService : BackgroundService
     {
+        private readonly IServiceProvider serviceProvider;
         private readonly IWorkflowInvoker workflowInvoker;
         private readonly IOptions<TimersOptions> options;
         private readonly ILogger<TimersHostedService> logger;
 
-        public TimersHostedService(IWorkflowInvoker workflowInvoker, IOptions<TimersOptions> options, ILogger<TimersHostedService> logger)
+        public TimersHostedService(
+            IServiceProvider serviceProvider, 
+            IWorkflowInvoker workflowInvoker,
+            IOptions<TimersOptions> options, 
+            ILogger<TimersHostedService> logger)
         {
+            this.serviceProvider = serviceProvider;
             this.workflowInvoker = workflowInvoker;
             this.options = options;
             this.logger = logger;
@@ -31,9 +38,12 @@ namespace Elsa.Activities.Timers.HostedServices
             {
                 try
                 {
-                    await workflowInvoker.TriggerAsync(nameof(TimerEvent), Variables.Empty, stoppingToken);
-                    await workflowInvoker.TriggerAsync(nameof(CronEvent), Variables.Empty, stoppingToken);
-                    await workflowInvoker.TriggerAsync(nameof(InstantEvent), Variables.Empty, stoppingToken);
+                    using (var scope = serviceProvider.CreateScope())
+                    {
+                        await workflowInvoker.TriggerAsync(nameof(TimerEvent), Variables.Empty, stoppingToken);
+                        await workflowInvoker.TriggerAsync(nameof(CronEvent), Variables.Empty, stoppingToken);
+                        await workflowInvoker.TriggerAsync(nameof(InstantEvent), Variables.Empty, stoppingToken);
+                    }
                 }
                 catch (Exception ex)
                 {

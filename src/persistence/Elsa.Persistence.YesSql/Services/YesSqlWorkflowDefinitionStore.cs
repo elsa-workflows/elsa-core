@@ -23,22 +23,28 @@ namespace Elsa.Persistence.YesSql.Services
             this.mapper = mapper;
         }
 
-        public Task<WorkflowDefinitionVersion> SaveAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken = default)
+        public async Task<WorkflowDefinitionVersion> SaveAsync(
+            WorkflowDefinitionVersion definition,
+            CancellationToken cancellationToken = default)
         {
             var document = mapper.Map<WorkflowDefinitionVersionDocument>(definition);
             session.Save(document);
-            return Task.FromResult(mapper.Map<WorkflowDefinitionVersion>(document));
+            await session.CommitAsync();
+            return mapper.Map<WorkflowDefinitionVersion>(document);
         }
 
-        public Task AddAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken = default)
+        public async Task AddAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken = default)
         {
             var document = mapper.Map<WorkflowDefinitionVersionDocument>(definition);
 
             session.Save(document);
-            return Task.CompletedTask;
+            await session.CommitAsync();
         }
 
-        public async Task<WorkflowDefinitionVersion> GetByIdAsync(string id, VersionOptions version, CancellationToken cancellationToken = default)
+        public async Task<WorkflowDefinitionVersion> GetByIdAsync(
+            string id,
+            VersionOptions version,
+            CancellationToken cancellationToken = default)
         {
             var query = session
                 .Query<WorkflowDefinitionVersionDocument, WorkflowDefinitionIndex>()
@@ -50,25 +56,31 @@ namespace Elsa.Persistence.YesSql.Services
             return mapper.Map<WorkflowDefinitionVersion>(document);
         }
 
-        public async Task<IEnumerable<WorkflowDefinitionVersion>> ListAsync(VersionOptions version, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<WorkflowDefinitionVersion>> ListAsync(
+            VersionOptions version,
+            CancellationToken cancellationToken = default)
         {
-            var query = session.Query<WorkflowDefinitionVersionDocument, WorkflowDefinitionIndex>().WithVersion(version);
+            var query = session.Query<WorkflowDefinitionVersionDocument, WorkflowDefinitionIndex>()
+                .WithVersion(version);
             var documents = await query.ListAsync();
 
             return mapper.Map<IEnumerable<WorkflowDefinitionVersion>>(documents);
         }
 
-        public async Task<WorkflowDefinitionVersion> UpdateAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken)
+        public async Task<WorkflowDefinitionVersion> UpdateAsync(
+            WorkflowDefinitionVersion definition,
+            CancellationToken cancellationToken)
         {
             var query = session
                 .Query<WorkflowDefinitionVersionDocument, WorkflowDefinitionIndex>()
                 .Where(x => x.WorkflowDefinitionId == definition.DefinitionId)
                 .WithVersion(VersionOptions.SpecificVersion(definition.Version));
-            
+
             var document = await query.FirstOrDefaultAsync();
 
             document = mapper.Map(definition, document);
             session.Save(document);
+            await session.CommitAsync();
 
             return mapper.Map<WorkflowDefinitionVersion>(document);
         }
@@ -86,12 +98,8 @@ namespace Elsa.Persistence.YesSql.Services
                 session.Delete(document);
             }
 
+            await session.CommitAsync();
             return documents.Count;
-        }
-
-        public Task CommitAsync(CancellationToken cancellationToken = default)
-        {
-            return session.CommitAsync();
         }
     }
 }
