@@ -44,6 +44,7 @@ namespace Elsa.Activities.ControlFlow
             if (index >= collection.Count)
             {
                 context.EndScope();
+                CurrentIndex = 0;
                 return Done();
             }
 
