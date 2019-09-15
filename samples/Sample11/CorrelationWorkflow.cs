@@ -13,9 +13,9 @@ namespace Sample11
         {
             builder
                 .StartWith<WriteLine>(activity => activity.TextExpression = new JavaScriptExpression<string>("`Workflow started with correlation ID \"${correlationId()}\".`"))
-                .Then<Signaled>(activity => activity.Signal = new PlainTextExpression("Proceed"))
+                .Then<Signaled>(activity => activity.Signal = new Literal("Proceed"))
                 .Then<WriteLine>(activity => activity.TextExpression = new JavaScriptExpression<string>("`Signal received for workflow with correlation ID: \"${correlationId()}\"`"))
-                .Then<WriteLine>(activity => activity.TextExpression = new PlainTextExpression("Workflow finished."));
+                .Then<WriteLine>(activity => activity.TextExpression = new Literal("Workflow finished."));
         }
     }
 }

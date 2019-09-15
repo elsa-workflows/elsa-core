@@ -23,7 +23,7 @@ namespace Elsa.Activities.Workflows
 
         public WorkflowExpression<string> ActivityType
         {
-            get => GetState(() => new PlainTextExpression(""));
+            get => GetState(() => new Literal(""));
             set => SetState(value);
         }
 
@@ -35,7 +35,7 @@ namespace Elsa.Activities.Workflows
 
         public WorkflowExpression<string> CorrelationId
         {
-            get => GetState(() => new PlainTextExpression(Guid.NewGuid().ToString()));
+            get => GetState(() => new Literal(Guid.NewGuid().ToString()));
             set => SetState(value);
         }
 

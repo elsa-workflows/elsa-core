@@ -31,8 +31,8 @@ namespace Sample03
             {
                 Activities = new[]
                 {
-                    new ActivityDefinition<WriteLine>("activity-1", new { TextExpression = new PlainTextExpression("Hello world!")}),
-                    new ActivityDefinition<WriteLine>("activity-2", new { TextExpression = new PlainTextExpression("Goodbye cruel world...")})
+                    new ActivityDefinition<WriteLine>("activity-1", new { TextExpression = new Literal("Hello world!")}),
+                    new ActivityDefinition<WriteLine>("activity-2", new { TextExpression = new Literal("Goodbye cruel world...")})
                 },
                 Connections = new []
                 {

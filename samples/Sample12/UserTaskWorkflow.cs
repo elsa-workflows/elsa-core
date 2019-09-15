@@ -12,27 +12,27 @@ namespace Sample12
         public void Build(IWorkflowBuilder builder)
         {
             builder
-                .StartWith<WriteLine>(activity => activity.TextExpression = new PlainTextExpression("Workflow started. Waiting for user action."))
+                .StartWith<WriteLine>(activity => activity.TextExpression = new Literal("Workflow started. Waiting for user action."))
                 .Then<UserTask>(
                     activity => activity.Actions = new[] { "Accept", "Reject", "Needs Work" },
                     userTask =>
                     {
                         userTask
                             .When("Accept")
-                            .Then<WriteLine>(activity => activity.TextExpression = new PlainTextExpression("Great! Your work has been accepted."))
+                            .Then<WriteLine>(activity => activity.TextExpression = new Literal("Great! Your work has been accepted."))
                             .Then("Exit");
 
                         userTask.When("Reject")
-                            .Then<WriteLine>(activity => activity.TextExpression = new PlainTextExpression("Sorry! Your work has been rejected."))
+                            .Then<WriteLine>(activity => activity.TextExpression = new Literal("Sorry! Your work has been rejected."))
                             .Then("Exit");
 
                         userTask.When("Needs Work")
-                            .Then<WriteLine>(activity => activity.TextExpression = new PlainTextExpression("So close! Your work needs a little bit more work."))
+                            .Then<WriteLine>(activity => activity.TextExpression = new Literal("So close! Your work needs a little bit more work."))
                             .Then("WaitUser");
                     },
                     "WaitUser"
                 )
-                .Add<WriteLine>(activity => activity.TextExpression = new PlainTextExpression("Workflow finished."), "Exit");
+                .Add<WriteLine>(activity => activity.TextExpression = new Literal("Workflow finished."), "Exit");
         }
     }
 }

@@ -23,7 +23,7 @@ namespace Elsa.Activities.Timers.Activities
 
         public WorkflowExpression<string> CronExpression
         {
-            get => GetState(() => new PlainTextExpression("* * * * *"));
+            get => GetState(() => new Literal("* * * * *"));
             set => SetState(value);
         }
 

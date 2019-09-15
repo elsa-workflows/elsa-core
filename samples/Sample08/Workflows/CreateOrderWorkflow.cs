@@ -48,7 +48,7 @@ namespace Sample08.Workflows
                             .Then<HttpResponseAction>(
                                 activity =>
                                 {
-                                    activity.Content = new PlainTextExpression("<h1>Order Received</h1><p>Your order has been received. Waiting for shipment.</p>");
+                                    activity.Content = new Literal("<h1>Order Received</h1><p>Your order has been received. Waiting for shipment.</p>");
                                     activity.ContentType = "text/html";
                                     activity.StatusCode = HttpStatusCode.Accepted;
                                 }
@@ -60,7 +60,7 @@ namespace Sample08.Workflows
                             .Then<SendEmail>(
                                 activity =>
                                 {
-                                    activity.From = new PlainTextExpression("shipment@acme.com");
+                                    activity.From = new Literal("shipment@acme.com");
                                     activity.To = new JavaScriptExpression<string>("order.customer.email");
                                     activity.Subject = new JavaScriptExpression<string>("`Your order with ID #${order.id} has been shipped!`");
                                     activity.Body = new JavaScriptExpression<string>(
