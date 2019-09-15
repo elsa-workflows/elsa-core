@@ -15,7 +15,7 @@ namespace Elsa.Extensions
             string correlationId = default,
             CancellationToken cancellationToken = default) where TActivity : IActivity
         {
-            var items = await store.ListByBlockingActivityAsync(nameof(TActivity), correlationId, cancellationToken);
+            var items = await store.ListByBlockingActivityAsync(typeof(TActivity).Name, correlationId, cancellationToken);
             return items.Select(x => (x.Item1, x.Item2));
         }
     }

@@ -10,7 +10,6 @@ using Elsa.Runtime;
 using Elsa.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Sample14;
 
 namespace Sample15
 {
@@ -43,7 +42,7 @@ namespace Sample15
 
                 // Execute the workflow.
                 var invoker = scope.ServiceProvider.GetRequiredService<IWorkflowInvoker>();
-                var executionContext = await invoker.InvokeAsync(workflowDefinition);
+                var executionContext = await invoker.StartAsync(workflowDefinition);
 
                 // Persist the workflow instance.
                 var instanceStore = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();

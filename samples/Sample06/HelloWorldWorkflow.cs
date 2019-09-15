@@ -17,7 +17,7 @@ namespace Sample06
                     activity =>
                     {
                         activity.Content = new PlainTextExpression("<h1>Hello World!</h1><p>Elsa says hi :)</p>");
-                        activity.ContentType = new PlainTextExpression("text/html");
+                        activity.ContentType = "text/html";
                         activity.StatusCode = HttpStatusCode.OK;
                         activity.ResponseHeaders = new PlainTextExpression("X-Powered-By=Elsa Workflows");
                     }

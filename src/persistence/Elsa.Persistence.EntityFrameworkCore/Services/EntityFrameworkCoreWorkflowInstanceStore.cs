@@ -2,8 +2,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using AutoMapper;
 using Elsa.Extensions;
 using Elsa.Models;
+using Elsa.Persistence.EntityFrameworkCore.Documents;
 using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Services
@@ -11,35 +13,58 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
     public class EntityFrameworkCoreWorkflowInstanceStore : IWorkflowInstanceStore
     {
         private readonly ElsaContext dbContext;
+        private readonly IMapper mapper;
 
-        public EntityFrameworkCoreWorkflowInstanceStore(ElsaContext dbContext)
+        public EntityFrameworkCoreWorkflowInstanceStore(ElsaContext dbContext, IMapper mapper)
         {
             this.dbContext = dbContext;
+            this.mapper = mapper;
         }
 
         public async Task SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
         {
-            await dbContext.WorkflowInstances.AddAsync(instance, cancellationToken);
+            var document = Map(instance);
+
+            await dbContext.WorkflowInstances.Upsert(document)
+                .On(x => new { x.Id })
+                .RunAsync(cancellationToken);
+
+            await dbContext.SaveChangesAsync(cancellationToken);
         }
 
         public async Task<WorkflowInstance> GetByIdAsync(string id, CancellationToken cancellationToken = default)
         {
-            return await dbContext.WorkflowInstances.FindAsync(id, cancellationToken);
+            var document = await dbContext.WorkflowInstances.FindAsync(new object[] { id }, cancellationToken);
+
+            return Map(document);
         }
 
-        public async Task<WorkflowInstance> GetByCorrelationIdAsync(string correlationId, CancellationToken cancellationToken = default)
+        public async Task<WorkflowInstance> GetByCorrelationIdAsync(
+            string correlationId,
+            CancellationToken cancellationToken = default)
         {
-            return await dbContext.WorkflowInstances.Where(x => x.CorrelationId == correlationId).FirstOrDefaultAsync(cancellationToken);
+            var document = await dbContext.WorkflowInstances
+                .Where(x => x.CorrelationId == correlationId)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            return Map(document);
         }
 
-        public async Task<IEnumerable<WorkflowInstance>> ListByDefinitionAsync(string definitionId, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<WorkflowInstance>> ListByDefinitionAsync(
+            string definitionId,
+            CancellationToken cancellationToken = default)
         {
-            return await dbContext.WorkflowInstances.Where(x => x.DefinitionId == definitionId).ToListAsync(cancellationToken);
+            var documents = await dbContext.WorkflowInstances
+                .Where(x => x.DefinitionId == definitionId)
+                .ToListAsync(cancellationToken);
+
+            return Map(documents);
         }
 
         public async Task<IEnumerable<WorkflowInstance>> ListAllAsync(CancellationToken cancellationToken = default)
         {
-            return await dbContext.WorkflowInstances.ToListAsync(cancellationToken);
+            var documents = await dbContext.WorkflowInstances.ToListAsync(cancellationToken);
+            return Map(documents);
         }
 
         public async Task<IEnumerable<(WorkflowInstance, ActivityInstance)>> ListByBlockingActivityAsync(
@@ -47,24 +72,46 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             string correlationId = default,
             CancellationToken cancellationToken = default)
         {
-            var query = dbContext.WorkflowInstances.Where(x => x.BlockingActivities.Any(y => y.ActivityType == activityType));
+            var query = dbContext.WorkflowInstances.AsQueryable();
 
-            if (string.IsNullOrWhiteSpace(correlationId))
+            if (!string.IsNullOrWhiteSpace(correlationId))
                 query = query.Where(x => x.CorrelationId == correlationId);
 
-            var instances = await query.ToListAsync(cancellationToken);
+            query = query.Where(x => x.BlockingActivities.Any(y => y.ActivityType == activityType));
 
-            return instances.GetBlockingActivities();
+            var documents = await query.ToListAsync(cancellationToken);
+            var instances = Map(documents);
+
+            return instances.GetBlockingActivities(activityType);
         }
 
-        public async Task<IEnumerable<WorkflowInstance>> ListByStatusAsync(string definitionId, WorkflowStatus status, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<WorkflowInstance>> ListByStatusAsync(
+            string definitionId,
+            WorkflowStatus status,
+            CancellationToken cancellationToken = default)
         {
-            return await dbContext.WorkflowInstances.Where(x => x.DefinitionId == definitionId && x.Status == status).ToListAsync(cancellationToken);
+            var documents = await dbContext.WorkflowInstances
+                .Where(x => x.DefinitionId == definitionId && x.Status == status)
+                .ToListAsync(cancellationToken);
+
+            return Map(documents);
         }
 
-        public async Task<IEnumerable<WorkflowInstance>> ListByStatusAsync(WorkflowStatus status, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<WorkflowInstance>> ListByStatusAsync(
+            WorkflowStatus status,
+            CancellationToken cancellationToken = default)
         {
-            return await dbContext.WorkflowInstances.Where(x => x.Status == status).ToListAsync(cancellationToken);
+            var documents = await dbContext.WorkflowInstances
+                .Where(x => x.Status == status)
+                .ToListAsync(cancellationToken);
+
+            return Map(documents);
         }
+
+        private WorkflowInstanceDocument Map(WorkflowInstance source) => mapper.Map<WorkflowInstanceDocument>(source);
+        private WorkflowInstance Map(WorkflowInstanceDocument source) => mapper.Map<WorkflowInstance>(source);
+
+        private IEnumerable<WorkflowInstance> Map(IEnumerable<WorkflowInstanceDocument> source) =>
+            mapper.Map<IEnumerable<WorkflowInstance>>(source);
     }
 }

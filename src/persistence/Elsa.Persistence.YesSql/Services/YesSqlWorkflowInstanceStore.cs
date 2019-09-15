@@ -58,15 +58,17 @@ namespace Elsa.Persistence.YesSql.Services
             string correlationId = default,
             CancellationToken cancellationToken = default)
         {
-            var query = session.Query<WorkflowInstanceDocument, WorkflowInstanceBlockingActivitiesIndex>(x => x.ActivityType == activityType);
-
-            if (string.IsNullOrWhiteSpace(correlationId))
+            var query = session.Query<WorkflowInstanceDocument, WorkflowInstanceBlockingActivitiesIndex>();
+            
+            if (!string.IsNullOrWhiteSpace(correlationId))
                 query = query.Where(x => x.CorrelationId == correlationId);
+            
+            query = query.Where(x => x.ActivityType == activityType);
 
             var documents = await query.ListAsync();
             var instances = mapper.Map<IEnumerable<WorkflowInstance>>(documents);
 
-            return instances.GetBlockingActivities();
+            return instances.GetBlockingActivities(activityType);
         }
 
         public async Task<IEnumerable<WorkflowInstance>> ListByStatusAsync(string definitionId, WorkflowStatus status, CancellationToken cancellationToken)

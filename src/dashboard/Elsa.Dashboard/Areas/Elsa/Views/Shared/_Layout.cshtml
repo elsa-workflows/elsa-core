@@ -32,6 +32,7 @@
     <!-- CSS Files -->
     <link href="~/assets/css/argon-dashboard.css?v=1.1.0" rel="stylesheet"/>
     <link href="~/assets/css/elsa.css?v=1.1.0" rel="stylesheet"/>
+    <script src='https://unpkg.com/@@elsa-workflows/elsa-workflow-designer@0.0.41/dist/elsa-workflow-designer.js'></script>
     @await RenderSectionAsync("HeadScripts", false)
 </head>
 
@@ -55,6 +56,7 @@
 <!--   Core   -->
 <script src="~/assets/js/plugins/jquery/dist/jquery.min.js"></script>
 <script src="~/assets/js/plugins/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+@await Html.PartialAsync("CustomScripts")
 @await RenderSectionAsync("FootScripts", false)
 </body>
 

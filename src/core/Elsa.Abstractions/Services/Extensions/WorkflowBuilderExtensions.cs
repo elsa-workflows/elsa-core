@@ -5,7 +5,7 @@ namespace Elsa.Services.Extensions
 {
     public static class WorkflowBuilderExtensions
     {
-        public static WorkflowDefinition Build<T>(this IWorkflowBuilder builder) where T:IWorkflow, new()
+        public static WorkflowDefinitionVersion Build<T>(this IWorkflowBuilder builder) where T:IWorkflow, new()
         {
             var workflow = new T();
             workflow.Build(builder);

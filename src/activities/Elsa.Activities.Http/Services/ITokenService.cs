@@ -1,6 +1,6 @@
 namespace Elsa.Activities.Http.Services
 {
-    public interface ISharedAccessSignatureService
+    public interface ITokenService
     {
         /// <summary>
         /// Creates a SAS (Shared Access Signature) token containing the specified data.

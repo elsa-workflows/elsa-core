@@ -13,7 +13,7 @@ namespace Elsa.Extensions
         public static T GetState<T>(this JObject state, string key, Func<T> defaultValue = null)
         {
             var item = state.GetValue(key, StringComparison.OrdinalIgnoreCase);
-            return item != null ? item.ToObject<T>(Serializer) : defaultValue != null ? defaultValue() : default;
+            return item != null && item.Type != JTokenType.Null ? item.ToObject<T>(Serializer) : defaultValue != null ? defaultValue() : default(T);
         }
         
         public static T GetState<T>(this JObject state, Type type, string key, Func<T> defaultValue = null)

@@ -11,15 +11,15 @@ namespace Elsa.Persistence.MongoDb.Services
 {
     public class MongoWorkflowDefinitionStore : IWorkflowDefinitionStore
     {
-        private readonly IMongoCollection<WorkflowDefinition> collection;
+        private readonly IMongoCollection<WorkflowDefinitionVersion> collection;
 
-        public MongoWorkflowDefinitionStore(IMongoCollection<WorkflowDefinition> collection)
+        public MongoWorkflowDefinitionStore(IMongoCollection<WorkflowDefinitionVersion> collection)
         {
             this.collection = collection;
         }
 
-        public async Task<WorkflowDefinition> SaveAsync(
-            WorkflowDefinition definition,
+        public async Task<WorkflowDefinitionVersion> SaveAsync(
+            WorkflowDefinitionVersion definition,
             CancellationToken cancellationToken = default)
         {
             await collection.ReplaceOneAsync(
@@ -32,32 +32,32 @@ namespace Elsa.Persistence.MongoDb.Services
             return definition;
         }
 
-        public async Task AddAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
+        public async Task AddAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken = default)
         {
             await collection.InsertOneAsync(definition, new InsertOneOptions(), cancellationToken);
         }
 
-        public async Task<WorkflowDefinition> GetByIdAsync(
+        public async Task<WorkflowDefinitionVersion> GetByIdAsync(
             string id, 
             VersionOptions version,
             CancellationToken cancellationToken = default)
         {
-            var query = (IMongoQueryable<WorkflowDefinition>)collection.AsQueryable()
-                .Where(x => x.Id == id)
+            var query = (IMongoQueryable<WorkflowDefinitionVersion>)collection.AsQueryable()
+                .Where(x => x.DefinitionId == id)
                 .WithVersion(version);
 
             return await query.FirstOrDefaultAsync(cancellationToken);
         }
 
-        public async Task<IEnumerable<WorkflowDefinition>> ListAsync(
+        public async Task<IEnumerable<WorkflowDefinitionVersion>> ListAsync(
             VersionOptions version,
             CancellationToken cancellationToken = default)
         {
-            var query = (IMongoQueryable<WorkflowDefinition>)collection.AsQueryable().WithVersion(version);
+            var query = (IMongoQueryable<WorkflowDefinitionVersion>)collection.AsQueryable().WithVersion(version);
             return await query.ToListAsync(cancellationToken);
         }
 
-        public async Task<WorkflowDefinition> UpdateAsync(WorkflowDefinition definition,
+        public async Task<WorkflowDefinitionVersion> UpdateAsync(WorkflowDefinitionVersion definition,
             CancellationToken cancellationToken)
         {
             await collection.ReplaceOneAsync(
@@ -72,14 +72,9 @@ namespace Elsa.Persistence.MongoDb.Services
 
         public async Task<int> DeleteAsync(string id, CancellationToken cancellationToken = default)
         {
-            var result = await collection.DeleteManyAsync(x => x.Id == id, cancellationToken);
+            var result = await collection.DeleteManyAsync(x => x.DefinitionId == id, cancellationToken);
 
             return (int) result.DeletedCount;
-        }
-
-        public Task CommitAsync(CancellationToken cancellationToken = default)
-        {
-            return Task.CompletedTask;
         }
     }
 }

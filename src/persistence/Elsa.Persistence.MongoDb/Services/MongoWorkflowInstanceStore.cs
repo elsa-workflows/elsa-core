@@ -60,24 +60,26 @@ namespace Elsa.Persistence.MongoDb.Services
             string correlationId = default,
             CancellationToken cancellationToken = default)
         {
-            var query = collection.AsQueryable()
-                .Where(x => x.BlockingActivities.Any(y => y.ActivityType == activityType));
+            var query = collection.AsQueryable();
 
-            if (string.IsNullOrWhiteSpace(correlationId))
+            if (!string.IsNullOrWhiteSpace(correlationId))
                 query = query.Where(x => x.CorrelationId == correlationId);
+
+            query = query.Where(x => x.BlockingActivities.Any(y => y.ActivityType == activityType));
 
             var instances = await query.ToListAsync(cancellationToken);
 
-            return instances.GetBlockingActivities();
+            return instances.GetBlockingActivities(activityType);
         }
 
         public async Task<IEnumerable<WorkflowInstance>> ListByStatusAsync(
-            string definitionId, 
+            string definitionId,
             WorkflowStatus status,
             CancellationToken cancellationToken)
         {
             return await collection
-                .AsQueryable().Where(
+                .AsQueryable()
+                .Where(
                     x => x.DefinitionId == definitionId && x.Status == status
                 )
                 .ToListAsync(cancellationToken);
@@ -88,7 +90,8 @@ namespace Elsa.Persistence.MongoDb.Services
             CancellationToken cancellationToken)
         {
             return await collection
-                .AsQueryable().Where(x => x.Status == status)
+                .AsQueryable()
+                .Where(x => x.Status == status)
                 .ToListAsync(cancellationToken);
         }
     }

@@ -8,15 +8,17 @@ using Elsa.Results;
 using Elsa.Services.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using NodaTime;
-using NodaTime.Serialization.JsonNet;
 
 namespace Elsa.Services
 {
     public abstract class ActivityBase : IActivity
     {   
         public JObject State { get; set; } = new JObject();
-        public JObject Output { get; set; } = new JObject();
+        public Variables Output { get; set; } = new Variables();
+        
+        [JsonIgnore]
+        public Variables TransientOutput { get; } = new Variables();
+        
         public virtual string Type => GetType().Name;
         public string Id { get; set; }
 
@@ -28,7 +30,8 @@ namespace Elsa.Services
         {
             Id = Id,
             Type = Type,
-            State = new JObject(State)
+            State = new JObject(State),
+            Output = JObject.FromObject(Output)
         };
 
         public Task<ActivityExecutionResult> ResumeAsync(WorkflowExecutionContext context, CancellationToken cancellationToken) => OnResumeAsync(context, cancellationToken);

@@ -59,7 +59,7 @@
                                     <th scope="row">
                                         <div class="media align-items-center">
                                             <div class="media-body">
-                                                <a asp-action="Edit" asp-route-id="@latest.Id" class="mb-0 text-sm">@latest.Name</a>
+                                                <a asp-action="Edit" asp-route-id="@latest.DefinitionId" class="mb-0 text-sm">@latest.Name</a>
                                             </div>
                                         </div>
                                     </th>
@@ -95,11 +95,11 @@
                                                 <i class="fas fa-ellipsis-v"></i>
                                             </a>
                                             <div class="dropdown-menu dropdown-menu-right dropdown-menu-arrow">
-                                                <a class="dropdown-item" asp-action="Edit" asp-route-id="@latest.Id" >Edit</a>
+                                                <a class="dropdown-item" asp-action="Edit" asp-route-id="@latest.DefinitionId" >Edit</a>
                                                 <a class="dropdown-item" href="#">Publish Draft</a>
                                                 <a class="dropdown-item" href="#">Unpublish</a>
                                                 <a class="dropdown-item" href="#">History</a>
-                                                <a class="dropdown-item" href="#" onclick="onDeleteClick(event, '@latest.Id')">Delete</a>
+                                                <a class="dropdown-item" href="#" onclick="onDeleteClick(event, '@latest.DefinitionId')">Delete</a>
                                             </div>
                                         </div>
                                     </td>

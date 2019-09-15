@@ -1,5 +1,6 @@
 using System;
 using Elsa.AutoMapper.Extensions;
+using Elsa.AutoMapper.Extensions.NodaTime;
 using Elsa.Persistence.YesSql.Indexes;
 using Elsa.Persistence.YesSql.Mapping;
 using Elsa.Persistence.YesSql.Services;
@@ -20,6 +21,7 @@ namespace Elsa.Persistence.YesSql.Extensions
                 .AddSingleton<IIndexProvider, WorkflowDefinitionIndexProvider>()
                 .AddSingleton<IIndexProvider, WorkflowInstanceIndexProvider>()
                 .AddScoped(CreateSession)
+                .AddAutoMapperProfile<InstantProfile>(ServiceLifetime.Singleton)
                 .AddAutoMapperProfile<DocumentProfile>(ServiceLifetime.Singleton)
                 .AddStartupTask<StoreInitializationTask>();
         }

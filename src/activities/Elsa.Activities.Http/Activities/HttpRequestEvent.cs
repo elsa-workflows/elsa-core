@@ -84,8 +84,8 @@ namespace Elsa.Activities.Http.Activities
             var model = new HttpRequestModel
             {
                 Path = new Uri(request.Path.ToString(), UriKind.Relative),
-                QueryString = request.Query.ToDictionary(x => x.Key, x => x.Value),
-                Headers = request.Headers.ToDictionary(x => x.Key, x => x.Value),
+                QueryString = request.Query.ToDictionary(x => x.Key, x => new StringValuesModel(x.Value)),
+                Headers = request.Headers.ToDictionary(x => x.Key, x => new StringValuesModel(x.Value)),
                 Method = request.Method
             };
 
@@ -93,7 +93,7 @@ namespace Elsa.Activities.Http.Activities
             {
                 if (request.HasFormContentType)
                 {
-                    model.Form = (await request.ReadFormAsync(cancellationToken)).ToDictionary(x => x.Key, x => x.Value);
+                    model.Form = (await request.ReadFormAsync(cancellationToken)).ToDictionary(x => x.Key, x => new StringValuesModel(x.Value));
                 }
 
                 var parser = SelectContentParser(request.ContentType);

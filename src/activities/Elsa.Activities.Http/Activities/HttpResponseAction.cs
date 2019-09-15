@@ -45,9 +45,9 @@ namespace Elsa.Activities.Http.Activities
         /// <summary>
         /// The Content-Type header to send along with the response.
         /// </summary>
-        public WorkflowExpression<string> ContentType
+        public string ContentType
         {
-            get => GetState(() => new WorkflowExpression<string>(PlainTextEvaluator.SyntaxName, ""));
+            get => GetState<string>();
             set => SetState(value);
         }
         
@@ -65,7 +65,7 @@ namespace Elsa.Activities.Http.Activities
             var response = httpContextAccessor.HttpContext.Response;
 
             response.StatusCode = (int) StatusCode;
-            response.ContentType = await expressionEvaluator.EvaluateAsync(ContentType, workflowContext, cancellationToken);
+            response.ContentType = ContentType;
 
             var headersText = await expressionEvaluator.EvaluateAsync(ResponseHeaders, workflowContext, cancellationToken);
 

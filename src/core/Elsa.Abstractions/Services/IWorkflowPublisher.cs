@@ -9,9 +9,9 @@ namespace Elsa.Services
         /// <summary>
         /// Instantiates a new workflow.
         /// </summary>
-        WorkflowDefinition New(bool publish);
-        Task<WorkflowDefinition> PublishAsync(string id, CancellationToken cancellationToken);
-        Task<WorkflowDefinition> PublishAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken);
-        Task<WorkflowDefinition> GetDraftAsync(string id, CancellationToken cancellationToken);
+        WorkflowDefinitionVersion New(bool publish);
+        Task<WorkflowDefinitionVersion> PublishAsync(string id, CancellationToken cancellationToken);
+        Task<WorkflowDefinitionVersion> PublishAsync(WorkflowDefinitionVersion workflowDefinition, CancellationToken cancellationToken);
+        Task<WorkflowDefinitionVersion> GetDraftAsync(string id, CancellationToken cancellationToken);
     }
 }

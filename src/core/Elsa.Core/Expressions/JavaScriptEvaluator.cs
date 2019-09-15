@@ -1,19 +1,25 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Scripting;
+using Elsa.Serialization;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Jint;
 using Jint.Native;
+using Jint.Runtime.Interop;
 using Newtonsoft.Json;
+using NodaTime;
+using NodaTime.Serialization.JsonNet;
 
 namespace Elsa.Expressions
 {
     public class JavaScriptEvaluator : IExpressionEvaluator
     {
         private readonly IEnumerable<IScriptEngineConfigurator> configurators;
+        private readonly JsonSerializerSettings serializerSettings;
         public const string SyntaxName = "JavaScript";
 
         public static WorkflowExpression<T> CreateExpression<T>(string expression)
@@ -24,11 +30,13 @@ namespace Elsa.Expressions
         public JavaScriptEvaluator(IEnumerable<IScriptEngineConfigurator> configurators)
         {
             this.configurators = configurators;
+            serializerSettings = new JsonSerializerSettings().ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
         }
 
         public string Syntax => SyntaxName;
 
-        public Task<object> EvaluateAsync(string expression, Type type, WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
+        public Task<object> EvaluateAsync(string expression, Type type,
+            WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
         {
             var engine = new Engine(options => { options.AllowClr(); });
 
@@ -50,6 +58,9 @@ namespace Elsa.Expressions
 
         private object ConvertValue(JsValue value, Type targetType)
         {
+            if (value.IsUndefined())
+                return null;
+
             if (value.IsNull())
                 return default;
 
@@ -63,19 +74,12 @@ namespace Elsa.Expressions
                 return value.AsNumber();
 
             if (value.IsString())
-                return value.AsString();
-
-            if (value.IsObject())
-            {
-                var obj = value.AsObject().ToObject();
-                var json = JsonConvert.SerializeObject(obj);
-                return JsonConvert.DeserializeObject(json, targetType);
-            }
+                return Convert.ChangeType(value.AsString(), targetType);
 
             if (value.IsArray())
             {
                 var arrayInstance = value.AsArray();
-                var elementType = targetType.GetElementType();
+                var elementType = targetType.GetElementType() ?? targetType.GenericTypeArguments.First();
                 var array = Array.CreateInstance(elementType, arrayInstance.Length);
 
                 for (uint i = 0; i < array.Length; i++)
@@ -86,6 +90,13 @@ namespace Elsa.Expressions
                 }
 
                 return array;
+            }
+            
+            if (value.IsObject())
+            {
+                var obj = value.AsObject().ToObject();
+                var json = JsonConvert.SerializeObject(obj, serializerSettings);
+                return JsonConvert.DeserializeObject(json, targetType, serializerSettings);
             }
 
             throw new ArgumentException($"Value type {value.Type} is not supported.", nameof(value));

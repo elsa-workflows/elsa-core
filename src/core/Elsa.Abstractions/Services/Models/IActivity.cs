@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Results;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Elsa.Services.Models
@@ -16,7 +17,10 @@ namespace Elsa.Services.Models
         /// <summary>
         /// Holds activity output.
         /// </summary>
-        JObject Output { get; set; }
+        Variables Output { get; set; }
+        
+        [JsonIgnore]
+        Variables TransientOutput { get; }
         
         /// <summary>
         /// The type name of this activity.

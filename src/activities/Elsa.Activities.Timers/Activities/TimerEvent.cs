@@ -35,11 +35,7 @@ namespace Elsa.Activities.Timers.Activities
 
         protected override ActivityExecutionResult OnExecute(WorkflowExecutionContext workflowContext)
         {
-            if (StartTime == null)
-            {
-                StartTime = clock.GetCurrentInstant();
-            }
-            
+            StartTime = clock.GetCurrentInstant();
             return Halt();
         }
 

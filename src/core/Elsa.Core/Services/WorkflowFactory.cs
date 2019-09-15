@@ -14,33 +14,52 @@ namespace Elsa.Services
         private readonly IWorkflowBuilder workflowBuilder;
         private readonly IIdGenerator idGenerator;
 
-        public WorkflowFactory(IActivityResolver activityResolver, IWorkflowBuilder workflowBuilder, IIdGenerator idGenerator)
+        public WorkflowFactory(
+            IActivityResolver activityResolver, 
+            IWorkflowBuilder workflowBuilder,
+            IIdGenerator idGenerator)
         {
             this.activityResolver = activityResolver;
             this.workflowBuilder = workflowBuilder;
             this.idGenerator = idGenerator;
         }
 
-        public Workflow CreateWorkflow<T>(Variables input = null, WorkflowInstance workflowInstance = null) where T : IWorkflow, new()
+        public Workflow CreateWorkflow<T>(
+            Variables input = default, 
+            WorkflowInstance workflowInstance = default,
+            string correlationId = default) where T : IWorkflow, new()
         {
             var workflowDefinition = workflowBuilder.Build<T>();
-            return CreateWorkflow(workflowDefinition, input, workflowInstance);
+            return CreateWorkflow(workflowDefinition, input, workflowInstance, correlationId);
         }
 
-        public Workflow CreateWorkflow(WorkflowDefinition definition, Variables input = null, WorkflowInstance workflowInstance = null)
+        public Workflow CreateWorkflow(
+            WorkflowDefinitionVersion definition, 
+            Variables input = default,
+            WorkflowInstance workflowInstance = default, 
+            string correlationId = default)
         {
             var activities = CreateActivities(definition.Activities).ToList();
             var connections = CreateConnections(definition.Connections, activities);
             var id = idGenerator.Generate();
-            var workflow = new Workflow(id, definition.Id, definition.Version, activities, connections, input);
+            var workflow = new Workflow(
+                id,
+                definition.DefinitionId,
+                definition.Version,
+                activities,
+                connections,
+                input,
+                correlationId
+            );
 
-            if(workflowInstance != null)
+            if (workflowInstance != default)
                 workflow.Initialize(workflowInstance);
-            
+
             return workflow;
         }
 
-        private IEnumerable<Connection> CreateConnections(IEnumerable<ConnectionDefinition> connectionBlueprints, IEnumerable<IActivity> activities)
+        private IEnumerable<Connection> CreateConnections(IEnumerable<ConnectionDefinition> connectionBlueprints,
+            IEnumerable<IActivity> activities)
         {
             var activityDictionary = activities.ToDictionary(x => x.Id);
             return connectionBlueprints.Select(x => CreateConnection(x, activityDictionary));
@@ -57,15 +76,16 @@ namespace Elsa.Services
 
             activity.State = new JObject(definition.State);
             activity.Id = definition.Id;
-            
+
             return activity;
         }
-        
-        private Connection CreateConnection(ConnectionDefinition connectionDefinition, IDictionary<string, IActivity> activityDictionary)
+
+        private Connection CreateConnection(ConnectionDefinition connectionDefinition,
+            IDictionary<string, IActivity> activityDictionary)
         {
             var source = activityDictionary[connectionDefinition.SourceActivityId];
             var target = activityDictionary[connectionDefinition.DestinationActivityId];
-            return new Connection(source, target, connectionDefinition.Outcome);   
+            return new Connection(source, target, connectionDefinition.Outcome);
         }
     }
 }

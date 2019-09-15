@@ -9,27 +9,34 @@ namespace Elsa.Services
     public class ActivityResolver : IActivityResolver
     {
         private readonly IServiceProvider serviceProvider;
-        private readonly IDictionary<string, Type> activityTypeLookup;
+        private readonly Lazy<IDictionary<string, Type>> lazyActivityTypeLookup;
 
-        public ActivityResolver(IServiceProvider serviceProvider, IEnumerable<IActivity> activities)
+        public ActivityResolver(IServiceProvider serviceProvider, Func<IEnumerable<IActivity>> activitiesFunc)
         {
             this.serviceProvider = serviceProvider;
-            activityTypeLookup = activities.Select(x => x.GetType()).ToDictionary(x => x.Name);
+            lazyActivityTypeLookup = new Lazy<IDictionary<string, Type>>(
+                () =>
+                {
+                    var activities = activitiesFunc();
+                    return activities.Select(x => x.GetType()).ToDictionary(x => x.Name);
+                });
         }
+
+        private IDictionary<string, Type> ActivityTypeLookup => lazyActivityTypeLookup.Value;
         
         public Type ResolveActivityType(string activityTypeName)
         {
-            if (!activityTypeLookup.ContainsKey(activityTypeName))
+            if (!ActivityTypeLookup.ContainsKey(activityTypeName))
             {
                 var activityType = Type.GetType(activityTypeName);
                 
                 if(activityType == null)
                     throw new ArgumentException($"No such activity type: {activityTypeName}", nameof(activityTypeName));
                 
-                activityTypeLookup[activityTypeName] = activityType;
+                ActivityTypeLookup[activityTypeName] = activityType;
             }
 
-            return activityTypeLookup[activityTypeName];    
+            return ActivityTypeLookup[activityTypeName];    
 
         }
         

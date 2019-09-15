@@ -1,4 +1,7 @@
 using System;
+using Elsa.AutoMapper.Extensions;
+using Elsa.AutoMapper.Extensions.NodaTime;
+using Elsa.Persistence.EntityFrameworkCore.Mapping;
 using Elsa.Persistence.EntityFrameworkCore.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,7 +17,9 @@ namespace Elsa.Persistence.EntityFrameworkCore.Extensions
             else
                 services.AddDbContext<ElsaContext>(configureOptions);
 
-            return services;
+            return services
+                .AddAutoMapperProfile<InstantProfile>(ServiceLifetime.Singleton)
+                .AddAutoMapperProfile<DocumentProfile>(ServiceLifetime.Singleton);
         }
         
         public static IServiceCollection AddEntityFrameworkCoreWorkflowInstanceStore(this IServiceCollection services)

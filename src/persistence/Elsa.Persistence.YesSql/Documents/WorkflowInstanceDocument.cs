@@ -1,6 +1,6 @@
+using System;
 using System.Collections.Generic;
 using Elsa.Models;
-using NodaTime;
 
 namespace Elsa.Persistence.YesSql.Documents
 {
@@ -12,10 +12,11 @@ namespace Elsa.Persistence.YesSql.Documents
         public int Version { get; set; }
         public WorkflowStatus Status { get; set; }
         public string CorrelationId { get; set; }
-        public Instant CreatedAt { get; set; }
-        public Instant? StartedAt { get; set; }
-        public Instant? HaltedAt { get; set; }
-        public Instant? FinishedAt { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime? StartedAt { get; set; }
+        public DateTime? FinishedAt { get; set; }
+        public DateTime? FaultedAt { get; set; }
+        public DateTime? AbortedAt { get; set; }
         public IDictionary<string, ActivityInstance> Activities { get; set; } = new Dictionary<string, ActivityInstance>();
         public Stack<WorkflowExecutionScope> Scopes { get; set; }
         public Variables Input { get; set; }

@@ -10,12 +10,14 @@ namespace Elsa.WorkflowBuilders
     public class WorkflowBuilder : IWorkflowBuilder
     {
         private readonly IActivityResolver activityResolver;
+        private readonly IIdGenerator idGenerator;
         private readonly IList<IActivityBuilder> activityBuilders = new List<IActivityBuilder>();
         private readonly IList<IConnectionBuilder> connectionBuilders = new List<IConnectionBuilder>();
 
-        public WorkflowBuilder(IActivityResolver activityResolver)
+        public WorkflowBuilder(IActivityResolver activityResolver, IIdGenerator idGenerator)
         {
             this.activityResolver = activityResolver;
+            this.idGenerator = idGenerator;
         }
 
         public string Id { get; set; }
@@ -87,7 +89,7 @@ namespace Elsa.WorkflowBuilders
             return Add(setupActivity, id);
         }
 
-        public WorkflowDefinition Build()
+        public WorkflowDefinitionVersion Build()
         {
             // Generate deterministic activity ids.
             var id = 1;
@@ -99,8 +101,9 @@ namespace Elsa.WorkflowBuilders
             
             var activities = activityBuilders.Select(x => x.BuildActivity()).ToList();
             var connections = connectionBuilders.Select(x => x.BuildConnection()).ToList();
+            var versionId = idGenerator.Generate();
 
-            return new WorkflowDefinition(Id, Version, Name, Description, activities, connections, IsSingleton, Variables.Empty);
+            return new WorkflowDefinitionVersion(versionId, Id, Version, Name, Description, activities, connections, IsSingleton, Variables.Empty);
         }
     }
 }

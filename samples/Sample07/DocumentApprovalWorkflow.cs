@@ -6,6 +6,7 @@ using Elsa.Activities.Email.Activities;
 using Elsa.Activities.Http.Activities;
 using Elsa.Activities.ControlFlow;
 using Elsa.Activities.Primitives;
+using Elsa.Activities.Workflows;
 using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -48,7 +49,7 @@ namespace Sample07
                     activity =>
                     {
                         activity.Content = new PlainTextExpression("<h1>Request for Approval Sent</h1><p>Your document has been received and will be reviewed shortly.</p>");
-                        activity.ContentType = new PlainTextExpression("text/html");
+                        activity.ContentType = "text/html";
                         activity.StatusCode = HttpStatusCode.OK;
                         activity.ResponseHeaders = new PlainTextExpression("X-Powered-By=Elsa Workflows");
                     }
@@ -59,12 +60,12 @@ namespace Sample07
                     {
                         fork
                             .When("Approve")
-                            .Then<SignalEvent>(activity => activity.Signal = new PlainTextExpression("approve"))
+                            .Then<Signaled>(activity => activity.Signal = new PlainTextExpression("approve"))
                             .Then("join-signals");
 
                         fork
                             .When("Reject")
-                            .Then<SignalEvent>(activity => activity.Signal = new PlainTextExpression("reject"))
+                            .Then<Signaled>(activity => activity.Signal = new PlainTextExpression("reject"))
                             .Then("join-signals");
                     }
                 )

@@ -10,14 +10,14 @@ namespace Elsa.Persistence.Memory
 {
     public class MemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
     {
-        private readonly List<WorkflowDefinition> definitions;
+        private readonly List<WorkflowDefinitionVersion> definitions;
 
         public MemoryWorkflowDefinitionStore()
         {
-            definitions = new List<WorkflowDefinition>();
+            definitions = new List<WorkflowDefinitionVersion>();
         }
 
-        public async Task<WorkflowDefinition> SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
+        public async Task<WorkflowDefinitionVersion> SaveAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken = default)
         {
             var existingDefinition = await GetByIdAsync(definition.Id, VersionOptions.SpecificVersion(definition.Version), cancellationToken);
 
@@ -29,7 +29,7 @@ namespace Elsa.Persistence.Memory
             return definition;
         }
 
-        public async Task AddAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
+        public async Task AddAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken = default)
         {
             var existingDefinition = await GetByIdAsync(definition.Id, VersionOptions.SpecificVersion(definition.Version), cancellationToken);
 
@@ -41,20 +41,20 @@ namespace Elsa.Persistence.Memory
             definitions.Add(definition);
         }
 
-        public Task<WorkflowDefinition> GetByIdAsync(string id, VersionOptions version, CancellationToken cancellationToken = default)
+        public Task<WorkflowDefinitionVersion> GetByIdAsync(string id, VersionOptions version, CancellationToken cancellationToken = default)
         {
-            var query = definitions.Where(x => x.Id == id).AsQueryable().WithVersion(version);
+            var query = definitions.Where(x => x.DefinitionId == id).AsQueryable().WithVersion(version);
             var definition = query.FirstOrDefault();
             return Task.FromResult(definition);
         }
 
-        public Task<IEnumerable<WorkflowDefinition>> ListAsync(VersionOptions version, CancellationToken cancellationToken = default)
+        public Task<IEnumerable<WorkflowDefinitionVersion>> ListAsync(VersionOptions version, CancellationToken cancellationToken = default)
         {
             var query = definitions.AsQueryable().WithVersion(version);
             return Task.FromResult(query.AsEnumerable());
         }
 
-        public async Task<WorkflowDefinition> UpdateAsync(WorkflowDefinition definition, CancellationToken cancellationToken)
+        public async Task<WorkflowDefinitionVersion> UpdateAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken)
         {
             var existingDefinition = await GetByIdAsync(definition.Id, VersionOptions.SpecificVersion(definition.Version), cancellationToken);
             var index = definitions.IndexOf(existingDefinition);
@@ -65,13 +65,8 @@ namespace Elsa.Persistence.Memory
 
         public Task<int> DeleteAsync(string id, CancellationToken cancellationToken = default)
         {
-            var count = definitions.RemoveAll(x => x.Id == id);
-            return Task.FromResult<int>(count);
-        }
-
-        public Task CommitAsync(CancellationToken cancellationToken = default)
-        {
-            return Task.CompletedTask;
+            var count = definitions.RemoveAll(x => x.DefinitionId == id);
+            return Task.FromResult(count);
         }
     }
 }

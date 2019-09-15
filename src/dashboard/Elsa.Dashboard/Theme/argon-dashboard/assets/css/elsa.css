@@ -26,5 +26,9 @@ wf-activity-picker .card-title i {
 
 .workflow-designer-wrapper {
   height: 50vh; }
+  .workflow-designer-wrapper .workflow-canvas .activity p {
+    font-size: 1em; }
+  .workflow-designer-wrapper .workflow-canvas .connection-label {
+    font-size: 0.8em; }
 
 /*# sourceMappingURL=elsa.css.map */

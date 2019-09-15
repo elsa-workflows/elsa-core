@@ -15,7 +15,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Jint" Version="3.0.0-beta-1552" />
+      <PackageReference Include="Jint" Version="3.0.0-beta-1598" />
       <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="2.2.0" />
       <PackageReference Include="Microsoft.Extensions.Localization.Abstractions" Version="2.2.0" />
       <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />

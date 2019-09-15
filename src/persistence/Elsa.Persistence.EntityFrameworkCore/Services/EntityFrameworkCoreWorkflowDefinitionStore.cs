@@ -2,8 +2,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Extensions;
+using AutoMapper;
 using Elsa.Models;
+using Elsa.Persistence.EntityFrameworkCore.Documents;
+using Elsa.Persistence.EntityFrameworkCore.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Services
@@ -11,59 +13,86 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
     public class EntityFrameworkCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
     {
         private readonly ElsaContext dbContext;
+        private readonly IMapper mapper;
 
-        public EntityFrameworkCoreWorkflowDefinitionStore(ElsaContext dbContext)
+        public EntityFrameworkCoreWorkflowDefinitionStore(ElsaContext dbContext, IMapper mapper)
         {
             this.dbContext = dbContext;
+            this.mapper = mapper;
         }
 
-        public async Task<WorkflowDefinition> SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
+        public async Task<WorkflowDefinitionVersion> SaveAsync(WorkflowDefinitionVersion definition,
+            CancellationToken cancellationToken = default)
         {
-            await dbContext.WorkflowDefinitions.Upsert(definition)
-                .On(x => new { x.Id, x.Version })
+            var document = Map(definition);
+
+            await dbContext.WorkflowDefinitionVersions.Upsert(document)
+                .On(x => new { x.Id })
                 .RunAsync(cancellationToken);
 
+            await dbContext.SaveChangesAsync(cancellationToken);
             return definition;
         }
 
-        public async Task AddAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
+        public async Task AddAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken = default)
         {
-            await dbContext.WorkflowDefinitions.AddAsync(definition, cancellationToken);
+            var document = Map(definition);
+            await dbContext.WorkflowDefinitionVersions.AddAsync(document, cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
         }
 
-        public async Task<WorkflowDefinition> GetByIdAsync(string id, VersionOptions version, CancellationToken cancellationToken = default)
+        public async Task<WorkflowDefinitionVersion> GetByIdAsync(string id, VersionOptions version,
+            CancellationToken cancellationToken = default)
         {
-            var query = dbContext.WorkflowDefinitions
+            var query = dbContext.WorkflowDefinitionVersions
                 .AsQueryable()
-                .Where(x => x.Id == id)
+                .Where(x => x.DefinitionId == id)
                 .WithVersion(version);
 
-            return await query.FirstOrDefaultAsync(cancellationToken);
+            var document = await query.FirstOrDefaultAsync(cancellationToken);
+            return Map(document);
         }
 
-        public async Task<IEnumerable<WorkflowDefinition>> ListAsync(VersionOptions version, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<WorkflowDefinitionVersion>> ListAsync(VersionOptions version,
+            CancellationToken cancellationToken = default)
         {
-            var query = dbContext.WorkflowDefinitions.AsQueryable().WithVersion(version);
-            return await query.ToListAsync(cancellationToken);
+            var query = dbContext.WorkflowDefinitionVersions.AsQueryable().WithVersion(version);
+            var documents = await query.ToListAsync(cancellationToken);
+
+            return mapper.Map<IEnumerable<WorkflowDefinitionVersion>>(documents);
         }
 
-        public Task<WorkflowDefinition> UpdateAsync(WorkflowDefinition definition, CancellationToken cancellationToken)
+        public async Task<WorkflowDefinitionVersion> UpdateAsync(
+            WorkflowDefinitionVersion definition,
+            CancellationToken cancellationToken)
         {
-            dbContext.WorkflowDefinitions.Update(definition);
-            return Task.FromResult(definition);
+            var document = Map(definition);
+            dbContext.WorkflowDefinitionVersions.Update(document);
+            
+            await dbContext.SaveChangesAsync(cancellationToken);
+
+            return Map(document);
         }
 
         public async Task<int> DeleteAsync(string id, CancellationToken cancellationToken = default)
         {
-            var records = await dbContext.WorkflowDefinitions.Where(x => x.Id == id).ToListAsync(cancellationToken);
+            var records = await dbContext.WorkflowDefinitionVersions.Where(x => x.DefinitionId == id)
+                .ToListAsync(cancellationToken);
 
-            dbContext.WorkflowDefinitions.RemoveRange(records);
+            dbContext.WorkflowDefinitionVersions.RemoveRange(records);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            
             return records.Count;
         }
 
-        public Task CommitAsync(CancellationToken cancellationToken = default)
+        private WorkflowDefinitionVersionDocument Map(WorkflowDefinitionVersion source)
         {
-            return dbContext.SaveChangesAsync(cancellationToken);
+            return mapper.Map<WorkflowDefinitionVersionDocument>(source);
+        }
+
+        private WorkflowDefinitionVersion Map(WorkflowDefinitionVersionDocument source)
+        {
+            return mapper.Map<WorkflowDefinitionVersion>(source);
         }
     }
 }
