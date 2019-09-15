@@ -82,7 +82,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             var documents = await query.ToListAsync(cancellationToken);
             var instances = Map(documents);
 
-            return instances.GetBlockingActivities();
+            return instances.GetBlockingActivities(activityType);
         }
 
         public async Task<IEnumerable<WorkflowInstance>> ListByStatusAsync(

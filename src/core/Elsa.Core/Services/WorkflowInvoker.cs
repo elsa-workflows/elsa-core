@@ -120,6 +120,7 @@ namespace Elsa.Services
             var startedExecutionContexts = await StartManyAsync(
                 activityType,
                 input,
+                correlationId,
                 activityStatePredicate,
                 cancellationToken
             );
@@ -138,6 +139,7 @@ namespace Elsa.Services
         private async Task<IEnumerable<WorkflowExecutionContext>> StartManyAsync(
             string activityType,
             Variables input = default,
+            string correlationId = default,
             Func<JObject, bool> activityStatePredicate = default,
             CancellationToken cancellationToken = default)
         {
@@ -148,7 +150,7 @@ namespace Elsa.Services
 
             workflowDefinitions = await FilterRunningSingletonsAsync(workflowDefinitions, cancellationToken);
 
-            return await StartManyAsync(workflowDefinitions, input, cancellationToken);
+            return await StartManyAsync(workflowDefinitions, input, correlationId, cancellationToken);
         }
 
         public async Task<IEnumerable<WorkflowExecutionContext>> ResumeManyAsync(
@@ -188,6 +190,7 @@ namespace Elsa.Services
         private async Task<IEnumerable<WorkflowExecutionContext>> StartManyAsync(
             IEnumerable<(WorkflowDefinitionVersion, ActivityDefinition)> workflowDefinitions,
             Variables input,
+            string correlationId,
             CancellationToken cancellationToken1)
         {
             var executionContexts = new List<WorkflowExecutionContext>();
@@ -198,7 +201,7 @@ namespace Elsa.Services
                     .Where(x => x.Id == activityDefinition.Id)
                     .Select(x => x.Id);
 
-                var workflow = workflowFactory.CreateWorkflow(workflowDefinition, input);
+                var workflow = workflowFactory.CreateWorkflow(workflowDefinition, input, correlationId: correlationId);
 
                 var executionContext = await ExecuteAsync(
                     workflow,

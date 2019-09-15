@@ -13,8 +13,9 @@ namespace Elsa.Persistence.EntityFrameworkCore.Documents
         public string CorrelationId { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? StartedAt { get; set; }
-        public DateTime? HaltedAt { get; set; }
         public DateTime? FinishedAt { get; set; }
+        public DateTime? FaultedAt { get; set; }
+        public DateTime? AbortedAt { get; set; }
         public IDictionary<string, ActivityInstance> Activities { get; set; } = new Dictionary<string, ActivityInstance>();
         public Stack<WorkflowExecutionScope> Scopes { get; set; }
         public Variables Input { get; set; }

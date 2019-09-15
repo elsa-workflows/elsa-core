@@ -83,6 +83,7 @@ namespace Elsa.Services.Models
         {
             Workflow.FinishedAt = clock.GetCurrentInstant();
             Workflow.Status = WorkflowStatus.Finished;
+            Workflow.BlockingActivities.Clear();
         }
         
         public void Abort()

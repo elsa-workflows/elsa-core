@@ -68,7 +68,7 @@ namespace Elsa.Persistence.YesSql.Services
             var documents = await query.ListAsync();
             var instances = mapper.Map<IEnumerable<WorkflowInstance>>(documents);
 
-            return instances.GetBlockingActivities();
+            return instances.GetBlockingActivities(activityType);
         }
 
         public async Task<IEnumerable<WorkflowInstance>> ListByStatusAsync(string definitionId, WorkflowStatus status, CancellationToken cancellationToken)

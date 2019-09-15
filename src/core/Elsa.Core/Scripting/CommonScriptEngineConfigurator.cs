@@ -22,7 +22,11 @@ namespace Elsa.Scripting
             engine.SetValue("lastResult", (Func<string, object>) (name => context.CurrentScope.LastResult));
             engine.SetValue("correlationId", (Func<object>) (() => context.Workflow.CorrelationId));
 
-            foreach (var variable in workflowExecutionContext.CurrentScope.Variables)
+            var variables = workflowExecutionContext.Workflow.Scopes
+                .Select(x => x.Variables)
+                .Aggregate((x, y) => new Variables(x.Union(y)));
+            
+            foreach (var variable in variables)
             {
                 engine.SetValue(variable.Key, variable.Value);
             }

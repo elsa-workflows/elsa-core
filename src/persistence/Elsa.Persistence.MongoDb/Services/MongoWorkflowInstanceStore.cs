@@ -69,7 +69,7 @@ namespace Elsa.Persistence.MongoDb.Services
 
             var instances = await query.ToListAsync(cancellationToken);
 
-            return instances.GetBlockingActivities();
+            return instances.GetBlockingActivities(activityType);
         }
 
         public async Task<IEnumerable<WorkflowInstance>> ListByStatusAsync(
