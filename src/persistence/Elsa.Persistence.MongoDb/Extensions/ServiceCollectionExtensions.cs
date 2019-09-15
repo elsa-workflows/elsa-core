@@ -1,4 +1,5 @@
 using System;
+using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Persistence.MongoDb.Serialization;
 using Elsa.Persistence.MongoDb.Services;
@@ -33,14 +34,14 @@ namespace Elsa.Persistence.MongoDb.Extensions
         {
             return services
                 .AddMongoDbCollection<WorkflowInstance>("WorkflowInstances")
-                .AddSingleton<IWorkflowInstanceStore, MongoWorkflowInstanceStore>();
+                .Replace<IWorkflowInstanceStore, MongoWorkflowInstanceStore>(ServiceLifetime.Scoped);
         }
 
         public static IServiceCollection AddMongoDbWorkflowDefinitionStore(this IServiceCollection services)
         {
             return services
                 .AddMongoDbCollection<WorkflowDefinitionVersion>("WorkflowDefinitions")
-                .AddSingleton<IWorkflowDefinitionStore, MongoWorkflowDefinitionStore>();
+                .Replace<IWorkflowDefinitionStore, MongoWorkflowDefinitionStore>(ServiceLifetime.Scoped);
         }
         
         public static IServiceCollection AddMongoDbCollection<T>(this IServiceCollection services, string collectionName)

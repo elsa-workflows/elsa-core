@@ -5,7 +5,7 @@
 @{
     var scripts = Options.Value.Scripts;
     
-    if (scripts.Any())
+    if (scripts?.Any() == true)
     {
         foreach (var script in scripts)
         {

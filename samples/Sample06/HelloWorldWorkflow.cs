@@ -12,7 +12,9 @@ namespace Sample06
         public void Build(IWorkflowBuilder builder)
         {
             builder
-                .StartWith<HttpRequestEvent>(activity => activity.Path = new Uri("/hello-world", UriKind.RelativeOrAbsolute))
+                .StartWith<HttpRequestEvent>(
+                    activity => activity.Path = new Uri("/hello-world", UriKind.RelativeOrAbsolute)
+                )
                 .Then<HttpResponseAction>(
                     activity =>
                     {

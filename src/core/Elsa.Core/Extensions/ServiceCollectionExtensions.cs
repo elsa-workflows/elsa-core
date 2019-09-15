@@ -7,6 +7,7 @@ using Elsa.Activities.Workflows;
 using Elsa.AutoMapper.Extensions;
 using Elsa.Expressions;
 using Elsa.Mapping;
+using Elsa.Persistence.Memory;
 using Elsa.Runtime;
 using Elsa.Scripting;
 using Elsa.Serialization;
@@ -28,6 +29,8 @@ namespace Elsa.Extensions
             services.AddWorkflowsCore();
 
             return services
+                .AddMemoryWorkflowInstanceStore()
+                .AddMemoryWorkflowDefinitionStore()
                 .AddScoped<IWorkflowEventHandler, PersistenceWorkflowEventHandler>();
         }
 
@@ -102,6 +105,13 @@ namespace Elsa.Extensions
             }
 
             return services;
+        }
+
+        public static IServiceCollection Replace<TService, TImplementation>(
+            this IServiceCollection services,
+            ServiceLifetime lifetime)
+        {
+            return services.Replace(new ServiceDescriptor(typeof(TService), typeof(TImplementation), lifetime));
         }
 
         private static IServiceCollection AddPrimitiveActivities(this IServiceCollection services)
