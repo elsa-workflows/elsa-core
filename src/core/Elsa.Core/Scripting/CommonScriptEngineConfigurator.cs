@@ -24,7 +24,7 @@ namespace Elsa.Scripting
 
             var variables = workflowExecutionContext.Workflow.Scopes
                 .Select(x => x.Variables)
-                .Aggregate((x, y) => new Variables(x.Union(y)));
+                .Aggregate(Variables.Empty, (x, y) => new Variables(x.Union(y)));
             
             foreach (var variable in variables)
             {
