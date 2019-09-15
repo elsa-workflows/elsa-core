@@ -3,14 +3,12 @@
 ## Elsa Workflows
 
 [![MyGet (with prereleases)](https://img.shields.io/myget/elsa/vpre/Elsa.Core.svg?label=myget)](https://www.myget.org/gallery/elsa)
+[![Build status](https://ci.appveyor.com/api/projects/status/rqg10opfpy78yiga/branch/develop?svg=true)](https://ci.appveyor.com/project/sfmskywalker/elsa/branch/develop)
 
 Elsa Core is a workflows library that enables workflow execution in any .NET Core application.
 Workflows can be defined not only using code but also as JSON, YAML or XML.
 
 Workflows can be visually designed using [Elsa Designer](https://github.com/elsa-workflows/elsa-designer-html), a reusable & extensible HTML5 web component built with [StencilJS[(https://stenciljs.com/).
-
-![Web-based workflow designer](/doc/workflow-sample-3.png)
-
 To manage workflow definitions and instances, Elsa comes with a reusable Razor Class Library that provides a dashboard application in the form of an MVC area that you can include in your own ASP.NET Core application.
 
 ![Web-based workflow designer](/doc/dashboard-sample-1.png)
