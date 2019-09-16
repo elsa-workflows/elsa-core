@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using Elsa.Results;
 using Elsa.Services.Models;
-using NodaTime;
 
 namespace Elsa.Services
 {

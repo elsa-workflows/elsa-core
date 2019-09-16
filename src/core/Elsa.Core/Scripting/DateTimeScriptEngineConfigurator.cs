@@ -1,7 +1,6 @@
 using System;
 using Elsa.Services.Models;
 using Jint;
-using Newtonsoft.Json.Linq;
 using NodaTime;
 
 namespace Elsa.Scripting

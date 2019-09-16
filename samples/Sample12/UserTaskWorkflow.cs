@@ -1,5 +1,4 @@
 using Elsa.Activities.Console.Activities;
-using Elsa.Activities.Primitives;
 using Elsa.Activities.UserTask.Activities;
 using Elsa.Expressions;
 using Elsa.Services;

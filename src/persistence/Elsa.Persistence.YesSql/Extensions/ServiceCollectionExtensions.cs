@@ -8,7 +8,6 @@ using Elsa.Persistence.YesSql.Services;
 using Elsa.Persistence.YesSql.StartupTasks;
 using Elsa.Runtime;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using YesSql;
 using YesSql.Indexes;
 

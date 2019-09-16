@@ -1,7 +1,6 @@
 using Elsa;
 using Elsa.Activities.Console.Activities;
 using Elsa.Activities.ControlFlow;
-using Elsa.Activities.Primitives;
 using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;

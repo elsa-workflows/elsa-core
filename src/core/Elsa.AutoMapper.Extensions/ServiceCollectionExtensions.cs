@@ -1,6 +1,5 @@
 ﻿using System;
 using AutoMapper;
-using Elsa.AutoMapper.Extensions.NodaTime;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 

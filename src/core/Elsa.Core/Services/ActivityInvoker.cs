@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Models;
 using Elsa.Results;
 using Elsa.Services.Models;
 using Microsoft.Extensions.Logging;
-using NodaTime;
 
 namespace Elsa.Services
 {

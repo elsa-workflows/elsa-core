@@ -2,11 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
-using Elsa.Activities.ControlFlow;
 using Elsa.Models;
 using Elsa.Services.Models;
 using Jint;
-using Newtonsoft.Json;
 
 namespace Elsa.Scripting
 {

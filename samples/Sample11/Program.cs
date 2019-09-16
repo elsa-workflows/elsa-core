@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Elsa.Activities.Console.Extensions;
-using Elsa.Activities.Primitives;
 using Elsa.Activities.Workflows;
 using Elsa.Extensions;
 using Elsa.Models;

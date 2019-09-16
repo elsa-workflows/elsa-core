@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Elsa.Comparers;
 using Elsa.Models;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NodaTime;
 

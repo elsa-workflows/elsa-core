@@ -1,5 +1,3 @@
-![Web-based workflow designer](/doc/elsa-cover.png)
-
 ## Elsa Workflows
 
 [![MyGet (with prereleases)](https://img.shields.io/myget/elsa/vpre/Elsa.Core.svg?label=myget)](https://www.myget.org/gallery/elsa)
@@ -12,6 +10,10 @@ Workflows can be visually designed using [Elsa Designer](https://github.com/elsa
 To manage workflow definitions and instances, Elsa comes with a reusable Razor Class Library that provides a dashboard application in the form of an MVC area that you can include in your own ASP.NET Core application.
 
 ![Web-based workflow designer](/doc/dashboard-sample-1.png)
+
+## Get Started
+
+Follow the [Getting Started](https://elsa-workflows.github.io/elsa-core/docs/installing-elsa-core) instructions on the [Elsa Workflows documentation site](https://elsa-workflows.github.io/elsa-core).
 
 ## Programmatic Workflows
 

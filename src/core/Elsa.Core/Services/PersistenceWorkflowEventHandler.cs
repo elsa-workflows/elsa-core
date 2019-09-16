@@ -1,9 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Persistence;
-using Elsa.Serialization;
 using Elsa.Services.Models;
-using Newtonsoft.Json;
 
 namespace Elsa.Services
 {

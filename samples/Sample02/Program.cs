@@ -4,7 +4,6 @@ using Elsa.Activities.Console.Activities;
 using Elsa.Activities.Console.Extensions;
 using Elsa.Expressions;
 using Elsa.Extensions;
-using Elsa.Persistence.Memory;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -20,7 +19,6 @@ namespace Sample02
             // Setup a service collection.
             var services = new ServiceCollection()
                 .AddWorkflows()
-                .AddMemoryWorkflowInstanceStore()
                 .AddConsoleActivities()
                 .BuildServiceProvider();
 
@@ -31,7 +29,7 @@ namespace Sample02
                 .Then<WriteLine>(x => x.TextExpression = new Literal("Goodbye cruel world..."))
                 .Build();
 
-            // Run the workflow.
+            // Start the workflow.
             var invoker = services.GetService<IWorkflowInvoker>();
             await invoker.StartAsync(workflowDefinition);
 
