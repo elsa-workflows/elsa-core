@@ -37,7 +37,7 @@ namespace Elsa.Activities.Workflows
 
         public WorkflowExpression<string> CorrelationId
         {
-            get => GetState(() => new WorkflowExpression<string>(PlainTextEvaluator.SyntaxName, ""));
+            get => GetState(() => new WorkflowExpression<string>(LiteralEvaluator.SyntaxName, ""));
             set => SetState(value);
         }
 

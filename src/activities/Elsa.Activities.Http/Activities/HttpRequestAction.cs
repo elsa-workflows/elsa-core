@@ -44,9 +44,9 @@ namespace Elsa.Activities.Http.Activities
                 var url = GetState<string>();
 
                 if (!string.IsNullOrWhiteSpace(url) && Uri.TryCreate(url, UriKind.RelativeOrAbsolute, out var uri))
-                    return new WorkflowExpression<Uri>(PlainTextEvaluator.SyntaxName, uri.ToString());
+                    return new WorkflowExpression<Uri>(LiteralEvaluator.SyntaxName, uri.ToString());
 
-                return new WorkflowExpression<Uri>(PlainTextEvaluator.SyntaxName, "");
+                return new WorkflowExpression<Uri>(LiteralEvaluator.SyntaxName, "");
             }
             set => SetState(value.ToString());
         }
@@ -65,7 +65,7 @@ namespace Elsa.Activities.Http.Activities
         /// </summary>
         public WorkflowExpression<string> Body
         {
-            get => GetState(() => new WorkflowExpression<string>(PlainTextEvaluator.SyntaxName, ""));
+            get => GetState(() => new WorkflowExpression<string>(LiteralEvaluator.SyntaxName, ""));
             set => SetState(value);
         }
 
@@ -74,7 +74,7 @@ namespace Elsa.Activities.Http.Activities
         /// </summary>
         public WorkflowExpression<string> ContentType
         {
-            get => GetState(() => new WorkflowExpression<string>(PlainTextEvaluator.SyntaxName, ""));
+            get => GetState(() => new WorkflowExpression<string>(LiteralEvaluator.SyntaxName, ""));
             set => SetState(value);
         }
 
@@ -83,7 +83,7 @@ namespace Elsa.Activities.Http.Activities
         /// </summary>
         public WorkflowExpression<string> RequestHeaders
         {
-            get => GetState(() => new WorkflowExpression<string>(PlainTextEvaluator.SyntaxName, ""));
+            get => GetState(() => new WorkflowExpression<string>(LiteralEvaluator.SyntaxName, ""));
             set => SetState(value);
         }
 

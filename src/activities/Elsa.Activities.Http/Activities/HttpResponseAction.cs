@@ -38,7 +38,7 @@ namespace Elsa.Activities.Http.Activities
         /// </summary>
         public WorkflowExpression<string> Content
         {
-            get => GetState(() => new WorkflowExpression<string>(PlainTextEvaluator.SyntaxName, ""));
+            get => GetState(() => new WorkflowExpression<string>(LiteralEvaluator.SyntaxName, ""));
             set => SetState(value);
         }
 
@@ -56,7 +56,7 @@ namespace Elsa.Activities.Http.Activities
         /// </summary>
         public WorkflowExpression<string> ResponseHeaders
         {
-            get => GetState(() => new WorkflowExpression<string>(PlainTextEvaluator.SyntaxName, ""));
+            get => GetState(() => new WorkflowExpression<string>(LiteralEvaluator.SyntaxName, ""));
             set => SetState(value);
         }
 

@@ -45,9 +45,7 @@ namespace Sample05
             services
                 .AddWorkflows()
                 .AddConsoleActivities()
-                .AddTimerActivities(options => options.Configure(x => x.SweepInterval = Period.FromSeconds(1)))
-                .AddMemoryWorkflowDefinitionStore()
-                .AddMemoryWorkflowInstanceStore();
+                .AddTimerActivities(options => options.Configure(x => x.SweepInterval = Period.FromSeconds(1)));
         }
     }
 }

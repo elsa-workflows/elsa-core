@@ -10,7 +10,7 @@ namespace Sample13
         public void Build(IWorkflowBuilder builder)
         {
             builder
-                .StartWith<WriteLine>(x => x.TextExpression = new Literal("Hi! What's your name?"))
+                .StartWith<WriteLine>(x => x.TextExpression = new LiteralExpression("Hi! What's your name?"))
                 .Then<ReadLine>(id: "name")
                 .Then<WriteLine>(x => x.TextExpression = new JavaScriptExpression<string>("`${name.output.text}, that's a great name! Now, what's your age?`"))
                 .Then<ReadLine>(id: "age")

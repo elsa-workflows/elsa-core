@@ -47,7 +47,7 @@ namespace Elsa.Extensions
                 .TryAddProvider<ITokenFormatter, JsonTokenFormatter>(ServiceLifetime.Singleton)
                 .TryAddProvider<ITokenFormatter, YamlTokenFormatter>(ServiceLifetime.Singleton)
                 .TryAddProvider<ITokenFormatter, XmlTokenFormatter>(ServiceLifetime.Singleton)
-                .TryAddProvider<IExpressionEvaluator, PlainTextEvaluator>(ServiceLifetime.Singleton)
+                .TryAddProvider<IExpressionEvaluator, LiteralEvaluator>(ServiceLifetime.Singleton)
                 .TryAddProvider<IExpressionEvaluator, JavaScriptEvaluator>(ServiceLifetime.Singleton)
                 .AddSingleton<IScriptEngineConfigurator, CommonScriptEngineConfigurator>()
                 .AddSingleton<IScriptEngineConfigurator, DateTimeScriptEngineConfigurator>()

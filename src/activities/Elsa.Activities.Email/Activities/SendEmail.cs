@@ -29,25 +29,25 @@ namespace Elsa.Activities.Email.Activities
 
         public WorkflowExpression<string> From
         {
-            get => GetState(() => new WorkflowExpression<string>(PlainTextEvaluator.SyntaxName, ""));
+            get => GetState(() => new WorkflowExpression<string>(LiteralEvaluator.SyntaxName, ""));
             set => SetState(value);
         }
 
         public WorkflowExpression<string> To
         {
-            get => GetState(() => new WorkflowExpression<string>(PlainTextEvaluator.SyntaxName, ""));
+            get => GetState(() => new WorkflowExpression<string>(LiteralEvaluator.SyntaxName, ""));
             set => SetState(value);
         }
 
         public WorkflowExpression<string> Subject
         {
-            get => GetState(() => new WorkflowExpression<string>(PlainTextEvaluator.SyntaxName, ""));
+            get => GetState(() => new WorkflowExpression<string>(LiteralEvaluator.SyntaxName, ""));
             set => SetState(value);
         }
 
         public WorkflowExpression<string> Body
         {
-            get => GetState(() => new WorkflowExpression<string>(PlainTextEvaluator.SyntaxName, ""));
+            get => GetState(() => new WorkflowExpression<string>(LiteralEvaluator.SyntaxName, ""));
             set => SetState(value);
         }
 

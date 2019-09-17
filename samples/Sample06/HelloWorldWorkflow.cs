@@ -18,10 +18,10 @@ namespace Sample06
                 .Then<HttpResponseAction>(
                     activity =>
                     {
-                        activity.Content = new Literal("<h1>Hello World!</h1><p>Elsa says hi :)</p>");
+                        activity.Content = new LiteralExpression("<h1>Hello World!</h1><p>Elsa says hi :)</p>");
                         activity.ContentType = "text/html";
                         activity.StatusCode = HttpStatusCode.OK;
-                        activity.ResponseHeaders = new Literal("X-Powered-By=Elsa Workflows");
+                        activity.ResponseHeaders = new LiteralExpression("X-Powered-By=Elsa Workflows");
                     }
                 );
         }

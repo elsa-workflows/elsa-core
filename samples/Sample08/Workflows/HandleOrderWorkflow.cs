@@ -22,7 +22,7 @@ namespace Sample08.Workflows
                         activity.Expression = new JavaScriptExpression<object>("lastResult().Order");
                     }
                 )
-                .Then<TimerEvent>(activity => activity.TimeoutExpression = new PlainTextExpression<TimeSpan>("00:00:05"))
+                .Then<TimerEvent>(activity => activity.TimeoutExpression = new LiteralExpression<TimeSpan>("00:00:05"))
                 .Then<SendMassTransitMessage>(activity =>
                     {
                         activity.Message = new JavaScriptExpression<OrderShipped>("return {order: order}");

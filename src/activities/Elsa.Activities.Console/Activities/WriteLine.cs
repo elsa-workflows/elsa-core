@@ -27,7 +27,7 @@ namespace Elsa.Activities.Console.Activities
 
         public WorkflowExpression<string> TextExpression 
         {
-            get => GetState(() => PlainTextEvaluator.Expression<string>(null));
+            get => GetState(() => LiteralEvaluator.Expression<string>(null));
             set => SetState(value);
         }
 

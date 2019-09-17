@@ -13,12 +13,12 @@ namespace Sample04
         public void Build(IWorkflowBuilder builder)
         {
             builder
-                .StartWith<WriteLine>(x => x.TextExpression = new Literal("Welcome to Calculator Workflow!"))
-                .Then<WriteLine>(x => x.TextExpression = new Literal("Enter number 1:"), id: "start")
+                .StartWith<WriteLine>(x => x.TextExpression = new LiteralExpression("Welcome to Calculator Workflow!"))
+                .Then<WriteLine>(x => x.TextExpression = new LiteralExpression("Enter number 1:"), id: "start")
                 .Then<ReadLine>(x => x.VariableName = "number1")
-                .Then<WriteLine>(x => x.TextExpression = new Literal("Enter number 2:"))
+                .Then<WriteLine>(x => x.TextExpression = new LiteralExpression("Enter number 2:"))
                 .Then<ReadLine>(x => x.VariableName = "number2")
-                .Then<WriteLine>(x => x.TextExpression = new Literal("Now enter the operation you wish to apply. Options are: add, subtract, multiply or divide:"))
+                .Then<WriteLine>(x => x.TextExpression = new LiteralExpression("Now enter the operation you wish to apply. Options are: add, subtract, multiply or divide:"))
                 .Then<ReadLine>(x => x.VariableName = "operation")
                 .Then<Switch>(@switch =>
                     {
@@ -49,7 +49,7 @@ namespace Sample04
                     }
                 )
                 .Add<WriteLine>(x => x.TextExpression = new JavaScriptExpression<string>("`Result: ${result}`"), "showResult")
-                .Then<WriteLine>(x => x.TextExpression = new Literal("Try again? (y/n)"))
+                .Then<WriteLine>(x => x.TextExpression = new LiteralExpression("Try again? (y/n)"))
                 .Then<ReadLine>(x => x.VariableName = "retry")
                 .Then<IfElse>(
                     x => x.Expression = new JavaScriptExpression<bool>("retry.toLowerCase() === 'y'"),
@@ -61,7 +61,7 @@ namespace Sample04
                         
                         ifElse
                             .When(OutcomeNames.False)
-                            .Then<WriteLine>(x => x.TextExpression = new Literal("Bye!"));
+                            .Then<WriteLine>(x => x.TextExpression = new LiteralExpression("Bye!"));
                     });;
         }
 

@@ -23,7 +23,7 @@ namespace Elsa.Activities.Timers.Activities
 
         public WorkflowExpression<TimeSpan> TimeoutExpression
         {
-            get => GetState(() => new PlainTextExpression<TimeSpan>("00:01:00"));
+            get => GetState(() => new LiteralExpression<TimeSpan>("00:01:00"));
             set => SetState(value);
         }
 

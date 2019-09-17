@@ -25,8 +25,8 @@ namespace Sample02
             // Define a workflow.
             var workflowBuilder = services.GetRequiredService<IWorkflowBuilder>();
             var workflowDefinition = workflowBuilder
-                .StartWith<WriteLine>(x => x.TextExpression = new Literal("Hello world!"))
-                .Then<WriteLine>(x => x.TextExpression = new Literal("Goodbye cruel world..."))
+                .StartWith<WriteLine>(x => x.TextExpression = new LiteralExpression("Hello world!"))
+                .Then<WriteLine>(x => x.TextExpression = new LiteralExpression("Goodbye cruel world..."))
                 .Build();
 
             // Start the workflow.

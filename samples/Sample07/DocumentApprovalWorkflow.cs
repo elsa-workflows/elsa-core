@@ -36,7 +36,7 @@ namespace Sample07
                 .Then<SendEmail>(
                     activity =>
                     {
-                        activity.From = new Literal("approval@acme.com");
+                        activity.From = new LiteralExpression("approval@acme.com");
                         activity.To = new JavaScriptExpression<string>("document.author.email");
                         activity.Subject = new JavaScriptExpression<string>("`Document received from ${document.author.name}`");
                         activity.Body = new JavaScriptExpression<string>(
@@ -48,10 +48,10 @@ namespace Sample07
                 .Then<HttpResponseAction>(
                     activity =>
                     {
-                        activity.Content = new Literal("<h1>Request for Approval Sent</h1><p>Your document has been received and will be reviewed shortly.</p>");
+                        activity.Content = new LiteralExpression("<h1>Request for Approval Sent</h1><p>Your document has been received and will be reviewed shortly.</p>");
                         activity.ContentType = "text/html";
                         activity.StatusCode = HttpStatusCode.OK;
-                        activity.ResponseHeaders = new Literal("X-Powered-By=Elsa Workflows");
+                        activity.ResponseHeaders = new LiteralExpression("X-Powered-By=Elsa Workflows");
                     }
                 )
                 .Then<Fork>(
@@ -60,12 +60,12 @@ namespace Sample07
                     {
                         fork
                             .When("Approve")
-                            .Then<Signaled>(activity => activity.Signal = new Literal("approve"))
+                            .Then<Signaled>(activity => activity.Signal = new LiteralExpression("approve"))
                             .Then("join-signals");
 
                         fork
                             .When("Reject")
-                            .Then<Signaled>(activity => activity.Signal = new Literal("reject"))
+                            .Then<Signaled>(activity => activity.Signal = new LiteralExpression("reject"))
                             .Then("join-signals");
                     }
                 )
@@ -78,7 +78,7 @@ namespace Sample07
                             .Then<SendEmail>(
                                 activity =>
                                 {
-                                    activity.From = new Literal("approval@acme.com");
+                                    activity.From = new LiteralExpression("approval@acme.com");
                                     activity.To = new JavaScriptExpression<string>("document.author.email");
                                     activity.Subject = new JavaScriptExpression<string>("`Document ${document.id} approved!`");
                                     activity.Body = new JavaScriptExpression<string>("`Great job ${document.author.name}, that document is perfect! Keep it up.`");
@@ -89,7 +89,7 @@ namespace Sample07
                             .Then<SendEmail>(
                                 activity =>
                                 {
-                                    activity.From = new Literal("approval@acme.com");
+                                    activity.From = new LiteralExpression("approval@acme.com");
                                     activity.To = new JavaScriptExpression<string>("document.author.email");
                                     activity.Subject = new JavaScriptExpression<string>("`Document ${document.id} rejected`");
                                     activity.Body = new JavaScriptExpression<string>("`Sorry ${document.author.name}, that document isn't good enough. Please try again.`");

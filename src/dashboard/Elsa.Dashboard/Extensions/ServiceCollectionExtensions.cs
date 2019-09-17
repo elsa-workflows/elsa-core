@@ -5,6 +5,7 @@ using Elsa.Dashboard.Options;
 using Elsa.Dashboard.Services;
 using Elsa.Extensions;
 using Elsa.Mapping;
+using Elsa.Persistence.Memory;
 using Elsa.Runtime;
 using Elsa.Serialization;
 using Elsa.Serialization.Formatters;
@@ -27,6 +28,8 @@ namespace Elsa.Dashboard.Extensions
 
             services
                 .AddTaskExecutingServer()
+                .AddMemoryWorkflowDefinitionStore()
+                .AddMemoryWorkflowInstanceStore()
                 .AddSingleton<IIdGenerator, IdGenerator>()
                 .AddSingleton<IWorkflowSerializerProvider, WorkflowSerializerProvider>()
                 .AddSingleton<IWorkflowSerializer, WorkflowSerializer>()

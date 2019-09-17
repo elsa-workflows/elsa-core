@@ -26,7 +26,7 @@ namespace Elsa.Dashboard.Web
         public void ConfigureServices(IServiceCollection services)
         {
             services
-                .AddMvc(options => options.Conventions.Add(new AddLocalhostFilterConvention()))
+                .AddMvc(/*options => options.Conventions.Add(new AddLocalhostFilterConvention())*/)
                 .SetCompatibilityVersion(CompatibilityVersion.Latest)
                 .AddRazorOptions(options =>
                     {
