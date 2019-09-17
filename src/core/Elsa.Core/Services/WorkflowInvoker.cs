@@ -280,38 +280,33 @@ namespace Elsa.Services
             WorkflowExecutionContext workflowExecutionContext,
             CancellationToken cancellationToken)
         {
-            // Any other status than Executing means the workflow has ended (because it reached the final activity, was aborted or has faulted).
-            if (!workflowExecutionContext.Workflow.IsExecuting() &&
-                !workflowExecutionContext.Workflow.IsFaultedOrAborted())
+            if (!workflowExecutionContext.HasScheduledHaltingActivities && workflowExecutionContext.Workflow.IsExecuting())
             {
                 workflowExecutionContext.Finish();
             }
             else
             {
-                if (workflowExecutionContext.HasScheduledHaltingActivities)
+                // Notify event handlers that halting activities are about to be executed.
+                await workflowEventHandlers.InvokeAsync(
+                    async x => await x.InvokingHaltedActivitiesAsync(workflowExecutionContext, cancellationToken),
+                    logger
+                );
+
+                // Invoke Halted event on activity drivers that halted the workflow.
+                while (workflowExecutionContext.HasScheduledHaltingActivities)
                 {
-                    // Notify event handlers that halting activities are about to be executed.
-                    await workflowEventHandlers.InvokeAsync(
-                        async x => await x.InvokingHaltedActivitiesAsync(workflowExecutionContext, cancellationToken),
-                        logger
+                    var currentActivity = workflowExecutionContext.PopScheduledHaltingActivity();
+                    var result = await ExecuteActivityHaltedAsync(
+                        workflowExecutionContext,
+                        currentActivity,
+                        cancellationToken
                     );
 
-                    // Invoke Halted event on activity drivers that halted the workflow.
-                    while (workflowExecutionContext.HasScheduledHaltingActivities)
-                    {
-                        var currentActivity = workflowExecutionContext.PopScheduledHaltingActivity();
-                        var result = await ExecuteActivityHaltedAsync(
-                            workflowExecutionContext,
-                            currentActivity,
-                            cancellationToken
-                        );
-
-                        await result.ExecuteAsync(this, workflowExecutionContext, cancellationToken);
-                    }
+                    await result.ExecuteAsync(this, workflowExecutionContext, cancellationToken);
                 }
             }
 
-            // Notify event handlers that invocation has ended.
+            // Notify event handlers that workflow execution has ended.
             await workflowEventHandlers.InvokeAsync(
                 async x => await x.WorkflowInvokedAsync(workflowExecutionContext, cancellationToken),
                 logger
