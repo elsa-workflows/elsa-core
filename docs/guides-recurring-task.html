@@ -69,9 +69,9 @@ Elsa ships with 3 types of timer activities:</p>
 </blockquote>
 <pre><code class="hljs css language-bash">dotnet new console --name Elsa.Guides.RecurringTask.ConsoleApp
 <span class="hljs-built_in">cd</span> Elsa.Guides.RecurringTask.ConsoleApp
-dotnet add package Elsa.Core -v 1.0.0.11-beta3
-dotnet add package Elsa.Activities.Console -v 1.0.0.11-beta3
-dotnet add package Elsa.Activities.Timers -v 1.0.0.11-beta3
+dotnet add package Elsa.Core -v 1.0.0.12-beta3
+dotnet add package Elsa.Activities.Console -v 1.0.0.12-beta3
+dotnet add package Elsa.Activities.Timers -v 1.0.0.12-beta3
 dotnet add package Microsoft.Extensions.Hosting
 </code></pre>
 <h2><a class="anchor" aria-hidden="true" id="create-workflow-class"></a><a href="#create-workflow-class" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Create Workflow Class</h2>
@@ -91,12 +91,17 @@ dotnet add package Microsoft.Extensions.Hosting
         <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">Build</span>(<span class="hljs-params">IWorkflowBuilder builder</span>)</span>
         {
             builder
+                .AsSingleton()
                 .StartWith&lt;TimerEvent&gt;(x =&gt; x.TimeoutExpression = <span class="hljs-keyword">new</span> LiteralExpression&lt;TimeSpan&gt;(<span class="hljs-string">"00:00:05"</span>))
                 .Then&lt;WriteLine&gt;(x =&gt; x.TextExpression = <span class="hljs-keyword">new</span> JavaScriptExpression&lt;<span class="hljs-keyword">string</span>&gt;(<span class="hljs-string">"`It's now ${new Date()}. Let's do this thing!`"</span>));
         }
     }
 }
 </code></pre>
+<blockquote>
+<p>Notice that we're defining this workflow as a <strong>singleton</strong>. Singleton workflows will only ever have a single instance running.
+This is desirable in this example, because we don't want to spawn a new workflow instance every time the timer background runner ticks.</p>
+</blockquote>
 <p>Next, open <code>Program.cs</code> and insert the following code:</p>
 <pre><code class="hljs css language-csharp"><span class="hljs-keyword">using</span> System;
 <span class="hljs-keyword">using</span> System.Threading.Tasks;
@@ -154,8 +159,8 @@ dotnet add package Microsoft.Extensions.Hosting
 </code></pre>
 <p>After 5 seconds, you will start seeing the following output:</p>
 <pre><code class="hljs css language-text">It's now Tue Sep 17 2019 16:28:40 GMT+02:00. Let's do this thing!
-It's now Tue Sep 17 2019 16:28:45 GMT+02:00. Let's do this thing!
-It's now Tue Sep 17 2019 16:28:50 GMT+02:00. Let's do this thing!
+It's now Tue Sep 17 2019 16:28:46 GMT+02:00. Let's do this thing!
+It's now Tue Sep 17 2019 16:28:52 GMT+02:00. Let's do this thing!
 </code></pre>
 <h2><a class="anchor" aria-hidden="true" id="summary"></a><a href="#summary" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Summary</h2>
 <p>In this guide, we've seen how to setup a workflow that is triggered using a <code>TimerEvent</code> activity.</p>
