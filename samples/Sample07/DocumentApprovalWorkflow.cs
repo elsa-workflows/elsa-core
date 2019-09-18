@@ -22,7 +22,7 @@ namespace Sample07
                     activity =>
                     {
                         activity.Method = HttpMethod.Post.Method;
-                        activity.Path = new Uri("/documents", UriKind.RelativeOrAbsolute);
+                        activity.Path = new Uri("/documents", UriKind.Relative);
                         activity.ReadContent = true;
                     }
                 )
