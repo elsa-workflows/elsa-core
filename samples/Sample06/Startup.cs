@@ -22,9 +22,7 @@ namespace Sample06
         {
             services
                 .AddWorkflows()
-                .AddHttpActivities()
-                .AddMemoryWorkflowDefinitionStore()
-                .AddMemoryWorkflowInstanceStore();
+                .AddHttpActivities();
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, IWorkflowRegistry workflowRegistry)

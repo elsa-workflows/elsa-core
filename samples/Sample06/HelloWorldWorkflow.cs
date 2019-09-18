@@ -13,7 +13,7 @@ namespace Sample06
         {
             builder
                 .StartWith<HttpRequestEvent>(
-                    activity => activity.Path = new Uri("/hello-world", UriKind.RelativeOrAbsolute)
+                    activity => activity.Path = new Uri("/hello-world", UriKind.Relative)
                 )
                 .Then<HttpResponseAction>(
                     activity =>

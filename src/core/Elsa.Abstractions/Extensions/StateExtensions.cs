@@ -1,4 +1,5 @@
 using System;
+using Jint;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NodaTime;
@@ -24,7 +25,9 @@ namespace Elsa.Extensions
         
         public static void SetState(this JObject state, string key, object value)
         {
-            state[key] = JToken.FromObject(value, Serializer);
+            state[key] = value != null 
+                ? JToken.FromObject(value, Serializer)
+                : null;
         }
     }
 }

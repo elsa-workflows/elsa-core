@@ -32,7 +32,7 @@ namespace Elsa.Activities.MassTransit.Activities
 
         public WorkflowExpression Message
         {
-            get => GetState(() => new WorkflowExpression(JavaScriptEvaluator.SyntaxName, string.Empty));
+            get => GetState<WorkflowExpression>();
             set => SetState(value);
         }
 

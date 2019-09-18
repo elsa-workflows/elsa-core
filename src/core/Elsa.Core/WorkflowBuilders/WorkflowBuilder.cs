@@ -102,8 +102,9 @@ namespace Elsa.WorkflowBuilders
             var activities = activityBuilders.Select(x => x.BuildActivity()).ToList();
             var connections = connectionBuilders.Select(x => x.BuildConnection()).ToList();
             var versionId = idGenerator.Generate();
+            var definitionId = !string.IsNullOrWhiteSpace(Id) ? Id : idGenerator.Generate();
 
-            return new WorkflowDefinitionVersion(versionId, Id, Version, Name, Description, activities, connections, IsSingleton, Variables.Empty);
+            return new WorkflowDefinitionVersion(versionId, definitionId, Version, Name, Description, activities, connections, IsSingleton, Variables.Empty);
         }
     }
 }

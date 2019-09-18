@@ -10,9 +10,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\src\activities\Elsa.Activities.Email\Elsa.Activities.Email.csproj" />
       <ProjectReference Include="..\..\src\activities\Elsa.Activities.Http\Elsa.Activities.Http.csproj" />
-      <ProjectReference Include="..\..\src\activities\Elsa.Activities.Timers\Elsa.Activities.Timers.csproj" />
       <ProjectReference Include="..\..\src\core\Elsa.Core\Elsa.Core.csproj" />
     </ItemGroup>
 

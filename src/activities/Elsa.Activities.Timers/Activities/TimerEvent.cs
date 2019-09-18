@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.Workflows;
 using Elsa.Expressions;
 using Elsa.Extensions;
 using Elsa.Results;
@@ -33,25 +34,38 @@ namespace Elsa.Activities.Timers.Activities
             set => SetState(value);
         }
 
-        protected override ActivityExecutionResult OnExecute(WorkflowExecutionContext workflowContext)
+        protected override async Task<bool> OnCanExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
         {
-            StartTime = clock.GetCurrentInstant();
+            return StartTime == null || await IsExpiredAsync(context, cancellationToken);
+        }
+
+        protected override ActivityExecutionResult OnExecute(WorkflowExecutionContext context)
+        {
             return Halt();
         }
 
-        protected override async Task<ActivityExecutionResult> OnResumeAsync(WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
+        protected override async Task<ActivityExecutionResult> OnResumeAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
         {
-            var isExpired = await IsExpiredAsync(workflowContext, cancellationToken);
-
-            return isExpired ? Done() : Halt();
+            if (await IsExpiredAsync(context, cancellationToken))
+            {
+                StartTime = null;
+                return Done();
+            }
+            
+            return Halt();
         }
 
-        private async Task<bool> IsExpiredAsync(WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
+        private async Task<bool> IsExpiredAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
         {
-            var timeSpan = await expressionEvaluator.EvaluateAsync(TimeoutExpression, workflowContext, cancellationToken);
             var now = clock.GetCurrentInstant();
-            var startTime = StartTime ?? now;
-            var expiresAt = startTime.ToDateTimeUtc() + timeSpan;
+
+            if (StartTime == null)
+            {
+                StartTime = now;
+            }
+            
+            var timeSpan = await expressionEvaluator.EvaluateAsync(TimeoutExpression, context, cancellationToken);
+            var expiresAt = StartTime.Value.ToDateTimeUtc() + timeSpan;
             
             return now.ToDateTimeUtc() >= expiresAt;
         }

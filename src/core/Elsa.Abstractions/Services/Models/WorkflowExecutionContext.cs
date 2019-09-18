@@ -32,22 +32,25 @@ namespace Elsa.Services.Models
         public WorkflowExecutionScope CurrentScope => Workflow.Scopes.Peek();
         public Variables TransientState { get; } = new Variables();
         public IActivity CurrentActivity { get; private set; }
+        public void ScheduleActivities(params IActivity[] activities) => ScheduleActivities((IEnumerable<IActivity>) activities);
 
-        public ActivityExecutionContext CreateActivityExecutionContext(IActivity activity) => new ActivityExecutionContext(activity);
-        public Task ScheduleActivitiesAsync(params IActivity[] activities) => ScheduleActivitiesAsync((IEnumerable<IActivity>) activities);
-
-        public async Task ScheduleActivitiesAsync(IEnumerable<IActivity> activities)
+        public void ScheduleActivities(IEnumerable<IActivity> activities)
         {
             foreach (var activity in activities)
             {
-                if(await activity.CanExecuteAsync(this))
-                    ScheduleActivity(activity);
+                ScheduleActivity(activity);
             }
         }
 
         public void BeginScope() => Workflow.Scopes.Push(new WorkflowExecutionScope());
         public void EndScope() => Workflow.Scopes.Pop();
-        public void ScheduleActivity(IActivity activity) => scheduledActivities.Push(activity);
+        
+        public void ScheduleActivity(IActivity activity)
+        {
+            scheduledActivities.Push(activity);
+        }
+
+        public IActivity PeekScheduledActivity() => scheduledActivities.Peek();
         public IActivity PopScheduledActivity() => CurrentActivity = scheduledActivities.Pop();
         public void ScheduleHaltingActivity(IActivity activity) => scheduledHaltingActivities.Push(activity);
         public IActivity PopScheduledHaltingActivity() => scheduledHaltingActivities.Pop();
@@ -71,6 +74,7 @@ namespace Elsa.Services.Models
                 Message = errorMessage,
                 FaultedActivity = activity
             };
+            Workflow.Status = WorkflowStatus.Faulted;
         }
 
         public void Halt(IActivity activity = null)

@@ -74,6 +74,8 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
         {
             var query = dbContext.WorkflowInstances.AsQueryable();
 
+            query = query.Where(x => x.Status == WorkflowStatus.Executing);
+            
             if (!string.IsNullOrWhiteSpace(correlationId))
                 query = query.Where(x => x.CorrelationId == correlationId);
 
