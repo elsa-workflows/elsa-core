@@ -23,15 +23,15 @@ namespace Elsa.Activities.Primitives
             set => SetState(value);
         }
 
-        public WorkflowExpression<object> Expression
+        public WorkflowExpression ValueExpression
         {
-            get => GetState<WorkflowExpression<object>>();
+            get => GetState<WorkflowExpression>();
             set => SetState(value);
         }
 
         protected override async Task<ActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
         {
-            var value = await expressionEvaluator.EvaluateAsync(Expression, workflowContext, cancellationToken);
+            var value = await expressionEvaluator.EvaluateAsync(ValueExpression, ValueExpression.Type, workflowContext, cancellationToken);
             workflowContext.CurrentScope.SetVariable(VariableName, value);
             return Done();
         }

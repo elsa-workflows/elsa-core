@@ -52,7 +52,7 @@ namespace Sample04
                 .Then<WriteLine>(x => x.TextExpression = new LiteralExpression("Try again? (y/n)"))
                 .Then<ReadLine>(x => x.VariableName = "retry")
                 .Then<IfElse>(
-                    x => x.Expression = new JavaScriptExpression<bool>("retry.toLowerCase() === 'y'"),
+                    x => x.ConditionExpression = new JavaScriptExpression<bool>("retry.toLowerCase() === 'y'"),
                     ifElse =>
                     {
                         ifElse

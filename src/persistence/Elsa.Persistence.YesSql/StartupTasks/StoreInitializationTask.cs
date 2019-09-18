@@ -51,6 +51,7 @@ namespace Elsa.Persistence.YesSql.StartupTasks
                             .Column<string>("ActivityId")
                             .Column<string>("ActivityType")
                             .Column<string>("CorrelationId")
+                            .Column<string>("WorkflowStatus")
                         );
 
                     transaction.Commit();

@@ -91,12 +91,12 @@ namespace Elsa.Services
             return Invoke(x => x.TriggerAsync(activityType, input, correlationId, activityStatePredicate, cancellationToken));
         }
 
-        private T Invoke<T>(Func<IScopedWorkflowInvoker, T> action)
+        private async Task<T> Invoke<T>(Func<IScopedWorkflowInvoker, Task<T>> action)
         {
             using (var scope = serviceProvider.CreateScope())
             {
                 var invoker = scope.ServiceProvider.GetRequiredService<IScopedWorkflowInvoker>();
-                return action(invoker);
+                return await action(invoker);
             }
         }
     }

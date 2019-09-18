@@ -19,7 +19,7 @@ namespace Sample08.Workflows
                     activity =>
                     {
                         activity.VariableName = "order";
-                        activity.Expression = new JavaScriptExpression<object>("lastResult().Order");
+                        activity.ValueExpression = new JavaScriptExpression<object>("lastResult().Order");
                     }
                 )
                 .Then<TimerEvent>(activity => activity.TimeoutExpression = new LiteralExpression<TimeSpan>("00:00:05"))

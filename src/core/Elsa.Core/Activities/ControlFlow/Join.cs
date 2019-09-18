@@ -48,20 +48,19 @@ namespace Elsa.Activities.ControlFlow
                     break;
                 case JoinMode.WaitAny:
                     done = inboundConnections.Any(x => recordedInboundTransitions.Contains(GetTransitionKey(x)));
-
-                    if (done)
-                    {
-                        // Remove any inbound blocking activities.
-                        var ancestorActivityIds = workflow.GetInboundActivityPath(Id).ToList();
-                        var blockingActivities = workflow.BlockingActivities.Where(x => ancestorActivityIds.Contains(x.Id)).ToList();
-
-                        foreach (var blockingActivity in blockingActivities)
-                        {
-                            workflow.BlockingActivities.Remove(blockingActivity);
-                        }
-                    }
-
                     break;
+            }
+            
+            if (done)
+            {
+                // Remove any inbound blocking activities.
+                var ancestorActivityIds = workflow.GetInboundActivityPath(Id).ToList();
+                var blockingActivities = workflow.BlockingActivities.Where(x => ancestorActivityIds.Contains(x.Id)).ToList();
+
+                foreach (var blockingActivity in blockingActivities)
+                {
+                    workflow.BlockingActivities.Remove(blockingActivity);
+                }
             }
 
             return done ? Done() : Noop();

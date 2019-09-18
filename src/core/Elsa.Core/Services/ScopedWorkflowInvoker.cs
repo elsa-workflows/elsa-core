@@ -206,6 +206,7 @@ namespace Elsa.Services
             while (workflowExecutionContext.HasScheduledActivities)
             {
                 var currentActivity = workflowExecutionContext.PopScheduledActivity();
+                
                 var result = start
                     ? await ExecuteActivityAsync(workflowExecutionContext, currentActivity, cancellationToken)
                     : await ResumeActivityAsync(workflowExecutionContext, currentActivity, cancellationToken);
@@ -284,7 +285,7 @@ namespace Elsa.Services
             WorkflowExecutionContext workflowExecutionContext,
             CancellationToken cancellationToken)
         {
-            if (!workflowExecutionContext.HasScheduledHaltingActivities &&
+            if (!workflowExecutionContext.Workflow.BlockingActivities.Any() &&
                 workflowExecutionContext.Workflow.IsExecuting())
             {
                 workflowExecutionContext.Finish();

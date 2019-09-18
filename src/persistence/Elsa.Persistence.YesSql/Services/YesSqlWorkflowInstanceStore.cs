@@ -59,6 +59,8 @@ namespace Elsa.Persistence.YesSql.Services
             CancellationToken cancellationToken = default)
         {
             var query = session.Query<WorkflowInstanceDocument, WorkflowInstanceBlockingActivitiesIndex>();
+
+            query = query.Where(x => x.WorkflowStatus == WorkflowStatus.Executing);
             
             if (!string.IsNullOrWhiteSpace(correlationId))
                 query = query.Where(x => x.CorrelationId == correlationId);

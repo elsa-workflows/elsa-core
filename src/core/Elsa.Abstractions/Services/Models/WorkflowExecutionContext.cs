@@ -48,6 +48,7 @@ namespace Elsa.Services.Models
         public void BeginScope() => Workflow.Scopes.Push(new WorkflowExecutionScope());
         public void EndScope() => Workflow.Scopes.Pop();
         public void ScheduleActivity(IActivity activity) => scheduledActivities.Push(activity);
+        public IActivity PeekScheduledActivity() => scheduledActivities.Peek();
         public IActivity PopScheduledActivity() => CurrentActivity = scheduledActivities.Pop();
         public void ScheduleHaltingActivity(IActivity activity) => scheduledHaltingActivities.Push(activity);
         public IActivity PopScheduledHaltingActivity() => scheduledHaltingActivities.Pop();
@@ -71,6 +72,7 @@ namespace Elsa.Services.Models
                 Message = errorMessage,
                 FaultedActivity = activity
             };
+            Workflow.Status = WorkflowStatus.Faulted;
         }
 
         public void Halt(IActivity activity = null)

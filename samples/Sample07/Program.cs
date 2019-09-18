@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore;
+﻿using Elsa.TypeConverters;
+using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 
 namespace Sample07
@@ -7,6 +8,7 @@ namespace Sample07
     {
         public static void Main(string[] args)
         {
+            ProgramExtensions.ConfigureTypeConverters();
             CreateWebHostBuilder(args).Build().Run();
         }
 

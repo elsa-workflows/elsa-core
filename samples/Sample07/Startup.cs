@@ -1,5 +1,6 @@
 ﻿using Elsa.Activities.Email.Extensions;
 using Elsa.Activities.Http.Extensions;
+using Elsa.Activities.Timers.Extensions;
 using Elsa.Extensions;
 using Elsa.Persistence.Memory;
 using Elsa.Services;
@@ -23,8 +24,9 @@ namespace Sample07
         {
             services
                 .AddWorkflows()
-                .AddHttpActivities()
-                .AddEmailActivities(options => options.Bind(Configuration.GetSection("Smtp"))) //Tip: use Smtp4Dev for a local SMTP server that displays sent emails without actually sending them.
+                .AddHttpActivities(options => options.Bind(Configuration.GetSection("Http")))
+                .AddEmailActivities(options => options.Bind(Configuration.GetSection("Smtp")))
+                .AddTimerActivities(options => options.Bind(Configuration.GetSection("BackgroundRunner")))
                 .AddMemoryWorkflowDefinitionStore()
                 .AddMemoryWorkflowInstanceStore();
         }
