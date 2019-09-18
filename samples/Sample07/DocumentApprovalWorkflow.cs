@@ -152,8 +152,7 @@ namespace Sample07
                                         "`Sorry ${Document.Author.Name}, that document isn't good enough. Please try again.`"
                                     );
                                 }
-                            )
-                            .Then("WaitForDocument");
+                            );
                     }
                 );
         }

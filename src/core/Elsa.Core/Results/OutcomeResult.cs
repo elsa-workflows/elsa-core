@@ -40,11 +40,9 @@ namespace Elsa.Results
         {
             var completedActivity = workflowContext.CurrentActivity;
             var connections = workflowContext.Workflow.Connections.Where(x => x.Source.Activity == completedActivity && (x.Source.Outcome ?? OutcomeNames.Done) == endpoint.Outcome);
-
-            foreach (var connection in connections)
-            {
-                workflowContext.ScheduleActivity(connection.Target.Activity);
-            }
+            var activities = connections.Select(x => x.Target.Activity);
+            
+            workflowContext.ScheduleActivities(activities);
         }
     }
 }

@@ -36,13 +36,7 @@ namespace Elsa.Activities.Timers.Activities
 
         protected override async Task<bool> OnCanExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
         {
-            if (StartTime == default)
-            {
-                StartTime = clock.GetCurrentInstant();
-                return true;
-            }
-            
-            return await IsExpiredAsync(context, cancellationToken);
+            return StartTime == null || await IsExpiredAsync(context, cancellationToken);
         }
 
         protected override ActivityExecutionResult OnExecute(WorkflowExecutionContext context)
@@ -52,16 +46,26 @@ namespace Elsa.Activities.Timers.Activities
 
         protected override async Task<ActivityExecutionResult> OnResumeAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
         {
-            StartTime = default;
-            return Done();
+            if (await IsExpiredAsync(context, cancellationToken))
+            {
+                StartTime = null;
+                return Done();
+            }
+            
+            return Halt();
         }
 
         private async Task<bool> IsExpiredAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
         {
-            var timeSpan = await expressionEvaluator.EvaluateAsync(TimeoutExpression, context, cancellationToken);
             var now = clock.GetCurrentInstant();
-            var startTime = StartTime ?? now;
-            var expiresAt = startTime.ToDateTimeUtc() + timeSpan;
+
+            if (StartTime == null)
+            {
+                StartTime = now;
+            }
+            
+            var timeSpan = await expressionEvaluator.EvaluateAsync(TimeoutExpression, context, cancellationToken);
+            var expiresAt = StartTime.Value.ToDateTimeUtc() + timeSpan;
             
             return now.ToDateTimeUtc() >= expiresAt;
         }
