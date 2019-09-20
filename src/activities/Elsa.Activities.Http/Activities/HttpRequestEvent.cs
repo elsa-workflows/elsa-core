@@ -102,6 +102,7 @@ namespace Elsa.Activities.Http.Activities
                 model.ParsedContent = await parser.ParseAsync(content, request.ContentType);
             }
 
+            Output["Content"] = model;
             workflowContext.CurrentScope.LastResult = model;
 
             return Done();
