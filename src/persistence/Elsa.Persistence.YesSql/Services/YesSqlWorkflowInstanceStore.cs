@@ -86,5 +86,15 @@ namespace Elsa.Persistence.YesSql.Services
             var documents = await session.Query<WorkflowInstanceDocument, WorkflowInstanceIndex>(x => x.WorkflowStatus == status).ListAsync();
             return mapper.Map<IEnumerable<WorkflowInstance>>(documents);
         }
+
+        public async Task DeleteAsync(string id, CancellationToken cancellationToken = default)
+        {
+            var document = await session.Query<WorkflowInstanceDocument, WorkflowInstanceIndex>(x => x.WorkflowInstanceId == id).FirstOrDefaultAsync();
+
+            if (document == null)
+                return;
+            
+            session.Delete(document);
+        }
     }
 }

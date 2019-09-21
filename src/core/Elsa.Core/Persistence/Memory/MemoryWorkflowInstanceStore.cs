@@ -77,5 +77,11 @@ namespace Elsa.Persistence.Memory
             var query = workflowInstances.Values.Where(x => x.Status == status);
             return Task.FromResult(query);
         }
+
+        public Task DeleteAsync(string id, CancellationToken cancellationToken = default)
+        {
+            workflowInstances.Remove(id);
+            return Task.CompletedTask;
+        }
     }
 }

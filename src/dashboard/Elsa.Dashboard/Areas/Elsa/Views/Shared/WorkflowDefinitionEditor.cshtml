@@ -1,4 +1,4 @@
-@model WorkflowDefinitionViewModel
+@model WorkflowDefinitionEditModel
 @{
     var formAction = Model.Id == null ? "Create" : "Edit";
 }
@@ -72,7 +72,7 @@
                 </div>
                 <div class="modal-footer ">
                     <input type="submit" class="btn btn-primary" value="Update"/>
-                    <button type="button" class="btn btn-link  ml-auto" >Cancel</button>
+                    <button type="button" class="btn btn-link  ml-auto" data-dismiss="modal" >Cancel</button>
                 </div>
             </form>
 

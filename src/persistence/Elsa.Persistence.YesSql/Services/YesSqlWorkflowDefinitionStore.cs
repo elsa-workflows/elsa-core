@@ -86,19 +86,29 @@ namespace Elsa.Persistence.YesSql.Services
 
         public async Task<int> DeleteAsync(string id, CancellationToken cancellationToken = default)
         {
-            var documents = (await session
+            var instanceDocuments = (await session.Query<WorkflowInstanceDocument, WorkflowInstanceIndex>()
+                    .Where(x => x.WorkflowDefinitionId == id)
+                    .ListAsync())
+                .ToList();
+
+            var definitionDocuments = (await session
                     .Query<WorkflowDefinitionVersionDocument, WorkflowDefinitionIndex>()
                     .Where(x => x.WorkflowDefinitionId == id)
                     .ListAsync())
                 .ToList();
 
-            foreach (var document in documents)
+            foreach (var document in instanceDocuments)
+            {
+                session.Delete(document);
+            }
+
+            foreach (var document in definitionDocuments)
             {
                 session.Delete(document);
             }
 
             await session.CommitAsync();
-            return documents.Count;
+            return definitionDocuments.Count;
         }
     }
 }

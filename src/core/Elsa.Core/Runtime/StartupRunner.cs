@@ -1,23 +1,29 @@
-using System.Collections.Generic;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Runtime
 {
     public class StartupRunner : IStartupRunner
     {
-        private readonly IEnumerable<IStartupTask> startupTasks;
+        private readonly IServiceProvider serviceProvider;
 
-        public StartupRunner(IEnumerable<IStartupTask> startupTasks)
+        public StartupRunner(IServiceProvider serviceProvider)
         {
-            this.startupTasks = startupTasks;
+            this.serviceProvider = serviceProvider;
         }
         
         public async Task StartupAsync(CancellationToken cancellationToken = default)
         {
-            foreach (var startupTask in startupTasks)
+            using (var scope = serviceProvider.CreateScope())
             {
-                await startupTask.ExecuteAsync(cancellationToken);
+                var startupTasks = scope.ServiceProvider.GetServices<IStartupTask>();
+                
+                foreach (var startupTask in startupTasks)
+                {
+                    await startupTask.ExecuteAsync(cancellationToken);
+                }
             }
         }
     }

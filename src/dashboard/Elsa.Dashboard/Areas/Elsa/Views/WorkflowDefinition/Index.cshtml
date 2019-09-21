@@ -52,39 +52,84 @@
                             <tbody>
                             @foreach (var grouping in Model.WorkflowDefinitions)
                             {
-                                var latest = grouping.First(x => x.IsLatest);
-                                var published = grouping.FirstOrDefault(x => x.IsPublished);
-                                var publishedVersion = published?.Version.ToString() ?? "-";
+                                var latest = grouping.First(x => x.WorkflowDefinition.IsLatest);
+                                var published = grouping.FirstOrDefault(x => x.WorkflowDefinition.IsPublished);
+                                var publishedVersion = published?.WorkflowDefinition.Version.ToString() ?? "-";
                                 <tr>
                                     <th scope="row">
                                         <div class="media align-items-center">
                                             <div class="media-body">
-                                                <a asp-action="Edit" asp-route-id="@latest.DefinitionId" class="mb-0 text-sm">@latest.Name</a>
+                                                <a asp-action="Edit" asp-route-id="@latest.WorkflowDefinition.DefinitionId" class="mb-0 text-sm">@latest.WorkflowDefinition.Name</a>
                                             </div>
                                         </div>
                                     </th>
-                                    <td>@latest.Description</td>
+                                    <td>@latest.WorkflowDefinition.Description</td>
                                     <td>
                                         <ul class="list-unstyled">
-                                            <li>
-                                                <span class="badge badge-dot mr-4">
-                                                    <i class="bg-info"></i> <a href="#">10 Halted</a>
-                                                </span>
-                                            </li>
-                                            <li>
-                                                <span class="badge badge-dot mr-4">
-                                                    <i class="bg-warning"></i> <a href="#">1 Faulted</a>
-                                                </span>
-                                            </li>
-                                            <li>
-                                                <span class="badge badge-dot mr-4">
-                                                    <i class="bg-success"></i> <a href="#">50 Completed</a>
-                                                </span>
-                                            </li>
+                                            @if (latest.ExecutingCount > 0)
+                                            {
+                                                <li>
+                                                    <span class="badge badge-dot mr-4">
+                                                        <i class="bg-info"></i>
+                                                        <a
+                                                            asp-action="Index"
+                                                            asp-controller="WorkflowInstance"
+                                                            asp-route-definitionId="@latest.WorkflowDefinition.DefinitionId"
+                                                            asp-route-status="Executing">
+                                                            @($"{latest.ExecutingCount} Executing")
+                                                        </a>
+                                                    </span>
+                                                </li>
+                                            }
+                                            @if (latest.FaultedCount > 0)
+                                            {
+                                                <li>
+                                                    <span class="badge badge-dot mr-4">
+                                                        <i class="bg-warning"></i>
+                                                        <a
+                                                            asp-action="Index"
+                                                            asp-controller="WorkflowInstance"
+                                                            asp-route-definitionId="@latest.WorkflowDefinition.DefinitionId"
+                                                            asp-route-status="Faulted">
+                                                            @($"{latest.FaultedCount} Faulted")
+                                                        </a>
+                                                    </span>
+                                                </li>
+                                            }
+                                            @if (latest.FinishedCount > 0)
+                                            {
+                                                <li>
+                                                    <span class="badge badge-dot mr-4">
+                                                        <i class="bg-success"></i>
+                                                        <a
+                                                            asp-action="Index"
+                                                            asp-controller="WorkflowInstance"
+                                                            asp-route-definitionId="@latest.WorkflowDefinition.DefinitionId"
+                                                            asp-route-status="Finished">
+                                                            @($"{latest.FinishedCount} Finished")
+                                                        </a>
+                                                    </span>
+                                                </li>
+                                            }
+                                            @if (latest.AbortedCount > 0)
+                                            {
+                                                <li>
+                                                    <span class="badge badge-dot mr-4">
+                                                        <i class="bg-default"></i>
+                                                        <a
+                                                            asp-action="Index"
+                                                            asp-controller="WorkflowInstance"
+                                                            asp-route-definitionId="@latest.WorkflowDefinition.DefinitionId"
+                                                            asp-route-status="Aborted">
+                                                            @($"{latest.AbortedCount} Aborted")
+                                                        </a>
+                                                    </span>
+                                                </li>
+                                            }
                                         </ul>
                                     </td>
                                     <td>
-                                        @latest.Version
+                                        @latest.WorkflowDefinition.Version
                                     </td>
                                     <td>
                                         @publishedVersion
@@ -95,11 +140,11 @@
                                                 <i class="fas fa-ellipsis-v"></i>
                                             </a>
                                             <div class="dropdown-menu dropdown-menu-right dropdown-menu-arrow">
-                                                <a class="dropdown-item" asp-action="Edit" asp-route-id="@latest.DefinitionId" >Edit</a>
+                                                <a class="dropdown-item" asp-action="Edit" asp-route-id="@latest.WorkflowDefinition.DefinitionId">Edit</a>
                                                 <a class="dropdown-item" href="#">Publish Draft</a>
                                                 <a class="dropdown-item" href="#">Unpublish</a>
                                                 <a class="dropdown-item" href="#">History</a>
-                                                <a class="dropdown-item" href="#" onclick="onDeleteClick(event, '@latest.DefinitionId')">Delete</a>
+                                                <a class="dropdown-item" href="#" onclick="onDeleteClick(event, '@latest.WorkflowDefinition.DefinitionId')">Delete</a>
                                             </div>
                                         </div>
                                     </td>

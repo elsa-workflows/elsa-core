@@ -76,13 +76,20 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
 
         public async Task<int> DeleteAsync(string id, CancellationToken cancellationToken = default)
         {
-            var records = await dbContext.WorkflowDefinitionVersions.Where(x => x.DefinitionId == id)
+            var definitionRecords = await dbContext.WorkflowDefinitionVersions
+                .Where(x => x.DefinitionId == id)
                 .ToListAsync(cancellationToken);
 
-            dbContext.WorkflowDefinitionVersions.RemoveRange(records);
+            var instanceRecords = await dbContext
+                .WorkflowInstances.Where(x => x.DefinitionId == id)
+                .ToListAsync(cancellationToken);
+
+            dbContext.WorkflowInstances.RemoveRange(instanceRecords);
+            dbContext.WorkflowDefinitionVersions.RemoveRange(definitionRecords);
+            
             await dbContext.SaveChangesAsync(cancellationToken);
             
-            return records.Count;
+            return definitionRecords.Count;
         }
 
         private WorkflowDefinitionVersionDocument Map(WorkflowDefinitionVersion source)

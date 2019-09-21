@@ -63,5 +63,5 @@ function onWorkflowDesignerReady() {
     designer.workflow = workflow = JSON.parse(json);
 }
 
-// Temporary workaround until I figured out how to listen for the workflow designer component's ready event.
+// Temporary workaround until I figure out how to listen for the workflow designer component's ready event.
 setTimeout(onWorkflowDesignerReady, 100);
