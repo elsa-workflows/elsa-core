@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using Elsa.Dashboard.Extensions;
 using Elsa.Persistence.EntityFrameworkCore.Extensions;
+using Elsa.Services.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -27,6 +28,8 @@ namespace Elsa.Dashboard.Web
             services
                 .AddMvc( /*options => options.Conventions.Add(new AddLocalhostFilterConvention())*/)
                 .SetCompatibilityVersion(CompatibilityVersion.Latest)
+
+                // This is entirely optional and only useful when developing the Elsa.Dashboard project.
                 .AddRazorOptions(
                     options =>
                     {
@@ -47,7 +50,19 @@ namespace Elsa.Dashboard.Web
                 )
                 .AddEntityFrameworkCoreWorkflowDefinitionStore()
                 .AddEntityFrameworkCoreWorkflowInstanceStore()
-                .AddElsaDashboard();
+                .AddElsaDashboard(
+                    options => options
+                        // Add activity definitions from configuration.
+                        .Bind(Configuration.GetSection("WorkflowDesigner"))
+                        .Configure(
+                            configureOptions => configureOptions.ActivityDefinitions
+                                // Add all activities from all referenced assemblies.
+                                .Discover(
+                                    selector => selector.FromApplicationDependencies()
+                                        .AddClasses(x => x.AssignableTo<IActivity>())
+                                )
+                        )
+                );
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)

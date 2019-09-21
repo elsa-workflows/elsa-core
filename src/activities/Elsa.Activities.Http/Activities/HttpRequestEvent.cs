@@ -7,27 +7,39 @@ using System.Threading.Tasks;
 using Elsa.Activities.Http.Extensions;
 using Elsa.Activities.Http.Models;
 using Elsa.Activities.Http.Services;
+using Elsa.Attributes;
 using Elsa.Extensions;
 using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
+using Elsa.WorkflowDesigner.Models;
 using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json.Linq;
 
 namespace Elsa.Activities.Http.Activities
 {
+    [ActivityDefinition(
+        Category = "HTTP",
+        DisplayName = "Receive HTTP Request",
+        Description = "Receive an incoming HTTP request."
+    )]
+    [ActivityDefinitionDesigner(
+        Description =
+            "x => !!x.state.path ? `Handle <strong>${ x.state.method } ${ x.state.path }</strong>.` : x.definition.description",
+        Outcomes = new[] { OutcomeNames.Done }
+    )]
     public class HttpRequestEvent : Activity
     {
         public static Uri GetPath(JObject state)
         {
             return state.GetState<Uri>(nameof(Path));
         }
-        
+
         public static string GetMethod(JObject state)
         {
             return state.GetState<string>(nameof(Method));
         }
-        
+
         private readonly IHttpContextAccessor httpContextAccessor;
         private readonly IEnumerable<IContentFormatter> contentFormatters;
 
@@ -42,9 +54,7 @@ namespace Elsa.Activities.Http.Activities
         /// <summary>
         /// The path that triggers this activity. 
         /// </summary>
-        [Display(Description = "The relative path that triggers this activity.")]
-        [Required]
-        [UIHint("RelativePath")]
+        [ActivityProperty(Hint = "The relative path that triggers this activity.")]
         public Uri Path
         {
             get => GetState<Uri>();
@@ -54,10 +64,13 @@ namespace Elsa.Activities.Http.Activities
         /// <summary>
         /// The HTTP method that triggers this activity.
         /// </summary>
-        [Display(Description = "The HTTP method that triggers this activity.")]
-        [Required]
-        [UIHint("Dropdown")]
-        public string Method {
+        [ActivityProperty(
+            Type = ActivityPropertyTypes.Select,
+            Hint = "The HTTP method that triggers this activity."
+        )]
+        [SelectOptions("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD")]
+        public string Method
+        {
             get => GetState<string>();
             set => SetState(value);
         }
@@ -66,7 +79,10 @@ namespace Elsa.Activities.Http.Activities
         /// A value indicating whether the HTTP request content body should be read and stored as part of the HTTP request model.
         /// The stored format depends on the content-type header.
         /// </summary>
-        [Display(Description = "A value indicating whether the HTTP request content body should be read and stored as part of the HTTP request model. The stored format depends on the content-type header.")]
+        [ActivityProperty(
+            Hint =
+                "A value indicating whether the HTTP request content body should be read and stored as part of the HTTP request model. The stored format depends on the content-type header."
+        )]
         public bool ReadContent
         {
             get => GetState<bool>();
@@ -78,7 +94,8 @@ namespace Elsa.Activities.Http.Activities
             return Halt(true);
         }
 
-        protected override async Task<ActivityExecutionResult> OnResumeAsync(WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
+        protected override async Task<ActivityExecutionResult> OnResumeAsync(WorkflowExecutionContext workflowContext,
+            CancellationToken cancellationToken)
         {
             var request = httpContextAccessor.HttpContext.Request;
             var model = new HttpRequestModel
@@ -93,7 +110,10 @@ namespace Elsa.Activities.Http.Activities
             {
                 if (request.HasFormContentType)
                 {
-                    model.Form = (await request.ReadFormAsync(cancellationToken)).ToDictionary(x => x.Key, x => new StringValuesModel(x.Value));
+                    model.Form = (await request.ReadFormAsync(cancellationToken)).ToDictionary(
+                        x => x.Key,
+                        x => new StringValuesModel(x.Value)
+                    );
                 }
 
                 var parser = SelectContentParser(request.ContentType);
@@ -111,7 +131,9 @@ namespace Elsa.Activities.Http.Activities
         private IContentFormatter SelectContentParser(string contentType)
         {
             var formatters = contentFormatters.OrderByDescending(x => x.Priority).ToList();
-            return formatters.FirstOrDefault(x => x.SupportedContentTypes.Contains(contentType, StringComparer.OrdinalIgnoreCase)) ?? formatters.Last();
+            return formatters.FirstOrDefault(
+                       x => x.SupportedContentTypes.Contains(contentType, StringComparer.OrdinalIgnoreCase)
+                   ) ?? formatters.Last();
         }
     }
 }

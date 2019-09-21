@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Attributes;
 using Elsa.Expressions;
 using Elsa.Results;
 using Elsa.Services;
@@ -9,6 +10,11 @@ using MassTransit;
 
 namespace Elsa.Activities.MassTransit.Activities
 {
+    [ActivityDefinition(
+        Category = "MassTransit",
+        DisplayName = "Send MassTransit Message",
+        Description = "Send a message via MassTransit."
+    )]
     public class SendMassTransitMessage : Activity
     {
         private readonly ISendEndpointProvider sender;
@@ -20,6 +26,7 @@ namespace Elsa.Activities.MassTransit.Activities
             this.evaluator = evaluator;
         }
 
+        [ActivityProperty(Hint = "The assembly-qualified type name of the message to send.")]
         public Type MessageType
         {
             get
@@ -30,6 +37,7 @@ namespace Elsa.Activities.MassTransit.Activities
             set => SetState(value.AssemblyQualifiedName);
         }
 
+        [ActivityProperty(Hint = "An expression that evaluates to the message to send.")]
         public WorkflowExpression Message
         {
             get => GetState<WorkflowExpression>();
@@ -41,7 +49,8 @@ namespace Elsa.Activities.MassTransit.Activities
             return MessageType != null;
         }
 
-        protected override async Task<ActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
+        protected override async Task<ActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext context,
+            CancellationToken cancellationToken)
         {
             var message = await evaluator.EvaluateAsync(Message, MessageType, context, cancellationToken);
             await sender.Send(message, cancellationToken);

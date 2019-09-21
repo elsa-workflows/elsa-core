@@ -1,5 +1,6 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Attributes;
 using Elsa.Expressions;
 using Elsa.Extensions;
 using Elsa.Results;
@@ -11,6 +12,10 @@ namespace Elsa.Activities.Workflows
     /// <summary>
     /// Halts workflow execution until the specified signal is received.
     /// </summary>
+    [ActivityDefinition(
+        Category = "Workflows",
+        Description = "Halt workflow execution until the specified signal is received."
+    )]
     public class Signaled : Activity
     {
         private readonly IWorkflowExpressionEvaluator expressionEvaluator;
@@ -20,6 +25,7 @@ namespace Elsa.Activities.Workflows
             this.expressionEvaluator = expressionEvaluator;
         }
 
+        [ActivityProperty(Hint = "An expression that evaluates to the name of the signal to wait for.")]
         public WorkflowExpression<string> Signal
         {
             get => GetState<WorkflowExpression<string>>();
