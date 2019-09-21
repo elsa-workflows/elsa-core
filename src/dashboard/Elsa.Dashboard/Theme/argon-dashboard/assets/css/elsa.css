@@ -1,6 +1,18 @@
 b, strong {
   font-weight: bold; }
 
+.navbar.navbar-vertical.navbar-expand-md .navbar-brand {
+  text-align: left; }
+
+.navbar.navbar-vertical.navbar-expand-md .logo {
+  background-image: url("../img/brand/logo.png");
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-origin: content-box;
+  background-position-x: -50px;
+  padding-left: 50px;
+  text-transform: uppercase; }
+
 .table .badge a {
   color: #172b4d; }
 

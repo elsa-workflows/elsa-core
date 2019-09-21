@@ -6,7 +6,9 @@
         </button>
         <!-- Brand -->
         <a class="navbar-brand pt-0" asp-area="Elsa" asp-controller="Home" asp-action="Index">
-            <h1>Elsa</h1>
+            <h1 class="logo">
+                Elsa
+            </h1>
         </a>
         <!-- User -->
         <ul class="nav align-items-center d-md-none">
@@ -18,8 +20,10 @@
             <div class="navbar-collapse-header d-md-none">
                 <div class="row">
                     <div class="col-6 collapse-brand">
-                        <a href="~/index.html">
-                            <img src="~/assets/img/brand/blue.png">
+                        <a asp-area="Elsa" asp-controller="Home" asp-action="Index">
+                            <h1 class="logo">
+                                Elsa
+                            </h1>
                         </a>
                     </div>
                     <div class="col-6 collapse-close">
