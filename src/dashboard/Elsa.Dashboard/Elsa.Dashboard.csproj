@@ -19,7 +19,7 @@
         <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.2.0" />
         <PackageReference Include="Microsoft.AspNetCore.StaticFiles" Version="2.2.0" />
         <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="2.2.0" />
-        <PackageReference Include="Scrutor" Version="3.0.2.19" />
+        <PackageReference Include="Scrutor.Elsa" Version="3.0.2.20" />
     </ItemGroup>
 
     <ItemGroup>
