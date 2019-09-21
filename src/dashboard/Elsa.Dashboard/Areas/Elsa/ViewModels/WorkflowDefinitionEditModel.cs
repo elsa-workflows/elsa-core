@@ -1,3 +1,5 @@
+using Elsa.WorkflowDesigner.Models;
+
 namespace Elsa.Dashboard.Areas.Elsa.ViewModels
 {
     public class WorkflowDefinitionEditModel
@@ -7,5 +9,6 @@ namespace Elsa.Dashboard.Areas.Elsa.ViewModels
         public string SubmitAction { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
+        public ActivityDefinition[] ActivityDefinitions { get; set; }
     }
 }

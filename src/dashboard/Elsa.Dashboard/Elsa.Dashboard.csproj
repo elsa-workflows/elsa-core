@@ -28,6 +28,7 @@
     <ItemGroup>
       <ProjectReference Include="..\..\core\Elsa.Abstractions\Elsa.Abstractions.csproj" />
       <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
+      <ProjectReference Include="..\Elsa.WorkflowDesigner\Elsa.WorkflowDesigner.csproj" />
     </ItemGroup>
 
     <ItemGroup>
@@ -40,6 +41,8 @@
       <_ContentIncludedByDefault Remove="wwwroot\assets\css\argon-dashboard.css" />
       <_ContentIncludedByDefault Remove="wwwroot\assets\css\argon-dashboard.css.map" />
       <_ContentIncludedByDefault Remove="wwwroot\assets\css\argon-dashboard.min.css" />
+      <_ContentIncludedByDefault Remove="Views\Shared\Components\WorkflowDesigner\Default.cshtml" />
+      <_ContentIncludedByDefault Remove="Views\_ViewImports.cshtml" />
     </ItemGroup>
 
 </Project>

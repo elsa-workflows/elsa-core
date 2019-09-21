@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Elsa.Dashboard.Areas.Elsa.ViewModels;
 using Elsa.Dashboard.Extensions;
 using Elsa.Dashboard.Models;
+using Elsa.Dashboard.Options;
 using Elsa.Dashboard.Services;
 using Elsa.Extensions;
 using Elsa.Models;
@@ -12,6 +13,9 @@ using Elsa.Serialization;
 using Elsa.Serialization.Formatters;
 using Elsa.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 namespace Elsa.Dashboard.Areas.Elsa.Controllers
 {
@@ -23,6 +27,7 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
         private readonly IWorkflowInstanceStore workflowInstanceStore;
         private readonly IWorkflowPublisher publisher;
         private readonly IWorkflowSerializer serializer;
+        private readonly IOptions<ElsaDashboardOptions> options;
         private readonly IIdGenerator idGenerator;
         private readonly INotifier notifier;
 
@@ -31,6 +36,7 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
             IWorkflowInstanceStore workflowInstanceStore,
             IWorkflowPublisher publisher,
             IWorkflowSerializer serializer,
+            IOptions<ElsaDashboardOptions> options,
             IIdGenerator idGenerator,
             INotifier notifier)
         {
@@ -38,6 +44,7 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
             this.workflowDefinitionStore = workflowDefinitionStore;
             this.workflowInstanceStore = workflowInstanceStore;
             this.serializer = serializer;
+            this.options = options;
             this.idGenerator = idGenerator;
             this.notifier = notifier;
         }
@@ -73,7 +80,8 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
             var model = new WorkflowDefinitionEditModel
             {
                 Name = workflow.Name,
-                Json = serializer.Serialize(workflow, JsonTokenFormatter.FormatName)
+                Json = serializer.Serialize(workflow, JsonTokenFormatter.FormatName),
+                ActivityDefinitions = options.Value.ActivityDefinitions.ToArray()
             };
 
             return View(model);
@@ -110,7 +118,8 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
                 Id = workflow.Id,
                 Name = workflow.Name,
                 Description = workflow.Description,
-                Json = serializer.Serialize(workflow, JsonTokenFormatter.FormatName)
+                Json = serializer.Serialize(workflow, JsonTokenFormatter.FormatName),
+                ActivityDefinitions = options.Value.ActivityDefinitions.ToArray()
             };
 
             return View(model);

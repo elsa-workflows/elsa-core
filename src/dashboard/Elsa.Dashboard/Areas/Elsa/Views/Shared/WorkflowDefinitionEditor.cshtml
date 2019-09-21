@@ -24,7 +24,7 @@
                 <div class="card-body">
                     <form asp-action="@formAction">
                         <input asp-for="Json" id="workflowData" type="hidden"/>
-                        <wf-designer-host id="designerHost" canvas-height="300vh"></wf-designer-host>
+                        <vc:workflow-designer activity-definitions="@Model.ActivityDefinitions" />
                         <div class="text-center">
                             <button asp-for="SubmitAction" name="SubmitAction" type="submit" value="draft" class="btn btn-primary mt-4">Save Draft</button>
                             <button asp-for="SubmitAction" name="SubmitAction" type="submit" value="publish" class="btn btn-success mt-4">Publish</button>
