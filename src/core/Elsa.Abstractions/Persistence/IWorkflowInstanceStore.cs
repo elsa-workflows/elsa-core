@@ -16,5 +16,6 @@ namespace Elsa.Persistence
         Task<IEnumerable<(WorkflowInstance, ActivityInstance)>> ListByBlockingActivityAsync(string activityType, string correlationId = default, CancellationToken cancellationToken = default);
         Task<IEnumerable<WorkflowInstance>> ListByStatusAsync(string definitionId, WorkflowStatus status, CancellationToken cancellationToken = default);
         Task<IEnumerable<WorkflowInstance>> ListByStatusAsync(WorkflowStatus status, CancellationToken cancellationToken = default);
+        Task DeleteAsync(string id, CancellationToken cancellationToken = default);
     }
 }

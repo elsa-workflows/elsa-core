@@ -1,6 +1,6 @@
 namespace Elsa.Dashboard.Areas.Elsa.ViewModels
 {
-    public class WorkflowDefinitionViewModel
+    public class WorkflowDefinitionEditModel
     {
         public string Id { get; set; }
         public string Json { get; set; }

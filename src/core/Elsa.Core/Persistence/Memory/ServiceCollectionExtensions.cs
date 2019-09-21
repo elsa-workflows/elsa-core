@@ -1,3 +1,4 @@
+using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Persistence.Memory
@@ -6,13 +7,18 @@ namespace Elsa.Persistence.Memory
     {
         public static IServiceCollection AddMemoryWorkflowInstanceStore(this IServiceCollection services)
         {
-            return services
-                .AddSingleton<IWorkflowInstanceStore, MemoryWorkflowInstanceStore>();
+            if (services.All(x => x.ServiceType != typeof(IWorkflowInstanceStore)))
+                services.AddSingleton<IWorkflowInstanceStore, MemoryWorkflowInstanceStore>();
+
+            return services;
         }
-        
+
         public static IServiceCollection AddMemoryWorkflowDefinitionStore(this IServiceCollection services)
         {
-            return services.AddSingleton<IWorkflowDefinitionStore, MemoryWorkflowDefinitionStore>();
+            if (services.All(x => x.ServiceType != typeof(IWorkflowDefinitionStore)))
+                services.AddSingleton<IWorkflowDefinitionStore, MemoryWorkflowDefinitionStore>();
+
+            return services;
         }
     }
 }

@@ -96,5 +96,10 @@ namespace Elsa.Persistence.MongoDb.Services
                 .Where(x => x.Status == status)
                 .ToListAsync(cancellationToken);
         }
+
+        public async Task DeleteAsync(string id, CancellationToken cancellationToken = default)
+        {
+            await collection.DeleteOneAsync(x => x.Id == id, cancellationToken);
+        }
     }
 }

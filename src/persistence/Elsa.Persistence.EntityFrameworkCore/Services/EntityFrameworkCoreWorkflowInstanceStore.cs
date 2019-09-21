@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Schema;
 using AutoMapper;
 using Elsa.Extensions;
 using Elsa.Models;
@@ -75,7 +76,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             var query = dbContext.WorkflowInstances.AsQueryable();
 
             query = query.Where(x => x.Status == WorkflowStatus.Executing);
-            
+
             if (!string.IsNullOrWhiteSpace(correlationId))
                 query = query.Where(x => x.CorrelationId == correlationId);
 
@@ -108,6 +109,17 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
                 .ToListAsync(cancellationToken);
 
             return Map(documents);
+        }
+
+        public async Task DeleteAsync(string id, CancellationToken cancellationToken = default)
+        {
+            var record = await dbContext.WorkflowInstances.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+            if (record == null)
+                return;
+
+            dbContext.WorkflowInstances.Remove(record);
+            await dbContext.SaveChangesAsync(cancellationToken);
         }
 
         private WorkflowInstanceDocument Map(WorkflowInstance source) => mapper.Map<WorkflowInstanceDocument>(source);

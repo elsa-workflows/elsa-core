@@ -1,5 +1,4 @@
 ﻿using System.IO;
-using Elsa.Dashboard.Conventions;
 using Elsa.Dashboard.Extensions;
 using Elsa.Persistence.EntityFrameworkCore.Extensions;
 using Microsoft.AspNetCore.Builder;
@@ -20,19 +19,24 @@ namespace Elsa.Dashboard.Web
             Environment = environment;
         }
 
-        public IConfiguration Configuration { get; }
-        public IHostingEnvironment Environment { get; }
+        private IConfiguration Configuration { get; }
+        private IHostingEnvironment Environment { get; }
 
         public void ConfigureServices(IServiceCollection services)
         {
             services
-                .AddMvc(/*options => options.Conventions.Add(new AddLocalhostFilterConvention())*/)
+                .AddMvc( /*options => options.Conventions.Add(new AddLocalhostFilterConvention())*/)
                 .SetCompatibilityVersion(CompatibilityVersion.Latest)
-                .AddRazorOptions(options =>
+                .AddRazorOptions(
+                    options =>
                     {
                         // Workaround to get Razor views in Elsa.Dashboard recompiled when changing .cshtml.
-                        if(Environment.IsDevelopment())
-                            options.FileProviders.Add(new PhysicalFileProvider(Path.Combine(Environment.ContentRootPath, @"..\Elsa.Dashboard")));
+                        if (Environment.IsDevelopment())
+                            options.FileProviders.Add(
+                                new PhysicalFileProvider(
+                                    Path.Combine(Environment.ContentRootPath, @"..\Elsa.Dashboard")
+                                )
+                            );
                     }
                 );
 
@@ -48,8 +52,11 @@ namespace Elsa.Dashboard.Web
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
-            app.UseStaticFiles();
-            app.UseMvcWithDefaultRoute();
+            app
+                .UseDeveloperExceptionPage()
+                .UseStaticFiles()
+                .UseMvcWithDefaultRoute()
+                .UseWelcomePage();
         }
     }
 }

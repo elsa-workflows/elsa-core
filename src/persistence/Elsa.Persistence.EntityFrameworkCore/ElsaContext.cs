@@ -47,6 +47,7 @@ namespace Elsa.Persistence.EntityFrameworkCore
 
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Id).ValueGeneratedNever();
+            entity.Property(x => x.Status).HasConversion<string>();
             entity.Property(x => x.Activities)
                 .HasConversion(
                     x => Serialize(x),

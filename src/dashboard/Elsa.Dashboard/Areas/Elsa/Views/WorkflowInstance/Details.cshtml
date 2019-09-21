@@ -1,0 +1,34 @@
+@model WorkflowInstanceDetailsModel
+<div class="container-fluid mt--7" data-workflow="@Model.Json">
+    <div class="row">
+        <div class="col">
+            <div class="card bg-secondary shadow">
+                <div class="card-header bg-white border-0">
+                    <div class="row align-items-center">
+                        <div class="col-8">
+                            <h3 id="editorCaption" class="mb-0">@Model.WorkflowDefinition.Name</h3>
+                            <small id="editorDescription" class="text-muted">@Model.WorkflowDefinition.Description</small>
+                        </div>
+                        <div class="col-4 text-right">
+                            <a href="#!" class="btn btn-secondary" onclick="exportWorkflow()">Download</a>
+                            <a href="#!" class="btn btn-secondary" data-toggle="modal" data-target="#workflow-properties-modal">
+                                <i class="ni ni-settings-gear-65"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <wf-designer-host id="designerHost" canvas-height="300vh"></wf-designer-host>
+                    <div class="text-center">
+                        <a href="@Model.ReturnUrl" class="btn btn-primary mt-4">Back</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @await Html.PartialAsync("Footer")
+</div>
+
+@section FootScripts{
+    <script src="~/assets/js/workflow-instance-viewer.js"></script>
+}
