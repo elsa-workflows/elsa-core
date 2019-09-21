@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using Elsa.WorkflowDesigner.Models;
 
 namespace Elsa.Dashboard.Options
 {
@@ -8,10 +7,10 @@ namespace Elsa.Dashboard.Options
         public ElsaDashboardOptions()
         {
             Scripts = new List<string>();
-            ActivityDefinitions = new List<ActivityDefinition>();
+            ActivityDefinitions = new ActivityDefinitionList();
         }
         
         public IList<string> Scripts { get; set; }
-        public IList<ActivityDefinition> ActivityDefinitions { get; set; }
+        public ActivityDefinitionList ActivityDefinitions { get; set; }
     }
 }

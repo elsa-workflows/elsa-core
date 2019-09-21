@@ -2,7 +2,9 @@
 using System.IO;
 using Elsa.Dashboard.Extensions;
 using Elsa.Dashboard.Models;
+using Elsa.Dashboard.Web.Activities;
 using Elsa.Persistence.EntityFrameworkCore.Extensions;
+using Elsa.WorkflowDesigner;
 using Elsa.WorkflowDesigner.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -54,33 +56,35 @@ namespace Elsa.Dashboard.Web
                     options => options
                         .Bind(Configuration.GetSection("WorkflowDesigner"))
                         .Configure(
-                            x => x.ActivityDefinitions.Add(
-                                new ActivityDefinition
-                                {
-                                    Type = "MyCustomActivity1",
-                                    DisplayName = "My Custom Activity 1",
-                                    Category = "Custom",
-                                    Description = "Demonstrates adding custom activities to the designer",
-                                    Properties = new[]
+                            x => x.ActivityDefinitions
+                                .Add(ActivityDescriber.Describe<SampleActivity>())
+                                .Add(
+                                    new ActivityDefinition
                                     {
-                                        new ActivityPropertyDescriptor
+                                        Type = "MyCustomActivity1",
+                                        DisplayName = "My Custom Activity 1",
+                                        Category = "Custom",
+                                        Description = "Demonstrates adding custom activities to the designer",
+                                        Properties = new[]
                                         {
-                                            Name = "Property1",
-                                            Label = "Property 1",
-                                            Type = ActivityPropertyTypes.Expression,
-                                            Hint = "Specify any value you like.",
-                                            Options = new WorkflowExpressionOptions
+                                            new ActivityPropertyDescriptor
                                             {
-                                                Multiline = true
-                                            }
+                                                Name = "Property1",
+                                                Label = "Property 1",
+                                                Type = ActivityPropertyTypes.Expression,
+                                                Hint = "Specify any value you like.",
+                                                Options = new WorkflowExpressionOptions
+                                                {
+                                                    Multiline = true
+                                                }
+                                            },
                                         },
-                                    },
-                                    Designer = new ActivityDesignerSettings
-                                    {
-                                        Outcomes = new[] { OutcomeNames.Done }
+                                        Designer = new ActivityDesignerSettings
+                                        {
+                                            Outcomes = new[] { OutcomeNames.Done }
+                                        }
                                     }
-                                }
-                            )
+                                )
                         )
                 );
         }
