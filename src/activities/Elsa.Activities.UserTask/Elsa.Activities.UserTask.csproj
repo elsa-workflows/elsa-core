@@ -15,6 +15,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
+        <ProjectReference Include="..\..\dashboard\Elsa.WorkflowDesigner\Elsa.WorkflowDesigner.csproj" />
     </ItemGroup>
 
 </Project>

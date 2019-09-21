@@ -1,5 +1,6 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Attributes;
 using Elsa.Expressions;
 using Elsa.Extensions;
 using Elsa.Models;
@@ -9,6 +10,10 @@ using Elsa.Services.Models;
 
 namespace Elsa.Activities.Workflows
 {
+    [ActivityDefinition(
+        Category = "Workflows",
+        Description = "Removes any blocking activities and sets the status of the workflow to Finished."
+    )]
     public class Finish : Activity
     {
         private readonly IWorkflowExpressionEvaluator expressionEvaluator;
@@ -18,6 +23,7 @@ namespace Elsa.Activities.Workflows
             this.expressionEvaluator = expressionEvaluator;
         }
 
+        [ActivityProperty(Hint = "An expression that evaluates to a dictionary to be set as the workflow's output.'")]
         public WorkflowExpression<Variables> WorkflowOutput
         {
             get => GetState(() => new JavaScriptExpression<Variables>("({})"));

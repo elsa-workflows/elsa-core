@@ -1,5 +1,6 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Attributes;
 using Elsa.Expressions;
 using Elsa.Extensions;
 using Elsa.Models;
@@ -12,6 +13,10 @@ namespace Elsa.Activities.Workflows
     /// <summary>
     /// Triggers the specified signal.
     /// </summary>
+    [ActivityDefinition(
+        Category = "Workflows",
+        Description = "Trigger the specified signal."
+    )]
     public class Trigger : Activity
     {
         private readonly IWorkflowExpressionEvaluator expressionEvaluator;
@@ -23,18 +28,23 @@ namespace Elsa.Activities.Workflows
             this.workflowInvoker = workflowInvoker;
         }
 
+        [ActivityProperty(Hint = "An expression that evaluates to the name of the signal to trigger.")]
         public WorkflowExpression<string> Signal
         {
             get => GetState<WorkflowExpression<string>>();
             set => SetState(value);
         }
 
+        [ActivityProperty(
+            Hint = "An expression that evaluates to a dictionary to be provided as input when signaling."
+        )]
         public WorkflowExpression<Variables> Input
         {
             get => GetState(() => new WorkflowExpression<Variables>(JavaScriptEvaluator.SyntaxName, "{}"));
             set => SetState(value);
         }
 
+        [ActivityProperty(Hint = "An expression that evaluates to the correlation ID to use when signaling.")]
         public WorkflowExpression<string> CorrelationId
         {
             get => GetState(() => new WorkflowExpression<string>(LiteralEvaluator.SyntaxName, ""));
@@ -57,7 +67,7 @@ namespace Elsa.Activities.Workflows
                 correlationId,
                 cancellationToken: cancellationToken
             );
-            
+
             return Done();
         }
     }

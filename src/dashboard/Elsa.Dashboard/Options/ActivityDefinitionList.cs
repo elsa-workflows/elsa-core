@@ -8,18 +8,18 @@ namespace Elsa.Dashboard.Options
     {
         public ActivityDefinitionList()
         {
-            Items = new List<ActivityDefinition>();
+            Items = new Dictionary<string, ActivityDefinition>();
         }
 
-        public List<ActivityDefinition> Items { get; }
+        private IDictionary<string, ActivityDefinition> Items { get; }
         
         public ActivityDefinitionList Add(ActivityDefinition item)
         {
-            Items.Add(item);
+            Items[item.Type] = item;
             return this;
         }
 
-        public IEnumerator<ActivityDefinition> GetEnumerator() => Items.GetEnumerator();
+        public IEnumerator<ActivityDefinition> GetEnumerator() => Items.Values.GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator()
         {

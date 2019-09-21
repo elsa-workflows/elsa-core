@@ -23,7 +23,8 @@ namespace Elsa.WorkflowDesigner.ViewComponents
             var definitions = activityDefinitions ?? new ActivityDefinition[0];
             var settings = new JsonSerializerSettings
             {
-                ContractResolver = new CamelCasePropertyNamesContractResolver()
+                ContractResolver = new CamelCasePropertyNamesContractResolver(),
+                NullValueHandling = NullValueHandling.Ignore
             };
             return JsonConvert.SerializeObject(definitions, settings);
         }

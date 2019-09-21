@@ -27,19 +27,22 @@ namespace Elsa.Activities.Primitives
             this.expressionEvaluator = expressionEvaluator;
         }
 
+        [ActivityProperty(Hint = "The name of the variable to store the value into.")]
         public string VariableName
         {
             get => GetState<string>();
             set => SetState(value);
         }
 
+        [ActivityProperty(Hint = "An expression that evaluates to the value to store in the variable.")]
         public WorkflowExpression ValueExpression
         {
             get => GetState<WorkflowExpression>();
             set => SetState(value);
         }
 
-        protected override async Task<ActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowContext,
+        protected override async Task<ActivityExecutionResult> OnExecuteAsync(
+            WorkflowExecutionContext workflowContext,
             CancellationToken cancellationToken)
         {
             var value = await expressionEvaluator.EvaluateAsync(

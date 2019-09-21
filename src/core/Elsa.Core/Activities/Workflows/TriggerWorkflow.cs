@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Attributes;
 using Elsa.Expressions;
 using Elsa.Extensions;
 using Elsa.Models;
@@ -10,6 +11,10 @@ using Elsa.Services.Models;
 
 namespace Elsa.Activities.Workflows
 {
+    [ActivityDefinition(
+        Category = "Workflows",
+        Description = "Trigger all workflows that start with or are blocked on the specified activity type."
+    )]
     public class TriggerWorkflow : Activity
     {
         private readonly IWorkflowInvoker workflowInvoker;
@@ -21,18 +26,23 @@ namespace Elsa.Activities.Workflows
             this.expressionEvaluator = expressionEvaluator;
         }
 
+        [ActivityProperty(Hint = "An expression that evaluates to the activity type to use when triggering workflows.")]
         public WorkflowExpression<string> ActivityType
         {
             get => GetState(() => new LiteralExpression(""));
             set => SetState(value);
         }
 
+        [ActivityProperty(
+            Hint = "An expression that evaluates to a dictionary to be provided as input when triggering workflows."
+        )]
         public WorkflowExpression<Variables> Input
         {
             get => GetState(() => new JavaScriptExpression<Variables>("{}"));
             set => SetState(value);
         }
 
+        [ActivityProperty(Hint = "An expression that evaluates to the correlation ID to use when triggering workflows.")]
         public WorkflowExpression<string> CorrelationId
         {
             get => GetState(() => new LiteralExpression(Guid.NewGuid().ToString()));

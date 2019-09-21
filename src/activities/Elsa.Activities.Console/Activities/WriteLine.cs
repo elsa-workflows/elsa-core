@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Attributes;
 using Elsa.Expressions;
 using Elsa.Extensions;
 using Elsa.Results;
@@ -12,6 +13,15 @@ namespace Elsa.Activities.Console.Activities
     /// <summary>
     /// Writes a text string to the console.
     /// </summary>
+    [ActivityDefinition(
+        Category = "Console",
+        Description = "Write text to standard out."
+    )]
+    [ActivityDefinitionDesigner(
+        Description =
+            "x => !!x.state.textExpression ? `Write <strong>${ x.state.textExpression.expression }</strong> to standard out.` : x.definition.description",
+        Outcomes = new[] { OutcomeNames.Done }
+    )]
     public class WriteLine : Activity
     {
         public WriteLine(IWorkflowExpressionEvaluator evaluator)
@@ -25,6 +35,7 @@ namespace Elsa.Activities.Console.Activities
             this.output = output;
         }
 
+        [ActivityProperty(Hint = "The text to write.")]
         public WorkflowExpression<string> TextExpression 
         {
             get => GetState(() => LiteralEvaluator.Expression<string>(null));

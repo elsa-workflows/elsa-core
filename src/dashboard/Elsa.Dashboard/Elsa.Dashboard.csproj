@@ -19,6 +19,7 @@
         <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.2.0" />
         <PackageReference Include="Microsoft.AspNetCore.StaticFiles" Version="2.2.0" />
         <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="2.2.0" />
+        <PackageReference Include="Scrutor" Version="3.0.2.19" />
     </ItemGroup>
 
     <ItemGroup>
@@ -26,23 +27,17 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\core\Elsa.Abstractions\Elsa.Abstractions.csproj" />
-      <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
-      <ProjectReference Include="..\Elsa.WorkflowDesigner\Elsa.WorkflowDesigner.csproj" />
+        <ProjectReference Include="..\..\core\Elsa.Abstractions\Elsa.Abstractions.csproj" />
+        <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
+        <ProjectReference Include="..\Elsa.WorkflowDesigner\Elsa.WorkflowDesigner.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-      <Reference Include="Microsoft.Extensions.FileProviders.Physical, Version=2.2.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60">
-        <HintPath>..\..\..\..\..\..\Program Files\dotnet\sdk\NuGetFallbackFolder\microsoft.extensions.fileproviders.physical\2.2.0\lib\netstandard2.0\Microsoft.Extensions.FileProviders.Physical.dll</HintPath>
-      </Reference>
-    </ItemGroup>
-
-    <ItemGroup>
-      <_ContentIncludedByDefault Remove="wwwroot\assets\css\argon-dashboard.css" />
-      <_ContentIncludedByDefault Remove="wwwroot\assets\css\argon-dashboard.css.map" />
-      <_ContentIncludedByDefault Remove="wwwroot\assets\css\argon-dashboard.min.css" />
-      <_ContentIncludedByDefault Remove="Views\Shared\Components\WorkflowDesigner\Default.cshtml" />
-      <_ContentIncludedByDefault Remove="Views\_ViewImports.cshtml" />
+        <_ContentIncludedByDefault Remove="wwwroot\assets\css\argon-dashboard.css" />
+        <_ContentIncludedByDefault Remove="wwwroot\assets\css\argon-dashboard.css.map" />
+        <_ContentIncludedByDefault Remove="wwwroot\assets\css\argon-dashboard.min.css" />
+        <_ContentIncludedByDefault Remove="Views\Shared\Components\WorkflowDesigner\Default.cshtml" />
+        <_ContentIncludedByDefault Remove="Views\_ViewImports.cshtml" />
     </ItemGroup>
 
 </Project>

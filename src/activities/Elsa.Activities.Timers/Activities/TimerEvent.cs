@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Workflows;
+using Elsa.Attributes;
 using Elsa.Expressions;
 using Elsa.Extensions;
 using Elsa.Results;
@@ -11,6 +12,10 @@ using NodaTime;
 
 namespace Elsa.Activities.Timers.Activities
 {
+    [ActivityDefinition(
+        Category = "Timers",
+        Description = "Triggers at a specified interval."
+    )]
     public class TimerEvent : Activity
     {
         private readonly IWorkflowExpressionEvaluator expressionEvaluator;
@@ -22,6 +27,7 @@ namespace Elsa.Activities.Timers.Activities
             this.clock = clock;
         }
 
+        [ActivityProperty(Hint = "An expression that evaluates to a TimeSpan value")]
         public WorkflowExpression<TimeSpan> TimeoutExpression
         {
             get => GetState(() => new LiteralExpression<TimeSpan>("00:01:00"));

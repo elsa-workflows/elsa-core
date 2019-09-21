@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Attributes;
 using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Extensions;
@@ -9,19 +10,29 @@ using Elsa.Services.Models;
 
 namespace Elsa.Activities.ControlFlow
 {
+    [ActivityDefinition(
+        Category = "Control Flow",
+        Description = "Merge workflow execution back into a single branch."
+    )]
+    [ActivityDefinitionDesigner(
+        Description =
+            "x => !!x.state.joinMode ? `Merge workflow execution back into a single branch using mode <strong>${ x.state.joinMode }</strong>` : x.definition.description",
+        Outcomes = new[] { OutcomeNames.Done }
+    )]
     public class Join : Activity, IWorkflowEventHandler
     {
         public Join()
         {
             InboundTransitions = new List<string>().AsReadOnly();
         }
-        
+
         public enum JoinMode
         {
             WaitAll,
             WaitAny
         }
 
+        [ActivityProperty(Hint = "Either 'WaitAll' or 'WaitAny'")]
         public JoinMode Mode
         {
             get => GetState(() => JoinMode.WaitAll);
@@ -33,7 +44,7 @@ namespace Elsa.Activities.ControlFlow
             get => GetState<IReadOnlyCollection<string>>();
             set => SetState(value);
         }
-        
+
         protected override ActivityExecutionResult OnExecute(WorkflowExecutionContext workflowContext)
         {
             var recordedInboundTransitions = InboundTransitions ?? new List<string>();
@@ -50,12 +61,13 @@ namespace Elsa.Activities.ControlFlow
                     done = inboundConnections.Any(x => recordedInboundTransitions.Contains(GetTransitionKey(x)));
                     break;
             }
-            
+
             if (done)
             {
                 // Remove any inbound blocking activities.
                 var ancestorActivityIds = workflow.GetInboundActivityPath(Id).ToList();
-                var blockingActivities = workflow.BlockingActivities.Where(x => ancestorActivityIds.Contains(x.Id)).ToList();
+                var blockingActivities =
+                    workflow.BlockingActivities.Where(x => ancestorActivityIds.Contains(x.Id)).ToList();
 
                 foreach (var blockingActivity in blockingActivities)
                 {
@@ -87,7 +99,10 @@ namespace Elsa.Activities.ControlFlow
             {
                 var joinActivity = (Join) inboundConnection.Target.Activity;
                 var inboundTransitions = joinActivity.InboundTransitions ?? new List<string>();
-                joinActivity.InboundTransitions = inboundTransitions.Union(new[] { GetTransitionKey(inboundConnection) }).Distinct().ToList();
+                joinActivity.InboundTransitions = inboundTransitions
+                    .Union(new[] { GetTransitionKey(inboundConnection) })
+                    .Distinct()
+                    .ToList();
             }
         }
 
@@ -99,14 +114,18 @@ namespace Elsa.Activities.ControlFlow
             return $"@{sourceActivityId}_{sourceOutcomeName}";
         }
 
-        Task IWorkflowEventHandler.ActivityExecutedAsync(WorkflowExecutionContext workflowContext, IActivity activity, CancellationToken cancellationToken)
+        Task IWorkflowEventHandler.ActivityExecutedAsync(WorkflowExecutionContext workflowContext, IActivity activity,
+            CancellationToken cancellationToken)
         {
             RecordInboundTransitions(workflowContext, activity);
 
             return Task.CompletedTask;
         }
 
-        Task IWorkflowEventHandler.InvokingHaltedActivitiesAsync(WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken) => Task.CompletedTask;
-        Task IWorkflowEventHandler.WorkflowInvokedAsync(WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken) => Task.CompletedTask;
+        Task IWorkflowEventHandler.InvokingHaltedActivitiesAsync(WorkflowExecutionContext workflowExecutionContext,
+            CancellationToken cancellationToken) => Task.CompletedTask;
+
+        Task IWorkflowEventHandler.WorkflowInvokedAsync(WorkflowExecutionContext workflowExecutionContext,
+            CancellationToken cancellationToken) => Task.CompletedTask;
     }
 }

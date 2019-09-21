@@ -8,16 +8,24 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Models;
 using Elsa.Activities.Http.Services;
+using Elsa.Attributes;
 using Elsa.Expressions;
 using Elsa.Extensions;
 using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
+using Elsa.WorkflowDesigner.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
 
 namespace Elsa.Activities.Http.Activities
 {
+    [ActivityDefinition(
+        Category = "HTTP",
+        DisplayName = "Send HTTP Request",
+        Description = "Send an HTTP request."
+    )]
+    [ActivityDefinitionDesigner(Outcomes = "x => !!x.state.supportedStatusCodes ? x.state.supportedStatusCodes : []")]
     public class HttpRequestAction : Activity
     {
         private readonly IWorkflowExpressionEvaluator expressionEvaluator;
@@ -37,6 +45,7 @@ namespace Elsa.Activities.Http.Activities
         /// <summary>
         /// The URL to invoke. 
         /// </summary>
+        [ActivityProperty(Hint = "The URL to send the HTTP request to.")]
         public WorkflowExpression<Uri> Url
         {
             get
@@ -54,6 +63,11 @@ namespace Elsa.Activities.Http.Activities
         /// <summary>
         /// The HTTP method to use.
         /// </summary>
+        [ActivityProperty(
+            Type = ActivityPropertyTypes.Select,
+            Hint = "The HTTP method to use when making the request."
+        )]
+        [SelectOptions("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD")]
         public string Method
         {
             get => GetState(() => "GET");
@@ -63,7 +77,8 @@ namespace Elsa.Activities.Http.Activities
         /// <summary>
         /// The body to send along with the request.
         /// </summary>
-        public WorkflowExpression<string> Body
+        [ActivityProperty(Hint = "The HTTP content to send along with the request.")]
+        public WorkflowExpression<string> Content
         {
             get => GetState(() => new WorkflowExpression<string>(LiteralEvaluator.SyntaxName, ""));
             set => SetState(value);
@@ -72,6 +87,11 @@ namespace Elsa.Activities.Http.Activities
         /// <summary>
         /// The Content Type header to send along with the request body.
         /// </summary>
+        [ActivityProperty(
+            Type = ActivityPropertyTypes.Select,
+            Hint = "The content type to send with the request."
+        )]
+        [SelectOptions("text/plain", "text/html", "application/json", "application/xml")]
         public WorkflowExpression<string> ContentType
         {
             get => GetState(() => new WorkflowExpression<string>(LiteralEvaluator.SyntaxName, ""));
@@ -81,6 +101,7 @@ namespace Elsa.Activities.Http.Activities
         /// <summary>
         /// The headers to send along with the request.
         /// </summary>
+        [ActivityProperty(Hint = "The headers to send along with the request. One 'header: value' pair per line.")]
         public WorkflowExpression<string> RequestHeaders
         {
             get => GetState(() => new WorkflowExpression<string>(LiteralEvaluator.SyntaxName, ""));
@@ -90,6 +111,10 @@ namespace Elsa.Activities.Http.Activities
         /// <summary>
         /// A list of HTTP status codes this activity can handle.
         /// </summary>
+        [ActivityProperty(
+            Type = ActivityPropertyTypes.List,
+            Hint = "A list of possible HTTP status codes to handle, comma-separated. Example: 200, 400, 404"
+        )]
         public HashSet<int> SupportedStatusCodes
         {
             get => GetState(() => new HashSet<int> { 200 });
@@ -102,14 +127,16 @@ namespace Elsa.Activities.Http.Activities
         {
             var request = await CreateRequestAsync(workflowContext, cancellationToken);
             var response = await httpClient.SendAsync(request, cancellationToken);
-            var content = response.Content != null ? await response.Content.ReadAsStringAsync() : default(string);
+            var content = response.Content != null ? await response.Content.ReadAsStringAsync() : default;
             var contentType = response.Content?.Headers.ContentType.MediaType;
             var formatter = SelectContentFormatter(contentType);
 
             var responseModel = new HttpResponseModel
             {
                 StatusCode = response.StatusCode,
-                Headers = new HeaderDictionary(response.Headers.ToDictionary(x => x.Key, x => new StringValues(x.Value.ToArray()))),
+                Headers = new HeaderDictionary(
+                    response.Headers.ToDictionary(x => x.Key, x => new StringValues(x.Value.ToArray()))
+                ),
                 Content = content,
                 FormattedContent = await formatter.ParseAsync(content, contentType)
             };
@@ -123,10 +150,13 @@ namespace Elsa.Activities.Http.Activities
         private IContentFormatter SelectContentFormatter(string contentType)
         {
             var formatters = contentFormatters.OrderByDescending(x => x.Priority).ToList();
-            return formatters.FirstOrDefault(x => x.SupportedContentTypes.Contains(contentType, StringComparer.OrdinalIgnoreCase)) ?? formatters.Last();
+            return formatters.FirstOrDefault(
+                       x => x.SupportedContentTypes.Contains(contentType, StringComparer.OrdinalIgnoreCase)
+                   ) ?? formatters.Last();
         }
 
-        private async Task<HttpRequestMessage> CreateRequestAsync(WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
+        private async Task<HttpRequestMessage> CreateRequestAsync(WorkflowExecutionContext workflowContext,
+            CancellationToken cancellationToken)
         {
             var methodSupportsBody = GetMethodSupportsBody(Method);
             var uri = await expressionEvaluator.EvaluateAsync(Url, workflowContext, cancellationToken);
@@ -135,8 +165,12 @@ namespace Elsa.Activities.Http.Activities
 
             if (methodSupportsBody)
             {
-                var body = await expressionEvaluator.EvaluateAsync(Body, workflowContext, cancellationToken);
-                var contentType = await expressionEvaluator.EvaluateAsync(ContentType, workflowContext, cancellationToken);
+                var body = await expressionEvaluator.EvaluateAsync(Content, workflowContext, cancellationToken);
+                var contentType = await expressionEvaluator.EvaluateAsync(
+                    ContentType,
+                    workflowContext,
+                    cancellationToken
+                );
 
                 if (!string.IsNullOrWhiteSpace(body))
                 {
@@ -152,9 +186,14 @@ namespace Elsa.Activities.Http.Activities
             return request;
         }
 
-        private async Task<IHeaderDictionary> ParseRequestHeadersAsync(WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
+        private async Task<IHeaderDictionary> ParseRequestHeadersAsync(WorkflowExecutionContext workflowContext,
+            CancellationToken cancellationToken)
         {
-            var headersText = await expressionEvaluator.EvaluateAsync(RequestHeaders, workflowContext, cancellationToken);
+            var headersText = await expressionEvaluator.EvaluateAsync(
+                RequestHeaders,
+                workflowContext,
+                cancellationToken
+            );
             var headers = new HeaderDictionary();
 
             if (headersText != null)
@@ -167,7 +206,11 @@ namespace Elsa.Activities.Http.Activities
                 foreach (var header in headersQuery)
                 {
                     var headerValueExpression = new WorkflowExpression<string>(RequestHeaders.Syntax, header.Value);
-                    var headerValue = await expressionEvaluator.EvaluateAsync(headerValueExpression, workflowContext, cancellationToken);
+                    var headerValue = await expressionEvaluator.EvaluateAsync(
+                        headerValueExpression,
+                        workflowContext,
+                        cancellationToken
+                    );
                     headers.Add(header.Key, headerValue);
                 }
             }
