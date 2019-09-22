@@ -7,7 +7,7 @@ namespace Elsa.Activities.Workflows
 {
     [ActivityDefinition(
         Category = "Workflows",
-        Description = "Useful when you need to invoke the workflow manually."
+        Description = "The start of the workflow."
     )]
     public class Start : Activity
     {

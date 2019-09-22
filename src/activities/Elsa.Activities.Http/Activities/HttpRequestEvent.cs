@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -94,7 +93,8 @@ namespace Elsa.Activities.Http.Activities
             return Halt(true);
         }
 
-        protected override async Task<ActivityExecutionResult> OnResumeAsync(WorkflowExecutionContext workflowContext,
+        protected override async Task<ActivityExecutionResult> OnResumeAsync(
+            WorkflowExecutionContext workflowContext,
             CancellationToken cancellationToken)
         {
             var request = httpContextAccessor.HttpContext.Request;
@@ -117,7 +117,7 @@ namespace Elsa.Activities.Http.Activities
                 }
 
                 var parser = SelectContentParser(request.ContentType);
-                var content = await request.ReadBodyAsync();
+                var content = await request.ReadContentAsBytesAsync(cancellationToken);
                 model.Content = content;
                 model.ParsedContent = await parser.ParseAsync(content, request.ContentType);
             }

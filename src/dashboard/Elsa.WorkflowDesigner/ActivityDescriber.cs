@@ -36,7 +36,7 @@ namespace Elsa.WorkflowDesigner
 
             return new ActivityDefinition
             {
-                Type = typeName.Camelize(),
+                Type = typeName.Pascalize(),
                 DisplayName = displayName,
                 Description = description,
                 Category = category,
@@ -87,8 +87,11 @@ namespace Elsa.WorkflowDesigner
 
             if (type == typeof(bool) || type == typeof(bool?))
                 return ActivityPropertyTypes.Boolean;
+            
+            if (type == typeof(string))
+                return ActivityPropertyTypes.Text;
 
-            if (typeof(IEnumerable).IsAssignableFrom(type))
+            if (typeof(IEnumerable<>).IsAssignableFrom(type))
                 return ActivityPropertyTypes.List;
 
             return ActivityPropertyTypes.Text;

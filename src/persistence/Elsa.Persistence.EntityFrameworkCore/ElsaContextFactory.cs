@@ -1,3 +1,4 @@
+using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
@@ -8,12 +9,28 @@ namespace Elsa.Persistence.EntityFrameworkCore
         public ElsaContext CreateDbContext(string[] args)
         {
             var optionsBuilder = new DbContextOptionsBuilder<ElsaContext>();
+            var migrationAssembly = typeof(ElsaContextFactory).Assembly.FullName;
+            var provider = Environment.GetEnvironmentVariable("EF_PROVIDER") ?? "Sqlite";
+            var connectionString = Environment.GetEnvironmentVariable("EF_CONNECTIONSTRING") ?? "Data Source=c:\\data\\elsa.db;Cache=Shared";
 
-            optionsBuilder.UseSqlite(
-                "Data Source=c:\\data\\elsa.db;Cache=Shared",
-                x => x.MigrationsAssembly(typeof(ElsaContextFactory).Assembly.FullName)
-            );
-
+            switch (provider)
+            {
+                case "Sqlite":
+                    optionsBuilder.UseSqlite(
+                        connectionString,
+                        x => x.MigrationsAssembly(migrationAssembly)
+                    );
+                    break;
+                case "SqlServer":
+                    optionsBuilder.UseSqlServer(
+                        connectionString,
+                        x => x.MigrationsAssembly(migrationAssembly)    
+                    );
+                    break;
+                default:
+                    throw new NotSupportedException("The specified provider is not supported.");
+            }
+            
             return new ElsaContext(optionsBuilder.Options);
         }
     }

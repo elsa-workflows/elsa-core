@@ -72,12 +72,33 @@ namespace Elsa.Expressions
                 return value.AsNumber();
 
             if (value.IsString())
-                return Convert.ChangeType(value.AsString(), targetType);
+            {
+                var stringValue = value.AsString();
+                return targetType != null
+                    ? targetType == typeof(Uri)
+                        ? new Uri(stringValue, UriKind.RelativeOrAbsolute)
+                        : Convert.ChangeType(stringValue, targetType)
+                    : value.AsString();
+            }
 
             if (value.IsArray())
             {
                 var arrayInstance = value.AsArray();
                 var elementType = targetType.GetElementType() ?? targetType.GenericTypeArguments.First();
+
+                if (elementType == typeof(byte))
+                {
+                    var bytes = new byte[arrayInstance.Length];
+                    
+                    for (uint i = 0; i < arrayInstance.Length; i++)
+                    {
+                        var jsValue = arrayInstance[i];
+                        bytes[i] = (byte)jsValue.AsNumber();
+                    }
+
+                    return bytes;
+                }
+                
                 var array = Array.CreateInstance(elementType, arrayInstance.Length);
 
                 for (uint i = 0; i < array.Length; i++)
@@ -89,12 +110,13 @@ namespace Elsa.Expressions
 
                 return array;
             }
-            
+
             if (value.IsObject())
             {
                 var obj = value.AsObject().ToObject();
+                var type = targetType ?? obj.GetType();
                 var json = JsonConvert.SerializeObject(obj, serializerSettings);
-                return JsonConvert.DeserializeObject(json, targetType, serializerSettings);
+                return JsonConvert.DeserializeObject(json, type, serializerSettings);
             }
 
             throw new ArgumentException($"Value type {value.Type} is not supported.", nameof(value));

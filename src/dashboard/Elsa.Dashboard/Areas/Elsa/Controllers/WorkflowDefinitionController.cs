@@ -102,7 +102,7 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
             await workflowDefinitionStore.SaveAsync(workflow, cancellationToken);
 
             notifier.Notify("New workflow successfully created.", NotificationType.Success);
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction("Edit", new { id = workflow.Id });
         }
 
         [HttpGet("edit/{id}")]
@@ -146,7 +146,7 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
             await workflowDefinitionStore.SaveAsync(workflow, cancellationToken);
 
             notifier.Notify("Workflow successfully saved.", NotificationType.Success);
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction("Edit", new { id = workflow.Id });
         }
 
         [HttpPost("delete/{id}")]

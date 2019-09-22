@@ -1,4 +1,5 @@
-﻿using Elsa.Activities.Email.Extensions;
+﻿using Elsa.Activities.Dropbox.Extensions;
+using Elsa.Activities.Email.Extensions;
 using Elsa.Activities.Http.Extensions;
 using Elsa.Activities.Timers.Extensions;
 using Elsa.Extensions;
@@ -27,6 +28,7 @@ namespace Elsa.WorkflowHost.Web
                 .AddHttpActivities(options => options.Bind(Configuration.GetSection("Http")))
                 .AddEmailActivities(options => options.Bind(Configuration.GetSection("Smtp")))
                 .AddTimerActivities(options => options.Bind(Configuration.GetSection("BackgroundRunner")))
+                .AddDropboxActivities(options => options.Bind(Configuration.GetSection("Dropbox")))
                 .AddEntityFrameworkCore(
                     options => options
                         .UseSqlite(Configuration.GetConnectionString("Sqlite"))

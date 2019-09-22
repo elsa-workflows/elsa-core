@@ -15,7 +15,7 @@ namespace Elsa.Activities.Primitives
     )]
     [ActivityDefinitionDesigner(
         Description =
-            "x => !!x.state.variableName ? `${x.state.expression.syntax}: <strong>${x.state.variableName}</strong> = <strong>${x.state.expression.expression}</strong>` : x.definition.description",
+            "x => !!x.state.variableName ? `<strong>${x.state.variableName}</strong> = <strong>${x.state.valueExpression.expression}</strong><br/>${x.state.valueExpression.syntax}` : x.definition.description",
         Outcomes = new[] { OutcomeNames.Done }
     )]
     public class SetVariable : Activity

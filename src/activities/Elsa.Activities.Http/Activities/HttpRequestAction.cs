@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Net.Mime;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -25,7 +27,11 @@ namespace Elsa.Activities.Http.Activities
         DisplayName = "Send HTTP Request",
         Description = "Send an HTTP request."
     )]
-    [ActivityDefinitionDesigner(Outcomes = "x => !!x.state.supportedStatusCodes ? x.state.supportedStatusCodes : []")]
+    [ActivityDefinitionDesigner(
+        Description =
+            "x => !!x.state.url ? `Send HTTP <strong>${ x.state.method } ${ x.state.url.expression }</strong>.` : x.definition.description",
+        Outcomes = "x => !!x.state.supportedStatusCodes ? x.state.supportedStatusCodes : []"
+    )]
     public class HttpRequestAction : Activity
     {
         private readonly IWorkflowExpressionEvaluator expressionEvaluator;
@@ -50,14 +56,18 @@ namespace Elsa.Activities.Http.Activities
         {
             get
             {
-                var url = GetState<string>();
+                var url = GetState<WorkflowExpression<string>>();
 
-                if (!string.IsNullOrWhiteSpace(url) && Uri.TryCreate(url, UriKind.RelativeOrAbsolute, out var uri))
-                    return new WorkflowExpression<Uri>(LiteralEvaluator.SyntaxName, uri.ToString());
+                if (url != null && !string.IsNullOrWhiteSpace(url.Expression) && Uri.TryCreate(
+                        url.Expression,
+                        UriKind.RelativeOrAbsolute,
+                        out var uri
+                    ))
+                    return new WorkflowExpression<Uri>(url.Syntax, uri.ToString());
 
                 return new WorkflowExpression<Uri>(LiteralEvaluator.SyntaxName, "");
             }
-            set => SetState(value.ToString());
+            set => SetState(new WorkflowExpression<string>(value.Syntax, value.Expression));
         }
 
         /// <summary>
@@ -89,12 +99,21 @@ namespace Elsa.Activities.Http.Activities
         /// </summary>
         [ActivityProperty(
             Type = ActivityPropertyTypes.Select,
-            Hint = "The content type to send with the request."
+            Hint = "The content type to send with the request (if applicable)."
         )]
         [SelectOptions("text/plain", "text/html", "application/json", "application/xml")]
         public WorkflowExpression<string> ContentType
         {
             get => GetState(() => new WorkflowExpression<string>(LiteralEvaluator.SyntaxName, ""));
+            set => SetState(value);
+        }
+
+        [ActivityProperty(
+            Hint = "The Authorization header value to send."
+        )]
+        public WorkflowExpression<string> Authorization
+        {
+            get => GetState<WorkflowExpression<string>>();
             set => SetState(value);
         }
 
@@ -105,6 +124,13 @@ namespace Elsa.Activities.Http.Activities
         public WorkflowExpression<string> RequestHeaders
         {
             get => GetState(() => new WorkflowExpression<string>(LiteralEvaluator.SyntaxName, ""));
+            set => SetState(value);
+        }
+
+        [ActivityProperty(Hint = "Check to read the content of the response.")]
+        public bool ReadContent
+        {
+            get => GetState(() => true);
             set => SetState(value);
         }
 
@@ -127,21 +153,27 @@ namespace Elsa.Activities.Http.Activities
         {
             var request = await CreateRequestAsync(workflowContext, cancellationToken);
             var response = await httpClient.SendAsync(request, cancellationToken);
-            var content = response.Content != null ? await response.Content.ReadAsStringAsync() : default;
+            var hasContent = response.Content != null;
             var contentType = response.Content?.Headers.ContentType.MediaType;
-            var formatter = SelectContentFormatter(contentType);
 
             var responseModel = new HttpResponseModel
             {
                 StatusCode = response.StatusCode,
                 Headers = new HeaderDictionary(
                     response.Headers.ToDictionary(x => x.Key, x => new StringValues(x.Value.ToArray()))
-                ),
-                Content = content,
-                FormattedContent = await formatter.ParseAsync(content, contentType)
+                )
             };
 
+            if (hasContent && ReadContent)
+            {
+                var formatter = SelectContentFormatter(contentType);
+
+                responseModel.Content = await response.Content.ReadAsByteArrayAsync();
+                responseModel.ParsedContent = await formatter.ParseAsync(responseModel.Content, contentType);
+            }
+
             workflowContext.SetLastResult(responseModel);
+            Output["Response"] = responseModel;
             var statusEndpoint = ((int) response.StatusCode).ToString();
 
             return Outcomes(new[] { OutcomeNames.Done, statusEndpoint });
@@ -161,6 +193,13 @@ namespace Elsa.Activities.Http.Activities
             var methodSupportsBody = GetMethodSupportsBody(Method);
             var uri = await expressionEvaluator.EvaluateAsync(Url, workflowContext, cancellationToken);
             var request = new HttpRequestMessage(new HttpMethod(Method), uri);
+            
+            var authorizationHeaderValue = await expressionEvaluator.EvaluateAsync(
+                Authorization,
+                workflowContext,
+                cancellationToken
+            );
+            
             var requestHeaders = await ParseRequestHeadersAsync(workflowContext, cancellationToken);
 
             if (methodSupportsBody)
@@ -176,6 +215,11 @@ namespace Elsa.Activities.Http.Activities
                 {
                     request.Content = new StringContent(body, Encoding.UTF8, contentType);
                 }
+            }
+
+            if (!string.IsNullOrWhiteSpace(authorizationHeaderValue))
+            {
+                request.Headers.Authorization = AuthenticationHeaderValue.Parse(authorizationHeaderValue);
             }
 
             foreach (var header in requestHeaders)

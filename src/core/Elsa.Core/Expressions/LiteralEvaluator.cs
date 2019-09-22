@@ -14,7 +14,7 @@ namespace Elsa.Expressions
             return new WorkflowExpression<T>(SyntaxName, expression);
         }
         
-        public const string SyntaxName = "PlainText";
+        public const string SyntaxName = "Literal";
         public string Syntax => SyntaxName;
 
         public Task<object> EvaluateAsync(string expression, Type type, WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)

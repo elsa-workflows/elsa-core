@@ -11,7 +11,7 @@ namespace Elsa.Activities.Http.Models
 
         public HttpStatusCode StatusCode { get; set; }
         public IHeaderDictionary Headers { get; set; } = new HeaderDictionary();
-        public string Content { get; set; }
-        public object FormattedContent { get; set; }
+        public byte[] Content { get; set; }
+        public object ParsedContent { get; set; }
     }
 }

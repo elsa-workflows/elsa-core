@@ -35,7 +35,7 @@ namespace Elsa.Activities.Http.Extensions
             services
                 .AddTaskExecutingServer()
                 .AddSingleton<ITokenService, TokenService>()
-                .AddSingleton<IContentFormatter, NullContentFormatter>()
+                .AddSingleton<IContentFormatter, DefaultContentFormatter>()
                 .AddSingleton<IContentFormatter, JsonContentFormatter>()
                 .AddSingleton<IScriptEngineConfigurator, HttpScriptEngineConfigurator>()
                 .AddSingleton<IActionContextAccessor, ActionContextAccessor>()

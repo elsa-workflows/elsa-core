@@ -13,7 +13,7 @@ namespace Elsa.Extensions
         
         public static object Parse(this string value, Type targetType)
         {
-            if (typeof(string) == targetType)
+            if (typeof(string) == targetType || targetType == default)
                 return value;
             
             var converter = TypeDescriptor.GetConverter(targetType);

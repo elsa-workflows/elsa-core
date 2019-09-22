@@ -4,14 +4,14 @@ using Elsa.Activities.Http.Services;
 
 namespace Elsa.Activities.Http.Formatters
 {
-    public class NullContentFormatter : IContentFormatter
+    public class DefaultContentFormatter : IContentFormatter
     {
         public int Priority => -1;
         public IEnumerable<string> SupportedContentTypes => new[] { "", default };
 
-        public Task<object> ParseAsync(string content, string contentType)
+        public Task<object> ParseAsync(byte[] content, string contentType)
         {
-            return Task.FromResult<object>(content);
+            return Task.FromResult<object>(null);
         }
     }
 }
