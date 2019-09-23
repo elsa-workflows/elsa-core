@@ -91,7 +91,7 @@ namespace Elsa.WorkflowDesigner
             if (type == typeof(string))
                 return ActivityPropertyTypes.Text;
 
-            if (typeof(IEnumerable<>).IsAssignableFrom(type))
+            if (typeof(IEnumerable).IsAssignableFrom(type))
                 return ActivityPropertyTypes.List;
 
             return ActivityPropertyTypes.Text;
