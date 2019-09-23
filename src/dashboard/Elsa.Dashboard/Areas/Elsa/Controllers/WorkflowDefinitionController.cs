@@ -102,7 +102,7 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
             await workflowDefinitionStore.SaveAsync(workflow, cancellationToken);
 
             notifier.Notify("New workflow successfully created.", NotificationType.Success);
-            return RedirectToAction("Edit", new { id = workflow.Id });
+            return RedirectToAction("Edit", new { id = workflow.DefinitionId });
         }
 
         [HttpGet("edit/{id}")]
