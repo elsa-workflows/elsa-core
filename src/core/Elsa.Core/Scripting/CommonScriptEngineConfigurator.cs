@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Dynamic;
+using System.Globalization;
 using System.Linq;
 using Elsa.Models;
 using Elsa.Services.Models;
@@ -20,6 +21,7 @@ namespace Elsa.Scripting
             engine.SetValue("variable", (Func<string, object>) (name => context.CurrentScope.GetVariable(name)));
             engine.SetValue("lastResult", (Func<string, object>) (name => context.CurrentScope.LastResult));
             engine.SetValue("correlationId", (Func<object>) (() => context.Workflow.CorrelationId));
+            engine.SetValue("currentCulture", (Func<object>) (() => CultureInfo.InvariantCulture));
 
             var variables = workflowExecutionContext.Workflow.Scopes
                 .Select(x => x.Variables)
