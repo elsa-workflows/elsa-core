@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using Elsa.TypeConverters;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 
 namespace Elsa.WorkflowHost.Web
 {
@@ -14,6 +8,7 @@ namespace Elsa.WorkflowHost.Web
     {
         public static void Main(string[] args)
         {
+            ProgramExtensions.ConfigureTypeConverters();
             CreateWebHostBuilder(args).Build().Run();
         }
 
