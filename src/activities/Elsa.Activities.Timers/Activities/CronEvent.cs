@@ -15,6 +15,11 @@ namespace Elsa.Activities.Timers.Activities
         Category = "Timers",
         Description = "Triggers periodically based on a specified CRON expression."
     )]
+    [ActivityDefinitionDesigner(
+        Description =
+            "x => !!x.state.cronExpression ? `<strong>${ x.state.cronExpression.expression }</strong>.` : x.definition.description",
+        Outcomes = new[] { OutcomeNames.Done }
+    )]
     public class CronEvent : Activity
     {
         private readonly IWorkflowExpressionEvaluator expressionEvaluator;
