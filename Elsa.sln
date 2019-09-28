@@ -51,6 +51,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.WorkflowDesigner", "sr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.DocumentDb", "src\persistence\Elsa.Persistence.DocumentDb\Elsa.Persistence.DocumentDb.csproj", "{39EBECE7-538B-431C-AAB7-901AB16E6D4A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Activities.Dropbox", "src\activities\Elsa.Activities.Dropbox\Elsa.Activities.Dropbox.csproj", "{5A3C9D59-21FE-4BE3-A00A-FF3F198EEC97}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -117,6 +119,10 @@ Global
 		{39EBECE7-538B-431C-AAB7-901AB16E6D4A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{39EBECE7-538B-431C-AAB7-901AB16E6D4A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{39EBECE7-538B-431C-AAB7-901AB16E6D4A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5A3C9D59-21FE-4BE3-A00A-FF3F198EEC97}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5A3C9D59-21FE-4BE3-A00A-FF3F198EEC97}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5A3C9D59-21FE-4BE3-A00A-FF3F198EEC97}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5A3C9D59-21FE-4BE3-A00A-FF3F198EEC97}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -141,6 +147,7 @@ Global
 		{82CDD590-2409-4C7E-8AF4-07C7D718D4D8} = {76710230-AC6D-4E54-9A06-15F34C155118}
 		{120E4BF9-4A42-4BB9-A0B2-9597160D6E37} = {8B87D79A-F0DE-4F88-81D3-8C8C69108ADB}
 		{39EBECE7-538B-431C-AAB7-901AB16E6D4A} = {76710230-AC6D-4E54-9A06-15F34C155118}
+		{5A3C9D59-21FE-4BE3-A00A-FF3F198EEC97} = {B43B546E-23F3-46E8-ACB7-D04F05CDA180}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}
