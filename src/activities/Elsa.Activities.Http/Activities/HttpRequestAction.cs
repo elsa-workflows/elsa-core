@@ -159,8 +159,8 @@ namespace Elsa.Activities.Http.Activities
             var responseModel = new HttpResponseModel
             {
                 StatusCode = response.StatusCode,
-                Headers = new HeaderDictionary(
-                    response.Headers.ToDictionary(x => x.Key, x => new StringValues(x.Value.ToArray()))
+                Headers = new Dictionary<string, string[]>(
+                    response.Headers.ToDictionary(x => x.Key, x => x.Value.ToArray())
                 )
             };
 

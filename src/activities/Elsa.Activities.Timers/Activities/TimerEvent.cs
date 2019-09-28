@@ -66,9 +66,7 @@ namespace Elsa.Activities.Timers.Activities
             var now = clock.GetCurrentInstant();
 
             if (StartTime == null)
-            {
                 StartTime = now;
-            }
             
             var timeSpan = await expressionEvaluator.EvaluateAsync(TimeoutExpression, context, cancellationToken);
             var expiresAt = StartTime.Value.ToDateTimeUtc() + timeSpan;

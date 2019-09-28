@@ -1,5 +1,5 @@
+using System.Collections.Generic;
 using System.Net;
-using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Activities.Http.Models
 {
@@ -10,7 +10,7 @@ namespace Elsa.Activities.Http.Models
         }
 
         public HttpStatusCode StatusCode { get; set; }
-        public IHeaderDictionary Headers { get; set; } = new HeaderDictionary();
+        public Dictionary<string, string[]> Headers { get; set; } = new Dictionary<string, string[]>();
         public byte[] Content { get; set; }
         public object ParsedContent { get; set; }
     }
