@@ -43,19 +43,27 @@ namespace Elsa.Activities.Timers.Activities
             get => GetState<Instant?>();
             set => SetState(value);
         }
+        
+        protected override async Task<bool> OnCanExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
+        {
+            return StartTime == null || await IsExpiredAsync(context, cancellationToken);
+        }
 
         protected override ActivityExecutionResult OnExecute(WorkflowExecutionContext workflowContext)
         {
-            StartTime = clock.GetCurrentInstant();
             return Halt();
         }
 
-        protected override async Task<ActivityExecutionResult> OnResumeAsync(WorkflowExecutionContext workflowContext,
+        protected override async Task<ActivityExecutionResult> OnResumeAsync(WorkflowExecutionContext context,
             CancellationToken cancellationToken)
         {
-            var isExpired = await IsExpiredAsync(workflowContext, cancellationToken);
-
-            return isExpired ? Done() : Halt();
+            if (await IsExpiredAsync(context, cancellationToken))
+            {
+                StartTime = null;
+                return Done();
+            }
+            
+            return Halt();
         }
 
         private async Task<bool> IsExpiredAsync(WorkflowExecutionContext workflowContext,
@@ -68,8 +76,11 @@ namespace Elsa.Activities.Timers.Activities
             );
             var schedule = CrontabSchedule.Parse(cronExpression);
             var now = clock.GetCurrentInstant();
-            var startTime = StartTime ?? now;
-            var nextOccurrence = schedule.GetNextOccurrence(startTime.ToDateTimeUtc());
+            
+            if (StartTime == null)
+                StartTime = now;
+            
+            var nextOccurrence = schedule.GetNextOccurrence(StartTime.Value.ToDateTimeUtc());
 
             return now.ToDateTimeUtc() >= nextOccurrence;
         }
