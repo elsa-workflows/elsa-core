@@ -10,7 +10,6 @@ namespace Elsa.Persistence.DocumentDb.Extensions
             this IQueryable<WorkflowDefinitionVersionDocument> query,
             VersionOptions version)
         {
-
             if (version.IsDraft)
                 query = query.Where(x => !x.IsPublished);
             if (version.IsLatest)

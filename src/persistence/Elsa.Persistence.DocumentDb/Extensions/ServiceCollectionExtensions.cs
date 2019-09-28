@@ -8,7 +8,12 @@ namespace Elsa.Persistence.DocumentDb.Extensions
     public static class ServiceCollectionExtensions
     {
         public static IServiceCollection UseAzureCosmosDbAsWorkflowStore(
-            this IServiceCollection services, string url, string authSecret, string database, string collection, DocumentDbStorageOptions options = null)
+            this IServiceCollection services,
+            string url,
+            string authSecret,
+            string database,
+            string collection,
+            DocumentDbStorageOptions options = null)
         {
             if (string.IsNullOrEmpty(url)) throw new ArgumentNullException(nameof(url));
             if (string.IsNullOrEmpty(authSecret)) throw new ArgumentNullException(nameof(authSecret));
@@ -26,7 +31,8 @@ namespace Elsa.Persistence.DocumentDb.Extensions
 
         public static IServiceCollection AddCosmosDbWorkflowDefinitionStore(this IServiceCollection services)
         {
-            return services.Replace<IWorkflowDefinitionStore, CosmosDbWorkflowDefinitionStore>(ServiceLifetime.Transient);
+            return services.Replace<IWorkflowDefinitionStore, CosmosDbWorkflowDefinitionStore>(
+                ServiceLifetime.Transient);
         }
     }
 }
