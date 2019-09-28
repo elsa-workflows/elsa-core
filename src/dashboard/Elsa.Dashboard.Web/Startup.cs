@@ -50,7 +50,7 @@ namespace Elsa.Dashboard.Web
                 )
                 .AddEntityFrameworkCoreWorkflowDefinitionStore()
                 .AddEntityFrameworkCoreWorkflowInstanceStore()
-                .AddElsaDashboard(options => options.DiscoveredActivities());
+                .AddElsaDashboard(options => options.Discover());
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)

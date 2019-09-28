@@ -33,7 +33,7 @@ namespace Elsa.Dashboard.Extensions
             return list;
         }
 
-        public static OptionsBuilder<ElsaDashboardOptions> DiscoveredActivities(
+        public static OptionsBuilder<ElsaDashboardOptions> Discover(
             this OptionsBuilder<ElsaDashboardOptions> options)
         {
             return options.Configure(
