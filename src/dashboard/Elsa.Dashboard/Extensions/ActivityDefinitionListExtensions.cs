@@ -3,6 +3,7 @@ using Elsa.Dashboard.Options;
 using Elsa.Services.Models;
 using Elsa.WorkflowDesigner;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Scrutor;
 
 namespace Elsa.Dashboard.Extensions
@@ -13,8 +14,10 @@ namespace Elsa.Dashboard.Extensions
         {
             return list.Add(ActivityDescriber.Describe<T>());
         }
-        
-        public static ActivityDefinitionList Discover(this ActivityDefinitionList list, Action<ITypeSourceSelector> selector)
+
+        public static ActivityDefinitionList Discover(
+            this ActivityDefinitionList list,
+            Action<ITypeSourceSelector> selector)
         {
             var typeSourceSelector = new TypeSourceSelector();
             selector(typeSourceSelector);
@@ -24,10 +27,21 @@ namespace Elsa.Dashboard.Extensions
 
             foreach (var service in serviceCollection)
             {
-                list.Add(ActivityDescriber.Describe(service.ImplementationType));    
+                list.Add(ActivityDescriber.Describe(service.ImplementationType));
             }
 
             return list;
+        }
+
+        public static OptionsBuilder<ElsaDashboardOptions> DiscoveredActivities(
+            this OptionsBuilder<ElsaDashboardOptions> options)
+        {
+            return options.Configure(
+                configureOptions => configureOptions.ActivityDefinitions
+                    // Add all activities from all referenced assemblies.
+                    .Discover(
+                        selector => selector.FromApplicationDependencies()
+                            .AddClasses(x => x.AssignableTo<IActivity>())));
         }
     }
 }

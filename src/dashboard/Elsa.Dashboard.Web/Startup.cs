@@ -50,19 +50,7 @@ namespace Elsa.Dashboard.Web
                 )
                 .AddEntityFrameworkCoreWorkflowDefinitionStore()
                 .AddEntityFrameworkCoreWorkflowInstanceStore()
-                .AddElsaDashboard(
-                    options => options
-                        // Add activity definitions from configuration.
-                        .Bind(Configuration.GetSection("WorkflowDesigner"))
-                        .Configure(
-                            configureOptions => configureOptions.ActivityDefinitions
-                                // Add all activities from all referenced assemblies.
-                                .Discover(
-                                    selector => selector.FromApplicationDependencies()
-                                        .AddClasses(x => x.AssignableTo<IActivity>())
-                                )
-                        )
-                );
+                .AddElsaDashboard(options => options.DiscoveredActivities());
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
