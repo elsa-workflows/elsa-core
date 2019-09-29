@@ -8,10 +8,11 @@ namespace Elsa.WorkflowDesigner.ViewComponents
 {
     public class WorkflowDesignerViewComponent : ViewComponent
     {
-        public IViewComponentResult Invoke(ActivityDefinition[] activityDefinitions)
+        public IViewComponentResult Invoke(ActivityDefinition[] activityDefinitions, string id)
         {
             var model = new WorkflowDesignerViewComponentModel
             {
+                Id = id,
                 ActivityDefinitionsJson = GetActivityDefinitionOptions(activityDefinitions)
             };
 

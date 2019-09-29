@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Elsa.Dashboard.Areas.Elsa.ViewModels;
 using Elsa.Dashboard.Extensions;
 using Elsa.Dashboard.Models;
+using Elsa.Dashboard.Options;
 using Elsa.Dashboard.Services;
 using Elsa.Extensions;
 using Elsa.Models;
@@ -12,6 +13,7 @@ using Elsa.Serialization;
 using Elsa.Serialization.Formatters;
 using Jint.Native.Json;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Dashboard.Areas.Elsa.Controllers
 {
@@ -21,17 +23,20 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
     {
         private readonly IWorkflowInstanceStore workflowInstanceStore;
         private readonly IWorkflowDefinitionStore workflowDefinitionStore;
+        private readonly IOptions<ElsaDashboardOptions> options;
         private readonly IWorkflowSerializer serializer;
         private readonly INotifier notifier;
 
         public WorkflowInstanceController(
             IWorkflowInstanceStore workflowInstanceStore,
             IWorkflowDefinitionStore workflowDefinitionStore,
+            IOptions<ElsaDashboardOptions> options,
             IWorkflowSerializer serializer,
             INotifier notifier)
         {
             this.workflowInstanceStore = workflowInstanceStore;
             this.workflowDefinitionStore = workflowDefinitionStore;
+            this.options = options;
             this.serializer = serializer;
             this.notifier = notifier;
         }
@@ -92,7 +97,8 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
                 ReturnUrl = returnUrl,
                 Json = json,
                 WorkflowDefinition = definition,
-                WorkflowInstance = instance
+                WorkflowInstance = instance,
+                ActivityDefinitions = options.Value.ActivityDefinitions.ToArray()
             };
 
             return View(model);
