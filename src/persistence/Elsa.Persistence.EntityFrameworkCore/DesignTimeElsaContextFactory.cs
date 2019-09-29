@@ -4,12 +4,12 @@ using Microsoft.EntityFrameworkCore.Design;
 
 namespace Elsa.Persistence.EntityFrameworkCore
 {
-    public class ElsaContextFactory : IDesignTimeDbContextFactory<ElsaContext>
+    public class DesignTimeElsaContextFactory : IDesignTimeDbContextFactory<ElsaContext>
     {
         public ElsaContext CreateDbContext(string[] args)
         {
             var optionsBuilder = new DbContextOptionsBuilder<ElsaContext>();
-            var migrationAssembly = typeof(ElsaContextFactory).Assembly.FullName;
+            var migrationAssembly = typeof(DesignTimeElsaContextFactory).Assembly.FullName;
             var provider = Environment.GetEnvironmentVariable("EF_PROVIDER") ?? "Sqlite";
             var connectionString = Environment.GetEnvironmentVariable("EF_CONNECTIONSTRING") ?? "Data Source=c:\\data\\elsa.db;Cache=Shared";
 

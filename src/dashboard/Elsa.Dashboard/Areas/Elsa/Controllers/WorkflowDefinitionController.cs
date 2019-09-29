@@ -72,18 +72,16 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
         [HttpGet("create")]
         public ViewResult Create()
         {
-            var workflow = new WorkflowDefinitionVersion
-            {
-                Name = "New Workflow"
-            };
+            var workflow = publisher.New();
 
             var model = new WorkflowDefinitionEditModel
             {
                 Name = workflow.Name,
                 Json = serializer.Serialize(workflow, JsonTokenFormatter.FormatName),
                 ActivityDefinitions = options.Value.ActivityDefinitions.ToArray(),
-                IsSingleton = false,
-                IsDisabled = false
+                IsSingleton = workflow.IsSingleton,
+                IsDisabled = workflow.IsDisabled,
+                Description = workflow.Description
             };
 
             return View(model);
@@ -96,13 +94,6 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
                 ? serializer.Deserialize<WorkflowDefinitionVersion>(model.Json, JsonTokenFormatter.FormatName)
                 : new WorkflowDefinitionVersion();
 
-            workflow.Id = idGenerator.Generate();
-            workflow.DefinitionId = idGenerator.Generate();
-            workflow.IsLatest = true;
-            workflow.Version = 1;
-            workflow.IsSingleton = model.IsSingleton;
-            workflow.IsDisabled = model.IsDisabled;
-
             await workflowDefinitionStore.SaveAsync(workflow, cancellationToken);
 
             notifier.Notify("New workflow successfully created.", NotificationType.Success);
@@ -112,14 +103,14 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
         [HttpGet("edit/{id}")]
         public async Task<IActionResult> Edit(string id, CancellationToken cancellationToken)
         {
-            var workflow = await workflowDefinitionStore.GetByIdAsync(id, VersionOptions.Latest, cancellationToken);
+            var workflow = await publisher.GetDraftAsync(id, cancellationToken);
 
             if (workflow == null)
                 return NotFound();
 
             var model = new WorkflowDefinitionEditModel
             {
-                Id = workflow.Id,
+                Id = workflow.DefinitionId,
                 Name = workflow.Name,
                 Description = workflow.Description,
                 IsSingleton = workflow.IsSingleton,
@@ -139,20 +130,22 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
         {
             var workflow = serializer.Deserialize<WorkflowDefinitionVersion>(model.Json, JsonTokenFormatter.FormatName);
 
-            workflow.Id = id;
+            workflow.DefinitionId = id;
 
             var publish = model.SubmitAction == "publish";
 
-            if (publish && !workflow.IsPublished)
+            if (publish)
             {
-                workflow.IsPublished = true;
-                workflow.Version++;
+                await publisher.PublishAsync(workflow, cancellationToken);
+                notifier.Notify("Workflow successfully published.", NotificationType.Success);
+            }
+            else
+            {
+                await publisher.SaveDraftAsync(workflow, cancellationToken);
+                notifier.Notify("Workflow successfully saved as a draft.", NotificationType.Success);
             }
 
-            await workflowDefinitionStore.SaveAsync(workflow, cancellationToken);
-
-            notifier.Notify("Workflow successfully saved.", NotificationType.Success);
-            return RedirectToAction("Edit", new { id = workflow.Id });
+            return RedirectToAction("Edit", new { id = workflow.DefinitionId });
         }
 
         [HttpPost("delete/{id}")]

@@ -12,28 +12,36 @@ namespace Elsa.Services
         private readonly IIdGenerator idGenerator;
         private readonly IMapper mapper;
 
-        public WorkflowPublisher(IWorkflowDefinitionStore store, IIdGenerator idGenerator, IMapper mapper)
+        public WorkflowPublisher(
+            IWorkflowDefinitionStore store,
+            IIdGenerator idGenerator,
+            IMapper mapper)
         {
             this.store = store;
             this.idGenerator = idGenerator;
             this.mapper = mapper;
         }
 
-        public WorkflowDefinitionVersion New(bool publish)
+        public WorkflowDefinitionVersion New()
         {
             var definition = new WorkflowDefinitionVersion
             {
                 Id = idGenerator.Generate(),
+                DefinitionId = idGenerator.Generate(),
                 Name = "New Workflow",
                 Version = 1,
                 IsLatest = true,
-                IsPublished = false
+                IsPublished = false,
+                IsSingleton = false,
+                IsDisabled = false
             };
 
             return definition;
         }
 
-        public async Task<WorkflowDefinitionVersion> PublishAsync(string id, CancellationToken cancellationToken)
+        public async Task<WorkflowDefinitionVersion> PublishAsync(
+            string id,
+            CancellationToken cancellationToken)
         {
             var definition = await store.GetByIdAsync(id, VersionOptions.Latest, cancellationToken);
 
@@ -43,32 +51,16 @@ namespace Elsa.Services
             return await PublishAsync(definition, cancellationToken);
         }
 
-        public async Task<WorkflowDefinitionVersion> PublishAsync(WorkflowDefinitionVersion workflowDefinition,
+        public async Task<WorkflowDefinitionVersion> PublishAsync(
+            WorkflowDefinitionVersion workflowDefinition,
             CancellationToken cancellationToken)
         {
             var definition = mapper.Map<WorkflowDefinitionVersion>(workflowDefinition);
 
-            if (definition.IsPublished)
-            {
-                definition.IsPublished = false;
-                definition.IsLatest = false;
-                await store.UpdateAsync(definition, cancellationToken);
-
-                var clone = mapper.Map<WorkflowDefinitionVersion>(definition);
-                clone.Version++;
-                clone.IsPublished = true;
-                clone.IsLatest = true;
-
-                await store.AddAsync(clone, cancellationToken);
-
-                return clone;
-            }
-
             var publishedDefinition = await store.GetByIdAsync(
-                definition.Id,
+                definition.DefinitionId,
                 VersionOptions.Published,
-                cancellationToken
-            );
+                cancellationToken);
 
             if (publishedDefinition != null)
             {
@@ -84,30 +76,46 @@ namespace Elsa.Services
             return definition;
         }
 
-        public async Task<WorkflowDefinitionVersion> GetDraftAsync(string id, CancellationToken cancellationToken)
+        public async Task<WorkflowDefinitionVersion> GetDraftAsync(
+            string id,
+            CancellationToken cancellationToken)
         {
-            var definition =
-                await store.GetByIdAsync(id, VersionOptions.Latest, cancellationToken) ??
-                new WorkflowDefinitionVersion
-                {
-                    Id = idGenerator.Generate(),
-                    Version = 1,
-                    IsLatest = true,
-                    IsPublished = false
-                };
+            var definition = await store.GetByIdAsync(id, VersionOptions.Latest, cancellationToken);
+
+            if (definition == null)
+                return null;
 
             if (!definition.IsPublished)
                 return definition;
 
-            definition.IsLatest = false;
-            await store.UpdateAsync(definition, cancellationToken);
-
             var draft = mapper.Map<WorkflowDefinitionVersion>(definition);
+            draft.Id = idGenerator.Generate();
             draft.IsPublished = false;
             draft.IsLatest = true;
             draft.Version++;
 
-            await store.AddAsync(draft, cancellationToken);
+            return draft;
+        }
+
+        public async Task<WorkflowDefinitionVersion> SaveDraftAsync(
+            WorkflowDefinitionVersion draft,
+            CancellationToken cancellationToken)
+        {
+            // Mark currently published version as non-latest.
+            var latestVersion = await store.GetByIdAsync(
+                draft.DefinitionId,
+                VersionOptions.Latest,
+                cancellationToken);
+
+            if (latestVersion != null && latestVersion.IsPublished && latestVersion.IsLatest)
+            {
+                latestVersion.IsLatest = false;
+                await store.UpdateAsync(latestVersion, cancellationToken);
+            }
+
+            // Store the updated draft.
+            await store.SaveAsync(draft, cancellationToken);
+
             return draft;
         }
     }

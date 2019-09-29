@@ -21,7 +21,8 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             this.mapper = mapper;
         }
 
-        public async Task<WorkflowDefinitionVersion> SaveAsync(WorkflowDefinitionVersion definition,
+        public async Task<WorkflowDefinitionVersion> SaveAsync(
+            WorkflowDefinitionVersion definition,
             CancellationToken cancellationToken = default)
         {
             var document = Map(definition);
@@ -41,7 +42,9 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             await dbContext.SaveChangesAsync(cancellationToken);
         }
 
-        public async Task<WorkflowDefinitionVersion> GetByIdAsync(string id, VersionOptions version,
+        public async Task<WorkflowDefinitionVersion> GetByIdAsync(
+            string id,
+            VersionOptions version,
             CancellationToken cancellationToken = default)
         {
             var query = dbContext.WorkflowDefinitionVersions
@@ -53,7 +56,8 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             return Map(document);
         }
 
-        public async Task<IEnumerable<WorkflowDefinitionVersion>> ListAsync(VersionOptions version,
+        public async Task<IEnumerable<WorkflowDefinitionVersion>> ListAsync(
+            VersionOptions version,
             CancellationToken cancellationToken = default)
         {
             var query = dbContext.WorkflowDefinitionVersions.AsQueryable().WithVersion(version);
@@ -66,9 +70,11 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             WorkflowDefinitionVersion definition,
             CancellationToken cancellationToken)
         {
-            var document = Map(definition);
+            var document = await dbContext.WorkflowDefinitionVersions.FindAsync(definition.Id);
+
+            document = mapper.Map(definition, document);
             dbContext.WorkflowDefinitionVersions.Update(document);
-            
+
             await dbContext.SaveChangesAsync(cancellationToken);
 
             return Map(document);
@@ -86,9 +92,9 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
 
             dbContext.WorkflowInstances.RemoveRange(instanceRecords);
             dbContext.WorkflowDefinitionVersions.RemoveRange(definitionRecords);
-            
+
             await dbContext.SaveChangesAsync(cancellationToken);
-            
+
             return definitionRecords.Count;
         }
 
