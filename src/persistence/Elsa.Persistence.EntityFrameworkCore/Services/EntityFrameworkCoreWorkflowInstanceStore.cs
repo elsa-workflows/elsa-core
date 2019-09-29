@@ -16,13 +16,17 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
         private readonly ElsaContext dbContext;
         private readonly IMapper mapper;
 
-        public EntityFrameworkCoreWorkflowInstanceStore(ElsaContext dbContext, IMapper mapper)
+        public EntityFrameworkCoreWorkflowInstanceStore(
+            ElsaContext dbContext,
+            IMapper mapper)
         {
             this.dbContext = dbContext;
             this.mapper = mapper;
         }
 
-        public async Task SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
+        public async Task SaveAsync(
+            WorkflowInstance instance,
+            CancellationToken cancellationToken = default)
         {
             var document = Map(instance);
 
@@ -33,7 +37,9 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             await dbContext.SaveChangesAsync(cancellationToken);
         }
 
-        public async Task<WorkflowInstance> GetByIdAsync(string id, CancellationToken cancellationToken = default)
+        public async Task<WorkflowInstance> GetByIdAsync(
+            string id,
+            CancellationToken cancellationToken = default)
         {
             var document = await dbContext.WorkflowInstances.FindAsync(new object[] { id }, cancellationToken);
 
@@ -57,6 +63,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
         {
             var documents = await dbContext.WorkflowInstances
                 .Where(x => x.DefinitionId == definitionId)
+                .OrderByDescending(x => x.CreatedAt)
                 .ToListAsync(cancellationToken);
 
             return Map(documents);
@@ -64,7 +71,9 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
 
         public async Task<IEnumerable<WorkflowInstance>> ListAllAsync(CancellationToken cancellationToken = default)
         {
-            var documents = await dbContext.WorkflowInstances.ToListAsync(cancellationToken);
+            var documents = await dbContext.WorkflowInstances
+                .OrderByDescending(x => x.CreatedAt)
+                .ToListAsync(cancellationToken);
             return Map(documents);
         }
 
@@ -81,6 +90,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
                 query = query.Where(x => x.CorrelationId == correlationId);
 
             query = query.Where(x => x.BlockingActivities.Any(y => y.ActivityType == activityType));
+            query = query.OrderByDescending(x => x.CreatedAt);
 
             var documents = await query.ToListAsync(cancellationToken);
             var instances = Map(documents);
@@ -95,6 +105,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
         {
             var documents = await dbContext.WorkflowInstances
                 .Where(x => x.DefinitionId == definitionId && x.Status == status)
+                .OrderByDescending(x => x.CreatedAt)
                 .ToListAsync(cancellationToken);
 
             return Map(documents);
@@ -106,12 +117,15 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
         {
             var documents = await dbContext.WorkflowInstances
                 .Where(x => x.Status == status)
+                .OrderByDescending(x => x.CreatedAt)
                 .ToListAsync(cancellationToken);
 
             return Map(documents);
         }
 
-        public async Task DeleteAsync(string id, CancellationToken cancellationToken = default)
+        public async Task DeleteAsync(
+            string id,
+            CancellationToken cancellationToken = default)
         {
             var record = await dbContext.WorkflowInstances.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 

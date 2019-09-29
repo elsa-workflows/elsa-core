@@ -33,8 +33,10 @@ function onWorkflowPropertiesSubmit(e) {
     const formData = new FormData(e.target);
     const name = formData.get("Name").toString();
     const description = formData.get("Description").toString();
+    const isSingleton = formData.get("IsSingleton") === "true";
+    const isDisabled = formData.get("IsDisabled") === "true";
 
-    designer.workflow = {...workflow, name, description};
+    designer.workflow = {...workflow, name, description, isSingleton, isDisabled};
     
     const editorCaption = document.querySelector("#editorCaption");
     const editorDescription = document.querySelector("#editorDescription");

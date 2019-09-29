@@ -81,7 +81,9 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
             {
                 Name = workflow.Name,
                 Json = serializer.Serialize(workflow, JsonTokenFormatter.FormatName),
-                ActivityDefinitions = options.Value.ActivityDefinitions.ToArray()
+                ActivityDefinitions = options.Value.ActivityDefinitions.ToArray(),
+                IsSingleton = false,
+                IsDisabled = false
             };
 
             return View(model);
@@ -98,6 +100,8 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
             workflow.DefinitionId = idGenerator.Generate();
             workflow.IsLatest = true;
             workflow.Version = 1;
+            workflow.IsSingleton = model.IsSingleton;
+            workflow.IsDisabled = model.IsDisabled;
 
             await workflowDefinitionStore.SaveAsync(workflow, cancellationToken);
 
@@ -118,6 +122,8 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
                 Id = workflow.Id,
                 Name = workflow.Name,
                 Description = workflow.Description,
+                IsSingleton = workflow.IsSingleton,
+                IsDisabled = workflow.IsDisabled,
                 Json = serializer.Serialize(workflow, JsonTokenFormatter.FormatName),
                 ActivityDefinitions = options.Value.ActivityDefinitions.ToArray()
             };

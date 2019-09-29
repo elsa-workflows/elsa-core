@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Extensions;
@@ -10,21 +11,24 @@ namespace Elsa.StartupTasks
 {
     public class PopulateRegistryTask : IStartupTask
     {
-        private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
-        private readonly IWorkflowRegistry _workflowRegistry;
+        private readonly IWorkflowDefinitionStore workflowDefinitionStore;
+        private readonly IWorkflowRegistry workflowRegistry;
 
-        public PopulateRegistryTask(IWorkflowDefinitionStore workflowDefinitionStore, IWorkflowRegistry workflowRegistry)
+        public PopulateRegistryTask(
+            IWorkflowDefinitionStore workflowDefinitionStore,
+            IWorkflowRegistry workflowRegistry)
         {
-            _workflowDefinitionStore = workflowDefinitionStore;
-            _workflowRegistry = workflowRegistry;
+            this.workflowDefinitionStore = workflowDefinitionStore;
+            this.workflowRegistry = workflowRegistry;
         }
 
         public async Task ExecuteAsync(CancellationToken cancellationToken = default)
         {
-            var workflowDefinitions =
-                await _workflowDefinitionStore.ListAsync(VersionOptions.Published, cancellationToken);
-            
-            _workflowRegistry.RegisterWorkflows(workflowDefinitions);
+            var query =
+                await workflowDefinitionStore.ListAsync(VersionOptions.Published, cancellationToken);
+
+            var workflowDefinitions = query.Where(x => !x.IsDisabled).ToList();
+            workflowRegistry.RegisterWorkflows(workflowDefinitions);
         }
     }
 }

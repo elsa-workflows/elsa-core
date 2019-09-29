@@ -19,6 +19,7 @@ CREATE TABLE [WorkflowDefinitionVersions] (
     [Connections] nvarchar(max) NULL,
     [Variables] nvarchar(max) NULL,
     [IsSingleton] bit NOT NULL,
+    [IsDisabled] bit NOT NULL,
     [IsPublished] bit NOT NULL,
     [IsLatest] bit NOT NULL,
     CONSTRAINT [PK_WorkflowDefinitionVersions] PRIMARY KEY ([Id])

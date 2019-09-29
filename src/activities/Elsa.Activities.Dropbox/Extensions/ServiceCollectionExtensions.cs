@@ -7,6 +7,7 @@ using Elsa.Activities.Dropbox.Options;
 using Elsa.Activities.Dropbox.Services;
 using Elsa.Extensions;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Http.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Activities.Dropbox.Extensions

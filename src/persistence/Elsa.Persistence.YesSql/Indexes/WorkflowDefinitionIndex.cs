@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Elsa.Models;
@@ -12,12 +13,14 @@ namespace Elsa.Persistence.YesSql.Indexes
         public int Version { get; set; }
         public bool IsLatest { get; set; }
         public bool IsPublished { get; set; }
+        public bool IsDisabled { get; set; }
     }
 
     public class WorkflowDefinitionStartActivitiesIndex : MapIndex
     {
         public string StartActivityId { get; set; }
         public string StartActivityType { get; set; }
+        public bool IsDisabled { get; set; }
     }
 
     public class WorkflowDefinitionIndexProvider : IndexProvider<WorkflowDefinitionVersionDocument>
@@ -31,7 +34,8 @@ namespace Elsa.Persistence.YesSql.Indexes
                         WorkflowDefinitionId = document.WorkflowDefinitionId,
                         Version = document.Version,
                         IsPublished = document.IsPublished,
-                        IsLatest = document.IsLatest
+                        IsLatest = document.IsLatest,
+                        IsDisabled = document.IsDisabled
                     }
                 );
 
@@ -42,7 +46,8 @@ namespace Elsa.Persistence.YesSql.Indexes
                             activity => new WorkflowDefinitionStartActivitiesIndex
                             {
                                 StartActivityId = activity.Id,
-                                StartActivityType = activity.Type
+                                StartActivityType = activity.Type,
+                                IsDisabled = document.IsDisabled
                             }
                         )
                 );

@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Migrations
 {
-    public partial class Create : Migration
+    public partial class InitialCreate : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -20,6 +20,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Migrations
                     Connections = table.Column<string>(nullable: true),
                     Variables = table.Column<string>(nullable: true),
                     IsSingleton = table.Column<bool>(nullable: false),
+                    IsDisabled = table.Column<bool>(nullable: false),
                     IsPublished = table.Column<bool>(nullable: false),
                     IsLatest = table.Column<bool>(nullable: false)
                 },
@@ -35,7 +36,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Migrations
                     Id = table.Column<string>(nullable: false),
                     DefinitionId = table.Column<string>(nullable: true),
                     Version = table.Column<int>(nullable: false),
-                    Status = table.Column<int>(nullable: false),
+                    Status = table.Column<string>(nullable: false),
                     CorrelationId = table.Column<string>(nullable: true),
                     CreatedAt = table.Column<DateTime>(nullable: false),
                     StartedAt = table.Column<DateTime>(nullable: true),

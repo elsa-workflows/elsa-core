@@ -9,6 +9,8 @@ namespace Elsa.Dashboard.Areas.Elsa.ViewModels
         public string SubmitAction { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
+        public bool IsSingleton { get; set; }
+        public bool IsDisabled { get; set; }
         public ActivityDefinition[] ActivityDefinitions { get; set; }
     }
 }

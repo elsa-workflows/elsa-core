@@ -24,6 +24,9 @@ namespace Elsa.Activities.Dropbox.Services
             content.Headers.Add("Dropbox-API-Arg", request.ToString());
             
             var response = await httpClient.PostAsync("/2/files/upload", content, cancellationToken);
+
+            response.EnsureSuccessStatusCode();
+            
             var json = await response.Content.ReadAsStringAsync();
 
             return JsonConvert.DeserializeObject<UploadResponse>(json, new JsonSerializerSettings().ConfigureForDropboxApi());

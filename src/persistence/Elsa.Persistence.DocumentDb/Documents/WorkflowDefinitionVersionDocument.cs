@@ -32,6 +32,9 @@ namespace Elsa.Persistence.DocumentDb.Documents
         [JsonProperty(PropertyName = "isSingleton")]
         public bool IsSingleton { get; set; }
 
+        [JsonProperty(PropertyName = "isDisabled")]
+        public bool IsDisabled { get; set; }
+
         [JsonProperty(PropertyName = "isPublished")]
         public bool IsPublished { get; set; }
 

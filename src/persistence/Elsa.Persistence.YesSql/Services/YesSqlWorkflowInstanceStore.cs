@@ -15,13 +15,17 @@ namespace Elsa.Persistence.YesSql.Services
         private readonly ISession session;
         private readonly IMapper mapper;
 
-        public YesSqlWorkflowInstanceStore(ISession session, IMapper mapper)
+        public YesSqlWorkflowInstanceStore(
+            ISession session,
+            IMapper mapper)
         {
             this.session = session;
             this.mapper = mapper;
         }
 
-        public Task SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken)
+        public Task SaveAsync(
+            WorkflowInstance instance,
+            CancellationToken cancellationToken)
         {
             var document = mapper.Map<WorkflowInstanceDocument>(instance);
 
@@ -29,43 +33,59 @@ namespace Elsa.Persistence.YesSql.Services
             return Task.CompletedTask;
         }
 
-        public async Task<WorkflowInstance> GetByIdAsync(string id, CancellationToken cancellationToken)
+        public async Task<WorkflowInstance> GetByIdAsync(
+            string id,
+            CancellationToken cancellationToken)
         {
-            var document = await session.Query<WorkflowInstanceDocument, WorkflowInstanceIndex>(x => x.WorkflowInstanceId == id).FirstOrDefaultAsync();
+            var document = await session
+                .Query<WorkflowInstanceDocument, WorkflowInstanceIndex>(x => x.WorkflowInstanceId == id)
+                .FirstOrDefaultAsync();
             return mapper.Map<WorkflowInstance>(document);
         }
 
-        public async Task<WorkflowInstance> GetByCorrelationIdAsync(string correlationId, CancellationToken cancellationToken = default)
+        public async Task<WorkflowInstance> GetByCorrelationIdAsync(
+            string correlationId,
+            CancellationToken cancellationToken = default)
         {
-            var document = await session.Query<WorkflowInstanceDocument, WorkflowInstanceIndex>(x => x.CorrelationId == correlationId).FirstOrDefaultAsync();
+            var document = await session
+                .Query<WorkflowInstanceDocument, WorkflowInstanceIndex>(x => x.CorrelationId == correlationId)
+                .FirstOrDefaultAsync();
             return mapper.Map<WorkflowInstance>(document);
         }
 
-        public async Task<IEnumerable<WorkflowInstance>> ListByDefinitionAsync(string definitionId, CancellationToken cancellationToken)
+        public async Task<IEnumerable<WorkflowInstance>> ListByDefinitionAsync(
+            string definitionId,
+            CancellationToken cancellationToken)
         {
-            var documents = await session.Query<WorkflowInstanceDocument, WorkflowInstanceIndex>(x => x.WorkflowDefinitionId == definitionId).ListAsync();
+            var documents = await session
+                .Query<WorkflowInstanceDocument, WorkflowInstanceIndex>(x => x.WorkflowDefinitionId == definitionId)
+                .OrderByDescending(x => x.CreatedAt)
+                .ListAsync();
             return mapper.Map<IEnumerable<WorkflowInstance>>(documents);
         }
 
         public async Task<IEnumerable<WorkflowInstance>> ListAllAsync(CancellationToken cancellationToken)
         {
-            var documents = await session.Query<WorkflowInstanceDocument>().ListAsync();
+            var documents = await session.Query<WorkflowInstanceDocument, WorkflowInstanceIndex>()
+                .OrderByDescending(x => x.CreatedAt)
+                .ListAsync();
             return mapper.Map<IEnumerable<WorkflowInstance>>(documents);
         }
 
         public async Task<IEnumerable<(WorkflowInstance, ActivityInstance)>> ListByBlockingActivityAsync(
-            string activityType, 
+            string activityType,
             string correlationId = default,
             CancellationToken cancellationToken = default)
         {
             var query = session.Query<WorkflowInstanceDocument, WorkflowInstanceBlockingActivitiesIndex>();
 
             query = query.Where(x => x.WorkflowStatus == WorkflowStatus.Executing);
-            
+
             if (!string.IsNullOrWhiteSpace(correlationId))
                 query = query.Where(x => x.CorrelationId == correlationId);
-            
+
             query = query.Where(x => x.ActivityType == activityType);
+            query = query.OrderByDescending(x => x.CreatedAt);
 
             var documents = await query.ListAsync();
             var instances = mapper.Map<IEnumerable<WorkflowInstance>>(documents);
@@ -73,27 +93,42 @@ namespace Elsa.Persistence.YesSql.Services
             return instances.GetBlockingActivities(activityType);
         }
 
-        public async Task<IEnumerable<WorkflowInstance>> ListByStatusAsync(string definitionId, WorkflowStatus status, CancellationToken cancellationToken)
+        public async Task<IEnumerable<WorkflowInstance>> ListByStatusAsync(
+            string definitionId,
+            WorkflowStatus status,
+            CancellationToken cancellationToken)
         {
             var documents = await session
-                .Query<WorkflowInstanceDocument, WorkflowInstanceIndex>(x => x.WorkflowDefinitionId == definitionId && x.WorkflowStatus == status)
+                .Query<WorkflowInstanceDocument, WorkflowInstanceIndex>(
+                    x => x.WorkflowDefinitionId == definitionId && x.WorkflowStatus == status)
+                .OrderByDescending(x => x.CreatedAt)
                 .ListAsync();
             return mapper.Map<IEnumerable<WorkflowInstance>>(documents);
         }
 
-        public async Task<IEnumerable<WorkflowInstance>> ListByStatusAsync(WorkflowStatus status, CancellationToken cancellationToken)
+        public async Task<IEnumerable<WorkflowInstance>> ListByStatusAsync(
+            WorkflowStatus status,
+            CancellationToken cancellationToken)
         {
-            var documents = await session.Query<WorkflowInstanceDocument, WorkflowInstanceIndex>(x => x.WorkflowStatus == status).ListAsync();
+            var documents = await session
+                .Query<WorkflowInstanceDocument, WorkflowInstanceIndex>(x => x.WorkflowStatus == status)
+                .OrderByDescending(x => x.CreatedAt)
+                .ListAsync();
             return mapper.Map<IEnumerable<WorkflowInstance>>(documents);
         }
 
-        public async Task DeleteAsync(string id, CancellationToken cancellationToken = default)
+        public async Task DeleteAsync(
+            string id,
+            CancellationToken cancellationToken = default)
         {
-            var document = await session.Query<WorkflowInstanceDocument, WorkflowInstanceIndex>(x => x.WorkflowInstanceId == id).FirstOrDefaultAsync();
+            var document = await session
+                .Query<WorkflowInstanceDocument, WorkflowInstanceIndex>(x => x.WorkflowInstanceId == id)
+                .OrderByDescending(x => x.CreatedAt)
+                .FirstOrDefaultAsync();
 
             if (document == null)
                 return;
-            
+
             session.Delete(document);
         }
     }

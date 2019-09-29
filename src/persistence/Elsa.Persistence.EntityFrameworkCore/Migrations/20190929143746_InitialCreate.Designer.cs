@@ -9,8 +9,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Elsa.Persistence.EntityFrameworkCore.Migrations
 {
     [DbContext(typeof(ElsaContext))]
-    [Migration("20190915185812_Create")]
-    partial class Create
+    [Migration("20190929143746_InitialCreate")]
+    partial class InitialCreate
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -29,6 +29,8 @@ namespace Elsa.Persistence.EntityFrameworkCore.Migrations
                     b.Property<string>("DefinitionId");
 
                     b.Property<string>("Description");
+
+                    b.Property<bool>("IsDisabled");
 
                     b.Property<bool>("IsLatest");
 
@@ -77,7 +79,8 @@ namespace Elsa.Persistence.EntityFrameworkCore.Migrations
 
                     b.Property<DateTime?>("StartedAt");
 
-                    b.Property<int>("Status");
+                    b.Property<string>("Status")
+                        .IsRequired();
 
                     b.Property<int>("Version");
 

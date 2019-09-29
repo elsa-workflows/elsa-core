@@ -14,7 +14,9 @@ namespace Elsa.WorkflowBuilders
         private readonly IList<IActivityBuilder> activityBuilders = new List<IActivityBuilder>();
         private readonly IList<IConnectionBuilder> connectionBuilders = new List<IConnectionBuilder>();
 
-        public WorkflowBuilder(IActivityResolver activityResolver, IIdGenerator idGenerator)
+        public WorkflowBuilder(
+            IActivityResolver activityResolver,
+            IIdGenerator idGenerator)
         {
             this.activityResolver = activityResolver;
             this.idGenerator = idGenerator;
@@ -25,6 +27,7 @@ namespace Elsa.WorkflowBuilders
         public string Name { get; set; }
         public string Description { get; set; }
         public bool IsSingleton { get; set; }
+        public bool IsDisabled { get; set; }
         public IReadOnlyList<IActivityBuilder> Activities => activityBuilders.ToList().AsReadOnly();
 
         public IWorkflowBuilder WithId(string id)
@@ -32,19 +35,19 @@ namespace Elsa.WorkflowBuilders
             Id = id;
             return this;
         }
-        
+
         public IWorkflowBuilder WithVersion(int version)
         {
             Version = version;
             return this;
         }
-        
+
         public IWorkflowBuilder WithName(string name)
         {
             Name = name;
             return this;
         }
-        
+
         public IWorkflowBuilder WithDescription(string description)
         {
             Description = description;
@@ -56,8 +59,22 @@ namespace Elsa.WorkflowBuilders
             IsSingleton = value;
             return this;
         }
+        
+        public IWorkflowBuilder Disable()
+        {
+            IsDisabled = true;
+            return this;
+        }
+        
+        public IWorkflowBuilder Enable()
+        {
+            IsDisabled = false;
+            return this;
+        }
 
-        public IActivityBuilder Add<T>(Action<T> setupActivity = default, string id = default) where T : class, IActivity
+        public IActivityBuilder Add<T>(
+            Action<T> setupActivity = default,
+            string id = default) where T : class, IActivity
         {
             var activity = activityResolver.ResolveActivity(setupActivity);
             var activityBlueprint = ActivityDefinition.FromActivity(activity);
@@ -65,17 +82,23 @@ namespace Elsa.WorkflowBuilders
 
             if (id != null)
                 activity.Id = id;
-            
+
             activityBuilders.Add(activityBuilder);
             return activityBuilder;
         }
 
-        public IConnectionBuilder Connect(IActivityBuilder source, IActivityBuilder target, string outcome = default)
+        public IConnectionBuilder Connect(
+            IActivityBuilder source,
+            IActivityBuilder target,
+            string outcome = default)
         {
             return Connect(() => source, () => target, outcome);
         }
 
-        public IConnectionBuilder Connect(Func<IActivityBuilder> source, Func<IActivityBuilder> target, string outcome = default)
+        public IConnectionBuilder Connect(
+            Func<IActivityBuilder> source,
+            Func<IActivityBuilder> target,
+            string outcome = default)
         {
             var connectionBuilder = new ConnectionBuilder(this, source, target, outcome);
 
@@ -84,7 +107,9 @@ namespace Elsa.WorkflowBuilders
         }
 
 
-        public IActivityBuilder StartWith<T>(Action<T> setupActivity, string id = null) where T : class, IActivity
+        public IActivityBuilder StartWith<T>(
+            Action<T> setupActivity,
+            string id = null) where T : class, IActivity
         {
             return Add(setupActivity, id);
         }
@@ -98,13 +123,23 @@ namespace Elsa.WorkflowBuilders
                 if (activityBuilder.Id == null)
                     activityBuilder.Id = $"activity-{id++}";
             }
-            
+
             var activities = activityBuilders.Select(x => x.BuildActivity()).ToList();
             var connections = connectionBuilders.Select(x => x.BuildConnection()).ToList();
             var versionId = idGenerator.Generate();
             var definitionId = !string.IsNullOrWhiteSpace(Id) ? Id : idGenerator.Generate();
 
-            return new WorkflowDefinitionVersion(versionId, definitionId, Version, Name, Description, activities, connections, IsSingleton, Variables.Empty);
+            return new WorkflowDefinitionVersion(
+                versionId,
+                definitionId,
+                Version,
+                Name,
+                Description,
+                activities,
+                connections,
+                IsSingleton,
+                IsDisabled,
+                Variables.Empty);
         }
     }
 }

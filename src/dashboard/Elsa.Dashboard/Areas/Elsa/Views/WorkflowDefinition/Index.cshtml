@@ -46,6 +46,7 @@
                                 <th scope="col">Instances</th>
                                 <th scope="col">Latest Version</th>
                                 <th scope="col">Published Version</th>
+                                <th scope="col">Enabled</th>
                                 <th scope="col"></th>
                             </tr>
                             </thead>
@@ -133,6 +134,12 @@
                                     </td>
                                     <td>
                                         @publishedVersion
+                                    </td>
+                                    <td>
+                                        <label class="custom-toggle disabled">
+                                            <input type="checkbox" @if(!latest.WorkflowDefinition.IsDisabled){<text>checked</text>} disabled="disabled">
+                                            <span class="custom-toggle-slider rounded-circle"></span>
+                                        </label>
                                     </td>
                                     <td class="text-right">
                                         <div class="dropdown">

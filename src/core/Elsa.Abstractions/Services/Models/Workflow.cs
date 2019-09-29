@@ -14,6 +14,7 @@ namespace Elsa.Services.Models
             string id,
             string definitionId,
             int version,
+            Instant createdAt,
             IEnumerable<IActivity> activities,
             IEnumerable<Connection> connections,
             Variables input = default,
@@ -22,6 +23,7 @@ namespace Elsa.Services.Models
             Id = id;
             DefinitionId = definitionId;
             Version = version;
+            CreatedAt = createdAt;
             CorrelationId = correlationId;
             Activities = activities.ToList();
             Connections = connections.ToList();
