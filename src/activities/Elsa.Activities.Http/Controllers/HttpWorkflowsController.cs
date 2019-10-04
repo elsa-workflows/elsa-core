@@ -28,6 +28,7 @@ namespace Elsa.Activities.Http.Controllers
         }
         
         [Route("trigger/{token}")]
+        [HttpGet, HttpPost]
         public async Task<IActionResult> Trigger(string token, CancellationToken cancellationToken)
         {
             if (!tokenService.TryDecryptToken(token, out Signal signal))
