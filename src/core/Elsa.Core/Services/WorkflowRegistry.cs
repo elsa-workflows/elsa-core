@@ -5,20 +5,21 @@ using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Services.Extensions;
 using Elsa.Services.Models;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Services
 {
     public class WorkflowRegistry : IWorkflowRegistry
     {
-        private readonly Func<IWorkflowBuilder> workflowBuilderFactory;
+        private readonly IServiceProvider serviceProvider;
         private readonly IDictionary<(string, int), WorkflowDefinitionVersion> workflowDefinitions;
 
-        public WorkflowRegistry(Func<IWorkflowBuilder> workflowBuilderFactory)
+        public WorkflowRegistry(IServiceProvider serviceProvider)
         {
-            this.workflowBuilderFactory = workflowBuilderFactory;
+            this.serviceProvider = serviceProvider;
             workflowDefinitions = new Dictionary<(string, int), WorkflowDefinitionVersion>();
         }
-        
+
         public void RegisterWorkflow(WorkflowDefinitionVersion definition)
         {
             workflowDefinitions[(definition.DefinitionId, definition.Version)] = definition;
@@ -26,9 +27,13 @@ namespace Elsa.Services
 
         public WorkflowDefinitionVersion RegisterWorkflow<T>() where T : IWorkflow, new()
         {
-            var definition = workflowBuilderFactory().Build<T>();
-            RegisterWorkflow(definition);
-            return definition;
+            using (var scope = serviceProvider.CreateScope())
+            {
+                var workflowBuilder = scope.ServiceProvider.GetRequiredService<IWorkflowBuilder>();
+                var definition = workflowBuilder.Build<T>();
+                RegisterWorkflow(definition);
+                return definition;
+            }
         }
 
         public IEnumerable<(WorkflowDefinitionVersion, ActivityDefinition)> ListByStartActivity(string activityType)
