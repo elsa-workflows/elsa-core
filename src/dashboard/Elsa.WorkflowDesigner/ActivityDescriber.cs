@@ -30,6 +30,7 @@ namespace Elsa.WorkflowDesigner
             
             var description = activityDefinitionAttribute?.Description;
             var category = activityDefinitionAttribute?.Category ?? "Miscellaneous";
+            var icon = activityDefinitionAttribute?.Icon;
             var designerDescription = activityDesignerAttribute?.Description;
             var designerOutcomes = activityDesignerAttribute?.Outcomes ?? new[] { OutcomeNames.Done };
             var properties = DescribeProperties(activityType);
@@ -40,6 +41,7 @@ namespace Elsa.WorkflowDesigner
                 DisplayName = displayName,
                 Description = description,
                 Category = category,
+                Icon = icon,
                 Properties = properties.ToArray(),
                 Designer = new ActivityDesignerSettings
                 {

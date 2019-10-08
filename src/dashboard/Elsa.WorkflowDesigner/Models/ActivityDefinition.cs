@@ -11,6 +11,7 @@ namespace Elsa.WorkflowDesigner.Models
         public string DisplayName { get; set; }
         public string Description { get; set; }
         public string Category { get; set; }
+        public string Icon { get; set; }
         public ActivityPropertyDescriptor[] Properties { get; set; }
         public ActivityDesignerSettings Designer { get; set; }
     }

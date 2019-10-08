@@ -14,7 +14,8 @@ namespace Elsa.Activities.Workflows
     /// </summary>
     [ActivityDefinition(
         Category = "Workflows",
-        Description = "Set the CorrelationId of the workflow to a given value."
+        Description = "Set the CorrelationId of the workflow to a given value.",
+        Icon = "fas fa-link"
     )]
     public class Correlate : Activity
     {

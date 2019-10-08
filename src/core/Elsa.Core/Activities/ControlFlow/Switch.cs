@@ -12,7 +12,8 @@ namespace Elsa.Activities.ControlFlow
 {
     [ActivityDefinition(
         Category = "Control Flow",
-        Description = "Switch execution based on a given expression."
+        Description = "Switch execution based on a given expression.",
+        Icon = "far fa-list-alt"
     )]
     [ActivityDefinitionDesigner(
         Description =

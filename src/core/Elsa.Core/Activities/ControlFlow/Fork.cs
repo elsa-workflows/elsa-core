@@ -6,7 +6,10 @@ using Elsa.Services.Models;
 
 namespace Elsa.Activities.ControlFlow
 {
-    [ActivityDefinition(Category = "Control Flow", Description = "Fork workflow execution into multiple branches.")]
+    [ActivityDefinition(
+        Category = "Control Flow",
+        Description = "Fork workflow execution into multiple branches.",
+        Icon = "fas fa-code-branch fa-rotate-180")]
     [ActivityDefinitionDesigner(Outcomes = "x => x.state.branches")]
     public class Fork : Activity
     {

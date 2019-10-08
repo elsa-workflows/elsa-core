@@ -7,7 +7,8 @@ namespace Elsa.Activities.Workflows
 {
     [ActivityDefinition(
         Category = "Workflows",
-        Description = "The start of the workflow."
+        Description = "The start of the workflow.",
+        Icon = "far fa-flag"
     )]
     public class Start : Activity
     {

@@ -12,7 +12,8 @@ namespace Elsa.Activities.Workflows
 {
     [ActivityDefinition(
         Category = "Workflows",
-        Description = "Removes any blocking activities and sets the status of the workflow to Finished."
+        Description = "Removes any blocking activities and sets the status of the workflow to Finished.",
+        Icon = "fas fa-flag-checkered"
     )]
     public class Finish : Activity
     {

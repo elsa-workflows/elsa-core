@@ -15,7 +15,8 @@ namespace Elsa.Activities.Workflows
     /// </summary>
     [ActivityDefinition(
         Category = "Workflows",
-        Description = "Trigger the specified signal."
+        Description = "Trigger the specified signal.",
+        Icon = "fas fa-broadcast-tower"
     )]
     public class Trigger : Activity
     {

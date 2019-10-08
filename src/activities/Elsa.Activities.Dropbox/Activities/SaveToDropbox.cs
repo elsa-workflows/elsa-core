@@ -11,7 +11,10 @@ using Elsa.Services.Models;
 
 namespace Elsa.Activities.Dropbox.Activities
 {
-    [ActivityDefinition(Category = "Dropbox", Description = "Saves a given file or byte array to a folder in Dropbox")]
+    [ActivityDefinition(
+        Category = "Dropbox",
+        Description = "Saves a given file or byte array to a folder in Dropbox",
+        Icon = "fab fa-dropbox")]
     public class SaveToDropbox : Activity
     {
         private readonly IFilesApi filesApi;

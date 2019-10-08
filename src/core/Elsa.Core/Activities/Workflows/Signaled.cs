@@ -14,7 +14,8 @@ namespace Elsa.Activities.Workflows
     /// </summary>
     [ActivityDefinition(
         Category = "Workflows",
-        Description = "Halt workflow execution until the specified signal is received."
+        Description = "Halt workflow execution until the specified signal is received.",
+        Icon = "fas fa-traffic-light"
     )]
     public class Signaled : Activity
     {

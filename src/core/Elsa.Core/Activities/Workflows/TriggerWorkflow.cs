@@ -13,7 +13,8 @@ namespace Elsa.Activities.Workflows
 {
     [ActivityDefinition(
         Category = "Workflows",
-        Description = "Trigger all workflows that start with or are blocked on the specified activity type."
+        Description = "Trigger all workflows that start with or are blocked on the specified activity type.",
+        Icon = "fas fa-sitemap"
     )]
     public class TriggerWorkflow : Activity
     {

@@ -12,7 +12,8 @@ namespace Elsa.Activities.ControlFlow
 {
     [ActivityDefinition(
         Category = "Control Flow",
-        Description = "Merge workflow execution back into a single branch."
+        Description = "Merge workflow execution back into a single branch.",
+        Icon = "fas fa-code-branch"
     )]
     [ActivityDefinitionDesigner(
         Description =
