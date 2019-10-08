@@ -1,6 +1,7 @@
 ﻿using Elsa.Activities.Http.Extensions;
 using Elsa.Extensions;
 using Elsa.Persistence.Memory;
+using Elsa.Runtime;
 using Elsa.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -22,6 +23,7 @@ namespace Sample06
         {
             services
                 .AddWorkflows()
+                .AddTaskExecutingServer()
                 .AddHttpActivities();
         }
 

@@ -4,6 +4,7 @@ using Elsa.Activities.MassTransit.Extensions;
 using Elsa.Activities.Timers.Extensions;
 using Elsa.Extensions;
 using Elsa.Persistence.Memory;
+using Elsa.Runtime;
 using Elsa.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -29,6 +30,7 @@ namespace Sample08
         {
             services
                 .AddWorkflows()
+                .AddTaskExecutingServer()
                 .AddHttpActivities()
                 .AddTimerActivities(options => options.Configure(x => x.SweepInterval = Period.FromSeconds(10)))
                 .AddEmailActivities(options => options.Bind(Configuration.GetSection("Smtp")))

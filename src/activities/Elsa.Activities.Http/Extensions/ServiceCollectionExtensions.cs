@@ -33,7 +33,6 @@ namespace Elsa.Activities.Http.Extensions
                 .AddActivity<HttpRequestAction>();
 
             services
-                .AddTaskExecutingServer()
                 .AddSingleton<ITokenService, TokenService>()
                 .AddSingleton<IContentFormatter, DefaultContentFormatter>()
                 .AddSingleton<IContentFormatter, JsonContentFormatter>()
