@@ -71,7 +71,7 @@ namespace Elsa.Services
 
             definition.IsPublished = true;
             definition.IsLatest = true;
-            await store.UpdateAsync(definition, cancellationToken);
+            await store.SaveAsync(definition, cancellationToken);
 
             return definition;
         }
