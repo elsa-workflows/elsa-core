@@ -2,10 +2,19 @@ namespace Elsa.WorkflowDesigner.Models
 {
     public class ActivityPropertyDescriptor
     {
-        public string Name { get; set; }
-        public string Type { get; set; }
-        public string Label { get; set; }
-        public string Hint { get; set; }
-        public object Options { get; set; }
+        public ActivityPropertyDescriptor(string name, string type, string label, string? hint = null, object? options = null)
+        {
+            Name = name;
+            Type = type;
+            Label = label;
+            Hint = hint;
+            Options = options;
+        }
+        
+        public string Name { get; }
+        public string Type { get; }
+        public string Label { get; }
+        public string? Hint { get; }
+        public object? Options { get; }
     }
 }

@@ -98,7 +98,7 @@ namespace Elsa.Activities.ControlFlow
             // For each inbound connection, record the transition.
             foreach (var inboundConnection in inboundConnections)
             {
-                var joinActivity = (Join) inboundConnection.Target.Activity;
+                var joinActivity = (Join)inboundConnection.Target.Activity;
                 var inboundTransitions = joinActivity.InboundTransitions ?? new List<string>();
                 joinActivity.InboundTransitions = inboundTransitions
                     .Union(new[] { GetTransitionKey(inboundConnection) })
@@ -115,7 +115,9 @@ namespace Elsa.Activities.ControlFlow
             return $"@{sourceActivityId}_{sourceOutcomeName}";
         }
 
-        Task IWorkflowEventHandler.ActivityExecutedAsync(WorkflowExecutionContext workflowContext, IActivity activity,
+        Task IWorkflowEventHandler.ActivityExecutedAsync(
+            WorkflowExecutionContext workflowContext,
+            IActivity activity,
             CancellationToken cancellationToken)
         {
             RecordInboundTransitions(workflowContext, activity);
@@ -123,10 +125,18 @@ namespace Elsa.Activities.ControlFlow
             return Task.CompletedTask;
         }
 
-        Task IWorkflowEventHandler.InvokingHaltedActivitiesAsync(WorkflowExecutionContext workflowExecutionContext,
+        public Task ActivityFaultedAsync(
+            WorkflowExecutionContext workflowExecutionContext,
+            IActivity activity,
+            string message,
             CancellationToken cancellationToken) => Task.CompletedTask;
 
-        Task IWorkflowEventHandler.WorkflowInvokedAsync(WorkflowExecutionContext workflowExecutionContext,
+        Task IWorkflowEventHandler.InvokingHaltedActivitiesAsync(
+            WorkflowExecutionContext workflowExecutionContext,
+            CancellationToken cancellationToken) => Task.CompletedTask;
+
+        Task IWorkflowEventHandler.WorkflowInvokedAsync(
+            WorkflowExecutionContext workflowExecutionContext,
             CancellationToken cancellationToken) => Task.CompletedTask;
     }
 }

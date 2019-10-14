@@ -16,6 +16,11 @@ namespace Elsa.Services
         Task ActivityExecutedAsync(WorkflowExecutionContext workflowExecutionContext, IActivity activity, CancellationToken cancellationToken);
         
         /// <summary>
+        /// Invoked when an activity has faulted.
+        /// </summary>
+        Task ActivityFaultedAsync(WorkflowExecutionContext workflowExecutionContext, IActivity activity, string message, CancellationToken cancellationToken);
+        
+        /// <summary>
         /// Invoked when halted activities are about to be executed.
         /// </summary>
         Task InvokingHaltedActivitiesAsync(WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken);

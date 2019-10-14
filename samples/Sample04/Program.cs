@@ -35,6 +35,11 @@ namespace Sample04
             var invoker = services.GetService<IWorkflowInvoker>();
             await invoker.StartAsync(workflow);
 
+            Console.WriteLine("Workflow has ended. Here are the activities that have executed:");
+            foreach (var logEntry in workflow.ExecutionLog)
+            {
+                Console.WriteLine("{0}: {1}", logEntry.Timestamp, logEntry.ActivityId);
+            }
             Console.ReadLine();
         }
     }

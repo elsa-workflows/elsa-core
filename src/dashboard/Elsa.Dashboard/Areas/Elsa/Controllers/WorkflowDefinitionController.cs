@@ -27,6 +27,7 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
         private readonly IWorkflowInstanceStore workflowInstanceStore;
         private readonly IWorkflowPublisher publisher;
         private readonly IWorkflowSerializer serializer;
+        private readonly IWorkflowFactory workflowFactory;
         private readonly IOptions<ElsaDashboardOptions> options;
         private readonly IIdGenerator idGenerator;
         private readonly INotifier notifier;
@@ -36,6 +37,7 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
             IWorkflowInstanceStore workflowInstanceStore,
             IWorkflowPublisher publisher,
             IWorkflowSerializer serializer,
+            IWorkflowFactory workflowFactory,
             IOptions<ElsaDashboardOptions> options,
             IIdGenerator idGenerator,
             INotifier notifier)
@@ -44,6 +46,7 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
             this.workflowDefinitionStore = workflowDefinitionStore;
             this.workflowInstanceStore = workflowInstanceStore;
             this.serializer = serializer;
+            this.workflowFactory = workflowFactory;
             this.options = options;
             this.idGenerator = idGenerator;
             this.notifier = notifier;
@@ -72,16 +75,17 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
         [HttpGet("create")]
         public ViewResult Create()
         {
-            var workflow = publisher.New();
+            var workflowDefinition = publisher.New();
+            var workflow = workflowFactory.CreateWorkflow(workflowDefinition);
 
             var model = new WorkflowDefinitionEditModel
             {
-                Name = workflow.Name,
-                Json = serializer.Serialize(workflow, JsonTokenFormatter.FormatName),
+                Name = workflowDefinition.Name,
+                Workflow = workflow,
                 ActivityDefinitions = options.Value.ActivityDefinitions.ToArray(),
-                IsSingleton = workflow.IsSingleton,
-                IsDisabled = workflow.IsDisabled,
-                Description = workflow.Description
+                IsSingleton = workflowDefinition.IsSingleton,
+                IsDisabled = workflowDefinition.IsDisabled,
+                Description = workflowDefinition.Description
             };
 
             return View(model);
@@ -103,19 +107,18 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
         [HttpGet("edit/{id}")]
         public async Task<IActionResult> Edit(string id, CancellationToken cancellationToken)
         {
-            var workflow = await publisher.GetDraftAsync(id, cancellationToken);
+            var workflowDefinition = await publisher.GetDraftAsync(id, cancellationToken);
 
-            if (workflow == null)
+            if (workflowDefinition == null)
                 return NotFound();
 
             var model = new WorkflowDefinitionEditModel
             {
-                Id = workflow.DefinitionId,
-                Name = workflow.Name,
-                Description = workflow.Description,
-                IsSingleton = workflow.IsSingleton,
-                IsDisabled = workflow.IsDisabled,
-                Json = serializer.Serialize(workflow, JsonTokenFormatter.FormatName),
+                Id = workflowDefinition.DefinitionId,
+                Name = workflowDefinition.Name,
+                Description = workflowDefinition.Description,
+                IsSingleton = workflowDefinition.IsSingleton,
+                IsDisabled = workflowDefinition.IsDisabled,
                 ActivityDefinitions = options.Value.ActivityDefinitions.ToArray()
             };
 

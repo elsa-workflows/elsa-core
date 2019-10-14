@@ -1,5 +1,5 @@
 @model WorkflowInstanceDetailsModel
-<div class="container-fluid mt--7" data-workflow="@Model.Json">
+<div class="container-fluid mt-7">
     <div class="row">
         <div class="col">
             <div class="card bg-secondary shadow">
@@ -18,7 +18,7 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <vc:workflow-designer id="designerHost" activity-definitions="@Model.ActivityDefinitions" />
+                    <vc:workflow-designer id="designerHost" activity-definitions="@Model.ActivityDefinitions" workflow="@Model.Workflow"/>
                     <div class="text-center">
                         <a href="@Model.ReturnUrl" class="btn btn-primary mt-4">Back</a>
                     </div>

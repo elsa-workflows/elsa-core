@@ -63,13 +63,13 @@ namespace Elsa.WorkflowDesigner
                     yield break;
 
                 yield return new ActivityPropertyDescriptor
-                {
-                    Name = (activityProperty.Name ?? propertyInfo.Name).Camelize(),
-                    Label = activityProperty.Label ?? propertyInfo.Name.Humanize(LetterCasing.Title),
-                    Type = (activityProperty.Type ?? DeterminePropertyType(propertyInfo)).Camelize(),
-                    Hint = activityProperty.Hint,
-                    Options = GetPropertyTypeOptions(propertyInfo)
-                };
+                (
+                    (activityProperty.Name ?? propertyInfo.Name).Camelize(),
+                    (activityProperty.Type ?? DeterminePropertyType(propertyInfo)).Camelize(),
+                    activityProperty.Label ?? propertyInfo.Name.Humanize(LetterCasing.Title),
+                    activityProperty.Hint,
+                    GetPropertyTypeOptions(propertyInfo)
+                );
             }
         }
         
