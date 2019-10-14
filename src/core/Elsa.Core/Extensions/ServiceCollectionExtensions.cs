@@ -7,6 +7,7 @@ using Elsa.Activities.Workflows;
 using Elsa.AutoMapper.Extensions;
 using Elsa.Expressions;
 using Elsa.Mapping;
+using Elsa.Persistence;
 using Elsa.Persistence.Memory;
 using Elsa.Runtime;
 using Elsa.Scripting;
@@ -16,6 +17,7 @@ using Elsa.Services;
 using Elsa.Services.Models;
 using Elsa.StartupTasks;
 using Elsa.WorkflowBuilders;
+using Elsa.WorkflowEventHandlers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using NodaTime;
@@ -61,6 +63,7 @@ namespace Elsa.Extensions
                 .AddScoped<IScopedWorkflowInvoker, ScopedWorkflowInvoker>()
                 .AddScoped<IActivityResolver, ActivityResolver>()
                 .AddScoped<IWorkflowBuilder, WorkflowBuilder>()
+                .AddScoped<IWorkflowEventHandler, ActivityLoggingWorkflowEventHandler>()
                 .AddStartupTask<PopulateRegistryTask>()
                 .AddSingleton<Func<IWorkflowBuilder>>(sp => sp.GetRequiredService<IWorkflowBuilder>)
                 .AddAutoMapperProfile<WorkflowDefinitionProfile>(ServiceLifetime.Singleton)

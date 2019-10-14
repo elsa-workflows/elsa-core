@@ -11,6 +11,7 @@ using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Serialization;
 using Elsa.Serialization.Formatters;
+using Elsa.Services;
 using Jint.Native.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -25,6 +26,7 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
         private readonly IWorkflowDefinitionStore workflowDefinitionStore;
         private readonly IOptions<ElsaDashboardOptions> options;
         private readonly IWorkflowSerializer serializer;
+        private readonly IWorkflowFactory workflowFactory;
         private readonly INotifier notifier;
 
         public WorkflowInstanceController(
@@ -32,12 +34,14 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
             IWorkflowDefinitionStore workflowDefinitionStore,
             IOptions<ElsaDashboardOptions> options,
             IWorkflowSerializer serializer,
+            IWorkflowFactory workflowFactory,
             INotifier notifier)
         {
             this.workflowInstanceStore = workflowInstanceStore;
             this.workflowDefinitionStore = workflowDefinitionStore;
             this.options = options;
             this.serializer = serializer;
+            this.workflowFactory = workflowFactory;
             this.notifier = notifier;
         }
 
@@ -90,14 +94,13 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
                 cancellationToken
             );
 
-            var json = serializer.Serialize(definition, JsonTokenFormatter.FormatName);
+            var workflow = workflowFactory.CreateWorkflow(definition, Variables.Empty, instance);
 
             var model = new WorkflowInstanceDetailsModel
             {
                 ReturnUrl = returnUrl,
-                Json = json,
                 WorkflowDefinition = definition,
-                WorkflowInstance = instance,
+                Workflow = workflow,
                 ActivityDefinitions = options.Value.ActivityDefinitions.ToArray()
             };
 

@@ -2,7 +2,15 @@ namespace Elsa.WorkflowDesigner.ViewModels
 {
     public class WorkflowDesignerViewComponentModel
     {
-        public string Id { get; set; }
-        public string ActivityDefinitionsJson { get; set; }
+        public WorkflowDesignerViewComponentModel(string id, string? activityDefinitionsJson, string? workflowJson)
+        {
+            Id = id;
+            ActivityDefinitionsJson = activityDefinitionsJson;
+            WorkflowJson = workflowJson;
+        }
+
+        public string Id { get; }
+        public string? ActivityDefinitionsJson { get; set; }
+        public string? WorkflowJson { get; set; }
     }
 }
