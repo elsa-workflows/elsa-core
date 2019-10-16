@@ -19,13 +19,12 @@ namespace Elsa.WorkflowDesigner.ViewComponents
 
         public IViewComponentResult Invoke(
             string id,
-            ActivityDefinition[]? activityDefinitions = null,
-            Workflow? workflow = null)
+            ActivityDefinition[]? activityDefinitions = null)
         {
             var model = new WorkflowDesignerViewComponentModel(
                 id,
                 Serialize(activityDefinitions ?? new ActivityDefinition[0]),
-                Serialize(workflow)
+                null
             );
 
             return View(model);
