@@ -12,6 +12,7 @@ using Elsa.Persistence;
 using Elsa.Serialization;
 using Elsa.Serialization.Formatters;
 using Elsa.Services;
+using Elsa.WorkflowDesigner.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -113,7 +114,12 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
                 Description = workflowDefinition.Description,
                 IsSingleton = workflowDefinition.IsSingleton,
                 IsDisabled = workflowDefinition.IsDisabled,
-                ActivityDefinitions = options.Value.ActivityDefinitions.ToArray()
+                ActivityDefinitions = options.Value.ActivityDefinitions.ToArray(),
+                DesignerWorkflow = new DesignerWorkflow
+                {
+                    Activities = workflowDefinition.Activities.Select(x => new DesignerActivity(x)).ToList(),
+                    Connections = workflowDefinition.Connections.Select(x => new DesignerConnection(x)).ToList()
+                }
             };
 
             return View(model);

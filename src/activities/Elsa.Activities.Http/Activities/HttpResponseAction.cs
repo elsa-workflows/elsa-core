@@ -6,12 +6,12 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
+using Elsa.Design;
 using Elsa.Expressions;
 using Elsa.Extensions;
 using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Elsa.WorkflowDesigner.Models;
 using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Activities.Http.Activities

@@ -55,15 +55,5 @@ function onWorkflowChanged(e) {
     input.value = json;
 }
 
-function onWorkflowDesignerReady() {
-    const input = document.querySelector('#workflowData');
-    const json = input.value;
-
-    if (!json)
-        return;
-
-    designer.workflow = workflow = JSON.parse(json);
-}
-
 // Temporary workaround until I figure out how to listen for the workflow designer component's ready event.
 setTimeout(onWorkflowDesignerReady, 100);

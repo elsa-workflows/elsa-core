@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Elsa.Attributes;
+using Elsa.Design;
 using Elsa.Expressions;
 using Elsa.Services.Models;
 using Elsa.WorkflowDesigner.Models;
@@ -13,12 +14,12 @@ namespace Elsa.WorkflowDesigner
 {
     public static class ActivityDescriber
     {
-        public static ActivityDefinition Describe<T>() where T : IActivity
+        public static DesignerActivityDefinition Describe<T>() where T : IActivity
         {
             return Describe(typeof(T));
         }
 
-        public static ActivityDefinition Describe(Type activityType)
+        public static DesignerActivityDefinition Describe(Type activityType)
         {
             var activityDefinitionAttribute = activityType.GetCustomAttribute<ActivityDefinitionAttribute>();
             var activityDesignerAttribute = activityType.GetCustomAttribute<ActivityDefinitionDesignerAttribute>();
@@ -35,7 +36,7 @@ namespace Elsa.WorkflowDesigner
             var designerOutcomes = activityDesignerAttribute?.Outcomes ?? new[] { OutcomeNames.Done };
             var properties = DescribeProperties(activityType);
 
-            return new ActivityDefinition
+            return new DesignerActivityDefinition
             {
                 Type = typeName.Pascalize(),
                 DisplayName = displayName,

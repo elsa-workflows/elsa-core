@@ -9,9 +9,8 @@ using Elsa.Dashboard.Services;
 using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Persistence;
-using Elsa.Serialization;
 using Elsa.Serialization.Formatters;
-using Elsa.Services;
+using Elsa.WorkflowDesigner.Models;
 using Jint.Native.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -25,23 +24,17 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
         private readonly IWorkflowInstanceStore workflowInstanceStore;
         private readonly IWorkflowDefinitionStore workflowDefinitionStore;
         private readonly IOptions<ElsaDashboardOptions> options;
-        private readonly IWorkflowSerializer serializer;
-        private readonly IWorkflowFactory workflowFactory;
         private readonly INotifier notifier;
 
         public WorkflowInstanceController(
             IWorkflowInstanceStore workflowInstanceStore,
             IWorkflowDefinitionStore workflowDefinitionStore,
             IOptions<ElsaDashboardOptions> options,
-            IWorkflowSerializer serializer,
-            IWorkflowFactory workflowFactory,
             INotifier notifier)
         {
             this.workflowInstanceStore = workflowInstanceStore;
             this.workflowDefinitionStore = workflowDefinitionStore;
             this.options = options;
-            this.serializer = serializer;
-            this.workflowFactory = workflowFactory;
             this.notifier = notifier;
         }
 
@@ -93,8 +86,12 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
                 VersionOptions.SpecificVersion(instance.Version),
                 cancellationToken
             );
-
-            var workflow = workflowFactory.CreateWorkflow(definition, Variables.Empty, instance);
+            
+            var workflow = new DesignerWorkflow
+            {
+                Activities = definition.Activities.Select(x => new DesignerActivity(x)).ToList(),
+                Connections = definition.Connections.Select(x => new DesignerConnection(x)).ToList()
+            };
 
             var model = new WorkflowInstanceDetailsModel
             {

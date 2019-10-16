@@ -1,8 +1,8 @@
 namespace Elsa.WorkflowDesigner.Models
 {
-    public class ActivityDefinition
+    public class DesignerActivityDefinition
     {
-        public ActivityDefinition()
+        public DesignerActivityDefinition()
         {
             Type = "Activity";
             Properties = new ActivityPropertyDescriptor[0];

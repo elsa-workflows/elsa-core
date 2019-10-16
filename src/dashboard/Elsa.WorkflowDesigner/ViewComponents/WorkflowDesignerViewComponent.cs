@@ -1,30 +1,23 @@
-using Elsa.Serialization;
-using Elsa.Services.Models;
+using Elsa.WorkflowDesigner.Models;
 using Elsa.WorkflowDesigner.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
-using ActivityDefinition = Elsa.WorkflowDesigner.Models.ActivityDefinition;
+using Workflow = Elsa.Services.Models.Workflow;
 
 namespace Elsa.WorkflowDesigner.ViewComponents
 {
     public class WorkflowDesignerViewComponent : ViewComponent
     {
-        private readonly IWorkflowSerializer serializer;
-
-        public WorkflowDesignerViewComponent(IWorkflowSerializer serializer)
-        {
-            this.serializer = serializer;
-        }
-
         public IViewComponentResult Invoke(
             string id,
-            ActivityDefinition[]? activityDefinitions = null)
+            DesignerActivityDefinition[]? activityDefinitions = null,
+            DesignerWorkflow? workflow = null)
         {
             var model = new WorkflowDesignerViewComponentModel(
                 id,
-                Serialize(activityDefinitions ?? new ActivityDefinition[0]),
-                null
+                Serialize(activityDefinitions ?? new DesignerActivityDefinition[0]),
+                Serialize(workflow ?? new DesignerWorkflow())
             );
 
             return View(model);
