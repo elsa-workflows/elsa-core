@@ -70,10 +70,12 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
         public ViewResult Create()
         {
             var workflowDefinition = publisher.New();
+            var workflow = workflowFactory.CreateWorkflow(workflowDefinition);
 
             var model = new WorkflowDefinitionEditModel
             {
                 Name = workflowDefinition.Name,
+                Json = serializer.Serialize(workflow, JsonTokenFormatter.FormatName),
                 ActivityDefinitions = options.Value.ActivityDefinitions.ToArray(),
                 IsSingleton = workflowDefinition.IsSingleton,
                 IsDisabled = workflowDefinition.IsDisabled,

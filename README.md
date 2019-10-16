@@ -246,8 +246,9 @@ In order to run Elsa on your local machine, follow these steps:
 
 1. Clone the repository.
 2. Run NPM install on all folders containing packages.json (or run `node npm-install.js` - a script in the root that recursively installs the Node packages)
-3. Open a shell and navigate to `src/samples/SampleDashboard.Web` and run `dotnet run`.
-4. Navigate to https://localhost:44397/
+3. Execute gulp build from the directory src\dashboard\Elsa.Dashboard\Theme\argon-dashboard
+4. Open a shell and navigate to `src/samples/SampleDashboard.Web` and run `dotnet run`.
+5. Navigate to https://localhost:44397/elsa/home
 
 ## Running Elsa Workflows Host
 
