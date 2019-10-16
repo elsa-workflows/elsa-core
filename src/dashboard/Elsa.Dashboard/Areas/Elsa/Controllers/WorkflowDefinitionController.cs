@@ -27,9 +27,7 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
         private readonly IWorkflowInstanceStore workflowInstanceStore;
         private readonly IWorkflowPublisher publisher;
         private readonly IWorkflowSerializer serializer;
-        private readonly IWorkflowFactory workflowFactory;
         private readonly IOptions<ElsaDashboardOptions> options;
-        private readonly IIdGenerator idGenerator;
         private readonly INotifier notifier;
 
         public WorkflowDefinitionController(
@@ -37,18 +35,14 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
             IWorkflowInstanceStore workflowInstanceStore,
             IWorkflowPublisher publisher,
             IWorkflowSerializer serializer,
-            IWorkflowFactory workflowFactory,
             IOptions<ElsaDashboardOptions> options,
-            IIdGenerator idGenerator,
             INotifier notifier)
         {
             this.publisher = publisher;
             this.workflowDefinitionStore = workflowDefinitionStore;
             this.workflowInstanceStore = workflowInstanceStore;
             this.serializer = serializer;
-            this.workflowFactory = workflowFactory;
             this.options = options;
-            this.idGenerator = idGenerator;
             this.notifier = notifier;
         }
 
@@ -76,12 +70,10 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
         public ViewResult Create()
         {
             var workflowDefinition = publisher.New();
-            var workflow = workflowFactory.CreateWorkflow(workflowDefinition);
 
             var model = new WorkflowDefinitionEditModel
             {
                 Name = workflowDefinition.Name,
-                Workflow = workflow,
                 ActivityDefinitions = options.Value.ActivityDefinitions.ToArray(),
                 IsSingleton = workflowDefinition.IsSingleton,
                 IsDisabled = workflowDefinition.IsDisabled,
