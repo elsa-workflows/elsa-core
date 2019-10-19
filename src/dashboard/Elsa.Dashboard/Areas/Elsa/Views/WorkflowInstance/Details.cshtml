@@ -18,7 +18,7 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <vc:workflow-designer id="designerHost" activity-definitions="@Model.ActivityDefinitions" workflow="@Model.Workflow"/>
+                    <vc:workflow-designer id="designerHost" activity-definitions="@Model.ActivityDefinitions" workflow="@Model.WorkflowModel" is-readonly="@true"/>
                     <div class="text-center">
                         <a href="@Model.ReturnUrl" class="btn btn-primary mt-4">Back</a>
                     </div>

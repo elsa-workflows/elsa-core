@@ -17,7 +17,7 @@ namespace Elsa.Services
         Task<WorkflowDefinitionVersion> GetDraftAsync(string id, CancellationToken cancellationToken);
 
         Task<WorkflowDefinitionVersion> SaveDraftAsync(
-            WorkflowDefinitionVersion draft,
+            WorkflowDefinitionVersion workflowDefinition,
             CancellationToken cancellationToken);
     }
 }

@@ -7,20 +7,22 @@ namespace Elsa.Models
     {
         public static ActivityDefinition FromActivity(IActivity activity)
         {
-            return new ActivityDefinition(activity.Id, activity.Type, activity.State);
+            return new ActivityDefinition(activity.Id, activity.Type, activity.State, 0, 0);
         }
 
         public ActivityDefinition()
         {
         }
-        
-        public ActivityDefinition(string id, string type, JObject state)
+
+        public ActivityDefinition(string id, string type, JObject state, int left = 0, int top = 0)
         {
             Id = id;
             Type = type;
+            Left = left;
+            Top = top;
             State = new JObject(state);
         }
-        
+
         public string Id { get; set; }
         public string Type { get; set; }
         public int Left { get; set; }
@@ -30,11 +32,21 @@ namespace Elsa.Models
 
     public class ActivityDefinition<T> : ActivityDefinition where T : IActivity
     {
-        public ActivityDefinition(string id, JObject state) : base(id, typeof(T).Name, state)
+        public ActivityDefinition(string id, JObject state, int left = 0, int top = 0) : base(
+            id,
+            typeof(T).Name,
+            state,
+            left,
+            top)
         {
         }
-        
-        public ActivityDefinition(string id, object state) : base(id, typeof(T).Name, JObject.FromObject(state))
+
+        public ActivityDefinition(string id, object state, int left = 0, int top = 0) : base(
+            id,
+            typeof(T).Name,
+            JObject.FromObject(state),
+            left,
+            top)
         {
         }
     }

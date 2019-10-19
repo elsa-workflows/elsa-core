@@ -4,22 +4,22 @@ using Elsa.WorkflowDesigner.Models;
 
 namespace Elsa.Dashboard.Options
 {
-    public class ActivityDefinitionList : IEnumerable<ActivityDefinition>
+    public class ActivityDefinitionList : IEnumerable<ActivityDefinitionModel>
     {
         public ActivityDefinitionList()
         {
-            Items = new Dictionary<string, ActivityDefinition>();
+            Items = new Dictionary<string, ActivityDefinitionModel>();
         }
 
-        private IDictionary<string, ActivityDefinition> Items { get; }
+        private IDictionary<string, ActivityDefinitionModel> Items { get; }
         
-        public ActivityDefinitionList Add(ActivityDefinition item)
+        public ActivityDefinitionList Add(ActivityDefinitionModel item)
         {
             Items[item.Type] = item;
             return this;
         }
 
-        public IEnumerator<ActivityDefinition> GetEnumerator() => Items.Values.GetEnumerator();
+        public IEnumerator<ActivityDefinitionModel> GetEnumerator() => Items.Values.GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator()
         {

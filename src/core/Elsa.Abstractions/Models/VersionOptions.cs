@@ -21,6 +21,11 @@ namespace Elsa.Models
         /// Gets the draft version.
         /// </summary>
         public static readonly VersionOptions Draft = new VersionOptions { IsDraft = true };
+        
+        /// <summary>
+        /// Gets all versions.
+        /// </summary>
+        public static readonly VersionOptions All = new VersionOptions { AllVersions = true };
 
         /// <summary>
         /// Gets a specific version.
@@ -31,6 +36,7 @@ namespace Elsa.Models
         public bool IsLatestOrPublished { get; private set; }
         public bool IsPublished { get; private set; }
         public bool IsDraft { get; private set; }
+        public bool AllVersions { get; private set; }
         public int Version { get; private set; }
     }
 }

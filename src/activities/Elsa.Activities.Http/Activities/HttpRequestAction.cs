@@ -11,12 +11,12 @@ using System.Threading.Tasks;
 using Elsa.Activities.Http.Models;
 using Elsa.Activities.Http.Services;
 using Elsa.Attributes;
+using Elsa.Design;
 using Elsa.Expressions;
 using Elsa.Extensions;
 using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Elsa.WorkflowDesigner.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
 
@@ -88,6 +88,7 @@ namespace Elsa.Activities.Http.Activities
         /// The body to send along with the request.
         /// </summary>
         [ActivityProperty(Hint = "The HTTP content to send along with the request.")]
+        [ExpressionOptions(Multiline = true)]
         public WorkflowExpression<string> Content
         {
             get => GetState(() => new WorkflowExpression<string>(LiteralEvaluator.SyntaxName, ""));

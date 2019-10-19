@@ -16,8 +16,9 @@ namespace Elsa.WorkflowEventHandlers
 
         protected override void ActivityExecuted(WorkflowExecutionContext workflowExecutionContext, IActivity activity)
         {
+            var timeStamp = clock.GetCurrentInstant();
             workflowExecutionContext.Workflow.ExecutionLog.Add(
-                new LogEntry(activity.Id, clock.GetCurrentInstant(), "Executed"));
+                new LogEntry(activity.Id, timeStamp, $"Successfully executed at {timeStamp}"));
         }
 
         protected override void ActivityFaulted(
