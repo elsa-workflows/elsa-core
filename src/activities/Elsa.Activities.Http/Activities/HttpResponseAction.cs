@@ -6,12 +6,12 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
+using Elsa.Design;
 using Elsa.Expressions;
 using Elsa.Extensions;
 using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Elsa.WorkflowDesigner.Models;
 using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Activities.Http.Activities
@@ -23,7 +23,7 @@ namespace Elsa.Activities.Http.Activities
     )]
     [ActivityDefinitionDesigner(
         Description =
-            "x => !!x.state.statusCode ? `Send an HTTP <strong>${ x.state.statusCode }</strong><br/><br/> ${ x.state.contentType }</strong><br/>${ !!x.state.content ? x.state.content.expression ? x.state.content.expression.substr(0,100) + '...' : '' : '' }` : x.definition.description",
+            "x => !!x.state.statusCode ? `Send an HTTP <strong>${ x.state.statusCode }</strong> - <strong>${ x.state.contentType }</strong> response` : x.definition.description",
         Outcomes = new[] { OutcomeNames.Done }
     )]
     public class HttpResponseAction : Activity

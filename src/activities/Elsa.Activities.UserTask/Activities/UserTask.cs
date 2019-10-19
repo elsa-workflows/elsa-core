@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Linq;
 using Elsa.Attributes;
+using Elsa.Design;
 using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Elsa.WorkflowDesigner.Models;
 
 namespace Elsa.Activities.UserTask.Activities
 {

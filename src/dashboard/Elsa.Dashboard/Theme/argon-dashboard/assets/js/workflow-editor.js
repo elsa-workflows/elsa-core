@@ -4,8 +4,6 @@ let workflow = null;
 
 designer.addEventListener('workflowChanged', onWorkflowChanged);
 
-//designer.addEventListener('componentReady', onWorkflowDesignerReady);
-
 function addActivity() {
     designer.showActivityPicker();
 }
@@ -33,16 +31,19 @@ function onWorkflowPropertiesSubmit(e) {
     const formData = new FormData(e.target);
     const name = formData.get("Name").toString();
     const description = formData.get("Description").toString();
-    const isSingleton = formData.get("IsSingleton") === "true";
-    const isDisabled = formData.get("IsDisabled") === "true";
-
-    designer.workflow = {...workflow, name, description, isSingleton, isDisabled};
-    
+    const isDisabled = formData.get("IsDisabled").toString() === 'true';
+    const isSingleton = formData.get("IsSingleton").toString() === 'true';
     const editorCaption = document.querySelector("#editorCaption");
     const editorDescription = document.querySelector("#editorDescription");
+    const workflowNameInput = document.querySelector("#workflowName");
+    const workflowDescriptionInput = document.querySelector("#workflowDescription");
+    const workflowIsDisabledInput = document.querySelector("#workflowIsDisabled");
+    const workflowSingletonInput = document.querySelector("#workflowIsSingleton");
     
-    editorCaption.innerHTML = name;
-    editorDescription.innerHTML = description;
+    editorCaption.innerHTML = workflowNameInput.value = name;
+    editorDescription.innerHTML = workflowDescriptionInput.value = description;
+    workflowIsDisabledInput.value = isDisabled.toString();
+    workflowSingletonInput.value = isSingleton.toString();
 
     $(modal).modal('hide');
 }
@@ -54,16 +55,3 @@ function onWorkflowChanged(e) {
 
     input.value = json;
 }
-
-function onWorkflowDesignerReady() {
-    const input = document.querySelector('#workflowData');
-    const json = input.value;
-
-    if (!json)
-        return;
-
-    designer.workflow = workflow = JSON.parse(json);
-}
-
-// Temporary workaround until I figure out how to listen for the workflow designer component's ready event.
-setTimeout(onWorkflowDesignerReady, 100);

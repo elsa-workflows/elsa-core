@@ -13,13 +13,15 @@ namespace Elsa.Persistence.EntityFrameworkCore.Extensions
 
             if (version.IsDraft)
                 query = query.Where(x => !x.IsPublished);
-            if (version.IsLatest)
+            else if (version.IsLatest)
                 query = query.OrderByDescending(x => x.Version);
-            if (version.IsPublished)
+            else if (version.IsPublished)
                 query = query.Where(x => x.IsPublished);
-            if (version.IsLatestOrPublished)
+            else if (version.IsLatestOrPublished)
                 query = query.Where(x => x.IsPublished || x.IsLatest);
-            if (version.Version > 0)
+            else if (version.AllVersions)
+                query = query;
+            else if (version.Version > 0)
                 query = query.Where(x => x.Version == version.Version);
 
             return query.OrderByDescending(x => x.Version);

@@ -7,11 +7,11 @@ using Elsa.Activities.Http.Extensions;
 using Elsa.Activities.Http.Models;
 using Elsa.Activities.Http.Services;
 using Elsa.Attributes;
+using Elsa.Design;
 using Elsa.Extensions;
 using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Elsa.WorkflowDesigner.Models;
 using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json.Linq;
 
@@ -118,8 +118,7 @@ namespace Elsa.Activities.Http.Activities
 
                 var parser = SelectContentParser(request.ContentType);
                 var content = await request.ReadContentAsBytesAsync(cancellationToken);
-                model.Content = content;
-                model.ParsedContent = await parser.ParseAsync(content, request.ContentType);
+                model.Content = await parser.ParseAsync(content, request.ContentType);
             }
 
             Output["Content"] = model;

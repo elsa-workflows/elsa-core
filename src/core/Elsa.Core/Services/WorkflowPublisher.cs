@@ -69,8 +69,19 @@ namespace Elsa.Services
                 await store.UpdateAsync(publishedDefinition, cancellationToken);
             }
 
-            definition.IsPublished = true;
+            if (definition.IsPublished)
+            {
+                definition.Id = idGenerator.Generate();
+                definition.Version++;
+            }
+            else
+            {
+                definition.IsPublished = true;   
+            }
+
             definition.IsLatest = true;
+            definition = Initialize(definition);
+            
             await store.SaveAsync(definition, cancellationToken);
 
             return definition;
@@ -98,25 +109,46 @@ namespace Elsa.Services
         }
 
         public async Task<WorkflowDefinitionVersion> SaveDraftAsync(
-            WorkflowDefinitionVersion draft,
+            WorkflowDefinitionVersion workflowDefinition,
             CancellationToken cancellationToken)
         {
-            // Mark currently published version as non-latest.
+            var draft = mapper.Map<WorkflowDefinitionVersion>(workflowDefinition);
+            
             var latestVersion = await store.GetByIdAsync(
-                draft.DefinitionId,
+                workflowDefinition.DefinitionId,
                 VersionOptions.Latest,
                 cancellationToken);
 
             if (latestVersion != null && latestVersion.IsPublished && latestVersion.IsLatest)
             {
                 latestVersion.IsLatest = false;
+                draft.Id = idGenerator.Generate();
+                draft.Version++;
+                
                 await store.UpdateAsync(latestVersion, cancellationToken);
             }
-
-            // Store the updated draft.
+   
+            draft.IsLatest = true;
+            draft.IsPublished = false;
+            draft = Initialize(draft);
+            
             await store.SaveAsync(draft, cancellationToken);
 
             return draft;
+        }
+
+        private WorkflowDefinitionVersion Initialize(WorkflowDefinitionVersion workflowDefinition)
+        {
+            if (workflowDefinition.Id == null)
+                workflowDefinition.Id = idGenerator.Generate();
+
+            if (workflowDefinition.Version == 0)
+                workflowDefinition.Version = 1;
+
+            if (workflowDefinition.DefinitionId == null)
+                workflowDefinition.DefinitionId = idGenerator.Generate();
+
+            return workflowDefinition;
         }
     }
 }
