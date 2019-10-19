@@ -1,7 +1,8 @@
+@using System.Globalization
 @model WorkflowInstanceDetailsModel
-<div class="container-fluid mt-7">
+<div id="workflowViewer" class="container-fluid mt-7">
     <div class="row">
-        <div class="col">
+        <div class="col-9">
             <div class="card bg-secondary shadow">
                 <div class="card-header bg-white border-0">
                     <div class="row align-items-center">
@@ -25,8 +26,50 @@
                 </div>
             </div>
         </div>
+        <div class="col-3" id="executionLog">
+            <div class="card shadow">
+                <div class="card-header bg-white border-0">
+                    <div class="row align-items-center">
+                        <div class="col-8">
+                            <h3 class="mb-0">Execution Log</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table align-items-center table-flush">
+                        <thead class="thead-light">
+                        <tr>
+                            <th scope="col">Timestamp</th>
+                            <th scope="col">Activity ID</th>
+                            <th scope="col">Message</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var item in Model.WorkflowInstance.ExecutionLog.OrderBy(x => x.Timestamp))
+                        {
+                            var statusClass = item.Faulted ? "bg-warning" : "bg-success";
+                            var message = item.Faulted ? item.Message : "";
+
+                            <tr data-activity-id="@item.ActivityId">
+                                <td>
+                                    <span class="badge badge-dot mr-4">
+                                        <i class=@statusClass></i>
+                                    </span>
+                                    @item.Timestamp.ToString("g", CultureInfo.CurrentCulture)
+                                </td>
+                                <td>@item.ActivityId</td>
+                                <td>@message</td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer py-4">
+                </div>
+            </div>
+        </div>
+        @await Html.PartialAsync("Footer")
     </div>
-    @await Html.PartialAsync("Footer")
 </div>
 
 @section FootScripts{

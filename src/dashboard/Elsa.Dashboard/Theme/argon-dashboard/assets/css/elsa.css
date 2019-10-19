@@ -36,11 +36,22 @@ wf-activity-picker .card-title i {
   font-size: 1.5em;
   vertical-align: top; }
 
-.workflow-designer-wrapper {
+#workflowViewer .workflow-designer-wrapper {
   height: 50vh; }
-  .workflow-designer-wrapper .workflow-canvas .activity p {
+  #workflowViewer .workflow-designer-wrapper .workflow-canvas .activity p {
     font-size: 1em; }
-  .workflow-designer-wrapper .workflow-canvas .connection-label {
+  #workflowViewer .workflow-designer-wrapper .workflow-canvas .activity-executed.highlight, #workflowViewer .workflow-designer-wrapper .workflow-canvas .activity-executed:hover, #workflowViewer .workflow-designer-wrapper .workflow-canvas .activity-faulted.highlight, #workflowViewer .workflow-designer-wrapper .workflow-canvas .activity-faulted:hover, #workflowViewer .workflow-designer-wrapper .workflow-canvas .activity-blocking.highlight, #workflowViewer .workflow-designer-wrapper .workflow-canvas .activity-blocking:hover {
+    background-color: #172b4d;
+    border-color: #172b4d; }
+  #workflowViewer .workflow-designer-wrapper .workflow-canvas .connection-label {
     font-size: 0.8em; }
+
+#workflowViewer #executionLog tbody tr {
+  cursor: pointer; }
+  #workflowViewer #executionLog tbody tr.table-row-dark, #workflowViewer #executionLog tbody tr:hover {
+    color: #f8f9fe;
+    background-color: #172b4d; }
+    #workflowViewer #executionLog tbody tr.table-row-dark td, #workflowViewer #executionLog tbody tr.table-row-dark th, #workflowViewer #executionLog tbody tr:hover td, #workflowViewer #executionLog tbody tr:hover th {
+      border-color: #1f3a68; }
 
 /*# sourceMappingURL=elsa.css.map */

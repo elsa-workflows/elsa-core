@@ -1,30 +1,9 @@
-@using Elsa.Models
+@using Elsa.Dashboard.Extensions
 @model WorkflowInstanceListViewModel
 @{
     ViewBag.Title = "Workflow Instances";
     
     var deleteUrlTemplate = Url.Action("Delete", new { id = "id", returnUrl = Model.ReturnUrl }).Replace("id", "${id}");
-}
-
-@functions
-{
-
-    string GetStatusClass(WorkflowStatus status)
-    {
-        switch (status)
-        {
-            case WorkflowStatus.Executing:
-                return "bg-info";
-            case WorkflowStatus.Faulted:
-                return "bg-warning";
-            case WorkflowStatus.Finished:
-                return "bg-success";
-            case WorkflowStatus.Aborted:
-            default:
-                return "bg-default";
-        }
-    }
-
 }
 
 @section FootScripts
@@ -76,7 +55,7 @@
                             @foreach (var item in Model.WorkflowInstances)
                             {
                                 var workflowInstance = item.WorkflowInstance;
-                                var statusClass = GetStatusClass(item.WorkflowInstance.Status);
+                                var statusClass = item.WorkflowInstance.Status.GetStatusClass();
                                 
                                 <tr>
                                     <td>
