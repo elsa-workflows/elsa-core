@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
+using Elsa.Design;
 using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Extensions;
@@ -33,7 +34,11 @@ namespace Elsa.Activities.ControlFlow
             WaitAny
         }
 
-        [ActivityProperty(Hint = "Either 'WaitAll' or 'WaitAny'")]
+        [ActivityProperty(
+            Type = ActivityPropertyTypes.Select,
+            Hint = "Either 'WaitAll' or 'WaitAny'")
+        ]
+        [SelectOptions("WaitAll", "WaitAny")]
         public JoinMode Mode
         {
             get => GetState(() => JoinMode.WaitAll);

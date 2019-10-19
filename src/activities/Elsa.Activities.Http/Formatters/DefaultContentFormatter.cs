@@ -11,7 +11,7 @@ namespace Elsa.Activities.Http.Formatters
 
         public Task<object> ParseAsync(byte[] content, string contentType)
         {
-            return Task.FromResult<object>(null);
+            return Task.FromResult<object>(content);
         }
     }
 }

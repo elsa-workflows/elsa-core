@@ -9,8 +9,7 @@ namespace Elsa.Activities.Http.Models
         public string Method { get; set; }
         public IDictionary<string, StringValuesModel> QueryString { get; set; }
         public IDictionary<string, StringValuesModel> Headers { get; set; }
-        public byte[] Content { get; set; }
-        public object ParsedContent { get; set; }
+        public object Content { get; set; }
         public IDictionary<string, StringValuesModel> Form { get; set; }
     }
 }

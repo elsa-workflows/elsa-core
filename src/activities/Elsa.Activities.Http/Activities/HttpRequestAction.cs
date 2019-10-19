@@ -88,6 +88,7 @@ namespace Elsa.Activities.Http.Activities
         /// The body to send along with the request.
         /// </summary>
         [ActivityProperty(Hint = "The HTTP content to send along with the request.")]
+        [ExpressionOptions(Multiline = true)]
         public WorkflowExpression<string> Content
         {
             get => GetState(() => new WorkflowExpression<string>(LiteralEvaluator.SyntaxName, ""));

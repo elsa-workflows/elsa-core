@@ -3,8 +3,7 @@
     "windowsAuthentication": false, 
     "anonymousAuthentication": true, 
     "iisExpress": {
-      "applicationUrl": "http://localhost:59267",
-      "sslPort": 44389
+      "applicationUrl": "http://localhost:59267"
     }
   },
   "profiles": {
@@ -18,7 +17,7 @@
     "Elsa.WorkflowHost.Web": {
       "commandName": "Project",
       "launchBrowser": true,
-      "applicationUrl": "https://localhost:5001;http://localhost:5000",
+      "applicationUrl": "http://localhost:59267",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }

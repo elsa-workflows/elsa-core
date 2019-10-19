@@ -100,6 +100,7 @@ namespace Elsa.Services.Models
             FinishedAt = instance.FinishedAt;
             FaultedAt = instance.FaultedAt;
             AbortedAt = instance.AbortedAt;
+            ExecutionLog = instance.ExecutionLog.ToList();
 
             BlockingActivities =
                 new HashSet<IActivity>(instance.BlockingActivities.Select(x => activityLookup[x.ActivityId]));

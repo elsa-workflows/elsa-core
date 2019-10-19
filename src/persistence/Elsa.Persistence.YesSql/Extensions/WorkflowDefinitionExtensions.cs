@@ -26,11 +26,15 @@ namespace Elsa.Persistence.YesSql.Extensions
             
             if (version.IsDraft)
                 query = query.Where(x => !x.IsPublished).OrderByDescending(x => x.Version);
-            if (version.IsLatest)
+            else if (version.IsLatest)
                 query = query.Where(x => x.IsLatest);
-            if (version.IsPublished)
+            else if (version.IsPublished)
                 query = query.Where(x => x.IsPublished).OrderByDescending(x => x.Version);
-            if (version.Version > 0)
+            else if (version.IsLatestOrPublished)
+                query = query.Where(x => x.IsPublished || x.IsLatest);
+            else if (version.AllVersions)
+                query = query;
+            else if (version.Version > 0)
                 query = query.Where(x => x.Version == version.Version);
 
             return query;

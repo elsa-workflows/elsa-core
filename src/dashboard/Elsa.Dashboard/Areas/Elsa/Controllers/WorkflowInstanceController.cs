@@ -126,7 +126,7 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
             WorkflowInstance workflowInstance)
         {
             var isBlocking = workflowInstance.BlockingActivities.Any(x => x.ActivityId == activityDefinition.Id);
-            var logEntry = workflowInstance.ExecutionLog.FirstOrDefault(x => x.ActivityId == activityDefinition.Id);
+            var logEntry = workflowInstance.ExecutionLog.OrderByDescending(x => x.Timestamp).FirstOrDefault(x => x.ActivityId == activityDefinition.Id);
             var isExecuted = logEntry != null;
             var isFaulted = logEntry?.Faulted ?? false;
             var message = default(ActivityMessageModel);

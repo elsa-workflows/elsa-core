@@ -31,12 +31,19 @@ function onWorkflowPropertiesSubmit(e) {
     const formData = new FormData(e.target);
     const name = formData.get("Name").toString();
     const description = formData.get("Description").toString();
+    const isDisabled = formData.get("IsDisabled").toString() === 'true';
+    const isSingleton = formData.get("IsSingleton").toString() === 'true';
     const editorCaption = document.querySelector("#editorCaption");
     const editorDescription = document.querySelector("#editorDescription");
     const workflowNameInput = document.querySelector("#workflowName");
+    const workflowDescriptionInput = document.querySelector("#workflowDescription");
+    const workflowIsDisabledInput = document.querySelector("#workflowIsDisabled");
+    const workflowSingletonInput = document.querySelector("#workflowIsSingleton");
     
     editorCaption.innerHTML = workflowNameInput.value = name;
-    editorDescription.innerHTML = description;
+    editorDescription.innerHTML = workflowDescriptionInput.value = description;
+    workflowIsDisabledInput.value = isDisabled.toString();
+    workflowSingletonInput.value = isSingleton.toString();
 
     $(modal).modal('hide');
 }

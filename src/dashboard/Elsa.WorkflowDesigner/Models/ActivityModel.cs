@@ -16,6 +16,10 @@ namespace Elsa.WorkflowDesigner.Models
             Left = left;
             Top = top;
             State = state;
+            Blocking = blocking;
+            Executed = executed;
+            Faulted = faulted;
+            Message = message;
         }
 
         public ActivityModel(ActivityDefinition activityDefinition) : this(

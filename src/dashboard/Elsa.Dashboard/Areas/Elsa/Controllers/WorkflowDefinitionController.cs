@@ -89,17 +89,11 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
         [HttpPost("create")]
         public async Task<IActionResult> Create(WorkflowDefinitionEditModel model, CancellationToken cancellationToken)
         {
-            var workflow = !string.IsNullOrWhiteSpace(model.Json)
-                ? serializer.Deserialize<WorkflowDefinitionVersion>(model.Json, JsonTokenFormatter.FormatName)
-                : new WorkflowDefinitionVersion();
-
-            await workflowDefinitionStore.SaveAsync(workflow, cancellationToken);
-
-            notifier.Notify("New workflow successfully created.", NotificationType.Success);
-            return RedirectToAction("Edit", new { id = workflow.DefinitionId });
+            var workflow = new WorkflowDefinitionVersion();
+            return await SaveAsync(model, workflow, cancellationToken);
         }
 
-        [HttpGet("edit/{id}")]
+        [HttpGet("edit/{id}", Name ="EditWorkflowDefinition")]
         public async Task<IActionResult> Edit(string id, CancellationToken cancellationToken)
         {
             var workflowDefinition = await publisher.GetDraftAsync(id, cancellationToken);
@@ -134,8 +128,24 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
             WorkflowDefinitionEditModel model,
             CancellationToken cancellationToken)
         {
-            var postedWorkflow = serializer.Deserialize<WorkflowModel>(model.Json, JsonTokenFormatter.FormatName);
             var workflow = await workflowDefinitionStore.GetByIdAsync(id, VersionOptions.Latest, cancellationToken);
+            return await SaveAsync(model, workflow, cancellationToken);
+        }
+
+        [HttpPost("delete/{id}")]
+        public async Task<IActionResult> Delete(string id, CancellationToken cancellationToken)
+        {
+            await workflowDefinitionStore.DeleteAsync(id, cancellationToken);
+            notifier.Notify("Workflow successfully deleted.", NotificationType.Success);
+            return RedirectToAction(nameof(Index));
+        }
+        
+        private async Task<IActionResult> SaveAsync(
+            WorkflowDefinitionEditModel model,
+            WorkflowDefinitionVersion workflow,
+            CancellationToken cancellationToken)
+        {
+            var postedWorkflow = serializer.Deserialize<WorkflowModel>(model.Json, JsonTokenFormatter.FormatName);
 
             workflow.Activities = postedWorkflow.Activities
                 .Select(x => new ActivityDefinition(x.Id, x.Type, x.State, x.Left, x.Top))
@@ -153,24 +163,16 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
 
             if (publish)
             {
-                await publisher.PublishAsync(workflow, cancellationToken);
+                workflow = await publisher.PublishAsync(workflow, cancellationToken);
                 notifier.Notify("Workflow successfully published.", NotificationType.Success);
             }
             else
             {
-                await publisher.SaveDraftAsync(workflow, cancellationToken);
+                workflow = await publisher.SaveDraftAsync(workflow, cancellationToken);
                 notifier.Notify("Workflow successfully saved as a draft.", NotificationType.Success);
             }
-
-            return RedirectToAction("Edit", new { id = workflow.DefinitionId });
-        }
-
-        [HttpPost("delete/{id}")]
-        public async Task<IActionResult> Delete(string id, CancellationToken cancellationToken)
-        {
-            await workflowDefinitionStore.DeleteAsync(id, cancellationToken);
-            notifier.Notify("Workflow successfully deleted.", NotificationType.Success);
-            return RedirectToAction(nameof(Index));
+            
+            return RedirectToRoute("EditWorkflowDefinition", new { id = workflow.DefinitionId });
         }
 
         private async Task<WorkflowDefinitionListItemModel> CreateWorkflowDefinitionListItemModelAsync(

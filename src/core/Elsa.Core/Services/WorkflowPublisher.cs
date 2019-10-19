@@ -80,6 +80,7 @@ namespace Elsa.Services
             }
 
             definition.IsLatest = true;
+            definition = Initialize(definition);
             
             await store.SaveAsync(definition, cancellationToken);
 
@@ -122,14 +123,30 @@ namespace Elsa.Services
             {
                 latestVersion.IsLatest = false;
                 draft.Id = idGenerator.Generate();
-                draft.IsLatest = true;
-                draft.IsPublished = false;
                 draft.Version++;
                 
                 await store.UpdateAsync(latestVersion, cancellationToken);
             }
    
+            draft.IsLatest = true;
+            draft.IsPublished = false;
+            draft = Initialize(draft);
+            
             await store.SaveAsync(draft, cancellationToken);
+
+            return draft;
+        }
+
+        private WorkflowDefinitionVersion Initialize(WorkflowDefinitionVersion workflowDefinition)
+        {
+            if (workflowDefinition.Id == null)
+                workflowDefinition.Id = idGenerator.Generate();
+
+            if (workflowDefinition.Version == 0)
+                workflowDefinition.Version = 1;
+
+            if (workflowDefinition.DefinitionId == null)
+                workflowDefinition.DefinitionId = idGenerator.Generate();
 
             return workflowDefinition;
         }

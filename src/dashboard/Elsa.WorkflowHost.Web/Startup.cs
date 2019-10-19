@@ -4,6 +4,7 @@ using Elsa.Activities.Http.Extensions;
 using Elsa.Activities.Timers.Extensions;
 using Elsa.Extensions;
 using Elsa.Persistence.EntityFrameworkCore.Extensions;
+using Elsa.Runtime;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -25,6 +26,7 @@ namespace Elsa.WorkflowHost.Web
         {
             services
                 .AddWorkflows()
+                .AddTaskExecutingServer()
                 .AddHttpActivities(options => options.Bind(Configuration.GetSection("Http")))
                 .AddEmailActivities(options => options.Bind(Configuration.GetSection("Smtp")))
                 .AddTimerActivities(options => options.Bind(Configuration.GetSection("BackgroundRunner")))

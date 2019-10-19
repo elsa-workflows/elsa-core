@@ -54,13 +54,15 @@ namespace Elsa.Activities.Email.Activities
         }
 
         [ActivityProperty(Hint = "The body of the email message.")]
+        [ExpressionOptions(Multiline = true)]
         public WorkflowExpression<string> Body
         {
             get => GetState(() => new WorkflowExpression<string>(LiteralEvaluator.SyntaxName, ""));
             set => SetState(value);
         }
 
-        protected override async Task<ActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowContext,
+        protected override async Task<ActivityExecutionResult> OnExecuteAsync(
+            WorkflowExecutionContext workflowContext,
             CancellationToken cancellationToken)
         {
             var from = (await expressionEvaluator.EvaluateAsync(From, workflowContext, cancellationToken)) ??

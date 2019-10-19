@@ -25,7 +25,7 @@ namespace Elsa.StartupTasks
         public async Task ExecuteAsync(CancellationToken cancellationToken = default)
         {
             var query =
-                await workflowDefinitionStore.ListAsync(VersionOptions.Published, cancellationToken);
+                await workflowDefinitionStore.ListAsync(VersionOptions.All, cancellationToken);
 
             var workflowDefinitions = query.Where(x => !x.IsDisabled).ToList();
             workflowRegistry.RegisterWorkflows(workflowDefinitions);

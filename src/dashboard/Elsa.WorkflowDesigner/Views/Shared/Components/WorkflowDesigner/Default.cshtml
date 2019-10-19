@@ -2,6 +2,7 @@
 
 <wf-designer-host 
     id="@Model.Id" 
-    canvas-height="300vh" 
+    canvas-height="300vh"
+    readonly="@Model.IsReadonly"
     data-activity-definitions="@Model.ActivityDefinitionsJson"
     data-workflow="@Model.WorkflowJson"></wf-designer-host>
