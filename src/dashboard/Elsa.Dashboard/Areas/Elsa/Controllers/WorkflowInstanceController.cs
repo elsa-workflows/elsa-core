@@ -86,20 +86,19 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
                 VersionOptions.SpecificVersion(instance.Version),
                 cancellationToken
             );
-            
+
             var workflow = new WorkflowModel
             {
                 Activities = definition.Activities.Select(x => CreateActivityModel(x, instance)).ToList(),
                 Connections = definition.Connections.Select(x => new ConnectionModel(x)).ToList()
             };
 
-            var model = new WorkflowInstanceDetailsModel
-            {
-                ReturnUrl = returnUrl,
-                WorkflowDefinition = definition,
-                WorkflowModel = workflow,
-                ActivityDefinitions = options.Value.ActivityDefinitions.ToArray()
-            };
+            var model = new WorkflowInstanceDetailsModel(
+                instance,
+                definition,
+                workflow,
+                options.Value.ActivityDefinitions,
+                returnUrl);
 
             return View(model);
         }
@@ -126,18 +125,21 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
             WorkflowInstance workflowInstance)
         {
             var isBlocking = workflowInstance.BlockingActivities.Any(x => x.ActivityId == activityDefinition.Id);
-            var logEntry = workflowInstance.ExecutionLog.OrderByDescending(x => x.Timestamp).FirstOrDefault(x => x.ActivityId == activityDefinition.Id);
+            var logEntry = workflowInstance.ExecutionLog.OrderByDescending(x => x.Timestamp)
+                .FirstOrDefault(x => x.ActivityId == activityDefinition.Id);
             var isExecuted = logEntry != null;
             var isFaulted = logEntry?.Faulted ?? false;
             var message = default(ActivityMessageModel);
 
             if (isFaulted)
                 message = new ActivityMessageModel("Faulted", logEntry.Message);
-            else if(isBlocking)
-                message = new ActivityMessageModel("Blocking", "This activity is blocking workflow execution until the appropriate event is triggered.");
-            else if(isExecuted)
+            else if (isBlocking)
+                message = new ActivityMessageModel(
+                    "Blocking",
+                    "This activity is blocking workflow execution until the appropriate event is triggered.");
+            else if (isExecuted)
                 message = new ActivityMessageModel("Executed", logEntry.Message);
-            
+
             return new ActivityModel(activityDefinition, isBlocking, isExecuted, isFaulted, message);
         }
     }

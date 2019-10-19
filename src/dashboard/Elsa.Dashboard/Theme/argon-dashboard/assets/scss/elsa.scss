@@ -65,18 +65,43 @@ wf-activity-picker {
     }
 }
 
-.workflow-designer-wrapper {
-    height: 50vh;
+#workflowViewer {
+    .workflow-designer-wrapper {
+        height: 50vh;
 
-    .workflow-canvas {
-        .activity {
-            p {
-                font-size: 1em;
+        .workflow-canvas {
+            .activity {
+                p {
+                    font-size: 1em;
+                }
+            }
+
+            .activity-executed, .activity-faulted, .activity-blocking {
+
+                &.highlight, &:hover {
+                    background-color: #172b4d;
+                    border-color: #172b4d;
+                }
+            }
+
+            .connection-label {
+                font-size: 0.8em;
             }
         }
+    }
 
-        .connection-label {
-            font-size: 0.8em;
+    #executionLog {
+        tbody tr {
+            cursor: pointer;
+
+            &.table-row-dark, &:hover {
+                color: #f8f9fe;
+                background-color: #172b4d;
+
+                td, th {
+                    border-color: #1f3a68;
+                }
+            }
         }
     }
 }
