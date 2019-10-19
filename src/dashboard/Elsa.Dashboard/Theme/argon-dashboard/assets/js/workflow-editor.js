@@ -4,8 +4,6 @@ let workflow = null;
 
 designer.addEventListener('workflowChanged', onWorkflowChanged);
 
-//designer.addEventListener('componentReady', onWorkflowDesignerReady);
-
 function addActivity() {
     designer.showActivityPicker();
 }
@@ -33,15 +31,11 @@ function onWorkflowPropertiesSubmit(e) {
     const formData = new FormData(e.target);
     const name = formData.get("Name").toString();
     const description = formData.get("Description").toString();
-    const isSingleton = formData.get("IsSingleton") === "true";
-    const isDisabled = formData.get("IsDisabled") === "true";
-
-    designer.workflow = {...workflow, name, description, isSingleton, isDisabled};
-    
     const editorCaption = document.querySelector("#editorCaption");
     const editorDescription = document.querySelector("#editorDescription");
+    const workflowNameInput = document.querySelector("#workflowName");
     
-    editorCaption.innerHTML = name;
+    editorCaption.innerHTML = workflowNameInput.value = name;
     editorDescription.innerHTML = description;
 
     $(modal).modal('hide');
@@ -54,6 +48,3 @@ function onWorkflowChanged(e) {
 
     input.value = json;
 }
-
-// Temporary workaround until I figure out how to listen for the workflow designer component's ready event.
-setTimeout(onWorkflowDesignerReady, 100);

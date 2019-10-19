@@ -69,8 +69,18 @@ namespace Elsa.Services
                 await store.UpdateAsync(publishedDefinition, cancellationToken);
             }
 
-            definition.IsPublished = true;
+            if (definition.IsPublished)
+            {
+                definition.Id = idGenerator.Generate();
+                definition.Version++;
+            }
+            else
+            {
+                definition.IsPublished = true;   
+            }
+
             definition.IsLatest = true;
+            
             await store.SaveAsync(definition, cancellationToken);
 
             return definition;
@@ -98,25 +108,30 @@ namespace Elsa.Services
         }
 
         public async Task<WorkflowDefinitionVersion> SaveDraftAsync(
-            WorkflowDefinitionVersion draft,
+            WorkflowDefinitionVersion workflowDefinition,
             CancellationToken cancellationToken)
         {
-            // Mark currently published version as non-latest.
+            var draft = mapper.Map<WorkflowDefinitionVersion>(workflowDefinition);
+            
             var latestVersion = await store.GetByIdAsync(
-                draft.DefinitionId,
+                workflowDefinition.DefinitionId,
                 VersionOptions.Latest,
                 cancellationToken);
 
             if (latestVersion != null && latestVersion.IsPublished && latestVersion.IsLatest)
             {
                 latestVersion.IsLatest = false;
+                draft.Id = idGenerator.Generate();
+                draft.IsLatest = true;
+                draft.IsPublished = false;
+                draft.Version++;
+                
                 await store.UpdateAsync(latestVersion, cancellationToken);
             }
-
-            // Store the updated draft.
+   
             await store.SaveAsync(draft, cancellationToken);
 
-            return draft;
+            return workflowDefinition;
         }
     }
 }

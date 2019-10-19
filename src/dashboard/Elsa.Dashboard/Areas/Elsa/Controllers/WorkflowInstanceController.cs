@@ -87,17 +87,17 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
                 cancellationToken
             );
             
-            var workflow = new DesignerWorkflow
+            var workflow = new WorkflowModel
             {
-                Activities = definition.Activities.Select(x => new DesignerActivity(x)).ToList(),
-                Connections = definition.Connections.Select(x => new DesignerConnection(x)).ToList()
+                Activities = definition.Activities.Select(x => CreateActivityModel(x, instance)).ToList(),
+                Connections = definition.Connections.Select(x => new ConnectionModel(x)).ToList()
             };
 
             var model = new WorkflowInstanceDetailsModel
             {
                 ReturnUrl = returnUrl,
                 WorkflowDefinition = definition,
-                Workflow = workflow,
+                WorkflowModel = workflow,
                 ActivityDefinitions = options.Value.ActivityDefinitions.ToArray()
             };
 
@@ -119,6 +119,26 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
                 return Redirect(returnUrl);
 
             return RedirectToAction("Index", "WorkflowDefinition");
+        }
+
+        private ActivityModel CreateActivityModel(
+            ActivityDefinition activityDefinition,
+            WorkflowInstance workflowInstance)
+        {
+            var isBlocking = workflowInstance.BlockingActivities.Any(x => x.ActivityId == activityDefinition.Id);
+            var logEntry = workflowInstance.ExecutionLog.FirstOrDefault(x => x.ActivityId == activityDefinition.Id);
+            var isExecuted = logEntry != null;
+            var isFaulted = logEntry?.Faulted ?? false;
+            var message = default(ActivityMessageModel);
+
+            if (isFaulted)
+                message = new ActivityMessageModel("Faulted", logEntry.Message);
+            else if(isBlocking)
+                message = new ActivityMessageModel("Blocking", "This activity is blocking workflow execution until the appropriate event is triggered.");
+            else if(isExecuted)
+                message = new ActivityMessageModel("Executed", logEntry.Message);
+            
+            return new ActivityModel(activityDefinition, isBlocking, isExecuted, isFaulted, message);
         }
     }
 }

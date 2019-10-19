@@ -12,6 +12,7 @@ using Elsa.Persistence;
 using Elsa.Serialization;
 using Elsa.Serialization.Formatters;
 using Elsa.Services;
+using Elsa.Services.Models;
 using Elsa.WorkflowDesigner.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -106,20 +107,22 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
             if (workflowDefinition == null)
                 return NotFound();
 
+            var workflowModel = new WorkflowModel
+            {
+                Activities = workflowDefinition.Activities.Select(x => new ActivityModel(x)).ToList(),
+                Connections = workflowDefinition.Connections.Select(x => new ConnectionModel(x)).ToList()
+            };
+
             var model = new WorkflowDefinitionEditModel
             {
                 Id = workflowDefinition.DefinitionId,
                 Name = workflowDefinition.Name,
-                Json = serializer.Serialize(workflowDefinition, JsonTokenFormatter.FormatName),
+                Json = serializer.Serialize(workflowModel, JsonTokenFormatter.FormatName),
                 Description = workflowDefinition.Description,
                 IsSingleton = workflowDefinition.IsSingleton,
                 IsDisabled = workflowDefinition.IsDisabled,
                 ActivityDefinitions = options.Value.ActivityDefinitions.ToArray(),
-                DesignerWorkflow = new DesignerWorkflow
-                {
-                    Activities = workflowDefinition.Activities.Select(x => new DesignerActivity(x)).ToList(),
-                    Connections = workflowDefinition.Connections.Select(x => new DesignerConnection(x)).ToList()
-                }
+                WorkflowModel = workflowModel
             };
 
             return View(model);
@@ -131,9 +134,20 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
             WorkflowDefinitionEditModel model,
             CancellationToken cancellationToken)
         {
-            var workflow = serializer.Deserialize<WorkflowDefinitionVersion>(model.Json, JsonTokenFormatter.FormatName);
+            var postedWorkflow = serializer.Deserialize<WorkflowModel>(model.Json, JsonTokenFormatter.FormatName);
+            var workflow = await workflowDefinitionStore.GetByIdAsync(id, VersionOptions.Latest, cancellationToken);
 
-            workflow.DefinitionId = id;
+            workflow.Activities = postedWorkflow.Activities
+                .Select(x => new ActivityDefinition(x.Id, x.Type, x.State, x.Left, x.Top))
+                .ToList();
+
+            workflow.Connections = postedWorkflow.Connections.Select(
+                x => new ConnectionDefinition(x.SourceActivityId, x.DestinationActivityId, x.Outcome)).ToList();
+
+            workflow.Description = model.Description;
+            workflow.Name = model.Name;
+            workflow.IsDisabled = model.IsDisabled;
+            workflow.IsSingleton = model.IsSingleton;
 
             var publish = model.SubmitAction == "publish";
 

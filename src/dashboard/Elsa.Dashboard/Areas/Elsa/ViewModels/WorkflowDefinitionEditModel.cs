@@ -11,7 +11,7 @@ namespace Elsa.Dashboard.Areas.Elsa.ViewModels
         public string Description { get; set; }
         public bool IsSingleton { get; set; }
         public bool IsDisabled { get; set; }
-        public DesignerActivityDefinition[] ActivityDefinitions { get; set; }
-        public DesignerWorkflow DesignerWorkflow { get; set; }
+        public ActivityDefinitionModel[] ActivityDefinitions { get; set; }
+        public WorkflowModel WorkflowModel { get; set; }
     }
 }

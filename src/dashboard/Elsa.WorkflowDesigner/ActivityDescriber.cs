@@ -14,12 +14,12 @@ namespace Elsa.WorkflowDesigner
 {
     public static class ActivityDescriber
     {
-        public static DesignerActivityDefinition Describe<T>() where T : IActivity
+        public static ActivityDefinitionModel Describe<T>() where T : IActivity
         {
             return Describe(typeof(T));
         }
 
-        public static DesignerActivityDefinition Describe(Type activityType)
+        public static ActivityDefinitionModel Describe(Type activityType)
         {
             var activityDefinitionAttribute = activityType.GetCustomAttribute<ActivityDefinitionAttribute>();
             var activityDesignerAttribute = activityType.GetCustomAttribute<ActivityDefinitionDesignerAttribute>();
@@ -36,7 +36,7 @@ namespace Elsa.WorkflowDesigner
             var designerOutcomes = activityDesignerAttribute?.Outcomes ?? new[] { OutcomeNames.Done };
             var properties = DescribeProperties(activityType);
 
-            return new DesignerActivityDefinition
+            return new ActivityDefinitionModel
             {
                 Type = typeName.Pascalize(),
                 DisplayName = displayName,

@@ -2,28 +2,28 @@
 
 namespace Elsa.WorkflowDesigner.Models
 {
-    public class DesignerConnection
+    public class ConnectionModel
     {
-        public DesignerConnection()
+        public ConnectionModel()
         {
         }
 
-        public DesignerConnection(string sourceActivityId, string destinationActivityId, string outcome)
+        public ConnectionModel(string sourceActivityId, string destinationActivityId, string outcome)
         {
             SourceActivityId = sourceActivityId;
             DestinationActivityId = destinationActivityId;
             Outcome = outcome;
         }
 
-        public DesignerConnection(ConnectionDefinition connectionDefinition) : this(
+        public ConnectionModel(ConnectionDefinition connectionDefinition) : this(
             connectionDefinition.SourceActivityId,
             connectionDefinition.DestinationActivityId,
             connectionDefinition.Outcome)
         {
         }
 
-        public string SourceActivityId { get; set; }
-        public string DestinationActivityId { get; set; }
-        public string Outcome { get; set; }
+        public string? SourceActivityId { get; set; }
+        public string? DestinationActivityId { get; set; }
+        public string? Outcome { get; set; }
     }
 }

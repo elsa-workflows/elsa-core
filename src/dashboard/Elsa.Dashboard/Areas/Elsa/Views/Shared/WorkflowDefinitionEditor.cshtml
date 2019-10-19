@@ -25,7 +25,8 @@
                 <div class="card-body">
                     <form asp-action="@formAction">
                         <input asp-for="Json" id="workflowData" type="hidden"/>
-                        <vc:workflow-designer id="designerHost" activity-definitions="@Model.ActivityDefinitions" workflow="@Model.DesignerWorkflow" />
+                        <input asp-for="Name" type="hidden" id="workflowName"/>
+                        <vc:workflow-designer id="designerHost" activity-definitions="@Model.ActivityDefinitions" workflow="@Model.WorkflowModel" />
                         <div class="text-center">
                             <button asp-for="SubmitAction" name="SubmitAction" type="submit" value="draft" class="btn btn-primary mt-4">Save Draft</button>
                             <button asp-for="SubmitAction" name="SubmitAction" type="submit" value="publish" class="btn btn-success mt-4">Publish</button>
@@ -58,7 +59,7 @@
                             <div class="pl-lg-4">
                                 <div class="form-group focused">
                                     <label asp-for="Name" class="form-control-label">Name</label>
-                                    <input asp-for="Name" class="form-control form-control-alternative" type="text" id="workflowName">
+                                    <input asp-for="Name" class="form-control form-control-alternative" type="text">
                                 </div>
                                 <div class="form-group">
                                     <label asp-for="Description">Description</label>
