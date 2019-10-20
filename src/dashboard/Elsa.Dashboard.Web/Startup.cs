@@ -36,10 +36,7 @@ namespace Elsa.Dashboard.Web
                 .UseDeveloperExceptionPage()
                 .UseStaticFiles()
                 .UseRouting()
-                .UseEndpoints(endpoints =>
-                {
-                    endpoints.MapControllers();
-                })
+                .UseEndpoints(endpoints => endpoints.MapControllers())
                 .UseWelcomePage();
         }
     }

@@ -22,8 +22,4 @@
       <ProjectReference Include="..\Elsa.Dashboard\Elsa.Dashboard.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <_ContentIncludedByDefault Remove="wwwroot\.placeholder" />
-    </ItemGroup>
-
 </Project>

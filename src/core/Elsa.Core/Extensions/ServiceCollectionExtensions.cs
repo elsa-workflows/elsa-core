@@ -58,7 +58,6 @@ namespace Elsa.Extensions
                 .AddSingleton<IWorkflowExpressionEvaluator, WorkflowExpressionEvaluator>()
                 .AddSingleton<IWorkflowSerializerProvider, WorkflowSerializerProvider>()
                 .AddSingleton<IWorkflowRegistry, WorkflowRegistry>()
-                .AddSingleton<IWorkflowPublisher, WorkflowPublisher>()
                 .AddSingleton<IWorkflowInvoker, WorkflowInvoker>()
                 .AddScoped<IScopedWorkflowInvoker, ScopedWorkflowInvoker>()
                 .AddScoped<IActivityResolver, ActivityResolver>()
