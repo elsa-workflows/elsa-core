@@ -33,15 +33,16 @@ namespace Elsa.Dashboard.Extensions
             return list;
         }
 
-        public static OptionsBuilder<ElsaDashboardOptions> Discover(
-            this OptionsBuilder<ElsaDashboardOptions> options)
+        public static ElsaDashboardOptions DiscoverActivities(
+            this ElsaDashboardOptions options)
         {
-            return options.Configure(
-                configureOptions => configureOptions.ActivityDefinitions
-                    // Add all activities from all referenced assemblies.
-                    .Discover(
-                        selector => selector.FromApplicationDependencies()
-                            .AddClasses(x => x.AssignableTo<IActivity>())));
+            options.ActivityDefinitions
+                // Add all activities from all referenced assemblies.
+                .Discover(
+                    selector => selector.FromApplicationDependencies()
+                        .AddClasses(x => x.AssignableTo<IActivity>()));
+
+            return options;
         }
     }
 }

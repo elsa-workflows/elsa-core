@@ -24,7 +24,7 @@ namespace Elsa.Persistence.YesSql.Extensions
                 .AddScoped(CreateSession)
                 .AddAutoMapperProfile<InstantProfile>(ServiceLifetime.Singleton)
                 .AddAutoMapperProfile<DocumentProfile>(ServiceLifetime.Singleton)
-                .AddStartupTask<StoreInitializationTask>();
+                .AddStartupTask<InitializeStoreTask>();
         }
 
         public static IServiceCollection AddYesSqlWorkflowInstanceStore(this IServiceCollection services)

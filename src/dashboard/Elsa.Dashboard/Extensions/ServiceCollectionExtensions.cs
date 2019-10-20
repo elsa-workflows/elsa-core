@@ -21,12 +21,10 @@ namespace Elsa.Dashboard.Extensions
     {
         public static IServiceCollection AddElsaDashboard(
             this IServiceCollection services,
-            Action<OptionsBuilder<ElsaDashboardOptions>> options = null)
+            Action<ElsaDashboardOptions> options)
         {
-            var optionsBuilder = services.AddOptions<ElsaDashboardOptions>();
-            options?.Invoke(optionsBuilder);
-
             services
+                .Configure(options)
                 .AddTaskExecutingServer()
                 .AddMemoryWorkflowDefinitionStore()
                 .AddMemoryWorkflowInstanceStore()
