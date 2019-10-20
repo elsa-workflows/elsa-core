@@ -13,7 +13,6 @@ using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 
 namespace Elsa.Dashboard.Extensions
 {
@@ -34,7 +33,6 @@ namespace Elsa.Dashboard.Extensions
                 .TryAddProvider<ITokenFormatter, JsonTokenFormatter>(ServiceLifetime.Singleton)
                 .TryAddProvider<ITokenFormatter, YamlTokenFormatter>(ServiceLifetime.Singleton)
                 .TryAddProvider<ITokenFormatter, XmlTokenFormatter>(ServiceLifetime.Singleton)
-                .AddSingleton<ITempDataProvider, CookieTempDataProvider>()
                 .AddHttpContextAccessor()
                 .AddScoped<IWorkflowPublisher, WorkflowPublisher>()
                 .AddScoped<INotifier, Notifier>()
@@ -49,8 +47,7 @@ namespace Elsa.Dashboard.Extensions
                     return factory.GetTempData(accessor.HttpContext);
                 }
             );
-
-            services.ConfigureOptions<StaticAssetsConfigureOptions>();
+            
             services.AddMvcCore(
                 mvc => { mvc.Filters.AddService<NotifierFilter>(); }
             );

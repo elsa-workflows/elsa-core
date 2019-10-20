@@ -3,7 +3,6 @@ using Elsa.WorkflowDesigner.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
-using Workflow = Elsa.Services.Models.Workflow;
 
 namespace Elsa.WorkflowDesigner.ViewComponents
 {

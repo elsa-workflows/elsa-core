@@ -20,7 +20,9 @@ namespace Elsa.Persistence.EntityFrameworkCore.Extensions
             else if (version.IsLatestOrPublished)
                 query = query.Where(x => x.IsPublished || x.IsLatest);
             else if (version.AllVersions)
-                query = query;
+            {
+                // Nothing to filter.
+            }
             else if (version.Version > 0)
                 query = query.Where(x => x.Version == version.Version);
 
