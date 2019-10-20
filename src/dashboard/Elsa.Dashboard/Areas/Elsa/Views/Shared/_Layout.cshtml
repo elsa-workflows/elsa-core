@@ -23,15 +23,15 @@
         Elsa Dashboard
     </title>
     <!-- Favicon -->
-    <link href="~/assets/img/brand/favicon.png" rel="icon" type="image/png">
+    <link href="~/_content/Elsa.Dashboard/assets/img/brand/favicon.png" rel="icon" type="image/png">
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700" rel="stylesheet">
     <!-- Icons -->
-    <link href="~/assets/js/plugins/nucleo/css/nucleo.css" rel="stylesheet"/>
+    <link href="~/_content/Elsa.Dashboard/assets/js/plugins/nucleo/css/nucleo.css" rel="stylesheet"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/all.min.css" integrity="sha256-+N4/V/SbAFiW1MPBCXnfnP9QSN3+Keu+NlB+0ev/YKQ=" crossorigin="anonymous" />
     <!-- CSS Files -->
-    <link href="~/assets/css/argon-dashboard.css?v=1.1.0" rel="stylesheet"/>
-    <link href="~/assets/css/elsa.css?v=1.1.0" rel="stylesheet"/>
+    <link href="~/_content/Elsa.Dashboard/assets/css/argon-dashboard.css?v=1.1.0" rel="stylesheet"/>
+    <link href="~/_content/Elsa.Dashboard/assets/css/elsa.css?v=1.1.0" rel="stylesheet"/>
     <script type="module" src="https://unpkg.com/@@elsa-workflows/elsa-workflow-designer@0.0.59/dist/elsa-workflow-designer/elsa-workflow-designer.esm.js"></script>
     <script nomodule="" src="https://unpkg.com/@@elsa-workflows/elsa-workflow-designer@0.0.59/dist/elsa-workflow-designer/elsa-workflow-designer.js"></script>
     @await RenderSectionAsync("HeadScripts", false)
@@ -55,8 +55,8 @@
     @RenderBody()
 </div>
 <!--   Core   -->
-<script src="~/assets/js/plugins/jquery/dist/jquery.min.js"></script>
-<script src="~/assets/js/plugins/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="~/_content/Elsa.Dashboard/assets/js/plugins/jquery/dist/jquery.min.js"></script>
+<script src="~/_content/Elsa.Dashboard/assets/js/plugins/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 @await Html.PartialAsync("CustomScripts")
 @await RenderSectionAsync("FootScripts", false)
 </body>
