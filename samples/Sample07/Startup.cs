@@ -4,11 +4,11 @@ using Elsa.Activities.Timers.Extensions;
 using Elsa.Extensions;
 using Elsa.Persistence.Memory;
 using Elsa.Runtime;
-using Elsa.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace Sample07
 {
@@ -30,10 +30,11 @@ namespace Sample07
                 .AddEmailActivities(options => options.Bind(Configuration.GetSection("Smtp")))
                 .AddTimerActivities(options => options.Bind(Configuration.GetSection("BackgroundRunner")))
                 .AddMemoryWorkflowDefinitionStore()
-                .AddMemoryWorkflowInstanceStore();
+                .AddMemoryWorkflowInstanceStore()
+                .AddWorkflow<DocumentApprovalWorkflow>();
         }
 
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, IWorkflowRegistry workflowRegistry)
+        public void Configure(IApplicationBuilder app, IHostEnvironment env)
         {
             if (env.IsDevelopment())
             {
@@ -42,8 +43,6 @@ namespace Sample07
             
             app.UseHttpActivities();
             app.UseWelcomePage();
-            
-            workflowRegistry.RegisterWorkflow<DocumentApprovalWorkflow>();
         }
     }
 }

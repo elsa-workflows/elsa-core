@@ -17,7 +17,7 @@
             "state": {
                 "textExpression": {
                     "expression": "Welcome to Calculator",
-                    "syntax": "PlainText"
+                    "syntax": "Literal"
                 }
             }
         },
@@ -29,7 +29,7 @@
             "state": {
                 "textExpression": {
                     "expression": "Enter a number",
-                    "syntax": "PlainText"
+                    "syntax": "Literal"
                 }
             }
         },
@@ -41,7 +41,7 @@
             "state": {
                 "textExpression": {
                     "expression": "Enter another number",
-                    "syntax": "PlainText"
+                    "syntax": "Literal"
                 }
             }
         },
@@ -62,7 +62,7 @@
             "state": {
                 "textExpression": {
                     "expression": "Enter an operation. Options: Add, Subtract, Multiply, Divide",
-                    "syntax": "PlainText"
+                    "syntax": "Literal"
                 }
             }
         },
@@ -91,7 +91,7 @@
             "type": "SetVariable",
             "state": {
                 "variableName": "result",
-                "variableExpression": {
+                "valueExpression": {
                     "expression": "a + b",
                     "syntax": "JavaScript"
                 },
@@ -108,7 +108,7 @@
             "type": "SetVariable",
             "state": {
                 "variableName": "result",
-                "variableExpression": {
+                "valueExpression": {
                     "expression": "a - b",
                     "syntax": "JavaScript"
                 },
@@ -125,7 +125,7 @@
             "type": "SetVariable",
             "state": {
                 "variableName": "result",
-                "variableExpression": {
+                "valueExpression": {
                     "expression": "a * b",
                     "syntax": "JavaScript"
                 },
@@ -142,7 +142,7 @@
             "type": "SetVariable",
             "state": {
                 "variableName": "result",
-                "variableExpression": {
+                "valueExpression": {
                     "expression": "a / b",
                     "syntax": "JavaScript"
                 },
@@ -172,7 +172,7 @@
             "state": {
                 "textExpression": {
                     "expression": "Try again? (y/n)",
-                    "syntax": "PlainText"
+                    "syntax": "Literal"
                 }
             }
         },
@@ -191,7 +191,7 @@
             "left": 687,
             "type": "IfElse",
             "state": {
-                "expression": {
+                "conditionExpression": {
                     "expression": "retry === 'y'",
                     "syntax": "JavaScript"
                 }
@@ -205,7 +205,7 @@
             "state": {
                 "textExpression": {
                     "expression": "Bye!",
-                    "syntax": "PlainText"
+                    "syntax": "Literal"
                 }
             }
         },

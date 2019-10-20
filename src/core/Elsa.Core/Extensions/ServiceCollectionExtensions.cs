@@ -7,17 +7,15 @@ using Elsa.Activities.Workflows;
 using Elsa.AutoMapper.Extensions;
 using Elsa.Expressions;
 using Elsa.Mapping;
-using Elsa.Persistence;
 using Elsa.Persistence.Memory;
-using Elsa.Runtime;
 using Elsa.Scripting;
 using Elsa.Serialization;
 using Elsa.Serialization.Formatters;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Elsa.StartupTasks;
 using Elsa.WorkflowBuilders;
 using Elsa.WorkflowEventHandlers;
+using Elsa.WorkflowProviders;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using NodaTime;
@@ -43,6 +41,7 @@ namespace Elsa.Extensions
             return services
                 .AddLogging()
                 .AddLocalization()
+                .AddMemoryCache()
                 .AddTransient<Func<IEnumerable<IActivity>>>(sp => sp.GetServices<IActivity>)
                 .AddSingleton<IIdGenerator, IdGenerator>()
                 .AddSingleton<IWorkflowSerializer, WorkflowSerializer>()
@@ -61,14 +60,21 @@ namespace Elsa.Extensions
                 .AddSingleton<IWorkflowInvoker, WorkflowInvoker>()
                 .AddScoped<IScopedWorkflowInvoker, ScopedWorkflowInvoker>()
                 .AddScoped<IActivityResolver, ActivityResolver>()
-                .AddScoped<IWorkflowBuilder, WorkflowBuilder>()
                 .AddScoped<IWorkflowEventHandler, ActivityLoggingWorkflowEventHandler>()
-                .AddStartupTask<PopulateRegistryTask>()
-                .AddSingleton<Func<IWorkflowBuilder>>(sp => sp.GetRequiredService<IWorkflowBuilder>)
+                .AddTransient<IWorkflowProvider, StoreWorkflowProvider>()
+                .AddTransient<IWorkflowProvider, CodeWorkflowProvider>()
+                .AddTransient<IWorkflowBuilder, WorkflowBuilder>()
+                .AddTransient<Func<IWorkflowBuilder>>(sp => sp.GetRequiredService<IWorkflowBuilder>)
                 .AddAutoMapperProfile<WorkflowDefinitionProfile>(ServiceLifetime.Singleton)
                 .AddPrimitiveActivities()
                 .AddControlFlowActivities()
                 .AddWorkflowActivities();
+        }
+
+        public static IServiceCollection AddWorkflow<T>(this IServiceCollection services)
+            where T : class, IWorkflow
+        {
+            return services.AddTransient<IWorkflow, T>();
         }
 
         public static IServiceCollection AddActivity<T>(this IServiceCollection services)
@@ -95,7 +101,8 @@ namespace Elsa.Extensions
         public static IServiceCollection TryAddProvider(
             this IServiceCollection services,
             Type serviceType,
-            Type providerType, ServiceLifetime lifetime)
+            Type providerType,
+            ServiceLifetime lifetime)
         {
             var descriptor = services.FirstOrDefault(
                 x => x.ServiceType == serviceType && x.ImplementationType == providerType

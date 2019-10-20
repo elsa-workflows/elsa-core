@@ -1,10 +1,7 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Elsa.Activities.Console.Extensions;
 using Elsa.Activities.Timers.Extensions;
 using Elsa.Extensions;
-using Elsa.Persistence.Memory;
-using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -27,23 +24,16 @@ namespace Sample05
 
             using (host)
             {
-                SetupWorkflow(host.Services);
                 await host.StartAsync();
                 await host.WaitForShutdownAsync();
             }
-        }
-
-        private static void SetupWorkflow(IServiceProvider services)
-        {
-            // Register the workflow.
-            var registry = services.GetService<IWorkflowRegistry>();
-            registry.RegisterWorkflow<RecurringWorkflow>();
         }
 
         private static void ConfigureServices(IServiceCollection services)
         {
             services
                 .AddWorkflows()
+                .AddWorkflow<RecurringWorkflow>()
                 .AddConsoleActivities()
                 .AddTimerActivities(options => options.Configure(x => x.SweepInterval = Period.FromSeconds(1)));
         }

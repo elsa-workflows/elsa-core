@@ -2,12 +2,13 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using CSharpFunctionalExtensions;
 using Elsa.Activities.Http.Models;
 using Elsa.Activities.Http.Services;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services;
+using LanguageExt;
+using LanguageExt.Common;
 using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Activities.Http.RequestHandlers.Handlers
@@ -38,70 +39,78 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
             this.workflowInstanceStore = workflowInstanceStore;
             cancellationToken = httpContext.RequestAborted;
         }
-        
+
         public async Task<IRequestHandlerResult> HandleRequestAsync()
         {
             await DecryptToken()
-                .OnSuccess(GetWorkflowInstanceAsync)
-                .OnSuccess(CheckIfExecutingAsync)
-                .OnSuccess(ResumeWorkflowAsync);
+                .BindAsync(GetWorkflowInstanceAsync)
+                .BindAsync(CheckIfExecutingAsync)
+                .MapAsync(ResumeWorkflowAsync);
 
             return default;
         }
-        
-        private Result<Signal> DecryptToken()
+
+        private Either<Error, Signal> DecryptToken()
         {
             var token = httpContext.Request.Query["token"];
-            
+
             if (tokenService.TryDecryptToken(token, out Signal signal))
             {
-                return Result.Ok(signal);
+                return signal;
             }
 
-            httpContext.Response.StatusCode = (int) HttpStatusCode.NotFound;
-            return Result.Fail<Signal>("Invalid token");
+            httpContext.Response.StatusCode = (int)HttpStatusCode.NotFound;
+            return Error.New("Invalid token");
         }
 
-        private async Task<Result<(WorkflowInstance, Signal)>> GetWorkflowInstanceAsync(Signal signal)
+        private async Task<Either<Error, (WorkflowInstance, Signal)>> GetWorkflowInstanceAsync(Signal signal)
         {
-            var workflowInstance = await workflowInstanceStore.GetByIdAsync(signal.WorkflowInstanceId, cancellationToken);
+            var workflowInstance =
+                await workflowInstanceStore.GetByIdAsync(signal.WorkflowInstanceId, cancellationToken);
 
             if (workflowInstance != null)
-                return Result.Ok((workflowInstance, signal));
-            
-            httpContext.Response.StatusCode = (int) HttpStatusCode.NotFound;
-            return Result.Fail<(WorkflowInstance, Signal)>("Workflow not found");
+                return (workflowInstance, signal);
+
+            httpContext.Response.StatusCode = (int)HttpStatusCode.NotFound;
+            return Error.New("Workflow not found");
         }
 
-        private async Task<Result<(WorkflowInstance, Signal)>> CheckIfExecutingAsync((WorkflowInstance, Signal) tuple)
+        private async Task<Either<Error, (WorkflowInstance, Signal)>> CheckIfExecutingAsync(
+            (WorkflowInstance, Signal) tuple)
         {
             var (workflowInstance, signal) = tuple;
-            
-            if (workflowInstance.Status == WorkflowStatus.Executing) 
-                return Result.Ok((workflowInstance, signal));
-            
-            httpContext.Response.StatusCode = (int) HttpStatusCode.BadRequest;
-            await httpContext.Response.WriteAsync($"Cannot signal a workflow with status other than {WorkflowStatus.Executing}. Actual workflow status: {workflowInstance.Status}.", cancellationToken);
-            return Result.Fail<(WorkflowInstance, Signal)>("Cannot resume workflow that is not executing.");
+
+            if (workflowInstance.Status == WorkflowStatus.Executing)
+                return (workflowInstance, signal);
+
+            httpContext.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+            await httpContext.Response.WriteAsync(
+                $"Cannot signal a workflow with status other than {WorkflowStatus.Executing}. Actual workflow status: {workflowInstance.Status}.",
+                cancellationToken);
+            return Error.New("Cannot resume workflow that is not executing.");
         }
 
         private async Task ResumeWorkflowAsync((WorkflowInstance, Signal) tuple)
         {
             var (workflowInstance, signal) = tuple;
-            
+
             var input = new Variables
             {
                 ["Signal"] = signal.Name
             };
 
-            var workflowDefinition = workflowRegistry.GetById(workflowInstance.DefinitionId, workflowInstance.Version);
+            var workflowDefinition = await workflowRegistry.GetWorkflowDefinitionAsync(
+                workflowInstance.DefinitionId,
+                workflowInstance.Version,
+                cancellationToken);
+            
             var workflow = workflowFactory.CreateWorkflow(workflowDefinition, input, workflowInstance);
             var blockingSignalActivities = workflow.BlockingActivities.ToList();
             await workflowInvoker.ResumeAsync(workflow, blockingSignalActivities, cancellationToken);
 
             if (!httpContext.Response.HasStarted)
             {
-                httpContext.Response.StatusCode = (int) HttpStatusCode.Accepted;
+                httpContext.Response.StatusCode = (int)HttpStatusCode.Accepted;
             }
         }
     }

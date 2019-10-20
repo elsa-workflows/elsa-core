@@ -23,7 +23,8 @@ namespace Sample02
                 .BuildServiceProvider();
 
             // Define a workflow.
-            var workflowBuilder = services.GetRequiredService<IWorkflowBuilder>();
+            var workflowBuilderFactory = services.GetRequiredService<Func<IWorkflowBuilder>>();
+            var workflowBuilder = workflowBuilderFactory();
             var workflowDefinition = workflowBuilder
                 .StartWith<WriteLine>(x => x.TextExpression = new LiteralExpression("Hello world!"))
                 .Then<WriteLine>(x => x.TextExpression = new LiteralExpression("Goodbye cruel world..."))

@@ -1,5 +1,4 @@
-﻿using Elsa.TypeConverters;
-using Microsoft.AspNetCore;
+﻿using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 
 namespace Elsa.WorkflowHost.Web
@@ -8,7 +7,6 @@ namespace Elsa.WorkflowHost.Web
     {
         public static void Main(string[] args)
         {
-            ProgramExtensions.ConfigureTypeConverters();
             CreateWebHostBuilder(args).Build().Run();
         }
 

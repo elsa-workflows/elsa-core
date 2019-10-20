@@ -30,7 +30,7 @@ namespace Sample08.Workflows
                     activity =>
                     {
                         activity.VariableName = "order";
-                        activity.ValueExpression = new JavaScriptExpression<object>("lastResult().ParsedContent");
+                        activity.ValueExpression = new JavaScriptExpression<object>("lastResult().Content");
                     }
                 )
                 .Then<SendMassTransitMessage>(activity =>

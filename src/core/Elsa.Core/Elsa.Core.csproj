@@ -15,17 +15,20 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="AutoMapper" Version="8.1.1" />
+        <PackageReference Include="AutoMapper" Version="9.0.0" />
         <PackageReference Include="Microsoft.AspNetCore.Hosting.Server.Abstractions" Version="2.2.0" />
         <PackageReference Include="Microsoft.CSharp" Version="4.5.0" />
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.2.0" />
-        <PackageReference Include="Microsoft.Extensions.Localization" Version="2.2.0" />
-        <PackageReference Include="Microsoft.Extensions.Logging" Version="2.2.0" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.2.0" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="2.2.0" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="2.2.0" />
+        <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="3.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="3.0.0" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Localization" Version="3.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Logging" Version="3.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="3.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="3.0.0" />
         <PackageReference Include="NodaTime.Serialization.JsonNet" Version="2.2.0" />
         <PackageReference Include="Scrutor.Elsa" Version="3.0.2.20" />
+        <PackageReference Include="SlimMessageBus" Version="1.1.2" />
 
         <PackageReference Include="YamlDotNet.NetStandard" Version="4.0.0" />
     </ItemGroup>

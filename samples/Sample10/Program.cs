@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Data;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Console.Extensions;
 using Elsa.Extensions;
@@ -24,25 +25,29 @@ namespace Sample10
             // Invoke startup tasks.
             var startupRunner = services.GetRequiredService<IStartupRunner>();
             await startupRunner.StartupAsync();
-            
-            // Create a workflow definition.
-            var registry = services.GetService<IWorkflowRegistry>();
-            var workflowDefinition = registry.RegisterWorkflow<HelloWorldWorkflow>();
-            
-            // Mark this definition as the "latest" version.
-            workflowDefinition.IsLatest = true;
-            workflowDefinition.Version = 1;
 
             using (var scope = services.CreateScope())
             {
-                var session = services.GetRequiredService<ISession>();
-                
-                // Persist the workflow definition.
                 var definitionStore = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionStore>();
+                var workflowDefinitionId = nameof(HelloWorldWorkflow);
+
+                // When running this program multiple times, we should delete the created workflow definition before adding it to the store again.
+                await definitionStore.DeleteAsync(workflowDefinitionId);
+
+                // Create a workflow definition.
+                var registry = services.GetService<IWorkflowRegistry>();
+                var workflowDefinition = await registry.GetWorkflowDefinitionAsync<HelloWorldWorkflow>();
+
+                // Mark this definition as the "latest" version.
+                workflowDefinition.IsLatest = true;
+                workflowDefinition.Version = 1;
+
+                // Persist the workflow definition.
+
                 await definitionStore.SaveAsync(workflowDefinition);
 
                 // Load the workflow definition.
-                workflowDefinition = await definitionStore.GetByIdAsync(workflowDefinition.Id, VersionOptions.Latest);
+                workflowDefinition = await definitionStore.GetByIdAsync(workflowDefinition.DefinitionId, VersionOptions.Latest);
 
                 // Execute the workflow.
                 var invoker = scope.ServiceProvider.GetRequiredService<IWorkflowInvoker>();
@@ -54,20 +59,22 @@ namespace Sample10
                 await instanceStore.SaveAsync(workflowInstance);
             }
         }
-        
+
         private static IServiceProvider BuildServices()
         {
             return new ServiceCollection()
                 .AddWorkflowsCore()
                 .AddStartupRunner()
                 .AddConsoleActivities()
-                .AddYesSql(options => options
-                    .UseSqLite(@"Data Source=c:\data\elsa.yessql.db;Cache=Shared", IsolationLevel.ReadUncommitted)
-                    .UseDefaultIdGenerator()
-                    .SetTablePrefix("elsa_")
+                .AddYesSql(
+                    options => options
+                        .UseSqLite(@"Data Source=c:\data\elsa.yessql.db;Cache=Shared", IsolationLevel.ReadUncommitted)
+                        .UseDefaultIdGenerator()
+                        .SetTablePrefix("elsa_")
                 )
                 .AddYesSqlWorkflowDefinitionStore()
                 .AddYesSqlWorkflowInstanceStore()
+                .AddWorkflow<HelloWorldWorkflow>()
                 .BuildServiceProvider();
         }
     }

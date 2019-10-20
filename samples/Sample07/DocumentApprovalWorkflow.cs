@@ -32,7 +32,7 @@ namespace Sample07
                     x =>
                     {
                         x.VariableName = "Document";
-                        x.ValueExpression = new JavaScriptExpression<object>("lastResult().ParsedContent");
+                        x.ValueExpression = new JavaScriptExpression<object>("lastResult().Content");
                     }
                 )
                 .Then<SendEmail>(
