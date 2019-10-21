@@ -31,7 +31,7 @@ CREATE TABLE [WorkflowInstances] (
     [Id] nvarchar(450) NOT NULL,
     [DefinitionId] nvarchar(max) NULL,
     [Version] int NOT NULL,
-    [Status] int NOT NULL,
+    [Status] nvarchar(max) NOT NULL,
     [CorrelationId] nvarchar(max) NULL,
     [CreatedAt] datetime2 NOT NULL,
     [StartedAt] datetime2 NULL,
@@ -50,6 +50,6 @@ CREATE TABLE [WorkflowInstances] (
 GO
 
 INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-VALUES (N'20190915185812_Create', N'2.2.6-servicing-10079');
+VALUES (N'20190929143746_InitialCreate', N'2.2.6-servicing-10079');
 
 GO
