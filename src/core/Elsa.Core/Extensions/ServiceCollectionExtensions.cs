@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Elsa;
 using Elsa.Activities.ControlFlow;
 using Elsa.Activities.Primitives;
 using Elsa.Activities.Workflows;
@@ -20,25 +21,33 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using NodaTime;
 
-namespace Elsa.Extensions
+// ReSharper disable once CheckNamespace
+namespace Microsoft.Extensions.DependencyInjection
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddWorkflows(this IServiceCollection services)
+        public static IServiceCollection AddWorkflows(
+            this IServiceCollection services,
+            Action<ServiceConfiguration> configure)
         {
-            services.AddWorkflowsCore();
-
-            return services
-                .AddMemoryWorkflowInstanceStore()
-                .AddMemoryWorkflowDefinitionStore()
-                .AddScoped<IWorkflowEventHandler, PersistenceWorkflowEventHandler>();
+            var configuration = new ServiceConfiguration(services);
+            configuration.WithWorkflowsCore();
+            configure(configuration);
+            return services;
         }
 
-        public static IServiceCollection AddWorkflowsCore(this IServiceCollection services)
+        public static ServiceConfiguration WithAutomaticPersistence(this ServiceConfiguration configuration)
         {
+            configuration.Services.AddScoped<IWorkflowEventHandler, PersistenceWorkflowEventHandler>();
+            return configuration;
+        }
+
+        private static ServiceConfiguration WithWorkflowsCore(this ServiceConfiguration configuration)
+        {
+            var services = configuration.Services;
             services.TryAddSingleton<IClock>(SystemClock.Instance);
 
-            return services
+            services
                 .AddLogging()
                 .AddLocalization()
                 .AddMemoryCache()
@@ -69,6 +78,8 @@ namespace Elsa.Extensions
                 .AddPrimitiveActivities()
                 .AddControlFlowActivities()
                 .AddWorkflowActivities();
+
+            return configuration;
         }
 
         public static IServiceCollection AddWorkflow<T>(this IServiceCollection services)

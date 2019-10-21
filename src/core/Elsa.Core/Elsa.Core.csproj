@@ -28,7 +28,6 @@
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="3.0.0" />
         <PackageReference Include="NodaTime.Serialization.JsonNet" Version="2.2.0" />
         <PackageReference Include="Scrutor.Elsa" Version="3.0.2.20" />
-        <PackageReference Include="SlimMessageBus" Version="1.1.2" />
 
         <PackageReference Include="YamlDotNet.NetStandard" Version="4.0.0" />
     </ItemGroup>

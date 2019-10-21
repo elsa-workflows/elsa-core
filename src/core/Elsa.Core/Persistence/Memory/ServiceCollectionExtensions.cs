@@ -1,24 +1,26 @@
-using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Persistence.Memory
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddMemoryWorkflowInstanceStore(this IServiceCollection services)
+        public static MemoryStoreServiceConfiguration WithMemoryProvider(this ServiceConfiguration configuration)
         {
-            if (services.All(x => x.ServiceType != typeof(IWorkflowInstanceStore)))
-                services.AddSingleton<IWorkflowInstanceStore, MemoryWorkflowInstanceStore>();
+            return new MemoryStoreServiceConfiguration(configuration.Services);
+        }
+        
+        public static MemoryStoreServiceConfiguration WithWorkflowInstanceStore(this MemoryStoreServiceConfiguration configuration)
+        {
+            configuration.Services.AddSingleton<IWorkflowInstanceStore, MemoryWorkflowInstanceStore>();
 
-            return services;
+            return configuration;
         }
 
-        public static IServiceCollection AddMemoryWorkflowDefinitionStore(this IServiceCollection services)
+        public static MemoryStoreServiceConfiguration WithWorkflowDefinitionStore(this MemoryStoreServiceConfiguration configuration)
         {
-            if (services.All(x => x.ServiceType != typeof(IWorkflowDefinitionStore)))
-                services.AddSingleton<IWorkflowDefinitionStore, MemoryWorkflowDefinitionStore>();
+            configuration.Services.AddSingleton<IWorkflowDefinitionStore, MemoryWorkflowDefinitionStore>();
 
-            return services;
+            return configuration;
         }
     }
 }

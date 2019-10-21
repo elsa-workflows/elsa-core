@@ -15,7 +15,7 @@ namespace Elsa.Persistence.MongoDb.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddMongoDb(this IServiceCollection services,
+        public static MongoServiceConfiguration WithMongoDbProvider(this ServiceConfiguration serviceConfiguration,
             IConfiguration configuration,
             string databaseName,
             string connectionStringName
@@ -25,23 +25,29 @@ namespace Elsa.Persistence.MongoDb.Extensions
             RegisterEnumAsStringConvention();
             BsonSerializer.RegisterSerializer(new JObjectSerializer());
 
-            return services
+            serviceConfiguration.Services
                 .AddSingleton(sp => CreateDbClient(configuration, connectionStringName))
                 .AddSingleton(sp => CreateDatabase(sp, databaseName));
+            
+            return new MongoServiceConfiguration(serviceConfiguration.Services);
         }
 
-        public static IServiceCollection AddMongoDbWorkflowInstanceStore(this IServiceCollection services)
+        public static MongoServiceConfiguration AddMongoDbWorkflowInstanceStore(this MongoServiceConfiguration configuration)
         {
-            return services
+            configuration.Services
                 .AddMongoDbCollection<WorkflowInstance>("WorkflowInstances")
                 .Replace<IWorkflowInstanceStore, MongoWorkflowInstanceStore>(ServiceLifetime.Scoped);
+
+            return configuration;
         }
 
-        public static IServiceCollection AddMongoDbWorkflowDefinitionStore(this IServiceCollection services)
+        public static MongoServiceConfiguration AddMongoDbWorkflowDefinitionStore(this MongoServiceConfiguration configuration)
         {
-            return services
+            configuration.Services
                 .AddMongoDbCollection<WorkflowDefinitionVersion>("WorkflowDefinitions")
                 .Replace<IWorkflowDefinitionStore, MongoWorkflowDefinitionStore>(ServiceLifetime.Scoped);
+
+            return configuration;
         }
         
         public static IServiceCollection AddMongoDbCollection<T>(this IServiceCollection services, string collectionName)

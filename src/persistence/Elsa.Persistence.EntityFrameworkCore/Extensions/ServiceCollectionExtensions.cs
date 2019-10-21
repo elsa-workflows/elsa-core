@@ -11,30 +11,40 @@ namespace Elsa.Persistence.EntityFrameworkCore.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddEntityFrameworkCore(
-            this IServiceCollection services,
-            Action<DbContextOptionsBuilder> configureOptions, bool usePooling = true)
+        public static EntityFrameworkCoreServiceConfiguration WithEntityFrameworkCoreProvider(
+            this ServiceConfiguration configuration,
+            Action<DbContextOptionsBuilder> configureOptions,
+            bool usePooling = true)
         {
+            var services = configuration.Services;
             if (usePooling)
                 services.AddDbContextPool<ElsaContext>(configureOptions);
             else
                 services.AddDbContext<ElsaContext>(configureOptions);
 
-            return services
+            services
                 .AddAutoMapperProfile<InstantProfile>(ServiceLifetime.Singleton)
                 .AddAutoMapperProfile<DocumentProfile>(ServiceLifetime.Singleton);
+
+            return new EntityFrameworkCoreServiceConfiguration(configuration.Services);
         }
 
-        public static IServiceCollection AddEntityFrameworkCoreWorkflowInstanceStore(this IServiceCollection services)
+        public static EntityFrameworkCoreServiceConfiguration WithWorkflowInstanceStore(
+            this EntityFrameworkCoreServiceConfiguration configuration)
         {
-            return services
-                .Replace<IWorkflowInstanceStore, EntityFrameworkCoreWorkflowInstanceStore>(ServiceLifetime.Scoped);
+            configuration.Services
+                .AddScoped<IWorkflowInstanceStore, EntityFrameworkCoreWorkflowInstanceStore>();
+
+            return configuration;
         }
 
-        public static IServiceCollection AddEntityFrameworkCoreWorkflowDefinitionStore(this IServiceCollection services)
+        public static EntityFrameworkCoreServiceConfiguration WithWorkflowDefinitionStore(
+            this EntityFrameworkCoreServiceConfiguration configuration)
         {
-            return services
-                .Replace<IWorkflowDefinitionStore, EntityFrameworkCoreWorkflowDefinitionStore>(ServiceLifetime.Scoped);
+            configuration.Services
+                .AddScoped<IWorkflowDefinitionStore, EntityFrameworkCoreWorkflowDefinitionStore>();
+
+            return configuration;
         }
     }
 }

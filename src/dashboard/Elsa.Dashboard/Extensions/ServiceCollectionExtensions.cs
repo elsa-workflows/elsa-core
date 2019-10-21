@@ -20,13 +20,32 @@ namespace Elsa.Dashboard.Extensions
     {
         public static IServiceCollection AddElsaDashboard(
             this IServiceCollection services,
-            Action<ElsaDashboardOptions> options)
+            Action<ElsaDashboardOptions> options,
+            Action<ServiceConfiguration> configure)
         {
+            var configuration = new ServiceConfiguration(services);
+
+            configuration.WithElsaDashboard();
+            configure(configuration);
+            
             services
                 .Configure(options)
                 .AddTaskExecutingServer()
-                .AddMemoryWorkflowDefinitionStore()
-                .AddMemoryWorkflowInstanceStore()
+                .AddTempData();
+            
+            services.AddMvcCore(
+                mvc => { mvc.Filters.AddService<NotifierFilter>(); }
+            );
+
+            return services;
+        }
+        
+        public static ServiceConfiguration WithElsaDashboard(this ServiceConfiguration configuration)
+        {
+            var services = configuration.Services;
+            
+            services
+                .AddTaskExecutingServer()
                 .AddSingleton<IIdGenerator, IdGenerator>()
                 .AddSingleton<IWorkflowSerializerProvider, WorkflowSerializerProvider>()
                 .AddSingleton<IWorkflowSerializer, WorkflowSerializer>()
@@ -52,7 +71,19 @@ namespace Elsa.Dashboard.Extensions
                 mvc => { mvc.Filters.AddService<NotifierFilter>(); }
             );
 
-            return services;
+            return configuration;
+        }
+
+        private static IServiceCollection AddTempData(this IServiceCollection services)
+        {
+            return services.AddScoped(
+                sp =>
+                {
+                    var accessor = sp.GetRequiredService<IHttpContextAccessor>();
+                    var factory = sp.GetRequiredService<ITempDataDictionaryFactory>();
+                    return factory.GetTempData(accessor.HttpContext);
+                }
+            );
         }
     }
 }
