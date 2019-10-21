@@ -1,9 +1,11 @@
 using System;
 using Elsa.AutoMapper.Extensions;
 using Elsa.Dashboard.ActionFilters;
+using Elsa.Dashboard.Decorators;
 using Elsa.Dashboard.Options;
 using Elsa.Dashboard.Services;
 using Elsa.Mapping;
+using Elsa.Persistence;
 using Elsa.Runtime;
 using Elsa.Serialization;
 using Elsa.Serialization.Formatters;
@@ -30,6 +32,8 @@ namespace Elsa.Dashboard.Extensions
                 .Configure(options)
                 .AddTaskExecutingServer()
                 .AddTempData();
+            
+            services.Decorate<IWorkflowDefinitionStore, PublishingWorkflowDefinitionStore>();
             
             services.AddMvcCore(
                 mvc => { mvc.Filters.AddService<NotifierFilter>(); }

@@ -16,6 +16,8 @@
 
     <ItemGroup>
         <PackageReference Include="AutoMapper" Version="9.0.0" />
+        <PackageReference Include="MediatR" Version="7.0.0" />
+        <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="7.0.0" />
         <PackageReference Include="Microsoft.AspNetCore.Hosting.Server.Abstractions" Version="2.2.0" />
         <PackageReference Include="Microsoft.CSharp" Version="4.5.0" />
         <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="3.0.0" />

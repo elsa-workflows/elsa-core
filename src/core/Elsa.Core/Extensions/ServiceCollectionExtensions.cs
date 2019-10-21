@@ -16,6 +16,7 @@ using Elsa.Services.Models;
 using Elsa.WorkflowBuilders;
 using Elsa.WorkflowEventHandlers;
 using Elsa.WorkflowProviders;
+using MediatR;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using NodaTime;
 
@@ -30,6 +31,7 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             var configuration = new ServiceConfiguration(services);
             configuration.WithWorkflowsCore();
+            configuration.WithMediatR();
             configure(configuration);
             return services;
         }
@@ -37,46 +39,6 @@ namespace Microsoft.Extensions.DependencyInjection
         public static ServiceConfiguration WithAutomaticPersistence(this ServiceConfiguration configuration)
         {
             configuration.Services.AddScoped<IWorkflowEventHandler, PersistenceWorkflowEventHandler>();
-            return configuration;
-        }
-
-        private static ServiceConfiguration WithWorkflowsCore(this ServiceConfiguration configuration)
-        {
-            var services = configuration.Services;
-            services.TryAddSingleton<IClock>(SystemClock.Instance);
-
-            services
-                .AddLogging()
-                .AddLocalization()
-                .AddMemoryCache()
-                .AddTransient<Func<IEnumerable<IActivity>>>(sp => sp.GetServices<IActivity>)
-                .AddSingleton<IIdGenerator, IdGenerator>()
-                .AddSingleton<IWorkflowSerializer, WorkflowSerializer>()
-                .TryAddProvider<ITokenFormatter, JsonTokenFormatter>(ServiceLifetime.Singleton)
-                .TryAddProvider<ITokenFormatter, YamlTokenFormatter>(ServiceLifetime.Singleton)
-                .TryAddProvider<ITokenFormatter, XmlTokenFormatter>(ServiceLifetime.Singleton)
-                .TryAddProvider<IExpressionEvaluator, LiteralEvaluator>(ServiceLifetime.Singleton)
-                .TryAddProvider<IExpressionEvaluator, JavaScriptEvaluator>(ServiceLifetime.Singleton)
-                .AddSingleton<IScriptEngineConfigurator, CommonScriptEngineConfigurator>()
-                .AddSingleton<IScriptEngineConfigurator, DateTimeScriptEngineConfigurator>()
-                .AddScoped<IWorkflowFactory, WorkflowFactory>()
-                .AddSingleton<IActivityInvoker, ActivityInvoker>()
-                .AddSingleton<IWorkflowExpressionEvaluator, WorkflowExpressionEvaluator>()
-                .AddSingleton<IWorkflowSerializerProvider, WorkflowSerializerProvider>()
-                .AddSingleton<IWorkflowRegistry, WorkflowRegistry>()
-                .AddSingleton<IWorkflowInvoker, WorkflowInvoker>()
-                .AddScoped<IScopedWorkflowInvoker, ScopedWorkflowInvoker>()
-                .AddScoped<IActivityResolver, ActivityResolver>()
-                .AddScoped<IWorkflowEventHandler, ActivityLoggingWorkflowEventHandler>()
-                .AddTransient<IWorkflowProvider, StoreWorkflowProvider>()
-                .AddTransient<IWorkflowProvider, CodeWorkflowProvider>()
-                .AddTransient<IWorkflowBuilder, WorkflowBuilder>()
-                .AddTransient<Func<IWorkflowBuilder>>(sp => sp.GetRequiredService<IWorkflowBuilder>)
-                .AddAutoMapperProfile<WorkflowDefinitionProfile>(ServiceLifetime.Singleton)
-                .AddPrimitiveActivities()
-                .AddControlFlowActivities()
-                .AddWorkflowActivities();
-
             return configuration;
         }
 
@@ -131,6 +93,51 @@ namespace Microsoft.Extensions.DependencyInjection
             ServiceLifetime lifetime)
         {
             return services.Replace(new ServiceDescriptor(typeof(TService), typeof(TImplementation), lifetime));
+        }
+
+        private static IServiceCollection WithMediatR(this ServiceConfiguration configuration)
+        {
+            return configuration.Services.AddMediatR(typeof(ServiceCollectionExtensions));
+        }
+        
+        private static ServiceConfiguration WithWorkflowsCore(this ServiceConfiguration configuration)
+        {
+            var services = configuration.Services;
+            services.TryAddSingleton<IClock>(SystemClock.Instance);
+
+            services
+                .AddLogging()
+                .AddLocalization()
+                .AddMemoryCache()
+                .AddTransient<Func<IEnumerable<IActivity>>>(sp => sp.GetServices<IActivity>)
+                .AddSingleton<IIdGenerator, IdGenerator>()
+                .AddSingleton<IWorkflowSerializer, WorkflowSerializer>()
+                .TryAddProvider<ITokenFormatter, JsonTokenFormatter>(ServiceLifetime.Singleton)
+                .TryAddProvider<ITokenFormatter, YamlTokenFormatter>(ServiceLifetime.Singleton)
+                .TryAddProvider<ITokenFormatter, XmlTokenFormatter>(ServiceLifetime.Singleton)
+                .TryAddProvider<IExpressionEvaluator, LiteralEvaluator>(ServiceLifetime.Singleton)
+                .TryAddProvider<IExpressionEvaluator, JavaScriptEvaluator>(ServiceLifetime.Singleton)
+                .AddSingleton<IScriptEngineConfigurator, CommonScriptEngineConfigurator>()
+                .AddSingleton<IScriptEngineConfigurator, DateTimeScriptEngineConfigurator>()
+                .AddScoped<IWorkflowFactory, WorkflowFactory>()
+                .AddSingleton<IActivityInvoker, ActivityInvoker>()
+                .AddSingleton<IWorkflowExpressionEvaluator, WorkflowExpressionEvaluator>()
+                .AddSingleton<IWorkflowSerializerProvider, WorkflowSerializerProvider>()
+                .AddSingleton<IWorkflowRegistry, WorkflowRegistry>()
+                .AddSingleton<IWorkflowInvoker, WorkflowInvoker>()
+                .AddScoped<IScopedWorkflowInvoker, ScopedWorkflowInvoker>()
+                .AddScoped<IActivityResolver, ActivityResolver>()
+                .AddScoped<IWorkflowEventHandler, ActivityLoggingWorkflowEventHandler>()
+                .AddTransient<IWorkflowProvider, StoreWorkflowProvider>()
+                .AddTransient<IWorkflowProvider, CodeWorkflowProvider>()
+                .AddTransient<IWorkflowBuilder, WorkflowBuilder>()
+                .AddTransient<Func<IWorkflowBuilder>>(sp => sp.GetRequiredService<IWorkflowBuilder>)
+                .AddAutoMapperProfile<WorkflowDefinitionProfile>(ServiceLifetime.Singleton)
+                .AddPrimitiveActivities()
+                .AddControlFlowActivities()
+                .AddWorkflowActivities();
+
+            return configuration;
         }
 
         private static IServiceCollection AddPrimitiveActivities(this IServiceCollection services)

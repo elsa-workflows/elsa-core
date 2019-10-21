@@ -52,6 +52,12 @@ namespace Elsa.Services
                 .WithVersion(version).FirstOrDefault();
         }
 
+        public Task EvictAsync(CancellationToken cancellationToken)
+        {
+            cache.Remove(CacheKey);
+            return Task.CompletedTask;
+        }
+
         private async Task<ICollection<WorkflowDefinitionVersion>> ReadCacheAsync(CancellationToken cancellationToken)
         {
             return await cache.GetOrCreateAsync(
