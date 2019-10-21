@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Activities.Workflows;
 using Elsa.Attributes;
 using Elsa.Expressions;
 using Elsa.Extensions;

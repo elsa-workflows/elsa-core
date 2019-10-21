@@ -2,7 +2,6 @@
 using Elsa.Activities.Http.Extensions;
 using Elsa.Activities.MassTransit.Extensions;
 using Elsa.Activities.Timers.Extensions;
-using Elsa.Extensions;
 using Elsa.Persistence.Memory;
 using Elsa.Runtime;
 using Microsoft.AspNetCore.Builder;
@@ -27,7 +26,7 @@ namespace Sample08
         public void ConfigureServices(IServiceCollection services)
         {
             services
-                .AddWorkflows()
+                .AddWorkflows(x => x.WithMemoryStores())
                 .AddTaskExecutingServer()
                 .AddHttpActivities()
                 .AddTimerActivities(options => options.Configure(x => x.SweepInterval = Period.FromSeconds(10)))
@@ -36,8 +35,6 @@ namespace Sample08
                     options => options.Bind(Configuration.GetSection("MassTransit:RabbitMq")),
                     typeof(CreateOrder),
                     typeof(OrderShipped))
-                .AddMemoryWorkflowDefinitionStore()
-                .AddMemoryWorkflowInstanceStore()
                 .AddWorkflow<CreateOrderWorkflow>()
                 .AddWorkflow<HandleOrderWorkflow>();
         }

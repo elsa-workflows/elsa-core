@@ -12,12 +12,9 @@ using Elsa.Persistence;
 using Elsa.Serialization;
 using Elsa.Serialization.Formatters;
 using Elsa.Services;
-using Elsa.Services.Models;
 using Elsa.WorkflowDesigner.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 
 namespace Elsa.Dashboard.Areas.Elsa.Controllers
 {

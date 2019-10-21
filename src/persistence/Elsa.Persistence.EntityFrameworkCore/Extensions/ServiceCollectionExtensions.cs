@@ -1,7 +1,6 @@
 using System;
 using Elsa.AutoMapper.Extensions;
 using Elsa.AutoMapper.Extensions.NodaTime;
-using Elsa.Extensions;
 using Elsa.Persistence.EntityFrameworkCore.Mapping;
 using Elsa.Persistence.EntityFrameworkCore.Services;
 using Microsoft.EntityFrameworkCore;
@@ -27,6 +26,17 @@ namespace Elsa.Persistence.EntityFrameworkCore.Extensions
                 .AddAutoMapperProfile<DocumentProfile>(ServiceLifetime.Singleton);
 
             return new EntityFrameworkCoreServiceConfiguration(configuration.Services);
+        }
+
+        public static EntityFrameworkCoreServiceConfiguration UseEntityFrameworkStores(
+            this ServiceConfiguration configuration,
+            Action<DbContextOptionsBuilder> configureOptions,
+            bool usePooling = true)
+        {
+            return configuration
+                .WithEntityFrameworkCoreProvider(configureOptions, usePooling)
+                .WithWorkflowDefinitionStore()
+                .WithWorkflowInstanceStore();
         }
 
         public static EntityFrameworkCoreServiceConfiguration WithWorkflowInstanceStore(

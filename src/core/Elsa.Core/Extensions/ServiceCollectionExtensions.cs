@@ -8,7 +8,6 @@ using Elsa.Activities.Workflows;
 using Elsa.AutoMapper.Extensions;
 using Elsa.Expressions;
 using Elsa.Mapping;
-using Elsa.Persistence.Memory;
 using Elsa.Scripting;
 using Elsa.Serialization;
 using Elsa.Serialization.Formatters;
@@ -17,7 +16,6 @@ using Elsa.Services.Models;
 using Elsa.WorkflowBuilders;
 using Elsa.WorkflowEventHandlers;
 using Elsa.WorkflowProviders;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using NodaTime;
 

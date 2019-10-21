@@ -14,7 +14,7 @@ namespace Sample11
     /// <summary>
     /// Demonstrates workflow correlation.
     /// </summary>
-    public class Program
+    public static class Program
     {
         public static async Task Main(string[] args)
         {
@@ -50,10 +50,8 @@ namespace Sample11
         private static IServiceProvider BuildServices()
         {
             return new ServiceCollection()
-                .AddWorkflows()
+                .AddWorkflows(x => x.WithMemoryStores())
                 .AddConsoleActivities()
-                .AddMemoryWorkflowDefinitionStore()
-                .AddMemoryWorkflowInstanceStore()
                 .AddWorkflow<CorrelationWorkflow>()
                 .BuildServiceProvider();
         }

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Elsa.Activities.Console.Extensions;
-using Elsa.Extensions;
 using Elsa.Persistence.Memory;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,8 +17,7 @@ namespace Sample04
         {
             // Setup a service collection.
             var services = new ServiceCollection()
-                .AddWorkflows()
-                .AddMemoryWorkflowInstanceStore()
+                .AddWorkflows(x => x.WithMemoryStores())
                 .AddConsoleActivities()
                 .AddActivity<Sum>()
                 .AddActivity<Subtract>()

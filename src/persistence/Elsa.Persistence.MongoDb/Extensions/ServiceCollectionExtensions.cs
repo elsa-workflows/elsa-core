@@ -1,6 +1,6 @@
 using System;
-using Elsa.Extensions;
 using Elsa.Models;
+using Elsa.Persistence.Memory;
 using Elsa.Persistence.MongoDb.Serialization;
 using Elsa.Persistence.MongoDb.Services;
 using Microsoft.Extensions.Configuration;
@@ -15,7 +15,8 @@ namespace Elsa.Persistence.MongoDb.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        public static MongoServiceConfiguration WithMongoDbProvider(this ServiceConfiguration serviceConfiguration,
+        public static MongoServiceConfiguration WithMongoDbProvider(
+            this ServiceConfiguration serviceConfiguration,
             IConfiguration configuration,
             string databaseName,
             string connectionStringName
@@ -28,11 +29,24 @@ namespace Elsa.Persistence.MongoDb.Extensions
             serviceConfiguration.Services
                 .AddSingleton(sp => CreateDbClient(configuration, connectionStringName))
                 .AddSingleton(sp => CreateDatabase(sp, databaseName));
-            
+
             return new MongoServiceConfiguration(serviceConfiguration.Services);
         }
 
-        public static MongoServiceConfiguration AddMongoDbWorkflowInstanceStore(this MongoServiceConfiguration configuration)
+        public static MongoServiceConfiguration UseMongoDbStores(
+            this ServiceConfiguration serviceConfiguration,
+            IConfiguration configuration,
+            string databaseName,
+            string connectionStringName)
+        {
+            return serviceConfiguration
+                .WithMongoDbProvider(configuration, databaseName, connectionStringName)
+                .AddMongoDbWorkflowDefinitionStore()
+                .AddMongoDbWorkflowInstanceStore();
+        }
+
+        public static MongoServiceConfiguration AddMongoDbWorkflowInstanceStore(
+            this MongoServiceConfiguration configuration)
         {
             configuration.Services
                 .AddMongoDbCollection<WorkflowInstance>("WorkflowInstances")
@@ -41,7 +55,8 @@ namespace Elsa.Persistence.MongoDb.Extensions
             return configuration;
         }
 
-        public static MongoServiceConfiguration AddMongoDbWorkflowDefinitionStore(this MongoServiceConfiguration configuration)
+        public static MongoServiceConfiguration AddMongoDbWorkflowDefinitionStore(
+            this MongoServiceConfiguration configuration)
         {
             configuration.Services
                 .AddMongoDbCollection<WorkflowDefinitionVersion>("WorkflowDefinitions")
@@ -49,8 +64,10 @@ namespace Elsa.Persistence.MongoDb.Extensions
 
             return configuration;
         }
-        
-        public static IServiceCollection AddMongoDbCollection<T>(this IServiceCollection services, string collectionName)
+
+        public static IServiceCollection AddMongoDbCollection<T>(
+            this IServiceCollection services,
+            string collectionName)
         {
             return services.AddSingleton(sp => CreateCollection<T>(sp, collectionName));
         }
@@ -72,7 +89,7 @@ namespace Elsa.Persistence.MongoDb.Extensions
             var connectionString = configuration.GetConnectionString(connectionStringName);
             return new MongoClient(connectionString);
         }
-        
+
         private static void RegisterEnumAsStringConvention()
         {
             var pack = new ConventionPack { new EnumRepresentationConvention(BsonType.String) };

@@ -9,8 +9,6 @@ using Elsa.Persistence;
 using Elsa.Results;
 using Elsa.Services.Extensions;
 using Elsa.Services.Models;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using NodaTime;

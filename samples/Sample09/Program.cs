@@ -3,7 +3,6 @@ using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
 using Elsa.Activities.Console.Extensions;
-using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Persistence.Memory;
 using Elsa.Serialization;
@@ -32,10 +31,8 @@ namespace Sample09
         private static IServiceProvider BuildServices()
         {
             return new ServiceCollection()
-                .AddWorkflows()
+                .AddWorkflows(x => x.WithMemoryStores())
                 .AddConsoleActivities()
-                .AddMemoryWorkflowDefinitionStore()
-                .AddMemoryWorkflowInstanceStore()
                 .BuildServiceProvider();
         }
 

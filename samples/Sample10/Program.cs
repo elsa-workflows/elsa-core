@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Data;
-using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Console.Extensions;
 using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Persistence;
+using Elsa.Persistence.Memory;
 using Elsa.Persistence.YesSql.Extensions;
 using Elsa.Runtime;
 using Elsa.Services;
@@ -47,7 +47,9 @@ namespace Sample10
                 await definitionStore.SaveAsync(workflowDefinition);
 
                 // Load the workflow definition.
-                workflowDefinition = await definitionStore.GetByIdAsync(workflowDefinition.DefinitionId, VersionOptions.Latest);
+                workflowDefinition = await definitionStore.GetByIdAsync(
+                    workflowDefinition.DefinitionId,
+                    VersionOptions.Latest);
 
                 // Execute the workflow.
                 var invoker = scope.ServiceProvider.GetRequiredService<IWorkflowInvoker>();
@@ -63,17 +65,16 @@ namespace Sample10
         private static IServiceProvider BuildServices()
         {
             return new ServiceCollection()
-                .AddWorkflowsCore()
+                .AddWorkflows(
+                    x => x.WithYesSqlStores(
+                        options => options
+                            .UseSqLite(
+                                @"Data Source=c:\data\elsa.yessql.db;Cache=Shared",
+                                IsolationLevel.ReadUncommitted)
+                            .UseDefaultIdGenerator()
+                            .SetTablePrefix("elsa_")))
                 .AddStartupRunner()
                 .AddConsoleActivities()
-                .AddYesSql(
-                    options => options
-                        .UseSqLite(@"Data Source=c:\data\elsa.yessql.db;Cache=Shared", IsolationLevel.ReadUncommitted)
-                        .UseDefaultIdGenerator()
-                        .SetTablePrefix("elsa_")
-                )
-                .AddYesSqlWorkflowDefinitionStore()
-                .AddYesSqlWorkflowInstanceStore()
                 .AddWorkflow<HelloWorldWorkflow>()
                 .BuildServiceProvider();
         }

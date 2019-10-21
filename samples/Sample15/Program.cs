@@ -38,7 +38,9 @@ namespace Sample15
                 await definitionStore.SaveAsync(workflowDefinition);
 
                 // Load the workflow definition.
-                workflowDefinition = await definitionStore.GetByIdAsync(workflowDefinition.DefinitionId, VersionOptions.Latest);
+                workflowDefinition = await definitionStore.GetByIdAsync(
+                    workflowDefinition.DefinitionId,
+                    VersionOptions.Latest);
 
                 // Execute the workflow.
                 var invoker = scope.ServiceProvider.GetRequiredService<IWorkflowInvoker>();
@@ -62,12 +64,9 @@ namespace Sample15
                 .Build();
 
             return new ServiceCollection()
-                .AddWorkflowsCore()
+                .AddWorkflows(x => x.UseMongoDbStores(configuration, "Elsa", "MongoDb"))
                 .AddStartupRunner()
                 .AddConsoleActivities()
-                .AddMongoDb(configuration, "Elsa", "MongoDb")
-                .AddMongoDbWorkflowDefinitionStore()
-                .AddMongoDbWorkflowInstanceStore()
                 .AddWorkflow<HelloWorldWorkflow>()
                 .BuildServiceProvider();
         }

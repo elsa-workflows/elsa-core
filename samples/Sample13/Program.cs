@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Elsa.Activities.Console.Extensions;
-using Elsa.Extensions;
 using Elsa.Persistence.Memory;
 using Elsa.Scripting;
 using Elsa.Services;
@@ -18,8 +17,7 @@ namespace Sample13
         {
             // Setup a service collection.
             var services = new ServiceCollection()
-                .AddWorkflows()
-                .AddMemoryWorkflowInstanceStore()
+                .AddWorkflows(x => x.WithMemoryStores())
                 .AddConsoleActivities()
                 .AddSingleton<IScriptEngineConfigurator, ScriptEngineConfigurator>()
                 .BuildServiceProvider();

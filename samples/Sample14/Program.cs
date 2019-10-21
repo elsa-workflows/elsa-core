@@ -30,7 +30,7 @@ namespace Sample14
             // Create a workflow definition.
             var registry = services.GetService<IWorkflowRegistry>();
             var workflowDefinition = await registry.GetWorkflowDefinitionAsync<HelloWorldWorkflow>();
-            
+
             // Mark this definition as the "latest" version.
             workflowDefinition.IsLatest = true;
             workflowDefinition.Version = 1;
@@ -38,10 +38,10 @@ namespace Sample14
             using (var scope = services.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<ElsaContext>();
-            
+
                 // Ensure DB exists.
                 await dbContext.Database.EnsureCreatedAsync();
-                
+
                 // Persist the workflow definition.
                 var definitionStore = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionStore>();
                 await definitionStore.SaveAsync(workflowDefinition);
@@ -50,7 +50,9 @@ namespace Sample14
                 await dbContext.SaveChangesAsync();
 
                 // Load the workflow definition.
-                workflowDefinition = await definitionStore.GetByIdAsync(workflowDefinition.DefinitionId, VersionOptions.Latest);
+                workflowDefinition = await definitionStore.GetByIdAsync(
+                    workflowDefinition.DefinitionId,
+                    VersionOptions.Latest);
 
                 // Execute the workflow.
                 var invoker = scope.ServiceProvider.GetRequiredService<IWorkflowInvoker>();
@@ -69,15 +71,12 @@ namespace Sample14
         private static IServiceProvider BuildServices()
         {
             return new ServiceCollection()
-                .AddWorkflowsCore()
+                .AddWorkflows(
+                    x => x.UseEntityFrameworkStores(
+                        options => options
+                            .UseSqlite(@"Data Source=c:\data\elsa.entity-framework-core.db;Cache=Shared")))
                 .AddStartupRunner()
                 .AddConsoleActivities()
-                .AddEntityFrameworkCore(
-                    options => options
-                        .UseSqlite(@"Data Source=c:\data\elsa.entity-framework-core.db;Cache=Shared")
-                )
-                .AddEntityFrameworkCoreWorkflowDefinitionStore()
-                .AddEntityFrameworkCoreWorkflowInstanceStore()
                 .AddWorkflow<HelloWorldWorkflow>()
                 .BuildServiceProvider();
         }

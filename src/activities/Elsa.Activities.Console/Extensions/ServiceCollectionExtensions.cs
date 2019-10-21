@@ -1,5 +1,4 @@
 using Elsa.Activities.Console.Activities;
-using Elsa.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Activities.Console.Extensions

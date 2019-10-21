@@ -1,5 +1,5 @@
 ﻿using Elsa.Activities.Http.Extensions;
-using Elsa.Extensions;
+using Elsa.Persistence.Memory;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -20,18 +20,16 @@ namespace Sample06
         public void ConfigureServices(IServiceCollection services)
         {
             services
-                .AddWorkflows()
+                .AddWorkflows(x => x.WithMemoryStores())
                 .AddHttpActivities()
                 .AddWorkflow<HelloWorldWorkflow>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            if (env.IsDevelopment())
-            {
+            if (env.IsDevelopment()) 
                 app.UseDeveloperExceptionPage();
-            }
-            
+
             app.UseHttpActivities();
             app.UseWelcomePage();
         }

@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Elsa.Extensions;
+using Elsa.Persistence.Memory;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Sample01.Activities;
@@ -16,7 +16,7 @@ namespace Sample01
         {
             // Setup a service collection.
             var services = new ServiceCollection()
-                .AddWorkflows()
+                .AddWorkflows(x => x.WithMemoryStores())
                 .AddActivity<HelloWorld>()
                 .AddActivity<GoodByeWorld>()
                 .BuildServiceProvider();

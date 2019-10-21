@@ -5,14 +5,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Extensions;
 using Elsa.Models;
-using Elsa.Serialization;
-using Elsa.Serialization.Formatters;
-using Elsa.Services.Extensions;
-using Elsa.Services.Models;
-using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json;
 
 namespace Elsa.Services
 {

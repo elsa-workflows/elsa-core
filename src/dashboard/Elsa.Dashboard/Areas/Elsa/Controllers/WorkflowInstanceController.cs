@@ -9,9 +9,7 @@ using Elsa.Dashboard.Services;
 using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Persistence;
-using Elsa.Serialization.Formatters;
 using Elsa.WorkflowDesigner.Models;
-using Jint.Native.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 

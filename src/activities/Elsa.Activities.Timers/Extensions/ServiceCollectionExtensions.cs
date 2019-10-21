@@ -2,7 +2,6 @@ using System;
 using Elsa.Activities.Timers.Activities;
 using Elsa.Activities.Timers.HostedServices;
 using Elsa.Activities.Timers.Options;
-using Elsa.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 

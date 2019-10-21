@@ -1,7 +1,6 @@
 using System;
 using Elsa.AutoMapper.Extensions;
 using Elsa.AutoMapper.Extensions.NodaTime;
-using Elsa.Extensions;
 using Elsa.Persistence.YesSql.Indexes;
 using Elsa.Persistence.YesSql.Mapping;
 using Elsa.Persistence.YesSql.Services;
@@ -15,9 +14,11 @@ namespace Elsa.Persistence.YesSql.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddYesSql(this IServiceCollection services, Action<IConfiguration> configure)
+        public static YesSqlServiceConfiguration WithYesSqlProvider(
+            this ServiceConfiguration configuration,
+            Action<IConfiguration> configure)
         {
-            return services
+            configuration.Services
                 .AddSingleton(sp => StoreFactory.CreateStore(sp, configure))
                 .AddSingleton<IIndexProvider, WorkflowDefinitionIndexProvider>()
                 .AddSingleton<IIndexProvider, WorkflowInstanceIndexProvider>()
@@ -25,18 +26,32 @@ namespace Elsa.Persistence.YesSql.Extensions
                 .AddAutoMapperProfile<InstantProfile>(ServiceLifetime.Singleton)
                 .AddAutoMapperProfile<DocumentProfile>(ServiceLifetime.Singleton)
                 .AddStartupTask<InitializeStoreTask>();
+
+            return new YesSqlServiceConfiguration(configuration.Services);
         }
 
-        public static IServiceCollection AddYesSqlWorkflowInstanceStore(this IServiceCollection services)
+        public static YesSqlServiceConfiguration WithYesSqlStores(
+            this ServiceConfiguration configuration,
+            Action<IConfiguration> configure)
         {
-            return services
-                .Replace<IWorkflowInstanceStore, YesSqlWorkflowInstanceStore>(ServiceLifetime.Scoped);
+            return configuration.WithYesSqlProvider(configure).WithWorkflowDefinitionStore()
+                .WithWorkflowInstanceStore();
         }
 
-        public static IServiceCollection AddYesSqlWorkflowDefinitionStore(this IServiceCollection services)
+        public static YesSqlServiceConfiguration WithWorkflowInstanceStore(
+            this YesSqlServiceConfiguration configuration)
         {
-            return services
-                .Replace<IWorkflowDefinitionStore, YesSqlWorkflowDefinitionStore>(ServiceLifetime.Scoped);
+            configuration.Services.AddScoped<IWorkflowInstanceStore, YesSqlWorkflowInstanceStore>();
+            return configuration;
+        }
+
+        public static YesSqlServiceConfiguration WithWorkflowDefinitionStore(
+            this YesSqlServiceConfiguration configuration)
+        {
+            configuration.Services
+                .AddScoped<IWorkflowDefinitionStore, YesSqlWorkflowDefinitionStore>();
+
+            return configuration;
         }
 
         private static ISession CreateSession(IServiceProvider services)

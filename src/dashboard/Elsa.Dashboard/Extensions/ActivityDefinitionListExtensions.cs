@@ -3,7 +3,6 @@ using Elsa.Dashboard.Options;
 using Elsa.Services.Models;
 using Elsa.WorkflowDesigner;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using Scrutor;
 
 namespace Elsa.Dashboard.Extensions
