@@ -17,13 +17,13 @@ namespace Sample12
     /// <summary>
     /// Demonstrates workflow correlation & user tasks.
     /// </summary>
-    public class Program
+    public static class Program
     {
         public static async Task Main(string[] args)
         {
             var services = BuildServices();
             var registry = services.GetService<IWorkflowRegistry>();
-            var workflowDefinition = registry.RegisterWorkflow<UserTaskWorkflow>();
+            var workflowDefinition = await registry.GetWorkflowDefinitionAsync<UserTaskWorkflow>();
             var invoker = services.GetRequiredService<IWorkflowInvoker>();
 
             // Start the workflow.
@@ -52,6 +52,7 @@ namespace Sample12
                 .AddUserTaskActivities()
                 .AddMemoryWorkflowDefinitionStore()
                 .AddMemoryWorkflowInstanceStore()
+                .AddWorkflow<UserTaskWorkflow>()
                 .BuildServiceProvider();
         }
     }

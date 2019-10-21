@@ -101,7 +101,7 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
 
             var workflowDefinition = await workflowRegistry.GetWorkflowDefinitionAsync(
                 workflowInstance.DefinitionId,
-                workflowInstance.Version,
+                VersionOptions.SpecificVersion(workflowInstance.Version),
                 cancellationToken);
             
             var workflow = workflowFactory.CreateWorkflow(workflowDefinition, input, workflowInstance);

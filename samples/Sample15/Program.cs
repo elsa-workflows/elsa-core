@@ -17,15 +17,15 @@ namespace Sample15
     /// A simple demonstration of using the MongoDB persistence providers.
     /// If you don't have MongoDB installed but you do have Docker, run `docker-compose up` to run a container with MongoDB (see the 'docker-compose.yaml' file). 
     /// </summary>
-    class Program
+    static class Program
     {
-        static async Task Main()
+        private static async Task Main()
         {
             var services = BuildServices();
 
             // Create a workflow definition.
             var registry = services.GetService<IWorkflowRegistry>();
-            var workflowDefinition = registry.RegisterWorkflow<HelloWorldWorkflow>();
+            var workflowDefinition = await registry.GetWorkflowDefinitionAsync<HelloWorldWorkflow>();
 
             // Mark this definition as the "latest" version.
             workflowDefinition.IsLatest = true;
@@ -38,7 +38,7 @@ namespace Sample15
                 await definitionStore.SaveAsync(workflowDefinition);
 
                 // Load the workflow definition.
-                workflowDefinition = await definitionStore.GetByIdAsync(workflowDefinition.Id, VersionOptions.Latest);
+                workflowDefinition = await definitionStore.GetByIdAsync(workflowDefinition.DefinitionId, VersionOptions.Latest);
 
                 // Execute the workflow.
                 var invoker = scope.ServiceProvider.GetRequiredService<IWorkflowInvoker>();
@@ -68,6 +68,7 @@ namespace Sample15
                 .AddMongoDb(configuration, "Elsa", "MongoDb")
                 .AddMongoDbWorkflowDefinitionStore()
                 .AddMongoDbWorkflowInstanceStore()
+                .AddWorkflow<HelloWorldWorkflow>()
                 .BuildServiceProvider();
         }
     }

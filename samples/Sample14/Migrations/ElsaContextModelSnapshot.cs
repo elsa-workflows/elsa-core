@@ -3,6 +3,7 @@ using System;
 using Elsa.Persistence.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Sample14.Migrations
 {
@@ -15,17 +16,19 @@ namespace Sample14.Migrations
             modelBuilder
                 .HasAnnotation("ProductVersion", "2.2.6-servicing-10079");
 
-            modelBuilder.Entity("Elsa.Models.WorkflowDefinition", b =>
+            modelBuilder.Entity("Elsa.Persistence.EntityFrameworkCore.Documents.WorkflowDefinitionVersionDocument", b =>
                 {
                     b.Property<string>("Id");
-
-                    b.Property<int>("Version");
 
                     b.Property<string>("Activities");
 
                     b.Property<string>("Connections");
 
+                    b.Property<string>("DefinitionId");
+
                     b.Property<string>("Description");
+
+                    b.Property<bool>("IsDisabled");
 
                     b.Property<bool>("IsLatest");
 
@@ -37,14 +40,18 @@ namespace Sample14.Migrations
 
                     b.Property<string>("Variables");
 
-                    b.HasKey("Id", "Version");
+                    b.Property<int>("Version");
 
-                    b.ToTable("WorkflowDefinitions");
+                    b.HasKey("Id");
+
+                    b.ToTable("WorkflowDefinitionVersions");
                 });
 
-            modelBuilder.Entity("Elsa.Models.WorkflowInstance", b =>
+            modelBuilder.Entity("Elsa.Persistence.EntityFrameworkCore.Documents.WorkflowInstanceDocument", b =>
                 {
                     b.Property<string>("Id");
+
+                    b.Property<DateTime?>("AbortedAt");
 
                     b.Property<string>("Activities");
 
@@ -60,9 +67,9 @@ namespace Sample14.Migrations
 
                     b.Property<string>("Fault");
 
-                    b.Property<DateTime?>("FinishedAt");
+                    b.Property<DateTime?>("FaultedAt");
 
-                    b.Property<DateTime?>("HaltedAt");
+                    b.Property<DateTime?>("FinishedAt");
 
                     b.Property<string>("Input");
 
@@ -70,7 +77,8 @@ namespace Sample14.Migrations
 
                     b.Property<DateTime?>("StartedAt");
 
-                    b.Property<int>("Status");
+                    b.Property<string>("Status")
+                        .IsRequired();
 
                     b.Property<int>("Version");
 

@@ -29,7 +29,7 @@ namespace Sample14
 
             // Create a workflow definition.
             var registry = services.GetService<IWorkflowRegistry>();
-            var workflowDefinition = registry.RegisterWorkflow<HelloWorldWorkflow>();
+            var workflowDefinition = await registry.GetWorkflowDefinitionAsync<HelloWorldWorkflow>();
             
             // Mark this definition as the "latest" version.
             workflowDefinition.IsLatest = true;
@@ -50,7 +50,7 @@ namespace Sample14
                 await dbContext.SaveChangesAsync();
 
                 // Load the workflow definition.
-                workflowDefinition = await definitionStore.GetByIdAsync(workflowDefinition.Id, VersionOptions.Latest);
+                workflowDefinition = await definitionStore.GetByIdAsync(workflowDefinition.DefinitionId, VersionOptions.Latest);
 
                 // Execute the workflow.
                 var invoker = scope.ServiceProvider.GetRequiredService<IWorkflowInvoker>();
@@ -78,6 +78,7 @@ namespace Sample14
                 )
                 .AddEntityFrameworkCoreWorkflowDefinitionStore()
                 .AddEntityFrameworkCoreWorkflowInstanceStore()
+                .AddWorkflow<HelloWorldWorkflow>()
                 .BuildServiceProvider();
         }
     }
