@@ -2,9 +2,9 @@
 
 namespace Elsa
 {
-    public class ServiceConfiguration
+    public class ElsaBuilder
     {
-        public ServiceConfiguration(IServiceCollection services)
+        public ElsaBuilder(IServiceCollection services)
         {
             Services = services;
         }

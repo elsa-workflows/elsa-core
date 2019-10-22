@@ -53,7 +53,7 @@ namespace Elsa.Persistence.DocumentDb
         /// <summary>
         /// Return the name of the database.
         /// </summary>
-        public override string ToString() => $"DocumentDb Database : {Options.DatabaseName}";
+        public override string ToString() => $"DocumentDb Database: {Options.DatabaseName}";
 
         private void Initialize()
         {

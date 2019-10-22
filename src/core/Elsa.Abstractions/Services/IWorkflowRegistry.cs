@@ -15,7 +15,5 @@ namespace Elsa.Services
             string id,
             VersionOptions version,
             CancellationToken cancellationToken = default);
-
-        Task EvictAsync(CancellationToken cancellationToken);
     }
 }

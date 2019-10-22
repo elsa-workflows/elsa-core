@@ -1,7 +1,7 @@
-﻿using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 
-namespace Sample07
+namespace Sample16
 {
     public static class Program
     {

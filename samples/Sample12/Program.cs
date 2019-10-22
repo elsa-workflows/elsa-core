@@ -47,7 +47,7 @@ namespace Sample12
         private static IServiceProvider BuildServices()
         {
             return new ServiceCollection()
-                .AddWorkflows(x => x.WithMemoryStores())
+                .AddWorkflows()
                 .AddConsoleActivities()
                 .AddUserTaskActivities()
                 .AddWorkflow<UserTaskWorkflow>()

@@ -14,8 +14,8 @@ namespace Elsa.Persistence.DocumentDb.Services
 {
     public class CosmosDbWorkflowDefinitionStore : IWorkflowDefinitionStore
     {
-        readonly IMapper mapper;
-        readonly DocumentDbStorage storage;
+        private readonly IMapper mapper;
+        private readonly DocumentDbStorage storage;
 
         public CosmosDbWorkflowDefinitionStore(DocumentDbStorage storage)
         {

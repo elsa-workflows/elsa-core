@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 namespace Sample14.Migrations
 {
     [DbContext(typeof(ElsaContext))]
-    partial class ElsaContextModelSnapshot : ModelSnapshot
+    internal partial class ElsaContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)
         {

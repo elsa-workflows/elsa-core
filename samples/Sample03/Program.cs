@@ -14,13 +14,13 @@ namespace Sample03
     /// <summary>
     /// A minimal workflows program defined as data (workflow definition) and Console activities.
     /// </summary>
-    class Program
+    internal static class Program
     {
-        static async Task Main(string[] args)
+        private static async Task Main(string[] args)
         {
             // Setup a service collection.
             var services = new ServiceCollection()
-                .AddWorkflows(x => x.WithMemoryStores())
+                .AddWorkflows()
                 .AddConsoleActivities()
                 .BuildServiceProvider();
 

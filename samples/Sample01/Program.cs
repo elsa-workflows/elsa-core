@@ -10,13 +10,13 @@ namespace Sample01
     /// <summary>
     /// A minimal workflows program defined in code with a strongly-typed workflow class.
     /// </summary>
-    class Program
+    internal static class Program
     {
-        static async Task Main(string[] args)
+        private static async Task Main(string[] args)
         {
             // Setup a service collection.
             var services = new ServiceCollection()
-                .AddWorkflows(x => x.WithMemoryStores())
+                .AddWorkflows()
                 .AddActivity<HelloWorld>()
                 .AddActivity<GoodByeWorld>()
                 .BuildServiceProvider();

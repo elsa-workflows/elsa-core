@@ -1,7 +1,6 @@
 using System;
 using Elsa.AutoMapper.Extensions;
 using Elsa.Dashboard.ActionFilters;
-using Elsa.Dashboard.Decorators;
 using Elsa.Dashboard.Options;
 using Elsa.Dashboard.Services;
 using Elsa.Mapping;
@@ -13,41 +12,50 @@ using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Dashboard.Extensions
 {
-    public static class ServiceCollectionExtensions
+    public static class DashboardServiceCollectionExtensions
     {
         public static IServiceCollection AddElsaDashboard(
             this IServiceCollection services,
-            Action<ElsaDashboardOptions> options,
-            Action<ServiceConfiguration> configure)
-        {
-            var configuration = new ServiceConfiguration(services);
+            Action<ElsaBuilder> configure) =>
+            services.AddElsaDashboard(default, configure);
 
+        public static IServiceCollection AddElsaDashboard(
+            this IServiceCollection services,
+            Action<OptionsBuilder<ElsaDashboardOptions>> options = null,
+            Action<ElsaBuilder> configure = null)
+        {
+            var configuration = new ElsaBuilder(services);
+
+            services.AddControllersWithViews();
             configuration.WithElsaDashboard();
-            configure(configuration);
+            configure?.Invoke(configuration);
+
+            var optionsBuilder = services.AddOptions<ElsaDashboardOptions>();
+            options?.Invoke(optionsBuilder);
+
+            if (options == null)
+                optionsBuilder.Configure(x => x.DiscoverActivities());
             
             services
-                .Configure(options)
                 .AddTaskExecutingServer()
                 .AddTempData();
-            
-            services.Decorate<IWorkflowDefinitionStore, PublishingWorkflowDefinitionStore>();
-            
+
             services.AddMvcCore(
                 mvc => { mvc.Filters.AddService<NotifierFilter>(); }
             );
 
             return services;
         }
-        
-        public static ServiceConfiguration WithElsaDashboard(this ServiceConfiguration configuration)
+
+        private static ElsaBuilder WithElsaDashboard(this ElsaBuilder builder)
         {
-            var services = configuration.Services;
+            var services = builder.Services;
             
             services
-                .AddTaskExecutingServer()
                 .AddSingleton<IIdGenerator, IdGenerator>()
                 .AddSingleton<IWorkflowSerializerProvider, WorkflowSerializerProvider>()
                 .AddSingleton<IWorkflowSerializer, WorkflowSerializer>()
@@ -73,7 +81,7 @@ namespace Elsa.Dashboard.Extensions
                 mvc => { mvc.Filters.AddService<NotifierFilter>(); }
             );
 
-            return configuration;
+            return builder;
         }
 
         private static IServiceCollection AddTempData(this IServiceCollection services)

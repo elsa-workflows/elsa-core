@@ -15,9 +15,9 @@ namespace Sample09
     /// <summary>
     /// A simple console program that loads & executes a workflow designed with the HTML5 workflow designer.
     /// </summary>
-    class Program
+    internal class Program
     {
-        static async Task Main()
+        private static async Task Main()
         {
             var json = await ReadEmbeddedResourceAsync("Sample09.calculator.json");
             var services = BuildServices();
@@ -31,7 +31,7 @@ namespace Sample09
         private static IServiceProvider BuildServices()
         {
             return new ServiceCollection()
-                .AddWorkflows(x => x.WithMemoryStores())
+                .AddWorkflows()
                 .AddConsoleActivities()
                 .BuildServiceProvider();
         }

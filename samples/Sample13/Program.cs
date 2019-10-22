@@ -11,13 +11,13 @@ namespace Sample13
     /// <summary>
     /// A strongly-typed workflows program demonstrating scripting, and branching.
     /// </summary>
-    class Program
+    internal class Program
     {
-        static async Task Main()
+        private static async Task Main()
         {
             // Setup a service collection.
             var services = new ServiceCollection()
-                .AddWorkflows(x => x.WithMemoryStores())
+                .AddWorkflows()
                 .AddConsoleActivities()
                 .AddSingleton<IScriptEngineConfigurator, ScriptEngineConfigurator>()
                 .BuildServiceProvider();

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Caching;
 using Elsa.Extensions;
 using Elsa.Models;
 using Microsoft.Extensions.Caching.Memory;
@@ -12,16 +13,19 @@ namespace Elsa.Services
 {
     public class WorkflowRegistry : IWorkflowRegistry
     {
-        private const string CacheKey = "elsa:workflow-registry";
+        internal const string CacheKey = "elsa:workflow-registry";
         private readonly IServiceProvider serviceProvider;
         private readonly IMemoryCache cache;
+        private readonly ISignal signal;
 
         public WorkflowRegistry(
             IServiceProvider serviceProvider,
-            IMemoryCache cache)
+            IMemoryCache cache,
+            ISignal signal)
         {
             this.serviceProvider = serviceProvider;
             this.cache = cache;
+            this.signal = signal;
         }
 
         public async Task<IEnumerable<(WorkflowDefinitionVersion, ActivityDefinition)>> ListByStartActivityAsync(
@@ -45,17 +49,11 @@ namespace Elsa.Services
             CancellationToken cancellationToken)
         {
             var workflowDefinitions = await ReadCacheAsync(cancellationToken);
-            
+
             return workflowDefinitions
                 .Where(x => x.DefinitionId == id)
                 .OrderByDescending(x => x.Version)
                 .WithVersion(version).FirstOrDefault();
-        }
-
-        public Task EvictAsync(CancellationToken cancellationToken)
-        {
-            cache.Remove(CacheKey);
-            return Task.CompletedTask;
         }
 
         private async Task<ICollection<WorkflowDefinitionVersion>> ReadCacheAsync(CancellationToken cancellationToken)
@@ -68,6 +66,7 @@ namespace Elsa.Services
 
                     entry.SlidingExpiration = TimeSpan.FromHours(1);
                     entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(4);
+                    entry.Monitor(signal.GetToken(CacheKey));
                     return workflowDefinitions;
                 });
         }

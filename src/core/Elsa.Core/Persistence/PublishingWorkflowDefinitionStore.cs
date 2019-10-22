@@ -3,10 +3,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Messages;
 using Elsa.Models;
-using Elsa.Persistence;
 using MediatR;
 
-namespace Elsa.Dashboard.Decorators
+namespace Elsa.Persistence
 {
     public class PublishingWorkflowDefinitionStore : IWorkflowDefinitionStore
     {
@@ -22,14 +21,14 @@ namespace Elsa.Dashboard.Decorators
         public async Task<WorkflowDefinitionVersion> SaveAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken = default)
         {
             var savedDefinition = await decoratedStore.SaveAsync(definition, cancellationToken);
-            await mediator.Publish(new WorkflowDefinitionStoreUpdated(), cancellationToken);
+            await PublishUpdateEventAsync(cancellationToken);
             return savedDefinition;
         }
 
         public async Task AddAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken = default)
         {
             await decoratedStore.AddAsync(definition, cancellationToken);
-            
+            await PublishUpdateEventAsync(cancellationToken);
         }
 
         public Task<WorkflowDefinitionVersion> GetByIdAsync(string id, VersionOptions version, CancellationToken cancellationToken = default)
@@ -45,13 +44,20 @@ namespace Elsa.Dashboard.Decorators
         public async Task<WorkflowDefinitionVersion> UpdateAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken = default)
         {
             var updatedDefinition = await decoratedStore.UpdateAsync(definition, cancellationToken);
+            await PublishUpdateEventAsync(cancellationToken);
             return updatedDefinition;
         }
 
         public async Task<int> DeleteAsync(string id, CancellationToken cancellationToken = default)
         {
             var count = await decoratedStore.DeleteAsync(id, cancellationToken);
+            await PublishUpdateEventAsync(cancellationToken);
             return count;
+        }
+
+        private Task PublishUpdateEventAsync(CancellationToken cancellationToken)
+        {
+            return mediator.Publish(new WorkflowDefinitionStoreUpdated(), cancellationToken);
         }
     }
 }

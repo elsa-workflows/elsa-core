@@ -4,26 +4,26 @@ namespace Elsa.Persistence.Memory
 {
     public static class ServiceCollectionExtensions
     {
-        public static MemoryStoreServiceConfiguration WithMemoryProvider(this ServiceConfiguration configuration)
+        public static MemoryStoreElsaBuilder WithMemoryProvider(this ElsaBuilder configuration)
         {
-            return new MemoryStoreServiceConfiguration(configuration.Services);
+            return new MemoryStoreElsaBuilder(configuration.Services);
         }
 
-        public static MemoryStoreServiceConfiguration WithMemoryStores(this ServiceConfiguration configuration)
+        public static MemoryStoreElsaBuilder WithMemoryStores(this ElsaBuilder configuration)
         {
             return configuration.WithMemoryProvider().WithWorkflowDefinitionStore().WithWorkflowInstanceStore();
         }
 
-        public static MemoryStoreServiceConfiguration WithWorkflowInstanceStore(
-            this MemoryStoreServiceConfiguration configuration)
+        public static MemoryStoreElsaBuilder WithWorkflowInstanceStore(
+            this MemoryStoreElsaBuilder configuration)
         {
             configuration.Services.AddSingleton<IWorkflowInstanceStore, MemoryWorkflowInstanceStore>();
 
             return configuration;
         }
 
-        public static MemoryStoreServiceConfiguration WithWorkflowDefinitionStore(
-            this MemoryStoreServiceConfiguration configuration)
+        public static MemoryStoreElsaBuilder WithWorkflowDefinitionStore(
+            this MemoryStoreElsaBuilder configuration)
         {
             configuration.Services.AddSingleton<IWorkflowDefinitionStore, MemoryWorkflowDefinitionStore>();
 

@@ -50,7 +50,7 @@ namespace Sample11
         private static IServiceProvider BuildServices()
         {
             return new ServiceCollection()
-                .AddWorkflows(x => x.WithMemoryStores())
+                .AddWorkflows()
                 .AddConsoleActivities()
                 .AddWorkflow<CorrelationWorkflow>()
                 .BuildServiceProvider();

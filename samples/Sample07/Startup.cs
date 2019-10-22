@@ -17,12 +17,12 @@ namespace Sample07
             Configuration = configuration;
         }
 
-        public IConfiguration Configuration { get; }
+        private IConfiguration Configuration { get; }
 
         public void ConfigureServices(IServiceCollection services)
         {
             services
-                .AddWorkflows(x => x.WithMemoryStores())
+                .AddWorkflows()
                 .AddTaskExecutingServer()
                 .AddHttpActivities(options => options.Bind(Configuration.GetSection("Http")))
                 .AddEmailActivities(options => options.Bind(Configuration.GetSection("Smtp")))

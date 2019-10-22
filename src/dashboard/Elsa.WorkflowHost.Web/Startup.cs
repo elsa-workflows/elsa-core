@@ -25,11 +25,9 @@ namespace Elsa.WorkflowHost.Web
         {
             services
                 .AddWorkflows(
-                    elsa => elsa.WithEntityFrameworkCoreProvider(
-                            options => options
-                                .UseSqlite(Configuration.GetConnectionString("Sqlite")))
-                        .WithWorkflowDefinitionStore()
-                        .WithWorkflowInstanceStore())
+                    elsa => elsa.AddEntityFrameworkStores(
+                        options => options
+                            .UseSqlite(Configuration.GetConnectionString("Sqlite"))))
                 .AddTaskExecutingServer()
                 .AddHttpActivities(options => options.Bind(Configuration.GetSection("Http")))
                 .AddEmailActivities(options => options.Bind(Configuration.GetSection("Smtp")))

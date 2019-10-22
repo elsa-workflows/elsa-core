@@ -12,9 +12,9 @@ namespace Sample05
     /// <summary>
     /// A minimal workflows program defined in code with a strongly-typed workflow class.
     /// </summary>
-    class Program
+    internal static class Program
     {
-        static async Task Main()
+        private static async Task Main()
         {
             var host = new HostBuilder()
                 .ConfigureServices(ConfigureServices)
@@ -32,7 +32,7 @@ namespace Sample05
         private static void ConfigureServices(IServiceCollection services)
         {
             services
-                .AddWorkflows(x => x.WithMemoryStores())
+                .AddWorkflows()
                 .AddWorkflow<RecurringWorkflow>()
                 .AddConsoleActivities()
                 .AddTimerActivities(options => options.Configure(x => x.SweepInterval = Period.FromSeconds(1)));

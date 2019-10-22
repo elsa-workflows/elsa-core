@@ -15,8 +15,8 @@ namespace Elsa.Persistence.MongoDb.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        public static MongoServiceConfiguration WithMongoDbProvider(
-            this ServiceConfiguration serviceConfiguration,
+        public static MongoElsaBuilder AddMongoDbProvider(
+            this ElsaBuilder elsaBuilder,
             IConfiguration configuration,
             string databaseName,
             string connectionStringName
@@ -26,27 +26,27 @@ namespace Elsa.Persistence.MongoDb.Extensions
             RegisterEnumAsStringConvention();
             BsonSerializer.RegisterSerializer(new JObjectSerializer());
 
-            serviceConfiguration.Services
+            elsaBuilder.Services
                 .AddSingleton(sp => CreateDbClient(configuration, connectionStringName))
                 .AddSingleton(sp => CreateDatabase(sp, databaseName));
 
-            return new MongoServiceConfiguration(serviceConfiguration.Services);
+            return new MongoElsaBuilder(elsaBuilder.Services);
         }
 
-        public static MongoServiceConfiguration UseMongoDbStores(
-            this ServiceConfiguration serviceConfiguration,
+        public static MongoElsaBuilder AddMongoDbStores(
+            this ElsaBuilder elsaBuilder,
             IConfiguration configuration,
             string databaseName,
             string connectionStringName)
         {
-            return serviceConfiguration
-                .WithMongoDbProvider(configuration, databaseName, connectionStringName)
+            return elsaBuilder
+                .AddMongoDbProvider(configuration, databaseName, connectionStringName)
                 .AddMongoDbWorkflowDefinitionStore()
                 .AddMongoDbWorkflowInstanceStore();
         }
 
-        public static MongoServiceConfiguration AddMongoDbWorkflowInstanceStore(
-            this MongoServiceConfiguration configuration)
+        public static MongoElsaBuilder AddMongoDbWorkflowInstanceStore(
+            this MongoElsaBuilder configuration)
         {
             configuration.Services
                 .AddMongoDbCollection<WorkflowInstance>("WorkflowInstances")
@@ -55,8 +55,8 @@ namespace Elsa.Persistence.MongoDb.Extensions
             return configuration;
         }
 
-        public static MongoServiceConfiguration AddMongoDbWorkflowDefinitionStore(
-            this MongoServiceConfiguration configuration)
+        public static MongoElsaBuilder AddMongoDbWorkflowDefinitionStore(
+            this MongoElsaBuilder configuration)
         {
             configuration.Services
                 .AddMongoDbCollection<WorkflowDefinitionVersion>("WorkflowDefinitions")

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 namespace Elsa.Persistence.EntityFrameworkCore.Migrations
 {
     [DbContext(typeof(ElsaContext))]
-    partial class ElsaContextModelSnapshot : ModelSnapshot
+    internal partial class ElsaContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)
         {

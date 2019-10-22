@@ -72,7 +72,7 @@ namespace Sample14
         {
             return new ServiceCollection()
                 .AddWorkflows(
-                    x => x.UseEntityFrameworkStores(
+                    x => x.AddEntityFrameworkStores(
                         options => options
                             .UseSqlite(@"Data Source=c:\data\elsa.entity-framework-core.db;Cache=Shared")))
                 .AddStartupRunner()

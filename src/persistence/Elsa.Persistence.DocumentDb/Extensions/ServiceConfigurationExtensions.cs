@@ -6,8 +6,8 @@ namespace Elsa.Persistence.DocumentDb.Extensions
 {
     public static class ServiceConfigurationExtensions
     {
-        public static CosmosDbServiceConfiguration WithCosmosDbProvider(
-            this ServiceConfiguration configuration,
+        public static CosmosDbElsaBuilder AddCosmosDbProvider(
+            this ElsaBuilder builder,
             string url,
             string authSecret,
             string database,
@@ -19,19 +19,19 @@ namespace Elsa.Persistence.DocumentDb.Extensions
 
             var storage = new DocumentDbStorage(url, authSecret, database, collection, options);
 
-            configuration.Services
+            builder.Services
                 .AddSingleton(storage);
 
-            return new CosmosDbServiceConfiguration(configuration.Services);
+            return new CosmosDbElsaBuilder(builder.Services);
         }
 
-        public static CosmosDbServiceConfiguration WithWorkflowInstanceStore(this CosmosDbServiceConfiguration configuration)
+        public static CosmosDbElsaBuilder AddWorkflowInstanceStore(this CosmosDbElsaBuilder configuration)
         {
             configuration.Services.AddSingleton<IWorkflowInstanceStore, CosmosDbWorkflowInstanceStore>();
             return configuration;
         }
 
-        public static CosmosDbServiceConfiguration WithWorkflowDefinitionStore(this CosmosDbServiceConfiguration configuration)
+        public static CosmosDbElsaBuilder AddWorkflowDefinitionStore(this CosmosDbElsaBuilder configuration)
         {
             configuration.Services.AddSingleton<IWorkflowDefinitionStore, CosmosDbWorkflowDefinitionStore>();
             return configuration;

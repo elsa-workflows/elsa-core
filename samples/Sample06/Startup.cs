@@ -15,12 +15,12 @@ namespace Sample06
             Configuration = configuration;
         }
 
-        public IConfiguration Configuration { get; }
+        private IConfiguration Configuration { get; }
 
         public void ConfigureServices(IServiceCollection services)
         {
             services
-                .AddWorkflows(x => x.WithMemoryStores())
+                .AddWorkflows()
                 .AddHttpActivities()
                 .AddWorkflow<HelloWorldWorkflow>();
         }

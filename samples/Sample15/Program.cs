@@ -17,7 +17,7 @@ namespace Sample15
     /// A simple demonstration of using the MongoDB persistence providers.
     /// If you don't have MongoDB installed but you do have Docker, run `docker-compose up` to run a container with MongoDB (see the 'docker-compose.yaml' file). 
     /// </summary>
-    static class Program
+    internal static class Program
     {
         private static async Task Main()
         {
@@ -64,7 +64,7 @@ namespace Sample15
                 .Build();
 
             return new ServiceCollection()
-                .AddWorkflows(x => x.UseMongoDbStores(configuration, "Elsa", "MongoDb"))
+                .AddWorkflows(x => x.AddMongoDbStores(configuration, "Elsa", "MongoDb"))
                 .AddStartupRunner()
                 .AddConsoleActivities()
                 .AddWorkflow<HelloWorldWorkflow>()

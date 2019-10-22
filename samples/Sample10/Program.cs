@@ -16,7 +16,7 @@ using YesSql.Provider.Sqlite;
 namespace Sample10
 {
     // A simple demonstration of using YesSql persistence providers.
-    public class Program
+    public static class Program
     {
         public static async Task Main(string[] args)
         {
@@ -66,7 +66,7 @@ namespace Sample10
         {
             return new ServiceCollection()
                 .AddWorkflows(
-                    x => x.WithYesSqlStores(
+                    x => x.AddYesSqlStores(
                         options => options
                             .UseSqLite(
                                 @"Data Source=c:\data\elsa.yessql.db;Cache=Shared",

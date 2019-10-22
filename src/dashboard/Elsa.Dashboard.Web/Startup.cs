@@ -18,14 +18,9 @@ namespace Elsa.Dashboard.Web
 
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllersWithViews();
-
             services.AddElsaDashboard(
-                options => options.DiscoverActivities(),
-                elsa => elsa.WithEntityFrameworkCoreProvider(
-                    provider => provider.UseSqlite(Configuration.GetConnectionString("Sqlite")))
-                    .WithWorkflowDefinitionStore()
-                    .WithWorkflowInstanceStore());
+                elsa => elsa.AddEntityFrameworkStores(
+                    provider => provider.UseSqlite(Configuration.GetConnectionString("Sqlite"))));
         }
 
         public void Configure(IApplicationBuilder app)

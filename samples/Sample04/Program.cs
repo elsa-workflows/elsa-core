@@ -11,13 +11,13 @@ namespace Sample04
     /// <summary>
     /// A strongly-typed workflows program demonstrating scripting, and branching.
     /// </summary>
-    class Program
+    internal static class Program
     {
-        static async Task Main()
+        private static async Task Main()
         {
             // Setup a service collection.
             var services = new ServiceCollection()
-                .AddWorkflows(x => x.WithMemoryStores())
+                .AddWorkflows()
                 .AddConsoleActivities()
                 .AddActivity<Sum>()
                 .AddActivity<Subtract>()
