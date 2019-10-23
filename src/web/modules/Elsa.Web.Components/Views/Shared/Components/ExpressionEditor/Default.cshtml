@@ -1,7 +1,0 @@
-@model ExpressionViewModel
-<div class="input-group mb-3">
-    <input asp-for="Expression" type="text" class="form-control" placeholder="Enter an expression">
-    <div class="input-group-append">
-        <select asp-for="Syntax" class="input-group-select" asp-items="@ViewBag.Syntaxes"></select>
-    </div>
-</div>

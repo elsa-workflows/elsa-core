@@ -1,8 +1,10 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Models;
+using Elsa.Services;
+using Elsa.Services.Models;
 
 namespace Elsa.Expressions
 {
@@ -14,11 +16,14 @@ namespace Elsa.Expressions
         {
             this.evaluators = evaluators.ToDictionary(x => x.Syntax);
         }
-        
-        public async Task<T> EvaluateAsync<T>(WorkflowExpression<T> expression, WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
+
+        public async Task<object> EvaluateAsync(IWorkflowExpression expression, Type type, WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
         {
+            if (expression == null)
+                return default;
+            
             var evaluator = evaluators[expression.Syntax];
-            return await evaluator.EvaluateAsync<T>(expression.Expression, workflowExecutionContext, cancellationToken);
+            return await evaluator.EvaluateAsync(expression.Expression, type, workflowExecutionContext, cancellationToken);
         }
     }
 }

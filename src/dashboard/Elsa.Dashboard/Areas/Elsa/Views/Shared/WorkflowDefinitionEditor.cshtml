@@ -1,0 +1,100 @@
+@model WorkflowDefinitionEditModel
+@{
+    var formAction = Model.Id == null ? "Create" : "Edit";
+}
+<div class="container-fluid mt--7">
+    <div class="row">
+        <div class="col">
+            <div class="card bg-secondary shadow">
+                <div class="card-header bg-white border-0">
+                    <div class="row align-items-center">
+                        <div class="col-8">
+                            <h3 id="editorCaption" class="mb-0">@Model.Name</h3>
+                            <small id="editorDescription" class="text-muted">@Model.Description</small>
+                        </div>
+                        <div class="col-4 text-right">
+                            <a href="#!" class="btn btn-primary" onclick="addActivity()">Add Activity</a>
+                            <a href="#!" class="btn btn-secondary" onclick="exportWorkflow()">Download</a>
+                            <a href="#!" class="btn btn-secondary" onclick="importWorkflow()">Import</a>
+                            <a href="#!" class="btn btn-secondary" data-toggle="modal" data-target="#workflow-properties-modal">
+                                <i class="ni ni-settings-gear-65"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form asp-action="@formAction">
+                        <input asp-for="Json" id="workflowData" type="hidden"/>
+                        <input asp-for="Name" type="hidden" id="workflowName"/>
+                        <input asp-for="Description" type="hidden" id="workflowDescription"/>
+                        <input asp-for="IsDisabled" type="hidden" id="workflowIsDisabled"/>
+                        <input asp-for="IsSingleton" type="hidden" id="workflowIsSingleton"/>
+                        <vc:workflow-designer id="designerHost" activity-definitions="@Model.ActivityDefinitions" workflow="@Model.WorkflowModel" is-readonly="@false" />
+                        <div class="text-center">
+                            <button asp-for="SubmitAction" name="SubmitAction" type="submit" value="draft" class="btn btn-primary mt-4">Save Draft</button>
+                            <button asp-for="SubmitAction" name="SubmitAction" type="submit" value="publish" class="btn btn-success mt-4">Publish</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    @await Html.PartialAsync("Footer")
+</div>
+
+<div class="modal fade" id="workflow-properties-modal" tabindex="-1" role="dialog" aria-labelledby="workflow-properties-modal" aria-hidden="true">
+    <div class="modal-dialog modal- modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content bg-secondary">
+
+            <div class="modal-header bg-white">
+                <h2 class="modal-title" id="modal-title-default">Workflow Properties</h2>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <form role="form" onsubmit="onWorkflowPropertiesSubmit(event)">
+                <div class="modal-body p-0">
+
+                    <div class="card bg-secondary border-0">
+                        <div class="card-body">
+
+                            <h6 class="heading-small text-muted mb-4">Name and Description</h6>
+                            <div class="pl-lg-4">
+                                <div class="form-group focused">
+                                    <label asp-for="Name" class="form-control-label">Name</label>
+                                    <input asp-for="Name" class="form-control form-control-alternative" type="text">
+                                </div>
+                                <div class="form-group">
+                                    <label asp-for="Description">Description</label>
+                                    <textarea asp-for="Description" rows="4" class="form-control form-control-alternative"></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <div class="custom-control custom-checkbox">
+                                        <input asp-for="IsSingleton" class="custom-control-input" type="checkbox">
+                                        <label asp-for="IsSingleton" class="custom-control-label">Singleton</label>
+                                    </div>
+                                    <small class="text-muted">Check to mark this workflow as being a <a href="https://elsa-workflows.github.io/elsa-core/" target="_blank">singleton</a></small>
+                                </div>
+                                <div class="form-group">
+                                    <div class="custom-control custom-checkbox">
+                                        <input asp-for="IsDisabled" class="custom-control-input" type="checkbox">
+                                        <label asp-for="IsDisabled" class="custom-control-label">Disabled</label>
+                                    </div>
+                                    <small class="text-muted">Check to disable this workflow. Disabled workflows won't be triggered.</small>
+                                </div>
+                            </div>
+                            <hr class="my-4">
+
+                        </div>
+                    </div>
+
+                </div>
+                <div class="modal-footer ">
+                    <input type="submit" class="btn btn-primary" value="Update"/>
+                    <button type="button" class="btn btn-link  ml-auto" data-dismiss="modal">Cancel</button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>

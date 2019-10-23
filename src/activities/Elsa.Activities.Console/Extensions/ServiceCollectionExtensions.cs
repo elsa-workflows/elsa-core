@@ -1,22 +1,15 @@
-using Elsa.Activities.Console.Drivers;
-using Elsa.Extensions;
+using Elsa.Activities.Console.Activities;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Activities.Console.Extensions
 {
     public static class ServiceCollectionExtensions
-    {
-        public static IServiceCollection AddConsoleWorkflowDescriptors(this IServiceCollection services)
-        {
-            return services.AddActivityDescriptors<ActivityDescriptors>();
-        }
-        
-        public static IServiceCollection AddConsoleWorkflowDrivers(this IServiceCollection services)
+    {        
+        public static IServiceCollection AddConsoleActivities(this IServiceCollection services)
         {
             return services
-                .AddConsoleWorkflowDescriptors()
-                .AddActivityDriver<ReadLineDriver>()
-                .AddActivityDriver<WriteLineDriver>();
+                .AddActivity<ReadLine>()
+                .AddActivity<WriteLine>();
         }
     }
 }

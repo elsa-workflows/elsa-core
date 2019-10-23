@@ -1,7 +1,8 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Models;
-using NodaTime;
+using Elsa.Services;
+using Elsa.Services.Models;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Results
 {
@@ -10,20 +11,22 @@ namespace Elsa.Results
     /// </summary>
     public class HaltResult : ActivityExecutionResult
     {
-        private readonly Instant instant;
-
-        public HaltResult(Instant instant)
+        public HaltResult(bool continueOnFirstPass = false)
         {
-            this.instant = instant;
+            ContinueOnFirstPass = continueOnFirstPass;
         }
+        
+        public bool ContinueOnFirstPass { get; }
         
         public override async Task ExecuteAsync(IWorkflowInvoker invoker, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
         {            
             var activity = workflowContext.CurrentActivity;
 
-            if (workflowContext.IsFirstPass)
+            if (workflowContext.IsFirstPass && ContinueOnFirstPass)
             {
-                var result = await invoker.ActivityInvoker.ResumeAsync(workflowContext, activity, cancellationToken);
+                var activityInvoker = workflowContext.ServiceProvider.GetRequiredService<IActivityInvoker>();
+                var result = await activityInvoker.ResumeAsync(workflowContext, activity, cancellationToken);
+                
                 workflowContext.IsFirstPass = false;
 
                 await result.ExecuteAsync(invoker, workflowContext, cancellationToken);
@@ -31,7 +34,7 @@ namespace Elsa.Results
             else
             {
                 workflowContext.ScheduleHaltingActivity(activity);
-                workflowContext.Halt(instant);
+                workflowContext.Halt(activity);
             }
         }
     }

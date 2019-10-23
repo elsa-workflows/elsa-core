@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>netcoreapp3.0</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\activities\Elsa.Activities.Email\Elsa.Activities.Email.csproj" />
+      <ProjectReference Include="..\..\activities\Elsa.Activities.Http\Elsa.Activities.Http.csproj" />
+      <ProjectReference Include="..\..\activities\Elsa.Activities.Timers\Elsa.Activities.Timers.csproj" />
+      <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
+      <ProjectReference Include="..\..\dashboard\Elsa.Dashboard\Elsa.Dashboard.csproj" />
+      <ProjectReference Include="..\..\persistence\Elsa.Persistence.MongoDb\Elsa.Persistence.MongoDb.csproj" />
+    </ItemGroup>
+
+</Project>
