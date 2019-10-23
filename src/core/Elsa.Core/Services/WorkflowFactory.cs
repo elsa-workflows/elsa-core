@@ -13,13 +13,13 @@ namespace Elsa.Services
     public class WorkflowFactory : IWorkflowFactory
     {
         private readonly IActivityResolver activityResolver;
-        private readonly IWorkflowBuilder workflowBuilder;
+        private readonly Func<IWorkflowBuilder> workflowBuilder;
         private readonly IClock clock;
         private readonly IIdGenerator idGenerator;
 
         public WorkflowFactory(
             IActivityResolver activityResolver,
-            IWorkflowBuilder workflowBuilder,
+            Func<IWorkflowBuilder> workflowBuilder,
             IClock clock,
             IIdGenerator idGenerator)
         {
@@ -34,7 +34,7 @@ namespace Elsa.Services
             WorkflowInstance workflowInstance = default,
             string correlationId = default) where T : IWorkflow, new()
         {
-            var workflowDefinition = workflowBuilder.Build<T>();
+            var workflowDefinition = workflowBuilder().Build<T>();
             return CreateWorkflow(workflowDefinition, input, workflowInstance, correlationId);
         }
 

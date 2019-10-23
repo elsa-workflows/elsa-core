@@ -1,4 +1,3 @@
-using Elsa.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Activities.UserTask.Extensions

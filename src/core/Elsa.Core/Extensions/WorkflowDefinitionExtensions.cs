@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using Elsa.Models;
 
@@ -5,6 +6,13 @@ namespace Elsa.Extensions
 {
     public static class WorkflowDefinitionExtensions
     {
+        public static IEnumerable<WorkflowDefinitionVersion> WithVersion(
+            this IEnumerable<WorkflowDefinitionVersion> query,
+            VersionOptions version)
+        {
+            return query.AsQueryable().WithVersion(version);
+        }
+        
         public static IQueryable<WorkflowDefinitionVersion> WithVersion(
             this IQueryable<WorkflowDefinitionVersion> query,
             VersionOptions version)

@@ -1,6 +1,6 @@
 using System;
-using Elsa.Extensions;
 using Elsa.Models;
+using Elsa.Persistence.Memory;
 using Elsa.Persistence.MongoDb.Serialization;
 using Elsa.Persistence.MongoDb.Services;
 using Microsoft.Extensions.Configuration;
@@ -15,7 +15,8 @@ namespace Elsa.Persistence.MongoDb.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddMongoDb(this IServiceCollection services,
+        public static MongoElsaBuilder AddMongoDbProvider(
+            this ElsaBuilder elsaBuilder,
             IConfiguration configuration,
             string databaseName,
             string connectionStringName
@@ -24,27 +25,51 @@ namespace Elsa.Persistence.MongoDb.Extensions
             NodaTimeSerializers.Register();
             RegisterEnumAsStringConvention();
             BsonSerializer.RegisterSerializer(new JObjectSerializer());
+            BsonSerializer.RegisterSerializer(new WorkflowExecutionScopeSerializer());
+            //BsonSerializer.RegisterSerializer(new WorkflowInstanceSerializer());
 
-            return services
+            elsaBuilder.Services
                 .AddSingleton(sp => CreateDbClient(configuration, connectionStringName))
                 .AddSingleton(sp => CreateDatabase(sp, databaseName));
+
+            return new MongoElsaBuilder(elsaBuilder.Services);
         }
 
-        public static IServiceCollection AddMongoDbWorkflowInstanceStore(this IServiceCollection services)
+        public static MongoElsaBuilder AddMongoDbStores(
+            this ElsaBuilder elsaBuilder,
+            IConfiguration configuration,
+            string databaseName,
+            string connectionStringName)
         {
-            return services
+            return elsaBuilder
+                .AddMongoDbProvider(configuration, databaseName, connectionStringName)
+                .AddMongoDbWorkflowDefinitionStore()
+                .AddMongoDbWorkflowInstanceStore();
+        }
+
+        public static MongoElsaBuilder AddMongoDbWorkflowInstanceStore(
+            this MongoElsaBuilder configuration)
+        {
+            configuration.Services
                 .AddMongoDbCollection<WorkflowInstance>("WorkflowInstances")
                 .Replace<IWorkflowInstanceStore, MongoWorkflowInstanceStore>(ServiceLifetime.Scoped);
+
+            return configuration;
         }
 
-        public static IServiceCollection AddMongoDbWorkflowDefinitionStore(this IServiceCollection services)
+        public static MongoElsaBuilder AddMongoDbWorkflowDefinitionStore(
+            this MongoElsaBuilder configuration)
         {
-            return services
+            configuration.Services
                 .AddMongoDbCollection<WorkflowDefinitionVersion>("WorkflowDefinitions")
                 .Replace<IWorkflowDefinitionStore, MongoWorkflowDefinitionStore>(ServiceLifetime.Scoped);
+
+            return configuration;
         }
-        
-        public static IServiceCollection AddMongoDbCollection<T>(this IServiceCollection services, string collectionName)
+
+        public static IServiceCollection AddMongoDbCollection<T>(
+            this IServiceCollection services,
+            string collectionName)
         {
             return services.AddSingleton(sp => CreateCollection<T>(sp, collectionName));
         }
@@ -66,7 +91,7 @@ namespace Elsa.Persistence.MongoDb.Extensions
             var connectionString = configuration.GetConnectionString(connectionStringName);
             return new MongoClient(connectionString);
         }
-        
+
         private static void RegisterEnumAsStringConvention()
         {
             var pack = new ConventionPack { new EnumRepresentationConvention(BsonType.String) };

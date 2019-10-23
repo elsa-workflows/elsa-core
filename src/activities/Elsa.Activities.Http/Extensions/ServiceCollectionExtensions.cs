@@ -5,8 +5,6 @@ using Elsa.Activities.Http.Options;
 using Elsa.Activities.Http.RequestHandlers.Handlers;
 using Elsa.Activities.Http.Scripting;
 using Elsa.Activities.Http.Services;
-using Elsa.Extensions;
-using Elsa.Runtime;
 using Elsa.Scripting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Infrastructure;

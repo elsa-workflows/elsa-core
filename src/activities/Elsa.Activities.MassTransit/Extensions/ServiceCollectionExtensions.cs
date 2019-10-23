@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using Elsa.Activities.MassTransit.Activities;
 using Elsa.Activities.MassTransit.Consumers;
 using Elsa.Activities.MassTransit.Options;
-using Elsa.Extensions;
 using MassTransit;
 using MassTransit.AspNetCoreIntegration;
 using MassTransit.AspNetCoreIntegration.HealthChecks;

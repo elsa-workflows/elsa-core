@@ -9,8 +9,6 @@ using Elsa.Persistence;
 using Elsa.Results;
 using Elsa.Services.Extensions;
 using Elsa.Services.Models;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using NodaTime;
@@ -100,15 +98,18 @@ namespace Elsa.Services
             return ExecuteAsync(workflow, true, startActivities, cancellationToken);
         }
 
-        public Task<WorkflowExecutionContext> ResumeAsync(
+        public async Task<WorkflowExecutionContext> ResumeAsync(
             WorkflowInstance workflowInstance,
             Variables input = null,
             IEnumerable<string> startActivityIds = default,
             CancellationToken cancellationToken = default)
         {
-            var definition = workflowRegistry.GetById(workflowInstance.DefinitionId, workflowInstance.Version);
+            var definition = await workflowRegistry.GetWorkflowDefinitionAsync(
+                workflowInstance.DefinitionId,
+                VersionOptions.SpecificVersion(workflowInstance.Version),
+                cancellationToken);
             var workflow = workflowFactory.CreateWorkflow(definition, input, workflowInstance);
-            return ExecuteAsync(workflow, true, startActivityIds, cancellationToken);
+            return await ExecuteAsync(workflow, true, startActivityIds, cancellationToken);
         }
 
         public async Task<IEnumerable<WorkflowExecutionContext>> TriggerAsync(
@@ -165,7 +166,7 @@ namespace Elsa.Services
             Func<JObject, bool> activityStatePredicate = default,
             CancellationToken cancellationToken = default)
         {
-            var workflowDefinitions = workflowRegistry.ListByStartActivity(activityType);
+            var workflowDefinitions = await workflowRegistry.ListByStartActivityAsync(activityType, cancellationToken);
 
             if (activityStatePredicate != null)
                 workflowDefinitions = workflowDefinitions.Where(x => activityStatePredicate(x.Item2.State));
@@ -208,7 +209,7 @@ namespace Elsa.Services
             while (workflowExecutionContext.HasScheduledActivities)
             {
                 var currentActivity = workflowExecutionContext.PopScheduledActivity();
-                
+
                 var result = start
                     ? await ExecuteActivityAsync(workflowExecutionContext, currentActivity, cancellationToken)
                     : await ResumeActivityAsync(workflowExecutionContext, currentActivity, cancellationToken);
@@ -266,10 +267,11 @@ namespace Elsa.Services
             foreach (var workflowInstanceGroup in workflowInstanceGroups)
             {
                 var workflowInstance = workflowInstanceGroup.Key;
-                
-                var workflowDefinition = workflowRegistry.GetById(
+
+                var workflowDefinition = await workflowRegistry.GetWorkflowDefinitionAsync(
                     workflowInstance.DefinitionId,
-                    workflowInstance.Version
+                    VersionOptions.SpecificVersion(workflowInstance.Version),
+                    cancellationToken
                 );
 
                 var workflow = workflowFactory.CreateWorkflow(workflowDefinition, input, workflowInstance);
@@ -282,7 +284,7 @@ namespace Elsa.Services
                         new[] { activity.Item2.Id },
                         cancellationToken
                     );
-                    
+
                     executionContexts.Add(executionContext);
                 }
             }
@@ -341,8 +343,10 @@ namespace Elsa.Services
             );
         }
 
-        private async Task<ActivityExecutionResult> ResumeActivityAsync(WorkflowExecutionContext workflowContext,
-            IActivity activity, CancellationToken cancellationToken)
+        private async Task<ActivityExecutionResult> ResumeActivityAsync(
+            WorkflowExecutionContext workflowContext,
+            IActivity activity,
+            CancellationToken cancellationToken)
         {
             return await InvokeActivityAsync(
                 workflowContext,
@@ -377,8 +381,10 @@ namespace Elsa.Services
             return null;
         }
 
-        private async Task<ActivityExecutionResult> ExecuteActivityHaltedAsync(WorkflowExecutionContext workflowContext,
-            IActivity activity, CancellationToken cancellationToken)
+        private async Task<ActivityExecutionResult> ExecuteActivityHaltedAsync(
+            WorkflowExecutionContext workflowContext,
+            IActivity activity,
+            CancellationToken cancellationToken)
         {
             return await InvokeActivityAsync(
                 workflowContext,
@@ -407,10 +413,10 @@ namespace Elsa.Services
 
             foreach (var startActivity in startActivityList)
             {
-                if(await startActivity.CanExecuteAsync(workflowExecutionContext, cancellationToken))
+                if (await startActivity.CanExecuteAsync(workflowExecutionContext, cancellationToken))
                     workflowExecutionContext.ScheduleActivity(startActivity);
             }
-            
+
             if (workflowExecutionContext.HasScheduledActivities)
             {
                 workflow.BlockingActivities.RemoveWhere(startActivityList.Contains);

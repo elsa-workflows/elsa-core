@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Services;
 
@@ -6,13 +6,9 @@ namespace Elsa.Extensions
 {
     public static class WorkflowRegistryExtensions
     {
-        public static void RegisterWorkflows(this IWorkflowRegistry registry,
-            IEnumerable<WorkflowDefinitionVersion> workflowDefinitions)
+        public static Task<WorkflowDefinitionVersion> GetWorkflowDefinitionAsync<T>(this IWorkflowRegistry workflowRegistry)
         {
-            foreach (var workflowDefinition in workflowDefinitions)
-            {
-                registry.RegisterWorkflow(workflowDefinition);
-            }
+            return workflowRegistry.GetWorkflowDefinitionAsync(typeof(T).Name, VersionOptions.Latest);            
         }
     }
 }

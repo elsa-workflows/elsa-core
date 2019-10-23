@@ -20,7 +20,7 @@
 
     <ItemGroup>
       <PackageReference Include="MongoDb.Bson.NodaTime" Version="2.0.0" />
-      <PackageReference Include="MongoDB.Driver" Version="2.9.1" />
+      <PackageReference Include="MongoDB.Driver" Version="2.9.2" />
     </ItemGroup>
 
 </Project>
