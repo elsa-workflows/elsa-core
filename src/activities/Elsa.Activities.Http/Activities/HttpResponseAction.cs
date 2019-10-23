@@ -113,6 +113,9 @@ namespace Elsa.Activities.Http.Activities
         {
             var response = httpContextAccessor.HttpContext.Response;
 
+            if (response.HasStarted)
+                return Fault("Response has already started");
+            
             response.StatusCode = (int) StatusCode;
             response.ContentType = ContentType;
 

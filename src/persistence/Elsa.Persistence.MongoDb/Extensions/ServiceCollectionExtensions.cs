@@ -25,6 +25,8 @@ namespace Elsa.Persistence.MongoDb.Extensions
             NodaTimeSerializers.Register();
             RegisterEnumAsStringConvention();
             BsonSerializer.RegisterSerializer(new JObjectSerializer());
+            BsonSerializer.RegisterSerializer(new WorkflowExecutionScopeSerializer());
+            //BsonSerializer.RegisterSerializer(new WorkflowInstanceSerializer());
 
             elsaBuilder.Services
                 .AddSingleton(sp => CreateDbClient(configuration, connectionStringName))
