@@ -36,6 +36,7 @@ namespace Elsa.Services
 
             var query =
                 from workflow in workflowDefinitions
+                where workflow.IsPublished
                 from activity in workflow.GetStartActivities()
                 where activity.Type == activityType
                 select (workflow, activity);
