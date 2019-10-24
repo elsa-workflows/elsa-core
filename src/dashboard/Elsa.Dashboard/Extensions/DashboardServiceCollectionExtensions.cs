@@ -4,7 +4,6 @@ using Elsa.Dashboard.ActionFilters;
 using Elsa.Dashboard.Options;
 using Elsa.Dashboard.Services;
 using Elsa.Mapping;
-using Elsa.Persistence;
 using Elsa.Runtime;
 using Elsa.Serialization;
 using Elsa.Serialization.Formatters;

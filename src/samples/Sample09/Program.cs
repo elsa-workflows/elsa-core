@@ -4,7 +4,6 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Elsa.Activities.Console.Extensions;
 using Elsa.Models;
-using Elsa.Persistence.Memory;
 using Elsa.Serialization;
 using Elsa.Serialization.Formatters;
 using Elsa.Services;
