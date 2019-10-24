@@ -5,7 +5,6 @@ using Elsa.Activities.Console.Extensions;
 using Elsa.Activities.Workflows;
 using Elsa.Extensions;
 using Elsa.Models;
-using Elsa.Persistence.Memory;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 

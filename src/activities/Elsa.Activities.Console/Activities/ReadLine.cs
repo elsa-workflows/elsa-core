@@ -24,7 +24,7 @@ namespace Elsa.Activities.Console.Activities
     {
         private readonly TextReader input;
 
-        public ReadLine() : this(System.Console.In)
+        public ReadLine()
         {
         }
 
@@ -53,7 +53,7 @@ namespace Elsa.Activities.Console.Activities
 
         protected override ActivityExecutionResult OnResume(WorkflowExecutionContext context)
         {
-            var receivedInput = (string) context.Workflow.Input[VariableName];
+            var receivedInput = (string) context.Workflow.Input["ReadLineInput"];
             return Execute(context, receivedInput);
         }
 

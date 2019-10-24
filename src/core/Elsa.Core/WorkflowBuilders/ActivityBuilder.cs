@@ -40,6 +40,12 @@ namespace Elsa.WorkflowBuilders
             return activityBuilder;
         }
 
+        public IActivityBuilder WithId(string id)
+        {
+            Id = id;
+            return this;
+        }
+
         public IWorkflowBuilder Then(string activityId)
         {
             WorkflowBuilder.Connect(

@@ -6,7 +6,6 @@ using Elsa.Activities.UserTask.Activities;
 using Elsa.Activities.UserTask.Extensions;
 using Elsa.Extensions;
 using Elsa.Models;
-using Elsa.Persistence.Memory;
 using Elsa.Services;
 using Elsa.Services.Extensions;
 using Elsa.Services.Models;

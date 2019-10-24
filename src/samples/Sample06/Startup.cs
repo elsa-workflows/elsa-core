@@ -1,5 +1,4 @@
 ﻿using Elsa.Activities.Http.Extensions;
-using Elsa.Persistence.Memory;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;

@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Elsa.Activities.Console.Activities;
 using Elsa.Activities.Console.Extensions;
 using Elsa.Expressions;
-using Elsa.Persistence.Memory;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 

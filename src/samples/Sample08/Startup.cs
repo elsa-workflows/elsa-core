@@ -2,7 +2,6 @@
 using Elsa.Activities.Http.Extensions;
 using Elsa.Activities.MassTransit.Extensions;
 using Elsa.Activities.Timers.Extensions;
-using Elsa.Persistence.Memory;
 using Elsa.Runtime;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;

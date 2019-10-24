@@ -5,7 +5,6 @@ using Elsa.Activities.Console.Extensions;
 using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Persistence;
-using Elsa.Persistence.Memory;
 using Elsa.Persistence.YesSql.Extensions;
 using Elsa.Runtime;
 using Elsa.Services;
