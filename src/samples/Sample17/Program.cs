@@ -14,8 +14,8 @@ namespace Sample17
         {
             var services = BuildServices();
             var workflowInvoker = services.GetRequiredService<IWorkflowInvoker>();
-            var workflow = await workflowInvoker.StartAsync<CreateDocumentWorkflow>();
-            var document = workflow.CurrentScope.GetVariable<Document>("Document");
+            var workflowExecutionContext = await workflowInvoker.StartAsync<CreatePersonWorkflow>();
+            var document = workflowExecutionContext.CurrentScope.GetVariable<Person>("Document");
             
             Console.WriteLine("Created document: {0}", document);
         }
@@ -24,9 +24,10 @@ namespace Sample17
         {
             return new ServiceCollection()
                 .AddWorkflows()
-                .AddWorkflow<CreateDocumentWorkflow>()
+                .AddWorkflow<CreatePersonWorkflow>()
                 .AddConsoleActivities()
-                .AddActivity<CreateDocument>()
+                .AddActivity<CreatePerson>()
+                .AddSingleton(Console.In)
                 .BuildServiceProvider();
         }
     }

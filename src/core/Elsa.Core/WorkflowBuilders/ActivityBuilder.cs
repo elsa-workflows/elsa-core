@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Linq.Expressions;
 using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -38,6 +39,12 @@ namespace Elsa.WorkflowBuilders
         {
             var activityBuilder = When(null).Then(setup, branch, id);
             return activityBuilder;
+        }
+
+        public IActivityBuilder WithId(string id)
+        {
+            Id = id;
+            return this;
         }
 
         public IWorkflowBuilder Then(string activityId)
