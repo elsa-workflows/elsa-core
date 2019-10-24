@@ -21,7 +21,6 @@
 
     <ItemGroup>
         <PackageReference Include="GravatarHelper.AspNetCore" Version="1.1.0" />
-        <PackageReference Include="Scrutor.Elsa" Version="3.0.2.21" />
     </ItemGroup>
 
     <ItemGroup>
