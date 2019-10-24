@@ -1,5 +1,7 @@
 using System;
+using System.Net;
 using System.Net.Mail;
+using System.Runtime.InteropServices.ComTypes;
 using Elsa.Activities.Email.Activities;
 using Elsa.Activities.Email.Options;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,8 +25,28 @@ namespace Elsa.Activities.Email.Extensions
         private static SmtpClient CreateSmtpClient(IServiceProvider serviceProvider)
         {
             var options = serviceProvider.GetRequiredService<IOptions<SmtpOptions>>().Value;
+            var smtpClient = new SmtpClient(options.Host, options.Port);
+            var credentials = options.Credentials;
             
-            return new SmtpClient(options.Host, options.Port);
+            if (credentials != null && !string.IsNullOrWhiteSpace(credentials.Username)) 
+                smtpClient.Credentials = new NetworkCredential(credentials.Username, credentials.Password);
+
+            if (options.Timeout != null)
+                smtpClient.Timeout = (int)options.Timeout.Value.TotalSeconds;
+
+            if (options.DeliveryFormat != null)
+                smtpClient.DeliveryFormat = options.DeliveryFormat.Value;
+
+            if (options.DeliveryMethod != null)
+                smtpClient.DeliveryMethod = options.DeliveryMethod.Value;
+
+            if (options.EnableSsl != null)
+                smtpClient.EnableSsl = options.EnableSsl.Value;
+
+            if (!string.IsNullOrWhiteSpace(options.PickupDirectoryLocation))
+                smtpClient.PickupDirectoryLocation = options.PickupDirectoryLocation;
+
+            return smtpClient;
         }
     }
 }
