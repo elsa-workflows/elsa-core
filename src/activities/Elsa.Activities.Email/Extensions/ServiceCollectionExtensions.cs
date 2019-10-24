@@ -1,7 +1,6 @@
 using System;
 using System.Net;
 using System.Net.Mail;
-using System.Runtime.InteropServices.ComTypes;
 using Elsa.Activities.Email.Activities;
 using Elsa.Activities.Email.Options;
 using Microsoft.Extensions.DependencyInjection;

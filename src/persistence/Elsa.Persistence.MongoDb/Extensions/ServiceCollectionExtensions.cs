@@ -1,6 +1,5 @@
 using System;
 using Elsa.Models;
-using Elsa.Persistence.Memory;
 using Elsa.Persistence.MongoDb.Serialization;
 using Elsa.Persistence.MongoDb.Services;
 using Microsoft.Extensions.Configuration;
