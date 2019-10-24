@@ -4,6 +4,7 @@ using Elsa.Activities.Console.Extensions;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Sample17.Activities;
+using Sample17.Models;
 
 namespace Sample17
 {
@@ -13,8 +14,10 @@ namespace Sample17
         {
             var services = BuildServices();
             var workflowInvoker = services.GetRequiredService<IWorkflowInvoker>();
-
-            await workflowInvoker.StartAsync<CreateDocumentWorkflow>();
+            var workflow = await workflowInvoker.StartAsync<CreateDocumentWorkflow>();
+            var document = workflow.CurrentScope.GetVariable<Document>("Document");
+            
+            Console.WriteLine("Created document: {0}", document);
         }
         
         private static IServiceProvider BuildServices()
