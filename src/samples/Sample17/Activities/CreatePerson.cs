@@ -39,6 +39,9 @@ namespace Sample17.Activities
             var person = new Person { FullName = name, Age = age };
 
             Output["Person"] = person;
+            Output["FullName"] = person.FullName;
+            Output["Age"] = person.Age;
+            
             return Done();
         }
     }

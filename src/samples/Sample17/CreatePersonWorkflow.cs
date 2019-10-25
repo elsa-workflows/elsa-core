@@ -35,7 +35,7 @@ namespace Sample17
                         x.VariableName = "Age";
                         x.ValueExpression = new JavaScriptExpression<int>("CreatePerson.Person.Age");
                     })
-                .Then<WriteLine>(x => x.TextExpression = new JavaScriptExpression<string>("`A new person was created with name \"${Person.FullName}\" and age \"${Age}\"`"));
+                .Then<WriteLine>(x => x.TextExpression = new JavaScriptExpression<string>("`A new person was created with name \"${Person.FullName}\" and age \"${CreatePerson.Age}\"`"));
         }
     }
 }
