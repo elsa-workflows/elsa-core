@@ -61,7 +61,7 @@ namespace Elsa.WorkflowDesigner
                 var activityProperty = propertyInfo.GetCustomAttribute<ActivityPropertyAttribute>();
 
                 if (activityProperty == null)
-                    yield break;
+                    continue;
 
                 yield return new ActivityPropertyDescriptor
                 (
