@@ -14,9 +14,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="MassTransit.AspNetCore" Version="5.5.2" />
-      <PackageReference Include="MassTransit.Extensions.DependencyInjection" Version="5.5.2" />
-      <PackageReference Include="MassTransit.RabbitMQ" Version="5.5.2" />
+      <PackageReference Include="MassTransit.AspNetCore" Version="5.5.6" />
+      <PackageReference Include="MassTransit.Extensions.DependencyInjection" Version="5.5.6" />
+      <PackageReference Include="MassTransit.RabbitMQ" Version="5.5.6" />
     </ItemGroup>
 
     <ItemGroup>
