@@ -7,22 +7,20 @@ using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Expressions;
 using Elsa.Services.Models;
-using Elsa.WorkflowDesigner.Models;
 using Humanizer;
 
-namespace Elsa.WorkflowDesigner
+namespace Elsa.Metadata
 {
     public static class ActivityDescriber
     {
-        public static ActivityDefinitionModel Describe<T>() where T : IActivity
+        public static ActivityDescriptor Describe<T>() where T : IActivity
         {
             return Describe(typeof(T));
         }
-
-        public static ActivityDefinitionModel Describe(Type activityType)
+        
+        public static ActivityDescriptor Describe(Type activityType)
         {
             var activityDefinitionAttribute = activityType.GetCustomAttribute<ActivityDefinitionAttribute>();
-            var activityDesignerAttribute = activityType.GetCustomAttribute<ActivityDefinitionDesignerAttribute>();
             var typeName = activityDefinitionAttribute?.Type ?? activityType.Name;
             
             var displayName =
@@ -30,25 +28,22 @@ namespace Elsa.WorkflowDesigner
                 activityType.Name.Humanize(LetterCasing.Title);
             
             var description = activityDefinitionAttribute?.Description;
+            var runtimeDescription = activityDefinitionAttribute?.RuntimeDescription;
             var category = activityDefinitionAttribute?.Category ?? "Miscellaneous";
             var icon = activityDefinitionAttribute?.Icon;
-            var designerDescription = activityDesignerAttribute?.Description;
-            var designerOutcomes = activityDesignerAttribute?.Outcomes ?? new[] { OutcomeNames.Done };
+            var outcomes = activityDefinitionAttribute?.Outcomes ?? new[] { OutcomeNames.Done };
             var properties = DescribeProperties(activityType);
 
-            return new ActivityDefinitionModel
+            return new ActivityDescriptor
             {
                 Type = typeName.Pascalize(),
                 DisplayName = displayName,
                 Description = description,
+                RuntimeDescription = runtimeDescription,
                 Category = category,
                 Icon = icon,
                 Properties = properties.ToArray(),
-                Designer = new ActivityDesignerSettings
-                {
-                    Description = designerDescription,
-                    Outcomes = designerOutcomes
-                }
+                Outcomes = outcomes
             };
         }
 

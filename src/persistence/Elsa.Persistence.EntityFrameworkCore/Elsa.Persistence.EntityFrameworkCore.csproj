@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
-        <TargetFramework>netcoreapp2.2</TargetFramework>
+        <TargetFramework>netcoreapp3.0</TargetFramework>
         <LangVersion>latest</LangVersion>
         <PackageVersion>1.0.0</PackageVersion>
         <Authors>Sipke Schoorstra</Authors>
@@ -15,11 +15,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="FlexLabs.EntityFrameworkCore.Upsert" Version="2.2.0" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="2.2.6" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="2.2.6" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="2.2.6" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="2.2.6" />
+        <PackageReference Include="FlexLabs.EntityFrameworkCore.Upsert" Version="3.0.0" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="3.0.0" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="3.0.0" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="3.0.0" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="3.0.0" />
     </ItemGroup>
 
     <ItemGroup>

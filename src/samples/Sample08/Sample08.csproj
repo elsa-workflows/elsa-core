@@ -5,7 +5,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="MassTransit.AspNetCore" Version="5.5.2" />
+        <PackageReference Include="MassTransit.AspNetCore" Version="6.0.0-develop.2231" />
     </ItemGroup>
 
     <ItemGroup>

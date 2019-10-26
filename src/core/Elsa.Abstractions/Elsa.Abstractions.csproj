@@ -15,7 +15,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Jint" Version="3.0.0-beta-1612" />
+      <PackageReference Include="Jint" Version="3.0.0-beta-1629" />
       <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="3.0.0" />
       <PackageReference Include="Microsoft.Extensions.Localization.Abstractions" Version="3.0.0" />
       <PackageReference Include="Microsoft.Extensions.Primitives" Version="3.0.0" />

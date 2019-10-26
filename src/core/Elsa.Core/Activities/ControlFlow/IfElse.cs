@@ -12,11 +12,8 @@ namespace Elsa.Activities.ControlFlow
     [ActivityDefinition(
         DisplayName = "If/Else",
         Category = "Control Flow",
-        Description = "Evaluate a Boolean expression and continue execution depending on the result."
-    )]
-    [ActivityDefinitionDesigner(
-        Description =
-            "x => !!x.state.expression ? `Evaluate <strong>${ x.state.expression.expression }</strong> and continue execution depending on the result.` : x.definition.description",
+        Description = "Evaluate a Boolean expression and continue execution depending on the result.",
+        RuntimeDescription = "x => !!x.state.expression ? `Evaluate <strong>${ x.state.expression.expression }</strong> and continue execution depending on the result.` : x.definition.description",
         Outcomes = new[] { OutcomeNames.True, OutcomeNames.False }
     )]
     public class IfElse : Activity

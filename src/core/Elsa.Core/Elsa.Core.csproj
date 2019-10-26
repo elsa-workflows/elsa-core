@@ -16,10 +16,11 @@
 
     <ItemGroup>
         <PackageReference Include="AutoMapper" Version="9.0.0" />
+        <PackageReference Include="Humanizer.Core" Version="2.7.9" />
         <PackageReference Include="MediatR" Version="7.0.0" />
         <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="7.0.0" />
         <PackageReference Include="Microsoft.AspNetCore.Hosting.Server.Abstractions" Version="2.2.0" />
-        <PackageReference Include="Microsoft.CSharp" Version="4.5.0" />
+        <PackageReference Include="Microsoft.CSharp" Version="4.6.0" />
         <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="3.0.0" />
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="3.0.0" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.0.0" />
@@ -29,7 +30,7 @@
         <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="3.0.0" />
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="3.0.0" />
         <PackageReference Include="NodaTime.Serialization.JsonNet" Version="2.2.0" />
-        <PackageReference Include="Elsa.Scrutor" Version="3.0.2.25" />
+        <PackageReference Include="Elsa.Scrutor" Version="3.0.2.26" />
 
         <PackageReference Include="YamlDotNet.NetStandard" Version="4.0.0" />
     </ItemGroup>

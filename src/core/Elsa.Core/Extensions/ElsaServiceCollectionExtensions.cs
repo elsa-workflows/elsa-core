@@ -175,6 +175,7 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             return services
                 .AddActivity<ForEach>()
+                .AddActivity<While>()
                 .AddActivity<Fork>()
                 .AddActivity<Join>()
                 .AddSingleton<IWorkflowEventHandler>(sp => sp.GetRequiredService<Join>())

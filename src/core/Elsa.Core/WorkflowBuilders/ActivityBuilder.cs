@@ -18,6 +18,8 @@ namespace Elsa.WorkflowBuilders
         public WorkflowBuilder WorkflowBuilder { get; }
         public ActivityDefinition Activity { get; }
         public string Id { get; set; }
+        public string Description { get; set; }
+        public string DisplayName { get; set; }
 
         public IActivityBuilder StartWith<T>(Action<T> setup = default, string id = default) where T : class, IActivity
         {
@@ -45,6 +47,18 @@ namespace Elsa.WorkflowBuilders
             Id = id;
             return this;
         }
+        
+        public IActivityBuilder WithDisplayName(string displayName)
+        {
+            DisplayName = displayName;
+            return this;
+        }
+
+        public IActivityBuilder WithDescription(string description)
+        {
+            Description = description;
+            return this;
+        }
 
         public IWorkflowBuilder Then(string activityId)
         {
@@ -56,9 +70,17 @@ namespace Elsa.WorkflowBuilders
             return WorkflowBuilder;
         }
 
+        public IActivityBuilder Then(IActivityBuilder targetActivity)
+        {
+            WorkflowBuilder.Connect(this, targetActivity);
+            return this;
+        }
+
         public ActivityDefinition BuildActivity()
         {
             Activity.Id = Id;
+            Activity.Description = Description;
+            Activity.DisplayName = DisplayName;
             return Activity;
         }
 
