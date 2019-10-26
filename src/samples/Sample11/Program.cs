@@ -49,7 +49,7 @@ namespace Sample11
         private static IServiceProvider BuildServices()
         {
             return new ServiceCollection()
-                .AddWorkflows()
+                .AddElsa()
                 .AddConsoleActivities()
                 .AddWorkflow<CorrelationWorkflow>()
                 .BuildServiceProvider();

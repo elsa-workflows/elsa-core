@@ -7,7 +7,7 @@ using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 
-namespace Elsa.Activities.ControlFlow
+namespace Elsa.Activities.ControlFlow.Activities
 {
     [ActivityDefinition(Category = "Control Flow", Description = "Execute while a given condition is true.", Icon = "far fa-circle")]
     public class While : Activity

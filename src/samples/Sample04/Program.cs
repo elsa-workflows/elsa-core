@@ -18,7 +18,7 @@ namespace Sample04
             // Setup a service collection.
             var services = new ServiceCollection()
                 .AddSingleton(Console.In)
-                .AddWorkflows()
+                .AddElsa()
                 .AddConsoleActivities()
                 .AddActivity<Sum>()
                 .AddActivity<Subtract>()

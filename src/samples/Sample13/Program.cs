@@ -16,9 +16,10 @@ namespace Sample13
         {
             // Setup a service collection.
             var services = new ServiceCollection()
-                .AddWorkflows()
+                .AddElsa()
                 .AddConsoleActivities()
                 .AddSingleton<IScriptEngineConfigurator, ScriptEngineConfigurator>()
+                .AddSingleton(Console.In)
                 .BuildServiceProvider();
 
             // Create a workflow.

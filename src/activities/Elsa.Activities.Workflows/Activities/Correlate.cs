@@ -7,7 +7,7 @@ using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 
-namespace Elsa.Activities.Workflows
+namespace Elsa.Activities.Workflows.Activities
 {
     /// <summary>
     /// Sets the CorrelationId of the workflow to a given value.

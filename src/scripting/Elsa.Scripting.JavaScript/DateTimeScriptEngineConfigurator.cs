@@ -4,7 +4,7 @@ using Elsa.Services.Models;
 using Jint;
 using NodaTime;
 
-namespace Elsa.Scripting
+namespace Elsa.Scripting.JavaScript
 {
     public class DateTimeScriptEngineConfigurator : IScriptEngineConfigurator
     {

@@ -5,15 +5,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="MassTransit.AspNetCore" Version="6.0.0-develop.2231" />
+        <PackageReference Include="MassTransit.AspNetCore" Version="5.5.6" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\activities\Elsa.Activities.Email\Elsa.Activities.Email.csproj" />
-        <ProjectReference Include="..\..\activities\Elsa.Activities.Http\Elsa.Activities.Http.csproj" />
         <ProjectReference Include="..\..\activities\Elsa.Activities.MassTransit\Elsa.Activities.MassTransit.csproj" />
-        <ProjectReference Include="..\..\activities\Elsa.Activities.Timers\Elsa.Activities.Timers.csproj" />
-        <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
+        <ProjectReference Include="..\..\core\Elsa\Elsa.csproj" />
     </ItemGroup>
 
 
