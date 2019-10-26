@@ -18,11 +18,8 @@ namespace Elsa.Activities.Http.Activities
     [ActivityDefinition(
         Category = "HTTP",
         DisplayName = "Send HTTP Response",
-        Description = "Send an HTTP response."
-    )]
-    [ActivityDefinitionDesigner(
-        Description =
-            "x => !!x.state.statusCode ? `Send an HTTP <strong>${ x.state.statusCode }</strong> - <strong>${ x.state.contentType }</strong> response` : x.definition.description",
+        Description = "Send an HTTP response.",
+        RuntimeDescription = "x => !!x.state.statusCode ? `Send an HTTP <strong>${ x.state.statusCode }</strong> - <strong>${ x.state.contentType }</strong> response` : x.definition.description",
         Outcomes = new[] { OutcomeNames.Done }
     )]
     public class HttpResponseAction : Activity

@@ -11,11 +11,8 @@ namespace Elsa.Activities.Primitives
     [ActivityDefinition(
         DisplayName = "Set Variable",
         Description = "Set variable on the workflow.",
-        Category = "Primitives"
-    )]
-    [ActivityDefinitionDesigner(
-        Description =
-            "x => !!x.state.variableName ? `<strong>${x.state.variableName}</strong> = <strong>${x.state.valueExpression.expression}</strong><br/>${x.state.valueExpression.syntax}` : x.definition.description",
+        Category = "Primitives",
+        RuntimeDescription = "x => !!x.state.variableName ? `<strong>${x.state.variableName}</strong> = <strong>${x.state.valueExpression.expression}</strong><br/>${x.state.valueExpression.syntax}` : x.definition.description",
         Outcomes = new[] { OutcomeNames.Done }
     )]
     public class SetVariable : Activity
@@ -51,7 +48,7 @@ namespace Elsa.Activities.Primitives
                 workflowContext,
                 cancellationToken
             );
-            workflowContext.CurrentScope.SetVariable(VariableName, value);
+            workflowContext.SetVariable(VariableName, value);
             return Done();
         }
     }

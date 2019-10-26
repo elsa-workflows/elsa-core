@@ -13,11 +13,8 @@ namespace Elsa.Activities.ControlFlow
     [ActivityDefinition(
         Category = "Control Flow",
         Description = "Switch execution based on a given expression.",
-        Icon = "far fa-list-alt"
-    )]
-    [ActivityDefinitionDesigner(
-        Description =
-            "x => !!x.state.expression ? `Switch execution based on <strong>${ x.state.expression.expression }</strong>.` : x.definition.description",
+        Icon = "far fa-list-alt",
+        RuntimeDescription = "x => !!x.state.expression ? `Switch execution based on <strong>${ x.state.expression.expression }</strong>.` : x.definition.description",
         Outcomes = "x => x.state.cases.map(c => c.toString())"
     )]
     public class Switch : Activity
@@ -44,7 +41,8 @@ namespace Elsa.Activities.ControlFlow
             set => SetState(value);
         }
 
-        protected override async Task<ActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowContext,
+        protected override async Task<ActivityExecutionResult> OnExecuteAsync(
+            WorkflowExecutionContext workflowContext,
             CancellationToken cancellationToken)
         {
             var result = await expressionEvaluator.EvaluateAsync(Expression, workflowContext, cancellationToken);

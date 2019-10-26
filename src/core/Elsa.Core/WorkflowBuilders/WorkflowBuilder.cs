@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Elsa.Metadata;
 using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -79,10 +80,13 @@ namespace Elsa.WorkflowBuilders
             var activity = activityResolver.ResolveActivity(setupActivity);
             var activityBlueprint = ActivityDefinition.FromActivity(activity);
             var activityBuilder = new ActivityBuilder(this, activityBlueprint, id);
+            var activityDescriptor = ActivityDescriber.Describe<T>();
 
             if (id != null)
                 activity.Id = id;
 
+            activityBuilder.DisplayName = activityDescriptor.DisplayName;
+            activityBuilder.Description = activityDescriptor.Description;
             activityBuilders.Add(activityBuilder);
             return activityBuilder;
         }

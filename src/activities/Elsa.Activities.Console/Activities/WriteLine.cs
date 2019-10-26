@@ -15,11 +15,8 @@ namespace Elsa.Activities.Console.Activities
     /// </summary>
     [ActivityDefinition(
         Category = "Console",
-        Description = "Write text to standard out."
-    )]
-    [ActivityDefinitionDesigner(
-        Description =
-            "x => !!x.state.textExpression ? `Write <strong>${ x.state.textExpression.expression }</strong> to standard out.` : x.definition.description",
+        Description = "Write text to standard out.",
+        RuntimeDescription = "x => !!x.state.textExpression ? `Write <strong>${ x.state.textExpression.expression }</strong> to standard out.` : x.definition.description",
         Outcomes = new[] { OutcomeNames.Done }
     )]
     public class WriteLine : Activity

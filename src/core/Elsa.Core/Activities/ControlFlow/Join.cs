@@ -14,11 +14,8 @@ namespace Elsa.Activities.ControlFlow
     [ActivityDefinition(
         Category = "Control Flow",
         Description = "Merge workflow execution back into a single branch.",
-        Icon = "fas fa-code-branch"
-    )]
-    [ActivityDefinitionDesigner(
-        Description =
-            "x => !!x.state.joinMode ? `Merge workflow execution back into a single branch using mode <strong>${ x.state.joinMode }</strong>` : x.definition.description",
+        Icon = "fas fa-code-branch",
+        RuntimeDescription = "x => !!x.state.joinMode ? `Merge workflow execution back into a single branch using mode <strong>${ x.state.joinMode }</strong>` : x.definition.description",
         Outcomes = new[] { OutcomeNames.Done }
     )]
     public class Join : Activity, IWorkflowEventHandler

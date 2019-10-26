@@ -23,7 +23,7 @@ namespace Elsa.Scripting
             engine.SetValue("correlationId", (Func<object>) (() => context.Workflow.CorrelationId));
             engine.SetValue("currentCulture", (Func<object>) (() => CultureInfo.InvariantCulture));
 
-            var variables = workflowExecutionContext.Workflow.Scopes
+            var variables = workflowExecutionContext.Workflow.Scopes.Reverse()
                 .Select(x => x.Variables)
                 .Aggregate(Variables.Empty, (x, y) => new Variables(x.Union(y)));
             

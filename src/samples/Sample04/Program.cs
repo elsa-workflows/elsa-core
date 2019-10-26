@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Elsa.Activities.Console.Extensions;
 using Elsa.Services;
@@ -16,6 +17,7 @@ namespace Sample04
         {
             // Setup a service collection.
             var services = new ServiceCollection()
+                .AddSingleton(Console.In)
                 .AddWorkflows()
                 .AddConsoleActivities()
                 .AddActivity<Sum>()
@@ -35,7 +37,8 @@ namespace Sample04
             Console.WriteLine("Workflow has ended. Here are the activities that have executed:");
             foreach (var logEntry in workflow.ExecutionLog)
             {
-                Console.WriteLine("{0}: {1}", logEntry.Timestamp, logEntry.ActivityId);
+                var activity = workflow.Definition.Activities.First(x => x.Id == logEntry.ActivityId);
+                Console.WriteLine("{0}: {1}", logEntry.Timestamp, activity.DisplayName);
             }
             Console.ReadLine();
         }

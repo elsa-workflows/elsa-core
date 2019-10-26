@@ -53,8 +53,21 @@ namespace Elsa.Services.Models
         public IActivity PopScheduledActivity() => CurrentActivity = scheduledActivities.Pop();
         public void ScheduleHaltingActivity(IActivity activity) => scheduledHaltingActivities.Push(activity);
         public IActivity PopScheduledHaltingActivity() => scheduledHaltingActivities.Pop();
-        public void SetVariable(string name, object value) => CurrentScope.SetVariable(name, value);
-        public T GetVariable<T>(string name) => CurrentScope.GetVariable<T>(name);
+        
+        public void SetVariable(string name, object value)
+        {
+            // Get the first scope (starting from the oldest one) containing the variable (existing variable). Otherwise use the current scope (new variable declaration)
+            var scope = Workflow.Scopes.Reverse().FirstOrDefault(x => x.Variables.ContainsKey(name)) ?? CurrentScope;
+            scope.SetVariable(name, value);
+        }
+
+        public T GetVariable<T>(string name)
+        {
+            // Get the first scope (starting from the newest one) containing the variable.
+            var scope = Workflow.Scopes.FirstOrDefault(x => x.Variables.ContainsKey(name)) ?? CurrentScope;
+            return scope.GetVariable<T>(name);
+        }
+
         public void SetLastResult(object value) => CurrentScope.LastResult = value;
 
         public void Start()

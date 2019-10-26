@@ -13,11 +13,8 @@ namespace Elsa.Activities.Timers.Activities
 {
     [ActivityDefinition(
         Category = "Timers",
-        Description = "Triggers periodically based on a specified CRON expression."
-    )]
-    [ActivityDefinitionDesigner(
-        Description =
-            "x => !!x.state.cronExpression ? `<strong>${ x.state.cronExpression.expression }</strong>.` : x.definition.description",
+        Description = "Triggers periodically based on a specified CRON expression.",
+        RuntimeDescription = "x => !!x.state.cronExpression ? `<strong>${ x.state.cronExpression.expression }</strong>.` : x.definition.description",
         Outcomes = new[] { OutcomeNames.Done }
     )]
     public class CronEvent : Activity
@@ -43,7 +40,7 @@ namespace Elsa.Activities.Timers.Activities
             get => GetState<Instant?>();
             set => SetState(value);
         }
-        
+
         protected override async Task<bool> OnCanExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
         {
             return StartTime == null || await IsExpiredAsync(context, cancellationToken);
@@ -54,7 +51,8 @@ namespace Elsa.Activities.Timers.Activities
             return Halt();
         }
 
-        protected override async Task<ActivityExecutionResult> OnResumeAsync(WorkflowExecutionContext context,
+        protected override async Task<ActivityExecutionResult> OnResumeAsync(
+            WorkflowExecutionContext context,
             CancellationToken cancellationToken)
         {
             if (await IsExpiredAsync(context, cancellationToken))
@@ -62,11 +60,12 @@ namespace Elsa.Activities.Timers.Activities
                 StartTime = null;
                 return Done();
             }
-            
+
             return Halt();
         }
 
-        private async Task<bool> IsExpiredAsync(WorkflowExecutionContext workflowContext,
+        private async Task<bool> IsExpiredAsync(
+            WorkflowExecutionContext workflowContext,
             CancellationToken cancellationToken)
         {
             var cronExpression = await expressionEvaluator.EvaluateAsync(
@@ -76,10 +75,10 @@ namespace Elsa.Activities.Timers.Activities
             );
             var schedule = CrontabSchedule.Parse(cronExpression);
             var now = clock.GetCurrentInstant();
-            
+
             if (StartTime == null)
                 StartTime = now;
-            
+
             var nextOccurrence = schedule.GetNextOccurrence(StartTime.Value.ToDateTimeUtc());
 
             return now.ToDateTimeUtc() >= nextOccurrence;
