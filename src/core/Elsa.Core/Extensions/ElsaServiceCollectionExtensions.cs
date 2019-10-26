@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Elsa;
-using Elsa.Activities.Primitives;
+using Elsa.Activities;
 using Elsa.AutoMapper.Extensions;
 using Elsa.Caching;
 using Elsa.Expressions;

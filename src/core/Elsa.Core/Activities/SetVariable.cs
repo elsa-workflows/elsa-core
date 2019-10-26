@@ -6,7 +6,7 @@ using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 
-namespace Elsa.Activities.Primitives
+namespace Elsa.Activities
 {
     [ActivityDefinition(
         DisplayName = "Set Variable",

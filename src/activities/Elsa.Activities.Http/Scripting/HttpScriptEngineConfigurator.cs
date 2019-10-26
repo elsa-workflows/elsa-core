@@ -2,6 +2,7 @@ using System;
 using Elsa.Activities.Http.Models;
 using Elsa.Activities.Http.Services;
 using Elsa.Scripting;
+using Elsa.Scripting.JavaScript;
 using Elsa.Services.Models;
 using Jint;
 using Microsoft.AspNetCore.Http;

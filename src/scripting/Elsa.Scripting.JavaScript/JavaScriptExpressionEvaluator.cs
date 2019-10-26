@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Scripting;
+using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Jint;
@@ -12,9 +12,9 @@ using Newtonsoft.Json;
 using NodaTime;
 using NodaTime.Serialization.JsonNet;
 
-namespace Elsa.Expressions
+namespace Elsa.Scripting.JavaScript
 {
-    public class JavaScriptEvaluator : IExpressionEvaluator
+    public class JavaScriptExpressionEvaluator : IExpressionEvaluator
     {
         private readonly IEnumerable<IScriptEngineConfigurator> configurators;
         private readonly JsonSerializerSettings serializerSettings;
@@ -25,7 +25,7 @@ namespace Elsa.Expressions
             return new WorkflowExpression<T>(SyntaxName, expression);
         }
 
-        public JavaScriptEvaluator(IEnumerable<IScriptEngineConfigurator> configurators)
+        public JavaScriptExpressionEvaluator(IEnumerable<IScriptEngineConfigurator> configurators)
         {
             this.configurators = configurators;
             serializerSettings = new JsonSerializerSettings().ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);

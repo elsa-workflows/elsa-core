@@ -1,5 +1,6 @@
 using System;
 using Elsa.Scripting;
+using Elsa.Scripting.JavaScript;
 using Elsa.Services.Models;
 using Jint;
 using NodaTime;

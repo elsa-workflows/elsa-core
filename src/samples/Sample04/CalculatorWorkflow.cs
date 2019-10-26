@@ -1,9 +1,10 @@
 using Elsa;
+using Elsa.Activities;
 using Elsa.Activities.Console.Activities;
 using Elsa.Activities.ControlFlow;
 using Elsa.Activities.ControlFlow.Activities;
-using Elsa.Activities.Primitives;
 using Elsa.Expressions;
+using Elsa.Scripting.JavaScript;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Sample04.Activities;

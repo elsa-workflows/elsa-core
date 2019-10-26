@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Elsa.Activities.Console.Extensions;
 using Elsa.Scripting;
+using Elsa.Scripting.JavaScript;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 

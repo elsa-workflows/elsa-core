@@ -9,12 +9,12 @@ using Fluid.Values;
 
 namespace Elsa.Scripting.Liquid
 {
-    public class LiquidEvaluator : IExpressionEvaluator
+    public class LiquidExpressionEvaluator : IExpressionEvaluator
     {
         private readonly ILiquidTemplateManager liquidTemplateManager;
         public const string SyntaxName = "Liquid";
 
-        public LiquidEvaluator(ILiquidTemplateManager liquidTemplateManager)
+        public LiquidExpressionEvaluator(ILiquidTemplateManager liquidTemplateManager)
         {
             this.liquidTemplateManager = liquidTemplateManager;
         }

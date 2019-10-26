@@ -4,10 +4,11 @@ using Elsa.Attributes;
 using Elsa.Expressions;
 using Elsa.Extensions;
 using Elsa.Results;
+using Elsa.Scripting.JavaScript;
 using Elsa.Services;
 using Elsa.Services.Models;
 
-namespace Elsa.Activities.ControlFlow
+namespace Elsa.Activities.ControlFlow.Activities
 {
     [ActivityDefinition(
         DisplayName = "If/Else",

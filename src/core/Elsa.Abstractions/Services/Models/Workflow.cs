@@ -62,7 +62,7 @@ namespace Elsa.Services.Models
             return new WorkflowInstance
             {
                 Id = Id,
-                DefinitionId = Definition.Id,
+                DefinitionId = Definition.DefinitionId,
                 Version = Definition.Version,
                 CorrelationId = CorrelationId,
                 Status = Status,

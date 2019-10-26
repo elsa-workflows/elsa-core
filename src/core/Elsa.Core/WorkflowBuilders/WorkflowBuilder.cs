@@ -60,13 +60,13 @@ namespace Elsa.WorkflowBuilders
             IsSingleton = value;
             return this;
         }
-        
+
         public IWorkflowBuilder Disable()
         {
             IsDisabled = true;
             return this;
         }
-        
+
         public IWorkflowBuilder Enable()
         {
             IsDisabled = false;
@@ -143,7 +143,11 @@ namespace Elsa.WorkflowBuilders
                 connections,
                 IsSingleton,
                 IsDisabled,
-                Variables.Empty);
+                Variables.Empty)
+            {
+                IsPublished = true,
+                IsLatest = true
+            };
         }
     }
 }

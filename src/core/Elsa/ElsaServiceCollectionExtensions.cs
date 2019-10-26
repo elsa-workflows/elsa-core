@@ -4,6 +4,7 @@ using Elsa.Activities.ControlFlow.Extensions;
 using Elsa.Activities.UserTask.Extensions;
 using Elsa.Activities.Workflows.Extensions;
 using Elsa.Scripting.JavaScript;
+using Elsa.Scripting.Liquid;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -17,6 +18,7 @@ namespace Microsoft.Extensions.DependencyInjection
             return services
                 .AddElsaCore(configure)
                 .AddJavaScriptExpressionEvaluator()
+                .AddLiquidExpressionEvaluator()
                 .AddControlFlowActivities()
                 .AddWorkflowActivities()
                 .AddUserTaskActivities();

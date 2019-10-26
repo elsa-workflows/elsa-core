@@ -7,7 +7,7 @@ using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 
-namespace Elsa.Activities.Workflows
+namespace Elsa.Activities.Workflows.Activities
 {
     /// <summary>
     /// Halts workflow execution until the specified signal is received.

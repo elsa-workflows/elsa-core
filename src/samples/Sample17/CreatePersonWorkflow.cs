@@ -1,6 +1,7 @@
-﻿using Elsa.Activities.Console.Activities;
-using Elsa.Activities.Primitives;
+﻿using Elsa.Activities;
+using Elsa.Activities.Console.Activities;
 using Elsa.Expressions;
+using Elsa.Scripting.JavaScript;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Sample17.Activities;

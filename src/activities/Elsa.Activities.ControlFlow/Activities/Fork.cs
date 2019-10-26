@@ -4,7 +4,7 @@ using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 
-namespace Elsa.Activities.ControlFlow
+namespace Elsa.Activities.ControlFlow.Activities
 {
     [ActivityDefinition(
         Category = "Control Flow",

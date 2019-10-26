@@ -9,7 +9,7 @@ namespace Elsa.Scripting.JavaScript
         public static IServiceCollection AddJavaScriptExpressionEvaluator(this IServiceCollection services)
         {
             return services
-                .TryAddProvider<IExpressionEvaluator, JavaScriptEvaluator>(ServiceLifetime.Singleton)
+                .TryAddProvider<IExpressionEvaluator, JavaScriptExpressionEvaluator>(ServiceLifetime.Singleton)
                 .AddSingleton<IScriptEngineConfigurator, CommonScriptEngineConfigurator>()
                 .AddSingleton<IScriptEngineConfigurator, DateTimeScriptEngineConfigurator>();
         }

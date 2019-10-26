@@ -5,10 +5,11 @@ using Elsa.Expressions;
 using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Results;
+using Elsa.Scripting.JavaScript;
 using Elsa.Services;
 using Elsa.Services.Models;
 
-namespace Elsa.Activities.Workflows
+namespace Elsa.Activities.Workflows.Activities
 {
     /// <summary>
     /// Triggers the specified signal.
@@ -41,7 +42,7 @@ namespace Elsa.Activities.Workflows
         )]
         public WorkflowExpression<Variables> Input
         {
-            get => GetState(() => new WorkflowExpression<Variables>(JavaScriptEvaluator.SyntaxName, "{}"));
+            get => GetState(() => new WorkflowExpression<Variables>(JavaScriptExpressionEvaluator.SyntaxName, "{}"));
             set => SetState(value);
         }
 

@@ -3,7 +3,7 @@ using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 
-namespace Elsa.Activities.Workflows
+namespace Elsa.Activities.Workflows.Activities
 {
     [ActivityDefinition(
         Category = "Workflows",

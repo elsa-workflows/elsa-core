@@ -5,10 +5,11 @@ using Elsa.Attributes;
 using Elsa.Expressions;
 using Elsa.Extensions;
 using Elsa.Results;
+using Elsa.Scripting.JavaScript;
 using Elsa.Services;
 using Elsa.Services.Models;
 
-namespace Elsa.Activities.ControlFlow
+namespace Elsa.Activities.ControlFlow.Activities
 {
     [ActivityDefinition(Category = "Control Flow", Description = "Iterate over a collection.", Icon = "far fa-circle")]
     public class ForEach : Activity

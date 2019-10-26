@@ -6,6 +6,7 @@ using Elsa.Activities.Http.RequestHandlers.Handlers;
 using Elsa.Activities.Http.Scripting;
 using Elsa.Activities.Http.Services;
 using Elsa.Scripting;
+using Elsa.Scripting.JavaScript;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;

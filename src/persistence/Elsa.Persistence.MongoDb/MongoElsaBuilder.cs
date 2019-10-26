@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Persistence.MongoDb.Extensions
+namespace Elsa.Persistence.MongoDb
 {
     public class MongoElsaBuilder : ElsaBuilder
     {

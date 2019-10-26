@@ -9,7 +9,7 @@ using Elsa.Services;
 using Elsa.Services.Extensions;
 using Elsa.Services.Models;
 
-namespace Elsa.Activities.ControlFlow
+namespace Elsa.Activities.ControlFlow.Activities
 {
     [ActivityDefinition(
         Category = "Control Flow",
