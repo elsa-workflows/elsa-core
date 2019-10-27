@@ -15,7 +15,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Jint" Version="3.0.0-beta-1612" />
       <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="3.0.0" />
       <PackageReference Include="Microsoft.Extensions.Localization.Abstractions" Version="3.0.0" />
       <PackageReference Include="Microsoft.Extensions.Primitives" Version="3.0.0" />
@@ -23,6 +22,10 @@
       <PackageReference Include="NodaTime" Version="3.0.0-beta01" />
       <PackageReference Include="NodaTime.Serialization.JsonNet" Version="2.2.0" />
       <PackageReference Include="System.ComponentModel.Annotations" Version="4.6.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Scripting" />
     </ItemGroup>
 
 </Project>

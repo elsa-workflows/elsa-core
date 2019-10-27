@@ -52,8 +52,7 @@ namespace Elsa.Services
             var id = idGenerator.Generate();
             var workflow = new Workflow(
                 id,
-                definition.DefinitionId,
-                definition.Version,
+                definition,
                 clock.GetCurrentInstant(),
                 activities,
                 connections,

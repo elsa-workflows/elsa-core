@@ -12,8 +12,7 @@ namespace Elsa.Services.Models
     {
         public Workflow(
             string id,
-            string definitionId,
-            int version,
+            WorkflowDefinitionVersion definition,
             Instant createdAt,
             IEnumerable<IActivity> activities,
             IEnumerable<Connection> connections,
@@ -21,14 +20,15 @@ namespace Elsa.Services.Models
             string correlationId = default) : this()
         {
             Id = id;
-            DefinitionId = definitionId;
-            Version = version;
+            Definition = definition;
             CreatedAt = createdAt;
             CorrelationId = correlationId;
             Activities = activities.ToList();
             Connections = connections.ToList();
             Input = new Variables(input ?? Variables.Empty);
         }
+
+        
 
         public Workflow()
         {
@@ -38,8 +38,7 @@ namespace Elsa.Services.Models
         }
 
         public string Id { get; set; }
-        public string DefinitionId { get; }
-        public int Version { get; }
+        public WorkflowDefinitionVersion Definition { get; }
         public string CorrelationId { get; set; }
         public WorkflowStatus Status { get; set; }
         public Instant CreatedAt { get; set; }
@@ -63,8 +62,8 @@ namespace Elsa.Services.Models
             return new WorkflowInstance
             {
                 Id = Id,
-                DefinitionId = DefinitionId,
-                Version = Version,
+                DefinitionId = Definition.DefinitionId,
+                Version = Definition.Version,
                 CorrelationId = CorrelationId,
                 Status = Status,
                 CreatedAt = CreatedAt,

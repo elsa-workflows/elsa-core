@@ -20,11 +20,8 @@ namespace Elsa.Activities.Http.Activities
     [ActivityDefinition(
         Category = "HTTP",
         DisplayName = "Receive HTTP Request",
-        Description = "Receive an incoming HTTP request."
-    )]
-    [ActivityDefinitionDesigner(
-        Description =
-            "x => !!x.state.path ? `Handle <strong>${ x.state.method } ${ x.state.path }</strong>.` : x.definition.description",
+        Description = "Receive an incoming HTTP request.",
+        RuntimeDescription = "x => !!x.state.path ? `Handle <strong>${ x.state.method } ${ x.state.path }</strong>.` : x.definition.description",
         Outcomes = new[] { OutcomeNames.Done }
     )]
     public class HttpRequestEvent : Activity
@@ -118,7 +115,7 @@ namespace Elsa.Activities.Http.Activities
 
                 var parser = SelectContentParser(request.ContentType);
                 var content = await request.ReadContentAsBytesAsync(cancellationToken);
-                model.Content = await parser.ParseAsync(content, request.ContentType);
+                model.Body = await parser.ParseAsync(content, request.ContentType);
             }
 
             Output["Content"] = model;

@@ -2,6 +2,7 @@
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Attributes;
 using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Results;
@@ -12,15 +13,36 @@ using Newtonsoft.Json.Linq;
 namespace Elsa.Services
 {
     public abstract class ActivityBase : IActivity
-    {   
+    {
         public JObject State { get; set; } = new JObject();
         public Variables Output { get; set; } = new Variables();
-        
+
         [JsonIgnore]
         public Variables TransientOutput { get; } = new Variables();
-        
+
         public virtual string Type => GetType().Name;
+        
         public string Id { get; set; }
+        
+        [ActivityProperty(Label = "Name", Hint = "Optionally provide a name for this activity. You can reference named activities from expressions.")]
+        public string Name {
+            get => GetState<string>();
+            set => SetState(value);
+        }
+
+        [ActivityProperty(Hint = "Optionally provide a custom title for this activity.")]
+        public string Title
+        {
+            get => GetState<string>();
+            set => SetState(value);
+        }
+
+        [ActivityProperty(Hint = "Optionally provide a custom description for this activity.")]
+        public string Description
+        {
+            get => GetState<string>();
+            set => SetState(value);
+        }
 
         public Task<bool> CanExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken) => OnCanExecuteAsync(context, cancellationToken);
         public Task<ActivityExecutionResult> ExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken) => OnExecuteAsync(context, cancellationToken);

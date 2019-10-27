@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Elsa.Metadata;
 using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -59,30 +60,29 @@ namespace Elsa.WorkflowBuilders
             IsSingleton = value;
             return this;
         }
-        
+
         public IWorkflowBuilder Disable()
         {
             IsDisabled = true;
             return this;
         }
-        
+
         public IWorkflowBuilder Enable()
         {
             IsDisabled = false;
             return this;
         }
 
-        public IActivityBuilder Add<T>(
-            Action<T> setupActivity = default,
-            string id = default) where T : class, IActivity
+        public IActivityBuilder Add<T>(Action<T> setupActivity = default, string name = default) where T : class, IActivity
         {
             var activity = activityResolver.ResolveActivity(setupActivity);
             var activityBlueprint = ActivityDefinition.FromActivity(activity);
-            var activityBuilder = new ActivityBuilder(this, activityBlueprint, id);
-
-            if (id != null)
-                activity.Id = id;
-
+            var activityBuilder = new ActivityBuilder(this, activityBlueprint);
+            var activityDescriptor = ActivityDescriber.Describe<T>();
+            
+            activity.Name = name;
+            activityBuilder.DisplayName = activityDescriptor.DisplayName;
+            activityBuilder.Description = activityDescriptor.Description;
             activityBuilders.Add(activityBuilder);
             return activityBuilder;
         }
@@ -107,11 +107,9 @@ namespace Elsa.WorkflowBuilders
         }
 
 
-        public IActivityBuilder StartWith<T>(
-            Action<T> setupActivity,
-            string id = null) where T : class, IActivity
+        public IActivityBuilder StartWith<T>(Action<T> setupActivity, string name = default) where T : class, IActivity
         {
-            return Add(setupActivity, id);
+            return Add(setupActivity, name);
         }
 
         public WorkflowDefinitionVersion Build()
@@ -139,7 +137,11 @@ namespace Elsa.WorkflowBuilders
                 connections,
                 IsSingleton,
                 IsDisabled,
-                Variables.Empty);
+                Variables.Empty)
+            {
+                IsPublished = true,
+                IsLatest = true
+            };
         }
     }
 }

@@ -2,22 +2,18 @@
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFramework>netcoreapp2.2</TargetFramework>
+        <TargetFramework>netcoreapp3.0</TargetFramework>
         <LangVersion>latest</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\activities\Elsa.Activities.Console\Elsa.Activities.Console.csproj" />
-        <ProjectReference Include="..\..\activities\Elsa.Activities.Email\Elsa.Activities.Email.csproj" />
-        <ProjectReference Include="..\..\activities\Elsa.Activities.Http\Elsa.Activities.Http.csproj" />
-        <ProjectReference Include="..\..\activities\Elsa.Activities.Timers\Elsa.Activities.Timers.csproj" />
-        <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
+        <ProjectReference Include="..\..\core\Elsa\Elsa.csproj" />
         <ProjectReference Include="..\..\persistence\Elsa.Persistence.EntityFrameworkCore\Elsa.Persistence.EntityFrameworkCore.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="2.2.6" />
-      <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="2.2.6" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="3.0.0" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="3.0.0" />
     </ItemGroup>
 
 </Project>

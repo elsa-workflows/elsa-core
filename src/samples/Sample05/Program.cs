@@ -31,9 +31,9 @@ namespace Sample05
         private static void ConfigureServices(IServiceCollection services)
         {
             services
-                .AddWorkflows()
-                .AddWorkflow<RecurringWorkflow>()
+                .AddElsa()
                 .AddConsoleActivities()
+                .AddWorkflow<RecurringWorkflow>()
                 .AddTimerActivities(options => options.Configure(x => x.SweepInterval = Period.FromSeconds(1)));
         }
     }

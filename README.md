@@ -10,6 +10,41 @@ Workflows can be defined not only using code but also as JSON, YAML or XML.
 
 Follow the [Getting Started](https://elsa-workflows.github.io/elsa-core/docs/installing-elsa-core) instructions on the [Elsa Workflows documentation site](https://elsa-workflows.github.io/elsa-core).
 
+## Roadmap
+
+Version 1.0
+
+- [x] Workflow Invoker
+- [x] Long-running Workflows
+- [x] Workflows as code
+- [x] Workflows as data
+- [x] Correlation
+- [x] Persistence: CosmosDB, Entity Framework Core, MongoDB, YesSQL 
+- [x] HTML5 Workflow Designer Web Component
+- [x] ASP.NET Core Workflow Dashboard
+- [x] JavaScript Expressions
+- [x] Liquid Expressions
+- [x] Primitive Activities
+- [X] Control Flow Activities
+- [x] Workflow Activities
+- [x] Timer Activities
+- [x] HTTP Activities
+- [x] Email Activities
+
+Version 2.0
+
+- [ ] Service Bus Messaging
+- [ ] Generic Command & Event Activities
+- [ ] Workflow Host REST API
+- [ ] Workflow Host gRPC API
+- [ ] Distributed Hosting Support (support for multi-node environments)
+- [ ] Localization Support
+
+Version 3.0
+
+- [ ] State Machines
+- [ ] Container Activities
+
 ## Workflow Designer
 
 Workflows can be visually designed using [Elsa Designer](https://github.com/elsa-workflows/elsa-designer-html), a reusable & extensible HTML5 web component built with [StencilJS](https://stenciljs.com/).
@@ -68,107 +103,6 @@ The following providers will be supported:
 
 Currently, workflows can be stored in YAML or JSON format.
 The following demonstrates a simple workflow expressed in YAML and JSON, respectively:
-
-**YAML**
-```yaml
-activities:
-- name: WriteLine
-  id: activity-1
-  textExpression:  
-    syntax: PlainText
-    expression: Hi! What's your name?
-- name: ReadLine
-  id: activity-2
-  argumentName: name
-- name: WriteLine
-  id: activity-3
-  textExpression:
-    syntax: JavaScript
-    expression: '`Nice to meet you, ${name}!`'
-connections:
-- source:
-    activityId: activity-1
-    name: Done
-  target:
-    activityId: activity-2
-- source:
-    activityId: activity-2
-    name: Done
-  target:
-    activityId: activity-3
-```
-
-**JSON**
-```json
-{
-  "activities": [
-    {
-      "name": "WriteLine",
-      "id": "activity-1",
-      "textExpression": {
-        "syntax": "PlainText",
-        "expression": "Hi! What's your name?"
-      }
-    },
-    {
-      "id": "activity-2",
-      "name": "ReadLine",
-      "argumentName": "name"
-    },
-    {
-      "name": "WriteLine",
-      "id": "activity-3",
-      "textExpression": {
-        "syntax": "JavaScript",
-        "expression": "`Nice to meet you, ${name}!`"
-      }
-    }
-  ],
-  "connections": [
-    {
-      "source": {
-        "activityId": "activity-1",
-        "name": "Done"
-      },
-      "target": {
-        "activityId": "activity-2"
-      }
-    },
-    {
-      "source": {
-        "activityId": "activity-2",
-        "name": "Done"
-      },
-      "target": {
-        "activityId": "activity-3"
-      }
-    }
-  ]
-}
-```
-
-The following demonstrates loading a workflow from a YAML string:
-
-```c#
-// Setup a service collection and use the FileSystemProvider for both workflow definitions and workflow instances.
-var services = new ServiceCollection()
-    .AddWorkflowsInvoker()
-    .AddConsoleActivities()
-    .AddSingleton(Console.In)
-    .BuildServiceProvider();
-
-// Load the data and specify data format.
-var data = Resources.SampleWorkflowDefinition;
-var format = YamlTokenFormatter.FormatName; // "YAML"
-
-// Deserialize the workflow from data.
-var serializer = services.GetService<IWorkflowSerializer>();
-var workflowDefinition = await serializer.DeserializeAsync(data, format, CancellationToken.None);
-
-// Invoke the workflow.
-var invoker = services.GetService<IWorkflowInvoker>();
-await invoker.InvokeAsync(workflowDefinition);
-```
 
 ## Long Running Workflows
 
@@ -240,35 +174,12 @@ TODO: describe all the steps to add packages and register services.
 
 TODO: describe all the steps to add packages and register services.
 
-## Running Elsa Workflows Dashboard
+### Building & Running Elsa Workflows Dashboard
 
-In order to run Elsa on your local machine, follow these steps:
+In order to build & run Elsa on your local machine, follow these steps:
 
 1. Clone the repository.
 2. Run NPM install on all folders containing packages.json (or run `node npm-install.js` - a script in the root that recursively installs the Node packages)
 3. Execute gulp build from the directory src\dashboard\Elsa.Dashboard\Theme\argon-dashboard
-4. Open a shell and navigate to `src/samples/SampleDashboard.Web` and run `dotnet run`.
-5. Navigate to https://localhost:44397/elsa/home
-
-## Running Elsa Workflows Host
-
-(TODO)
-
-## Roadmap
-
-(TODO)
- 
-- Describe all the features (core engine, runtime, webbased designer, YAML, scripting, separation of designer from invoker from engine).
-- Describe various use cases.
-- Describe how to use.
-- Describe architecture.
-- Describe how to implement (custom host, custom dashboard).
-- Implement more activities
-- Implement integration with Orchard Core (separate repo)
-- Detailed documentation
-- Open API Activity Harvester
-- MassTransit Activity Harvester
-- RabbitMQ Activities
-- Azure Service Bus Activities
-- Automatic UI for Activity Editor
-
+4. Open a shell and navigate to `src/samples/Sample16` and run `dotnet run`.
+5. Navigate to https://localhost:8632/elsa/home

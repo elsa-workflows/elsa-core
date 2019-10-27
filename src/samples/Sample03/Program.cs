@@ -19,7 +19,7 @@ namespace Sample03
         {
             // Setup a service collection.
             var services = new ServiceCollection()
-                .AddWorkflows()
+                .AddElsa()
                 .AddConsoleActivities()
                 .BuildServiceProvider();
 

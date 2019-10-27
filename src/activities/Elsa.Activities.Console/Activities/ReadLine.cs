@@ -13,11 +13,8 @@ namespace Elsa.Activities.Console.Activities
     /// </summary>
     [ActivityDefinition(
         Category = "Console",
-        Description = "Read text from standard in."
-    )]
-    [ActivityDefinitionDesigner(
-        Description =
-            "a => !!a.state.variableName ? `Read text from standard in and store into <strong>${ a.state.variableName }</strong>.` : 'Read text from standard in.'",
+        Description = "Read text from standard in.",
+        RuntimeDescription = "a => !!a.state.variableName ? `Read text from standard in and store into <strong>${ a.state.variableName }</strong>.` : 'Read text from standard in.'",
         Outcomes = new[] { OutcomeNames.Done }
     )]
     public class ReadLine : Activity

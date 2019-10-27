@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Elsa.Metadata;
 using Elsa.Models;
 using Elsa.WorkflowDesigner.Models;
 
@@ -11,7 +12,7 @@ namespace Elsa.Dashboard.Areas.Elsa.ViewModels
             WorkflowInstance workflowInstance,
             WorkflowDefinitionVersion workflowDefinition,
             WorkflowModel workflowModel,
-            IEnumerable<ActivityDefinitionModel> activityDefinitions,
+            IEnumerable<ActivityDescriptor> activityDefinitions,
             string returnUrl)
         {
             WorkflowInstance = workflowInstance;
@@ -24,7 +25,7 @@ namespace Elsa.Dashboard.Areas.Elsa.ViewModels
         public WorkflowInstance WorkflowInstance { get; }
         public WorkflowDefinitionVersion WorkflowDefinition { get; }
         public WorkflowModel WorkflowModel { get; }
-        public ActivityDefinitionModel[] ActivityDefinitions { get; }
+        public ActivityDescriptor[] ActivityDefinitions { get; }
         public string ReturnUrl { get; }
     }
 }

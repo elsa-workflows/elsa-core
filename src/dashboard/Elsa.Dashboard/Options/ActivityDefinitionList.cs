@@ -1,25 +1,26 @@
 using System.Collections;
 using System.Collections.Generic;
+using Elsa.Metadata;
 using Elsa.WorkflowDesigner.Models;
 
 namespace Elsa.Dashboard.Options
 {
-    public class ActivityDefinitionList : IEnumerable<ActivityDefinitionModel>
+    public class ActivityDefinitionList : IEnumerable<ActivityDescriptor>
     {
         public ActivityDefinitionList()
         {
-            Items = new Dictionary<string, ActivityDefinitionModel>();
+            Items = new Dictionary<string, ActivityDescriptor>();
         }
 
-        private IDictionary<string, ActivityDefinitionModel> Items { get; }
+        private IDictionary<string, ActivityDescriptor> Items { get; }
         
-        public ActivityDefinitionList Add(ActivityDefinitionModel item)
+        public ActivityDefinitionList Add(ActivityDescriptor item)
         {
             Items[item.Type] = item;
             return this;
         }
 
-        public IEnumerator<ActivityDefinitionModel> GetEnumerator() => Items.Values.GetEnumerator();
+        public IEnumerator<ActivityDescriptor> GetEnumerator() => Items.Values.GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator()
         {

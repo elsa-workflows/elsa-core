@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\activities\Elsa.Activities.Console\Elsa.Activities.Console.csproj" />
+      <ProjectReference Include="..\..\activities\Elsa.Activities.ControlFlow\Elsa.Activities.ControlFlow.csproj" />
+      <ProjectReference Include="..\..\activities\Elsa.Activities.Email\Elsa.Activities.Email.csproj" />
+      <ProjectReference Include="..\..\activities\Elsa.Activities.Http\Elsa.Activities.Http.csproj" />
+      <ProjectReference Include="..\..\activities\Elsa.Activities.Timers\Elsa.Activities.Timers.csproj" />
+      <ProjectReference Include="..\..\activities\Elsa.Activities.UserTask\Elsa.Activities.UserTask.csproj" />
+      <ProjectReference Include="..\..\activities\Elsa.Activities.Workflows\Elsa.Activities.Workflows.csproj" />
+      <ProjectReference Include="..\..\scripting\Elsa.Scripting.Liquid\Elsa.Scripting.Liquid.csproj" />
+      <ProjectReference Include="..\Elsa.Core\Elsa.Core.csproj" />
+    </ItemGroup>
+
+</Project>

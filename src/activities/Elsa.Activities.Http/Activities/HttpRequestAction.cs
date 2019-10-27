@@ -23,11 +23,8 @@ namespace Elsa.Activities.Http.Activities
     [ActivityDefinition(
         Category = "HTTP",
         DisplayName = "Send HTTP Request",
-        Description = "Send an HTTP request."
-    )]
-    [ActivityDefinitionDesigner(
-        Description =
-            "x => !!x.state.url ? `Send HTTP <strong>${ x.state.method } ${ x.state.url.expression }</strong>.` : x.definition.description",
+        Description = "Send an HTTP request.",
+        RuntimeDescription = "x => !!x.state.url ? `Send HTTP <strong>${ x.state.method } ${ x.state.url.expression }</strong>.` : x.definition.description",
         Outcomes = "x => !!x.state.supportedStatusCodes ? x.state.supportedStatusCodes : []"
     )]
     public class HttpRequestAction : Activity

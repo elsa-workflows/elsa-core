@@ -1,12 +1,14 @@
 using System;
 using System.Net;
 using System.Net.Http;
+using Elsa.Activities;
 using Elsa.Activities.Email.Activities;
 using Elsa.Activities.Http.Activities;
 using Elsa.Activities.MassTransit.Activities;
 using Elsa.Activities.ControlFlow;
-using Elsa.Activities.Primitives;
+using Elsa.Activities.ControlFlow.Activities;
 using Elsa.Expressions;
+using Elsa.Scripting.JavaScript;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Sample08.Messages;

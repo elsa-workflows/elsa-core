@@ -5,10 +5,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\activities\Elsa.Activities.Email\Elsa.Activities.Email.csproj" />
-        <ProjectReference Include="..\..\activities\Elsa.Activities.Http\Elsa.Activities.Http.csproj" />
-        <ProjectReference Include="..\..\activities\Elsa.Activities.Timers\Elsa.Activities.Timers.csproj" />
-        <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
+        <ProjectReference Include="..\..\core\Elsa\Elsa.csproj" />
     </ItemGroup>
 
 

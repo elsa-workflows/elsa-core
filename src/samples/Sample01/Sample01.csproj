@@ -2,12 +2,11 @@
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFramework>netcoreapp2.2</TargetFramework>
+        <TargetFramework>netcoreapp3.0</TargetFramework>
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\activities\Elsa.Activities.Console\Elsa.Activities.Console.csproj" />
-      <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
+      <ProjectReference Include="..\..\core\Elsa\Elsa.csproj" />
     </ItemGroup>
 
 </Project>

@@ -15,7 +15,7 @@ namespace Sample01
         {
             // Setup a service collection.
             var services = new ServiceCollection()
-                .AddWorkflows()
+                .AddElsa()
                 .AddActivity<HelloWorld>()
                 .AddActivity<GoodByeWorld>()
                 .BuildServiceProvider();

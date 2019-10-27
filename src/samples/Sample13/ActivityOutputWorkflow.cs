@@ -1,5 +1,6 @@
 using Elsa.Activities.Console.Activities;
 using Elsa.Expressions;
+using Elsa.Scripting.JavaScript;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -11,10 +12,10 @@ namespace Sample13
         {
             builder
                 .StartWith<WriteLine>(x => x.TextExpression = new LiteralExpression("Hi! What's your name?"))
-                .Then<ReadLine>(id: "name")
-                .Then<WriteLine>(x => x.TextExpression = new JavaScriptExpression<string>("`${name.Input}, that's a great name! Now, what's your age?`"))
-                .Then<ReadLine>(id: "age")
-                .Then<WriteLine>(x => x.TextExpression = new JavaScriptExpression<string>("`I see! So you were born in ${getDateOfBirth(parseInt(age.Input))}. What a year to be alive!`"));
+                .Then<ReadLine>().WithName("Name")
+                .Then<WriteLine>(x => x.TextExpression = new JavaScriptExpression<string>("`${Name.Input}, that's a great name! Now, what's your age?`"))
+                .Then<ReadLine>().WithName("Age")
+                .Then<WriteLine>(x => x.TextExpression = new JavaScriptExpression<string>("`I see! So you were born in ${getDateOfBirth(parseInt(Age.Input))}. What a year to be alive!`"));
         }
     }
 }

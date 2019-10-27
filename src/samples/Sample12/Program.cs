@@ -46,7 +46,7 @@ namespace Sample12
         private static IServiceProvider BuildServices()
         {
             return new ServiceCollection()
-                .AddWorkflows()
+                .AddElsa()
                 .AddConsoleActivities()
                 .AddUserTaskActivities()
                 .AddWorkflow<UserTaskWorkflow>()
