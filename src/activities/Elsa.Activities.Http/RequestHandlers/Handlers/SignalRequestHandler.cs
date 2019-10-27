@@ -103,7 +103,7 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
                 workflowInstance.DefinitionId,
                 VersionOptions.SpecificVersion(workflowInstance.Version),
                 cancellationToken);
-            
+
             var workflow = workflowFactory.CreateWorkflow(workflowDefinition, input, workflowInstance);
             var blockingSignalActivities = workflow.BlockingActivities.ToList();
             await workflowInvoker.ResumeAsync(workflow, blockingSignalActivities, cancellationToken);

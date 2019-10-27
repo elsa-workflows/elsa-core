@@ -19,14 +19,14 @@ namespace Elsa.Activities.Http.Controllers
 
         public HttpWorkflowsController(
             ITokenService tokenService,
-            IWorkflowInvoker workflowInvoker, 
+            IWorkflowInvoker workflowInvoker,
             IWorkflowInstanceStore workflowInstanceStore)
         {
             this.tokenService = tokenService;
             this.workflowInvoker = workflowInvoker;
             this.workflowInstanceStore = workflowInstanceStore;
         }
-        
+
         [Route("trigger/{token}")]
         [HttpGet, HttpPost]
         public async Task<IActionResult> Trigger(string token, CancellationToken cancellationToken)
@@ -37,8 +37,8 @@ namespace Elsa.Activities.Http.Controllers
             var workflowInstance = await workflowInstanceStore.GetByIdAsync(signal.WorkflowInstanceId, cancellationToken);
 
             if (workflowInstance == null)
-                return NotFound();                
-            
+                return NotFound();
+
             var input = new Variables
             {
                 ["signal"] = signal.Name
@@ -46,8 +46,8 @@ namespace Elsa.Activities.Http.Controllers
 
             await workflowInvoker.ResumeAsync(workflowInstance, input, cancellationToken: cancellationToken);
 
-            return HttpContext.Items.ContainsKey(WorkflowHttpResult.Instance) 
-                ? (IActionResult) new EmptyResult() 
+            return HttpContext.Items.ContainsKey(WorkflowHttpResult.Instance)
+                ? (IActionResult)new EmptyResult()
                 : Accepted();
         }
     }

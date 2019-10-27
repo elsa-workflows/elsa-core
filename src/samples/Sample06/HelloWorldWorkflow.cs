@@ -12,10 +12,10 @@ namespace Sample06
         public void Build(IWorkflowBuilder builder)
         {
             builder
-                .StartWith<HttpRequestEvent>(
+                .StartWith<ReceiveHttpRequest>(
                     activity => activity.Path = new Uri("/hello-world", UriKind.Relative)
                 )
-                .Then<HttpResponseAction>(
+                .Then<WriteHttpResponse>(
                     activity =>
                     {
                         activity.Content = new LiteralExpression("<h1>Hello World!</h1><p>Elsa says hi :)</p>");

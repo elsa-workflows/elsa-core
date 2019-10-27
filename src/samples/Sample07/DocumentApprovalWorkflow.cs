@@ -22,7 +22,7 @@ namespace Sample07
         public void Build(IWorkflowBuilder builder)
         {
             builder
-                .StartWith<HttpRequestEvent>(
+                .StartWith<ReceiveHttpRequest>(
                     x =>
                     {
                         x.Method = HttpMethod.Post.Method;
@@ -50,7 +50,7 @@ namespace Sample07
                         );
                     }
                 )
-                .Then<HttpResponseAction>(
+                .Then<WriteHttpResponse>(
                     x =>
                     {
                         x.Content = new LiteralExpression(

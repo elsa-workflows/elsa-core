@@ -9,7 +9,7 @@ namespace Elsa.Activities.Http.RequestHandlers.Results
     {
         public Task ExecuteResultAsync(HttpContext httpContext, RequestDelegate next)
         {
-            httpContext.Response.StatusCode = (int) HttpStatusCode.Accepted;
+            httpContext.Response.StatusCode = (int)HttpStatusCode.Accepted;
             return Task.CompletedTask;
         }
     }

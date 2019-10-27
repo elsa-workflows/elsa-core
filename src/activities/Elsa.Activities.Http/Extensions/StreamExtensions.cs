@@ -10,7 +10,7 @@ namespace Elsa.Activities.Http.Extensions
         {
             using (var ms = new MemoryStream())
             {
-                await input.CopyToAsync(ms, 16*1024, cancellationToken);
+                await input.CopyToAsync(ms, 16 * 1024, cancellationToken);
                 return ms.ToArray();
             }
         }

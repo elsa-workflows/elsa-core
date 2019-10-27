@@ -24,12 +24,12 @@ namespace Elsa.Activities.Http.Extensions
             options?.Invoke(services.AddOptions<HttpActivityOptions>());
 
             services.TryAddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-            services.AddHttpClient(nameof(HttpRequestAction));
+            services.AddHttpClient(nameof(SendHttpRequest));
 
             services
-                .AddActivity<HttpRequestEvent>()
-                .AddActivity<HttpResponseAction>()
-                .AddActivity<HttpRequestAction>();
+                .AddActivity<ReceiveHttpRequest>()
+                .AddActivity<WriteHttpResponse>()
+                .AddActivity<SendHttpRequest>();
 
             services
                 .AddSingleton<ITokenService, TokenService>()

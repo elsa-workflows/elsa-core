@@ -14,7 +14,7 @@ namespace Elsa.Activities.Http.Handlers
             var context = notification.TemplateContext;
 
             context.MemberAccessStrategy.Register<HttpRequestModel>();
-            
+
             return Task.CompletedTask;
         }
     }

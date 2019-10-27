@@ -13,12 +13,12 @@ namespace Elsa.Activities.Http.Extensions
                 .UseRequestHandler<TriggerRequestHandler>()
                 .UseRequestHandler<SignalRequestHandler>("/workflows/signal");
         }
-        
+
         public static IApplicationBuilder UseRequestHandler<THandler>(this IApplicationBuilder app) where THandler : IRequestHandler
         {
             return app.UseMiddleware<RequestHandlerMiddleware<THandler>>();
         }
-        
+
         public static IApplicationBuilder UseRequestHandler<THandler>(this IApplicationBuilder app, string path) where THandler : IRequestHandler
         {
             return app

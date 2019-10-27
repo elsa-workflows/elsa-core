@@ -25,25 +25,25 @@ namespace Elsa.Activities.Http.Handlers
             this.absoluteUrlProvider = absoluteUrlProvider;
             this.httpContextAccessor = httpContextAccessor;
         }
-        
+
         public Task Handle(EvaluatingJavaScriptExpression notification, CancellationToken cancellationToken)
         {
             var engine = notification.Engine;
             var workflowExecutionContext = notification.WorkflowExecutionContext;
-            
+
             engine.SetValue(
                 "queryString",
-                (Func<string, string>) (key => httpContextAccessor.HttpContext.Request.Query[key].ToString())
+                (Func<string, string>)(key => httpContextAccessor.HttpContext.Request.Query[key].ToString())
             );
             engine.SetValue(
                 "absoluteUrl",
-                (Func<string, string>) (url => absoluteUrlProvider.ToAbsoluteUrl(url).ToString())
+                (Func<string, string>)(url => absoluteUrlProvider.ToAbsoluteUrl(url).ToString())
             );
             engine.SetValue(
                 "signalUrl",
-                (Func<string, string>) (signal => GenerateUrl(signal, workflowExecutionContext))
+                (Func<string, string>)(signal => GenerateUrl(signal, workflowExecutionContext))
             );
-            
+
             return Task.CompletedTask;
         }
 

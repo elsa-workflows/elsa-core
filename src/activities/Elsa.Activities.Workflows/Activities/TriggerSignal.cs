@@ -20,12 +20,12 @@ namespace Elsa.Activities.Workflows.Activities
         Description = "Trigger the specified signal.",
         Icon = "fas fa-broadcast-tower"
     )]
-    public class Trigger : Activity
+    public class TriggerSignal : Activity
     {
         private readonly IWorkflowExpressionEvaluator expressionEvaluator;
         private readonly IWorkflowInvoker workflowInvoker;
 
-        public Trigger(IWorkflowExpressionEvaluator expressionEvaluator, IWorkflowInvoker workflowInvoker)
+        public TriggerSignal(IWorkflowExpressionEvaluator expressionEvaluator, IWorkflowInvoker workflowInvoker)
         {
             this.expressionEvaluator = expressionEvaluator;
             this.workflowInvoker = workflowInvoker;

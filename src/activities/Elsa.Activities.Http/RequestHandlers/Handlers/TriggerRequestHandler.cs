@@ -41,11 +41,11 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
             // TODO: Optimize this by building up a hash of routes and workflows to execute.
             var requestPath = new Uri(httpContext.Request.Path.ToString(), UriKind.Relative);
             var method = httpContext.Request.Method;
-            var httpWorkflows = await registry.ListByStartActivityAsync(nameof(HttpRequestEvent), cancellationToken);
+            var httpWorkflows = await registry.ListByStartActivityAsync(nameof(ReceiveHttpRequest), cancellationToken);
             var workflowsToStart = Filter(httpWorkflows, requestPath, method).ToList();
-            var haltedHttpWorkflows = await workflowInstanceStore.ListByBlockingActivityAsync<HttpRequestEvent>(
+            var haltedHttpWorkflows = await workflowInstanceStore.ListByBlockingActivityAsync<ReceiveHttpRequest>(
                 cancellationToken: cancellationToken);
-            
+
             var workflowsToResume = Filter(haltedHttpWorkflows, requestPath, method).ToList();
 
             if (!workflowsToStart.Any() && !workflowsToResume.Any())
@@ -77,8 +77,8 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
 
         private bool IsMatch(JObject state, Uri path, string method)
         {
-            var m = HttpRequestEvent.GetMethod(state);
-            var p = HttpRequestEvent.GetPath(state);
+            var m = ReceiveHttpRequest.GetMethod(state);
+            var p = ReceiveHttpRequest.GetPath(state);
             return (string.IsNullOrWhiteSpace(m) || m == method) && p == path;
         }
 

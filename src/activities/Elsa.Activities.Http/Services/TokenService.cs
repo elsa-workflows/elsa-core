@@ -11,7 +11,7 @@ namespace Elsa.Activities.Http.Services
         {
             dataProtector = dataProtectionProvider.CreateProtector("HTTP Workflow Tokens");
         }
-        
+
         public string CreateToken<T>(T payload)
         {
             var json = JsonConvert.SerializeObject(payload);
@@ -36,7 +36,6 @@ namespace Elsa.Activities.Http.Services
             }
 
             return false;
-
         }
     }
 }

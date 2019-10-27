@@ -9,7 +9,7 @@ namespace Elsa.Activities.Http.RequestHandlers.Results
     {
         public Task ExecuteResultAsync(HttpContext httpContext, RequestDelegate next)
         {
-            httpContext.Response.StatusCode = (int) HttpStatusCode.NotFound;
+            httpContext.Response.StatusCode = (int)HttpStatusCode.NotFound;
             return Task.CompletedTask;
         }
     }

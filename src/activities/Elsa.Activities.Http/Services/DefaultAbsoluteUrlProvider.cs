@@ -11,7 +11,8 @@ namespace Elsa.Activities.Http.Services
         private readonly IHttpContextAccessor httpContextAccessor;
         private readonly IOptions<HttpActivityOptions> options;
 
-        public DefaultAbsoluteUrlProvider(IHttpContextAccessor httpContextAccessor,
+        public DefaultAbsoluteUrlProvider(
+            IHttpContextAccessor httpContextAccessor,
             IOptions<HttpActivityOptions> options)
         {
             this.httpContextAccessor = httpContextAccessor;

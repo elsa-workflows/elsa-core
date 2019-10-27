@@ -38,8 +38,12 @@ Version 2.0
 - [ ] Generic Command & Event Activities
 - [ ] Workflow Host REST API
 - [ ] Workflow Host gRPC API
+- [ ] Workflow Server
 - [ ] Distributed Hosting Support (support for multi-node environments)
 - [ ] Localization Support
+- [ ] More activities
+- [ ] Workflow Designer UI improvements
+- [ ] Activity Editor UI improvements
 
 Version 3.0
 

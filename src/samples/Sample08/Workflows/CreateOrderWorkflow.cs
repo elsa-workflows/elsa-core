@@ -20,7 +20,7 @@ namespace Sample08.Workflows
         public void Build(IWorkflowBuilder builder)
         {
             builder
-                .StartWith<HttpRequestEvent>(
+                .StartWith<ReceiveHttpRequest>(
                     activity =>
                     {
                         activity.Method = HttpMethod.Post.Method;
@@ -47,7 +47,7 @@ namespace Sample08.Workflows
                     {
                         fork
                             .When("Write-Response")
-                            .Then<HttpResponseAction>(
+                            .Then<WriteHttpResponse>(
                                 activity =>
                                 {
                                     activity.Content = new LiteralExpression("<h1>Order Received</h1><p>Your order has been received. Waiting for shipment.</p>");

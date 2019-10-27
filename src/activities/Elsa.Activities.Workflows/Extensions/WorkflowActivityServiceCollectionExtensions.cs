@@ -11,7 +11,7 @@ namespace Elsa.Activities.Workflows.Extensions
                 .AddActivity<TriggerWorkflow>()
                 .AddActivity<Correlate>()
                 .AddActivity<Signaled>()
-                .AddActivity<Trigger>()
+                .AddActivity<TriggerSignal>()
                 .AddActivity<Start>()
                 .AddActivity<Finish>();
         }

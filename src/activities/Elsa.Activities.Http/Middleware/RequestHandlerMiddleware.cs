@@ -12,12 +12,12 @@ namespace Elsa.Activities.Http.Middleware
         {
             this.next = next;
         }
-        
+
         public async Task InvokeAsync(HttpContext httpContext, THandler handler)
         {
             var result = await handler.HandleRequestAsync();
 
-            if(result != null && !httpContext.Response.HasStarted)
+            if (result != null && !httpContext.Response.HasStarted)
                 await result.ExecuteResultAsync(httpContext, next);
         }
     }
