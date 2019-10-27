@@ -48,7 +48,7 @@ namespace Elsa.Activities.ControlFlow.Activities
                     HasStarted = true;
 
                 context.BeginScope();
-                return Outcome(OutcomeNames.Loop);
+                return Outcome(OutcomeNames.Iterate);
             }
 
             return Done();

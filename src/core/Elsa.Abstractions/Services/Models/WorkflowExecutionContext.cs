@@ -67,6 +67,13 @@ namespace Elsa.Services.Models
             var scope = Workflow.Scopes.FirstOrDefault(x => x.Variables.ContainsKey(name)) ?? CurrentScope;
             return scope.GetVariable<T>(name);
         }
+        
+        public object GetVariable(string name)
+        {
+            // Get the first scope (starting from the newest one) containing the variable.
+            var scope = Workflow.Scopes.FirstOrDefault(x => x.Variables.ContainsKey(name)) ?? CurrentScope;
+            return scope.GetVariable(name);
+        }
 
         public void SetLastResult(object value) => CurrentScope.LastResult = value;
 

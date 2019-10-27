@@ -1,28 +1,31 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Globalization;
 using System.Linq;
-using Elsa.Services.Models;
-using Jint;
+using System.Threading;
+using System.Threading.Tasks;
+using Elsa.Scripting.JavaScript.Messages;
+using MediatR;
 using Newtonsoft.Json.Linq;
 
-namespace Elsa.Scripting.JavaScript
+namespace Elsa.Scripting.JavaScript.Handlers
 {
-    public class CommonScriptEngineConfigurator : IScriptEngineConfigurator
+    public class CommonJavaScriptEngineHandler : INotificationHandler<EvaluatingJavaScriptExpression>
     {
-        public void Configure(Engine engine, WorkflowExecutionContext workflowExecutionContext)
+        public Task Handle(EvaluatingJavaScriptExpression notification, CancellationToken cancellationToken)
         {
-            var context = workflowExecutionContext;
-            var workflow = workflowExecutionContext.Workflow;
+            var executionContext = notification.WorkflowExecutionContext;
+            var workflow = executionContext.Workflow;
+            var engine = notification.Engine;
 
             engine.SetValue("input", (Func<string, object>) (name => workflow.Input.GetVariable(name)));
-            engine.SetValue("variable", (Func<string, object>) (name => context.CurrentScope.GetVariable(name)));
-            engine.SetValue("lastResult", (Func<string, object>) (name => context.CurrentScope.LastResult));
-            engine.SetValue("correlationId", (Func<object>) (() => context.Workflow.CorrelationId));
+            engine.SetValue("variable", (Func<string, object>) (name => executionContext.CurrentScope.GetVariable(name)));
+            engine.SetValue("lastResult", (Func<string, object>) (name => executionContext.CurrentScope.LastResult));
+            engine.SetValue("correlationId", (Func<object>) (() => executionContext.Workflow.CorrelationId));
             engine.SetValue("currentCulture", (Func<object>) (() => CultureInfo.InvariantCulture));
 
-            var variables = workflowExecutionContext.GetVariables();
+            var variables = executionContext.GetVariables();
             
             foreach (var variable in variables)
             {
@@ -36,7 +39,7 @@ namespace Elsa.Scripting.JavaScript
                 engine.SetValue(variable.Key, value);
             }
 
-            foreach (var activity in workflowExecutionContext.Workflow.Activities.Where(x => x.Output != null))
+            foreach (var activity in executionContext.Workflow.Activities.Where(x => x.Output != null))
             {
                 var expando = new ExpandoObject() as IDictionary<string, object>;
                 
@@ -47,6 +50,8 @@ namespace Elsa.Scripting.JavaScript
                 
                 engine.SetValue(activity.Id, expando);
             }
+            
+            return Task.CompletedTask;
         }
     }
 }

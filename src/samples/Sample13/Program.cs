@@ -4,6 +4,7 @@ using Elsa.Activities.Console.Extensions;
 using Elsa.Scripting;
 using Elsa.Scripting.JavaScript;
 using Elsa.Services;
+using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Sample13
@@ -19,8 +20,8 @@ namespace Sample13
             var services = new ServiceCollection()
                 .AddElsa()
                 .AddConsoleActivities()
-                .AddSingleton<IScriptEngineConfigurator, ScriptEngineConfigurator>()
                 .AddSingleton(Console.In)
+                .AddMediatR(typeof(Program))
                 .BuildServiceProvider();
 
             // Create a workflow.

@@ -3,7 +3,7 @@ using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 using Fluid;
 
-namespace Elsa.Scripting.Liquid
+namespace Elsa.Scripting.Liquid.Services
 {
     /// <summary>
     /// Provides services to render Liquid templates.

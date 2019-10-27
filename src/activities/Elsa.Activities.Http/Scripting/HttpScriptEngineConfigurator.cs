@@ -1,17 +1,21 @@
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Elsa.Activities.Http.Models;
 using Elsa.Activities.Http.Services;
 using Elsa.Scripting;
 using Elsa.Scripting.JavaScript;
+using Elsa.Scripting.JavaScript.Messages;
 using Elsa.Services.Models;
 using Jint;
+using MediatR;
 using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Activities.Http.Scripting
 {
-    public class HttpScriptEngineConfigurator : IScriptEngineConfigurator
+    public class HttpScriptEngineConfigurator : INotificationHandler<EvaluatingJavaScriptExpression>
     {
-        private readonly ITokenService _tokenService;
+        private readonly ITokenService tokenService;
         private readonly IAbsoluteUrlProvider absoluteUrlProvider;
         private readonly IHttpContextAccessor httpContextAccessor;
 
@@ -20,13 +24,16 @@ namespace Elsa.Activities.Http.Scripting
             IAbsoluteUrlProvider absoluteUrlProvider,
             IHttpContextAccessor httpContextAccessor)
         {
-            this._tokenService = tokenService;
+            this.tokenService = tokenService;
             this.absoluteUrlProvider = absoluteUrlProvider;
             this.httpContextAccessor = httpContextAccessor;
         }
-
-        public void Configure(Engine engine, WorkflowExecutionContext workflowExecutionContext)
+        
+        public Task Handle(EvaluatingJavaScriptExpression notification, CancellationToken cancellationToken)
         {
+            var engine = notification.Engine;
+            var workflowExecutionContext = notification.WorkflowExecutionContext;
+            
             engine.SetValue(
                 "queryString",
                 (Func<string, string>) (key => httpContextAccessor.HttpContext.Request.Query[key].ToString())
@@ -39,13 +46,15 @@ namespace Elsa.Activities.Http.Scripting
                 "signalUrl",
                 (Func<string, string>) (signal => GenerateUrl(signal, workflowExecutionContext))
             );
+            
+            return Task.CompletedTask;
         }
 
         private string GenerateUrl(string signal, WorkflowExecutionContext workflowExecutionContext)
         {
             var workflowInstanceId = workflowExecutionContext.Workflow.Id;
             var payload = new Signal(signal, workflowInstanceId);
-            var token = _tokenService.CreateToken(payload);
+            var token = tokenService.CreateToken(payload);
             var url = $"/workflows/signal?token={token}";
 
             return absoluteUrlProvider.ToAbsoluteUrl(url).ToString();

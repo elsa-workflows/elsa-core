@@ -1,8 +1,9 @@
 ﻿using System.Text.Encodings.Web;
 using System.Threading.Tasks;
+using Elsa.Scripting.Liquid.Services;
 using Fluid;
 
-namespace Elsa.Scripting.Liquid
+namespace Elsa.Scripting.Liquid.Extensions
 {
     public static class LiquidTemplateManagerExtensions
     {

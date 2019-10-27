@@ -4,19 +4,21 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Expressions;
+using Elsa.Scripting.JavaScript.Messages;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Jint;
 using Jint.Native;
+using MediatR;
 using Newtonsoft.Json;
 using NodaTime;
 using NodaTime.Serialization.JsonNet;
 
-namespace Elsa.Scripting.JavaScript
+namespace Elsa.Scripting.JavaScript.Services
 {
     public class JavaScriptExpressionEvaluator : IExpressionEvaluator
     {
-        private readonly IEnumerable<IScriptEngineConfigurator> configurators;
+        private readonly IMediator mediator;
         private readonly JsonSerializerSettings serializerSettings;
         public const string SyntaxName = "JavaScript";
 
@@ -25,32 +27,27 @@ namespace Elsa.Scripting.JavaScript
             return new WorkflowExpression<T>(SyntaxName, expression);
         }
 
-        public JavaScriptExpressionEvaluator(IEnumerable<IScriptEngineConfigurator> configurators)
+        public JavaScriptExpressionEvaluator(IMediator mediator)
         {
-            this.configurators = configurators;
+            this.mediator = mediator;
             serializerSettings = new JsonSerializerSettings().ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
         }
 
         public string Syntax => SyntaxName;
 
-        public Task<object> EvaluateAsync(string expression, Type type, WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
+        public async Task<object> EvaluateAsync(string expression, Type type, WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
         {
             var engine = new Engine(options => { options.AllowClr(); });
 
-            ConfigureEngine(engine, workflowExecutionContext);
+            await ConfigureEngineAsync(engine, workflowExecutionContext, cancellationToken);
             engine.Execute(expression);
 
-            var result = ConvertValue(engine.GetCompletionValue(), type);
-
-            return Task.FromResult(result);
+            return ConvertValue(engine.GetCompletionValue(), type);
         }
 
-        private void ConfigureEngine(Engine engine, WorkflowExecutionContext workflowExecutionContext)
+        private async Task ConfigureEngineAsync(Engine engine, WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
         {
-            foreach (var configurator in configurators)
-            {
-                configurator.Configure(engine, workflowExecutionContext);
-            }
+            await mediator.Publish(new EvaluatingJavaScriptExpression(engine, workflowExecutionContext), cancellationToken);
         }
 
         private object ConvertValue(JsValue value, Type targetType)

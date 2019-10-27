@@ -1,12 +1,14 @@
 using System;
 using System.Globalization;
-using Elsa.Services.Models;
-using Jint;
+using System.Threading;
+using System.Threading.Tasks;
+using Elsa.Scripting.JavaScript.Messages;
+using MediatR;
 using NodaTime;
 
-namespace Elsa.Scripting.JavaScript
+namespace Elsa.Scripting.JavaScript.Handlers
 {
-    public class DateTimeScriptEngineConfigurator : IScriptEngineConfigurator
+    public class DateTimeScriptEngineConfigurator : INotificationHandler<EvaluatingJavaScriptExpression>
     {
         private readonly IClock clock;
 
@@ -14,9 +16,11 @@ namespace Elsa.Scripting.JavaScript
         {
             this.clock = clock;
         }
-
-        public void Configure(Engine engine, WorkflowExecutionContext workflowExecutionContext)
+        
+        public Task Handle(EvaluatingJavaScriptExpression notification, CancellationToken cancellationToken)
         {
+            var engine = notification.Engine;
+            
             engine.SetValue(
                 "currentInstant",
                 (Func<Instant>) (() => clock.GetCurrentInstant())
@@ -76,6 +80,8 @@ namespace Elsa.Scripting.JavaScript
                 "instantFromLocalDate",
                 (Func<LocalDate, Instant>) (value => value.AtStartOfDayInZone(DateTimeZone.Utc).ToInstant())
             );
+            
+            return Task.CompletedTask;
         }
 
         private LocalDateTime GetStartOfMonth(Instant instant)

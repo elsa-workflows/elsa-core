@@ -1,8 +1,9 @@
-using Elsa.Expressions;
+using Elsa.Scripting.JavaScript.Services;
 using Elsa.Services;
+using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Scripting.JavaScript
+namespace Elsa.Scripting.JavaScript.Extensions
 {
     public static class JavaScriptServiceCollectionExtensions
     {
@@ -10,8 +11,7 @@ namespace Elsa.Scripting.JavaScript
         {
             return services
                 .TryAddProvider<IExpressionEvaluator, JavaScriptExpressionEvaluator>(ServiceLifetime.Singleton)
-                .AddSingleton<IScriptEngineConfigurator, CommonScriptEngineConfigurator>()
-                .AddSingleton<IScriptEngineConfigurator, DateTimeScriptEngineConfigurator>();
+                .AddMediatR(typeof(JavaScriptServiceCollectionExtensions));
         }
     }
 }

@@ -28,7 +28,7 @@ namespace Sample04
                     whileActivity =>
                     {
                         whileActivity
-                            .When(OutcomeNames.Loop)
+                            .When(OutcomeNames.Iterate)
                             .Then<WriteLine>(x => x.TextExpression = new LiteralExpression("Enter number 1:"))
                             .Then<ReadLine>(x => x.VariableName = "number1")
                             .Then<WriteLine>(x => x.TextExpression = new LiteralExpression("Enter number 2:"))

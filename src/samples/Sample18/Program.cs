@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Elsa.Activities.Console.Extensions;
 using Elsa.Activities.Email.Extensions;
 using Elsa.Activities.Timers.Extensions;
+using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -31,6 +32,10 @@ namespace Sample18
             using (host)
             {
                 await host.StartAsync();
+
+                var workflowInvoker = host.Services.GetRequiredService<IWorkflowInvoker>();
+                await workflowInvoker.StartAsync<EmailReminderWorkflow>();
+                
                 await host.WaitForShutdownAsync();
             }
         }
@@ -38,6 +43,7 @@ namespace Sample18
         private static void ConfigureServices(IServiceCollection services)
         {
             services
+                .AddSingleton(System.Console.In)
                 .AddElsa()
                 .AddConsoleActivities()
                 .AddEmailActivities(options => options.Configure(
@@ -48,7 +54,7 @@ namespace Sample18
                         smtp.PickupDirectoryLocation = PickupLocation;
                     }))
                 .AddWorkflow<EmailReminderWorkflow>()
-                .AddTimerActivities(options => options.Configure(x => x.SweepInterval = Period.FromSeconds(2)));
+                .AddTimerActivities(options => options.Configure(x => x.SweepInterval = Period.FromSeconds(1)));
         }
     }
 }

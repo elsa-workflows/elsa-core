@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Elsa.Scripting.Liquid
+namespace Elsa.Scripting.Liquid.Options
 {
     public class LiquidOptions
     {

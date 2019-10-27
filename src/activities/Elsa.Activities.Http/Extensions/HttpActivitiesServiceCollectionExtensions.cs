@@ -7,6 +7,7 @@ using Elsa.Activities.Http.Scripting;
 using Elsa.Activities.Http.Services;
 using Elsa.Scripting;
 using Elsa.Scripting.JavaScript;
+using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
@@ -35,10 +36,10 @@ namespace Elsa.Activities.Http.Extensions
                 .AddSingleton<ITokenService, TokenService>()
                 .AddSingleton<IContentFormatter, DefaultContentFormatter>()
                 .AddSingleton<IContentFormatter, JsonContentFormatter>()
-                .AddSingleton<IScriptEngineConfigurator, HttpScriptEngineConfigurator>()
                 .AddSingleton<IActionContextAccessor, ActionContextAccessor>()
                 .AddSingleton<IAbsoluteUrlProvider, DefaultAbsoluteUrlProvider>()
                 .AddHttpContextAccessor()
+                .AddMediatR(typeof(HttpActivitiesServiceCollectionExtensions))
                 .AddDataProtection();
 
             return services

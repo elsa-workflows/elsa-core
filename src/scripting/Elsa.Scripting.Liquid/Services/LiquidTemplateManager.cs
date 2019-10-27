@@ -2,18 +2,25 @@
 using System.Collections.Generic;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
+using Elsa.Scripting.Liquid.Extensions;
+using Elsa.Scripting.Liquid.Options;
 using Fluid;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
 
-namespace Elsa.Scripting.Liquid
+namespace Elsa.Scripting.Liquid.Services
 {
     public class LiquidTemplateManager : ILiquidTemplateManager
     {
         private readonly IMemoryCache memoryCache;
+        private readonly IServiceProvider serviceProvider;
+        private readonly LiquidOptions options;
 
-        public LiquidTemplateManager(IMemoryCache memoryCache)
+        public LiquidTemplateManager(IMemoryCache memoryCache, IOptions<LiquidOptions> options, IServiceProvider serviceProvider)
         {
             this.memoryCache = memoryCache;
+            this.serviceProvider = serviceProvider;
+            this.options = options.Value;
         }
 
         public async Task<string> RenderAsync(string source, TemplateContext context, TextEncoder encoder)
@@ -21,6 +28,7 @@ namespace Elsa.Scripting.Liquid
             if (string.IsNullOrWhiteSpace(source))
                 return default;
 
+            context.AddAsyncFilters(options, serviceProvider);
             var result = GetCachedTemplate(source);
 
             return await result.RenderAsync(context, encoder);
