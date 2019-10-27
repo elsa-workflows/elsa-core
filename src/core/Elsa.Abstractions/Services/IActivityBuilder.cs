@@ -13,6 +13,7 @@ namespace Elsa.Services
         IActivityBuilder Add<T>(Action<T> setup = default, string name = null) where T : class, IActivity;
         IOutcomeBuilder When(string outcome);
         IActivityBuilder Then<T>(Action<T> setup = null, Action<IActivityBuilder> branch = null, string name = null) where T : class, IActivity;
+        IActivityBuilder WithName(string name);
         IActivityBuilder WithDisplayName(string displayName);
         IActivityBuilder WithDescription(string description);
         IWorkflowBuilder Then(string activityName);
