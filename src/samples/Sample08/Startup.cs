@@ -25,7 +25,7 @@ namespace Sample08
         public void ConfigureServices(IServiceCollection services)
         {
             services
-                .AddWorkflows()
+                .AddElsa()
                 .AddTaskExecutingServer()
                 .AddHttpActivities()
                 .AddTimerActivities(options => options.Configure(x => x.SweepInterval = Period.FromSeconds(10)))

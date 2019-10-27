@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
-        <LangVersion>latest</LangVersion>
+        <LangVersion>8</LangVersion>
         <RootNamespace>Elsa</RootNamespace>
         <PackageVersion>1.0.0</PackageVersion>
         <Authors>Sipke Schoorstra</Authors>
@@ -36,8 +36,8 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\..\utils\Elsa.AutoMapper.Extensions\Elsa.AutoMapper.Extensions.csproj" />
         <ProjectReference Include="..\Elsa.Abstractions\Elsa.Abstractions.csproj" />
-        <ProjectReference Include="..\Elsa.AutoMapper.Extensions\Elsa.AutoMapper.Extensions.csproj" />
     </ItemGroup>
 
 </Project>

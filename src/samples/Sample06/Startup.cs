@@ -19,7 +19,7 @@ namespace Sample06
         public void ConfigureServices(IServiceCollection services)
         {
             services
-                .AddWorkflows()
+                .AddElsa()
                 .AddHttpActivities()
                 .AddWorkflow<HelloWorldWorkflow>();
         }

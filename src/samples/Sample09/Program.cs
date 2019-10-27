@@ -30,18 +30,17 @@ namespace Sample09
         private static IServiceProvider BuildServices()
         {
             return new ServiceCollection()
-                .AddWorkflows()
+                .AddElsa()
                 .AddConsoleActivities()
+                .AddSingleton(Console.In)
                 .BuildServiceProvider();
         }
 
         private static async Task<string> ReadEmbeddedResourceAsync(string resourceName)
         {
             var assembly = typeof(Program).GetTypeInfo().Assembly;
-            using (var reader = new StreamReader(assembly.GetManifestResourceStream(resourceName)))
-            {
-                return await reader.ReadToEndAsync();
-            }
+            using var reader = new StreamReader(assembly.GetManifestResourceStream(resourceName));
+            return await reader.ReadToEndAsync();
         }
     }
 }

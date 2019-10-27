@@ -2,16 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Elsa;
-using Elsa.Activities.ControlFlow;
-using Elsa.Activities.Primitives;
-using Elsa.Activities.Workflows;
+using Elsa.Activities;
 using Elsa.AutoMapper.Extensions;
 using Elsa.Caching;
 using Elsa.Expressions;
 using Elsa.Mapping;
 using Elsa.Persistence;
 using Elsa.Persistence.Memory;
-using Elsa.Scripting;
 using Elsa.Serialization;
 using Elsa.Serialization.Formatters;
 using Elsa.Services;
@@ -28,7 +25,7 @@ namespace Microsoft.Extensions.DependencyInjection
 {
     public static class ElsaServiceCollectionExtensions
     {
-        public static IServiceCollection AddWorkflows(
+        public static IServiceCollection AddElsaCore(
             this IServiceCollection services,
             Action<ElsaBuilder> configure = null)
         {
@@ -115,12 +112,9 @@ namespace Microsoft.Extensions.DependencyInjection
                 .TryAddProvider<ITokenFormatter, YamlTokenFormatter>(ServiceLifetime.Singleton)
                 .TryAddProvider<ITokenFormatter, XmlTokenFormatter>(ServiceLifetime.Singleton)
                 .TryAddProvider<IExpressionEvaluator, LiteralEvaluator>(ServiceLifetime.Singleton)
-                .TryAddProvider<IExpressionEvaluator, JavaScriptEvaluator>(ServiceLifetime.Singleton)
-                .AddSingleton<IScriptEngineConfigurator, CommonScriptEngineConfigurator>()
-                .AddSingleton<IScriptEngineConfigurator, DateTimeScriptEngineConfigurator>()
                 .AddScoped<IWorkflowFactory, WorkflowFactory>()
                 .AddSingleton<IActivityInvoker, ActivityInvoker>()
-                .AddSingleton<IWorkflowExpressionEvaluator, WorkflowExpressionEvaluator>()
+                .AddScoped<IWorkflowExpressionEvaluator, WorkflowExpressionEvaluator>()
                 .AddSingleton<IWorkflowSerializerProvider, WorkflowSerializerProvider>()
                 .AddSingleton<IWorkflowRegistry, WorkflowRegistry>()
                 .AddScoped<IWorkflowEventHandler, PersistenceWorkflowEventHandler>()
@@ -133,9 +127,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddTransient<IWorkflowBuilder, WorkflowBuilder>()
                 .AddTransient<Func<IWorkflowBuilder>>(sp => sp.GetRequiredService<IWorkflowBuilder>)
                 .AddAutoMapperProfile<WorkflowDefinitionProfile>(ServiceLifetime.Singleton)
-                .AddPrimitiveActivities()
-                .AddControlFlowActivities()
-                .AddWorkflowActivities();
+                .AddPrimitiveActivities();
 
             return configuration;
         }
@@ -169,29 +161,6 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             return services
                 .AddActivity<SetVariable>();
-        }
-
-        private static IServiceCollection AddControlFlowActivities(this IServiceCollection services)
-        {
-            return services
-                .AddActivity<ForEach>()
-                .AddActivity<While>()
-                .AddActivity<Fork>()
-                .AddActivity<Join>()
-                .AddSingleton<IWorkflowEventHandler>(sp => sp.GetRequiredService<Join>())
-                .AddActivity<IfElse>()
-                .AddActivity<Switch>();
-        }
-
-        private static IServiceCollection AddWorkflowActivities(this IServiceCollection services)
-        {
-            return services
-                .AddActivity<TriggerWorkflow>()
-                .AddActivity<Correlate>()
-                .AddActivity<Signaled>()
-                .AddActivity<Trigger>()
-                .AddActivity<Start>()
-                .AddActivity<Finish>();
         }
     }
 }

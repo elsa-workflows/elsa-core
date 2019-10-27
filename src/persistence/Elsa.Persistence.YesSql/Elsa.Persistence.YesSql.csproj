@@ -15,7 +15,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\core\Elsa.Abstractions\Elsa.Abstractions.csproj" />
-        <ProjectReference Include="..\..\core\Elsa.AutoMapper.Extensions\Elsa.AutoMapper.Extensions.csproj" />
         <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
     </ItemGroup>
 

@@ -25,46 +25,44 @@ namespace Sample10
             var startupRunner = services.GetRequiredService<IStartupRunner>();
             await startupRunner.StartupAsync();
 
-            using (var scope = services.CreateScope())
-            {
-                var definitionStore = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionStore>();
-                var workflowDefinitionId = nameof(HelloWorldWorkflow);
+            using var scope = services.CreateScope();
+            var definitionStore = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionStore>();
+            const string workflowDefinitionId = nameof(HelloWorldWorkflow);
 
-                // When running this program multiple times, we should delete the created workflow definition before adding it to the store again.
-                await definitionStore.DeleteAsync(workflowDefinitionId);
+            // When running this program multiple times, we should delete the created workflow definition before adding it to the store again.
+            await definitionStore.DeleteAsync(workflowDefinitionId);
 
-                // Create a workflow definition.
-                var registry = services.GetService<IWorkflowRegistry>();
-                var workflowDefinition = await registry.GetWorkflowDefinitionAsync<HelloWorldWorkflow>();
+            // Create a workflow definition.
+            var registry = services.GetService<IWorkflowRegistry>();
+            var workflowDefinition = await registry.GetWorkflowDefinitionAsync<HelloWorldWorkflow>();
 
-                // Mark this definition as the "latest" version.
-                workflowDefinition.IsLatest = true;
-                workflowDefinition.Version = 1;
+            // Mark this definition as the "latest" version.
+            workflowDefinition.IsLatest = true;
+            workflowDefinition.Version = 1;
 
-                // Persist the workflow definition.
+            // Persist the workflow definition.
 
-                await definitionStore.SaveAsync(workflowDefinition);
+            await definitionStore.SaveAsync(workflowDefinition);
 
-                // Load the workflow definition.
-                workflowDefinition = await definitionStore.GetByIdAsync(
-                    workflowDefinition.DefinitionId,
-                    VersionOptions.Latest);
+            // Load the workflow definition.
+            workflowDefinition = await definitionStore.GetByIdAsync(
+                workflowDefinition.DefinitionId,
+                VersionOptions.Latest);
 
-                // Execute the workflow.
-                var invoker = scope.ServiceProvider.GetRequiredService<IWorkflowInvoker>();
-                var executionContext = await invoker.StartAsync(workflowDefinition);
+            // Execute the workflow.
+            var invoker = scope.ServiceProvider.GetRequiredService<IWorkflowInvoker>();
+            var executionContext = await invoker.StartAsync(workflowDefinition);
 
-                // Persist the workflow instance.
-                var instanceStore = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
-                var workflowInstance = executionContext.Workflow.ToInstance();
-                await instanceStore.SaveAsync(workflowInstance);
-            }
+            // Persist the workflow instance.
+            var instanceStore = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
+            var workflowInstance = executionContext.Workflow.ToInstance();
+            await instanceStore.SaveAsync(workflowInstance);
         }
 
         private static IServiceProvider BuildServices()
         {
             return new ServiceCollection()
-                .AddWorkflows(
+                .AddElsa(
                     x => x.AddYesSqlStores(
                         options => options
                             .UseSqLite(

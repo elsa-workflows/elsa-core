@@ -21,7 +21,7 @@ namespace Sample07
         public void ConfigureServices(IServiceCollection services)
         {
             services
-                .AddWorkflows()
+                .AddElsa()
                 .AddTaskExecutingServer()
                 .AddHttpActivities(options => options.Bind(Configuration.GetSection("Http")))
                 .AddEmailActivities(options => options.Bind(Configuration.GetSection("Smtp")))

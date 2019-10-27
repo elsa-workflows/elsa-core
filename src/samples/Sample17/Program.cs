@@ -23,11 +23,11 @@ namespace Sample17
         private static IServiceProvider BuildServices()
         {
             return new ServiceCollection()
-                .AddWorkflows()
-                .AddWorkflow<CreatePersonWorkflow>()
+                .AddElsa()
                 .AddConsoleActivities()
                 .AddActivity<CreatePerson>()
                 .AddSingleton(Console.In)
+                .AddWorkflow<CreatePersonWorkflow>()
                 .BuildServiceProvider();
         }
     }

@@ -31,7 +31,7 @@ namespace Elsa.Services.Models
         public WorkflowExecutionScope CurrentScope => Workflow.Scopes.Peek();
         public Variables TransientState { get; } = new Variables();
         public IActivity CurrentActivity { get; private set; }
-        public void ScheduleActivities(params IActivity[] activities) => ScheduleActivities((IEnumerable<IActivity>) activities);
+        public void ScheduleActivities(params IActivity[] activities) => ScheduleActivities((IEnumerable<IActivity>)activities);
 
         public void ScheduleActivities(IEnumerable<IActivity> activities)
         {
@@ -43,7 +43,7 @@ namespace Elsa.Services.Models
 
         public void BeginScope() => Workflow.Scopes.Push(new WorkflowExecutionScope());
         public void EndScope() => Workflow.Scopes.Pop();
-        
+
         public void ScheduleActivity(IActivity activity)
         {
             scheduledActivities.Push(activity);
@@ -53,7 +53,7 @@ namespace Elsa.Services.Models
         public IActivity PopScheduledActivity() => CurrentActivity = scheduledActivities.Pop();
         public void ScheduleHaltingActivity(IActivity activity) => scheduledHaltingActivities.Push(activity);
         public IActivity PopScheduledHaltingActivity() => scheduledHaltingActivities.Pop();
-        
+
         public void SetVariable(string name, object value)
         {
             // Get the first scope (starting from the oldest one) containing the variable (existing variable). Otherwise use the current scope (new variable declaration)
@@ -67,6 +67,13 @@ namespace Elsa.Services.Models
             var scope = Workflow.Scopes.FirstOrDefault(x => x.Variables.ContainsKey(name)) ?? CurrentScope;
             return scope.GetVariable<T>(name);
         }
+        
+        public object GetVariable(string name)
+        {
+            // Get the first scope (starting from the newest one) containing the variable.
+            var scope = Workflow.Scopes.FirstOrDefault(x => x.Variables.ContainsKey(name)) ?? CurrentScope;
+            return scope.GetVariable(name);
+        }
 
         public void SetLastResult(object value) => CurrentScope.LastResult = value;
 
@@ -75,7 +82,7 @@ namespace Elsa.Services.Models
             Workflow.StartedAt = clock.GetCurrentInstant();
             Workflow.Status = WorkflowStatus.Executing;
         }
-        
+
         public void Fault(IActivity activity, Exception exception) => Fault(activity, exception.Message);
 
         public void Fault(IActivity activity, string errorMessage)
@@ -101,11 +108,16 @@ namespace Elsa.Services.Models
             Workflow.Status = WorkflowStatus.Finished;
             Workflow.BlockingActivities.Clear();
         }
-        
+
         public void Abort()
         {
             Workflow.AbortedAt = clock.GetCurrentInstant();
             Workflow.Status = WorkflowStatus.Aborted;
         }
+
+        public Variables GetVariables() => Workflow.Scopes
+            .Reverse()
+            .Select(x => x.Variables)
+            .Aggregate(Variables.Empty, (x, y) => new Variables(x.Union(y)));
     }
 }

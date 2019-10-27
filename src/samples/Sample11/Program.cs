@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Elsa.Activities.Console.Extensions;
 using Elsa.Activities.Workflows;
+using Elsa.Activities.Workflows.Activities;
 using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Services;
@@ -49,7 +50,7 @@ namespace Sample11
         private static IServiceProvider BuildServices()
         {
             return new ServiceCollection()
-                .AddWorkflows()
+                .AddElsa()
                 .AddConsoleActivities()
                 .AddWorkflow<CorrelationWorkflow>()
                 .BuildServiceProvider();

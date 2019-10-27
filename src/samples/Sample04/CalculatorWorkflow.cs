@@ -1,8 +1,10 @@
 using Elsa;
+using Elsa.Activities;
 using Elsa.Activities.Console.Activities;
 using Elsa.Activities.ControlFlow;
-using Elsa.Activities.Primitives;
+using Elsa.Activities.ControlFlow.Activities;
 using Elsa.Expressions;
+using Elsa.Scripting.JavaScript;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Sample04.Activities;
@@ -26,7 +28,7 @@ namespace Sample04
                     whileActivity =>
                     {
                         whileActivity
-                            .When(OutcomeNames.Loop)
+                            .When(OutcomeNames.Iterate)
                             .Then<WriteLine>(x => x.TextExpression = new LiteralExpression("Enter number 1:"))
                             .Then<ReadLine>(x => x.VariableName = "number1")
                             .Then<WriteLine>(x => x.TextExpression = new LiteralExpression("Enter number 2:"))
@@ -43,29 +45,28 @@ namespace Sample04
                                 {
                                     @switch
                                         .When("add")
-                                        .Then<Sum>(SetupOperation, id: "perform-sum")
+                                        .Then<Sum>(SetupOperation).WithName("PerformSum")
                                         .Then("ShowResult");
 
                                     @switch
                                         .When("subtract")
-                                        .Then<Subtract>(SetupOperation, id: "perform-subtract")
+                                        .Then<Subtract>(SetupOperation).WithName("PerformSubtract")
                                         .Then("ShowResult");
 
                                     @switch
                                         .When("multiply")
-                                        .Then<Multiply>(SetupOperation, id: "perform-multiply")
+                                        .Then<Multiply>(SetupOperation).WithName("PerformMultiply")
                                         .Then("ShowResult");
 
                                     @switch
                                         .When("divide")
-                                        .Then<Divide>(SetupOperation, id: "perform-divide")
+                                        .Then<Divide>(SetupOperation).WithName("PerformDivide")
                                         .Then("ShowResult");
-                                },
-                                "inspect-selected-operation"
-                            )
-                            .Add<WriteLine>(x => x.TextExpression = new JavaScriptExpression<string>("`Result: ${result}`")).WithId("ShowResult")
+                                }
+                            ).WithName("InspectSelectedOperation")
+                            .Add<WriteLine>(x => x.TextExpression = new JavaScriptExpression<string>("`Result: ${result}`")).WithName("ShowResult")
                             .Then<WriteLine>(x => x.TextExpression = new LiteralExpression("Try again? (y/n)"))
-                            .Then<ReadLine>().WithId("TryAgain")
+                            .Then<ReadLine>().WithName("TryAgain")
                             .Then<SetVariable>(x =>
                             {
                                 x.VariableName = "Exit";

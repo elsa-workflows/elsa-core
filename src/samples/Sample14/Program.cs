@@ -35,43 +35,41 @@ namespace Sample14
             workflowDefinition.IsLatest = true;
             workflowDefinition.Version = 1;
 
-            using (var scope = services.CreateScope())
-            {
-                var dbContext = scope.ServiceProvider.GetRequiredService<ElsaContext>();
+            using var scope = services.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<ElsaContext>();
 
-                // Ensure DB exists.
-                await dbContext.Database.EnsureCreatedAsync();
+            // Ensure DB exists.
+            await dbContext.Database.EnsureCreatedAsync();
 
-                // Persist the workflow definition.
-                var definitionStore = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionStore>();
-                await definitionStore.SaveAsync(workflowDefinition);
+            // Persist the workflow definition.
+            var definitionStore = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionStore>();
+            await definitionStore.SaveAsync(workflowDefinition);
 
-                // Flush to DB.
-                await dbContext.SaveChangesAsync();
+            // Flush to DB.
+            await dbContext.SaveChangesAsync();
 
-                // Load the workflow definition.
-                workflowDefinition = await definitionStore.GetByIdAsync(
-                    workflowDefinition.DefinitionId,
-                    VersionOptions.Latest);
+            // Load the workflow definition.
+            workflowDefinition = await definitionStore.GetByIdAsync(
+                workflowDefinition.DefinitionId,
+                VersionOptions.Latest);
 
-                // Execute the workflow.
-                var invoker = scope.ServiceProvider.GetRequiredService<IWorkflowInvoker>();
-                var executionContext = await invoker.StartAsync(workflowDefinition);
+            // Execute the workflow.
+            var invoker = scope.ServiceProvider.GetRequiredService<IWorkflowInvoker>();
+            var executionContext = await invoker.StartAsync(workflowDefinition);
 
-                // Persist the workflow instance.
-                var instanceStore = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
-                var workflowInstance = executionContext.Workflow.ToInstance();
-                await instanceStore.SaveAsync(workflowInstance);
+            // Persist the workflow instance.
+            var instanceStore = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
+            var workflowInstance = executionContext.Workflow.ToInstance();
+            await instanceStore.SaveAsync(workflowInstance);
 
-                // Flush to DB.
-                await dbContext.SaveChangesAsync();
-            }
+            // Flush to DB.
+            await dbContext.SaveChangesAsync();
         }
 
         private static IServiceProvider BuildServices()
         {
             return new ServiceCollection()
-                .AddWorkflows(
+                .AddElsa(
                     x => x.AddEntityFrameworkStores(
                         options => options
                             .UseSqlite(@"Data Source=c:\data\elsa.entity-framework-core.db;Cache=Shared")))

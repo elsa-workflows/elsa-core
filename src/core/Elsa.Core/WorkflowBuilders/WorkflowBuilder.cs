@@ -60,31 +60,27 @@ namespace Elsa.WorkflowBuilders
             IsSingleton = value;
             return this;
         }
-        
+
         public IWorkflowBuilder Disable()
         {
             IsDisabled = true;
             return this;
         }
-        
+
         public IWorkflowBuilder Enable()
         {
             IsDisabled = false;
             return this;
         }
 
-        public IActivityBuilder Add<T>(
-            Action<T> setupActivity = default,
-            string id = default) where T : class, IActivity
+        public IActivityBuilder Add<T>(Action<T> setupActivity = default, string name = default) where T : class, IActivity
         {
             var activity = activityResolver.ResolveActivity(setupActivity);
             var activityBlueprint = ActivityDefinition.FromActivity(activity);
-            var activityBuilder = new ActivityBuilder(this, activityBlueprint, id);
+            var activityBuilder = new ActivityBuilder(this, activityBlueprint);
             var activityDescriptor = ActivityDescriber.Describe<T>();
-
-            if (id != null)
-                activity.Id = id;
-
+            
+            activity.Name = name;
             activityBuilder.DisplayName = activityDescriptor.DisplayName;
             activityBuilder.Description = activityDescriptor.Description;
             activityBuilders.Add(activityBuilder);
@@ -111,11 +107,9 @@ namespace Elsa.WorkflowBuilders
         }
 
 
-        public IActivityBuilder StartWith<T>(
-            Action<T> setupActivity,
-            string id = null) where T : class, IActivity
+        public IActivityBuilder StartWith<T>(Action<T> setupActivity, string name = default) where T : class, IActivity
         {
-            return Add(setupActivity, id);
+            return Add(setupActivity, name);
         }
 
         public WorkflowDefinitionVersion Build()
@@ -143,7 +137,11 @@ namespace Elsa.WorkflowBuilders
                 connections,
                 IsSingleton,
                 IsDisabled,
-                Variables.Empty);
+                Variables.Empty)
+            {
+                IsPublished = true,
+                IsLatest = true
+            };
         }
     }
 }

@@ -21,9 +21,14 @@ namespace Elsa.Services
         public Variables TransientOutput { get; } = new Variables();
 
         public virtual string Type => GetType().Name;
-
-        [ActivityProperty(Label = "ID", Hint = "Optionally provide a custom ID for this activity. You can then reference this activity from expressions.")]
+        
         public string Id { get; set; }
+        
+        [ActivityProperty(Label = "Name", Hint = "Optionally provide a name for this activity. You can reference named activities from expressions.")]
+        public string Name {
+            get => GetState<string>();
+            set => SetState(value);
+        }
 
         [ActivityProperty(Hint = "Optionally provide a custom title for this activity.")]
         public string Title

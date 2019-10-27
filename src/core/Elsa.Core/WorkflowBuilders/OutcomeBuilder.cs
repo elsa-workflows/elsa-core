@@ -19,9 +19,9 @@ namespace Elsa.WorkflowBuilders
         public IActivityBuilder Source { get; }
         public string Outcome { get; }
 
-        public IActivityBuilder Then<T>(Action<T> setup = default, Action<IActivityBuilder> branch = null, string id = default) where T : class, IActivity
+        public IActivityBuilder Then<T>(Action<T> setup = default, Action<IActivityBuilder> branch = default, string name = default) where T : class, IActivity
         {
-            var target = WorkflowBuilder.Add(setup, id);
+            var target = WorkflowBuilder.Add(setup, name);
             branch?.Invoke(target);
 
             WorkflowBuilder.Connect(Source, target, Outcome);
@@ -30,11 +30,11 @@ namespace Elsa.WorkflowBuilders
 
         public WorkflowDefinitionVersion Build() => WorkflowBuilder.Build();
 
-        public IConnectionBuilder Then(string activityId)
+        public IConnectionBuilder Then(string activityName)
         {
             return WorkflowBuilder.Connect(
                 () => Source, 
-                () => WorkflowBuilder.Activities.First(x => x.Id == activityId), 
+                () => WorkflowBuilder.Activities.First(x => x.Name == activityName), 
                 Outcome);
         }
     }
