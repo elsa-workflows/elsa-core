@@ -141,8 +141,7 @@ In fact, Elsa Workflows is taken & adapted from Orchard Core's Workflows module.
 
 The following lists some of Elsa's key features:
 
-- **Small, simple and fast**. The library should be lean & mean, meaning that it should be **easy to use**, **fast to execute** and **easy to extend** with custom activities.
-- It must be a set of **libraries**. This allows me to create my application anyway I like, and implement workflow capabilities as I see fit. Thanks to ASP.NET Core's application model however, creating a workflow designer & workflow host is as simple as referencing the right packages and making a few calls. 
+- **Small, simple and fast**. The library should be lean & mean, meaning that it should be **easy to use**, **fast to execute** and **easy to extend** with custom activities. 
 - Invoke arbitrary workflows as if they were **functions of my application**.
 - Trigger events that cause the appropriate workflows to **automatically start/resume** based on that event.
 - Support **long-running workflows**. When a workflow executes and encounters an activity that requires e.g. user input, the workflow will halt, be persisted and go out of memory until it's time to resume. this could be a few seconds later, a few minutes, hours, days or even years.
