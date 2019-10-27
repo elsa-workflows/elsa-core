@@ -14,8 +14,8 @@ namespace Elsa.Services
         IWorkflowBuilder WithName(string name);
         IWorkflowBuilder WithDescription(string description);
         IWorkflowBuilder AsSingleton(bool value = true);
-        IActivityBuilder Add<T>(Action<T> setupActivity = default, string id = default) where T : class, IActivity;
-        IActivityBuilder StartWith<T>(Action<T> setup = default, string id = default) where T: class, IActivity;
+        IActivityBuilder Add<T>(Action<T> setupActivity = default, string name = default) where T : class, IActivity;
+        IActivityBuilder StartWith<T>(Action<T> setup = default, string name = default) where T: class, IActivity;
         IConnectionBuilder Connect(IActivityBuilder source, IActivityBuilder target, string outcome = default);
         IConnectionBuilder Connect(Func<IActivityBuilder> source, Func<IActivityBuilder> target, string outcome = default);
         WorkflowDefinitionVersion Build();

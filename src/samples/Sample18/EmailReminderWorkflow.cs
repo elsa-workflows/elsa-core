@@ -21,7 +21,7 @@ namespace Sample18
                 .WithId("RecurringWorkflow")
                 .AsSingleton()
                 .StartWith<WriteLine>(x => x.TextExpression = new LiteralExpression<string>("Enter a reminder"))
-                .Then<ReadLine>().WithId("ReminderInput")
+                .Then<ReadLine>().WithName("ReminderInput")
                 .Then<SetVariable>(
                     x =>
                     {

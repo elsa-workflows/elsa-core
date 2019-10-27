@@ -114,7 +114,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .TryAddProvider<IExpressionEvaluator, LiteralEvaluator>(ServiceLifetime.Singleton)
                 .AddScoped<IWorkflowFactory, WorkflowFactory>()
                 .AddSingleton<IActivityInvoker, ActivityInvoker>()
-                .AddSingleton<IWorkflowExpressionEvaluator, WorkflowExpressionEvaluator>()
+                .AddScoped<IWorkflowExpressionEvaluator, WorkflowExpressionEvaluator>()
                 .AddSingleton<IWorkflowSerializerProvider, WorkflowSerializerProvider>()
                 .AddSingleton<IWorkflowRegistry, WorkflowRegistry>()
                 .AddScoped<IWorkflowEventHandler, PersistenceWorkflowEventHandler>()

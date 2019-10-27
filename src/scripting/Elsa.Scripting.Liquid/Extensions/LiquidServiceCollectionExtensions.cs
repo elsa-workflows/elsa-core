@@ -1,3 +1,4 @@
+using Elsa.Scripting.Liquid.Filters;
 using Elsa.Scripting.Liquid.Options;
 using Elsa.Scripting.Liquid.Services;
 using Elsa.Services;
@@ -11,10 +12,11 @@ namespace Elsa.Scripting.Liquid.Extensions
         public static IServiceCollection AddLiquidExpressionEvaluator(this IServiceCollection services)
         {
             return services
-                .TryAddProvider<IExpressionEvaluator, LiquidExpressionEvaluator>(ServiceLifetime.Singleton)
+                .TryAddProvider<IExpressionEvaluator, LiquidExpressionEvaluator>(ServiceLifetime.Scoped)
                 .AddMemoryCache()
                 .AddMediatR(typeof(LiquidServiceCollectionExtensions))
-                .AddSingleton<ILiquidTemplateManager, LiquidTemplateManager>();
+                .AddScoped<ILiquidTemplateManager, LiquidTemplateManager>()
+                .AddLiquidFilter<JsonFilter>("json");
         }
         
         public static IServiceCollection AddLiquidFilter<T>(this IServiceCollection services, string name) where T : class, ILiquidFilter

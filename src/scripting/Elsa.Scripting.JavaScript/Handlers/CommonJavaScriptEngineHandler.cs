@@ -39,7 +39,7 @@ namespace Elsa.Scripting.JavaScript.Handlers
                 engine.SetValue(variable.Key, value);
             }
 
-            foreach (var activity in executionContext.Workflow.Activities.Where(x => x.Output != null))
+            foreach (var activity in executionContext.Workflow.Activities.Where(x => !string.IsNullOrWhiteSpace(x.Name) && x.Output != null))
             {
                 var expando = new ExpandoObject() as IDictionary<string, object>;
                 
@@ -48,7 +48,7 @@ namespace Elsa.Scripting.JavaScript.Handlers
                     expando[variable.Key] = variable.Value;   
                 }
                 
-                engine.SetValue(activity.Id, expando);
+                engine.SetValue(activity.Name, expando);
             }
             
             return Task.CompletedTask;

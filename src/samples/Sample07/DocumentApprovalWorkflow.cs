@@ -28,14 +28,13 @@ namespace Sample07
                         x.Method = HttpMethod.Post.Method;
                         x.Path = new Uri("/documents", UriKind.Relative);
                         x.ReadContent = true;
-                    },
-                    "WaitForDocument"
-                )
+                    }
+                ).WithName("WaitForDocument")
                 .Then<SetVariable>(
                     x =>
                     {
                         x.VariableName = "Document";
-                        x.ValueExpression = new JavaScriptExpression<object>("lastResult().Content");
+                        x.ValueExpression = new JavaScriptExpression<object>("WaitForDocument.Content");
                     }
                 )
                 .Then<SendEmail>(
@@ -86,9 +85,8 @@ namespace Sample07
                         fork
                             .When("Remind")
                             .Then<TimerEvent>(
-                                x => x.TimeoutExpression = new LiteralExpression<TimeSpan>("00:00:10"),
-                                id: "RemindTimer"
-                            )
+                                x => x.TimeoutExpression = new LiteralExpression<TimeSpan>("00:00:10")
+                            ).WithName("RemindTimer")
                             .Then<IfElse>(
                                 x => x.ConditionExpression = new JavaScriptExpression<bool>("!!Approved"),
                                 ifElse =>
@@ -115,7 +113,7 @@ namespace Sample07
                             );
                     }
                 )
-                .Then<Join>(x => x.Mode = Join.JoinMode.WaitAny, id: "Join")
+                .Then<Join>(x => x.Mode = Join.JoinMode.WaitAny).WithName("Join")
                 .Then<SetVariable>(
                     x =>
                     {

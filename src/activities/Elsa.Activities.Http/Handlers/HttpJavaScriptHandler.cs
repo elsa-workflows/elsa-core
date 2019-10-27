@@ -3,23 +3,20 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Models;
 using Elsa.Activities.Http.Services;
-using Elsa.Scripting;
-using Elsa.Scripting.JavaScript;
 using Elsa.Scripting.JavaScript.Messages;
 using Elsa.Services.Models;
-using Jint;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 
-namespace Elsa.Activities.Http.Scripting
+namespace Elsa.Activities.Http.Handlers
 {
-    public class HttpScriptEngineConfigurator : INotificationHandler<EvaluatingJavaScriptExpression>
+    public class HttpJavaScriptHandler : INotificationHandler<EvaluatingJavaScriptExpression>
     {
         private readonly ITokenService tokenService;
         private readonly IAbsoluteUrlProvider absoluteUrlProvider;
         private readonly IHttpContextAccessor httpContextAccessor;
 
-        public HttpScriptEngineConfigurator(
+        public HttpJavaScriptHandler(
             ITokenService tokenService,
             IAbsoluteUrlProvider absoluteUrlProvider,
             IHttpContextAccessor httpContextAccessor)

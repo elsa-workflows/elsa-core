@@ -10,7 +10,7 @@ namespace Elsa.Scripting.JavaScript.Extensions
         public static IServiceCollection AddJavaScriptExpressionEvaluator(this IServiceCollection services)
         {
             return services
-                .TryAddProvider<IExpressionEvaluator, JavaScriptExpressionEvaluator>(ServiceLifetime.Singleton)
+                .TryAddProvider<IExpressionEvaluator, JavaScriptExpressionEvaluator>(ServiceLifetime.Scoped)
                 .AddMediatR(typeof(JavaScriptServiceCollectionExtensions));
         }
     }

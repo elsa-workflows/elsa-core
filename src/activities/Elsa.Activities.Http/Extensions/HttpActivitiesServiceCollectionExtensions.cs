@@ -3,7 +3,6 @@ using Elsa.Activities.Http.Activities;
 using Elsa.Activities.Http.Formatters;
 using Elsa.Activities.Http.Options;
 using Elsa.Activities.Http.RequestHandlers.Handlers;
-using Elsa.Activities.Http.Scripting;
 using Elsa.Activities.Http.Services;
 using Elsa.Scripting;
 using Elsa.Scripting.JavaScript;

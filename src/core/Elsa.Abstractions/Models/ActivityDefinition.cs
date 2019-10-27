@@ -12,6 +12,7 @@ namespace Elsa.Models
 
         public ActivityDefinition()
         {
+            State = new JObject();
         }
 
         public ActivityDefinition(string id, string type, JObject state, int left = 0, int top = 0)
@@ -25,6 +26,13 @@ namespace Elsa.Models
 
         public string Id { get; set; }
         public string Type { get; set; }
+
+        public string Name
+        {
+            get => State.ContainsKey(nameof(Name)) ? State[nameof(Name)].Value<string>() : default;
+            set => State[nameof(Name)] = value;
+        }
+
         public string DisplayName { get; set; }
         public string Description { get; set; }
         public int Left { get; set; }

@@ -15,15 +15,15 @@ namespace Sample17
         {
             builder
                 .StartWith<WriteLine>(x => x.TextExpression = new LiteralExpression("Enter name:"))
-                .Then<ReadLine>().WithId("NameInput")
+                .Then<ReadLine>().WithName("NameInput")
                 .Then<WriteLine>(x => x.TextExpression = new LiteralExpression("Enter age:"))
-                .Then<ReadLine>().WithId("AgeInput")
+                .Then<ReadLine>().WithName("AgeInput")
                 .Then<CreatePerson>(
                     x =>
                     {
                         x.TitleExpression = new JavaScriptExpression<string>("NameInput.Input");
                         x.AgeExpression = new JavaScriptExpression<int>("AgeInput.Input");
-                    }).WithId("CreatePerson")
+                    }).WithName("CreatePerson")
                 .Then<SetVariable>(
                     x =>
                     {

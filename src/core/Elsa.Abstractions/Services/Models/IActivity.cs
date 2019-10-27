@@ -28,9 +28,14 @@ namespace Elsa.Services.Models
         string Type { get; }
         
         /// <summary>
-        /// Unique identifier of this activity
+        /// Unique identifier of this activity.
         /// </summary>
         string Id { get; set; }
+        
+        /// <summary>
+        /// Name identifier of this activity.
+        /// </summary>
+        string Name { get; set; }
         
         /// <summary>
         /// Returns a value of whether the specified activity can execute.

@@ -115,7 +115,7 @@ namespace Elsa.Activities.Http.Activities
 
                 var parser = SelectContentParser(request.ContentType);
                 var content = await request.ReadContentAsBytesAsync(cancellationToken);
-                model.Content = await parser.ParseAsync(content, request.ContentType);
+                model.Body = await parser.ParseAsync(content, request.ContentType);
             }
 
             Output["Content"] = model;
