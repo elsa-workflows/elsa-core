@@ -18,6 +18,8 @@ Version 1.0
 - [x] Long-running Workflows
 - [x] Workflows as code
 - [x] Workflows as data
+- [x] Correlation
+- [x] Persistence: CosmosDB, Entity Framework Core, MongoDB, YesSQL 
 - [x] HTML5 Workflow Designer Web Component
 - [x] ASP.NET Core Workflow Dashboard
 - [x] JavaScript Expressions
@@ -172,35 +174,12 @@ TODO: describe all the steps to add packages and register services.
 
 TODO: describe all the steps to add packages and register services.
 
-## Running Elsa Workflows Dashboard
+### Building & Running Elsa Workflows Dashboard
 
-In order to run Elsa on your local machine, follow these steps:
+In order to build & run Elsa on your local machine, follow these steps:
 
 1. Clone the repository.
 2. Run NPM install on all folders containing packages.json (or run `node npm-install.js` - a script in the root that recursively installs the Node packages)
 3. Execute gulp build from the directory src\dashboard\Elsa.Dashboard\Theme\argon-dashboard
-4. Open a shell and navigate to `src/samples/SampleDashboard.Web` and run `dotnet run`.
+4. Open a shell and navigate to `src/samples/Sample16` and run `dotnet run`.
 5. Navigate to https://localhost:44397/elsa/home
-
-## Running Elsa Workflows Host
-
-(TODO)
-
-## Roadmap
-
-(TODO)
- 
-- Describe all the features (core engine, runtime, webbased designer, YAML, scripting, separation of designer from invoker from engine).
-- Describe various use cases.
-- Describe how to use.
-- Describe architecture.
-- Describe how to implement (custom host, custom dashboard).
-- Implement more activities
-- Implement integration with Orchard Core (separate repo)
-- Detailed documentation
-- Open API Activity Harvester
-- MassTransit Activity Harvester
-- RabbitMQ Activities
-- Azure Service Bus Activities
-- Automatic UI for Activity Editor
-
