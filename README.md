@@ -39,6 +39,7 @@ Version 2.0
 - [ ] Workflow Host REST API
 - [ ] Workflow Host gRPC API
 - [ ] Workflow Server
+- [ ] Activity Harvesting
 - [ ] Distributed Hosting Support (support for multi-node environments)
 - [ ] Localization Support
 - [ ] More activities

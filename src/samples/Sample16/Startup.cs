@@ -28,7 +28,6 @@ namespace Sample16
             services
                 // Add workflow services.
                 .AddElsa(x => x.AddMongoDbStores(Configuration, "Sample16", "MongoDb"))
-                .AddTaskExecutingServer()
                 
                 // Add activities we'd like to use.
                 .AddHttpActivities(options => options.Bind(elsaSection.GetSection("Http")))
