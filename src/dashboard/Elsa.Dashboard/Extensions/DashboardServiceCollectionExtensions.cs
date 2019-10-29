@@ -19,13 +19,9 @@ namespace Elsa.Dashboard.Extensions
     {
         public static IServiceCollection AddElsaDashboard(
             this IServiceCollection services,
-            Action<ElsaBuilder> configure) =>
-            services.AddElsaDashboard(default, configure);
-
-        public static IServiceCollection AddElsaDashboard(
-            this IServiceCollection services,
-            Action<OptionsBuilder<ElsaDashboardOptions>> options = null,
-            Action<ElsaBuilder> configure = null)
+            Action<OptionsBuilder<ElsaDashboardOptions>> options = default,
+            Action<ElsaBuilder> configure = default
+            )
         {
             var configuration = new ElsaBuilder(services);
 
