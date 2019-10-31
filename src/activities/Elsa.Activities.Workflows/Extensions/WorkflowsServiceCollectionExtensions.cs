@@ -3,7 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Activities.Workflows.Extensions
 {
-    public static class WorkflowActivityServiceCollectionExtensions
+    public static class WorkflowsServiceCollectionExtensions
     {
         public static IServiceCollection AddWorkflowActivities(this IServiceCollection services)
         {

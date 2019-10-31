@@ -3,12 +3,11 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Models;
+using Elsa.Activities.Http.RequestHandlers.Results;
 using Elsa.Activities.Http.Services;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services;
-using LanguageExt;
-using LanguageExt.Common;
 using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Activities.Http.RequestHandlers.Handlers
@@ -42,58 +41,39 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
 
         public async Task<IRequestHandlerResult> HandleRequestAsync()
         {
-            await DecryptToken()
-                .BindAsync(GetWorkflowInstanceAsync)
-                .BindAsync(CheckIfExecutingAsync)
-                .MapAsync(ResumeWorkflowAsync);
+            var signal = DecryptToken();
 
-            return default;
+            if (signal == null)
+                return new NotFoundResult();
+
+            var workflowInstance = await GetWorkflowInstanceAsync(signal);
+
+            if (workflowInstance == null)
+                return new NotFoundResult();
+
+            if (!CheckIfExecuting(workflowInstance))
+                return new BadRequestResult($"Cannot signal a workflow with status other than {WorkflowStatus.Executing}. Actual workflow status: {workflowInstance.Status}.");
+
+            await ResumeWorkflowAsync(workflowInstance, signal);
+
+            return new AcceptedResult();
         }
 
-        private Either<Error, Signal> DecryptToken()
+        private Signal DecryptToken()
         {
             var token = httpContext.Request.Query["token"];
 
-            if (tokenService.TryDecryptToken(token, out Signal signal))
-            {
-                return signal;
-            }
-
-            httpContext.Response.StatusCode = (int)HttpStatusCode.NotFound;
-            return Error.New("Invalid token");
+            return tokenService.TryDecryptToken(token, out Signal signal) ? signal : default;
         }
 
-        private async Task<Either<Error, (WorkflowInstance, Signal)>> GetWorkflowInstanceAsync(Signal signal)
+        private async Task<WorkflowInstance> GetWorkflowInstanceAsync(Signal signal) => 
+            await workflowInstanceStore.GetByIdAsync(signal.WorkflowInstanceId, cancellationToken);
+
+        private bool CheckIfExecuting(WorkflowInstance workflowInstance) => 
+            workflowInstance.Status == WorkflowStatus.Executing;
+
+        private async Task ResumeWorkflowAsync(WorkflowInstance workflowInstance, Signal signal)
         {
-            var workflowInstance =
-                await workflowInstanceStore.GetByIdAsync(signal.WorkflowInstanceId, cancellationToken);
-
-            if (workflowInstance != null)
-                return (workflowInstance, signal);
-
-            httpContext.Response.StatusCode = (int)HttpStatusCode.NotFound;
-            return Error.New("Workflow not found");
-        }
-
-        private async Task<Either<Error, (WorkflowInstance, Signal)>> CheckIfExecutingAsync(
-            (WorkflowInstance, Signal) tuple)
-        {
-            var (workflowInstance, signal) = tuple;
-
-            if (workflowInstance.Status == WorkflowStatus.Executing)
-                return (workflowInstance, signal);
-
-            httpContext.Response.StatusCode = (int)HttpStatusCode.BadRequest;
-            await httpContext.Response.WriteAsync(
-                $"Cannot signal a workflow with status other than {WorkflowStatus.Executing}. Actual workflow status: {workflowInstance.Status}.",
-                cancellationToken);
-            return Error.New("Cannot resume workflow that is not executing.");
-        }
-
-        private async Task ResumeWorkflowAsync((WorkflowInstance, Signal) tuple)
-        {
-            var (workflowInstance, signal) = tuple;
-
             var input = new Variables
             {
                 ["Signal"] = signal.Name
@@ -107,11 +87,6 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
             var workflow = workflowFactory.CreateWorkflow(workflowDefinition, input, workflowInstance);
             var blockingSignalActivities = workflow.BlockingActivities.ToList();
             await workflowInvoker.ResumeAsync(workflow, blockingSignalActivities, cancellationToken);
-
-            if (!httpContext.Response.HasStarted)
-            {
-                httpContext.Response.StatusCode = (int)HttpStatusCode.Accepted;
-            }
         }
     }
 }

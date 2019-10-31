@@ -7,10 +7,24 @@ namespace Elsa.Activities.Http.RequestHandlers.Results
 {
     public class BadRequestResult : IRequestHandlerResult
     {
-        public Task ExecuteResultAsync(HttpContext httpContext, RequestDelegate next)
+        public BadRequestResult()
+        {
+        }
+
+        public BadRequestResult(string message)
+        {
+            Message = message;
+        }
+        
+        public string Message { get; }
+
+        
+        public async Task ExecuteResultAsync(HttpContext httpContext, RequestDelegate next)
         {
             httpContext.Response.StatusCode = (int)HttpStatusCode.BadRequest;
-            return Task.CompletedTask;
+            
+            if(!string.IsNullOrWhiteSpace(Message))
+                await httpContext.Response.WriteAsync(Message, httpContext.RequestAborted);
         }
     }
 }

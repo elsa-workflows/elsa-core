@@ -24,16 +24,16 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
         private readonly CancellationToken cancellationToken;
 
         public TriggerRequestHandler(
-            HttpContext httpContext,
+            IHttpContextAccessor httpContext,
             IWorkflowInvoker workflowInvoker,
             IWorkflowRegistry registry,
             IWorkflowInstanceStore workflowInstanceStore)
         {
-            this.httpContext = httpContext;
+            this.httpContext = httpContext.HttpContext;
             this.workflowInvoker = workflowInvoker;
             this.registry = registry;
             this.workflowInstanceStore = workflowInstanceStore;
-            cancellationToken = httpContext.RequestAborted;
+            cancellationToken = httpContext.HttpContext.RequestAborted;
         }
 
         public async Task<IRequestHandlerResult> HandleRequestAsync()

@@ -10,7 +10,7 @@ namespace Elsa.Models
         {
         }
 
-        public Variables(Variables other) : this((IEnumerable<KeyValuePair<string, object>>) other)
+        public Variables(Variables other) : this((IEnumerable<KeyValuePair<string, object>>)other)
         {
         }
 
@@ -29,7 +29,21 @@ namespace Elsa.Models
 
         public T GetVariable<T>(string name)
         {
-            return ContainsKey(name) ? (T) this[name] : default(T);
+            return ContainsKey(name) ? (T)this[name] : default(T);
+        }
+
+        public void AddVariable(string name, object value)
+        {
+            this[name] = value;
+        }
+
+        public void AddVariables(Variables variables) => 
+            AddVariables((IEnumerable<KeyValuePair<string, object>>)variables);
+
+        public void AddVariables(IEnumerable<KeyValuePair<string, object>> variables)
+        {
+            foreach (var variable in variables)
+                AddVariable(variable.Key, variable.Value);
         }
 
         public bool HasVariable(string name, object value)

@@ -34,6 +34,7 @@ namespace Elsa.Scripting.Liquid.Services
         private async Task<TemplateContext> CreateTemplateContextAsync(WorkflowExecutionContext workflowContext)
         {
             var context = new TemplateContext();
+            context.SetValue("WorkflowExecutionContext", workflowContext);
             await mediator.Publish(new EvaluatingLiquidExpression(context, workflowContext));
             context.Model = workflowContext;
             return context;

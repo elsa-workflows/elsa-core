@@ -9,6 +9,7 @@ using Elsa.Services.Models;
 using Fluid;
 using Fluid.Values;
 using MediatR;
+using Newtonsoft.Json.Linq;
 
 namespace Elsa.Scripting.Liquid.Handlers
 {
@@ -17,11 +18,14 @@ namespace Elsa.Scripting.Liquid.Handlers
         static CommonLiquidContextHandler()
         {
             FluidValue.SetTypeMapping<ExpandoObject>(x => new ObjectValue(x));
+            FluidValue.SetTypeMapping<JObject>(o => new ObjectValue(o));
+            FluidValue.SetTypeMapping<JValue>(o => FluidValue.Create(o.Value));
         }
-        
+
         public Task Handle(EvaluatingLiquidExpression notification, CancellationToken cancellationToken)
         {
             var context = notification.TemplateContext;
+
             context.MemberAccessStrategy.Register<LiquidPropertyAccessor, FluidValue>((x, name) => x.GetValueAsync(name));
             context.MemberAccessStrategy.Register<WorkflowExecutionContext, LiquidPropertyAccessor>("Input", x => new LiquidPropertyAccessor(name => ToFluidValue(x.Workflow.Input, name)));
             context.MemberAccessStrategy.Register<WorkflowExecutionContext, LiquidPropertyAccessor>("Output", x => new LiquidPropertyAccessor(name => ToFluidValue(x.Workflow.Output, name)));
@@ -30,10 +34,11 @@ namespace Elsa.Scripting.Liquid.Handlers
             context.MemberAccessStrategy.Register<LiquidObjectAccessor<IActivity>, LiquidObjectAccessor<object>>((x, activityName) => new LiquidObjectAccessor<object>(outputKey => GetActivityOutput(x, activityName, outputKey)));
             context.MemberAccessStrategy.Register<LiquidObjectAccessor<object>, object>((x, name) => x.GetValueAsync(name));
             context.MemberAccessStrategy.Register<ExpandoObject, object>((x, name) => ((IDictionary<string, object>)x)[name]);
-            
+            context.MemberAccessStrategy.Register<JObject, object>((source, name) => source[name]);
+
             return Task.CompletedTask;
         }
-        
+
         private Task<FluidValue> ToFluidValue(IDictionary<string, object> dictionary, string key)
         {
             return Task.FromResult(!dictionary.ContainsKey(key) ? default : FluidValue.Create(dictionary[key]));

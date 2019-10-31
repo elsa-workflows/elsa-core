@@ -1,12 +1,12 @@
 using System;
 using Elsa.Activities.Http.Activities;
 using Elsa.Activities.Http.Formatters;
+using Elsa.Activities.Http.Liquid;
 using Elsa.Activities.Http.Options;
 using Elsa.Activities.Http.RequestHandlers.Handlers;
 using Elsa.Activities.Http.Services;
-using Elsa.Scripting;
-using Elsa.Scripting.JavaScript;
-using MediatR;
+using Elsa.Extensions;
+using Elsa.Scripting.Liquid.Extensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
@@ -38,11 +38,12 @@ namespace Elsa.Activities.Http.Extensions
                 .AddSingleton<IActionContextAccessor, ActionContextAccessor>()
                 .AddSingleton<IAbsoluteUrlProvider, DefaultAbsoluteUrlProvider>()
                 .AddHttpContextAccessor()
-                .AddMediatR(typeof(HttpActivitiesServiceCollectionExtensions))
+                .AddNotificationHandlers(typeof(HttpActivitiesServiceCollectionExtensions))
                 .AddDataProtection();
-
+            
+            services.AddLiquidFilter<SignalUrlFilter>("signal_url");
+            
             return services
-                .AddScoped(sp => sp.GetRequiredService<IHttpContextAccessor>().HttpContext)
                 .AddRequestHandler<TriggerRequestHandler>()
                 .AddRequestHandler<SignalRequestHandler>();
         }
