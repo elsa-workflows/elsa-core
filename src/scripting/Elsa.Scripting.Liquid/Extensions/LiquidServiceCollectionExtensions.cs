@@ -1,8 +1,8 @@
+using Elsa.Extensions;
 using Elsa.Scripting.Liquid.Filters;
 using Elsa.Scripting.Liquid.Options;
 using Elsa.Scripting.Liquid.Services;
 using Elsa.Services;
-using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Scripting.Liquid.Extensions
@@ -14,7 +14,7 @@ namespace Elsa.Scripting.Liquid.Extensions
             return services
                 .TryAddProvider<IExpressionEvaluator, LiquidExpressionEvaluator>(ServiceLifetime.Scoped)
                 .AddMemoryCache()
-                .AddMediatR(typeof(LiquidServiceCollectionExtensions))
+                .AddNotificationHandlers(typeof(LiquidServiceCollectionExtensions))
                 .AddScoped<ILiquidTemplateManager, LiquidTemplateManager>()
                 .AddLiquidFilter<JsonFilter>("json");
         }

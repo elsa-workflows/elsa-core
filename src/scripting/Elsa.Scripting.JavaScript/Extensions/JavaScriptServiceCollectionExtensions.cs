@@ -1,6 +1,6 @@
+using Elsa.Extensions;
 using Elsa.Scripting.JavaScript.Services;
 using Elsa.Services;
-using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Scripting.JavaScript.Extensions
@@ -11,7 +11,7 @@ namespace Elsa.Scripting.JavaScript.Extensions
         {
             return services
                 .TryAddProvider<IExpressionEvaluator, JavaScriptExpressionEvaluator>(ServiceLifetime.Scoped)
-                .AddMediatR(typeof(JavaScriptServiceCollectionExtensions));
+                .AddNotificationHandlers(typeof(JavaScriptServiceCollectionExtensions));
         }
     }
 }

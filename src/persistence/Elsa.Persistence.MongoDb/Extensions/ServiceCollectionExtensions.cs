@@ -25,7 +25,6 @@ namespace Elsa.Persistence.MongoDb.Extensions
             RegisterEnumAsStringConvention();
             BsonSerializer.RegisterSerializer(new JObjectSerializer());
             BsonSerializer.RegisterSerializer(new WorkflowExecutionScopeSerializer());
-            //BsonSerializer.RegisterSerializer(new WorkflowInstanceSerializer());
 
             elsaBuilder.Services
                 .AddSingleton(sp => CreateDbClient(configuration, connectionStringName))
@@ -51,7 +50,7 @@ namespace Elsa.Persistence.MongoDb.Extensions
         {
             configuration.Services
                 .AddMongoDbCollection<WorkflowInstance>("WorkflowInstances")
-                .Replace<IWorkflowInstanceStore, MongoWorkflowInstanceStore>(ServiceLifetime.Scoped);
+                .AddScoped<IWorkflowInstanceStore, MongoWorkflowInstanceStore>();
 
             return configuration;
         }
@@ -61,7 +60,7 @@ namespace Elsa.Persistence.MongoDb.Extensions
         {
             configuration.Services
                 .AddMongoDbCollection<WorkflowDefinitionVersion>("WorkflowDefinitions")
-                .Replace<IWorkflowDefinitionStore, MongoWorkflowDefinitionStore>(ServiceLifetime.Scoped);
+                .AddScoped<IWorkflowDefinitionStore, MongoWorkflowDefinitionStore>();
 
             return configuration;
         }

@@ -19,13 +19,13 @@ namespace Elsa.Services
         private readonly ISignal signal;
 
         public WorkflowRegistry(
-            IServiceProvider serviceProvider,
             IMemoryCache cache,
-            ISignal signal)
+            ISignal signal,
+            IServiceProvider serviceProvider)
         {
-            this.serviceProvider = serviceProvider;
             this.cache = cache;
             this.signal = signal;
+            this.serviceProvider = serviceProvider;
         }
 
         public async Task<IEnumerable<(WorkflowDefinitionVersion, ActivityDefinition)>> ListByStartActivityAsync(
@@ -72,8 +72,7 @@ namespace Elsa.Services
                 });
         }
 
-        private async Task<ICollection<WorkflowDefinitionVersion>> LoadWorkflowDefinitionsAsync(
-            CancellationToken cancellationToken)
+        private async Task<ICollection<WorkflowDefinitionVersion>> LoadWorkflowDefinitionsAsync(CancellationToken cancellationToken)
         {
             using var scope = serviceProvider.CreateScope();
             var providers = scope.ServiceProvider.GetServices<IWorkflowProvider>();

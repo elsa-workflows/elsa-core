@@ -5,7 +5,6 @@ using Elsa.Expressions;
 using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Results;
-using Elsa.Scripting.JavaScript;
 using Elsa.Scripting.JavaScript.Services;
 using Elsa.Services;
 using Elsa.Services.Models;

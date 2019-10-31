@@ -2,7 +2,6 @@ using System;
 using Elsa.Dashboard.Options;
 using Elsa.Metadata;
 using Elsa.Services.Models;
-using Elsa.WorkflowDesigner;
 using Microsoft.Extensions.DependencyInjection;
 using Scrutor;
 

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Elsa;
 using Elsa.Activities;
 using Elsa.AutoMapper.Extensions;
@@ -30,8 +29,8 @@ namespace Microsoft.Extensions.DependencyInjection
             Action<ElsaBuilder> configure = null)
         {
             var configuration = new ElsaBuilder(services);
-            configuration.UseWorkflowsCore();
-            configuration.UseMediatR();
+            configuration.AddWorkflowsCore();
+            configuration.AddMediatR();
             configure?.Invoke(configuration);
             EnsurePersistence(configuration);
             EnsureCaching(configuration);
@@ -53,51 +52,14 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddTransient<IActivity>(sp => sp.GetRequiredService<T>());
         }
 
-        /// <summary>
-        /// Registers the specified service only if none already exists for the specified provider type.
-        /// </summary>
-        public static IServiceCollection TryAddProvider<TService, TProvider>(
-            this IServiceCollection services,
-            ServiceLifetime lifetime)
+        private static IServiceCollection AddMediatR(this ElsaBuilder configuration)
         {
-            return services.TryAddProvider(typeof(TService), typeof(TProvider), lifetime);
+            return configuration.Services.AddMediatR(
+                mediatr => mediatr.AsSingleton(), 
+                typeof(ElsaServiceCollectionExtensions));
         }
 
-        /// <summary>
-        /// Registers the specified service only if none already exists for the specified provider type.
-        /// </summary>
-        public static IServiceCollection TryAddProvider(
-            this IServiceCollection services,
-            Type serviceType,
-            Type providerType,
-            ServiceLifetime lifetime)
-        {
-            var descriptor = services.FirstOrDefault(
-                x => x.ServiceType == serviceType && x.ImplementationType == providerType
-            );
-
-            if (descriptor == null)
-            {
-                descriptor = new ServiceDescriptor(serviceType, providerType, lifetime);
-                services.Add(descriptor);
-            }
-
-            return services;
-        }
-
-        public static IServiceCollection Replace<TService, TImplementation>(
-            this IServiceCollection services,
-            ServiceLifetime lifetime)
-        {
-            return services.Replace(new ServiceDescriptor(typeof(TService), typeof(TImplementation), lifetime));
-        }
-
-        private static IServiceCollection UseMediatR(this ElsaBuilder configuration)
-        {
-            return configuration.Services.AddMediatR(typeof(ElsaServiceCollectionExtensions));
-        }
-
-        private static ElsaBuilder UseWorkflowsCore(this ElsaBuilder configuration)
+        private static ElsaBuilder AddWorkflowsCore(this ElsaBuilder configuration)
         {
             var services = configuration.Services;
             services.TryAddSingleton<IClock>(SystemClock.Instance);
@@ -112,14 +74,13 @@ namespace Microsoft.Extensions.DependencyInjection
                 .TryAddProvider<ITokenFormatter, YamlTokenFormatter>(ServiceLifetime.Singleton)
                 .TryAddProvider<ITokenFormatter, XmlTokenFormatter>(ServiceLifetime.Singleton)
                 .TryAddProvider<IExpressionEvaluator, LiteralEvaluator>(ServiceLifetime.Singleton)
-                .AddScoped<IWorkflowFactory, WorkflowFactory>()
-                .AddSingleton<IActivityInvoker, ActivityInvoker>()
+                .AddTransient<IWorkflowFactory, WorkflowFactory>()
+                .AddScoped<IActivityInvoker, ActivityInvoker>()
                 .AddScoped<IWorkflowExpressionEvaluator, WorkflowExpressionEvaluator>()
                 .AddSingleton<IWorkflowSerializerProvider, WorkflowSerializerProvider>()
-                .AddSingleton<IWorkflowRegistry, WorkflowRegistry>()
+                .AddTransient<IWorkflowRegistry, WorkflowRegistry>()
                 .AddScoped<IWorkflowEventHandler, PersistenceWorkflowEventHandler>()
-                .AddSingleton<IWorkflowInvoker, WorkflowInvoker>()
-                .AddScoped<IScopedWorkflowInvoker, ScopedWorkflowInvoker>()
+                .AddScoped<IWorkflowInvoker, WorkflowInvoker>()
                 .AddScoped<IActivityResolver, ActivityResolver>()
                 .AddScoped<IWorkflowEventHandler, ActivityLoggingWorkflowEventHandler>()
                 .AddTransient<IWorkflowProvider, StoreWorkflowProvider>()
@@ -150,12 +111,6 @@ namespace Microsoft.Extensions.DependencyInjection
 
             configuration.Services.AddMemoryCache();
         }
-
-        private static bool HasService<T>(this IServiceCollection services) =>
-            services.Any(x => x.ServiceType == typeof(T));
-
-        private static bool HasService<T>(this ElsaBuilder configuration) =>
-            configuration.Services.HasService<T>();
 
         private static IServiceCollection AddPrimitiveActivities(this IServiceCollection services)
         {

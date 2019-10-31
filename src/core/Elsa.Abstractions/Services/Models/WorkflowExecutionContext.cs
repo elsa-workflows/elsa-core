@@ -1,7 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Elsa.Expressions;
+using Elsa.Extensions;
 using Elsa.Models;
+using Microsoft.Extensions.DependencyInjection;
 using NodaTime;
 
 namespace Elsa.Services.Models
@@ -20,6 +25,7 @@ namespace Elsa.Services.Models
             IsFirstPass = true;
             scheduledActivities = new Stack<IActivity>();
             scheduledHaltingActivities = new Stack<IActivity>();
+            ExpressionEvaluator = serviceProvider.GetRequiredService<IWorkflowExpressionEvaluator>();
         }
 
         public Workflow Workflow { get; }
@@ -53,6 +59,7 @@ namespace Elsa.Services.Models
         public IActivity PopScheduledActivity() => CurrentActivity = scheduledActivities.Pop();
         public void ScheduleHaltingActivity(IActivity activity) => scheduledHaltingActivities.Push(activity);
         public IActivity PopScheduledHaltingActivity() => scheduledHaltingActivities.Pop();
+        public IWorkflowExpressionEvaluator ExpressionEvaluator { get; }
 
         public void SetVariable(string name, object value)
         {
@@ -74,6 +81,9 @@ namespace Elsa.Services.Models
             var scope = Workflow.Scopes.FirstOrDefault(x => x.Variables.ContainsKey(name)) ?? CurrentScope;
             return scope.GetVariable(name);
         }
+
+        public Task<T> EvaluateAsync<T>(IWorkflowExpression<T> expression, CancellationToken cancellationToken) =>
+            ExpressionEvaluator.EvaluateAsync(expression, this, cancellationToken);
 
         public void SetLastResult(object value) => CurrentScope.LastResult = value;
 

@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using Elsa.Metadata;
-using Elsa.WorkflowDesigner.Models;
 
 namespace Elsa.Dashboard.Options
 {
