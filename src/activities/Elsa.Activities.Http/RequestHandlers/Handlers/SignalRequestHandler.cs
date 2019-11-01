@@ -23,14 +23,14 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
         private readonly CancellationToken cancellationToken;
 
         public SignalRequestHandler(
-            HttpContext httpContext,
+            IHttpContextAccessor httpContextAccessor,
             ITokenService tokenService,
             IWorkflowInvoker workflowInvoker,
             IWorkflowRegistry workflowRegistry,
             IWorkflowFactory workflowFactory,
             IWorkflowInstanceStore workflowInstanceStore)
         {
-            this.httpContext = httpContext;
+            httpContext = httpContextAccessor.HttpContext;
             this.tokenService = tokenService;
             this.workflowInvoker = workflowInvoker;
             this.workflowRegistry = workflowRegistry;
