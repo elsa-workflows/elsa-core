@@ -9,6 +9,7 @@ var Paths = {
     HERE: './',
     DIST: '../../wwwroot/',
     ASSETS: './assets/',
+    NPM: './node_modules/',
     CSS: './assets/css/',
     SCSS_TOOLKIT_SOURCES: './assets/scss/**/**',
     SCSS: './assets/scss/**/**'
@@ -52,6 +53,11 @@ gulp.task('copy-scripts', function () {
         .pipe(gulp.dest(`${Paths.DIST}assets/js/`, {overwrite: true}));
 });
 
+gulp.task('copy-scripts-npm', function () {
+    gulp.src(`${Paths.NPM}@elsa-workflows/elsa-workflow-designer/dist/**/*.*`)
+        .pipe(gulp.dest(`${Paths.DIST}assets/js/plugins/elsa-workflows/`, {overwrite: true}));
+});
+
 gulp.task('open-app', ['open', 'watch']);
-gulp.task('build', ['compile-scss', 'copy-styles', 'copy-scripts', 'copy-fonts', 'copy-images']);
+gulp.task('build', ['compile-scss', 'copy-styles', 'copy-scripts', 'copy-scripts-npm', 'copy-fonts', 'copy-images']);
 gulp.task('build-styles', ['compile-scss', 'copy-styles']);

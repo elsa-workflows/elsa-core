@@ -1,4 +1,6 @@
-﻿namespace Elsa.Models
+﻿using Newtonsoft.Json.Linq;
+
+namespace Elsa.Models
 {
     public class WorkflowExecutionScope
     {
@@ -7,15 +9,15 @@
             Variables = new Variables();
         }
 
-        public object LastResult { get; set; }
+        public JToken LastResult { get; set; }
         public Variables Variables { get; }
 
         public void SetVariable(string variableName, object value)
         {
-            Variables[variableName] = value;
+            Variables[variableName] = JToken.FromObject(value);
         }
 
         public T GetVariable<T>(string name) => Variables.GetVariable<T>(name);
-        public object GetVariable(string name) => Variables.GetVariable(name);
+        public JToken GetVariable(string name) => Variables.GetVariable(name);
     }
 }

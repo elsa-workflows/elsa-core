@@ -19,14 +19,11 @@ namespace Elsa.Activities.Workflows.Extensions
             string correlationId = default,
             CancellationToken cancellationToken = default)
         {
-            var combinedInput = new Variables(
-                new Dictionary<string, object>
-                {
-                    ["Signal"] = signalName
-                });
+            var combinedInput = new Variables();
+            combinedInput.SetVariable("Signal", signalName);
 
             if (input != null)
-                combinedInput.AddVariables(input);
+                combinedInput.SetVariables(input);
 
             await workflowInvoker.TriggerAsync(nameof(Signaled), combinedInput, correlationId, activityStatePredicate, cancellationToken);
         }

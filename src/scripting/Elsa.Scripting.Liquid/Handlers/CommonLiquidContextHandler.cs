@@ -39,10 +39,8 @@ namespace Elsa.Scripting.Liquid.Handlers
             return Task.CompletedTask;
         }
 
-        private Task<FluidValue> ToFluidValue(IDictionary<string, object> dictionary, string key)
-        {
-            return Task.FromResult(!dictionary.ContainsKey(key) ? default : FluidValue.Create(dictionary[key]));
-        }
+        private Task<FluidValue> ToFluidValue(IDictionary<string, JToken> dictionary, string key) 
+            => Task.FromResult(!dictionary.ContainsKey(key) ? default : FluidValue.Create(dictionary[key]));
 
         private async Task<object> GetActivityOutput(LiquidObjectAccessor<IActivity> accessor, string activityName, string outputKey)
         {
@@ -51,6 +49,7 @@ namespace Elsa.Scripting.Liquid.Handlers
             return !output.ContainsKey(outputKey) ? default : output[outputKey];
         }
 
-        private Task<IActivity> GetActivityAsync(WorkflowExecutionContext executionContext, string name) => Task.FromResult(executionContext.Workflow.Activities.FirstOrDefault(x => x.Name == name));
+        private Task<IActivity> GetActivityAsync(WorkflowExecutionContext executionContext, string name) 
+            => Task.FromResult(executionContext.Workflow.Activities.FirstOrDefault(x => x.Name == name));
     }
 }
