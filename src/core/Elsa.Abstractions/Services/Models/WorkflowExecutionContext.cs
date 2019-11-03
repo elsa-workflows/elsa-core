@@ -86,8 +86,8 @@ namespace Elsa.Services.Models
         public Task<T> EvaluateAsync<T>(IWorkflowExpression<T> expression, CancellationToken cancellationToken) =>
             ExpressionEvaluator.EvaluateAsync(expression, this, cancellationToken);
 
-        public void SetLastResult(object value) => CurrentScope.LastResult = (JValue)value;
-        public void SetLastResult(JValue value) => CurrentScope.LastResult = value;
+        public void SetLastResult(object value) => SetLastResult(JToken.FromObject(value));
+        public void SetLastResult(JToken value) => CurrentScope.LastResult = value;
 
         public void Start()
         {

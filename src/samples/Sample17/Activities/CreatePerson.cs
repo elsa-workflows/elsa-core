@@ -38,9 +38,9 @@ namespace Sample17.Activities
             var age = await expressionEvaluator.EvaluateAsync(AgeExpression, context, cancellationToken);
             var person = new Person { FullName = name, Age = age };
 
-            Output["Person"] = person;
-            Output["FullName"] = person.FullName;
-            Output["Age"] = person.Age;
+            Output.SetVariable("Person", person);
+            Output.SetVariable("FullName", person.FullName);
+            Output.SetVariable("Age", person.Age);
             
             return Done();
         }
