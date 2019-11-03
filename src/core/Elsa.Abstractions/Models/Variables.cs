@@ -1,8 +1,10 @@
 ﻿using System.Collections.Generic;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Elsa.Models
 {
-    public class Variables : Dictionary<string, object>
+    public class Variables : Dictionary<string, JToken>
     {
         public static readonly Variables Empty = new Variables();
 
@@ -10,11 +12,11 @@ namespace Elsa.Models
         {
         }
 
-        public Variables(Variables other) : this((IEnumerable<KeyValuePair<string, object>>)other)
+        public Variables(Variables other) : this((IEnumerable<KeyValuePair<string, JToken>>)other)
         {
         }
 
-        public Variables(IEnumerable<KeyValuePair<string, object>> dictionary)
+        public Variables(IEnumerable<KeyValuePair<string, JToken>> dictionary)
         {
             foreach (var item in dictionary)
             {
@@ -22,33 +24,30 @@ namespace Elsa.Models
             }
         }
 
-        public object GetVariable(string name)
+        public JToken GetVariable(string name)
         {
-            return ContainsKey(name) ? this[name] : null;
+            return ContainsKey(name) ? this[name] : default;
         }
 
         public T GetVariable<T>(string name)
         {
-            return ContainsKey(name) ? (T)this[name] : default(T);
+            var value = ContainsKey(name) ? this[name] : default;
+
+            return value == null ? default : value.ToObject<T>();
         }
 
-        public void AddVariable(string name, object value)
+        public JToken SetVariable(string name, object value)
         {
-            this[name] = value;
+            return this[name] = JToken.FromObject(value);
         }
 
-        public void AddVariables(Variables variables) => 
-            AddVariables((IEnumerable<KeyValuePair<string, object>>)variables);
+        public void SetVariables(Variables variables) => 
+            SetVariables((IEnumerable<KeyValuePair<string, JToken>>)variables);
 
-        public void AddVariables(IEnumerable<KeyValuePair<string, object>> variables)
+        public void SetVariables(IEnumerable<KeyValuePair<string, JToken>> variables)
         {
             foreach (var variable in variables)
-                AddVariable(variable.Key, variable.Value);
-        }
-
-        public bool HasVariable(string name, object value)
-        {
-            return ContainsKey(name) && this[name].Equals(value);
+                SetVariable(variable.Key, variable.Value);
         }
 
         public bool HasVariable(string name)

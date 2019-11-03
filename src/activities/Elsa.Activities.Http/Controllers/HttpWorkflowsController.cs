@@ -6,6 +6,7 @@ using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json.Linq;
 
 namespace Elsa.Activities.Http.Controllers
 {
@@ -39,10 +40,8 @@ namespace Elsa.Activities.Http.Controllers
             if (workflowInstance == null)
                 return NotFound();
 
-            var input = new Variables
-            {
-                ["signal"] = signal.Name
-            };
+            var input = new Variables();
+            input.SetVariable("Signal", signal.Name);
 
             await workflowInvoker.ResumeAsync(workflowInstance, input, cancellationToken: cancellationToken);
 

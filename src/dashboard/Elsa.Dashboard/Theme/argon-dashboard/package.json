@@ -36,6 +36,9 @@
   "bugs": {
     "url": "https://github.com/creativetimofficial/argon-dashboard/issues"
   },
+  "dependencies": {
+    "@elsa-workflows/elsa-workflow-designer": "latest"
+  },
   "devDependencies": {
     "gulp": "^3.9.1",
     "gulp-autoprefixer": "^5.0.0",

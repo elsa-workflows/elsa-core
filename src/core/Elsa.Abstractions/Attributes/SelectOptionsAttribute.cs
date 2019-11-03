@@ -63,4 +63,31 @@ namespace Elsa.Attributes
         public string Label { get; set; }
         public object[] Options { get; set; }
     }
+    
+    public class SelectOption<T>
+    {
+        public SelectOption()
+        {
+        }
+
+        public SelectOption(string label, T value)
+        {
+            Label = label;
+            Value = value;
+        }
+        
+        public string Label { get; set; }
+        public T Value { get; set; }
+    }
+    
+    public class SelectOption : SelectOption<string>
+    {
+        public SelectOption()
+        {
+        }
+
+        public SelectOption(string label, string value) : base(label, value)
+        {
+        }
+    }
 }

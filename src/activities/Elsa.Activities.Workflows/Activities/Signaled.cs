@@ -36,7 +36,7 @@ namespace Elsa.Activities.Workflows.Activities
         protected override async Task<bool> OnCanExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
         {
             var signal = await expressionEvaluator.EvaluateAsync(Signal, context, cancellationToken);
-            return context.Workflow.Input.HasVariable("Signal", signal);
+            return context.Workflow.Input.GetVariable<string>("Signal") == signal;
         }
 
         protected override ActivityExecutionResult OnExecute(WorkflowExecutionContext context)

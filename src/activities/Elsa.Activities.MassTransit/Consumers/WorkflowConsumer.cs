@@ -3,6 +3,7 @@ using Elsa.Activities.MassTransit.Activities;
 using Elsa.Models;
 using Elsa.Services;
 using MassTransit;
+using Newtonsoft.Json.Linq;
 
 namespace Elsa.Activities.MassTransit.Consumers
 {
@@ -19,7 +20,10 @@ namespace Elsa.Activities.MassTransit.Consumers
         {
             var message = context.Message;
             var activityType = nameof(ReceiveMassTransitMessage);
-            var input = new Variables { ["message"] = message };
+            var input = new Variables();
+
+            input.SetVariable("Message", message);
+            
             var correlationId = context.CorrelationId?.ToString();
             
             await workflowInvoker.TriggerAsync(

@@ -9,6 +9,7 @@ using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;
+using Newtonsoft.Json.Linq;
 
 namespace Elsa.Activities.Http.RequestHandlers.Handlers
 {
@@ -56,7 +57,7 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
 
             await ResumeWorkflowAsync(workflowInstance, signal);
 
-            return new AcceptedResult();
+            return new EmptyResult();
         }
 
         private Signal DecryptToken()
@@ -74,10 +75,8 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
 
         private async Task ResumeWorkflowAsync(WorkflowInstance workflowInstance, Signal signal)
         {
-            var input = new Variables
-            {
-                ["Signal"] = signal.Name
-            };
+            var input = new Variables();
+            input.SetVariable("Signal", signal.Name);
 
             var workflowDefinition = await workflowRegistry.GetWorkflowDefinitionAsync(
                 workflowInstance.DefinitionId,

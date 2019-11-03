@@ -17,6 +17,7 @@ using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
+using Newtonsoft.Json.Linq;
 
 namespace Elsa.Activities.Http.Activities
 {
@@ -31,16 +32,16 @@ namespace Elsa.Activities.Http.Activities
     {
         private readonly IWorkflowExpressionEvaluator expressionEvaluator;
         private readonly HttpClient httpClient;
-        private readonly IEnumerable<IContentFormatter> contentFormatters;
+        private readonly IEnumerable<IHttpResponseBodyParser> parsers;
 
         public SendHttpRequest(
             IWorkflowExpressionEvaluator expressionEvaluator,
             IHttpClientFactory httpClientFactory,
-            IEnumerable<IContentFormatter> contentFormatters)
+            IEnumerable<IHttpResponseBodyParser> parsers)
         {
             this.expressionEvaluator = expressionEvaluator;
             httpClient = httpClientFactory.CreateClient(nameof(SendHttpRequest));
-            this.contentFormatters = contentFormatters;
+            this.parsers = parsers;
         }
 
         /// <summary>
@@ -163,22 +164,21 @@ namespace Elsa.Activities.Http.Activities
 
             if (hasContent && ReadContent)
             {
-                var formatter = SelectContentFormatter(contentType);
+                var formatter = SelectContentParser(contentType);
 
-                responseModel.Content = await response.Content.ReadAsByteArrayAsync();
-                responseModel.ParsedContent = await formatter.ParseAsync(responseModel.Content, contentType);
+                responseModel.Content = await formatter.ParseAsync(response, cancellationToken);
             }
-
-            workflowContext.SetLastResult(responseModel);
-            Output["Response"] = responseModel;
+            
+            workflowContext.SetLastResult(Output.SetVariable("Response", responseModel));
+            
             var statusEndpoint = ((int)response.StatusCode).ToString();
 
             return Outcomes(new[] { OutcomeNames.Done, statusEndpoint });
         }
 
-        private IContentFormatter SelectContentFormatter(string contentType)
+        private IHttpResponseBodyParser SelectContentParser(string contentType)
         {
-            var formatters = contentFormatters.OrderByDescending(x => x.Priority).ToList();
+            var formatters = parsers.OrderByDescending(x => x.Priority).ToList();
             return formatters.FirstOrDefault(
                        x => x.SupportedContentTypes.Contains(contentType, StringComparer.OrdinalIgnoreCase)
                    ) ?? formatters.Last();
