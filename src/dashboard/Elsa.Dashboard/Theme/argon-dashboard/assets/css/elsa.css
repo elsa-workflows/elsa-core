@@ -16,6 +16,9 @@ b, strong {
 .table .badge a {
   color: #172b4d; }
 
+.table-wrapper {
+  min-height: 250px; }
+
 wf-expression-field .input-group > .form-control:not(:first-child) {
   border-left: 1px solid #cad1d7;
   border-top-left-radius: 0.375rem;
