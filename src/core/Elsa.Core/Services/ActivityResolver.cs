@@ -18,7 +18,7 @@ namespace Elsa.Services
                 () =>
                 {
                     var activities = activitiesFunc();
-                    return activities.Select(x => x.GetType()).ToDictionary(x => x.Name);
+                    return activities.Select(x => x.GetType()).Distinct().ToDictionary(x => x.Name);
                 });
         }
 
