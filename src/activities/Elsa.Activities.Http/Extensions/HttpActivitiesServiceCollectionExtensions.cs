@@ -35,6 +35,7 @@ namespace Elsa.Activities.Http.Extensions
                 .AddSingleton<ITokenService, TokenService>()
                 .AddSingleton<IContentFormatter, DefaultContentFormatter>()
                 .AddSingleton<IContentFormatter, JsonContentFormatter>()
+                .AddSingleton<IContentFormatter, XMLContentFormatter>()
                 .AddSingleton<IActionContextAccessor, ActionContextAccessor>()
                 .AddSingleton<IAbsoluteUrlProvider, DefaultAbsoluteUrlProvider>()
                 .AddHttpContextAccessor()

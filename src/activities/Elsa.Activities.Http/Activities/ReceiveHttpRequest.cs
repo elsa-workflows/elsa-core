@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -85,6 +85,16 @@ namespace Elsa.Activities.Http.Activities
             set => SetState(value);
         }
 
+        /// <summary>
+        /// Variable name for model body - Read model body to named variable. 
+        /// </summary>
+        [ActivityProperty(Hint = "Variable name for content model - Read content model to named variable.")]
+        public string OutputVariable
+        {
+            get => GetState<string>(null, "OutputVariable");
+            set => SetState(value, "OutputVariable");
+        }
+
         protected override ActivityExecutionResult OnExecute(WorkflowExecutionContext workflowContext)
         {
             return Halt(true);
@@ -94,6 +104,7 @@ namespace Elsa.Activities.Http.Activities
             WorkflowExecutionContext workflowContext,
             CancellationToken cancellationToken)
         {
+            
             var request = httpContextAccessor.HttpContext.Request;
             var model = new HttpRequestModel
             {
@@ -120,6 +131,10 @@ namespace Elsa.Activities.Http.Activities
 
             Output["Content"] = model;
             workflowContext.CurrentScope.LastResult = model;
+            if(OutputVariable != null && OutputVariable != "")
+            {
+                workflowContext.SetVariable(OutputVariable, model.Body);
+            }
 
             return Done();
         }
