@@ -101,7 +101,6 @@ namespace Elsa.Activities.Reflection.Activities
             }
             else
             {
-
             }
 
             workflowContext.CurrentScope.SetVariable(OutputVariableName, receivedOutput);

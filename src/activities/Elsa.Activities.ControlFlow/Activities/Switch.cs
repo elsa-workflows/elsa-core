@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
@@ -24,7 +25,10 @@ namespace Elsa.Activities.ControlFlow.Activities
         public Switch(IWorkflowExpressionEvaluator expressionEvaluator)
         {
             this.expressionEvaluator = expressionEvaluator;
-            Cases = new List<string>();
+            Cases = new List<string>()
+            {
+                "!unknown!"
+            };
         }
 
         [ActivityProperty(Hint = "The expression to evaluate. The evaluated value will be used to switch on.")]
@@ -34,7 +38,7 @@ namespace Elsa.Activities.ControlFlow.Activities
             set => SetState(value);
         }
 
-        [ActivityProperty(Hint = "A comma-separated list of possible outcomes of the expression.")]
+        [ActivityProperty(Hint = "A comma-separated list of possible outcomes of the expression. Use outcome !unknown! for everything not in the list")]
         public IReadOnlyCollection<string> Cases
         {
             get => GetState<IReadOnlyCollection<string>>();
@@ -46,7 +50,15 @@ namespace Elsa.Activities.ControlFlow.Activities
             CancellationToken cancellationToken)
         {
             var result = await expressionEvaluator.EvaluateAsync(Expression, workflowContext, cancellationToken);
-            return Outcome(result);
+
+            if (Cases.Contains(result) || !Cases.Contains("!unknown!"))
+            {
+                return Outcome(result);
+            }
+            else
+            {
+                return Outcome("!unknown!");
+            }
         }
     }
 }

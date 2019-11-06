@@ -8,7 +8,8 @@ namespace Elsa.Activities.Reflection.Extensions
         public static IServiceCollection AddReflectionActivities(this IServiceCollection services)
         {
             return services
-                .AddActivity<ExecuteMethod>();
+                .AddActivity<ExecuteMethod>()
+                .AddActivity<SplitObject>();
         }
     }
 }
