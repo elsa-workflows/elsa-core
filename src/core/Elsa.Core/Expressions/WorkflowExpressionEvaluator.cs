@@ -5,16 +5,19 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Services;
 using Elsa.Services.Models;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Expressions
 {
     public class WorkflowExpressionEvaluator : IWorkflowExpressionEvaluator
     {
         private readonly IDictionary<string, IExpressionEvaluator> evaluators;
+        private readonly ILogger logger;
 
-        public WorkflowExpressionEvaluator(IEnumerable<IExpressionEvaluator> evaluators)
+        public WorkflowExpressionEvaluator(IEnumerable<IExpressionEvaluator> evaluators, ILogger<WorkflowExpressionEvaluator> logger)
         {
             this.evaluators = evaluators.ToDictionary(x => x.Syntax);
+            this.logger = logger;
         }
 
         public async Task<object> EvaluateAsync(IWorkflowExpression expression, Type type, WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
@@ -23,7 +26,16 @@ namespace Elsa.Expressions
                 return default;
             
             var evaluator = evaluators[expression.Syntax];
-            return await evaluator.EvaluateAsync(expression.Expression, type, workflowExecutionContext, cancellationToken);
+
+            try
+            {
+                return await evaluator.EvaluateAsync(expression.Expression, type, workflowExecutionContext, cancellationToken);
+            }
+            catch (Exception e)
+            {
+                logger.LogError(e, "Error while evaluating {Expression}.", expression);
+                return $"Error while evaluating {expression.Syntax} expression \"{expression.Expression}\". Message: {e.Message}";
+            }
         }
     }
 }
