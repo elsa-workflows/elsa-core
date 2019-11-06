@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -29,14 +30,14 @@ namespace Elsa.Activities.Reflection.Activities
         }
 
 
-        [ActivityProperty(Hint = "The name of the variable to get the value from.")]
-        public string InputVariableName
+        [ActivityProperty(Hint = "The variables to use as parameters, seperated by comma in order of method call.")]
+        public string InputVariableNames
         {
-            get => GetState<string>(null, "InputVariableName");
-            set => SetState(value, "InputVariableName");
+            get => GetState<string>(null, "InputVariableNames");
+            set => SetState(value, "InputVariableNames");
         }
 
-        [ActivityProperty(Hint = "The name of the variable to store the value into.")]
+        [ActivityProperty(Hint = "The name of the variable to store the returned value into.")]
         public string OutputVariableName
         {
             get => GetState<string>(null, "OutputVariableName");
@@ -76,17 +77,17 @@ namespace Elsa.Activities.Reflection.Activities
             CancellationToken cancellationToken)
         {
             await Task.Delay(1);
-            var input = context.GetVariable(InputVariableName);
-            return Execute(context, input);
+            var inputValues = InputVariableNames.Split(',').Select(s => context.GetVariable(s)).ToArray();
+            return Execute(context, inputValues);
         }
 
         protected override ActivityExecutionResult OnResume(WorkflowExecutionContext context)
         {
-            var input = context.GetVariable(InputVariableName);
-            return Execute(context, input);
+            var inputValues = InputVariableNames.Split(',').Select(s => context.GetVariable(s)).ToArray();
+            return Execute(context, inputValues);
         }
 
-        private ActivityExecutionResult Execute(WorkflowExecutionContext workflowContext, object receivedInput)
+        private ActivityExecutionResult Execute(WorkflowExecutionContext workflowContext, object[] receivedInputValues)
         {
             string path = Directory.EnumerateFiles(AppDomain.CurrentDomain.BaseDirectory, AssemblyName, SearchOption.AllDirectories).FirstOrDefault();
             Assembly assembly = Assembly.LoadFrom(path);
@@ -96,7 +97,7 @@ namespace Elsa.Activities.Reflection.Activities
             {
                 var staticClassType = assembly.DefinedTypes.Where(t => t.Name == ClassName).FirstOrDefault();
                 var staticMethod = staticClassType.DeclaredMethods.Where(m => m.Name == MethodName).FirstOrDefault();
-                receivedOutput = staticMethod.Invoke(null, new object[1] { receivedInput });
+                receivedOutput = staticMethod.Invoke(null, receivedInputValues);
             }
             else
             {
