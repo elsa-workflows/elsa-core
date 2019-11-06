@@ -110,6 +110,10 @@ namespace Elsa.Scripting.JavaScript.Services
             {
                 var obj = value.AsObject().ToObject();
                 var type = targetType ?? obj.GetType();
+
+                if (type == typeof(string))
+                    return Convert.ToString(obj);
+                
                 var json = JsonConvert.SerializeObject(obj, serializerSettings);
                 return JsonConvert.DeserializeObject(json, type, serializerSettings);
             }
