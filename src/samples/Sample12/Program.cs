@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Elsa.Activities.Console.Extensions;
@@ -48,7 +48,6 @@ namespace Sample12
             return new ServiceCollection()
                 .AddElsa()
                 .AddConsoleActivities()
-                .AddUserTaskActivities()
                 .AddWorkflow<UserTaskWorkflow>()
                 .BuildServiceProvider();
         }
