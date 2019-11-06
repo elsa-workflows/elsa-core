@@ -1,9 +1,11 @@
-﻿using System.Collections.Generic;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.Http.Services;
 using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Expressions;
@@ -26,6 +28,7 @@ namespace Elsa.Activities.Http.Activities
     {
         private readonly IWorkflowExpressionEvaluator expressionEvaluator;
         private readonly IHttpContextAccessor httpContextAccessor;
+        private readonly IEnumerable<IContentFormatter> contentFormatters;
 
         public static IEnumerable<SelectItem> GetStatusCodes()
         {
@@ -51,10 +54,12 @@ namespace Elsa.Activities.Http.Activities
 
         public WriteHttpResponse(
             IWorkflowExpressionEvaluator expressionEvaluator,
-            IHttpContextAccessor httpContextAccessor)
+            IHttpContextAccessor httpContextAccessor,
+            IEnumerable<IContentFormatter> contentFormatters)
         {
             this.expressionEvaluator = expressionEvaluator;
             this.httpContextAccessor = httpContextAccessor;
+            this.contentFormatters = contentFormatters;
         }
 
         /// <summary>
@@ -106,6 +111,17 @@ namespace Elsa.Activities.Http.Activities
             set => SetState(value);
         }
 
+
+        /// <summary>
+        /// Variable name for model body - Read model body from named variable. 
+        /// </summary>
+        [ActivityProperty(Hint = "Variable name for content model - Read content model from named variable.")]
+        public string InputVariable
+        {
+            get => GetState<string>(null, "InputVariable");
+            set => SetState(value, "InputVariable");
+        }
+
         protected override async Task<ActivityExecutionResult> OnExecuteAsync(
             WorkflowExecutionContext workflowContext,
             CancellationToken cancellationToken)
@@ -142,7 +158,19 @@ namespace Elsa.Activities.Http.Activities
                 }
             }
 
-            var bodyText = await expressionEvaluator.EvaluateAsync(Content, workflowContext, cancellationToken);
+            string bodyText = "";
+            object inputVariableValue = workflowContext.GetVariable(InputVariable);
+
+            if (inputVariableValue == null)
+            {
+                bodyText = await expressionEvaluator.EvaluateAsync(Content, workflowContext, cancellationToken);
+            }
+            else
+            {
+                bodyText = System.Text.Encoding.Default.GetString(
+                    await SelectContentParser(ContentType).ParseAsync(inputVariableValue, ContentType)
+                    );
+            }
 
             if (!string.IsNullOrWhiteSpace(bodyText))
             {
@@ -151,5 +179,15 @@ namespace Elsa.Activities.Http.Activities
 
             return Done();
         }
+
+        private IContentFormatter SelectContentParser(string contentType)
+        {
+            var formatters = contentFormatters.OrderByDescending(x => x.Priority).ToList();
+            return formatters.FirstOrDefault(
+                       x => x.SupportedContentTypes.Contains(contentType, StringComparer.OrdinalIgnoreCase)
+                   ) ?? formatters.Last();
+        }
     }
+
+
 }

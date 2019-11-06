@@ -17,5 +17,10 @@ namespace Elsa.Activities.Http.Formatters
             var json = Encoding.UTF8.GetString(content);
             return Task.FromResult<object>(JsonConvert.DeserializeObject<ExpandoObject>(json));
         }
+
+        public Task<byte[]> ParseAsync(object content, string contentType)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

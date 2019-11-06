@@ -8,5 +8,6 @@ namespace Elsa.Activities.Http.Services
         int Priority { get; }
         IEnumerable<string> SupportedContentTypes { get; }
         Task<object> ParseAsync(byte[] content, string contentType);
+        Task<byte[]> ParseAsync(object content, string contentType);
     }
 }

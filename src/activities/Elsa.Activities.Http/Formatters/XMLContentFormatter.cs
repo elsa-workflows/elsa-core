@@ -45,6 +45,18 @@ namespace Elsa.Activities.Http.Formatters
             return null;
         }
 
+
+        public Task<byte[]> ParseAsync(object content, string contentType)
+        {
+            Type rootType = content.GetType();
+            XmlSerializer xmlSerializer = new XmlSerializer(rootType);
+            using (MemoryStream stream = new MemoryStream())
+            {
+                xmlSerializer.Serialize(stream, content);
+                return Task.FromResult<byte[]>(stream.ToArray());
+            }
+        }
+
         private static Type GetRootType(string rootNodeName)
         {
             return XMLContentFormatterCache.TypeCache.Where(t => t.Name == rootNodeName).FirstOrDefault();
@@ -73,7 +85,7 @@ namespace Elsa.Activities.Http.Formatters
 
 
 
-                XMLContentFormatterCache.TypeCache = 
+                XMLContentFormatterCache.TypeCache =
                     AppDomain.CurrentDomain.GetAssemblies().
                     Where(a =>
                         {
