@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -39,7 +40,8 @@ namespace Elsa.Results
         private void ScheduleNextActivities(WorkflowExecutionContext workflowContext, SourceEndpoint endpoint)
         {
             var completedActivity = workflowContext.CurrentActivity;
-            var connections = workflowContext.Workflow.Connections.Where(x => x.Source.Activity == completedActivity && (x.Source.Outcome ?? OutcomeNames.Done) == endpoint.Outcome);
+            var connections = workflowContext.Workflow.Connections.Where(x => x.Source.Activity == completedActivity &&
+                                                                              (x.Source.Outcome ?? OutcomeNames.Done).Equals(endpoint.Outcome, StringComparison.OrdinalIgnoreCase));
             var activities = connections.Select(x => x.Target.Activity);
             
             workflowContext.ScheduleActivities(activities);
