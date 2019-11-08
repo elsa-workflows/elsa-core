@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Exceptions;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.Logging;
@@ -33,8 +34,10 @@ namespace Elsa.Expressions
             }
             catch (Exception e)
             {
-                logger.LogError(e, "Error while evaluating {Expression}.", expression);
-                return $"Error while evaluating {expression.Syntax} expression \"{expression.Expression}\". Message: {e.Message}";
+                string message = $"Error while evaluating {expression.Syntax} expression \"{expression.Expression}\". Message: {e.Message}";
+
+                logger.LogError(e, message);
+                throw new WorkflowException(message);
             }
         }
     }
