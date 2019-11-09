@@ -15,6 +15,7 @@ namespace Elsa.Activities.Console.Activities
     [ActivityDefinition(
         Category = "Console",
         Description = "Read text from standard in.",
+        Icon = "fas fa-terminal",
         RuntimeDescription = "a => !!a.state.variableName ? `Read text from standard in and store into <strong>${ a.state.variableName }</strong>.` : 'Read text from standard in.'",
         Outcomes = new[] { OutcomeNames.Done }
     )]
@@ -59,11 +60,10 @@ namespace Elsa.Activities.Console.Activities
         {
             if (!string.IsNullOrWhiteSpace(VariableName))
                 workflowContext.CurrentScope.SetVariable(VariableName, receivedInput);
-
-            workflowContext.SetLastResult(receivedInput);
+            
             Output.SetVariable("Input", receivedInput);
 
-            return Outcome(OutcomeNames.Done);
+            return Done();
         }
     }
 }
