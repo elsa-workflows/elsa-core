@@ -37,14 +37,14 @@ namespace Elsa.Activities.Http.Activities
         }
 
         private readonly IHttpContextAccessor httpContextAccessor;
-        private readonly IEnumerable<IContentFormatter> contentFormatters;
+        private readonly IEnumerable<IHttpRequestBodyParser> parsers;
 
         public ReceiveHttpRequest(
             IHttpContextAccessor httpContextAccessor,
-            IEnumerable<IContentFormatter> contentFormatters)
+            IEnumerable<IHttpRequestBodyParser> parsers)
         {
             this.httpContextAccessor = httpContextAccessor;
-            this.contentFormatters = contentFormatters;
+            this.parsers = parsers;
         }
 
         /// <summary>
@@ -85,16 +85,6 @@ namespace Elsa.Activities.Http.Activities
             set => SetState(value);
         }
 
-        /// <summary>
-        /// Variable name for model body - Read model body to named variable. 
-        /// </summary>
-        [ActivityProperty(Hint = "Variable name for content model - Read content model to named variable.")]
-        public string OutputVariable
-        {
-            get => GetState<string>(null, "OutputVariable");
-            set => SetState(value, "OutputVariable");
-        }
-
         protected override ActivityExecutionResult OnExecute(WorkflowExecutionContext workflowContext)
         {
             return Halt(true);
@@ -116,32 +106,18 @@ namespace Elsa.Activities.Http.Activities
 
             if (ReadContent)
             {
-                if (request.HasFormContentType)
-                {
-                    model.Form = (await request.ReadFormAsync(cancellationToken)).ToDictionary(
-                        x => x.Key,
-                        x => new StringValuesModel(x.Value)
-                    );
-                }
-
                 var parser = SelectContentParser(request.ContentType);
-                var content = await request.ReadContentAsBytesAsync(cancellationToken);
-                model.Body = await parser.ParseAsync(content, request.ContentType);
+                model.Body = await parser.ParseAsync(request, cancellationToken);
             }
 
-            Output["Content"] = model;
-            workflowContext.CurrentScope.LastResult = model;
-            if(OutputVariable != null && OutputVariable != "")
-            {
-                workflowContext.SetVariable(OutputVariable, model.Body);
-            }
+            workflowContext.CurrentScope.LastResult = Output.SetVariable("Content", model);
 
             return Done();
         }
 
-        private IContentFormatter SelectContentParser(string contentType)
+        private IHttpRequestBodyParser SelectContentParser(string contentType)
         {
-            var formatters = contentFormatters.OrderByDescending(x => x.Priority).ToList();
+            var formatters = parsers.OrderByDescending(x => x.Priority).ToList();
             return formatters.FirstOrDefault(
                        x => x.SupportedContentTypes.Contains(contentType, StringComparer.OrdinalIgnoreCase)
                    ) ?? formatters.Last();

@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Persistence.YesSql.Indexes;
@@ -48,12 +49,14 @@ namespace Elsa.Persistence.YesSql.StartupTasks
                             .Column<string>("WorkflowDefinitionId")
                             .Column<string>("CorrelationId")
                             .Column<string>("WorkflowStatus")
+                            .Column<DateTime>("CreatedAt")
                         )
                         .CreateMapIndexTable(nameof(WorkflowInstanceBlockingActivitiesIndex), table => table
                             .Column<string>("ActivityId")
                             .Column<string>("ActivityType")
                             .Column<string>("CorrelationId")
                             .Column<string>("WorkflowStatus")
+                            .Column<DateTime>("CreatedAt")
                         );
 
                     transaction.Commit();

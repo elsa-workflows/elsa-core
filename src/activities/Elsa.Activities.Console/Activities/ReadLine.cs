@@ -5,6 +5,7 @@ using Elsa.Attributes;
 using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
+using Newtonsoft.Json.Linq;
 
 namespace Elsa.Activities.Console.Activities
 {
@@ -60,7 +61,7 @@ namespace Elsa.Activities.Console.Activities
                 workflowContext.CurrentScope.SetVariable(VariableName, receivedInput);
 
             workflowContext.SetLastResult(receivedInput);
-            Output["Input"] = receivedInput;
+            Output.SetVariable("Input", receivedInput);
 
             return Outcome(OutcomeNames.Done);
         }

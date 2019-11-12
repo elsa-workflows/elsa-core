@@ -7,6 +7,7 @@ using Elsa.Expressions;
 using Elsa.Extensions;
 using Elsa.Models;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json.Linq;
 using NodaTime;
 
 namespace Elsa.Services.Models
@@ -85,7 +86,8 @@ namespace Elsa.Services.Models
         public Task<T> EvaluateAsync<T>(IWorkflowExpression<T> expression, CancellationToken cancellationToken) =>
             ExpressionEvaluator.EvaluateAsync(expression, this, cancellationToken);
 
-        public void SetLastResult(object value) => CurrentScope.LastResult = value;
+        public void SetLastResult(object value) => SetLastResult(JToken.FromObject(value));
+        public void SetLastResult(JToken value) => CurrentScope.LastResult = value;
 
         public void Start()
         {

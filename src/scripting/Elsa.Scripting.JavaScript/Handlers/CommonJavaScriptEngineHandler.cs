@@ -32,11 +32,10 @@ namespace Elsa.Scripting.JavaScript.Handlers
                 // Jint causes an exception when evaluating expressions using the backtick syntax in combination with JObjects.
                 // Therefore converting JObjects to ExpandoObjects, allowing expressions such as `My age is ${person.age}`.
                 
-                var value = variable.Value is JObject jObject
-                    ? jObject.ToObject<ExpandoObject>()
-                    : variable.Value;
-                
-                engine.SetValue(variable.Key, value);
+                if(variable.Value is JObject jObject)
+                    engine.SetValue(variable.Key, jObject);
+                else
+                    engine.SetValue(variable.Key, variable.Value);
             }
 
             foreach (var activity in executionContext.Workflow.Activities.Where(x => !string.IsNullOrWhiteSpace(x.Name) && x.Output != null))

@@ -1,13 +1,14 @@
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Activities.Http.Services
 {
-    public interface IContentFormatter
+    public interface IHttpRequestBodyParser
     {
         int Priority { get; }
         IEnumerable<string> SupportedContentTypes { get; }
-        Task<object> ParseAsync(byte[] content, string contentType);
-        Task<byte[]> ParseAsync(object content, string contentType);
+        Task<object> ParseAsync(HttpRequest request, CancellationToken cancellationToken);
     }
 }

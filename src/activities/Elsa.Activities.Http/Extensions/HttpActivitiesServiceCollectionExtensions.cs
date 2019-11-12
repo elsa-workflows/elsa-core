@@ -1,8 +1,8 @@
 using System;
 using Elsa.Activities.Http.Activities;
-using Elsa.Activities.Http.Formatters;
 using Elsa.Activities.Http.Liquid;
 using Elsa.Activities.Http.Options;
+using Elsa.Activities.Http.Parsers;
 using Elsa.Activities.Http.RequestHandlers.Handlers;
 using Elsa.Activities.Http.Services;
 using Elsa.Extensions;
@@ -29,13 +29,19 @@ namespace Elsa.Activities.Http.Extensions
             services
                 .AddActivity<ReceiveHttpRequest>()
                 .AddActivity<WriteHttpResponse>()
-                .AddActivity<SendHttpRequest>();
+                .AddActivity<SendHttpRequest>()
+                .AddActivity<Redirect>();
 
             services
                 .AddSingleton<ITokenService, TokenService>()
-                .AddSingleton<IContentFormatter, DefaultContentFormatter>()
-                .AddSingleton<IContentFormatter, JsonContentFormatter>()
-                .AddSingleton<IContentFormatter, XMLContentFormatter>()
+                .AddSingleton<IHttpRequestBodyParser, DefaultHttpRequestBodyParser>()
+                .AddSingleton<IHttpRequestBodyParser, JsonHttpRequestBodyParser>()
+                .AddSingleton<IHttpRequestBodyParser, XMLHttpRequestBodyParser>()
+                .AddSingleton<IHttpRequestBodyParser, FormHttpRequestBodyParser>()
+                .AddSingleton<IHttpResponseBodyParser, DefaultHttpResponseBodyParser>()
+                .AddSingleton<IHttpResponseBodyParser, JsonHttpResponseBodyParser>()
+                .AddSingleton<IHttpResponseBodyParser, XMLHttpResponseBodyParser>()
+
                 .AddSingleton<IActionContextAccessor, ActionContextAccessor>()
                 .AddSingleton<IAbsoluteUrlProvider, DefaultAbsoluteUrlProvider>()
                 .AddHttpContextAccessor()

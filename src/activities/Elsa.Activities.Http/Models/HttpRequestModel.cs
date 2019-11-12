@@ -10,6 +10,5 @@ namespace Elsa.Activities.Http.Models
         public IDictionary<string, StringValuesModel> QueryString { get; set; }
         public IDictionary<string, StringValuesModel> Headers { get; set; }
         public object Body { get; set; }
-        public IDictionary<string, StringValuesModel> Form { get; set; }
     }
 }
