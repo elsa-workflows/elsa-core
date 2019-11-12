@@ -32,4 +32,22 @@
         <ProjectReference Include="..\Elsa.WorkflowDesigner\Elsa.WorkflowDesigner.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Update="Theme\argon-dashboard\assets\js\plugins\jquery-scroll-lock\dist\jquery-scrollLock.min.js">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Theme\argon-dashboard\assets\js\plugins\jquery.scrollbar\jquery.scrollbar.css">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Theme\argon-dashboard\assets\js\plugins\jquery.scrollbar\jquery.scrollbar.min.js">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Theme\argon-dashboard\assets\js\plugins\jquery\dist\jquery.min.js">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="Theme\argon-dashboard\assets\js\plugins\jquery\dist\jquery.slim.min.js">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
 </Project>
