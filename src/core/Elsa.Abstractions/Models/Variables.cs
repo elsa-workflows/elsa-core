@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+using System;
+using System.Collections.Generic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -29,10 +30,15 @@ namespace Elsa.Models
             return ContainsKey(name) ? this[name] : default;
         }
 
+        public object GetVariable(string name, string typeName)
+        {
+            var value = ContainsKey(name) ? this[name] : default;
+            return value == null ? default : value.ToObject(Type.GetType(typeName));
+        }
+
         public T GetVariable<T>(string name)
         {
             var value = ContainsKey(name) ? this[name] : default;
-
             return value == null ? default : value.ToObject<T>();
         }
 
