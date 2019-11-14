@@ -30,7 +30,9 @@ namespace Elsa.Activities.Http.Extensions
                 .AddActivity<ReceiveHttpRequest>()
                 .AddActivity<WriteHttpResponse>()
                 .AddActivity<SendHttpRequest>()
-                .AddActivity<Redirect>();
+                .AddActivity<Redirect>()
+                .AddActivity<ReceiveXmlHttpRequest>()
+                .AddActivity<WriteXmlHttpResponse>();
 
             services
                 .AddSingleton<ITokenService, TokenService>()
