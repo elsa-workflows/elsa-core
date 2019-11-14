@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -75,7 +75,14 @@ namespace Elsa.Services.Models
             var scope = Workflow.Scopes.FirstOrDefault(x => x.Variables.ContainsKey(name)) ?? CurrentScope;
             return scope.GetVariable<T>(name);
         }
-        
+
+        public object GetVariable(string name, string typeName)
+        {
+            // Get the first scope (starting from the newest one) containing the variable.
+            var scope = Workflow.Scopes.FirstOrDefault(x => x.Variables.ContainsKey(name)) ?? CurrentScope;
+            return scope.GetVariable(name, typeName);
+        }
+
         public object GetVariable(string name)
         {
             // Get the first scope (starting from the newest one) containing the variable.
