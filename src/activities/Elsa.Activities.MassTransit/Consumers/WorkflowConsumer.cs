@@ -23,6 +23,7 @@ namespace Elsa.Activities.MassTransit.Consumers
             var input = new Variables();
 
             input.SetVariable(Constants.MessageInputKey, message);
+            input.SetVariable(Constants.MessageTypeNameInputKey, typeof(T).AssemblyQualifiedName);
 
             var correlationId = context.CorrelationId?.ToString();
 

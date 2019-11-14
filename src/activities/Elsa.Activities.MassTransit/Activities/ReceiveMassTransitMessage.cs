@@ -32,14 +32,11 @@ namespace Elsa.Activities.MassTransit.Activities
 
         protected override bool OnCanExecute(WorkflowExecutionContext context)
         {
-            var message = context.Workflow.Input[Constants.MessageInputKey];
+            var messageTypeName = context.Workflow.Input[Constants.MessageTypeNameInputKey];
+            var messageInputType = System.Type.GetType(messageTypeName.ToString());
             var messageType = MessageType;
-
-            // TODO: Workout what needs to be done here as the message input is now a JObject,
-            // and not the original message received from the bus.
-
-            // return message != null && messageType != null && message.GetType() == messageType;
-            return true;
+            
+            return messageInputType != null && messageType != null && messageInputType == messageType;
         }
 
         protected override ActivityExecutionResult OnExecute(WorkflowExecutionContext context)
