@@ -53,9 +53,11 @@ namespace Elsa.Activities.Http.Activities
         }
 
         public WriteXmlHttpResponse(
-            IHttpContextAccessor httpContextAccessor)
+            IHttpContextAccessor httpContextAccessor,
+            IWorkflowExpressionEvaluator expressionEvaluator)
         {
             this.httpContextAccessor = httpContextAccessor;
+            this.expressionEvaluator = expressionEvaluator;
         }
 
         /// <summary>
@@ -96,6 +98,7 @@ namespace Elsa.Activities.Http.Activities
             set => SetState(value);
         }
 
+
         protected override async Task<ActivityExecutionResult> OnExecuteAsync(
             WorkflowExecutionContext workflowContext,
             CancellationToken cancellationToken)
@@ -134,7 +137,7 @@ namespace Elsa.Activities.Http.Activities
 
 
             string bodyText;
-            var inputObject = workflowContext.CurrentScope.LastResult;
+            object inputObject = workflowContext.GetVariable("Result") != null ? workflowContext.GetVariable("Result") : workflowContext.CurrentScope.LastResult;
 
             Type rootType = inputObject.GetType();
             XmlSerializer xmlSerializer = new XmlSerializer(rootType);
