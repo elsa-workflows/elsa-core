@@ -1,0 +1,34 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <PackageVersion>1.0.0</PackageVersion>
+        <LangVersion>latest</LangVersion>
+        <Authors>Elsa Contributors</Authors>
+        <Description>
+            Elsa is a set of workflow libraries and tools that enable super-fast workflowing capabilities in any .NET Core application.
+            This package provides the following Reflection activities:
+            
+            * ExecuteFunction
+            
+        </Description>
+        <Copyright>2019</Copyright>
+        <PackageProjectUrl>https://github.com/elsa-workflows/elsa-core</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/elsa-workflows/elsa-core</RepositoryUrl>
+        <RepositoryType>GitHub</RepositoryType>
+        <PackageTags>elsa, workflows</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Rebus" Version="5.4.0" />
+      <PackageReference Include="Rebus.AmazonSqs" Version="4.1.1" />
+      <PackageReference Include="Rebus.AzureQueues" Version="0.4.0" />
+      <PackageReference Include="Rebus.Msmq" Version="5.1.1" />
+      <PackageReference Include="Rebus.RabbitMq" Version="5.2.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
+    </ItemGroup>
+
+</Project>
