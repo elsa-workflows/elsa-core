@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Elsa.Extensions;
 using Elsa.Models;
-using Elsa.Persistence.EntityFrameworkCore.Documents;
+using Elsa.Persistence.EntityFrameworkCore.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Services
@@ -135,10 +135,10 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             await dbContext.SaveChangesAsync(cancellationToken);
         }
 
-        private WorkflowInstanceDocument Map(WorkflowInstance source) => mapper.Map<WorkflowInstanceDocument>(source);
-        private WorkflowInstance Map(WorkflowInstanceDocument source) => mapper.Map<WorkflowInstance>(source);
+        private WorkflowInstanceEntity Map(WorkflowInstance source) => mapper.Map<WorkflowInstanceEntity>(source);
+        private WorkflowInstance Map(WorkflowInstanceEntity source) => mapper.Map<WorkflowInstance>(source);
 
-        private IEnumerable<WorkflowInstance> Map(IEnumerable<WorkflowInstanceDocument> source) =>
+        private IEnumerable<WorkflowInstance> Map(IEnumerable<WorkflowInstanceEntity> source) =>
             mapper.Map<IEnumerable<WorkflowInstance>>(source);
     }
 }

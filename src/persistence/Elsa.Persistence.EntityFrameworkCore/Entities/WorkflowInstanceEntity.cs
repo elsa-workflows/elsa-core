@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using Elsa.Models;
 
-namespace Elsa.Persistence.EntityFrameworkCore.Documents
+namespace Elsa.Persistence.EntityFrameworkCore.Entities
 {
-    public class WorkflowInstanceDocument
+    public class WorkflowInstanceEntity
     {
         public string Id { get; set; }
         public string DefinitionId { get; set; }
@@ -16,11 +16,11 @@ namespace Elsa.Persistence.EntityFrameworkCore.Documents
         public DateTime? FinishedAt { get; set; }
         public DateTime? FaultedAt { get; set; }
         public DateTime? AbortedAt { get; set; }
-        public IDictionary<string, ActivityInstance> Activities { get; set; } = new Dictionary<string, ActivityInstance>();
         public Stack<WorkflowExecutionScope> Scopes { get; set; }
         public Variables Input { get; set; }
-        public HashSet<BlockingActivity> BlockingActivities { get; set; }
         public ICollection<LogEntry> ExecutionLog { get; set; }
         public WorkflowFault Fault { get; set; }
+        public ICollection<ActivityInstanceEntity> Activities { get; set; }
+        public ICollection<BlockingActivityEntity> BlockingActivities { get; set; }
     }
 }

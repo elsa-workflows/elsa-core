@@ -4,7 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
 using Elsa.Models;
-using Elsa.Persistence.EntityFrameworkCore.Documents;
+using Elsa.Persistence.EntityFrameworkCore.Entities;
 using Elsa.Persistence.EntityFrameworkCore.Extensions;
 using Microsoft.EntityFrameworkCore;
 
@@ -98,12 +98,12 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             return definitionRecords.Count;
         }
 
-        private WorkflowDefinitionVersionDocument Map(WorkflowDefinitionVersion source)
+        private WorkflowDefinitionVersionEntity Map(WorkflowDefinitionVersion source)
         {
-            return mapper.Map<WorkflowDefinitionVersionDocument>(source);
+            return mapper.Map<WorkflowDefinitionVersionEntity>(source);
         }
 
-        private WorkflowDefinitionVersion Map(WorkflowDefinitionVersionDocument source)
+        private WorkflowDefinitionVersion Map(WorkflowDefinitionVersionEntity source)
         {
             return mapper.Map<WorkflowDefinitionVersion>(source);
         }

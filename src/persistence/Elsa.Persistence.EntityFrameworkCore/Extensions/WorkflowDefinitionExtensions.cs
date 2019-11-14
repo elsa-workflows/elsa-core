@@ -1,13 +1,13 @@
 using System.Linq;
 using Elsa.Models;
-using Elsa.Persistence.EntityFrameworkCore.Documents;
+using Elsa.Persistence.EntityFrameworkCore.Entities;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Extensions
 {
     public static class WorkflowDefinitionDocumentExtensions
     {
-        public static IQueryable<WorkflowDefinitionVersionDocument> WithVersion(
-            this IQueryable<WorkflowDefinitionVersionDocument> query,
+        public static IQueryable<WorkflowDefinitionVersionEntity> WithVersion(
+            this IQueryable<WorkflowDefinitionVersionEntity> query,
             VersionOptions version)
         {
 

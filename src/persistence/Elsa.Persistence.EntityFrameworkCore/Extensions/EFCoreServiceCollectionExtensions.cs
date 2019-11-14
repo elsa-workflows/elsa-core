@@ -23,7 +23,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Extensions
 
             services
                 .AddAutoMapperProfile<InstantProfile>(ServiceLifetime.Singleton)
-                .AddAutoMapperProfile<DocumentProfile>(ServiceLifetime.Singleton);
+                .AddAutoMapperProfile<EntitiesProfile>(ServiceLifetime.Singleton);
 
             return new EntityFrameworkCoreElsaBuilder(configuration.Services);
         }
