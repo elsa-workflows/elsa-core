@@ -52,8 +52,13 @@ namespace Elsa.Activities.MassTransit.Extensions
                     var options = sp.GetRequiredService<IOptions<RabbitMqOptions>>().Value;
                     var host = bus.Host(new Uri(options.Host), h =>
                     {
-                        h.Username(options.Username);
-                        h.Password(options.Password);
+                        if (!string.IsNullOrEmpty(options.Username))
+                        {
+                            h.Username(options.Username);
+
+                            if (!string.IsNullOrEmpty(options.Password))
+                                h.Password(options.Password);
+                        }
                     });
 
 
