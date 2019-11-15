@@ -30,10 +30,10 @@ namespace Elsa.Models
             return ContainsKey(name) ? this[name] : default;
         }
 
-        public object GetVariable(string name, string typeName)
+        public object GetVariable(string name, Type type)
         {
             var value = ContainsKey(name) ? this[name] : default;
-            return value == null ? default : value.ToObject(Type.GetType(typeName));
+            return value == null ? default : value.ToObject(type);
         }
 
         public T GetVariable<T>(string name)
