@@ -1,4 +1,5 @@
 using Newtonsoft.Json.Linq;
+using System;
 
 namespace Elsa.Models
 {
@@ -14,7 +15,7 @@ namespace Elsa.Models
 
         public void SetVariable(string variableName, object value) => Variables.SetVariable(variableName, value);
         public T GetVariable<T>(string name) => Variables.GetVariable<T>(name);
-        public object GetVariable(string name, string typeName) => Variables.GetVariable(name, typeName);
+        public object GetVariable(string name, Type type) => Variables.GetVariable(name, type);
         public JToken GetVariable(string name) => Variables.GetVariable(name);
     }
 }
