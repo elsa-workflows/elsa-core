@@ -58,9 +58,6 @@ namespace Elsa.Persistence.EntityFrameworkCore.Migrations
                     Id = table.Column<string>(nullable: false),
                     WorkflowDefinitionVersionId = table.Column<string>(nullable: true),
                     Type = table.Column<string>(nullable: true),
-                    Name = table.Column<string>(nullable: true),
-                    DisplayName = table.Column<string>(nullable: true),
-                    Description = table.Column<string>(nullable: true),
                     Left = table.Column<int>(nullable: false),
                     Top = table.Column<int>(nullable: false),
                     State = table.Column<string>(nullable: true)

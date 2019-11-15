@@ -42,20 +42,27 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
         public async Task<WorkflowDefinitionVersion> AddAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken = default)
         {
             var entity = Map(definition);
+            
             entity.Activities = Map(definition.Activities).ToList();
+            entity.Connections = Map(definition.Connections).ToList();
+            RegenerateIdentities(entity);
             
             await dbContext.WorkflowDefinitionVersions.AddAsync(entity, cancellationToken);
             await dbContext.SaveChangesAsync(cancellationToken);
             return Map(entity);
         }
-        
+
         public async Task<WorkflowDefinitionVersion> UpdateAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken)
         {
             var entity = await dbContext.WorkflowDefinitionVersions.FindAsync(definition.Id);
 
             DeleteActivities(entity);
+            DeleteConnections(entity);
+            
             entity = mapper.Map(definition, entity);
             entity.Activities = Map(definition.Activities).ToList();
+            entity.Connections = Map(definition.Connections).ToList();
+            
             dbContext.WorkflowDefinitionVersions.Update(entity);
 
             await dbContext.SaveChangesAsync(cancellationToken);
@@ -106,8 +113,28 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
                 .WorkflowInstances.Where(x => x.DefinitionId == id)
                 .ToListAsync(cancellationToken);
 
+            var activityDefinitionRecords = await dbContext.ActivityDefinitions
+                .Where(x => x.WorkflowDefinitionVersion.DefinitionId == id)
+                .ToListAsync(cancellationToken);
+
+            var connectionRecords = await dbContext.ConnectionDefinitions
+                .Where(x => x.WorkflowDefinitionVersion.DefinitionId == id)
+                .ToListAsync(cancellationToken);
+
+            var activityInstanceRecords = await dbContext.ActivityInstances
+                .Where(x => x.WorkflowInstance.DefinitionId == id)
+                .ToListAsync(cancellationToken);
+
+            var blockingActivityRecords = await dbContext.BlockingActivities
+                .Where(x => x.WorkflowInstance.DefinitionId == id)
+                .ToListAsync(cancellationToken);
+
             dbContext.WorkflowInstances.RemoveRange(instanceRecords);
             dbContext.WorkflowDefinitionVersions.RemoveRange(definitionRecords);
+            dbContext.ActivityDefinitions.RemoveRange(activityDefinitionRecords);
+            dbContext.ConnectionDefinitions.RemoveRange(connectionRecords);
+            dbContext.ActivityInstances.RemoveRange(activityInstanceRecords);
+            dbContext.BlockingActivities.RemoveRange(blockingActivityRecords);
 
             await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -118,6 +145,32 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
         {
             dbContext.ActivityDefinitions.RemoveRange(entity.Activities);
             entity.Activities.Clear();
+        }
+        
+        private void DeleteConnections(WorkflowDefinitionVersionEntity entity)
+        {
+            dbContext.ConnectionDefinitions.RemoveRange(entity.Connections);
+            entity.Connections.Clear();
+        }
+        
+        private void RegenerateIdentities(WorkflowDefinitionVersionEntity entity)
+        {
+            foreach (var activity in entity.Activities)
+            {
+                var newId = idGenerator.Generate();
+
+                foreach (var connection in entity.Connections.Where(x => x.DestinationActivityId == activity.Id))
+                {
+                    connection.DestinationActivityId = newId;
+                }
+                
+                foreach (var connection in entity.Connections.Where(x => x.SourceActivityId == activity.Id))
+                {
+                    connection.SourceActivityId = newId;
+                }
+
+                activity.Id = newId;
+            }
         }
 
         private WorkflowDefinitionVersionEntity Map(WorkflowDefinitionVersion source)
@@ -145,19 +198,19 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             foreach (var activity in activities)
             {
                 var entity = mapper.Map<ActivityDefinitionEntity>(activity);
-                entity.Id = idGenerator.Generate();
+                //entity.Id = idGenerator.Generate();
                 yield return entity;
             }
         }
         
-//        private IEnumerable<ConnectionDefinitionEntity> Map(IEnumerable<ConnectionDefinition> connections)
-//        {
-//            foreach (var connection in connections)
-//            {
-//                var entity = mapper.Map<ConnectionDefinitionEntity>(connection);
-//                entity.Id = idGenerator.Generate();
-//                yield return entity;
-//            }
-//        }
+        private IEnumerable<ConnectionDefinitionEntity> Map(IEnumerable<ConnectionDefinition> connections)
+        {
+            foreach (var connection in connections)
+            {
+                var entity = mapper.Map<ConnectionDefinitionEntity>(connection);
+                //entity.Id = idGenerator.Generate();
+                yield return entity;
+            }
+        }
     }
 }
