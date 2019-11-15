@@ -15,19 +15,20 @@ namespace Elsa.Activities.MassTransit.Consumers
         {
             this.workflowInvoker = workflowInvoker;
         }
-        
+
         public async Task Consume(ConsumeContext<T> context)
         {
             var message = context.Message;
             var activityType = nameof(ReceiveMassTransitMessage);
             var input = new Variables();
 
-            input.SetVariable("Message", message);
-            
+            input.SetVariable(Constants.MessageInputKey, message);
+            input.SetVariable(Constants.MessageTypeNameInputKey, typeof(T).AssemblyQualifiedName);
+
             var correlationId = context.CorrelationId?.ToString();
-            
+
             await workflowInvoker.TriggerAsync(
-                activityType, 
+                activityType,
                 input,
                 correlationId,
                 x => ReceiveMassTransitMessage.GetMessageType(x) == message.GetType(),
