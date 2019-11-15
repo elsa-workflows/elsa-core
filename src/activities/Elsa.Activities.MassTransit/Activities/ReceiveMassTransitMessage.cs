@@ -32,10 +32,11 @@ namespace Elsa.Activities.MassTransit.Activities
 
         protected override bool OnCanExecute(WorkflowExecutionContext context)
         {
-            var message = context.Workflow.Input["message"];
+            var messageTypeName = context.Workflow.Input[Constants.MessageTypeNameInputKey];
+            var messageInputType = System.Type.GetType(messageTypeName.ToString());
             var messageType = MessageType;
-
-            return message != null && messageType != null && message.GetType() == messageType;
+            
+            return messageInputType != null && messageType != null && messageInputType == messageType;
         }
 
         protected override ActivityExecutionResult OnExecute(WorkflowExecutionContext context)
@@ -46,7 +47,7 @@ namespace Elsa.Activities.MassTransit.Activities
         protected override Task<ActivityExecutionResult> OnResumeAsync(WorkflowExecutionContext context,
             CancellationToken cancellationToken)
         {
-            var message = context.Workflow.Input["message"];
+            var message = context.Workflow.Input[Constants.MessageInputKey];
             context.SetLastResult(message);
 
             return Task.FromResult(Done());
