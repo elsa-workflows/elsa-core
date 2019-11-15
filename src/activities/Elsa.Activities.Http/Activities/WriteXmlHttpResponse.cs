@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
+using Elsa.Activities.Http.Extensions;
 using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Expressions;
@@ -89,6 +90,30 @@ namespace Elsa.Activities.Http.Activities
         }
 
         /// <summary>
+        /// The type of the received document.
+        /// </summary>
+        [ActivityProperty(
+            Hint = "The type name of the received document. (Only Typename or with namespace)"
+        )]
+        public string TypeName
+        {
+            get => GetState<string>();
+            set => SetState(value);
+        }
+
+        /// <summary>
+        /// The library to load (e.g. dll file without path).
+        /// </summary>
+        [ActivityProperty(
+            Hint = "The assembly to load (e.g. poco-dll file without path)."
+        )]
+        public string AssemlbyName
+        {
+            get => GetState<string>();
+            set => SetState(value);
+        }
+
+        /// <summary>
         /// The headers to send along with the response. One 'header: value' pair per line.
         /// </summary>
         [ActivityProperty(Hint = "The headers to send along with the response. One 'header: value' pair per line.")]
@@ -137,9 +162,10 @@ namespace Elsa.Activities.Http.Activities
 
 
             string bodyText;
-            object inputObject = workflowContext.GetVariable("Result") != null ? workflowContext.GetVariable("Result") : workflowContext.CurrentScope.LastResult;
+            Type rootType = TypeSafeXMLExtensions.GetType(TypeName, AssemlbyName);
+            var inputObject = workflowContext.GetVariable("Result", rootType) != null ? workflowContext.GetVariable("Result", rootType) : workflowContext.CurrentScope.LastResult;
 
-            Type rootType = inputObject.GetType();
+            
             XmlSerializer xmlSerializer = new XmlSerializer(rootType);
             using (MemoryStream stream = new MemoryStream())
             {

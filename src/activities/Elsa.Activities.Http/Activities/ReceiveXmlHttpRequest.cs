@@ -122,10 +122,11 @@ namespace Elsa.Activities.Http.Activities
             {
                 Type rootType = TypeSafeXMLExtensions.GetType(rootNodeTypeName, AssemlbyName);
                 XmlSerializer xmlSerializer = new XmlSerializer(rootType);
-                model.Body = xmlSerializer.Deserialize(new MemoryStream(content));
+                var bodyObject = xmlSerializer.Deserialize(new MemoryStream(content));
+                model.Body = bodyObject;
                 workflowContext.CurrentScope.LastResult = Output.SetVariable("Content", model);
                 Output.SetVariable("Result", model.Body);
-                workflowContext.SetVariable("Result", model.Body);
+                workflowContext.SetVariable("Result", bodyObject);
             }
 
             return Done();
