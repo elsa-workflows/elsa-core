@@ -35,9 +35,10 @@ namespace Elsa.Persistence.MongoDb.Services
             return definition;
         }
 
-        public async Task AddAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken = default)
+        public async Task<WorkflowDefinitionVersion> AddAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken = default)
         {
             await workflowDefinitionCollection.InsertOneAsync(definition, new InsertOneOptions(), cancellationToken);
+            return definition;
         }
 
         public async Task<WorkflowDefinitionVersion> GetByIdAsync(

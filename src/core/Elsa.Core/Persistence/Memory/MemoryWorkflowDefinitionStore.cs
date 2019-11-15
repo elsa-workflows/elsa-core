@@ -29,7 +29,7 @@ namespace Elsa.Persistence.Memory
             return definition;
         }
 
-        public async Task AddAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken = default)
+        public async Task<WorkflowDefinitionVersion> AddAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken = default)
         {
             var existingDefinition = await GetByIdAsync(definition.Id, VersionOptions.SpecificVersion(definition.Version), cancellationToken);
 
@@ -39,6 +39,7 @@ namespace Elsa.Persistence.Memory
             }
 
             definitions.Add(definition);
+            return definition;
         }
 
         public Task<WorkflowDefinitionVersion> GetByIdAsync(string id, VersionOptions version, CancellationToken cancellationToken = default)

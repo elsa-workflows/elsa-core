@@ -18,7 +18,6 @@ namespace Elsa.Activities.MassTransit.Consumers
 
         public async Task Consume(ConsumeContext<T> context)
         {
-            typeof(T).AssemblyQualifiedName
             var message = context.Message;
             var activityType = nameof(ReceiveMassTransitMessage);
             var input = new Variables();

@@ -32,12 +32,13 @@ namespace Elsa.Persistence.YesSql.Services
             return mapper.Map<WorkflowDefinitionVersion>(document);
         }
 
-        public async Task AddAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken = default)
+        public async Task<WorkflowDefinitionVersion> AddAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken = default)
         {
             var document = mapper.Map<WorkflowDefinitionVersionDocument>(definition);
 
             session.Save(document);
             await session.CommitAsync();
+            return mapper.Map<WorkflowDefinitionVersion>(document);
         }
 
         public async Task<WorkflowDefinitionVersion> GetByIdAsync(

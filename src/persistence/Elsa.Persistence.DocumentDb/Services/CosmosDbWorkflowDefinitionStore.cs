@@ -28,11 +28,12 @@ namespace Elsa.Persistence.DocumentDb.Services
             mapper = configuration.CreateMapper();
         }
 
-        public async Task AddAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken = default)
+        public async Task<WorkflowDefinitionVersion> AddAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken = default)
         {
             var document = Map(definition);
             var client = storage.Client;
             await client.CreateDocumentWithRetriesAsync(storage.CollectionUri, document, cancellationToken: cancellationToken);
+            return Map(document);
         }
 
         public async Task<int> DeleteAsync(string id, CancellationToken cancellationToken = default)
