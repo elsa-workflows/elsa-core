@@ -77,13 +77,13 @@ namespace Elsa.Activities.Reflection.Activities
             CancellationToken cancellationToken)
         {
             await Task.Delay(1);
-            var inputValues = InputVariableNames.Split(',').Select(s => context.GetVariable(s)).ToArray();
+            var inputValues = InputVariableNames.Split(',').Select(s => context.GetVariable<object>(s)).ToArray();
             return Execute(context, inputValues);
         }
 
         protected override ActivityExecutionResult OnResume(WorkflowExecutionContext context)
         {
-            var inputValues = InputVariableNames.Split(',').Select(s => context.GetVariable(s)).ToArray();
+            var inputValues = InputVariableNames.Split(',').Select(s => context.GetVariable<object>(s)).ToArray();
             return Execute(context, inputValues);
         }
 

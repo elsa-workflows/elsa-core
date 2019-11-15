@@ -14,6 +14,7 @@ using Rebus.Activation;
 using Rebus.Bus;
 using Rebus.Config;
 using Rebus.Encryption;
+using Rebus.Routing.TypeBased;
 
 namespace Elsa.Activities.Reflection.Activities
 {
@@ -82,7 +83,15 @@ namespace Elsa.Activities.Reflection.Activities
             RebusConfigurer configurer;
             using (var activator = new BuiltinHandlerActivator())
             {
-                configurer = Configure.With(activator);
+                object messageObject = context.GetVariable("Result", typeof(object));
+
+                configurer = Configure.With(activator)
+                    .Routing(
+                        r =>
+                        {
+                            r.TypeBased().Map(messageObject.GetType(), Queue);
+                        }                            
+                    );
 
                 if (BusType == "MSMQ")
                 {
@@ -108,7 +117,7 @@ namespace Elsa.Activities.Reflection.Activities
 
                 IBus bus = configurer.Start();
 
-                object messageObject = context.GetVariable("Result");
+
 
                 await bus.Send(messageObject);
 
