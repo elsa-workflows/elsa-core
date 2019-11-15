@@ -76,11 +76,11 @@ namespace Elsa.Services.Models
             return scope.GetVariable<T>(name);
         }
 
-        public object GetVariable(string name, string typeName)
+        public object GetVariable(string name, Type type)
         {
             // Get the first scope (starting from the newest one) containing the variable.
             var scope = Workflow.Scopes.FirstOrDefault(x => x.Variables.ContainsKey(name)) ?? CurrentScope;
-            return scope.GetVariable(name, typeName);
+            return scope.GetVariable(name, type);
         }
 
         public object GetVariable(string name)
