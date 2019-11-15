@@ -25,6 +25,18 @@ namespace Elsa.Models
             }
         }
 
+        public new JToken this[string key]
+        {
+            get
+            {
+                return base[key];
+            }
+            set
+            {
+                base[key] = value;
+            }
+        }
+
         public JToken GetVariable(string name)
         {
             return ContainsKey(name) ? this[name] : default;
@@ -47,7 +59,7 @@ namespace Elsa.Models
             return this[name] = JToken.FromObject(value);
         }
 
-        public void SetVariables(Variables variables) => 
+        public void SetVariables(Variables variables) =>
             SetVariables((IEnumerable<KeyValuePair<string, JToken>>)variables);
 
         public void SetVariables(IEnumerable<KeyValuePair<string, JToken>> variables)
