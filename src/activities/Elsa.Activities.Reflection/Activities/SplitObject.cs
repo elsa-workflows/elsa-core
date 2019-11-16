@@ -47,9 +47,9 @@ namespace Elsa.Activities.Reflection.Activities
             CancellationToken cancellationToken)
         {
             object splitObject = null;
-            if (string.IsNullOrEmpty(InputVariableName))
+            if (!string.IsNullOrEmpty(InputVariableName))
             {
-                splitObject = context.GetVariable(InputVariableName);
+                splitObject = context.GetVariable<object>(InputVariableName);
             }
 
             if (splitObject != null)

@@ -44,6 +44,17 @@ namespace Elsa.Activities.MassTransit.Activities
             set => SetState(value);
         }
 
+        [ActivityProperty(Hint = "The address of a specific endpoint to send the message to.")]
+        public Uri EndpointAddress
+        {
+            get
+            {
+                var endpointAddress = GetState<string>();
+                return string.IsNullOrEmpty(endpointAddress) ? null : new Uri(endpointAddress);
+            }
+            set => SetState(value.ToString());
+        }
+
         protected override bool OnCanExecute(WorkflowExecutionContext context)
         {
             return MessageType != null;
@@ -53,7 +64,16 @@ namespace Elsa.Activities.MassTransit.Activities
             CancellationToken cancellationToken)
         {
             var message = await evaluator.EvaluateAsync(Message, MessageType, context, cancellationToken);
-            await sender.Send(message, cancellationToken);
+
+            if (EndpointAddress != null)
+            {
+                var endpoint = await sender.GetSendEndpoint(EndpointAddress);
+                await endpoint.Send(message, cancellationToken);
+            }
+            else
+            {
+                await sender.Send(message, cancellationToken);
+            }
 
             return Done();
         }

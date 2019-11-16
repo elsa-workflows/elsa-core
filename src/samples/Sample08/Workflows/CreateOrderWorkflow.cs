@@ -7,6 +7,7 @@ using Elsa.Activities.Http.Activities;
 using Elsa.Activities.MassTransit.Activities;
 using Elsa.Activities.ControlFlow;
 using Elsa.Activities.ControlFlow.Activities;
+using Elsa.Activities.Workflows.Activities;
 using Elsa.Expressions;
 using Elsa.Scripting.JavaScript;
 using Elsa.Services;
@@ -32,12 +33,15 @@ namespace Sample08.Workflows
                     activity =>
                     {
                         activity.VariableName = "order";
-                        activity.ValueExpression = new JavaScriptExpression<object>("lastResult().Content");
+                        activity.ValueExpression = new JavaScriptExpression<object>("lastResult().Body");
                     }
                 )
+                // Need to ensure that the correlation ID is the same string format that is used by the WorkflowConsumer<T>
+                // MassTransit will always use Guid values for correlation ID's, so need to ensure the same string format is used.
+                .Then<Correlate>(activity => activity.ValueExpression = new LiteralExpression(Guid.NewGuid().ToString()))
                 .Then<SendMassTransitMessage>(activity =>
                     {
-                        activity.Message = new JavaScriptExpression<CreateOrder>("return {order: order};");
+                        activity.Message = new JavaScriptExpression<CreateOrder>("return { correlationId: correlationId(), order: order};");
                         activity.MessageType = typeof(CreateOrder);
                     }
                 )
