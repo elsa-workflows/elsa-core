@@ -18,20 +18,21 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
         private readonly IMapper mapper;
         private readonly IIdGenerator idGenerator;
 
-        public EntityFrameworkCoreWorkflowDefinitionStore(ElsaContext dbContext, IMapper mapper,
-            IIdGenerator idGenerator)
+        public EntityFrameworkCoreWorkflowDefinitionStore(ElsaContext dbContext, IMapper mapper, IIdGenerator idGenerator)
         {
             this.dbContext = dbContext;
             this.mapper = mapper;
             this.idGenerator = idGenerator;
         }
 
-        public async Task<WorkflowDefinitionVersion> SaveAsync(
-            WorkflowDefinitionVersion definition,
-            CancellationToken cancellationToken = default)
+        public async Task<WorkflowDefinitionVersion> SaveAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken = default)
         {
             var existingEntity =
-                await dbContext.WorkflowDefinitionVersions.FirstOrDefaultAsync(x => x.Id == definition.Id, cancellationToken);
+                await dbContext
+                    .WorkflowDefinitionVersions
+                    .Include(x => x.Activities)
+                    .Include(x => x.Connections)
+                    .FirstOrDefaultAsync(x => x.Id == definition.Id, cancellationToken);
 
             if (existingEntity == null)
                 return await AddAsync(definition, cancellationToken);
@@ -43,8 +44,6 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
         {
             var entity = Map(definition);
             
-            entity.Activities = Map(definition.Activities).ToList();
-            entity.Connections = Map(definition.Connections).ToList();
             RegenerateIdentities(entity);
             
             await dbContext.WorkflowDefinitionVersions.AddAsync(entity, cancellationToken);
@@ -60,8 +59,6 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             DeleteConnections(entity);
             
             entity = mapper.Map(definition, entity);
-            entity.Activities = Map(definition.Activities).ToList();
-            entity.Connections = Map(definition.Connections).ToList();
             
             dbContext.WorkflowDefinitionVersions.Update(entity);
 
@@ -100,7 +97,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
 
             var entities = await query.ToListAsync(cancellationToken);
 
-            return Map(entities);
+            return mapper.Map<IEnumerable<WorkflowDefinitionVersion>>(entities);
         }
 
         public async Task<int> DeleteAsync(string id, CancellationToken cancellationToken = default)
@@ -160,14 +157,10 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
                 var newId = idGenerator.Generate();
 
                 foreach (var connection in entity.Connections.Where(x => x.DestinationActivityId == activity.Id))
-                {
                     connection.DestinationActivityId = newId;
-                }
-                
+
                 foreach (var connection in entity.Connections.Where(x => x.SourceActivityId == activity.Id))
-                {
                     connection.SourceActivityId = newId;
-                }
 
                 activity.Id = newId;
             }
@@ -183,34 +176,6 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             return entity;
         }
 
-        private WorkflowDefinitionVersion Map(WorkflowDefinitionVersionEntity source)
-        {
-            return mapper.Map<WorkflowDefinitionVersion>(source);
-        }
-
-        private IEnumerable<WorkflowDefinitionVersion> Map(IEnumerable<WorkflowDefinitionVersionEntity> source)
-        {
-            return source.Select(Map);
-        }
-        
-        private IEnumerable<ActivityDefinitionEntity> Map(IEnumerable<ActivityDefinition> activities)
-        {
-            foreach (var activity in activities)
-            {
-                var entity = mapper.Map<ActivityDefinitionEntity>(activity);
-                //entity.Id = idGenerator.Generate();
-                yield return entity;
-            }
-        }
-        
-        private IEnumerable<ConnectionDefinitionEntity> Map(IEnumerable<ConnectionDefinition> connections)
-        {
-            foreach (var connection in connections)
-            {
-                var entity = mapper.Map<ConnectionDefinitionEntity>(connection);
-                //entity.Id = idGenerator.Generate();
-                yield return entity;
-            }
-        }
+        private WorkflowDefinitionVersion Map(WorkflowDefinitionVersionEntity source) => mapper.Map<WorkflowDefinitionVersion>(source);
     }
 }

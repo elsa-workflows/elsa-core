@@ -6,6 +6,7 @@ using AutoMapper;
 using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Persistence.EntityFrameworkCore.Entities;
+using Elsa.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Services
@@ -14,26 +15,50 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
     {
         private readonly ElsaContext dbContext;
         private readonly IMapper mapper;
+        private readonly IIdGenerator idGenerator;
 
         public EntityFrameworkCoreWorkflowInstanceStore(
             ElsaContext dbContext,
-            IMapper mapper)
+            IMapper mapper, 
+            IIdGenerator idGenerator)
         {
             this.dbContext = dbContext;
             this.mapper = mapper;
+            this.idGenerator = idGenerator;
         }
 
-        public async Task SaveAsync(
+        public async Task<WorkflowInstance> SaveAsync(
             WorkflowInstance instance,
             CancellationToken cancellationToken = default)
         {
-            var document = Map(instance);
+            var existingEntity = await dbContext
+                .WorkflowInstances
+                .Include(x => x.Activities)
+                .Include(x => x.BlockingActivities)
+                .FirstOrDefaultAsync(x => x.Id == instance.Id, cancellationToken: cancellationToken);
 
-            await dbContext.WorkflowInstances.Upsert(document)
-                .On(x => new { x.Id })
-                .RunAsync(cancellationToken);
+            if (existingEntity == null)
+            {
+                var entity = Map(instance);
+                RegenerateIdentities(entity);
 
-            await dbContext.SaveChangesAsync(cancellationToken);
+                await dbContext.WorkflowInstances.AddAsync(entity, cancellationToken);
+                await dbContext.SaveChangesAsync(cancellationToken);
+                return Map(entity);
+            }
+            else
+            {
+                dbContext.ActivityInstances.RemoveRange(existingEntity.Activities);
+                dbContext.BlockingActivities.RemoveRange(existingEntity.BlockingActivities);
+                existingEntity.Activities.Clear();
+                existingEntity.BlockingActivities.Clear();
+
+                var entity = mapper.Map(instance, existingEntity);
+
+                dbContext.WorkflowInstances.Update(entity);
+                await dbContext.SaveChangesAsync(cancellationToken);
+                return Map(entity);
+            }
         }
 
         public async Task<WorkflowInstance> GetByIdAsync(
@@ -168,11 +193,22 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             
             await dbContext.SaveChangesAsync(cancellationToken);
         }
+        
+        private void RegenerateIdentities(WorkflowInstanceEntity entity)
+        {
+            foreach (var activity in entity.Activities)
+            {
+                var newId = idGenerator.Generate();
+
+                foreach (var blockingActivity in entity.BlockingActivities.Where(x => x.ActivityId == activity.Id))
+                    blockingActivity.ActivityId = newId;
+
+                activity.Id = newId;
+            }
+        }
 
         private WorkflowInstanceEntity Map(WorkflowInstance source) => mapper.Map<WorkflowInstanceEntity>(source);
         private WorkflowInstance Map(WorkflowInstanceEntity source) => mapper.Map<WorkflowInstance>(source);
-
-        private IEnumerable<WorkflowInstance> Map(IEnumerable<WorkflowInstanceEntity> source) =>
-            mapper.Map<IEnumerable<WorkflowInstance>>(source);
+        private IEnumerable<WorkflowInstance> Map(IEnumerable<WorkflowInstanceEntity> source) => mapper.Map<IEnumerable<WorkflowInstance>>(source);
     }
 }

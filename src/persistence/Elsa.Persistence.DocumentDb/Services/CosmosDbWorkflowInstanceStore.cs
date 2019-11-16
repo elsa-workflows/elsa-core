@@ -125,16 +125,19 @@ namespace Elsa.Persistence.DocumentDb.Services
             return Task.FromResult(Map(query.ToList()));
         }
 
-        public async Task SaveAsync(
+        public async Task<WorkflowInstance> SaveAsync(
             WorkflowInstance instance,
             CancellationToken cancellationToken = default)
         {
             var document = Map(instance);
             var client = storage.Client;
-            await client.UpsertDocumentWithRetriesAsync(
+            var response = await client.UpsertDocumentWithRetriesAsync(
                 storage.CollectionUri,
                 document,
                 cancellationToken: cancellationToken);
+
+            document = (dynamic)response.Resource;
+            return Map(document);
         }
 
         private WorkflowInstanceDocument Map(WorkflowInstance source) => mapper.Map<WorkflowInstanceDocument>(source);

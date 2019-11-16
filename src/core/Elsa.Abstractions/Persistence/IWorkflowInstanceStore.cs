@@ -8,7 +8,7 @@ namespace Elsa.Persistence
 {
     public interface IWorkflowInstanceStore
     {   
-        Task SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default);
+        Task<WorkflowInstance> SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default);
         Task<WorkflowInstance> GetByIdAsync(string id, CancellationToken cancellationToken = default);
         Task<WorkflowInstance> GetByCorrelationIdAsync(string correlationId, CancellationToken cancellationToken = default);
         Task<IEnumerable<WorkflowInstance>> ListByDefinitionAsync(string definitionId, CancellationToken cancellationToken = default);
