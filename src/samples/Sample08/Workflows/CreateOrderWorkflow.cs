@@ -36,7 +36,9 @@ namespace Sample08.Workflows
                         activity.ValueExpression = new JavaScriptExpression<object>("lastResult().Body");
                     }
                 )
-                .Then<Correlate>(activity => activity.ValueExpression = new LiteralExpression(Guid.NewGuid().ToString("N")))
+                // Need to ensure that the correlation ID is the same string format that is used by the WorkflowConsumer<T>
+                // MassTransit will always use Guid values for correlation ID's, so need to ensure the same string format is used.
+                .Then<Correlate>(activity => activity.ValueExpression = new LiteralExpression(Guid.NewGuid().ToString()))
                 .Then<SendMassTransitMessage>(activity =>
                     {
                         activity.Message = new JavaScriptExpression<CreateOrder>("return { correlationId: correlationId(), order: order};");
