@@ -25,10 +25,11 @@ namespace Elsa.Persistence
             return savedDefinition;
         }
 
-        public async Task AddAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken = default)
+        public async Task<WorkflowDefinitionVersion> AddAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken = default)
         {
-            await decoratedStore.AddAsync(definition, cancellationToken);
+            var result = await decoratedStore.AddAsync(definition, cancellationToken);
             await PublishUpdateEventAsync(cancellationToken);
+            return result;
         }
 
         public Task<WorkflowDefinitionVersion> GetByIdAsync(string id, VersionOptions version, CancellationToken cancellationToken = default)

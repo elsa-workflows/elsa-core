@@ -13,10 +13,10 @@ namespace Elsa.Persistence.Memory
         private readonly IDictionary<string, WorkflowInstance> workflowInstances =
             new ConcurrentDictionary<string, WorkflowInstance>();
 
-        public Task SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken)
+        public Task<WorkflowInstance> SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken)
         {
             workflowInstances[instance.Id] = instance;
-            return Task.CompletedTask;
+            return Task.FromResult(instance);
         }
 
         public Task<WorkflowInstance> GetByIdAsync(string id, CancellationToken cancellationToken)

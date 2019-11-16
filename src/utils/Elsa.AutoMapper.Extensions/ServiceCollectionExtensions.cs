@@ -10,7 +10,7 @@ namespace Elsa.AutoMapper.Extensions
         public static IServiceCollection AddAutoMapper(this IServiceCollection services, ServiceLifetime lifetime)
         {
             services.TryAddSingleton(CreateConfigurationProvider);
-            services.TryAdd(new ServiceDescriptor(typeof(IMapper), sp => new Mapper(sp.GetRequiredService<IConfigurationProvider>(), sp.GetService), lifetime));
+            services.TryAdd(new ServiceDescriptor(typeof(IMapper), sp => sp.GetRequiredService<IConfigurationProvider>().CreateMapper(sp.GetService), lifetime));
 
             return services;
         }

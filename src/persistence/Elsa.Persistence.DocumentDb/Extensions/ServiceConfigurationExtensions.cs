@@ -1,6 +1,9 @@
-using Microsoft.Extensions.DependencyInjection;
-using Elsa.Persistence.DocumentDb.Services;
 using System;
+using Elsa.Persistence.DocumentDb.Services;
+using Elsa.AutoMapper.Extensions;
+using Elsa.AutoMapper.Extensions.NodaTime;
+using Elsa.Persistence.DocumentDb.Mapping;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Persistence.DocumentDb.Extensions
 {
@@ -20,7 +23,9 @@ namespace Elsa.Persistence.DocumentDb.Extensions
             var storage = new DocumentDbStorage(url, authSecret, database, collection, options);
 
             builder.Services
-                .AddSingleton(storage);
+                .AddSingleton(storage)
+                .AddAutoMapperProfile<NodaTimeProfile>(ServiceLifetime.Singleton)
+                .AddAutoMapperProfile<DocumentProfile>(ServiceLifetime.Singleton);
 
             return new CosmosDbElsaBuilder(builder.Services);
         }

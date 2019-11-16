@@ -67,8 +67,8 @@ namespace Elsa.Scripting.JavaScript.Handlers
 
             engine.SetValue(
                 "formatInstant",
-                (Func<Instant, string, string>) ((instant, format) =>
-                    instant.ToString(format, CultureInfo.InvariantCulture))
+                (Func<Instant, string, CultureInfo, string>) ((instant, format, cultureInfo) =>
+                    instant.ToString(format, cultureInfo ?? CultureInfo.InvariantCulture))
             );
 
             engine.SetValue(

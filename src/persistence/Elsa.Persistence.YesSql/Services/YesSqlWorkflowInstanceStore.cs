@@ -23,14 +23,13 @@ namespace Elsa.Persistence.YesSql.Services
             this.mapper = mapper;
         }
 
-        public Task SaveAsync(
-            WorkflowInstance instance,
-            CancellationToken cancellationToken)
+        public async Task<WorkflowInstance> SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken)
         {
             var document = mapper.Map<WorkflowInstanceDocument>(instance);
 
             session.Save(document);
-            return Task.CompletedTask;
+            await session.CommitAsync();
+            return mapper.Map<WorkflowInstance>(document);
         }
 
         public async Task<WorkflowInstance> GetByIdAsync(

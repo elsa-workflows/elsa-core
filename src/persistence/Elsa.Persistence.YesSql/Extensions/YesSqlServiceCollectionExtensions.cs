@@ -23,7 +23,7 @@ namespace Elsa.Persistence.YesSql.Extensions
                 .AddSingleton<IIndexProvider, WorkflowDefinitionIndexProvider>()
                 .AddSingleton<IIndexProvider, WorkflowInstanceIndexProvider>()
                 .AddScoped(CreateSession)
-                .AddAutoMapperProfile<InstantProfile>(ServiceLifetime.Singleton)
+                .AddAutoMapperProfile<NodaTimeProfile>(ServiceLifetime.Singleton)
                 .AddAutoMapperProfile<DocumentProfile>(ServiceLifetime.Singleton)
                 .AddStartupTask<InitializeStoreTask>();
 

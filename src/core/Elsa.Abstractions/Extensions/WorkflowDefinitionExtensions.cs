@@ -17,7 +17,7 @@ namespace Elsa.Extensions
                 select activity;
 
             var activities = query.ToArray();
-            return activities.Any() ? activities : new[] { workflow.Activities.FirstOrDefault() };
+            return activities.Any() ? activities : workflow.Activities.Take(1);
         }
 
         public static ActivityDefinition GetActivity(this WorkflowDefinitionVersion workflowDefinition, string id) =>

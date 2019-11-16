@@ -18,15 +18,15 @@ namespace Elsa.Persistence.MongoDb.Services
             this.collection = collection;
         }
 
-        public async Task SaveAsync(
-            WorkflowInstance instance,
-            CancellationToken cancellationToken)
+        public async Task<WorkflowInstance> SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken)
         {
             await collection.ReplaceOneAsync(
                 x => x.Id == instance.Id,
                 instance,
                 new UpdateOptions { IsUpsert = true },
                 cancellationToken);
+
+            return instance;
         }
 
         public async Task<WorkflowInstance> GetByIdAsync(

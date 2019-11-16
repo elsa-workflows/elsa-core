@@ -14,6 +14,7 @@ namespace Elsa.Persistence.MongoDb.Serialization
         protected JsonSerializerBase()
         {
             serializerSettings = new JsonSerializerSettings().ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
+            serializerSettings.NullValueHandling = NullValueHandling.Ignore;
         }
         
         public override T Deserialize(BsonDeserializationContext context, BsonDeserializationArgs args)
