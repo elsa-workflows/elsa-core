@@ -108,6 +108,10 @@ namespace Elsa.Models
         {
             object value;
             objects.TryGetValue(name, out value);
+            if(value != null && ((value.GetType() == typeof(JValue) || value.GetType() == typeof(JToken)) && value.GetType() != typeof(T)))
+            {
+                value = ((JToken)value).ToObject<T>();
+            }
             return value == null ? default : (T)value;
         }
 
