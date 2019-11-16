@@ -18,7 +18,10 @@ namespace Elsa.Persistence.EntityFrameworkCore.Migrations
 
             modelBuilder.Entity("Elsa.Persistence.EntityFrameworkCore.Entities.ActivityDefinitionEntity", b =>
                 {
-                    b.Property<string>("Id")
+                    b.Property<int>("Id")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ActivityId")
                         .HasColumnType("TEXT");
 
                     b.Property<int>("Left")
@@ -33,8 +36,8 @@ namespace Elsa.Persistence.EntityFrameworkCore.Migrations
                     b.Property<string>("Type")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("WorkflowDefinitionVersionId")
-                        .HasColumnType("TEXT");
+                    b.Property<int?>("WorkflowDefinitionVersionId")
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
@@ -45,7 +48,11 @@ namespace Elsa.Persistence.EntityFrameworkCore.Migrations
 
             modelBuilder.Entity("Elsa.Persistence.EntityFrameworkCore.Entities.ActivityInstanceEntity", b =>
                 {
-                    b.Property<string>("Id")
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ActivityId")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Output")
@@ -57,8 +64,8 @@ namespace Elsa.Persistence.EntityFrameworkCore.Migrations
                     b.Property<string>("Type")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("WorkflowInstanceId")
-                        .HasColumnType("TEXT");
+                    b.Property<int?>("WorkflowInstanceId")
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
@@ -79,8 +86,8 @@ namespace Elsa.Persistence.EntityFrameworkCore.Migrations
                     b.Property<string>("ActivityType")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("WorkflowInstanceId")
-                        .HasColumnType("TEXT");
+                    b.Property<int?>("WorkflowInstanceId")
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
@@ -104,8 +111,8 @@ namespace Elsa.Persistence.EntityFrameworkCore.Migrations
                     b.Property<string>("SourceActivityId")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("WorkflowDefinitionVersionId")
-                        .HasColumnType("TEXT");
+                    b.Property<int?>("WorkflowDefinitionVersionId")
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
@@ -116,8 +123,8 @@ namespace Elsa.Persistence.EntityFrameworkCore.Migrations
 
             modelBuilder.Entity("Elsa.Persistence.EntityFrameworkCore.Entities.WorkflowDefinitionVersionEntity", b =>
                 {
-                    b.Property<string>("Id")
-                        .HasColumnType("TEXT");
+                    b.Property<int>("Id")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("DefinitionId")
                         .HasColumnType("TEXT");
@@ -146,6 +153,9 @@ namespace Elsa.Persistence.EntityFrameworkCore.Migrations
                     b.Property<int>("Version")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("VersionId")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
                     b.ToTable("WorkflowDefinitionVersions");
@@ -153,8 +163,8 @@ namespace Elsa.Persistence.EntityFrameworkCore.Migrations
 
             modelBuilder.Entity("Elsa.Persistence.EntityFrameworkCore.Entities.WorkflowInstanceEntity", b =>
                 {
-                    b.Property<string>("Id")
-                        .HasColumnType("TEXT");
+                    b.Property<int>("Id")
+                        .HasColumnType("INTEGER");
 
                     b.Property<DateTime?>("AbortedAt")
                         .HasColumnType("TEXT");
@@ -181,6 +191,9 @@ namespace Elsa.Persistence.EntityFrameworkCore.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Input")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("InstanceId")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Scopes")

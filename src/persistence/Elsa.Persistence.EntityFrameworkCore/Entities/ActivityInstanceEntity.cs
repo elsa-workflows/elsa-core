@@ -4,7 +4,8 @@ namespace Elsa.Persistence.EntityFrameworkCore.Entities
 {
     public class ActivityInstanceEntity
     {
-        public string Id { get; set; }
+        public int Id { get; set; }
+        public string ActivityId { get; set; }
         public WorkflowInstanceEntity WorkflowInstance { get; set; }
         public string Type { get; set; }
         public JObject State { get; set; }

@@ -6,7 +6,6 @@ using AutoMapper;
 using Elsa.Models;
 using Elsa.Persistence.EntityFrameworkCore.Entities;
 using Elsa.Persistence.EntityFrameworkCore.Extensions;
-using Elsa.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.VisualBasic.CompilerServices;
 
@@ -16,13 +15,11 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
     {
         private readonly ElsaContext dbContext;
         private readonly IMapper mapper;
-        private readonly IIdGenerator idGenerator;
 
-        public EntityFrameworkCoreWorkflowDefinitionStore(ElsaContext dbContext, IMapper mapper, IIdGenerator idGenerator)
+        public EntityFrameworkCoreWorkflowDefinitionStore(ElsaContext dbContext, IMapper mapper)
         {
             this.dbContext = dbContext;
             this.mapper = mapper;
-            this.idGenerator = idGenerator;
         }
 
         public async Task<WorkflowDefinitionVersion> SaveAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken = default)
@@ -32,7 +29,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
                     .WorkflowDefinitionVersions
                     .Include(x => x.Activities)
                     .Include(x => x.Connections)
-                    .FirstOrDefaultAsync(x => x.Id == definition.Id, cancellationToken);
+                    .FirstOrDefaultAsync(x => x.VersionId == definition.Id, cancellationToken);
 
             if (existingEntity == null)
                 return await AddAsync(definition, cancellationToken);
@@ -43,9 +40,6 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
         public async Task<WorkflowDefinitionVersion> AddAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken = default)
         {
             var entity = Map(definition);
-            
-            RegenerateIdentities(entity);
-            
             await dbContext.WorkflowDefinitionVersions.AddAsync(entity, cancellationToken);
             await dbContext.SaveChangesAsync(cancellationToken);
             return Map(entity);
@@ -53,7 +47,11 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
 
         public async Task<WorkflowDefinitionVersion> UpdateAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken)
         {
-            var entity = await dbContext.WorkflowDefinitionVersions.FindAsync(definition.Id);
+            var entity = await dbContext
+                .WorkflowDefinitionVersions
+                .Include(x => x.Activities)
+                .Include(x => x.Connections)
+                .FirstOrDefaultAsync(x => x.VersionId == definition.Id, cancellationToken);
 
             DeleteActivities(entity);
             DeleteConnections(entity);
@@ -81,6 +79,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
                 .WithVersion(version);
 
             var entity = await query.FirstOrDefaultAsync(cancellationToken);
+            
             return Map(entity);
         }
 
@@ -149,33 +148,8 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             dbContext.ConnectionDefinitions.RemoveRange(entity.Connections);
             entity.Connections.Clear();
         }
-        
-        private void RegenerateIdentities(WorkflowDefinitionVersionEntity entity)
-        {
-            foreach (var activity in entity.Activities)
-            {
-                var newId = idGenerator.Generate();
 
-                foreach (var connection in entity.Connections.Where(x => x.DestinationActivityId == activity.Id))
-                    connection.DestinationActivityId = newId;
-
-                foreach (var connection in entity.Connections.Where(x => x.SourceActivityId == activity.Id))
-                    connection.SourceActivityId = newId;
-
-                activity.Id = newId;
-            }
-        }
-
-        private WorkflowDefinitionVersionEntity Map(WorkflowDefinitionVersion source)
-        {
-            var entity = mapper.Map<WorkflowDefinitionVersionEntity>(source);
-
-            foreach (var activity in entity.Activities)
-                activity.WorkflowDefinitionVersion = entity;
-
-            return entity;
-        }
-
+        private WorkflowDefinitionVersionEntity Map(WorkflowDefinitionVersion source) => mapper.Map<WorkflowDefinitionVersionEntity>(source);
         private WorkflowDefinitionVersion Map(WorkflowDefinitionVersionEntity source) => mapper.Map<WorkflowDefinitionVersion>(source);
     }
 }

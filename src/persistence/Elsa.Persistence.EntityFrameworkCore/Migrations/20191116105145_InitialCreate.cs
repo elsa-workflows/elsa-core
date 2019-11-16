@@ -11,7 +11,8 @@ namespace Elsa.Persistence.EntityFrameworkCore.Migrations
                 name: "WorkflowDefinitionVersions",
                 columns: table => new
                 {
-                    Id = table.Column<string>(nullable: false),
+                    Id = table.Column<int>(nullable: false),
+                    VersionId = table.Column<string>(nullable: true),
                     DefinitionId = table.Column<string>(nullable: true),
                     Version = table.Column<int>(nullable: false),
                     Name = table.Column<string>(nullable: true),
@@ -31,7 +32,8 @@ namespace Elsa.Persistence.EntityFrameworkCore.Migrations
                 name: "WorkflowInstances",
                 columns: table => new
                 {
-                    Id = table.Column<string>(nullable: false),
+                    Id = table.Column<int>(nullable: false),
+                    InstanceId = table.Column<string>(nullable: true),
                     DefinitionId = table.Column<string>(nullable: true),
                     Version = table.Column<int>(nullable: false),
                     Status = table.Column<string>(nullable: false),
@@ -55,8 +57,9 @@ namespace Elsa.Persistence.EntityFrameworkCore.Migrations
                 name: "ActivityDefinitions",
                 columns: table => new
                 {
-                    Id = table.Column<string>(nullable: false),
-                    WorkflowDefinitionVersionId = table.Column<string>(nullable: true),
+                    Id = table.Column<int>(nullable: false),
+                    ActivityId = table.Column<string>(nullable: true),
+                    WorkflowDefinitionVersionId = table.Column<int>(nullable: true),
                     Type = table.Column<string>(nullable: true),
                     Left = table.Column<int>(nullable: false),
                     Top = table.Column<int>(nullable: false),
@@ -79,7 +82,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Migrations
                 {
                     Id = table.Column<int>(nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    WorkflowDefinitionVersionId = table.Column<string>(nullable: true),
+                    WorkflowDefinitionVersionId = table.Column<int>(nullable: true),
                     SourceActivityId = table.Column<string>(nullable: true),
                     DestinationActivityId = table.Column<string>(nullable: true),
                     Outcome = table.Column<string>(nullable: true)
@@ -99,8 +102,10 @@ namespace Elsa.Persistence.EntityFrameworkCore.Migrations
                 name: "ActivityInstances",
                 columns: table => new
                 {
-                    Id = table.Column<string>(nullable: false),
-                    WorkflowInstanceId = table.Column<string>(nullable: true),
+                    Id = table.Column<int>(nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    ActivityId = table.Column<string>(nullable: true),
+                    WorkflowInstanceId = table.Column<int>(nullable: true),
                     Type = table.Column<string>(nullable: true),
                     State = table.Column<string>(nullable: true),
                     Output = table.Column<string>(nullable: true)
@@ -122,7 +127,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Migrations
                 {
                     Id = table.Column<int>(nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    WorkflowInstanceId = table.Column<string>(nullable: true),
+                    WorkflowInstanceId = table.Column<int>(nullable: true),
                     ActivityId = table.Column<string>(nullable: true),
                     ActivityType = table.Column<string>(nullable: true)
                 },

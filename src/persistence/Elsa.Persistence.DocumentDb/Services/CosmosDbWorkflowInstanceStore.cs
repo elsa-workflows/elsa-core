@@ -3,12 +3,10 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
-using Elsa.AutoMapper.Extensions.NodaTime;
 using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Persistence.DocumentDb.Documents;
 using Elsa.Persistence.DocumentDb.Helpers;
-using Elsa.Persistence.DocumentDb.Mapping;
 
 namespace Elsa.Persistence.DocumentDb.Services
 {
@@ -17,16 +15,10 @@ namespace Elsa.Persistence.DocumentDb.Services
         private readonly IMapper mapper;
         private readonly DocumentDbStorage storage;
 
-        public CosmosDbWorkflowInstanceStore(DocumentDbStorage storage)
+        public CosmosDbWorkflowInstanceStore(DocumentDbStorage storage, IMapper mapper)
         {
-            var configuration = new MapperConfiguration(
-                cfg =>
-                {
-                    cfg.AddProfile<InstantProfile>();
-                    cfg.AddProfile<DocumentProfile>();
-                });
-            mapper = configuration.CreateMapper();
             this.storage = storage;
+            this.mapper = mapper;
         }
 
         public async Task DeleteAsync(

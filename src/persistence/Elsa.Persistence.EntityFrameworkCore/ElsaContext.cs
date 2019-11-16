@@ -40,7 +40,6 @@ namespace Elsa.Persistence.EntityFrameworkCore
             var entity = modelBuilder.Entity<WorkflowDefinitionVersionEntity>();
 
             entity.HasKey(x => x.Id);
-            entity.Property(x => x.Id).ValueGeneratedNever();
             entity.Property(x => x.DefinitionId);
             entity.Property(x => x.Variables).HasConversion(x => Serialize(x), x => Deserialize<Variables>(x));
             entity.HasMany(x => x.Activities).WithOne(x => x.WorkflowDefinitionVersion);
@@ -52,7 +51,6 @@ namespace Elsa.Persistence.EntityFrameworkCore
             var entity = modelBuilder.Entity<WorkflowInstanceEntity>();
 
             entity.HasKey(x => x.Id);
-            entity.Property(x => x.Id).ValueGeneratedNever();
             entity.Property(x => x.Status).HasConversion<string>();
             
             entity
@@ -97,8 +95,7 @@ namespace Elsa.Persistence.EntityFrameworkCore
             var entity = modelBuilder.Entity<ActivityDefinitionEntity>();
 
             entity.HasKey(x => x.Id);
-            entity.Property(x => x.Id).ValueGeneratedNever();
-            
+
             entity
                 .Property(x => x.State)
                 .HasConversion(x => Serialize(x), x => Deserialize<JObject>(x));

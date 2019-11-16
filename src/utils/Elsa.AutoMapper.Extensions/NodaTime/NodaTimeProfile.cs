@@ -4,20 +4,19 @@ using NodaTime;
 
 namespace Elsa.AutoMapper.Extensions.NodaTime
 {
-    public class InstantProfile : Profile,
+    public class NodaTimeProfile : Profile,
         ITypeConverter<Instant, DateTime>,
         ITypeConverter<Instant?, DateTime?>,
         ITypeConverter<DateTime, Instant>,
         ITypeConverter<DateTime?, Instant?>
     {
-        public InstantProfile()
+        public NodaTimeProfile()
         {
             CreateMap<Instant, DateTime>().ConvertUsing(this);
             CreateMap<Instant?, DateTime?>().ConvertUsing(this);
             CreateMap<DateTime, Instant>().ConvertUsing(this);
             CreateMap<DateTime?, Instant?>().ConvertUsing(this);
         }
-
 
         public DateTime Convert(Instant source, DateTime destination, ResolutionContext context)
         {
@@ -36,7 +35,7 @@ namespace Elsa.AutoMapper.Extensions.NodaTime
 
         public Instant? Convert(DateTime? source, Instant? destination, ResolutionContext context)
         {
-            return source != null ? Convert(source.Value) : default;
+            return source != null ? Convert(source.Value) : default(Instant?);
         }
         
         public Instant Convert(DateTime source)
