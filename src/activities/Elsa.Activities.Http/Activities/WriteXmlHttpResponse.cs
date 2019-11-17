@@ -163,7 +163,7 @@ namespace Elsa.Activities.Http.Activities
 
             string bodyText;
             Type rootType = TypeSafeXMLExtensions.GetType(TypeName, AssemlbyName);
-            var inputObject = workflowContext.GetVariable("Result", rootType) != null ? workflowContext.GetVariable("Result", rootType) : workflowContext.CurrentScope.LastResult;
+            var inputObject = workflowContext.GetVariable("Result") != null ? workflowContext.GetVariable("Result") : workflowContext.CurrentScope.LastResult;
 
             
             XmlSerializer xmlSerializer = new XmlSerializer(rootType);

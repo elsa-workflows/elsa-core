@@ -1,4 +1,4 @@
-﻿using MongoDB.Bson;
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
 using Newtonsoft.Json;
@@ -19,7 +19,11 @@ namespace Elsa.Persistence.MongoDb.Serialization
         public override T Deserialize(BsonDeserializationContext context, BsonDeserializationArgs args)
         {
             var document = BsonDocumentSerializer.Instance.Deserialize(context);
-            return JsonConvert.DeserializeObject<T>(document.ToString(), serializerSettings);
+            try
+            {
+                return JsonConvert.DeserializeObject<T>(document.ToString(), serializerSettings);
+            }
+            catch { return default; }
         }
 
         public override void Serialize(BsonSerializationContext context, BsonSerializationArgs args, T value)

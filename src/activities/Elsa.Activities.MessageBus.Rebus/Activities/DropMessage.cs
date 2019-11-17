@@ -83,7 +83,7 @@ namespace Elsa.Activities.Reflection.Activities
             RebusConfigurer configurer;
             using (var activator = new BuiltinHandlerActivator())
             {
-                object messageObject = context.GetVariable("Result", typeof(object));
+                object messageObject = context.GetVariable("Result");
 
                 configurer = Configure.With(activator)
                     .Routing(
