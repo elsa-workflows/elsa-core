@@ -14,7 +14,7 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
     },
-    "Sample16": {
+    "Sample19": {
       "commandName": "Project",
       "launchBrowser": true,
       "applicationUrl": "http://localhost:8236",

@@ -8,7 +8,6 @@ using Elsa.Results;
 using Elsa.Scripting.JavaScript.Services;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Newtonsoft.Json.Linq;
 
 namespace Elsa.Activities.Workflows.Activities
 {

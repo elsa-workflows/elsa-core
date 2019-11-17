@@ -1,116 +1,70 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
+using Elsa.Expressions;
 using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Activities.Reflection.Activities
 {
     /// <summary>
-    /// Execute a Method by reflection.
+    /// Execute a method by reflection.
     /// </summary>
     [ActivityDefinition(
         Category = "Reflection",
-        Description = "Execute a Method by reflection.",
+        Description = "Execute a method by reflection.",
         RuntimeDescription = "a => !!a.state.variableName ? `Execute a Method by reflection and store the result into <strong>${ a.state.variableName }</strong>.` : 'Execute a Method by reflection.'",
         Outcomes = new[] { OutcomeNames.Done }
     )]
     public class ExecuteMethod : Activity
     {
-
-        public ExecuteMethod(IWorkflowExpressionEvaluator evaluator)
+        [ActivityProperty(Hint = "An expression that returns an array of arguments to the method. Leave empty if the method does not accept any arguments.")]
+        public WorkflowExpression<object[]> Arguments
         {
-
+            get => GetState<WorkflowExpression<object[]>>();
+            set => SetState(value);
         }
 
-
-        [ActivityProperty(Hint = "The variables to use as parameters, seperated by comma in order of method call.")]
-        public string InputVariableNames
+        [ActivityProperty(Hint = "The assembly-qualified type name containing the method to execute.")]
+        public string TypeName
         {
-            get => GetState<string>(null, "InputVariableNames");
-            set => SetState(value, "InputVariableNames");
+            get => GetState<string>();
+            set => SetState(value);
         }
 
-        [ActivityProperty(Hint = "The name of the variable to store the returned value into.")]
-        public string OutputVariableName
-        {
-            get => GetState<string>(null, "OutputVariableName");
-            set => SetState(value, "OutputVariableName");
-        }
-
-        [ActivityProperty(Hint = "Assembly name (fullname or filename) to load")]
-        public string AssemblyName
-        {
-            get => GetState<string>(null, "AssemblyName");
-            set => SetState(value, "AssemblyName");
-        }
-
-        [ActivityProperty(Hint = "Class name to start or lookup")]
-        public string ClassName
-        {
-            get => GetState<string>(null, "ClassName");
-            set => SetState(value, "ClassName");
-        }
-
-        [ActivityProperty(Hint = "Class is a static class?")]
-        public bool IsStaticClass
-        {
-            get => GetState<bool>(null, "IsStaticClass");
-            set => SetState(value, "IsStaticClass");
-        }
-
-        [ActivityProperty(Hint = "Method name to execute")]
+        [ActivityProperty(Hint = "The name of the method name to execute.")]
         public string MethodName
         {
-            get => GetState<string>(null, "MethodName");
-            set => SetState(value, "MethodName");
+            get => GetState<string>();
+            set => SetState(value);
         }
 
-        protected override async Task<ActivityExecutionResult> OnExecuteAsync(
-            WorkflowExecutionContext context,
-            CancellationToken cancellationToken)
+        protected override async Task<ActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
         {
-            await Task.Delay(1);
-            var inputValues = InputVariableNames.Split(',').Select(s => context.GetVariable(s)).ToArray();
-            return Execute(context, inputValues);
-        }
+            var type = System.Type.GetType(TypeName);
 
-        protected override ActivityExecutionResult OnResume(WorkflowExecutionContext context)
-        {
-            var inputValues = InputVariableNames.Split(',').Select(s => context.GetVariable(s)).ToArray();
-            return Execute(context, inputValues);
-        }
+            if (type == null)
+                return Fault($"Type {TypeName} not found.");
 
-        private ActivityExecutionResult Execute(WorkflowExecutionContext workflowContext, object[] receivedInputValues)
-        {
-            string path = Directory.EnumerateFiles(AppDomain.CurrentDomain.BaseDirectory, AssemblyName, SearchOption.AllDirectories).FirstOrDefault();
-            Assembly assembly = Assembly.LoadFrom(path);
-            object receivedOutput = null;
-            var classType = assembly.DefinedTypes.Where(t => t.Name == ClassName).FirstOrDefault();
+            var inputValues = await context.EvaluateAsync(Arguments, cancellationToken) ?? new object[0];
 
-            if (IsStaticClass)
-            {
-                var staticMethod = classType.DeclaredMethods.Where(m => m.Name == MethodName).FirstOrDefault();
-                receivedOutput = staticMethod.Invoke(null, receivedInputValues);
-            }
-            else
-            {
-                var instancedClass = Activator.CreateInstance(classType);
-                var instanceMethod = instancedClass.GetType().GetMethod(MethodName);
-                receivedOutput = instanceMethod.Invoke(instancedClass, receivedInputValues);
-            }
+            var method = type
+                .GetMethods(BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                .Where(x => x.GetParameters().Length == inputValues.Length)
+                .FirstOrDefault(x => x.Name == MethodName);
 
-            workflowContext.CurrentScope.SetVariable(OutputVariableName, receivedOutput);
-
-            workflowContext.SetLastResult(receivedOutput);
+            if (method == null)
+                return Fault($"Type {TypeName} does not have a method called {MethodName}.");
 
 
+            var instance = method.IsStatic ? default : ActivatorUtilities.GetServiceOrCreateInstance(context.ServiceProvider, type);
+            var result = method.Invoke(instance, inputValues);
+
+            Output.SetVariable("Result", result);
             return Outcome(OutcomeNames.Done);
         }
     }

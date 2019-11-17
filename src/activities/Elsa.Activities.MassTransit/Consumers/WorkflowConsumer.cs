@@ -3,7 +3,6 @@ using Elsa.Activities.MassTransit.Activities;
 using Elsa.Models;
 using Elsa.Services;
 using MassTransit;
-using Newtonsoft.Json.Linq;
 
 namespace Elsa.Activities.MassTransit.Consumers
 {

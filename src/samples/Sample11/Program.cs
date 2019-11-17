@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Elsa.Activities.Console.Extensions;
-using Elsa.Activities.Workflows;
 using Elsa.Activities.Workflows.Activities;
 using Elsa.Extensions;
 using Elsa.Models;
@@ -38,7 +37,7 @@ namespace Sample11
                 var correlationId = Console.ReadLine();
 
                 // Resume one workflow using the specified correlation ID.
-                var triggeredExecutionContexts = (await invoker.TriggerAsync(nameof(Signaled), new Variables { ["Signal"] = "Proceed" }, correlationId)).ToList();
+                var triggeredExecutionContexts = (await invoker.TriggerAsync(nameof(Signaled), new Variables() { ["Signal"] = new Variable("Proceed") }, correlationId)).ToList();
 
                 Console.WriteLine("{0} workflow was resumed. Would you like to trigger another?", triggeredExecutionContexts.Count);
                 retry = string.Equals("y", Console.ReadLine(), StringComparison.OrdinalIgnoreCase);

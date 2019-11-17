@@ -7,7 +7,6 @@ using Elsa.Models;
 using Elsa.Persistence.EntityFrameworkCore.Entities;
 using Elsa.Persistence.EntityFrameworkCore.Extensions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.VisualBasic.CompilerServices;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Services
 {

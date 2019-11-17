@@ -3,6 +3,7 @@ using System.Dynamic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Models;
 using Elsa.Scripting.Liquid.Helpers;
 using Elsa.Scripting.Liquid.Messages;
 using Elsa.Services.Models;
@@ -39,14 +40,14 @@ namespace Elsa.Scripting.Liquid.Handlers
             return Task.CompletedTask;
         }
 
-        private Task<FluidValue> ToFluidValue(IDictionary<string, JToken> dictionary, string key) 
+        private Task<FluidValue> ToFluidValue(IDictionary<string, Variable> dictionary, string key) 
             => Task.FromResult(!dictionary.ContainsKey(key) ? default : FluidValue.Create(dictionary[key]));
 
         private async Task<object> GetActivityOutput(LiquidObjectAccessor<IActivity> accessor, string activityName, string outputKey)
         {
             var activity = await accessor.GetValueAsync(activityName);
             var output = activity.Output;
-            return !output.ContainsKey(outputKey) ? default : output[outputKey];
+            return output.GetVariable(outputKey);
         }
 
         private Task<IActivity> GetActivityAsync(WorkflowExecutionContext executionContext, string name) 

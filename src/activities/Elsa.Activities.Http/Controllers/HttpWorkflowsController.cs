@@ -6,7 +6,6 @@ using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json.Linq;
 
 namespace Elsa.Activities.Http.Controllers
 {

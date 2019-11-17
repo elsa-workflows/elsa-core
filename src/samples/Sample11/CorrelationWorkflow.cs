@@ -1,5 +1,4 @@
 using Elsa.Activities.Console.Activities;
-using Elsa.Activities.Workflows;
 using Elsa.Activities.Workflows.Activities;
 using Elsa.Expressions;
 using Elsa.Scripting.JavaScript;

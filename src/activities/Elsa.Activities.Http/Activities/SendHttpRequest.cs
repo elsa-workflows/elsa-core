@@ -17,7 +17,6 @@ using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
-using Newtonsoft.Json.Linq;
 
 namespace Elsa.Activities.Http.Activities
 {

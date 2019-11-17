@@ -6,7 +6,6 @@ using AutoMapper;
 using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Persistence.EntityFrameworkCore.Entities;
-using Elsa.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Services
