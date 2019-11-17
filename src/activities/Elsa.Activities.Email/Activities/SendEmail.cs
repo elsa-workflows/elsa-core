@@ -1,4 +1,3 @@
-﻿using System.Net.Mail;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Email.Options;
@@ -9,6 +8,8 @@ using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.Options;
+using MimeKit;
+using MailKit.Net.Smtp;
 
 namespace Elsa.Activities.Email.Activities
 {
@@ -71,16 +72,10 @@ namespace Elsa.Activities.Email.Activities
             var subject = await expressionEvaluator.EvaluateAsync(Subject, workflowContext, cancellationToken);
             var body = await expressionEvaluator.EvaluateAsync(Body, workflowContext, cancellationToken);
 
-            var mailMessage = new MailMessage
-            {
-                From = new MailAddress(@from),
-                Body = body,
-                Subject = subject,
-                IsBodyHtml = true
-            };
+            var mailMessage = new MimeMessage(from, to, subject, body);
 
-            mailMessage.To.Add(to);
-            await smtpClient.SendMailAsync(mailMessage);
+
+            await smtpClient.SendAsync(mailMessage);
 
             return Done();
         }

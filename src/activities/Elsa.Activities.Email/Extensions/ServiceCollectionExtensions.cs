@@ -1,8 +1,8 @@
 using System;
 using System.Net;
-using System.Net.Mail;
 using Elsa.Activities.Email.Activities;
 using Elsa.Activities.Email.Options;
+using MailKit.Net.Smtp;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
@@ -24,15 +24,18 @@ namespace Elsa.Activities.Email.Extensions
         private static SmtpClient CreateSmtpClient(IServiceProvider serviceProvider)
         {
             var options = serviceProvider.GetRequiredService<IOptions<SmtpOptions>>().Value;
-            var smtpClient = new SmtpClient(options.Host, options.Port);
+            var smtpClient = new SmtpClient();
+            smtpClient.Connect(options.Host, options.Port, useSsl: options.EnableSsl.HasValue ? options.EnableSsl.Value : false);
+                
             var credentials = options.Credentials;
             
             if (credentials != null && !string.IsNullOrWhiteSpace(credentials.Username)) 
-                smtpClient.Credentials = new NetworkCredential(credentials.Username, credentials.Password);
+                smtpClient.Authenticate(new NetworkCredential(credentials.Username, credentials.Password));
 
             if (options.Timeout != null)
                 smtpClient.Timeout = (int)options.Timeout.Value.TotalSeconds;
 
+            /*
             if (options.DeliveryFormat != null)
                 smtpClient.DeliveryFormat = options.DeliveryFormat.Value;
 
@@ -41,9 +44,12 @@ namespace Elsa.Activities.Email.Extensions
 
             if (options.EnableSsl != null)
                 smtpClient.EnableSsl = options.EnableSsl.Value;
-
+            
             if (!string.IsNullOrWhiteSpace(options.PickupDirectoryLocation))
-                smtpClient.PickupDirectoryLocation = options.PickupDirectoryLocation;
+                smtpClient. = options.PickupDirectoryLocation;
+
+            */
+
 
             return smtpClient;
         }
