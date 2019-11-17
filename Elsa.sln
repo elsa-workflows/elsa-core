@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28010.2036
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29424.173
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Core", "src\core\Elsa.Core\Elsa.Core.csproj", "{300EE2D5-54C5-46F2-AD03-BB43589EA074}"
 EndProject
@@ -47,25 +47,27 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Persistence.MongoDb", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.WorkflowDesigner", "src\dashboard\Elsa.WorkflowDesigner\Elsa.WorkflowDesigner.csproj", "{120E4BF9-4A42-4BB9-A0B2-9597160D6E37}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.DocumentDb", "src\persistence\Elsa.Persistence.DocumentDb\Elsa.Persistence.DocumentDb.csproj", "{39EBECE7-538B-431C-AAB7-901AB16E6D4A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Persistence.DocumentDb", "src\persistence\Elsa.Persistence.DocumentDb\Elsa.Persistence.DocumentDb.csproj", "{39EBECE7-538B-431C-AAB7-901AB16E6D4A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Activities.Dropbox", "src\activities\Elsa.Activities.Dropbox\Elsa.Activities.Dropbox.csproj", "{5A3C9D59-21FE-4BE3-A00A-FF3F198EEC97}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.Dropbox", "src\activities\Elsa.Activities.Dropbox\Elsa.Activities.Dropbox.csproj", "{5A3C9D59-21FE-4BE3-A00A-FF3F198EEC97}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "utils", "utils", "{9E1AF14C-0BEC-4BC2-810C-85FC25A9DDD4}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripting", "scripting", "{5E230C5F-7A64-4E95-A790-DF40CC66DA31}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.AutoMapper.Extensions", "src\utils\Elsa.AutoMapper.Extensions\Elsa.AutoMapper.Extensions.csproj", "{72DA50EC-8A99-4D4F-BF61-DEF105BDAE10}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.AutoMapper.Extensions", "src\utils\Elsa.AutoMapper.Extensions\Elsa.AutoMapper.Extensions.csproj", "{72DA50EC-8A99-4D4F-BF61-DEF105BDAE10}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Scripting.JavaScript", "src\scripting\Elsa.Scripting.JavaScript\Elsa.Scripting.JavaScript.csproj", "{DA91DAF2-4C59-4468-8F1D-6A500D218A1E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Scripting.JavaScript", "src\scripting\Elsa.Scripting.JavaScript\Elsa.Scripting.JavaScript.csproj", "{DA91DAF2-4C59-4468-8F1D-6A500D218A1E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Scripting.Liquid", "src\scripting\Elsa.Scripting.Liquid\Elsa.Scripting.Liquid.csproj", "{9A2D1E3E-328F-4E02-86F8-84974925C1E3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Scripting.Liquid", "src\scripting\Elsa.Scripting.Liquid\Elsa.Scripting.Liquid.csproj", "{9A2D1E3E-328F-4E02-86F8-84974925C1E3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Activities.ControlFlow", "src\activities\Elsa.Activities.ControlFlow\Elsa.Activities.ControlFlow.csproj", "{3FC85C9D-CC20-4F54-9936-029F19FBFBE1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.ControlFlow", "src\activities\Elsa.Activities.ControlFlow\Elsa.Activities.ControlFlow.csproj", "{3FC85C9D-CC20-4F54-9936-029F19FBFBE1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Activities.Workflows", "src\activities\Elsa.Activities.Workflows\Elsa.Activities.Workflows.csproj", "{1BB8EC9E-AEBD-438B-9FA7-B7FA78999D7D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.Workflows", "src\activities\Elsa.Activities.Workflows\Elsa.Activities.Workflows.csproj", "{1BB8EC9E-AEBD-438B-9FA7-B7FA78999D7D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa", "src\core\Elsa\Elsa.csproj", "{ED2A4FE5-821B-46F7-B72F-E66DE0D66C93}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa", "src\core\Elsa\Elsa.csproj", "{ED2A4FE5-821B-46F7-B72F-E66DE0D66C93}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.Reflection", "src\activities\Elsa.Activities.Reflection\Elsa.Activities.Reflection.csproj", "{CD44EA69-C3A3-4053-B4CB-D757DD9CB442}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -157,6 +159,10 @@ Global
 		{ED2A4FE5-821B-46F7-B72F-E66DE0D66C93}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{ED2A4FE5-821B-46F7-B72F-E66DE0D66C93}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{ED2A4FE5-821B-46F7-B72F-E66DE0D66C93}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CD44EA69-C3A3-4053-B4CB-D757DD9CB442}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CD44EA69-C3A3-4053-B4CB-D757DD9CB442}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CD44EA69-C3A3-4053-B4CB-D757DD9CB442}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CD44EA69-C3A3-4053-B4CB-D757DD9CB442}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -189,6 +195,7 @@ Global
 		{3FC85C9D-CC20-4F54-9936-029F19FBFBE1} = {B43B546E-23F3-46E8-ACB7-D04F05CDA180}
 		{1BB8EC9E-AEBD-438B-9FA7-B7FA78999D7D} = {B43B546E-23F3-46E8-ACB7-D04F05CDA180}
 		{ED2A4FE5-821B-46F7-B72F-E66DE0D66C93} = {35F44BE9-13D0-417C-A01A-F0787BEE6DC3}
+		{CD44EA69-C3A3-4053-B4CB-D757DD9CB442} = {B43B546E-23F3-46E8-ACB7-D04F05CDA180}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}
