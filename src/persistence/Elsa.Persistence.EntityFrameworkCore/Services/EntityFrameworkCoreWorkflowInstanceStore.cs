@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Elsa.Extensions;
 using Elsa.Models;
-using Elsa.Persistence.EntityFrameworkCore.Documents;
+using Elsa.Persistence.EntityFrameworkCore.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Services
@@ -15,32 +15,54 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
         private readonly ElsaContext dbContext;
         private readonly IMapper mapper;
 
-        public EntityFrameworkCoreWorkflowInstanceStore(
-            ElsaContext dbContext,
-            IMapper mapper)
+        public EntityFrameworkCoreWorkflowInstanceStore(ElsaContext dbContext, IMapper mapper)
         {
             this.dbContext = dbContext;
             this.mapper = mapper;
         }
 
-        public async Task SaveAsync(
+        public async Task<WorkflowInstance> SaveAsync(
             WorkflowInstance instance,
             CancellationToken cancellationToken = default)
         {
-            var document = Map(instance);
+            var existingEntity = await dbContext
+                .WorkflowInstances
+                .Include(x => x.Activities)
+                .Include(x => x.BlockingActivities)
+                .FirstOrDefaultAsync(x => x.InstanceId == instance.Id, cancellationToken: cancellationToken);
 
-            await dbContext.WorkflowInstances.Upsert(document)
-                .On(x => new { x.Id })
-                .RunAsync(cancellationToken);
+            if (existingEntity == null)
+            {
+                var entity = Map(instance);
 
-            await dbContext.SaveChangesAsync(cancellationToken);
+                await dbContext.WorkflowInstances.AddAsync(entity, cancellationToken);
+                await dbContext.SaveChangesAsync(cancellationToken);
+                return Map(entity);
+            }
+            else
+            {
+                dbContext.ActivityInstances.RemoveRange(existingEntity.Activities);
+                dbContext.BlockingActivities.RemoveRange(existingEntity.BlockingActivities);
+                existingEntity.Activities.Clear();
+                existingEntity.BlockingActivities.Clear();
+
+                var entity = mapper.Map(instance, existingEntity);
+
+                dbContext.WorkflowInstances.Update(entity);
+                await dbContext.SaveChangesAsync(cancellationToken);
+                return Map(entity);
+            }
         }
 
         public async Task<WorkflowInstance> GetByIdAsync(
             string id,
             CancellationToken cancellationToken = default)
         {
-            var document = await dbContext.WorkflowInstances.FindAsync(new object[] { id }, cancellationToken);
+            var document = await dbContext
+                .WorkflowInstances
+                .Include(x => x.Activities)
+                .Include(x => x.BlockingActivities)
+                .FirstOrDefaultAsync(x => x.InstanceId == id, cancellationToken);
 
             return Map(document);
         }
@@ -49,7 +71,10 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             string correlationId,
             CancellationToken cancellationToken = default)
         {
-            var document = await dbContext.WorkflowInstances
+            var document = await dbContext
+                .WorkflowInstances
+                .Include(x => x.Activities)
+                .Include(x => x.BlockingActivities)
                 .Where(x => x.CorrelationId == correlationId)
                 .FirstOrDefaultAsync(cancellationToken);
 
@@ -60,7 +85,10 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             string definitionId,
             CancellationToken cancellationToken = default)
         {
-            var documents = await dbContext.WorkflowInstances
+            var documents = await dbContext
+                .WorkflowInstances
+                .Include(x => x.Activities)
+                .Include(x => x.BlockingActivities)
                 .Where(x => x.DefinitionId == definitionId)
                 .OrderByDescending(x => x.CreatedAt)
                 .ToListAsync(cancellationToken);
@@ -70,7 +98,10 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
 
         public async Task<IEnumerable<WorkflowInstance>> ListAllAsync(CancellationToken cancellationToken = default)
         {
-            var documents = await dbContext.WorkflowInstances
+            var documents = await dbContext
+                .WorkflowInstances
+                .Include(x => x.Activities)
+                .Include(x => x.BlockingActivities)
                 .OrderByDescending(x => x.CreatedAt)
                 .ToListAsync(cancellationToken);
             return Map(documents);
@@ -81,7 +112,11 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             string correlationId = default,
             CancellationToken cancellationToken = default)
         {
-            var query = dbContext.WorkflowInstances.AsQueryable();
+            var query = dbContext
+                .WorkflowInstances
+                .Include(x => x.Activities)
+                .Include(x => x.BlockingActivities)
+                .AsQueryable();
 
             query = query.Where(x => x.Status == WorkflowStatus.Executing);
 
@@ -102,7 +137,10 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             WorkflowStatus status,
             CancellationToken cancellationToken = default)
         {
-            var documents = await dbContext.WorkflowInstances
+            var documents = await dbContext
+                .WorkflowInstances
+                .Include(x => x.Activities)
+                .Include(x => x.BlockingActivities)
                 .Where(x => x.DefinitionId == definitionId && x.Status == status)
                 .OrderByDescending(x => x.CreatedAt)
                 .ToListAsync(cancellationToken);
@@ -114,7 +152,10 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             WorkflowStatus status,
             CancellationToken cancellationToken = default)
         {
-            var documents = await dbContext.WorkflowInstances
+            var documents = await dbContext
+                .WorkflowInstances
+                .Include(x => x.Activities)
+                .Include(x => x.BlockingActivities)
                 .Where(x => x.Status == status)
                 .OrderByDescending(x => x.CreatedAt)
                 .ToListAsync(cancellationToken);
@@ -126,19 +167,28 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             string id,
             CancellationToken cancellationToken = default)
         {
-            var record = await dbContext.WorkflowInstances.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+            var record = await dbContext.WorkflowInstances.FirstOrDefaultAsync(x => x.InstanceId == id, cancellationToken);
 
             if (record == null)
                 return;
 
+            var activityInstanceRecords = await dbContext.ActivityInstances
+                .Where(x => x.WorkflowInstance.InstanceId == id)
+                .ToListAsync(cancellationToken);
+
+            var blockingActivityRecords = await dbContext.BlockingActivities
+                .Where(x => x.WorkflowInstance.InstanceId == id)
+                .ToListAsync(cancellationToken);
+            
+            dbContext.ActivityInstances.RemoveRange(activityInstanceRecords);
+            dbContext.BlockingActivities.RemoveRange(blockingActivityRecords);
             dbContext.WorkflowInstances.Remove(record);
+            
             await dbContext.SaveChangesAsync(cancellationToken);
         }
 
-        private WorkflowInstanceDocument Map(WorkflowInstance source) => mapper.Map<WorkflowInstanceDocument>(source);
-        private WorkflowInstance Map(WorkflowInstanceDocument source) => mapper.Map<WorkflowInstance>(source);
-
-        private IEnumerable<WorkflowInstance> Map(IEnumerable<WorkflowInstanceDocument> source) =>
-            mapper.Map<IEnumerable<WorkflowInstance>>(source);
+        private WorkflowInstanceEntity Map(WorkflowInstance source) => mapper.Map<WorkflowInstanceEntity>(source);
+        private WorkflowInstance Map(WorkflowInstanceEntity source) => mapper.Map<WorkflowInstance>(source);
+        private IEnumerable<WorkflowInstance> Map(IEnumerable<WorkflowInstanceEntity> source) => mapper.Map<IEnumerable<WorkflowInstance>>(source);
     }
 }

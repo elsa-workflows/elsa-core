@@ -1,5 +1,4 @@
 using System.Linq;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Models;
@@ -9,7 +8,6 @@ using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;
-using Newtonsoft.Json.Linq;
 
 namespace Elsa.Activities.Http.RequestHandlers.Handlers
 {

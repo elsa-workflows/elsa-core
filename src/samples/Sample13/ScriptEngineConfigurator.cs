@@ -1,11 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Scripting;
-using Elsa.Scripting.JavaScript;
 using Elsa.Scripting.JavaScript.Messages;
-using Elsa.Services.Models;
-using Jint;
 using MediatR;
 using NodaTime;
 

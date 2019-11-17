@@ -1,7 +1,6 @@
 using Elsa;
 using Elsa.Activities;
 using Elsa.Activities.Console.Activities;
-using Elsa.Activities.ControlFlow;
 using Elsa.Activities.ControlFlow.Activities;
 using Elsa.Expressions;
 using Elsa.Scripting.JavaScript;
