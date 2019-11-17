@@ -27,14 +27,14 @@ namespace Elsa.Scripting.JavaScript.Handlers
             var variables = executionContext.GetVariables();
             
             foreach (var variable in variables) 
-                engine.SetValue(variable.Key, variable.Value.GetValue());
+                engine.SetValue(variable.Key, variable.Value);
 
             foreach (var activity in executionContext.Workflow.Activities.Where(x => !string.IsNullOrWhiteSpace(x.Name) && x.Output != null))
             {
                 var expando = new ExpandoObject() as IDictionary<string, object>;
                 
                 foreach (var variable in activity.Output) 
-                    expando[variable.Key] = variable.Value.GetValue();
+                    expando[variable.Key] = variable.Value;
 
                 engine.SetValue(activity.Name, expando);
             }

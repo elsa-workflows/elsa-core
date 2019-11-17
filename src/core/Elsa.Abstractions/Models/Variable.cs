@@ -1,8 +1,8 @@
-﻿using System;
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json;
 
 namespace Elsa.Models
 {
+    [JsonObject(ItemTypeNameHandling = TypeNameHandling.Auto)]
     public class Variable
     {
         public Variable()
@@ -11,23 +11,9 @@ namespace Elsa.Models
 
         public Variable(object value)
         {
-            if (value != null)
-            {
-                TypeName = value.GetType().AssemblyQualifiedName;
-                Token = JToken.FromObject(value);
-            }
+            Value = value;
         }
         
-        public string TypeName { get; set; }
-        public JToken Token { get; set; }
-
-        public object GetValue()
-        {
-            if (Token == null)
-                return null;
-            
-            var type = Type.GetType(TypeName);
-            return Token.ToObject(type);
-        }
+        public object Value { get; set; }
     }
 }

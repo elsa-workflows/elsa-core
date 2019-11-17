@@ -41,7 +41,7 @@ namespace Elsa.Scripting.Liquid.Handlers
         }
 
         private Task<FluidValue> ToFluidValue(IDictionary<string, Variable> dictionary, string key) 
-            => Task.FromResult(!dictionary.ContainsKey(key) ? default : FluidValue.Create(dictionary[key].GetValue()));
+            => Task.FromResult(!dictionary.ContainsKey(key) ? default : FluidValue.Create(dictionary[key]));
 
         private async Task<object> GetActivityOutput(LiquidObjectAccessor<IActivity> accessor, string activityName, string outputKey)
         {

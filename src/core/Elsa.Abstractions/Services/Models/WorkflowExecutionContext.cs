@@ -7,7 +7,6 @@ using Elsa.Expressions;
 using Elsa.Extensions;
 using Elsa.Models;
 using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json.Linq;
 using NodaTime;
 
 namespace Elsa.Services.Models

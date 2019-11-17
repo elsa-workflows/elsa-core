@@ -2,6 +2,8 @@
 using System.Threading.Tasks;
 using Elsa.Activities.Console.Extensions;
 using Elsa.Activities.Reflection.Extensions;
+using Elsa.Serialization;
+using Elsa.Serialization.Formatters;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Sample20.Workflows;
@@ -27,8 +29,15 @@ namespace Sample20
 
             // Invoke the workflows.
             var invoker = services.GetService<IWorkflowInvoker>();
-            await invoker.StartAsync<ExecuteMethodWorkflow>();
-            await invoker.StartAsync<SplitObjectWorkflow>();
+            var executionContext1 = await invoker.StartAsync<ExecuteMethodWorkflow>();
+            var executionContext2 = await invoker.StartAsync<SplitObjectWorkflow>();
+
+            var serializer = services.GetRequiredService<IWorkflowSerializer>();
+            var json1 = serializer.Serialize(executionContext1.Workflow.ToInstance(), JsonTokenFormatter.FormatName);
+            var json2 = serializer.Serialize(executionContext2.Workflow.ToInstance(), JsonTokenFormatter.FormatName);
+            
+            Console.WriteLine(json1);
+            Console.WriteLine(json2);
 
             Console.ReadLine();
         }
