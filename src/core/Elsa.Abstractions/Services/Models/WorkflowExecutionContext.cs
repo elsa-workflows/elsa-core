@@ -69,19 +69,7 @@ namespace Elsa.Services.Models
             scope.SetVariable(name, value);
         }
 
-        public T GetVariable<T>(string name)
-        {
-            // Get the first scope (starting from the newest one) containing the variable.
-            var scope = Workflow.Scopes.FirstOrDefault(x => x.Variables.ContainsKey(name)) ?? CurrentScope;
-            return scope.GetVariable<T>(name);
-        }
-
-        public object GetVariable(string name, Type type)
-        {
-            // Get the first scope (starting from the newest one) containing the variable.
-            var scope = Workflow.Scopes.FirstOrDefault(x => x.Variables.ContainsKey(name)) ?? CurrentScope;
-            return scope.GetVariable(name, type);
-        }
+        public T GetVariable<T>(string name) => (T) GetVariable(name);
 
         public object GetVariable(string name)
         {
@@ -93,8 +81,8 @@ namespace Elsa.Services.Models
         public Task<T> EvaluateAsync<T>(IWorkflowExpression<T> expression, CancellationToken cancellationToken) =>
             ExpressionEvaluator.EvaluateAsync(expression, this, cancellationToken);
 
-        public void SetLastResult(object value) => SetLastResult(JToken.FromObject(value));
-        public void SetLastResult(JToken value) => CurrentScope.LastResult = value;
+        public void SetLastResult(object value) => SetLastResult(new Variable(value));
+        public void SetLastResult(Variable value) => CurrentScope.LastResult = value;
 
         public void Start()
         {

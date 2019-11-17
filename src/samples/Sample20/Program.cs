@@ -1,34 +1,34 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Elsa.Activities.Console.Extensions;
+using Elsa.Activities.Reflection.Extensions;
 using Elsa.Services;
-using MediatR;
 using Microsoft.Extensions.DependencyInjection;
+using Sample20.Workflows;
 
-namespace Sample13
+namespace Sample20
 {
     /// <summary>
-    /// A strongly-typed workflows program demonstrating scripting, and branching.
+    /// Demonstrates Reflection activities
     /// </summary>
-    internal class Program
+    internal static class Program
     {
-        private static async Task Main()
+        private static async Task Main(string[] args)
         {
             // Setup a service collection.
             var services = new ServiceCollection()
                 .AddElsa()
+                .AddReflectionActivities()
                 .AddConsoleActivities()
+                .AddWorkflow<ExecuteMethodWorkflow>()
+                .AddWorkflow<SplitObjectWorkflow>()
                 .AddSingleton(Console.In)
-                .AddMediatR(typeof(Program))
                 .BuildServiceProvider();
 
-            // Create a workflow.
-            var workflowFactory = services.GetRequiredService<IWorkflowFactory>();
-            var workflow = workflowFactory.CreateWorkflow<ActivityOutputWorkflow>();
-
-            // Start the workflow.
+            // Invoke the workflows.
             var invoker = services.GetService<IWorkflowInvoker>();
-            await invoker.StartAsync(workflow);
+            await invoker.StartAsync<ExecuteMethodWorkflow>();
+            await invoker.StartAsync<SplitObjectWorkflow>();
 
             Console.ReadLine();
         }

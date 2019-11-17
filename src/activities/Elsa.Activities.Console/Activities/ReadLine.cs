@@ -5,7 +5,6 @@ using Elsa.Attributes;
 using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Newtonsoft.Json.Linq;
 
 namespace Elsa.Activities.Console.Activities
 {
@@ -52,7 +51,7 @@ namespace Elsa.Activities.Console.Activities
 
         protected override ActivityExecutionResult OnResume(WorkflowExecutionContext context)
         {
-            var receivedInput = (string) context.Workflow.Input["ReadLineInput"];
+            var receivedInput = context.Workflow.Input.GetVariable<string>("ReadLineInput");
             return Execute(context, receivedInput);
         }
 

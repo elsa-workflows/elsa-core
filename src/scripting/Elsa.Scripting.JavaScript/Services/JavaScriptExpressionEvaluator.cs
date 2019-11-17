@@ -1,8 +1,11 @@
 using System;
+using System.Dynamic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using AutoMapper;
 using Elsa.Expressions;
+using Elsa.Scripting.JavaScript.Converters;
 using Elsa.Scripting.JavaScript.Messages;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -18,6 +21,7 @@ namespace Elsa.Scripting.JavaScript.Services
     public class JavaScriptExpressionEvaluator : IExpressionEvaluator
     {
         private readonly IMediator mediator;
+        private readonly IMapper mapper;
         private readonly JsonSerializerSettings serializerSettings;
         public const string SyntaxName = "JavaScript";
 
@@ -26,10 +30,13 @@ namespace Elsa.Scripting.JavaScript.Services
             return new WorkflowExpression<T>(SyntaxName, expression);
         }
 
-        public JavaScriptExpressionEvaluator(IMediator mediator)
+        public JavaScriptExpressionEvaluator(IMediator mediator, IMapper mapper)
         {
             this.mediator = mediator;
+            this.mapper = mapper;
+            
             serializerSettings = new JsonSerializerSettings().ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
+            serializerSettings.Converters.Add(new TruncatingNumberJsonConverter());
         }
 
         public string Syntax => SyntaxName;
@@ -84,16 +91,16 @@ namespace Elsa.Scripting.JavaScript.Services
                 if (elementType == typeof(byte))
                 {
                     var bytes = new byte[arrayInstance.Length];
-                    
+
                     for (uint i = 0; i < arrayInstance.Length; i++)
                     {
                         var jsValue = arrayInstance[i];
-                        bytes[i] = (byte)jsValue.AsNumber();
+                        bytes[i] = (byte) jsValue.AsNumber();
                     }
 
                     return bytes;
                 }
-                
+
                 var array = Array.CreateInstance(elementType, arrayInstance.Length);
 
                 for (uint i = 0; i < array.Length; i++)
@@ -109,13 +116,14 @@ namespace Elsa.Scripting.JavaScript.Services
             if (value.IsObject())
             {
                 var obj = value.AsObject().ToObject();
-                var type = targetType ?? obj.GetType();
 
-                if (type == typeof(string))
-                    return Convert.ToString(obj);
-                
-                var json = JsonConvert.SerializeObject(obj, serializerSettings);
-                return JsonConvert.DeserializeObject(json, type, serializerSettings);
+                if (obj is ExpandoObject)
+                {
+                    var json = JsonConvert.SerializeObject(obj, serializerSettings);
+                    return JsonConvert.DeserializeObject(json, targetType, serializerSettings);
+                }
+
+                return obj;
             }
 
             throw new ArgumentException($"Value type {value.Type} is not supported.", nameof(value));

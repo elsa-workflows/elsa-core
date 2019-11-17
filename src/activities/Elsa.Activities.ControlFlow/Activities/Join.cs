@@ -78,7 +78,12 @@ namespace Elsa.Activities.ControlFlow.Activities
                 }
             }
 
-            return done ? Done() : Noop();
+            if (!done)
+                return Noop();
+            
+            // Clear the recorded inbound transitions. This is necessary in case we're in a looping construct. 
+            InboundTransitions = new List<string>();
+            return Done();
         }
 
         private void RecordInboundTransitions(WorkflowExecutionContext workflowContext, IActivity activity)

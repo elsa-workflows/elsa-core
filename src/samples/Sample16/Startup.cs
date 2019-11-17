@@ -3,7 +3,6 @@ using Elsa.Activities.Http.Extensions;
 using Elsa.Activities.Timers.Extensions;
 using Elsa.Dashboard.Extensions;
 using Elsa.Persistence.MongoDb.Extensions;
-using Elsa.Runtime;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;

@@ -5,7 +5,6 @@ using Elsa.Activities;
 using Elsa.Activities.Email.Activities;
 using Elsa.Activities.Http.Activities;
 using Elsa.Activities.MassTransit.Activities;
-using Elsa.Activities.ControlFlow;
 using Elsa.Activities.ControlFlow.Activities;
 using Elsa.Activities.Workflows.Activities;
 using Elsa.Expressions;
