@@ -28,7 +28,7 @@ namespace Elsa.Models
 
         public object GetVariable(string name)
         {
-            return ContainsKey(name) ? this[name] : default;
+            return ContainsKey(name) ? this[name].Value : default;
         }
 
         public T GetVariable<T>(string name) => (T) GetVariable(name);

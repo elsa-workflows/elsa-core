@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Elsa.Activities.Console.Extensions;
 using Elsa.Activities.Reflection.Extensions;
+using Elsa.Models;
 using Elsa.Serialization;
 using Elsa.Serialization.Formatters;
 using Elsa.Services;
@@ -33,11 +34,17 @@ namespace Sample20
             var executionContext2 = await invoker.StartAsync<SplitObjectWorkflow>();
 
             var serializer = services.GetRequiredService<IWorkflowSerializer>();
+            
+            // Test serialization.
             var json1 = serializer.Serialize(executionContext1.Workflow.ToInstance(), JsonTokenFormatter.FormatName);
             var json2 = serializer.Serialize(executionContext2.Workflow.ToInstance(), JsonTokenFormatter.FormatName);
             
             Console.WriteLine(json1);
             Console.WriteLine(json2);
+
+            // Test deserialization.
+            var workflowInstance1 = serializer.Deserialize<WorkflowInstance>(json1, JsonTokenFormatter.FormatName);
+            var workflowInstance2 = serializer.Deserialize<WorkflowInstance>(json2, JsonTokenFormatter.FormatName);
 
             Console.ReadLine();
         }

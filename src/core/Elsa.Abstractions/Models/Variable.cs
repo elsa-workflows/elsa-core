@@ -1,8 +1,8 @@
-﻿using Newtonsoft.Json;
+﻿using Elsa.Converters;
+using Newtonsoft.Json;
 
 namespace Elsa.Models
 {
-    [JsonObject(ItemTypeNameHandling = TypeNameHandling.Auto)]
     public class Variable
     {
         public Variable()
@@ -13,7 +13,8 @@ namespace Elsa.Models
         {
             Value = value;
         }
-        
+    
+        [JsonConverter(typeof(TypeNameHandlingConverter))]
         public object Value { get; set; }
     }
 }

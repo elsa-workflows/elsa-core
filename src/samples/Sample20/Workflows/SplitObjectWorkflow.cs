@@ -34,6 +34,11 @@ namespace Sample20.Workflows
                     x.VariableName = "Customer3";
                     x.ValueExpression = new JavaScriptExpression<Customer>("({ Name: 'Bill', Age: 25, Cash: 50 })");
                 })
+                .Then<SetVariable>(x =>
+                {
+                    x.VariableName = "SomePrimitive";
+                    x.ValueExpression = new JavaScriptExpression<string>("'Test'");
+                })
                 .Then<ForEach>(
                     x => x.CollectionExpression = new JavaScriptExpression<IList<object>>("[Customer1, Customer2, Customer3]"),
                     forEach =>
