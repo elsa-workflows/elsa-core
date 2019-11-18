@@ -6,6 +6,7 @@ using Elsa.Activities.MassTransit.Options;
 using MassTransit;
 using MassTransit.AspNetCoreIntegration;
 using MassTransit.AspNetCoreIntegration.HealthChecks;
+using MassTransit.ConsumeConfigurators;
 using MassTransit.ExtensionsDependencyInjectionIntegration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -15,35 +16,59 @@ namespace Elsa.Activities.MassTransit.Extensions
 {
     public static class ServiceCollectionExtensions
     {
+        public static IServiceCollection AddMassTransitActivities(this IServiceCollection services)
+        {
+            return services
+                .AddActivity<SendMassTransitMessage>()
+                .AddActivity<ScheduleMassTransitMessage>()
+                .AddActivity<ReceiveMassTransitMessage>();
+        }
+
         public static IServiceCollection AddRabbitMqActivities(this IServiceCollection services, Action<OptionsBuilder<RabbitMqOptions>> options = null, params Type[] messageTypes)
         {
             var optionsBuilder = services.AddOptions<RabbitMqOptions>();
             options?.Invoke(optionsBuilder);
 
             services
-                .AddActivity<SendMassTransitMessage>()
-                .AddActivity<ReceiveMassTransitMessage>();
-
-            services.AddSingleton<SimplifiedBusHealthCheck>();
-            services.AddSingleton<ReceiveEndpointHealthCheck>();
-
-            services.AddMassTransit(
-                massTransit =>
-                {
-                    foreach (var messageType in messageTypes)
-                    {
-                        massTransit.AddConsumer(CreateConsumerType(messageType));
-                    }
-
-                    massTransit.AddBus(sp => CreateUsingRabbitMq(massTransit, sp, messageTypes));
-                });
-
-            services.AddSingleton<IHostedService, MassTransitHostedService>();
+                .AddMassTransitActivities()
+                .AddMassTransit(CreateBus, ConfigureMassTransit);
 
             return services;
+
+            // local function to configure consumers
+            void ConfigureMassTransit(IServiceCollectionConfigurator configurator)
+            {
+                foreach (var messageType in messageTypes)
+                {
+                    configurator.AddConsumer(CreateConsumerType(messageType));
+                }
+            }
+
+            // local function to create the bus
+            IBusControl CreateBus(IServiceProvider sp)
+            {
+                return CreateUsingRabbitMq(sp, messageTypes);
+            }
         }
 
-        private static IBusControl CreateUsingRabbitMq(IServiceCollectionConfigurator massTransit, IServiceProvider sp, IEnumerable<Type> messageTypes)
+        public static void ConfigureWorkflowConsumer<T>(
+            this IReceiveEndpointConfigurator configurator,
+            IServiceProvider provider,
+            Action<IConsumerConfigurator<WorkflowConsumer<T>>> configure = null)
+            where T : class
+        {
+            provider.GetRequiredService<IRegistration>().ConfigureConsumer(configurator, configure);
+
+            EndpointConvention.Map<T>(configurator.InputAddress);
+        }
+
+        public static IConsumerRegistrationConfigurator<WorkflowConsumer<T>> AddWorkflowConsumer<T>(this IRegistrationConfigurator configurator,
+            Action<IConsumerConfigurator<WorkflowConsumer<T>>> configure = null) where T : class
+        {
+            return configurator.AddConsumer(configure);
+        }
+
+        private static IBusControl CreateUsingRabbitMq(IServiceProvider sp, IEnumerable<Type> messageTypes)
         {
 
             return Bus.Factory.CreateUsingRabbitMq(
