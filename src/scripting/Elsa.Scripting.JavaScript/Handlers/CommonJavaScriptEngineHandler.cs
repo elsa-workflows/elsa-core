@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Globalization;
@@ -20,7 +20,7 @@ namespace Elsa.Scripting.JavaScript.Handlers
 
             engine.SetValue("input", (Func<string, object>) (name => workflow.Input.GetVariable(name)));
             engine.SetValue("variable", (Func<string, object>) (name => executionContext.CurrentScope.GetVariable(name)));
-            engine.SetValue("lastResult", (Func<string, object>) (name => executionContext.CurrentScope.LastResult));
+            engine.SetValue("lastResult", (Func<string, object>) (name => executionContext.CurrentScope.LastResult?.Value));
             engine.SetValue("correlationId", (Func<object>) (() => executionContext.Workflow.CorrelationId));
             engine.SetValue("currentCulture", (Func<object>) (() => CultureInfo.InvariantCulture));
 
