@@ -23,22 +23,23 @@ namespace Elsa.Scripting.JavaScript.Handlers
             engine.SetValue("lastResult", (Func<string, object>) (name => executionContext.CurrentScope.LastResult?.Value));
             engine.SetValue("correlationId", (Func<object>) (() => executionContext.Workflow.CorrelationId));
             engine.SetValue("currentCulture", (Func<object>) (() => CultureInfo.InvariantCulture));
+            engine.SetValue("newGuid", (Func<string>) (() => Guid.NewGuid().ToString()));
 
             var variables = executionContext.GetVariables();
-            
-            foreach (var variable in variables) 
+
+            foreach (var variable in variables)
                 engine.SetValue(variable.Key, variable.Value.Value);
 
             foreach (var activity in executionContext.Workflow.Activities.Where(x => !string.IsNullOrWhiteSpace(x.Name) && x.Output != null))
             {
                 var expando = new ExpandoObject() as IDictionary<string, object>;
-                
-                foreach (var variable in activity.Output) 
+
+                foreach (var variable in activity.Output)
                     expando[variable.Key] = variable.Value.Value;
 
                 engine.SetValue(activity.Name, expando);
             }
-            
+
             return Task.CompletedTask;
         }
     }
