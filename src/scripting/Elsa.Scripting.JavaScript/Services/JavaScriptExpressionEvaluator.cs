@@ -13,6 +13,7 @@ using Jint;
 using Jint.Native;
 using MediatR;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using NodaTime;
 using NodaTime.Serialization.JsonNet;
 
@@ -34,7 +35,7 @@ namespace Elsa.Scripting.JavaScript.Services
         {
             this.mediator = mediator;
             this.mapper = mapper;
-            
+
             serializerSettings = new JsonSerializerSettings().ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
             serializerSettings.Converters.Add(new TruncatingNumberJsonConverter());
         }
@@ -117,13 +118,18 @@ namespace Elsa.Scripting.JavaScript.Services
             {
                 var obj = value.AsObject().ToObject();
 
-                if (obj is ExpandoObject)
+                switch (obj)
                 {
-                    var json = JsonConvert.SerializeObject(obj, serializerSettings);
-                    return JsonConvert.DeserializeObject(json, targetType, serializerSettings);
+                    case ExpandoObject _:
+                    {
+                        var json = JsonConvert.SerializeObject(obj, serializerSettings);
+                        return JsonConvert.DeserializeObject(json, targetType, serializerSettings);
+                    }
+                    case JValue jValue:
+                        return jValue.Value;
+                    default:
+                        return obj;
                 }
-
-                return obj;
             }
 
             throw new ArgumentException($"Value type {value.Type} is not supported.", nameof(value));
