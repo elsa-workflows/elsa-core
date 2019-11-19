@@ -8,9 +8,9 @@ services:
             - ConnectionStrings:MongoDb=mongodb://mongodb
         ports:
             - "22174:80"
-#        depends_on:
-#            - mongodb
-#            - smtp4dev
+        depends_on:
+            - mongodb
+            - smtp4dev
 
     mongodb:
         image: mongo
@@ -19,6 +19,6 @@ services:
 
     smtp4dev:
         image: opvolger/rnwoodsmtp4dev
-        ports:a
+        ports:
             - "3000:80"
             - "2525:25"
