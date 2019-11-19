@@ -38,7 +38,7 @@ namespace Elsa.Dashboard.Extensions
             options.ActivityDefinitions
                 // Add all activities from all referenced assemblies.
                 .Discover(
-                    selector => selector.FromApplicationDependencies()
+                    selector => selector.FromApplicationDependencies(x => !x.FullName.StartsWith("Microsoft.AspNetCore")) // TODO: Prevents type load exception. Needs more investigation.
                         .AddClasses(x => x.AssignableTo<IActivity>()));
 
             return options;

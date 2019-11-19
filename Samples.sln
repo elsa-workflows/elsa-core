@@ -13,6 +13,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "solution", "solution", "{71
 		.gitignore = .gitignore
 		Nuget.Config = Nuget.Config
 		README.md = README.md
+		docker-compose.yaml = docker-compose.yaml
+		Dockerfile = Dockerfile
+		.dockerignore = .dockerignore
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Abstractions", "src\core\Elsa.Abstractions\Elsa.Abstractions.csproj", "{3130C574-557C-4DA2-933E-AED7A9EBE48A}"
@@ -110,6 +113,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Activities.Reflection", "src\activities\Elsa.Activities.Reflection\Elsa.Activities.Reflection.csproj", "{258F624E-98D7-4498-AE2E-F612D8ECA763}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sample20", "src\samples\Sample20\Sample20.csproj", "{9B238B75-5A68-48B1-973A-59F0EFAB0A8B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Dashboard.Web", "src\dashboard\Elsa.Dashboard.Web\Elsa.Dashboard.Web.csproj", "{AE0363D2-3630-4CDD-86A1-7D6A717361BD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -285,6 +290,10 @@ Global
 		{9B238B75-5A68-48B1-973A-59F0EFAB0A8B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9B238B75-5A68-48B1-973A-59F0EFAB0A8B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9B238B75-5A68-48B1-973A-59F0EFAB0A8B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AE0363D2-3630-4CDD-86A1-7D6A717361BD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AE0363D2-3630-4CDD-86A1-7D6A717361BD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AE0363D2-3630-4CDD-86A1-7D6A717361BD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AE0363D2-3630-4CDD-86A1-7D6A717361BD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -339,6 +348,7 @@ Global
 		{2AEA0028-96D6-4823-A88F-24294E4BA4E8} = {5E5E1E84-DDBC-40D6-B891-0D563A15A44A}
 		{258F624E-98D7-4498-AE2E-F612D8ECA763} = {B43B546E-23F3-46E8-ACB7-D04F05CDA180}
 		{9B238B75-5A68-48B1-973A-59F0EFAB0A8B} = {5E5E1E84-DDBC-40D6-B891-0D563A15A44A}
+		{AE0363D2-3630-4CDD-86A1-7D6A717361BD} = {0DF567E8-2A21-4A1C-90E8-025F1EC615F3}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}
