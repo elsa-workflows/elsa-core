@@ -29,6 +29,8 @@ namespace Elsa.Dashboard.Web
                 .AddElsa(x => x.AddMongoDbStores(Configuration, "Elsa", "MongoDb"))
                 
                 // Add activities we'd like to use.
+                // Configuring the activities as is done here is only required if we want to be able to actually run workflows form this application.
+                // Otherwise it's only necessary to register activities for the workflow designer to discover.
                 .AddHttpActivities(options => options.Bind(elsaSection.GetSection("Http")))
                 .AddEmailActivities(options => options.Bind(elsaSection.GetSection("Smtp")))
                 .AddTimerActivities(options => options.Bind(elsaSection.GetSection("BackgroundRunner")))
@@ -43,8 +45,10 @@ namespace Elsa.Dashboard.Web
                 app.UseDeveloperExceptionPage();
 
             app
-                .UseStaticFiles()
+                // This is only necessary if we want to be able to run workflows containing HTTP activities from this application. 
                 .UseHttpActivities()
+                
+                .UseStaticFiles()
                 .UseRouting()
                 .UseEndpoints(endpoints => endpoints.MapControllers())
                 .UseWelcomePage();
