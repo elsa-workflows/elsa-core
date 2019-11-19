@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -52,14 +53,12 @@ namespace Elsa.Activities.ControlFlow.Activities
         {
             var result = await expressionEvaluator.EvaluateAsync(Expression, workflowContext, cancellationToken);
 
-            if (Cases.Contains(result) || !Cases.Contains("default"))
-            {
+            if (ContainsCase(result) || !ContainsCase("default"))
                 return Outcome(result);
-            }
-            else
-            {
-                return Outcome("default");
-            }
+
+            return Outcome("default");
         }
+
+        private bool ContainsCase(string @case) => Cases.Contains(@case, StringComparer.OrdinalIgnoreCase);
     }
 }
