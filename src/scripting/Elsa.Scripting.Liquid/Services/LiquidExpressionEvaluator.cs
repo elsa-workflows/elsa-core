@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Scripting.Liquid.Extensions;
@@ -28,7 +28,9 @@ namespace Elsa.Scripting.Liquid.Services
         {
             var templateContext = await CreateTemplateContextAsync(workflowExecutionContext);
             var result = await liquidTemplateManager.RenderAsync(expression, templateContext);
-            return string.IsNullOrWhiteSpace(result) ? default : type != null ? Convert.ChangeType(result, type) : result;
+            object convertedResult = string.IsNullOrWhiteSpace(result) ? default : type != null ? Convert.ChangeType(result, type) : result;
+            workflowExecutionContext.SetLastExpressionResult(convertedResult);
+            return convertedResult;
         }
 
         private async Task<TemplateContext> CreateTemplateContextAsync(WorkflowExecutionContext workflowContext)

@@ -83,6 +83,8 @@ namespace Elsa.Services.Models
         public void SetLastResult(object value) => SetLastResult(new Variable(value));
         public void SetLastResult(Variable value) => CurrentScope.LastResult = value;
 
+        public void SetLastExpressionResult(object value) => CurrentScope.LastExpressionResult = new Variable(value);
+
         public void Start()
         {
             Workflow.StartedAt = clock.GetCurrentInstant();

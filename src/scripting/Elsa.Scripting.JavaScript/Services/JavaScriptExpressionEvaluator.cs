@@ -49,7 +49,10 @@ namespace Elsa.Scripting.JavaScript.Services
             await ConfigureEngineAsync(engine, workflowExecutionContext, cancellationToken);
             engine.Execute(expression);
 
-            return ConvertValue(engine.GetCompletionValue(), type);
+            object convertedResult = ConvertValue(engine.GetCompletionValue(), type);
+            workflowExecutionContext.SetLastExpressionResult(convertedResult);
+
+            return convertedResult;
         }
 
         private async Task ConfigureEngineAsync(Engine engine, WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)

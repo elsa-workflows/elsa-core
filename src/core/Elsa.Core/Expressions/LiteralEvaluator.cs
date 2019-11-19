@@ -20,9 +20,14 @@ namespace Elsa.Expressions
         public Task<object> EvaluateAsync(string expression, Type type, WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(expression))
+            {
+                workflowExecutionContext.SetLastExpressionResult(default(object));
                 return Task.FromResult(default(object));
-            
-            return Task.FromResult(expression.Parse(type));
+            }
+
+            object convertedResult = expression.Parse(type);
+            workflowExecutionContext.SetLastExpressionResult(convertedResult);
+            return Task.FromResult(convertedResult);
         }
     }
 }
