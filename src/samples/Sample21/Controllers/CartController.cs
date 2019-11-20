@@ -1,9 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Security.Claims;
 using System.Threading.Tasks;
-using Esprima.Ast;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Sample21.Models;
 
@@ -15,18 +12,18 @@ namespace Sample21.Controllers
     {
         private const string Username = "sampleUser";
 
-        private readonly ICarts _carts;
+        private readonly ICarts carts;
 
         public CartController(ICarts carts)
         {
-            _carts = carts;
+            this.carts = carts;
         }
 
         // GET: api/Cart
         [HttpGet]
         public async Task<Cart> Get()
         {
-            var cart = await _carts.Cart(Username);
+            var cart = await carts.Cart(Username);
 
             return cart ?? new Cart
             {
@@ -40,7 +37,7 @@ namespace Sample21.Controllers
         [HttpPost]
         public async Task Post([FromBody] CartItem item)
         {
-            await _carts.AddItem(Username, item);
+            await carts.AddItem(Username, item);
         }
 
         // POST: api/cart/submit
@@ -48,7 +45,7 @@ namespace Sample21.Controllers
         [Route("submit")]
         public async Task SubmitOrder()
         {
-            await _carts.Submit(Username);
+            await carts.Submit(Username);
         }
     }
 }

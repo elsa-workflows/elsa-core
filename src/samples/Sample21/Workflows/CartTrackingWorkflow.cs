@@ -71,7 +71,6 @@ namespace Sample21.Workflows
                             .Then("Join");
                     })
                 .Then<Join>(x => x.Mode = Join.JoinMode.WaitAny).WithName("Join");
-
         }
     }
 }

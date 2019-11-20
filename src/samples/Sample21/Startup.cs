@@ -2,7 +2,6 @@ using System;
 using System.Collections.Specialized;
 using Elsa.Activities.Email.Extensions;
 using Elsa.Activities.Http.Extensions;
-using Elsa.Activities.MassTransit.Consumers;
 using Elsa.Activities.MassTransit.Extensions;
 using Elsa.Activities.Timers.Extensions;
 using Elsa.Runtime;
@@ -11,7 +10,6 @@ using MassTransit;
 using MassTransit.ExtensionsDependencyInjectionIntegration;
 using MassTransit.AspNetCoreIntegration;
 using MassTransit.QuartzIntegration;
-using MassTransit.Util;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,7 +23,6 @@ using Sample21.Controllers;
 using Sample21.Messages;
 using Sample21.Services;
 using Sample21.Workflows;
-using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace Sample21
 {
@@ -131,8 +128,6 @@ namespace Sample21
 
                 return bus;
             }
-
-
 
             IScheduler CreateScheduler()
             {

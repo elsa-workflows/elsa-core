@@ -1,8 +1,5 @@
-using MassTransit.AspNetCoreIntegration;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Sample21.Services;
 
 namespace Sample21
 {
