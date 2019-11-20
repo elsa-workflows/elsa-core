@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Elsa.Expressions;
 using Elsa.Scripting.JavaScript.Converters;
+using Elsa.Scripting.JavaScript.Extensions;
 using Elsa.Scripting.JavaScript.Messages;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -65,14 +66,17 @@ namespace Elsa.Scripting.JavaScript.Services
             if (value.IsNull())
                 return default;
 
-            if (value.IsBoolean())
+            if (targetType == typeof(bool) && value.IsBoolean())
                 return value.AsBoolean();
 
-            if (value.IsDate())
+            if (targetType == typeof(DateTime) && value.IsDate())
                 return value.AsDate().ToDateTime();
 
-            if (value.IsNumber())
-                return value.AsNumber();
+            if (targetType.IsNumeric() && value.IsNumber())
+                return Convert.ChangeType(value.AsNumber(), targetType);
+
+            if (targetType == typeof(string))
+                return value.ToString();
 
             if (value.IsString())
             {

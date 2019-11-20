@@ -19,10 +19,10 @@
 
     <ItemGroup>
         <PackageReference Include="FlexLabs.EntityFrameworkCore.Upsert" Version="3.0.0" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="3.0.0" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="3.0.0" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="3.0.0" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="3.0.0" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="3.0.1" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="3.0.1" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="3.0.1" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="3.0.1" />
     </ItemGroup>
 
     <ItemGroup>
