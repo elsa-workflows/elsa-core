@@ -5,11 +5,9 @@ using Elsa.Activities.MassTransit.Consumers;
 using Elsa.Activities.MassTransit.Options;
 using MassTransit;
 using MassTransit.AspNetCoreIntegration;
-using MassTransit.AspNetCoreIntegration.HealthChecks;
 using MassTransit.ConsumeConfigurators;
 using MassTransit.ExtensionsDependencyInjectionIntegration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Activities.MassTransit.Extensions
@@ -19,8 +17,9 @@ namespace Elsa.Activities.MassTransit.Extensions
         public static IServiceCollection AddMassTransitActivities(this IServiceCollection services)
         {
             return services
+                .AddActivity<CancelScheduledMassTransitMessage>()
                 .AddActivity<SendMassTransitMessage>()
-                .AddActivity<ScheduleMassTransitMessage>()
+                .AddActivity<ScheduleSendMassTransitMessage>()
                 .AddActivity<ReceiveMassTransitMessage>();
         }
 

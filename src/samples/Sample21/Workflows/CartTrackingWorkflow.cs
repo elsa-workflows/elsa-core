@@ -20,7 +20,7 @@ namespace Sample21.Workflows
     {
         public void Build(IWorkflowBuilder builder)
         {
-            builder.StartWith<ReceiveMassTransitMessage>(activity => activity.MessageType = typeof(CartItemAdded))
+            builder.StartWith<ReceiveMassTransitMessage>(activity => activity.MessageType = typeof(CartCreated))
                 .Then<SetVariable>(activity =>
                 {
                     activity.VariableName = "LastUpdateTimestamp";
@@ -36,14 +36,20 @@ namespace Sample21.Workflows
                     fork =>
                     {
                         fork.When("Item-Added")
-                            .Then<ScheduleMassTransitMessage>(
+                            .Then<ScheduleSendMassTransitMessage>(
                                 activity =>
                                 {
                                     activity.MessageType = typeof(CartExpiredEvent);
                                     activity.EndpointAddress = new Uri("rabbitmq://localhost/shopping_cart_state");
                                     activity.Message = new JavaScriptExpression<CartExpiredEvent>("return { correlationId: correlationId(), cardId: correlationId() }");
                                 }).WithName("ScheduleExpire")
+                            .Then<SetVariable>(activity =>
+                            {
+                                activity.VariableName = "ScheduleTokenId";
+                                activity.ValueExpression = new JavaScriptExpression<bool>("lastResult()");
+                            })
                             .Then<ReceiveMassTransitMessage>(activity => activity.MessageType = typeof(CartItemAdded))
+                            .Then<CancelScheduledMassTransitMessage>(activity => activity.TokenId = new JavaScriptExpression<Guid>("return ScheduleTokenId"))
                             .Then("ScheduleExpire");
 
                         fork.When("Cart-Expired")

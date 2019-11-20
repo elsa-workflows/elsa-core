@@ -15,12 +15,12 @@ namespace Elsa.Activities.MassTransit.Activities
         DisplayName = "Schedule MassTransit Message",
         Description = "Schedule a message via MassTransit."
     )]
-    public class ScheduleMassTransitMessage : Activity
+    public class ScheduleSendMassTransitMessage : Activity
     {
         private readonly ISendEndpointProvider sender;
         private readonly IWorkflowExpressionEvaluator evaluator;
 
-        public ScheduleMassTransitMessage(ISendEndpointProvider sender, IWorkflowExpressionEvaluator evaluator)
+        public ScheduleSendMassTransitMessage(ISendEndpointProvider sender, IWorkflowExpressionEvaluator evaluator)
         {
             this.sender = sender;
             this.evaluator = evaluator;
@@ -67,7 +67,9 @@ namespace Elsa.Activities.MassTransit.Activities
 
             var endpoint = await sender.GetSendEndpoint(new Uri("rabbitmq://localhost/sample_quartz_scheduler"));
 
-            await endpoint.ScheduleSend(EndpointAddress, DateTime.UtcNow + TimeSpan.FromSeconds(10), message, cancellationToken);
+            var scheduledMessage = await endpoint.ScheduleSend(EndpointAddress, DateTime.UtcNow + TimeSpan.FromSeconds(10), message, cancellationToken);
+
+            context.SetLastResult(Output.SetVariable("TokenId", scheduledMessage.TokenId));
 
             return Done();
         }

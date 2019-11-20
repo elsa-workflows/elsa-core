@@ -70,6 +70,7 @@ namespace Sample21
                 configurator.AddConsumer<CancelScheduledMessageConsumer>();
 
                 // configure workflow consumers
+                configurator.AddWorkflowConsumer<CartCreated>();
                 configurator.AddWorkflowConsumer<CartItemAdded>();
                 configurator.AddWorkflowConsumer<CartExpiredEvent>();
             }
@@ -94,6 +95,7 @@ namespace Sample21
                         ep.UseMessageRetry(r => r.Interval(2, 100));
 
                         // Consume all workflow messages from the same queue.
+                        ep.ConfigureWorkflowConsumer<CartCreated>(serviceProvider);
                         ep.ConfigureWorkflowConsumer<CartItemAdded>(serviceProvider);
                         ep.ConfigureWorkflowConsumer<CartExpiredEvent>(serviceProvider);
                     });

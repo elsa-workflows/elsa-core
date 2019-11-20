@@ -39,6 +39,12 @@ namespace Sample21.Controllers
                 };
 
                 ActiveCarts.Add(cart);
+
+                await sender.Send(new CartCreated
+                {
+                    CartId = cart.Id,
+                    Timestamp = DateTime.UtcNow
+                });
             }
 
             var exitingItem = cart.Items.FirstOrDefault(x => x.ProductSku == item.ProductSku);
@@ -53,7 +59,7 @@ namespace Sample21.Controllers
 
             await sender.Send(new CartItemAdded
             {
-                CardId = cart.Id,
+                CartId = cart.Id,
                 Timestamp = DateTime.UtcNow
             });
         }
