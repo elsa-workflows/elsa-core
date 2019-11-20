@@ -42,6 +42,8 @@ namespace Sample21
             services
                 .AddControllers();
 
+            var scheduler = CreateScheduler();
+
             services
                 .AddElsa()
                 .AddTaskExecutingServer()
@@ -52,7 +54,8 @@ namespace Sample21
                 .AddWorkflow<CartTrackingWorkflow>()
 
                 .AddScoped<ICarts, Carts>()
-                .AddSingleton(CreateScheduler())
+
+                .AddSingleton(scheduler)
 
                 // configures MassTransit to integrate with the built-in dependency injection
                 .AddMassTransit(CreateBus, ConfigureMassTransit)
@@ -74,7 +77,7 @@ namespace Sample21
             // local function to create the bus
             IBusControl CreateBus(IServiceProvider serviceProvider)
             {
-                return Bus.Factory.CreateUsingRabbitMq(cfg =>
+                var bus = Bus.Factory.CreateUsingRabbitMq(cfg =>
                 {
                     var host = cfg.Host(new Uri("rabbitmq://localhost"), h =>
                     {
@@ -107,6 +110,10 @@ namespace Sample21
                         e.ConfigureConsumer<CancelScheduledMessageConsumer>(serviceProvider);
                     });
                 });
+
+                scheduler.JobFactory = new MassTransitJobFactory(bus);
+
+                return bus;
             }
 
 
