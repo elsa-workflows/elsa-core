@@ -16,11 +16,34 @@ namespace Elsa.Activities.MassTransit.Extensions
     {
         public static IServiceCollection AddMassTransitActivities(this IServiceCollection services)
         {
+            if (services == null)
+            {
+                throw new ArgumentNullException(nameof(services));
+            }
+
             return services
-                .AddActivity<CancelScheduledMassTransitMessage>()
                 .AddActivity<SendMassTransitMessage>()
-                .AddActivity<ScheduleSendMassTransitMessage>()
                 .AddActivity<ReceiveMassTransitMessage>();
+        }
+
+        public static IServiceCollection AddMassTransitSchedulingActivities(this IServiceCollection services, Action<MessageScheduleOptions> configureOptions)
+        {
+            if (services == null)
+            {
+                throw new ArgumentNullException(nameof(services));
+            }
+
+            if (configureOptions == null)
+            {
+                throw new ArgumentNullException(nameof(configureOptions));
+            }
+
+            services.AddMassTransitActivities()
+                .AddActivity<CancelScheduledMassTransitMessage>()
+                .AddActivity<ScheduleSendMassTransitMessage>();
+
+            services.Configure(configureOptions);
+            return services;
         }
 
         public static IServiceCollection AddRabbitMqActivities(this IServiceCollection services, Action<OptionsBuilder<RabbitMqOptions>> options = null, params Type[] messageTypes)
@@ -50,26 +73,27 @@ namespace Elsa.Activities.MassTransit.Extensions
             }
         }
 
-        public static void ConfigureWorkflowConsumer<T>(
+        public static void ConfigureWorkflowConsumer<TMessage>(
             this IReceiveEndpointConfigurator configurator,
             IServiceProvider provider,
-            Action<IConsumerConfigurator<WorkflowConsumer<T>>> configure = null)
-            where T : class
+            Action<IConsumerConfigurator<WorkflowConsumer<TMessage>>> configure = null)
+            where TMessage : class
         {
             provider.GetRequiredService<IRegistration>().ConfigureConsumer(configurator, configure);
 
-            EndpointConvention.Map<T>(configurator.InputAddress);
+            EndpointConvention.Map<TMessage>(configurator.InputAddress);
         }
 
-        public static IConsumerRegistrationConfigurator<WorkflowConsumer<T>> AddWorkflowConsumer<T>(this IRegistrationConfigurator configurator,
-            Action<IConsumerConfigurator<WorkflowConsumer<T>>> configure = null) where T : class
+        public static IConsumerRegistrationConfigurator<WorkflowConsumer<TMessage>> AddWorkflowConsumer<TMessage>(
+            this IRegistrationConfigurator configurator,
+            Action<IConsumerConfigurator<WorkflowConsumer<TMessage>>> configure = null)
+            where TMessage : class
         {
             return configurator.AddConsumer(configure);
         }
 
         private static IBusControl CreateUsingRabbitMq(IServiceProvider sp, IEnumerable<Type> messageTypes)
         {
-
             return Bus.Factory.CreateUsingRabbitMq(
                 bus =>
                 {

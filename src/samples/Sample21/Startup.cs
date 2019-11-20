@@ -51,7 +51,10 @@ namespace Sample21
                 .AddHttpActivities()
                 .AddTimerActivities(options => options.Configure(x => x.SweepInterval = Period.FromSeconds(10)))
                 .AddEmailActivities(options => options.Bind(Configuration.GetSection("Smtp")))
-                .AddMassTransitActivities()
+                .AddMassTransitSchedulingActivities(options =>
+                {
+                    options.SchedulerAddress = new Uri("rabbitmq://localhost/sample_quartz_scheduler");
+                })
                 .AddWorkflow<CartTrackingWorkflow>()
 
                 .AddScoped<ICarts, Carts>()

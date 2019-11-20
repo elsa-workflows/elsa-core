@@ -1,12 +1,14 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.MassTransit.Options;
 using Elsa.Attributes;
 using Elsa.Expressions;
 using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 using MassTransit;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Activities.MassTransit.Activities
 {
@@ -19,11 +21,13 @@ namespace Elsa.Activities.MassTransit.Activities
     {
         private readonly ISendEndpointProvider sender;
         private readonly IWorkflowExpressionEvaluator evaluator;
+        private readonly MessageScheduleOptions options;
 
-        public ScheduleSendMassTransitMessage(ISendEndpointProvider sender, IWorkflowExpressionEvaluator evaluator)
+        public ScheduleSendMassTransitMessage(ISendEndpointProvider sender, IWorkflowExpressionEvaluator evaluator, IOptions<MessageScheduleOptions> options)
         {
             this.sender = sender;
             this.evaluator = evaluator;
+            this.options = options.Value;
         }
 
         [ActivityProperty(Hint = "The assembly-qualified type name of the message to send.")]
@@ -57,7 +61,7 @@ namespace Elsa.Activities.MassTransit.Activities
 
         protected override bool OnCanExecute(WorkflowExecutionContext context)
         {
-            return MessageType != null;
+            return MessageType != null && options.SchedulerAddress != null;
         }
 
         protected override async Task<ActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext context,
@@ -65,7 +69,7 @@ namespace Elsa.Activities.MassTransit.Activities
         {
             var message = await evaluator.EvaluateAsync(Message, MessageType, context, cancellationToken);
 
-            var endpoint = await sender.GetSendEndpoint(new Uri("rabbitmq://localhost/sample_quartz_scheduler"));
+            var endpoint = await sender.GetSendEndpoint(options.SchedulerAddress);
 
             var scheduledMessage = await endpoint.ScheduleSend(EndpointAddress, DateTime.UtcNow + TimeSpan.FromSeconds(10), message, cancellationToken);
 

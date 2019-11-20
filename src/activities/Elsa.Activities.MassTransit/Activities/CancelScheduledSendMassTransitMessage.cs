@@ -1,12 +1,14 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.MassTransit.Options;
 using Elsa.Attributes;
 using Elsa.Expressions;
 using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 using MassTransit;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Activities.MassTransit.Activities
 {
@@ -19,11 +21,13 @@ namespace Elsa.Activities.MassTransit.Activities
     {
         private readonly ISendEndpointProvider sender;
         private readonly IWorkflowExpressionEvaluator evaluator;
+        private readonly MessageScheduleOptions options;
 
-        public CancelScheduledMassTransitMessage(ISendEndpointProvider sender, IWorkflowExpressionEvaluator evaluator)
+        public CancelScheduledMassTransitMessage(ISendEndpointProvider sender, IWorkflowExpressionEvaluator evaluator, IOptions<MessageScheduleOptions> options)
         {
             this.sender = sender;
             this.evaluator = evaluator;
+            this.options = options.Value;
         }
 
         [ActivityProperty(Hint = "Expression that returns the tokenId of a scheduled message to cancel.")]
@@ -36,7 +40,7 @@ namespace Elsa.Activities.MassTransit.Activities
 
         protected override bool OnCanExecute(WorkflowExecutionContext context)
         {
-            return TokenId != null;
+            return TokenId != null && options.SchedulerAddress != null;
         }
 
         protected override async Task<ActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext context,
@@ -44,7 +48,7 @@ namespace Elsa.Activities.MassTransit.Activities
         {
             var tokenId = (Guid)await evaluator.EvaluateAsync(TokenId, typeof(Guid), context, cancellationToken);
 
-            var endpoint = await sender.GetSendEndpoint(new Uri("rabbitmq://localhost/sample_quartz_scheduler"));
+            var endpoint = await sender.GetSendEndpoint(options.SchedulerAddress);
 
             await endpoint.CancelScheduledSend(tokenId);
 
