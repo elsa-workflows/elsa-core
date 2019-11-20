@@ -20,6 +20,7 @@ using NodaTime;
 using Quartz;
 using Quartz.Impl;
 using Quartz.Logging;
+using Sample21.Consumers;
 using Sample21.Controllers;
 using Sample21.Messages;
 using Sample21.Services;
@@ -72,7 +73,11 @@ namespace Sample21
                 // configure workflow consumers
                 configurator.AddWorkflowConsumer<CartCreated>();
                 configurator.AddWorkflowConsumer<CartItemAdded>();
+                configurator.AddWorkflowConsumer<OrderSubmitted>();
                 configurator.AddWorkflowConsumer<CartExpiredEvent>();
+
+                // host fake service consumers
+                configurator.AddConsumer<CartRemovedConsumer>();
             }
 
             // local function to create the bus
@@ -88,6 +93,11 @@ namespace Sample21
 
                     cfg.UseMessageScheduler(new Uri("rabbitmq://localhost/sample_quartz_scheduler"));
 
+                    cfg.ReceiveEndpoint(host, "shopping_cart_service", ep =>
+                    {
+                        ep.ConfigureConsumer<CartRemovedConsumer>(serviceProvider);
+                    });
+
                     cfg.ReceiveEndpoint(host, "shopping_cart_state", ep =>
                     {
                         ep.PrefetchCount = 16;
@@ -97,6 +107,7 @@ namespace Sample21
                         // Consume all workflow messages from the same queue.
                         ep.ConfigureWorkflowConsumer<CartCreated>(serviceProvider);
                         ep.ConfigureWorkflowConsumer<CartItemAdded>(serviceProvider);
+                        ep.ConfigureWorkflowConsumer<OrderSubmitted>(serviceProvider);
                         ep.ConfigureWorkflowConsumer<CartExpiredEvent>(serviceProvider);
                     });
 

@@ -42,5 +42,13 @@ namespace Sample21.Controllers
         {
             await _carts.AddItem(Username, item);
         }
+
+        // POST: api/cart/submit
+        [HttpPost]
+        [Route("submit")]
+        public async Task SubmitOrder()
+        {
+            await _carts.Submit(Username);
+        }
     }
 }

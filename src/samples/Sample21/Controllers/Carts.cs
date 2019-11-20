@@ -11,7 +11,7 @@ namespace Sample21.Controllers
 {
     public class Carts : ICarts
     {
-        private static readonly ConcurrentBag<Cart> ActiveCarts = new ConcurrentBag<Cart>();
+        private static readonly ConcurrentDictionary<string, Cart> ActiveCarts = new ConcurrentDictionary<string, Cart>();
 
         private readonly ISendEndpointProvider sender;
 
@@ -22,7 +22,9 @@ namespace Sample21.Controllers
 
         public Task<Cart> Cart(string username)
         {
-            return Task.FromResult(ActiveCarts.FirstOrDefault(x => x.Username == username));
+            ActiveCarts.TryGetValue(username, out var cart);
+
+            return Task.FromResult(cart);
         }
 
         public async Task AddItem(string username, CartItem item)
@@ -38,13 +40,19 @@ namespace Sample21.Controllers
                     Items = new List<CartItem>()
                 };
 
-                ActiveCarts.Add(cart);
-
-                await sender.Send(new CartCreated
+                if (ActiveCarts.TryAdd(username, cart))
                 {
-                    CartId = cart.Id,
-                    Timestamp = DateTime.UtcNow
-                });
+                    await sender.Send(new CartCreated
+                    {
+                        CartId = cart.Id,
+                        UserName = cart.Username,
+                        Timestamp = DateTime.UtcNow
+                    });
+                }
+                else
+                {
+                    ActiveCarts.TryGetValue(username, out cart);
+                }
             }
 
             var exitingItem = cart.Items.FirstOrDefault(x => x.ProductSku == item.ProductSku);
@@ -60,8 +68,32 @@ namespace Sample21.Controllers
             await sender.Send(new CartItemAdded
             {
                 CartId = cart.Id,
+                UserName = cart.Username,
                 Timestamp = DateTime.UtcNow
             });
+        }
+
+        public async Task Submit(string username)
+        {
+            if (ActiveCarts.TryRemove(username, out var cart))
+            {
+                await sender.Send(new OrderSubmitted
+                {
+                    OrderId = Guid.NewGuid(),
+                    CartId = cart.Id,
+                    UserName = username,
+                    Timestamp = DateTime.UtcNow
+                });
+            }
+        }
+
+        public void Remove(Guid cartId)
+        {
+            var cart = ActiveCarts.Values.FirstOrDefault(x => x.Id == cartId);
+            if (cart != null)
+            {
+                ActiveCarts.TryRemove(cart.Username, out _);
+            }
         }
     }
 }

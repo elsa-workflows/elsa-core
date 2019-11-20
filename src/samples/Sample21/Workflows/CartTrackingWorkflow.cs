@@ -1,14 +1,7 @@
 using System;
-using System.Collections.Generic;
-using System.Net;
-using System.Net.Http;
 using Elsa.Activities;
 using Elsa.Activities.ControlFlow.Activities;
-using Elsa.Activities.Email.Activities;
-using Elsa.Activities.Http.Activities;
 using Elsa.Activities.MassTransit.Activities;
-using Elsa.Activities.Workflows.Activities;
-using Elsa.Expressions;
 using Elsa.Scripting.JavaScript;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -32,7 +25,7 @@ namespace Sample21.Workflows
                     activity.ValueExpression = new JavaScriptExpression<bool>("false");
                 })
                 .Then<Fork>(
-                    action => action.Branches = new [] {"Item-Added", "Cart-Expired"},
+                    action => action.Branches = new [] {"Item-Added", "Cart-Expired", "Order-Submitted"},
                     fork =>
                     {
                         fork.When("Item-Added")
@@ -41,7 +34,7 @@ namespace Sample21.Workflows
                                 {
                                     activity.MessageType = typeof(CartExpiredEvent);
                                     activity.EndpointAddress = new Uri("rabbitmq://localhost/shopping_cart_state");
-                                    activity.Message = new JavaScriptExpression<CartExpiredEvent>("return { correlationId: correlationId(), cardId: correlationId() }");
+                                    activity.Message = new JavaScriptExpression<CartExpiredEvent>("return { correlationId: correlationId(), cartId: correlationId() }");
                                 }).WithName("ScheduleExpire")
                             .Then<SetVariable>(activity =>
                             {
@@ -61,9 +54,20 @@ namespace Sample21.Workflows
                             })
                             .Then<SendMassTransitMessage>(activity =>
                             {
-                                activity.Message = new JavaScriptExpression<CartRemovedEvent>("return { cardId: correlationId() };");
+                                activity.Message = new JavaScriptExpression<CartRemovedEvent>("return { cartId: correlationId() };");
+                                activity.EndpointAddress = new Uri("rabbitmq://localhost/shopping_cart_service");
                                 activity.MessageType = typeof(CartRemovedEvent);
                             })
+                            .Then("Join");
+
+                        fork.When("OrderSubmitted")
+                            .Then<ReceiveMassTransitMessage>(activity => activity.MessageType = typeof(OrderSubmitted))
+                            .Then<SetVariable>(activity =>
+                            {
+                                activity.VariableName = "LastUpdateTimestamp";
+                                activity.ValueExpression = new JavaScriptExpression<DateTime>("lastResult().Timestamp");
+                            })
+                            .Then<CancelScheduledMassTransitMessage>(activity => activity.TokenId = new JavaScriptExpression<Guid>("return ScheduleTokenId"))
                             .Then("Join");
                     })
                 .Then<Join>(x => x.Mode = Join.JoinMode.WaitAny).WithName("Join");

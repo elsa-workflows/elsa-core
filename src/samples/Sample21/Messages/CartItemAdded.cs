@@ -6,6 +6,19 @@ using MassTransit;
 
 namespace Sample21.Messages
 {
+    public class OrderSubmitted : CorrelatedBy<Guid>
+    {
+        public Guid CorrelationId => CartId;
+
+        public Guid OrderId { get; set; }
+
+        public DateTime Timestamp { get; set; }
+
+        public Guid CartId { get; set; }
+
+        public string UserName { get; set; }
+    }
+
     public class CartCreated : CorrelatedBy<Guid>
     {
         public Guid CorrelationId => CartId;
@@ -13,6 +26,7 @@ namespace Sample21.Messages
         public Guid CartId { get; set; }
 
         public DateTime Timestamp { get; set; }
+        public string UserName { get; set; }
     }
 
     public class CartItemAdded : CorrelatedBy<Guid>
@@ -20,6 +34,8 @@ namespace Sample21.Messages
         public Guid CorrelationId => CartId;
 
         public Guid CartId { get; set; }
+
+        public string UserName { get; set; }
 
         public DateTime Timestamp { get; set; }
     }
