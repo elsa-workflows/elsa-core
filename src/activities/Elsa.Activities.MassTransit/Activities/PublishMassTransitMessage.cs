@@ -15,16 +15,13 @@ namespace Elsa.Activities.MassTransit.Activities
         DisplayName = "Publish MassTransit Message",
         Description = "Publish an event via MassTransit."
     )]
-    public class PublishMassTransitMessage : Activity
+    public class PublishMassTransitMessage : MassTransitBusActivity
     {
-        private readonly ConsumeContext consumeContext;
-        private readonly IBus bus;
         private readonly IWorkflowExpressionEvaluator evaluator;
 
-        public PublishMassTransitMessage(ConsumeContext consumeContext, IBus bus, IWorkflowExpressionEvaluator evaluator)
+        public PublishMassTransitMessage(IWorkflowExpressionEvaluator evaluator, IBus bus, ConsumeContext consumeContext)
+            : base(bus, consumeContext)
         {
-            this.consumeContext = consumeContext;
-            this.bus = bus;
             this.evaluator = evaluator;
         }
 
@@ -50,18 +47,6 @@ namespace Elsa.Activities.MassTransit.Activities
         {
             return MessageType != null;
         }
-
-        /// <summary>
-        /// Gets the publish endpoint to use.
-        /// </summary>
-        /// <remarks>
-        /// Will use the current scopes consume context if one exists to maintain
-        /// the conversation and correlation id.
-        /// </remarks>
-        private IPublishEndpoint PublishEndpoint =>
-            consumeContext != null
-                ? (IPublishEndpoint)consumeContext
-                : (IPublishEndpoint)bus;
 
         protected override async Task<ActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext context,
             CancellationToken cancellationToken)

@@ -17,15 +17,14 @@ namespace Elsa.Activities.MassTransit.Activities
         DisplayName = "Cancel scheduled MassTransit Message",
         Description = "Cancel a scheduled message via MassTransit."
     )]
-    public class CancelScheduledMassTransitMessage : Activity
+    public class CancelScheduledMassTransitMessage : MassTransitBusActivity
     {
-        private readonly ISendEndpointProvider sender;
         private readonly IWorkflowExpressionEvaluator evaluator;
         private readonly MessageScheduleOptions options;
 
-        public CancelScheduledMassTransitMessage(ISendEndpointProvider sender, IWorkflowExpressionEvaluator evaluator, IOptions<MessageScheduleOptions> options)
+        public CancelScheduledMassTransitMessage(IWorkflowExpressionEvaluator evaluator, IBus bus, ConsumeContext consumeContext, IOptions<MessageScheduleOptions> options)
+            : base(bus, consumeContext)
         {
-            this.sender = sender;
             this.evaluator = evaluator;
             this.options = options.Value;
         }
@@ -48,7 +47,7 @@ namespace Elsa.Activities.MassTransit.Activities
         {
             var tokenId = (Guid)await evaluator.EvaluateAsync(TokenId, typeof(Guid), context, cancellationToken);
 
-            var endpoint = await sender.GetSendEndpoint(options.SchedulerAddress);
+            var endpoint = await SendEndpointProvider.GetSendEndpoint(options.SchedulerAddress);
 
             await endpoint.CancelScheduledSend(tokenId);
 

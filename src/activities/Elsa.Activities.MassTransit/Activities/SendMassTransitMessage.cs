@@ -15,16 +15,13 @@ namespace Elsa.Activities.MassTransit.Activities
         DisplayName = "Send MassTransit Message",
         Description = "Send a message via MassTransit."
     )]
-    public class SendMassTransitMessage : Activity
+    public class SendMassTransitMessage : MassTransitBusActivity
     {
-        private readonly ConsumeContext consumeContext;
-        private readonly IBus bus;
         private readonly IWorkflowExpressionEvaluator evaluator;
 
         public SendMassTransitMessage(ConsumeContext consumeContext, IBus bus, IWorkflowExpressionEvaluator evaluator)
+            : base(bus, consumeContext)
         {
-            this.consumeContext = consumeContext;
-            this.bus = bus;
             this.evaluator = evaluator;
         }
 
@@ -56,18 +53,6 @@ namespace Elsa.Activities.MassTransit.Activities
             }
             set => SetState(value.ToString());
         }
-
-        /// <summary>
-        /// Gets the send endpoint provider to use.
-        /// </summary>
-        /// <remarks>
-        /// Will use the current scopes consume context if one exists to maintain
-        /// the conversation and correlation id.
-        /// </remarks>
-        private ISendEndpointProvider SendEndpointProvider =>
-            consumeContext != null
-                ? (ISendEndpointProvider)consumeContext
-                : (ISendEndpointProvider)bus;
 
         protected override bool OnCanExecute(WorkflowExecutionContext context)
         {
