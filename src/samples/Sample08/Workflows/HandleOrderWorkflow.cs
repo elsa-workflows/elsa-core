@@ -24,7 +24,7 @@ namespace Sample08.Workflows
                     }
                 )
                 .Then<TimerEvent>(activity => activity.TimeoutExpression = new LiteralExpression<TimeSpan>("00:00:05"))
-                .Then<SendMassTransitMessage>(activity =>
+                .Then<PublishMassTransitMessage>(activity =>
                     {
                         activity.Message = new JavaScriptExpression<OrderShipped>("return { correlationId: correlationId(), order: order}");
                         activity.MessageType = typeof(OrderShipped);

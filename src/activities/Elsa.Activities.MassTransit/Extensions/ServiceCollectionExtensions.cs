@@ -22,6 +22,7 @@ namespace Elsa.Activities.MassTransit.Extensions
 
             services
                 .AddActivity<SendMassTransitMessage>()
+                .AddActivity<PublishMassTransitMessage>()
                 .AddActivity<ReceiveMassTransitMessage>();
 
             services.AddSingleton<SimplifiedBusHealthCheck>();
