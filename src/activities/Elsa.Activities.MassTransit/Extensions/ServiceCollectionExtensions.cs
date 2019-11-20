@@ -22,8 +22,9 @@ namespace Elsa.Activities.MassTransit.Extensions
             }
 
             return services
-                .AddActivity<SendMassTransitMessage>()
-                .AddActivity<ReceiveMassTransitMessage>();
+                .AddActivity<PublishMassTransitMessage>()
+                .AddActivity<ReceiveMassTransitMessage>()
+                .AddActivity<SendMassTransitMessage>();
         }
 
         public static IServiceCollection AddMassTransitSchedulingActivities(this IServiceCollection services, Action<MessageScheduleOptions> configureOptions)
