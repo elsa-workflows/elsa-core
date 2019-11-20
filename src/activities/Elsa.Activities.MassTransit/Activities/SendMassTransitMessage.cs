@@ -17,12 +17,14 @@ namespace Elsa.Activities.MassTransit.Activities
     )]
     public class SendMassTransitMessage : Activity
     {
-        private readonly ISendEndpointProvider sender;
+        private readonly ConsumeContext consumeContext;
+        private readonly IBus bus;
         private readonly IWorkflowExpressionEvaluator evaluator;
 
-        public SendMassTransitMessage(ISendEndpointProvider sender, IWorkflowExpressionEvaluator evaluator)
+        public SendMassTransitMessage(ConsumeContext consumeContext, IBus bus, IWorkflowExpressionEvaluator evaluator)
         {
-            this.sender = sender;
+            this.consumeContext = consumeContext;
+            this.bus = bus;
             this.evaluator = evaluator;
         }
 
@@ -55,6 +57,18 @@ namespace Elsa.Activities.MassTransit.Activities
             set => SetState(value.ToString());
         }
 
+        /// <summary>
+        /// Gets the send endpoint provider to use.
+        /// </summary>
+        /// <remarks>
+        /// Will use the current scopes consume context if one exists to maintain
+        /// the conversation and correlation id.
+        /// </remarks>
+        private ISendEndpointProvider SendEndpointProvider =>
+            consumeContext != null
+                ? (ISendEndpointProvider)consumeContext
+                : (ISendEndpointProvider)bus;
+
         protected override bool OnCanExecute(WorkflowExecutionContext context)
         {
             return MessageType != null;
@@ -67,12 +81,12 @@ namespace Elsa.Activities.MassTransit.Activities
 
             if (EndpointAddress != null)
             {
-                var endpoint = await sender.GetSendEndpoint(EndpointAddress);
+                var endpoint = await SendEndpointProvider.GetSendEndpoint(EndpointAddress);
                 await endpoint.Send(message, cancellationToken);
             }
             else
             {
-                await sender.Send(message, cancellationToken);
+                await SendEndpointProvider.Send(message, cancellationToken);
             }
 
             return Done();
