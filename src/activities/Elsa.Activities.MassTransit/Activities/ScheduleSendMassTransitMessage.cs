@@ -40,14 +40,14 @@ namespace Elsa.Activities.MassTransit.Activities
             set => SetState(value.AssemblyQualifiedName);
         }
 
-        [ActivityProperty(Hint = "An expression that evaluates to the message to send.")]
+        [ActivityProperty(Hint = "An expression that evaluates to the message to be delivered.")]
         public WorkflowExpression Message
         {
             get => GetState<WorkflowExpression>();
             set => SetState(value);
         }
 
-        [ActivityProperty(Hint = "The address of a specific endpoint to send the message to.")]
+        [ActivityProperty(Hint = "The address of a specific endpoint to deliver the message to.")]
         public Uri EndpointAddress
         {
             get
@@ -56,6 +56,13 @@ namespace Elsa.Activities.MassTransit.Activities
                 return string.IsNullOrEmpty(endpointAddress) ? null : new Uri(endpointAddress);
             }
             set => SetState(value.ToString());
+        }
+
+        [ActivityProperty(Hint = "An expression that evaluates to the date and time to deliver the message.")]
+        public WorkflowExpression<DateTime> ScheduledTime
+        {
+            get => GetState<WorkflowExpression<DateTime>>();
+            set => SetState(value);
         }
 
         protected override bool OnCanExecute(WorkflowExecutionContext context)
@@ -67,10 +74,11 @@ namespace Elsa.Activities.MassTransit.Activities
             CancellationToken cancellationToken)
         {
             var message = await evaluator.EvaluateAsync(Message, MessageType, context, cancellationToken);
+            var scheduledTime = (DateTime)await evaluator.EvaluateAsync(ScheduledTime, typeof(DateTime), context, cancellationToken);
 
             var endpoint = await SendEndpointProvider.GetSendEndpoint(options.SchedulerAddress);
 
-            var scheduledMessage = await endpoint.ScheduleSend(EndpointAddress, DateTime.UtcNow + TimeSpan.FromSeconds(10), message, cancellationToken);
+            var scheduledMessage = await endpoint.ScheduleSend(EndpointAddress, scheduledTime, message, cancellationToken);
 
             context.SetLastResult(Output.SetVariable("TokenId", scheduledMessage.TokenId));
 

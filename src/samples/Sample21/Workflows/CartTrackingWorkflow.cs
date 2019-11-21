@@ -5,6 +5,7 @@ using Elsa.Activities.MassTransit.Activities;
 using Elsa.Scripting.JavaScript;
 using Elsa.Services;
 using Elsa.Services.Models;
+using NodaTime;
 using Sample21.Messages;
 
 namespace Sample21.Workflows
@@ -17,7 +18,7 @@ namespace Sample21.Workflows
                 .Then<SetVariable>(activity =>
                 {
                     activity.VariableName = "LastUpdateTimestamp";
-                    activity.ValueExpression = new JavaScriptExpression<DateTime>("lastResult().Timestamp");
+                    activity.ValueExpression = new JavaScriptExpression<Instant>("instantFromDateTimeUtc(lastResult().Timestamp)");
                 })
                 .Then<SetVariable>(activity =>
                 {
@@ -34,6 +35,7 @@ namespace Sample21.Workflows
                                 {
                                     activity.MessageType = typeof(CartExpiredEvent);
                                     activity.EndpointAddress = new Uri("rabbitmq://localhost/shopping_cart_state");
+                                    activity.ScheduledTime = new JavaScriptExpression<DateTime>("plus(LastUpdateTimestamp, durationFromSeconds(10)).ToDateTimeUtc()");
                                     activity.Message = new JavaScriptExpression<CartExpiredEvent>("return { correlationId: correlationId(), cartId: correlationId() }");
                                 }).WithName("ScheduleExpire")
                             .Then<SetVariable>(activity =>
@@ -42,6 +44,11 @@ namespace Sample21.Workflows
                                 activity.ValueExpression = new JavaScriptExpression<bool>("lastResult()");
                             })
                             .Then<ReceiveMassTransitMessage>(activity => activity.MessageType = typeof(CartItemAdded))
+                            .Then<SetVariable>(activity =>
+                            {
+                                activity.VariableName = "LastUpdateTimestamp";
+                                activity.ValueExpression = new JavaScriptExpression<Instant>("instantFromDateTimeUtc(lastResult().Timestamp)");
+                            })
                             .Then<CancelScheduledMassTransitMessage>(activity => activity.TokenId = new JavaScriptExpression<Guid>("return ScheduleTokenId"))
                             .Then("ScheduleExpire");
 
