@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Elsa;
 using Elsa.Activities.ControlFlow.Extensions;
 using Elsa.Activities.UserTask.Extensions;

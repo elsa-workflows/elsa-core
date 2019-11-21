@@ -8,11 +8,13 @@ using Elsa.Expressions;
 using Elsa.Scripting.JavaScript.Converters;
 using Elsa.Scripting.JavaScript.Extensions;
 using Elsa.Scripting.JavaScript.Messages;
+using Elsa.Scripting.JavaScript.Options;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Jint;
 using Jint.Native;
 using MediatR;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NodaTime;
@@ -24,6 +26,7 @@ namespace Elsa.Scripting.JavaScript.Services
     {
         private readonly IMediator mediator;
         private readonly IMapper mapper;
+        private readonly IOptions<ScriptOptions> options;
         private readonly JsonSerializerSettings serializerSettings;
         public const string SyntaxName = "JavaScript";
 
@@ -32,10 +35,11 @@ namespace Elsa.Scripting.JavaScript.Services
             return new WorkflowExpression<T>(SyntaxName, expression);
         }
 
-        public JavaScriptExpressionEvaluator(IMediator mediator, IMapper mapper)
+        public JavaScriptExpressionEvaluator(IMediator mediator, IMapper mapper, IOptions<ScriptOptions> options)
         {
             this.mediator = mediator;
             this.mapper = mapper;
+            this.options = options;
 
             serializerSettings = new JsonSerializerSettings().ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
             serializerSettings.Converters.Add(new TruncatingNumberJsonConverter());
@@ -45,12 +49,18 @@ namespace Elsa.Scripting.JavaScript.Services
 
         public async Task<object> EvaluateAsync(string expression, Type type, WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
         {
-            var engine = new Engine(options => { options.AllowClr(); });
+            var engine = new Engine(ConfigureJintEngine);
 
             await ConfigureEngineAsync(engine, workflowExecutionContext, cancellationToken);
             engine.Execute(expression);
 
             return ConvertValue(engine.GetCompletionValue(), type);
+        }
+
+        private void ConfigureJintEngine(Jint.Options options)
+        {
+            if (this.options.Value.AllowClr)
+                options.AllowClr();
         }
 
         private async Task ConfigureEngineAsync(Engine engine, WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
