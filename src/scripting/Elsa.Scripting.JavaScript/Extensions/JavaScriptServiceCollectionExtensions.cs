@@ -17,11 +17,11 @@ namespace Elsa.Scripting.JavaScript.Extensions
                 .AddNotificationHandlers(typeof(JavaScriptServiceCollectionExtensions));
         }
 
-        public static IServiceCollection ConfigureJavaScriptOptions(this IServiceCollection services, Action<OptionsBuilder<ScriptOptions>> options)
+        public static IServiceCollection WithJavaScriptOptions(this IServiceCollection services, Action<OptionsBuilder<ScriptOptions>> options)
         {
             var scriptOptions = services.AddOptions<ScriptOptions>();
             options(scriptOptions);
-            
+
             return services;
         }
     }
