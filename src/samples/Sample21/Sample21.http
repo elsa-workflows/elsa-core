@@ -1,0 +1,21 @@
+// Use VS Code Rest Client
+// https://marketplace.visualstudio.com/items?itemName=humao.rest-client
+
+
+GET http://localhost:59862/api/cart
+
+####
+
+POST http://localhost:59862/api/cart
+Content-Type: application/json
+
+{
+    "productSku": "010-01787-00",
+    "quantity": 1
+}
+
+####
+
+POST http://localhost:59862/api/cart/submit
+
+###

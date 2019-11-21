@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Elsa.Scripting.JavaScript.Messages;
 using MediatR;
 using NodaTime;
+using NodaTime.Text;
 
 namespace Elsa.Scripting.JavaScript.Handlers
 {
@@ -16,11 +17,15 @@ namespace Elsa.Scripting.JavaScript.Handlers
         {
             this.clock = clock;
         }
-        
+
         public Task Handle(EvaluatingJavaScriptExpression notification, CancellationToken cancellationToken)
         {
             var engine = notification.Engine;
-            
+
+            engine.SetValue(
+                "instantFromDateTimeUtc",
+                (Func<DateTime, Instant>) Instant.FromDateTimeUtc);
+
             engine.SetValue(
                 "currentInstant",
                 (Func<Instant>) (() => clock.GetCurrentInstant())
@@ -61,6 +66,21 @@ namespace Elsa.Scripting.JavaScript.Handlers
             );
 
             engine.SetValue(
+                "durationFromSeconds",
+                (Func<long, Duration>) (Duration.FromSeconds)
+            );
+
+            engine.SetValue(
+                "durationFromMinutes",
+                (Func<long, Duration>) (Duration.FromMinutes)
+            );
+
+            engine.SetValue(
+                "durationFromHours",
+                (Func<int, Duration>) (Duration.FromHours)
+            );
+
+            engine.SetValue(
                 "durationFromDays",
                 (Func<int, Duration>) (Duration.FromDays)
             );
@@ -80,7 +100,7 @@ namespace Elsa.Scripting.JavaScript.Handlers
                 "instantFromLocalDate",
                 (Func<LocalDate, Instant>) (value => value.AtStartOfDayInZone(DateTimeZone.Utc).ToInstant())
             );
-            
+
             return Task.CompletedTask;
         }
 
