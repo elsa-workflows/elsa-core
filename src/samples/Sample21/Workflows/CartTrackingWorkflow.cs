@@ -25,7 +25,7 @@ namespace Sample21.Workflows
                     activity.VariableName = "IsExpired";
                     activity.ValueExpression = new JavaScriptExpression<bool>("false");
                 })
-                .Then<Fork>(
+                .Fork(
                     action => action.Branches = new [] {"Item-Added", "Cart-Expired", "Order-Submitted"},
                     fork =>
                     {
@@ -77,7 +77,7 @@ namespace Sample21.Workflows
                             .Then<CancelScheduledMassTransitMessage>(activity => activity.TokenId = new JavaScriptExpression<Guid>("return ScheduleTokenId"))
                             .Then("Join");
                     })
-                .Then<Join>(x => x.Mode = Join.JoinMode.WaitAny).WithName("Join");
+                .Join(x => x.Mode = Join.JoinMode.WaitAny).WithName("Join");
         }
     }
 }
