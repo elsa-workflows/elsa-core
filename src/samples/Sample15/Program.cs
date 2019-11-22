@@ -5,7 +5,6 @@ using Elsa.Activities.Console.Extensions;
 using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Persistence;
-using Elsa.Persistence.MongoDb.Extensions;
 using Elsa.Runtime;
 using Elsa.Services;
 using Microsoft.Extensions.Configuration;

@@ -1,9 +1,8 @@
 using Elsa.Activities.Http.Middleware;
 using Elsa.Activities.Http.RequestHandlers.Handlers;
 using Elsa.Activities.Http.Services;
-using Microsoft.AspNetCore.Builder;
 
-namespace Elsa.Activities.Http.Extensions
+namespace Microsoft.AspNetCore.Builder
 {
     public static class ApplicationBuilderExtensions
     {

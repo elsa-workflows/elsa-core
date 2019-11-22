@@ -1,9 +1,6 @@
 using System;
 using System.Collections.Specialized;
-using Elsa.Activities.Email.Extensions;
-using Elsa.Activities.Http.Extensions;
 using Elsa.Activities.MassTransit.Extensions;
-using Elsa.Activities.Timers.Extensions;
 using Elsa.Runtime;
 using GreenPipes;
 using MassTransit;

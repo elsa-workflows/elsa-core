@@ -23,11 +23,12 @@ namespace Elsa.Dashboard.Extensions
             Action<ElsaBuilder> configure = default
             )
         {
-            var configuration = new ElsaBuilder(services);
+            var builder = new ElsaBuilder(services);
 
             services.AddControllersWithViews();
-            configuration.WithElsaDashboard();
-            configure?.Invoke(configuration);
+            services.AddElsaManagement();
+            builder.WithElsaDashboard();
+            configure?.Invoke(builder);
 
             var optionsBuilder = services.AddOptions<ElsaDashboardOptions>();
             options?.Invoke(optionsBuilder);
@@ -51,17 +52,9 @@ namespace Elsa.Dashboard.Extensions
             var services = builder.Services;
             
             services
-                .AddSingleton<IIdGenerator, IdGenerator>()
-                .AddSingleton<IWorkflowSerializerProvider, WorkflowSerializerProvider>()
-                .AddSingleton<IWorkflowSerializer, WorkflowSerializer>()
-                .TryAddProvider<ITokenFormatter, JsonTokenFormatter>(ServiceLifetime.Singleton)
-                .TryAddProvider<ITokenFormatter, YamlTokenFormatter>(ServiceLifetime.Singleton)
-                .TryAddProvider<ITokenFormatter, XmlTokenFormatter>(ServiceLifetime.Singleton)
                 .AddHttpContextAccessor()
-                .AddScoped<IWorkflowPublisher, WorkflowPublisher>()
                 .AddScoped<INotifier, Notifier>()
-                .AddScoped<NotifierFilter>()
-                .AddAutoMapperProfile<WorkflowDefinitionProfile>(ServiceLifetime.Singleton);
+                .AddScoped<NotifierFilter>();
 
             services.AddScoped(
                 sp =>

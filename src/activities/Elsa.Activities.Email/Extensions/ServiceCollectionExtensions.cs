@@ -2,10 +2,9 @@ using System;
 using Elsa.Activities.Email.Activities;
 using Elsa.Activities.Email.Options;
 using Elsa.Activities.Email.Services;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
-namespace Elsa.Activities.Email.Extensions
+namespace Microsoft.Extensions.DependencyInjection
 {
     public static class ServiceCollectionExtensions
     {

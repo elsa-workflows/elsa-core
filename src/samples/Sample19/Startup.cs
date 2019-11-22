@@ -1,6 +1,3 @@
-using Elsa.Activities.Email.Extensions;
-using Elsa.Activities.Http.Extensions;
-using Elsa.Activities.Timers.Extensions;
 using Elsa.Dashboard.Extensions;
 using Elsa.Persistence.EntityFrameworkCore.Extensions;
 using Microsoft.AspNetCore.Builder;

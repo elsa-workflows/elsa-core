@@ -2,10 +2,9 @@ using System;
 using Elsa.Activities.Timers.Activities;
 using Elsa.Activities.Timers.HostedServices;
 using Elsa.Activities.Timers.Options;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
-namespace Elsa.Activities.Timers.Extensions
+namespace Microsoft.Extensions.DependencyInjection
 {
     public static class ServiceCollectionExtensions
     {

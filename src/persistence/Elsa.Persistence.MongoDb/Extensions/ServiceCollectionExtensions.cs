@@ -1,16 +1,18 @@
 using System;
+using Elsa;
 using Elsa.Models;
+using Elsa.Persistence;
+using Elsa.Persistence.MongoDb;
 using Elsa.Persistence.MongoDb.Serialization;
 using Elsa.Persistence.MongoDb.Services;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Bson;
 using MongoDb.Bson.NodaTime;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Conventions;
 using MongoDB.Driver;
 
-namespace Elsa.Persistence.MongoDb.Extensions
+namespace Microsoft.Extensions.DependencyInjection
 {
     public static class ServiceCollectionExtensions
     {

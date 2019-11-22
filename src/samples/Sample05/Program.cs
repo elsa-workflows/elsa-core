@@ -1,6 +1,5 @@
 ﻿using System.Threading.Tasks;
 using Elsa.Activities.Console.Extensions;
-using Elsa.Activities.Timers.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;

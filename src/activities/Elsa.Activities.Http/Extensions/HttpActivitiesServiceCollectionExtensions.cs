@@ -9,11 +9,10 @@ using Elsa.Extensions;
 using Elsa.Scripting.Liquid.Extensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 
-namespace Elsa.Activities.Http.Extensions
+namespace Microsoft.Extensions.DependencyInjection
 {
     public static class HttpActivitiesServiceCollectionExtensions
     {

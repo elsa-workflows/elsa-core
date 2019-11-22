@@ -1,9 +1,6 @@
 ﻿using System.IO;
-using System.Net.Mail;
 using System.Threading.Tasks;
 using Elsa.Activities.Console.Extensions;
-using Elsa.Activities.Email.Extensions;
-using Elsa.Activities.Timers.Extensions;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
