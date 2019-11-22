@@ -56,6 +56,8 @@ namespace Elsa.Activities.ControlFlow.Activities
             if (ContainsCase(result) || !ContainsCase("default"))
                 return Outcome(result);
 
+            Output.SetVariable("Result", result);
+
             return Outcome("default");
         }
 
