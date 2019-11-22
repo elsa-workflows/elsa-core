@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using NodaTime;
+using SmtpDeliveryMethod = Elsa.Activities.Email.Options.SmtpDeliveryMethod;
 
 namespace Sample18
 {
@@ -49,7 +50,7 @@ namespace Sample18
                 .AddEmailActivities(options => options.Configure(
                     smtp =>
                     {
-                        smtp.DefaultSender = "reminder@acme.com";
+                        smtp.DefaultSender = "noreply@acme.com";
                         smtp.DeliveryMethod = SmtpDeliveryMethod.SpecifiedPickupDirectory;
                         smtp.PickupDirectoryLocation = PickupLocation;
                     }))

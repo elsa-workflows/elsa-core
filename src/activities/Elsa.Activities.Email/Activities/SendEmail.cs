@@ -1,7 +1,7 @@
-﻿using System.Net.Mail;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Email.Options;
+using Elsa.Activities.Email.Services;
 using Elsa.Attributes;
 using Elsa.Expressions;
 using Elsa.Extensions;
@@ -9,27 +9,23 @@ using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.Options;
+using MimeKit;
+using MimeKit.Text;
 
 namespace Elsa.Activities.Email.Activities
 {
-    [ActivityDefinition(
-        Category = "Email",
-        Description = "Send an email message."
-    )]
+    [ActivityDefinition(Category = "Email", Description = "Send an email message.")]
     public class SendEmail : Activity
     {
         private readonly IWorkflowExpressionEvaluator expressionEvaluator;
+        private readonly ISmtpService smtpService;
         private readonly IOptions<SmtpOptions> options;
-        private readonly SmtpClient smtpClient;
 
-        public SendEmail(
-            IWorkflowExpressionEvaluator expressionEvaluator,
-            IOptions<SmtpOptions> options,
-            SmtpClient smtpClient)
+        public SendEmail(IWorkflowExpressionEvaluator expressionEvaluator, ISmtpService smtpService, IOptions<SmtpOptions> options)
         {
             this.expressionEvaluator = expressionEvaluator;
+            this.smtpService = smtpService;
             this.options = options;
-            this.smtpClient = smtpClient;
         }
 
         [ActivityProperty(Hint = "The sender's email address.")]
@@ -61,26 +57,25 @@ namespace Elsa.Activities.Email.Activities
             set => SetState(value);
         }
 
-        protected override async Task<ActivityExecutionResult> OnExecuteAsync(
-            WorkflowExecutionContext workflowContext,
-            CancellationToken cancellationToken)
+        protected override async Task<ActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
         {
-            var from = (await expressionEvaluator.EvaluateAsync(From, workflowContext, cancellationToken)) ??
-                       options.Value.DefaultSender;
+            var from = (await expressionEvaluator.EvaluateAsync(From, workflowContext, cancellationToken)) ?? options.Value.DefaultSender;
             var to = await expressionEvaluator.EvaluateAsync(To, workflowContext, cancellationToken);
             var subject = await expressionEvaluator.EvaluateAsync(Subject, workflowContext, cancellationToken);
             var body = await expressionEvaluator.EvaluateAsync(Body, workflowContext, cancellationToken);
-
-            var mailMessage = new MailMessage
+            var message = new MimeMessage();
+            
+            message.From.Add(new MailboxAddress(@from));
+            message.Subject = subject;
+            
+            message.Body = new TextPart(TextFormat.Html)
             {
-                From = new MailAddress(@from),
-                Body = body,
-                Subject = subject,
-                IsBodyHtml = true
+                Text = body
             };
 
-            mailMessage.To.Add(to);
-            await smtpClient.SendMailAsync(mailMessage);
+            message.To.Add(new MailboxAddress(to));
+
+            await smtpService.SendAsync(message, cancellationToken);
 
             return Done();
         }
