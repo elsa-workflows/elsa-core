@@ -18,7 +18,15 @@
         <RepositoryUrl>https://github.com/elsa-workflows/elsa-core</RepositoryUrl>
         <RepositoryType>GitHub</RepositoryType>
         <PackageTags>elsa, workflows, timers, background tasks</PackageTags>
+        <PackageIcon>icon.png</PackageIcon>
     </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="icon.png">
+            <Pack>True</Pack>
+            <PackagePath />
+        </None>
+    </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />

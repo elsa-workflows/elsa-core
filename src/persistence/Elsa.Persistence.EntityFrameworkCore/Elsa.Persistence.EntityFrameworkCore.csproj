@@ -15,7 +15,15 @@
         <RepositoryUrl>https://github.com/elsa-workflows/elsa-core</RepositoryUrl>
         <RepositoryType>GitHub</RepositoryType>
         <PackageTags>elsa, workflows, entity framework core</PackageTags>
+        <PackageIcon>icon.png</PackageIcon>
     </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="icon.png">
+            <Pack>True</Pack>
+            <PackagePath />
+        </None>
+    </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="FlexLabs.EntityFrameworkCore.Upsert" Version="3.0.0" />

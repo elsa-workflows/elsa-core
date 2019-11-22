@@ -14,7 +14,15 @@
         <RepositoryUrl>https://github.com/elsa-workflows/elsa-core</RepositoryUrl>
         <RepositoryType>GitHub</RepositoryType>
         <PackageTags>elsa, workflows, cosmosdb</PackageTags>
+        <PackageIcon>icon.png</PackageIcon>
     </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="icon.png">
+            <Pack>True</Pack>
+            <PackagePath />
+        </None>
+    </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="Microsoft.Azure.DocumentDB.Core" Version="2.9.2" />
