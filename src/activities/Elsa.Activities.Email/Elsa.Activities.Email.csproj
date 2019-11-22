@@ -22,4 +22,8 @@
         <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="MailKit" Version="2.4.1" />
+    </ItemGroup>
+
 </Project>
