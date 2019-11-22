@@ -15,7 +15,6 @@ namespace Sample18
 {
     /// <summary>
     /// A minimal workflows program defined in code with a strongly-typed workflow class.
-    /// Hint: Run docker-compose.yaml to launch an SMTP host listening on port 2525. Then inspect sent messages on http://localhost:3000/ 
     /// </summary>
     internal static class Program
     {
@@ -51,7 +50,7 @@ namespace Sample18
                 .AddEmailActivities(options => options.Configure(
                     smtp =>
                     {
-                        smtp.DefaultSender = "sipke@skywalkersd.net";
+                        smtp.DefaultSender = "noreply@acme.com";
                         smtp.DeliveryMethod = SmtpDeliveryMethod.SpecifiedPickupDirectory;
                         smtp.PickupDirectoryLocation = PickupLocation;
                     }))
