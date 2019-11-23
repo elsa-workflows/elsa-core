@@ -12,30 +12,6 @@ namespace Elsa.Models
             Variables = new Variables();
         }
 
-        public WorkflowDefinitionVersion(
-            string id,
-            string definitionId,
-            int version,
-            string name,
-            string description,
-            IEnumerable<ActivityDefinition> activities,
-            IEnumerable<ConnectionDefinition> connections,
-            bool isSingleton,
-            bool isDisabled,
-            Variables variables)
-        {
-            Id = id;
-            DefinitionId = definitionId;
-            Version = version;
-            Name = name;
-            Description = description;
-            Activities = activities.ToList();
-            Connections = connections.ToList();
-            IsSingleton = isSingleton;
-            IsDisabled = isDisabled;
-            Variables = variables;
-        }
-
         public string Id { get; set; }
         public string DefinitionId { get; set; }
         public int Version { get; set; }

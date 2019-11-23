@@ -79,7 +79,7 @@ namespace Elsa.WorkflowBuilders
             var activityBlueprint = ActivityDefinition.FromActivity(activity);
             var activityBuilder = new ActivityBuilder(this, activityBlueprint);
             var activityDescriptor = ActivityDescriber.Describe<T>();
-            
+
             activityBuilder.Name = name;
             activityBuilder.DisplayName = activityDescriptor.DisplayName;
             activityBuilder.Description = activityDescriptor.Description;
@@ -127,18 +127,18 @@ namespace Elsa.WorkflowBuilders
             var versionId = idGenerator.Generate();
             var definitionId = !string.IsNullOrWhiteSpace(Id) ? Id : idGenerator.Generate();
 
-            return new WorkflowDefinitionVersion(
-                versionId,
-                definitionId,
-                Version,
-                Name,
-                Description,
-                activities,
-                connections,
-                IsSingleton,
-                IsDisabled,
-                Variables.Empty)
+            return new WorkflowDefinitionVersion
             {
+                Id = versionId,
+                DefinitionId = definitionId,
+                Version = Version,
+                Name = Name,
+                Description = Description,
+                Activities = activities,
+                Connections = connections,
+                IsSingleton = IsSingleton,
+                IsDisabled = IsDisabled,
+                Variables = Variables.Empty,
                 IsPublished = true,
                 IsLatest = true
             };

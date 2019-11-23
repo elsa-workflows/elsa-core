@@ -41,13 +41,18 @@ namespace Elsa.Persistence.MongoDb.Services
             return definition;
         }
 
+        public Task<WorkflowDefinitionVersion> GetByIdAsync(string id, CancellationToken cancellationToken = default)
+        {
+            return workflowDefinitionCollection.AsQueryable().FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        }
+
         public async Task<WorkflowDefinitionVersion> GetByIdAsync(
-            string id, 
+            string definitionId, 
             VersionOptions version,
             CancellationToken cancellationToken = default)
         {
             var query = (IMongoQueryable<WorkflowDefinitionVersion>)workflowDefinitionCollection.AsQueryable()
-                .Where(x => x.DefinitionId == id)
+                .Where(x => x.DefinitionId == definitionId)
                 .WithVersion(version);
 
             return await query.FirstOrDefaultAsync(cancellationToken);

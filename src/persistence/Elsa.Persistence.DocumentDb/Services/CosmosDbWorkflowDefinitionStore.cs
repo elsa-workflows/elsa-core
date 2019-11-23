@@ -29,6 +29,23 @@ namespace Elsa.Persistence.DocumentDb.Services
             return Map(document);
         }
 
+        public Task<WorkflowDefinitionVersion> GetByIdAsync(string id, CancellationToken cancellationToken = default)
+        {
+            var client = storage.Client;
+            var query = client.CreateDocumentQuery<WorkflowDefinitionVersionDocument>(storage.CollectionUri).Where(c => c.Id == id);
+            var document = query.FirstOrDefault();
+            return Task.FromResult(Map(document));
+        }
+
+        public Task<WorkflowDefinitionVersion> GetByIdAsync(string definitionId, VersionOptions version, CancellationToken cancellationToken = default)
+        {
+            var client = storage.Client;
+            var query = client.CreateDocumentQuery<WorkflowDefinitionVersionDocument>(storage.CollectionUri)
+                .Where(c => c.DefinitionId == definitionId).WithVersion(version);
+            var document = query.AsEnumerable().FirstOrDefault();
+            return Task.FromResult(Map(document));
+        }
+        
         public async Task<int> DeleteAsync(string id, CancellationToken cancellationToken = default)
         {
             var client = storage.Client;
@@ -38,15 +55,6 @@ namespace Elsa.Persistence.DocumentDb.Services
                 await client.DeleteDocumentAsync(record.Id, cancellationToken: cancellationToken);
             }
             return records.Count;
-        }
-
-        public Task<WorkflowDefinitionVersion> GetByIdAsync(string id, VersionOptions version, CancellationToken cancellationToken = default)
-        {
-            var client = storage.Client;
-            var query = client.CreateDocumentQuery<WorkflowDefinitionVersionDocument>(storage.CollectionUri)
-                .Where(c => c.DefinitionId == id).WithVersion(version);
-            var document = query.AsEnumerable().FirstOrDefault();
-            return Task.FromResult(Map(document));
         }
 
         public Task<IEnumerable<WorkflowDefinitionVersion>> ListAsync(VersionOptions version, CancellationToken cancellationToken = default)

@@ -1,17 +1,17 @@
 ﻿using System.Collections.Generic;
 using Elsa.Models;
 
-namespace Elsa.Persistence.YesSql.Documents
+namespace Elsa.Server.GraphQL.Models
 {
-    public class WorkflowDefinitionVersionDocument : YesSqlDocument
+    public class WorkflowDefinitionVersionModel
     {
-        public string VersionId { get; set; }
-        public string WorkflowDefinitionId { get; set; }
+        public string Id { get; set; }
+        public string DefinitionId { get; set; }
         public int Version { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
-        public ICollection<ActivityDefinition> Activities { get; set; }
-        public IList<ConnectionDefinition> Connections { get; set; }
+        public ICollection<ActivityDefinitionModel> Activities { get; set; }
+        public ICollection<ConnectionDefinition> Connections { get; set; }
         public Variables Variables { get; set; }
         public bool IsSingleton { get; set; }
         public bool IsDisabled { get; set; }

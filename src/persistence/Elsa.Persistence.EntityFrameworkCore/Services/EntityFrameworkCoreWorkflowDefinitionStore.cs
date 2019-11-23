@@ -44,6 +44,37 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             return Map(entity);
         }
 
+        public async Task<WorkflowDefinitionVersion> GetByIdAsync(string id, CancellationToken cancellationToken = default)
+        {
+            var query = dbContext
+                .WorkflowDefinitionVersions
+                .Include(x => x.Activities)
+                .Include(x => x.Connections)
+                .Where(x => x.VersionId == id);
+
+            var entity = await query.FirstOrDefaultAsync(cancellationToken);
+            
+            return Map(entity);
+        }
+
+        public async Task<WorkflowDefinitionVersion> GetByIdAsync(
+            string definitionId,
+            VersionOptions version,
+            CancellationToken cancellationToken = default)
+        {
+            var query = dbContext
+                .WorkflowDefinitionVersions
+                .Include(x => x.Activities)
+                .Include(x => x.Connections)
+                .AsQueryable()
+                .Where(x => x.DefinitionId == definitionId)
+                .WithVersion(version);
+
+            var entity = await query.FirstOrDefaultAsync(cancellationToken);
+            
+            return Map(entity);
+        }
+        
         public async Task<WorkflowDefinitionVersion> UpdateAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken)
         {
             var entity = await dbContext
@@ -61,24 +92,6 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
 
             await dbContext.SaveChangesAsync(cancellationToken);
 
-            return Map(entity);
-        }
-
-        public async Task<WorkflowDefinitionVersion> GetByIdAsync(
-            string id,
-            VersionOptions version,
-            CancellationToken cancellationToken = default)
-        {
-            var query = dbContext
-                .WorkflowDefinitionVersions
-                .Include(x => x.Activities)
-                .Include(x => x.Connections)
-                .AsQueryable()
-                .Where(x => x.DefinitionId == id)
-                .WithVersion(version);
-
-            var entity = await query.FirstOrDefaultAsync(cancellationToken);
-            
             return Map(entity);
         }
 

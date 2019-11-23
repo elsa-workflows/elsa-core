@@ -7,6 +7,7 @@ using Elsa.Expressions;
 using Elsa.Models;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json.Linq;
 
 namespace Sample03
 {
@@ -28,8 +29,8 @@ namespace Sample03
             {
                 Activities = new[]
                 {
-                    new ActivityDefinition<WriteLine>("activity-1", new { TextExpression = new LiteralExpression("Hello world!")}),
-                    new ActivityDefinition<WriteLine>("activity-2", new { TextExpression = new LiteralExpression("Goodbye cruel world...")})
+                    new ActivityDefinition<WriteLine> { Id = "activity-1", State = JObject.FromObject(new { TextExpression = new LiteralExpression("Hello world!")})},
+                    new ActivityDefinition<WriteLine> { Id = "activity-2", State = JObject.FromObject(new { TextExpression = new LiteralExpression("Goodbye cruel world...")})}
                 },
                 Connections = new []
                 {

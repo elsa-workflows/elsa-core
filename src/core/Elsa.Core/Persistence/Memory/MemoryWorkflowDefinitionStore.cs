@@ -42,9 +42,15 @@ namespace Elsa.Persistence.Memory
             return definition;
         }
 
-        public Task<WorkflowDefinitionVersion> GetByIdAsync(string id, VersionOptions version, CancellationToken cancellationToken = default)
+        public Task<WorkflowDefinitionVersion> GetByIdAsync(string id, CancellationToken cancellationToken = default)
         {
-            var query = definitions.Where(x => x.DefinitionId == id).AsQueryable().WithVersion(version);
+            var definition = definitions.FirstOrDefault(x => x.Id == id);
+            return Task.FromResult(definition);
+        }
+
+        public Task<WorkflowDefinitionVersion> GetByIdAsync(string definitionId, VersionOptions version, CancellationToken cancellationToken = default)
+        {
+            var query = definitions.Where(x => x.DefinitionId == definitionId).AsQueryable().WithVersion(version);
             var definition = query.FirstOrDefault();
             return Task.FromResult(definition);
         }

@@ -8,6 +8,7 @@ namespace Elsa.Persistence.YesSql.Indexes
 {
     public class WorkflowDefinitionIndex : MapIndex
     {
+        public string VersionId { get; set; }
         public string WorkflowDefinitionId { get; set; }
         public int Version { get; set; }
         public bool IsLatest { get; set; }
@@ -30,6 +31,7 @@ namespace Elsa.Persistence.YesSql.Indexes
                 .Map(
                     document => new WorkflowDefinitionIndex
                     {
+                        VersionId =  document.VersionId,
                         WorkflowDefinitionId = document.WorkflowDefinitionId,
                         Version = document.Version,
                         IsPublished = document.IsPublished,

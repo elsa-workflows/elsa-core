@@ -1,13 +1,11 @@
 ﻿using System;
 using Elsa;
 using Elsa.AutoMapper.Extensions;
-using Elsa.Mapping;
-using Elsa.Serialization;
-using Elsa.Serialization.Formatters;
 using Elsa.Server.GraphQL;
-using Elsa.Services;
+using Elsa.Server.GraphQL.Mapping;
 using GraphQL.Server;
 
+// ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
 {
     public static class GraphQLServiceCollectionExtensions
@@ -18,6 +16,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
             services
                 .AddScoped<ElsaSchema>()
+                .AddAutoMapperProfile<GraphQLProfile>(ServiceLifetime.Singleton)
                 .AddLogging();
 
             var graphQLOptions = new GraphQLOptions();

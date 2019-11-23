@@ -90,7 +90,7 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
             return await SaveAsync(model, workflow, cancellationToken);
         }
 
-        [HttpGet("edit/{id}", Name ="EditWorkflowDefinition")]
+        [HttpGet("edit/{id}", Name = "EditWorkflowDefinition")]
         public async Task<IActionResult> Edit(string id, CancellationToken cancellationToken)
         {
             var workflowDefinition = await publisher.GetDraftAsync(id, cancellationToken);
@@ -136,7 +136,7 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
             notifier.Notify("Workflow successfully deleted.", NotificationType.Success);
             return RedirectToAction(nameof(Index));
         }
-        
+
         private async Task<IActionResult> SaveAsync(
             WorkflowDefinitionEditModel model,
             WorkflowDefinitionVersion workflow,
@@ -145,8 +145,14 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
             var postedWorkflow = serializer.Deserialize<WorkflowModel>(model.Json, JsonTokenFormatter.FormatName);
 
             workflow.Activities = postedWorkflow.Activities
-                .Select(x => new ActivityDefinition(x.Id, x.Type, x.State, x.Left, x.Top))
-                .ToList();
+                .Select(x => new ActivityDefinition
+                {
+                    Id = x.Id,
+                    Type = x.Type,
+                    State = x.State,
+                    Left = x.Left,
+                    Top = x.Top
+                }).ToList();
 
             workflow.Connections = postedWorkflow.Connections.Select(
                 x => new ConnectionDefinition(x.SourceActivityId, x.DestinationActivityId, x.Outcome)).ToList();
@@ -168,7 +174,7 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
                 workflow = await publisher.SaveDraftAsync(workflow, cancellationToken);
                 notifier.Notify("Workflow successfully saved as a draft.", NotificationType.Success);
             }
-            
+
             return RedirectToRoute("EditWorkflowDefinition", new { id = workflow.DefinitionId });
         }
 

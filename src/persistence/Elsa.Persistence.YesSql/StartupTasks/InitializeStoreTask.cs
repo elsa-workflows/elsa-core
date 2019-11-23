@@ -33,6 +33,7 @@ namespace Elsa.Persistence.YesSql.StartupTasks
                 {
                     new SchemaBuilder(store.Configuration, transaction, false)
                         .CreateMapIndexTable(nameof(WorkflowDefinitionIndex), table => table
+                            .Column<string>("VersionId")
                             .Column<string>("WorkflowDefinitionId")
                             .Column<int>("Version")
                             .Column<bool>("IsPublished")

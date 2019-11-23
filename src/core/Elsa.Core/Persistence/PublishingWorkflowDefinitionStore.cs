@@ -32,9 +32,14 @@ namespace Elsa.Persistence
             return result;
         }
 
-        public Task<WorkflowDefinitionVersion> GetByIdAsync(string id, VersionOptions version, CancellationToken cancellationToken = default)
+        public Task<WorkflowDefinitionVersion> GetByIdAsync(string id, CancellationToken cancellationToken = default)
         {
-            return decoratedStore.GetByIdAsync(id, version, cancellationToken);
+            return decoratedStore.GetByIdAsync(id, cancellationToken);
+        }
+
+        public Task<WorkflowDefinitionVersion> GetByIdAsync(string definitionId, VersionOptions version, CancellationToken cancellationToken = default)
+        {
+            return decoratedStore.GetByIdAsync(definitionId, version, cancellationToken);
         }
 
         public Task<IEnumerable<WorkflowDefinitionVersion>> ListAsync(VersionOptions version, CancellationToken cancellationToken = default)
