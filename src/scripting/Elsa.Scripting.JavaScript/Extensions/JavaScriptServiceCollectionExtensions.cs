@@ -2,11 +2,11 @@ using Elsa.Extensions;
 using Elsa.Scripting.JavaScript.Options;
 using Elsa.Scripting.JavaScript.Services;
 using Elsa.Services;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using System;
 
-namespace Elsa.Scripting.JavaScript.Extensions
+// ReSharper disable once CheckNamespace
+namespace Microsoft.Extensions.DependencyInjection
 {
     public static class JavaScriptServiceCollectionExtensions
     {
