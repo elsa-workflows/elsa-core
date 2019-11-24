@@ -1,7 +1,7 @@
 ﻿using Elsa.Models;
 using GraphQL.Types;
 
-namespace Elsa.Server.GraphQL.Types
+namespace Elsa.Server.GraphQL.Types.Input
 {
     public class ConnectionDefinitionInputType : InputObjectGraphType<ConnectionDefinition>
     {

@@ -1,7 +1,7 @@
 ﻿using Elsa.Server.GraphQL.Models;
 using GraphQL.Types;
 
-namespace Elsa.Server.GraphQL.Types
+namespace Elsa.Server.GraphQL.Types.Input
 {
     public class UpdateWorkflowDefinitionInputType : InputObjectGraphType<UpdateWorkflowDefinitionInputModel>
     {

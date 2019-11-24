@@ -49,12 +49,12 @@ namespace Elsa.Persistence.DocumentDb.Services
         public async Task<int> DeleteAsync(string id, CancellationToken cancellationToken = default)
         {
             var client = storage.Client;
-            var records = await client.CreateDocumentQuery<WorkflowDefinitionVersionDocument>(storage.CollectionUri).Where(c => c.DefinitionId == id).ToQueryResultAsync();
-            foreach (var record in records)
+            var workflowDefinitionDocuments = await client.CreateDocumentQuery<WorkflowDefinitionVersionDocument>(storage.CollectionUri).Where(c => c.DefinitionId == id).ToQueryResultAsync();
+            foreach (var record in workflowDefinitionDocuments)
             {
                 await client.DeleteDocumentAsync(record.Id, cancellationToken: cancellationToken);
             }
-            return records.Count;
+            return workflowDefinitionDocuments.Count;
         }
 
         public Task<IEnumerable<WorkflowDefinitionVersion>> ListAsync(VersionOptions version, CancellationToken cancellationToken = default)

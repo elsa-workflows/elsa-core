@@ -49,7 +49,7 @@ namespace Elsa.Services
             Id = Id,
             Type = Type,
             State = new JObject(State),
-            Output = JObject.FromObject(Output)
+            Output = Output != null ? JObject.FromObject(Output) : null
         };
 
         public Task<IActivityExecutionResult> ResumeAsync(WorkflowExecutionContext context, CancellationToken cancellationToken) => OnResumeAsync(context, cancellationToken);

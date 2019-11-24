@@ -25,8 +25,8 @@ namespace Elsa.Persistence.MongoDb.Serialization
 
         public override void Serialize(BsonSerializationContext context, BsonSerializationArgs args, T value)
         {
-            var json = JsonConvert.SerializeObject(value, serializerSettings);
-            var document = BsonDocument.Parse(json);
+            var json = value != null ? JsonConvert.SerializeObject(value, serializerSettings) : null;
+            var document = json != null ? BsonDocument.Parse(json) : new BsonDocument();
             BsonDocumentSerializer.Instance.Serialize(context, document);
         }
     }

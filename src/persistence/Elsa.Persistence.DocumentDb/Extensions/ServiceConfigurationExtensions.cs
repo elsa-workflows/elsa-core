@@ -30,16 +30,16 @@ namespace Elsa.Persistence.DocumentDb.Extensions
             return new CosmosDbElsaBuilder(builder.Services);
         }
 
-        public static CosmosDbElsaBuilder AddWorkflowInstanceStore(this CosmosDbElsaBuilder configuration)
+        public static CosmosDbElsaBuilder AddWorkflowInstanceStore(this CosmosDbElsaBuilder builder)
         {
-            configuration.Services.AddSingleton<IWorkflowInstanceStore, CosmosDbWorkflowInstanceStore>();
-            return configuration;
+            builder.Services.AddSingleton<IWorkflowInstanceStore, CosmosDbWorkflowInstanceStore>();
+            return builder;
         }
 
-        public static CosmosDbElsaBuilder AddWorkflowDefinitionStore(this CosmosDbElsaBuilder configuration)
+        public static CosmosDbElsaBuilder AddWorkflowDefinitionStore(this CosmosDbElsaBuilder builder)
         {
-            configuration.Services.AddSingleton<IWorkflowDefinitionStore, CosmosDbWorkflowDefinitionStore>();
-            return configuration;
+            builder.Services.AddSingleton<IWorkflowDefinitionStore, CosmosDbWorkflowDefinitionStore>();
+            return builder;
         }
     }
 }

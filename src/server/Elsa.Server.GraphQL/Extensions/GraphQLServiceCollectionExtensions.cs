@@ -4,6 +4,9 @@ using Elsa.AutoMapper.Extensions;
 using Elsa.Models;
 using Elsa.Server.GraphQL;
 using Elsa.Server.GraphQL.Mapping;
+using Elsa.Server.GraphQL.Mutations;
+using Elsa.Server.GraphQL.Queries;
+using Elsa.Server.GraphQL.Services;
 using GraphQL.NodaTime;
 using GraphQL.Server;
 using GraphQL.Types;
@@ -21,6 +24,14 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddScoped<ElsaSchema>()
                 .AddSingleton<InstantGraphType>()
                 .AddSingleton<EnumerationGraphType<WorkflowStatus>>()
+                .AddQueryProvider<ListWorkflowDefinitions>()
+                .AddQueryProvider<ListWorkflowInstances>()
+                .AddQueryProvider<GetWorkflowDefinition>()
+                .AddMutationProvider<DefineWorkflow>()
+                .AddMutationProvider<UpdateWorkflowDefinition>()
+                .AddMutationProvider<RunWorkflow>()
+                .AddMutationProvider<PublishWorkflow>()
+                .AddMutationProvider<DeleteWorkflowDefinition>()
                 .AddAutoMapperProfile<GraphQLProfile>(ServiceLifetime.Singleton)
                 .AddLogging();
 
@@ -32,6 +43,16 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddGraphTypes(ServiceLifetime.Scoped);
 
             return builder;
+        }
+
+        public static IServiceCollection AddMutationProvider<T>(this IServiceCollection services) where T : class, IMutationProvider
+        {
+            return services.AddScoped<IMutationProvider, T>();
+        }
+        
+        public static IServiceCollection AddQueryProvider<T>(this IServiceCollection services) where T : class, IQueryProvider
+        {
+            return services.AddScoped<IQueryProvider, T>();
         }
     }
 }

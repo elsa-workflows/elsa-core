@@ -1,8 +1,8 @@
 ﻿using Elsa.Models;
-using Elsa.Server.GraphQL.Scalars.Json;
+using Elsa.Server.GraphQL.Types.Scalars.Json;
 using GraphQL.Types;
 
-namespace Elsa.Server.GraphQL.Types
+namespace Elsa.Server.GraphQL.Types.Input
 {
     public class ActivityDefinitionInputType : InputObjectGraphType<ActivityDefinition>
     {
@@ -10,6 +10,7 @@ namespace Elsa.Server.GraphQL.Types
         {
             Name = "ActivityDefinitionInput";
             
+            Field(x => x.Id).Description("The ID of the activity.");
             Field(x => x.Type).Description("The activity type name.");
             Field(x => x.Description, true).Description("A description for the activity");
             Field(x => x.Name, true).Description("A name for the activity. Named activities make it easy to be referenced from workflow expressions.");

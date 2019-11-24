@@ -1,7 +1,7 @@
 ﻿using GraphQL.Language.AST;
 using Newtonsoft.Json.Linq;
 
-namespace Elsa.Server.GraphQL.Scalars.Json
+namespace Elsa.Server.GraphQL.Types.Scalars.Json
 {
     public class JsonValue : ValueNode<JObject>
     {

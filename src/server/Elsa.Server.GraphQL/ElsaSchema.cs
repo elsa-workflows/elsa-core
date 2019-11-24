@@ -1,5 +1,5 @@
 ﻿using System;
-using Elsa.Server.GraphQL.Scalars.Json;
+using Elsa.Server.GraphQL.Types.Scalars.Json;
 using GraphQL.Types;
 
 namespace Elsa.Server.GraphQL

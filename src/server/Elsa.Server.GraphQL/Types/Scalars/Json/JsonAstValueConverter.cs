@@ -2,7 +2,7 @@
 using GraphQL.Types;
 using Newtonsoft.Json.Linq;
 
-namespace Elsa.Server.GraphQL.Scalars.Json
+namespace Elsa.Server.GraphQL.Types.Scalars.Json
 {
     public class JsonAstValueConverter : IAstFromValueConverter
     {

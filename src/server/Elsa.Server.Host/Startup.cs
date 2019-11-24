@@ -1,3 +1,4 @@
+using Elsa.Activities.Console.Extensions;
 using Elsa.Server.GraphQL.Extensions;
 using GraphQL.Server.Ui.GraphiQL;
 using GraphQL.Server.Ui.Playground;
@@ -31,6 +32,7 @@ namespace Elsa.Server.Host
                     .AddMongoDbStores(Configuration, "ElsaServer", "MongoDb")
                     .AddGraphQL(options => Configuration.GetSection("GraphQL").Bind(options)))
                 
+                .AddConsoleActivities()
                 .AddHttpActivities(options => options.Bind(elsaSection.GetSection("Http")))
                 .AddEmailActivities(options => options.Bind(elsaSection.GetSection("Smtp")))
                 .AddTimerActivities(options => options.Bind(elsaSection.GetSection("BackgroundRunner")))
