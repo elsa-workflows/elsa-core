@@ -12,8 +12,7 @@ using Elsa.Activities.Http.Services;
 using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Expressions;
-using Elsa.Extensions;
-using Elsa.Results;
+using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
@@ -29,16 +28,13 @@ namespace Elsa.Activities.Http.Activities
     )]
     public class SendHttpRequest : Activity
     {
-        private readonly IWorkflowExpressionEvaluator expressionEvaluator;
         private readonly HttpClient httpClient;
         private readonly IEnumerable<IHttpResponseBodyParser> parsers;
 
         public SendHttpRequest(
-            IWorkflowExpressionEvaluator expressionEvaluator,
             IHttpClientFactory httpClientFactory,
             IEnumerable<IHttpResponseBodyParser> parsers)
         {
-            this.expressionEvaluator = expressionEvaluator;
             httpClient = httpClientFactory.CreateClient(nameof(SendHttpRequest));
             this.parsers = parsers;
         }
@@ -143,8 +139,7 @@ namespace Elsa.Activities.Http.Activities
             set => SetState(value);
         }
 
-
-        protected override async Task<ActivityExecutionResult> OnExecuteAsync(
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(
             WorkflowExecutionContext workflowContext,
             CancellationToken cancellationToken)
         {
@@ -168,7 +163,7 @@ namespace Elsa.Activities.Http.Activities
                 responseModel.Content = await formatter.ParseAsync(response, cancellationToken);
             }
             
-            workflowContext.SetLastResult(Output.SetVariable("Response", responseModel));
+            Output = new Variable(responseModel);
             
             var statusEndpoint = ((int)response.StatusCode).ToString();
 
@@ -188,25 +183,15 @@ namespace Elsa.Activities.Http.Activities
             CancellationToken cancellationToken)
         {
             var methodSupportsBody = GetMethodSupportsBody(Method);
-            var uri = await expressionEvaluator.EvaluateAsync(Url, workflowContext, cancellationToken);
+            var uri = await workflowContext.EvaluateAsync(Url, cancellationToken);
             var request = new HttpRequestMessage(new HttpMethod(Method), uri);
-
-            var authorizationHeaderValue = await expressionEvaluator.EvaluateAsync(
-                Authorization,
-                workflowContext,
-                cancellationToken
-            );
-
+            var authorizationHeaderValue = await workflowContext.EvaluateAsync(Authorization, cancellationToken);
             var requestHeaders = await ParseRequestHeadersAsync(workflowContext, cancellationToken);
 
             if (methodSupportsBody)
             {
-                var body = await expressionEvaluator.EvaluateAsync(Content, workflowContext, cancellationToken);
-                var contentType = await expressionEvaluator.EvaluateAsync(
-                    ContentType,
-                    workflowContext,
-                    cancellationToken
-                );
+                var body = await workflowContext.EvaluateAsync(Content, cancellationToken);
+                var contentType = await workflowContext.EvaluateAsync(ContentType, cancellationToken);
 
                 if (!string.IsNullOrWhiteSpace(body))
                 {
@@ -231,11 +216,7 @@ namespace Elsa.Activities.Http.Activities
             WorkflowExecutionContext workflowContext,
             CancellationToken cancellationToken)
         {
-            var headersText = await expressionEvaluator.EvaluateAsync(
-                RequestHeaders,
-                workflowContext,
-                cancellationToken
-            );
+            var headersText = await workflowContext.EvaluateAsync(RequestHeaders, cancellationToken);
             var headers = new HeaderDictionary();
 
             if (headersText != null)
@@ -248,11 +229,7 @@ namespace Elsa.Activities.Http.Activities
                 foreach (var header in headersQuery)
                 {
                     var headerValueExpression = new WorkflowExpression<string>(RequestHeaders.Syntax, header.Value);
-                    var headerValue = await expressionEvaluator.EvaluateAsync(
-                        headerValueExpression,
-                        workflowContext,
-                        cancellationToken
-                    );
+                    var headerValue = await workflowContext.EvaluateAsync(headerValueExpression, cancellationToken);
                     headers.Add(header.Key, headerValue);
                 }
             }
@@ -260,7 +237,7 @@ namespace Elsa.Activities.Http.Activities
             return headers;
         }
 
-        private bool GetMethodSupportsBody(string method)
+        private static bool GetMethodSupportsBody(string method)
         {
             var methods = new[] { "POST", "PUT", "PATCH" };
             return methods.Contains(method, StringComparer.InvariantCultureIgnoreCase);

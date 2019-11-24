@@ -7,8 +7,6 @@ using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Expressions;
-using Elsa.Extensions;
-using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
@@ -24,7 +22,6 @@ namespace Elsa.Activities.Http.Activities
     )]
     public class WriteHttpResponse : Activity
     {
-        private readonly IWorkflowExpressionEvaluator expressionEvaluator;
         private readonly IHttpContextAccessor httpContextAccessor;
 
         public static IEnumerable<SelectItem> GetStatusCodes()
@@ -49,11 +46,8 @@ namespace Elsa.Activities.Http.Activities
             };
         }
 
-        public WriteHttpResponse(
-            IWorkflowExpressionEvaluator expressionEvaluator,
-            IHttpContextAccessor httpContextAccessor)
+        public WriteHttpResponse(IHttpContextAccessor httpContextAccessor)
         {
-            this.expressionEvaluator = expressionEvaluator;
             this.httpContextAccessor = httpContextAccessor;
         }
 
@@ -106,7 +100,7 @@ namespace Elsa.Activities.Http.Activities
             set => SetState(value);
         }
 
-        protected override async Task<ActivityExecutionResult> OnExecuteAsync(
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(
             WorkflowExecutionContext workflowContext,
             CancellationToken cancellationToken)
         {
@@ -118,11 +112,7 @@ namespace Elsa.Activities.Http.Activities
             response.StatusCode = (int)StatusCode;
             response.ContentType = ContentType;
 
-            var headersText = await expressionEvaluator.EvaluateAsync(
-                ResponseHeaders,
-                workflowContext,
-                cancellationToken
-            );
+            var headersText = await workflowContext.EvaluateAsync(ResponseHeaders, cancellationToken);
 
             if (headersText != null)
             {
@@ -134,20 +124,14 @@ namespace Elsa.Activities.Http.Activities
                 foreach (var header in headersQuery)
                 {
                     var headerValueExpression = new WorkflowExpression<string>(ResponseHeaders.Syntax, header.Value);
-                    response.Headers[header.Key] = await expressionEvaluator.EvaluateAsync(
-                        headerValueExpression,
-                        workflowContext,
-                        cancellationToken
-                    );
+                    response.Headers[header.Key] = await workflowContext.EvaluateAsync(headerValueExpression, cancellationToken);
                 }
             }
 
-            var bodyText = await expressionEvaluator.EvaluateAsync(Content, workflowContext, cancellationToken);
+            var bodyText = await workflowContext.EvaluateAsync(Content, cancellationToken);
 
-            if (!string.IsNullOrWhiteSpace(bodyText))
-            {
+            if (!string.IsNullOrWhiteSpace(bodyText)) 
                 await response.WriteAsync(bodyText, cancellationToken);
-            }
 
             return Done();
         }

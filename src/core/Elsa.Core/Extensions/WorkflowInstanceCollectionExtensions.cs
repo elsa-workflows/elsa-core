@@ -11,7 +11,8 @@ namespace Elsa.Extensions
             var query =
                 from workflowInstance in instances
                 from blockingActivity in workflowInstance.BlockingActivities
-                let activity = workflowInstance.Activities[blockingActivity.ActivityId]
+                let activityDictionary = workflowInstance.Activities.ToDictionary(x => x.Id)
+                let activity = activityDictionary[blockingActivity.ActivityId]
                 select (workflowInstance, activity);
 
             if (!string.IsNullOrWhiteSpace(activityType))

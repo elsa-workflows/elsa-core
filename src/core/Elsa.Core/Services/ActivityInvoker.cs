@@ -16,7 +16,7 @@ namespace Elsa.Services
             this.logger = logger;
         }
 
-        public async Task<ActivityExecutionResult> ExecuteAsync(
+        public async Task<IActivityExecutionResult> ExecuteAsync(
             WorkflowExecutionContext workflowContext,
             IActivity activity,
             CancellationToken cancellationToken = default)
@@ -28,7 +28,7 @@ namespace Elsa.Services
             );
         }
 
-        public async Task<ActivityExecutionResult> ResumeAsync(
+        public async Task<IActivityExecutionResult> ResumeAsync(
             WorkflowExecutionContext workflowContext,
             IActivity activity,
             CancellationToken cancellationToken = default)
@@ -40,7 +40,7 @@ namespace Elsa.Services
             );
         }
 
-        public async Task<ActivityExecutionResult> HaltedAsync(
+        public async Task<IActivityExecutionResult> HaltedAsync(
             WorkflowExecutionContext workflowContext,
             IActivity activity, CancellationToken cancellationToken = default)
         {
@@ -51,10 +51,10 @@ namespace Elsa.Services
             );
         }
 
-        private async Task<ActivityExecutionResult> InvokeAsync(
+        private async Task<IActivityExecutionResult> InvokeAsync(
             WorkflowExecutionContext workflowContext,
             IActivity activity,
-            Func<IActivity, Task<ActivityExecutionResult>> invokeAction)
+            Func<IActivity, Task<IActivityExecutionResult>> invokeAction)
         {
             try
             {

@@ -1,6 +1,7 @@
 using System;
 using Elsa.Services;
 
+// ReSharper disable once CheckNamespace
 namespace Elsa.Activities.ControlFlow.Activities
 {
     public static class ActivityBuilderExtensions

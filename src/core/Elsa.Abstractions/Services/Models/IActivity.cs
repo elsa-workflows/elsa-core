@@ -1,8 +1,6 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
-using Elsa.Results;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Elsa.Services.Models
@@ -17,10 +15,7 @@ namespace Elsa.Services.Models
         /// <summary>
         /// Holds activity output.
         /// </summary>
-        Variables Output { get; set; }
-        
-        [JsonIgnore]
-        Variables TransientOutput { get; }
+        Variable Output { get; set; }
         
         /// <summary>
         /// The type name of this activity.
@@ -45,17 +40,17 @@ namespace Elsa.Services.Models
         /// <summary>
         /// Executes the specified activity.
         /// </summary>
-        Task<ActivityExecutionResult> ExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken = default);
+        Task<IActivityExecutionResult> ExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Resumes the specified activity.
         /// </summary>
-        Task<ActivityExecutionResult> ResumeAsync(WorkflowExecutionContext context, CancellationToken cancellationToken = default);
+        Task<IActivityExecutionResult> ResumeAsync(WorkflowExecutionContext context, CancellationToken cancellationToken = default);
         
         /// <summary>
         /// Invoked when the workflow is halted.
         /// </summary>
-        Task<ActivityExecutionResult> HaltedAsync(WorkflowExecutionContext context, CancellationToken cancellationToken = default);
+        Task<IActivityExecutionResult> HaltedAsync(WorkflowExecutionContext context, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Creates an instance representation of this activity.

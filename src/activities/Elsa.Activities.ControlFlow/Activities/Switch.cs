@@ -5,8 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
-using Elsa.Extensions;
-using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -21,15 +19,11 @@ namespace Elsa.Activities.ControlFlow.Activities
     )]
     public class Switch : Activity
     {
-        private readonly IWorkflowExpressionEvaluator expressionEvaluator;
-
-
         public Switch(IWorkflowExpressionEvaluator expressionEvaluator)
         {
-            this.expressionEvaluator = expressionEvaluator;
             Cases = new List<string>()
             {
-                "default"
+                OutcomeNames.Default
             };
         }
 
@@ -47,18 +41,14 @@ namespace Elsa.Activities.ControlFlow.Activities
             set => SetState(value);
         }
 
-        protected override async Task<ActivityExecutionResult> OnExecuteAsync(
-            WorkflowExecutionContext workflowContext,
-            CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
         {
-            var result = await expressionEvaluator.EvaluateAsync(Expression, workflowContext, cancellationToken);
+            var result = await workflowContext.EvaluateAsync(Expression, cancellationToken);
 
-            if (ContainsCase(result) || !ContainsCase("default"))
-                return Outcome(result);
+            if (ContainsCase(result) || !ContainsCase(OutcomeNames.Default))
+                return Outcome(result, result);
 
-            Output.SetVariable("Result", result);
-
-            return Outcome("default");
+            return Outcome(OutcomeNames.Default, result);
         }
 
         private bool ContainsCase(string @case) => Cases.Contains(@case, StringComparer.OrdinalIgnoreCase);

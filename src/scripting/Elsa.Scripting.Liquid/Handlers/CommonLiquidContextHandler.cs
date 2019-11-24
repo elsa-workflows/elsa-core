@@ -32,7 +32,7 @@ namespace Elsa.Scripting.Liquid.Handlers
             context.MemberAccessStrategy.Register<WorkflowExecutionContext, LiquidPropertyAccessor>("Output", x => new LiquidPropertyAccessor(name => ToFluidValue(x.Workflow.Output, name)));
             context.MemberAccessStrategy.Register<WorkflowExecutionContext, LiquidPropertyAccessor>("Variables", x => new LiquidPropertyAccessor(name => ToFluidValue(x.GetVariables(), name)));
             context.MemberAccessStrategy.Register<WorkflowExecutionContext, LiquidObjectAccessor<IActivity>>("Activities", x => new LiquidObjectAccessor<IActivity>(name => GetActivityAsync(x, name)));
-            context.MemberAccessStrategy.Register<LiquidObjectAccessor<IActivity>, LiquidObjectAccessor<object>>((x, activityName) => new LiquidObjectAccessor<object>(outputKey => GetActivityOutput(x, activityName, outputKey)));
+            context.MemberAccessStrategy.Register<LiquidObjectAccessor<IActivity>, object>(GetActivityOutput);
             context.MemberAccessStrategy.Register<LiquidObjectAccessor<object>, object>((x, name) => x.GetValueAsync(name));
             context.MemberAccessStrategy.Register<ExpandoObject, object>((x, name) => ((IDictionary<string, object>)x)[name]);
             context.MemberAccessStrategy.Register<JObject, object>((source, name) => source[name]);
@@ -43,11 +43,10 @@ namespace Elsa.Scripting.Liquid.Handlers
         private Task<FluidValue> ToFluidValue(IDictionary<string, Variable> dictionary, string key) 
             => Task.FromResult(!dictionary.ContainsKey(key) ? default : FluidValue.Create(dictionary[key].Value));
 
-        private async Task<object> GetActivityOutput(LiquidObjectAccessor<IActivity> accessor, string activityName, string outputKey)
+        private async Task<object> GetActivityOutput(LiquidObjectAccessor<IActivity> accessor, string activityName)
         {
             var activity = await accessor.GetValueAsync(activityName);
-            var output = activity.Output;
-            return output.GetVariable(outputKey);
+            return activity.Output;
         }
 
         private Task<IActivity> GetActivityAsync(WorkflowExecutionContext executionContext, string name) 

@@ -2,8 +2,6 @@
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
-using Elsa.Extensions;
-using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 using NCrontab;
@@ -19,12 +17,10 @@ namespace Elsa.Activities.Timers.Activities
     )]
     public class CronEvent : Activity
     {
-        private readonly IWorkflowExpressionEvaluator expressionEvaluator;
         private readonly IClock clock;
 
-        public CronEvent(IWorkflowExpressionEvaluator expressionEvaluator, IClock clock)
+        public CronEvent(IClock clock)
         {
-            this.expressionEvaluator = expressionEvaluator;
             this.clock = clock;
         }
 
@@ -46,14 +42,12 @@ namespace Elsa.Activities.Timers.Activities
             return StartTime == null || await IsExpiredAsync(context, cancellationToken);
         }
 
-        protected override ActivityExecutionResult OnExecute(WorkflowExecutionContext workflowContext)
+        protected override IActivityExecutionResult OnExecute(WorkflowExecutionContext workflowContext)
         {
             return Halt();
         }
 
-        protected override async Task<ActivityExecutionResult> OnResumeAsync(
-            WorkflowExecutionContext context,
-            CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnResumeAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
         {
             if (await IsExpiredAsync(context, cancellationToken))
             {
@@ -64,15 +58,9 @@ namespace Elsa.Activities.Timers.Activities
             return Halt();
         }
 
-        private async Task<bool> IsExpiredAsync(
-            WorkflowExecutionContext workflowContext,
-            CancellationToken cancellationToken)
+        private async Task<bool> IsExpiredAsync(WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
         {
-            var cronExpression = await expressionEvaluator.EvaluateAsync(
-                CronExpression,
-                workflowContext,
-                cancellationToken
-            );
+            var cronExpression = await workflowContext.EvaluateAsync(CronExpression, cancellationToken);
             var schedule = CrontabSchedule.Parse(cronExpression);
             var now = clock.GetCurrentInstant();
 

@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
 using Elsa.Extensions;
-using Elsa.Results;
 using Elsa.Scripting.JavaScript;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -41,9 +40,7 @@ namespace Elsa.Activities.ControlFlow.Activities
             set => SetState(value);
         }
 
-        protected override async Task<ActivityExecutionResult> OnExecuteAsync(
-            WorkflowExecutionContext context,
-            CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
         {
             var collection = await expressionEvaluator.EvaluateAsync(CollectionExpression, context, cancellationToken);
             var index = CurrentIndex;

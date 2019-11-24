@@ -8,7 +8,7 @@ using Elsa.Activities.Http.Services;
 using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Extensions;
-using Elsa.Results;
+using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
@@ -84,12 +84,12 @@ namespace Elsa.Activities.Http.Activities
             set => SetState(value);
         }
 
-        protected override ActivityExecutionResult OnExecute(WorkflowExecutionContext workflowContext)
+        protected override IActivityExecutionResult OnExecute(WorkflowExecutionContext workflowContext)
         {
             return Halt(true);
         }
 
-        protected override async Task<ActivityExecutionResult> OnResumeAsync(
+        protected override async Task<IActivityExecutionResult> OnResumeAsync(
             WorkflowExecutionContext workflowContext,
             CancellationToken cancellationToken)
         {
@@ -108,7 +108,7 @@ namespace Elsa.Activities.Http.Activities
                 model.Body = await parser.ParseAsync(request, cancellationToken);
             }
 
-            workflowContext.CurrentScope.LastResult = Output.SetVariable("Content", model);
+            Output = new Variable(model);
 
             return Done();
         }

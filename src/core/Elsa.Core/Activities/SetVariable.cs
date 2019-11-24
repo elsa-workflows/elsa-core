@@ -2,7 +2,6 @@
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
-using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -38,7 +37,7 @@ namespace Elsa.Activities
             set => SetState(value);
         }
 
-        protected override async Task<ActivityExecutionResult> OnExecuteAsync(
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(
             WorkflowExecutionContext workflowContext,
             CancellationToken cancellationToken)
         {

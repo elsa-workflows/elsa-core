@@ -33,9 +33,7 @@ namespace Elsa.Services.Models
         public bool HasScheduledActivities => scheduledActivities.Any();
         public bool HasScheduledHaltingActivities => scheduledHaltingActivities.Any();
         public bool IsFirstPass { get; set; }
-        public LogEntry CurrentLogEntry => Workflow.ExecutionLog.LastOrDefault();
         public WorkflowExecutionScope CurrentScope => Workflow.Scopes.Peek();
-        public Variables TransientState { get; } = new Variables();
         public IActivity CurrentActivity { get; private set; }
         public void ScheduleActivities(params IActivity[] activities) => ScheduleActivities((IEnumerable<IActivity>)activities);
 
@@ -79,9 +77,9 @@ namespace Elsa.Services.Models
 
         public Task<T> EvaluateAsync<T>(IWorkflowExpression<T> expression, CancellationToken cancellationToken) =>
             ExpressionEvaluator.EvaluateAsync(expression, this, cancellationToken);
-
-        public void SetLastResult(object value) => SetLastResult(new Variable(value));
-        public void SetLastResult(Variable value) => CurrentScope.LastResult = value;
+        
+        public Task<object> EvaluateAsync(IWorkflowExpression expression, Type type, CancellationToken cancellationToken) =>
+            ExpressionEvaluator.EvaluateAsync(expression, type, this, cancellationToken);
 
         public void Start()
         {

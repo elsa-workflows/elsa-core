@@ -2,8 +2,6 @@
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
-using Elsa.Extensions;
-using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 using NodaTime;
@@ -19,12 +17,10 @@ namespace Elsa.Activities.Timers.Activities
     )]
     public class InstantEvent : Activity
     {
-        private readonly IWorkflowExpressionEvaluator expressionEvaluator;
         private readonly IClock clock;
 
-        public InstantEvent(IWorkflowExpressionEvaluator expressionEvaluator, IClock clock)
+        public InstantEvent(IClock clock)
         {
-            this.expressionEvaluator = expressionEvaluator;
             this.clock = clock;
         }
 
@@ -38,23 +34,23 @@ namespace Elsa.Activities.Timers.Activities
             set => SetState(value);
         }
 
-        protected override async Task<ActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
         {
             var isExpired = await IsExpiredAsync(context, cancellationToken);
 
-            return isExpired ? Done() : Halt();
+            return isExpired ? (IActivityExecutionResult)Done() : Halt();
         }
 
-        protected override async Task<ActivityExecutionResult> OnResumeAsync(WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnResumeAsync(WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
         {
             var isExpired = await IsExpiredAsync(workflowContext, cancellationToken);
 
-            return isExpired ? Done() : Halt();
+            return isExpired ? (IActivityExecutionResult)Done() : Halt();
         }
 
         private async Task<bool> IsExpiredAsync(WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
         {
-            var instant = await expressionEvaluator.EvaluateAsync(InstantExpression, workflowContext, cancellationToken);
+            var instant = await workflowContext.EvaluateAsync(InstantExpression, cancellationToken);
             var now = clock.GetCurrentInstant();
 
             return now >= instant;

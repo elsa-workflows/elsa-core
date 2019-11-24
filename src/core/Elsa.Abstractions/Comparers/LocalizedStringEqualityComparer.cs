@@ -5,14 +5,7 @@ namespace Elsa.Comparers
 {
     public class LocalizedStringEqualityComparer : IEqualityComparer<LocalizedString>
     {
-        public bool Equals(LocalizedString x, LocalizedString y)
-        {
-            return x.Name.Equals(y.Name);
-        }
-
-        public int GetHashCode(LocalizedString obj)
-        {
-            return obj.Name.GetHashCode();
-        }
+        public bool Equals(LocalizedString x, LocalizedString y) => x.Name.Equals(y.Name);
+        public int GetHashCode(LocalizedString obj) => obj.Name.GetHashCode();
     }
 }

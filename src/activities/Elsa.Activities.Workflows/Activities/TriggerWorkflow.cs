@@ -3,9 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
-using Elsa.Extensions;
 using Elsa.Models;
-using Elsa.Results;
 using Elsa.Scripting.JavaScript;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -20,12 +18,10 @@ namespace Elsa.Activities.Workflows.Activities
     public class TriggerWorkflow : Activity
     {
         private readonly IWorkflowInvoker workflowInvoker;
-        private readonly IWorkflowExpressionEvaluator expressionEvaluator;
 
-        public TriggerWorkflow(IWorkflowInvoker workflowInvoker, IWorkflowExpressionEvaluator expressionEvaluator)
+        public TriggerWorkflow(IWorkflowInvoker workflowInvoker)
         {
             this.workflowInvoker = workflowInvoker;
-            this.expressionEvaluator = expressionEvaluator;
         }
 
         [ActivityProperty(Hint = "An expression that evaluates to the activity type to use when triggering workflows.")]
@@ -51,12 +47,11 @@ namespace Elsa.Activities.Workflows.Activities
             set => SetState(value);
         }
 
-        protected override async Task<ActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext context,
-            CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
         {
-            var activityType = await expressionEvaluator.EvaluateAsync(ActivityType, context, cancellationToken);
-            var input = await expressionEvaluator.EvaluateAsync(Input, context, cancellationToken);
-            var correlationId = await expressionEvaluator.EvaluateAsync(CorrelationId, context, cancellationToken);
+            var activityType = await context.EvaluateAsync(ActivityType, cancellationToken);
+            var input = await context.EvaluateAsync(Input, cancellationToken);
+            var correlationId = await context.EvaluateAsync(CorrelationId, cancellationToken);
 
             await workflowInvoker.TriggerAsync(
                 activityType,

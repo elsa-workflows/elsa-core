@@ -10,7 +10,7 @@ namespace Elsa.Server.GraphQL.Models
         public bool IsSingleton { get; set; }
         public bool IsDisabled { get; set; }
         public bool Publish { get; set; }
-        public IReadOnlyCollection<ActivityDefinitionModel> Activities { get; set; }
+        public IReadOnlyCollection<ActivityDefinition> Activities { get; set; }
         public IReadOnlyCollection<ConnectionDefinition> Connections { get; set; }
     }
 }

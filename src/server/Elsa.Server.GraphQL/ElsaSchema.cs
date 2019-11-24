@@ -1,4 +1,5 @@
 ﻿using System;
+using Elsa.Server.GraphQL.Scalars.Json;
 using GraphQL.Types;
 
 namespace Elsa.Server.GraphQL
@@ -9,6 +10,8 @@ namespace Elsa.Server.GraphQL
         {
             Query = query;
             Mutation = mutation;
+            
+            RegisterValueConverter(new JsonAstValueConverter());
         }
     }
 }

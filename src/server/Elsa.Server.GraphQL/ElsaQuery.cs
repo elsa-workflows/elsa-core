@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using AutoMapper;
 using Elsa.Models;
 using Elsa.Persistence;
@@ -12,11 +11,13 @@ namespace Elsa.Server.GraphQL
     public class ElsaQuery : ObjectGraphType
     {
         private readonly IWorkflowDefinitionStore workflowDefinitionStore;
+        private readonly IWorkflowInstanceStore workflowInstanceStore;
         private readonly IMapper mapper;
 
-        public ElsaQuery(IWorkflowDefinitionStore workflowDefinitionStore, IMapper mapper)
+        public ElsaQuery(IWorkflowDefinitionStore workflowDefinitionStore, IWorkflowInstanceStore workflowInstanceStore, IMapper mapper)
         {
             this.workflowDefinitionStore = workflowDefinitionStore;
+            this.workflowInstanceStore = workflowInstanceStore;
             this.mapper = mapper;
 
             FieldAsync<ListGraphType<WorkflowDefinitionVersionType>>(
@@ -31,24 +32,30 @@ namespace Elsa.Server.GraphQL
                     new  QueryArgument<StringGraphType> { Name = "definitionId", Description = "Get a specific workflow definition by ID."},
                 new QueryArgument<VersionOptionsInputType>{ Name = "version", Description = "Filter workflow definitions by the specified version options."}),
                 resolve: ResolveWorkflowDefinition);
+            
+            FieldAsync<ListGraphType<WorkflowInstanceType>>(
+                "workflowInstances",
+                arguments: new QueryArguments(
+                    new QueryArgument<StringGraphType>{ Name = "definitionId", Description = "Filter workflow instances by the specified workflow definition ID."},
+                    new QueryArgument<EnumerationGraphType<WorkflowStatus>>{ Name = "status", Description = "Filter workflow instances by the specified workflow status."}
+                ),
+                resolve: ResolveWorkflowInstances);
+        }
+
+        private async Task<object> ResolveWorkflowInstances(ResolveFieldContext<object> context)
+        {
+            return await workflowInstanceStore.ListAllAsync(context.CancellationToken);
         }
 
         private async Task<object> ResolveWorkflowDefinitions(ResolveFieldContext<object> context)
         {
             var versionOptionsModel = context.GetArgument<VersionOptionsModel>("version");
             var versionOptions = mapper.Map<VersionOptions>(versionOptionsModel);
-            var items = await workflowDefinitionStore.ListAsync(versionOptions, context.CancellationToken);
-
-            return mapper.Map<IEnumerable<WorkflowDefinitionVersionModel>>(items);
+            return await workflowDefinitionStore.ListAsync(versionOptions, context.CancellationToken);
         }
         
-        private async Task<object> ResolveWorkflowDefinition(ResolveFieldContext<object> context)
-        {
-            var workflowDefinition = await ResolveWorkflowDefinitionInternal(context);
+        private async Task<object> ResolveWorkflowDefinition(ResolveFieldContext<object> context) => await ResolveWorkflowDefinitionInternal(context);
 
-            return mapper.Map<WorkflowDefinitionVersionModel>(workflowDefinition);
-        }
-        
         private async Task<WorkflowDefinitionVersion> ResolveWorkflowDefinitionInternal(ResolveFieldContext<object> context)
         {
             var versionId = context.GetArgument<string>("versionId");

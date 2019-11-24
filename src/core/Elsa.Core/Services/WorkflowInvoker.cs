@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Persistence;
-using Elsa.Results;
 using Elsa.Services.Extensions;
 using Elsa.Services.Models;
 using Microsoft.Extensions.Logging;
@@ -330,7 +329,7 @@ namespace Elsa.Services
             );
         }
 
-        private async Task<ActivityExecutionResult> ExecuteActivityAsync(
+        private async Task<IActivityExecutionResult> ExecuteActivityAsync(
             WorkflowExecutionContext workflowContext,
             IActivity activity,
             CancellationToken cancellationToken)
@@ -343,7 +342,7 @@ namespace Elsa.Services
             );
         }
 
-        private async Task<ActivityExecutionResult> ResumeActivityAsync(
+        private async Task<IActivityExecutionResult> ResumeActivityAsync(
             WorkflowExecutionContext workflowContext,
             IActivity activity,
             CancellationToken cancellationToken)
@@ -356,10 +355,10 @@ namespace Elsa.Services
             );
         }
 
-        private async Task<ActivityExecutionResult> InvokeActivityAsync(
+        private async Task<IActivityExecutionResult> InvokeActivityAsync(
             WorkflowExecutionContext workflowContext,
             IActivity activity,
-            Func<Task<ActivityExecutionResult>> executeAction,
+            Func<Task<IActivityExecutionResult>> executeAction,
             CancellationToken cancellationToken)
         {
             try
@@ -381,7 +380,7 @@ namespace Elsa.Services
             return null;
         }
 
-        private async Task<ActivityExecutionResult> ExecuteActivityHaltedAsync(
+        private async Task<IActivityExecutionResult> ExecuteActivityHaltedAsync(
             WorkflowExecutionContext workflowContext,
             IActivity activity,
             CancellationToken cancellationToken)

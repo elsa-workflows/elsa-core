@@ -6,6 +6,7 @@
 
     <ItemGroup>
       <PackageReference Include="GraphQL" Version="3.0.0-preview-1271" />
+      <PackageReference Include="GraphQL.NodaTime" Version="0.0.8" />
       <PackageReference Include="GraphQL.Server.Transports.AspNetCore" Version="3.5.0-alpha0027" />
       <PackageReference Include="Microsoft.AspNetCore.Server.IIS" Version="2.2.6" />
       <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="2.2.0" />

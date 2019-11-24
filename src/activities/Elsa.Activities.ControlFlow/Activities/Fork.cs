@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using Elsa.Attributes;
-using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -22,7 +21,7 @@ namespace Elsa.Activities.ControlFlow.Activities
             set => SetState(value);
         }
 
-        protected override ActivityExecutionResult OnExecute(WorkflowExecutionContext workflowContext)
+        protected override IActivityExecutionResult OnExecute(WorkflowExecutionContext workflowContext)
         {
             return Outcomes(Branches);
         }

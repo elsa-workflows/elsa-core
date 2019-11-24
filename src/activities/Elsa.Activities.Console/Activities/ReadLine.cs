@@ -2,7 +2,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
-using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -38,9 +37,7 @@ namespace Elsa.Activities.Console.Activities
             set => SetState(value);
         }
 
-        protected override async Task<ActivityExecutionResult> OnExecuteAsync(
-            WorkflowExecutionContext context,
-            CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
         {
             if (input == null)
                 return Halt();
@@ -49,20 +46,18 @@ namespace Elsa.Activities.Console.Activities
             return Execute(context, receivedInput);
         }
 
-        protected override ActivityExecutionResult OnResume(WorkflowExecutionContext context)
+        protected override IActivityExecutionResult OnResume(WorkflowExecutionContext context)
         {
             var receivedInput = context.Workflow.Input.GetVariable<string>("ReadLineInput");
             return Execute(context, receivedInput);
         }
 
-        private ActivityExecutionResult Execute(WorkflowExecutionContext workflowContext, string receivedInput)
+        private IActivityExecutionResult Execute(WorkflowExecutionContext workflowContext, string receivedInput)
         {
             if (!string.IsNullOrWhiteSpace(VariableName))
                 workflowContext.CurrentScope.SetVariable(VariableName, receivedInput);
             
-            Output.SetVariable("Input", receivedInput);
-
-            return Done();
+            return Done(receivedInput);
         }
     }
 }

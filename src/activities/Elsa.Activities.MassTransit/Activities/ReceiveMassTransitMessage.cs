@@ -3,7 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Extensions;
-using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Newtonsoft.Json.Linq;
@@ -39,18 +38,16 @@ namespace Elsa.Activities.MassTransit.Activities
             return messageInputType != null && messageType != null && messageInputType == messageType;
         }
 
-        protected override ActivityExecutionResult OnExecute(WorkflowExecutionContext context)
+        protected override IActivityExecutionResult OnExecute(WorkflowExecutionContext context)
         {
             return Halt(true);
         }
 
-        protected override Task<ActivityExecutionResult> OnResumeAsync(WorkflowExecutionContext context,
-            CancellationToken cancellationToken)
+        protected override Task<IActivityExecutionResult> OnResumeAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
         {
             var message = context.Workflow.Input.GetVariable(Constants.MessageInputKey);
-            context.SetLastResult(message);
-
-            return Task.FromResult(Done());
+            
+            return Task.FromResult<IActivityExecutionResult>(Done(message));
         }
     }
 }

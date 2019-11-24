@@ -2,9 +2,7 @@
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
-using Elsa.Extensions;
 using Elsa.Models;
-using Elsa.Results;
 using Elsa.Scripting.JavaScript.Services;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -21,12 +19,10 @@ namespace Elsa.Activities.Workflows.Activities
     )]
     public class TriggerSignal : Activity
     {
-        private readonly IWorkflowExpressionEvaluator expressionEvaluator;
         private readonly IWorkflowInvoker workflowInvoker;
 
-        public TriggerSignal(IWorkflowExpressionEvaluator expressionEvaluator, IWorkflowInvoker workflowInvoker)
+        public TriggerSignal(IWorkflowInvoker workflowInvoker)
         {
-            this.expressionEvaluator = expressionEvaluator;
             this.workflowInvoker = workflowInvoker;
         }
 
@@ -53,13 +49,11 @@ namespace Elsa.Activities.Workflows.Activities
             set => SetState(value);
         }
 
-        protected override async Task<ActivityExecutionResult> OnExecuteAsync(
-            WorkflowExecutionContext context,
-            CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
         {
-            var signal = await expressionEvaluator.EvaluateAsync(Signal, context, cancellationToken);
-            var input = (await expressionEvaluator.EvaluateAsync(Input, context, cancellationToken)) ?? new Variables();
-            var correlationId = await expressionEvaluator.EvaluateAsync(CorrelationId, context, cancellationToken);
+            var signal = await context.EvaluateAsync(Signal, cancellationToken);
+            var input = (await context.EvaluateAsync(Input, cancellationToken)) ?? new Variables();
+            var correlationId = await context.EvaluateAsync(CorrelationId, cancellationToken);
 
             input.SetVariable("Signal", signal);
 

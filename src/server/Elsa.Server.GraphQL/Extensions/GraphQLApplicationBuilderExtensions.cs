@@ -1,6 +1,6 @@
-﻿using Elsa.Server.GraphQL;
+﻿using Microsoft.AspNetCore.Builder;
 
-namespace Microsoft.AspNetCore.Builder
+namespace Elsa.Server.GraphQL.Extensions
 {
     public static class GraphQLApplicationBuilderExtensions
     {

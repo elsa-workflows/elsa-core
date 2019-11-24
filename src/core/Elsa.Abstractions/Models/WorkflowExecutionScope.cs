@@ -6,8 +6,7 @@ namespace Elsa.Models
         {
             Variables = new Variables();
         }
-
-        public Variable LastResult { get; set; }
+        
         public Variables Variables { get; }
 
         public void SetVariable(string variableName, object value) => Variables.SetVariable(variableName, value);

@@ -15,11 +15,10 @@ namespace Elsa.Models
         public Instant? FinishedAt { get; set; }
         public Instant? FaultedAt { get; set; }
         public Instant? AbortedAt { get; set; }
-        public IDictionary<string, ActivityInstance> Activities { get; set; } = new Dictionary<string, ActivityInstance>();
+        public ICollection<ActivityInstance> Activities { get; set; }
         public Stack<WorkflowExecutionScope> Scopes { get; set; }
         public Variables Input { get; set; }
         public HashSet<BlockingActivity> BlockingActivities { get; set; }
-        public string[] TestItems { get; set; } = new string[0];
         public ICollection<LogEntry> ExecutionLog { get; set; }
         public WorkflowFault Fault { get; set; }
     }

@@ -4,7 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
-using Elsa.Results;
+using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.DependencyInjection;
@@ -43,7 +43,7 @@ namespace Elsa.Activities.Reflection.Activities
             set => SetState(value);
         }
 
-        protected override async Task<ActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
         {
             var type = System.Type.GetType(TypeName);
 
@@ -64,7 +64,7 @@ namespace Elsa.Activities.Reflection.Activities
             var instance = method.IsStatic ? default : ActivatorUtilities.GetServiceOrCreateInstance(context.ServiceProvider, type);
             var result = method.Invoke(instance, inputValues);
 
-            Output.SetVariable("Result", result);
+            Output = new Variable(result);
             return Outcome(OutcomeNames.Done);
         }
     }

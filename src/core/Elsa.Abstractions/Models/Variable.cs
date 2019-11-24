@@ -5,6 +5,11 @@ namespace Elsa.Models
 {
     public class Variable
     {
+        public static Variable From(object output)
+        {
+            return output != null ? new Variable(output) : null;
+        }
+        
         public Variable()
         {
         }

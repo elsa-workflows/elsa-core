@@ -3,8 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
-using Elsa.Results;
-using Elsa.Services;
 using Elsa.Services.Models;
 using MassTransit;
 
@@ -17,12 +15,9 @@ namespace Elsa.Activities.MassTransit.Activities
     )]
     public class PublishMassTransitMessage : MassTransitBusActivity
     {
-        private readonly IWorkflowExpressionEvaluator evaluator;
-
-        public PublishMassTransitMessage(IWorkflowExpressionEvaluator evaluator, IBus bus, ConsumeContext consumeContext)
+        public PublishMassTransitMessage(IBus bus, ConsumeContext consumeContext)
             : base(bus, consumeContext)
         {
-            this.evaluator = evaluator;
         }
 
         [ActivityProperty(Hint = "The assembly-qualified type name of the event to publish.")]
@@ -48,10 +43,9 @@ namespace Elsa.Activities.MassTransit.Activities
             return MessageType != null;
         }
 
-        protected override async Task<ActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext context,
-            CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
         {
-            var message = await evaluator.EvaluateAsync(Message, MessageType, context, cancellationToken);
+            var message = await context.EvaluateAsync(Message, MessageType, cancellationToken);
 
             await PublishEndpoint.Publish(message, cancellationToken);
 

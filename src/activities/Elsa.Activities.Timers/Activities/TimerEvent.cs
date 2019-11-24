@@ -3,8 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
-using Elsa.Extensions;
-using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 using NodaTime;
@@ -17,12 +15,10 @@ namespace Elsa.Activities.Timers.Activities
     )]
     public class TimerEvent : Activity
     {
-        private readonly IWorkflowExpressionEvaluator expressionEvaluator;
         private readonly IClock clock;
 
-        public TimerEvent(IWorkflowExpressionEvaluator expressionEvaluator, IClock clock)
+        public TimerEvent(IClock clock)
         {
-            this.expressionEvaluator = expressionEvaluator;
             this.clock = clock;
         }
 
@@ -44,12 +40,12 @@ namespace Elsa.Activities.Timers.Activities
             return StartTime == null || await IsExpiredAsync(context, cancellationToken);
         }
 
-        protected override ActivityExecutionResult OnExecute(WorkflowExecutionContext context)
+        protected override IActivityExecutionResult OnExecute(WorkflowExecutionContext context)
         {
             return Halt();
         }
 
-        protected override async Task<ActivityExecutionResult> OnResumeAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnResumeAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
         {
             if (await IsExpiredAsync(context, cancellationToken))
             {
@@ -67,7 +63,7 @@ namespace Elsa.Activities.Timers.Activities
             if (StartTime == null)
                 StartTime = now;
             
-            var timeSpan = await expressionEvaluator.EvaluateAsync(TimeoutExpression, context, cancellationToken);
+            var timeSpan = await context.EvaluateAsync(TimeoutExpression, cancellationToken);
             var expiresAt = StartTime.Value.ToDateTimeUtc() + timeSpan;
             
             return now.ToDateTimeUtc() >= expiresAt;

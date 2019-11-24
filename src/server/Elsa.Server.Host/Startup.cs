@@ -1,3 +1,4 @@
+using Elsa.Server.GraphQL.Extensions;
 using GraphQL.Server.Ui.GraphiQL;
 using GraphQL.Server.Ui.Playground;
 using GraphQL.Server.Ui.Voyager;
@@ -17,9 +18,9 @@ namespace Elsa.Server.Host
             Environment = environment;
             Configuration = configuration;
         }
-        
-        public IWebHostEnvironment Environment { get; }
-        public IConfiguration Configuration { get; }
+
+        private IWebHostEnvironment Environment { get; }
+        private IConfiguration Configuration { get; }
 
         public void ConfigureServices(IServiceCollection services)
         {

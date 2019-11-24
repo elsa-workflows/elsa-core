@@ -34,7 +34,7 @@ namespace Elsa.Server.GraphQL
                     else
                         await publisher.SaveDraftAsync(workflowDefinitionVersion, context.CancellationToken);
 
-                    return mapper.Map<WorkflowDefinitionVersionModel>(workflowDefinitionVersion);
+                    return workflowDefinitionVersion;
                 });
             
             FieldAsync<WorkflowDefinitionVersionType>(
@@ -50,27 +50,24 @@ namespace Elsa.Server.GraphQL
 
                     if (workflowDefinitionVersion == null)
                         return null;
-
-                    var workflowDefinitionVersionModel = mapper.Map<WorkflowDefinitionVersionModel>(workflowDefinitionVersion);
+                    
                     var updateModel = context.GetArgument<dynamic>("workflowDefinition");
                     var props = (IDictionary<string, object>)updateModel;
                     var publish = props.ContainsKey("publish") && (bool)props["publish"];
 
                     // "Patch" the existing workflow definition version with the posted model values.
                     var json = JsonConvert.SerializeObject(updateModel);
-                    JsonConvert.PopulateObject(json, workflowDefinitionVersionModel, new JsonSerializerSettings
+                    JsonConvert.PopulateObject(json, workflowDefinitionVersion, new JsonSerializerSettings
                     {
                         ObjectCreationHandling = ObjectCreationHandling.Replace
                     });
 
-                    workflowDefinitionVersion = mapper.Map<WorkflowDefinitionVersion>(workflowDefinitionVersionModel);
-                    
                     if (publish)
                         workflowDefinitionVersion = await publisher.PublishAsync(workflowDefinitionVersion, context.CancellationToken);
                     else
                         workflowDefinitionVersion = await publisher.SaveDraftAsync(workflowDefinitionVersion, context.CancellationToken);
 
-                    return mapper.Map<WorkflowDefinitionVersionModel>(workflowDefinitionVersion);
+                    return workflowDefinitionVersion;
                 });
         }
     }

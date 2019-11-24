@@ -2,9 +2,7 @@
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
-using Elsa.Extensions;
 using Elsa.Models;
-using Elsa.Results;
 using Elsa.Scripting.JavaScript;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -18,13 +16,6 @@ namespace Elsa.Activities.Workflows.Activities
     )]
     public class Finish : Activity
     {
-        private readonly IWorkflowExpressionEvaluator expressionEvaluator;
-
-        public Finish(IWorkflowExpressionEvaluator expressionEvaluator)
-        {
-            this.expressionEvaluator = expressionEvaluator;
-        }
-
         [ActivityProperty(Hint = "An expression that evaluates to a dictionary to be set as the workflow's output.'")]
         public WorkflowExpression<Variables> WorkflowOutput
         {
@@ -32,15 +23,9 @@ namespace Elsa.Activities.Workflows.Activities
             set => SetState(value);
         }
 
-        protected override async Task<ActivityExecutionResult> OnExecuteAsync(
-            WorkflowExecutionContext workflowContext,
-            CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
         {
-            var workflowOutput = await expressionEvaluator.EvaluateAsync(
-                WorkflowOutput,
-                workflowContext,
-                cancellationToken
-            );
+            var workflowOutput = await workflowContext.EvaluateAsync(WorkflowOutput, cancellationToken);
             
             workflowContext.Workflow.Output = workflowOutput;
 

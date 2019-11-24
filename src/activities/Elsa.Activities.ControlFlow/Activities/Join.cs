@@ -4,7 +4,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Design;
-using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Extensions;
 using Elsa.Services.Models;
@@ -48,7 +47,7 @@ namespace Elsa.Activities.ControlFlow.Activities
             set => SetState(value);
         }
 
-        protected override ActivityExecutionResult OnExecute(WorkflowExecutionContext workflowContext)
+        protected override IActivityExecutionResult OnExecute(WorkflowExecutionContext workflowContext)
         {
             var recordedInboundTransitions = InboundTransitions ?? new List<string>();
             var workflow = workflowContext.Workflow;

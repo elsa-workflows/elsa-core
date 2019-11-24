@@ -79,7 +79,6 @@ namespace Sample04
         private void SetupOperation(ArithmeticOperation operation)
         {
             operation.Values = new JavaScriptExpression<double[]>("[number1, number2]");
-            operation.ResultVariableName = "result";
         }
     }
 }

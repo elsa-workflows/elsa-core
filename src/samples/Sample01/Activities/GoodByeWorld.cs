@@ -7,7 +7,7 @@ namespace Sample01.Activities
 {
     public class GoodByeWorld : Activity
     {
-        protected override ActivityExecutionResult OnExecute(WorkflowExecutionContext context)
+        protected override IActivityExecutionResult OnExecute(WorkflowExecutionContext context)
         {
             Console.WriteLine("Goodbye cruel world...");
             return Done();

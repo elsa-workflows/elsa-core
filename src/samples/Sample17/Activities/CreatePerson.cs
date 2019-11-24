@@ -30,7 +30,7 @@ namespace Sample17.Activities
             set => SetState(value);
         }
 
-        protected override async Task<ActivityExecutionResult> OnExecuteAsync(
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(
             WorkflowExecutionContext context,
             CancellationToken cancellationToken)
         {
@@ -38,11 +38,7 @@ namespace Sample17.Activities
             var age = await expressionEvaluator.EvaluateAsync(AgeExpression, context, cancellationToken);
             var person = new Person { FullName = name, Age = age };
 
-            Output.SetVariable("Person", person);
-            Output.SetVariable("FullName", person.FullName);
-            Output.SetVariable("Age", person.Age);
-            
-            return Done();
+            return Done(person);
         }
     }
 }

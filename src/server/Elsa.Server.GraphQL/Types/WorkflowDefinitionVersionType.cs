@@ -1,13 +1,14 @@
-﻿using Elsa.Server.GraphQL.Models;
+﻿using Elsa.Models;
 using GraphQL.Types;
 
 namespace Elsa.Server.GraphQL.Types
 {
-    public class WorkflowDefinitionVersionType : ObjectGraphType<WorkflowDefinitionVersionModel>
+    public class WorkflowDefinitionVersionType : ObjectGraphType<WorkflowDefinitionVersion>
     {
         public WorkflowDefinitionVersionType()
         {
             Name = "WorkflowDefinitionVersion";
+            Description = "Represents a workflow definition, which acts as a blueprint for workflow instances.";
             
             Field(x => x.Id).Description("The version ID of the workflow.");
             Field(x => x.DefinitionId).Description("The ID of the workflow");
@@ -20,6 +21,7 @@ namespace Elsa.Server.GraphQL.Types
             Field(x => x.IsSingleton).Description("Whether the workflow acts as a singleton or not. When true, only one instance can execute at any given time.");
             Field(x => x.Activities, true, typeof(ListGraphType<ActivityDefinitionType>)).Description("A list of activities for the workflow.");
             Field(x => x.Connections, true, typeof(ListGraphType<ConnectionDefinitionType>)).Description("A list of connections between activities on the workflow.");
+            Field(x => x.Variables, true, typeof(VariablesType)).Description("A set of predefined variables for the workflow.");
         }
     }
 }

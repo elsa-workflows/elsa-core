@@ -28,8 +28,6 @@ namespace Elsa.Services.Models
             Input = new Variables(input ?? Variables.Empty);
         }
 
-        
-
         public Workflow()
         {
             Scopes = new Stack<WorkflowExecutionScope>(new[] { new WorkflowExecutionScope() });
@@ -57,8 +55,6 @@ namespace Elsa.Services.Models
 
         public WorkflowInstance ToInstance()
         {
-            var activities = Activities.ToDictionary(x => x.Id, x => x.ToInstance());
-
             return new WorkflowInstance
             {
                 Id = Id,
@@ -71,14 +67,9 @@ namespace Elsa.Services.Models
                 FinishedAt = FinishedAt,
                 FaultedAt = FaultedAt,
                 AbortedAt = AbortedAt,
-                Activities = activities,
+                Activities = new HashSet<ActivityInstance>(Activities.Select(x => x.ToInstance()), new ActivityInstanceEqualityComparer()),
                 Scopes = new Stack<WorkflowExecutionScope>(Scopes),
-                
-                BlockingActivities = new HashSet<BlockingActivity>(
-                    BlockingActivities.Select(x => new BlockingActivity(x.Id, x.Type)),
-                    new BlockingActivityEqualityComparer()
-                ),
-                
+                BlockingActivities = new HashSet<BlockingActivity>(BlockingActivities.Select(x => new BlockingActivity(x.Id, x.Type)), new BlockingActivityEqualityComparer()),
                 ExecutionLog = ExecutionLog.ToList(),
                 Fault = Fault?.ToInstance()
             };
@@ -100,16 +91,15 @@ namespace Elsa.Services.Models
             FaultedAt = instance.FaultedAt;
             AbortedAt = instance.AbortedAt;
             ExecutionLog = instance.ExecutionLog.ToList();
-
-            BlockingActivities =
-                new HashSet<IActivity>(instance.BlockingActivities.Select(x => activityLookup[x.ActivityId]));
-
+            BlockingActivities = new HashSet<IActivity>(instance.BlockingActivities.Select(x => activityLookup[x.ActivityId]));
             Scopes = new Stack<WorkflowExecutionScope>(instance.Scopes);
 
+            var activityDictionary = instance.Activities.ToDictionary(x => x.Id);
+            
             foreach (var activity in Activities)
             {
-                activity.State = new JObject(instance.Activities[activity.Id].State);
-                activity.Output = instance.Activities[activity.Id].Output.ToObject<Variables>();
+                activity.State = new JObject(activityDictionary[activity.Id].State);
+                activity.Output = activityDictionary[activity.Id].Output.ToObject<Variable>();
             }
         }
     }

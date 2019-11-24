@@ -2,8 +2,6 @@
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
-using Elsa.Extensions;
-using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -19,13 +17,6 @@ namespace Elsa.Activities.Workflows.Activities
     )]
     public class Signaled : Activity
     {
-        private readonly IWorkflowExpressionEvaluator expressionEvaluator;
-
-        public Signaled(IWorkflowExpressionEvaluator expressionEvaluator)
-        {
-            this.expressionEvaluator = expressionEvaluator;
-        }
-
         [ActivityProperty(Hint = "An expression that evaluates to the name of the signal to wait for.")]
         public WorkflowExpression<string> Signal
         {
@@ -35,16 +26,16 @@ namespace Elsa.Activities.Workflows.Activities
 
         protected override async Task<bool> OnCanExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
         {
-            var signal = await expressionEvaluator.EvaluateAsync(Signal, context, cancellationToken);
+            var signal = await context.EvaluateAsync(Signal, cancellationToken);
             return context.Workflow.Input.GetVariable<string>("Signal") == signal;
         }
 
-        protected override ActivityExecutionResult OnExecute(WorkflowExecutionContext context)
+        protected override IActivityExecutionResult OnExecute(WorkflowExecutionContext context)
         {
             return Halt(true);
         }
 
-        protected override ActivityExecutionResult OnResume(WorkflowExecutionContext context)
+        protected override IActivityExecutionResult OnResume(WorkflowExecutionContext context)
         {
             return Done();
         }
