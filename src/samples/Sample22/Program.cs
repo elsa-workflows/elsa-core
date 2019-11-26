@@ -12,21 +12,17 @@ using Elsa.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Sample14
+namespace Sample22
 {
     /// <summary>
-    /// A simple demonstration of using Entity Framework Core persistence providers.
-    /// To run the EF migration, first run the following command: `dotnet ef database update`.
+    /// A simple demonstration of using Entity Framework Core persistence providers with SQL Server.
+    /// To run the EF migration, run the command: `dotnet ef database update` within the context of the "Elsa.Persistence.EntityFrameworkCore" project root.
     /// </summary>
     public class Program
     {
         public static async Task Main(string[] args)
         {
             var services = BuildServices();
-
-            // Invoke startup tasks.
-            var startupRunner = services.GetRequiredService<IStartupRunner>();
-            await startupRunner.StartupAsync();
 
             // Create a workflow definition.
             var registry = services.GetService<IWorkflowRegistry>();
@@ -73,8 +69,7 @@ namespace Sample14
                 .AddElsa(
                     x => x.AddEntityFrameworkStores(
                         options => options
-                            .UseSqlite(@"Data Source=c:\data\elsa.entity-framework-core.db;Cache=Shared")))
-                .AddStartupRunner()
+                            .UseSqlServer(@"Server=localhost;Database=Elsa;User=sa;Password=Secret_password123!;")))
                 .AddConsoleActivities()
                 .AddWorkflow<HelloWorldWorkflow>()
                 .BuildServiceProvider();
