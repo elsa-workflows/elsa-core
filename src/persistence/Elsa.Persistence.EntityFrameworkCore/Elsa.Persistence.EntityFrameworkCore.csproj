@@ -31,6 +31,11 @@
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="3.0.1" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="3.0.1" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="3.0.1" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="3.0.1">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="3.0.1" />
     </ItemGroup>
 
     <ItemGroup>
