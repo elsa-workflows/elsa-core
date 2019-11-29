@@ -8,13 +8,13 @@ namespace Elsa.Services.Extensions
 {
     public static class WorkflowExtensions
     {
-        public static bool IsExecuting(this Workflow workflow) => workflow.Status == WorkflowStatus.Executing;
+        public static bool IsExecuting(this Workflow workflow) => workflow.Status == WorkflowStatus.Running;
 
         public static bool IsFaultedOrAborted(this Workflow workflow) =>
-            workflow.Status == WorkflowStatus.Aborted ||
+            workflow.Status == WorkflowStatus.Cancelled ||
             workflow.Status == WorkflowStatus.Faulted;
 
-        public static bool IsFinished(this Workflow workflow) => workflow.Status == WorkflowStatus.Finished;
+        public static bool IsFinished(this Workflow workflow) => workflow.Status == WorkflowStatus.Completed;
 
         public static IEnumerable<IActivity> GetStartActivities(this Workflow workflow)
         {

@@ -12,7 +12,7 @@ namespace Elsa.Results
             this.activity = activity;
         }
         
-        protected override void Execute(IWorkflowInvoker invoker, WorkflowExecutionContext workflowContext)
+        protected override void Execute(IWorkflowRunner runner, WorkflowExecutionContext workflowContext)
         {
             workflowContext.ScheduleActivity(activity);
         }

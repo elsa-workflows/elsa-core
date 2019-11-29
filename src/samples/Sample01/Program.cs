@@ -21,8 +21,8 @@ namespace Sample01
                 .BuildServiceProvider();
 
             // Invoke the workflow.
-            var invoker = services.GetService<IWorkflowInvoker>();
-            await invoker.StartAsync<HelloWorldWorkflow>();
+            var invoker = services.GetService<IWorkflowRunner>();
+            await invoker.RunAsync<HelloWorldWorkflow>();
 
             Console.ReadLine();
         }

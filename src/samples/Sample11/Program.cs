@@ -20,13 +20,13 @@ namespace Sample11
             var services = BuildServices();
             var registry = services.GetService<IWorkflowRegistry>();
             var workflowDefinition = await registry.GetWorkflowDefinitionAsync<CorrelationWorkflow>();
-            var invoker = services.GetRequiredService<IWorkflowInvoker>();
+            var invoker = services.GetRequiredService<IWorkflowRunner>();
 
             Console.WriteLine("How many workflow instances should be started? Enter a number:");
             var instanceCount = int.Parse(Console.ReadLine());
             
             for (var i = 0; i < instanceCount; i++)
-                await invoker.StartAsync(workflowDefinition, correlationId: $"document {i + 1}");
+                await invoker.RunAsync(workflowDefinition, correlationId: $"document {i + 1}");
 
             var retry = true;
 

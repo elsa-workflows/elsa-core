@@ -23,7 +23,7 @@ namespace Elsa.Results
 
         public IReadOnlyList<string> EndpointNames { get; }
 
-        public override async Task ExecuteAsync(IWorkflowInvoker invoker, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
+        public override async Task ExecuteAsync(IWorkflowRunner runner, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
         {
             var currentActivity = workflowContext.CurrentActivity;
 

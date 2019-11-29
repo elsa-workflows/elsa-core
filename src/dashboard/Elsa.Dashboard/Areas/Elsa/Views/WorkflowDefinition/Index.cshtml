@@ -76,7 +76,7 @@
                                                             asp-action="Index"
                                                             asp-controller="WorkflowInstance"
                                                             asp-route-definitionId="@latest.WorkflowDefinition.DefinitionId"
-                                                            asp-route-status="Executing">
+                                                            asp-route-status="Running">
                                                             @($"{latest.ExecutingCount} Executing")
                                                         </a>
                                                     </span>
@@ -106,7 +106,7 @@
                                                             asp-action="Index"
                                                             asp-controller="WorkflowInstance"
                                                             asp-route-definitionId="@latest.WorkflowDefinition.DefinitionId"
-                                                            asp-route-status="Finished">
+                                                            asp-route-status="Completed">
                                                             @($"{latest.FinishedCount} Finished")
                                                         </a>
                                                     </span>
@@ -121,7 +121,7 @@
                                                             asp-action="Index"
                                                             asp-controller="WorkflowInstance"
                                                             asp-route-definitionId="@latest.WorkflowDefinition.DefinitionId"
-                                                            asp-route-status="Aborted">
+                                                            asp-route-status="Cancelled">
                                                             @($"{latest.AbortedCount} Aborted")
                                                         </a>
                                                     </span>

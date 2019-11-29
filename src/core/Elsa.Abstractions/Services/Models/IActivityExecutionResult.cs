@@ -5,6 +5,6 @@ namespace Elsa.Services.Models
 {
     public interface IActivityExecutionResult
     {
-        Task ExecuteAsync(IWorkflowInvoker invoker, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken);
+        Task ExecuteAsync(IWorkflowRunner runner, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken);
     }
 }

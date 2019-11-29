@@ -13,8 +13,8 @@ namespace Sample17
         private static async Task Main(string[] args)
         {
             var services = BuildServices();
-            var workflowInvoker = services.GetRequiredService<IWorkflowInvoker>();
-            var workflowExecutionContext = await workflowInvoker.StartAsync<CreatePersonWorkflow>();
+            var workflowInvoker = services.GetRequiredService<IWorkflowRunner>();
+            var workflowExecutionContext = await workflowInvoker.RunAsync<CreatePersonWorkflow>();
             var document = workflowExecutionContext.CurrentScope.GetVariable<Person>("Document");
             
             Console.WriteLine("Created document: {0}", document);

@@ -22,11 +22,11 @@ namespace Sample12
             var services = BuildServices();
             var registry = services.GetService<IWorkflowRegistry>();
             var workflowDefinition = await registry.GetWorkflowDefinitionAsync<UserTaskWorkflow>();
-            var invoker = services.GetRequiredService<IWorkflowInvoker>();
+            var invoker = services.GetRequiredService<IWorkflowRunner>();
 
             // Start the workflow.
             var correlationId = Guid.NewGuid().ToString("N");
-            await invoker.StartAsync(workflowDefinition, correlationId: correlationId);
+            await invoker.RunAsync(workflowDefinition, correlationId: correlationId);
             WorkflowExecutionContext executionContext;
             
             do

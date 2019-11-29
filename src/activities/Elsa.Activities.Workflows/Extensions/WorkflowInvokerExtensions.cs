@@ -11,7 +11,7 @@ namespace Elsa.Activities.Workflows.Extensions
     public static class WorkflowInvokerExtensions
     {
         public static async Task TriggerSignalAsync(
-            this IWorkflowInvoker workflowInvoker,
+            this IWorkflowRunner workflowRunner,
             string signalName,
             Variables input = default,
             Func<JObject, bool> activityStatePredicate = null,
@@ -24,7 +24,7 @@ namespace Elsa.Activities.Workflows.Extensions
             if (input != null)
                 combinedInput.SetVariables(input);
 
-            await workflowInvoker.TriggerAsync(nameof(Signaled), combinedInput, correlationId, activityStatePredicate, cancellationToken);
+            await workflowRunner.TriggerAsync(nameof(Signaled), combinedInput, correlationId, activityStatePredicate, cancellationToken);
         }
     }
 }

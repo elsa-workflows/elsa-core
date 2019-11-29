@@ -7,10 +7,10 @@ namespace Elsa.Dashboard.Extensions
         public static string GetStatusClass(this WorkflowStatus workflowStatus) =>
             workflowStatus switch
             {
-                WorkflowStatus.Executing => "bg-info",
+                WorkflowStatus.Running => "bg-info",
                 WorkflowStatus.Faulted => "bg-warning",
-                WorkflowStatus.Finished => "bg-success",
-                WorkflowStatus.Aborted => "bg-info",
+                WorkflowStatus.Completed => "bg-success",
+                WorkflowStatus.Cancelled => "bg-info",
                 _ => "bg-default",
             };
     }

@@ -19,11 +19,11 @@ namespace Elsa.Activities.Workflows.Activities
     )]
     public class TriggerSignal : Activity
     {
-        private readonly IWorkflowInvoker workflowInvoker;
+        private readonly IWorkflowRunner workflowRunner;
 
-        public TriggerSignal(IWorkflowInvoker workflowInvoker)
+        public TriggerSignal(IWorkflowRunner workflowRunner)
         {
-            this.workflowInvoker = workflowInvoker;
+            this.workflowRunner = workflowRunner;
         }
 
         [ActivityProperty(Hint = "An expression that evaluates to the name of the signal to trigger.")]
@@ -57,7 +57,7 @@ namespace Elsa.Activities.Workflows.Activities
 
             input.SetVariable("Signal", signal);
 
-            await workflowInvoker.TriggerAsync(
+            await workflowRunner.TriggerAsync(
                 nameof(Signaled),
                 input,
                 correlationId,

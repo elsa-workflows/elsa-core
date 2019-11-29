@@ -29,9 +29,9 @@ namespace Sample20
                 .BuildServiceProvider();
 
             // Invoke the workflows.
-            var invoker = services.GetService<IWorkflowInvoker>();
-            var executionContext1 = await invoker.StartAsync<ExecuteMethodWorkflow>();
-            var executionContext2 = await invoker.StartAsync<SplitObjectWorkflow>();
+            var invoker = services.GetService<IWorkflowRunner>();
+            var executionContext1 = await invoker.RunAsync<ExecuteMethodWorkflow>();
+            var executionContext2 = await invoker.RunAsync<SplitObjectWorkflow>();
 
             var serializer = services.GetRequiredService<IWorkflowSerializer>();
             

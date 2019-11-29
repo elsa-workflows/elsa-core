@@ -21,11 +21,11 @@ namespace Elsa.Results
         
         public IReadOnlyCollection<IActivityExecutionResult> Results { get; }
 
-        public override async Task ExecuteAsync(IWorkflowInvoker invoker, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
+        public override async Task ExecuteAsync(IWorkflowRunner runner, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
         {
             foreach (var result in Results)
             {
-                await result.ExecuteAsync(invoker, workflowContext, cancellationToken);
+                await result.ExecuteAsync(runner, workflowContext, cancellationToken);
             }
         }
     }

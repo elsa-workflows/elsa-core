@@ -17,11 +17,11 @@ namespace Elsa.Activities.Workflows.Activities
     )]
     public class TriggerWorkflow : Activity
     {
-        private readonly IWorkflowInvoker workflowInvoker;
+        private readonly IWorkflowRunner workflowRunner;
 
-        public TriggerWorkflow(IWorkflowInvoker workflowInvoker)
+        public TriggerWorkflow(IWorkflowRunner workflowRunner)
         {
-            this.workflowInvoker = workflowInvoker;
+            this.workflowRunner = workflowRunner;
         }
 
         [ActivityProperty(Hint = "An expression that evaluates to the activity type to use when triggering workflows.")]
@@ -53,7 +53,7 @@ namespace Elsa.Activities.Workflows.Activities
             var input = await context.EvaluateAsync(Input, cancellationToken);
             var correlationId = await context.EvaluateAsync(CorrelationId, cancellationToken);
 
-            await workflowInvoker.TriggerAsync(
+            await workflowRunner.TriggerAsync(
                 activityType,
                 input,
                 correlationId,

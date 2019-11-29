@@ -13,7 +13,7 @@ namespace Elsa.Results
         
         public Variable Value { get; }
         
-        protected override void Execute(IWorkflowInvoker invoker, WorkflowExecutionContext workflowContext)
+        protected override void Execute(IWorkflowRunner runner, WorkflowExecutionContext workflowContext)
         {
             workflowContext.CurrentActivity.Output = Value;
         }

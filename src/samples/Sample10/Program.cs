@@ -50,8 +50,8 @@ namespace Sample10
                 VersionOptions.Latest);
 
             // Execute the workflow.
-            var invoker = scope.ServiceProvider.GetRequiredService<IWorkflowInvoker>();
-            var executionContext = await invoker.StartAsync(workflowDefinition);
+            var invoker = scope.ServiceProvider.GetRequiredService<IWorkflowRunner>();
+            var executionContext = await invoker.RunAsync(workflowDefinition);
 
             // Persist the workflow instance.
             var instanceStore = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();

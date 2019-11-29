@@ -84,7 +84,7 @@ namespace Elsa.Services.Models
         public void Start()
         {
             Workflow.StartedAt = clock.GetCurrentInstant();
-            Workflow.Status = WorkflowStatus.Executing;
+            Workflow.Status = WorkflowStatus.Running;
         }
 
         public void Fault(IActivity activity, Exception exception) => Fault(activity, exception.Message);
@@ -109,14 +109,14 @@ namespace Elsa.Services.Models
         public void Finish()
         {
             Workflow.FinishedAt = clock.GetCurrentInstant();
-            Workflow.Status = WorkflowStatus.Finished;
+            Workflow.Status = WorkflowStatus.Completed;
             Workflow.BlockingActivities.Clear();
         }
 
         public void Abort()
         {
             Workflow.AbortedAt = clock.GetCurrentInstant();
-            Workflow.Status = WorkflowStatus.Aborted;
+            Workflow.Status = WorkflowStatus.Cancelled;
         }
 
         public Variables GetVariables() => Workflow.Scopes

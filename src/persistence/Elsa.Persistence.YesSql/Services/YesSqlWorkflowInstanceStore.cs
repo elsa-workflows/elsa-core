@@ -78,7 +78,7 @@ namespace Elsa.Persistence.YesSql.Services
         {
             var query = session.Query<WorkflowInstanceDocument, WorkflowInstanceBlockingActivitiesIndex>();
 
-            query = query.Where(x => x.WorkflowStatus == WorkflowStatus.Executing);
+            query = query.Where(x => x.WorkflowStatus == WorkflowStatus.Running);
 
             if (!string.IsNullOrWhiteSpace(correlationId))
                 query = query.Where(x => x.CorrelationId == correlationId);

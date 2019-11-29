@@ -27,8 +27,8 @@ namespace Sample13
             var workflow = workflowFactory.CreateWorkflow<ActivityOutputWorkflow>();
 
             // Start the workflow.
-            var invoker = services.GetService<IWorkflowInvoker>();
-            await invoker.StartAsync(workflow);
+            var invoker = services.GetService<IWorkflowRunner>();
+            await invoker.RunAsync(workflow);
 
             Console.ReadLine();
         }

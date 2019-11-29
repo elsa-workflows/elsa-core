@@ -18,19 +18,19 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
     public class TriggerRequestHandler : IRequestHandler
     {
         private readonly HttpContext httpContext;
-        private readonly IWorkflowInvoker workflowInvoker;
+        private readonly IWorkflowRunner workflowRunner;
         private readonly IWorkflowRegistry registry;
         private readonly IWorkflowInstanceStore workflowInstanceStore;
         private readonly CancellationToken cancellationToken;
 
         public TriggerRequestHandler(
             IHttpContextAccessor httpContext,
-            IWorkflowInvoker workflowInvoker,
+            IWorkflowRunner workflowRunner,
             IWorkflowRegistry registry,
             IWorkflowInstanceStore workflowInstanceStore)
         {
             this.httpContext = httpContext.HttpContext;
-            this.workflowInvoker = workflowInvoker;
+            this.workflowRunner = workflowRunner;
             this.registry = registry;
             this.workflowInstanceStore = workflowInstanceStore;
             cancellationToken = httpContext.HttpContext.RequestAborted;
@@ -87,7 +87,7 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
         {
             foreach (var item in items)
             {
-                await workflowInvoker.StartAsync(
+                await workflowRunner.RunAsync(
                     item.Item1,
                     Variables.Empty,
                     new[] { item.Item2.Id },
@@ -99,7 +99,7 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
         {
             foreach (var (workflowInstance, activity) in items)
             {
-                await workflowInvoker.ResumeAsync(
+                await workflowRunner.ResumeAsync(
                     workflowInstance,
                     Variables.Empty,
                     new[] { activity.Id },

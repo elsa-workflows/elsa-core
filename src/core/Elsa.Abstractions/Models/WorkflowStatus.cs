@@ -2,10 +2,11 @@
 {
     public enum WorkflowStatus
     {
-        Idle,
-        Executing,
-        Finished,
+        Pending,
+        Running,
+        Completed,
+        Suspended,
         Faulted,
-        Aborted
+        Cancelled
     }
 }

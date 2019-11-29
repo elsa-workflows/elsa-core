@@ -31,8 +31,8 @@ namespace Sample18
             {
                 await host.StartAsync();
 
-                var workflowInvoker = host.Services.GetRequiredService<IWorkflowInvoker>();
-                await workflowInvoker.StartAsync<EmailReminderWorkflow>();
+                var workflowInvoker = host.Services.GetRequiredService<IWorkflowRunner>();
+                await workflowInvoker.RunAsync<EmailReminderWorkflow>();
                 
                 await host.WaitForShutdownAsync();
             }

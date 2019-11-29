@@ -118,7 +118,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
                 .Include(x => x.BlockingActivities)
                 .AsQueryable();
 
-            query = query.Where(x => x.Status == WorkflowStatus.Executing);
+            query = query.Where(x => x.Status == WorkflowStatus.Running);
 
             if (!string.IsNullOrWhiteSpace(correlationId))
                 query = query.Where(x => x.CorrelationId == correlationId);

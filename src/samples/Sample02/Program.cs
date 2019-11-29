@@ -30,8 +30,8 @@ namespace Sample02
                 .Build();
 
             // Start the workflow.
-            var invoker = services.GetService<IWorkflowInvoker>();
-            await invoker.StartAsync(workflowDefinition);
+            var invoker = services.GetService<IWorkflowRunner>();
+            await invoker.RunAsync(workflowDefinition);
 
             Console.ReadLine();
         }

@@ -31,8 +31,8 @@ namespace Sample04
             var workflow = workflowFactory.CreateWorkflow<CalculatorWorkflow>();
 
             // Start the workflow.
-            var invoker = services.GetService<IWorkflowInvoker>();
-            await invoker.StartAsync(workflow);
+            var invoker = services.GetService<IWorkflowRunner>();
+            await invoker.RunAsync(workflow);
 
             Console.WriteLine("Workflow has ended. Here are the activities that have executed:");
             foreach (var logEntry in workflow.ExecutionLog)

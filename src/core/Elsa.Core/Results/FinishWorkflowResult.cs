@@ -11,7 +11,7 @@ namespace Elsa.Results
     public class FinishWorkflowResult : ActivityExecutionResult
     {
         public override async Task ExecuteAsync(
-            IWorkflowInvoker invoker,
+            IWorkflowRunner runner,
             WorkflowExecutionContext workflowContext,
             CancellationToken cancellationToken)
         {

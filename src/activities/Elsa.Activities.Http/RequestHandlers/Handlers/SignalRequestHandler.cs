@@ -15,7 +15,7 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
     {
         private readonly HttpContext httpContext;
         private readonly ITokenService tokenService;
-        private readonly IWorkflowInvoker workflowInvoker;
+        private readonly IWorkflowRunner workflowRunner;
         private readonly IWorkflowRegistry workflowRegistry;
         private readonly IWorkflowFactory workflowFactory;
         private readonly IWorkflowInstanceStore workflowInstanceStore;
@@ -24,14 +24,14 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
         public SignalRequestHandler(
             IHttpContextAccessor httpContextAccessor,
             ITokenService tokenService,
-            IWorkflowInvoker workflowInvoker,
+            IWorkflowRunner workflowRunner,
             IWorkflowRegistry workflowRegistry,
             IWorkflowFactory workflowFactory,
             IWorkflowInstanceStore workflowInstanceStore)
         {
             httpContext = httpContextAccessor.HttpContext;
             this.tokenService = tokenService;
-            this.workflowInvoker = workflowInvoker;
+            this.workflowRunner = workflowRunner;
             this.workflowRegistry = workflowRegistry;
             this.workflowFactory = workflowFactory;
             this.workflowInstanceStore = workflowInstanceStore;
@@ -51,7 +51,7 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
                 return new NotFoundResult();
 
             if (!CheckIfExecuting(workflowInstance))
-                return new BadRequestResult($"Cannot signal a workflow with status other than {WorkflowStatus.Executing}. Actual workflow status: {workflowInstance.Status}.");
+                return new BadRequestResult($"Cannot signal a workflow with status other than {WorkflowStatus.Running}. Actual workflow status: {workflowInstance.Status}.");
 
             await ResumeWorkflowAsync(workflowInstance, signal);
 
@@ -69,7 +69,7 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
             await workflowInstanceStore.GetByIdAsync(signal.WorkflowInstanceId, cancellationToken);
 
         private bool CheckIfExecuting(WorkflowInstance workflowInstance) => 
-            workflowInstance.Status == WorkflowStatus.Executing;
+            workflowInstance.Status == WorkflowStatus.Running;
 
         private async Task ResumeWorkflowAsync(WorkflowInstance workflowInstance, Signal signal)
         {
@@ -83,7 +83,7 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
 
             var workflow = workflowFactory.CreateWorkflow(workflowDefinition, input, workflowInstance);
             var blockingSignalActivities = workflow.BlockingActivities.ToList();
-            await workflowInvoker.ResumeAsync(workflow, blockingSignalActivities, cancellationToken);
+            await workflowRunner.ResumeAsync(workflow, blockingSignalActivities, cancellationToken);
         }
     }
 }

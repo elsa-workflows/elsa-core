@@ -18,7 +18,7 @@ namespace Elsa.Results
         
         public bool ContinueOnFirstPass { get; }
         
-        public override async Task ExecuteAsync(IWorkflowInvoker invoker, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
+        public override async Task ExecuteAsync(IWorkflowRunner runner, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
         {            
             var activity = workflowContext.CurrentActivity;
 
@@ -29,7 +29,7 @@ namespace Elsa.Results
                 
                 workflowContext.IsFirstPass = false;
 
-                await result.ExecuteAsync(invoker, workflowContext, cancellationToken);
+                await result.ExecuteAsync(runner, workflowContext, cancellationToken);
             }
             else
             {

@@ -80,7 +80,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IWorkflowSerializerProvider, WorkflowSerializerProvider>()
                 .AddTransient<IWorkflowRegistry, WorkflowRegistry>()
                 .AddScoped<IWorkflowEventHandler, PersistenceWorkflowEventHandler>()
-                .AddScoped<IWorkflowInvoker, WorkflowInvoker>()
+                .AddScoped<IWorkflowRunner, WorkflowRunner>()
                 .AddScoped<IActivityResolver, ActivityResolver>()
                 .AddScoped<IWorkflowEventHandler, ActivityLoggingWorkflowEventHandler>()
                 .AddTransient<IWorkflowProvider, StoreWorkflowProvider>()

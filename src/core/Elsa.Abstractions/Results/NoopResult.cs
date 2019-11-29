@@ -8,7 +8,7 @@ namespace Elsa.Results
     /// </summary>
     public class NoopResult : ActivityExecutionResult
     {
-        protected override void Execute(IWorkflowInvoker invoker, WorkflowExecutionContext workflowContext)
+        protected override void Execute(IWorkflowRunner runner, WorkflowExecutionContext workflowContext)
         {
             // Noop.
         }

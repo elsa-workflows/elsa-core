@@ -22,9 +22,9 @@ namespace Sample09
             var services = BuildServices();
             var serializer = services.GetRequiredService<IWorkflowSerializer>();
             var workflow = serializer.Deserialize<WorkflowDefinitionVersion>(json, JsonTokenFormatter.FormatName);
-            var invoker = services.GetRequiredService<IWorkflowInvoker>();
+            var invoker = services.GetRequiredService<IWorkflowRunner>();
             
-            await invoker.StartAsync(workflow);
+            await invoker.RunAsync(workflow);
         }
 
         private static IServiceProvider BuildServices()

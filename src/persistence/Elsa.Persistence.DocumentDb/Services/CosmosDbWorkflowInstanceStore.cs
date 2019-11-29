@@ -69,7 +69,7 @@ namespace Elsa.Persistence.DocumentDb.Services
 
             var query = client
                 .CreateDocumentQuery<WorkflowInstanceDocument>(storage.CollectionUri)
-                .Where(x => x.Status == WorkflowStatus.Executing);
+                .Where(x => x.Status == WorkflowStatus.Running);
 
             if (!string.IsNullOrWhiteSpace(correlationId))
             {
