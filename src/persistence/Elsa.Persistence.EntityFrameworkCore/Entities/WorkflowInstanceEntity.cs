@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
 using Elsa.Models;
+using Elsa.Persistence.EntityFrameworkCore.DbContexts;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Entities
 {
@@ -23,5 +26,21 @@ namespace Elsa.Persistence.EntityFrameworkCore.Entities
         public WorkflowFault Fault { get; set; }
         public ICollection<ActivityInstanceEntity> Activities { get; set; }
         public ICollection<BlockingActivityEntity> BlockingActivities { get; set; }
+    }
+
+    public class WorkflowInstanceEntityConfiguration : IEntityTypeConfiguration<WorkflowInstanceEntity>
+    {
+        private readonly IDbContextCustomSchema _dbContextCustomSchema;
+        public WorkflowInstanceEntityConfiguration(IDbContextCustomSchema dbContextCustomSchema)
+        {
+            _dbContextCustomSchema = dbContextCustomSchema;
+        }
+        public void Configure(EntityTypeBuilder<WorkflowInstanceEntity> builder)
+        {
+            if (_dbContextCustomSchema != null && _dbContextCustomSchema.UseCustomSchema)
+            {
+                builder.ToTable(nameof(WorkflowInstanceEntity), _dbContextCustomSchema.CustomDefaultSchema);
+            }
+        }
     }
 }

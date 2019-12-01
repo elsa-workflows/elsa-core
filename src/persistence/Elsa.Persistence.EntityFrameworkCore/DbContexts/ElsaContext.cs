@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using Elsa.Models;
 using Elsa.Persistence.EntityFrameworkCore.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NodaTime;
@@ -11,7 +13,10 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
 {
     public class ElsaContext : DbContext
     {
+        internal static IServiceCollection Services { get; set; }
+
         private readonly JsonSerializerSettings serializerSettings;
+        private IDbContextCustomSchema _dbContextCustomSchema = null;
 
         public ElsaContext(DbContextOptions<ElsaContext> options) : base(options)
         {
@@ -27,6 +32,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            ConfigureCustomSchema(modelBuilder);
             base.OnModelCreating(modelBuilder);
             ConfigureWorkflowDefinitionVersion(modelBuilder);
             ConfigureWorkflowInstance(modelBuilder);
@@ -44,6 +50,29 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
             entity.Property(x => x.Variables).HasConversion(x => Serialize(x), x => Deserialize<Variables>(x));
             entity.HasMany(x => x.Activities).WithOne(x => x.WorkflowDefinitionVersion);
             entity.HasMany(x => x.Connections).WithOne(x => x.WorkflowDefinitionVersion);
+        }
+
+        private void ConfigureCustomSchema(ModelBuilder modelBuilder)
+        {
+            if (Services != null && _dbContextCustomSchema == null)
+            {
+                using (var scope = Services.BuildServiceProvider().CreateScope())
+                {
+                    _dbContextCustomSchema = scope.ServiceProvider.GetService<IDbContextCustomSchema>();
+                }
+            }
+            if (_dbContextCustomSchema != null && _dbContextCustomSchema.UseCustomSchema)
+            {
+                modelBuilder.HasDefaultSchema(_dbContextCustomSchema.CustomDefaultSchema);
+
+                // Apply the custom mapping to suport the non-default schema to the types in used in this context.
+                modelBuilder.ApplyConfiguration(new ActivityDefinitionEntityConfiguration(_dbContextCustomSchema));
+                modelBuilder.ApplyConfiguration(new ActivityInstanceEntityConfiguration(_dbContextCustomSchema));
+                modelBuilder.ApplyConfiguration(new BlockingActivityEntityConfiguration(_dbContextCustomSchema));
+                modelBuilder.ApplyConfiguration(new ConnectionDefinitionEntityConfiguration(_dbContextCustomSchema));
+                modelBuilder.ApplyConfiguration(new WorkflowDefinitionVersionEntityConfiguration(_dbContextCustomSchema));
+                modelBuilder.ApplyConfiguration(new WorkflowInstanceEntityConfiguration(_dbContextCustomSchema));
+            }
         }
 
         private void ConfigureWorkflowInstance(ModelBuilder modelBuilder)

@@ -17,7 +17,10 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
 
             optionsBuilder.UseSqlite(
                 connectionString,
-                x => x.MigrationsAssembly(migrationAssembly)
+                x =>
+                {
+                    x.MigrationsAssembly(migrationAssembly);
+                }
             );
 
             return new SqliteContext(optionsBuilder.Options);

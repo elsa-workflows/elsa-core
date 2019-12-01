@@ -11,6 +11,20 @@ namespace Elsa.Persistence.EntityFrameworkCore.Extensions
 {
     public static class EFCoreServiceCollectionExtensions
     {
+        public static IServiceCollection AddCustomSchemaSupport(this IServiceCollection services, string schema, string migrationHistoryTableName = null)
+        {
+            if(string.IsNullOrWhiteSpace(schema))
+            {
+                return services;
+            }
+            ElsaContext.Services = services;
+            DbContextCustomSchema dbContextCustomSchema = new DbContextCustomSchema(schema,
+                    !string.IsNullOrWhiteSpace(migrationHistoryTableName) ? migrationHistoryTableName : DbContextCustomSchema.DefaultMigrationsHistoryTableName);
+
+            services.AddSingleton<IDbContextCustomSchema>(dbContextCustomSchema);
+
+            return services;
+        }
         public static EntityFrameworkCoreElsaBuilder AddEntityFrameworkCoreProvider(
             this ElsaBuilder configuration,
             Action<DbContextOptionsBuilder> configureOptions,
