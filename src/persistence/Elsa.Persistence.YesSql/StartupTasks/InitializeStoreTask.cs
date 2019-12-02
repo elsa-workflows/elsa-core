@@ -19,7 +19,15 @@ namespace Elsa.Persistence.YesSql.StartupTasks
         
         public Task ExecuteAsync(CancellationToken cancellationToken = default)
         {
-            CreateTables();
+            try
+            {
+                CreateTables();
+            }
+            catch (InvalidOperationException)
+            {
+                // Temporary before adding schema version support
+            }
+
             return Task.CompletedTask;
         }
 
