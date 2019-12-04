@@ -17,18 +17,7 @@ namespace Elsa.Activities.Startup.Activities
     )]
     public class Startup : Activity
     {
-
-        public Startup()
-        {
-        }
-
-
         protected override ActivityExecutionResult OnExecute(WorkflowExecutionContext context)
-        {
-            return Halt();
-        }
-
-        protected override async Task<ActivityExecutionResult> OnResumeAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
         {
             return Done();
         }
