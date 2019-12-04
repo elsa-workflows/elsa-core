@@ -1,0 +1,29 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <PackageVersion>1.0.0</PackageVersion>
+        <LangVersion>latest</LangVersion>
+        <Authors>Elsa Contributors</Authors>
+        <Description>
+            Elsa is a set of workflow libraries and tools that enable super-fast workflowing capabilities in any .NET Core application.
+            This package provides the following Startup activities:
+            
+            * Startup
+</Description>
+        <Copyright>2019</Copyright>
+        <PackageProjectUrl>https://github.com/elsa-workflows/elsa-core</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/elsa-workflows/elsa-core</RepositoryUrl>
+        <RepositoryType>GitHub</RepositoryType>
+        <PackageTags>elsa, workflows</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="3.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
+    </ItemGroup>
+
+</Project>
