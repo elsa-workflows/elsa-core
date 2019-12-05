@@ -9,6 +9,7 @@ namespace Elsa.Activities.Reflection.Extensions
         {
             return services
                 .AddActivity<ExecuteMethod>()
+                .AddActivity<LoadAssembly>()
                 .AddActivity<SplitObject>();
         }
     }
