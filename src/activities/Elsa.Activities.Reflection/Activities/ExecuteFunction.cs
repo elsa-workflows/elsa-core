@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -45,10 +46,27 @@ namespace Elsa.Activities.Reflection.Activities
 
         protected override async Task<ActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
         {
+            // doesnt work for reflected assemblies 
             var type = System.Type.GetType(TypeName);
 
             if (type == null)
+            {
+                // catch reflected type
+                var assemblies = AppDomain.CurrentDomain.GetAssemblies().ToList();
+                type = assemblies.AsParallel()
+                        .Where(
+                            a => a.GetTypes().Any(t => t.FullName == TypeName)
+                        )
+                        .Select(
+                            a => a.GetTypes().FirstOrDefault(t => t.FullName == TypeName)
+                        )
+                        .FirstOrDefault();
+            }
+
+
+            if (type == null)
                 return Fault($"Type {TypeName} not found.");
+
 
             var inputValues = await context.EvaluateAsync(Arguments, cancellationToken) ?? new object[0];
 
