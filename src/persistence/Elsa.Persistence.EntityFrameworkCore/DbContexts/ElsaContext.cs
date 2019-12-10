@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Elsa.Models;
 using Elsa.Persistence.EntityFrameworkCore.Entities;
+using Elsa.Persistence.EntityFrameworkCore.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,10 +14,12 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
 {
     public class ElsaContext : DbContext
     {
-        internal static IServiceCollection Services { get; set; }
-
         private readonly JsonSerializerSettings serializerSettings;
-        private IDbContextCustomSchema _dbContextCustomSchema = null;
+        /// <summary>
+        /// The CustomSchemaModelCacheKeyFactory will not resolve services from the DI container for constructor injection
+        /// so this is necessary in order to set the custom schema for the Model Cache.
+        /// </summary>
+        internal IDbContextCustomSchema DbContextCustomSchema { get; set; }
 
         public ElsaContext(DbContextOptions<ElsaContext> options) : base(options)
         {
@@ -30,6 +33,12 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
         public DbSet<ActivityInstanceEntity> ActivityInstances { get; set; }
         public DbSet<BlockingActivityEntity> BlockingActivities { get; set; }
 
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            base.OnConfiguring(optionsBuilder);
+            DbContextCustomSchema = optionsBuilder.GetDbContextCustomSchema();
+        }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             ConfigureCustomSchema(modelBuilder);
@@ -40,7 +49,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
             ConfigureActivityInstance(modelBuilder);
             ConfigureBlockingActivity(modelBuilder);
         }
-        
+
         private void ConfigureWorkflowDefinitionVersion(ModelBuilder modelBuilder)
         {
             var entity = modelBuilder.Entity<WorkflowDefinitionVersionEntity>();
@@ -53,25 +62,18 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
         }
 
         private void ConfigureCustomSchema(ModelBuilder modelBuilder)
-        {
-            if (Services != null && _dbContextCustomSchema == null)
+        {            
+            if (DbContextCustomSchema != null && DbContextCustomSchema.UseCustomSchema)
             {
-                using (var scope = Services.BuildServiceProvider().CreateScope())
-                {
-                    _dbContextCustomSchema = scope.ServiceProvider.GetService<IDbContextCustomSchema>();
-                }
-            }
-            if (_dbContextCustomSchema != null && _dbContextCustomSchema.UseCustomSchema)
-            {
-                modelBuilder.HasDefaultSchema(_dbContextCustomSchema.CustomDefaultSchema);
+                modelBuilder.HasDefaultSchema(DbContextCustomSchema.Schema);
 
                 // Apply the custom mapping to suport the non-default schema to the types in used in this context.
-                modelBuilder.ApplyConfiguration(new ActivityDefinitionEntityConfiguration(_dbContextCustomSchema));
-                modelBuilder.ApplyConfiguration(new ActivityInstanceEntityConfiguration(_dbContextCustomSchema));
-                modelBuilder.ApplyConfiguration(new BlockingActivityEntityConfiguration(_dbContextCustomSchema));
-                modelBuilder.ApplyConfiguration(new ConnectionDefinitionEntityConfiguration(_dbContextCustomSchema));
-                modelBuilder.ApplyConfiguration(new WorkflowDefinitionVersionEntityConfiguration(_dbContextCustomSchema));
-                modelBuilder.ApplyConfiguration(new WorkflowInstanceEntityConfiguration(_dbContextCustomSchema));
+                modelBuilder.ApplyConfiguration(new SchemaEntityTypeConfiguration<ActivityDefinitionEntity>(DbContextCustomSchema));
+                modelBuilder.ApplyConfiguration(new SchemaEntityTypeConfiguration<ActivityInstanceEntity>(DbContextCustomSchema));
+                modelBuilder.ApplyConfiguration(new SchemaEntityTypeConfiguration<BlockingActivityEntity>(DbContextCustomSchema));
+                modelBuilder.ApplyConfiguration(new SchemaEntityTypeConfiguration<ConnectionDefinitionEntity>(DbContextCustomSchema));
+                modelBuilder.ApplyConfiguration(new SchemaEntityTypeConfiguration<WorkflowDefinitionVersionEntity>(DbContextCustomSchema));
+                modelBuilder.ApplyConfiguration(new SchemaEntityTypeConfiguration<WorkflowInstanceEntity>(DbContextCustomSchema));
             }
         }
 

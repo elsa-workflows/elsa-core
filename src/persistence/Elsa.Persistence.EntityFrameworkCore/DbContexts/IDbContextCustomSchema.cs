@@ -7,7 +7,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
     public interface IDbContextCustomSchema
     {
         bool UseCustomSchema { get; }
-        string CustomDefaultSchema { get; set; }
-        string CustomMigrationsHistoryTableName { get; set; }
+        string Schema { get; set; }
+        string MigrationsHistoryTableName { get; set; }
     }
 }

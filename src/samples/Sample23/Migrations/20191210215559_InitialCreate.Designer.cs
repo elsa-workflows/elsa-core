@@ -3,14 +3,16 @@ using System;
 using Elsa.Persistence.EntityFrameworkCore.DbContexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
-namespace Sample23.CustomMigration.Migrations
+namespace Sample23.Migrations
 {
     [DbContext(typeof(ElsaContext))]
-    partial class ElsaContextModelSnapshot : ModelSnapshot
+    [Migration("20191210215559_InitialCreate")]
+    partial class InitialCreate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -45,7 +47,7 @@ namespace Sample23.CustomMigration.Migrations
 
                     b.HasIndex("WorkflowDefinitionVersionId");
 
-                    b.ToTable("ActivityDefinitions");
+                    b.ToTable("ActivityDefinitionEntity","elsa");
                 });
 
             modelBuilder.Entity("Elsa.Persistence.EntityFrameworkCore.Entities.ActivityInstanceEntity", b =>
@@ -73,7 +75,7 @@ namespace Sample23.CustomMigration.Migrations
 
                     b.HasIndex("WorkflowInstanceId");
 
-                    b.ToTable("ActivityInstances");
+                    b.ToTable("ActivityInstanceEntity","elsa");
                 });
 
             modelBuilder.Entity("Elsa.Persistence.EntityFrameworkCore.Entities.BlockingActivityEntity", b =>
@@ -95,7 +97,7 @@ namespace Sample23.CustomMigration.Migrations
 
                     b.HasIndex("WorkflowInstanceId");
 
-                    b.ToTable("BlockingActivities");
+                    b.ToTable("BlockingActivityEntity","elsa");
                 });
 
             modelBuilder.Entity("Elsa.Persistence.EntityFrameworkCore.Entities.ConnectionDefinitionEntity", b =>
@@ -120,7 +122,7 @@ namespace Sample23.CustomMigration.Migrations
 
                     b.HasIndex("WorkflowDefinitionVersionId");
 
-                    b.ToTable("ConnectionDefinitions");
+                    b.ToTable("ConnectionDefinitionEntity","elsa");
                 });
 
             modelBuilder.Entity("Elsa.Persistence.EntityFrameworkCore.Entities.WorkflowDefinitionVersionEntity", b =>
@@ -161,7 +163,7 @@ namespace Sample23.CustomMigration.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("WorkflowDefinitionVersions");
+                    b.ToTable("WorkflowDefinitionVersionEntity","elsa");
                 });
 
             modelBuilder.Entity("Elsa.Persistence.EntityFrameworkCore.Entities.WorkflowInstanceEntity", b =>
@@ -215,7 +217,7 @@ namespace Sample23.CustomMigration.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("WorkflowInstances");
+                    b.ToTable("WorkflowInstanceEntity","elsa");
                 });
 
             modelBuilder.Entity("Elsa.Persistence.EntityFrameworkCore.Entities.ActivityDefinitionEntity", b =>

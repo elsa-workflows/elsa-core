@@ -17,7 +17,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\core\Elsa\Elsa.csproj" />
     <ProjectReference Include="..\..\persistence\Elsa.Persistence.EntityFrameworkCore\Elsa.Persistence.EntityFrameworkCore.csproj" />
-    <ProjectReference Include="..\Sample23.CustomMigration\Sample23.CustomMigration.csproj" />
   </ItemGroup>
 
 </Project>

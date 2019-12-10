@@ -1,9 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
 {
@@ -15,16 +12,12 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
         public object Create(DbContext context)
         {
             string schema = null;
-            if(context is ElsaContext && ElsaContext.Services != null)
+            if(context is ElsaContext)
             {
-                IDbContextCustomSchema dbContextCustomSchema = null;
-                using(var scope = ElsaContext.Services.BuildServiceProvider().CreateScope())
-                {
-                    dbContextCustomSchema = scope.ServiceProvider.GetService<IDbContextCustomSchema>();
-                }
+                IDbContextCustomSchema dbContextCustomSchema = ((ElsaContext)context).DbContextCustomSchema;
                 if (dbContextCustomSchema != null && dbContextCustomSchema.UseCustomSchema)
                 {
-                    schema = dbContextCustomSchema.CustomDefaultSchema;
+                    schema = dbContextCustomSchema.Schema;
                 }
             }
             return new

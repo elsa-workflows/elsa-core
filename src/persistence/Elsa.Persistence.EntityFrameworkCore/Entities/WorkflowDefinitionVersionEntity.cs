@@ -1,8 +1,5 @@
-using System.Collections.Generic;
 using Elsa.Models;
-using Elsa.Persistence.EntityFrameworkCore.DbContexts;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using System.Collections.Generic;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Entities
 {
@@ -21,21 +18,5 @@ namespace Elsa.Persistence.EntityFrameworkCore.Entities
         public bool IsLatest { get; set; }
         public ICollection<ActivityDefinitionEntity> Activities { get; set; }
         public ICollection<ConnectionDefinitionEntity> Connections { get; set; }
-    }
-
-    public class WorkflowDefinitionVersionEntityConfiguration : IEntityTypeConfiguration<WorkflowDefinitionVersionEntity>
-    {
-        private readonly IDbContextCustomSchema _dbContextCustomSchema;
-        public WorkflowDefinitionVersionEntityConfiguration(IDbContextCustomSchema dbContextCustomSchema)
-        {
-            _dbContextCustomSchema = dbContextCustomSchema;
-        }
-        public void Configure(EntityTypeBuilder<WorkflowDefinitionVersionEntity> builder)
-        {
-            if (_dbContextCustomSchema != null && _dbContextCustomSchema.UseCustomSchema)
-            {
-                builder.ToTable(nameof(WorkflowDefinitionVersionEntity), _dbContextCustomSchema.CustomDefaultSchema);
-            }
-        }
     }
 }

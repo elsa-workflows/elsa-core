@@ -12,26 +12,26 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
         {
             UseCustomSchema = false;
         }
-        public DbContextCustomSchema(string customSchema, string customMigrationHistoryTableName = "__EFMigrationsHistory")
+        public DbContextCustomSchema(string schema, string migrationHistoryTableName = "__EFMigrationsHistory")
         {
-            CustomDefaultSchema = customSchema;
-            CustomMigrationsHistoryTableName = customMigrationHistoryTableName;
+            Schema = schema;
+            MigrationsHistoryTableName = migrationHistoryTableName;
         }
 
         public bool UseCustomSchema { get; internal set; } = false;
-        private string _customDefaultSchema = null;
-        public string CustomDefaultSchema
+        private string schema = null;
+        public string Schema
         {
-            get { return _customDefaultSchema; }
+            get { return schema; }
             set
             {
-                if (value != _customDefaultSchema)
+                if (value != schema)
                 {
-                    _customDefaultSchema = value;
-                    UseCustomSchema = !string.IsNullOrWhiteSpace(_customDefaultSchema);
+                    schema = value;
+                    UseCustomSchema = !string.IsNullOrWhiteSpace(schema);
                 }
             }
         }
-        public string CustomMigrationsHistoryTableName { get; set; } = DefaultMigrationsHistoryTableName;
+        public string MigrationsHistoryTableName { get; set; } = DefaultMigrationsHistoryTableName;
     }
 }

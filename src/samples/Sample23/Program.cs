@@ -12,7 +12,6 @@ using Elsa.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
-using Sample23.CustomMigration;
 
 namespace Sample23
 {
@@ -72,24 +71,18 @@ namespace Sample23
         private static IServiceProvider BuildServices()
         {
             return new ServiceCollection()
-                .AddCustomSchemaSupport("elsa")
                 .AddElsa(
-                    elsaBuilder => elsaBuilder.AddEntityFrameworkStores(
-                        options => options
-                            .ReplaceService<IModelCacheKeyFactory, CustomSchemaModelCacheKeyFactory>()
-                            .UseSqlite(@"Data Source=c:\data\elsa.entity-framework-core.db;Cache=Shared",
-                            x =>
-                            {
-                                x.MigrationsAssembly(typeof(MigrateStub).Assembly.FullName);
-                                using (var scope = elsaBuilder.Services.BuildServiceProvider().CreateScope())
+                    elsaBuilder =>
+                        elsaBuilder.AddCustomSchema("elsa")
+                        .AddEntityFrameworkStores(
+                            options => options                                                           
+                                .UseSqlite(@"Data Source=c:\data\elsa.entity-framework-core.db;Cache=Shared",
+                                x =>
                                 {
-                                    IDbContextCustomSchema dbContextCustomSchema = scope.ServiceProvider.GetService<IDbContextCustomSchema>();
-                                    if(dbContextCustomSchema != null && dbContextCustomSchema.UseCustomSchema)
-                                    {
-                                        x.MigrationsHistoryTable(dbContextCustomSchema.CustomMigrationsHistoryTableName, dbContextCustomSchema.CustomDefaultSchema);
-                                    }
-                                }
-                            })))
+                                    x.AddCustomSchemaModelSupport(options, elsaBuilder.Services);
+                                    x.MigrationsAssembly(typeof(Program).Assembly.FullName);
+                                    x.MigrationsHistoryTableWithSchema(options);
+                                 })))
                 .AddStartupRunner()
                 .AddConsoleActivities()
                 .AddWorkflow<HelloWorldWorkflow>()
