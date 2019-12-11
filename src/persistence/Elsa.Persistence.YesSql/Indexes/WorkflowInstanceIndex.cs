@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Elsa.Models;
+using Elsa.Persistence.YesSql.Documents;
 using YesSql.Indexes;
 
 namespace Elsa.Persistence.YesSql.Indexes
@@ -23,18 +24,19 @@ namespace Elsa.Persistence.YesSql.Indexes
         public DateTime CreatedAt { get; set; }
     }
 
-    public class WorkflowInstanceIndexProvider : IndexProvider<WorkflowInstance>
+    public class WorkflowInstanceIndexProvider : IndexProvider<WorkflowInstanceDocument>
     {
-        public override void Describe(DescribeContext<WorkflowInstance> context)
+        public override void Describe(DescribeContext<WorkflowInstanceDocument> context)
         {
             context.For<WorkflowInstanceIndex>()
                 .Map(
                     workflowInstance => new WorkflowInstanceIndex
                     {
-                        WorkflowDefinitionId = workflowInstance.Id,
+                        WorkflowInstanceId = workflowInstance.WorkflowInstanceId,
+                        WorkflowDefinitionId = workflowInstance.DefinitionId,
                         WorkflowStatus = workflowInstance.Status,
                         CorrelationId = workflowInstance.CorrelationId,
-                        CreatedAt = workflowInstance.CreatedAt.ToDateTimeUtc()
+                        CreatedAt = workflowInstance.CreatedAt
                     });
 
             context.For<WorkflowInstanceBlockingActivitiesIndex>()
@@ -47,7 +49,7 @@ namespace Elsa.Persistence.YesSql.Indexes
                                 ActivityType = activity.ActivityType,
                                 CorrelationId = workflowInstance.CorrelationId,
                                 WorkflowStatus = workflowInstance.Status,
-                                CreatedAt = workflowInstance.CreatedAt.ToDateTimeUtc()
+                                CreatedAt = workflowInstance.CreatedAt
                             }));
         }
     }
