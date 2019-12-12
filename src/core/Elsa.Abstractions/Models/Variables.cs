@@ -42,13 +42,18 @@ namespace Elsa.Models
             return this[name] = new Variable(value);
         }
 
+        public Variable SetVariable(string name, Variable variable)
+        {
+            return SetVariable(name, variable.Value);
+        }
+
         public void SetVariables(Variables variables) =>
             SetVariables((IEnumerable<KeyValuePair<string, Variable>>) variables);
 
         public void SetVariables(IEnumerable<KeyValuePair<string, Variable>> variables)
         {
             foreach (var variable in variables)
-                SetVariable(variable.Key, variable.Value.Value);
+                SetVariable(variable.Key, variable.Value);
         }
 
         public bool HasVariable(string name)
