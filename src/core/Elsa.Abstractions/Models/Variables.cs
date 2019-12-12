@@ -44,7 +44,7 @@ namespace Elsa.Models
         public void SetVariables(IEnumerable<KeyValuePair<string, Variable>> variables)
         {
             foreach (var variable in variables)
-                SetVariable(variable.Key, variable.Value);
+                SetVariable(variable.Key, variable.Value.Value);
         }
 
         public bool HasVariable(string name)
