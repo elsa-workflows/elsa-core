@@ -33,8 +33,10 @@ namespace Elsa.Models
 
         public T GetVariable<T>(string name)
         {
-            object value = GetVariable(name) ?? default(T);
-            return (T)System.Convert.ChangeType(value, typeof(T));
+            object value = GetVariable(name);
+            return (value != default) 
+                ? (T)System.Convert.ChangeType(value, typeof(T))
+                : default(T);
         }
 
         public Variable SetVariable(string name, object value)
