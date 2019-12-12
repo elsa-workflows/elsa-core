@@ -31,7 +31,11 @@ namespace Elsa.Models
             return ContainsKey(name) ? this[name].Value : default;
         }
 
-        public T GetVariable<T>(string name) => (T) GetVariable(name);
+        public T GetVariable<T>(string name)
+        {
+            object value = GetVariable(name) ?? default(T);
+            return (T)System.Convert.ChangeType(value, typeof(T));
+        }
 
         public Variable SetVariable(string name, object value)
         {
