@@ -11,12 +11,7 @@ namespace Elsa.Activities.MassTransit.Activities
 
         protected MassTransitBusActivity(IBus bus, ConsumeContext consumeContext)
         {
-            if (bus == null)
-            {
-                throw new ArgumentNullException(nameof(bus));
-            }
-
-            this.bus = bus;
+            this.bus = bus ?? throw new ArgumentNullException(nameof(bus));
             this.consumeContext = consumeContext;
         }
 

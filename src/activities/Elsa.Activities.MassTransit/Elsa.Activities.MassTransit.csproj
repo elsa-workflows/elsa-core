@@ -28,9 +28,10 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="MassTransit.AspNetCore" Version="5.5.6" />
-      <PackageReference Include="MassTransit.Extensions.DependencyInjection" Version="5.5.6" />
-      <PackageReference Include="MassTransit.RabbitMQ" Version="5.5.6" />
+      <PackageReference Include="MassTransit.AspNetCore" Version="6.0.0" />
+      <PackageReference Include="MassTransit.Extensions.DependencyInjection" Version="6.0.0" />
+      <PackageReference Include="MassTransit.Quartz" Version="6.0.0" />
+      <PackageReference Include="MassTransit.RabbitMQ" Version="6.0.0" />
     </ItemGroup>
 
     <ItemGroup>
