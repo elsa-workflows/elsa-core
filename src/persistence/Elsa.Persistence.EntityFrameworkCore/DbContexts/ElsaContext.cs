@@ -24,6 +24,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
         public ElsaContext(DbContextOptions<ElsaContext> options) : base(options)
         {
             serializerSettings = new JsonSerializerSettings().ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
+            DbContextCustomSchema = options.GetDbContextCustomSchema();
         }
 
         public DbSet<WorkflowDefinitionVersionEntity> WorkflowDefinitionVersions { get; set; }
@@ -32,12 +33,6 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
         public DbSet<ConnectionDefinitionEntity> ConnectionDefinitions { get; set; }
         public DbSet<ActivityInstanceEntity> ActivityInstances { get; set; }
         public DbSet<BlockingActivityEntity> BlockingActivities { get; set; }
-
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-            base.OnConfiguring(optionsBuilder);
-            DbContextCustomSchema = optionsBuilder.GetDbContextCustomSchema();
-        }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

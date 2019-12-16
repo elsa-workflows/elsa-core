@@ -6,15 +6,13 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
 {
     public class CustomSchemaModelCacheKeyFactory : IModelCacheKeyFactory
     {
-        public CustomSchemaModelCacheKeyFactory()
-        {
-        }
+        public CustomSchemaModelCacheKeyFactory() { }
         public object Create(DbContext context)
         {
             string schema = null;
-            if(context is ElsaContext)
+            if (context is ElsaContext)
             {
-                IDbContextCustomSchema dbContextCustomSchema = ((ElsaContext)context).DbContextCustomSchema;
+                var dbContextCustomSchema = ((ElsaContext)context).DbContextCustomSchema;
                 if (dbContextCustomSchema != null && dbContextCustomSchema.UseCustomSchema)
                 {
                     schema = dbContextCustomSchema.Schema;

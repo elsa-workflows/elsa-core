@@ -53,60 +53,34 @@ namespace Elsa.Persistence.EntityFrameworkCore.Extensions
         public static SqliteDbContextOptionsBuilder AddCustomSchemaExtension(this SqliteDbContextOptionsBuilder sqliteDbContextOptionsBuilder, IServiceCollection services)
         {
             var infrastructure = sqliteDbContextOptionsBuilder as IRelationalDbContextOptionsBuilderInfrastructure;
-            if (infrastructure != null)
-            {
-                var builder = infrastructure.OptionsBuilder as IDbContextOptionsBuilderInfrastructure;
-                if (builder != null)
-                {
-                    // if the extension is registered already then we keep it 
-                    // otherwise we create a new one
-                    var extension = infrastructure.OptionsBuilder.Options.FindExtension<CustomSchemaOptionsExtension>();
-                    if (extension == null)
-                    {
-                        using (var scope = services.BuildServiceProvider().CreateScope())
-                        {
-                            builder.AddOrUpdateExtension(scope.ServiceProvider.GetService<CustomSchemaOptionsExtension>());
-                        }
-                    }
-                }
-            }
+            infrastructure.AddCustomSchemaExtension(services);
             return sqliteDbContextOptionsBuilder;
         }
 
         public static SqlServerDbContextOptionsBuilder AddCustomSchemaExtension(this SqlServerDbContextOptionsBuilder sqlServerDbContextOptionsBuilder, IServiceCollection services)
         {
             var infrastructure = sqlServerDbContextOptionsBuilder as IRelationalDbContextOptionsBuilderInfrastructure;
-            if (infrastructure != null)
-            {
-                var builder = infrastructure.OptionsBuilder as IDbContextOptionsBuilderInfrastructure;
-                if (builder != null)
-                {
-                    // if the extension is registered already then we keep it 
-                    // otherwise we create a new one
-                    var extension = infrastructure.OptionsBuilder.Options.FindExtension<CustomSchemaOptionsExtension>();
-                    if (extension == null)
-                    {
-                        using (var scope = services.BuildServiceProvider().CreateScope())
-                        {
-                            builder.AddOrUpdateExtension(scope.ServiceProvider.GetService<CustomSchemaOptionsExtension>());
-                        }
-                    }
-                }
-            }
+            infrastructure.AddCustomSchemaExtension(services);
             return sqlServerDbContextOptionsBuilder;
         }
 
         public static NpgsqlDbContextOptionsBuilder AddCustomSchemaExtension(this NpgsqlDbContextOptionsBuilder npgsqlDbContextOptionsBuilder, IServiceCollection services)
         {
             var infrastructure = npgsqlDbContextOptionsBuilder as IRelationalDbContextOptionsBuilderInfrastructure;
-            if (infrastructure != null)
+            infrastructure.AddCustomSchemaExtension(services);
+            return npgsqlDbContextOptionsBuilder;            
+        }
+
+        static void AddCustomSchemaExtension(this IRelationalDbContextOptionsBuilderInfrastructure relationalDbContextOptionsBuilderInfrastructure, IServiceCollection services)
+        {
+            if (relationalDbContextOptionsBuilderInfrastructure != null)
             {
-                var builder = infrastructure.OptionsBuilder as IDbContextOptionsBuilderInfrastructure;
+                var builder = relationalDbContextOptionsBuilderInfrastructure.OptionsBuilder as IDbContextOptionsBuilderInfrastructure;
                 if (builder != null)
                 {
                     // if the extension is registered already then we keep it 
                     // otherwise we create a new one
-                    var extension = infrastructure.OptionsBuilder.Options.FindExtension<CustomSchemaOptionsExtension>();
+                    var extension = relationalDbContextOptionsBuilderInfrastructure.OptionsBuilder.Options.FindExtension<CustomSchemaOptionsExtension>();
                     if (extension == null)
                     {
                         using (var scope = services.BuildServiceProvider().CreateScope())
@@ -116,7 +90,6 @@ namespace Elsa.Persistence.EntityFrameworkCore.Extensions
                     }
                 }
             }
-            return npgsqlDbContextOptionsBuilder;
         }
 
         public static SqliteDbContextOptionsBuilder MigrationsHistoryTableWithSchema(this SqliteDbContextOptionsBuilder sqliteDbContextOptionsBuilder, DbContextOptionsBuilder optionsBuilder)
@@ -166,7 +139,22 @@ namespace Elsa.Persistence.EntityFrameworkCore.Extensions
             IDbContextCustomSchema dbContextCustomSchema = null;
             if (optionsBuilder != null)
             {
-                var extension = optionsBuilder.Options.FindExtension<CustomSchemaOptionsExtension>();
+                return optionsBuilder.Options.GetDbContextCustomSchema();
+            }
+            return dbContextCustomSchema;
+        }
+
+        public static IDbContextCustomSchema GetDbContextCustomSchema(this DbContextOptions<ElsaContext> options)
+        {
+            return GetDbContextCustomSchema((DbContextOptions)options);
+        }
+
+        public static IDbContextCustomSchema GetDbContextCustomSchema(this DbContextOptions options)
+        {
+            IDbContextCustomSchema dbContextCustomSchema = null;
+            if (options != null)
+            {
+                var extension = options.FindExtension<CustomSchemaOptionsExtension>();
                 if (extension != null)
                 {
                     dbContextCustomSchema = extension.ContextCustomSchema;
