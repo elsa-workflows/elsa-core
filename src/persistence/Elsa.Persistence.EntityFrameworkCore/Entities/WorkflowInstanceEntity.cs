@@ -1,6 +1,6 @@
+using Elsa.Models;
 using System;
 using System.Collections.Generic;
-using Elsa.Models;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Entities
 {
