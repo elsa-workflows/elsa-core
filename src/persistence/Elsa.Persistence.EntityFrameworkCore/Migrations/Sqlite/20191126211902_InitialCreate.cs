@@ -1,7 +1,7 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
-namespace Elsa.Persistence.EntityFrameworkCore.Migrations
+namespace Elsa.Persistence.EntityFrameworkCore.Migrations.Sqlite
 {
     public partial class InitialCreate : Migration
     {
@@ -11,7 +11,8 @@ namespace Elsa.Persistence.EntityFrameworkCore.Migrations
                 name: "WorkflowDefinitionVersions",
                 columns: table => new
                 {
-                    Id = table.Column<int>(nullable: false),
+                    Id = table.Column<int>(nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
                     VersionId = table.Column<string>(nullable: true),
                     DefinitionId = table.Column<string>(nullable: true),
                     Version = table.Column<int>(nullable: false),
@@ -32,7 +33,8 @@ namespace Elsa.Persistence.EntityFrameworkCore.Migrations
                 name: "WorkflowInstances",
                 columns: table => new
                 {
-                    Id = table.Column<int>(nullable: false),
+                    Id = table.Column<int>(nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
                     InstanceId = table.Column<string>(nullable: true),
                     DefinitionId = table.Column<string>(nullable: true),
                     Version = table.Column<int>(nullable: false),
@@ -57,7 +59,8 @@ namespace Elsa.Persistence.EntityFrameworkCore.Migrations
                 name: "ActivityDefinitions",
                 columns: table => new
                 {
-                    Id = table.Column<int>(nullable: false),
+                    Id = table.Column<int>(nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
                     ActivityId = table.Column<string>(nullable: true),
                     WorkflowDefinitionVersionId = table.Column<int>(nullable: true),
                     Type = table.Column<string>(nullable: true),

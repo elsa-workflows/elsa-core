@@ -1,9 +1,30 @@
+# Generating migrations
+
+We should generate migration sets per provider as described here: https://docs.microsoft.com/en-us/ef/core/managing-schemas/migrations/providers?tabs=dotnet-core-cli 
+
+Example commands:
+
+```bash
+dotnet ef migrations add InitialCreate --context SqliteContext --output-dir Migrations/Sqlite
+dotnet ef migrations add InitialCreate --context SqlServerContext --output-dir Migrations/SqlServer
+dotnet ef migrations add InitialCreate --context PostgreSqlContext --output-dir Migrations/PostgreSql
+```
+ 
+
 # Creating and updating the Sqlite database
 
-To create the database, run the following command from a shell:
+First, set the appropriate connection string.
+To create the database, run the migrations.
+
+Example command:
 
  ```bash
-dotnet ef database update
-```
+SET EF_CONNECTIONSTRING="Data Source=c:\data\elsa.db;Cache=Shared"
+dotnet ef database update --context SqliteContext
 
-> NOTE: By default, the SqLite provider is used, and will create a database called `elsa.db` in folder `c:\data`. You will have to create this folder manually if it doesn't exist. 
+SET EF_CONNECTIONSTRING="Server=localhost;Database=Elsa;User=sa;Password=Secret_password123!;"
+dotnet ef database update --context SqlServerContext
+
+SET EF_CONNECTIONSTRING="Server=localhost;Database=Elsa;Port=5432;User Id=postgres;Password=Secret_password123!"
+dotnet ef database update --context PostgreSqlContext
+``` 

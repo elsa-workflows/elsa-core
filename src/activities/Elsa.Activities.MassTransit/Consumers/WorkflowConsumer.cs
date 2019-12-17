@@ -45,7 +45,7 @@ namespace Elsa.Activities.MassTransit.Consumers
             await workflowRunner.TriggerAsync(
                 activityType,
                 input,
-                correlationId.ToString(),
+                correlationId?.ToString(),
                 x => ReceiveMassTransitMessage.GetMessageType(x) == message.GetType(),
                 context.CancellationToken);
         }

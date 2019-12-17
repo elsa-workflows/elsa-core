@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Linq;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Entities
 {
