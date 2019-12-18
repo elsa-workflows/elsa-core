@@ -40,17 +40,6 @@ namespace Elsa.Services
             );
         }
 
-        public async Task<IActivityExecutionResult> HaltedAsync(
-            WorkflowExecutionContext workflowContext,
-            IActivity activity, CancellationToken cancellationToken = default)
-        {
-            return await InvokeAsync(
-                workflowContext,
-                activity,
-                (a) => a.HaltedAsync(workflowContext, cancellationToken)
-            );
-        }
-
         private async Task<IActivityExecutionResult> InvokeAsync(
             WorkflowExecutionContext workflowContext,
             IActivity activity,

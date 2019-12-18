@@ -42,7 +42,6 @@ namespace Elsa.Services
 
         public Task<bool> CanExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken) => OnCanExecuteAsync(context, cancellationToken);
         public Task<IActivityExecutionResult> ExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken) => OnExecuteAsync(context, cancellationToken);
-        public Task<IActivityExecutionResult> HaltedAsync(WorkflowExecutionContext context, CancellationToken cancellationToken) => OnHaltedAsync(context, cancellationToken);
 
         public ActivityInstance ToInstance() => new ActivityInstance
         {
@@ -55,11 +54,9 @@ namespace Elsa.Services
         public Task<IActivityExecutionResult> ResumeAsync(WorkflowExecutionContext context, CancellationToken cancellationToken) => OnResumeAsync(context, cancellationToken);
         protected virtual Task<bool> OnCanExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken) => Task.FromResult(OnCanExecute(context));
         protected virtual Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken) => Task.FromResult(OnExecute(context));
-        protected virtual Task<IActivityExecutionResult> OnHaltedAsync(WorkflowExecutionContext context, CancellationToken cancellationToken) => Task.FromResult(OnHalted(context));
         protected virtual Task<IActivityExecutionResult> OnResumeAsync(WorkflowExecutionContext context, CancellationToken cancellationToken) => Task.FromResult(OnResume(context));
         protected virtual bool OnCanExecute(WorkflowExecutionContext context) => true;
         protected virtual IActivityExecutionResult OnExecute(WorkflowExecutionContext context) => Noop();
-        protected virtual IActivityExecutionResult OnHalted(WorkflowExecutionContext context) => Noop();
         protected virtual IActivityExecutionResult OnResume(WorkflowExecutionContext context) => Noop();
         protected NoopResult Noop() => new NoopResult();
 

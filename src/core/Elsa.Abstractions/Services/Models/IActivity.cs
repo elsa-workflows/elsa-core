@@ -46,11 +46,6 @@ namespace Elsa.Services.Models
         /// Resumes the specified activity.
         /// </summary>
         Task<IActivityExecutionResult> ResumeAsync(WorkflowExecutionContext context, CancellationToken cancellationToken = default);
-        
-        /// <summary>
-        /// Invoked when the workflow is halted.
-        /// </summary>
-        Task<IActivityExecutionResult> HaltedAsync(WorkflowExecutionContext context, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Creates an instance representation of this activity.
