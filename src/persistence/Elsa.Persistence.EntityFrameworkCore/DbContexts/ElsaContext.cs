@@ -49,7 +49,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
         {
             var entity = modelBuilder.Entity<WorkflowDefinitionVersionEntity>();
 
-            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).UseIdentityColumn();
             entity.Property(x => x.DefinitionId);
             entity.Property(x => x.Variables).HasConversion(x => Serialize(x), x => Deserialize<Variables>(x));
             entity.HasMany(x => x.Activities).WithOne(x => x.WorkflowDefinitionVersion);
@@ -62,7 +62,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
             {
                 modelBuilder.HasDefaultSchema(DbContextCustomSchema.Schema);
 
-                // Apply the custom mapping to suport the non-default schema to the types in used in this context.
+                // Apply the custom mapping to support the non-default schema to the types in used in this context.
                 modelBuilder.ApplyConfiguration(new SchemaEntityTypeConfiguration<ActivityDefinitionEntity>(DbContextCustomSchema));
                 modelBuilder.ApplyConfiguration(new SchemaEntityTypeConfiguration<ActivityInstanceEntity>(DbContextCustomSchema));
                 modelBuilder.ApplyConfiguration(new SchemaEntityTypeConfiguration<BlockingActivityEntity>(DbContextCustomSchema));
@@ -76,7 +76,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
         {
             var entity = modelBuilder.Entity<WorkflowInstanceEntity>();
 
-            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).UseIdentityColumn();
             entity.Property(x => x.Status).HasConversion<string>();
             
             entity
@@ -120,7 +120,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
         {
             var entity = modelBuilder.Entity<ActivityDefinitionEntity>();
 
-            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).UseIdentityColumn();
 
             entity
                 .Property(x => x.State)
@@ -131,14 +131,14 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
         {
             var entity = modelBuilder.Entity<ConnectionDefinitionEntity>();
 
-            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).UseIdentityColumn();
         }
         
         private void ConfigureActivityInstance(ModelBuilder modelBuilder)
         {
             var entity = modelBuilder.Entity<ActivityInstanceEntity>();
 
-            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).UseIdentityColumn();
             
             entity
                 .Property(x => x.State)
