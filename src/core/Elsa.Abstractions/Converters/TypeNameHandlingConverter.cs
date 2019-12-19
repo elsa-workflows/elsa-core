@@ -15,14 +15,21 @@ namespace Elsa.Converters
         {
             var token = JToken.FromObject(value);
 
-            if (token.Type == JTokenType.Object)
+            switch (token.Type)
             {
-                token[TypeFieldName] = GetAssemblyQualifiedTypeName(value.GetType());
-                token.WriteTo(writer, serializer.Converters.ToArray());
-            }
-            else
-            {
-                token.WriteTo(writer);
+                case JTokenType.Object:
+                    token[TypeFieldName] = GetAssemblyQualifiedTypeName(value.GetType());
+                    token.WriteTo(writer, serializer.Converters.ToArray());
+                    break;
+                case JTokenType.Date: // Taking over DateTime serialization because NodaTime disabled date handling.
+                    var dateToken = new JObject();
+                    dateToken[TypeFieldName] = "DateTime";
+                    dateToken["Value"] = token;
+                    dateToken.WriteTo(writer, serializer.Converters.ToArray());
+                    break;
+                default:
+                    token.WriteTo(writer);
+                    break;
             }
         }
 
@@ -30,15 +37,24 @@ namespace Elsa.Converters
         {
             var token = JToken.ReadFrom(reader);
 
-            if (token.Type == JTokenType.Object)
+            switch (token.Type)
             {
-                var typeName = token[TypeFieldName].Value<string>();
-                var type = Type.GetType(typeName);
+                case JTokenType.Object:
+                    var typeName = token[TypeFieldName].Value<string>();
 
-                return token.ToObject(type, serializer);
+                    if (typeName == "DateTime")
+                    {
+                        var dateTime = token["Value"].ToObject<DateTime>();
+                        return dateTime;
+                    }
+                    else
+                    {
+                        var type = Type.GetType(typeName);
+                        return token.ToObject(type, serializer);   
+                    }
+                default:
+                    return token.ToObject(objectType);
             }
-
-            return token.ToObject(objectType);
         }
 
         public override bool CanConvert(Type objectType) => true;
