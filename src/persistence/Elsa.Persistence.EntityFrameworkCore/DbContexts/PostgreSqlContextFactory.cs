@@ -17,10 +17,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
 
             optionsBuilder.UseNpgsql(
                 connectionString,
-                x =>
-                {
-                    x.MigrationsAssembly(migrationAssembly);
-                }
+                x => x.MigrationsAssembly(migrationAssembly)
             );
 
             return new PostgreSqlContext(optionsBuilder.Options);

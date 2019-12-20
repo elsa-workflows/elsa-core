@@ -93,12 +93,12 @@ namespace Sample21
 
                     cfg.UseMessageScheduler(new Uri("rabbitmq://localhost/sample_quartz_scheduler"));
 
-                    cfg.ReceiveEndpoint(host, "shopping_cart_service", ep =>
+                    cfg.ReceiveEndpoint("shopping_cart_service", ep =>
                     {
                         ep.ConfigureConsumer<CartRemovedConsumer>(serviceProvider);
                     });
 
-                    cfg.ReceiveEndpoint(host, "shopping_cart_state", ep =>
+                    cfg.ReceiveEndpoint("shopping_cart_state", ep =>
                     {
                         ep.PrefetchCount = 16;
 
@@ -113,7 +113,7 @@ namespace Sample21
 
                     // Should use external process scheduler service
                     // https://github.com/MassTransit/MassTransit/tree/develop/src/Samples/MassTransit.QuartzService
-                    cfg.ReceiveEndpoint(host, "sample_quartz_scheduler", e =>
+                    cfg.ReceiveEndpoint("sample_quartz_scheduler", e =>
                     {
                         // For MT4.0, prefetch must be set for Quartz prior to anything else
                         e.PrefetchCount = 1;

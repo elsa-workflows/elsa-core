@@ -1,7 +1,10 @@
 using System.Collections.Generic;
 using Elsa.Models;
 using Elsa.Persistence.EntityFrameworkCore.Entities;
+using Elsa.Persistence.EntityFrameworkCore.Extensions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NodaTime;
@@ -12,10 +15,16 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
     public class ElsaContext : DbContext
     {
         private readonly JsonSerializerSettings serializerSettings;
+        /// <summary>
+        /// The CustomSchemaModelCacheKeyFactory will not resolve services from the DI container for constructor injection
+        /// so this is necessary in order to set the custom schema for the Model Cache.
+        /// </summary>
+        internal IDbContextCustomSchema DbContextCustomSchema { get; set; }
 
         public ElsaContext(DbContextOptions<ElsaContext> options) : base(options)
         {
             serializerSettings = new JsonSerializerSettings().ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
+            DbContextCustomSchema = options.GetDbContextCustomSchema();
         }
 
         public DbSet<WorkflowDefinitionVersionEntity> WorkflowDefinitionVersions { get; set; }
@@ -27,6 +36,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            ConfigureCustomSchema(modelBuilder);
             base.OnModelCreating(modelBuilder);
             ConfigureWorkflowDefinitionVersion(modelBuilder);
             ConfigureWorkflowInstance(modelBuilder);
@@ -34,23 +44,39 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
             ConfigureActivityInstance(modelBuilder);
             ConfigureBlockingActivity(modelBuilder);
         }
-        
+
         private void ConfigureWorkflowDefinitionVersion(ModelBuilder modelBuilder)
         {
             var entity = modelBuilder.Entity<WorkflowDefinitionVersionEntity>();
 
-            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).UseIdentityColumn();
             entity.Property(x => x.DefinitionId);
             entity.Property(x => x.Variables).HasConversion(x => Serialize(x), x => Deserialize<Variables>(x));
             entity.HasMany(x => x.Activities).WithOne(x => x.WorkflowDefinitionVersion);
             entity.HasMany(x => x.Connections).WithOne(x => x.WorkflowDefinitionVersion);
         }
 
+        private void ConfigureCustomSchema(ModelBuilder modelBuilder)
+        {            
+            if (DbContextCustomSchema != null && DbContextCustomSchema.UseCustomSchema)
+            {
+                modelBuilder.HasDefaultSchema(DbContextCustomSchema.Schema);
+
+                // Apply the custom mapping to support the non-default schema to the types in used in this context.
+                modelBuilder.ApplyConfiguration(new SchemaEntityTypeConfiguration<ActivityDefinitionEntity>(DbContextCustomSchema));
+                modelBuilder.ApplyConfiguration(new SchemaEntityTypeConfiguration<ActivityInstanceEntity>(DbContextCustomSchema));
+                modelBuilder.ApplyConfiguration(new SchemaEntityTypeConfiguration<BlockingActivityEntity>(DbContextCustomSchema));
+                modelBuilder.ApplyConfiguration(new SchemaEntityTypeConfiguration<ConnectionDefinitionEntity>(DbContextCustomSchema));
+                modelBuilder.ApplyConfiguration(new SchemaEntityTypeConfiguration<WorkflowDefinitionVersionEntity>(DbContextCustomSchema));
+                modelBuilder.ApplyConfiguration(new SchemaEntityTypeConfiguration<WorkflowInstanceEntity>(DbContextCustomSchema));
+            }
+        }
+
         private void ConfigureWorkflowInstance(ModelBuilder modelBuilder)
         {
             var entity = modelBuilder.Entity<WorkflowInstanceEntity>();
 
-            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).UseIdentityColumn();
             entity.Property(x => x.Status).HasConversion<string>();
             
             entity
@@ -94,7 +120,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
         {
             var entity = modelBuilder.Entity<ActivityDefinitionEntity>();
 
-            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).UseIdentityColumn();
 
             entity
                 .Property(x => x.State)
@@ -105,14 +131,14 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
         {
             var entity = modelBuilder.Entity<ConnectionDefinitionEntity>();
 
-            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).UseIdentityColumn();
         }
         
         private void ConfigureActivityInstance(ModelBuilder modelBuilder)
         {
             var entity = modelBuilder.Entity<ActivityInstanceEntity>();
 
-            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).UseIdentityColumn();
             
             entity
                 .Property(x => x.State)

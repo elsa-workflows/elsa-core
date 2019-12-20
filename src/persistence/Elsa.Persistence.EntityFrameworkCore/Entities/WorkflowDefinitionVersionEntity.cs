@@ -1,5 +1,5 @@
-﻿using System.Collections.Generic;
 using Elsa.Models;
+using System.Collections.Generic;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Entities
 {

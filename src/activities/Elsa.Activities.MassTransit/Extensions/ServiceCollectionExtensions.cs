@@ -117,7 +117,6 @@ namespace Elsa.Activities.MassTransit.Extensions
                         var consumerType = CreateConsumerType(messageType);
 
                         bus.ReceiveEndpoint(
-                            host,
                             queueName,
                             endpoint =>
                             {
