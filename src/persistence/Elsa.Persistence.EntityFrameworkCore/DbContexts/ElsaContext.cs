@@ -1,10 +1,9 @@
 using System.Collections.Generic;
 using Elsa.Models;
+using Elsa.Persistence.EntityFrameworkCore.CustomSchema;
 using Elsa.Persistence.EntityFrameworkCore.Entities;
 using Elsa.Persistence.EntityFrameworkCore.Extensions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NodaTime;
@@ -15,17 +14,18 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
     public class ElsaContext : DbContext
     {
         private readonly JsonSerializerSettings serializerSettings;
-        /// <summary>
-        /// The CustomSchemaModelCacheKeyFactory will not resolve services from the DI container for constructor injection
-        /// so this is necessary in order to set the custom schema for the Model Cache.
-        /// </summary>
-        internal IDbContextCustomSchema DbContextCustomSchema { get; set; }
 
         public ElsaContext(DbContextOptions<ElsaContext> options) : base(options)
         {
             serializerSettings = new JsonSerializerSettings().ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
             DbContextCustomSchema = options.GetDbContextCustomSchema();
         }
+        
+        /// <summary>
+        /// The CustomSchemaModelCacheKeyFactory will not resolve services from the DI container for constructor injection
+        /// so this is necessary in order to set the custom schema for the Model Cache.
+        /// </summary>
+        internal IDbContextCustomSchema DbContextCustomSchema { get; }
 
         public DbSet<WorkflowDefinitionVersionEntity> WorkflowDefinitionVersions { get; set; }
         public DbSet<WorkflowInstanceEntity> WorkflowInstances { get; set; }

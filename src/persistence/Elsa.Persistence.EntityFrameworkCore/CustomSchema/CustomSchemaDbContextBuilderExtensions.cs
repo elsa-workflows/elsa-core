@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Infrastructure;
 
-namespace Elsa.Persistence.EntityFrameworkCore.Extensions
+namespace Elsa.Persistence.EntityFrameworkCore.CustomSchema
 {
     public static class CustomSchemaDbContextBuilderExtensions
     {
