@@ -1,8 +1,8 @@
+using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using System;
 
-namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
+namespace Elsa.Persistence.EntityFrameworkCore.CustomSchema
 {
     public class SchemaEntityTypeConfiguration<TEntity> : IEntityTypeConfiguration<TEntity>
         where TEntity : class
