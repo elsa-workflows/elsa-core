@@ -1,70 +1,70 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using Elsa.Serialization.Handlers;
+using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using NodaTime;
+using NodaTime.Serialization.JsonNet;
+using NodaTime.Text;
 
 namespace Elsa.Converters
 {
     public class TypeNameHandlingConverter : JsonConverter
     {
-        private const string TypeFieldName = "TypeName";
+        private static readonly IDictionary<Type, IValueHandler> ValueHandlers = new Dictionary<Type, IValueHandler>();
+
+        public static void RegisterTypeHandler<T>() where T : IValueHandler
+        {
+            var handler = Activator.CreateInstance<T>();
+            RegisterTypeHandler(handler);
+        }
+        
+        public static void RegisterTypeHandler(IValueHandler handler)
+        {
+            ValueHandlers[handler.GetType()] = handler;
+        }
+
+        static TypeNameHandlingConverter()
+        {
+            RegisterTypeHandler<DateTimeHandler>();
+            RegisterTypeHandler<InstantHandler>();
+            RegisterTypeHandler<AnnualDateHandler>();
+            RegisterTypeHandler<DurationHandler>();
+            RegisterTypeHandler<LocalDateHandler>();
+            RegisterTypeHandler<LocalDateTimeHandler>();
+            RegisterTypeHandler<LocalTimeHandler>();
+            RegisterTypeHandler<OffsetDateHandler>();
+            RegisterTypeHandler<OffsetHandler>();
+            RegisterTypeHandler<OffsetTimeHandler>();
+            RegisterTypeHandler<YearMonthHandler>();
+            RegisterTypeHandler<ZonedDateTimeHandler>();
+        }
+        
         public override bool CanRead => true;
         public override bool CanWrite => true;
 
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
+            var valueType = value.GetType();
             var token = JToken.FromObject(value);
+            var handler = GetHandler(x => x.CanSerialize(token, valueType));
 
-            switch (token.Type)
-            {
-                case JTokenType.Object:
-                    token[TypeFieldName] = GetAssemblyQualifiedTypeName(value.GetType());
-                    token.WriteTo(writer, serializer.Converters.ToArray());
-                    break;
-                case JTokenType.Date: // Taking over DateTime serialization because NodaTime disabled date handling.
-                    var dateToken = new JObject();
-                    dateToken[TypeFieldName] = "DateTime";
-                    dateToken["Value"] = token;
-                    dateToken.WriteTo(writer, serializer.Converters.ToArray());
-                    break;
-                default:
-                    token.WriteTo(writer);
-                    break;
-            }
+            handler.Serialize(writer, serializer, token);
         }
 
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
             var token = JToken.ReadFrom(reader);
+            var handler = GetHandler(x => x.CanDeserialize(token, objectType));
 
-            switch (token.Type)
-            {
-                case JTokenType.Object:
-                    var typeName = token[TypeFieldName].Value<string>();
-
-                    if (typeName == "DateTime")
-                    {
-                        var dateTime = token["Value"].ToObject<DateTime>();
-                        return dateTime;
-                    }
-                    else
-                    {
-                        var type = Type.GetType(typeName);
-                        return token.ToObject(type, serializer);   
-                    }
-                default:
-                    return token.ToObject(objectType);
-            }
+            return handler.Deserialize(reader, serializer, objectType, token);
         }
 
         public override bool CanConvert(Type objectType) => true;
 
-        private string GetAssemblyQualifiedTypeName(Type type)
-        {
-            var typeName = type.FullName;
-            var assemblyName = type.Assembly.GetName().Name;
-
-            return $"{typeName}, {assemblyName}";
-        }
+        private IValueHandler GetHandler(Func<IValueHandler, bool> predicate) => 
+            ValueHandlers.Values.OrderByDescending(x => x.Priority).FirstOrDefault(predicate) ?? new DefaultValueHandler();
     }
 }

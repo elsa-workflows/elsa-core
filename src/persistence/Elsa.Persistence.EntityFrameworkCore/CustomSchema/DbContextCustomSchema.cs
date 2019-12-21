@@ -1,8 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
+namespace Elsa.Persistence.EntityFrameworkCore.CustomSchema
 {
     public class DbContextCustomSchema : IDbContextCustomSchema
     {

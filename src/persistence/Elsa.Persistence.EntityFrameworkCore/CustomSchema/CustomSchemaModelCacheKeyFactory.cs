@@ -1,12 +1,15 @@
+using Elsa.Persistence.EntityFrameworkCore.DbContexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
+namespace Elsa.Persistence.EntityFrameworkCore.CustomSchema
 {
     public class CustomSchemaModelCacheKeyFactory : IModelCacheKeyFactory
     {
-        public CustomSchemaModelCacheKeyFactory() { }
+        public CustomSchemaModelCacheKeyFactory()
+        {
+        }
+
         public object Create(DbContext context)
         {
             string schema = null;
@@ -18,6 +21,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
                     schema = dbContextCustomSchema.Schema;
                 }
             }
+
             return new
             {
                 Type = context.GetType(),
