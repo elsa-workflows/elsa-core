@@ -14,21 +14,19 @@ namespace Elsa.Services.Models
     public class WorkflowExecutionContext
     {
         private readonly IClock clock;
-        private readonly Stack<IActivity> scheduledActivities;
 
-        public WorkflowExecutionContext(Workflow workflowInstance, IWorkflowExpressionEvaluator workflowExpressionEvaluator, IClock clock, IServiceProvider serviceProvider)
+        public WorkflowExecutionContext(Workflow workflow, IWorkflowExpressionEvaluator workflowExpressionEvaluator, IClock clock, IServiceProvider serviceProvider)
         {
             this.clock = clock;
-            Workflow = workflowInstance;
+            Workflow = workflow;
             ServiceProvider = serviceProvider;
             IsFirstPass = true;
-            scheduledActivities = new Stack<IActivity>();
             WorkflowExpressionEvaluator = workflowExpressionEvaluator;
         }
 
         public Workflow Workflow { get; }
         public IServiceProvider ServiceProvider { get; }
-        public bool HasScheduledActivities => scheduledActivities.Any();
+        public bool HasScheduledActivities => Workflow.ScheduledActivities.Any();
         public bool IsFirstPass { get; set; }
         public WorkflowExecutionScope CurrentScope => Workflow.Scopes.Peek();
         public IActivity CurrentActivity { get; private set; }
@@ -47,10 +45,11 @@ namespace Elsa.Services.Models
 
         public void ScheduleActivity(IActivity activity)
         {
-            scheduledActivities.Push(activity);
+            Workflow.ScheduledActivities.Push(activity);
         }
         
-        public IActivity PopScheduledActivity() => CurrentActivity = scheduledActivities.Pop();
+        public IActivity PopScheduledActivity() => CurrentActivity = Workflow.ScheduledActivities.Pop();
+        public IActivity PeekScheduledActivity() => Workflow.ScheduledActivities.Peek();
         public IWorkflowExpressionEvaluator WorkflowExpressionEvaluator { get; }
 
         public bool AddBlockingActivity(IActivity activity) => Workflow.BlockingActivities.Add(activity);

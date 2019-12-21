@@ -21,5 +21,6 @@ namespace Elsa.Models
         public HashSet<BlockingActivity> BlockingActivities { get; set; }
         public ICollection<LogEntry> ExecutionLog { get; set; }
         public WorkflowFault Fault { get; set; }
+        public HashSet<string> ScheduledActivities { get; set; }
     }
 }

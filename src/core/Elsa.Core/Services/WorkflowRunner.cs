@@ -81,7 +81,7 @@ namespace Elsa.Services
             IEnumerable<IActivity> startActivities = default,
             CancellationToken cancellationToken = default)
         {
-            return ExecuteAsync(workflow, false, startActivities, cancellationToken);
+            return RunAsync(workflow, false, startActivities, cancellationToken);
         }
 
         public Task<WorkflowExecutionContext> RunAsync(
@@ -94,7 +94,7 @@ namespace Elsa.Services
             var workflow = workflowFactory.CreateWorkflow(workflowDefinition, input, correlationId: correlationId);
             var startActivities = workflow.Activities.Find(startActivityIds);
 
-            return ExecuteAsync(workflow, false, startActivities, cancellationToken);
+            return RunAsync(workflow, false, startActivities, cancellationToken);
         }
 
         public Task<WorkflowExecutionContext> RunAsync<T>(
@@ -106,7 +106,16 @@ namespace Elsa.Services
             var workflow = workflowFactory.CreateWorkflow<T>(input, correlationId: correlationId);
             var startActivities = workflow.Activities.Find(startActivityIds);
 
-            return ExecuteAsync(workflow, false, startActivities, cancellationToken);
+            return RunAsync(workflow, false, startActivities, cancellationToken);
+        }
+        
+        public Task<WorkflowExecutionContext> RunAsync(
+            WorkflowInstance workflowInstance,
+            Variables input = null,
+            IEnumerable<string> startActivityIds = default,
+            CancellationToken cancellationToken = default)
+        {
+            return RunAsync(workflowInstance, false, input, startActivityIds, cancellationToken);
         }
 
         public Task<WorkflowExecutionContext> ResumeAsync(
@@ -114,7 +123,7 @@ namespace Elsa.Services
             IEnumerable<IActivity> startActivities = default,
             CancellationToken cancellationToken = default)
         {
-            return ExecuteAsync(workflow, true, startActivities, cancellationToken);
+            return RunAsync(workflow, true, startActivities, cancellationToken);
         }
 
         public Task<WorkflowExecutionContext> ResumeAsync<T>(
@@ -125,11 +134,21 @@ namespace Elsa.Services
         {
             var workflow = workflowFactory.CreateWorkflow<T>(input, workflowInstance);
             var startActivities = workflow.Activities.Find(startActivityIds);
-            return ExecuteAsync(workflow, true, startActivities, cancellationToken);
+            return RunAsync(workflow, true, startActivities, cancellationToken);
         }
 
-        public async Task<WorkflowExecutionContext> ResumeAsync(
+        public Task<WorkflowExecutionContext> ResumeAsync(
             WorkflowInstance workflowInstance,
+            Variables input = null,
+            IEnumerable<string> startActivityIds = default,
+            CancellationToken cancellationToken = default)
+        {
+            return RunAsync(workflowInstance, true, input, startActivityIds, cancellationToken);
+        }
+        
+        private async Task<WorkflowExecutionContext> RunAsync(
+            WorkflowInstance workflowInstance,
+            bool resume,
             Variables input = null,
             IEnumerable<string> startActivityIds = default,
             CancellationToken cancellationToken = default)
@@ -139,7 +158,7 @@ namespace Elsa.Services
                 VersionOptions.SpecificVersion(workflowInstance.Version),
                 cancellationToken);
             var workflow = workflowFactory.CreateWorkflow(definition, input, workflowInstance);
-            return await ExecuteAsync(workflow, true, startActivityIds, cancellationToken);
+            return await RunAsync(workflow, resume, startActivityIds, cancellationToken);
         }
 
         private async Task<IEnumerable<WorkflowExecutionContext>> ResumeManyAsync(
@@ -199,7 +218,7 @@ namespace Elsa.Services
 
                 var workflow = workflowFactory.CreateWorkflow(workflowDefinition, input, correlationId: correlationId);
 
-                var executionContext = await ExecuteAsync(
+                var executionContext = await RunAsync(
                     workflow,
                     false,
                     startActivityIds,
@@ -233,7 +252,7 @@ namespace Elsa.Services
 
                 foreach (var activity in workflowInstanceGroup)
                 {
-                    var executionContext = await ExecuteAsync(
+                    var executionContext = await RunAsync(
                         workflow,
                         true,
                         new[] { activity.Item2.Id },
@@ -247,7 +266,7 @@ namespace Elsa.Services
             return executionContexts;
         }
         
-        private Task<WorkflowExecutionContext> ExecuteAsync(
+        private Task<WorkflowExecutionContext> RunAsync(
             Workflow workflow,
             bool resume,
             IEnumerable<string> startActivityIds = default,
@@ -257,15 +276,17 @@ namespace Elsa.Services
                 ? workflow.Activities.Find(startActivityIds)
                 : Enumerable.Empty<IActivity>();
 
-            return ExecuteAsync(workflow, resume, startActivities, cancellationToken);
+            return RunAsync(workflow, resume, startActivities, cancellationToken);
         }
         
-        private async Task<WorkflowExecutionContext> ExecuteAsync(
+        private async Task<WorkflowExecutionContext> RunAsync(
             Workflow workflow,
             bool resume,
             IEnumerable<IActivity> startActivities = default,
             CancellationToken cancellationToken = default)
         {
+            await mediator.Publish(new ExecutingWorkflow(workflow), cancellationToken);
+            
             var workflowExecutionContext = await CreateWorkflowExecutionContextAsync(
                 workflow,
                 startActivities,
@@ -276,6 +297,8 @@ namespace Elsa.Services
 
             while (workflowExecutionContext.HasScheduledActivities)
             {
+                var nextActivity = workflowExecutionContext.PeekScheduledActivity();
+                await mediator.Publish(new ExecutingActivity(workflow, nextActivity), cancellationToken);
                 var currentActivity = workflowExecutionContext.PopScheduledActivity();
 
                 var result = start
@@ -284,18 +307,17 @@ namespace Elsa.Services
 
                 workflowExecutionContext.IsFirstPass = false;
                 start = true;
+
+                await mediator.Publish(new ActivityExecuted(workflow, currentActivity), cancellationToken);
                 
                 if (result == null)
                     break;
 
                 await result.ExecuteAsync(this, workflowExecutionContext, cancellationToken);
             }
-
-            // Publish Workflow Executed event.
-            await mediator.Publish(new WorkflowExecuted(workflow), cancellationToken);
             
             // Determine new workflow state.
-            TransitionState(workflow, workflowExecutionContext);
+            UpdateWorkflowStatus(workflowExecutionContext);
             
             // Publish appropriate event depending on current workflow state.
             await PublishTransitionEvent(workflowExecutionContext, cancellationToken);
@@ -303,14 +325,14 @@ namespace Elsa.Services
             return workflowExecutionContext;
         }
 
-        private static void TransitionState(Workflow workflow, WorkflowExecutionContext workflowExecutionContext)
+        private static void UpdateWorkflowStatus( WorkflowExecutionContext workflowExecutionContext)
         {
             // Automatically transition to Suspended state if there are blocking activities.
-            if (workflow.BlockingActivities.Any())
+            if (workflowExecutionContext.Workflow.BlockingActivities.Any())
                 workflowExecutionContext.Suspend();
 
             // Automatically transition to Completed state if there are no more blocking activities. 
-            else
+            else if(!workflowExecutionContext.HasScheduledActivities)
                 workflowExecutionContext.Complete();
         }
 
@@ -319,6 +341,9 @@ namespace Elsa.Services
             CancellationToken cancellationToken)
         {
             var workflow = workflowExecutionContext.Workflow;
+            
+            // Publish Workflow Executed event.
+            await mediator.Publish(new WorkflowExecuted(workflow), cancellationToken);
             
             switch (workflow.Status)
             {

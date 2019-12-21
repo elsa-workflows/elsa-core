@@ -6,6 +6,7 @@ using Elsa.AutoMapper.Extensions;
 using Elsa.Caching;
 using Elsa.Expressions;
 using Elsa.Mapping;
+using Elsa.Messages.Handlers;
 using Elsa.Persistence;
 using Elsa.Persistence.Memory;
 using Elsa.Serialization;
@@ -13,7 +14,6 @@ using Elsa.Serialization.Formatters;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Elsa.WorkflowBuilders;
-using Elsa.WorkflowEventHandlers;
 using Elsa.WorkflowProviders;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -79,7 +79,6 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddScoped<IWorkflowExpressionEvaluator, WorkflowExpressionEvaluator>()
                 .AddSingleton<IWorkflowSerializerProvider, WorkflowSerializerProvider>()
                 .AddTransient<IWorkflowRegistry, WorkflowRegistry>()
-                .AddScoped<IWorkflowEventHandler, PersistenceWorkflowEventHandler>()
                 .AddScoped<IWorkflowRunner, WorkflowRunner>()
                 .AddScoped<IActivityResolver, ActivityResolver>()
                 .AddScoped<IWorkflowEventHandler, ActivityLoggingWorkflowEventHandler>()

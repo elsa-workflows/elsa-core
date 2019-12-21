@@ -1,5 +1,7 @@
 using Elsa.Activities.Console.Extensions;
+using Elsa.Runtime;
 using Elsa.Server.GraphQL.Extensions;
+using Elsa.StartupTasks;
 using GraphQL.Server.Ui.GraphiQL;
 using GraphQL.Server.Ui.Playground;
 using GraphQL.Server.Ui.Voyager;
@@ -36,7 +38,8 @@ namespace Elsa.Server.Host
                 .AddHttpActivities(options => options.Bind(elsaSection.GetSection("Http")))
                 .AddEmailActivities(options => options.Bind(elsaSection.GetSection("Smtp")))
                 .AddTimerActivities(options => options.Bind(elsaSection.GetSection("BackgroundRunner")))
-                .AddElsaManagement();
+                .AddElsaManagement()
+                .AddStartupTask<ResumeRunningWorkflowsTask>();
 
             EnableSynchronousIO(services);
         }

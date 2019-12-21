@@ -30,6 +30,12 @@ namespace Elsa.Services
             CancellationToken cancellationToken = default
         );
 
+        Task<WorkflowExecutionContext> RunAsync(
+            WorkflowInstance workflowInstance,
+            Variables input = null,
+            IEnumerable<string> startActivityIds = default,
+            CancellationToken cancellationToken = default);
+
         Task<WorkflowExecutionContext> ResumeAsync(
             Workflow workflow,
             IEnumerable<IActivity> startActivities = default,

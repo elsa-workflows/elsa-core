@@ -29,6 +29,8 @@ namespace Elsa.WorkflowBuilders
         public string Description { get; set; }
         public bool IsSingleton { get; set; }
         public bool IsDisabled { get; set; }
+        public WorkflowPersistenceBehavior PersistenceBehavior { get; set; }
+        public bool DeleteCompletedWorkflows { get; set; }
         public IReadOnlyList<IActivityBuilder> Activities => activityBuilders.ToList().AsReadOnly();
 
         public IWorkflowBuilder WithId(string id)
@@ -58,6 +60,18 @@ namespace Elsa.WorkflowBuilders
         public IWorkflowBuilder AsSingleton(bool value)
         {
             IsSingleton = value;
+            return this;
+        }
+        
+        public IWorkflowBuilder WithPersistenceBehavior(WorkflowPersistenceBehavior value)
+        {
+            PersistenceBehavior = value;
+            return this;
+        }
+        
+        public IWorkflowBuilder WithDeleteCompletedWorkflows(bool value)
+        {
+            DeleteCompletedWorkflows = value;
             return this;
         }
 
@@ -140,7 +154,9 @@ namespace Elsa.WorkflowBuilders
                 IsDisabled = IsDisabled,
                 Variables = Variables.Empty,
                 IsPublished = true,
-                IsLatest = true
+                IsLatest = true,
+                PersistenceBehavior = PersistenceBehavior,
+                DeleteCompletedWorkflows = DeleteCompletedWorkflows
             };
         }
     }

@@ -25,7 +25,7 @@ namespace Elsa.Persistence.YesSql.StartupTasks
 
             schemaVersionUpdates = new[]
             {
-                new SchemaUpdate {Version = 1, Update = UpdateToVersion1}
+                new SchemaUpdate { Version = 1, Update = UpdateToVersion1 }
             };
         }
 
@@ -39,14 +39,14 @@ namespace Elsa.Persistence.YesSql.StartupTasks
                 await schemaVersionStore.SaveVersionAsync(schemaUpdate.Version);
             }
         }
-        
+
         private void UpdateToVersion1()
         {
             PerformUpdates(builder =>
             {
                 builder
                     .CreateMapIndexTable(nameof(WorkflowDefinitionIndex), table => table
-                            .Column<string>("VersionId")
+                        .Column<string>("VersionId")
                         .Column<string>("WorkflowDefinitionId")
                         .Column<int>("Version")
                         .Column<bool>("IsPublished")
@@ -84,9 +84,7 @@ namespace Elsa.Persistence.YesSql.StartupTasks
                 using (var transaction = connection.BeginTransaction(store.Configuration.IsolationLevel))
                 {
                     var schemaBuilder = new SchemaBuilder(store.Configuration, transaction, false);
-
                     builder(schemaBuilder);
-
                     transaction.Commit();
                 }
             }

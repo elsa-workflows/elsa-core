@@ -43,6 +43,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
             ConfigureActivityDefinition(modelBuilder);
             ConfigureActivityInstance(modelBuilder);
             ConfigureBlockingActivity(modelBuilder);
+            ConfigureConnectionDefinition(modelBuilder);
         }
 
         private void ConfigureWorkflowDefinitionVersion(ModelBuilder modelBuilder)
@@ -114,6 +115,13 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
             entity
                 .HasMany(x => x.BlockingActivities)
                 .WithOne(x => x.WorkflowInstance);
+            
+            entity
+                .Property(x => x.ScheduledActivities)
+                .HasConversion(
+                    x => Serialize(x),
+                    x => Deserialize<Stack<string>>(x)
+                );
         }
         
         private void ConfigureActivityDefinition(ModelBuilder modelBuilder)
