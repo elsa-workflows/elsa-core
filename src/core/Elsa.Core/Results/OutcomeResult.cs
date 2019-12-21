@@ -12,7 +12,7 @@ using Microsoft.Extensions.Logging;
 namespace Elsa.Results
 {
     /// <summary>
-    /// A result that carries information about the next activity to execute.
+    /// A result that carries information about the executed activity's outcome.
     /// </summary>
     public class OutcomeResult : ActivityExecutionResult
     {

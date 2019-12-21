@@ -39,7 +39,7 @@ namespace Sample12
                 var triggeredExecutionContexts = await invoker.TriggerAsync(nameof(UserTask), new Variables { ["UserAction"] = new Variable(userAction)}, correlationId);
                 executionContext = triggeredExecutionContexts.First();
 
-            } while (executionContext.Workflow.IsExecuting());
+            } while (executionContext.Workflow.IsRunning());
         }
 
         private static IServiceProvider BuildServices()

@@ -14,24 +14,19 @@ namespace Elsa.Services.Models
     public class WorkflowExecutionContext
     {
         private readonly IClock clock;
-        private readonly Stack<IActivity> scheduledActivities;
-        private readonly Stack<IActivity> scheduledHaltingActivities;
 
-        public WorkflowExecutionContext(Workflow workflowInstance, IClock clock, IServiceProvider serviceProvider)
+        public WorkflowExecutionContext(Workflow workflow, IWorkflowExpressionEvaluator workflowExpressionEvaluator, IClock clock, IServiceProvider serviceProvider)
         {
             this.clock = clock;
-            Workflow = workflowInstance;
+            Workflow = workflow;
             ServiceProvider = serviceProvider;
             IsFirstPass = true;
-            scheduledActivities = new Stack<IActivity>();
-            scheduledHaltingActivities = new Stack<IActivity>();
-            ExpressionEvaluator = serviceProvider.GetRequiredService<IWorkflowExpressionEvaluator>();
+            WorkflowExpressionEvaluator = workflowExpressionEvaluator;
         }
 
         public Workflow Workflow { get; }
         public IServiceProvider ServiceProvider { get; }
-        public bool HasScheduledActivities => scheduledActivities.Any();
-        public bool HasScheduledHaltingActivities => scheduledHaltingActivities.Any();
+        public bool HasScheduledActivities => Workflow.ScheduledActivities.Any();
         public bool IsFirstPass { get; set; }
         public WorkflowExecutionScope CurrentScope => Workflow.Scopes.Peek();
         public IActivity CurrentActivity { get; private set; }
@@ -50,14 +45,14 @@ namespace Elsa.Services.Models
 
         public void ScheduleActivity(IActivity activity)
         {
-            scheduledActivities.Push(activity);
+            Workflow.ScheduledActivities.Push(activity);
         }
+        
+        public IActivity PopScheduledActivity() => CurrentActivity = Workflow.ScheduledActivities.Pop();
+        public IActivity PeekScheduledActivity() => Workflow.ScheduledActivities.Peek();
+        public IWorkflowExpressionEvaluator WorkflowExpressionEvaluator { get; }
 
-        public IActivity PeekScheduledActivity() => scheduledActivities.Peek();
-        public IActivity PopScheduledActivity() => CurrentActivity = scheduledActivities.Pop();
-        public void ScheduleHaltingActivity(IActivity activity) => scheduledHaltingActivities.Push(activity);
-        public IActivity PopScheduledHaltingActivity() => scheduledHaltingActivities.Pop();
-        public IWorkflowExpressionEvaluator ExpressionEvaluator { get; }
+        public bool AddBlockingActivity(IActivity activity) => Workflow.BlockingActivities.Add(activity);
 
         public void SetVariable(string name, object value)
         {
@@ -74,14 +69,19 @@ namespace Elsa.Services.Models
             var scope = Workflow.Scopes.FirstOrDefault(x => x.Variables.ContainsKey(name)) ?? CurrentScope;
             return scope.GetVariable(name);
         }
+        
+        public Variables GetVariables() => Workflow.Scopes
+            .Reverse()
+            .Select(x => x.Variables)
+            .Aggregate(Variables.Empty, (x, y) => new Variables(x.Union(y)));
 
         public Task<T> EvaluateAsync<T>(IWorkflowExpression<T> expression, CancellationToken cancellationToken) =>
-            ExpressionEvaluator.EvaluateAsync(expression, this, cancellationToken);
+            WorkflowExpressionEvaluator.EvaluateAsync(expression, this, cancellationToken);
         
         public Task<object> EvaluateAsync(IWorkflowExpression expression, Type type, CancellationToken cancellationToken) =>
-            ExpressionEvaluator.EvaluateAsync(expression, type, this, cancellationToken);
+            WorkflowExpressionEvaluator.EvaluateAsync(expression, type, this, cancellationToken);
 
-        public void Start()
+        public void Run()
         {
             Workflow.StartedAt = clock.GetCurrentInstant();
             Workflow.Status = WorkflowStatus.Running;
@@ -100,28 +100,22 @@ namespace Elsa.Services.Models
             Workflow.Status = WorkflowStatus.Faulted;
         }
 
-        public void Halt(IActivity activity = null)
+        public void Suspend()
         {
-            if (activity != null)
-                Workflow.BlockingActivities.Add(activity);
+            Workflow.Status = WorkflowStatus.Suspended;
         }
 
-        public void Finish()
+        public void Complete()
         {
-            Workflow.FinishedAt = clock.GetCurrentInstant();
+            Workflow.CompletedAt = clock.GetCurrentInstant();
             Workflow.Status = WorkflowStatus.Completed;
             Workflow.BlockingActivities.Clear();
         }
 
-        public void Abort()
+        public void Cancel()
         {
-            Workflow.AbortedAt = clock.GetCurrentInstant();
+            Workflow.CancelledAt = clock.GetCurrentInstant();
             Workflow.Status = WorkflowStatus.Cancelled;
         }
-
-        public Variables GetVariables() => Workflow.Scopes
-            .Reverse()
-            .Select(x => x.Variables)
-            .Aggregate(Variables.Empty, (x, y) => new Variables(x.Union(y)));
     }
 }

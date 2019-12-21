@@ -32,6 +32,7 @@ namespace Elsa.Services.Models
         {
             Scopes = new Stack<WorkflowExecutionScope>(new[] { new WorkflowExecutionScope() });
             BlockingActivities = new HashSet<IActivity>();
+            ScheduledActivities = new Stack<IActivity>();
             ExecutionLog = new List<LogEntry>();
         }
 
@@ -41,12 +42,13 @@ namespace Elsa.Services.Models
         public WorkflowStatus Status { get; set; }
         public Instant CreatedAt { get; set; }
         public Instant? StartedAt { get; set; }
-        public Instant? FinishedAt { get; set; }
+        public Instant? CompletedAt { get; set; }
         public Instant? FaultedAt { get; set; }
-        public Instant? AbortedAt { get; set; }
+        public Instant? CancelledAt { get; set; }
         public ICollection<IActivity> Activities { get; } = new List<IActivity>();
         public IList<Connection> Connections { get; } = new List<Connection>();
         public Stack<WorkflowExecutionScope> Scopes { get; set; }
+        public Stack<IActivity> ScheduledActivities { get; set; }
         public HashSet<IActivity> BlockingActivities { get; set; }
         public IList<LogEntry> ExecutionLog { get; set; }
         public WorkflowFault Fault { get; set; }
@@ -64,12 +66,13 @@ namespace Elsa.Services.Models
                 Status = Status,
                 CreatedAt = CreatedAt,
                 StartedAt = StartedAt,
-                FinishedAt = FinishedAt,
+                FinishedAt = CompletedAt,
                 FaultedAt = FaultedAt,
-                AbortedAt = AbortedAt,
+                AbortedAt = CancelledAt,
                 Activities = new HashSet<ActivityInstance>(Activities.Select(x => x.ToInstance()), new ActivityInstanceEqualityComparer()),
                 Scopes = new Stack<WorkflowExecutionScope>(Scopes),
                 BlockingActivities = new HashSet<BlockingActivity>(BlockingActivities.Select(x => new BlockingActivity(x.Id, x.Type)), new BlockingActivityEqualityComparer()),
+                ScheduledActivities = new HashSet<string>(ScheduledActivities.Select(x => x.Id)),
                 ExecutionLog = ExecutionLog.ToList(),
                 Fault = Fault?.ToInstance()
             };
@@ -87,11 +90,12 @@ namespace Elsa.Services.Models
             Status = instance.Status;
             CreatedAt = instance.CreatedAt;
             StartedAt = instance.StartedAt;
-            FinishedAt = instance.FinishedAt;
+            CompletedAt = instance.FinishedAt;
             FaultedAt = instance.FaultedAt;
-            AbortedAt = instance.AbortedAt;
+            CancelledAt = instance.AbortedAt;
             ExecutionLog = instance.ExecutionLog.ToList();
             BlockingActivities = new HashSet<IActivity>(instance.BlockingActivities.Select(x => activityLookup[x.ActivityId]));
+            ScheduledActivities = new Stack<IActivity>(instance.ScheduledActivities.Select(x => activityLookup[x]));
             Scopes = new Stack<WorkflowExecutionScope>(instance.Scopes);
 
             var activityDictionary = instance.Activities.ToDictionary(x => x.Id);
@@ -99,7 +103,7 @@ namespace Elsa.Services.Models
             foreach (var activity in Activities)
             {
                 activity.State = new JObject(activityDictionary[activity.Id].State);
-                activity.Output = activityDictionary[activity.Id].Output.ToObject<Variable>();
+                activity.Output = activityDictionary[activity.Id].Output?.ToObject<Variable>();
             }
         }
     }

@@ -3,7 +3,7 @@ using Elsa.Services;
 using Elsa.Services.Models;
 using NodaTime;
 
-namespace Elsa.WorkflowEventHandlers
+namespace Elsa.Messages.Handlers
 {
     public class ActivityLoggingWorkflowEventHandler : WorkflowEventHandlerBase
     {

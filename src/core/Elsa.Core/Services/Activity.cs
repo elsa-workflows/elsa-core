@@ -8,7 +8,7 @@ namespace Elsa.Services
 {
     public abstract class Activity : ActivityBase
     {
-        protected HaltResult Halt(bool continueOnFirstPass = false) => new HaltResult(continueOnFirstPass);
+        protected SuspendWorkflowResult Halt(bool continueOnFirstPass = false) => new SuspendWorkflowResult(continueOnFirstPass);
         protected OutcomeResult Outcomes(IEnumerable<string> names) => new OutcomeResult(names);
         protected OutcomeResult Outcome(string name) => Outcomes(new[] { name });
         protected CombinedResult Outcome(string name, object output) => Combine(SetOutput(output), Outcome(name));
@@ -18,7 +18,7 @@ namespace Elsa.Services
         protected OutputResult SetOutput(Variable value) => new OutputResult(value);
         protected OutputResult SetOutput(object value) => SetOutput(Variable.From(value));
         protected ScheduleActivityResult ScheduleActivity(IActivity activity) => new ScheduleActivityResult(activity);
-        protected FinishWorkflowResult Finish() => new FinishWorkflowResult();
+        protected CompleteWorkflowResult Finish() => new CompleteWorkflowResult();
         protected FaultWorkflowResult Fault(string errorMessage) => new FaultWorkflowResult(errorMessage);
         protected FaultWorkflowResult Fault(Exception exception) => new FaultWorkflowResult(exception);
         protected CombinedResult Combine(params IActivityExecutionResult[] results) => new CombinedResult(results);
