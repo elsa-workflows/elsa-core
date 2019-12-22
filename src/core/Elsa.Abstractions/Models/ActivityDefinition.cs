@@ -40,7 +40,7 @@ namespace Elsa.Models
     {
         public ActivityDefinition()
         {
-            Name = typeof(T).Name;
+            Type = typeof(T).Name;
         }
     }
 }
