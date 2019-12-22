@@ -30,7 +30,7 @@ namespace Elsa.Activities.Console.Activities
         }
 
         [ActivityProperty(Hint = "The text to write.")]
-        public WorkflowExpression<string> TextExpression 
+        public IWorkflowExpression<string> TextExpression 
         {
             get => GetState(() => LiteralEvaluator.Expression<string>(null));
             set => SetState(value);

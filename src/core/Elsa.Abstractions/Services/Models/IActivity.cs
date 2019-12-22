@@ -33,6 +33,16 @@ namespace Elsa.Services.Models
         string Name { get; set; }
         
         /// <summary>
+        /// Display name of this activity.
+        /// </summary>
+        string DisplayName { get; set; }
+        
+        /// <summary>
+        /// Description of this activity.
+        /// </summary>
+        string Description { get; set; }
+        
+        /// <summary>
         /// Returns a value of whether the specified activity can execute.
         /// </summary>
         Task<bool> CanExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken = default);

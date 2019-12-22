@@ -18,6 +18,6 @@ namespace Elsa.Services
         IActivityBuilder StartWith<T>(Action<T> setup = default, string name = default) where T: class, IActivity;
         IConnectionBuilder Connect(IActivityBuilder source, IActivityBuilder target, string outcome = default);
         IConnectionBuilder Connect(Func<IActivityBuilder> source, Func<IActivityBuilder> target, string outcome = default);
-        WorkflowDefinitionVersion Build();
+        WorkflowBlueprint Build();
     }
 }

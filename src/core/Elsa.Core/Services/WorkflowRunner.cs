@@ -91,8 +91,19 @@ namespace Elsa.Services
             string correlationId = default,
             CancellationToken cancellationToken = default)
         {
+            var blueprint = workflowFactory.CreateWorkflowBlueprint(workflowDefinition);
+            return RunAsync(blueprint, input, startActivityIds, correlationId, cancellationToken);
+        }
+        
+        public Task<WorkflowExecutionContext> RunAsync(
+            WorkflowBlueprint workflowDefinition,
+            Variables input = default,
+            IEnumerable<string> startActivityIds = default,
+            string correlationId = default,
+            CancellationToken cancellationToken = default)
+        {
             var workflow = workflowFactory.CreateWorkflow(workflowDefinition, input, correlationId: correlationId);
-            var startActivities = workflow.Activities.Find(startActivityIds);
+            var startActivities = workflow.Blueprint.Activities.Find(startActivityIds);
 
             return RunAsync(workflow, false, startActivities, cancellationToken);
         }
@@ -104,7 +115,7 @@ namespace Elsa.Services
             CancellationToken cancellationToken = default) where T : IWorkflow, new()
         {
             var workflow = workflowFactory.CreateWorkflow<T>(input, correlationId: correlationId);
-            var startActivities = workflow.Activities.Find(startActivityIds);
+            var startActivities = workflow.Blueprint.Activities.Find(startActivityIds);
 
             return RunAsync(workflow, false, startActivities, cancellationToken);
         }
@@ -133,7 +144,7 @@ namespace Elsa.Services
             CancellationToken cancellationToken = default) where T : IWorkflow, new()
         {
             var workflow = workflowFactory.CreateWorkflow<T>(input, workflowInstance);
-            var startActivities = workflow.Activities.Find(startActivityIds);
+            var startActivities = workflow.Blueprint.Activities.Find(startActivityIds);
             return RunAsync(workflow, true, startActivities, cancellationToken);
         }
 
@@ -153,7 +164,7 @@ namespace Elsa.Services
             IEnumerable<string> startActivityIds = default,
             CancellationToken cancellationToken = default)
         {
-            var definition = await workflowRegistry.GetWorkflowDefinitionAsync(
+            var definition = await workflowRegistry.GetWorkflowBlueprintAsync(
                 workflowInstance.DefinitionId,
                 VersionOptions.SpecificVersion(workflowInstance.Version),
                 cancellationToken);
@@ -203,7 +214,7 @@ namespace Elsa.Services
         }
 
         private async Task<IEnumerable<WorkflowExecutionContext>> RunManyAsync(
-            IEnumerable<(WorkflowDefinitionVersion, ActivityDefinition)> workflowDefinitions,
+            IEnumerable<(WorkflowBlueprint, IActivity)> workflowDefinitions,
             Variables input,
             string correlationId,
             CancellationToken cancellationToken1)
@@ -242,7 +253,7 @@ namespace Elsa.Services
             {
                 var workflowInstance = workflowInstanceGroup.Key;
 
-                var workflowDefinition = await workflowRegistry.GetWorkflowDefinitionAsync(
+                var workflowDefinition = await workflowRegistry.GetWorkflowBlueprintAsync(
                     workflowInstance.DefinitionId,
                     VersionOptions.SpecificVersion(workflowInstance.Version),
                     cancellationToken
@@ -273,7 +284,7 @@ namespace Elsa.Services
             CancellationToken cancellationToken = default)
         {
             var startActivities = startActivityIds != null
-                ? workflow.Activities.Find(startActivityIds)
+                ? workflow.Blueprint.Activities.Find(startActivityIds)
                 : Enumerable.Empty<IActivity>();
 
             return RunAsync(workflow, resume, startActivities, cancellationToken);
@@ -445,8 +456,8 @@ namespace Elsa.Services
             return workflowExecutionContext;
         }
 
-        private async Task<IEnumerable<(WorkflowDefinitionVersion, ActivityDefinition)>> FilterRunningSingletonsAsync(
-            IEnumerable<(WorkflowDefinitionVersion, ActivityDefinition)> workflowDefinitions,
+        private async Task<IEnumerable<(WorkflowBlueprint, IActivity)>> FilterRunningSingletonsAsync(
+            IEnumerable<(WorkflowBlueprint, IActivity)> workflowDefinitions,
             CancellationToken cancellationToken)
         {
             var definitions = workflowDefinitions.ToList();

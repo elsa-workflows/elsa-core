@@ -67,7 +67,7 @@ namespace Sample04
 
         private static DataTable GetExecutionLogDataTable(Workflow workflow)
         {
-            var workflowDefinitionVersion = workflow.Definition;
+            var workflowDefinitionVersion = workflow.Blueprint;
             var table = new DataTable { TableName = workflowDefinitionVersion.Name };
 
             table.Columns.Add("Id", typeof(string));

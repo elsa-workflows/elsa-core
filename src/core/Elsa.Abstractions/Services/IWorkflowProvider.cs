@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
+using Elsa.Services.Models;
 
 namespace Elsa.Services
 {
@@ -10,6 +11,6 @@ namespace Elsa.Services
     /// </summary>
     public interface IWorkflowProvider
     {
-        Task<IEnumerable<WorkflowDefinitionVersion>> GetWorkflowDefinitionsAsync(CancellationToken cancellationToken);
+        Task<IEnumerable<WorkflowBlueprint>> GetWorkflowDefinitionsAsync(CancellationToken cancellationToken);
     }
 }

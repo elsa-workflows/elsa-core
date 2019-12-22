@@ -31,7 +31,7 @@ namespace Elsa.Scripting.JavaScript.Handlers
                 engine.SetValue(variable.Key, variable.Value.Value);
 
             // Add activity outputs.
-            foreach (var activity in executionContext.Workflow.Activities.Where(x => !string.IsNullOrWhiteSpace(x.Name) && x.Output != null))
+            foreach (var activity in executionContext.Workflow.Blueprint.Activities.Where(x => !string.IsNullOrWhiteSpace(x.Name) && x.Output != null))
             {
                 engine.SetValue(activity.Name, activity.Output);
             }

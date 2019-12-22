@@ -38,18 +38,6 @@ namespace Sample22
             // Ensure DB exists.
             await dbContext.Database.EnsureCreatedAsync();
 
-            // Persist the workflow definition.
-            var definitionStore = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionStore>();
-            await definitionStore.SaveAsync(workflowDefinition);
-
-            // Flush to DB.
-            await dbContext.SaveChangesAsync();
-
-            // Load the workflow definition.
-            workflowDefinition = await definitionStore.GetByIdAsync(
-                workflowDefinition.DefinitionId,
-                VersionOptions.Latest);
-
             // Execute the workflow.
             var runner = scope.ServiceProvider.GetRequiredService<IWorkflowRunner>();
             var executionContext = await runner.RunAsync(workflowDefinition);

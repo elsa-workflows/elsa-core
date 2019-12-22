@@ -23,6 +23,14 @@ namespace Elsa.Services
             CancellationToken cancellationToken = default) where T : IWorkflow, new();
         
         Task<WorkflowExecutionContext> RunAsync(
+            WorkflowBlueprint workflowDefinition,
+            Variables input = default,
+            IEnumerable<string> startActivityIds = default,
+            string correlationId = default,
+            CancellationToken cancellationToken = default
+        );
+        
+        Task<WorkflowExecutionContext> RunAsync(
             WorkflowDefinitionVersion workflowDefinition,
             Variables input = default,
             IEnumerable<string> startActivityIds = default,

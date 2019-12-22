@@ -53,11 +53,8 @@ namespace Elsa.Core.UnitTests
         [Fact(DisplayName = "Can run simple workflow to completed state.")]
         public async Task RunAsync01()
         {
-            var workflow = new Workflow();
             var activity = CreateActivity();
-
-            workflow.Activities.Add(activity);
-
+            var workflow = CreateWorkflow(activity);
             var executionContext = await runner.RunAsync(workflow);
 
             Assert.Equal(WorkflowStatus.Completed, executionContext.Workflow.Status);
@@ -66,11 +63,9 @@ namespace Elsa.Core.UnitTests
         [Fact(DisplayName = "Invokes returned activity execution result.")]
         public async Task RunAsync02()
         {
-            var workflow = new Workflow();
             var activityExecutionResultMock = new Mock<IActivityExecutionResult>();
             var activity = CreateActivity(true, activityExecutionResultMock.Object);
-
-            workflow.Activities.Add(activity);
+            var workflow = CreateWorkflow(activity);
             var executionContext = await runner.RunAsync(workflow);
 
             activityExecutionResultMock
@@ -91,6 +86,13 @@ namespace Elsa.Core.UnitTests
                     .ReturnsAsync(activityExecutionResult);
 
             return activityMock.Object;
+        }
+
+        private Workflow CreateWorkflow(IActivity activity)
+        {
+            var blueprint = new WorkflowBlueprint();
+            blueprint.Activities.Add(activity);
+            return new Workflow(blueprint);
         }
     }
 }

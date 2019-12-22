@@ -17,11 +17,19 @@ namespace Elsa.Services
         public Variable Output { get; set; }
 
         public virtual string Type => GetType().Name;
-        
+
         public string Id { get; set; }
-        
+
         [ActivityProperty(Label = "Name", Hint = "Optionally provide a name for this activity. You can reference named activities from expressions.")]
-        public string Name {
+        public string Name
+        {
+            get => GetState<string>();
+            set => SetState(value);
+        }
+
+        [ActivityProperty(Label = "Display Name", Hint = "Optionally provide a display name for this activity.")]
+        public string DisplayName
+        {
             get => GetState<string>();
             set => SetState(value);
         }

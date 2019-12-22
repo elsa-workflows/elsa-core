@@ -23,25 +23,25 @@ namespace Elsa.Messages.Handlers
         
         public async Task Handle(WorkflowSuspended notification, CancellationToken cancellationToken)
         {
-            if (notification.Workflow.Definition.PersistenceBehavior == WorkflowPersistenceBehavior.Suspended)
+            if (notification.Workflow.Blueprint.PersistenceBehavior == WorkflowPersistenceBehavior.Suspended)
                 await SaveWorkflowAsync(notification.Workflow, cancellationToken);
         }
         
         public async Task Handle(WorkflowExecuted notification, CancellationToken cancellationToken)
         {
-            if (notification.Workflow.Definition.PersistenceBehavior == WorkflowPersistenceBehavior.WorkflowExecuted)
+            if (notification.Workflow.Blueprint.PersistenceBehavior == WorkflowPersistenceBehavior.WorkflowExecuted)
                 await SaveWorkflowAsync(notification.Workflow, cancellationToken);
         }
         
         public async Task Handle(ActivityExecuted notification, CancellationToken cancellationToken)
         {
-            if (notification.Workflow.Definition.PersistenceBehavior == WorkflowPersistenceBehavior.ActivityExecuted)
+            if (notification.Workflow.Blueprint.PersistenceBehavior == WorkflowPersistenceBehavior.ActivityExecuted)
                 await SaveWorkflowAsync(notification.Workflow, cancellationToken);
         }
         
         public async Task Handle(WorkflowCompleted notification, CancellationToken cancellationToken)
         {
-            if (notification.Workflow.Definition.DeleteCompletedWorkflows)
+            if (notification.Workflow.Blueprint.DeleteCompletedWorkflows)
                 await workflowInstanceStore.DeleteAsync(notification.Workflow.Id, cancellationToken);
         }
 

@@ -26,6 +26,7 @@ namespace Elsa.Models
         /// Indicates whether workflow instances should be deleted when the workflow completes. 
         /// </summary>
         public bool DeleteCompletedWorkflows { get; set; }
+        
         public bool IsDisabled { get; set; }
         public bool IsPublished { get; set; }
         public bool IsLatest { get; set; }

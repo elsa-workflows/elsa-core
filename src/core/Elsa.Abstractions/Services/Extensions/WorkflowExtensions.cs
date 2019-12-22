@@ -18,10 +18,10 @@ namespace Elsa.Services.Extensions
 
         public static IEnumerable<IActivity> GetStartActivities(this Workflow workflow)
         {
-            var targetActivityIds = workflow.Connections.Select(x => x.Target.Activity.Id).Distinct().ToLookup(x => x);
+            var targetActivityIds = workflow.Blueprint.Connections.Select(x => x.Target.Activity.Id).Distinct().ToLookup(x => x);
 
             var query =
-                from activity in workflow.Activities
+                from activity in workflow.Blueprint.Activities
                 where !targetActivityIds.Contains(activity.Id)
                 select activity;
 
@@ -29,7 +29,7 @@ namespace Elsa.Services.Extensions
         }
 
         public static IActivity GetActivity(this Workflow workflow, string id) =>
-            workflow.Activities.FirstOrDefault(x => x.Id == id);
+            workflow.Blueprint.Activities.FirstOrDefault(x => x.Id == id);
 
         public static LogEntry AddLogEntry(
             this Workflow workflow, 
@@ -45,12 +45,12 @@ namespace Elsa.Services.Extensions
 
         public static IEnumerable<Connection> GetInboundConnections(this Workflow workflow, string activityId)
         {
-            return workflow.Connections.Where(x => x.Target.Activity.Id == activityId).ToList();
+            return workflow.Blueprint.Connections.Where(x => x.Target.Activity.Id == activityId).ToList();
         }
 
         public static IEnumerable<Connection> GetOutboundConnections(this Workflow workflow, string activityId)
         {
-            return workflow.Connections.Where(x => x.Source.Activity.Id == activityId).ToList();
+            return workflow.Blueprint.Connections.Where(x => x.Source.Activity.Id == activityId).ToList();
         }
 
         /// <summary>

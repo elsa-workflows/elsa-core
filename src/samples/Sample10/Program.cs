@@ -40,15 +40,6 @@ namespace Sample10
             workflowDefinition.IsLatest = true;
             workflowDefinition.Version = 1;
 
-            // Persist the workflow definition.
-
-            await definitionStore.SaveAsync(workflowDefinition);
-
-            // Load the workflow definition.
-            workflowDefinition = await definitionStore.GetByIdAsync(
-                workflowDefinition.DefinitionId,
-                VersionOptions.Latest);
-
             // Execute the workflow.
             var invoker = scope.ServiceProvider.GetRequiredService<IWorkflowRunner>();
             var executionContext = await invoker.RunAsync(workflowDefinition);

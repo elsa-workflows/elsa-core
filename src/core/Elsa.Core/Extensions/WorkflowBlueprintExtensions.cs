@@ -5,17 +5,17 @@ using Elsa.Services.Models;
 
 namespace Elsa.Extensions
 {
-    public static class WorkflowDefinitionExtensions
+    public static class WorkflowBlueprintExtensions
     {
-        public static IEnumerable<WorkflowDefinitionVersion> WithVersion(
-            this IEnumerable<WorkflowDefinitionVersion> query,
+        public static IEnumerable<WorkflowBlueprint> WithVersion(
+            this IEnumerable<WorkflowBlueprint> query,
             VersionOptions version)
         {
             return query.AsQueryable().WithVersion(version);
         }
         
-        public static IQueryable<WorkflowDefinitionVersion> WithVersion(
-            this IQueryable<WorkflowDefinitionVersion> query,
+        public static IQueryable<WorkflowBlueprint> WithVersion(
+            this IQueryable<WorkflowBlueprint> query,
             VersionOptions version)
         {
             if (version.IsDraft)

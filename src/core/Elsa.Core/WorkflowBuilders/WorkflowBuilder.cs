@@ -90,13 +90,8 @@ namespace Elsa.WorkflowBuilders
         public IActivityBuilder Add<T>(Action<T> setupActivity = default, string name = default) where T : class, IActivity
         {
             var activity = activityResolver.ResolveActivity(setupActivity);
-            var activityBlueprint = ActivityDefinition.FromActivity(activity);
-            var activityBuilder = new ActivityBuilder(this, activityBlueprint);
-            var activityDescriptor = ActivityDescriber.Describe<T>();
+            var activityBuilder = new ActivityBuilder(this, activity);
 
-            activityBuilder.Name = name;
-            activityBuilder.DisplayName = activityDescriptor.DisplayName;
-            activityBuilder.Description = activityDescriptor.Description;
             activityBuilders.Add(activityBuilder);
             return activityBuilder;
         }
@@ -126,38 +121,35 @@ namespace Elsa.WorkflowBuilders
             return Add(setupActivity, name);
         }
 
-        public WorkflowDefinitionVersion Build()
+        public WorkflowBlueprint Build()
         {
             // Generate deterministic activity ids.
             var id = 1;
             foreach (var activityBuilder in activityBuilders)
             {
-                if (activityBuilder.Id == null)
-                    activityBuilder.Id = $"activity-{id++}";
+                if (activityBuilder.Activity.Id == null)
+                    activityBuilder.Activity.Id = $"activity-{id++}";
             }
 
             var activities = activityBuilders.Select(x => x.BuildActivity()).ToList();
-            var connections = connectionBuilders.Select(x => x.BuildConnection()).ToList();
-            var versionId = idGenerator.Generate();
+            var connectionDefinitions = connectionBuilders.Select(x => x.BuildConnection());
+            var connections = CreateConnections(connectionDefinitions, activities);
             var definitionId = !string.IsNullOrWhiteSpace(Id) ? Id : idGenerator.Generate();
 
-            return new WorkflowDefinitionVersion
-            {
-                Id = versionId,
-                DefinitionId = definitionId,
-                Version = Version,
-                Name = Name,
-                Description = Description,
-                Activities = activities,
-                Connections = connections,
-                IsSingleton = IsSingleton,
-                IsDisabled = IsDisabled,
-                Variables = Variables.Empty,
-                IsPublished = true,
-                IsLatest = true,
-                PersistenceBehavior = PersistenceBehavior,
-                DeleteCompletedWorkflows = DeleteCompletedWorkflows
-            };
+            return new WorkflowBlueprint(definitionId, Version, IsSingleton, IsDisabled, Name, Description, activities, connections);
+        }
+        
+        private IEnumerable<Connection> CreateConnections(IEnumerable<ConnectionDefinition> connectionDefinitions, IEnumerable<IActivity> activities)
+        {
+            var activityDictionary = activities.ToDictionary(x => x.Id);
+            return connectionDefinitions.Select(x => CreateConnection(x, activityDictionary));
+        }
+        
+        private Connection CreateConnection(ConnectionDefinition connectionDefinition, IDictionary<string, IActivity> activityDictionary)
+        {
+            var source = activityDictionary[connectionDefinition.SourceActivityId];
+            var target = activityDictionary[connectionDefinition.DestinationActivityId];
+            return new Connection(source, target, connectionDefinition.Outcome);
         }
     }
 }

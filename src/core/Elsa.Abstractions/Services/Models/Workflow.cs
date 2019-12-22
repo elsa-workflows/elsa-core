@@ -12,24 +12,20 @@ namespace Elsa.Services.Models
     {
         public Workflow(
             string id,
-            WorkflowDefinitionVersion definition,
+            WorkflowBlueprint blueprint,
             Instant createdAt,
-            IEnumerable<IActivity> activities,
-            IEnumerable<Connection> connections,
             Variables input = default,
-            string correlationId = default) : this()
+            string correlationId = default) : this(blueprint)
         {
             Id = id;
-            Definition = definition;
             CreatedAt = createdAt;
             CorrelationId = correlationId;
-            Activities = activities.ToList();
-            Connections = connections.ToList();
             Input = new Variables(input ?? Variables.Empty);
         }
 
-        public Workflow()
+        public Workflow(WorkflowBlueprint blueprint)
         {
+            Blueprint = blueprint;
             Scopes = new Stack<WorkflowExecutionScope>(new[] { new WorkflowExecutionScope() });
             BlockingActivities = new HashSet<IActivity>();
             ScheduledActivities = new Stack<IActivity>();
@@ -37,7 +33,7 @@ namespace Elsa.Services.Models
         }
 
         public string Id { get; set; }
-        public WorkflowDefinitionVersion Definition { get; }
+        public WorkflowBlueprint Blueprint { get; }
         public string CorrelationId { get; set; }
         public WorkflowStatus Status { get; set; }
         public Instant CreatedAt { get; set; }
@@ -45,8 +41,6 @@ namespace Elsa.Services.Models
         public Instant? CompletedAt { get; set; }
         public Instant? FaultedAt { get; set; }
         public Instant? CancelledAt { get; set; }
-        public ICollection<IActivity> Activities { get; } = new List<IActivity>();
-        public IList<Connection> Connections { get; } = new List<Connection>();
         public Stack<WorkflowExecutionScope> Scopes { get; set; }
         public Stack<IActivity> ScheduledActivities { get; set; }
         public HashSet<IActivity> BlockingActivities { get; set; }
@@ -60,8 +54,8 @@ namespace Elsa.Services.Models
             return new WorkflowInstance
             {
                 Id = Id,
-                DefinitionId = Definition.DefinitionId,
-                Version = Definition.Version,
+                DefinitionId = Blueprint.DefinitionId,
+                Version = Blueprint.Version,
                 CorrelationId = CorrelationId,
                 Status = Status,
                 CreatedAt = CreatedAt,
@@ -69,7 +63,7 @@ namespace Elsa.Services.Models
                 FinishedAt = CompletedAt,
                 FaultedAt = FaultedAt,
                 AbortedAt = CancelledAt,
-                Activities = new HashSet<ActivityInstance>(Activities.Select(x => x.ToInstance()), new ActivityInstanceEqualityComparer()),
+                Activities = new HashSet<ActivityInstance>(Blueprint.Activities.Select(x => x.ToInstance()), new ActivityInstanceEqualityComparer()),
                 Scopes = new Stack<WorkflowExecutionScope>(Scopes),
                 BlockingActivities = new HashSet<BlockingActivity>(BlockingActivities.Select(x => new BlockingActivity(x.Id, x.Type)), new BlockingActivityEqualityComparer()),
                 ScheduledActivities = new HashSet<string>(ScheduledActivities.Select(x => x.Id)),
@@ -83,7 +77,7 @@ namespace Elsa.Services.Models
             if (instance == null)
                 throw new ArgumentNullException(nameof(instance));
 
-            var activityLookup = Activities.ToDictionary(x => x.Id);
+            var activityLookup = Blueprint.Activities.ToDictionary(x => x.Id);
 
             Id = instance.Id;
             CorrelationId = instance.CorrelationId;
@@ -100,7 +94,7 @@ namespace Elsa.Services.Models
 
             var activityDictionary = instance.Activities.ToDictionary(x => x.Id);
             
-            foreach (var activity in Activities)
+            foreach (var activity in Blueprint.Activities)
             {
                 activity.State = new JObject(activityDictionary[activity.Id].State);
                 activity.Output = activityDictionary[activity.Id].Output?.ToObject<Variable>();

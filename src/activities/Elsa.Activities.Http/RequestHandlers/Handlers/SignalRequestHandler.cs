@@ -76,7 +76,7 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
             var input = new Variables();
             input.SetVariable("Signal", signal.Name);
 
-            var workflowDefinition = await workflowRegistry.GetWorkflowDefinitionAsync(
+            var workflowDefinition = await workflowRegistry.GetWorkflowBlueprintAsync(
                 workflowInstance.DefinitionId,
                 VersionOptions.SpecificVersion(workflowInstance.Version),
                 cancellationToken);

@@ -1,6 +1,6 @@
 using System;
 using System.Linq;
-using Elsa.Models;
+using Elsa.Metadata;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -8,18 +8,14 @@ namespace Elsa.WorkflowBuilders
 {
     public class ActivityBuilder : IActivityBuilder
     {
-        public ActivityBuilder(WorkflowBuilder workflowBuilder, ActivityDefinition activity)
+        public ActivityBuilder(WorkflowBuilder workflowBuilder, IActivity activity)
         {
             WorkflowBuilder = workflowBuilder;
             Activity = activity;
         }
 
         public WorkflowBuilder WorkflowBuilder { get; }
-        public ActivityDefinition Activity { get; }
-        public string Id { get; set; }
-        public string Name { get; set; }
-        public string Description { get; set; }
-        public string DisplayName { get; set; }
+        public IActivity Activity { get; }
 
         public IActivityBuilder StartWith<T>(Action<T> setup = default, string name = default) where T : class, IActivity
         {
@@ -44,19 +40,19 @@ namespace Elsa.WorkflowBuilders
 
         public IActivityBuilder WithName(string name)
         {
-            Name = name;
+            Activity.Name = name;
             return this;
         }
         
         public IActivityBuilder WithDisplayName(string displayName)
         {
-            DisplayName = displayName;
+            Activity.DisplayName = displayName;
             return this;
         }
 
         public IActivityBuilder WithDescription(string description)
         {
-            Description = description;
+            Activity.Description = description;
             return this;
         }
 
@@ -64,7 +60,7 @@ namespace Elsa.WorkflowBuilders
         {
             WorkflowBuilder.Connect(
                 () => this,
-                () => WorkflowBuilder.Activities.First(x => x.Name== activityName)
+                () => WorkflowBuilder.Activities.First(x => x.Activity.Name== activityName)
             );
 
             return WorkflowBuilder;
@@ -76,16 +72,8 @@ namespace Elsa.WorkflowBuilders
             return this;
         }
 
-        public ActivityDefinition BuildActivity()
-        {
-            Activity.Id = Id;
-            Activity.Name = Name;
-            Activity.DisplayName = Name;
-            Activity.Description = Description;
-            Activity.DisplayName = DisplayName;
-            return Activity;
-        }
+        public IActivity BuildActivity() => Activity;
 
-        public WorkflowDefinitionVersion Build() => WorkflowBuilder.Build();
+        public WorkflowBlueprint Build() => WorkflowBuilder.Build();
     }
 }

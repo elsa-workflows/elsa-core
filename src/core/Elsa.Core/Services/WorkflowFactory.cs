@@ -37,25 +37,30 @@ namespace Elsa.Services
             var workflowDefinition = workflowBuilder().Build<T>();
             return CreateWorkflow(workflowDefinition, input, workflowInstance, correlationId);
         }
+        
+        public WorkflowBlueprint CreateWorkflowBlueprint(WorkflowDefinitionVersion definition)
+        {
+            var activities = CreateActivities(definition.Activities).ToList();
+            var connections = CreateConnections(definition.Connections, activities).ToList();
+            return new WorkflowBlueprint(definition.DefinitionId, definition.Version, definition.IsSingleton, definition.IsDisabled, definition.Name, definition.Description, activities, connections);
+        }
 
         public Workflow CreateWorkflow(
-            WorkflowDefinitionVersion definition,
+            WorkflowBlueprint blueprint,
             Variables input = default,
             WorkflowInstance workflowInstance = default,
             string correlationId = default)
         {
-            if(definition.IsDisabled)
+            if (blueprint.IsDisabled)
                 throw new InvalidOperationException("Cannot instantiate disabled workflow definitions.");
-            
-            var activities = CreateActivities(definition.Activities).ToList();
-            var connections = CreateConnections(definition.Connections, activities);
+
+            var activities = blueprint.Activities.ToList();
+            var connections = blueprint.Connections;
             var id = idGenerator.Generate();
             var workflow = new Workflow(
                 id,
-                definition,
+                blueprint,
                 clock.GetCurrentInstant(),
-                activities,
-                connections,
                 input,
                 correlationId);
 
@@ -73,9 +78,9 @@ namespace Elsa.Services
             return connectionBlueprints.Select(x => CreateConnection(x, activityDictionary));
         }
 
-        private IEnumerable<IActivity> CreateActivities(IEnumerable<ActivityDefinition> activityBlueprints)
+        private IEnumerable<IActivity> CreateActivities(IEnumerable<ActivityDefinition> activityDefinitions)
         {
-            return activityBlueprints.Select(CreateActivity);
+            return activityDefinitions.Select(CreateActivity);
         }
 
         private IActivity CreateActivity(ActivityDefinition definition)

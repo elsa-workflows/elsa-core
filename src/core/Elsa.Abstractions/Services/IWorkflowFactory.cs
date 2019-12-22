@@ -5,6 +5,8 @@ namespace Elsa.Services
 {
     public interface IWorkflowFactory
     {
+        WorkflowBlueprint CreateWorkflowBlueprint(WorkflowDefinitionVersion definition);
+        
         Workflow CreateWorkflow<T>(
             Variables input = default, 
             WorkflowInstance workflowInstance = default,
@@ -12,7 +14,7 @@ namespace Elsa.Services
             where T : IWorkflow, new();
 
         Workflow CreateWorkflow(
-            WorkflowDefinitionVersion definition, 
+            WorkflowBlueprint blueprint, 
             Variables input = default,
             WorkflowInstance workflowInstance = default,
             string correlationId = default);

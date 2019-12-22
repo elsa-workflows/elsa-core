@@ -50,6 +50,6 @@ namespace Elsa.Scripting.Liquid.Handlers
         }
 
         private Task<IActivity> GetActivityAsync(WorkflowExecutionContext executionContext, string name) 
-            => Task.FromResult(executionContext.Workflow.Activities.FirstOrDefault(x => x.Name == name));
+            => Task.FromResult(executionContext.Workflow.Blueprint.Activities.FirstOrDefault(x => x.Name == name));
     }
 }
