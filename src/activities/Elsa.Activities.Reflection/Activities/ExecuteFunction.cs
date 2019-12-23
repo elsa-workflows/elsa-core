@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
 using Elsa.Models;
-using Elsa.Scripting;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.DependencyInjection;
@@ -44,7 +43,7 @@ namespace Elsa.Activities.Reflection.Activities
             set => SetState(value);
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
             var type = System.Type.GetType(TypeName);
 
@@ -62,7 +61,7 @@ namespace Elsa.Activities.Reflection.Activities
                 return Fault($"Type {TypeName} does not have a method called {MethodName}.");
 
 
-            var instance = method.IsStatic ? default : ActivatorUtilities.GetServiceOrCreateInstance(context.ServiceProvider, type);
+            var instance = method.IsStatic ? default : ActivatorUtilities.GetServiceOrCreateInstance(context.WorkflowExecutionContext.ServiceProvider, type);
             var result = method.Invoke(instance, inputValues);
 
             Output = new Variable(result);

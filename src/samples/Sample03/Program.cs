@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+using System;
 using System.Threading.Tasks;
 using Elsa;
 using Elsa.Activities.Console.Activities;
@@ -8,7 +7,6 @@ using Elsa.Expressions;
 using Elsa.Models;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json.Linq;
 
 namespace Sample03
 {

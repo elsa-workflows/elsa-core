@@ -1,11 +1,8 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
 using Elsa.Models;
-using Elsa.Scripting;
-using Elsa.Scripting.JavaScript;
-using Elsa.Scripting.JavaScript.Services;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -35,15 +32,6 @@ namespace Elsa.Activities.Workflows.Activities
             set => SetState(value);
         }
 
-        [ActivityProperty(
-            Hint = "An expression that evaluates to a dictionary to be provided as input when signaling."
-        )]
-        public IWorkflowExpression<Variables> Input
-        {
-            get => GetState<IWorkflowExpression<Variables>>();
-            set => SetState(value);
-        }
-
         [ActivityProperty(Hint = "An expression that evaluates to the correlation ID to use when signaling.")]
         public IWorkflowExpression<string> CorrelationId
         {
@@ -51,17 +39,14 @@ namespace Elsa.Activities.Workflows.Activities
             set => SetState(value);
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
             var signal = await context.EvaluateAsync(Signal, cancellationToken);
-            var input = (await context.EvaluateAsync(Input, cancellationToken)) ?? new Variables();
             var correlationId = await context.EvaluateAsync(CorrelationId, cancellationToken);
-
-            input.SetVariable("Signal", signal);
 
             await workflowRunner.TriggerAsync(
                 nameof(Signaled),
-                input,
+                Variable.From(signal),
                 correlationId,
                 cancellationToken: cancellationToken
             );

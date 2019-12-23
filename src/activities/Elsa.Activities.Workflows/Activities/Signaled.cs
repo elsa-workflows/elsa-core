@@ -1,8 +1,7 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
-using Elsa.Scripting;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -25,18 +24,18 @@ namespace Elsa.Activities.Workflows.Activities
             set => SetState(value);
         }
 
-        protected override async Task<bool> OnCanExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
+        protected override async Task<bool> OnCanExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
             var signal = await context.EvaluateAsync(Signal, cancellationToken);
-            return context.Workflow.Input.GetVariable<string>("Signal") == signal;
+            return context.Input.GetValue<string>() == signal;
         }
 
-        protected override IActivityExecutionResult OnExecute(WorkflowExecutionContext context)
+        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
             return Halt(true);
         }
 
-        protected override IActivityExecutionResult OnResume(WorkflowExecutionContext context)
+        protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
         {
             return Done();
         }

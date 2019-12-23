@@ -16,8 +16,8 @@ namespace Elsa.Activities
             Function = context => Task.FromResult<IActivityExecutionResult>(Done());
         }
         
-        public Func<WorkflowExecutionContext, Task<IActivityExecutionResult>> Function { get; set; }
+        public Func<ActivityExecutionContext, Task<IActivityExecutionResult>> Function { get; set; }
 
-        protected override Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken) => Function(context);
+        protected override Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken) => Function(context);
     }
 }

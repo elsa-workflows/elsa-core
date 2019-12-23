@@ -3,7 +3,6 @@ using Elsa.Extensions;
 using Elsa.Scripting.Liquid.Filters;
 using Elsa.Scripting.Liquid.Options;
 using Elsa.Scripting.Liquid.Services;
-using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Scripting.Liquid.Extensions

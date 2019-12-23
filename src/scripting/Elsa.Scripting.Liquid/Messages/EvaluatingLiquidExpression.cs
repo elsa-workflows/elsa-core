@@ -6,13 +6,13 @@ namespace Elsa.Scripting.Liquid.Messages
 {
     public class EvaluatingLiquidExpression : INotification
     {
-        public EvaluatingLiquidExpression(TemplateContext templateContext, WorkflowExecutionContext workflowExecutionContext)
+        public EvaluatingLiquidExpression(TemplateContext templateContext, ActivityExecutionContext context)
         {
             TemplateContext = templateContext;
-            WorkflowExecutionContext = workflowExecutionContext;
+            Context = context;
         }
 
         public TemplateContext TemplateContext { get; }
-        public WorkflowExecutionContext WorkflowExecutionContext { get; }
+        public ActivityExecutionContext Context { get; }
     }
 }

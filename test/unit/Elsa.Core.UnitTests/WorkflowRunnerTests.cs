@@ -36,8 +36,8 @@ namespace Elsa.Core.UnitTests
             var serviceProvider = new ServiceCollection().BuildServiceProvider();
 
             activityInvokerMock
-                .Setup(x => x.ExecuteAsync(It.IsAny<WorkflowExecutionContext>(), It.IsAny<IActivity>(), It.IsAny<CancellationToken>()))
-                .Returns(async (WorkflowExecutionContext a, IActivity b, CancellationToken c) => await b.ExecuteAsync(a, c));
+                .Setup(x => x.ExecuteAsync(It.IsAny<WorkflowExecutionContext>(), It.IsAny<IActivity>(), It.IsAny<Variable>(), It.IsAny<CancellationToken>()))
+                .Returns(async (WorkflowExecutionContext a, IActivity b, Variable c, CancellationToken d) => await b.ExecuteAsync(new ActivityExecutionContext(a, c), d));
 
             runner = new WorkflowRunner(
                 activityInvokerMock.Object,
@@ -78,12 +78,12 @@ namespace Elsa.Core.UnitTests
             var activityMock = new Mock<IActivity>();
 
             activityMock
-                .Setup(x => x.CanExecuteAsync(It.IsAny<WorkflowExecutionContext>(), It.IsAny<CancellationToken>()))
+                .Setup(x => x.CanExecuteAsync(It.IsAny<ActivityExecutionContext>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(canExecute);
 
             if (activityExecutionResult != null)
                 activityMock
-                    .Setup(x => x.ExecuteAsync(It.IsAny<WorkflowExecutionContext>(), It.IsAny<CancellationToken>()))
+                    .Setup(x => x.ExecuteAsync(It.IsAny<ActivityExecutionContext>(), It.IsAny<CancellationToken>()))
                     .ReturnsAsync(activityExecutionResult);
 
             return activityMock.Object;

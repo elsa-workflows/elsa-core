@@ -1,9 +1,7 @@
-using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
-using Elsa.Scripting;
 using Elsa.Services.Models;
 using MassTransit;
 
@@ -21,17 +19,6 @@ namespace Elsa.Activities.MassTransit.Activities
         {
         }
 
-        [ActivityProperty(Hint = "The assembly-qualified type name of the event to publish.")]
-        public Type MessageType
-        {
-            get
-            {
-                var typeName = GetState<string>();
-                return string.IsNullOrWhiteSpace(typeName) ? null : System.Type.GetType(typeName);
-            }
-            set => SetState(value.AssemblyQualifiedName);
-        }
-
         [ActivityProperty(Hint = "An expression that evaluates to the event to publish.")]
         public IWorkflowExpression Message
         {
@@ -39,14 +26,14 @@ namespace Elsa.Activities.MassTransit.Activities
             set => SetState(value);
         }
 
-        protected override bool OnCanExecute(WorkflowExecutionContext context)
+        protected override bool OnCanExecute(ActivityExecutionContext context)
         {
-            return MessageType != null;
+            return Message != null;
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var message = await context.EvaluateAsync(Message, MessageType, cancellationToken);
+            var message = await context.EvaluateAsync(Message, cancellationToken);
 
             await PublishEndpoint.Publish(message, cancellationToken);
 

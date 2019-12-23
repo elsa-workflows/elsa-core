@@ -4,7 +4,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
-using Elsa.Scripting;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -40,7 +39,7 @@ namespace Elsa.Activities.Reflection.Activities
             set => SetState(value);
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
             var splitObject = await context.EvaluateAsync(Object, cancellationToken);
             
@@ -49,7 +48,7 @@ namespace Elsa.Activities.Reflection.Activities
                 foreach (var property in Properties)
                 {
                     var propValue = FollowPropertyPath(splitObject, property);
-                    context.SetVariable(property, propValue);
+                    context.WorkflowExecutionContext.SetVariable(property, propValue);
                 }
             }
 

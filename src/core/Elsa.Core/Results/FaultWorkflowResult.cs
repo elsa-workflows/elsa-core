@@ -29,13 +29,13 @@ namespace Elsa.Results
         {
             var eventHandlers = workflowContext.ServiceProvider.GetServices<IWorkflowEventHandler>();
             var logger = workflowContext.ServiceProvider.GetRequiredService<ILogger<FaultWorkflowResult>>();
-            var currentActivity = workflowContext.CurrentActivity;
+            var currentActivity = workflowContext.ScheduledActivity.Activity;
             
             await eventHandlers.InvokeAsync(
                 x => x.ActivityFaultedAsync(workflowContext, currentActivity, errorMessage, cancellationToken),
                 logger);
 
-            workflowContext.Fault(workflowContext.CurrentActivity, errorMessage);
+            workflowContext.Fault(currentActivity, errorMessage);
         }
     }
 }

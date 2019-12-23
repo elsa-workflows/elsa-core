@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Elsa.Activities.MassTransit.Options;
 using Elsa.Attributes;
 using Elsa.Expressions;
-using Elsa.Scripting;
 using Elsa.Services.Models;
 using MassTransit;
 using Microsoft.Extensions.Options;
@@ -34,12 +33,12 @@ namespace Elsa.Activities.MassTransit.Activities
         }
 
 
-        protected override bool OnCanExecute(WorkflowExecutionContext context)
+        protected override bool OnCanExecute(ActivityExecutionContext context)
         {
             return TokenId != null && options.SchedulerAddress != null;
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
             var tokenId = await context.EvaluateAsync(TokenId, cancellationToken);
             var endpoint = await SendEndpointProvider.GetSendEndpoint(options.SchedulerAddress);

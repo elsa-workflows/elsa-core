@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+using System;
 using System.Data;
-using System.Linq;
 using System.Threading.Tasks;
 using Elsa.Activities.Console.Extensions;
 using Elsa.Extensions;
@@ -46,7 +44,7 @@ namespace Sample04
                 DisplayWorkflowState(executionContext.Workflow);
                 
                 var textInput = Console.ReadLine();
-                var input = new Variables(new Dictionary<string, object>() { ["ReadLineInput"] = textInput });
+                var input = Variable.From(textInput);
 
                 executionContext.Workflow.Input = input;
                 executionContext = await runner.ResumeAsync(executionContext.Workflow, executionContext.Workflow.BlockingActivities);

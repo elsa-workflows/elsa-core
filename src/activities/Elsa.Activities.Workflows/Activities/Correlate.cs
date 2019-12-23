@@ -1,8 +1,7 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
-using Elsa.Scripting;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -25,10 +24,10 @@ namespace Elsa.Activities.Workflows.Activities
             set => SetState(value);
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var value = await workflowContext.EvaluateAsync(ValueScriptExpression, cancellationToken);
-            workflowContext.Workflow.CorrelationId = value;
+            var value = await context.EvaluateAsync(ValueScriptExpression, cancellationToken);
+            context.WorkflowExecutionContext.Workflow.CorrelationId = value;
             return Done();
         }
     }

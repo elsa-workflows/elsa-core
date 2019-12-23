@@ -1,13 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Elsa.Serialization.Handlers;
-using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using NodaTime;
-using NodaTime.Serialization.JsonNet;
-using NodaTime.Text;
 
 namespace Elsa.Converters
 {
@@ -45,8 +41,11 @@ namespace Elsa.Converters
         public override bool CanRead => true;
         public override bool CanWrite => true;
 
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        public override void WriteJson(JsonWriter writer, object? value, JsonSerializer serializer)
         {
+            if (value == null)
+                return;
+            
             var valueType = value.GetType();
             var token = JToken.FromObject(value);
             var handler = GetHandler(x => x.CanSerialize(token, valueType));
@@ -54,7 +53,7 @@ namespace Elsa.Converters
             handler.Serialize(writer, serializer, token);
         }
 
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        public override object ReadJson(JsonReader reader, Type objectType, object? existingValue, JsonSerializer serializer)
         {
             var token = JToken.ReadFrom(reader);
             var handler = GetHandler(x => x.CanDeserialize(token, objectType));

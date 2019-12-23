@@ -1,8 +1,7 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Elsa.Activities;
 using Elsa.Results;
-using Elsa.Services;
 using Elsa.Services.Models;
 
 // ReSharper disable once CheckNamespace
@@ -10,10 +9,10 @@ namespace Elsa.Services
 {
     public static class WorkflowBuilderExtensions
     {
-        public static IActivityBuilder StartWith(this IWorkflowBuilder activityBuilder, Func<WorkflowExecutionContext, Task<IActivityExecutionResult>> code) 
+        public static IActivityBuilder StartWith(this IWorkflowBuilder activityBuilder, Func<ActivityExecutionContext, Task<IActivityExecutionResult>> code) 
             => activityBuilder.StartWith<CodeActivity>(x => x.Function = code);
         
-        public static IActivityBuilder StartWith(this IWorkflowBuilder activityBuilder, Func<WorkflowExecutionContext, Task> code)
+        public static IActivityBuilder StartWith(this IWorkflowBuilder activityBuilder, Func<ActivityExecutionContext, Task> code)
         {
             return activityBuilder.StartWith(async context =>
             {

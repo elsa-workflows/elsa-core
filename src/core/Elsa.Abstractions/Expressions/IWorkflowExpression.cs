@@ -1,5 +1,4 @@
-﻿using System;
-using Elsa.Scripting;
+using System;
 
 namespace Elsa.Expressions
 {

@@ -47,10 +47,10 @@ namespace Elsa.Activities.ControlFlow.Activities
             set => SetState(value);
         }
 
-        protected override IActivityExecutionResult OnExecute(WorkflowExecutionContext workflowContext)
+        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
             var recordedInboundTransitions = InboundTransitions ?? new List<string>();
-            var workflow = workflowContext.Workflow;
+            var workflow = context.WorkflowExecutionContext.Workflow;
             var inboundConnections = workflow.GetInboundConnections(Id);
             var done = false;
 

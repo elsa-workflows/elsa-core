@@ -1,8 +1,7 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
-using Elsa.Scripting;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
@@ -38,14 +37,14 @@ namespace Elsa.Activities.Http.Activities
             set => SetState(value);
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
             var response = httpContextAccessor.HttpContext.Response;
 
             if (response.HasStarted)
                 return Fault("Response has already started");
 
-            var location = await workflowContext.EvaluateAsync(Location, cancellationToken);
+            var location = await context.EvaluateAsync(Location, cancellationToken);
             response.Redirect(location, Permanent);
             
             return Done();

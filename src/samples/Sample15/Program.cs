@@ -1,9 +1,8 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Elsa.Activities.Console.Extensions;
 using Elsa.Extensions;
-using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Runtime;
 using Elsa.Services;

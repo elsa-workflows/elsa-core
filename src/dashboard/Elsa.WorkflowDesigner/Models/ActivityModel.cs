@@ -1,5 +1,4 @@
-﻿using Elsa.Models;
-using Newtonsoft.Json.Linq;
+using Elsa.Models;
 
 namespace Elsa.WorkflowDesigner.Models
 {

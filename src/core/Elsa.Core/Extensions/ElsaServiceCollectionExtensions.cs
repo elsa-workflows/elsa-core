@@ -9,7 +9,6 @@ using Elsa.Mapping;
 using Elsa.Messages.Handlers;
 using Elsa.Persistence;
 using Elsa.Persistence.Memory;
-using Elsa.Scripting;
 using Elsa.Serialization;
 using Elsa.Serialization.Formatters;
 using Elsa.Services;

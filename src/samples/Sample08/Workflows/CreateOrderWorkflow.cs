@@ -41,7 +41,6 @@ namespace Sample08.Workflows
                 .Then<SendMassTransitMessage>(activity =>
                     {
                         activity.Message = new JavaScriptExpression<CreateOrder>("return { correlationId: correlationId(), order: order};");
-                        activity.MessageType = typeof(CreateOrder);
                     }
                 )
                 .Then<Fork>(

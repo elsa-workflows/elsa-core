@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Elsa.Metadata;
 using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;

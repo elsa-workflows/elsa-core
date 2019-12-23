@@ -44,8 +44,8 @@
                         <tbody>
                         @foreach (var item in Model.WorkflowInstance.ExecutionLog.OrderBy(x => x.Timestamp))
                         {
-                            var statusClass = item.Faulted ? "bg-warning" : "bg-success";
-                            var message = item.Faulted ? item.Message : "";
+                            var statusClass = item?.Faulted == true ? "bg-warning" : "bg-success";
+                            var message = item?.Faulted == true ? item.Message : "";
 
                             <tr data-activity-id="@item.ActivityId">
                                 <td>

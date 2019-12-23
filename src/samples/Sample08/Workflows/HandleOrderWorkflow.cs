@@ -27,7 +27,6 @@ namespace Sample08.Workflows
                 .Then<PublishMassTransitMessage>(activity =>
                     {
                         activity.Message = new JavaScriptExpression<OrderShipped>("return { correlationId: correlationId(), order: order}");
-                        activity.MessageType = typeof(OrderShipped);
                     }
                 );
         }

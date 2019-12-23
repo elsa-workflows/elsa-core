@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using Elsa.Models;
 using Elsa.Persistence.EntityFrameworkCore.CustomSchema;
 using Elsa.Persistence.EntityFrameworkCore.Entities;
-using Elsa.Persistence.EntityFrameworkCore.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;

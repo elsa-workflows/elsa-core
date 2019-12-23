@@ -11,6 +11,6 @@ namespace Elsa.Activities.Workflows.Activities
     )]
     public class Start : Activity
     {
-        protected override IActivityExecutionResult OnExecute(WorkflowExecutionContext context) => Done();
+        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => Done();
     }
 }

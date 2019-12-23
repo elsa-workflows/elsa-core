@@ -13,7 +13,6 @@ using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Expressions;
 using Elsa.Models;
-using Elsa.Scripting;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
@@ -129,9 +128,9 @@ namespace Elsa.Activities.Http.Activities
             set => SetState(value);
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var request = await CreateRequestAsync(workflowContext, cancellationToken);
+            var request = await CreateRequestAsync(context, cancellationToken);
             var response = await httpClient.SendAsync(request, cancellationToken);
             var hasContent = response.Content != null;
             var contentType = response.Content?.Headers.ContentType.MediaType;
@@ -166,18 +165,18 @@ namespace Elsa.Activities.Http.Activities
                    ) ?? formatters.Last();
         }
 
-        private async Task<HttpRequestMessage> CreateRequestAsync(WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
+        private async Task<HttpRequestMessage> CreateRequestAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
             var methodSupportsBody = GetMethodSupportsBody(Method);
-            var uri = await workflowContext.EvaluateAsync(Url, cancellationToken);
+            var uri = await context.EvaluateAsync(Url, cancellationToken);
             var request = new HttpRequestMessage(new HttpMethod(Method), uri);
-            var authorizationHeaderValue = await workflowContext.EvaluateAsync(Authorization, cancellationToken);
-            var requestHeaders = await ParseRequestHeadersAsync(workflowContext, cancellationToken);
+            var authorizationHeaderValue = await context.EvaluateAsync(Authorization, cancellationToken);
+            var requestHeaders = await ParseRequestHeadersAsync(context, cancellationToken);
 
             if (methodSupportsBody)
             {
-                var body = await workflowContext.EvaluateAsync(Content, cancellationToken);
-                var contentType = await workflowContext.EvaluateAsync(ContentType, cancellationToken);
+                var body = await context.EvaluateAsync(Content, cancellationToken);
+                var contentType = await context.EvaluateAsync(ContentType, cancellationToken);
 
                 if (!string.IsNullOrWhiteSpace(body))
                 {
@@ -198,9 +197,9 @@ namespace Elsa.Activities.Http.Activities
             return request;
         }
 
-        private async Task<IHeaderDictionary> ParseRequestHeadersAsync(WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
+        private async Task<IHeaderDictionary> ParseRequestHeadersAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var headersText = await workflowContext.EvaluateAsync(RequestHeaders, cancellationToken);
+            var headersText = await context.EvaluateAsync(RequestHeaders, cancellationToken);
             var headers = new HeaderDictionary();
 
             if (headersText != null)

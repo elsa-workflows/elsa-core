@@ -1,9 +1,6 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Expressions;
-using Elsa.Extensions;
-using Elsa.Results;
-using Elsa.Scripting;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Sample17.Models;
@@ -32,7 +29,7 @@ namespace Sample17.Activities
         }
 
         protected override async Task<IActivityExecutionResult> OnExecuteAsync(
-            WorkflowExecutionContext context,
+            ActivityExecutionContext context,
             CancellationToken cancellationToken)
         {
             var name = await expressionEvaluator.EvaluateAsync(TitleScriptExpression, context, cancellationToken);

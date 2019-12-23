@@ -4,8 +4,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Exceptions;
-using Elsa.Scripting;
-using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.Logging;
 
@@ -22,7 +20,10 @@ namespace Elsa.Expressions
             this.logger = logger;
         }
 
-        public async Task<object> EvaluateAsync(IWorkflowExpression expression, WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken = default)
+        public async Task<object> EvaluateAsync(
+            IWorkflowExpression expression,
+            ActivityExecutionContext context,
+            CancellationToken cancellationToken = default)
         {
             if (expression == null)
                 return default;
@@ -31,7 +32,7 @@ namespace Elsa.Expressions
 
             try
             {
-                return await evaluator.EvaluateAsync(expression, workflowExecutionContext, cancellationToken);
+                return await evaluator.EvaluateAsync(expression, context, cancellationToken);
             }
             catch (Exception e)
             {
@@ -42,7 +43,10 @@ namespace Elsa.Expressions
             }
         }
 
-        public async Task<T> EvaluateAsync<T>(IWorkflowExpression<T> expression, WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken = default) 
-            => (T)await EvaluateAsync((IWorkflowExpression)expression, workflowExecutionContext, cancellationToken);
+        public async Task<T> EvaluateAsync<T>(
+            IWorkflowExpression<T> expression,
+            ActivityExecutionContext context,
+            CancellationToken cancellationToken = default) 
+            => (T)await EvaluateAsync((IWorkflowExpression)expression, context, cancellationToken);
     }
 }

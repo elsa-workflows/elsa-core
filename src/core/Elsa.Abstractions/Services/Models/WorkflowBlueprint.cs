@@ -15,10 +15,10 @@ namespace Elsa.Services.Models
             int version = 1, 
             bool isSingleton = false,
             bool isDisabled = false,
-            string name =  default,
-            string description = default,
-            IEnumerable<IActivity> activities = default, 
-            IEnumerable<Connection> connections = default)
+            string? name =  default,
+            string? description = default,
+            IEnumerable<IActivity>? activities = default, 
+            IEnumerable<Connection>? connections = default)
         {
             DefinitionId = definitionId;
             Version = version;
@@ -30,12 +30,12 @@ namespace Elsa.Services.Models
             Connections = connections?.ToList() ?? new List<Connection>();
         }
         
-        public string DefinitionId { get; }
+        public string? DefinitionId { get; }
         public int Version { get; set; }
         public bool IsSingleton { get; set; }
         public bool IsDisabled { get; set; }
-        public string Name { get; set; }
-        public string Description { get; set; }
+        public string? Name { get; set; }
+        public string? Description { get; set; }
         public ICollection<IActivity> Activities { get; set; }
         public ICollection<Connection> Connections { get; set;}
         public bool IsPublished { get; set; }

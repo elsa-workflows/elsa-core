@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using Elsa.Metadata;
 using Elsa.Services;
 using Elsa.Services.Models;
 

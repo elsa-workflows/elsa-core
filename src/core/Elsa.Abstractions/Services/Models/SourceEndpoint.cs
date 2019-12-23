@@ -11,6 +11,6 @@ namespace Elsa.Services.Models
             Outcome = outcome;
         }
 
-        public string Outcome { get; set; }
+        public string? Outcome { get; set; }
     }
 }

@@ -4,7 +4,6 @@ using System.Linq;
 using Elsa.Models;
 using Elsa.Services.Extensions;
 using Elsa.Services.Models;
-using Newtonsoft.Json.Linq;
 using NodaTime;
 using Connection = Elsa.Services.Models.Connection;
 
@@ -30,7 +29,7 @@ namespace Elsa.Services
         }
 
         public Workflow CreateWorkflow<T>(
-            Variables input = default,
+            Variable input = default,
             WorkflowInstance workflowInstance = default,
             string correlationId = default) where T : IWorkflow, new()
         {
@@ -47,7 +46,7 @@ namespace Elsa.Services
 
         public Workflow CreateWorkflow(
             WorkflowBlueprint blueprint,
-            Variables input = default,
+            Variable input = default,
             WorkflowInstance workflowInstance = default,
             string correlationId = default)
         {

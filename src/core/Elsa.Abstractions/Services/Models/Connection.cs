@@ -22,7 +22,7 @@ namespace Elsa.Services.Models
             Target = target;
         }
 
-        public SourceEndpoint Source { get; set; }
-        public TargetEndpoint Target { get; set; }
+        public SourceEndpoint? Source { get; set; }
+        public TargetEndpoint? Target { get; set; }
     }
 }

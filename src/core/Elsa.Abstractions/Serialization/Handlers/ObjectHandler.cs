@@ -14,7 +14,11 @@ namespace Elsa.Serialization.Handlers
         
         public object Deserialize(JsonReader reader, JsonSerializer serializer, Type type, JToken value)
         {
-            var typeName = value[TypeFieldName].Value<string>();
+            var typeName = value[TypeFieldName]?.Value<string>();
+            
+            if(typeName == null)
+                throw new InvalidOperationException();
+            
             var objectType = Type.GetType(typeName);
             return value.ToObject(objectType, serializer);
         }

@@ -20,21 +20,20 @@ namespace Elsa.Results
         
         public override async Task ExecuteAsync(IWorkflowRunner runner, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
         {            
-            var activity = workflowContext.CurrentActivity;
+            var activity = workflowContext.ScheduledActivity.Activity;
+            var input = workflowContext.ScheduledActivity.Input;
 
             if (workflowContext.IsFirstPass && ContinueOnFirstPass)
             {
                 var activityInvoker = workflowContext.ServiceProvider.GetRequiredService<IActivityInvoker>();
-                var result = await activityInvoker.ResumeAsync(workflowContext, activity, cancellationToken);
+                var result = await activityInvoker.ResumeAsync(workflowContext, activity, input, cancellationToken);
                 
                 workflowContext.IsFirstPass = false;
 
                 await result.ExecuteAsync(runner, workflowContext, cancellationToken);
             }
             else
-            {
                 workflowContext.AddBlockingActivity(activity);
-            }
         }
     }
 }

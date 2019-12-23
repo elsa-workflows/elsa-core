@@ -12,7 +12,6 @@ using Elsa.Persistence;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
-using Newtonsoft.Json.Linq;
 
 namespace Elsa.Activities.Http.RequestHandlers.Handlers
 {
@@ -90,7 +89,7 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
             {
                 await workflowRunner.RunAsync(
                     item.Item1,
-                    Variables.Empty,
+                    default,
                     new[] { item.Item2.Id },
                     cancellationToken: cancellationToken);
             }
@@ -102,7 +101,7 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
             {
                 await workflowRunner.ResumeAsync(
                     workflowInstance,
-                    Variables.Empty,
+                    default,
                     new[] { activity.Id },
                     cancellationToken);
             }

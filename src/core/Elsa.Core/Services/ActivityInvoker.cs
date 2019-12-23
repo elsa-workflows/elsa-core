@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Models;
 using Elsa.Results;
 using Elsa.Services.Models;
 using Microsoft.Extensions.Logging;
@@ -19,24 +20,28 @@ namespace Elsa.Services
         public async Task<IActivityExecutionResult> ExecuteAsync(
             WorkflowExecutionContext workflowContext,
             IActivity activity,
+            Variable input = null,
             CancellationToken cancellationToken = default)
         {
+            var activityContext = new ActivityExecutionContext(workflowContext, input);
             return await InvokeAsync(
                 workflowContext,
                 activity,
-                (a) => a.ExecuteAsync(workflowContext, cancellationToken)
+                (a) => a.ExecuteAsync(activityContext, cancellationToken)
             );
         }
 
         public async Task<IActivityExecutionResult> ResumeAsync(
             WorkflowExecutionContext workflowContext,
             IActivity activity,
+            Variable input = null,
             CancellationToken cancellationToken = default)
         {
+            var activityContext = new ActivityExecutionContext(workflowContext, input);
             return await InvokeAsync(
                 workflowContext,
                 activity,
-                (a) => a.ResumeAsync(workflowContext, cancellationToken)
+                (a) => a.ResumeAsync(activityContext, cancellationToken)
             );
         }
 

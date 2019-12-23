@@ -1,7 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Expressions;
-using Elsa.Scripting;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -15,7 +14,7 @@ namespace Sample04.Activities
             set => SetState(value);
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
             var values = await context.EvaluateAsync(Values, cancellationToken);
             var sum = Calculate(values);

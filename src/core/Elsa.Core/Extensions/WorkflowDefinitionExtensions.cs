@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using Elsa.Models;
-using Elsa.Services.Models;
 
 namespace Elsa.Extensions
 {

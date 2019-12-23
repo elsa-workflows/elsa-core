@@ -9,7 +9,6 @@ using Elsa.Scripting.JavaScript.Converters;
 using Elsa.Scripting.JavaScript.Extensions;
 using Elsa.Scripting.JavaScript.Messages;
 using Elsa.Scripting.JavaScript.Options;
-using Elsa.Services;
 using Elsa.Services.Models;
 using Jint;
 using Jint.Native;
@@ -41,12 +40,12 @@ namespace Elsa.Scripting.JavaScript.Services
 
         public string Type => JavaScriptExpression.ExpressionType;
 
-        public async Task<object> EvaluateAsync(IWorkflowExpression expression, WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
+        public async Task<object> EvaluateAsync(IWorkflowExpression expression, ActivityExecutionContext context, CancellationToken cancellationToken)
         {
             var javaScriptExpression = (JavaScriptExpression)expression;
             var engine = new Engine(ConfigureJintEngine);
 
-            await ConfigureEngineAsync(engine, workflowExecutionContext, cancellationToken);
+            await ConfigureEngineAsync(engine, context, cancellationToken);
             engine.Execute(javaScriptExpression.Script);
 
             return ConvertValue(engine.GetCompletionValue(), javaScriptExpression.ReturnType);
@@ -59,7 +58,7 @@ namespace Elsa.Scripting.JavaScript.Services
                 options.AllowClr();
         }
 
-        private async Task ConfigureEngineAsync(Engine engine, WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
+        private async Task ConfigureEngineAsync(Engine engine, ActivityExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
         {
             await mediator.Publish(new EvaluatingJavaScriptExpression(engine, workflowExecutionContext), cancellationToken);
         }

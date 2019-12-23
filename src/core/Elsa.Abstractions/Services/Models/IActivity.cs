@@ -1,7 +1,6 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
-using Newtonsoft.Json.Linq;
 
 namespace Elsa.Services.Models
 {
@@ -15,7 +14,7 @@ namespace Elsa.Services.Models
         /// <summary>
         /// Holds activity output.
         /// </summary>
-        Variable Output { get; set; }
+        Variable? Output { get; set; }
         
         /// <summary>
         /// The type name of this activity.
@@ -25,37 +24,37 @@ namespace Elsa.Services.Models
         /// <summary>
         /// Unique identifier of this activity.
         /// </summary>
-        string Id { get; set; }
+        string? Id { get; set; }
         
         /// <summary>
         /// Name identifier of this activity.
         /// </summary>
-        string Name { get; set; }
+        string? Name { get; set; }
         
         /// <summary>
         /// Display name of this activity.
         /// </summary>
-        string DisplayName { get; set; }
+        string? DisplayName { get; set; }
         
         /// <summary>
         /// Description of this activity.
         /// </summary>
-        string Description { get; set; }
+        string? Description { get; set; }
         
         /// <summary>
         /// Returns a value of whether the specified activity can execute.
         /// </summary>
-        Task<bool> CanExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken = default);
+        Task<bool> CanExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Executes the specified activity.
         /// </summary>
-        Task<IActivityExecutionResult> ExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken = default);
+        Task<IActivityExecutionResult> ExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Resumes the specified activity.
         /// </summary>
-        Task<IActivityExecutionResult> ResumeAsync(WorkflowExecutionContext context, CancellationToken cancellationToken = default);
+        Task<IActivityExecutionResult> ResumeAsync(ActivityExecutionContext context, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Creates an instance representation of this activity.

@@ -1,6 +1,5 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Extensions;
 using Elsa.Services.Models;
 
 namespace Elsa.Expressions
@@ -9,10 +8,13 @@ namespace Elsa.Expressions
     {
         public string Type => CodeExpression.ExpressionType;
 
-        public Task<object> EvaluateAsync(IWorkflowExpression expression, WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
+        public Task<object> EvaluateAsync(
+            IWorkflowExpression expression,
+            ActivityExecutionContext context,
+            CancellationToken cancellationToken)
         {
             var codeExpression = (CodeExpression)expression;
-            var result = codeExpression.Expression(workflowExecutionContext);
+            var result = codeExpression.Expression(context);
             return Task.FromResult(result);
         }
     }

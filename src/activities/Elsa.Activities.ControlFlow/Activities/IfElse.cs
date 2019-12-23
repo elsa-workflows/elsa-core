@@ -1,9 +1,7 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
-using Elsa.Scripting;
-using Elsa.Scripting.JavaScript;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -25,9 +23,9 @@ namespace Elsa.Activities.ControlFlow.Activities
             set => SetState(value);
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var result = await workflowContext.EvaluateAsync(Condition, cancellationToken);
+            var result = await context.EvaluateAsync(Condition, cancellationToken);
             return Outcome(result ? OutcomeNames.True : OutcomeNames.False);
         }
     }

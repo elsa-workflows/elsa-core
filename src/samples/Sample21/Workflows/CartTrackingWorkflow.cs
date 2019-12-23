@@ -33,7 +33,6 @@ namespace Sample21.Workflows
                             .Then<ScheduleSendMassTransitMessage>(
                                 activity =>
                                 {
-                                    activity.MessageType = typeof(CartExpiredEvent);
                                     activity.EndpointAddress = new Uri("rabbitmq://localhost/shopping_cart_state");
                                     activity.ScheduledTime = new JavaScriptExpression<DateTime>("plus(LastUpdateTimestamp, durationFromSeconds(10)).ToDateTimeUtc()");
                                     activity.Message = new JavaScriptExpression<CartExpiredEvent>("return { correlationId: correlationId(), cartId: correlationId() }");
@@ -63,7 +62,6 @@ namespace Sample21.Workflows
                             {
                                 activity.Message = new JavaScriptExpression<CartRemovedEvent>("return { cartId: correlationId() };");
                                 activity.EndpointAddress = new Uri("rabbitmq://localhost/shopping_cart_service");
-                                activity.MessageType = typeof(CartRemovedEvent);
                             })
                             .Then("Join");
 

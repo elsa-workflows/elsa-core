@@ -8,15 +8,15 @@ namespace Elsa.Services
         WorkflowBlueprint CreateWorkflowBlueprint(WorkflowDefinitionVersion definition);
         
         Workflow CreateWorkflow<T>(
-            Variables input = default, 
-            WorkflowInstance workflowInstance = default,
+            Variable? input = default, 
+            WorkflowInstance? workflowInstance = default,
             string correlationId = default)
             where T : IWorkflow, new();
 
         Workflow CreateWorkflow(
             WorkflowBlueprint blueprint, 
-            Variables input = default,
-            WorkflowInstance workflowInstance = default,
+            Variable? input = default,
+            WorkflowInstance? workflowInstance = default,
             string correlationId = default);
     }
 }

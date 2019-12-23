@@ -36,7 +36,7 @@ namespace Sample12
                 var userAction = Console.ReadLine();
 
                 // Resume the workflow with the received stimulus.
-                var triggeredExecutionContexts = await invoker.TriggerAsync(nameof(UserTask), new Variables { ["UserAction"] = new Variable(userAction)}, correlationId);
+                var triggeredExecutionContexts = await invoker.TriggerAsync(nameof(UserTask), new Variable(userAction), correlationId);
                 executionContext = triggeredExecutionContexts.First();
 
             } while (executionContext.Workflow.IsRunning());

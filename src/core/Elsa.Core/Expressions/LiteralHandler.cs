@@ -9,7 +9,10 @@ namespace Elsa.Expressions
     {
         public string Type => LiteralExpression.ExpressionType;
 
-        public Task<object> EvaluateAsync(IWorkflowExpression expression, WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
+        public Task<object> EvaluateAsync(
+            IWorkflowExpression expression,
+            ActivityExecutionContext context,
+            CancellationToken cancellationToken)
         {
             var literalExpression = (LiteralExpression)expression;
             if (string.IsNullOrWhiteSpace(literalExpression.Expression))

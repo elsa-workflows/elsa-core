@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Expressions;
-using Elsa.Scripting;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
@@ -101,7 +100,7 @@ namespace Elsa.Activities.Http.Activities
             set => SetState(value);
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
             var response = httpContextAccessor.HttpContext.Response;
 
@@ -111,7 +110,7 @@ namespace Elsa.Activities.Http.Activities
             response.StatusCode = (int)StatusCode;
             response.ContentType = ContentType;
 
-            var headersText = await workflowContext.EvaluateAsync(ResponseHeaders, cancellationToken);
+            var headersText = await context.EvaluateAsync(ResponseHeaders, cancellationToken);
 
             if (headersText != null)
             {
@@ -124,7 +123,7 @@ namespace Elsa.Activities.Http.Activities
                     response.Headers[header.Key] = header.Value;
             }
 
-            var bodyText = await workflowContext.EvaluateAsync(Content, cancellationToken);
+            var bodyText = await context.EvaluateAsync(Content, cancellationToken);
 
             if (!string.IsNullOrWhiteSpace(bodyText)) 
                 await response.WriteAsync(bodyText, cancellationToken);

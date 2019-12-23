@@ -30,10 +30,6 @@ namespace Elsa.Activities.MassTransit.Consumers
         {
             var message = context.Message;
             var activityType = nameof(ReceiveMassTransitMessage);
-            var input = new Variables();
-
-            input.SetVariable(Constants.MessageInputKey, message);
-            input.SetVariable(Constants.MessageTypeNameInputKey, typeof(T).AssemblyQualifiedName);
 
             Guid? correlationId = default;
             foreach (var item in CorrelationIdSelectors)
@@ -44,7 +40,7 @@ namespace Elsa.Activities.MassTransit.Consumers
 
             await workflowRunner.TriggerAsync(
                 activityType,
-                input,
+                Variable.From(message),
                 correlationId?.ToString(),
                 x => ReceiveMassTransitMessage.GetMessageType(x) == message.GetType(),
                 context.CancellationToken);

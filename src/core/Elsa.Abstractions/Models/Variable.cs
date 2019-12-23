@@ -20,6 +20,8 @@ namespace Elsa.Models
         }
     
         [JsonConverter(typeof(TypeNameHandlingConverter))]
-        public object Value { get; set; }
+        public object? Value { get; set; }
+
+        public T GetValue<T>() => (T)Value;
     }
 }

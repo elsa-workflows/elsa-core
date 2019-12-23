@@ -22,9 +22,9 @@ namespace Elsa.Attributes
             ProviderType = providerType;
         }
 
-        public object[] Items { get; }
-        public string OptionsProviderMethod { get; }
-        public Type ProviderType { get; }
+        public object[]? Items { get; }
+        public string? OptionsProviderMethod { get; }
+        public Type? ProviderType { get; }
 
         public override object GetOptions()
         {
@@ -60,8 +60,8 @@ namespace Elsa.Attributes
 
     public class SelectItem
     {
-        public string Label { get; set; }
-        public object[] Options { get; set; }
+        public string? Label { get; set; }
+        public object[]? Options { get; set; }
     }
     
     public class SelectOption<T>
@@ -70,13 +70,13 @@ namespace Elsa.Attributes
         {
         }
 
-        public SelectOption(string label, T value)
+        public SelectOption(string? label, T value)
         {
             Label = label;
             Value = value;
         }
         
-        public string Label { get; set; }
+        public string? Label { get; set; }
         public T Value { get; set; }
     }
     

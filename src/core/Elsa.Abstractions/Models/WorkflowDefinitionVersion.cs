@@ -11,14 +11,14 @@ namespace Elsa.Models
             Variables = new Variables();
         }
 
-        public string Id { get; set; }
-        public string DefinitionId { get; set; }
+        public string? Id { get; set; }
+        public string? DefinitionId { get; set; }
         public int Version { get; set; }
-        public string Name { get; set; }
-        public string Description { get; set; }
+        public string? Name { get; set; }
+        public string? Description { get; set; }
         public ICollection<ActivityDefinition> Activities { get; set; }
         public ICollection<ConnectionDefinition> Connections { get; set; }
-        public Variables Variables { get; set; }
+        public Variables? Variables { get; set; }
         public bool IsSingleton { get; set; }
         public WorkflowPersistenceBehavior PersistenceBehavior { get; set; }
         

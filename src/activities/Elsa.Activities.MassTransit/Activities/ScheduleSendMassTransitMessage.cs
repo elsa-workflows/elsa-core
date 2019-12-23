@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Elsa.Activities.MassTransit.Options;
 using Elsa.Attributes;
 using Elsa.Expressions;
-using Elsa.Scripting;
 using Elsa.Services.Models;
 using MassTransit;
 using Microsoft.Extensions.Options;
@@ -24,17 +23,6 @@ namespace Elsa.Activities.MassTransit.Activities
         : base(bus, consumeContext)
         {
             this.options = options.Value;
-        }
-
-        [ActivityProperty(Hint = "The assembly-qualified type name of the message to send.")]
-        public Type MessageType
-        {
-            get
-            {
-                var typeName = GetState<string>();
-                return string.IsNullOrWhiteSpace(typeName) ? null : System.Type.GetType(typeName);
-            }
-            set => SetState(value.AssemblyQualifiedName);
         }
 
         [ActivityProperty(Hint = "An expression that evaluates to the message to be delivered.")]
@@ -62,14 +50,14 @@ namespace Elsa.Activities.MassTransit.Activities
             set => SetState(value);
         }
 
-        protected override bool OnCanExecute(WorkflowExecutionContext context)
+        protected override bool OnCanExecute(ActivityExecutionContext context)
         {
-            return MessageType != null && options.SchedulerAddress != null;
+            return Message != null && options.SchedulerAddress != null;
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var message = await context.EvaluateAsync(Message, MessageType, cancellationToken);
+            var message = await context.EvaluateAsync(Message, cancellationToken);
             var scheduledTime = await context.EvaluateAsync(ScheduledTime, cancellationToken);
             var endpoint = await SendEndpointProvider.GetSendEndpoint(options.SchedulerAddress);
             var scheduledMessage = await endpoint.ScheduleSend(EndpointAddress, scheduledTime, message, cancellationToken);

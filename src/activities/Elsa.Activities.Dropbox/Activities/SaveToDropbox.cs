@@ -1,10 +1,9 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Dropbox.Models;
 using Elsa.Activities.Dropbox.Services;
 using Elsa.Attributes;
 using Elsa.Expressions;
-using Elsa.Scripting;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -37,7 +36,7 @@ namespace Elsa.Activities.Dropbox.Activities
             set => SetState(value);
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
             var data = await context.EvaluateAsync(Data, cancellationToken);
             var path = await context.EvaluateAsync(Path, cancellationToken);

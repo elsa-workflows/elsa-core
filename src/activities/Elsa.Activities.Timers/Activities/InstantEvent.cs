@@ -1,8 +1,7 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
-using Elsa.Scripting;
 using Elsa.Services;
 using Elsa.Services.Models;
 using NodaTime;
@@ -35,21 +34,21 @@ namespace Elsa.Activities.Timers.Activities
             set => SetState(value);
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
             var isExpired = await IsExpiredAsync(context, cancellationToken);
 
             return isExpired ? (IActivityExecutionResult)Done() : Halt();
         }
 
-        protected override async Task<IActivityExecutionResult> OnResumeAsync(WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnResumeAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var isExpired = await IsExpiredAsync(workflowContext, cancellationToken);
+            var isExpired = await IsExpiredAsync(context, cancellationToken);
 
             return isExpired ? (IActivityExecutionResult)Done() : Halt();
         }
 
-        private async Task<bool> IsExpiredAsync(WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
+        private async Task<bool> IsExpiredAsync(ActivityExecutionContext workflowContext, CancellationToken cancellationToken)
         {
             var instant = await workflowContext.EvaluateAsync(Instant, cancellationToken);
             var now = clock.GetCurrentInstant();

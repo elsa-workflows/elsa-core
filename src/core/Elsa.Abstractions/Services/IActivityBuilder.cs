@@ -1,5 +1,4 @@
 using System;
-using Elsa.Models;
 using Elsa.Services.Models;
 
 namespace Elsa.Services
@@ -7,10 +6,10 @@ namespace Elsa.Services
     public interface IActivityBuilder
     {
         IActivity Activity { get; }
-        IActivityBuilder StartWith<T>(Action<T> setup = default, string name = null) where T: class, IActivity;
-        IActivityBuilder Add<T>(Action<T> setup = default, string name = null) where T : class, IActivity;
+        IActivityBuilder StartWith<T>(Action<T>? setup = default, string? name = default) where T: class, IActivity;
+        IActivityBuilder Add<T>(Action<T>? setup = default, string? name = default) where T : class, IActivity;
         IOutcomeBuilder When(string outcome);
-        IActivityBuilder Then<T>(Action<T> setup = null, Action<IActivityBuilder> branch = null, string name = null) where T : class, IActivity;
+        IActivityBuilder Then<T>(Action<T>? setup = default, Action<IActivityBuilder>? branch = default, string? name = default) where T : class, IActivity;
         IActivityBuilder WithName(string name);
         IActivityBuilder WithDisplayName(string displayName);
         IActivityBuilder WithDescription(string description);

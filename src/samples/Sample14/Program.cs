@@ -1,10 +1,8 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Elsa.Activities.Console.Extensions;
 using Elsa.Extensions;
-using Elsa.Models;
 using Elsa.Persistence;
-using Elsa.Persistence.EntityFrameworkCore;
 using Elsa.Persistence.EntityFrameworkCore.DbContexts;
 using Elsa.Persistence.EntityFrameworkCore.Extensions;
 using Elsa.Runtime;

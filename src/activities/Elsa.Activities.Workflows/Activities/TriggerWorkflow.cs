@@ -32,9 +32,9 @@ namespace Elsa.Activities.Workflows.Activities
         [ActivityProperty(
             Hint = "An expression that evaluates to a dictionary to be provided as input when triggering workflows."
         )]
-        public IWorkflowExpression<Variables> Input
+        public IWorkflowExpression<Variable> Input
         {
-            get => GetState<IWorkflowExpression<Variables>>();
+            get => GetState<IWorkflowExpression<Variable>>();
             set => SetState(value);
         }
 
@@ -45,7 +45,7 @@ namespace Elsa.Activities.Workflows.Activities
             set => SetState(value);
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
             var activityType = await context.EvaluateAsync(ActivityType, cancellationToken);
             var input = await context.EvaluateAsync(Input, cancellationToken);
