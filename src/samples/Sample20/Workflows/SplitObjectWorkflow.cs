@@ -22,22 +22,22 @@ namespace Sample20.Workflows
                 .Then<SetVariable>(x =>
                 {
                     x.VariableName = "Customer1";
-                    x.ValueScriptExpression = new JavaScriptExpression<Customer>("({ Name: 'Johnny', Age: 21, Cash: 10 })");
+                    x.Value = new JavaScriptExpression<Customer>("({ Name: 'Johnny', Age: 21, Cash: 10 })");
                 })
                 .Then<SetVariable>(x =>
                 {
                     x.VariableName = "Customer2";
-                    x.ValueScriptExpression = new JavaScriptExpression<Customer>("({ Name: 'Margaret', Age: 19, Cash: 20 })");
+                    x.Value = new JavaScriptExpression<Customer>("({ Name: 'Margaret', Age: 19, Cash: 20 })");
                 })
                 .Then<SetVariable>(x =>
                 {
                     x.VariableName = "Customer3";
-                    x.ValueScriptExpression = new JavaScriptExpression<Customer>("({ Name: 'Bill', Age: 25, Cash: 50 })");
+                    x.Value = new JavaScriptExpression<Customer>("({ Name: 'Bill', Age: 25, Cash: 50 })");
                 })
                 .Then<SetVariable>(x =>
                 {
                     x.VariableName = "SomePrimitive";
-                    x.ValueScriptExpression = new JavaScriptExpression<string>("'Test'");
+                    x.Value = new JavaScriptExpression<string>("'Test'");
                 })
                 .Then<ForEach>(
                     x => x.Collection = new JavaScriptExpression<IList<object>>("[Customer1, Customer2, Customer3]"),

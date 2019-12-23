@@ -28,13 +28,13 @@ namespace Sample17
                     x =>
                     {
                         x.VariableName = "Person";
-                        x.ValueScriptExpression = new JavaScriptExpression<Person>("CreatePerson.Person");
+                        x.Value = new JavaScriptExpression<Person>("CreatePerson.Person");
                     })
                 .Then<SetVariable>(
                     x =>
                     {
                         x.VariableName = "Age";
-                        x.ValueScriptExpression = new JavaScriptExpression<int>("CreatePerson.Person.Age");
+                        x.Value = new JavaScriptExpression<int>("CreatePerson.Person.Age");
                     })
                 .Then<WriteLine>(x => x.Text = new JavaScriptExpression<string>("`A new person was created with name \"${Person.FullName}\" and age \"${CreatePerson.Age}\"`"));
         }

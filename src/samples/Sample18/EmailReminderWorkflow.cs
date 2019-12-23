@@ -26,7 +26,7 @@ namespace Sample18
                     x =>
                     {
                         x.VariableName = "Todo";
-                        x.ValueScriptExpression = new JavaScriptExpression<string>("ReminderInput.Input");
+                        x.Value = new JavaScriptExpression<string>("ReminderInput.Input");
                     })
                 .Then<While>(
                     x => x.Condition = new JavaScriptExpression<bool>("true"),

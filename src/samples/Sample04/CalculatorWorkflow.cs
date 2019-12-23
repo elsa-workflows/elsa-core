@@ -22,7 +22,7 @@ namespace Sample04
                     x =>
                     {
                         x.VariableName = "exit";
-                        x.ValueScriptExpression = new JavaScriptExpression<bool>("false");
+                        x.Value = new JavaScriptExpression<bool>("false");
                     })
                 .WithDisplayName("Initialize Exit Variable")
                 .Then<While>(
@@ -72,7 +72,7 @@ namespace Sample04
                             .Then<SetVariable>(x =>
                             {
                                 x.VariableName = "exit";
-                                x.ValueScriptExpression = new JavaScriptExpression<bool>("TryAgain.Input !== 'y' && TryAgain.Input !== 'Y'");
+                                x.Value = new JavaScriptExpression<bool>("TryAgain.Input !== 'y' && TryAgain.Input !== 'Y'");
                             }).WithDisplayName("Set Exit Variable").WithDescription("Set the Exit variable to the received response.")
                             .Then(whileActivity);
                     }).WithDisplayName("While Exit is False").WithDescription("Loop while Exit is false.")

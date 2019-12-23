@@ -32,7 +32,7 @@ namespace Sample08.Workflows
                     activity =>
                     {
                         activity.VariableName = "order";
-                        activity.ValueScriptExpression = new JavaScriptExpression<object>("lastResult().Body");
+                        activity.Value = new JavaScriptExpression<object>("lastResult().Body");
                     }
                 )
                 // Need to ensure that the correlation ID is the same string format that is used by the WorkflowConsumer<T>

@@ -32,7 +32,7 @@ namespace Sample07
                     x =>
                     {
                         x.VariableName = "Document";
-                        x.ValueScriptExpression = new JavaScriptExpression<object>("WaitForDocument.Content");
+                        x.Value = new JavaScriptExpression<object>("WaitForDocument.Content");
                     }
                 )
                 .Then<SendEmail>(
@@ -63,7 +63,7 @@ namespace Sample07
                     x =>
                     {
                         x.VariableName = "Approved";
-                        x.ValueScriptExpression = new LiteralExpression<bool>("false");
+                        x.Value = new LiteralExpression<bool>("false");
                     }
                 )
                 .Then<Fork>(
@@ -116,7 +116,7 @@ namespace Sample07
                     x =>
                     {
                         x.VariableName = "Approved";
-                        x.ValueScriptExpression = new JavaScriptExpression<object>("input('Signal') === 'Approve'");
+                        x.Value = new JavaScriptExpression<object>("input('Signal') === 'Approve'");
                     }
                 )
                 .Then<IfElse>(
