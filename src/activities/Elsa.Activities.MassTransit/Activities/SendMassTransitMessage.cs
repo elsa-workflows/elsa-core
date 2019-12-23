@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
+using Elsa.Scripting;
 using Elsa.Services.Models;
 using MassTransit;
 
@@ -31,9 +32,9 @@ namespace Elsa.Activities.MassTransit.Activities
         }
 
         [ActivityProperty(Hint = "An expression that evaluates to the message to send.")]
-        public WorkflowExpression Message
+        public IWorkflowExpression Message
         {
-            get => GetState<WorkflowExpression>();
+            get => GetState<IWorkflowExpression>();
             set => SetState(value);
         }
 

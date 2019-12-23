@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Expressions;
 using Elsa.Scripting.Liquid.Extensions;
 using Elsa.Scripting.Liquid.Messages;
 using Elsa.Services;
@@ -10,25 +11,25 @@ using MediatR;
 
 namespace Elsa.Scripting.Liquid.Services
 {
-    public class LiquidExpressionEvaluator : IExpressionEvaluator
+    public class LiquidWorkflowScriptExpressionHandler : IWorkflowScriptExpressionHandler
     {
         private readonly ILiquidTemplateManager liquidTemplateManager;
         private readonly IMediator mediator;
-        public const string SyntaxName = "Liquid";
 
-        public LiquidExpressionEvaluator(ILiquidTemplateManager liquidTemplateManager, IMediator mediator)
+        public LiquidWorkflowScriptExpressionHandler(ILiquidTemplateManager liquidTemplateManager, IMediator mediator)
         {
             this.liquidTemplateManager = liquidTemplateManager;
             this.mediator = mediator;
         }
 
-        public string Syntax => SyntaxName;
+        public string Type => LiquidExpression.ExpressionType;
 
-        public async Task<object> EvaluateAsync(string expression, Type type, WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
+        public async Task<object> EvaluateAsync(IWorkflowExpression expression, WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
         {
+            var liquidExpression = (LiquidExpression)expression;
             var templateContext = await CreateTemplateContextAsync(workflowExecutionContext);
-            var result = await liquidTemplateManager.RenderAsync(expression, templateContext);
-            return string.IsNullOrWhiteSpace(result) ? default : type != null ? Convert.ChangeType(result, type) : result;
+            var result = await liquidTemplateManager.RenderAsync(liquidExpression.Script, templateContext);
+            return string.IsNullOrWhiteSpace(result) ? default : Convert.ChangeType(result, liquidExpression.ReturnType);
         }
 
         private async Task<TemplateContext> CreateTemplateContextAsync(WorkflowExecutionContext workflowContext)

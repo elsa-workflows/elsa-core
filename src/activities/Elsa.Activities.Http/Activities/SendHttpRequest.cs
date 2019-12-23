@@ -13,6 +13,7 @@ using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Expressions;
 using Elsa.Models;
+using Elsa.Scripting;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
@@ -43,22 +44,10 @@ namespace Elsa.Activities.Http.Activities
         /// The URL to invoke. 
         /// </summary>
         [ActivityProperty(Hint = "The URL to send the HTTP request to.")]
-        public WorkflowExpression<Uri> Url
+        public IWorkflowExpression<PathString> Url
         {
-            get
-            {
-                var url = GetState<WorkflowExpression<string>>();
-
-                if (url != null && !string.IsNullOrWhiteSpace(url.Expression) && Uri.TryCreate(
-                        url.Expression,
-                        UriKind.RelativeOrAbsolute,
-                        out var uri
-                    ))
-                    return new WorkflowExpression<Uri>(url.Syntax, uri.ToString());
-
-                return new WorkflowExpression<Uri>(LiteralEvaluator.SyntaxName, "");
-            }
-            set => SetState(new WorkflowExpression<string>(value.Syntax, value.Expression));
+            get => GetState<IWorkflowExpression<PathString>>();
+            set => SetState(value);
         }
 
         /// <summary>
@@ -80,9 +69,9 @@ namespace Elsa.Activities.Http.Activities
         /// </summary>
         [ActivityProperty(Hint = "The HTTP content to send along with the request.")]
         [ExpressionOptions(Multiline = true)]
-        public WorkflowExpression<string> Content
+        public IWorkflowExpression<string> Content
         {
-            get => GetState(() => new WorkflowExpression<string>(LiteralEvaluator.SyntaxName, ""));
+            get => GetState<IWorkflowExpression<string>>();
             set => SetState(value);
         }
 
@@ -94,18 +83,18 @@ namespace Elsa.Activities.Http.Activities
             Hint = "The content type to send with the request (if applicable)."
         )]
         [SelectOptions("text/plain", "text/html", "application/json", "application/xml")]
-        public WorkflowExpression<string> ContentType
+        public IWorkflowExpression<string> ContentType
         {
-            get => GetState(() => new WorkflowExpression<string>(LiteralEvaluator.SyntaxName, ""));
+            get => GetState<IWorkflowExpression<string>>();
             set => SetState(value);
         }
 
         [ActivityProperty(
             Hint = "The Authorization header value to send."
         )]
-        public WorkflowExpression<string> Authorization
+        public IWorkflowExpression<string> Authorization
         {
-            get => GetState<WorkflowExpression<string>>();
+            get => GetState<IWorkflowExpression<string>>();
             set => SetState(value);
         }
 
@@ -113,9 +102,10 @@ namespace Elsa.Activities.Http.Activities
         /// The headers to send along with the request.
         /// </summary>
         [ActivityProperty(Hint = "The headers to send along with the request. One 'header: value' pair per line.")]
-        public WorkflowExpression<string> RequestHeaders
+        [ExpressionOptions(Multiline = true)]
+        public IWorkflowExpression<string> RequestHeaders
         {
-            get => GetState(() => new WorkflowExpression<string>(LiteralEvaluator.SyntaxName, ""));
+            get => GetState<IWorkflowExpression<string>>();
             set => SetState(value);
         }
 
@@ -139,9 +129,7 @@ namespace Elsa.Activities.Http.Activities
             set => SetState(value);
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(
-            WorkflowExecutionContext workflowContext,
-            CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
         {
             var request = await CreateRequestAsync(workflowContext, cancellationToken);
             var response = await httpClient.SendAsync(request, cancellationToken);
@@ -178,9 +166,7 @@ namespace Elsa.Activities.Http.Activities
                    ) ?? formatters.Last();
         }
 
-        private async Task<HttpRequestMessage> CreateRequestAsync(
-            WorkflowExecutionContext workflowContext,
-            CancellationToken cancellationToken)
+        private async Task<HttpRequestMessage> CreateRequestAsync(WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
         {
             var methodSupportsBody = GetMethodSupportsBody(Method);
             var uri = await workflowContext.EvaluateAsync(Url, cancellationToken);
@@ -212,9 +198,7 @@ namespace Elsa.Activities.Http.Activities
             return request;
         }
 
-        private async Task<IHeaderDictionary> ParseRequestHeadersAsync(
-            WorkflowExecutionContext workflowContext,
-            CancellationToken cancellationToken)
+        private async Task<IHeaderDictionary> ParseRequestHeadersAsync(WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
         {
             var headersText = await workflowContext.EvaluateAsync(RequestHeaders, cancellationToken);
             var headers = new HeaderDictionary();
@@ -226,12 +210,8 @@ namespace Elsa.Activities.Http.Activities
                     let pair = line.Split(':', '=')
                     select new KeyValuePair<string, string>(pair[0], pair[1]);
 
-                foreach (var header in headersQuery)
-                {
-                    var headerValueExpression = new WorkflowExpression<string>(RequestHeaders.Syntax, header.Value);
-                    var headerValue = await workflowContext.EvaluateAsync(headerValueExpression, cancellationToken);
-                    headers.Add(header.Key, headerValue);
-                }
+                foreach (var header in headersQuery) 
+                    headers.Add(header.Key, header.Value);
             }
 
             return headers;

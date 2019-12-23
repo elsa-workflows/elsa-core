@@ -1,26 +1,23 @@
 ﻿using System;
+using Elsa.Scripting;
 
 namespace Elsa.Expressions
 {
     public class WorkflowExpression : IWorkflowExpression
     {
-        public WorkflowExpression(string syntax, string expression, Type type)
+        public WorkflowExpression(string type, Type returnType)
         {
-            Syntax = syntax;
-            Expression = expression;
             Type = type;
+            ReturnType = returnType;
         }
 
-        public string Syntax { get; }
-        public string Expression { get; }
-        public Type Type { get; }
-
-        public override string ToString() => Expression;
+        public string Type { get; }
+        public Type ReturnType { get; }
     }
 
     public class WorkflowExpression<T> : WorkflowExpression, IWorkflowExpression<T>
     {   
-        public WorkflowExpression(string syntax, string expression) : base(syntax, expression, typeof(T))
+        public WorkflowExpression(string type) : base(type, typeof(T))
         {
         }
     }

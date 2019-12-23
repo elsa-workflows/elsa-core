@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
+using Elsa.Scripting;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -18,15 +19,15 @@ namespace Elsa.Activities.Workflows.Activities
     public class Correlate : Activity
     {
         [ActivityProperty(Hint = "An expression that evaluates to the value to store as the correlation ID.")]
-        public WorkflowExpression<string> ValueExpression
+        public IWorkflowExpression<string> ValueScriptExpression
         {
-            get => GetState<WorkflowExpression<string>>();
+            get => GetState<IWorkflowExpression<string>>();
             set => SetState(value);
         }
 
         protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
         {
-            var value = await workflowContext.EvaluateAsync(ValueExpression, cancellationToken);
+            var value = await workflowContext.EvaluateAsync(ValueScriptExpression, cancellationToken);
             workflowContext.Workflow.CorrelationId = value;
             return Done();
         }

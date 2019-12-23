@@ -6,6 +6,7 @@ using System.Reflection;
 using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Expressions;
+using Elsa.Scripting;
 using Elsa.Services.Models;
 using Humanizer;
 
@@ -80,7 +81,7 @@ namespace Elsa.Metadata
         {
             var type = propertyInfo.PropertyType;
 
-            if (typeof(IWorkflowExpression).IsAssignableFrom(type))
+            if (typeof(IWorkflowScriptExpression).IsAssignableFrom(type))
                 return ActivityPropertyTypes.Expression;
 
             if (type == typeof(bool) || type == typeof(bool?))

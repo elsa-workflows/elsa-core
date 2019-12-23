@@ -4,6 +4,7 @@ using Elsa.Activities.Email.Options;
 using Elsa.Activities.Email.Services;
 using Elsa.Attributes;
 using Elsa.Expressions;
+using Elsa.Scripting;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.Options;
@@ -25,31 +26,31 @@ namespace Elsa.Activities.Email.Activities
         }
 
         [ActivityProperty(Hint = "The sender's email address.")]
-        public WorkflowExpression<string> From
+        public IWorkflowExpression<string> From
         {
-            get => GetState(() => new WorkflowExpression<string>(LiteralEvaluator.SyntaxName, ""));
+            get => GetState<IWorkflowExpression<string>>();
             set => SetState(value);
         }
 
         [ActivityProperty(Hint = "The recipient's email address.")]
-        public WorkflowExpression<string> To
+        public IWorkflowExpression<string> To
         {
-            get => GetState(() => new WorkflowExpression<string>(LiteralEvaluator.SyntaxName, ""));
+            get => GetState<IWorkflowExpression<string>>();
             set => SetState(value);
         }
 
         [ActivityProperty(Hint = "The subject of the email message.")]
-        public WorkflowExpression<string> Subject
+        public IWorkflowExpression<string> Subject
         {
-            get => GetState(() => new WorkflowExpression<string>(LiteralEvaluator.SyntaxName, ""));
+            get => GetState<IWorkflowExpression<string>>();
             set => SetState(value);
         }
 
         [ActivityProperty(Hint = "The body of the email message.")]
         [ExpressionOptions(Multiline = true)]
-        public WorkflowExpression<string> Body
+        public IWorkflowExpression<string> Body
         {
-            get => GetState(() => new WorkflowExpression<string>(LiteralEvaluator.SyntaxName, ""));
+            get => GetState<IWorkflowExpression<string>>();
             set => SetState(value);
         }
 

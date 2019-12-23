@@ -1,11 +1,19 @@
-using Elsa.Expressions;
-using Elsa.Scripting.Liquid.Services;
+using System;
 
 namespace Elsa.Scripting.Liquid
 {
-    public class LiquidExpression<T> : WorkflowExpression<T>
+    public class LiquidExpression : WorkflowScriptExpression
     {
-        public LiquidExpression(string expression) : base(LiquidExpressionEvaluator.SyntaxName, expression)
+        public const string ExpressionType = "Liquid";
+        
+        public LiquidExpression(string script, Type returnType) : base(script, ExpressionType, returnType)
+        {
+        }
+    }
+    
+    public class LiquidExpression<T> : LiquidExpression, IWorkflowScriptExpression<T>
+    {
+        public LiquidExpression(string script) : base(script, typeof(T))
         {
         }
     }

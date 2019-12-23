@@ -1,15 +1,27 @@
+using System;
+
 namespace Elsa.Expressions
 {
-    public class LiteralExpression<T> : WorkflowExpression<T>
+    public class LiteralExpression : WorkflowExpression
     {
-        public LiteralExpression(string expression) : base(LiteralEvaluator.SyntaxName, expression)
+        public static string ExpressionType => "Literal";
+        public string Expression { get; }
+        
+        public LiteralExpression(string expression, Type returnType) : base(ExpressionType, returnType)
+        {
+            Expression = expression;
+        }
+
+        public override string ToString() => Expression;
+    }
+    
+    public class LiteralExpression<T> : LiteralExpression, IWorkflowExpression<T>
+    {
+        public LiteralExpression() : this("")
         {
         }
-    }
-
-    public class LiteralExpression : LiteralExpression<string>
-    {
-        public LiteralExpression(string expression) : base(expression)
+        
+        public LiteralExpression(string expression) : base(expression, typeof(T))
         {
         }
     }

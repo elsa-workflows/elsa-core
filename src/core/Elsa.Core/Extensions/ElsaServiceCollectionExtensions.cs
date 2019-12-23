@@ -9,6 +9,7 @@ using Elsa.Mapping;
 using Elsa.Messages.Handlers;
 using Elsa.Persistence;
 using Elsa.Persistence.Memory;
+using Elsa.Scripting;
 using Elsa.Serialization;
 using Elsa.Serialization.Formatters;
 using Elsa.Services;
@@ -73,7 +74,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 .TryAddProvider<ITokenFormatter, JsonTokenFormatter>(ServiceLifetime.Singleton)
                 .TryAddProvider<ITokenFormatter, YamlTokenFormatter>(ServiceLifetime.Singleton)
                 .TryAddProvider<ITokenFormatter, XmlTokenFormatter>(ServiceLifetime.Singleton)
-                .TryAddProvider<IExpressionEvaluator, LiteralEvaluator>(ServiceLifetime.Singleton)
+                .TryAddProvider<IWorkflowExpressionHandler, LiteralHandler>(ServiceLifetime.Singleton)
+                .TryAddProvider<IWorkflowExpressionHandler, CodeHandler>(ServiceLifetime.Singleton)
                 .AddTransient<IWorkflowFactory, WorkflowFactory>()
                 .AddScoped<IActivityInvoker, ActivityInvoker>()
                 .AddScoped<IWorkflowExpressionEvaluator, WorkflowExpressionEvaluator>()

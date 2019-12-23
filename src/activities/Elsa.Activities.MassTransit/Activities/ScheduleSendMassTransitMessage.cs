@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Elsa.Activities.MassTransit.Options;
 using Elsa.Attributes;
 using Elsa.Expressions;
+using Elsa.Scripting;
 using Elsa.Services.Models;
 using MassTransit;
 using Microsoft.Extensions.Options;
@@ -37,9 +38,9 @@ namespace Elsa.Activities.MassTransit.Activities
         }
 
         [ActivityProperty(Hint = "An expression that evaluates to the message to be delivered.")]
-        public WorkflowExpression Message
+        public IWorkflowExpression Message
         {
-            get => GetState<WorkflowExpression>();
+            get => GetState<IWorkflowExpression>();
             set => SetState(value);
         }
 
@@ -55,9 +56,9 @@ namespace Elsa.Activities.MassTransit.Activities
         }
 
         [ActivityProperty(Hint = "An expression that evaluates to the date and time to deliver the message.")]
-        public WorkflowExpression<DateTime> ScheduledTime
+        public IWorkflowExpression<DateTime> ScheduledTime
         {
-            get => GetState<WorkflowExpression<DateTime>>();
+            get => GetState<IWorkflowExpression<DateTime>>();
             set => SetState(value);
         }
 

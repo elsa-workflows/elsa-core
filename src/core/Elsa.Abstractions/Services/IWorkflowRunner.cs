@@ -71,7 +71,7 @@ namespace Elsa.Services
             string activityType,
             Variables input = default,
             string correlationId = default,
-            Func<JObject, bool> activityStatePredicate = default,
+            Func<Variables, bool> activityStatePredicate = default,
             CancellationToken cancellationToken = default);
     }
 }

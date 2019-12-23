@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
+using Elsa.Scripting;
 using Elsa.Services;
 using Elsa.Services.Models;
 using NCrontab;
@@ -25,9 +26,9 @@ namespace Elsa.Activities.Timers.Activities
         }
 
         [ActivityProperty(Hint = "Specify a CRON expression. See https://crontab.guru/ for help.")]
-        public WorkflowExpression<string> CronExpression
+        public IWorkflowExpression<string> CronScriptExpression
         {
-            get => GetState(() => new LiteralExpression("* * * * *"));
+            get => GetState<IWorkflowExpression<string>>(() => new LiteralExpression<string>("* * * * *"));
             set => SetState(value);
         }
 
@@ -60,7 +61,7 @@ namespace Elsa.Activities.Timers.Activities
 
         private async Task<bool> IsExpiredAsync(WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
         {
-            var cronExpression = await workflowContext.EvaluateAsync(CronExpression, cancellationToken);
+            var cronExpression = await workflowContext.EvaluateAsync(CronScriptExpression, cancellationToken);
             var schedule = CrontabSchedule.Parse(cronExpression);
             var now = clock.GetCurrentInstant();
 

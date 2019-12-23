@@ -18,12 +18,12 @@ namespace Sample21.Workflows
                 .Then<SetVariable>(activity =>
                 {
                     activity.VariableName = "LastUpdateTimestamp";
-                    activity.ValueExpression = new JavaScriptExpression<Instant>("instantFromDateTimeUtc(lastResult().Timestamp)");
+                    activity.ValueScriptExpression = new JavaScriptExpression<Instant>("instantFromDateTimeUtc(lastResult().Timestamp)");
                 })
                 .Then<SetVariable>(activity =>
                 {
                     activity.VariableName = "IsExpired";
-                    activity.ValueExpression = new JavaScriptExpression<bool>("false");
+                    activity.ValueScriptExpression = new JavaScriptExpression<bool>("false");
                 })
                 .Fork(
                     action => action.Branches = new [] {"Item-Added", "Cart-Expired", "Order-Submitted"},
@@ -41,13 +41,13 @@ namespace Sample21.Workflows
                             .Then<SetVariable>(activity =>
                             {
                                 activity.VariableName = "ScheduleTokenId";
-                                activity.ValueExpression = new JavaScriptExpression<bool>("lastResult()");
+                                activity.ValueScriptExpression = new JavaScriptExpression<bool>("lastResult()");
                             })
                             .Then<ReceiveMassTransitMessage>(activity => activity.MessageType = typeof(CartItemAdded))
                             .Then<SetVariable>(activity =>
                             {
                                 activity.VariableName = "LastUpdateTimestamp";
-                                activity.ValueExpression = new JavaScriptExpression<Instant>("instantFromDateTimeUtc(lastResult().Timestamp)");
+                                activity.ValueScriptExpression = new JavaScriptExpression<Instant>("instantFromDateTimeUtc(lastResult().Timestamp)");
                             })
                             .Then<CancelScheduledMassTransitMessage>(activity => activity.TokenId = new JavaScriptExpression<Guid>("return ScheduleTokenId"))
                             .Then("ScheduleExpire");
@@ -57,7 +57,7 @@ namespace Sample21.Workflows
                             .Then<SetVariable>(activity =>
                             {
                                 activity.VariableName = "IsExpired";
-                                activity.ValueExpression = new JavaScriptExpression<bool>("true");
+                                activity.ValueScriptExpression = new JavaScriptExpression<bool>("true");
                             })
                             .Then<SendMassTransitMessage>(activity =>
                             {
@@ -72,7 +72,7 @@ namespace Sample21.Workflows
                             .Then<SetVariable>(activity =>
                             {
                                 activity.VariableName = "LastUpdateTimestamp";
-                                activity.ValueExpression = new JavaScriptExpression<DateTime>("lastResult().Timestamp");
+                                activity.ValueScriptExpression = new JavaScriptExpression<DateTime>("lastResult().Timestamp");
                             })
                             .Then<CancelScheduledMassTransitMessage>(activity => activity.TokenId = new JavaScriptExpression<Guid>("return ScheduleTokenId"))
                             .Then("Join");

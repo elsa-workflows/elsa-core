@@ -33,29 +33,30 @@ namespace Elsa.Models
 
         public T GetVariable<T>(string name)
         {
-            object value = GetVariable(name);
-            return (value != default) 
-                ? (T)System.Convert.ChangeType(value, typeof(T))
-                : default(T);
+            return ContainsKey(name) ? (T)this[name].Value : default;
         }
 
-        public Variable SetVariable(string name, object value)
+        public Variables SetVariable(string name, object value)
         {
-            return this[name] = new Variable(value);
+            this[name] = new Variable(value);
+            return this;
         }
 
-        public Variable SetVariable(string name, Variable variable)
+        public Variables SetVariable(string name, Variable variable)
         {
-            return SetVariable(name, variable.Value);
+            this[name] = variable;
+            return this;
         }
 
         public void SetVariables(Variables variables) =>
             SetVariables((IEnumerable<KeyValuePair<string, Variable>>) variables);
 
-        public void SetVariables(IEnumerable<KeyValuePair<string, Variable>> variables)
+        public Variables SetVariables(IEnumerable<KeyValuePair<string, Variable>> variables)
         {
             foreach (var variable in variables)
                 SetVariable(variable.Key, variable.Value);
+
+            return this;
         }
 
         public bool HasVariable(string name)

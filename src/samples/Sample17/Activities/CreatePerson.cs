@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Elsa.Expressions;
 using Elsa.Extensions;
 using Elsa.Results;
+using Elsa.Scripting;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Sample17.Models;
@@ -18,15 +19,15 @@ namespace Sample17.Activities
             this.expressionEvaluator = expressionEvaluator;
         }
 
-        public WorkflowExpression<string> TitleExpression
+        public IWorkflowExpression<string> TitleScriptExpression
         {
-            get => GetState<WorkflowExpression<string>>();
+            get => GetState<IWorkflowExpression<string>>();
             set => SetState(value);
         }
 
-        public WorkflowExpression<int> AgeExpression
+        public IWorkflowExpression<int> AgeScriptExpression
         {
-            get => GetState<WorkflowExpression<int>>();
+            get => GetState<IWorkflowExpression<int>>();
             set => SetState(value);
         }
 
@@ -34,8 +35,8 @@ namespace Sample17.Activities
             WorkflowExecutionContext context,
             CancellationToken cancellationToken)
         {
-            var name = await expressionEvaluator.EvaluateAsync(TitleExpression, context, cancellationToken);
-            var age = await expressionEvaluator.EvaluateAsync(AgeExpression, context, cancellationToken);
+            var name = await expressionEvaluator.EvaluateAsync(TitleScriptExpression, context, cancellationToken);
+            var age = await expressionEvaluator.EvaluateAsync(AgeScriptExpression, context, cancellationToken);
             var person = new Person { FullName = name, Age = age };
 
             return Done(person);

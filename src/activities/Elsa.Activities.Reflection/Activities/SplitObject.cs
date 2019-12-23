@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
+using Elsa.Scripting;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -26,9 +27,9 @@ namespace Elsa.Activities.Reflection.Activities
         }
 
         [ActivityProperty(Hint = "Enter an expression that evaluates to the object to split.")]
-        public WorkflowExpression<object> Object
+        public IWorkflowExpression<object> Object
         {
-            get => GetState<WorkflowExpression<object>>();
+            get => GetState<IWorkflowExpression<object>>();
             set => SetState(value);
         }
 

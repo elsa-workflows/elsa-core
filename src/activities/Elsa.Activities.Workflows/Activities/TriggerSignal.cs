@@ -3,6 +3,8 @@ using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
 using Elsa.Models;
+using Elsa.Scripting;
+using Elsa.Scripting.JavaScript;
 using Elsa.Scripting.JavaScript.Services;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -27,25 +29,25 @@ namespace Elsa.Activities.Workflows.Activities
         }
 
         [ActivityProperty(Hint = "An expression that evaluates to the name of the signal to trigger.")]
-        public WorkflowExpression<string> Signal
+        public IWorkflowExpression<string> Signal
         {
-            get => GetState<WorkflowExpression<string>>();
+            get => GetState<IWorkflowExpression<string>>();
             set => SetState(value);
         }
 
         [ActivityProperty(
             Hint = "An expression that evaluates to a dictionary to be provided as input when signaling."
         )]
-        public WorkflowExpression<Variables> Input
+        public IWorkflowExpression<Variables> Input
         {
-            get => GetState(() => new WorkflowExpression<Variables>(JavaScriptExpressionEvaluator.SyntaxName, "{}"));
+            get => GetState<IWorkflowExpression<Variables>>();
             set => SetState(value);
         }
 
         [ActivityProperty(Hint = "An expression that evaluates to the correlation ID to use when signaling.")]
-        public WorkflowExpression<string> CorrelationId
+        public IWorkflowExpression<string> CorrelationId
         {
-            get => GetState(() => new WorkflowExpression<string>(LiteralEvaluator.SyntaxName, ""));
+            get => GetState<IWorkflowExpression<string>>();
             set => SetState(value);
         }
 

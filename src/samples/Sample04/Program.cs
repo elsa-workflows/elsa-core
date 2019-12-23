@@ -29,14 +29,13 @@ namespace Sample04
                 .AddActivity<Subtract>()
                 .AddActivity<Multiply>()
                 .AddActivity<Divide>()
-                .AddWorkflow<CalculatorWorkflow>()
                 .BuildServiceProvider();
 
             // Create a workflow.
             var workflowFactory = services.GetRequiredService<IWorkflowFactory>();
             var workflow = workflowFactory.CreateWorkflow<CalculatorWorkflow>();
 
-            // Start the workflow.
+            // Run the workflow.
             var runner = services.GetService<IWorkflowRunner>();
             var executionContext = await runner.RunAsync(workflow);
 

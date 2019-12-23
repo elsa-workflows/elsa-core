@@ -13,7 +13,7 @@ namespace Elsa.Services
 {
     public abstract class ActivityBase : IActivity
     {
-        public JObject State { get; set; } = new JObject();
+        public Variables State { get; set; } = new Variables();
         public Variable Output { get; set; }
 
         public virtual string Type => GetType().Name;
@@ -55,8 +55,8 @@ namespace Elsa.Services
         {
             Id = Id,
             Type = Type,
-            State = new JObject(State),
-            Output = Output != null ? JObject.FromObject(Output) : null
+            State = new Variables(State),
+            Output = Output
         };
 
         public Task<IActivityExecutionResult> ResumeAsync(WorkflowExecutionContext context, CancellationToken cancellationToken) => OnResumeAsync(context, cancellationToken);
@@ -73,14 +73,9 @@ namespace Elsa.Services
             return State.GetState(name, defaultValue);
         }
 
-        protected T GetState<T>(Type type, Func<T> defaultValue = null, [CallerMemberName] string name = null)
-        {
-            return State.GetState(type, name, defaultValue);
-        }
-
         protected void SetState(object value, [CallerMemberName] string name = null)
         {
-            State.SetState(name, value);
+            State.SetState(value, name);
         }
     }
 }

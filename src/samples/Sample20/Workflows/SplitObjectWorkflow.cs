@@ -18,29 +18,29 @@ namespace Sample20.Workflows
         public void Build(IWorkflowBuilder builder)
         {
             builder
-                .StartWith<WriteLine>(x => x.TextExpression = new LiteralExpression("Running Split Object Workflow."))
+                .StartWith<WriteLine>(x => x.Text = new LiteralExpression<string>("Running Split Object Workflow."))
                 .Then<SetVariable>(x =>
                 {
                     x.VariableName = "Customer1";
-                    x.ValueExpression = new JavaScriptExpression<Customer>("({ Name: 'Johnny', Age: 21, Cash: 10 })");
+                    x.ValueScriptExpression = new JavaScriptExpression<Customer>("({ Name: 'Johnny', Age: 21, Cash: 10 })");
                 })
                 .Then<SetVariable>(x =>
                 {
                     x.VariableName = "Customer2";
-                    x.ValueExpression = new JavaScriptExpression<Customer>("({ Name: 'Margaret', Age: 19, Cash: 20 })");
+                    x.ValueScriptExpression = new JavaScriptExpression<Customer>("({ Name: 'Margaret', Age: 19, Cash: 20 })");
                 })
                 .Then<SetVariable>(x =>
                 {
                     x.VariableName = "Customer3";
-                    x.ValueExpression = new JavaScriptExpression<Customer>("({ Name: 'Bill', Age: 25, Cash: 50 })");
+                    x.ValueScriptExpression = new JavaScriptExpression<Customer>("({ Name: 'Bill', Age: 25, Cash: 50 })");
                 })
                 .Then<SetVariable>(x =>
                 {
                     x.VariableName = "SomePrimitive";
-                    x.ValueExpression = new JavaScriptExpression<string>("'Test'");
+                    x.ValueScriptExpression = new JavaScriptExpression<string>("'Test'");
                 })
                 .Then<ForEach>(
-                    x => x.CollectionExpression = new JavaScriptExpression<IList<object>>("[Customer1, Customer2, Customer3]"),
+                    x => x.Collection = new JavaScriptExpression<IList<object>>("[Customer1, Customer2, Customer3]"),
                     forEach =>
                     {
                         forEach
@@ -53,23 +53,23 @@ namespace Sample20.Workflows
                             {
                                 splitObject
                                     .When(nameof(Customer.Name))
-                                    .Then<WriteLine>(x => x.TextExpression = new LiquidExpression<string>("Processing name: {{ Variables.Name }}."))
+                                    .Then<WriteLine>(x => x.Text = new LiquidExpression<string>("Processing name: {{ Variables.Name }}."))
                                     .Then("Join");
                                 
                                 splitObject
                                     .When(nameof(Customer.Age))
-                                    .Then<WriteLine>(x => x.TextExpression = new LiquidExpression<string>("Processing age: {{ Variables.Age }}."))
+                                    .Then<WriteLine>(x => x.Text = new LiquidExpression<string>("Processing age: {{ Variables.Age }}."))
                                     .Then("Join");
                                 
                                 splitObject
                                     .When(nameof(Customer.Cash))
-                                    .Then<WriteLine>(x => x.TextExpression = new LiquidExpression<string>("Processing cash: {{ Variables.Cash }}."))
+                                    .Then<WriteLine>(x => x.Text = new LiquidExpression<string>("Processing cash: {{ Variables.Cash }}."))
                                     .Then("Join");
                             })
                             .Add<Join>(x => x.Mode = Join.JoinMode.WaitAll).WithName("Join")
                             .Then(forEach);
                     })
-                .Then<WriteLine>(x => x.TextExpression = new LiteralExpression("All set."));
+                .Then<WriteLine>(x => x.Text = new LiteralExpression<string>("All set."));
         }
     }
 }

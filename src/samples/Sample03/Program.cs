@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Elsa;
 using Elsa.Activities.Console.Activities;
@@ -29,8 +30,8 @@ namespace Sample03
             {
                 Activities = new[]
                 {
-                    new ActivityDefinition<WriteLine> { Id = "activity-1", State = JObject.FromObject(new { TextExpression = new LiteralExpression("Hello world!")})},
-                    new ActivityDefinition<WriteLine> { Id = "activity-2", State = JObject.FromObject(new { TextExpression = new LiteralExpression("Goodbye cruel world...")})}
+                    new ActivityDefinition<WriteLine> { Id = "activity-1", State = new Variables().SetVariable("TextExpression", new LiteralExpression<string>("Hello world!"))},
+                    new ActivityDefinition<WriteLine> { Id = "activity-2", State = new Variables().SetVariable("TextExpression", new LiteralExpression<string>("Goodbye cruel world..."))}
                 },
                 Connections = new []
                 {

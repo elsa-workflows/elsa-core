@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
+using Elsa.Scripting;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
@@ -24,9 +25,9 @@ namespace Elsa.Activities.Http.Activities
         }
 
         [ActivityProperty(Hint = "The URL to redirect to (HTTP 302).")]
-        public WorkflowExpression<string> Location
+        public IWorkflowExpression<string> Location
         {
-            get => GetState<WorkflowExpression<string>>();
+            get => GetState<IWorkflowExpression<string>>();
             set => SetState(value);
         }
         

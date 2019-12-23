@@ -22,20 +22,14 @@ using NodaTime.Serialization.JsonNet;
 
 namespace Elsa.Scripting.JavaScript.Services
 {
-    public class JavaScriptExpressionEvaluator : IExpressionEvaluator
+    public class JavaScriptHandler : IWorkflowScriptExpressionHandler
     {
         private readonly IMediator mediator;
         private readonly IMapper mapper;
         private readonly IOptions<ScriptOptions> options;
         private readonly JsonSerializerSettings serializerSettings;
-        public const string SyntaxName = "JavaScript";
 
-        public static WorkflowExpression<T> CreateExpression<T>(string expression)
-        {
-            return new WorkflowExpression<T>(SyntaxName, expression);
-        }
-
-        public JavaScriptExpressionEvaluator(IMediator mediator, IMapper mapper, IOptions<ScriptOptions> options)
+        public JavaScriptHandler(IMediator mediator, IMapper mapper, IOptions<ScriptOptions> options)
         {
             this.mediator = mediator;
             this.mapper = mapper;
@@ -45,18 +39,20 @@ namespace Elsa.Scripting.JavaScript.Services
             serializerSettings.Converters.Add(new TruncatingNumberJsonConverter());
         }
 
-        public string Syntax => SyntaxName;
+        public string Type => JavaScriptExpression.ExpressionType;
 
-        public async Task<object> EvaluateAsync(string expression, Type type, WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
+        public async Task<object> EvaluateAsync(IWorkflowExpression expression, WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
         {
+            var javaScriptExpression = (JavaScriptExpression)expression;
             var engine = new Engine(ConfigureJintEngine);
 
             await ConfigureEngineAsync(engine, workflowExecutionContext, cancellationToken);
-            engine.Execute(expression);
+            engine.Execute(javaScriptExpression.Script);
 
-            return ConvertValue(engine.GetCompletionValue(), type);
+            return ConvertValue(engine.GetCompletionValue(), javaScriptExpression.ReturnType);
         }
 
+        // ReSharper disable once ParameterHidesMember
         private void ConfigureJintEngine(Jint.Options options)
         {
             if (this.options.Value.AllowClr)

@@ -140,6 +140,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "shared", "shared", "{0A6747
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Testing.Shared", "test\shared\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj", "{E7C689EB-5AD6-4E91-A007-6116EEA702FC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sample24", "src\samples\Sample24\Sample24.csproj", "{6E1AD8FF-6EB4-4CCB-8FB0-6BD4A9C70478}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -350,6 +352,10 @@ Global
 		{E7C689EB-5AD6-4E91-A007-6116EEA702FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E7C689EB-5AD6-4E91-A007-6116EEA702FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E7C689EB-5AD6-4E91-A007-6116EEA702FC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6E1AD8FF-6EB4-4CCB-8FB0-6BD4A9C70478}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6E1AD8FF-6EB4-4CCB-8FB0-6BD4A9C70478}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6E1AD8FF-6EB4-4CCB-8FB0-6BD4A9C70478}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6E1AD8FF-6EB4-4CCB-8FB0-6BD4A9C70478}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -416,6 +422,7 @@ Global
 		{475EEB95-ED27-4366-88EA-97C5000AC8E8} = {0A3C36AB-2ACF-4175-A512-66B4C3DB9371}
 		{0A6747EA-7AC6-4B6F-BC0C-C40C8A80C44D} = {AB1AE008-6FD6-414C-8E88-D735F42E1FA6}
 		{E7C689EB-5AD6-4E91-A007-6116EEA702FC} = {0A6747EA-7AC6-4B6F-BC0C-C40C8A80C44D}
+		{6E1AD8FF-6EB4-4CCB-8FB0-6BD4A9C70478} = {5E5E1E84-DDBC-40D6-B891-0D563A15A44A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}

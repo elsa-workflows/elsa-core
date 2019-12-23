@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Elsa.Activities.MassTransit.Options;
 using Elsa.Attributes;
 using Elsa.Expressions;
+using Elsa.Scripting;
 using Elsa.Services.Models;
 using MassTransit;
 using Microsoft.Extensions.Options;
@@ -26,9 +27,9 @@ namespace Elsa.Activities.MassTransit.Activities
         }
 
         [ActivityProperty(Hint = "Expression that returns the tokenId of a scheduled message to cancel.")]
-        public WorkflowExpression<Guid> TokenId
+        public IWorkflowExpression<Guid> TokenId
         {
-            get => GetState<WorkflowExpression<Guid>>();
+            get => GetState<IWorkflowExpression<Guid>>();
             set => SetState(value);
         }
 

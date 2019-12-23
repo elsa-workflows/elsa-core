@@ -1,12 +1,10 @@
-using Newtonsoft.Json.Linq;
-
 namespace Elsa.Models
 {
     public class ActivityInstance
     {
         public string Id { get; set; }
         public string Type { get; set; }
-        public JObject State { get; set; }
-        public JObject Output { get; set; }
+        public Variables State { get; set; }
+        public Variable Output { get; set; }
     }
 }

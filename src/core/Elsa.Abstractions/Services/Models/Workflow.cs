@@ -96,8 +96,8 @@ namespace Elsa.Services.Models
             
             foreach (var activity in Blueprint.Activities)
             {
-                activity.State = new JObject(activityDictionary[activity.Id].State);
-                activity.Output = activityDictionary[activity.Id].Output?.ToObject<Variable>();
+                activity.State = new Variables(activityDictionary[activity.Id].State);
+                activity.Output = activityDictionary[activity.Id].Output;
             }
         }
     }

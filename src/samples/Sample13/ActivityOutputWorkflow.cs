@@ -11,11 +11,11 @@ namespace Sample13
         public void Build(IWorkflowBuilder builder)
         {
             builder
-                .StartWith<WriteLine>(x => x.TextExpression = new LiteralExpression("Hi! What's your name?"))
+                .StartWith<WriteLine>(x => x.Text = new LiteralExpression<string>("Hi! What's your name?"))
                 .Then<ReadLine>().WithName("Name")
-                .Then<WriteLine>(x => x.TextExpression = new JavaScriptExpression<string>("`${Name.Input}, that's a great name! Now, what's your age?`"))
+                .Then<WriteLine>(x => x.Text = new JavaScriptExpression<string>("`${Name.Input}, that's a great name! Now, what's your age?`"))
                 .Then<ReadLine>().WithName("Age")
-                .Then<WriteLine>(x => x.TextExpression = new JavaScriptExpression<string>("`I see! So you were born in ${getDateOfBirth(parseInt(Age.Input))}. What a year to be alive!`"));
+                .Then<WriteLine>(x => x.Text = new JavaScriptExpression<string>("`I see! So you were born in ${getDateOfBirth(parseInt(Age.Input))}. What a year to be alive!`"));
         }
     }
 }

@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Extensions;
+using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Newtonsoft.Json.Linq;
@@ -16,7 +17,7 @@ namespace Elsa.Activities.MassTransit.Activities
     )]
     public class ReceiveMassTransitMessage : Activity
     {
-        public static Type GetMessageType(JObject state)
+        public static Type GetMessageType(Variables state)
         {
             var typeName = state.GetState<string>(nameof(MessageType));
             return string.IsNullOrWhiteSpace(typeName) ? null : System.Type.GetType(typeName);

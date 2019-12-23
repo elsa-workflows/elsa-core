@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
 using Elsa.Models;
+using Elsa.Scripting;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,9 +24,9 @@ namespace Elsa.Activities.Reflection.Activities
     public class ExecuteMethod : Activity
     {
         [ActivityProperty(Hint = "An expression that returns an array of arguments to the method. Leave empty if the method does not accept any arguments.")]
-        public WorkflowExpression<object[]> Arguments
+        public IWorkflowExpression<object[]> Arguments
         {
-            get => GetState<WorkflowExpression<object[]>>();
+            get => GetState<IWorkflowExpression<object[]>>();
             set => SetState(value);
         }
 

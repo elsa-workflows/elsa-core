@@ -10,7 +10,7 @@ namespace Elsa.Services.Models
         /// <summary>
         /// Holds persistable activity state.
         /// </summary>
-        JObject State { get; set; }
+        Variables State { get; set; }
         
         /// <summary>
         /// Holds activity output.

@@ -1,6 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Expressions;
+using Elsa.Scripting;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -8,9 +9,9 @@ namespace Sample04.Activities
 {
     public abstract class ArithmeticOperation : Activity
     {
-        public WorkflowExpression<double[]> Values
+        public IWorkflowExpression<double[]> Values
         {
-            get => GetState<WorkflowExpression<double[]>>();
+            get => GetState<IWorkflowExpression<double[]>>();
             set => SetState(value);
         }
 

@@ -20,22 +20,22 @@ namespace Sample18
             builder
                 .WithId("RecurringWorkflow")
                 .AsSingleton()
-                .StartWith<WriteLine>(x => x.TextExpression = new LiteralExpression<string>("Enter a reminder"))
+                .StartWith<WriteLine>(x => x.Text = new LiteralExpression<string>("Enter a reminder"))
                 .Then<ReadLine>().WithName("ReminderInput")
                 .Then<SetVariable>(
                     x =>
                     {
                         x.VariableName = "Todo";
-                        x.ValueExpression = new JavaScriptExpression<string>("ReminderInput.Input");
+                        x.ValueScriptExpression = new JavaScriptExpression<string>("ReminderInput.Input");
                     })
                 .Then<While>(
-                    x => x.ConditionExpression = new JavaScriptExpression<bool>("true"),
+                    x => x.Condition = new JavaScriptExpression<bool>("true"),
                     doWhile =>
                     {
                         doWhile
                             .When(OutcomeNames.Iterate)
-                            .Then<TimerEvent>(x => x.TimeoutExpression = new LiteralExpression<TimeSpan>("00:00:01"))
-                            .Then<WriteLine>(x => x.TextExpression = new LiquidExpression<string>("Sending reminder: \"{{ Activities.ReminderInput.Input }}\""))
+                            .Then<TimerEvent>(x => x.TimeoutScriptExpression = new LiteralExpression<TimeSpan>("00:00:01"))
+                            .Then<WriteLine>(x => x.Text = new LiquidExpression<string>("Sending reminder: \"{{ Activities.ReminderInput.Input }}\""))
                             .Then<SendEmail>(
                                 x =>
                                 {

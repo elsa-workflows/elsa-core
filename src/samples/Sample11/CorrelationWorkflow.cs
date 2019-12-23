@@ -12,10 +12,10 @@ namespace Sample11
         public void Build(IWorkflowBuilder builder)
         {
             builder
-                .StartWith<WriteLine>(activity => activity.TextExpression = new JavaScriptExpression<string>("`Workflow started with correlation ID \"${correlationId()}\".`"))
-                .Then<Signaled>(activity => activity.Signal = new LiteralExpression("Proceed"))
-                .Then<WriteLine>(activity => activity.TextExpression = new JavaScriptExpression<string>("`Signal received for workflow with correlation ID: \"${correlationId()}\"`"))
-                .Then<WriteLine>(activity => activity.TextExpression = new LiteralExpression("Workflow finished."));
+                .StartWith<WriteLine>(activity => activity.Text = new JavaScriptExpression<string>("`Workflow started with correlation ID \"${correlationId()}\".`"))
+                .Then<Signaled>(activity => activity.Signal = new LiteralExpression<string>("Proceed"))
+                .Then<WriteLine>(activity => activity.Text = new JavaScriptExpression<string>("`Signal received for workflow with correlation ID: \"${correlationId()}\"`"))
+                .Then<WriteLine>(activity => activity.Text = new LiteralExpression<string>("Workflow finished."));
         }
     }
 }

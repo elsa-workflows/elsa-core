@@ -76,7 +76,7 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
             return items.Where(x => IsMatch(x.Item2.State, path, method));
         }
 
-        private bool IsMatch(JObject state, Uri path, string method)
+        private bool IsMatch(Variables state, Uri path, string method)
         {
             var m = ReceiveHttpRequest.GetMethod(state);
             var p = ReceiveHttpRequest.GetPath(state);

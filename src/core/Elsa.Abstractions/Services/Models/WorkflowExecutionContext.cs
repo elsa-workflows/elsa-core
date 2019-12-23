@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Elsa.Expressions;
 using Elsa.Extensions;
 using Elsa.Models;
+using Elsa.Scripting;
 using Microsoft.Extensions.DependencyInjection;
 using NodaTime;
 
@@ -75,11 +76,13 @@ namespace Elsa.Services.Models
             .Select(x => x.Variables)
             .Aggregate(Variables.Empty, (x, y) => new Variables(x.Union(y)));
 
-        public Task<T> EvaluateAsync<T>(IWorkflowExpression<T> expression, CancellationToken cancellationToken) =>
-            WorkflowExpressionEvaluator.EvaluateAsync(expression, this, cancellationToken);
-        
+        public Task<T> EvaluateAsync<T>(IWorkflowExpression<T> expression, CancellationToken cancellationToken)
+        {
+            return WorkflowExpressionEvaluator.EvaluateAsync(expression, this, cancellationToken);
+        }
+
         public Task<object> EvaluateAsync(IWorkflowExpression expression, Type type, CancellationToken cancellationToken) =>
-            WorkflowExpressionEvaluator.EvaluateAsync(expression, type, this, cancellationToken);
+            WorkflowExpressionEvaluator.EvaluateAsync(expression, this, cancellationToken);
 
         public void Run()
         {

@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
+using Elsa.Scripting;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -19,7 +20,7 @@ namespace Elsa.Activities.ControlFlow.Activities
     )]
     public class Switch : Activity
     {
-        public Switch(IWorkflowExpressionEvaluator expressionEvaluator)
+        public Switch()
         {
             Cases = new List<string>()
             {
@@ -27,10 +28,10 @@ namespace Elsa.Activities.ControlFlow.Activities
             };
         }
 
-        [ActivityProperty(Hint = "The expression to evaluate. The evaluated value will be used to switch on.")]
-        public WorkflowExpression<string> Expression
+        [ActivityProperty(Hint = "The value to evaluate. The evaluated value will be used to switch on.")]
+        public IWorkflowExpression<string> Value
         {
-            get => GetState<WorkflowExpression<string>>();
+            get => GetState<IWorkflowExpression<string>>();
             set => SetState(value);
         }
 
@@ -43,7 +44,7 @@ namespace Elsa.Activities.ControlFlow.Activities
 
         protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
         {
-            var result = await workflowContext.EvaluateAsync(Expression, cancellationToken);
+            var result = await workflowContext.EvaluateAsync(Value, cancellationToken);
 
             if (ContainsCase(result) || !ContainsCase(OutcomeNames.Default))
                 return Outcome(result, result);

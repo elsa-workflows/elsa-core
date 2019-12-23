@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Expressions;
+using Elsa.Scripting;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
@@ -70,9 +71,9 @@ namespace Elsa.Activities.Http.Activities
         /// </summary>
         [ActivityProperty(Hint = "The HTTP content to write.")]
         [ExpressionOptions(Multiline = true)]
-        public WorkflowExpression<string> Content
+        public IWorkflowExpression<string> Content
         {
-            get => GetState(() => new WorkflowExpression<string>(LiteralEvaluator.SyntaxName, ""));
+            get => GetState<IWorkflowExpression<string>>();
             set => SetState(value);
         }
 
@@ -94,15 +95,13 @@ namespace Elsa.Activities.Http.Activities
         /// The headers to send along with the response. One 'header: value' pair per line.
         /// </summary>
         [ActivityProperty(Hint = "The headers to send along with the response. One 'header: value' pair per line.")]
-        public WorkflowExpression<string> ResponseHeaders
+        public IWorkflowExpression<string> ResponseHeaders
         {
-            get => GetState(() => new WorkflowExpression<string>(LiteralEvaluator.SyntaxName, ""));
+            get => GetState<IWorkflowExpression<string>>();
             set => SetState(value);
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(
-            WorkflowExecutionContext workflowContext,
-            CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
         {
             var response = httpContextAccessor.HttpContext.Response;
 
@@ -121,11 +120,8 @@ namespace Elsa.Activities.Http.Activities
                     let pair = line.Split(':', '=')
                     select new KeyValuePair<string, string>(pair[0], pair[1]);
 
-                foreach (var header in headersQuery)
-                {
-                    var headerValueExpression = new WorkflowExpression<string>(ResponseHeaders.Syntax, header.Value);
-                    response.Headers[header.Key] = await workflowContext.EvaluateAsync(headerValueExpression, cancellationToken);
-                }
+                foreach (var header in headersQuery) 
+                    response.Headers[header.Key] = header.Value;
             }
 
             var bodyText = await workflowContext.EvaluateAsync(Content, cancellationToken);

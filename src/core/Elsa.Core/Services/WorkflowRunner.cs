@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Expressions;
 using Elsa.Extensions;
 using Elsa.Messages;
 using Elsa.Models;
@@ -54,7 +55,7 @@ namespace Elsa.Services
             string activityType,
             Variables input = default,
             string correlationId = default,
-            Func<JObject, bool> activityStatePredicate = default,
+            Func<Variables, bool> activityStatePredicate = default,
             CancellationToken cancellationToken = default)
         {
             var startedExecutionContexts = await RunManyAsync(
@@ -176,7 +177,7 @@ namespace Elsa.Services
             string activityType,
             Variables input = default,
             string correlationId = default,
-            Func<JObject, bool> activityStatePredicate = default,
+            Func<Variables, bool> activityStatePredicate = default,
             CancellationToken cancellationToken = default)
         {
             var workflowInstances = await workflowInstanceStore
@@ -197,7 +198,7 @@ namespace Elsa.Services
             string activityType,
             Variables input = default,
             string correlationId = default,
-            Func<JObject, bool> activityStatePredicate = default,
+            Func<Variables, bool> activityStatePredicate = default,
             CancellationToken cancellationToken = default)
         {
             var workflowDefinitions = await workflowRegistry.ListByStartActivityAsync(activityType, cancellationToken);

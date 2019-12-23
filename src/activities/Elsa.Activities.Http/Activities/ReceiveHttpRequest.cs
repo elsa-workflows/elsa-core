@@ -25,12 +25,12 @@ namespace Elsa.Activities.Http.Activities
     )]
     public class ReceiveHttpRequest : Activity
     {
-        public static Uri GetPath(JObject state)
+        public static Uri GetPath(Variables state)
         {
             return state.GetState<Uri>(nameof(Path));
         }
 
-        public static string GetMethod(JObject state)
+        public static string GetMethod(Variables state)
         {
             return state.GetState<string>(nameof(Method));
         }

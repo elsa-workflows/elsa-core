@@ -14,7 +14,7 @@ namespace Elsa.Activities.Workflows.Extensions
             this IWorkflowRunner workflowRunner,
             string signalName,
             Variables input = default,
-            Func<JObject, bool> activityStatePredicate = null,
+            Func<Variables, bool> activityStatePredicate = null,
             string correlationId = default,
             CancellationToken cancellationToken = default)
         {

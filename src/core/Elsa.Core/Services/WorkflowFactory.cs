@@ -53,9 +53,7 @@ namespace Elsa.Services
         {
             if (blueprint.IsDisabled)
                 throw new InvalidOperationException("Cannot instantiate disabled workflow definitions.");
-
-            var activities = blueprint.Activities.ToList();
-            var connections = blueprint.Connections;
+            
             var id = idGenerator.Generate();
             var workflow = new Workflow(
                 id,
@@ -87,7 +85,7 @@ namespace Elsa.Services
         {
             var activity = activityResolver.ResolveActivity(definition.Type);
 
-            activity.State = new JObject(definition.State);
+            activity.State = new Variables(definition.State);
             activity.Id = definition.Id;
 
             return activity;

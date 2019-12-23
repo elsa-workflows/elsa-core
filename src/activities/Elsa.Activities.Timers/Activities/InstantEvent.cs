@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
+using Elsa.Scripting;
 using Elsa.Services;
 using Elsa.Services.Models;
 using NodaTime;
@@ -28,9 +29,9 @@ namespace Elsa.Activities.Timers.Activities
         /// An expression that evaluates to an <see cref="Instant"/>
         /// </summary>
         [ActivityProperty(Hint = "An expression that evaluates to a NodaTime Instant")]
-        public WorkflowExpression<Instant> InstantExpression
+        public IWorkflowExpression<Instant> InstantScriptExpression
         {
-            get => GetState<WorkflowExpression<Instant>>();
+            get => GetState<IWorkflowExpression<Instant>>();
             set => SetState(value);
         }
 
@@ -50,7 +51,7 @@ namespace Elsa.Activities.Timers.Activities
 
         private async Task<bool> IsExpiredAsync(WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
         {
-            var instant = await workflowContext.EvaluateAsync(InstantExpression, cancellationToken);
+            var instant = await workflowContext.EvaluateAsync(InstantScriptExpression, cancellationToken);
             var now = clock.GetCurrentInstant();
 
             return now >= instant;

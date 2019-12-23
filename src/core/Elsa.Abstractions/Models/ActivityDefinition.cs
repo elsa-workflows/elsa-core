@@ -1,3 +1,4 @@
+using Elsa.Extensions;
 using Elsa.Services.Models;
 using Newtonsoft.Json.Linq;
 
@@ -17,7 +18,7 @@ namespace Elsa.Models
 
         public ActivityDefinition()
         {
-            State = new JObject();
+            State = new Variables();
         }
 
         public string Id { get; set; }
@@ -25,15 +26,15 @@ namespace Elsa.Models
 
         public string Name
         {
-            get => State.ContainsKey(nameof(Name)) ? State[nameof(Name)].Value<string>() : default;
-            set => State[nameof(Name)] = value;
+            get => State.GetState<string>();
+            set => State.SetState(value);
         }
 
         public string DisplayName { get; set; }
         public string Description { get; set; }
         public int Left { get; set; }
         public int Top { get; set; }
-        public JObject State { get; set; }
+        public Variables State { get; set; }
     }
 
     public class ActivityDefinition<T> : ActivityDefinition where T : IActivity

@@ -1,9 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
 using Elsa.Extensions;
+using Elsa.Scripting;
 using Elsa.Scripting.JavaScript;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -21,9 +23,9 @@ namespace Elsa.Activities.ControlFlow.Activities
         }
 
         [ActivityProperty(Hint = "Enter an expression that evaluates to an array of items to iterate over.")]
-        public WorkflowExpression<IList<object>> CollectionExpression
+        public IWorkflowExpression<IList<object>> Collection
         {
-            get => GetState(() => new JavaScriptExpression<IList<object>>("[]"));
+            get => GetState<IWorkflowExpression<IList<object>>>();
             set => SetState(value);
         }
 
@@ -42,7 +44,7 @@ namespace Elsa.Activities.ControlFlow.Activities
 
         protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
         {
-            var collection = await expressionEvaluator.EvaluateAsync(CollectionExpression, context, cancellationToken);
+            var collection = await expressionEvaluator.EvaluateAsync(Collection, context, cancellationToken) ?? new object[0];
             var index = CurrentIndex;
 
             if (index >= collection.Count)
