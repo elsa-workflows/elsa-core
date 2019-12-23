@@ -29,7 +29,7 @@ namespace Elsa.Activities.Http.Handlers
         public Task Handle(EvaluatingJavaScriptExpression notification, CancellationToken cancellationToken)
         {
             var engine = notification.Engine;
-            var workflowExecutionContext = notification.WorkflowExecutionContext;
+            var activityContext = notification.ActivityExecutionContext;
 
             engine.SetValue(
                 "queryString",
@@ -41,15 +41,15 @@ namespace Elsa.Activities.Http.Handlers
             );
             engine.SetValue(
                 "signalUrl",
-                (Func<string, string>)(signal => GenerateUrl(signal, workflowExecutionContext))
+                (Func<string, string>)(signal => GenerateUrl(signal, activityContext))
             );
 
             return Task.CompletedTask;
         }
 
-        private string GenerateUrl(string signal, WorkflowExecutionContext workflowExecutionContext)
+        private string GenerateUrl(string signal, ActivityExecutionContext activityContext)
         {
-            var workflowInstanceId = workflowExecutionContext.Workflow.Id;
+            var workflowInstanceId = activityContext.WorkflowExecutionContext.Workflow.Id;
             var payload = new Signal(signal, workflowInstanceId);
             var token = tokenService.CreateToken(payload);
             var url = $"/workflows/signal?token={token}";

@@ -1,4 +1,4 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Dropbox.Models;
 using Elsa.Activities.Dropbox.Services;
@@ -23,25 +23,23 @@ namespace Elsa.Activities.Dropbox.Activities
         }
 
         [ActivityProperty(Hint = "An expression evaluating to a byte array to store.")]
-        public WorkflowExpression<byte[]> DataExpression
+        public IWorkflowExpression<byte[]> Data
         {
-            get => GetState<WorkflowExpression<byte[]>>();
+            get => GetState<IWorkflowExpression<byte[]>>();
             set => SetState(value);
         }
 
         [ActivityProperty(Hint = "An expression evaluating to the path to which the file should be saved.")]
-        public WorkflowExpression<string> PathExpression
+        public IWorkflowExpression<string> Path
         {
-            get => GetState<WorkflowExpression<string>>();
+            get => GetState<IWorkflowExpression<string>>();
             set => SetState(value);
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(
-            WorkflowExecutionContext context,
-            CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var data = await context.EvaluateAsync(DataExpression, cancellationToken);
-            var path = await context.EvaluateAsync(PathExpression, cancellationToken);
+            var data = await context.EvaluateAsync(Data, cancellationToken);
+            var path = await context.EvaluateAsync(Path, cancellationToken);
 
             await filesApi.UploadAsync(
                 new UploadRequest

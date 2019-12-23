@@ -26,25 +26,24 @@ namespace Elsa.Activities.UserTask.Activities
             set => SetState(value);
         }
 
-        protected override bool OnCanExecute(WorkflowExecutionContext context)
+        protected override bool OnCanExecute(ActivityExecutionContext context)
         {
             var userAction = GetUserAction(context);
 
             return Actions.Contains(userAction, StringComparer.OrdinalIgnoreCase);
         }
 
-        protected override IActivityExecutionResult OnExecute(WorkflowExecutionContext context)
+        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
             return Halt(true);
         }
 
-        protected override IActivityExecutionResult OnResume(WorkflowExecutionContext context)
+        protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
         {
             var userAction = GetUserAction(context);
             return Outcome(userAction);
         }
 
-        private string GetUserAction(WorkflowExecutionContext context) =>
-            (string) context.Workflow.Input.GetVariable("UserAction");
+        private string GetUserAction(ActivityExecutionContext context) => context.Input?.GetValue<string>();
     }
 }

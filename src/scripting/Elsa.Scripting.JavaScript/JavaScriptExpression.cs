@@ -1,11 +1,19 @@
+using System;
 using Elsa.Expressions;
-using Elsa.Scripting.JavaScript.Services;
 
 namespace Elsa.Scripting.JavaScript
 {
-    public class JavaScriptExpression<T> : WorkflowExpression<T>
+    public class JavaScriptExpression : WorkflowScriptExpression
     {
-        public JavaScriptExpression(string expression) : base(JavaScriptExpressionEvaluator.SyntaxName, expression)
+        public const string ExpressionType = "JavaScript";
+        public JavaScriptExpression(string script, Type returnType) : base(script, ExpressionType, returnType)
+        {
+        }
+    }
+
+    public class JavaScriptExpression<T> : JavaScriptExpression, IWorkflowExpression<T>
+    {
+        public JavaScriptExpression(string script) : base(script, typeof(T))
         {
         }
     }

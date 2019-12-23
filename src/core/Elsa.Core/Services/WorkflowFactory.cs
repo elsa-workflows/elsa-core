@@ -4,7 +4,6 @@ using System.Linq;
 using Elsa.Models;
 using Elsa.Services.Extensions;
 using Elsa.Services.Models;
-using Newtonsoft.Json.Linq;
 using NodaTime;
 using Connection = Elsa.Services.Models.Connection;
 
@@ -30,32 +29,35 @@ namespace Elsa.Services
         }
 
         public Workflow CreateWorkflow<T>(
-            Variables input = default,
+            Variable input = default,
             WorkflowInstance workflowInstance = default,
             string correlationId = default) where T : IWorkflow, new()
         {
             var workflowDefinition = workflowBuilder().Build<T>();
             return CreateWorkflow(workflowDefinition, input, workflowInstance, correlationId);
         }
+        
+        public WorkflowBlueprint CreateWorkflowBlueprint(WorkflowDefinitionVersion definition)
+        {
+            var activities = CreateActivities(definition.Activities).ToList();
+            var connections = CreateConnections(definition.Connections, activities).ToList();
+            return new WorkflowBlueprint(definition.DefinitionId, definition.Version, definition.IsSingleton, definition.IsDisabled, definition.Name, definition.Description, activities, connections);
+        }
 
         public Workflow CreateWorkflow(
-            WorkflowDefinitionVersion definition,
-            Variables input = default,
+            WorkflowBlueprint blueprint,
+            Variable input = default,
             WorkflowInstance workflowInstance = default,
             string correlationId = default)
         {
-            if(definition.IsDisabled)
+            if (blueprint.IsDisabled)
                 throw new InvalidOperationException("Cannot instantiate disabled workflow definitions.");
             
-            var activities = CreateActivities(definition.Activities).ToList();
-            var connections = CreateConnections(definition.Connections, activities);
             var id = idGenerator.Generate();
             var workflow = new Workflow(
                 id,
-                definition,
+                blueprint,
                 clock.GetCurrentInstant(),
-                activities,
-                connections,
                 input,
                 correlationId);
 
@@ -73,16 +75,16 @@ namespace Elsa.Services
             return connectionBlueprints.Select(x => CreateConnection(x, activityDictionary));
         }
 
-        private IEnumerable<IActivity> CreateActivities(IEnumerable<ActivityDefinition> activityBlueprints)
+        private IEnumerable<IActivity> CreateActivities(IEnumerable<ActivityDefinition> activityDefinitions)
         {
-            return activityBlueprints.Select(CreateActivity);
+            return activityDefinitions.Select(CreateActivity);
         }
 
         private IActivity CreateActivity(ActivityDefinition definition)
         {
             var activity = activityResolver.ResolveActivity(definition.Type);
 
-            activity.State = new JObject(definition.State);
+            activity.State = new Variables(definition.State);
             activity.Id = definition.Id;
 
             return activity;

@@ -14,15 +14,15 @@ namespace Sample20.Workflows
         public void Build(IWorkflowBuilder builder)
         {
             builder
-                .StartWith<WriteLine>(x => x.TextExpression = new LiteralExpression("Running Execute Method Workflow."))
+                .StartWith<WriteLine>(x => x.Text = new LiteralExpression<string>("Running Execute Method Workflow."))
                 .Then<ExecuteMethod>(x =>
                 {
                     x.MethodName = nameof(MyUtility.WriteHello);
                     x.TypeName = typeof(MyUtility).AssemblyQualifiedName;
                 })
-                .Then<WriteLine>(x => x.TextExpression = new LiteralExpression("Enter a number:"))
+                .Then<WriteLine>(x => x.Text = new LiteralExpression<string>("Enter a number:"))
                 .Then<ReadLine>().WithName("NumberA")
-                .Then<WriteLine>(x => x.TextExpression = new LiteralExpression("Enter another number:"))
+                .Then<WriteLine>(x => x.Text = new LiteralExpression<string>("Enter another number:"))
                 .Then<ReadLine>().WithName("NumberB")
                 .Then<ExecuteMethod>(x =>
                 {
@@ -30,8 +30,8 @@ namespace Sample20.Workflows
                     x.Arguments = new JavaScriptExpression<object[]>("[parseFloat(NumberA.Input), parseFloat(NumberB.Input)]");
                     x.TypeName = typeof(MyUtility).AssemblyQualifiedName;
                 }).WithName("Result")
-                .Then<WriteLine>(x => x.TextExpression = new LiquidExpression<string>("{{ Activities.NumberA.Input }} * {{ Activities.NumberB.Input }} = {{ Activities.Result.Result }}"))
-                .Then<WriteLine>(x => x.TextExpression = new LiteralExpression("Thanks for reflecting!"));
+                .Then<WriteLine>(x => x.Text = new LiquidExpression<string>("{{ Activities.NumberA.Input }} * {{ Activities.NumberB.Input }} = {{ Activities.Result.Result }}"))
+                .Then<WriteLine>(x => x.Text = new LiteralExpression<string>("Thanks for reflecting!"));
         }
     }
 }

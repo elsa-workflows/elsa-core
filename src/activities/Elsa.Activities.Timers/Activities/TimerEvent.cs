@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
@@ -23,9 +23,9 @@ namespace Elsa.Activities.Timers.Activities
         }
 
         [ActivityProperty(Hint = "An expression that evaluates to a TimeSpan value")]
-        public WorkflowExpression<TimeSpan> TimeoutExpression
+        public IWorkflowExpression<TimeSpan> TimeoutScriptExpression
         {
-            get => GetState(() => new LiteralExpression<TimeSpan>("00:01:00"));
+            get => GetState<IWorkflowExpression<TimeSpan>>(() => new LiteralExpression<TimeSpan>("00:01:00"));
             set => SetState(value);
         }
 
@@ -35,17 +35,17 @@ namespace Elsa.Activities.Timers.Activities
             set => SetState(value);
         }
 
-        protected override async Task<bool> OnCanExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
+        protected override async Task<bool> OnCanExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
             return StartTime == null || await IsExpiredAsync(context, cancellationToken);
         }
 
-        protected override IActivityExecutionResult OnExecute(WorkflowExecutionContext context)
+        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
             return Halt();
         }
 
-        protected override async Task<IActivityExecutionResult> OnResumeAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnResumeAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
             if (await IsExpiredAsync(context, cancellationToken))
             {
@@ -56,14 +56,14 @@ namespace Elsa.Activities.Timers.Activities
             return Halt();
         }
 
-        private async Task<bool> IsExpiredAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
+        private async Task<bool> IsExpiredAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
             var now = clock.GetCurrentInstant();
 
             if (StartTime == null)
                 StartTime = now;
             
-            var timeSpan = await context.EvaluateAsync(TimeoutExpression, cancellationToken);
+            var timeSpan = await context.EvaluateAsync(TimeoutScriptExpression, cancellationToken);
             var expiresAt = StartTime.Value.ToDateTimeUtc() + timeSpan;
             
             return now.ToDateTimeUtc() >= expiresAt;

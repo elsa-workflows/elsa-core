@@ -28,8 +28,7 @@ namespace Elsa.Scripting.Liquid.Handlers
             var context = notification.TemplateContext;
 
             context.MemberAccessStrategy.Register<LiquidPropertyAccessor, FluidValue>((x, name) => x.GetValueAsync(name));
-            context.MemberAccessStrategy.Register<WorkflowExecutionContext, LiquidPropertyAccessor>("Input", x => new LiquidPropertyAccessor(name => ToFluidValue(x.Workflow.Input, name)));
-            context.MemberAccessStrategy.Register<WorkflowExecutionContext, LiquidPropertyAccessor>("Output", x => new LiquidPropertyAccessor(name => ToFluidValue(x.Workflow.Output, name)));
+            context.MemberAccessStrategy.Register<ActivityExecutionContext, FluidValue>("Input", x => ToFluidValue(x.Input));
             context.MemberAccessStrategy.Register<WorkflowExecutionContext, LiquidPropertyAccessor>("Variables", x => new LiquidPropertyAccessor(name => ToFluidValue(x.GetVariables(), name)));
             context.MemberAccessStrategy.Register<WorkflowExecutionContext, LiquidObjectAccessor<IActivity>>("Activities", x => new LiquidObjectAccessor<IActivity>(name => GetActivityAsync(x, name)));
             context.MemberAccessStrategy.Register<LiquidObjectAccessor<IActivity>, object>(GetActivityOutput);
@@ -40,16 +39,18 @@ namespace Elsa.Scripting.Liquid.Handlers
             return Task.CompletedTask;
         }
 
+        private Task<FluidValue> ToFluidValue(Variable input) => Task.FromResult(FluidValue.Create(input));
+        
         private Task<FluidValue> ToFluidValue(IDictionary<string, Variable> dictionary, string key) 
             => Task.FromResult(!dictionary.ContainsKey(key) ? default : FluidValue.Create(dictionary[key].Value));
 
         private async Task<object> GetActivityOutput(LiquidObjectAccessor<IActivity> accessor, string activityName)
         {
             var activity = await accessor.GetValueAsync(activityName);
-            return activity.Output;
+            return activity?.Output?.Value;
         }
 
         private Task<IActivity> GetActivityAsync(WorkflowExecutionContext executionContext, string name) 
-            => Task.FromResult(executionContext.Workflow.Activities.FirstOrDefault(x => x.Name == name));
+            => Task.FromResult(executionContext.Workflow.Blueprint.Activities.FirstOrDefault(x => x.Name == name));
     }
 }

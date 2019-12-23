@@ -4,9 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Expressions;
-using Elsa.Extensions;
 using Elsa.Models;
-using Microsoft.Extensions.DependencyInjection;
 using NodaTime;
 
 namespace Elsa.Services.Models
@@ -29,27 +27,24 @@ namespace Elsa.Services.Models
         public bool HasScheduledActivities => Workflow.ScheduledActivities.Any();
         public bool IsFirstPass { get; set; }
         public WorkflowExecutionScope CurrentScope => Workflow.Scopes.Peek();
-        public IActivity CurrentActivity { get; private set; }
-        public void ScheduleActivities(params IActivity[] activities) => ScheduleActivities((IEnumerable<IActivity>)activities);
+        public ScheduledActivity? ScheduledActivity { get; private set; }
 
-        public void ScheduleActivities(IEnumerable<IActivity> activities)
+        public void ScheduleActivities(IEnumerable<IActivity> activities, Variable? input = default)
         {
-            foreach (var activity in activities)
-            {
-                ScheduleActivity(activity);
-            }
+            foreach (var activity in activities) 
+                ScheduleActivity(activity, input);
         }
 
         public void BeginScope() => Workflow.Scopes.Push(new WorkflowExecutionScope());
         public void EndScope() => Workflow.Scopes.Pop();
 
-        public void ScheduleActivity(IActivity activity)
+        public void ScheduleActivity(IActivity activity, Variable? input = default)
         {
-            Workflow.ScheduledActivities.Push(activity);
+            Workflow.ScheduledActivities.Push(new ScheduledActivity(activity, input));
         }
-        
-        public IActivity PopScheduledActivity() => CurrentActivity = Workflow.ScheduledActivities.Pop();
-        public IActivity PeekScheduledActivity() => Workflow.ScheduledActivities.Peek();
+
+        public ScheduledActivity PopScheduledActivity() => ScheduledActivity = Workflow.ScheduledActivities.Pop();
+        public ScheduledActivity PeekScheduledActivity() => Workflow.ScheduledActivities.Peek();
         public IWorkflowExpressionEvaluator WorkflowExpressionEvaluator { get; }
 
         public bool AddBlockingActivity(IActivity activity) => Workflow.BlockingActivities.Add(activity);
@@ -61,7 +56,7 @@ namespace Elsa.Services.Models
             scope.SetVariable(name, value);
         }
 
-        public T GetVariable<T>(string name) => (T) GetVariable(name);
+        public T GetVariable<T>(string name) => (T)GetVariable(name);
 
         public object GetVariable(string name)
         {
@@ -69,17 +64,19 @@ namespace Elsa.Services.Models
             var scope = Workflow.Scopes.FirstOrDefault(x => x.Variables.ContainsKey(name)) ?? CurrentScope;
             return scope.GetVariable(name);
         }
-        
+
         public Variables GetVariables() => Workflow.Scopes
             .Reverse()
             .Select(x => x.Variables)
             .Aggregate(Variables.Empty, (x, y) => new Variables(x.Union(y)));
 
-        public Task<T> EvaluateAsync<T>(IWorkflowExpression<T> expression, CancellationToken cancellationToken) =>
-            WorkflowExpressionEvaluator.EvaluateAsync(expression, this, cancellationToken);
-        
-        public Task<object> EvaluateAsync(IWorkflowExpression expression, Type type, CancellationToken cancellationToken) =>
-            WorkflowExpressionEvaluator.EvaluateAsync(expression, type, this, cancellationToken);
+        public Task<T> EvaluateAsync<T>(IWorkflowExpression<T> expression, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
+        {
+            return WorkflowExpressionEvaluator.EvaluateAsync(expression, activityExecutionContext, cancellationToken);
+        }
+
+        public Task<object> EvaluateAsync(IWorkflowExpression expression, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken) =>
+            WorkflowExpressionEvaluator.EvaluateAsync(expression, activityExecutionContext, cancellationToken);
 
         public void Run()
         {
@@ -92,11 +89,7 @@ namespace Elsa.Services.Models
         public void Fault(IActivity activity, string errorMessage)
         {
             Workflow.FaultedAt = clock.GetCurrentInstant();
-            Workflow.Fault = new WorkflowFault
-            {
-                Message = errorMessage,
-                FaultedActivity = activity
-            };
+            Workflow.Fault = new WorkflowFault(activity, errorMessage);
             Workflow.Status = WorkflowStatus.Faulted;
         }
 

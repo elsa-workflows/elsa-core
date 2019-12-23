@@ -16,9 +16,9 @@ namespace Elsa.Models
             Faulted = faulted;
         }
 
-        public string ActivityId { get; set; }
+        public string? ActivityId { get; set; }
         public Instant Timestamp { get; set; }
-        public bool Faulted { get; set; }
-        public string Message { get; set; }
+        public bool? Faulted { get; set; }
+        public string? Message { get; set; }
     }
 }

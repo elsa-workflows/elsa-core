@@ -1,9 +1,11 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services;
+using Elsa.Services.Models;
 
 namespace Elsa.WorkflowProviders
 {
@@ -13,13 +15,23 @@ namespace Elsa.WorkflowProviders
     public class StoreWorkflowProvider : IWorkflowProvider
     {
         private readonly IWorkflowDefinitionStore store;
+        private readonly IWorkflowFactory workflowFactory;
 
-        public StoreWorkflowProvider(IWorkflowDefinitionStore store)
+        public StoreWorkflowProvider(IWorkflowDefinitionStore store, IWorkflowFactory workflowFactory)
         {
             this.store = store;
+            this.workflowFactory = workflowFactory;
         }
 
-        public async Task<IEnumerable<WorkflowDefinitionVersion>> GetWorkflowDefinitionsAsync(
-            CancellationToken cancellationToken) => await store.ListAsync(VersionOptions.All, cancellationToken);
+        public async Task<IEnumerable<WorkflowBlueprint>> GetWorkflowDefinitionsAsync(CancellationToken cancellationToken)
+        {
+            var workflowDefinitions = await store.ListAsync(VersionOptions.All, cancellationToken);
+            return workflowDefinitions.Select(CreateWorkflowBlueprint);
+        }
+
+        private WorkflowBlueprint CreateWorkflowBlueprint(WorkflowDefinitionVersion definition)
+        {
+            return workflowFactory.CreateWorkflowBlueprint(definition);
+        }
     }
 }

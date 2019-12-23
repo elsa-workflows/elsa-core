@@ -73,10 +73,9 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
 
         private async Task ResumeWorkflowAsync(WorkflowInstance workflowInstance, Signal signal)
         {
-            var input = new Variables();
-            input.SetVariable("Signal", signal.Name);
+            var input = Variable.From(signal.Name);
 
-            var workflowDefinition = await workflowRegistry.GetWorkflowDefinitionAsync(
+            var workflowDefinition = await workflowRegistry.GetWorkflowBlueprintAsync(
                 workflowInstance.DefinitionId,
                 VersionOptions.SpecificVersion(workflowInstance.Version),
                 cancellationToken);

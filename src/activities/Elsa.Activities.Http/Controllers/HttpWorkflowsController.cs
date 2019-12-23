@@ -39,8 +39,7 @@ namespace Elsa.Activities.Http.Controllers
             if (workflowInstance == null)
                 return NotFound();
 
-            var input = new Variables();
-            input.SetVariable("Signal", signal.Name);
+            var input = Variable.From(signal.Name);
 
             await workflowRunner.ResumeAsync(workflowInstance, input, cancellationToken: cancellationToken);
 

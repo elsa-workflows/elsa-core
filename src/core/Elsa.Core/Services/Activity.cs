@@ -11,13 +11,16 @@ namespace Elsa.Services
         protected SuspendWorkflowResult Halt(bool continueOnFirstPass = false) => new SuspendWorkflowResult(continueOnFirstPass);
         protected OutcomeResult Outcomes(IEnumerable<string> names) => new OutcomeResult(names);
         protected OutcomeResult Outcome(string name) => Outcomes(new[] { name });
-        protected CombinedResult Outcome(string name, object output) => Combine(SetOutput(output), Outcome(name));
-        protected CombinedResult Outcome(string name, Variable output) => Combine(SetOutput(output), Outcome(name));
+        protected OutcomeResult Outcome(string name, object output) => Outcome(name, Variable.From(output));
         protected OutcomeResult Done() => Outcome(OutcomeNames.Done);
-        protected CombinedResult Done(object output) => Combine(SetOutput(output), Done());
-        protected OutputResult SetOutput(Variable value) => new OutputResult(value);
-        protected OutputResult SetOutput(object value) => SetOutput(Variable.From(value));
-        protected ScheduleActivityResult ScheduleActivity(IActivity activity) => new ScheduleActivityResult(activity);
+        protected OutcomeResult Done(object output) => Outcome(OutcomeNames.Done, output);
+        protected OutcomeResult Outcome(string name, Variable output)
+        {
+            Output = output;
+            return Outcome(name);
+        }
+        
+        protected ScheduleActivityResult ScheduleActivity(IActivity activity, Variable input = null) => new ScheduleActivityResult(activity, input);
         protected CompleteWorkflowResult Finish() => new CompleteWorkflowResult();
         protected FaultWorkflowResult Fault(string errorMessage) => new FaultWorkflowResult(errorMessage);
         protected FaultWorkflowResult Fault(Exception exception) => new FaultWorkflowResult(exception);

@@ -3,9 +3,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Extensions;
+using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Newtonsoft.Json.Linq;
 
 namespace Elsa.Activities.MassTransit.Activities
 {
@@ -16,7 +16,7 @@ namespace Elsa.Activities.MassTransit.Activities
     )]
     public class ReceiveMassTransitMessage : Activity
     {
-        public static Type GetMessageType(JObject state)
+        public static Type GetMessageType(Variables state)
         {
             var typeName = state.GetState<string>(nameof(MessageType));
             return string.IsNullOrWhiteSpace(typeName) ? null : System.Type.GetType(typeName);
@@ -29,23 +29,12 @@ namespace Elsa.Activities.MassTransit.Activities
             set => SetState(value.AssemblyQualifiedName);
         }
 
-        protected override bool OnCanExecute(WorkflowExecutionContext context)
-        {
-            var messageTypeName = context.Workflow.Input.GetVariable(Constants.MessageTypeNameInputKey);
-            var messageInputType = System.Type.GetType(messageTypeName.ToString());
-            var messageType = MessageType;
-            
-            return messageInputType != null && messageType != null && messageInputType == messageType;
-        }
+        protected override bool OnCanExecute(ActivityExecutionContext context) => context.Input.Value?.GetType() == MessageType;
+        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => Halt(true);
 
-        protected override IActivityExecutionResult OnExecute(WorkflowExecutionContext context)
+        protected override Task<IActivityExecutionResult> OnResumeAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            return Halt(true);
-        }
-
-        protected override Task<IActivityExecutionResult> OnResumeAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
-        {
-            var message = context.Workflow.Input.GetVariable(Constants.MessageInputKey);
+            var message = context.Input;
             
             return Task.FromResult<IActivityExecutionResult>(Done(message));
         }

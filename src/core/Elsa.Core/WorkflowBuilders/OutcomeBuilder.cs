@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -28,13 +27,13 @@ namespace Elsa.WorkflowBuilders
             return target;
         }
 
-        public WorkflowDefinitionVersion Build() => WorkflowBuilder.Build();
+        public WorkflowBlueprint Build() => WorkflowBuilder.Build();
 
         public IConnectionBuilder Then(string activityName)
         {
             return WorkflowBuilder.Connect(
                 () => Source, 
-                () => WorkflowBuilder.Activities.First(x => x.Name == activityName), 
+                () => WorkflowBuilder.Activities.First(x => x.Activity.Name == activityName), 
                 Outcome);
         }
     }

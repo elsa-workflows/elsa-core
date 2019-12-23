@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
@@ -30,17 +30,17 @@ namespace Elsa.Activities.Console.Activities
         }
 
         [ActivityProperty(Hint = "The text to write.")]
-        public WorkflowExpression<string> TextExpression 
+        public IWorkflowExpression<string> Text 
         {
-            get => GetState(() => LiteralEvaluator.Expression<string>(null));
+            get => GetState<IWorkflowExpression<string>>();
             set => SetState(value);
         }
         
         private readonly TextWriter output;
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var text = await context.EvaluateAsync(TextExpression, cancellationToken);
+            var text = await context.EvaluateAsync(Text, cancellationToken);
             await output.WriteLineAsync(text);
             return Outcome(OutcomeNames.Done);
         }

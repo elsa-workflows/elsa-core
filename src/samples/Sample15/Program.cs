@@ -1,9 +1,8 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Elsa.Activities.Console.Extensions;
 using Elsa.Extensions;
-using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Runtime;
 using Elsa.Services;
@@ -31,15 +30,7 @@ namespace Sample15
             workflowDefinition.Version = 1;
 
             using var scope = services.CreateScope();
-            // Persist the workflow definition.
-            var definitionStore = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionStore>();
-            await definitionStore.SaveAsync(workflowDefinition);
-
-            // Load the workflow definition.
-            workflowDefinition = await definitionStore.GetByIdAsync(
-                workflowDefinition.DefinitionId,
-                VersionOptions.Latest);
-
+            
             // Execute the workflow.
             var invoker = scope.ServiceProvider.GetRequiredService<IWorkflowRunner>();
             var executionContext = await invoker.RunAsync(workflowDefinition);

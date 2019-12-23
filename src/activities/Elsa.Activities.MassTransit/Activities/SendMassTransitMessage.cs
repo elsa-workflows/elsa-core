@@ -19,21 +19,10 @@ namespace Elsa.Activities.MassTransit.Activities
         {
         }
 
-        [ActivityProperty(Hint = "The assembly-qualified type name of the message to send.")]
-        public Type MessageType
-        {
-            get
-            {
-                var typeName = GetState<string>();
-                return string.IsNullOrWhiteSpace(typeName) ? null : System.Type.GetType(typeName);
-            }
-            set => SetState(value.AssemblyQualifiedName);
-        }
-
         [ActivityProperty(Hint = "An expression that evaluates to the message to send.")]
-        public WorkflowExpression Message
+        public IWorkflowExpression Message
         {
-            get => GetState<WorkflowExpression>();
+            get => GetState<IWorkflowExpression>();
             set => SetState(value);
         }
 
@@ -48,14 +37,14 @@ namespace Elsa.Activities.MassTransit.Activities
             set => SetState(value.ToString());
         }
 
-        protected override bool OnCanExecute(WorkflowExecutionContext context)
+        protected override bool OnCanExecute(ActivityExecutionContext context)
         {
-            return MessageType != null;
+            return Message != null;
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var message = await context.EvaluateAsync(Message, MessageType, cancellationToken);
+            var message = await context.EvaluateAsync(Message, cancellationToken);
 
             if (EndpointAddress != null)
             {

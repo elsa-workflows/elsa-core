@@ -1,4 +1,4 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Email.Options;
 using Elsa.Activities.Email.Services;
@@ -25,40 +25,40 @@ namespace Elsa.Activities.Email.Activities
         }
 
         [ActivityProperty(Hint = "The sender's email address.")]
-        public WorkflowExpression<string> From
+        public IWorkflowExpression<string> From
         {
-            get => GetState(() => new WorkflowExpression<string>(LiteralEvaluator.SyntaxName, ""));
+            get => GetState<IWorkflowExpression<string>>();
             set => SetState(value);
         }
 
         [ActivityProperty(Hint = "The recipient's email address.")]
-        public WorkflowExpression<string> To
+        public IWorkflowExpression<string> To
         {
-            get => GetState(() => new WorkflowExpression<string>(LiteralEvaluator.SyntaxName, ""));
+            get => GetState<IWorkflowExpression<string>>();
             set => SetState(value);
         }
 
         [ActivityProperty(Hint = "The subject of the email message.")]
-        public WorkflowExpression<string> Subject
+        public IWorkflowExpression<string> Subject
         {
-            get => GetState(() => new WorkflowExpression<string>(LiteralEvaluator.SyntaxName, ""));
+            get => GetState<IWorkflowExpression<string>>();
             set => SetState(value);
         }
 
         [ActivityProperty(Hint = "The body of the email message.")]
         [ExpressionOptions(Multiline = true)]
-        public WorkflowExpression<string> Body
+        public IWorkflowExpression<string> Body
         {
-            get => GetState(() => new WorkflowExpression<string>(LiteralEvaluator.SyntaxName, ""));
+            get => GetState<IWorkflowExpression<string>>();
             set => SetState(value);
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var from = (await workflowContext.EvaluateAsync(From, cancellationToken)) ?? options.Value.DefaultSender;
-            var to = await workflowContext.EvaluateAsync(To, cancellationToken);
-            var subject = await workflowContext.EvaluateAsync(Subject, cancellationToken);
-            var body = await workflowContext.EvaluateAsync(Body, cancellationToken);
+            var from = (await context.EvaluateAsync(From, cancellationToken)) ?? options.Value.DefaultSender;
+            var to = await context.EvaluateAsync(To, cancellationToken);
+            var subject = await context.EvaluateAsync(Subject, cancellationToken);
+            var body = await context.EvaluateAsync(Body, cancellationToken);
             var message = new MimeMessage();
             
             message.From.Add(new MailboxAddress(@from));

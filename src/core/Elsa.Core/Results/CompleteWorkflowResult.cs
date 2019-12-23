@@ -15,7 +15,7 @@ namespace Elsa.Results
             WorkflowExecutionContext workflowContext,
             CancellationToken cancellationToken)
         {
-            var currentActivity = workflowContext.CurrentActivity;
+            var currentActivity = workflowContext.ScheduledActivity.Activity;
             var eventHandlers = workflowContext.ServiceProvider.GetServices<IWorkflowEventHandler>();
             var logger = workflowContext.ServiceProvider.GetRequiredService<ILogger<OutcomeResult>>();
             

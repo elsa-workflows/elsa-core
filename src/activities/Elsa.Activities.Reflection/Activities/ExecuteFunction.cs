@@ -23,9 +23,9 @@ namespace Elsa.Activities.Reflection.Activities
     public class ExecuteMethod : Activity
     {
         [ActivityProperty(Hint = "An expression that returns an array of arguments to the method. Leave empty if the method does not accept any arguments.")]
-        public WorkflowExpression<object[]> Arguments
+        public IWorkflowExpression<object[]> Arguments
         {
-            get => GetState<WorkflowExpression<object[]>>();
+            get => GetState<IWorkflowExpression<object[]>>();
             set => SetState(value);
         }
 
@@ -43,7 +43,7 @@ namespace Elsa.Activities.Reflection.Activities
             set => SetState(value);
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
             var type = System.Type.GetType(TypeName);
 
@@ -61,7 +61,7 @@ namespace Elsa.Activities.Reflection.Activities
                 return Fault($"Type {TypeName} does not have a method called {MethodName}.");
 
 
-            var instance = method.IsStatic ? default : ActivatorUtilities.GetServiceOrCreateInstance(context.ServiceProvider, type);
+            var instance = method.IsStatic ? default : ActivatorUtilities.GetServiceOrCreateInstance(context.WorkflowExecutionContext.ServiceProvider, type);
             var result = method.Invoke(instance, inputValues);
 
             Output = new Variable(result);

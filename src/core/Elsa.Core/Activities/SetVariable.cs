@@ -1,4 +1,4 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
@@ -31,23 +31,20 @@ namespace Elsa.Activities
         }
 
         [ActivityProperty(Hint = "An expression that evaluates to the value to store in the variable.")]
-        public WorkflowExpression ValueExpression
+        public IWorkflowExpression Value
         {
-            get => GetState<WorkflowExpression>();
+            get => GetState<IWorkflowExpression>();
             set => SetState(value);
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(
-            WorkflowExecutionContext workflowContext,
-            CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
             var value = await expressionEvaluator.EvaluateAsync(
-                ValueExpression,
-                ValueExpression.Type,
-                workflowContext,
+                Value,
+                context,
                 cancellationToken
             );
-            workflowContext.SetVariable(VariableName, value);
+            context.WorkflowExecutionContext.SetVariable(VariableName, value);
             return Done();
         }
     }

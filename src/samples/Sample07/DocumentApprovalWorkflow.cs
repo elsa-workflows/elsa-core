@@ -32,13 +32,13 @@ namespace Sample07
                     x =>
                     {
                         x.VariableName = "Document";
-                        x.ValueExpression = new JavaScriptExpression<object>("WaitForDocument.Content");
+                        x.Value = new JavaScriptExpression<object>("WaitForDocument.Content");
                     }
                 )
                 .Then<SendEmail>(
                     x =>
                     {
-                        x.From = new LiteralExpression("approval@acme.com");
+                        x.From = new LiteralExpression<string>("approval@acme.com");
                         x.To = new JavaScriptExpression<string>("Document.Author.Email");
                         x.Subject =
                             new JavaScriptExpression<string>("`Document received from ${Document.Author.Name}`");
@@ -51,19 +51,19 @@ namespace Sample07
                 .Then<WriteHttpResponse>(
                     x =>
                     {
-                        x.Content = new LiteralExpression(
+                        x.Content = new LiteralExpression<string>(
                             "<h1>Request for Approval Sent</h1><p>Your document has been received and will be reviewed shortly.</p>"
                         );
                         x.ContentType = "text/html";
                         x.StatusCode = HttpStatusCode.OK;
-                        x.ResponseHeaders = new LiteralExpression("X-Powered-By=Elsa Workflows");
+                        x.ResponseHeaders = new LiteralExpression<string>("X-Powered-By=Elsa Workflows");
                     }
                 )
                 .Then<SetVariable>(
                     x =>
                     {
                         x.VariableName = "Approved";
-                        x.ValueExpression = new LiteralExpression<bool>("false");
+                        x.Value = new LiteralExpression<bool>("false");
                     }
                 )
                 .Then<Fork>(
@@ -72,21 +72,21 @@ namespace Sample07
                     {
                         fork
                             .When("Approve")
-                            .Then<Signaled>(x => x.Signal = new LiteralExpression("Approve"))
+                            .Then<Signaled>(x => x.Signal = new LiteralExpression<string>("Approve"))
                             .Then("Join");
 
                         fork
                             .When("Reject")
-                            .Then<Signaled>(x => x.Signal = new LiteralExpression("Reject"))
+                            .Then<Signaled>(x => x.Signal = new LiteralExpression<string>("Reject"))
                             .Then("Join");
 
                         fork
                             .When("Remind")
                             .Then<TimerEvent>(
-                                x => x.TimeoutExpression = new LiteralExpression<TimeSpan>("00:00:10")
+                                x => x.TimeoutScriptExpression = new LiteralExpression<TimeSpan>("00:00:10")
                             ).WithName("RemindTimer")
                             .Then<IfElse>(
-                                x => x.ConditionExpression = new JavaScriptExpression<bool>("!!Approved"),
+                                x => x.Condition = new JavaScriptExpression<bool>("!!Approved"),
                                 ifElse =>
                                 {
                                     ifElse
@@ -94,8 +94,8 @@ namespace Sample07
                                         .Then<SendEmail>(
                                             x =>
                                             {
-                                                x.From = new LiteralExpression("reminder@acme.com");
-                                                x.To = new LiteralExpression("approval@acme.com");
+                                                x.From = new LiteralExpression<string>("reminder@acme.com");
+                                                x.To = new LiteralExpression<string>("approval@acme.com");
                                                 x.Subject =
                                                     new JavaScriptExpression<string>(
                                                         "`${Document.Author.Name} is awaiting for your review!`"
@@ -116,11 +116,11 @@ namespace Sample07
                     x =>
                     {
                         x.VariableName = "Approved";
-                        x.ValueExpression = new JavaScriptExpression<object>("input('Signal') === 'Approve'");
+                        x.Value = new JavaScriptExpression<object>("input('Signal') === 'Approve'");
                     }
                 )
                 .Then<IfElse>(
-                    x => x.ConditionExpression = new JavaScriptExpression<bool>("!!Approved"),
+                    x => x.Condition = new JavaScriptExpression<bool>("!!Approved"),
                     ifElse =>
                     {
                         ifElse
@@ -128,7 +128,7 @@ namespace Sample07
                             .Then<SendEmail>(
                                 x =>
                                 {
-                                    x.From = new LiteralExpression("approval@acme.com");
+                                    x.From = new LiteralExpression<string>("approval@acme.com");
                                     x.To = new JavaScriptExpression<string>("Document.Author.Email");
                                     x.Subject =
                                         new JavaScriptExpression<string>("`Document ${Document.Id} approved!`");
@@ -143,7 +143,7 @@ namespace Sample07
                             .Then<SendEmail>(
                                 x =>
                                 {
-                                    x.From = new LiteralExpression("approval@acme.com");
+                                    x.From = new LiteralExpression<string>("approval@acme.com");
                                     x.To = new JavaScriptExpression<string>("Document.Author.Email");
                                     x.Subject =
                                         new JavaScriptExpression<string>("`Document ${Document.Id} rejected`");

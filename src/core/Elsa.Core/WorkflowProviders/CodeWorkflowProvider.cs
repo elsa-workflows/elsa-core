@@ -1,8 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -22,11 +21,11 @@ namespace Elsa.WorkflowProviders
             this.workflowBuilder = workflowBuilder;
         }
 
-        public Task<IEnumerable<WorkflowDefinitionVersion>> GetWorkflowDefinitionsAsync(
+        public Task<IEnumerable<WorkflowBlueprint>> GetWorkflowDefinitionsAsync(
             CancellationToken cancellationToken) =>
             Task.FromResult(GetWorkflowDefinitions());
 
-        private IEnumerable<WorkflowDefinitionVersion> GetWorkflowDefinitions()
+        private IEnumerable<WorkflowBlueprint> GetWorkflowDefinitions()
         {
             foreach (var workflow in workflows)
             {

@@ -1,9 +1,8 @@
-﻿using System;
+using System;
 using System.Data;
 using System.Threading.Tasks;
 using Elsa.Activities.Console.Extensions;
 using Elsa.Extensions;
-using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.YesSql.Extensions;
 using Elsa.Runtime;
@@ -39,15 +38,6 @@ namespace Sample10
             // Mark this definition as the "latest" version.
             workflowDefinition.IsLatest = true;
             workflowDefinition.Version = 1;
-
-            // Persist the workflow definition.
-
-            await definitionStore.SaveAsync(workflowDefinition);
-
-            // Load the workflow definition.
-            workflowDefinition = await definitionStore.GetByIdAsync(
-                workflowDefinition.DefinitionId,
-                VersionOptions.Latest);
 
             // Execute the workflow.
             var invoker = scope.ServiceProvider.GetRequiredService<IWorkflowRunner>();

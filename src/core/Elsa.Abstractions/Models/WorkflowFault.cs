@@ -2,7 +2,7 @@
 {
     public class WorkflowFault
     {
-        public string FaultedActivityId { get; set; }
-        public string Message { get; set; }
+        public string? FaultedActivityId { get; set; }
+        public string? Message { get; set; }
     }
 }

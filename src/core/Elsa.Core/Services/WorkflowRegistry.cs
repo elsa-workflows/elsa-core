@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Elsa.Caching;
 using Elsa.Extensions;
 using Elsa.Models;
+using Elsa.Services.Models;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -28,14 +29,12 @@ namespace Elsa.Services
             this.serviceProvider = serviceProvider;
         }
 
-        public async Task<IEnumerable<(WorkflowDefinitionVersion, ActivityDefinition)>> ListByStartActivityAsync(
-            string activityType,
-            CancellationToken cancellationToken)
+        public async Task<IEnumerable<(WorkflowBlueprint, IActivity)>> ListByStartActivityAsync(string activityType, CancellationToken cancellationToken)
         {
-            var workflowDefinitions = await ReadCacheAsync(cancellationToken);
+            var workflowBlueprints = await ReadCacheAsync(cancellationToken);
 
             var query =
-                from workflow in workflowDefinitions
+                from workflow in workflowBlueprints
                 where workflow.IsPublished
                 from activity in workflow.GetStartActivities()
                 where activity.Type == activityType
@@ -44,10 +43,7 @@ namespace Elsa.Services
             return query.Distinct();
         }
 
-        public async Task<WorkflowDefinitionVersion> GetWorkflowDefinitionAsync(
-            string id,
-            VersionOptions version,
-            CancellationToken cancellationToken)
+        public async Task<WorkflowBlueprint> GetWorkflowBlueprintAsync(string id, VersionOptions version, CancellationToken cancellationToken)
         {
             var workflowDefinitions = await ReadCacheAsync(cancellationToken);
 
@@ -57,7 +53,7 @@ namespace Elsa.Services
                 .WithVersion(version).FirstOrDefault();
         }
 
-        private async Task<ICollection<WorkflowDefinitionVersion>> ReadCacheAsync(CancellationToken cancellationToken)
+        private async Task<ICollection<WorkflowBlueprint>> ReadCacheAsync(CancellationToken cancellationToken)
         {
             return await cache.GetOrCreateAsync(
                 CacheKey,
@@ -72,7 +68,7 @@ namespace Elsa.Services
                 });
         }
 
-        private async Task<ICollection<WorkflowDefinitionVersion>> LoadWorkflowDefinitionsAsync(CancellationToken cancellationToken)
+        private async Task<ICollection<WorkflowBlueprint>> LoadWorkflowDefinitionsAsync(CancellationToken cancellationToken)
         {
             using var scope = serviceProvider.CreateScope();
             var providers = scope.ServiceProvider.GetServices<IWorkflowProvider>();

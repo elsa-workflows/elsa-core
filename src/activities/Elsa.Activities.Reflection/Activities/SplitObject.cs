@@ -26,9 +26,9 @@ namespace Elsa.Activities.Reflection.Activities
         }
 
         [ActivityProperty(Hint = "Enter an expression that evaluates to the object to split.")]
-        public WorkflowExpression<object> Object
+        public IWorkflowExpression<object> Object
         {
-            get => GetState<WorkflowExpression<object>>();
+            get => GetState<IWorkflowExpression<object>>();
             set => SetState(value);
         }
 
@@ -39,7 +39,7 @@ namespace Elsa.Activities.Reflection.Activities
             set => SetState(value);
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
             var splitObject = await context.EvaluateAsync(Object, cancellationToken);
             
@@ -48,7 +48,7 @@ namespace Elsa.Activities.Reflection.Activities
                 foreach (var property in Properties)
                 {
                     var propValue = FollowPropertyPath(splitObject, property);
-                    context.SetVariable(property, propValue);
+                    context.WorkflowExecutionContext.SetVariable(property, propValue);
                 }
             }
 

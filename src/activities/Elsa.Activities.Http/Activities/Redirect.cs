@@ -1,4 +1,4 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
@@ -24,9 +24,9 @@ namespace Elsa.Activities.Http.Activities
         }
 
         [ActivityProperty(Hint = "The URL to redirect to (HTTP 302).")]
-        public WorkflowExpression<string> Location
+        public IWorkflowExpression<string> Location
         {
-            get => GetState<WorkflowExpression<string>>();
+            get => GetState<IWorkflowExpression<string>>();
             set => SetState(value);
         }
         
@@ -37,14 +37,14 @@ namespace Elsa.Activities.Http.Activities
             set => SetState(value);
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
             var response = httpContextAccessor.HttpContext.Response;
 
             if (response.HasStarted)
                 return Fault("Response has already started");
 
-            var location = await workflowContext.EvaluateAsync(Location, cancellationToken);
+            var location = await context.EvaluateAsync(Location, cancellationToken);
             response.Redirect(location, Permanent);
             
             return Done();

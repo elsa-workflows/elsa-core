@@ -20,14 +20,13 @@ namespace Sample08.Workflows
                     activity =>
                     {
                         activity.VariableName = "order";
-                        activity.ValueExpression = new JavaScriptExpression<object>("lastResult().Order");
+                        activity.Value = new JavaScriptExpression<object>("lastResult().Order");
                     }
                 )
-                .Then<TimerEvent>(activity => activity.TimeoutExpression = new LiteralExpression<TimeSpan>("00:00:05"))
+                .Then<TimerEvent>(activity => activity.TimeoutScriptExpression = new LiteralExpression<TimeSpan>("00:00:05"))
                 .Then<PublishMassTransitMessage>(activity =>
                     {
                         activity.Message = new JavaScriptExpression<OrderShipped>("return { correlationId: correlationId(), order: order}");
-                        activity.MessageType = typeof(OrderShipped);
                     }
                 );
         }

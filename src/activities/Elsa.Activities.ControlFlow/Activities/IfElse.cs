@@ -1,8 +1,7 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
-using Elsa.Scripting.JavaScript;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -18,15 +17,15 @@ namespace Elsa.Activities.ControlFlow.Activities
     public class IfElse : Activity
     {
         [ActivityProperty(Hint = "The expression to evaluate. The evaluated value will be used to switch on.")]
-        public WorkflowExpression<bool> ConditionExpression
+        public IWorkflowExpression<bool> Condition
         {
-            get => GetState(() => new JavaScriptExpression<bool>("true"));
+            get => GetState<IWorkflowExpression<bool>>();
             set => SetState(value);
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var result = await workflowContext.EvaluateAsync(ConditionExpression, cancellationToken);
+            var result = await context.EvaluateAsync(Condition, cancellationToken);
             return Outcome(result ? OutcomeNames.True : OutcomeNames.False);
         }
     }

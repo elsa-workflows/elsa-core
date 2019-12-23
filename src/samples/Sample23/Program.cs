@@ -2,16 +2,13 @@ using System;
 using System.Threading.Tasks;
 using Elsa.Activities.Console.Extensions;
 using Elsa.Extensions;
-using Elsa.Models;
 using Elsa.Persistence;
-using Elsa.Persistence.EntityFrameworkCore;
 using Elsa.Persistence.EntityFrameworkCore.CustomSchema;
 using Elsa.Persistence.EntityFrameworkCore.DbContexts;
 using Elsa.Persistence.EntityFrameworkCore.Extensions;
 using Elsa.Runtime;
 using Elsa.Services;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Sample23
@@ -43,18 +40,6 @@ namespace Sample23
             // Mark this definition as the "latest" version.
             workflowDefinition.IsLatest = true;
             workflowDefinition.Version = 1;
-
-            // Persist the workflow definition.
-            var definitionStore = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionStore>();
-            await definitionStore.SaveAsync(workflowDefinition);
-
-            // Flush to DB.
-            await dbContext.SaveChangesAsync();
-
-            // Load the workflow definition.
-            workflowDefinition = await definitionStore.GetByIdAsync(
-                workflowDefinition.DefinitionId,
-                VersionOptions.Latest);
 
             // Execute the workflow.
             var runner = scope.ServiceProvider.GetRequiredService<IWorkflowRunner>();

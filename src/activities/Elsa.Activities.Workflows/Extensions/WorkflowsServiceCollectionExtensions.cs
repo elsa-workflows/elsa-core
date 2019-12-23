@@ -13,7 +13,7 @@ namespace Elsa.Activities.Workflows.Extensions
                 .AddActivity<Signaled>()
                 .AddActivity<TriggerSignal>()
                 .AddActivity<Start>()
-                .AddActivity<Finish>();
+                .AddActivity<Complete>();
         }
     }
 }

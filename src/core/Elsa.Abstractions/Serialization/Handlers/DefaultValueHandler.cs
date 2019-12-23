@@ -9,7 +9,7 @@ namespace Elsa.Serialization.Handlers
         public int Priority => -9000;
         public bool CanSerialize(JToken value, Type type) => true;
         public bool CanDeserialize(JToken value, Type type) => true;
-        public object Deserialize(JsonReader reader, JsonSerializer serializer, Type type, JToken value) => serializer.Deserialize(value.CreateReader(), type);
+        public object? Deserialize(JsonReader reader, JsonSerializer serializer, Type type, JToken value) => serializer.Deserialize(value.CreateReader(), type);
         public void Serialize(JsonWriter writer, JsonSerializer serializer, JToken value) => serializer.Serialize(writer, value);
     }
 }

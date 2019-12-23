@@ -13,8 +13,8 @@ namespace Elsa.Models
             Outcome = outcome;
         }
         
-        public string SourceActivityId { get; set; }
-        public string DestinationActivityId { get; set; }
-        public string Outcome { get; set; }
+        public string? SourceActivityId { get; set; }
+        public string? DestinationActivityId { get; set; }
+        public string? Outcome { get; set; }
     }
 }

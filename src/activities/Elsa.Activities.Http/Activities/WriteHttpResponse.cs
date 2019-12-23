@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
@@ -70,9 +70,9 @@ namespace Elsa.Activities.Http.Activities
         /// </summary>
         [ActivityProperty(Hint = "The HTTP content to write.")]
         [ExpressionOptions(Multiline = true)]
-        public WorkflowExpression<string> Content
+        public IWorkflowExpression<string> Content
         {
-            get => GetState(() => new WorkflowExpression<string>(LiteralEvaluator.SyntaxName, ""));
+            get => GetState<IWorkflowExpression<string>>();
             set => SetState(value);
         }
 
@@ -94,15 +94,13 @@ namespace Elsa.Activities.Http.Activities
         /// The headers to send along with the response. One 'header: value' pair per line.
         /// </summary>
         [ActivityProperty(Hint = "The headers to send along with the response. One 'header: value' pair per line.")]
-        public WorkflowExpression<string> ResponseHeaders
+        public IWorkflowExpression<string> ResponseHeaders
         {
-            get => GetState(() => new WorkflowExpression<string>(LiteralEvaluator.SyntaxName, ""));
+            get => GetState<IWorkflowExpression<string>>();
             set => SetState(value);
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(
-            WorkflowExecutionContext workflowContext,
-            CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
             var response = httpContextAccessor.HttpContext.Response;
 
@@ -112,7 +110,7 @@ namespace Elsa.Activities.Http.Activities
             response.StatusCode = (int)StatusCode;
             response.ContentType = ContentType;
 
-            var headersText = await workflowContext.EvaluateAsync(ResponseHeaders, cancellationToken);
+            var headersText = await context.EvaluateAsync(ResponseHeaders, cancellationToken);
 
             if (headersText != null)
             {
@@ -121,14 +119,11 @@ namespace Elsa.Activities.Http.Activities
                     let pair = line.Split(':', '=')
                     select new KeyValuePair<string, string>(pair[0], pair[1]);
 
-                foreach (var header in headersQuery)
-                {
-                    var headerValueExpression = new WorkflowExpression<string>(ResponseHeaders.Syntax, header.Value);
-                    response.Headers[header.Key] = await workflowContext.EvaluateAsync(headerValueExpression, cancellationToken);
-                }
+                foreach (var header in headersQuery) 
+                    response.Headers[header.Key] = header.Value;
             }
 
-            var bodyText = await workflowContext.EvaluateAsync(Content, cancellationToken);
+            var bodyText = await context.EvaluateAsync(Content, cancellationToken);
 
             if (!string.IsNullOrWhiteSpace(bodyText)) 
                 await response.WriteAsync(bodyText, cancellationToken);

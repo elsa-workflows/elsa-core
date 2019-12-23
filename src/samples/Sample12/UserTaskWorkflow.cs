@@ -11,27 +11,27 @@ namespace Sample12
         public void Build(IWorkflowBuilder builder)
         {
             builder
-                .StartWith<WriteLine>(activity => activity.TextExpression = new LiteralExpression("Workflow started. Waiting for user action."))
+                .StartWith<WriteLine>(activity => activity.Text = new LiteralExpression<string>("Workflow started. Waiting for user action."))
                 .Then<UserTask>(
                     activity => activity.Actions = new[] { "Accept", "Reject", "Needs Work" },
                     userTask =>
                     {
                         userTask
                             .When("Accept")
-                            .Then<WriteLine>(activity => activity.TextExpression = new LiteralExpression("Great! Your work has been accepted."))
+                            .Then<WriteLine>(activity => activity.Text = new LiteralExpression<string>("Great! Your work has been accepted."))
                             .Then("Exit");
 
                         userTask.When("Reject")
-                            .Then<WriteLine>(activity => activity.TextExpression = new LiteralExpression("Sorry! Your work has been rejected."))
+                            .Then<WriteLine>(activity => activity.Text = new LiteralExpression<string>("Sorry! Your work has been rejected."))
                             .Then("Exit");
 
                         userTask.When("Needs Work")
-                            .Then<WriteLine>(activity => activity.TextExpression = new LiteralExpression("So close! Your work needs a little bit more work."))
+                            .Then<WriteLine>(activity => activity.Text = new LiteralExpression<string>("So close! Your work needs a little bit more work."))
                             .Then("WaitUser");
                     },
                     "WaitUser"
                 )
-                .Add<WriteLine>(activity => activity.TextExpression = new LiteralExpression("Workflow finished."), "Exit");
+                .Add<WriteLine>(activity => activity.Text = new LiteralExpression<string>("Workflow finished."), "Exit");
         }
     }
 }

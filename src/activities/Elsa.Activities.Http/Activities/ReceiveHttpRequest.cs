@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -12,7 +12,6 @@ using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
-using Newtonsoft.Json.Linq;
 
 namespace Elsa.Activities.Http.Activities
 {
@@ -25,12 +24,12 @@ namespace Elsa.Activities.Http.Activities
     )]
     public class ReceiveHttpRequest : Activity
     {
-        public static Uri GetPath(JObject state)
+        public static Uri GetPath(Variables state)
         {
             return state.GetState<Uri>(nameof(Path));
         }
 
-        public static string GetMethod(JObject state)
+        public static string GetMethod(Variables state)
         {
             return state.GetState<string>(nameof(Method));
         }
@@ -84,14 +83,12 @@ namespace Elsa.Activities.Http.Activities
             set => SetState(value);
         }
 
-        protected override IActivityExecutionResult OnExecute(WorkflowExecutionContext workflowContext)
+        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
             return Halt(true);
         }
 
-        protected override async Task<IActivityExecutionResult> OnResumeAsync(
-            WorkflowExecutionContext workflowContext,
-            CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnResumeAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
             var request = httpContextAccessor.HttpContext.Request;
             var model = new HttpRequestModel

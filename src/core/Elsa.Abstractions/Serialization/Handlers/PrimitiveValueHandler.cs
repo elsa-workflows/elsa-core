@@ -15,7 +15,8 @@ namespace Elsa.Serialization.Handlers
         public virtual object Deserialize(JsonReader reader, JsonSerializer serializer, Type type, JToken value)
         {
             var valueToken = value["Value"];
-            return ParseValue(valueToken);
+
+            return valueToken == null ? null : ParseValue(valueToken);
         }
 
         public virtual void Serialize(JsonWriter writer, JsonSerializer serializer, JToken value)

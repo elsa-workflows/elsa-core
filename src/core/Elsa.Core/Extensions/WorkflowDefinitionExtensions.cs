@@ -17,7 +17,6 @@ namespace Elsa.Extensions
             this IQueryable<WorkflowDefinitionVersion> query,
             VersionOptions version)
         {
-
             if (version.IsDraft)
                 query = query.Where(x => !x.IsPublished);
             else if (version.IsLatest)

@@ -30,33 +30,23 @@ namespace Elsa.Activities.Console.Activities
             this.input = input;
         }
 
-        [ActivityProperty(Hint = "The name of the variable to store the value into.")]
-        public string VariableName
-        {
-            get => GetState<string>();
-            set => SetState(value);
-        }
-
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
             if (input == null)
                 return Halt();
 
             var receivedInput = await input.ReadLineAsync();
-            return Execute(context, receivedInput);
+            return Execute(receivedInput);
         }
 
-        protected override IActivityExecutionResult OnResume(WorkflowExecutionContext context)
+        protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
         {
-            var receivedInput = context.Workflow.Input.GetVariable<string>("ReadLineInput");
-            return Execute(context, receivedInput);
+            var receivedInput = context.Input?.GetValue<string>();
+            return Execute(receivedInput);
         }
 
-        private IActivityExecutionResult Execute(WorkflowExecutionContext workflowContext, string receivedInput)
-        {
-            if (!string.IsNullOrWhiteSpace(VariableName))
-                workflowContext.CurrentScope.SetVariable(VariableName, receivedInput);
-            
+        private IActivityExecutionResult Execute(string receivedInput)
+        {   
             return Done(receivedInput);
         }
     }

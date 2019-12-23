@@ -24,14 +24,15 @@ namespace Sample02
             // Define a workflow.
             var workflowBuilderFactory = services.GetRequiredService<Func<IWorkflowBuilder>>();
             var workflowBuilder = workflowBuilderFactory();
-            var workflowDefinition = workflowBuilder
-                .StartWith<WriteLine>(x => x.TextExpression = new LiteralExpression("Hello world!"))
-                .Then<WriteLine>(x => x.TextExpression = new LiteralExpression("Goodbye cruel world..."))
+            var workflowBlueprint = workflowBuilder
+                .StartWith<WriteLine>(x => x.Text = new LiteralExpression<string>("Hello world!"))
+                .Then(() => Console.WriteLine("Look, custom code!"))
+                .Then<WriteLine>(x => x.Text = new LiteralExpression<string>("Goodbye cruel world..."))
                 .Build();
 
             // Start the workflow.
             var invoker = services.GetService<IWorkflowRunner>();
-            await invoker.RunAsync(workflowDefinition);
+            await invoker.RunAsync(workflowBlueprint);
 
             Console.ReadLine();
         }

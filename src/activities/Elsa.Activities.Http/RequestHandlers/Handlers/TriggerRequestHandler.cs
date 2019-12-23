@@ -10,8 +10,8 @@ using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services;
+using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
-using Newtonsoft.Json.Linq;
 
 namespace Elsa.Activities.Http.RequestHandlers.Handlers
 {
@@ -67,15 +67,15 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
             return items.Where(x => IsMatch(x.Item2.State, path, method));
         }
 
-        private IEnumerable<(WorkflowDefinitionVersion, ActivityDefinition)> Filter(
-            IEnumerable<(WorkflowDefinitionVersion, ActivityDefinition)> items,
+        private IEnumerable<(WorkflowBlueprint, IActivity)> Filter(
+            IEnumerable<(WorkflowBlueprint, IActivity)> items,
             Uri path,
             string method)
         {
             return items.Where(x => IsMatch(x.Item2.State, path, method));
         }
 
-        private bool IsMatch(JObject state, Uri path, string method)
+        private bool IsMatch(Variables state, Uri path, string method)
         {
             var m = ReceiveHttpRequest.GetMethod(state);
             var p = ReceiveHttpRequest.GetPath(state);
@@ -83,13 +83,13 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
         }
 
         private async Task InvokeWorkflowsToStartAsync(
-            IEnumerable<(WorkflowDefinitionVersion, ActivityDefinition)> items)
+            IEnumerable<(WorkflowBlueprint, IActivity)> items)
         {
             foreach (var item in items)
             {
                 await workflowRunner.RunAsync(
                     item.Item1,
-                    Variables.Empty,
+                    default,
                     new[] { item.Item2.Id },
                     cancellationToken: cancellationToken);
             }
@@ -101,7 +101,7 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
             {
                 await workflowRunner.ResumeAsync(
                     workflowInstance,
-                    Variables.Empty,
+                    default,
                     new[] { activity.Id },
                     cancellationToken);
             }

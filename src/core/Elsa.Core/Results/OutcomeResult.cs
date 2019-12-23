@@ -20,12 +20,16 @@ namespace Elsa.Results
         {
             EndpointNames = endpointNames.ToList();
         }
+        
+        public OutcomeResult(params string[] endpointNames) : this((IEnumerable<string>)endpointNames)
+        {
+        }
 
         public IReadOnlyList<string> EndpointNames { get; }
 
         public override async Task ExecuteAsync(IWorkflowRunner runner, WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
         {
-            var currentActivity = workflowContext.CurrentActivity;
+            var currentActivity = workflowContext.ScheduledActivity.Activity;
 
             foreach (var endpointName in EndpointNames)
             {
@@ -39,12 +43,13 @@ namespace Elsa.Results
         
         private void ScheduleNextActivities(WorkflowExecutionContext workflowContext, SourceEndpoint endpoint)
         {
-            var completedActivity = workflowContext.CurrentActivity;
-            var connections = workflowContext.Workflow.Connections.Where(x => x.Source.Activity == completedActivity &&
-                                                                              (x.Source.Outcome ?? OutcomeNames.Done).Equals(endpoint.Outcome, StringComparison.OrdinalIgnoreCase));
+            var completedActivity = workflowContext.ScheduledActivity.Activity;
+            var connections = workflowContext.Workflow.Blueprint.Connections
+                .Where(x => x.Source.Activity == completedActivity && (x.Source.Outcome ?? OutcomeNames.Done).Equals(endpoint.Outcome, StringComparison.OrdinalIgnoreCase));
+            
             var activities = connections.Select(x => x.Target.Activity);
             
-            workflowContext.ScheduleActivities(activities);
+            workflowContext.ScheduleActivities(activities, completedActivity.Output);
         }
     }
 }

@@ -32,16 +32,15 @@ namespace Sample08.Workflows
                     activity =>
                     {
                         activity.VariableName = "order";
-                        activity.ValueExpression = new JavaScriptExpression<object>("lastResult().Body");
+                        activity.Value = new JavaScriptExpression<object>("lastResult().Body");
                     }
                 )
                 // Need to ensure that the correlation ID is the same string format that is used by the WorkflowConsumer<T>
                 // MassTransit will always use Guid values for correlation ID's, so need to ensure the same string format is used.
-                .Then<Correlate>(activity => activity.ValueExpression = new JavaScriptExpression<string>("newGuid()"))
+                .Then<Correlate>(activity => activity.ValueScriptExpression = new JavaScriptExpression<string>("newGuid()"))
                 .Then<SendMassTransitMessage>(activity =>
                     {
                         activity.Message = new JavaScriptExpression<CreateOrder>("return { correlationId: correlationId(), order: order};");
-                        activity.MessageType = typeof(CreateOrder);
                     }
                 )
                 .Then<Fork>(
@@ -53,7 +52,7 @@ namespace Sample08.Workflows
                             .Then<WriteHttpResponse>(
                                 activity =>
                                 {
-                                    activity.Content = new LiteralExpression("<h1>Order Received</h1><p>Your order has been received. Waiting for shipment.</p>");
+                                    activity.Content = new LiteralExpression<string>("<h1>Order Received</h1><p>Your order has been received. Waiting for shipment.</p>");
                                     activity.ContentType = "text/html";
                                     activity.StatusCode = HttpStatusCode.Accepted;
                                 }
@@ -65,7 +64,7 @@ namespace Sample08.Workflows
                             .Then<SendEmail>(
                                 activity =>
                                 {
-                                    activity.From = new LiteralExpression("shipment@acme.com");
+                                    activity.From = new LiteralExpression<string>("shipment@acme.com");
                                     activity.To = new JavaScriptExpression<string>("order.customer.email");
                                     activity.Subject = new JavaScriptExpression<string>("`Your order with ID #${order.id} has been shipped!`");
                                     activity.Body = new JavaScriptExpression<string>(

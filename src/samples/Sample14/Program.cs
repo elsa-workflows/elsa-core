@@ -1,10 +1,8 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Elsa.Activities.Console.Extensions;
 using Elsa.Extensions;
-using Elsa.Models;
 using Elsa.Persistence;
-using Elsa.Persistence.EntityFrameworkCore;
 using Elsa.Persistence.EntityFrameworkCore.DbContexts;
 using Elsa.Persistence.EntityFrameworkCore.Extensions;
 using Elsa.Runtime;
@@ -42,17 +40,8 @@ namespace Sample14
             // Ensure DB exists.
             await dbContext.Database.EnsureCreatedAsync();
 
-            // Persist the workflow definition.
-            var definitionStore = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionStore>();
-            await definitionStore.SaveAsync(workflowDefinition);
-
             // Flush to DB.
             await dbContext.SaveChangesAsync();
-
-            // Load the workflow definition.
-            workflowDefinition = await definitionStore.GetByIdAsync(
-                workflowDefinition.DefinitionId,
-                VersionOptions.Latest);
 
             // Execute the workflow.
             var invoker = scope.ServiceProvider.GetRequiredService<IWorkflowRunner>();

@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+using System;
 using System.Data;
-using System.Linq;
 using System.Threading.Tasks;
 using Elsa.Activities.Console.Extensions;
 using Elsa.Extensions;
@@ -29,14 +27,13 @@ namespace Sample04
                 .AddActivity<Subtract>()
                 .AddActivity<Multiply>()
                 .AddActivity<Divide>()
-                .AddWorkflow<CalculatorWorkflow>()
                 .BuildServiceProvider();
 
             // Create a workflow.
             var workflowFactory = services.GetRequiredService<IWorkflowFactory>();
             var workflow = workflowFactory.CreateWorkflow<CalculatorWorkflow>();
 
-            // Start the workflow.
+            // Run the workflow.
             var runner = services.GetService<IWorkflowRunner>();
             var executionContext = await runner.RunAsync(workflow);
 
@@ -47,7 +44,7 @@ namespace Sample04
                 DisplayWorkflowState(executionContext.Workflow);
                 
                 var textInput = Console.ReadLine();
-                var input = new Variables(new Dictionary<string, object>() { ["ReadLineInput"] = textInput });
+                var input = Variable.From(textInput);
 
                 executionContext.Workflow.Input = input;
                 executionContext = await runner.ResumeAsync(executionContext.Workflow, executionContext.Workflow.BlockingActivities);
@@ -67,7 +64,7 @@ namespace Sample04
 
         private static DataTable GetExecutionLogDataTable(Workflow workflow)
         {
-            var workflowDefinitionVersion = workflow.Definition;
+            var workflowDefinitionVersion = workflow.Blueprint;
             var table = new DataTable { TableName = workflowDefinitionVersion.Name };
 
             table.Columns.Add("Id", typeof(string));

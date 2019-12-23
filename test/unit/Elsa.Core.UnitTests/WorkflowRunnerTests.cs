@@ -1,6 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using AutoFixture;
+using Elsa.Expressions;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services;
@@ -35,8 +36,8 @@ namespace Elsa.Core.UnitTests
             var serviceProvider = new ServiceCollection().BuildServiceProvider();
 
             activityInvokerMock
-                .Setup(x => x.ExecuteAsync(It.IsAny<WorkflowExecutionContext>(), It.IsAny<IActivity>(), It.IsAny<CancellationToken>()))
-                .Returns(async (WorkflowExecutionContext a, IActivity b, CancellationToken c) => await b.ExecuteAsync(a, c));
+                .Setup(x => x.ExecuteAsync(It.IsAny<WorkflowExecutionContext>(), It.IsAny<IActivity>(), It.IsAny<Variable>(), It.IsAny<CancellationToken>()))
+                .Returns(async (WorkflowExecutionContext a, IActivity b, Variable c, CancellationToken d) => await b.ExecuteAsync(new ActivityExecutionContext(a, c), d));
 
             runner = new WorkflowRunner(
                 activityInvokerMock.Object,
@@ -53,11 +54,8 @@ namespace Elsa.Core.UnitTests
         [Fact(DisplayName = "Can run simple workflow to completed state.")]
         public async Task RunAsync01()
         {
-            var workflow = new Workflow();
             var activity = CreateActivity();
-
-            workflow.Activities.Add(activity);
-
+            var workflow = CreateWorkflow(activity);
             var executionContext = await runner.RunAsync(workflow);
 
             Assert.Equal(WorkflowStatus.Completed, executionContext.Workflow.Status);
@@ -66,11 +64,9 @@ namespace Elsa.Core.UnitTests
         [Fact(DisplayName = "Invokes returned activity execution result.")]
         public async Task RunAsync02()
         {
-            var workflow = new Workflow();
             var activityExecutionResultMock = new Mock<IActivityExecutionResult>();
             var activity = CreateActivity(true, activityExecutionResultMock.Object);
-
-            workflow.Activities.Add(activity);
+            var workflow = CreateWorkflow(activity);
             var executionContext = await runner.RunAsync(workflow);
 
             activityExecutionResultMock
@@ -82,15 +78,22 @@ namespace Elsa.Core.UnitTests
             var activityMock = new Mock<IActivity>();
 
             activityMock
-                .Setup(x => x.CanExecuteAsync(It.IsAny<WorkflowExecutionContext>(), It.IsAny<CancellationToken>()))
+                .Setup(x => x.CanExecuteAsync(It.IsAny<ActivityExecutionContext>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(canExecute);
 
             if (activityExecutionResult != null)
                 activityMock
-                    .Setup(x => x.ExecuteAsync(It.IsAny<WorkflowExecutionContext>(), It.IsAny<CancellationToken>()))
+                    .Setup(x => x.ExecuteAsync(It.IsAny<ActivityExecutionContext>(), It.IsAny<CancellationToken>()))
                     .ReturnsAsync(activityExecutionResult);
 
             return activityMock.Object;
+        }
+
+        private Workflow CreateWorkflow(IActivity activity)
+        {
+            var blueprint = new WorkflowBlueprint();
+            blueprint.Activities.Add(activity);
+            return new Workflow(blueprint);
         }
     }
 }

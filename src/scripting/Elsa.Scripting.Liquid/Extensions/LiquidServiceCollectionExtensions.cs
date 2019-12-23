@@ -1,8 +1,8 @@
+using Elsa.Expressions;
 using Elsa.Extensions;
 using Elsa.Scripting.Liquid.Filters;
 using Elsa.Scripting.Liquid.Options;
 using Elsa.Scripting.Liquid.Services;
-using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Scripting.Liquid.Extensions
@@ -12,7 +12,7 @@ namespace Elsa.Scripting.Liquid.Extensions
         public static IServiceCollection AddLiquidExpressionEvaluator(this IServiceCollection services)
         {
             return services
-                .TryAddProvider<IExpressionEvaluator, LiquidExpressionEvaluator>(ServiceLifetime.Scoped)
+                .TryAddProvider<IWorkflowExpressionHandler, LiquidWorkflowScriptExpressionHandler>(ServiceLifetime.Scoped)
                 .AddMemoryCache()
                 .AddNotificationHandlers(typeof(LiquidServiceCollectionExtensions))
                 .AddScoped<ILiquidTemplateManager, LiquidTemplateManager>()
