@@ -8,7 +8,7 @@ namespace Elsa.Services
 {
     public abstract class Activity : ActivityBase
     {
-        protected SuspendWorkflowResult Halt(bool continueOnFirstPass = false) => new SuspendWorkflowResult(continueOnFirstPass);
+        protected SuspendWorkflowResult Suspend(bool continueOnFirstPass = false) => new SuspendWorkflowResult(continueOnFirstPass);
         protected OutcomeResult Outcomes(IEnumerable<string> names) => new OutcomeResult(names);
         protected OutcomeResult Outcome(string name) => Outcomes(new[] { name });
         protected OutcomeResult Outcome(string name, object output) => Outcome(name, Variable.From(output));

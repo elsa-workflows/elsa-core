@@ -135,7 +135,7 @@ namespace Elsa.WorkflowBuilders
             var connections = CreateConnections(connectionDefinitions, activities);
             var definitionId = !string.IsNullOrWhiteSpace(Id) ? Id : idGenerator.Generate();
 
-            return new WorkflowBlueprint(definitionId, Version, IsSingleton, IsDisabled, Name, Description, activities, connections);
+            return new WorkflowBlueprint(definitionId, Version, IsSingleton, IsDisabled, Name, Description, true, true, activities, connections);
         }
         
         private IEnumerable<Connection> CreateConnections(IEnumerable<ConnectionDefinition> connectionDefinitions, IEnumerable<IActivity> activities)

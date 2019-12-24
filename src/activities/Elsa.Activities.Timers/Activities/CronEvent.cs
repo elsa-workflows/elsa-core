@@ -44,7 +44,7 @@ namespace Elsa.Activities.Timers.Activities
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext workflowContext)
         {
-            return Halt();
+            return Suspend();
         }
 
         protected override async Task<IActivityExecutionResult> OnResumeAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
@@ -55,7 +55,7 @@ namespace Elsa.Activities.Timers.Activities
                 return Done();
             }
 
-            return Halt();
+            return Suspend();
         }
 
         private async Task<bool> IsExpiredAsync(ActivityExecutionContext context, CancellationToken cancellationToken)

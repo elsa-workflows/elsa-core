@@ -51,7 +51,7 @@ namespace Elsa.Persistence.Memory
         {
             var query = workflowInstances.Values.AsQueryable();
 
-            query = query.Where(x => x.Status == WorkflowStatus.Running);
+            query = query.Where(x => x.Status == WorkflowStatus.Suspended);
 
             if (!string.IsNullOrWhiteSpace(correlationId))
                 query = query.Where(x => x.CorrelationId == correlationId);

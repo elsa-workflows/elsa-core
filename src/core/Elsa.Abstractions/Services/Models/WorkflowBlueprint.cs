@@ -17,6 +17,8 @@ namespace Elsa.Services.Models
             bool isDisabled = false,
             string? name =  default,
             string? description = default,
+            bool isLatest = false,
+            bool isPublished = false,
             IEnumerable<IActivity>? activities = default, 
             IEnumerable<Connection>? connections = default)
         {
@@ -24,6 +26,8 @@ namespace Elsa.Services.Models
             Version = version;
             IsSingleton = isSingleton;
             IsDisabled = isDisabled;
+            IsLatest = isLatest;
+            IsPublished = isPublished;
             Name = name;
             Description = description;
             Activities = activities?.ToList() ?? new List<IActivity>();

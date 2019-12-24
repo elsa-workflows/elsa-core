@@ -85,7 +85,7 @@ namespace Elsa.Activities.Http.Activities
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
-            return Halt(true);
+            return Suspend(true);
         }
 
         protected override async Task<IActivityExecutionResult> OnResumeAsync(ActivityExecutionContext context, CancellationToken cancellationToken)

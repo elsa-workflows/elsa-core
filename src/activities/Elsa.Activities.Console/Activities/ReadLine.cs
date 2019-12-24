@@ -33,7 +33,7 @@ namespace Elsa.Activities.Console.Activities
         protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
             if (input == null)
-                return Halt();
+                return Suspend();
 
             var receivedInput = await input.ReadLineAsync();
             return Execute(receivedInput);
