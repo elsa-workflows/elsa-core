@@ -468,7 +468,7 @@ namespace Elsa.Services
             {
                 var instances = await workflowInstanceStore.ListByStatusAsync(
                     definition.Item1.DefinitionId,
-                    WorkflowStatus.Running,
+                    WorkflowStatus.Suspended,
                     cancellationToken
                 );
 
