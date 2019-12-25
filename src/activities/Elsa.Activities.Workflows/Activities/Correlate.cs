@@ -18,7 +18,7 @@ namespace Elsa.Activities.Workflows.Activities
     public class Correlate : Activity
     {
         [ActivityProperty(Hint = "An expression that evaluates to the value to store as the correlation ID.")]
-        public IWorkflowExpression<string> ValueScriptExpression
+        public IWorkflowExpression<string> Value
         {
             get => GetState<IWorkflowExpression<string>>();
             set => SetState(value);
@@ -26,7 +26,7 @@ namespace Elsa.Activities.Workflows.Activities
 
         protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var value = await context.EvaluateAsync(ValueScriptExpression, cancellationToken);
+            var value = await context.EvaluateAsync(Value, cancellationToken);
             context.WorkflowExecutionContext.Workflow.CorrelationId = value;
             return Done();
         }

@@ -40,8 +40,11 @@ namespace Elsa.Messages.Handlers
         
         public async Task Handle(WorkflowCompleted notification, CancellationToken cancellationToken)
         {
-            if (notification.Workflow.Blueprint.DeleteCompletedWorkflows)
-                await workflowInstanceStore.DeleteAsync(notification.Workflow.Id, cancellationToken);
+            var workflow = notification.Workflow;
+            var blueprint = workflow.Blueprint;
+            
+            if (blueprint.DeleteCompletedWorkflows || blueprint.PersistenceBehavior == WorkflowPersistenceBehavior.Suspended)
+                await workflowInstanceStore.DeleteAsync(workflow.Id, cancellationToken);
         }
 
         private async Task SaveWorkflowAsync(Workflow workflow, CancellationToken cancellationToken)

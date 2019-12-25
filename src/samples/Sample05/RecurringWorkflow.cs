@@ -16,7 +16,7 @@ namespace Sample05
                 .WithId("RecurringWorkflow")
                 .AsSingleton()
                 .StartWith<TimerEvent>(x => x.TimeoutScriptExpression = new LiteralExpression<TimeSpan>("00:00:05"))
-                .Then<WriteLine>(x => x.Text = new JavaScriptExpression<string>("`Trigger received. The time is: ${new Date().toISOString()}`"));
+                .Then<WriteLine>(x => x.Text = new CodeExpression<string>(context => $"Trigger received. The time is: {DateTime.UtcNow.ToLocalTime()}"));
         }
     }
 }

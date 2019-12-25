@@ -32,7 +32,7 @@ namespace Elsa.Activities.Workflows.Activities
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
-            return Halt(true);
+            return Suspend(true);
         }
 
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)

@@ -25,7 +25,7 @@ namespace Sample02
             var workflowBuilderFactory = services.GetRequiredService<Func<IWorkflowBuilder>>();
             var workflowBuilder = workflowBuilderFactory();
             var workflowBlueprint = workflowBuilder
-                .StartWith<WriteLine>(x => x.Text = new LiteralExpression<string>("Hello world!"))
+                .StartWith<WriteLine>(x => x.Text = new CodeExpression<string>(() => "Hello world!"))
                 .Then(() => Console.WriteLine("Look, custom code!"))
                 .Then<WriteLine>(x => x.Text = new LiteralExpression<string>("Goodbye cruel world..."))
                 .Build();

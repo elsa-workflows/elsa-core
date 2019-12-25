@@ -38,14 +38,14 @@ namespace Elsa.Activities.Timers.Activities
         {
             var isExpired = await IsExpiredAsync(context, cancellationToken);
 
-            return isExpired ? (IActivityExecutionResult)Done() : Halt();
+            return isExpired ? (IActivityExecutionResult)Done() : Suspend();
         }
 
         protected override async Task<IActivityExecutionResult> OnResumeAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
             var isExpired = await IsExpiredAsync(context, cancellationToken);
 
-            return isExpired ? (IActivityExecutionResult)Done() : Halt();
+            return isExpired ? (IActivityExecutionResult)Done() : Suspend();
         }
 
         private async Task<bool> IsExpiredAsync(ActivityExecutionContext workflowContext, CancellationToken cancellationToken)

@@ -75,6 +75,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .TryAddProvider<ITokenFormatter, XmlTokenFormatter>(ServiceLifetime.Singleton)
                 .TryAddProvider<IWorkflowExpressionHandler, LiteralHandler>(ServiceLifetime.Singleton)
                 .TryAddProvider<IWorkflowExpressionHandler, CodeHandler>(ServiceLifetime.Singleton)
+                .TryAddProvider<IWorkflowExpressionHandler, VariableHandler>(ServiceLifetime.Singleton)
                 .AddTransient<IWorkflowFactory, WorkflowFactory>()
                 .AddScoped<IActivityInvoker, ActivityInvoker>()
                 .AddScoped<IWorkflowExpressionEvaluator, WorkflowExpressionEvaluator>()

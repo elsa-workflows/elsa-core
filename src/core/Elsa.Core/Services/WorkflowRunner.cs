@@ -318,15 +318,13 @@ namespace Elsa.Services
                     ? await ExecuteActivityAsync(workflowExecutionContext, scheduledActivity, cancellationToken)
                     : await ResumeActivityAsync(workflowExecutionContext, scheduledActivity, cancellationToken);
 
-                workflowExecutionContext.IsFirstPass = false;
-                start = true;
-
                 await mediator.Publish(new ActivityExecuted(workflow, activity), cancellationToken);
                 
-                if (result == null)
-                    break;
-
-                await result.ExecuteAsync(this, workflowExecutionContext, cancellationToken);
+                if (result != null)
+                    await result.ExecuteAsync(this, workflowExecutionContext, cancellationToken);
+                
+                workflowExecutionContext.IsFirstPass = false;
+                start = true;
             }
             
             // Determine new workflow state.
@@ -470,7 +468,7 @@ namespace Elsa.Services
             {
                 var instances = await workflowInstanceStore.ListByStatusAsync(
                     definition.Item1.DefinitionId,
-                    WorkflowStatus.Running,
+                    WorkflowStatus.Suspended,
                     cancellationToken
                 );
 

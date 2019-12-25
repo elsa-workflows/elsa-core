@@ -12,7 +12,7 @@ namespace Elsa.Services.Extensions
         public static Task TriggerAsync(
             this IWorkflowRunner workflowRunner,
             string activityType,
-            Variables input,
+            Variable input,
             CancellationToken cancellationToken = default)
         {
             return workflowRunner.TriggerAsync(activityType, input, cancellationToken: cancellationToken);

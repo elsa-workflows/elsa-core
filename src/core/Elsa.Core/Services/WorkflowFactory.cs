@@ -36,12 +36,22 @@ namespace Elsa.Services
             var workflowDefinition = workflowBuilder().Build<T>();
             return CreateWorkflow(workflowDefinition, input, workflowInstance, correlationId);
         }
-        
+
         public WorkflowBlueprint CreateWorkflowBlueprint(WorkflowDefinitionVersion definition)
         {
             var activities = CreateActivities(definition.Activities).ToList();
             var connections = CreateConnections(definition.Connections, activities).ToList();
-            return new WorkflowBlueprint(definition.DefinitionId, definition.Version, definition.IsSingleton, definition.IsDisabled, definition.Name, definition.Description, activities, connections);
+            return new WorkflowBlueprint(
+                definition.DefinitionId,
+                definition.Version,
+                definition.IsSingleton,
+                definition.IsDisabled,
+                definition.Name,
+                definition.Description,
+                definition.IsLatest,
+                definition.IsPublished,
+                activities,
+                connections);
         }
 
         public Workflow CreateWorkflow(
@@ -52,7 +62,7 @@ namespace Elsa.Services
         {
             if (blueprint.IsDisabled)
                 throw new InvalidOperationException("Cannot instantiate disabled workflow definitions.");
-            
+
             var id = idGenerator.Generate();
             var workflow = new Workflow(
                 id,
