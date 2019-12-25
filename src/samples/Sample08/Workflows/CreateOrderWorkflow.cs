@@ -37,7 +37,7 @@ namespace Sample08.Workflows
                 )
                 // Need to ensure that the correlation ID is the same string format that is used by the WorkflowConsumer<T>
                 // MassTransit will always use Guid values for correlation ID's, so need to ensure the same string format is used.
-                .Then<Correlate>(activity => activity.ValueScriptExpression = new JavaScriptExpression<string>("newGuid()"))
+                .Then<Correlate>(activity => activity.Value = new CodeExpression<string>(() => Guid.NewGuid().ToString()))
                 .Then<SendMassTransitMessage>(activity =>
                     {
                         activity.Message = new JavaScriptExpression<CreateOrder>("return { correlationId: correlationId(), order: order};");

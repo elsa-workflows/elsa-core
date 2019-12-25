@@ -8,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Sample13
 {
     /// <summary>
-    /// A strongly-typed workflows program demonstrating scripting, and branching.
+    /// A strongly-typed workflows program demonstrating scripting and branching.
     /// </summary>
     internal class Program
     {
