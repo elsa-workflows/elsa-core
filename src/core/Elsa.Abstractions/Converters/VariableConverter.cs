@@ -43,23 +43,12 @@ namespace Elsa.Converters
 
             if (variableToken.Type == JTokenType.Null)
                 return Variable.From(null);
-
-            if (variableToken.Type == JTokenType.Array)
-            {
-                var items = ((JArray)variableToken).Select(t =>
-                {
-                    var handler1 = GetHandler(x => x.CanDeserialize(t, objectType));
-                    var value1 = handler1.Deserialize(serializer, objectType, t);
-                    return value1;
-                });
-                return Variable.From(items.ToList());
-            }
             
             var token = variableToken["value"];
             var handler = GetHandler(x => x.CanDeserialize(token, objectType));
             var value = handler.Deserialize(serializer, objectType, token);
 
-            return value is Variable variable ? variable : Variable.From(value);
+            return Variable.From(value);
         }
 
         private IValueHandler GetHandler(Func<IValueHandler, bool> predicate) => handlers.OrderByDescending(x => x.Priority).First(predicate);

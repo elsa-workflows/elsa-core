@@ -39,7 +39,7 @@ namespace Elsa.Scripting.Liquid.Handlers
             return Task.CompletedTask;
         }
 
-        private Task<FluidValue> ToFluidValue(Variable input) => Task.FromResult(FluidValue.Create(input.Value));
+        private Task<FluidValue> ToFluidValue(Variable input) => Task.FromResult(FluidValue.Create(input?.Value));
         
         private Task<FluidValue> ToFluidValue(IDictionary<string, Variable> dictionary, string key) 
             => Task.FromResult(!dictionary.ContainsKey(key) ? default : FluidValue.Create(dictionary[key].Value));

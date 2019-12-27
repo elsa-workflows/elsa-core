@@ -27,7 +27,7 @@ namespace Elsa.Activities
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
-            return Combine(Done(), ScheduleActivities(Activities.Reverse()));
+            return Combine(Done(), ScheduleActivities(Activities.Reverse(), context.Input));
         }
     }
 }

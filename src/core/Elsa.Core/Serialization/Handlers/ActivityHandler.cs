@@ -34,7 +34,9 @@ namespace Elsa.Serialization.Handlers
             activity.Id = token["id"]?.Value<string>();
             activity.Name = token["name"]?.Value<string>();
             activity.DisplayName = token["displayName"]?.Value<string>();
+            activity.Description = token["description"]?.Value<string>();
             activity.State = token["state"]?.ToObject<Variables>(serializer);
+            activity.Output = token["output"]?.ToObject<Variable>(serializer);
 
             return activity;
         }
@@ -49,7 +51,9 @@ namespace Elsa.Serialization.Handlers
                     ActivityType = activity.Type,
                     State = activity.State,
                     Name = activity.Name,
-                    DisplayName = activity.DisplayName
+                    DisplayName = activity.DisplayName,
+                    Description = activity.Description,
+                    Output = activity.Output
                 }, serializer);
 
             activityToken.WriteTo(writer, serializer.Converters.ToArray());

@@ -107,6 +107,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddTypeNameValueHandler<LocalDateTimeHandler>()
                 .AddTypeNameValueHandler<LocalTimeHandler>()
                 .AddTypeNameValueHandler<ObjectHandler>()
+                .AddTypeNameValueHandler<ArrayHandler>()
                 .AddTypeNameValueHandler<OffsetDateHandler>()
                 .AddTypeNameValueHandler<OffsetHandler>()
                 .AddTypeNameValueHandler<OffsetTimeHandler>()
