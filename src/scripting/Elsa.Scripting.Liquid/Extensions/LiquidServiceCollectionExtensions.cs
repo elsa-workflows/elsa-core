@@ -16,7 +16,8 @@ namespace Elsa.Scripting.Liquid.Extensions
                 .AddMemoryCache()
                 .AddNotificationHandlers(typeof(LiquidServiceCollectionExtensions))
                 .AddScoped<ILiquidTemplateManager, LiquidTemplateManager>()
-                .AddLiquidFilter<JsonFilter>("json");
+                .AddLiquidFilter<JsonFilter>("json")
+                .AddTypeAlias(typeof(LiquidExpression<>), "LiquidExpression");
         }
         
         public static IServiceCollection AddLiquidFilter<T>(this IServiceCollection services, string name) where T : class, ILiquidFilter

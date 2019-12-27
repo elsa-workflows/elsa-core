@@ -12,11 +12,13 @@ namespace Elsa.Serialization
     {
         private readonly VariableConverter variableConverter;
         private readonly ActivityConverter activityConverter;
+        private readonly TypeConverter typeConverter;
 
-        public WorkflowSerializerProvider(VariableConverter variableConverter, ActivityConverter activityConverter)
+        public WorkflowSerializerProvider(VariableConverter variableConverter, ActivityConverter activityConverter, TypeConverter typeConverter)
         {
             this.variableConverter = variableConverter;
             this.activityConverter = activityConverter;
+            this.typeConverter = typeConverter;
         }
 
         public JsonSerializerSettings CreateJsonSerializerSettings()
@@ -34,7 +36,8 @@ namespace Elsa.Serialization
                 }
                 .ConfigureForNodaTime(DateTimeZoneProviders.Tzdb)
                 .WithConverter(variableConverter)
-                .WithConverter(activityConverter);
+                .WithConverter(activityConverter)
+                .WithConverter(typeConverter);
         }
 
         public JsonSerializer CreateJsonSerializer()
@@ -51,6 +54,7 @@ namespace Elsa.Serialization
             };
             jsonSerializer.Converters.Add(variableConverter);
             jsonSerializer.Converters.Add(activityConverter);
+            jsonSerializer.Converters.Add(typeConverter);
             return jsonSerializer;
         }
     }

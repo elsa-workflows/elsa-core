@@ -41,10 +41,8 @@ namespace Microsoft.Extensions.DependencyInjection
         }
 
         public static IServiceCollection AddWorkflow<T>(this IServiceCollection services)
-            where T : class, IWorkflow
-        {
-            return services.AddTransient<IWorkflow, T>();
-        }
+            where T : class, IWorkflow =>
+            services.AddTransient<IWorkflow, T>();
 
         public static IServiceCollection AddActivity<T>(this IServiceCollection services)
             where T : class, IActivity
@@ -54,10 +52,9 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddTransient<IActivity>(sp => sp.GetRequiredService<T>());
         }
 
-        public static IServiceCollection AddTypeNameValueHandler<T>(this IServiceCollection services) where T : class, IValueHandler
-        {
-            return services.AddTransient<IValueHandler, T>();
-        }
+        public static IServiceCollection AddTypeNameValueHandler<T>(this IServiceCollection services) where T : class, IValueHandler => services.AddTransient<IValueHandler, T>();
+        public static IServiceCollection AddTypeAlias<T>(this IServiceCollection services, string alias) => services.AddTypeAlias(typeof(T), alias);
+        public static IServiceCollection AddTypeAlias(this IServiceCollection services, Type type, string alias) => services.AddTransient<ITypeAlias>(sp => new TypeAlias(type, alias));
 
         private static IServiceCollection AddMediatR(this ElsaBuilder configuration)
         {
@@ -79,6 +76,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IWorkflowSerializer, WorkflowSerializer>()
                 .AddSingleton<VariableConverter>()
                 .AddSingleton<ActivityConverter>()
+                .AddSingleton<TypeConverter>()
+                .AddSingleton<ITypeMap, TypeMap>()
                 .TryAddProvider<ITokenFormatter, JsonTokenFormatter>(ServiceLifetime.Singleton)
                 .TryAddProvider<ITokenFormatter, YamlTokenFormatter>(ServiceLifetime.Singleton)
                 .TryAddProvider<ITokenFormatter, XmlTokenFormatter>(ServiceLifetime.Singleton)
@@ -114,6 +113,10 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddTypeNameValueHandler<YearMonthHandler>()
                 .AddTypeNameValueHandler<ZonedDateTimeHandler>()
                 .AddTypeNameValueHandler<ActivityHandler>()
+                .AddTypeAlias<object>("Object")
+                .AddTypeAlias<string>("String")
+                .AddTypeAlias<int>("Int32")
+                .AddTypeAlias(typeof(IList<>), "List")
                 .AddPrimitiveActivities();
 
             return configuration;

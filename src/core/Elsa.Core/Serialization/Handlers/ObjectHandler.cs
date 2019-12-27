@@ -7,7 +7,14 @@ namespace Elsa.Serialization.Handlers
 {
     public class ObjectHandler : IValueHandler
     {
+        private readonly ITypeMap typeMap;
         private const string TypeFieldName = "typeName";
+
+        public ObjectHandler(ITypeMap typeMap)
+        {
+            this.typeMap = typeMap;
+        }
+        
         public int Priority => -8999;
         public bool CanSerialize(JToken token, Type type, object value) => token.Type == JTokenType.Object;
         public bool CanDeserialize(JToken token) => token.Type == JTokenType.Object;
@@ -19,22 +26,14 @@ namespace Elsa.Serialization.Handlers
             if(typeName == null)
                 throw new InvalidOperationException();
             
-            var objectType = Type.GetType(typeName);
+            var objectType = typeMap.GetType(typeName);
             return token.ToObject(objectType, serializer);
         }
 
         public void Serialize(JsonWriter writer, JsonSerializer serializer, Type type, JToken token, object? value)
         {
-            token[TypeFieldName] = GetAssemblyQualifiedTypeName(type);
+            token[TypeFieldName] = typeMap.GetAlias(type);
             token.WriteTo(writer, serializer.Converters.ToArray());
-        }
-        
-        private string GetAssemblyQualifiedTypeName(Type type)
-        {
-            var typeName = type.FullName;
-            var assemblyName = type.Assembly.GetName().Name;
-
-            return $"{typeName}, {assemblyName}";
         }
     }
 }
