@@ -19,9 +19,9 @@ namespace Elsa.Serialization
         
         public JsonSerializer Serializer { get; }
 
-        public string Serialize<T>(T workflowInstance, string format)
+        public string Serialize<T>(T workflow, string format)
         {
-            var token = JObject.FromObject(workflowInstance, Serializer);
+            var token = JObject.FromObject(workflow, Serializer);
             return Serialize((JToken)token, format);
         }
 

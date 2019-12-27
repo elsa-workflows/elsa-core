@@ -1,8 +1,10 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
+using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -18,42 +20,21 @@ namespace Elsa.Activities.ControlFlow.Activities
             set => SetState(value);
         }
 
-        [ActivityProperty(Hint = "Enter a name for the iterator variable.")]
-        public string IteratorName
+        public IActivity Activity
         {
-            get => GetState(() => "CurrentValue");
-            set => SetState(value);
-        }
-
-        public int CurrentIndex
-        {
-            get => GetState(() => 0);
+            get => GetState<IActivity>();
             set => SetState(value);
         }
 
         protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
             var collection = await context.EvaluateAsync(Collection, cancellationToken) ?? new object[0];
-            var index = CurrentIndex;
+            var results = new List<IActivityExecutionResult> { Done() };
 
-            if (index >= collection.Count)
-            {
-                context.WorkflowExecutionContext.EndScope();
-                CurrentIndex = 0;
-                return Done();
-            }
+            foreach (var item in collection.Reverse()) 
+                results.Add(ScheduleActivity(Activity, Variable.From(item)));
 
-            var value = collection[index];
-            CurrentIndex++;
-
-            if (index == 0)
-            {
-                context.WorkflowExecutionContext.BeginScope();
-            }
-
-            context.WorkflowExecutionContext.CurrentScope.SetVariable(IteratorName, value);
-
-            return Outcome(OutcomeNames.Iterate);
+            return Combine(results);
         }
     }
 }

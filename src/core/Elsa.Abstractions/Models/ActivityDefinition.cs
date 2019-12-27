@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Elsa.Extensions;
 using Elsa.Services.Models;
 
@@ -11,7 +12,9 @@ namespace Elsa.Models
             {
                 Id = activity.Id,
                 Type = activity.Type,
-                State = activity.State
+                State = activity.State,
+                Name = activity.Name,
+                DisplayName = activity.DisplayName
             };
         }
 
@@ -34,6 +37,8 @@ namespace Elsa.Models
         public int Left { get; set; }
         public int Top { get; set; }
         public Variables State { get; set; }
+        public ICollection<ActivityDefinition> Activities { get; set; }
+        public ICollection<ConnectionDefinition> Connections { get; set; }
     }
 
     public class ActivityDefinition<T> : ActivityDefinition where T : IActivity

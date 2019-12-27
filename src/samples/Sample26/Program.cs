@@ -1,0 +1,55 @@
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
+using Elsa.Activities.Console.Activities;
+using Elsa.Activities.Console.Extensions;
+using Elsa.Activities.ControlFlow.Activities;
+using Elsa.Expressions;
+using Elsa.Models;
+using Elsa.Scripting.JavaScript;
+using Elsa.Serialization;
+using Elsa.Serialization.Formatters;
+using Elsa.Services;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace Sample26
+{
+    /// <summary>
+    /// Demonstrates constructing workflow blueprints from a workflow definition.
+    /// </summary>
+    class Program
+    {
+        static async Task Main()
+        {
+            var services = new ServiceCollection()
+                .AddElsa()
+                .AddConsoleActivities()
+                .BuildServiceProvider();
+
+            var definition = new WorkflowDefinitionVersion
+            {
+                IsPublished = true,
+                Activities = new List<ActivityDefinition>
+                {
+                    ActivityDefinition.FromActivity(new ForEach
+                    {
+                        Id = "for-each-1",
+                        Collection = new JavaScriptExpression<IList<object>>("[1, 2, 3]"),
+                        Activity = new WriteLine { Text = new JavaScriptExpression<string>("`Current item: ${input()}.`") }
+                    })
+                    // ActivityDefinition.FromActivity(new WriteLine
+                    // {
+                    //     Id = "activity-1",
+                    //     Text = new LiteralExpression<string>("Hello World!")
+                    // })
+                }
+            };
+
+            var serializer = services.GetRequiredService<IWorkflowSerializer>();
+            var json = serializer.Serialize(definition, JsonTokenFormatter.FormatName);
+            var deserializedDefinition = serializer.Deserialize<WorkflowDefinitionVersion>(json, JsonTokenFormatter.FormatName);
+
+            var workflowRunner = services.GetRequiredService<IWorkflowRunner>();
+            await workflowRunner.RunAsync(deserializedDefinition);
+        }
+    }
+}

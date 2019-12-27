@@ -21,9 +21,11 @@ namespace Elsa.Services
         }
         
         protected ScheduleActivityResult ScheduleActivity(IActivity activity, Variable input = null) => new ScheduleActivityResult(activity, input);
+        protected ScheduleActivitiesResult ScheduleActivities(IEnumerable<IActivity> activities, Variable input = null) => new ScheduleActivitiesResult(activities, input);
         protected CompleteWorkflowResult Finish() => new CompleteWorkflowResult();
         protected FaultWorkflowResult Fault(string errorMessage) => new FaultWorkflowResult(errorMessage);
         protected FaultWorkflowResult Fault(Exception exception) => new FaultWorkflowResult(exception);
         protected CombinedResult Combine(params IActivityExecutionResult[] results) => new CombinedResult(results);
+        protected CombinedResult Combine(IEnumerable<IActivityExecutionResult> results) => new CombinedResult(results);
     }
 }

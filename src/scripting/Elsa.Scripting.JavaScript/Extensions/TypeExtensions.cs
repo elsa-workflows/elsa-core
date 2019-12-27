@@ -23,5 +23,10 @@ namespace Elsa.Scripting.JavaScript.Extensions
         {
             return NumericTypes.Contains(type);
         }
+        
+        public static bool IsObject(this Type type)
+        {
+            return type == typeof(object);
+        }
     }
 }

@@ -1,69 +1,56 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Elsa.Models;
 using Elsa.Serialization.Handlers;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Elsa.Converters
 {
-    public class TypeNameHandlingConverter : JsonConverter
+    public class TypeNameHandlingConverter : JsonConverter<Variable>
     {
-        private static readonly IDictionary<Type, IValueHandler> ValueHandlers = new Dictionary<Type, IValueHandler>();
+        private readonly IEnumerable<IValueHandler> handlers;
 
-        public static void RegisterTypeHandler<T>() where T : IValueHandler
+        public TypeNameHandlingConverter(IEnumerable<IValueHandler> handlers)
         {
-            var handler = Activator.CreateInstance<T>();
-            RegisterTypeHandler(handler);
-        }
-        
-        public static void RegisterTypeHandler(IValueHandler handler)
-        {
-            ValueHandlers[handler.GetType()] = handler;
+            this.handlers = handlers;
         }
 
-        static TypeNameHandlingConverter()
-        {
-            RegisterTypeHandler<DateTimeHandler>();
-            RegisterTypeHandler<InstantHandler>();
-            RegisterTypeHandler<AnnualDateHandler>();
-            RegisterTypeHandler<DurationHandler>();
-            RegisterTypeHandler<LocalDateHandler>();
-            RegisterTypeHandler<LocalDateTimeHandler>();
-            RegisterTypeHandler<LocalTimeHandler>();
-            RegisterTypeHandler<OffsetDateHandler>();
-            RegisterTypeHandler<OffsetHandler>();
-            RegisterTypeHandler<OffsetTimeHandler>();
-            RegisterTypeHandler<YearMonthHandler>();
-            RegisterTypeHandler<ZonedDateTimeHandler>();
-        }
-        
         public override bool CanRead => true;
         public override bool CanWrite => true;
 
-        public override void WriteJson(JsonWriter writer, object? value, JsonSerializer serializer)
+        public override void WriteJson(JsonWriter writer, Variable variable, JsonSerializer serializer)
         {
+            var value = variable.Value;
+
             if (value == null)
                 return;
-            
+
             var valueType = value.GetType();
-            var token = JToken.FromObject(value);
-            var handler = GetHandler(x => x.CanSerialize(token, valueType));
+            var token = JToken.FromObject(value, serializer);
+            var handler = GetHandler(x => x.CanSerialize(value, token, valueType));
 
-            handler.Serialize(writer, serializer, token);
+            writer.WriteStartObject();
+            writer.WritePropertyName("value");
+            handler.Serialize(writer, serializer, valueType, token, value);
+            writer.WriteEndObject();
         }
 
-        public override object ReadJson(JsonReader reader, Type objectType, object? existingValue, JsonSerializer serializer)
+        public override Variable ReadJson(JsonReader reader, Type objectType, Variable existingValue, bool hasExistingValue, JsonSerializer serializer)
         {
-            var token = JToken.ReadFrom(reader);
-            var handler = GetHandler(x => x.CanDeserialize(token, objectType));
+            var variableToken = JToken.ReadFrom(reader);
 
-            return handler.Deserialize(reader, serializer, objectType, token);
+            if (variableToken.Type == JTokenType.Null)
+                return Variable.From(null);
+            
+            var token = variableToken["value"];
+            var handler = GetHandler(x => x.CanDeserialize(token, objectType));
+            var value = handler.Deserialize(serializer, objectType, token);
+
+            return Variable.From(value);
         }
 
-        public override bool CanConvert(Type objectType) => true;
-
-        private IValueHandler GetHandler(Func<IValueHandler, bool> predicate) => 
-            ValueHandlers.Values.OrderByDescending(x => x.Priority).FirstOrDefault(predicate) ?? new DefaultValueHandler();
+        private IValueHandler GetHandler(Func<IValueHandler, bool> predicate) => handlers.OrderByDescending(x => x.Priority).First(predicate);
     }
 }

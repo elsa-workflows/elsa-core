@@ -24,7 +24,7 @@ namespace Sample19
 
             services
                 // Add workflow services.
-                .AddElsa(x => x.AddEntityFrameworkStores(x => x.UseSqlite(Configuration.GetConnectionString("Sqlite"))))
+                .AddElsa(x => x.AddEntityFrameworkStores(db => db.UseSqlite(Configuration.GetConnectionString("Sqlite"))))
 
                 // Add activities we'd like to use.
                 .AddHttpActivities(options => options.Bind(elsaSection.GetSection("Http")))

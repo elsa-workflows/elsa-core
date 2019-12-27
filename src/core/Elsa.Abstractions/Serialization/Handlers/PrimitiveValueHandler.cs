@@ -8,23 +8,23 @@ namespace Elsa.Serialization.Handlers
     public abstract class PrimitiveValueHandler<T> : IValueHandler
     {
         public virtual int Priority => 0;
-        public bool CanSerialize(JToken value, Type type) => type == typeof(T);
-        public bool CanDeserialize(JToken value, Type type) => value.Type == JTokenType.Object && value["Type"]?.Value<string>() == TypeName;
+        public bool CanSerialize(object value, JToken token, Type type) => type == typeof(T);
+        public bool CanDeserialize(JToken token, Type type) => token.Type == JTokenType.Object && token["Type"]?.Value<string>() == TypeName;
         protected virtual string TypeName => typeof(T).Name;
 
-        public virtual object Deserialize(JsonReader reader, JsonSerializer serializer, Type type, JToken value)
+        public virtual object Deserialize(JsonSerializer serializer, Type type, JToken token)
         {
-            var valueToken = value["Value"];
+            var valueToken = token["Value"];
 
             return valueToken == null ? null : ParseValue(valueToken);
         }
 
-        public virtual void Serialize(JsonWriter writer, JsonSerializer serializer, JToken value)
+        public virtual void Serialize(JsonWriter writer, JsonSerializer serializer, Type type, JToken token, object? value)
         {
-            var token = new JObject
+            var objectToken = new JObject
             {
                 ["Type"] = TypeName,
-                ["Value"] = value
+                ["Value"] = token
             };
             token.WriteTo(writer, serializer.Converters.ToArray());
         }

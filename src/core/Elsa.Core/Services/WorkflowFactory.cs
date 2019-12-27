@@ -77,18 +77,13 @@ namespace Elsa.Services
             return workflow;
         }
 
-        private IEnumerable<Connection> CreateConnections(
-            IEnumerable<ConnectionDefinition> connectionBlueprints,
-            IEnumerable<IActivity> activities)
+        private IEnumerable<Connection> CreateConnections(IEnumerable<ConnectionDefinition> connectionBlueprints, IEnumerable<IActivity> activities)
         {
             var activityDictionary = activities.ToDictionary(x => x.Id);
             return connectionBlueprints.Select(x => CreateConnection(x, activityDictionary));
         }
 
-        private IEnumerable<IActivity> CreateActivities(IEnumerable<ActivityDefinition> activityDefinitions)
-        {
-            return activityDefinitions.Select(CreateActivity);
-        }
+        private IEnumerable<IActivity> CreateActivities(IEnumerable<ActivityDefinition> activityDefinitions) => activityDefinitions.Select(CreateActivity);
 
         private IActivity CreateActivity(ActivityDefinition definition)
         {
@@ -100,9 +95,7 @@ namespace Elsa.Services
             return activity;
         }
 
-        private Connection CreateConnection(
-            ConnectionDefinition connectionDefinition,
-            IDictionary<string, IActivity> activityDictionary)
+        private Connection CreateConnection(ConnectionDefinition connectionDefinition, IDictionary<string, IActivity> activityDictionary)
         {
             var source = activityDictionary[connectionDefinition.SourceActivityId];
             var target = activityDictionary[connectionDefinition.DestinationActivityId];
