@@ -1,0 +1,57 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Elsa.Models;
+using Elsa.Serialization.Handlers;
+using Elsa.Services;
+using Elsa.Services.Models;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+
+namespace Elsa.Converters
+{
+    public class ActivityConverter : JsonConverter<IActivity>
+    {
+        private readonly IActivityResolver activityResolver;
+
+        public ActivityConverter(IActivityResolver activityResolver)
+        {
+            this.activityResolver = activityResolver;
+        }
+        
+        public override bool CanRead => true;
+        public override bool CanWrite => true;
+        
+        public override void WriteJson(JsonWriter writer, IActivity value, JsonSerializer serializer)
+        {
+            var activityToken = JToken.FromObject(
+                new
+                {
+                    Id = value.Id,
+                    ActivityType = value.Type,
+                    State = value.State,
+                    Name = value.Name,
+                    DisplayName = value.DisplayName
+                }, serializer);
+
+            activityToken.WriteTo(writer, serializer.Converters.ToArray());
+        }
+
+        public override IActivity ReadJson(JsonReader reader, Type objectType, IActivity existingValue, bool hasExistingValue, JsonSerializer serializer)
+        {
+            var token = JToken.ReadFrom(reader);
+            var activityType = token["ActivityType"]?.Value<string>();
+
+            if (activityType == null)
+                throw new InvalidOperationException();
+
+            var activity = activityResolver.ResolveActivity(activityType);
+            activity.Id = token["id"]?.Value<string>();
+            activity.Name = token["name"]?.Value<string>();
+            activity.DisplayName = token["displayName"]?.Value<string>();
+            activity.State = token["state"]?.ToObject<Variables>(serializer);
+
+            return activity;
+        }
+    }
+}

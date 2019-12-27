@@ -23,7 +23,7 @@ namespace Sample08.Workflows
                         activity.Value = new JavaScriptExpression<object>("lastResult().Order");
                     }
                 )
-                .Then<TimerEvent>(activity => activity.TimeoutScriptExpression = new LiteralExpression<TimeSpan>("00:00:05"))
+                .Then<TimerEvent>(activity => activity.Timeout = new LiteralExpression<TimeSpan>("00:00:05"))
                 .Then<PublishMassTransitMessage>(activity =>
                     {
                         activity.Message = new JavaScriptExpression<OrderShipped>("return { correlationId: correlationId(), order: order}");

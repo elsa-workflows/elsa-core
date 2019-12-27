@@ -23,7 +23,7 @@ namespace Elsa.Activities.Timers.Activities
         }
 
         [ActivityProperty(Hint = "An expression that evaluates to a TimeSpan value")]
-        public IWorkflowExpression<TimeSpan> TimeoutScriptExpression
+        public IWorkflowExpression<TimeSpan> Timeout
         {
             get => GetState<IWorkflowExpression<TimeSpan>>(() => new LiteralExpression<TimeSpan>("00:01:00"));
             set => SetState(value);
@@ -63,7 +63,7 @@ namespace Elsa.Activities.Timers.Activities
             if (StartTime == null)
                 StartTime = now;
             
-            var timeSpan = await context.EvaluateAsync(TimeoutScriptExpression, cancellationToken);
+            var timeSpan = await context.EvaluateAsync(Timeout, cancellationToken);
             var expiresAt = StartTime.Value.ToDateTimeUtc() + timeSpan;
             
             return now.ToDateTimeUtc() >= expiresAt;

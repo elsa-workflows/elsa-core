@@ -11,7 +11,7 @@ namespace Elsa.Serialization.Handlers
 {
     public class ActivityHandler : IValueHandler
     {
-        private const string TypeFieldName = "type";
+        private const string TypeFieldName = "activityType";
         private readonly IActivityResolver activityResolver;
 
         public ActivityHandler(IActivityResolver activityResolver)
@@ -21,13 +21,13 @@ namespace Elsa.Serialization.Handlers
 
         public int Priority => 0;
         public bool CanSerialize(object value, JToken token, Type type) => typeof(IActivity).IsAssignableFrom(type);
-        public bool CanDeserialize(JToken token, Type type) => token["type"] != null && token["state"] != null && token["left"] != null;
-        
+        public bool CanDeserialize(JToken token, Type type) => token.Type == JTokenType.Object && token[TypeFieldName] != null;
+
         public object Deserialize(JsonSerializer serializer, Type type, JToken token)
         {
             var activityType = token[TypeFieldName]?.Value<string>();
-            
-            if(activityType == null)
+
+            if (activityType == null)
                 throw new InvalidOperationException();
 
             var activity = activityResolver.ResolveActivity(activityType);
@@ -35,16 +35,23 @@ namespace Elsa.Serialization.Handlers
             activity.Name = token["name"]?.Value<string>();
             activity.DisplayName = token["displayName"]?.Value<string>();
             activity.State = token["state"]?.ToObject<Variables>(serializer);
-            
+
             return activity;
         }
 
         public void Serialize(JsonWriter writer, JsonSerializer serializer, Type type, JToken token, object? value)
         {
             var activity = (IActivity)value;
-            var activityDefinition = ActivityDefinition.FromActivity(activity);
-            var activityToken = JToken.FromObject(activityDefinition, serializer);
-            
+            var activityToken = JToken.FromObject(
+                new
+                {
+                    Id = activity.Id,
+                    ActivityType = activity.Type,
+                    State = activity.State,
+                    Name = activity.Name,
+                    DisplayName = activity.DisplayName
+                }, serializer);
+
             activityToken.WriteTo(writer, serializer.Converters.ToArray());
         }
     }

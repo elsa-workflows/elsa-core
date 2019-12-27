@@ -1,14 +1,16 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using Elsa.Activities;
 using Elsa.Activities.Console.Activities;
 using Elsa.Activities.Console.Extensions;
 using Elsa.Activities.ControlFlow.Activities;
-using Elsa.Expressions;
 using Elsa.Models;
 using Elsa.Scripting.JavaScript;
+using Elsa.Scripting.Liquid;
 using Elsa.Serialization;
 using Elsa.Serialization.Formatters;
 using Elsa.Services;
+using Elsa.Services.Models;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Sample26
@@ -30,17 +32,20 @@ namespace Sample26
                 IsPublished = true,
                 Activities = new List<ActivityDefinition>
                 {
-                    ActivityDefinition.FromActivity(new ForEach
-                    {
-                        Id = "for-each-1",
-                        Collection = new JavaScriptExpression<IList<object>>("[1, 2, 3]"),
-                        Activity = new WriteLine { Text = new JavaScriptExpression<string>("`Current item: ${input()}.`") }
-                    })
-                    // ActivityDefinition.FromActivity(new WriteLine
-                    // {
-                    //     Id = "activity-1",
-                    //     Text = new LiteralExpression<string>("Hello World!")
-                    // })
+                    ActivityDefinition.FromActivity(
+                        new ForEach
+                        {
+                            Id = "for-each-1",
+                            Collection = new JavaScriptExpression<IList<object>>("[1, 2, 3]"),
+                            Activity = new Sequence
+                            {
+                                Activities = new IActivity[]
+                                {
+                                    new WriteLine { Text = new LiquidExpression<string>("Current item: {{ Input }}.") },
+                                    new WriteLine { Text = new LiquidExpression<string>("....") },
+                                }
+                            }
+                        })
                 }
             };
 

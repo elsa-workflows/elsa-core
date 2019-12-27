@@ -8,11 +8,11 @@ using Newtonsoft.Json.Linq;
 
 namespace Elsa.Converters
 {
-    public class TypeNameHandlingConverter : JsonConverter<Variable>
+    public class VariableConverter : JsonConverter<Variable>
     {
         private readonly IEnumerable<IValueHandler> handlers;
 
-        public TypeNameHandlingConverter(IEnumerable<IValueHandler> handlers)
+        public VariableConverter(IEnumerable<IValueHandler> handlers)
         {
             this.handlers = handlers;
         }
@@ -43,12 +43,23 @@ namespace Elsa.Converters
 
             if (variableToken.Type == JTokenType.Null)
                 return Variable.From(null);
+
+            if (variableToken.Type == JTokenType.Array)
+            {
+                var items = ((JArray)variableToken).Select(t =>
+                {
+                    var handler1 = GetHandler(x => x.CanDeserialize(t, objectType));
+                    var value1 = handler1.Deserialize(serializer, objectType, t);
+                    return value1;
+                });
+                return Variable.From(items.ToList());
+            }
             
             var token = variableToken["value"];
             var handler = GetHandler(x => x.CanDeserialize(token, objectType));
             var value = handler.Deserialize(serializer, objectType, token);
 
-            return Variable.From(value);
+            return value is Variable variable ? variable : Variable.From(value);
         }
 
         private IValueHandler GetHandler(Func<IValueHandler, bool> predicate) => handlers.OrderByDescending(x => x.Priority).First(predicate);

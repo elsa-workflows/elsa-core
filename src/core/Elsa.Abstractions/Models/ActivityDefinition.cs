@@ -37,8 +37,6 @@ namespace Elsa.Models
         public int Left { get; set; }
         public int Top { get; set; }
         public Variables State { get; set; }
-        public ICollection<ActivityDefinition> Activities { get; set; }
-        public ICollection<ConnectionDefinition> Connections { get; set; }
     }
 
     public class ActivityDefinition<T> : ActivityDefinition where T : IActivity

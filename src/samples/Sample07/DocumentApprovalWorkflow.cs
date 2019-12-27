@@ -83,7 +83,7 @@ namespace Sample07
                         fork
                             .When("Remind")
                             .Then<TimerEvent>(
-                                x => x.TimeoutScriptExpression = new LiteralExpression<TimeSpan>("00:00:10")
+                                x => x.Timeout = new LiteralExpression<TimeSpan>("00:00:10")
                             ).WithName("RemindTimer")
                             .Then<IfElse>(
                                 x => x.Condition = new JavaScriptExpression<bool>("!!Approved"),

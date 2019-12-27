@@ -19,7 +19,11 @@ namespace Elsa.Activities
             Activities = new List<IActivity>();
         }
 
-        public ICollection<IActivity> Activities { get; set; }
+        public ICollection<IActivity> Activities
+        {
+            get => GetState<ICollection<IActivity>>();
+            set => SetState(value);
+        }
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
