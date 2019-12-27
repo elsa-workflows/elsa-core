@@ -9,10 +9,10 @@ namespace Elsa.Serialization.Handlers
     {
         private const string TypeFieldName = "typeName";
         public int Priority => -8999;
-        public bool CanSerialize(object value, JToken token, Type type) => token.Type == JTokenType.Object;
-        public bool CanDeserialize(JToken token, Type type) => token.Type == JTokenType.Object;
+        public bool CanSerialize(JToken token, Type type, object value) => token.Type == JTokenType.Object;
+        public bool CanDeserialize(JToken token) => token.Type == JTokenType.Object;
         
-        public object Deserialize(JsonSerializer serializer, Type type, JToken token)
+        public object Deserialize(JsonSerializer serializer, JToken token)
         {
             var typeName = token[TypeFieldName]?.Value<string>();
             

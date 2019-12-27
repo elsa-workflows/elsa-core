@@ -11,8 +11,8 @@ namespace Elsa.Serialization.Handlers
         private const string ItemsFieldName = "items";
         
         public int Priority => 0;
-        public bool CanSerialize(object value, JToken token, Type type) => token.Type == JTokenType.Array;
-        public bool CanDeserialize(JToken token, Type type) => token.Type == JTokenType.Object && token[ItemTypeFieldName] != null;
+        public bool CanSerialize(JToken token, Type type, object value) => token.Type == JTokenType.Array;
+        public bool CanDeserialize(JToken token) => token.Type == JTokenType.Object && token[ItemTypeFieldName] != null;
         
         public void Serialize(JsonWriter writer, JsonSerializer serializer, Type type, JToken token, object? value)
         {
@@ -26,7 +26,7 @@ namespace Elsa.Serialization.Handlers
             arrayToken.WriteTo(writer, serializer.Converters.ToArray());
         }
         
-        public object Deserialize(JsonSerializer serializer, Type type, JToken token)
+        public object Deserialize(JsonSerializer serializer, JToken token)
         {
             var itemTypeName = token[ItemTypeFieldName]?.Value<string>();
             

@@ -4,6 +4,7 @@ using Elsa.Activities;
 using Elsa.Activities.Console.Activities;
 using Elsa.Activities.Console.Extensions;
 using Elsa.Activities.ControlFlow.Activities;
+using Elsa.Expressions;
 using Elsa.Models;
 using Elsa.Scripting.JavaScript;
 using Elsa.Scripting.Liquid;
@@ -41,8 +42,13 @@ namespace Sample26
                             {
                                 Activities = new IActivity[]
                                 {
+                                    new SetVariable(services.GetRequiredService<IWorkflowExpressionEvaluator>())
+                                    {
+                                        VariableName = "X",
+                                        Value = new JavaScriptExpression<int>("(41 + input())")
+                                    }, 
                                     new WriteLine { Text = new LiquidExpression<string>("Current item: {{ Input }}.") },
-                                    new WriteLine { Text = new LiquidExpression<string>("....") },
+                                    new WriteLine { Text = new LiquidExpression<string>("Variable: {{ Variables.X }}") },
                                 }
                             }
                         })

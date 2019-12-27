@@ -8,11 +8,11 @@ namespace Elsa.Serialization.Handlers
     public abstract class PrimitiveValueHandler<T> : IValueHandler
     {
         public virtual int Priority => 0;
-        public bool CanSerialize(object value, JToken token, Type type) => type == typeof(T);
-        public bool CanDeserialize(JToken token, Type type) => token.Type == JTokenType.Object && token["Type"]?.Value<string>() == TypeName;
+        public bool CanSerialize( JToken token, Type type, object value) => type == typeof(T);
+        public bool CanDeserialize(JToken token) => token.Type == JTokenType.Object && token["Type"]?.Value<string>() == TypeName;
         protected virtual string TypeName => typeof(T).Name;
 
-        public virtual object Deserialize(JsonSerializer serializer, Type type, JToken token)
+        public virtual object Deserialize(JsonSerializer serializer, JToken token)
         {
             var valueToken = token["Value"];
 

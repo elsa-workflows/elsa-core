@@ -29,7 +29,7 @@ namespace Elsa.Converters
 
             var valueType = value.GetType();
             var token = JToken.FromObject(value, serializer);
-            var handler = GetHandler(x => x.CanSerialize(value, token, valueType));
+            var handler = GetHandler(x => x.CanSerialize(token, valueType, value));
 
             writer.WriteStartObject();
             writer.WritePropertyName("value");
@@ -45,8 +45,8 @@ namespace Elsa.Converters
                 return Variable.From(null);
             
             var token = variableToken["value"];
-            var handler = GetHandler(x => x.CanDeserialize(token, objectType));
-            var value = handler.Deserialize(serializer, objectType, token);
+            var handler = GetHandler(x => x.CanDeserialize(token));
+            var value = handler.Deserialize(serializer, token);
 
             return Variable.From(value);
         }

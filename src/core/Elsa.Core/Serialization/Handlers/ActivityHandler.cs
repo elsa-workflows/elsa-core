@@ -20,10 +20,10 @@ namespace Elsa.Serialization.Handlers
         }
 
         public int Priority => 0;
-        public bool CanSerialize(object value, JToken token, Type type) => typeof(IActivity).IsAssignableFrom(type);
-        public bool CanDeserialize(JToken token, Type type) => token.Type == JTokenType.Object && token[TypeFieldName] != null;
+        public bool CanSerialize(JToken token, Type type, object value) => typeof(IActivity).IsAssignableFrom(type);
+        public bool CanDeserialize(JToken token) => token.Type == JTokenType.Object && token[TypeFieldName] != null;
 
-        public object Deserialize(JsonSerializer serializer, Type type, JToken token)
+        public object Deserialize(JsonSerializer serializer, JToken token)
         {
             var activityType = token[TypeFieldName]?.Value<string>();
 

@@ -29,8 +29,8 @@ namespace Elsa.Scripting.Liquid.Handlers
 
             context.MemberAccessStrategy.Register<LiquidPropertyAccessor, FluidValue>((x, name) => x.GetValueAsync(name));
             context.MemberAccessStrategy.Register<ActivityExecutionContext, FluidValue>("Input", x => ToFluidValue(x.Input));
-            context.MemberAccessStrategy.Register<WorkflowExecutionContext, LiquidPropertyAccessor>("Variables", x => new LiquidPropertyAccessor(name => ToFluidValue(x.GetVariables(), name)));
-            context.MemberAccessStrategy.Register<WorkflowExecutionContext, LiquidObjectAccessor<IActivity>>("Activities", x => new LiquidObjectAccessor<IActivity>(name => GetActivityAsync(x, name)));
+            context.MemberAccessStrategy.Register<ActivityExecutionContext, LiquidPropertyAccessor>("Variables", x => new LiquidPropertyAccessor(name => ToFluidValue(x.WorkflowExecutionContext.GetVariables(), name)));
+            context.MemberAccessStrategy.Register<ActivityExecutionContext, LiquidObjectAccessor<IActivity>>("Activities", x => new LiquidObjectAccessor<IActivity>(name => GetActivityAsync(x, name)));
             context.MemberAccessStrategy.Register<LiquidObjectAccessor<IActivity>, object>(GetActivityOutput);
             context.MemberAccessStrategy.Register<LiquidObjectAccessor<object>, object>((x, name) => x.GetValueAsync(name));
             context.MemberAccessStrategy.Register<ExpandoObject, object>((x, name) => ((IDictionary<string, object>)x)[name]);
@@ -50,7 +50,7 @@ namespace Elsa.Scripting.Liquid.Handlers
             return activity?.Output?.Value;
         }
 
-        private Task<IActivity> GetActivityAsync(WorkflowExecutionContext executionContext, string name) 
-            => Task.FromResult(executionContext.Workflow.Blueprint.Activities.FirstOrDefault(x => x.Name == name));
+        private Task<IActivity> GetActivityAsync(ActivityExecutionContext context, string name) 
+            => Task.FromResult(context.WorkflowExecutionContext.Workflow.Blueprint.Activities.FirstOrDefault(x => x.Name == name));
     }
 }
