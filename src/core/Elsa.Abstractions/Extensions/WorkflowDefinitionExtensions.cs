@@ -8,12 +8,12 @@ namespace Elsa.Extensions
     {
         public static IEnumerable<ActivityDefinition> GetStartActivities(this WorkflowDefinitionVersion workflow)
         {
-            var destinationActivityIds =
-                workflow.Connections.Select(x => x.DestinationActivityId).Distinct().ToLookup(x => x);
+            var targetActivityIds =
+                workflow.Connections.Select(x => x.TargetActivityId).Distinct().ToLookup(x => x);
 
             var query =
                 from activity in workflow.Activities
-                where !destinationActivityIds.Contains(activity.Id)
+                where !targetActivityIds.Contains(activity.Id)
                 select activity;
 
             var activities = query.ToArray();
@@ -27,7 +27,7 @@ namespace Elsa.Extensions
             this WorkflowDefinitionVersion workflowDefinition,
             string activityId)
         {
-            return workflowDefinition.Connections.Where(x => x.DestinationActivityId == activityId).ToList();
+            return workflowDefinition.Connections.Where(x => x.TargetActivityId == activityId).ToList();
         }
 
         public static IEnumerable<ConnectionDefinition> GetOutboundConnections(

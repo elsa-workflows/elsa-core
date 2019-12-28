@@ -147,7 +147,7 @@ namespace Elsa.WorkflowBuilders
         private Connection CreateConnection(ConnectionDefinition connectionDefinition, IDictionary<string, IActivity> activityDictionary)
         {
             var source = activityDictionary[connectionDefinition.SourceActivityId];
-            var target = activityDictionary[connectionDefinition.DestinationActivityId];
+            var target = activityDictionary[connectionDefinition.TargetActivityId];
             return new Connection(source, target, connectionDefinition.Outcome);
         }
     }

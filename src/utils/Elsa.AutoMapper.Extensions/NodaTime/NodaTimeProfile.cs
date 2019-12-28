@@ -18,22 +18,22 @@ namespace Elsa.AutoMapper.Extensions.NodaTime
             CreateMap<DateTime?, Instant?>().ConvertUsing(this);
         }
 
-        public DateTime Convert(Instant source, DateTime destination, ResolutionContext context)
+        public DateTime Convert(Instant source, DateTime target, ResolutionContext context)
         {
             return source.ToDateTimeUtc();
         }
 
-        public DateTime? Convert(Instant? source, DateTime? destination, ResolutionContext context)
+        public DateTime? Convert(Instant? source, DateTime? target, ResolutionContext context)
         {
             return source?.ToDateTimeUtc();
         }
 
-        public Instant Convert(DateTime source, Instant destination, ResolutionContext context)
+        public Instant Convert(DateTime source, Instant target, ResolutionContext context)
         {
             return Convert(source);
         }
 
-        public Instant? Convert(DateTime? source, Instant? destination, ResolutionContext context)
+        public Instant? Convert(DateTime? source, Instant? target, ResolutionContext context)
         {
             return source != null ? Convert(source.Value) : default(Instant?);
         }

@@ -39,6 +39,7 @@ Version 2.0
 
 - [ ] Service Bus Messaging
 - [ ] Generic Command & Event Activities
+- [ ] Workflow Host GraphQL API
 - [ ] Workflow Host REST API
 - [ ] Workflow Host gRPC API
 - [ ] Workflow Server
@@ -48,11 +49,11 @@ Version 2.0
 - [ ] More activities
 - [ ] Workflow Designer UI improvements
 - [ ] Activity Editor UI improvements
+- [x] Container Activities
 
 Version 3.0
 
 - [ ] State Machines
-- [ ] Container Activities
 
 ## Workflow Designer
 

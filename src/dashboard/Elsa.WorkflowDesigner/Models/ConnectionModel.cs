@@ -17,7 +17,7 @@ namespace Elsa.WorkflowDesigner.Models
 
         public ConnectionModel(ConnectionDefinition connectionDefinition) : this(
             connectionDefinition.SourceActivityId,
-            connectionDefinition.DestinationActivityId,
+            connectionDefinition.TargetActivityId,
             connectionDefinition.Outcome)
         {
         }

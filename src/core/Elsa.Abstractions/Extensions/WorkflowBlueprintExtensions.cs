@@ -8,12 +8,12 @@ namespace Elsa.Extensions
     {
         public static IEnumerable<IActivity> GetStartActivities(this WorkflowBlueprint workflow)
         {
-            var destinationActivityIds =
+            var targetActivityIds =
                 workflow.Connections.Select(x => x.Target.Activity.Id).Distinct().ToLookup(x => x);
 
             var query =
                 from activity in workflow.Activities
-                where !destinationActivityIds.Contains(activity.Id)
+                where !targetActivityIds.Contains(activity.Id)
                 select activity;
 
             var activities = query.ToArray();
