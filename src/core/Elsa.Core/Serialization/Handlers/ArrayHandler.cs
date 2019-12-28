@@ -7,20 +7,23 @@ namespace Elsa.Serialization.Handlers
 {
     public class ArrayHandler : IValueHandler
     {
-        private const string ItemTypeFieldName = "itemType";
-        private const string ItemsFieldName = "items";
-        
+        private readonly ITypeMap typeMap;
+        private const string ElementTypeFieldName = "elementType";
+        private const string ElementsFieldName = "elements";
+
+        public ArrayHandler(ITypeMap typeMap) => this.typeMap = typeMap;
+
         public int Priority => 0;
         public bool CanSerialize(JToken token, Type type, object value) => token.Type == JTokenType.Array;
-        public bool CanDeserialize(JToken token) => token.Type == JTokenType.Object && token[ItemTypeFieldName] != null;
+        public bool CanDeserialize(JToken token) => token.Type == JTokenType.Object && token[ElementTypeFieldName] != null;
         
         public void Serialize(JsonWriter writer, JsonSerializer serializer, Type type, JToken token, object? value)
         {
-            var elementType = type.GetElementType();
+            var elementType = GetElementType(type);
             var arrayToken = new JObject
             {
-                [ItemTypeFieldName] = GetAssemblyQualifiedTypeName(elementType), 
-                [ItemsFieldName] = token
+                [ElementTypeFieldName] = typeMap.GetAlias(elementType), 
+                [ElementsFieldName] = token
             };
 
             arrayToken.WriteTo(writer, serializer.Converters.ToArray());
@@ -28,32 +31,26 @@ namespace Elsa.Serialization.Handlers
         
         public object Deserialize(JsonSerializer serializer, JToken token)
         {
-            var itemTypeName = token[ItemTypeFieldName]?.Value<string>();
+            var elementTypeName = token[ElementTypeFieldName]?.Value<string>();
             
-            if(itemTypeName == null)
+            if(elementTypeName == null)
                 throw new InvalidOperationException();
             
-            var itemType = Type.GetType(itemTypeName);
+            var elementType = typeMap.GetType(elementTypeName);
             
-            if(itemType == null)
+            if(elementType == null)
                 throw new InvalidOperationException();
             
-            var itemsToken = (JArray)token[ItemsFieldName];
-            var items = itemsToken.Select(itemToken => itemToken.ToObject(itemType, serializer)).ToArray();
-            var array = Array.CreateInstance(itemType, items.Length);
+            var elementsToken = (JArray)token[ElementsFieldName];
+            var elements = elementsToken.Select(itemToken => itemToken.ToObject(elementType, serializer)).ToArray();
+            var array = Array.CreateInstance(elementType, elements.Length);
 
-            for (var i = 0; i < items.Length; i++) 
-                array.SetValue(items[i], i);
+            for (var i = 0; i < elements.Length; i++) 
+                array.SetValue(elements[i], i);
 
             return array;
         }
-        
-        private static string GetAssemblyQualifiedTypeName(Type type)
-        {
-            var typeName = type.FullName;
-            var assemblyName = type.Assembly.GetName().Name;
 
-            return $"{typeName}, {assemblyName}";
-        }
+        private Type GetElementType(Type listType) => listType.IsArray ? listType.GetElementType() : listType.GetGenericArguments().First();
     }
 }

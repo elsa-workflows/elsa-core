@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using Elsa;
 using Elsa.Activities;
 using Elsa.Activities.Console.Activities;
 using Elsa.Activities.Console.Extensions;
@@ -17,7 +18,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Sample26
 {
     /// <summary>
-    /// Demonstrates constructing workflow blueprints from a workflow definition.
+    /// Demonstrates constructing workflow blueprints from a workflow definition. This tests that a workflow JSON definition can be reconstructed and executed.
     /// </summary>
     class Program
     {
@@ -28,6 +29,7 @@ namespace Sample26
                 .AddConsoleActivities()
                 .BuildServiceProvider();
 
+            var evaluator = services.GetRequiredService<IWorkflowExpressionEvaluator>();
             var definition = new WorkflowDefinitionVersion
             {
                 IsPublished = true,
@@ -42,16 +44,50 @@ namespace Sample26
                             {
                                 Activities = new IActivity[]
                                 {
-                                    new SetVariable(services.GetRequiredService<IWorkflowExpressionEvaluator>())
+                                    new SetVariable(evaluator)
                                     {
                                         VariableName = "X",
                                         Value = new JavaScriptExpression<int>("(41 + input())")
                                     }, 
                                     new WriteLine { Text = new LiquidExpression<string>("Current item: {{ Input }}.") },
-                                    new WriteLine { Text = new LiquidExpression<string>("Variable: {{ Variables.X }}") },
+                                    new WriteLine { Text = new LiquidExpression<string>("Variable: {{ Variables.X }}.") },
+                                }
+                            }
+                        }),
+                    
+                    ActivityDefinition.FromActivity(new SetVariable(evaluator)
+                    {
+                        Id = "set-variable-1",
+                        VariableName = "X",
+                        Value = new LiteralExpression<int>("0")
+                    }),
+                    
+                    ActivityDefinition.FromActivity(
+                        new While
+                        {
+                            Id ="while-1",
+                            Condition = new JavaScriptExpression<bool>("X < 5"),
+                            Activity = new Sequence
+                            {
+                                Activities = new List<IActivity>
+                                {
+                                    new WriteLine
+                                    {
+                                        Text = new JavaScriptExpression<string>("`X = ${X}.`")
+                                    },
+                                    new SetVariable(evaluator)
+                                    {
+                                        VariableName = "X",
+                                        Value = new JavaScriptExpression<int>("X + 1")
+                                    }
                                 }
                             }
                         })
+                },
+                Connections = new List<ConnectionDefinition>
+                {
+                    new ConnectionDefinition("for-each-1", "set-variable-1", OutcomeNames.Done),
+                    new ConnectionDefinition("set-variable-1", "while-1", OutcomeNames.Done),
                 }
             };
 

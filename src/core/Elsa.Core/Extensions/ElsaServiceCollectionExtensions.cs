@@ -114,9 +114,14 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddTypeNameValueHandler<ZonedDateTimeHandler>()
                 .AddTypeNameValueHandler<ActivityHandler>()
                 .AddTypeAlias<object>("Object")
-                .AddTypeAlias<string>("String")
+                .AddTypeAlias<bool>("Boolean")
                 .AddTypeAlias<int>("Int32")
+                .AddTypeAlias<long>("Int64")
+                .AddTypeAlias<decimal>("Decimal")
+                .AddTypeAlias<string>("String")
+                .AddTypeAlias<IActivity>("Activity")
                 .AddTypeAlias(typeof(IList<>), "List")
+                .AddTypeAlias(typeof(LiteralExpression<>), "LiteralExpression")
                 .AddPrimitiveActivities();
 
             return configuration;
