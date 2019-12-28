@@ -5,7 +5,7 @@ namespace Elsa.Expressions
     public class LiteralExpression : WorkflowExpression
     {
         public static string ExpressionType => "Literal";
-        public string Expression { get; }
+        public string Expression { get; set; }
         
         public LiteralExpression(string expression, Type returnType) : base(ExpressionType, returnType)
         {

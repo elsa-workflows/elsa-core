@@ -4,6 +4,8 @@ using Elsa.Scripting.JavaScript.Services;
 using Microsoft.Extensions.Options;
 using System;
 using Elsa.Expressions;
+using Elsa.Scripting.JavaScript;
+using Jint.Runtime;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -14,7 +16,8 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             return services
                 .TryAddProvider<IWorkflowExpressionHandler, JavaScriptHandler>(ServiceLifetime.Scoped)
-                .AddNotificationHandlers(typeof(JavaScriptServiceCollectionExtensions));
+                .AddNotificationHandlers(typeof(JavaScriptServiceCollectionExtensions))
+                .AddTypeAlias(typeof(JavaScriptExpression<>), "JavaScriptExpression");
         }
 
         public static IServiceCollection WithJavaScriptOptions(this IServiceCollection services, Action<OptionsBuilder<ScriptOptions>> options)

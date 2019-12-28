@@ -15,7 +15,8 @@ namespace Elsa.Activities.ControlFlow.Extensions
                 .AddActivity<Join>()
                 .AddSingleton<IWorkflowEventHandler>(sp => sp.GetRequiredService<Join>())
                 .AddActivity<IfElse>()
-                .AddActivity<Switch>();
+                .AddActivity<Switch>()
+                .AddActivity<Sequence>();
         }
     }
 }

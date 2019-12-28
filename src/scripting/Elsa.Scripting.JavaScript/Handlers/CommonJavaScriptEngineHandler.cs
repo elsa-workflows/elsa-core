@@ -17,7 +17,7 @@ namespace Elsa.Scripting.JavaScript.Handlers
             var workflow = workflowContext.Workflow;
             var engine = notification.Engine;
 
-            engine.SetValue("input", (Func<string, object>) (name => activityContext.Input));
+            engine.SetValue("input", (Func<string, object>) (name => activityContext.Input?.Value));
             engine.SetValue("variable", (Func<string, object>) (name => workflowContext.GetVariable(name)));
             engine.SetValue("correlationId", (Func<object>) (() => workflow.CorrelationId));
             engine.SetValue("currentCulture", (Func<object>) (() => CultureInfo.InvariantCulture));

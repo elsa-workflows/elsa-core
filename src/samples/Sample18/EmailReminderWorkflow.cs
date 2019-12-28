@@ -34,7 +34,7 @@ namespace Sample18
                     {
                         doWhile
                             .When(OutcomeNames.Iterate)
-                            .Then<TimerEvent>(x => x.TimeoutScriptExpression = new LiteralExpression<TimeSpan>("00:00:01"))
+                            .Then<TimerEvent>(x => x.Timeout = new LiteralExpression<TimeSpan>("00:00:01"))
                             .Then<WriteLine>(x => x.Text = new LiquidExpression<string>("Sending reminder: \"{{ Activities.ReminderInput.Input }}\""))
                             .Then<SendEmail>(
                                 x =>

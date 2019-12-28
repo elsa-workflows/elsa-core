@@ -4,6 +4,7 @@ using Elsa;
 using Elsa.Activities;
 using Elsa.AutoMapper.Extensions;
 using Elsa.Caching;
+using Elsa.Converters;
 using Elsa.Expressions;
 using Elsa.Mapping;
 using Elsa.Messages.Handlers;
@@ -11,6 +12,7 @@ using Elsa.Persistence;
 using Elsa.Persistence.Memory;
 using Elsa.Serialization;
 using Elsa.Serialization.Formatters;
+using Elsa.Serialization.Handlers;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Elsa.WorkflowBuilders;
@@ -39,10 +41,8 @@ namespace Microsoft.Extensions.DependencyInjection
         }
 
         public static IServiceCollection AddWorkflow<T>(this IServiceCollection services)
-            where T : class, IWorkflow
-        {
-            return services.AddTransient<IWorkflow, T>();
-        }
+            where T : class, IWorkflow =>
+            services.AddTransient<IWorkflow, T>();
 
         public static IServiceCollection AddActivity<T>(this IServiceCollection services)
             where T : class, IActivity
@@ -52,10 +52,14 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddTransient<IActivity>(sp => sp.GetRequiredService<T>());
         }
 
+        public static IServiceCollection AddTypeNameValueHandler<T>(this IServiceCollection services) where T : class, IValueHandler => services.AddTransient<IValueHandler, T>();
+        public static IServiceCollection AddTypeAlias<T>(this IServiceCollection services, string alias) => services.AddTypeAlias(typeof(T), alias);
+        public static IServiceCollection AddTypeAlias(this IServiceCollection services, Type type, string alias) => services.AddTransient<ITypeAlias>(sp => new TypeAlias(type, alias));
+
         private static IServiceCollection AddMediatR(this ElsaBuilder configuration)
         {
             return configuration.Services.AddMediatR(
-                mediatr => mediatr.AsSingleton(), 
+                mediatr => mediatr.AsSingleton(),
                 typeof(ElsaServiceCollectionExtensions));
         }
 
@@ -70,6 +74,10 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddTransient<Func<IEnumerable<IActivity>>>(sp => sp.GetServices<IActivity>)
                 .AddSingleton<IIdGenerator, IdGenerator>()
                 .AddSingleton<IWorkflowSerializer, WorkflowSerializer>()
+                .AddSingleton<VariableConverter>()
+                .AddSingleton<ActivityConverter>()
+                .AddSingleton<TypeConverter>()
+                .AddSingleton<ITypeMap, TypeMap>()
                 .TryAddProvider<ITokenFormatter, JsonTokenFormatter>(ServiceLifetime.Singleton)
                 .TryAddProvider<ITokenFormatter, YamlTokenFormatter>(ServiceLifetime.Singleton)
                 .TryAddProvider<ITokenFormatter, XmlTokenFormatter>(ServiceLifetime.Singleton)
@@ -89,6 +97,31 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddTransient<IWorkflowBuilder, WorkflowBuilder>()
                 .AddTransient<Func<IWorkflowBuilder>>(sp => sp.GetRequiredService<IWorkflowBuilder>)
                 .AddAutoMapperProfile<WorkflowDefinitionProfile>(ServiceLifetime.Singleton)
+                .AddTypeNameValueHandler<AnnualDateHandler>()
+                .AddTypeNameValueHandler<DateTimeHandler>()
+                .AddTypeNameValueHandler<DefaultValueHandler>()
+                .AddTypeNameValueHandler<DurationHandler>()
+                .AddTypeNameValueHandler<InstantHandler>()
+                .AddTypeNameValueHandler<LocalDateHandler>()
+                .AddTypeNameValueHandler<LocalDateTimeHandler>()
+                .AddTypeNameValueHandler<LocalTimeHandler>()
+                .AddTypeNameValueHandler<ObjectHandler>()
+                .AddTypeNameValueHandler<ArrayHandler>()
+                .AddTypeNameValueHandler<OffsetDateHandler>()
+                .AddTypeNameValueHandler<OffsetHandler>()
+                .AddTypeNameValueHandler<OffsetTimeHandler>()
+                .AddTypeNameValueHandler<YearMonthHandler>()
+                .AddTypeNameValueHandler<ZonedDateTimeHandler>()
+                .AddTypeNameValueHandler<ActivityHandler>()
+                .AddTypeAlias<object>("Object")
+                .AddTypeAlias<bool>("Boolean")
+                .AddTypeAlias<int>("Int32")
+                .AddTypeAlias<long>("Int64")
+                .AddTypeAlias<decimal>("Decimal")
+                .AddTypeAlias<string>("String")
+                .AddTypeAlias<IActivity>("Activity")
+                .AddTypeAlias(typeof(IList<>), "List")
+                .AddTypeAlias(typeof(LiteralExpression<>), "LiteralExpression")
                 .AddPrimitiveActivities();
 
             return configuration;
@@ -99,7 +132,7 @@ namespace Microsoft.Extensions.DependencyInjection
             var hasDefinitionStore = configuration.HasService<IWorkflowDefinitionStore>();
             var hasInstanceStore = configuration.HasService<IWorkflowInstanceStore>();
 
-            if (!hasDefinitionStore || !hasInstanceStore) 
+            if (!hasDefinitionStore || !hasInstanceStore)
                 configuration.WithMemoryStores();
 
             configuration.Services.Decorate<IWorkflowDefinitionStore, PublishingWorkflowDefinitionStore>();
@@ -107,7 +140,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
         private static void EnsureCaching(ElsaBuilder configuration)
         {
-            if (!configuration.HasService<ISignal>()) 
+            if (!configuration.HasService<ISignal>())
                 configuration.Services.AddSingleton<ISignal, Signal>();
 
             configuration.Services.AddMemoryCache();

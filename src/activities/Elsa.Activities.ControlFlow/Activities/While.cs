@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
@@ -16,30 +17,24 @@ namespace Elsa.Activities.ControlFlow.Activities
             get => GetState<IWorkflowExpression<bool>>();
             set => SetState(value);
         }
-        
-        public bool HasStarted
+
+        public IActivity Activity
         {
-            get => GetState(() => false);
+            get => GetState<IActivity>();
             set => SetState(value);
         }
 
         protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
             var loop = await context.EvaluateAsync(Condition, cancellationToken);
+            var results = new List<IActivityExecutionResult>();
 
-            if(HasStarted)
-                context.WorkflowExecutionContext.EndScope();
-            
             if (loop)
-            {
-                if (!HasStarted) 
-                    HasStarted = true;
+                results.Add(ScheduleActivities(new[] { this, Activity }));
+            else
+                results.Add(Done());
 
-                context.WorkflowExecutionContext.BeginScope();
-                return Outcome(OutcomeNames.Iterate);
-            }
-
-            return Done();
+            return Combine(results);
         }
     }
 }

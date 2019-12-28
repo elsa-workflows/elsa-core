@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Elsa.Extensions;
 using Elsa.Services.Models;
 
@@ -11,7 +12,9 @@ namespace Elsa.Models
             {
                 Id = activity.Id,
                 Type = activity.Type,
-                State = activity.State
+                State = activity.State,
+                Name = activity.Name,
+                DisplayName = activity.DisplayName
             };
         }
 

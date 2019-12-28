@@ -15,6 +15,33 @@ namespace Elsa.Activities
         {
             Function = context => Task.FromResult<IActivityExecutionResult>(Done());
         }
+
+        public CodeActivity(Func<ActivityExecutionContext, Task<IActivityExecutionResult>> function)
+        {
+            Function = function;
+        }
+        
+        public CodeActivity(Func<ActivityExecutionContext, Task> function)
+        {
+            Function = context =>
+            {
+                function(context);
+                return Task.FromResult<IActivityExecutionResult>(Done());
+            };
+        }
+        
+        public CodeActivity(Action<ActivityExecutionContext> function)
+        {
+            Function = context =>
+            {
+                function(context);
+                return Task.FromResult<IActivityExecutionResult>(Done());
+            };
+        }
+        
+        public CodeActivity(Action function) : this(context => function())
+        {
+        }
         
         public Func<ActivityExecutionContext, Task<IActivityExecutionResult>> Function { get; set; }
 

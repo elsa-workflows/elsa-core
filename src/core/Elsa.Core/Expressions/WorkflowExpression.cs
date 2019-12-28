@@ -10,12 +10,12 @@ namespace Elsa.Expressions
             ReturnType = returnType;
         }
 
-        public string Type { get; }
-        public Type ReturnType { get; }
+        public string Type { get; set; }
+        public Type ReturnType { get; set; }
     }
 
     public class WorkflowExpression<T> : WorkflowExpression, IWorkflowExpression<T>
-    {   
+    {
         public WorkflowExpression(string type) : base(type, typeof(T))
         {
         }
