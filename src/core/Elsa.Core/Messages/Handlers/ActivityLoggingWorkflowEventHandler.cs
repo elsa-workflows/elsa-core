@@ -14,19 +14,19 @@ namespace Elsa.Messages.Handlers
             this.clock = clock;
         }
 
-        protected override void ActivityExecuted(WorkflowExecutionContext workflowExecutionContext, IActivity activity)
+        protected override void ActivityExecuted(ProcessExecutionContext processExecutionContext, IActivity activity)
         {
             var timeStamp = clock.GetCurrentInstant();
-            workflowExecutionContext.Workflow.ExecutionLog.Add(
+            processExecutionContext.ProcessInstance.ExecutionLog.Add(
                 new LogEntry(activity.Id, timeStamp, $"Successfully executed at {timeStamp}"));
         }
 
         protected override void ActivityFaulted(
-            WorkflowExecutionContext workflowExecutionContext,
+            ProcessExecutionContext processExecutionContext,
             IActivity activity,
             string message)
         {
-            workflowExecutionContext.Workflow.ExecutionLog.Add(
+            processExecutionContext.ProcessInstance.ExecutionLog.Add(
                 new LogEntry(activity.Id, clock.GetCurrentInstant(), message, true));
         }
     }

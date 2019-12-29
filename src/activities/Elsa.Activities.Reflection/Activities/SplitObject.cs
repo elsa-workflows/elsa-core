@@ -48,7 +48,7 @@ namespace Elsa.Activities.Reflection.Activities
                 foreach (var property in Properties)
                 {
                     var propValue = FollowPropertyPath(splitObject, property);
-                    context.WorkflowExecutionContext.SetVariable(property, propValue);
+                    context.ProcessExecutionContext.SetVariable(property, propValue);
                 }
             }
 

@@ -10,48 +10,48 @@ namespace Elsa.Persistence.Memory
 {
     public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
     {
-        private readonly IDictionary<string, WorkflowInstance> workflowInstances =
-            new ConcurrentDictionary<string, WorkflowInstance>();
+        private readonly IDictionary<string, ProcessInstance> workflowInstances =
+            new ConcurrentDictionary<string, ProcessInstance>();
 
-        public Task<WorkflowInstance> SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken)
+        public Task<ProcessInstance> SaveAsync(ProcessInstance instance, CancellationToken cancellationToken)
         {
             workflowInstances[instance.Id] = instance;
             return Task.FromResult(instance);
         }
 
-        public Task<WorkflowInstance> GetByIdAsync(string id, CancellationToken cancellationToken)
+        public Task<ProcessInstance> GetByIdAsync(string id, CancellationToken cancellationToken)
         {
             var instance = workflowInstances.ContainsKey(id) ? workflowInstances[id] : default;
             return Task.FromResult(instance);
         }
 
-        public Task<WorkflowInstance> GetByCorrelationIdAsync(string correlationId,
+        public Task<ProcessInstance> GetByCorrelationIdAsync(string correlationId,
             CancellationToken cancellationToken = default)
         {
             var instance = workflowInstances.Values.FirstOrDefault(x => x.CorrelationId == correlationId);
             return Task.FromResult(instance);
         }
 
-        public Task<IEnumerable<WorkflowInstance>> ListByDefinitionAsync(string definitionId,
+        public Task<IEnumerable<ProcessInstance>> ListByDefinitionAsync(string definitionId,
             CancellationToken cancellationToken)
         {
             var workflows = workflowInstances.Values.Where(x => x.DefinitionId == definitionId);
             return Task.FromResult(workflows);
         }
 
-        public Task<IEnumerable<WorkflowInstance>> ListAllAsync(CancellationToken cancellationToken)
+        public Task<IEnumerable<ProcessInstance>> ListAllAsync(CancellationToken cancellationToken)
         {
             var workflows = workflowInstances.Values.AsEnumerable();
             return Task.FromResult(workflows);
         }
 
-        public Task<IEnumerable<(WorkflowInstance, ActivityInstance)>> ListByBlockingActivityAsync(
+        public Task<IEnumerable<(ProcessInstance, ActivityInstance)>> ListByBlockingActivityAsync(
             string activityType,
             string correlationId = default, CancellationToken cancellationToken = default)
         {
             var query = workflowInstances.Values.AsQueryable();
 
-            query = query.Where(x => x.Status == WorkflowStatus.Suspended);
+            query = query.Where(x => x.Status == ProcessStatus.Suspended);
 
             if (!string.IsNullOrWhiteSpace(correlationId))
                 query = query.Where(x => x.CorrelationId == correlationId);
@@ -63,16 +63,16 @@ namespace Elsa.Persistence.Memory
             return Task.FromResult(query.AsEnumerable().GetBlockingActivities());
         }
 
-        public Task<IEnumerable<WorkflowInstance>> ListByStatusAsync(
+        public Task<IEnumerable<ProcessInstance>> ListByStatusAsync(
             string definitionId,
-            WorkflowStatus status,
+            ProcessStatus status,
             CancellationToken cancellationToken)
         {
             var query = workflowInstances.Values.Where(x => x.DefinitionId == definitionId && x.Status == status);
             return Task.FromResult(query);
         }
 
-        public Task<IEnumerable<WorkflowInstance>> ListByStatusAsync(WorkflowStatus status,
+        public Task<IEnumerable<ProcessInstance>> ListByStatusAsync(ProcessStatus status,
             CancellationToken cancellationToken)
         {
             var query = workflowInstances.Values.Where(x => x.Status == status);

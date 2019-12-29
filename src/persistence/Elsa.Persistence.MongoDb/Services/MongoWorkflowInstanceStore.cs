@@ -11,14 +11,14 @@ namespace Elsa.Persistence.MongoDb.Services
 {
     public class MongoWorkflowInstanceStore : IWorkflowInstanceStore
     {
-        private readonly IMongoCollection<WorkflowInstance> collection;
+        private readonly IMongoCollection<ProcessInstance> collection;
 
-        public MongoWorkflowInstanceStore(IMongoCollection<WorkflowInstance> collection)
+        public MongoWorkflowInstanceStore(IMongoCollection<ProcessInstance> collection)
         {
             this.collection = collection;
         }
 
-        public async Task<WorkflowInstance> SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken)
+        public async Task<ProcessInstance> SaveAsync(ProcessInstance instance, CancellationToken cancellationToken)
         {
             await collection.ReplaceOneAsync(
                 x => x.Id == instance.Id,
@@ -29,14 +29,14 @@ namespace Elsa.Persistence.MongoDb.Services
             return instance;
         }
 
-        public async Task<WorkflowInstance> GetByIdAsync(
+        public async Task<ProcessInstance> GetByIdAsync(
             string id,
             CancellationToken cancellationToken)
         {
             return await collection.AsQueryable().Where(x => x.Id == id).FirstOrDefaultAsync(cancellationToken);
         }
 
-        public async Task<WorkflowInstance> GetByCorrelationIdAsync(
+        public async Task<ProcessInstance> GetByCorrelationIdAsync(
             string correlationId,
             CancellationToken cancellationToken = default)
         {
@@ -45,7 +45,7 @@ namespace Elsa.Persistence.MongoDb.Services
                 .FirstOrDefaultAsync(cancellationToken);
         }
 
-        public async Task<IEnumerable<WorkflowInstance>> ListByDefinitionAsync(
+        public async Task<IEnumerable<ProcessInstance>> ListByDefinitionAsync(
             string definitionId,
             CancellationToken cancellationToken)
         {
@@ -55,7 +55,7 @@ namespace Elsa.Persistence.MongoDb.Services
                 .ToListAsync(cancellationToken);
         }
 
-        public async Task<IEnumerable<WorkflowInstance>> ListAllAsync(CancellationToken cancellationToken)
+        public async Task<IEnumerable<ProcessInstance>> ListAllAsync(CancellationToken cancellationToken)
         {
             return await collection
                 .AsQueryable()
@@ -63,14 +63,14 @@ namespace Elsa.Persistence.MongoDb.Services
                 .ToListAsync(cancellationToken);
         }
 
-        public async Task<IEnumerable<(WorkflowInstance, ActivityInstance)>> ListByBlockingActivityAsync(
+        public async Task<IEnumerable<(ProcessInstance, ActivityInstance)>> ListByBlockingActivityAsync(
             string activityType,
             string correlationId = default,
             CancellationToken cancellationToken = default)
         {
             var query = collection.AsQueryable();
 
-            query = query.Where(x => x.Status == WorkflowStatus.Running);
+            query = query.Where(x => x.Status == ProcessStatus.Running);
 
             if (!string.IsNullOrWhiteSpace(correlationId))
                 query = query.Where(x => x.CorrelationId == correlationId);
@@ -83,9 +83,9 @@ namespace Elsa.Persistence.MongoDb.Services
             return instances.GetBlockingActivities(activityType);
         }
 
-        public async Task<IEnumerable<WorkflowInstance>> ListByStatusAsync(
+        public async Task<IEnumerable<ProcessInstance>> ListByStatusAsync(
             string definitionId,
-            WorkflowStatus status,
+            ProcessStatus status,
             CancellationToken cancellationToken)
         {
             return await collection
@@ -95,8 +95,8 @@ namespace Elsa.Persistence.MongoDb.Services
                 .ToListAsync(cancellationToken);
         }
 
-        public async Task<IEnumerable<WorkflowInstance>> ListByStatusAsync(
-            WorkflowStatus status,
+        public async Task<IEnumerable<ProcessInstance>> ListByStatusAsync(
+            ProcessStatus status,
             CancellationToken cancellationToken)
         {
             return await collection

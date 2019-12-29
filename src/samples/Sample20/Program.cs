@@ -36,15 +36,15 @@ namespace Sample20
             var serializer = services.GetRequiredService<IWorkflowSerializer>();
             
             // Test serialization.
-            var json1 = serializer.Serialize(executionContext1.Workflow.ToInstance(), JsonTokenFormatter.FormatName);
-            var json2 = serializer.Serialize(executionContext2.Workflow.ToInstance(), JsonTokenFormatter.FormatName);
+            var json1 = serializer.Serialize(executionContext1.ProcessInstance.ToInstance(), JsonTokenFormatter.FormatName);
+            var json2 = serializer.Serialize(executionContext2.ProcessInstance.ToInstance(), JsonTokenFormatter.FormatName);
             
             Console.WriteLine(json1);
             Console.WriteLine(json2);
 
             // Test deserialization.
-            var workflowInstance1 = serializer.Deserialize<WorkflowInstance>(json1, JsonTokenFormatter.FormatName);
-            var workflowInstance2 = serializer.Deserialize<WorkflowInstance>(json2, JsonTokenFormatter.FormatName);
+            var workflowInstance1 = serializer.Deserialize<ProcessInstance>(json1, JsonTokenFormatter.FormatName);
+            var workflowInstance2 = serializer.Deserialize<ProcessInstance>(json2, JsonTokenFormatter.FormatName);
 
             Console.ReadLine();
         }

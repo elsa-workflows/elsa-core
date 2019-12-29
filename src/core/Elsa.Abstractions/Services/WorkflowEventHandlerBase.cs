@@ -7,56 +7,56 @@ namespace Elsa.Services
     public abstract class WorkflowEventHandlerBase : IWorkflowEventHandler
     {
         public virtual Task ActivityExecutedAsync(
-            WorkflowExecutionContext workflowExecutionContext,
+            ProcessExecutionContext processExecutionContext,
             IActivity activity,
             CancellationToken cancellationToken)
         {
-            ActivityExecuted(workflowExecutionContext, activity);
+            ActivityExecuted(processExecutionContext, activity);
             return Task.CompletedTask;
         }
 
         public virtual Task ActivityFaultedAsync(
-            WorkflowExecutionContext workflowExecutionContext,
+            ProcessExecutionContext processExecutionContext,
             IActivity activity,
             string message,
             CancellationToken cancellationToken)
         {
-            ActivityFaulted(workflowExecutionContext, activity, message);
+            ActivityFaulted(processExecutionContext, activity, message);
             return Task.CompletedTask;
         }
 
         public virtual Task InvokingHaltedActivitiesAsync(
-            WorkflowExecutionContext workflowExecutionContext,
+            ProcessExecutionContext processExecutionContext,
             CancellationToken cancellationToken)
         {
-            InvokingHaltedActivities(workflowExecutionContext);
+            InvokingHaltedActivities(processExecutionContext);
             return Task.CompletedTask;
         }
 
         public virtual Task WorkflowInvokedAsync(
-            WorkflowExecutionContext workflowExecutionContext,
+            ProcessExecutionContext processExecutionContext,
             CancellationToken cancellationToken)
         {
-            WorkflowInvoked(workflowExecutionContext);
+            WorkflowInvoked(processExecutionContext);
             return Task.CompletedTask;
         }
 
-        protected virtual void ActivityExecuted(WorkflowExecutionContext workflowExecutionContext, IActivity activity)
+        protected virtual void ActivityExecuted(ProcessExecutionContext processExecutionContext, IActivity activity)
         {
         }
 
         protected virtual void ActivityFaulted(
-            WorkflowExecutionContext workflowExecutionContext,
+            ProcessExecutionContext processExecutionContext,
             IActivity activity,
             string message)
         {
         }
 
-        protected virtual void InvokingHaltedActivities(WorkflowExecutionContext workflowExecutionContext)
+        protected virtual void InvokingHaltedActivities(ProcessExecutionContext processExecutionContext)
         {
         }
 
-        protected virtual void WorkflowInvoked(WorkflowExecutionContext workflowExecutionContext)
+        protected virtual void WorkflowInvoked(ProcessExecutionContext processExecutionContext)
         {
         }
     }

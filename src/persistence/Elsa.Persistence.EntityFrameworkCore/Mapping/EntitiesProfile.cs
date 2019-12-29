@@ -8,19 +8,19 @@ namespace Elsa.Persistence.EntityFrameworkCore.Mapping
     {
         public EntitiesProfile()
         {
-            CreateMap<WorkflowDefinitionVersion, WorkflowDefinitionVersionEntity>()
+            CreateMap<ProcessDefinitionVersion, WorkflowDefinitionVersionEntity>()
                 .ForMember(d => d.VersionId, d => d.MapFrom(s => s.Id))
                 .ForMember(d => d.Id, d => d.Ignore());
 
-            CreateMap<WorkflowDefinitionVersionEntity, WorkflowDefinitionVersion>()
+            CreateMap<WorkflowDefinitionVersionEntity, ProcessDefinitionVersion>()
                 .ForCtorParam("id", p => p.MapFrom(s => s.VersionId))
                 .ForMember(d => d.Id, d => d.MapFrom(s => s.VersionId));
 
-            CreateMap<WorkflowInstance, WorkflowInstanceEntity>()
+            CreateMap<ProcessInstance, WorkflowInstanceEntity>()
                 .ForMember(d => d.Id, d => d.Ignore())
                 .ForMember(d => d.InstanceId, d => d.MapFrom(s => s.Id));
 
-            CreateMap<WorkflowInstanceEntity, WorkflowInstance>()
+            CreateMap<WorkflowInstanceEntity, ProcessInstance>()
                 .ForMember(d => d.Id, d => d.MapFrom(s => s.InstanceId));
 
             CreateMap<ActivityDefinition, ActivityDefinitionEntity>()

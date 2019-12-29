@@ -3,7 +3,7 @@ using GraphQL.Types;
 
 namespace Elsa.Server.GraphQL.Types
 {
-    public class WorkflowExecutionScopeType : ObjectGraphType<WorkflowExecutionScope>
+    public class WorkflowExecutionScopeType : ObjectGraphType<ProcessExecutionScope>
     {
         public WorkflowExecutionScopeType()
         {

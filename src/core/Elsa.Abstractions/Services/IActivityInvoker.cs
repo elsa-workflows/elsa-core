@@ -7,7 +7,7 @@ namespace Elsa.Services
 {
     public interface IActivityInvoker
     {
-        Task<IActivityExecutionResult> ExecuteAsync(WorkflowExecutionContext workflowContext, IActivity activity, Variable? input = null, CancellationToken cancellationToken = default);
-        Task<IActivityExecutionResult> ResumeAsync(WorkflowExecutionContext workflowContext, IActivity activity, Variable? input = null, CancellationToken cancellationToken = default);
+        Task<IActivityExecutionResult> ExecuteAsync(ProcessExecutionContext processContext, IActivity activity, Variable? input = null, CancellationToken cancellationToken = default);
+        Task<IActivityExecutionResult> ResumeAsync(ProcessExecutionContext processContext, IActivity activity, Variable? input = null, CancellationToken cancellationToken = default);
     }
 }

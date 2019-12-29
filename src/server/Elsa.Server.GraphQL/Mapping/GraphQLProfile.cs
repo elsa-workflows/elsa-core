@@ -8,7 +8,7 @@ namespace Elsa.Server.GraphQL.Mapping
     {
         public GraphQLProfile()
         {
-            CreateMap<DefineWorkflowDefinitionInputModel, WorkflowDefinitionVersion>();
+            CreateMap<DefineWorkflowDefinitionInputModel, ProcessDefinitionVersion>();
 
             CreateMap<VersionOptionsModel, VersionOptions>()
                 .ForMember(d => d.IsDraft, d => d.MapFrom(s => s.Draft))

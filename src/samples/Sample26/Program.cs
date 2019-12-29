@@ -29,8 +29,8 @@ namespace Sample26
                 .AddConsoleActivities()
                 .BuildServiceProvider();
 
-            var evaluator = services.GetRequiredService<IWorkflowExpressionEvaluator>();
-            var definition = new WorkflowDefinitionVersion
+            var evaluator = services.GetRequiredService<IExpressionEvaluator>();
+            var definition = new ProcessDefinitionVersion
             {
                 IsPublished = true,
                 Activities = new List<ActivityDefinition>
@@ -93,7 +93,7 @@ namespace Sample26
 
             var serializer = services.GetRequiredService<IWorkflowSerializer>();
             var json = serializer.Serialize(definition, JsonTokenFormatter.FormatName);
-            var deserializedDefinition = serializer.Deserialize<WorkflowDefinitionVersion>(json, JsonTokenFormatter.FormatName);
+            var deserializedDefinition = serializer.Deserialize<ProcessDefinitionVersion>(json, JsonTokenFormatter.FormatName);
 
             var workflowRunner = services.GetRequiredService<IWorkflowRunner>();
             await workflowRunner.RunAsync(deserializedDefinition);

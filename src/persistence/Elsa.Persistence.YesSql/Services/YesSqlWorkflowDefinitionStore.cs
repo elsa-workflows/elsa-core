@@ -22,26 +22,26 @@ namespace Elsa.Persistence.YesSql.Services
             this.mapper = mapper;
         }
 
-        public async Task<WorkflowDefinitionVersion> SaveAsync(
-            WorkflowDefinitionVersion definition,
+        public async Task<ProcessDefinitionVersion> SaveAsync(
+            ProcessDefinitionVersion definition,
             CancellationToken cancellationToken = default)
         {
             var document = mapper.Map<WorkflowDefinitionVersionDocument>(definition);
             session.Save(document);
             await session.CommitAsync();
-            return mapper.Map<WorkflowDefinitionVersion>(document);
+            return mapper.Map<ProcessDefinitionVersion>(document);
         }
 
-        public async Task<WorkflowDefinitionVersion> AddAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken = default)
+        public async Task<ProcessDefinitionVersion> AddAsync(ProcessDefinitionVersion definition, CancellationToken cancellationToken = default)
         {
             var document = mapper.Map<WorkflowDefinitionVersionDocument>(definition);
 
             session.Save(document);
             await session.CommitAsync();
-            return mapper.Map<WorkflowDefinitionVersion>(document);
+            return mapper.Map<ProcessDefinitionVersion>(document);
         }
 
-        public async Task<WorkflowDefinitionVersion> GetByIdAsync(string id, CancellationToken cancellationToken = default)
+        public async Task<ProcessDefinitionVersion> GetByIdAsync(string id, CancellationToken cancellationToken = default)
         {
             var query = session
                 .Query<WorkflowDefinitionVersionDocument, WorkflowDefinitionIndex>()
@@ -49,10 +49,10 @@ namespace Elsa.Persistence.YesSql.Services
 
             var document = await query.FirstOrDefaultAsync();
 
-            return mapper.Map<WorkflowDefinitionVersion>(document);
+            return mapper.Map<ProcessDefinitionVersion>(document);
         }
 
-        public async Task<WorkflowDefinitionVersion> GetByIdAsync(
+        public async Task<ProcessDefinitionVersion> GetByIdAsync(
             string definitionId,
             VersionOptions version,
             CancellationToken cancellationToken = default)
@@ -64,10 +64,10 @@ namespace Elsa.Persistence.YesSql.Services
 
             var document = await query.FirstOrDefaultAsync();
 
-            return mapper.Map<WorkflowDefinitionVersion>(document);
+            return mapper.Map<ProcessDefinitionVersion>(document);
         }
 
-        public async Task<IEnumerable<WorkflowDefinitionVersion>> ListAsync(
+        public async Task<IEnumerable<ProcessDefinitionVersion>> ListAsync(
             VersionOptions version,
             CancellationToken cancellationToken = default)
         {
@@ -75,11 +75,11 @@ namespace Elsa.Persistence.YesSql.Services
                 .WithVersion(version);
             var documents = await query.ListAsync();
 
-            return mapper.Map<IEnumerable<WorkflowDefinitionVersion>>(documents);
+            return mapper.Map<IEnumerable<ProcessDefinitionVersion>>(documents);
         }
 
-        public async Task<WorkflowDefinitionVersion> UpdateAsync(
-            WorkflowDefinitionVersion definition,
+        public async Task<ProcessDefinitionVersion> UpdateAsync(
+            ProcessDefinitionVersion definition,
             CancellationToken cancellationToken)
         {
             var query = session
@@ -93,7 +93,7 @@ namespace Elsa.Persistence.YesSql.Services
             session.Save(document);
             await session.CommitAsync();
 
-            return mapper.Map<WorkflowDefinitionVersion>(document);
+            return mapper.Map<ProcessDefinitionVersion>(document);
         }
 
         public async Task<int> DeleteAsync(string id, CancellationToken cancellationToken = default)

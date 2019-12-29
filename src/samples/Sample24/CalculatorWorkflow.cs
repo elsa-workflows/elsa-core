@@ -59,7 +59,7 @@ namespace Sample24
 
         private void Calculate(ActivityExecutionContext context, Func<double, double, double> formula)
         {
-            var workflowContext = context.WorkflowExecutionContext;
+            var workflowContext = context.ProcessExecutionContext;
             var number1 = workflowContext.GetVariable<double>("Number1");
             var number2 = workflowContext.GetVariable<double>("Number2");
             var result = formula(number1, number2);

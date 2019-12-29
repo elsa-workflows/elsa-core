@@ -4,7 +4,7 @@ using GraphQL.Types;
 
 namespace Elsa.Server.GraphQL.Types
 {
-    public class WorkflowInstanceType : ObjectGraphType<WorkflowInstance>
+    public class WorkflowInstanceType : ObjectGraphType<ProcessInstance>
     {
         public WorkflowInstanceType()
         {

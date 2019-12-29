@@ -7,23 +7,23 @@ namespace Elsa.Services.Models
 {
     public class ActivityExecutionContext
     {
-        public ActivityExecutionContext(WorkflowExecutionContext workflowExecutionContext, Variable? input = null)
+        public ActivityExecutionContext(ProcessExecutionContext processExecutionContext, Variable? input = null)
         {
-            WorkflowExecutionContext = workflowExecutionContext;
+            ProcessExecutionContext = processExecutionContext;
             Input = input;
         }
         
-        public WorkflowExecutionContext WorkflowExecutionContext { get; }
+        public ProcessExecutionContext ProcessExecutionContext { get; }
         public Variable? Input { get; }
 
         public Task<object> EvaluateAsync(IWorkflowExpression expression, CancellationToken cancellationToken = default) 
-            => WorkflowExecutionContext.EvaluateAsync(expression, this, cancellationToken);
+            => ProcessExecutionContext.EvaluateAsync(expression, this, cancellationToken);
         
         public Task<T> EvaluateAsync<T>(IWorkflowExpression<T> expression, CancellationToken cancellationToken = default) 
-            => WorkflowExecutionContext.EvaluateAsync(expression, this, cancellationToken);
+            => ProcessExecutionContext.EvaluateAsync(expression, this, cancellationToken);
 
-        public void SetVariable(string name, object value) => WorkflowExecutionContext.SetVariable(name, value);
-        public T GetVariable<T>(string name) => WorkflowExecutionContext.GetVariable<T>(name);
-        public object GetVariable(string name) => WorkflowExecutionContext.GetVariable(name);
+        public void SetVariable(string name, object value) => ProcessExecutionContext.SetVariable(name, value);
+        public T GetVariable<T>(string name) => ProcessExecutionContext.GetVariable<T>(name);
+        public object GetVariable(string name) => ProcessExecutionContext.GetVariable(name);
     }
 }

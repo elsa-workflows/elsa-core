@@ -21,7 +21,7 @@ namespace Sample09
             var json = await ReadEmbeddedResourceAsync("Sample09.calculator.json");
             var services = BuildServices();
             var serializer = services.GetRequiredService<IWorkflowSerializer>();
-            var workflow = serializer.Deserialize<WorkflowDefinitionVersion>(json, JsonTokenFormatter.FormatName);
+            var workflow = serializer.Deserialize<ProcessDefinitionVersion>(json, JsonTokenFormatter.FormatName);
             var invoker = services.GetRequiredService<IWorkflowRunner>();
             
             await invoker.RunAsync(workflow);

@@ -61,7 +61,7 @@ namespace Elsa.Activities.Reflection.Activities
                 return Fault($"Type {TypeName} does not have a method called {MethodName}.");
 
 
-            var instance = method.IsStatic ? default : ActivatorUtilities.GetServiceOrCreateInstance(context.WorkflowExecutionContext.ServiceProvider, type);
+            var instance = method.IsStatic ? default : ActivatorUtilities.GetServiceOrCreateInstance(context.ProcessExecutionContext.ServiceProvider, type);
             var result = method.Invoke(instance, inputValues);
 
             Output = new Variable(result);

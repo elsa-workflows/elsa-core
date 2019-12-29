@@ -38,20 +38,20 @@ namespace Sample04
             var executionContext = await runner.RunAsync(workflow);
 
             // Keep resuming the workflow until it completes.
-            while (executionContext.Workflow.Status != WorkflowStatus.Completed)
+            while (executionContext.ProcessInstance.Status != ProcessStatus.Completed)
             {
                 // Print current execution log + blocking activities to visualize current workflow state.
-                DisplayWorkflowState(executionContext.Workflow);
+                DisplayWorkflowState(executionContext.ProcessInstance);
                 
                 var textInput = Console.ReadLine();
                 var input = Variable.From(textInput);
 
-                executionContext.Workflow.Input = input;
-                executionContext = await runner.ResumeAsync(executionContext.Workflow, executionContext.Workflow.BlockingActivities);
+                executionContext.ProcessInstance.Input = input;
+                executionContext = await runner.ResumeAsync(executionContext.ProcessInstance, executionContext.ProcessInstance.BlockingActivities);
             }
 
             Console.WriteLine("Workflow has ended. Here are the activities that have executed:");
-            DisplayWorkflowState(executionContext.Workflow);
+            DisplayWorkflowState(executionContext.ProcessInstance);
 
             Console.ReadLine();
         }

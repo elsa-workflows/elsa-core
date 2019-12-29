@@ -27,7 +27,7 @@ namespace Sample12
             // Start the workflow.
             var correlationId = Guid.NewGuid().ToString("N");
             await invoker.RunAsync(workflowDefinition, correlationId: correlationId);
-            WorkflowExecutionContext executionContext;
+            ProcessExecutionContext executionContext;
             
             do
             {
@@ -39,7 +39,7 @@ namespace Sample12
                 var triggeredExecutionContexts = await invoker.TriggerAsync(nameof(UserTask), new Variable(userAction), correlationId);
                 executionContext = triggeredExecutionContexts.First();
 
-            } while (executionContext.Workflow.IsRunning());
+            } while (executionContext.ProcessInstance.IsRunning());
         }
 
         private static IServiceProvider BuildServices()

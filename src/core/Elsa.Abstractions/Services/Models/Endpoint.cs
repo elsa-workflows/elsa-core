@@ -1,4 +1,6 @@
-namespace Elsa.Services.Models
+using Elsa.Services.Models;
+
+namespace Elsa.Activities.Workflows.Models
 {
     public abstract class Endpoint
     {

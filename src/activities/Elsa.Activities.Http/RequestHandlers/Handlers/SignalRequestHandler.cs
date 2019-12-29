@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,25 +16,25 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
     {
         private readonly HttpContext httpContext;
         private readonly ITokenService tokenService;
-        private readonly IWorkflowRunner workflowRunner;
-        private readonly IWorkflowRegistry workflowRegistry;
-        private readonly IWorkflowFactory workflowFactory;
+        private readonly IProcessRunner processRunner;
+        private readonly IProcessRegistry processRegistry;
+        private readonly IProcessFactory processFactory;
         private readonly IWorkflowInstanceStore workflowInstanceStore;
         private readonly CancellationToken cancellationToken;
 
         public SignalRequestHandler(
             IHttpContextAccessor httpContextAccessor,
             ITokenService tokenService,
-            IWorkflowRunner workflowRunner,
-            IWorkflowRegistry workflowRegistry,
-            IWorkflowFactory workflowFactory,
+            IProcessRunner processRunner,
+            IProcessRegistry processRegistry,
+            IProcessFactory processFactory,
             IWorkflowInstanceStore workflowInstanceStore)
         {
             httpContext = httpContextAccessor.HttpContext;
             this.tokenService = tokenService;
-            this.workflowRunner = workflowRunner;
-            this.workflowRegistry = workflowRegistry;
-            this.workflowFactory = workflowFactory;
+            this.processRunner = processRunner;
+            this.processRegistry = processRegistry;
+            this.processFactory = processFactory;
             this.workflowInstanceStore = workflowInstanceStore;
             cancellationToken = httpContext.RequestAborted;
         }
@@ -51,7 +52,7 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
                 return new NotFoundResult();
 
             if (!CheckIfExecuting(workflowInstance))
-                return new BadRequestResult($"Cannot signal a workflow with status other than {WorkflowStatus.Running}. Actual workflow status: {workflowInstance.Status}.");
+                return new BadRequestResult($"Cannot signal a workflow with status other than {ProcessStatus.Running}. Actual workflow status: {workflowInstance.Status}.");
 
             await ResumeWorkflowAsync(workflowInstance, signal);
 
@@ -65,24 +66,25 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
             return tokenService.TryDecryptToken(token, out Signal signal) ? signal : default;
         }
 
-        private async Task<WorkflowInstance> GetWorkflowInstanceAsync(Signal signal) => 
+        private async Task<ProcessInstance> GetWorkflowInstanceAsync(Signal signal) => 
             await workflowInstanceStore.GetByIdAsync(signal.WorkflowInstanceId, cancellationToken);
 
-        private bool CheckIfExecuting(WorkflowInstance workflowInstance) => 
-            workflowInstance.Status == WorkflowStatus.Running;
+        private bool CheckIfExecuting(ProcessInstance processInstance) => 
+            processInstance.Status == ProcessStatus.Running;
 
-        private async Task ResumeWorkflowAsync(WorkflowInstance workflowInstance, Signal signal)
+        private async Task ResumeWorkflowAsync(ProcessInstance processInstanceModel, Signal signal)
         {
             var input = Variable.From(signal.Name);
 
-            var workflowDefinition = await workflowRegistry.GetWorkflowBlueprintAsync(
-                workflowInstance.DefinitionId,
-                VersionOptions.SpecificVersion(workflowInstance.Version),
+            var workflowDefinition = await processRegistry.GetProcessAsync(
+                processInstanceModel.DefinitionId,
+                VersionOptions.SpecificVersion(processInstanceModel.Version),
                 cancellationToken);
 
-            var workflow = workflowFactory.CreateWorkflow(workflowDefinition, input, workflowInstance);
-            var blockingSignalActivities = workflow.BlockingActivities.ToList();
-            await workflowRunner.ResumeAsync(workflow, blockingSignalActivities, cancellationToken);
+            //var processInstance = processFactory.CreateProcessInstance(workflowDefinition, input, processInstanceModel);
+            //var blockingSignalActivities = processInstance.BlockingActivities.ToList();
+            //await workflowRunner.ResumeAsync(processInstance, blockingSignalActivities, cancellationToken);
+            throw new NotImplementedException();
         }
     }
 }

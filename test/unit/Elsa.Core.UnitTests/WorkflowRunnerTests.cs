@@ -19,27 +19,27 @@ namespace Elsa.Core.UnitTests
 {
     public class WorkflowRunnerTests
     {
-        private readonly WorkflowRunner runner;
+        private readonly ProcessRunner runner;
 
         public WorkflowRunnerTests()
         {
             var fixture = new Fixture().Customize(new NodaTimeCustomization());
             var activityInvokerMock = new Mock<IActivityInvoker>();
-            var workflowFactoryMock = new Mock<IWorkflowFactory>();
-            var workflowRegistryMock = new Mock<IWorkflowRegistry>();
+            var workflowFactoryMock = new Mock<IProcessFactory>();
+            var workflowRegistryMock = new Mock<IProcessRegistry>();
             var workflowInstanceStoreMock = new Mock<IWorkflowInstanceStore>();
-            var workflowExpressionEvaluatorMock = new Mock<IWorkflowExpressionEvaluator>();
+            var workflowExpressionEvaluatorMock = new Mock<IExpressionEvaluator>();
             var mediatorMock = new Mock<IMediator>();
             var now = fixture.Create<Instant>();
             var fakeClock = new FakeClock(now);
-            var logger = new NullLogger<WorkflowRunner>();
+            var logger = new NullLogger<ProcessRunner>();
             var serviceProvider = new ServiceCollection().BuildServiceProvider();
 
             activityInvokerMock
-                .Setup(x => x.ExecuteAsync(It.IsAny<WorkflowExecutionContext>(), It.IsAny<IActivity>(), It.IsAny<Variable>(), It.IsAny<CancellationToken>()))
-                .Returns(async (WorkflowExecutionContext a, IActivity b, Variable c, CancellationToken d) => await b.ExecuteAsync(new ActivityExecutionContext(a, c), d));
+                .Setup(x => x.ExecuteAsync(It.IsAny<ProcessExecutionContext>(), It.IsAny<IActivity>(), It.IsAny<Variable>(), It.IsAny<CancellationToken>()))
+                .Returns(async (ProcessExecutionContext a, IActivity b, Variable c, CancellationToken d) => await b.ExecuteAsync(new ActivityExecutionContext(a, c), d));
 
-            runner = new WorkflowRunner(
+            runner = new ProcessRunner(
                 activityInvokerMock.Object,
                 workflowFactoryMock.Object,
                 workflowRegistryMock.Object,
@@ -58,7 +58,7 @@ namespace Elsa.Core.UnitTests
             var workflow = CreateWorkflow(activity);
             var executionContext = await runner.RunAsync(workflow);
 
-            Assert.Equal(WorkflowStatus.Completed, executionContext.Workflow.Status);
+            Assert.Equal(ProcessStatus.Completed, executionContext.ProcessInstance.Status);
         }
 
         [Fact(DisplayName = "Invokes returned activity execution result.")]

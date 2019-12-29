@@ -22,8 +22,8 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             this.mapper = mapper;
         }
 
-        public async Task<WorkflowInstance> SaveAsync(
-            WorkflowInstance instance,
+        public async Task<ProcessInstance> SaveAsync(
+            ProcessInstance instance,
             CancellationToken cancellationToken = default)
         {
             var existingEntity = await dbContext
@@ -55,7 +55,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             }
         }
 
-        public async Task<WorkflowInstance> GetByIdAsync(
+        public async Task<ProcessInstance> GetByIdAsync(
             string id,
             CancellationToken cancellationToken = default)
         {
@@ -68,7 +68,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             return Map(document);
         }
 
-        public async Task<WorkflowInstance> GetByCorrelationIdAsync(
+        public async Task<ProcessInstance> GetByCorrelationIdAsync(
             string correlationId,
             CancellationToken cancellationToken = default)
         {
@@ -82,7 +82,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             return Map(document);
         }
 
-        public async Task<IEnumerable<WorkflowInstance>> ListByDefinitionAsync(
+        public async Task<IEnumerable<ProcessInstance>> ListByDefinitionAsync(
             string definitionId,
             CancellationToken cancellationToken = default)
         {
@@ -97,7 +97,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             return Map(documents);
         }
 
-        public async Task<IEnumerable<WorkflowInstance>> ListAllAsync(CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<ProcessInstance>> ListAllAsync(CancellationToken cancellationToken = default)
         {
             var documents = await dbContext
                 .WorkflowInstances
@@ -108,7 +108,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             return Map(documents);
         }
 
-        public async Task<IEnumerable<(WorkflowInstance, ActivityInstance)>> ListByBlockingActivityAsync(
+        public async Task<IEnumerable<(ProcessInstance, ActivityInstance)>> ListByBlockingActivityAsync(
             string activityType,
             string correlationId = default,
             CancellationToken cancellationToken = default)
@@ -119,7 +119,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
                 .Include(x => x.BlockingActivities)
                 .AsQueryable();
 
-            query = query.Where(x => x.Status == WorkflowStatus.Running);
+            query = query.Where(x => x.Status == ProcessStatus.Running);
 
             if (!string.IsNullOrWhiteSpace(correlationId))
                 query = query.Where(x => x.CorrelationId == correlationId);
@@ -133,9 +133,9 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             return instances.GetBlockingActivities(activityType);
         }
 
-        public async Task<IEnumerable<WorkflowInstance>> ListByStatusAsync(
+        public async Task<IEnumerable<ProcessInstance>> ListByStatusAsync(
             string definitionId,
-            WorkflowStatus status,
+            ProcessStatus status,
             CancellationToken cancellationToken = default)
         {
             var documents = await dbContext
@@ -149,8 +149,8 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             return Map(documents);
         }
 
-        public async Task<IEnumerable<WorkflowInstance>> ListByStatusAsync(
-            WorkflowStatus status,
+        public async Task<IEnumerable<ProcessInstance>> ListByStatusAsync(
+            ProcessStatus status,
             CancellationToken cancellationToken = default)
         {
             var documents = await dbContext
@@ -188,8 +188,8 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             await dbContext.SaveChangesAsync(cancellationToken);
         }
 
-        private WorkflowInstanceEntity Map(WorkflowInstance source) => mapper.Map<WorkflowInstanceEntity>(source);
-        private WorkflowInstance Map(WorkflowInstanceEntity source) => mapper.Map<WorkflowInstance>(source);
-        private IEnumerable<WorkflowInstance> Map(IEnumerable<WorkflowInstanceEntity> source) => mapper.Map<IEnumerable<WorkflowInstance>>(source);
+        private WorkflowInstanceEntity Map(ProcessInstance source) => mapper.Map<WorkflowInstanceEntity>(source);
+        private ProcessInstance Map(WorkflowInstanceEntity source) => mapper.Map<ProcessInstance>(source);
+        private IEnumerable<ProcessInstance> Map(IEnumerable<WorkflowInstanceEntity> source) => mapper.Map<IEnumerable<ProcessInstance>>(source);
     }
 }

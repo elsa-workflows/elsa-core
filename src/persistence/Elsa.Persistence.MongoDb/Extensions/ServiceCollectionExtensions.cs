@@ -51,7 +51,7 @@ namespace Microsoft.Extensions.DependencyInjection
             this MongoElsaBuilder configuration)
         {
             configuration.Services
-                .AddMongoDbCollection<WorkflowInstance>("WorkflowInstances")
+                .AddMongoDbCollection<ProcessInstance>("WorkflowInstances")
                 .AddScoped<IWorkflowInstanceStore, MongoWorkflowInstanceStore>();
 
             return configuration;
@@ -61,7 +61,7 @@ namespace Microsoft.Extensions.DependencyInjection
             this MongoElsaBuilder configuration)
         {
             configuration.Services
-                .AddMongoDbCollection<WorkflowDefinitionVersion>("WorkflowDefinitions")
+                .AddMongoDbCollection<ProcessDefinitionVersion>("WorkflowDefinitions")
                 .AddScoped<IWorkflowDefinitionStore, MongoWorkflowDefinitionStore>();
 
             return configuration;

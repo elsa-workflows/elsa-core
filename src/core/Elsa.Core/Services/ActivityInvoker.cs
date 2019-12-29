@@ -18,35 +18,35 @@ namespace Elsa.Services
         }
 
         public async Task<IActivityExecutionResult> ExecuteAsync(
-            WorkflowExecutionContext workflowContext,
+            ProcessExecutionContext processContext,
             IActivity activity,
             Variable input = null,
             CancellationToken cancellationToken = default)
         {
-            var activityContext = new ActivityExecutionContext(workflowContext, input);
+            var activityContext = new ActivityExecutionContext(processContext, input);
             return await InvokeAsync(
-                workflowContext,
+                processContext,
                 activity,
                 (a) => a.ExecuteAsync(activityContext, cancellationToken)
             );
         }
 
         public async Task<IActivityExecutionResult> ResumeAsync(
-            WorkflowExecutionContext workflowContext,
+            ProcessExecutionContext processContext,
             IActivity activity,
             Variable input = null,
             CancellationToken cancellationToken = default)
         {
-            var activityContext = new ActivityExecutionContext(workflowContext, input);
+            var activityContext = new ActivityExecutionContext(processContext, input);
             return await InvokeAsync(
-                workflowContext,
+                processContext,
                 activity,
                 (a) => a.ResumeAsync(activityContext, cancellationToken)
             );
         }
 
         private async Task<IActivityExecutionResult> InvokeAsync(
-            WorkflowExecutionContext workflowContext,
+            ProcessExecutionContext processContext,
             IActivity activity,
             Func<IActivity, Task<IActivityExecutionResult>> invokeAction)
         {
@@ -60,7 +60,7 @@ namespace Elsa.Services
                     e,
                     "Error while invoking activity {ActivityId} of workflow {WorkflowId}",
                     activity.Id,
-                    workflowContext.Workflow.Id
+                    processContext.ProcessInstance.Id
                 );
                 return new FaultWorkflowResult(e);
             }

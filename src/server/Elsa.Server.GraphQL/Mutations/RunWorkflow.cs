@@ -9,12 +9,12 @@ namespace Elsa.Server.GraphQL.Mutations
 {
     public class RunWorkflow : IMutationProvider
     {
-        private readonly IWorkflowRunner workflowRunner;
+        private readonly IProcessRunner processRunner;
         private readonly IWorkflowDefinitionStore workflowDefinitionStore;
 
-        public RunWorkflow(IWorkflowRunner workflowRunner, IWorkflowDefinitionStore workflowDefinitionStore)
+        public RunWorkflow(IProcessRunner processRunner, IWorkflowDefinitionStore workflowDefinitionStore)
         {
-            this.workflowRunner = workflowRunner;
+            this.processRunner = processRunner;
             this.workflowDefinitionStore = workflowDefinitionStore;
         }
 
@@ -36,8 +36,8 @@ namespace Elsa.Server.GraphQL.Mutations
                         return null;
 
                     var correlationId = context.GetArgument<string>("correlationId");
-                    var executionContext = await workflowRunner.RunAsync(workflowDefinition, correlationId: correlationId, cancellationToken: context.CancellationToken);
-                    return executionContext.Workflow.ToInstance();
+                    var executionContext = await processRunner.RunAsync(workflowDefinition, correlationId: correlationId, cancellationToken: context.CancellationToken);
+                    return executionContext.ProcessInstance.ToInstance();
                 });
         }
     }

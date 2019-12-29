@@ -45,7 +45,7 @@ namespace Sample10
 
             // Persist the workflow instance.
             var instanceStore = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
-            var workflowInstance = executionContext.Workflow.ToInstance();
+            var workflowInstance = executionContext.ProcessInstance.ToInstance();
             await instanceStore.SaveAsync(workflowInstance);
         }
 

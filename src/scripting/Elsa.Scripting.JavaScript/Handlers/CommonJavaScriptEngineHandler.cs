@@ -13,8 +13,8 @@ namespace Elsa.Scripting.JavaScript.Handlers
         public Task Handle(EvaluatingJavaScriptExpression notification, CancellationToken cancellationToken)
         {
             var activityContext = notification.ActivityExecutionContext;
-            var workflowContext = activityContext.WorkflowExecutionContext;
-            var workflow = workflowContext.Workflow;
+            var workflowContext = activityContext.ProcessExecutionContext;
+            var workflow = workflowContext.ProcessInstance;
             var engine = notification.Engine;
 
             engine.SetValue("input", (Func<string, object>) (name => activityContext.Input?.Value));

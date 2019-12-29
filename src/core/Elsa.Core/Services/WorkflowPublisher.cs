@@ -22,9 +22,9 @@ namespace Elsa.Services
             this.mapper = mapper;
         }
 
-        public WorkflowDefinitionVersion New()
+        public ProcessDefinitionVersion New()
         {
-            var definition = new WorkflowDefinitionVersion
+            var definition = new ProcessDefinitionVersion
             {
                 Id = idGenerator.Generate(),
                 DefinitionId = idGenerator.Generate(),
@@ -39,7 +39,7 @@ namespace Elsa.Services
             return definition;
         }
 
-        public async Task<WorkflowDefinitionVersion> PublishAsync(
+        public async Task<ProcessDefinitionVersion> PublishAsync(
             string id,
             CancellationToken cancellationToken)
         {
@@ -51,11 +51,11 @@ namespace Elsa.Services
             return await PublishAsync(definition, cancellationToken);
         }
 
-        public async Task<WorkflowDefinitionVersion> PublishAsync(
-            WorkflowDefinitionVersion workflowDefinition,
+        public async Task<ProcessDefinitionVersion> PublishAsync(
+            ProcessDefinitionVersion processDefinition,
             CancellationToken cancellationToken)
         {
-            var definition = mapper.Map<WorkflowDefinitionVersion>(workflowDefinition);
+            var definition = mapper.Map<ProcessDefinitionVersion>(processDefinition);
 
             var publishedDefinition = await store.GetByIdAsync(
                 definition.DefinitionId,
@@ -87,7 +87,7 @@ namespace Elsa.Services
             return definition;
         }
 
-        public async Task<WorkflowDefinitionVersion> GetDraftAsync(
+        public async Task<ProcessDefinitionVersion> GetDraftAsync(
             string id,
             CancellationToken cancellationToken)
         {
@@ -99,7 +99,7 @@ namespace Elsa.Services
             if (!definition.IsPublished)
                 return definition;
 
-            var draft = mapper.Map<WorkflowDefinitionVersion>(definition);
+            var draft = mapper.Map<ProcessDefinitionVersion>(definition);
             draft.Id = idGenerator.Generate();
             draft.IsPublished = false;
             draft.IsLatest = true;
@@ -108,14 +108,14 @@ namespace Elsa.Services
             return draft;
         }
 
-        public async Task<WorkflowDefinitionVersion> SaveDraftAsync(
-            WorkflowDefinitionVersion workflowDefinition,
+        public async Task<ProcessDefinitionVersion> SaveDraftAsync(
+            ProcessDefinitionVersion processDefinition,
             CancellationToken cancellationToken)
         {
-            var draft = mapper.Map<WorkflowDefinitionVersion>(workflowDefinition);
+            var draft = mapper.Map<ProcessDefinitionVersion>(processDefinition);
             
             var latestVersion = await store.GetByIdAsync(
-                workflowDefinition.DefinitionId,
+                processDefinition.DefinitionId,
                 VersionOptions.Latest,
                 cancellationToken);
 
@@ -137,18 +137,18 @@ namespace Elsa.Services
             return draft;
         }
 
-        private WorkflowDefinitionVersion Initialize(WorkflowDefinitionVersion workflowDefinition)
+        private ProcessDefinitionVersion Initialize(ProcessDefinitionVersion processDefinition)
         {
-            if (workflowDefinition.Id == null)
-                workflowDefinition.Id = idGenerator.Generate();
+            if (processDefinition.Id == null)
+                processDefinition.Id = idGenerator.Generate();
 
-            if (workflowDefinition.Version == 0)
-                workflowDefinition.Version = 1;
+            if (processDefinition.Version == 0)
+                processDefinition.Version = 1;
 
-            if (workflowDefinition.DefinitionId == null)
-                workflowDefinition.DefinitionId = idGenerator.Generate();
+            if (processDefinition.DefinitionId == null)
+                processDefinition.DefinitionId = idGenerator.Generate();
 
-            return workflowDefinition;
+            return processDefinition;
         }
     }
 }

@@ -12,7 +12,7 @@ namespace Elsa.Scripting.Liquid.Extensions
         public static IServiceCollection AddLiquidExpressionEvaluator(this IServiceCollection services)
         {
             return services
-                .TryAddProvider<IWorkflowExpressionHandler, LiquidWorkflowScriptExpressionHandler>(ServiceLifetime.Scoped)
+                .TryAddProvider<IExpressionHandler, LiquidExpressionHandler>(ServiceLifetime.Scoped)
                 .AddMemoryCache()
                 .AddNotificationHandlers(typeof(LiquidServiceCollectionExtensions))
                 .AddScoped<ILiquidTemplateManager, LiquidTemplateManager>()

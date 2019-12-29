@@ -21,7 +21,7 @@ using NodaTime.Serialization.JsonNet;
 
 namespace Elsa.Scripting.JavaScript.Services
 {
-    public class JavaScriptHandler : IWorkflowScriptExpressionHandler
+    public class JavaScriptHandler : IScriptExpressionHandler
     {
         private readonly IMediator mediator;
         private readonly IMapper mapper;

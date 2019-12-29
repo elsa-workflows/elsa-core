@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Elsa.Activities;
+using Elsa.Builders;
 using Elsa.Results;
 using Elsa.Services.Models;
 
@@ -9,30 +10,30 @@ namespace Elsa.Services
 {
     public static class WorkflowBuilderExtensions
     {
-        public static IActivityBuilder StartWith(this IWorkflowBuilder activityBuilder, Func<ActivityExecutionContext, Task<IActivityExecutionResult>> code) 
-            => activityBuilder.StartWith<CodeActivity>(x => x.Function = code);
+        public static IActivityBuilder StartWith(this IFlowchartBuilder builder, Func<ActivityExecutionContext, Task<IActivityExecutionResult>> code) 
+            => builder.StartWith<CodeActivity>(x => x.Function = code);
         
-        public static IActivityBuilder StartWith(this IWorkflowBuilder activityBuilder, Func<ActivityExecutionContext, Task> code)
+        public static IActivityBuilder StartWith(this IFlowchartBuilder builder, Func<ActivityExecutionContext, Task> code)
         {
-            return activityBuilder.StartWith(async context =>
+            return builder.StartWith(async context =>
             {
                 await code(context);
                 return new OutcomeResult(OutcomeNames.Done);
             });
         }
         
-        public static IActivityBuilder StartWith(this IWorkflowBuilder activityBuilder, Func<Task> code)
+        public static IActivityBuilder StartWith(this IFlowchartBuilder builder, Func<Task> code)
         {
-            return activityBuilder.StartWith(async context =>
+            return builder.StartWith(async context =>
             {
                 await code();
                 return new OutcomeResult(OutcomeNames.Done);
             });
         }
         
-        public static IActivityBuilder StartWith(this IWorkflowBuilder activityBuilder, Action code)
+        public static IActivityBuilder StartWith(this IFlowchartBuilder builder, Action code)
         {
-            return activityBuilder.StartWith(context =>
+            return builder.StartWith(context =>
             {
                 code();
                 return Task.FromResult<IActivityExecutionResult>(new OutcomeResult(OutcomeNames.Done));

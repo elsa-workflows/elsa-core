@@ -52,4 +52,9 @@
         <ProjectReference Include="..\Elsa.Abstractions\Elsa.Abstractions.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Results" />
+      <Folder Include="WorkflowBuilders" />
+    </ItemGroup>
+
 </Project>

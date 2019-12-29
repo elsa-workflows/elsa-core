@@ -22,7 +22,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             this.mapper = mapper;
         }
 
-        public async Task<WorkflowDefinitionVersion> SaveAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken = default)
+        public async Task<ProcessDefinitionVersion> SaveAsync(ProcessDefinitionVersion definition, CancellationToken cancellationToken = default)
         {
             var existingEntity =
                 await dbContext
@@ -37,7 +37,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             return await UpdateAsync(definition, cancellationToken);
         }
 
-        public async Task<WorkflowDefinitionVersion> AddAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken = default)
+        public async Task<ProcessDefinitionVersion> AddAsync(ProcessDefinitionVersion definition, CancellationToken cancellationToken = default)
         {
             var entity = Map(definition);
             await dbContext.WorkflowDefinitionVersions.AddAsync(entity, cancellationToken);
@@ -45,7 +45,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             return Map(entity);
         }
 
-        public async Task<WorkflowDefinitionVersion> GetByIdAsync(string id, CancellationToken cancellationToken = default)
+        public async Task<ProcessDefinitionVersion> GetByIdAsync(string id, CancellationToken cancellationToken = default)
         {
             var query = dbContext
                 .WorkflowDefinitionVersions
@@ -58,7 +58,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             return Map(entity);
         }
 
-        public async Task<WorkflowDefinitionVersion> GetByIdAsync(
+        public async Task<ProcessDefinitionVersion> GetByIdAsync(
             string definitionId,
             VersionOptions version,
             CancellationToken cancellationToken = default)
@@ -76,7 +76,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             return Map(entity);
         }
         
-        public async Task<WorkflowDefinitionVersion> UpdateAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken)
+        public async Task<ProcessDefinitionVersion> UpdateAsync(ProcessDefinitionVersion definition, CancellationToken cancellationToken)
         {
             var entity = await dbContext
                 .WorkflowDefinitionVersions
@@ -96,7 +96,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             return Map(entity);
         }
 
-        public async Task<IEnumerable<WorkflowDefinitionVersion>> ListAsync(
+        public async Task<IEnumerable<ProcessDefinitionVersion>> ListAsync(
             VersionOptions version,
             CancellationToken cancellationToken = default)
         {
@@ -109,7 +109,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
 
             var entities = await query.ToListAsync(cancellationToken);
 
-            return mapper.Map<IEnumerable<WorkflowDefinitionVersion>>(entities);
+            return mapper.Map<IEnumerable<ProcessDefinitionVersion>>(entities);
         }
 
         public async Task<int> DeleteAsync(string id, CancellationToken cancellationToken = default)
@@ -162,7 +162,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             entity.Connections.Clear();
         }
 
-        private WorkflowDefinitionVersionEntity Map(WorkflowDefinitionVersion source) => mapper.Map<WorkflowDefinitionVersionEntity>(source);
-        private WorkflowDefinitionVersion Map(WorkflowDefinitionVersionEntity source) => mapper.Map<WorkflowDefinitionVersion>(source);
+        private WorkflowDefinitionVersionEntity Map(ProcessDefinitionVersion source) => mapper.Map<WorkflowDefinitionVersionEntity>(source);
+        private ProcessDefinitionVersion Map(WorkflowDefinitionVersionEntity source) => mapper.Map<ProcessDefinitionVersion>(source);
     }
 }

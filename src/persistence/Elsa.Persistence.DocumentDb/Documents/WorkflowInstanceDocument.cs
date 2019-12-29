@@ -18,7 +18,7 @@ namespace Elsa.Persistence.DocumentDb.Documents
         public int Version { get; set; }
 
         [JsonProperty(PropertyName = "status")]
-        public WorkflowStatus Status { get; set; }
+        public ProcessStatus Status { get; set; }
 
         [JsonProperty(PropertyName = "correlationId")]
         public string CorrelationId { get; set; }
@@ -43,7 +43,7 @@ namespace Elsa.Persistence.DocumentDb.Documents
             new Dictionary<string, ActivityInstance>();
 
         [JsonProperty(PropertyName = "scopes")]
-        public Stack<WorkflowExecutionScope> Scopes { get; set; }
+        public Stack<ProcessExecutionScope> Scopes { get; set; }
 
         [JsonProperty(PropertyName = "input")] public Variables Input { get; set; }
 
@@ -56,6 +56,6 @@ namespace Elsa.Persistence.DocumentDb.Documents
         [JsonProperty(PropertyName = "executionLog")]
         public ICollection<LogEntry> ExecutionLog { get; set; }
 
-        [JsonProperty(PropertyName = "fault")] public WorkflowFault Fault { get; set; }
+        [JsonProperty(PropertyName = "fault")] public ProcessFault Fault { get; set; }
     }
 }

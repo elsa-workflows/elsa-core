@@ -32,7 +32,7 @@ namespace Elsa.Server.GraphQL.Mutations
                 {
                     var model = context.GetArgument<DefineWorkflowDefinitionInputModel>("workflowDefinition");
                     var publish = model.Publish;
-                    var workflowDefinitionVersion = mapper.Map<WorkflowDefinitionVersion>(model);
+                    var workflowDefinitionVersion = mapper.Map<ProcessDefinitionVersion>(model);
 
                     workflowDefinitionVersion.Id = idGenerator.Generate();
 

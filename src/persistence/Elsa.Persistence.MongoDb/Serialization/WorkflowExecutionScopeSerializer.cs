@@ -2,7 +2,7 @@
 
 namespace Elsa.Persistence.MongoDb.Serialization
 {
-    public class WorkflowExecutionScopeSerializer : JsonSerializerBase<WorkflowExecutionScope>
+    public class WorkflowExecutionScopeSerializer : JsonSerializerBase<ProcessExecutionScope>
     {
     }
 }

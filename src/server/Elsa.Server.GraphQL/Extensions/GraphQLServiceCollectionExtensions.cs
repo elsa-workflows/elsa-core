@@ -23,7 +23,7 @@ namespace Microsoft.Extensions.DependencyInjection
             services
                 .AddScoped<ElsaSchema>()
                 .AddSingleton<InstantGraphType>()
-                .AddSingleton<EnumerationGraphType<WorkflowStatus>>()
+                .AddSingleton<EnumerationGraphType<ProcessStatus>>()
                 .AddQueryProvider<ListWorkflowDefinitions>()
                 .AddQueryProvider<ListWorkflowInstances>()
                 .AddQueryProvider<GetWorkflowDefinition>()

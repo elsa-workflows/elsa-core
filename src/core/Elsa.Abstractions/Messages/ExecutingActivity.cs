@@ -2,9 +2,9 @@
 
 namespace Elsa.Messages
 {
-    public class ExecutingActivity : WorkflowNotification
+    public class ExecutingActivity : ProcessNotification
     {
-        public ExecutingActivity(Workflow workflow, IActivity activity) : base(workflow)
+        public ExecutingActivity(ProcessInstance process, IActivity activity) : base(process)
         {
             Activity = activity;
         }

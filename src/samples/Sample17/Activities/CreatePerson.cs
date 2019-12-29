@@ -9,9 +9,9 @@ namespace Sample17.Activities
 {
     public class CreatePerson : Activity
     {
-        private readonly IWorkflowExpressionEvaluator expressionEvaluator;
+        private readonly IExpressionEvaluator expressionEvaluator;
 
-        public CreatePerson(IWorkflowExpressionEvaluator expressionEvaluator)
+        public CreatePerson(IExpressionEvaluator expressionEvaluator)
         {
             this.expressionEvaluator = expressionEvaluator;
         }

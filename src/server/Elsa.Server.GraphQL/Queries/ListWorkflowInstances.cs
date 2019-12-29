@@ -21,7 +21,7 @@ namespace Elsa.Server.GraphQL.Queries
                 "workflowInstances",
                 arguments: new QueryArguments(
                     new QueryArgument<StringGraphType>{ Name = "definitionId", Description = "Filter workflow instances by the specified workflow definition ID."},
-                    new QueryArgument<EnumerationGraphType<WorkflowStatus>>{ Name = "status", Description = "Filter workflow instances by the specified workflow status."}
+                    new QueryArgument<EnumerationGraphType<ProcessStatus>>{ Name = "status", Description = "Filter workflow instances by the specified workflow status."}
                 ),
                 resolve: async context => await workflowInstanceStore.ListAllAsync(context.CancellationToken));
         }

@@ -2,7 +2,10 @@ using System;
 using System.Collections.Generic;
 using Elsa;
 using Elsa.Activities;
+using Elsa.Activities.ControlFlow.Activities;
+using Elsa.Activities.Workflows.Activities;
 using Elsa.AutoMapper.Extensions;
+using Elsa.Builders;
 using Elsa.Caching;
 using Elsa.Converters;
 using Elsa.Expressions;
@@ -15,7 +18,6 @@ using Elsa.Serialization.Formatters;
 using Elsa.Serialization.Handlers;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Elsa.WorkflowBuilders;
 using Elsa.WorkflowProviders;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -39,10 +41,6 @@ namespace Microsoft.Extensions.DependencyInjection
 
             return services;
         }
-
-        public static IServiceCollection AddWorkflow<T>(this IServiceCollection services)
-            where T : class, IWorkflow =>
-            services.AddTransient<IWorkflow, T>();
 
         public static IServiceCollection AddActivity<T>(this IServiceCollection services)
             where T : class, IActivity
@@ -81,21 +79,21 @@ namespace Microsoft.Extensions.DependencyInjection
                 .TryAddProvider<ITokenFormatter, JsonTokenFormatter>(ServiceLifetime.Singleton)
                 .TryAddProvider<ITokenFormatter, YamlTokenFormatter>(ServiceLifetime.Singleton)
                 .TryAddProvider<ITokenFormatter, XmlTokenFormatter>(ServiceLifetime.Singleton)
-                .TryAddProvider<IWorkflowExpressionHandler, LiteralHandler>(ServiceLifetime.Singleton)
-                .TryAddProvider<IWorkflowExpressionHandler, CodeHandler>(ServiceLifetime.Singleton)
-                .TryAddProvider<IWorkflowExpressionHandler, VariableHandler>(ServiceLifetime.Singleton)
-                .AddTransient<IWorkflowFactory, WorkflowFactory>()
+                .TryAddProvider<IExpressionHandler, LiteralHandler>(ServiceLifetime.Singleton)
+                .TryAddProvider<IExpressionHandler, CodeHandler>(ServiceLifetime.Singleton)
+                .TryAddProvider<IExpressionHandler, VariableHandler>(ServiceLifetime.Singleton)
+                .AddTransient<IProcessFactory, ProcessFactory>()
                 .AddScoped<IActivityInvoker, ActivityInvoker>()
-                .AddScoped<IWorkflowExpressionEvaluator, WorkflowExpressionEvaluator>()
+                .AddScoped<IExpressionEvaluator, ExpressionEvaluator>()
                 .AddSingleton<IWorkflowSerializerProvider, WorkflowSerializerProvider>()
-                .AddTransient<IWorkflowRegistry, WorkflowRegistry>()
-                .AddScoped<IWorkflowRunner, WorkflowRunner>()
+                .AddTransient<IProcessRegistry, ProcessRegistry>()
+                .AddScoped<IProcessRunner, ProcessRunner>()
                 .AddScoped<IActivityResolver, ActivityResolver>()
                 .AddScoped<IWorkflowEventHandler, ActivityLoggingWorkflowEventHandler>()
-                .AddTransient<IWorkflowProvider, StoreWorkflowProvider>()
-                .AddTransient<IWorkflowProvider, CodeWorkflowProvider>()
-                .AddTransient<IWorkflowBuilder, WorkflowBuilder>()
-                .AddTransient<Func<IWorkflowBuilder>>(sp => sp.GetRequiredService<IWorkflowBuilder>)
+                .AddTransient<IProcessProvider, StoreProcessProvider>()
+                .AddTransient<IProcessProvider, CodeProcessProvider>()
+                .AddTransient<IFlowchartBuilder, FlowchartBuilder>()
+                .AddTransient<Func<IFlowchartBuilder>>(sp => sp.GetRequiredService<IFlowchartBuilder>)
                 .AddAutoMapperProfile<WorkflowDefinitionProfile>(ServiceLifetime.Singleton)
                 .AddTypeNameValueHandler<AnnualDateHandler>()
                 .AddTypeNameValueHandler<DateTimeHandler>()
@@ -121,6 +119,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddTypeAlias<string>("String")
                 .AddTypeAlias<IActivity>("Activity")
                 .AddTypeAlias(typeof(IList<>), "List")
+                .AddTypeAlias(typeof(ICollection<>), "Collection")
                 .AddTypeAlias(typeof(LiteralExpression<>), "LiteralExpression")
                 .AddPrimitiveActivities();
 
@@ -149,7 +148,21 @@ namespace Microsoft.Extensions.DependencyInjection
         private static IServiceCollection AddPrimitiveActivities(this IServiceCollection services)
         {
             return services
-                .AddActivity<SetVariable>();
+                .AddActivity<SetVariable>()
+                .AddActivity<ForEach>()
+                .AddActivity<While>()
+                .AddActivity<Fork>()
+                .AddActivity<Join>()
+                .AddSingleton<IWorkflowEventHandler>(sp => sp.GetRequiredService<Join>())
+                .AddActivity<IfElse>()
+                .AddActivity<Switch>()
+                .AddActivity<Sequence>()
+                .AddActivity<TriggerWorkflow>()
+                .AddActivity<Correlate>()
+                .AddActivity<Signaled>()
+                .AddActivity<TriggerSignal>()
+                .AddActivity<Start>()
+                .AddActivity<Complete>();;
         }
     }
 }

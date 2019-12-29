@@ -18,11 +18,14 @@ namespace Sample01
                 .AddElsa()
                 .AddActivity<HelloWorld>()
                 .AddActivity<GoodByeWorld>()
+                .AddProcess<HelloWorldProcess>()
                 .BuildServiceProvider();
 
             // Invoke the workflow.
-            var invoker = services.GetService<IWorkflowRunner>();
-            await invoker.RunAsync<HelloWorldWorkflow>();
+            var factory = services.GetRequiredService<IProcessFactory>();
+            factory.CreateProcess()
+            var invoker = services.GetService<IProcessRunner>();
+            await invoker.RunAsync<HelloWorldProcess>();
 
             Console.ReadLine();
         }

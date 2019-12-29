@@ -36,7 +36,7 @@ namespace Elsa.Activities.Timers.HostedServices
                 try
                 {
                     using var scope = serviceProvider.CreateScope();
-                    var workflowInvoker = scope.ServiceProvider.GetRequiredService<IWorkflowRunner>(); 
+                    var workflowInvoker = scope.ServiceProvider.GetRequiredService<IProcessRunner>(); 
                     await workflowInvoker.TriggerAsync(nameof(TimerEvent), cancellationToken: stoppingToken);
                     await workflowInvoker.TriggerAsync(nameof(CronEvent), cancellationToken:stoppingToken);
                     await workflowInvoker.TriggerAsync(nameof(InstantEvent), cancellationToken: stoppingToken);

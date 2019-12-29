@@ -49,7 +49,7 @@ namespace Elsa.Activities.Http.Handlers
 
         private string GenerateUrl(string signal, ActivityExecutionContext activityContext)
         {
-            var workflowInstanceId = activityContext.WorkflowExecutionContext.Workflow.Id;
+            var workflowInstanceId = activityContext.ProcessExecutionContext.ProcessInstance.Id;
             var payload = new Signal(signal, workflowInstanceId);
             var token = tokenService.CreateToken(payload);
             var url = $"/workflows/signal?token={token}";
