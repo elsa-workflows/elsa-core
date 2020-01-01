@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 
+// ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
 {
     public static class HttpActivitiesServiceCollectionExtensions
@@ -44,7 +45,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddNotificationHandlers(typeof(HttpActivitiesServiceCollectionExtensions))
                 .AddDataProtection();
             
-            services.AddLiquidFilter<SignalUrlFilter>("signal_url");
+            //services.AddLiquidFilter<SignalUrlFilter>("signal_url");
             
             return services
                 .AddRequestHandler<TriggerRequestHandler>()

@@ -52,10 +52,11 @@ namespace Elsa.Builders
         public IActivityBuilder Add<T>(Action<T>? setupActivity = default, string? name = default) where T : class, IActivity
         {
             var activity = activityResolver.ResolveActivity(setupActivity);
-            var activityBuilder = new ActivityBuilder(this, activity);
+            //var activityBuilder = new ActivityBuilder(this, activity);
 
-            activityBuilders.Add(activityBuilder);
-            return activityBuilder;
+            //activityBuilders.Add(activityBuilder);
+            //return activityBuilder;
+            throw new NotImplementedException();
         }
 
         public IConnectionBuilder Connect(

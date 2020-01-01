@@ -6,9 +6,8 @@ namespace Elsa.Builders
 {
     public class ActivityBuilder : IActivityBuilder
     {
-        public ActivityBuilder(IFlowchartBuilder flowchartBuilder, IActivity activity)
+        public ActivityBuilder(IActivity activity)
         {
-            FlowchartBuilder = flowchartBuilder;
             Activity = activity;
         }
 
@@ -71,7 +70,5 @@ namespace Elsa.Builders
         }
 
         public IActivity BuildActivity() => Activity;
-
-        public Activities.Containers.Flowchart Build() => FlowchartBuilder.Build();
     }
 }

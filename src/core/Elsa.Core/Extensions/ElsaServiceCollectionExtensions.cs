@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Elsa;
 using Elsa.Activities;
+using Elsa.Activities.ControlFlow;
 using Elsa.Activities.ControlFlow.Activities;
 using Elsa.Activities.Workflows.Activities;
 using Elsa.AutoMapper.Extensions;
@@ -50,6 +51,13 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddTransient<IActivity>(sp => sp.GetRequiredService<T>());
         }
 
+        public static IServiceCollection AddProcess<T>(this IServiceCollection services) where T: class, IProcess
+        {
+            return services
+                .AddTransient<T>()
+                .AddTransient<IProcess>(sp => sp.GetRequiredService<T>());
+        }
+
         public static IServiceCollection AddTypeNameValueHandler<T>(this IServiceCollection services) where T : class, IValueHandler => services.AddTransient<IValueHandler, T>();
         public static IServiceCollection AddTypeAlias<T>(this IServiceCollection services, string alias) => services.AddTypeAlias(typeof(T), alias);
         public static IServiceCollection AddTypeAlias(this IServiceCollection services, Type type, string alias) => services.AddTransient<ITypeAlias>(sp => new TypeAlias(type, alias));
@@ -89,9 +97,9 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddTransient<IProcessRegistry, ProcessRegistry>()
                 .AddScoped<IProcessRunner, ProcessRunner>()
                 .AddScoped<IActivityResolver, ActivityResolver>()
-                .AddScoped<IWorkflowEventHandler, ActivityLoggingWorkflowEventHandler>()
                 .AddTransient<IProcessProvider, StoreProcessProvider>()
                 .AddTransient<IProcessProvider, CodeProcessProvider>()
+                .AddTransient<IProcessBuilder, ProcessBuilder>()
                 .AddTransient<IFlowchartBuilder, FlowchartBuilder>()
                 .AddTransient<Func<IFlowchartBuilder>>(sp => sp.GetRequiredService<IFlowchartBuilder>)
                 .AddAutoMapperProfile<WorkflowDefinitionProfile>(ServiceLifetime.Singleton)
@@ -153,7 +161,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddActivity<While>()
                 .AddActivity<Fork>()
                 .AddActivity<Join>()
-                .AddSingleton<IWorkflowEventHandler>(sp => sp.GetRequiredService<Join>())
+                //.AddSingleton<IWorkflowEventHandler>(sp => sp.GetRequiredService<Join>())
                 .AddActivity<IfElse>()
                 .AddActivity<Switch>()
                 .AddActivity<Sequence>()

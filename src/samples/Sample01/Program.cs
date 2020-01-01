@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Elsa.Builders;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Sample01.Activities;
@@ -22,10 +23,10 @@ namespace Sample01
                 .BuildServiceProvider();
 
             // Invoke the workflow.
-            var factory = services.GetRequiredService<IProcessFactory>();
-            factory.CreateProcess()
+            var processBuilder = services.GetRequiredService<IProcessBuilder>();
+            var process = processBuilder.Build<HelloWorldProcess>();
             var invoker = services.GetService<IProcessRunner>();
-            await invoker.RunAsync<HelloWorldProcess>();
+            await invoker.RunAsync(process);
 
             Console.ReadLine();
         }

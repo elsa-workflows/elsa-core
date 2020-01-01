@@ -14,8 +14,8 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             return services
                 .AddElsaCore(configure)
-                .AddJavaScriptExpressionEvaluator()
-                .AddLiquidExpressionEvaluator()
+                // .AddJavaScriptExpressionEvaluator()
+                // .AddLiquidExpressionEvaluator()
                 .AddUserTaskActivities();
         }
     }

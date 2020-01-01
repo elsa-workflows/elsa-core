@@ -1,14 +1,12 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Services;
-using Elsa.Services.Extensions;
 using Elsa.Services.Models;
 
-namespace Elsa.Activities.ControlFlow.Activities
+namespace Elsa.Activities.ControlFlow
 {
     [ActivityDefinition(
         Category = "Control Flow",
@@ -17,7 +15,7 @@ namespace Elsa.Activities.ControlFlow.Activities
         RuntimeDescription = "x => !!x.state.joinMode ? `Merge workflow execution back into a single branch using mode <strong>${ x.state.joinMode }</strong>` : x.definition.description",
         Outcomes = new[] { OutcomeNames.Done }
     )]
-    public class Join : Activity, IWorkflowEventHandler
+    public class Join : Activity
     {
         public Join()
         {
@@ -121,28 +119,14 @@ namespace Elsa.Activities.ControlFlow.Activities
         //     return $"@{sourceActivityId}_{sourceOutcomeName}";
         // }
 
-        Task IWorkflowEventHandler.ActivityExecutedAsync(
-            ProcessExecutionContext processContext,
-            IActivity activity,
-            CancellationToken cancellationToken)
-        {
-            RecordInboundTransitions(processContext, activity);
-
-            return Task.CompletedTask;
-        }
-
-        public Task ActivityFaultedAsync(
-            ProcessExecutionContext processExecutionContext,
-            IActivity activity,
-            string message,
-            CancellationToken cancellationToken) => Task.CompletedTask;
-
-        Task IWorkflowEventHandler.InvokingHaltedActivitiesAsync(
-            ProcessExecutionContext processExecutionContext,
-            CancellationToken cancellationToken) => Task.CompletedTask;
-
-        Task IWorkflowEventHandler.WorkflowInvokedAsync(
-            ProcessExecutionContext processExecutionContext,
-            CancellationToken cancellationToken) => Task.CompletedTask;
+        // Task IWorkflowEventHandler.ActivityExecutedAsync(
+        //     ProcessExecutionContext processContext,
+        //     IActivity activity,
+        //     CancellationToken cancellationToken)
+        // {
+        //     RecordInboundTransitions(processContext, activity);
+        //
+        //     return Task.CompletedTask;
+        // }
     }
 }

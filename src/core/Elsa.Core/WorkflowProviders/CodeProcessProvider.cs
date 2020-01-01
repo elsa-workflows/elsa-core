@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Builders;
@@ -22,19 +23,7 @@ namespace Elsa.WorkflowProviders
             this.workflowBuilder = workflowBuilder;
         }
 
-        public Task<IEnumerable<Process>> GetProcessesAsync(
-            CancellationToken cancellationToken) =>
-            Task.FromResult(GetProcesses());
-
-        private IEnumerable<Process> GetProcesses()
-        {
-            foreach (var process in processes)
-            {
-                var builder = workflowBuilder();
-                builder.WithId(process.GetType().Name);
-                process.Build(builder);
-                yield return builder.Build();
-            }
-        }
+        public Task<IEnumerable<Process>> GetProcessesAsync(CancellationToken cancellationToken) => Task.FromResult(GetProcesses());
+        private IEnumerable<Process> GetProcesses() => from process in processes let builder = workflowBuilder() select builder.Build(process);
     }
 }
