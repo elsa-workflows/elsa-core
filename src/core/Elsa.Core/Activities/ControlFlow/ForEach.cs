@@ -5,10 +5,12 @@ using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
 using Elsa.Models;
+using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
+using ScheduledActivity = Elsa.Services.Models.ScheduledActivity;
 
-namespace Elsa.Activities.ControlFlow.Activities
+namespace Elsa.Activities.ControlFlow
 {
     [ActivityDefinition(Category = "Control Flow", Description = "Iterate over a collection.", Icon = "far fa-circle")]
     public class ForEach : Activity
@@ -20,21 +22,19 @@ namespace Elsa.Activities.ControlFlow.Activities
             set => SetState(value);
         }
 
+        [Outlet(OutcomeNames.Iterate)]
         public IActivity Activity
         {
             get => GetState<IActivity>();
             set => SetState(value);
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
         {
-            var collection = await context.EvaluateAsync(Collection, cancellationToken) ?? new object[0];
-            var results = new List<IActivityExecutionResult> { Done() };
+            var collection = await workflowExecutionContext.EvaluateAsync(Collection, activityExecutionContext, cancellationToken) ?? new object[0];
+            var scheduledActivities = collection.Reverse().Select(x => new ScheduledActivity(Activity, Variable.From(x))).ToList();
 
-            foreach (var item in collection.Reverse()) 
-                results.Add(ScheduleActivity(Activity, Variable.From(item)));
-
-            return Combine(results);
+            return Schedule(scheduledActivities);
         }
     }
 }

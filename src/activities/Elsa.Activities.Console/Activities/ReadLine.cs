@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
+using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -30,7 +31,7 @@ namespace Elsa.Activities.Console.Activities
             this.input = input;
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
         {
             if (input == null)
                 return Suspend();
@@ -39,9 +40,9 @@ namespace Elsa.Activities.Console.Activities
             return Execute(receivedInput);
         }
 
-        protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
+        protected override IActivityExecutionResult OnResume(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext)
         {
-            var receivedInput = context.Input?.GetValue<string>();
+            var receivedInput = activityExecutionContext.Input?.GetValue<string>();
             return Execute(receivedInput);
         }
 

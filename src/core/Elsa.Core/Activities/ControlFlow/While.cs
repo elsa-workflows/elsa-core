@@ -1,12 +1,12 @@
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
+using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 
-namespace Elsa.Activities.ControlFlow.Activities
+namespace Elsa.Activities.ControlFlow
 {
     [ActivityDefinition(Category = "Control Flow", Description = "Execute while a given condition is true.", Icon = "far fa-circle")]
     public class While : Activity
@@ -18,23 +18,21 @@ namespace Elsa.Activities.ControlFlow.Activities
             set => SetState(value);
         }
 
+        [Outlet(OutcomeNames.Iterate)]
         public IActivity Activity
         {
             get => GetState<IActivity>();
             set => SetState(value);
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
         {
-            var loop = await context.EvaluateAsync(Condition, cancellationToken);
-            var results = new List<IActivityExecutionResult>();
+            var loop = await workflowExecutionContext.EvaluateAsync(Condition, activityExecutionContext, cancellationToken);
 
             if (loop)
-                results.Add(ScheduleActivities(new[] { this, Activity }));
-            else
-                results.Add(Done());
+                return Schedule(new[] { this, Activity }, activityExecutionContext.Input);
 
-            return Combine(results);
+            return Done();
         }
     }
 }

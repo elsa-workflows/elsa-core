@@ -4,6 +4,7 @@ using Elsa.Activities.Dropbox.Models;
 using Elsa.Activities.Dropbox.Services;
 using Elsa.Attributes;
 using Elsa.Expressions;
+using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -36,10 +37,10 @@ namespace Elsa.Activities.Dropbox.Activities
             set => SetState(value);
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
         {
-            var data = await context.EvaluateAsync(Data, cancellationToken);
-            var path = await context.EvaluateAsync(Path, cancellationToken);
+            var data = await workflowExecutionContext.EvaluateAsync(Data, activityExecutionContext, cancellationToken);
+            var path = await workflowExecutionContext.EvaluateAsync(Path, activityExecutionContext, cancellationToken);
 
             await filesApi.UploadAsync(
                 new UploadRequest

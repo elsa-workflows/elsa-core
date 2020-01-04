@@ -7,7 +7,7 @@ namespace Elsa.Models
     {
         public ProcessInstance()
         {
-            Scopes = new Stack<ProcessExecutionScope>();
+            Scopes = new Stack<WorkflowExecutionScope>();
             BlockingActivities = new HashSet<BlockingActivity>();
             ExecutionLog = new List<LogEntry>();
             ScheduledActivities = new HashSet<ScheduledActivity>();
@@ -16,7 +16,7 @@ namespace Elsa.Models
         public string? Id { get; set; }
         public string? DefinitionId { get; set; }
         public int Version { get; set; }
-        public ProcessStatus Status { get; set; }
+        public WorkflowStatus Status { get; set; }
         public string? CorrelationId { get; set; }
         public Instant CreatedAt { get; set; }
         public Instant? StartedAt { get; set; }
@@ -24,7 +24,7 @@ namespace Elsa.Models
         public Instant? FaultedAt { get; set; }
         public Instant? AbortedAt { get; set; }
         public ActivityInstance Start { get; set; }
-        public Stack<ProcessExecutionScope> Scopes { get; set; }
+        public Stack<WorkflowExecutionScope> Scopes { get; set; }
         public Variable? Input { get; set; }
         public Variable? Output { get; set; }
         public HashSet<BlockingActivity> BlockingActivities { get; set; }

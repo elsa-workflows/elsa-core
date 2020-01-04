@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using Elsa.Extensions;
+using Elsa.Services;
 using Elsa.Services.Models;
 
 namespace Elsa.Builders
@@ -11,17 +13,27 @@ namespace Elsa.Builders
         {
             Activity = activity;
         }
-        
+
+        public ActivityConfigurator(IActivityResolver activityResolver)
+        {
+            ActivityResolver = activityResolver;
+            Activity = activityResolver.ResolveActivity<T>();
+        }
+     
+        protected IActivityResolver ActivityResolver { get; }
         public T Activity { get; }
         
-        public IActivityConfigurator<T> WithProperty<TProperty>(Expression<Func<T, TProperty>> propertyExpression, Func<TProperty> propertyValueProvider)
+        public IActivityConfigurator<T> With<TProperty>(Expression<Func<T, TProperty>> propertyExpression, Func<TProperty> propertyValueProvider)
         {
+            var value = propertyValueProvider();
+            Activity.SetPropertyValue(propertyExpression, value);
             return this;
         }
 
-        public void WithId(string value)
+        public IActivityConfigurator<T> WithId(string value)
         {
             Activity.Id = value;
+            return this;
         }
 
         public IActivityConfigurator<T> WithName(string name)
@@ -42,6 +54,6 @@ namespace Elsa.Builders
             return this;
         }
         
-        public IActivity Build() => Activity;
+        public virtual T Build() => Activity;
     }
 }

@@ -3,10 +3,11 @@ using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
 using Elsa.Models;
+using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 
-namespace Elsa.Activities.Workflows.Activities
+namespace Elsa.Activities.ControlFlow
 {
     [ActivityDefinition(
         Category = "Workflows",
@@ -15,20 +16,21 @@ namespace Elsa.Activities.Workflows.Activities
     )]
     public class Complete : Activity
     {
-        [ActivityProperty(Hint = "An expression that evaluates to the workflow's output.'")]
-        public IWorkflowExpression<Variable> WorkflowOutput
+        [ActivityProperty(Hint = "An expression that evaluates to the activity's output.'")]
+        public IWorkflowExpression<Variable> Output
         {
             get => GetState<IWorkflowExpression<Variable>>();
             set => SetState(value);
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
         {
-            var workflowOutput = await context.EvaluateAsync(WorkflowOutput, cancellationToken) ?? new Variable();
+            var output = await workflowExecutionContext.EvaluateAsync(Output, activityExecutionContext, cancellationToken) ?? new Variable();
             
-            context.ProcessExecutionContext.ProcessInstance.Output = workflowOutput;
-
-            return Finish();
+            workflowExecutionContext.BlockingActivities.Clear();
+            workflowExecutionContext.Status = WorkflowStatus.Completed;
+            
+            return Done(output);
         }
     }
 }

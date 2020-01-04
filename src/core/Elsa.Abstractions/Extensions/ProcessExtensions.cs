@@ -8,13 +8,13 @@ namespace Elsa.Extensions
 {
     public static class ProcessExtensions
     {
-        public static bool IsRunning(this ProcessInstance workflow) => workflow.Status == ProcessStatus.Running;
+        public static bool IsRunning(this ProcessInstance workflow) => workflow.Status == WorkflowStatus.Running;
 
         public static bool IsCancelledOrFaulted(this ProcessInstance workflow) =>
-            workflow.Status == ProcessStatus.Cancelled ||
-            workflow.Status == ProcessStatus.Faulted;
+            workflow.Status == WorkflowStatus.Cancelled ||
+            workflow.Status == WorkflowStatus.Faulted;
 
-        public static bool IsCompleted(this ProcessInstance workflow) => workflow.Status == ProcessStatus.Completed;
+        public static bool IsCompleted(this ProcessInstance workflow) => workflow.Status == WorkflowStatus.Completed;
 
         public static LogEntry AddLogEntry(
             this ProcessInstance workflow, 

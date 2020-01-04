@@ -1,39 +1,32 @@
 using System;
 using System.Linq;
+using Elsa.Activities.Flowcharts;
 using Elsa.Services.Models;
 
 namespace Elsa.Builders
 {
-    public class OutcomeBuilder : IOutcomeBuilder
+    public class OutcomeBuilder
     {
-        public OutcomeBuilder(IFlowchartBuilder flowchartBuilder, IActivityBuilder source, string outcome)
+        public OutcomeBuilder(FlowchartConfigurator flowchartConfigurator, IActivity source, string outcome)
         {
-            FlowchartBuilder = flowchartBuilder;
+            FlowchartConfigurator = flowchartConfigurator;
             Source = source;
             Outcome = outcome;
         }
 
-        public IFlowchartBuilder FlowchartBuilder { get; }
-        public IActivityBuilder Source { get; }
+        public FlowchartConfigurator FlowchartConfigurator { get; }
+        public IActivity Source { get; }
         public string Outcome { get; }
 
-        public IActivityBuilder Then<T>(Action<T>? setup = default, Action<IActivityBuilder>? branch = default, string? name = default) where T : class, IActivity
+        public NodeConfigurator<T> Then<T>(Action<T>? setup = default, Action<NodeConfigurator<T>>? branch = default, string? name = default) where T : class, IActivity
         {
-            var target = FlowchartBuilder.Add(setup, name);
+            var target = FlowchartConfigurator.Add(setup, name);
             branch?.Invoke(target);
 
-            FlowchartBuilder.Connect(Source, target, Outcome);
+            FlowchartConfigurator.Connect(Source, target.Activity, Outcome);
             return target;
         }
 
-        public Activities.Containers.Flowchart Build() => FlowchartBuilder.Build();
-
-        public IConnectionBuilder Then(string activityName)
-        {
-            return FlowchartBuilder.Connect(
-                () => Source, 
-                () => FlowchartBuilder.Activities.First(x => x.Activity.Name == activityName), 
-                Outcome);
-        }
+        public Flowchart Build() => FlowchartConfigurator.Build();
     }
 }

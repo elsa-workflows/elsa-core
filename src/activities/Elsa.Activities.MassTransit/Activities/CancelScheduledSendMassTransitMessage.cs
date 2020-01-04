@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Elsa.Activities.MassTransit.Options;
 using Elsa.Attributes;
 using Elsa.Expressions;
+using Elsa.Results;
 using Elsa.Services.Models;
 using MassTransit;
 using Microsoft.Extensions.Options;

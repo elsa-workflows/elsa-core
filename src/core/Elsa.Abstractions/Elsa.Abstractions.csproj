@@ -36,6 +36,7 @@
       <PackageReference Include="NodaTime" Version="3.0.0-beta01" />
       <PackageReference Include="NodaTime.Serialization.JsonNet" Version="2.2.0" />
       <PackageReference Include="System.ComponentModel.Annotations" Version="4.7.0" />
+      <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.2" />
     </ItemGroup>
 
 </Project>

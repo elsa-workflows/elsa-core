@@ -16,25 +16,25 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
     {
         private readonly HttpContext httpContext;
         private readonly ITokenService tokenService;
-        private readonly IProcessRunner processRunner;
-        private readonly IProcessRegistry processRegistry;
-        private readonly IProcessFactory processFactory;
+        private readonly IWorkflowHost workflowHost;
+        private readonly IWorkflowRegistry workflowRegistry;
+        private readonly IWorkflowFactory workflowFactory;
         private readonly IWorkflowInstanceStore workflowInstanceStore;
         private readonly CancellationToken cancellationToken;
 
         public SignalRequestHandler(
             IHttpContextAccessor httpContextAccessor,
             ITokenService tokenService,
-            IProcessRunner processRunner,
-            IProcessRegistry processRegistry,
-            IProcessFactory processFactory,
+            IWorkflowHost workflowHost,
+            IWorkflowRegistry workflowRegistry,
+            IWorkflowFactory workflowFactory,
             IWorkflowInstanceStore workflowInstanceStore)
         {
             httpContext = httpContextAccessor.HttpContext;
             this.tokenService = tokenService;
-            this.processRunner = processRunner;
-            this.processRegistry = processRegistry;
-            this.processFactory = processFactory;
+            this.workflowHost = workflowHost;
+            this.workflowRegistry = workflowRegistry;
+            this.workflowFactory = workflowFactory;
             this.workflowInstanceStore = workflowInstanceStore;
             cancellationToken = httpContext.RequestAborted;
         }
@@ -52,7 +52,7 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
                 return new NotFoundResult();
 
             if (!CheckIfExecuting(workflowInstance))
-                return new BadRequestResult($"Cannot signal a workflow with status other than {ProcessStatus.Running}. Actual workflow status: {workflowInstance.Status}.");
+                return new BadRequestResult($"Cannot signal a workflow with status other than {WorkflowStatus.Running}. Actual workflow status: {workflowInstance.Status}.");
 
             await ResumeWorkflowAsync(workflowInstance, signal);
 
@@ -70,13 +70,13 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
             await workflowInstanceStore.GetByIdAsync(signal.WorkflowInstanceId, cancellationToken);
 
         private bool CheckIfExecuting(ProcessInstance processInstance) => 
-            processInstance.Status == ProcessStatus.Running;
+            processInstance.Status == WorkflowStatus.Running;
 
         private async Task ResumeWorkflowAsync(ProcessInstance processInstanceModel, Signal signal)
         {
             var input = Variable.From(signal.Name);
 
-            var workflowDefinition = await processRegistry.GetProcessAsync(
+            var workflowDefinition = await workflowRegistry.GetWorkflowAsync(
                 processInstanceModel.DefinitionId,
                 VersionOptions.SpecificVersion(processInstanceModel.Version),
                 cancellationToken);

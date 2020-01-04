@@ -1,52 +1,26 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Extensions;
-using Elsa.Services;
+using Elsa.Models;
 using Elsa.Services.Models;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 namespace Elsa.Results
 {
-    /// <summary>
-    /// A result that carries information about the executed activity's outcome.
-    /// </summary>
-    public class OutcomeResult : ActivityExecutionResult
+    public class OutcomeResult : IActivityExecutionResult
     {
-        public OutcomeResult(IEnumerable<string> endpointNames)
+        public OutcomeResult(IEnumerable<string> outcomes = default, Variable output = default)
         {
-            EndpointNames = endpointNames.ToList();
-        }
-        
-        public OutcomeResult(params string[] endpointNames) : this((IEnumerable<string>)endpointNames)
-        {
+            Outcomes = outcomes?.ToArray() ?? new string[0];
+            Output = output;
         }
 
-        public IReadOnlyList<string> EndpointNames { get; }
+        public IReadOnlyCollection<string> Outcomes { get; }
+        public Variable? Output { get; }
 
-        public override async Task ExecuteAsync(IProcessRunner runner, ProcessExecutionContext processContext, CancellationToken cancellationToken)
+        public Task ExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
         {
-            var currentActivity = processContext.ScheduledActivity.Activity;
-
-            foreach (var endpointName in EndpointNames)
-            {
-                //ScheduleNextActivities(processContext, new SourceEndpoint(currentActivity, endpointName));
-            }
-            
+            return Task.CompletedTask;
         }
-        
-        // private void ScheduleNextActivities(ProcessExecutionContext processContext, SourceEndpoint endpoint)
-        // {
-        //     var completedActivity = processContext.ScheduledActivity.Activity;
-        //     var connections = processContext.ProcessInstance.Blueprint.Connections
-        //         .Where(x => x.Source.Activity == completedActivity && (x.Source.Outcome ?? OutcomeNames.Done).Equals(endpoint.Outcome, StringComparison.OrdinalIgnoreCase));
-        //     
-        //     var activities = connections.Select(x => x.Target.Activity);
-        //     
-        //     processContext.ScheduleActivities(activities, completedActivity.Output);
-        // }
     }
 }

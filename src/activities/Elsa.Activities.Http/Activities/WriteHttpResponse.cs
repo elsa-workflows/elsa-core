@@ -7,9 +7,11 @@ using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Expressions;
+using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Localization;
 
 namespace Elsa.Activities.Http.Activities
 {
@@ -46,10 +48,13 @@ namespace Elsa.Activities.Http.Activities
             };
         }
 
-        public WriteHttpResponse(IHttpContextAccessor httpContextAccessor)
+        public WriteHttpResponse(IHttpContextAccessor httpContextAccessor, IStringLocalizer<WriteHttpResponse> localizer)
         {
+            T = localizer;
             this.httpContextAccessor = httpContextAccessor;
         }
+        
+        public IStringLocalizer T { get; }
 
         /// <summary>
         /// The HTTP status code to return.
@@ -100,17 +105,17 @@ namespace Elsa.Activities.Http.Activities
             set => SetState(value);
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
         {
             var response = httpContextAccessor.HttpContext.Response;
 
             if (response.HasStarted)
-                return Fault("Response has already started");
+                return Fault(T["Response has already started"]);
 
             response.StatusCode = (int)StatusCode;
             response.ContentType = ContentType;
 
-            var headersText = await context.EvaluateAsync(ResponseHeaders, cancellationToken);
+            var headersText = await workflowExecutionContext.EvaluateAsync(ResponseHeaders, activityExecutionContext, cancellationToken);
 
             if (headersText != null)
             {
@@ -123,7 +128,7 @@ namespace Elsa.Activities.Http.Activities
                     response.Headers[header.Key] = header.Value;
             }
 
-            var bodyText = await context.EvaluateAsync(Content, cancellationToken);
+            var bodyText = await workflowExecutionContext.EvaluateAsync(Content, activityExecutionContext, cancellationToken);
 
             if (!string.IsNullOrWhiteSpace(bodyText)) 
                 await response.WriteAsync(bodyText, cancellationToken);

@@ -2,6 +2,6 @@ namespace Elsa.Builders
 {
     public interface IFlowchart
     {
-        void Build(IFlowchartBuilder builder);
+        void Build(FlowchartConfigurator configurator);
     }
 }

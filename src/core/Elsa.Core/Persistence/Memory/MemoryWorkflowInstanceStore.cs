@@ -51,7 +51,7 @@ namespace Elsa.Persistence.Memory
         {
             var query = workflowInstances.Values.AsQueryable();
 
-            query = query.Where(x => x.Status == ProcessStatus.Suspended);
+            query = query.Where(x => x.Status == WorkflowStatus.Suspended);
 
             if (!string.IsNullOrWhiteSpace(correlationId))
                 query = query.Where(x => x.CorrelationId == correlationId);
@@ -65,14 +65,14 @@ namespace Elsa.Persistence.Memory
 
         public Task<IEnumerable<ProcessInstance>> ListByStatusAsync(
             string definitionId,
-            ProcessStatus status,
+            WorkflowStatus status,
             CancellationToken cancellationToken)
         {
             var query = workflowInstances.Values.Where(x => x.DefinitionId == definitionId && x.Status == status);
             return Task.FromResult(query);
         }
 
-        public Task<IEnumerable<ProcessInstance>> ListByStatusAsync(ProcessStatus status,
+        public Task<IEnumerable<ProcessInstance>> ListByStatusAsync(WorkflowStatus status,
             CancellationToken cancellationToken)
         {
             var query = workflowInstances.Values.Where(x => x.Status == status);

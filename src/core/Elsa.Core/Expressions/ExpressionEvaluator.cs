@@ -22,7 +22,8 @@ namespace Elsa.Expressions
 
         public async Task<object> EvaluateAsync(
             IWorkflowExpression expression,
-            ActivityExecutionContext context,
+            WorkflowExecutionContext workflowExecutionContext,
+            ActivityExecutionContext activityExecutionContext,
             CancellationToken cancellationToken = default)
         {
             if (expression == null)
@@ -32,7 +33,7 @@ namespace Elsa.Expressions
 
             try
             {
-                return await evaluator.EvaluateAsync(expression, context, cancellationToken);
+                return await evaluator.EvaluateAsync(expression, workflowExecutionContext, activityExecutionContext, cancellationToken);
             }
             catch (Exception e)
             {
@@ -45,8 +46,9 @@ namespace Elsa.Expressions
 
         public async Task<T> EvaluateAsync<T>(
             IWorkflowExpression<T> expression,
-            ActivityExecutionContext context,
+            WorkflowExecutionContext workflowExecutionContext,
+            ActivityExecutionContext activityExecutionContext,
             CancellationToken cancellationToken = default) 
-            => (T)await EvaluateAsync((IWorkflowExpression)expression, context, cancellationToken);
+            => (T)await EvaluateAsync((IWorkflowExpression)expression, workflowExecutionContext, activityExecutionContext, cancellationToken);
     }
 }

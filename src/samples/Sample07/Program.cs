@@ -1,17 +1,27 @@
-﻿using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Hosting;
+using System.Threading.Tasks;
+using Elsa.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Sample07
 {
-    public static class Program
+    /// <summary>
+    /// Demonstrates a flowchart-style workflows, where activities are connected to other activities via their outcomes.
+    /// </summary>
+    internal static class Program
     {
-        public static void Main(string[] args)
+        private static async Task Main()
         {
-            CreateHostBuilder(args).Build().Run();
-        }
+            // Setup a service collection.
+            var services = new ServiceCollection()
+                .AddElsa()
+                .AddWorkflow<MyFlowchart>() // Register the workflow.
+                .BuildServiceProvider();
 
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
-                .ConfigureWebHostDefaults(webBuilder => { webBuilder.UseStartup<Startup>(); });
+            // Get a workflow host.
+            var host = services.GetRequiredService<IWorkflowHost>();
+
+            // Run the workflow.
+            await host.RunAsync<MyFlowchart>();
+        }
     }
 }

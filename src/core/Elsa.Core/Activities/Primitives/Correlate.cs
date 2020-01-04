@@ -2,10 +2,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
+using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 
-namespace Elsa.Activities.Workflows.Activities
+namespace Elsa.Activities.Primitives
 {
     /// <summary>
     /// Sets the CorrelationId of the workflow to a given value.
@@ -24,11 +25,10 @@ namespace Elsa.Activities.Workflows.Activities
             set => SetState(value);
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
         {
-            var value = await context.EvaluateAsync(Value, cancellationToken);
-            context.ProcessExecutionContext.ProcessInstance.CorrelationId = value;
-            return Done();
+            var value = await workflowExecutionContext.EvaluateAsync(Value, activityExecutionContext, cancellationToken);
+            return new CorrelateResult(value);
         }
     }
 }

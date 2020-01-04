@@ -1,29 +1,17 @@
 using System;
-using System.Net;
-using Elsa.Activities.Http.Activities;
-using Elsa.Expressions;
-using Elsa.Services;
-using Elsa.Services.Models;
+using Elsa.Builders;
 
 namespace Sample06
 {
+    using static Console;
+    
     public class HelloWorldWorkflow : IWorkflow
     {
         public void Build(IWorkflowBuilder builder)
         {
             builder
-                .StartWith<ReceiveHttpRequest>(
-                    activity => activity.Path = new Uri("/hello-world", UriKind.Relative)
-                )
-                .Then<WriteHttpResponse>(
-                    activity =>
-                    {
-                        activity.Content = new LiteralExpression<string>("<h1>Hello World!</h1><p>Elsa says hi :)</p>");
-                        activity.ContentType = "text/html";
-                        activity.StatusCode = HttpStatusCode.OK;
-                        activity.ResponseHeaders = new LiteralExpression<string>("X-Powered-By=Elsa Workflows");
-                    }
-                );
+                .WithId("MyWorkflow")
+                .StartWith(() => WriteLine("Hello World!"));
         }
     }
 }

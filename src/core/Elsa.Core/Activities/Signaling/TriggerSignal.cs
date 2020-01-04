@@ -3,10 +3,11 @@ using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
 using Elsa.Models;
+using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 
-namespace Elsa.Activities.Workflows.Activities
+namespace Elsa.Activities.Signaling
 {
     /// <summary>
     /// Triggers the specified signal.
@@ -18,11 +19,11 @@ namespace Elsa.Activities.Workflows.Activities
     )]
     public class TriggerSignal : Activity
     {
-        private readonly IProcessRunner processRunner;
+        private readonly IWorkflowHost workflowHost;
 
-        public TriggerSignal(IProcessRunner processRunner)
+        public TriggerSignal(IWorkflowHost workflowHost)
         {
-            this.processRunner = processRunner;
+            this.workflowHost = workflowHost;
         }
 
         [ActivityProperty(Hint = "An expression that evaluates to the name of the signal to trigger.")]
@@ -39,17 +40,17 @@ namespace Elsa.Activities.Workflows.Activities
             set => SetState(value);
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
         {
-            var signal = await context.EvaluateAsync(Signal, cancellationToken);
-            var correlationId = await context.EvaluateAsync(CorrelationId, cancellationToken);
+            var signal = await workflowExecutionContext.EvaluateAsync(Signal, activityExecutionContext, cancellationToken);
+            var correlationId = await workflowExecutionContext.EvaluateAsync(CorrelationId, activityExecutionContext, cancellationToken);
 
-            await processRunner.TriggerAsync(
-                nameof(Signaled),
-                Variable.From(signal),
-                correlationId,
-                cancellationToken: cancellationToken
-            );
+            // await workflowHost.TriggerAsync(
+            //     nameof(Signaled),
+            //     Variable.From(signal),
+            //     correlationId,
+            //     cancellationToken: cancellationToken
+            // );
 
             return Done();
         }

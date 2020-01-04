@@ -9,6 +9,7 @@ using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Extensions;
 using Elsa.Models;
+using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
@@ -83,12 +84,12 @@ namespace Elsa.Activities.Http.Activities
             set => SetState(value);
         }
 
-        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
+        protected override IActivityExecutionResult OnExecute(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext)
         {
-            return Suspend(true);
+            return Suspend();
         }
 
-        protected override async Task<IActivityExecutionResult> OnResumeAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnResumeAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
         {
             var request = httpContextAccessor.HttpContext.Request;
             var model = new HttpRequestModel

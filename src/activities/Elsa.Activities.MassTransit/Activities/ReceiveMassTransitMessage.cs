@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Extensions;
 using Elsa.Models;
+using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 

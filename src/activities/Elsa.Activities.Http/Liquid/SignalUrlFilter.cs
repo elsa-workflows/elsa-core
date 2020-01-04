@@ -27,15 +27,15 @@ namespace Elsa.Activities.Http.Liquid
             if (workflowContextValue.IsNil())
                 throw new ArgumentException("WorkflowExecutionContext missing while invoking 'signal_url'");
 
-            var workflowContext = (ProcessExecutionContext)workflowContextValue.ToObjectValue();
+            var workflowContext = (WorkflowExecutionContext)workflowContextValue.ToObjectValue();
             var signalName = input.ToStringValue();
             var url = GenerateUrl(signalName, workflowContext);
             return new ValueTask<FluidValue>(new StringValue(url));
         }
 
-        private string GenerateUrl(string signal, ProcessExecutionContext processExecutionContext)
+        private string GenerateUrl(string signal, WorkflowExecutionContext workflowExecutionContext)
         {
-            var workflowInstanceId = processExecutionContext.ProcessInstance.Id;
+            var workflowInstanceId = workflowExecutionContext.InstanceId;
             var payload = new Signal(signal, workflowInstanceId);
             var token = tokenService.CreateToken(payload);
             var url = $"/workflows/signal?token={token}";

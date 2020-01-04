@@ -2,9 +2,10 @@ using System;
 using System.Collections.Generic;
 using Elsa;
 using Elsa.Activities;
+using Elsa.Activities.Containers;
 using Elsa.Activities.ControlFlow;
-using Elsa.Activities.ControlFlow.Activities;
-using Elsa.Activities.Workflows.Activities;
+using Elsa.Activities.Primitives;
+using Elsa.Activities.Signaling;
 using Elsa.AutoMapper.Extensions;
 using Elsa.Builders;
 using Elsa.Caching;
@@ -51,11 +52,11 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddTransient<IActivity>(sp => sp.GetRequiredService<T>());
         }
 
-        public static IServiceCollection AddProcess<T>(this IServiceCollection services) where T: class, IProcess
+        public static IServiceCollection AddWorkflow<T>(this IServiceCollection services) where T: class, IWorkflow
         {
             return services
                 .AddTransient<T>()
-                .AddTransient<IProcess>(sp => sp.GetRequiredService<T>());
+                .AddTransient<IWorkflow>(sp => sp.GetRequiredService<T>());
         }
 
         public static IServiceCollection AddTypeNameValueHandler<T>(this IServiceCollection services) where T : class, IValueHandler => services.AddTransient<IValueHandler, T>();
@@ -90,18 +91,18 @@ namespace Microsoft.Extensions.DependencyInjection
                 .TryAddProvider<IExpressionHandler, LiteralHandler>(ServiceLifetime.Singleton)
                 .TryAddProvider<IExpressionHandler, CodeHandler>(ServiceLifetime.Singleton)
                 .TryAddProvider<IExpressionHandler, VariableHandler>(ServiceLifetime.Singleton)
-                .AddTransient<IProcessFactory, ProcessFactory>()
-                .AddScoped<IActivityInvoker, ActivityInvoker>()
+                .AddTransient<IWorkflowFactory, WorkflowFactory>()
                 .AddScoped<IExpressionEvaluator, ExpressionEvaluator>()
                 .AddSingleton<IWorkflowSerializerProvider, WorkflowSerializerProvider>()
-                .AddTransient<IProcessRegistry, ProcessRegistry>()
-                .AddScoped<IProcessRunner, ProcessRunner>()
+                .AddTransient<IWorkflowRegistry, WorkflowRegistry>()
+                .AddScoped<IWorkflowHost, WorkflowHost>()
+                .AddScoped<IScheduler, Scheduler>()
                 .AddScoped<IActivityResolver, ActivityResolver>()
-                .AddTransient<IProcessProvider, StoreProcessProvider>()
-                .AddTransient<IProcessProvider, CodeProcessProvider>()
-                .AddTransient<IProcessBuilder, ProcessBuilder>()
-                .AddTransient<IFlowchartBuilder, FlowchartBuilder>()
-                .AddTransient<Func<IFlowchartBuilder>>(sp => sp.GetRequiredService<IFlowchartBuilder>)
+                .AddTransient<IWorkflowProvider, StoreWorkflowProvider>()
+                .AddTransient<IWorkflowProvider, CodeWorkflowProvider>()
+                .AddTransient<WorkflowBuilder>()
+                .AddTransient<Func<WorkflowBuilder>>(sp => sp.GetRequiredService<WorkflowBuilder>)
+                .AddTransient<FlowchartConfigurator>()
                 .AddAutoMapperProfile<WorkflowDefinitionProfile>(ServiceLifetime.Singleton)
                 .AddTypeNameValueHandler<AnnualDateHandler>()
                 .AddTypeNameValueHandler<DateTimeHandler>()
@@ -161,7 +162,6 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddActivity<While>()
                 .AddActivity<Fork>()
                 .AddActivity<Join>()
-                //.AddSingleton<IWorkflowEventHandler>(sp => sp.GetRequiredService<Join>())
                 .AddActivity<IfElse>()
                 .AddActivity<Switch>()
                 .AddActivity<Sequence>()
@@ -169,7 +169,6 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddActivity<Correlate>()
                 .AddActivity<Signaled>()
                 .AddActivity<TriggerSignal>()
-                .AddActivity<Start>()
                 .AddActivity<Complete>();;
         }
     }

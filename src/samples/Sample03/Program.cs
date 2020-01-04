@@ -1,47 +1,44 @@
 using System;
 using System.Threading.Tasks;
-using Elsa;
-using Elsa.Activities.Console.Activities;
-using Elsa.Activities.Console.Extensions;
+using Elsa.Activities.Containers;
+using Elsa.Activities.ControlFlow;
+using Elsa.Activities.Primitives;
 using Elsa.Expressions;
-using Elsa.Models;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Sample03
 {
+    using static Console;
+    
     /// <summary>
-    /// A minimal workflows program defined as data (workflow definition) and Console activities.
+    /// A sequential workflow with if/else branching.
     /// </summary>
     internal static class Program
     {
-        private static async Task Main(string[] args)
+        private static async Task Main()
         {
             // Setup a service collection.
             var services = new ServiceCollection()
                 .AddElsa()
-                .AddConsoleActivities()
                 .BuildServiceProvider();
 
-            // Define a workflow as data so we can store it somewhere (file, database, etc.).
-            var workflowDefinition = new ProcessDefinitionVersion
-            {
-                Activities = new[]
-                {
-                    new ActivityDefinition<WriteLine> { Id = "activity-1", State = new Variables().SetVariable("TextExpression", new LiteralExpression<string>("Hello world!"))},
-                    new ActivityDefinition<WriteLine> { Id = "activity-2", State = new Variables().SetVariable("TextExpression", new LiteralExpression<string>("Goodbye cruel world..."))}
-                },
-                Connections = new []
-                {
-                    new ConnectionDefinition("activity-1", "activity-2", OutcomeNames.Done), 
-                }
-            };
-            
-            // Run the workflow.
-            var invoker = services.GetService<IWorkflowRunner>();
-            await invoker.RunAsync(workflowDefinition);
+            // Get the scheduler.
+            var scheduler = services.GetRequiredService<IScheduler>();
 
-            Console.ReadLine();
+            // Create a sequence activity.
+            var sequence = new Sequence(
+                new Inline(() => WriteLine("What's your age?")),
+                new SetVariable("Age", new CodeExpression<int>(() => int.Parse(ReadLine()))),
+                new IfElse(
+                    (w, a) => w.GetVariable<int>("Age") > 21, 
+                    () => WriteLine("Here's your drink."),
+                    () => WriteLine("Here's your soda.")),
+                new Inline(() => WriteLine("Enjoy!"))
+            );
+
+            // Schedule an activity for execution.
+            await scheduler.ScheduleActivityAsync(sequence);
         }
     }
 }

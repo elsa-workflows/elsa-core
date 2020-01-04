@@ -14,16 +14,16 @@ namespace Elsa.Activities.Http.Controllers
     public class HttpWorkflowsController : ControllerBase
     {
         private readonly ITokenService tokenService;
-        private readonly IProcessRunner processRunner;
+        private readonly IWorkflowHost workflowHost;
         private readonly IWorkflowInstanceStore workflowInstanceStore;
 
         public HttpWorkflowsController(
             ITokenService tokenService,
-            IProcessRunner processRunner,
+            IWorkflowHost workflowHost,
             IWorkflowInstanceStore workflowInstanceStore)
         {
             this.tokenService = tokenService;
-            this.processRunner = processRunner;
+            this.workflowHost = workflowHost;
             this.workflowInstanceStore = workflowInstanceStore;
         }
 

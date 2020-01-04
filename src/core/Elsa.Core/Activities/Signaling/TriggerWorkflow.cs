@@ -3,10 +3,11 @@ using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
 using Elsa.Models;
+using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 
-namespace Elsa.Activities.Workflows.Activities
+namespace Elsa.Activities.Signaling
 {
     [ActivityDefinition(
         Category = "Workflows",
@@ -15,11 +16,11 @@ namespace Elsa.Activities.Workflows.Activities
     )]
     public class TriggerWorkflow : Activity
     {
-        private readonly IProcessRunner processRunner;
+        private readonly IWorkflowHost workflowHost;
 
-        public TriggerWorkflow(IProcessRunner processRunner)
+        public TriggerWorkflow(IWorkflowHost workflowHost)
         {
-            this.processRunner = processRunner;
+            this.workflowHost = workflowHost;
         }
 
         [ActivityProperty(Hint = "An expression that evaluates to the activity type to use when triggering workflows.")]
@@ -45,18 +46,18 @@ namespace Elsa.Activities.Workflows.Activities
             set => SetState(value);
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
         {
-            var activityType = await context.EvaluateAsync(ActivityType, cancellationToken);
-            var input = await context.EvaluateAsync(Input, cancellationToken);
-            var correlationId = await context.EvaluateAsync(CorrelationId, cancellationToken);
+            var activityType = await workflowExecutionContext.EvaluateAsync(ActivityType, activityExecutionContext, cancellationToken);
+            var input = await workflowExecutionContext.EvaluateAsync(Input, activityExecutionContext, cancellationToken);
+            var correlationId = await workflowExecutionContext.EvaluateAsync(CorrelationId, activityExecutionContext, cancellationToken);
 
-            await processRunner.TriggerAsync(
-                activityType,
-                input,
-                correlationId,
-                cancellationToken: cancellationToken
-            );
+            // await workflowHost.TriggerAsync(
+            //     activityType,
+            //     input,
+            //     correlationId,
+            //     cancellationToken: cancellationToken
+            // );
 
             return Done();
         }

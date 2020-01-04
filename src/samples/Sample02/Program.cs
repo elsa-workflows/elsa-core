@@ -1,40 +1,38 @@
 ﻿using System;
-using System.Threading.Tasks;
-using Elsa.Activities.Console.Activities;
-using Elsa.Activities.Console.Extensions;
-using Elsa.Expressions;
-using Elsa.Services;
-using Microsoft.Extensions.DependencyInjection;
-
-namespace Sample02
-{
-    /// <summary>
-    /// A minimal workflows program defined in code using fluent workflow builder and Console activities.
-    /// </summary>
-    internal static class Program
-    {
-        private static async Task Main(string[] args)
-        {
-            // Setup a service collection.
-            var services = new ServiceCollection()
-                .AddElsa()
-                .AddConsoleActivities()
-                .BuildServiceProvider();
-
-            // Define a workflow.
-            var workflowBuilderFactory = services.GetRequiredService<Func<IWorkflowBuilder>>();
-            var workflowBuilder = workflowBuilderFactory();
-            var workflowBlueprint = workflowBuilder
-                .StartWith<WriteLine>(x => x.Text = new CodeExpression<string>(() => "Hello world!"))
-                .Then(() => Console.WriteLine("Look, custom code!"))
-                .Then<WriteLine>(x => x.Text = new LiteralExpression<string>("Goodbye cruel world..."))
-                .Build();
-
-            // Start the workflow.
-            var invoker = services.GetService<IWorkflowRunner>();
-            await invoker.RunAsync(workflowBlueprint);
-
-            Console.ReadLine();
-        }
-    }
-}
+ using System.Threading.Tasks;
+ using Elsa.Activities.Containers;
+ using Elsa.Activities.Primitives;
+ using Elsa.Services;
+ using Microsoft.Extensions.DependencyInjection;
+ 
+ namespace Sample02
+ {
+     using static Console;
+     
+     /// <summary>
+     /// A sequential workflow writing out messages.
+     /// </summary>
+     internal static class Program
+     {
+         private static async Task Main(string[] args)
+         {
+             // Setup a service collection.
+             var services = new ServiceCollection()
+                 .AddElsa()
+                 .BuildServiceProvider();
+ 
+             // Get the scheduler.
+             var scheduler = services.GetRequiredService<IScheduler>();
+ 
+             // Create a sequence activity.
+             var sequence = new Sequence(
+                 new Inline(() => WriteLine("Line 1")),
+                 new Inline(() => WriteLine("Line 2")),
+                 new Inline(() => WriteLine("Line 3"))
+             );
+ 
+             // Schedule an activity for execution.
+             await scheduler.ScheduleActivityAsync(sequence);
+         }
+     }
+ }

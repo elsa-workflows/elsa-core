@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Design;
+using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -45,7 +46,7 @@ namespace Elsa.Activities.ControlFlow
             set => SetState(value);
         }
 
-        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
+        protected override IActivityExecutionResult OnExecute(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext)
         {
             // var recordedInboundTransitions = InboundTransitions ?? new List<string>();
             // var processInstance = context.ProcessExecutionContext.ProcessInstance;
@@ -83,7 +84,7 @@ namespace Elsa.Activities.ControlFlow
             return Done();
         }
 
-        private void RecordInboundTransitions(ProcessExecutionContext processContext, IActivity activity)
+        private void RecordInboundTransitions(WorkflowExecutionContext workflowExecutionContext, IActivity activity)
         {
             // var process = processContext.ProcessInstance;
             //

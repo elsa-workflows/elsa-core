@@ -30,6 +30,7 @@ namespace Elsa.Activities.Http.Handlers
         {
             var engine = notification.Engine;
             var activityContext = notification.ActivityExecutionContext;
+            var workflowExecutionContext = notification.WorkflowExecutionContext;
 
             engine.SetValue(
                 "queryString",
@@ -41,15 +42,15 @@ namespace Elsa.Activities.Http.Handlers
             );
             engine.SetValue(
                 "signalUrl",
-                (Func<string, string>)(signal => GenerateUrl(signal, activityContext))
+                (Func<string, string>)(signal => GenerateUrl(signal, workflowExecutionContext, activityContext))
             );
 
             return Task.CompletedTask;
         }
 
-        private string GenerateUrl(string signal, ActivityExecutionContext activityContext)
+        private string GenerateUrl(string signal, WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityContext)
         {
-            var workflowInstanceId = activityContext.ProcessExecutionContext.ProcessInstance.Id;
+            var workflowInstanceId = workflowExecutionContext.InstanceId;
             var payload = new Signal(signal, workflowInstanceId);
             var token = tokenService.CreateToken(payload);
             var url = $"/workflows/signal?token={token}";

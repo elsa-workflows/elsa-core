@@ -11,7 +11,8 @@ namespace Elsa.Expressions
 
         public Task<object> EvaluateAsync(
             IWorkflowExpression expression,
-            ActivityExecutionContext context,
+            WorkflowExecutionContext workflowExecutionContext,
+            ActivityExecutionContext activityExecutionContext,
             CancellationToken cancellationToken)
         {
             var literalExpression = (LiteralExpression)expression;

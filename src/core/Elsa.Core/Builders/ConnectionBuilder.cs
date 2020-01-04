@@ -1,26 +1,28 @@
 using System;
+using Elsa.Activities.Flowcharts;
 using Elsa.Models;
+using Elsa.Services.Models;
 
 namespace Elsa.Builders
 {
-    public class ConnectionBuilder : IConnectionBuilder
+    public class ConnectionBuilder
     {
-        public IFlowchartBuilder FlowchartBuilder { get; }
-        public Func<IActivityBuilder> Source { get; }
-        public Func<IActivityBuilder> Target{ get; }
+        public FlowchartConfigurator FlowchartConfigurator { get; }
+        public IActivity Source { get; }
+        public IActivity Target{ get; }
         public string? Outcome { get; }
 
-        public ConnectionBuilder(IFlowchartBuilder flowchartBuilder, Func<IActivityBuilder> source, Func<IActivityBuilder> target, string? outcome = null)
+        public ConnectionBuilder(FlowchartConfigurator flowchartConfigurator, IActivity source, IActivity target, string? outcome = null)
         {
             Source = source;
             Target = target;
-            FlowchartBuilder = flowchartBuilder;
+            FlowchartConfigurator = flowchartConfigurator;
             Outcome = outcome;
         }
 
-        public ConnectionDefinition BuildConnection()
+        public Connection BuildConnection()
         {
-            return new ConnectionDefinition(Source().Activity.Id, Target().Activity.Id, Outcome);
+            return new Connection(Source, Target, Outcome);
         }
     }
 }

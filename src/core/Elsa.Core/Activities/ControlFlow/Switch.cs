@@ -5,10 +5,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
+using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 
-namespace Elsa.Activities.ControlFlow.Activities
+namespace Elsa.Activities.ControlFlow
 {
     [ActivityDefinition(
         Category = "Control Flow",
@@ -41,14 +42,14 @@ namespace Elsa.Activities.ControlFlow.Activities
             set => SetState(value);
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
         {
-            var result = await context.EvaluateAsync(Value, cancellationToken);
+            var result = await workflowExecutionContext.EvaluateAsync(Value, activityExecutionContext, cancellationToken);
 
             if (ContainsCase(result) || !ContainsCase(OutcomeNames.Default))
-                return Outcome(result, result);
+                return Done(result, result);
 
-            return Outcome(OutcomeNames.Default, result);
+            return Done(OutcomeNames.Default, result);
         }
 
         private bool ContainsCase(string @case) => Cases.Contains(@case, StringComparer.OrdinalIgnoreCase);

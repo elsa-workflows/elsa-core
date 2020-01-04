@@ -1,14 +1,16 @@
+using System;
+using System.Threading.Tasks;
+using Elsa.Activities.Primitives;
+using Elsa.Results;
+using Elsa.Services.Models;
+
 namespace Elsa.Builders
 {
     public static class WorkflowBuilderExtensions
     {
-        public static Activities.Containers.Flowchart Build<T>(this IFlowchartBuilder builder) where T : IFlowchart, new()
-        {
-            var workflow = new T();
-            builder.WithId(typeof(T).Name);
-            workflow.Build(builder);
-
-            return builder.Build();
-        }
+        public static IWorkflowBuilder StartWith(this IWorkflowBuilder builder, Action action) => builder.StartWith(new Inline(action));
+        public static IWorkflowBuilder StartWith(this IWorkflowBuilder builder, Action<WorkflowExecutionContext, ActivityExecutionContext> action) => builder.StartWith(new Inline(action));
+        public static IWorkflowBuilder StartWith(this IWorkflowBuilder builder, Func<WorkflowExecutionContext, ActivityExecutionContext, Task> action) => builder.StartWith(new Inline(action));
+        public static IWorkflowBuilder StartWith(this IWorkflowBuilder builder, Func<WorkflowExecutionContext, ActivityExecutionContext, Task<IActivityExecutionResult>> action) => builder.StartWith(new Inline(action));
     }
 }

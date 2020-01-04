@@ -17,7 +17,7 @@ namespace Elsa.Messages.Handlers
         
         public Task Handle(WorkflowDefinitionStoreUpdated notification, CancellationToken cancellationToken)
         {
-            signal.Trigger(ProcessRegistry.CacheKey);
+            signal.Trigger(WorkflowRegistry.CacheKey);
             return Task.CompletedTask;
         }
     }

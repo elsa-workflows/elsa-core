@@ -1,39 +1,28 @@
-﻿using System.Threading.Tasks;
-using Elsa.Activities.Console.Extensions;
+using System;
+using System.Threading.Tasks;
+using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using NodaTime;
 
 namespace Sample05
 {
     /// <summary>
-    /// A minimal workflows program defined in code with a strongly-typed workflow class.
+    /// A workflow built using a fluent API and registered with DI and run from the workflow host.
     /// </summary>
     internal static class Program
     {
         private static async Task Main()
         {
-            var host = new HostBuilder()
-                .ConfigureServices(ConfigureServices)
-                .ConfigureLogging(logging => logging.AddConsole())
-                .UseConsoleLifetime()
-                .Build();
-
-            using (host)
-            {
-                await host.StartAsync();
-                await host.WaitForShutdownAsync();
-            }
-        }
-
-        private static void ConfigureServices(IServiceCollection services)
-        {
-            services
+            // Setup a service collection.
+            var services = new ServiceCollection()
                 .AddElsa()
-                .AddConsoleActivities()
-                .AddWorkflow<RecurringWorkflow>()
-                .AddTimerActivities(options => options.Configure(x => x.SweepInterval = Period.FromSeconds(1)));
+                .AddWorkflow<HelloWorldWorkflow>() // Register the workflow.
+                .BuildServiceProvider();
+
+            // Get a workflow host.
+            var host = services.GetRequiredService<IWorkflowHost>();
+
+            // Run the workflow.
+            await host.RunAsync<HelloWorldWorkflow>();
         }
     }
 }

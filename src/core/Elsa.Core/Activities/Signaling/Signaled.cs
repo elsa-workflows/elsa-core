@@ -2,10 +2,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
+using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 
-namespace Elsa.Activities.Workflows.Activities
+namespace Elsa.Activities.Signaling
 {
     /// <summary>
     /// Halts workflow execution until the specified signal is received.
@@ -24,18 +25,18 @@ namespace Elsa.Activities.Workflows.Activities
             set => SetState(value);
         }
 
-        protected override async Task<bool> OnCanExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        protected override async Task<bool> OnCanExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
         {
-            var signal = await context.EvaluateAsync(Signal, cancellationToken);
-            return context.Input.GetValue<string>() == signal;
+            var signal = await workflowExecutionContext.EvaluateAsync(Signal, activityExecutionContext, cancellationToken);
+            return activityExecutionContext.Input.GetValue<string>() == signal;
         }
 
-        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
+        protected override IActivityExecutionResult OnExecute(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext)
         {
-            return Suspend(true);
+            return Suspend();
         }
 
-        protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
+        protected override IActivityExecutionResult OnResume(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext context)
         {
             return Done();
         }

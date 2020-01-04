@@ -8,7 +8,7 @@ namespace Elsa.Services.Models
     {
         public ProcessInstance(
             string id,
-            Process blueprint,
+            Workflow blueprint,
             Instant createdAt,
             Variable? input = default,
             string? correlationId = default) : this(blueprint)
@@ -19,25 +19,25 @@ namespace Elsa.Services.Models
             Input = input;
         }
 
-        public ProcessInstance(Process blueprint)
+        public ProcessInstance(Workflow blueprint)
         {
             Blueprint = blueprint;
-            Scopes = new Stack<ProcessExecutionScope>(new[] { new ProcessExecutionScope() });
+            Scopes = new Stack<WorkflowExecutionScope>(new[] { new WorkflowExecutionScope() });
             BlockingActivities = new HashSet<IActivity>();
             ScheduledActivities = new Stack<ScheduledActivity>();
             ExecutionLog = new List<LogEntry>();
         }
 
         public string Id { get; private set; }
-        public Process Blueprint { get; }
+        public Workflow Blueprint { get; }
         public string CorrelationId { get; set; }
-        public ProcessStatus Status { get; set; }
+        public WorkflowStatus Status { get; set; }
         public Instant CreatedAt { get; set; }
         public Instant? StartedAt { get; set; }
         public Instant? CompletedAt { get; set; }
         public Instant? FaultedAt { get; set; }
         public Instant? CancelledAt { get; set; }
-        public Stack<ProcessExecutionScope> Scopes { get; set; }
+        public Stack<WorkflowExecutionScope> Scopes { get; set; }
         public Stack<ScheduledActivity> ScheduledActivities { get; set; }
         public HashSet<IActivity> BlockingActivities { get; set; }
         public IList<LogEntry> ExecutionLog { get; set; }

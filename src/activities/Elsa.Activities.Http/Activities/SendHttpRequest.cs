@@ -13,6 +13,7 @@ using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Expressions;
 using Elsa.Models;
+using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
@@ -128,9 +129,9 @@ namespace Elsa.Activities.Http.Activities
             set => SetState(value);
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
         {
-            var request = await CreateRequestAsync(context, cancellationToken);
+            var request = await CreateRequestAsync(workflowExecutionContext, activityExecutionContext, cancellationToken);
             var response = await httpClient.SendAsync(request, cancellationToken);
             var hasContent = response.Content != null;
             var contentType = response.Content?.Headers.ContentType.MediaType;
@@ -154,7 +155,7 @@ namespace Elsa.Activities.Http.Activities
             
             var statusEndpoint = ((int)response.StatusCode).ToString();
 
-            return Outcomes(new[] { OutcomeNames.Done, statusEndpoint });
+            return Done(OutcomeNames.Done, statusEndpoint);
         }
 
         private IHttpResponseBodyParser SelectContentParser(string contentType)
@@ -165,18 +166,18 @@ namespace Elsa.Activities.Http.Activities
                    ) ?? formatters.Last();
         }
 
-        private async Task<HttpRequestMessage> CreateRequestAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        private async Task<HttpRequestMessage> CreateRequestAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
         {
             var methodSupportsBody = GetMethodSupportsBody(Method);
-            var uri = await context.EvaluateAsync(Url, cancellationToken);
+            var uri = await workflowExecutionContext.EvaluateAsync(Url, activityExecutionContext, cancellationToken);
             var request = new HttpRequestMessage(new HttpMethod(Method), uri);
-            var authorizationHeaderValue = await context.EvaluateAsync(Authorization, cancellationToken);
-            var requestHeaders = await ParseRequestHeadersAsync(context, cancellationToken);
+            var authorizationHeaderValue = await workflowExecutionContext.EvaluateAsync(Authorization, activityExecutionContext, cancellationToken);
+            var requestHeaders = await ParseRequestHeadersAsync(workflowExecutionContext, activityExecutionContext, cancellationToken);
 
             if (methodSupportsBody)
             {
-                var body = await context.EvaluateAsync(Content, cancellationToken);
-                var contentType = await context.EvaluateAsync(ContentType, cancellationToken);
+                var body = await workflowExecutionContext.EvaluateAsync(Content, activityExecutionContext, cancellationToken);
+                var contentType = await workflowExecutionContext.EvaluateAsync(ContentType, activityExecutionContext, cancellationToken);
 
                 if (!string.IsNullOrWhiteSpace(body))
                 {
@@ -197,9 +198,9 @@ namespace Elsa.Activities.Http.Activities
             return request;
         }
 
-        private async Task<IHeaderDictionary> ParseRequestHeadersAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        private async Task<IHeaderDictionary> ParseRequestHeadersAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
         {
-            var headersText = await context.EvaluateAsync(RequestHeaders, cancellationToken);
+            var headersText = await workflowExecutionContext.EvaluateAsync(RequestHeaders, activityExecutionContext, cancellationToken);
             var headers = new HeaderDictionary();
 
             if (headersText != null)

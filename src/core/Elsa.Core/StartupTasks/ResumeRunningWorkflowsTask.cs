@@ -15,17 +15,17 @@ namespace Elsa.StartupTasks
     public class ResumeRunningWorkflowsTask : IStartupTask
     {
         private readonly IWorkflowInstanceStore workflowInstanceStore;
-        private readonly IProcessRunner processRunner;
+        private readonly IWorkflowHost workflowHost;
 
-        public ResumeRunningWorkflowsTask(IWorkflowInstanceStore workflowInstanceStore, IProcessRunner processRunner)
+        public ResumeRunningWorkflowsTask(IWorkflowInstanceStore workflowInstanceStore, IWorkflowHost workflowHost)
         {
             this.workflowInstanceStore = workflowInstanceStore;
-            this.processRunner = processRunner;
+            this.workflowHost = workflowHost;
         }
         
         public async Task ExecuteAsync(CancellationToken cancellationToken = default)
         {
-            var instances = await workflowInstanceStore.ListByStatusAsync(ProcessStatus.Running, cancellationToken);
+            var instances = await workflowInstanceStore.ListByStatusAsync(WorkflowStatus.Running, cancellationToken);
 
             foreach (var instance in instances)
             {

@@ -1,9 +1,10 @@
 ﻿using System.Collections.Generic;
 using Elsa.Attributes;
+using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 
-namespace Elsa.Activities.ControlFlow.Activities
+namespace Elsa.Activities.ControlFlow
 {
     [ActivityDefinition(
         Category = "Control Flow",
@@ -21,6 +22,9 @@ namespace Elsa.Activities.ControlFlow.Activities
             set => SetState(value);
         }
 
-        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => Outcomes(Branches);
+        protected override IActivityExecutionResult OnExecute(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext context)
+        {
+            return Done(Branches);
+        }
     }
 }

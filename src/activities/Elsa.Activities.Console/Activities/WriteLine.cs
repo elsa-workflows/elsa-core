@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
+using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -38,11 +39,11 @@ namespace Elsa.Activities.Console.Activities
         
         private readonly TextWriter output;
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
         {
-            var text = await context.EvaluateAsync(Text, cancellationToken);
+            var text = await workflowExecutionContext.EvaluateAsync(Text, activityExecutionContext, cancellationToken);
             await output.WriteLineAsync(text);
-            return Outcome(OutcomeNames.Done);
+            return Done();
         }
     }
 }

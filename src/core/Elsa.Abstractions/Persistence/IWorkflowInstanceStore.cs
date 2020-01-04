@@ -13,8 +13,8 @@ namespace Elsa.Persistence
         Task<IEnumerable<ProcessInstance>> ListByDefinitionAsync(string definitionId, CancellationToken cancellationToken = default);
         Task<IEnumerable<ProcessInstance>> ListAllAsync(CancellationToken cancellationToken = default);
         Task<IEnumerable<(ProcessInstance, ActivityInstance)>> ListByBlockingActivityAsync(string activityType, string? correlationId = default, CancellationToken cancellationToken = default);
-        Task<IEnumerable<ProcessInstance>> ListByStatusAsync(string definitionId, ProcessStatus status, CancellationToken cancellationToken = default);
-        Task<IEnumerable<ProcessInstance>> ListByStatusAsync(ProcessStatus status, CancellationToken cancellationToken = default);
+        Task<IEnumerable<ProcessInstance>> ListByStatusAsync(string definitionId, WorkflowStatus status, CancellationToken cancellationToken = default);
+        Task<IEnumerable<ProcessInstance>> ListByStatusAsync(WorkflowStatus status, CancellationToken cancellationToken = default);
         Task DeleteAsync(string id, CancellationToken cancellationToken = default);
     }
 }

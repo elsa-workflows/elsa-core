@@ -8,8 +8,11 @@ namespace Elsa.Extensions
     {
         public static T GetState<T>(this Variables state, [CallerMemberName]string? key = null, Func<T> defaultValue = null)
         {
-            if(!state.HasVariable(key))
-                return defaultValue != null ? defaultValue() : default;
+            if (!state.HasVariable(key))
+            {
+                var value = defaultValue != null ? defaultValue() : default;
+                state.SetVariable(key, value);
+            }
             
             return state.GetVariable<T>(key);
         }

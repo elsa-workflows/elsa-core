@@ -7,14 +7,14 @@ namespace Elsa.Extensions
 {
     public static class ProcessExtensions
     {
-        public static IEnumerable<Process> WithVersion(
-            this IEnumerable<Process> query,
+        public static IEnumerable<Workflow> WithVersion(
+            this IEnumerable<Workflow> query,
             VersionOptions version)
         {
             return query.AsQueryable().WithVersion(version);
         }
 
-        public static IQueryable<Process> WithVersion(this IQueryable<Process> query, VersionOptions version)
+        public static IQueryable<Workflow> WithVersion(this IQueryable<Workflow> query, VersionOptions version)
         {
             if (version.IsDraft)
                 query = query.Where(x => !x.IsPublished);

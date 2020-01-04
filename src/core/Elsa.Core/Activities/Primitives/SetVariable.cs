@@ -2,10 +2,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
+using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 
-namespace Elsa.Activities
+namespace Elsa.Activities.Primitives
 {
     [ActivityDefinition(
         DisplayName = "Set Variable",
@@ -16,13 +17,16 @@ namespace Elsa.Activities
     )]
     public class SetVariable : Activity
     {
-        private readonly IExpressionEvaluator expressionEvaluator;
-
-        public SetVariable(IExpressionEvaluator expressionEvaluator)
+        public SetVariable()
         {
-            this.expressionEvaluator = expressionEvaluator;
         }
 
+        public SetVariable(string name, IWorkflowExpression value)
+        {
+            VariableName = name;
+            Value = value;
+        }
+        
         [ActivityProperty(Hint = "The name of the variable to store the value into.")]
         public string VariableName
         {
@@ -37,15 +41,15 @@ namespace Elsa.Activities
             set => SetState(value);
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
         {
-            var value = await expressionEvaluator.EvaluateAsync(
+            var value = await workflowExecutionContext.EvaluateAsync(
                 Value,
-                context,
+                activityExecutionContext,
                 cancellationToken
             );
-            context.ProcessExecutionContext.SetVariable(VariableName, value);
-            return Done();
+
+            return new SetVariableResult(VariableName, value);
         }
     }
 }

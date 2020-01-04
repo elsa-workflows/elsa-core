@@ -19,19 +19,19 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
     public class TriggerRequestHandler : IRequestHandler
     {
         private readonly HttpContext httpContext;
-        private readonly IProcessRunner processRunner;
-        private readonly IProcessRegistry registry;
+        private readonly IWorkflowHost workflowHost;
+        private readonly IWorkflowRegistry registry;
         private readonly IWorkflowInstanceStore workflowInstanceStore;
         private readonly CancellationToken cancellationToken;
 
         public TriggerRequestHandler(
             IHttpContextAccessor httpContext,
-            IProcessRunner processRunner,
-            IProcessRegistry registry,
+            IWorkflowHost workflowHost,
+            IWorkflowRegistry registry,
             IWorkflowInstanceStore workflowInstanceStore)
         {
             this.httpContext = httpContext.HttpContext;
-            this.processRunner = processRunner;
+            this.workflowHost = workflowHost;
             this.registry = registry;
             this.workflowInstanceStore = workflowInstanceStore;
             cancellationToken = httpContext.HttpContext.RequestAborted;
