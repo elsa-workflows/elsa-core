@@ -10,7 +10,7 @@
      using static Console;
      
      /// <summary>
-     /// A sequential workflow writing out messages.
+     /// A sequential workflow writing out messages. Notice that workflows can be created entirely programmatically.
      /// </summary>
      internal static class Program
      {

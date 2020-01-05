@@ -2,13 +2,13 @@
 
 namespace Elsa.Messages
 {
-    public class ExecutingActivity : ProcessNotification
+    public class ExecutingActivity : WorkflowNotification
     {
-        public ExecutingActivity(ProcessInstance process, IActivity activity) : base(process)
+        public ExecutingActivity(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext) : base(workflowExecutionContext)
         {
-            Activity = activity;
+            ActivityExecutionContext = activityExecutionContext;
         }
         
-        public IActivity Activity { get; }
+        public ActivityExecutionContext ActivityExecutionContext { get; }
     }
 }

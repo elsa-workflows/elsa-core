@@ -1,6 +1,7 @@
+using Elsa.Services;
 using Elsa.Services.Models;
 
-namespace Elsa.Activities.Containers
+namespace Elsa.Activities.Flowcharts
 {
     public class SourceEndpoint : Endpoint
     {
@@ -8,11 +9,11 @@ namespace Elsa.Activities.Containers
         {
         }
 
-        public SourceEndpoint(IActivity activity, string outcome = OutcomeNames.Done) : base(activity)
+        public SourceEndpoint(IActivity activity, string outcome) : base(activity)
         {
             Outcome = outcome;
         }
 
-        public string? Outcome { get; set; }
+        public string Outcome { get; set; }
     }
 }

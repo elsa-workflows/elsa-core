@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Elsa.Activities.Containers;
 using Elsa.Activities.Flowcharts;
+using Elsa.Services;
 using Elsa.Services.Models;
 
 namespace Elsa.Extensions

@@ -1,4 +1,5 @@
-﻿using Elsa.Models;
+﻿using System.Collections.Generic;
+using Elsa.Models;
 
 namespace Elsa.Services.Models
 {
@@ -8,9 +9,12 @@ namespace Elsa.Services.Models
         {
             Activity = activity;
             Input = input;
+            Outcomes = new List<string>(0);
         }
 
         public IActivity Activity { get; }
         public Variable? Input { get; }
+        public Variable? Output { get; set; }
+        public IReadOnlyCollection<string> Outcomes { get; set; }
     }
 }

@@ -2,8 +2,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Results;
+using Elsa.Services.Models;
 
-namespace Elsa.Services.Models
+namespace Elsa.Services
 {
     public interface IActivity
     {
@@ -56,5 +57,7 @@ namespace Elsa.Services.Models
         /// Resumes the specified activity.
         /// </summary>
         Task<IActivityExecutionResult> ResumeAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken = default);
+
+        Task<IActivityExecutionResult> ChildActivityExecutedAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken = default);
     }
 }

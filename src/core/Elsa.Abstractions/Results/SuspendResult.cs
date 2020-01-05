@@ -8,6 +8,7 @@ namespace Elsa.Results
     {
         public Task ExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
         {
+            workflowExecutionContext.BlockingActivities.Add(activityExecutionContext.Activity);
             workflowExecutionContext.Suspend();
             return Task.CompletedTask;
         }

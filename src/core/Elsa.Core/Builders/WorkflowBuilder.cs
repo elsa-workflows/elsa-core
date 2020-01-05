@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Elsa.Activities.Containers;
+using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -13,7 +14,6 @@ namespace Elsa.Builders
     {
         private readonly IActivityResolver activityResolver;
         private readonly IIdGenerator idGenerator;
-        private readonly IServiceProvider serviceProvider;
 
         public WorkflowBuilder(
             IActivityResolver activityResolver,
@@ -22,19 +22,22 @@ namespace Elsa.Builders
         {
             this.activityResolver = activityResolver;
             this.idGenerator = idGenerator;
-            this.serviceProvider = serviceProvider;
+            ServiceProvider = serviceProvider;
             Id = idGenerator.Generate();
             Version = 1;
         }
 
+        public IServiceProvider ServiceProvider { get; }
         public string Id { get; private set; }
         public string? Name { get; private set; }
         public string? Description { get; private set; }
         public int Version { get; private set; }
         public bool IsSingleton { get; private set; }
-        public ProcessPersistenceBehavior PersistenceBehavior { get; private set; }
+        public WorkflowPersistenceBehavior PersistenceBehavior { get; private set; }
         public bool DeleteCompletedInstances { get; private set; }
+        
         public IActivity? Root { get; private set; }
+        public IActivityBuilder RootBuilder { get; private set; }
 
         public IWorkflowBuilder WithId(string value)
         {
@@ -72,7 +75,7 @@ namespace Elsa.Builders
             return this;
         }
 
-        public IWorkflowBuilder WithPersistenceBehavior(ProcessPersistenceBehavior value)
+        public IWorkflowBuilder WithPersistenceBehavior(WorkflowPersistenceBehavior value)
         {
             PersistenceBehavior = value;
             return this;
@@ -84,15 +87,10 @@ namespace Elsa.Builders
             return this;
         }
 
-        public IWorkflowBuilder StartWith<T>(Action<IActivityConfigurator<T>>? setupActivity = default) where T : class, IActivity
+        public IWorkflowBuilder StartWith<T>(Action<IActivity>? setup = default) where T : class, IActivity
         {
-            var activityConfigurator = BuildActivity<T>(x =>
-            {
-                x.WithId("root");
-                setupActivity?.Invoke(x);
-            });
-
-            Root = activityConfigurator.Build();
+            var activity = BuildActivity<T>(setup);
+            Root = activity;
             return this;
         }
 
@@ -109,33 +107,39 @@ namespace Elsa.Builders
             return this;
         }
 
-        public IActivityConfigurator<T> BuildActivity<T>(Action<IActivityConfigurator<T>>? setupActivity = default) where T : class, IActivity
+        public IWorkflowBuilder StartWith(IActivityBuilder activity)
         {
-            var activity = activityResolver.ResolveActivity<T>();
-            var activityConfigurator = new ActivityConfigurator<T>(activity);
-
-            setupActivity?.Invoke(activityConfigurator);
-            return activityConfigurator;
+            RootBuilder = activity;
+            return this;
         }
 
-        public T BuildActivity<T, TActivity>() where T : class, IActivityConfigurator<TActivity> where TActivity : class, IActivity
-        {
-            return serviceProvider.GetRequiredService<T>();
-        }
-
-        public T BuildActivity<T>(Action<T>? setupActivity = default) where T : class, IActivity
+        public T BuildActivity<T>(Action<T>? setup = default) where T : class, IActivity
         {
             var activity = activityResolver.ResolveActivity<T>();
 
-            setupActivity?.Invoke(activity);
+            setup?.Invoke(activity);
             return activity;
         }
 
         public Workflow Build()
         {
+            if (RootBuilder != null)
+                Root = RootBuilder.Build();
+            
             var definitionId = !string.IsNullOrWhiteSpace(Id) ? Id : idGenerator.Generate();
+            var workflow = new Workflow(definitionId, Version, IsSingleton, false, Name, Description, true, true, Root);
 
-            return new Workflow(definitionId, Version, IsSingleton, false, Name, Description, true, true, Root);
+            // Generate deterministic activity ids.
+            var id = 1;
+            var activities = workflow?.SelectActivities().ToList();
+            
+            foreach (var activity in activities)
+            {
+                if (string.IsNullOrEmpty(activity.Id))
+                    activity.Id = $"activity-{id++}";
+            }
+            
+            return workflow;
         }
 
         public Workflow Build(IWorkflow workflow)
@@ -145,10 +149,10 @@ namespace Elsa.Builders
             return Build();
         }
 
-        public Workflow Build(Type processType)
+        public Workflow Build(Type workflowType)
         {
-            var typedProcess = (IWorkflow)ActivatorUtilities.GetServiceOrCreateInstance(serviceProvider, processType);
-            return Build(typedProcess);
+            var workflow = (IWorkflow)ActivatorUtilities.GetServiceOrCreateInstance(ServiceProvider, workflowType);
+            return Build(workflow);
         }
 
         public Workflow Build<T>() where T : IWorkflow => Build(typeof(T));

@@ -4,13 +4,15 @@ namespace Elsa.Models
     {
         public WorkflowExecutionScope()
         {
-            Variables = new Variables();
+        }
+
+        public WorkflowExecutionScope(Variables variables, string containerActivityId)
+        {
+            Variables = variables;
+            ContainerActivityId = containerActivityId;
         }
         
         public Variables Variables { get; }
-
-        public void SetVariable(string variableName, object value) => Variables.SetVariable(variableName, value);
-        public T GetVariable<T>(string name) => Variables.GetVariable<T>(name);
-        public object GetVariable(string name) => Variables.GetVariable(name);
+        public string ContainerActivityId { get; }
     }
 }

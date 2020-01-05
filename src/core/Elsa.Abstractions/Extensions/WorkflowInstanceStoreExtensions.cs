@@ -4,14 +4,14 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Persistence;
+using Elsa.Services;
 using Elsa.Services.Models;
-using ProcessInstance = Elsa.Models.ProcessInstance;
 
 namespace Elsa.Extensions
 {
     public static class WorkflowInstanceStoreExtensions
     {
-        public static async Task<IEnumerable<(ProcessInstance, ActivityInstance)>> ListByBlockingActivityAsync<TActivity>(
+        public static async Task<IEnumerable<(WorkflowInstance, IActivity)>> ListByBlockingActivityAsync<TActivity>(
             this IWorkflowInstanceStore store,
             string? correlationId = default,
             CancellationToken cancellationToken = default) where TActivity : IActivity

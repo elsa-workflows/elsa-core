@@ -12,7 +12,6 @@ using Elsa.Persistence;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
-using ProcessInstance = Elsa.Models.ProcessInstance;
 
 namespace Elsa.Activities.Http.RequestHandlers.Handlers
 {
@@ -60,8 +59,8 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
                 : new EmptyResult();
         }
 
-        private IEnumerable<(ProcessInstance, ActivityInstance)> Filter(
-            IEnumerable<(ProcessInstance, ActivityInstance)> items,
+        private IEnumerable<(WorkflowInstance, ActivityInstance)> Filter(
+            IEnumerable<(WorkflowInstance, ActivityInstance)> items,
             Uri path,
             string method)
         {
@@ -96,7 +95,7 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
         //     }
         // }
 
-        private async Task InvokeWorkflowsToResumeAsync(IEnumerable<(ProcessInstance, ActivityInstance)> items)
+        private async Task InvokeWorkflowsToResumeAsync(IEnumerable<(WorkflowInstance, ActivityInstance)> items)
         {
             foreach (var (workflowInstance, activity) in items)
             {

@@ -11,9 +11,9 @@
         public IActivity FaultedActivity { get; }
         public string Message { get; }
 
-        public Elsa.Models.ProcessFault ToInstance()
+        public Elsa.Models.WorkflowFault ToInstance()
         {
-            return new Elsa.Models.ProcessFault
+            return new Elsa.Models.WorkflowFault
             {
                 FaultedActivityId = FaultedActivity?.Id,
                 Message = Message

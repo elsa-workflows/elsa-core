@@ -1,8 +1,8 @@
 ﻿namespace Elsa.Models
 {
-    public class ProcessDefinitionVersion
+    public class WorkflowDefinitionVersion
     {
-        public ProcessDefinitionVersion()
+        public WorkflowDefinitionVersion()
         {
             Variables = new Variables();
         }
@@ -15,7 +15,7 @@
         public ActivityDefinition Start { get; set; }
         public Variables? Variables { get; set; }
         public bool IsSingleton { get; set; }
-        public ProcessPersistenceBehavior PersistenceBehavior { get; set; }
+        public WorkflowPersistenceBehavior PersistenceBehavior { get; set; }
         public bool DeleteCompletedInstances { get; set; }
         
         public bool IsDisabled { get; set; }

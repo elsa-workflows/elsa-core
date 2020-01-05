@@ -1,4 +1,5 @@
 using Elsa.Activities.Containers;
+using Elsa.Services;
 using Elsa.Services.Models;
 
 namespace Elsa.Activities.Flowcharts
@@ -9,12 +10,7 @@ namespace Elsa.Activities.Flowcharts
         {
         }
 
-        public Connection(IActivity sourceActivity, IActivity targetActivity) 
-            : this(new SourceEndpoint(sourceActivity), new TargetEndpoint(targetActivity))
-        {
-        }
-        
-        public Connection(IActivity sourceActivity, IActivity targetActivity, string sourceOutcome) 
+        public Connection(IActivity sourceActivity, IActivity targetActivity, string sourceOutcome = OutcomeNames.Done) 
             : this(new SourceEndpoint(sourceActivity, sourceOutcome), new TargetEndpoint(targetActivity))
         {
         }
@@ -25,7 +21,7 @@ namespace Elsa.Activities.Flowcharts
             Target = target;
         }
 
-        public SourceEndpoint? Source { get; set; }
-        public TargetEndpoint? Target { get; set; }
+        public SourceEndpoint Source { get; set; }
+        public TargetEndpoint Target { get; set; }
     }
 }

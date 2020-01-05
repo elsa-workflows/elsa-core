@@ -1,26 +1,24 @@
 using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Elsa.Activities.Console.Activities;
-using Elsa.Activities.Containers;
-using Elsa.Activities.Flowcharts;
 using Elsa.Activities.Primitives;
 using Elsa.Builders;
-using Elsa.Services.Models;
 
 namespace Sample07
 {
+    /// <summary>
+    /// A simple flow chart where each activity is connected to the next.
+    /// </summary>
     public class MyFlowchart : IWorkflow
     {
         public void Build(IWorkflowBuilder builder)
         {
-            var flowchartConfigurator = builder.BuildActivity<FlowchartConfigurator, Flowchart>();
+            var goodBye = new Inline(() => Console.WriteLine("Goodbye cruel world..."));
 
-            flowchartConfigurator.StartWith(new Inline(() => Console.WriteLine("Hello World")));
-            var flowChart = flowchartConfigurator.Build();
-            
-            builder
-                .StartWith(flowChart);
+            builder.BuildFlowchart()
+                .StartWith(() => Console.WriteLine("Step 0"))
+                .Then(() => Console.WriteLine("Step 1"))
+                .Then(() => Console.WriteLine("Step 2"))
+                .Then(() => Console.WriteLine("Step 3"))
+                .Then(goodBye);
         }
     }
 }

@@ -3,9 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Timers.Activities;
 using Elsa.Activities.Timers.Options;
-using Elsa.Models;
 using Elsa.Services;
-using Elsa.Services.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -36,7 +34,7 @@ namespace Elsa.Activities.Timers.HostedServices
                 try
                 {
                     using var scope = serviceProvider.CreateScope();
-                    var workflowInvoker = scope.ServiceProvider.GetRequiredService<IProcessRunner>(); 
+                    var workflowInvoker = scope.ServiceProvider.GetRequiredService<IWorkflowHost>(); 
                     await workflowInvoker.TriggerAsync(nameof(TimerEvent), cancellationToken: stoppingToken);
                     await workflowInvoker.TriggerAsync(nameof(CronEvent), cancellationToken:stoppingToken);
                     await workflowInvoker.TriggerAsync(nameof(InstantEvent), cancellationToken: stoppingToken);

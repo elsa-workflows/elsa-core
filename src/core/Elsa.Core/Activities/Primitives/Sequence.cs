@@ -1,11 +1,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using Elsa.Attributes;
+using Elsa.Models;
 using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 
-namespace Elsa.Activities.Containers
+namespace Elsa.Activities.Primitives
 {
     [ActivityDefinition(
         DisplayName = "Sequence",
@@ -31,9 +32,40 @@ namespace Elsa.Activities.Containers
             set => SetState(value);
         }
 
+        public int CurrentIndex
+        {
+            get => GetState(() => 0);
+            set => SetState(value);
+        }
+
         protected override IActivityExecutionResult OnExecute(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext)
         {
-            return Schedule(Activities.Reverse(), activityExecutionContext.Input);
+            workflowExecutionContext.BeginScope(this);
+            return Execute(workflowExecutionContext, activityExecutionContext);
+        }
+
+        protected override IActivityExecutionResult OnChildExecuted(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext)
+        {
+            if(workflowExecutionContext.Status != WorkflowStatus.Running)
+                return Noop();
+
+            return Execute(workflowExecutionContext, activityExecutionContext);
+        }
+
+        private IActivityExecutionResult Execute(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext)
+        {
+            var activities = Activities.ToList();
+            var currentIndex = CurrentIndex;
+            
+            if (currentIndex < activities.Count)
+            {
+                var currentActivity = activities[currentIndex++];
+                CurrentIndex = currentIndex;
+                return Schedule(currentActivity, activityExecutionContext.Input);
+            }
+            
+            workflowExecutionContext.EndScope();
+            return Done(activityExecutionContext.Input);
         }
     }
 }

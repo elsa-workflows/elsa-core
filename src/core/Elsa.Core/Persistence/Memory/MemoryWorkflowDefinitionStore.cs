@@ -10,14 +10,14 @@ namespace Elsa.Persistence.Memory
 {
     public class MemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
     {
-        private readonly List<ProcessDefinitionVersion> definitions;
+        private readonly List<WorkflowDefinitionVersion> definitions;
 
         public MemoryWorkflowDefinitionStore()
         {
-            definitions = new List<ProcessDefinitionVersion>();
+            definitions = new List<WorkflowDefinitionVersion>();
         }
 
-        public async Task<ProcessDefinitionVersion> SaveAsync(ProcessDefinitionVersion definition, CancellationToken cancellationToken = default)
+        public async Task<WorkflowDefinitionVersion> SaveAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken = default)
         {
             var existingDefinition = await GetByIdAsync(definition.Id, VersionOptions.SpecificVersion(definition.Version), cancellationToken);
 
@@ -29,7 +29,7 @@ namespace Elsa.Persistence.Memory
             return definition;
         }
 
-        public async Task<ProcessDefinitionVersion> AddAsync(ProcessDefinitionVersion definition, CancellationToken cancellationToken = default)
+        public async Task<WorkflowDefinitionVersion> AddAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken = default)
         {
             var existingDefinition = await GetByIdAsync(definition.Id, VersionOptions.SpecificVersion(definition.Version), cancellationToken);
 
@@ -42,26 +42,26 @@ namespace Elsa.Persistence.Memory
             return definition;
         }
 
-        public Task<ProcessDefinitionVersion> GetByIdAsync(string id, CancellationToken cancellationToken = default)
+        public Task<WorkflowDefinitionVersion> GetByIdAsync(string id, CancellationToken cancellationToken = default)
         {
             var definition = definitions.FirstOrDefault(x => x.Id == id);
             return Task.FromResult(definition);
         }
 
-        public Task<ProcessDefinitionVersion> GetByIdAsync(string definitionId, VersionOptions version, CancellationToken cancellationToken = default)
+        public Task<WorkflowDefinitionVersion> GetByIdAsync(string definitionId, VersionOptions version, CancellationToken cancellationToken = default)
         {
             var query = definitions.Where(x => x.DefinitionId == definitionId).AsQueryable().WithVersion(version);
             var definition = query.FirstOrDefault();
             return Task.FromResult(definition);
         }
 
-        public Task<IEnumerable<ProcessDefinitionVersion>> ListAsync(VersionOptions version, CancellationToken cancellationToken = default)
+        public Task<IEnumerable<WorkflowDefinitionVersion>> ListAsync(VersionOptions version, CancellationToken cancellationToken = default)
         {
             var query = definitions.AsQueryable().WithVersion(version);
             return Task.FromResult(query.AsEnumerable());
         }
 
-        public async Task<ProcessDefinitionVersion> UpdateAsync(ProcessDefinitionVersion definition, CancellationToken cancellationToken)
+        public async Task<WorkflowDefinitionVersion> UpdateAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken)
         {
             var existingDefinition = await GetByIdAsync(definition.Id, VersionOptions.SpecificVersion(definition.Version), cancellationToken);
             var index = definitions.IndexOf(existingDefinition);

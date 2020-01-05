@@ -11,7 +11,7 @@ namespace Elsa.Models
             ActivityId = activityId;
             Input = input;
         }
-        
+
         public string? ActivityId { get; set; }
         public Variable? Input { get; set; }
     }

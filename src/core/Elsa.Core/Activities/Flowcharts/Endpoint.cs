@@ -1,6 +1,7 @@
+using Elsa.Services;
 using Elsa.Services.Models;
 
-namespace Elsa.Activities.Containers
+namespace Elsa.Activities.Flowcharts
 {
     public abstract class Endpoint
     {
@@ -13,6 +14,6 @@ namespace Elsa.Activities.Containers
             Activity = activity;
         }
         
-        public IActivity? Activity { get; set; }
+        public IActivity Activity { get; set; }
     }
 }

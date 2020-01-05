@@ -5,15 +5,14 @@ using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services.Models;
 using MediatR;
-using ProcessInstance = Elsa.Services.Models.ProcessInstance;
 
 namespace Elsa.Messages.Handlers
 {
     public class PersistenceWorkflowEventHandler : 
-        INotificationHandler<ProcessExecuted>, 
-        INotificationHandler<ProcessSuspended>,
+        INotificationHandler<WorkflowExecuted>, 
+        INotificationHandler<WorkflowSuspended>,
         INotificationHandler<ActivityExecuted>,
-        INotificationHandler<ProcessCompleted>
+        INotificationHandler<WorkflowCompleted>
     {
         private readonly IWorkflowInstanceStore workflowInstanceStore;
 
@@ -22,34 +21,34 @@ namespace Elsa.Messages.Handlers
             this.workflowInstanceStore = workflowInstanceStore;
         }
         
-        public async Task Handle(ProcessSuspended notification, CancellationToken cancellationToken)
+        public async Task Handle(WorkflowSuspended notification, CancellationToken cancellationToken)
         {
-            if (notification.Process.Blueprint.PersistenceBehavior == ProcessPersistenceBehavior.Suspended)
-                await SaveWorkflowAsync(notification.Process, cancellationToken);
+            if (notification.WorkflowExecutionContext.PersistenceBehavior == WorkflowPersistenceBehavior.Suspended)
+                await SaveWorkflowAsync(cancellationToken);
         }
         
-        public async Task Handle(ProcessExecuted notification, CancellationToken cancellationToken)
+        public async Task Handle(WorkflowExecuted notification, CancellationToken cancellationToken)
         {
-            if (notification.Process.Blueprint.PersistenceBehavior == ProcessPersistenceBehavior.WorkflowExecuted)
-                await SaveWorkflowAsync(notification.Process, cancellationToken);
+            if (notification.WorkflowExecutionContext.PersistenceBehavior == WorkflowPersistenceBehavior.WorkflowExecuted)
+                await SaveWorkflowAsync(cancellationToken);
         }
         
         public async Task Handle(ActivityExecuted notification, CancellationToken cancellationToken)
         {
-            if (notification.Process.Blueprint.PersistenceBehavior == ProcessPersistenceBehavior.ActivityExecuted)
-                await SaveWorkflowAsync(notification.Process, cancellationToken);
+            if (notification.WorkflowExecutionContext.PersistenceBehavior == WorkflowPersistenceBehavior.ActivityExecuted)
+                await SaveWorkflowAsync(cancellationToken);
         }
         
-        public async Task Handle(ProcessCompleted notification, CancellationToken cancellationToken)
+        public async Task Handle(WorkflowCompleted notification, CancellationToken cancellationToken)
         {
-            var workflow = notification.Process;
-            var blueprint = workflow.Blueprint;
+            var workflow = notification.WorkflowExecutionContext;
+            var blueprint = workflow;
             
-            if (blueprint.DeleteCompletedInstances || blueprint.PersistenceBehavior == ProcessPersistenceBehavior.Suspended)
-                await workflowInstanceStore.DeleteAsync(workflow.Id, cancellationToken);
+            if (blueprint.DeleteCompletedInstances || blueprint.PersistenceBehavior == WorkflowPersistenceBehavior.Suspended)
+                await workflowInstanceStore.DeleteAsync(workflow.InstanceId, cancellationToken);
         }
 
-        private async Task SaveWorkflowAsync(ProcessInstance workflow, CancellationToken cancellationToken)
+        private async Task SaveWorkflowAsync(CancellationToken cancellationToken)
         {
             //var workflowInstance = workflow.ToInstance();
             //await workflowInstanceStore.SaveAsync(workflowInstance, cancellationToken);

@@ -6,7 +6,7 @@ namespace Elsa.Extensions
 {
     public static class LambdaExtensions
     {
-        public static void SetPropertyValue<T, TValue>(this T target, Expression<Func<T, TValue>> expression, TValue value)
+        public static void SetPropertyValue<T, TProperty>(this T target, Expression<Func<T, TProperty>> expression, TProperty value)
         {
             if (expression.Body is MemberExpression memberExpression)
             {

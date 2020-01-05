@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
+using Elsa.Models;
 using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -46,9 +47,6 @@ namespace Elsa.Activities.Console.Activities
             return Execute(receivedInput);
         }
 
-        private IActivityExecutionResult Execute(string receivedInput)
-        {   
-            return Done(receivedInput);
-        }
+        private IActivityExecutionResult Execute(string receivedInput) => Done(Variable.From(receivedInput));
     }
 }

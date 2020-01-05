@@ -18,7 +18,6 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
         private readonly ITokenService tokenService;
         private readonly IWorkflowHost workflowHost;
         private readonly IWorkflowRegistry workflowRegistry;
-        private readonly IWorkflowFactory workflowFactory;
         private readonly IWorkflowInstanceStore workflowInstanceStore;
         private readonly CancellationToken cancellationToken;
 
@@ -27,14 +26,12 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
             ITokenService tokenService,
             IWorkflowHost workflowHost,
             IWorkflowRegistry workflowRegistry,
-            IWorkflowFactory workflowFactory,
             IWorkflowInstanceStore workflowInstanceStore)
         {
             httpContext = httpContextAccessor.HttpContext;
             this.tokenService = tokenService;
             this.workflowHost = workflowHost;
             this.workflowRegistry = workflowRegistry;
-            this.workflowFactory = workflowFactory;
             this.workflowInstanceStore = workflowInstanceStore;
             cancellationToken = httpContext.RequestAborted;
         }
@@ -66,19 +63,19 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
             return tokenService.TryDecryptToken(token, out Signal signal) ? signal : default;
         }
 
-        private async Task<ProcessInstance> GetWorkflowInstanceAsync(Signal signal) => 
+        private async Task<WorkflowInstance> GetWorkflowInstanceAsync(Signal signal) => 
             await workflowInstanceStore.GetByIdAsync(signal.WorkflowInstanceId, cancellationToken);
 
-        private bool CheckIfExecuting(ProcessInstance processInstance) => 
-            processInstance.Status == WorkflowStatus.Running;
+        private bool CheckIfExecuting(WorkflowInstance workflowInstance) => 
+            workflowInstance.Status == WorkflowStatus.Running;
 
-        private async Task ResumeWorkflowAsync(ProcessInstance processInstanceModel, Signal signal)
+        private async Task ResumeWorkflowAsync(WorkflowInstance workflowInstanceModel, Signal signal)
         {
             var input = Variable.From(signal.Name);
 
             var workflowDefinition = await workflowRegistry.GetWorkflowAsync(
-                processInstanceModel.DefinitionId,
-                VersionOptions.SpecificVersion(processInstanceModel.Version),
+                workflowInstanceModel.DefinitionId,
+                VersionOptions.SpecificVersion(workflowInstanceModel.Version),
                 cancellationToken);
 
             //var processInstance = processFactory.CreateProcessInstance(workflowDefinition, input, processInstanceModel);

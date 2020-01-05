@@ -5,9 +5,9 @@ namespace Elsa.Messages
     /// <summary>
     /// Published when a workflow transitioned into the Completed state.
     /// </summary>
-    public class ProcessCompleted : ProcessNotification
+    public class WorkflowCompleted : WorkflowNotification
     {
-        public ProcessCompleted(ProcessInstance process) : base(process)
+        public WorkflowCompleted(WorkflowExecutionContext workflowExecutionContext) : base(workflowExecutionContext)
         {
         }
     }

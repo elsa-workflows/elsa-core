@@ -1,46 +1,35 @@
-﻿using System;
-using System.IO;
-using System.Reflection;
+using System;
 using System.Threading.Tasks;
-using Elsa.Activities.Console.Extensions;
-using Elsa.Models;
-using Elsa.Serialization;
-using Elsa.Serialization.Formatters;
+using Elsa.Activities.Console.Activities;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Sample09
 {
     /// <summary>
-    /// A simple console program that loads & executes a workflow designed with the HTML5 workflow designer.
+    /// Demonstrates a mix of flowchart-style workflows mixed with sequential activities.
     /// </summary>
-    internal class Program
+    internal static class Program
     {
         private static async Task Main()
         {
-            var json = await ReadEmbeddedResourceAsync("Sample09.calculator.json");
-            var services = BuildServices();
-            var serializer = services.GetRequiredService<IWorkflowSerializer>();
-            var workflow = serializer.Deserialize<ProcessDefinitionVersion>(json, JsonTokenFormatter.FormatName);
-            var invoker = services.GetRequiredService<IWorkflowRunner>();
-            
-            await invoker.RunAsync(workflow);
-        }
-
-        private static IServiceProvider BuildServices()
-        {
-            return new ServiceCollection()
+            // Setup a service collection.
+            var services = new ServiceCollection()
                 .AddElsa()
-                .AddConsoleActivities()
-                .AddSingleton(Console.In)
+                .AddWorkflow<MyMixedWorkflow>() // Register the workflow.
                 .BuildServiceProvider();
-        }
 
-        private static async Task<string> ReadEmbeddedResourceAsync(string resourceName)
-        {
-            var assembly = typeof(Program).GetTypeInfo().Assembly;
-            using var reader = new StreamReader(assembly.GetManifestResourceStream(resourceName));
-            return await reader.ReadToEndAsync();
+            // Get a workflow host.
+            var host = services.GetRequiredService<IWorkflowHost>();
+
+            // Run the workflow.
+            await host.RunAsync<MyMixedWorkflow>();
+            
+            // Gather user input.
+            var input = Console.ReadLine();
+            
+            // Resume blocked workflows.
+            await host.TriggerAsync(nameof(ReadLine), input);
         }
     }
 }

@@ -1,23 +1,23 @@
 using System.Collections.Generic;
 using Elsa.Models;
+using Elsa.Services;
 using Elsa.Services.Models;
 using NodaTime;
-using ProcessInstance = Elsa.Services.Models.ProcessInstance;
 
 namespace Elsa.Extensions
 {
     public static class ProcessExtensions
     {
-        public static bool IsRunning(this ProcessInstance workflow) => workflow.Status == WorkflowStatus.Running;
+        public static bool IsRunning(this WorkflowInstance workflow) => workflow.Status == WorkflowStatus.Running;
 
-        public static bool IsCancelledOrFaulted(this ProcessInstance workflow) =>
+        public static bool IsCancelledOrFaulted(this WorkflowInstance workflow) =>
             workflow.Status == WorkflowStatus.Cancelled ||
             workflow.Status == WorkflowStatus.Faulted;
 
-        public static bool IsCompleted(this ProcessInstance workflow) => workflow.Status == WorkflowStatus.Completed;
+        public static bool IsCompleted(this WorkflowInstance workflow) => workflow.Status == WorkflowStatus.Completed;
 
         public static LogEntry AddLogEntry(
-            this ProcessInstance workflow, 
+            this WorkflowInstance workflow, 
             IActivity activity, 
             Instant instant, 
             string message,

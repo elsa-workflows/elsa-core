@@ -36,7 +36,11 @@ namespace Elsa.Activities.ControlFlow
         }
 
         [Outlet(OutcomeNames.Iterate)]
-        public IActivity Activity { get; set; }
+        public IActivity Activity
+        {
+            get => GetState<IActivity>();
+            set => SetState(value);
+        }
 
         protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
         {

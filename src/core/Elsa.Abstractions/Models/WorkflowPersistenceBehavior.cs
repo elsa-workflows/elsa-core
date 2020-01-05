@@ -1,6 +1,6 @@
 ﻿namespace Elsa.Models
 {
-    public enum ProcessPersistenceBehavior
+    public enum WorkflowPersistenceBehavior
     {
         /// <summary>
         /// Workflow instances are persisted only when being suspended. 

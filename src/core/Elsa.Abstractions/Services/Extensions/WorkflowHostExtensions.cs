@@ -8,7 +8,10 @@ namespace Elsa.Services
 {
     public static class WorkflowHostExtensions
     {
-        public static Task<WorkflowExecutionContext> RunAsync<T>(this IWorkflowHost workflowHost, object? input = default, CancellationToken cancellationToken = default) 
+        /// <summary>
+        /// Run a registered strongly-typed workflow.
+        /// </summary>
+        public static Task RunAsync<T>(this IWorkflowHost workflowHost, object? input = default, CancellationToken cancellationToken = default) 
             => workflowHost.RunAsync(typeof(T).Name, input, cancellationToken);
 
         /// <summary>
@@ -17,7 +20,7 @@ namespace Elsa.Services
         public static Task TriggerAsync(
             this IWorkflowHost workflowHost,
             string activityType,
-            Variable input,
+            object? input = null,
             CancellationToken cancellationToken = default)
         {
             return workflowHost.TriggerAsync(activityType, input, cancellationToken: cancellationToken);

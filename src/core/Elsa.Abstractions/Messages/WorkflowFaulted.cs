@@ -5,9 +5,9 @@ namespace Elsa.Messages
     /// <summary>
     /// Published when a workflow transitioned into the Faulted state.
     /// </summary>
-    public class ProcessFaulted : ProcessNotification
+    public class WorkflowFaulted : WorkflowNotification
     {
-        public ProcessFaulted(ProcessInstance process) : base(process)
+        public WorkflowFaulted(WorkflowExecutionContext workflowExecutionContext) : base(workflowExecutionContext)
         {
         }
     }

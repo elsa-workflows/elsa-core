@@ -45,7 +45,7 @@ namespace Elsa.Services
                 CacheKey,
                 async entry =>
                 {
-                    var workflowDefinitions = await GetProcessesAsync(cancellationToken);
+                    var workflowDefinitions = await GetWorkflowsAsync(cancellationToken);
 
                     entry.SlidingExpiration = TimeSpan.FromHours(1);
                     entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(4);
@@ -54,7 +54,7 @@ namespace Elsa.Services
                 });
         }
 
-        private async Task<ICollection<Workflow>> GetProcessesAsync(CancellationToken cancellationToken)
+        private async Task<ICollection<Workflow>> GetWorkflowsAsync(CancellationToken cancellationToken)
         {
             using var scope = serviceProvider.CreateScope();
             var providers = scope.ServiceProvider.GetServices<IWorkflowProvider>();

@@ -4,15 +4,25 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Services.Models;
-using ProcessInstance = Elsa.Models.ProcessInstance;
 
 namespace Elsa.Services
 {
-    using ProcessInstance = Elsa.Services.Models.ProcessInstance;
-    
     public interface IWorkflowHost
     {
-        Task<WorkflowExecutionContext> RunAsync(string workflowId, object? input = default, CancellationToken cancellationToken = default);
+        /// <summary>
+        /// Run a registered workflow by its ID.
+        /// </summary>
+        Task RunAsync(string workflowId, object? input = default, CancellationToken cancellationToken = default);
+        
+        /// <summary>
+        /// Starts new workflows that start with the specified activity name and resumes halted workflows that are blocked on activities with the specified activity name.
+        /// </summary>
+        Task TriggerAsync(
+            string activityType,
+            object? input = default,
+            string? correlationId = default,
+            Func<Variables, bool>? activityStatePredicate = default,
+            CancellationToken cancellationToken = default);
 
         // Task<WorkflowExecutionContext> RunAsync(
         //     ProcessInstance processInstance,
@@ -54,15 +64,5 @@ namespace Elsa.Services
         //     IEnumerable<string>? startActivityIds = default,
         //     CancellationToken cancellationToken = default
         // );
-        //
-        // /// <summary>
-        // /// Starts new workflows that start with the specified activity name and resumes halted workflows that are blocked on activities with the specified activity name.
-        // /// </summary>
-        // Task<IEnumerable<WorkflowExecutionContext>> TriggerAsync(
-        //     string activityType,
-        //     Variable? input = default,
-        //     string? correlationId = default,
-        //     Func<Variables, bool>? activityStatePredicate = default,
-        //     CancellationToken cancellationToken = default);
     }
 }

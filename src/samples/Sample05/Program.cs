@@ -7,6 +7,7 @@ namespace Sample05
 {
     /// <summary>
     /// A workflow built using a fluent API and registered with DI and run from the workflow host.
+    /// Notice that this time we don't have to build the workflow manually - this is done automatically by the workflow host.
     /// </summary>
     internal static class Program
     {

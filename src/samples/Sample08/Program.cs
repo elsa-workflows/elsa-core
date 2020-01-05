@@ -1,14 +1,29 @@
-﻿using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Hosting;
+using System;
+using System.Threading.Tasks;
+using Elsa.Activities.Console.Activities;
+using Elsa.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Sample08
 {
-    public static class Program
+    /// <summary>
+    /// Demonstrates a sequential-style workflow, where activities are automatically executed in sequence.
+    /// </summary>
+    internal static class Program
     {
-        public static void Main(string[] args) => CreateHostBuilder(args).Build().Run();
+        private static async Task Main()
+        {
+            // Setup a service collection.
+            var services = new ServiceCollection()
+                .AddElsa()
+                .AddWorkflow<MySequentialWorkflow>() // Register the workflow.
+                .BuildServiceProvider();
 
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
-                .ConfigureWebHostDefaults(webBuilder => { webBuilder.UseStartup<Startup>(); });
+            // Get a workflow host.
+            var host = services.GetRequiredService<IWorkflowHost>();
+
+            // Run the workflow.
+            await host.RunAsync<MySequentialWorkflow>();
+        }
     }
 }
