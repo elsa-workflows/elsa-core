@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -52,11 +53,15 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
                 VersionOptions.LatestOrPublished,
                 cancellationToken
             );
-            var workflowModelTasks = workflows.Select(
-                    async x => await CreateWorkflowDefinitionListItemModelAsync(x, cancellationToken)
-                )
-                .ToList();
-            var workflowModels = workflowModelTasks.Select(x => x.Result);
+            
+            var workflowModels = new List<WorkflowDefinitionListItemModel>();
+
+            foreach (var workflow in workflows)
+            {
+                var workflowModel = await CreateWorkflowDefinitionListItemModelAsync(workflow, cancellationToken);
+                workflowModels.Add(workflowModel);
+            }
+            
             var groups = workflowModels.GroupBy(x => x.WorkflowDefinition.DefinitionId);
             var model = new WorkflowDefinitionListViewModel
             {
