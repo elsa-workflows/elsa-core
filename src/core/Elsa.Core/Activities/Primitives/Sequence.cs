@@ -41,19 +41,6 @@ namespace Elsa.Activities.Primitives
         protected override IActivityExecutionResult OnExecute(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext)
         {
             workflowExecutionContext.BeginScope(this);
-            return Execute(workflowExecutionContext, activityExecutionContext);
-        }
-
-        protected override IActivityExecutionResult OnChildExecuted(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext)
-        {
-            if(workflowExecutionContext.Status != WorkflowStatus.Running)
-                return Noop();
-
-            return Execute(workflowExecutionContext, activityExecutionContext);
-        }
-
-        private IActivityExecutionResult Execute(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext)
-        {
             var activities = Activities.ToList();
             var currentIndex = CurrentIndex;
             
@@ -62,6 +49,25 @@ namespace Elsa.Activities.Primitives
                 var currentActivity = activities[currentIndex++];
                 CurrentIndex = currentIndex;
                 return Schedule(currentActivity, activityExecutionContext.Input);
+            }
+            
+            workflowExecutionContext.EndScope();
+            return Done(activityExecutionContext.Input);
+        }
+
+        protected override IActivityExecutionResult OnChildExecuted(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, ActivityExecutionContext childActivityExecutionContext)
+        {
+            if(workflowExecutionContext.Status != WorkflowStatus.Running)
+                return Noop();
+
+            var activities = Activities.ToList();
+            var currentIndex = CurrentIndex;
+            
+            if (currentIndex < activities.Count)
+            {
+                var currentActivity = activities[currentIndex++];
+                CurrentIndex = currentIndex;
+                return Schedule(currentActivity, childActivityExecutionContext.Input);
             }
             
             workflowExecutionContext.EndScope();

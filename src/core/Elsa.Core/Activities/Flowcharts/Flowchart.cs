@@ -37,15 +37,15 @@ namespace Elsa.Activities.Flowcharts
             return Done(activityExecutionContext.Input);
         }
 
-        protected override IActivityExecutionResult OnChildExecuted(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext)
+        protected override IActivityExecutionResult OnChildExecuted(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, ActivityExecutionContext childActivityExecutionContext)
         {
             if(workflowExecutionContext.Status != WorkflowStatus.Running)
                 return Noop();
             
-            var executedActivity = activityExecutionContext.Activity;
-            var outcomes = activityExecutionContext.Outcomes;
+            var executedActivity = childActivityExecutionContext.Activity;
+            var outcomes = childActivityExecutionContext.Outcomes;
             var connections = FindConnections(executedActivity, outcomes);
-            var scheduledActivities = CreateScheduledActivities(activityExecutionContext, connections).ToList();
+            var scheduledActivities = CreateScheduledActivities(childActivityExecutionContext, connections).ToList();
 
             if(scheduledActivities.Any())
                 return Schedule(scheduledActivities);

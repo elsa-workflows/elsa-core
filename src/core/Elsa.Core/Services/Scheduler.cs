@@ -89,10 +89,14 @@ namespace Elsa.Services
                 {
                     currentScope = workflowExecutionContext.CurrentScope;
                     
-                    if (currentScope != null && currentActivity != currentScope.Container)
+                    if (currentScope?.Container != null && currentActivity != currentScope.Container)
                     {
-                        var containerResult = await currentScope.Container.ChildActivityExecutedAsync(workflowExecutionContext, activityExecutionContext, cancellationToken);
-                        await containerResult.ExecuteAsync(workflowExecutionContext, activityExecutionContext, cancellationToken);
+                        var containerActivityExecutionContext = new ActivityExecutionContext(currentScope.Container, activityExecutionContext.Output);
+                        var containerResult = await currentScope.Container.ChildActivityExecutedAsync(workflowExecutionContext, containerActivityExecutionContext, activityExecutionContext, cancellationToken);
+                        await containerResult.ExecuteAsync(workflowExecutionContext, containerActivityExecutionContext, cancellationToken);
+
+                        if (currentScope != workflowExecutionContext.CurrentScope)
+                            activityExecutionContext = containerActivityExecutionContext;
                     }
                 } while (currentScope != workflowExecutionContext.CurrentScope);
 
