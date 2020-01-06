@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -19,9 +19,9 @@ namespace Elsa.Serialization.Handlers
             return value.ToObject(objectType, serializer);
         }
 
-        public void Serialize(JsonWriter writer, JsonSerializer serializer, JToken value)
+        public void Serialize(JsonWriter writer, JsonSerializer serializer, Type type, JToken value)
         {
-            value[TypeFieldName] = GetAssemblyQualifiedTypeName(value.GetType());
+            value[TypeFieldName] = GetAssemblyQualifiedTypeName(type);
             value.WriteTo(writer, serializer.Converters.ToArray());
         }
         
