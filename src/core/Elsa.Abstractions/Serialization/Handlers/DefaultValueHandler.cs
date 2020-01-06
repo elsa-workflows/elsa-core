@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -10,6 +10,6 @@ namespace Elsa.Serialization.Handlers
         public bool CanSerialize(JToken value, Type type) => true;
         public bool CanDeserialize(JToken value, Type type) => true;
         public object Deserialize(JsonReader reader, JsonSerializer serializer, Type type, JToken value) => serializer.Deserialize(value.CreateReader(), type);
-        public void Serialize(JsonWriter writer, JsonSerializer serializer, JToken value) => serializer.Serialize(writer, value);
+        public void Serialize(JsonWriter writer, JsonSerializer serializer, Type type, JToken value) => serializer.Serialize(writer, value);
     }
 }

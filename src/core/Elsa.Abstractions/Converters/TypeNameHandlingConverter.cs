@@ -28,6 +28,7 @@ namespace Elsa.Converters
 
         static TypeNameHandlingConverter()
         {
+            RegisterTypeHandler<ObjectHandler>();
             RegisterTypeHandler<DateTimeHandler>();
             RegisterTypeHandler<InstantHandler>();
             RegisterTypeHandler<AnnualDateHandler>();
@@ -51,7 +52,7 @@ namespace Elsa.Converters
             var token = JToken.FromObject(value);
             var handler = GetHandler(x => x.CanSerialize(token, valueType));
 
-            handler.Serialize(writer, serializer, token);
+            handler.Serialize(writer, serializer, valueType, token);
         }
 
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
