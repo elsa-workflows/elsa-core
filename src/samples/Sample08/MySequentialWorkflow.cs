@@ -13,12 +13,12 @@ namespace Sample08
         {
             var goodBye = new Inline(() => Console.WriteLine("Goodbye cruel world..."));
 
-            builder.BuildSequence()
-                .Add(() => Console.WriteLine("Step 0"))
-                .Add(() => Console.WriteLine("Step 1"))
-                .Add(() => Console.WriteLine("Step 2"))
-                .Add(() => Console.WriteLine("Step 3"))
-                .Add(goodBye);
+            // builder.BuildSequence()
+            //     .Add(() => Console.WriteLine("Step 0"))
+            //     .Add(() => Console.WriteLine("Step 1"))
+            //     .Add(() => Console.WriteLine("Step 2"))
+            //     .Add(() => Console.WriteLine("Step 3"))
+            //     .Add(goodBye);
         }
     }
 }

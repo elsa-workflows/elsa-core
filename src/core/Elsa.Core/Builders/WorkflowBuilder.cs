@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Elsa.Activities.Containers;
 using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Services;
@@ -25,6 +24,8 @@ namespace Elsa.Builders
             ServiceProvider = serviceProvider;
             Id = idGenerator.Generate();
             Version = 1;
+            Activities = new List<IActivity>();
+            Connections = new List<ConnectionBuilder>();
         }
 
         public IServiceProvider ServiceProvider { get; }
@@ -35,9 +36,8 @@ namespace Elsa.Builders
         public bool IsSingleton { get; private set; }
         public WorkflowPersistenceBehavior PersistenceBehavior { get; private set; }
         public bool DeleteCompletedInstances { get; private set; }
-        
-        public IActivity? Root { get; private set; }
-        public IActivityBuilder RootBuilder { get; private set; }
+        public ICollection<IActivity> Activities { get; set; }
+        public ICollection<ConnectionBuilder> Connections { get; }
 
         public IWorkflowBuilder WithId(string value)
         {
@@ -87,32 +87,6 @@ namespace Elsa.Builders
             return this;
         }
 
-        public IWorkflowBuilder StartWith<T>(Action<IActivity>? setup = default) where T : class, IActivity
-        {
-            var activity = BuildActivity<T>(setup);
-            Root = activity;
-            return this;
-        }
-
-        public IWorkflowBuilder StartWith<T>(Action<T>? setup = default) where T : class, IActivity
-        {
-            var activity = activityResolver.ResolveActivity<T>();
-            setup?.Invoke(activity);
-            return this;
-        }
-
-        public IWorkflowBuilder StartWith(IActivity activity)
-        {
-            Root = activity;
-            return this;
-        }
-
-        public IWorkflowBuilder StartWith(IActivityBuilder activity)
-        {
-            RootBuilder = activity;
-            return this;
-        }
-
         public T BuildActivity<T>(Action<T>? setup = default) where T : class, IActivity
         {
             var activity = activityResolver.ResolveActivity<T>();
@@ -123,11 +97,20 @@ namespace Elsa.Builders
 
         public Workflow Build()
         {
-            if (RootBuilder != null)
-                Root = RootBuilder.Build();
-            
             var definitionId = !string.IsNullOrWhiteSpace(Id) ? Id : idGenerator.Generate();
-            var workflow = new Workflow(definitionId, Version, IsSingleton, false, Name, Description, true, true, Root);
+            var connections = Connections.Where(x => x.Connection.Target != null).Select(x => x.Connection).ToList();
+            
+            var workflow = new Workflow(
+                definitionId, 
+                Version, 
+                IsSingleton, 
+                false, 
+                Name, 
+                Description, 
+                true, 
+                true, 
+                Activities,
+                connections);
 
             // Generate deterministic activity ids.
             var id = 1;
@@ -142,6 +125,36 @@ namespace Elsa.Builders
             return workflow;
         }
 
+        public ConnectionBuilder StartWith<T>(Action<T>? setup = default) where T : class, IActivity
+        {
+            var activity = activityResolver.ResolveActivity<T>();
+            setup?.Invoke(activity);
+            return StartWith(activity);
+        }
+        
+        public ConnectionBuilder StartWith<T>(T activity) where T : class, IActivity
+        {
+            return new ConnectionBuilder(this, activityResolver, ServiceProvider, activity);
+        }
+        
+        public IWorkflowBuilder Add<T>(Action<T>? setup = default) where T : class, IActivity
+        {
+            var activity = activityResolver.ResolveActivity(setup);
+            return Add(activity);
+        }
+        
+        public IWorkflowBuilder Add<T>(T activity) where T : class, IActivity
+        {
+            Activities.Add(activity);
+            return this;
+        }
+        
+        public IWorkflowBuilder Add(ConnectionBuilder connectionBuilder)
+        {
+            Connections.Add(connectionBuilder);
+            return this;
+        }
+        
         public Workflow Build(IWorkflow workflow)
         {
             WithId(workflow.GetType().Name);

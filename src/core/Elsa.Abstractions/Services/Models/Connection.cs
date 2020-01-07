@@ -1,8 +1,4 @@
-using Elsa.Activities.Containers;
-using Elsa.Services;
-using Elsa.Services.Models;
-
-namespace Elsa.Activities.Flowcharts
+namespace Elsa.Services.Models
 {
     public class Connection
     {

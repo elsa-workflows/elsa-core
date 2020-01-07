@@ -1,16 +1,15 @@
 using System;
-using Elsa.Activities.Containers;
-using Elsa.Activities.Flowcharts;
 using Elsa.Services;
+using Elsa.Services.Models;
 
 namespace Elsa.Builders
 {
     public class ConnectionBuilder : IActivityBuilder
     {
-        private readonly FlowchartBuilder flowchartBuilder;
+        private readonly IWorkflowBuilder workflowBuilder;
         private readonly IActivityResolver activityResolver;
 
-        public ConnectionBuilder(FlowchartBuilder flowchartBuilder, IActivityResolver activityResolver, IServiceProvider serviceProvider, IActivity source)
+        public ConnectionBuilder(IWorkflowBuilder workflowBuilder, IActivityResolver activityResolver, IServiceProvider serviceProvider, IActivity source)
         {
             ServiceProvider = serviceProvider;
             Connection = new Connection
@@ -21,10 +20,9 @@ namespace Elsa.Builders
                 }
             };
             
-            this.flowchartBuilder = flowchartBuilder;
+            this.workflowBuilder = workflowBuilder;
             this.activityResolver = activityResolver;
-            this.flowchartBuilder.Flowchart.Activities.Add(source);
-            this.flowchartBuilder.Connections.Add(this);
+            this.workflowBuilder.Add(this);
         }
 
         public IServiceProvider ServiceProvider { get; }
@@ -50,14 +48,14 @@ namespace Elsa.Builders
         
         public ConnectionBuilder Then<T>(T activity, Action<ConnectionBuilder>? connection = default) where T : class, IActivity
         {
-            flowchartBuilder.Add(activity);
+            workflowBuilder.Add(activity);
             Connection.Target = new TargetEndpoint(activity);
             
-            var nextConnection = new ConnectionBuilder(flowchartBuilder, activityResolver, ServiceProvider, activity);
+            var nextConnection = new ConnectionBuilder(workflowBuilder, activityResolver, ServiceProvider, activity);
             connection?.Invoke(nextConnection);
             return nextConnection;
         }
 
-        public IActivity Build() => flowchartBuilder.Build();
+        public IActivity Build() => workflowBuilder.Build();
     }
 }

@@ -99,17 +99,6 @@ namespace Elsa.Services
                 DefinitionId = workflow.DefinitionId,
             };
 
-            if (workflow.Start != null)
-            {
-                workflowInstance.Start = new ActivityInstance
-                {
-                    Id = workflow.Start.Id,
-                    Output = workflow.Start.Output,
-                    State = workflow.Start.State,
-                    Type = workflow.Start.Type
-                };
-            }
-
             return workflowInstance;
         }
         

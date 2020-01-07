@@ -17,14 +17,14 @@ namespace Sample07
             // Setup a service collection.
             var services = new ServiceCollection()
                 .AddElsa()
-                .AddWorkflow<MyFlowchart>() // Register the workflow.
+                .AddWorkflow<MyWorkflow>() // Register the workflow.
                 .BuildServiceProvider();
 
             // Get a workflow host.
             var host = services.GetRequiredService<IWorkflowHost>();
 
             // Run the workflow.
-            await host.RunAsync<MyFlowchart>();
+            await host.RunAsync<MyWorkflow>();
         }
     }
 }

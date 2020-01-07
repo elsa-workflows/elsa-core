@@ -1,8 +1,4 @@
-using Elsa.Activities.Flowcharts;
-using Elsa.Services;
-using Elsa.Services.Models;
-
-namespace Elsa.Activities.Containers
+namespace Elsa.Services.Models
 {
     public class TargetEndpoint : Endpoint
     {

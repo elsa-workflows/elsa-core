@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using Elsa;
 using Elsa.Activities;
-using Elsa.Activities.Containers;
 using Elsa.Activities.ControlFlow;
 using Elsa.Activities.Primitives;
 using Elsa.Activities.Signaling;

@@ -1,7 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using Elsa.Activities.Containers;
-using Elsa.Activities.Flowcharts;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -9,7 +7,7 @@ namespace Elsa.Extensions
 {
     public static class WorkflowExtensions
     {
-        public static IEnumerable<IActivity> GetStartActivities(this Flowchart workflow)
+        public static IEnumerable<IActivity> GetStartActivities(this Workflow workflow)
         {
             var targetActivityIds = workflow.Connections.Select(x => x.Target.Activity.Id).Distinct().ToLookup(x => x);
             
@@ -21,15 +19,15 @@ namespace Elsa.Extensions
             return query;
         }
 
-        public static IActivity GetActivity(this Flowchart workflow, string id) =>
+        public static IActivity GetActivity(this Workflow workflow, string id) =>
             workflow.Activities.FirstOrDefault(x => x.Id == id);
 
-        public static IEnumerable<Connection> GetInboundConnections(this Flowchart workflow, string activityId)
+        public static IEnumerable<Connection> GetInboundConnections(this Workflow workflow, string activityId)
         {
             return workflow.Connections.Where(x => x.Target.Activity.Id == activityId).ToList();
         }
 
-        public static IEnumerable<Connection> GetOutboundConnections(this Flowchart workflow, string activityId)
+        public static IEnumerable<Connection> GetOutboundConnections(this Workflow workflow, string activityId)
         {
             return workflow.Connections.Where(x => x.Source.Activity.Id == activityId).ToList();
         }
@@ -37,12 +35,12 @@ namespace Elsa.Extensions
         /// <summary>
         /// Returns the full path of incoming activities.
         /// </summary>
-        public static IEnumerable<string> GetInboundActivityPath(this Flowchart workflow, string activityId)
+        public static IEnumerable<string> GetInboundActivityPath(this Workflow workflow, string activityId)
         {
             return workflow.GetInboundActivityPathInternal(activityId, activityId).Distinct().ToList();
         }
 
-        private static IEnumerable<string> GetInboundActivityPathInternal(this Flowchart workflowInstance, string activityId, string startingPointActivityId)
+        private static IEnumerable<string> GetInboundActivityPathInternal(this Workflow workflowInstance, string activityId, string startingPointActivityId)
         {
             foreach (var connection in workflowInstance.GetInboundConnections(activityId))
             {

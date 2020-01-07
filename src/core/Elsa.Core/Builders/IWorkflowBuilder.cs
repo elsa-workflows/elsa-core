@@ -21,12 +21,14 @@ namespace Elsa.Builders
         IWorkflowBuilder WithVersion(int value);
         IWorkflowBuilder AsSingleton();
         IWorkflowBuilder AsTransient();
-        IWorkflowBuilder StartWith<T>(Action<T>? setup = default) where T : class, IActivity;
-        IWorkflowBuilder StartWith(IActivity activity);
-        IWorkflowBuilder StartWith(IActivityBuilder activity);
+        ConnectionBuilder StartWith<T>(Action<T>? setup = default) where T : class, IActivity;
+        ConnectionBuilder StartWith<T>(T activity) where T : class, IActivity;
+        IWorkflowBuilder Add<T>(Action<T>? setup = default) where T : class, IActivity;
+        IWorkflowBuilder Add<T>(T activity) where T : class, IActivity;
+        IWorkflowBuilder Add(ConnectionBuilder connectionBuilder);
         T BuildActivity<T>(Action<T>? setup = default) where T : class, IActivity;
         Workflow Build();
-        Workflow Build(IWorkflow process);
+        Workflow Build(IWorkflow workflow);
         Workflow Build(Type workflowType);
         Workflow Build<T>() where T:IWorkflow;
     }

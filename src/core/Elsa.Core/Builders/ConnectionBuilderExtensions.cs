@@ -14,11 +14,5 @@ namespace Elsa.Builders
         public static ConnectionBuilder Then(this ConnectionBuilder builder, Func<WorkflowExecutionContext, ActivityExecutionContext, Task> activity) => builder.Then(new Inline(activity));
         public static ConnectionBuilder Then(this ConnectionBuilder builder, Action<WorkflowExecutionContext, ActivityExecutionContext> activity) => builder.Then(new Inline(activity));
         
-        public static ConnectionBuilder Then(this ConnectionBuilder builder, Func<ConnectionBuilder, SequenceBuilder> activityBuilder)
-        {
-            var sequenceBuilder = activityBuilder(builder);
-            var sequence = sequenceBuilder.Build();
-            return builder.Then(sequence);
-        }
     }
 }

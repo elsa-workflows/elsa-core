@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using Elsa.Models;
 using Elsa.Results;
 using Elsa.Services.Models;
@@ -19,7 +21,8 @@ namespace Elsa.Services
             string? description = default,
             bool isLatest = false,
             bool isPublished = false,
-            IActivity? start = default)
+            IEnumerable<IActivity>? activities = default,
+            IEnumerable<Connection>? connections = default)
         {
             DefinitionId = definitionId;
             Version = version;
@@ -29,7 +32,8 @@ namespace Elsa.Services
             IsPublished = isPublished;
             Name = name;
             Description = description;
-            Start = start;
+            Activities = activities?.ToList() ?? new List<IActivity>();
+            Connections = connections?.ToList() ?? new List<Connection>();
         }
 
         public string? DefinitionId { get; }
@@ -38,21 +42,12 @@ namespace Elsa.Services
         public bool IsDisabled { get; set; }
         public string? Name { get; set; }
         public string? Description { get; set; }
-
-        public IActivity Start
-        {
-            get => GetState<IActivity>();
-            set => SetState(value);
-        }
         public bool IsPublished { get; set; }
         public bool IsLatest { get; set; }
         public WorkflowPersistenceBehavior PersistenceBehavior { get; set; }
         public bool DeleteCompletedInstances { get; set; }
+        public ICollection<IActivity> Activities { get; set; }
 
-        protected override IActivityExecutionResult OnExecute(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext)
-        {
-            workflowExecutionContext.BeginScope(this);
-            return Schedule(Start);
-        }
+        public ICollection<Connection> Connections { get; set; }
     }
 }

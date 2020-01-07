@@ -34,8 +34,7 @@ namespace Elsa.WorkflowProviders
             var workflow = new Workflow
             {
                 Description = definition.Description, 
-                Name = definition.Name, 
-                Start = ResolveActivity(definition.Start),
+                Name = definition.Name,
                 Version = definition.Version,
                 Id = definition.Id,
                 IsLatest = definition.IsLatest,
