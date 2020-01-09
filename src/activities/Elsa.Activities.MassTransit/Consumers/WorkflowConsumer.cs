@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Elsa.Activities.MassTransit.Activities;
 using Elsa.Activities.MassTransit.Consumers.MessageCorrelation;
+using Elsa.Expressions;
 using Elsa.Models;
 using Elsa.Services;
 using MassTransit;
@@ -19,26 +20,26 @@ namespace Elsa.Activities.MassTransit.Consumers
             new PropertyCorrelationIdSelector<T>("CommandId")
         };
 
-        private readonly IProcessRunner processRunner;
+        private readonly IWorkflowHost workflowHost;
 
-        public WorkflowConsumer(IProcessRunner processRunner)
+        public WorkflowConsumer(IWorkflowHost workflowHost)
         {
-            this.processRunner = processRunner;
+            this.workflowHost = workflowHost;
         }
 
         public async Task Consume(ConsumeContext<T> context)
         {
             var message = context.Message;
             var activityType = nameof(ReceiveMassTransitMessage);
-
-            Guid? correlationId = default;
+            var correlationId = default(Guid?);
+            
             foreach (var item in CorrelationIdSelectors)
             {
                 if (item.TryGetCorrelationId(message, out correlationId))
                     break;
             }
 
-            await processRunner.TriggerAsync(
+            await workflowHost.TriggerAsync(
                 activityType,
                 Variable.From(message),
                 correlationId?.ToString(),

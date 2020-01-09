@@ -49,11 +49,11 @@ namespace Elsa.Activities.Reflection.Activities
                 foreach (var property in Properties)
                 {
                     var propValue = FollowPropertyPath(splitObject, property);
-                    context.ProcessExecutionContext.SetVariable(property, propValue);
+                    context.SetVariable(property, propValue);
                 }
             }
 
-            return Outcomes(Properties.ToList());
+            return Done(Properties.ToList());
         }
 
         private object FollowPropertyPath(object value, string path)

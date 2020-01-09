@@ -15,8 +15,7 @@ namespace Elsa.Activities.MassTransit.Activities
     )]
     public class PublishMassTransitMessage : MassTransitBusActivity
     {
-        public PublishMassTransitMessage(IBus bus, ConsumeContext consumeContext)
-            : base(bus, consumeContext)
+        public PublishMassTransitMessage(IBus bus, ConsumeContext consumeContext) : base(bus, consumeContext)
         {
         }
 

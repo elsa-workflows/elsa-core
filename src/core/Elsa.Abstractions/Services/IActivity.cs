@@ -14,11 +14,6 @@ namespace Elsa.Services
         Variables State { get; set; }
         
         /// <summary>
-        /// Holds activity output.
-        /// </summary>
-        Variable? Output { get; set; }
-        
-        /// <summary>
         /// The type name of this activity.
         /// </summary>
         string Type { get; }
@@ -42,22 +37,25 @@ namespace Elsa.Services
         /// Description of this activity.
         /// </summary>
         string? Description { get; set; }
-        
+
+        /// <summary>
+        /// Activity output.
+        /// </summary>
+        Variable? Output { get; set; }
+
         /// <summary>
         /// Returns a value of whether the specified activity can execute.
         /// </summary>
-        Task<bool> CanExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken = default);
+        Task<bool> CanExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Executes the specified activity.
         /// </summary>
-        Task<IActivityExecutionResult> ExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken = default);
+        Task<IActivityExecutionResult> ExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Resumes the specified activity.
         /// </summary>
-        Task<IActivityExecutionResult> ResumeAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken = default);
-
-        Task<IActivityExecutionResult> ChildActivityExecutedAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, ActivityExecutionContext childActivityExecutionContext, CancellationToken cancellationToken = default);
+        Task<IActivityExecutionResult> ResumeAsync(ActivityExecutionContext context, CancellationToken cancellationToken = default);
     }
 }

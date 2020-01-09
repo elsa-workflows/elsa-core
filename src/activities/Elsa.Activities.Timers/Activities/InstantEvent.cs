@@ -35,23 +35,23 @@ namespace Elsa.Activities.Timers.Activities
             set => SetState(value);
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var isExpired = await IsExpiredAsync(workflowExecutionContext, activityExecutionContext, cancellationToken);
+            var isExpired = await IsExpiredAsync(context, cancellationToken);
 
             return isExpired ? (IActivityExecutionResult)Done() : Suspend();
         }
 
-        protected override async Task<IActivityExecutionResult> OnResumeAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnResumeAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var isExpired = await IsExpiredAsync(workflowExecutionContext, activityExecutionContext, cancellationToken);
+            var isExpired = await IsExpiredAsync(context, cancellationToken);
 
             return isExpired ? (IActivityExecutionResult)Done() : Suspend();
         }
 
-        private async Task<bool> IsExpiredAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
+        private async Task<bool> IsExpiredAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var instant = await workflowExecutionContext.EvaluateAsync(Instant, activityExecutionContext, cancellationToken);
+            var instant = await context.EvaluateAsync(Instant, cancellationToken);
             var now = clock.GetCurrentInstant();
 
             return now >= instant;

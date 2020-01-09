@@ -18,60 +18,22 @@ namespace Elsa.Services
     {
         public Variables State { get; set; } = new Variables();
         public Variable? Output { get; set; }
-
         public virtual string Type => GetType().Name;
-
         public string? Id { get; set; }
+        public string? Name { get; set; }
+        public string? DisplayName{ get; set; }
+        public string? Description{ get; set; }
 
-        [ActivityProperty(Label = "Name", Hint = "Optionally provide a name for this activity. You can reference named activities from expressions.")]
-        public string? Name
-        {
-            get => GetState<string>();
-            set => SetState(value);
-        }
+        public Task<bool> CanExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken) => OnCanExecuteAsync(context, cancellationToken);
+        public Task<IActivityExecutionResult> ExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken) => OnExecuteAsync(context, cancellationToken);
 
-        [ActivityProperty(Label = "Display Name", Hint = "Optionally provide a display name for this activity.")]
-        public string? DisplayName
-        {
-            get => GetState<string>();
-            set => SetState(value);
-        }
-
-        [ActivityProperty(Hint = "Optionally provide a custom title for this activity.")]
-        public string? Title
-        {
-            get => GetState<string>();
-            set => SetState(value);
-        }
-
-        [ActivityProperty(Hint = "Optionally provide a custom description for this activity.")]
-        public string? Description
-        {
-            get => GetState<string>();
-            set => SetState(value);
-        }
-
-        public Task<bool> CanExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken) => OnCanExecuteAsync(workflowExecutionContext, activityExecutionContext, cancellationToken);
-        public Task<IActivityExecutionResult> ExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken) => OnExecuteAsync(workflowExecutionContext, activityExecutionContext, cancellationToken);
-
-        public Task<IActivityExecutionResult> ResumeAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken) => OnResumeAsync(workflowExecutionContext, activityExecutionContext, cancellationToken);
-        public Task<IActivityExecutionResult> ChildActivityExecutedAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, ActivityExecutionContext childActivityExecutionContext, CancellationToken cancellationToken) => OnChildExecutedAsync(workflowExecutionContext, activityExecutionContext, childActivityExecutionContext, cancellationToken);
-        protected virtual bool OnCanExecute(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext) => true;
-        protected virtual Task<bool> OnCanExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken) => Task.FromResult(OnCanExecute(workflowExecutionContext, activityExecutionContext));
-        protected virtual Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken) => Task.FromResult(OnExecute(workflowExecutionContext, activityExecutionContext));
-        protected virtual Task<IActivityExecutionResult> OnResumeAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken) => Task.FromResult(OnResume(workflowExecutionContext, activityExecutionContext));
-
-        protected virtual Task<IActivityExecutionResult> OnChildExecutedAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, ActivityExecutionContext childActivityExecutionContext, CancellationToken cancellationToken)
-        {
-            var result = OnChildExecuted(workflowExecutionContext, activityExecutionContext, childActivityExecutionContext);
-            return Task.FromResult(result);
-        }
-
-        protected virtual IActivityExecutionResult OnExecute(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext) => Done();
-        protected virtual IActivityExecutionResult OnResume(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext) => Done();
-
-        protected virtual IActivityExecutionResult OnChildExecuted(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, ActivityExecutionContext childActivityExecutionContext) => Noop();
-
+        public Task<IActivityExecutionResult> ResumeAsync(ActivityExecutionContext context, CancellationToken cancellationToken) => OnResumeAsync(context, cancellationToken);
+        protected virtual bool OnCanExecute(ActivityExecutionContext context) => true;
+        protected virtual Task<bool> OnCanExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken) => Task.FromResult(OnCanExecute(context));
+        protected virtual Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken) => Task.FromResult(OnExecute(context));
+        protected virtual Task<IActivityExecutionResult> OnResumeAsync(ActivityExecutionContext context, CancellationToken cancellationToken) => Task.FromResult(OnResume(context));
+        protected virtual IActivityExecutionResult OnExecute(ActivityExecutionContext context) => Done();
+        protected virtual IActivityExecutionResult OnResume(ActivityExecutionContext context) => Done();
         protected T GetState<T>(Func<T>? defaultValue = null, [CallerMemberName] string? name = null) => State.GetState(name, defaultValue);
         protected void SetState(object value, [CallerMemberName] string? name = null) => State.SetState(value, name);
         protected NoopResult Noop() => new NoopResult();

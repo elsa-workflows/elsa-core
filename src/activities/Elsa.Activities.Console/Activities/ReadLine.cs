@@ -32,7 +32,7 @@ namespace Elsa.Activities.Console.Activities
             this.input = input;
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
             if (input == null)
                 return Suspend();
@@ -41,9 +41,9 @@ namespace Elsa.Activities.Console.Activities
             return Execute(receivedInput);
         }
 
-        protected override IActivityExecutionResult OnResume(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext)
+        protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
         {
-            var receivedInput = activityExecutionContext.Input?.GetValue<string>();
+            var receivedInput = context.Input?.GetValue<string>();
             return Execute(receivedInput);
         }
 

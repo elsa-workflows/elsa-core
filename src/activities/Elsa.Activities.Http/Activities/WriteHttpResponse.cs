@@ -105,7 +105,7 @@ namespace Elsa.Activities.Http.Activities
             set => SetState(value);
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
             var response = httpContextAccessor.HttpContext.Response;
 
@@ -115,7 +115,7 @@ namespace Elsa.Activities.Http.Activities
             response.StatusCode = (int)StatusCode;
             response.ContentType = ContentType;
 
-            var headersText = await workflowExecutionContext.EvaluateAsync(ResponseHeaders, activityExecutionContext, cancellationToken);
+            var headersText = await context.EvaluateAsync(ResponseHeaders, cancellationToken);
 
             if (headersText != null)
             {
@@ -128,7 +128,7 @@ namespace Elsa.Activities.Http.Activities
                     response.Headers[header.Key] = header.Value;
             }
 
-            var bodyText = await workflowExecutionContext.EvaluateAsync(Content, activityExecutionContext, cancellationToken);
+            var bodyText = await context.EvaluateAsync(Content, cancellationToken);
 
             if (!string.IsNullOrWhiteSpace(bodyText)) 
                 await response.WriteAsync(bodyText, cancellationToken);

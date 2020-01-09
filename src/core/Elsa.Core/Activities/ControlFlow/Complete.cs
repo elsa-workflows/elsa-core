@@ -23,12 +23,12 @@ namespace Elsa.Activities.ControlFlow
             set => SetState(value);
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var output = await workflowExecutionContext.EvaluateAsync(Output, activityExecutionContext, cancellationToken) ?? new Variable();
+            var output = await context.EvaluateAsync(Output, cancellationToken) ?? new Variable();
             
-            workflowExecutionContext.BlockingActivities.Clear();
-            workflowExecutionContext.Status = WorkflowStatus.Completed;
+            context.WorkflowExecutionContext.BlockingActivities.Clear();
+            context.WorkflowExecutionContext.Status = WorkflowStatus.Completed;
             
             return Done(output);
         }

@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Elsa.Activities.MassTransit.Options;
 using Elsa.Attributes;
 using Elsa.Expressions;
+using Elsa.Models;
 using Elsa.Results;
 using Elsa.Services.Models;
 using MassTransit;
@@ -63,7 +64,7 @@ namespace Elsa.Activities.MassTransit.Activities
             var endpoint = await SendEndpointProvider.GetSendEndpoint(options.SchedulerAddress);
             var scheduledMessage = await endpoint.ScheduleSend(EndpointAddress, scheduledTime, message, cancellationToken);
 
-            return Done(scheduledMessage.TokenId);
+            return Done(Variable.From(scheduledMessage.TokenId));
         }
     }
 }

@@ -54,12 +54,12 @@ namespace Elsa.Activities.Email.Activities
             set => SetState(value);
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var from = (await workflowExecutionContext.EvaluateAsync(From, activityExecutionContext, cancellationToken)) ?? options.Value.DefaultSender;
-            var to = await workflowExecutionContext.EvaluateAsync(To, activityExecutionContext, cancellationToken);
-            var subject = await workflowExecutionContext.EvaluateAsync(Subject, activityExecutionContext, cancellationToken);
-            var body = await workflowExecutionContext.EvaluateAsync(Body, activityExecutionContext, cancellationToken);
+            var from = (await context.EvaluateAsync(From, cancellationToken)) ?? options.Value.DefaultSender;
+            var to = await context.EvaluateAsync(To, cancellationToken);
+            var subject = await context.EvaluateAsync(Subject, cancellationToken);
+            var body = await context.EvaluateAsync(Body, cancellationToken);
             var message = new MimeMessage();
             
             message.From.Add(new MailboxAddress(@from));

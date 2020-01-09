@@ -5,9 +5,7 @@ using MassTransit.Internals.Reflection;
 
 namespace Elsa.Activities.MassTransit.Consumers.MessageCorrelation
 {
-    public class CorrelatedByCorrelationIdSelector<T>
-        : ICorrelationIdSelector<T>
-        where T : class
+    public class CorrelatedByCorrelationIdSelector<T> : ICorrelationIdSelector<T> where T : class
     {
         public bool TryGetCorrelationId(T message, out Guid? correlationId)
         {

@@ -3,20 +3,18 @@ using MassTransit.Internals.Reflection;
 
 namespace Elsa.Activities.MassTransit.Consumers.MessageCorrelation
 {
-    public class PropertyCorrelationIdSelector<T> :
-        ICorrelationIdSelector<T>
-        where T : class
+    public class PropertyCorrelationIdSelector<T> : ICorrelationIdSelector<T> where T : class
     {
-        readonly string _propertyName;
+        readonly string propertyName;
 
         public PropertyCorrelationIdSelector(string propertyName)
         {
-            _propertyName = propertyName;
+            this.propertyName = propertyName;
         }
 
         public bool TryGetCorrelationId(T message, out Guid? correlationId)
         {
-            var propertyInfo = typeof(T).GetProperty(_propertyName);
+            var propertyInfo = typeof(T).GetProperty(propertyName);
             if (propertyInfo != null && propertyInfo.PropertyType == typeof(Guid))
             {
                 var property = ReadPropertyCache<T>.GetProperty<Guid>(propertyInfo);

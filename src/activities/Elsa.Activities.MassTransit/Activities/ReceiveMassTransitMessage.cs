@@ -31,7 +31,7 @@ namespace Elsa.Activities.MassTransit.Activities
         }
 
         protected override bool OnCanExecute(ActivityExecutionContext context) => context.Input.Value?.GetType() == MessageType;
-        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => Suspend(true);
+        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => Suspend();
 
         protected override Task<IActivityExecutionResult> OnResumeAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {

@@ -84,12 +84,9 @@ namespace Elsa.Activities.Http.Activities
             set => SetState(value);
         }
 
-        protected override IActivityExecutionResult OnExecute(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext)
-        {
-            return Suspend();
-        }
+        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => Suspend();
 
-        protected override async Task<IActivityExecutionResult> OnResumeAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnResumeAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
             var request = httpContextAccessor.HttpContext.Request;
             var model = new HttpRequestModel
@@ -106,9 +103,7 @@ namespace Elsa.Activities.Http.Activities
                 model.Body = await parser.ParseAsync(request, cancellationToken);
             }
 
-            Output = new Variable(model);
-
-            return Done();
+            return Done(Variable.From(model));
         }
 
         private IHttpRequestBodyParser SelectContentParser(string contentType)

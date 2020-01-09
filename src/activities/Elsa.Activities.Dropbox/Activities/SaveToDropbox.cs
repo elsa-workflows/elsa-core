@@ -37,10 +37,10 @@ namespace Elsa.Activities.Dropbox.Activities
             set => SetState(value);
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var data = await workflowExecutionContext.EvaluateAsync(Data, activityExecutionContext, cancellationToken);
-            var path = await workflowExecutionContext.EvaluateAsync(Path, activityExecutionContext, cancellationToken);
+            var data = await context.EvaluateAsync(Data, cancellationToken);
+            var path = await context.EvaluateAsync(Path, cancellationToken);
 
             await filesApi.UploadAsync(
                 new UploadRequest

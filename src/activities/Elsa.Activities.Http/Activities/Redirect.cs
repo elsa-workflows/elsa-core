@@ -36,21 +36,21 @@ namespace Elsa.Activities.Http.Activities
             set => SetState(value);
         }
         
-        [ActivityProperty(Hint = "Tick this box to indicate if the redirect is permanent (HTTP 301).")]
+        [ActivityProperty(Hint = "Whether or not the redirect is permanent (HTTP 301).")]
         public bool Permanent
         {
             get => GetState(() => false);
             set => SetState(value);
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
             var response = httpContextAccessor.HttpContext.Response;
 
             if (response.HasStarted)
                 return Fault(T["Response has already started"]);
 
-            var location = await workflowExecutionContext.EvaluateAsync(Location, activityExecutionContext, cancellationToken);
+            var location = await context.EvaluateAsync(Location, cancellationToken);
             return new RedirectResult(httpContextAccessor, location, Permanent);
         }
     }

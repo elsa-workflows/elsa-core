@@ -39,9 +39,9 @@ namespace Elsa.Activities.Console.Activities
         
         private readonly TextWriter output;
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var text = await workflowExecutionContext.EvaluateAsync(Text, activityExecutionContext, cancellationToken);
+            var text = await context.EvaluateAsync(Text, cancellationToken);
             await output.WriteLineAsync(text);
             return Done();
         }

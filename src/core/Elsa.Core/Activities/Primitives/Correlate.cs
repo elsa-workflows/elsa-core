@@ -25,9 +25,9 @@ namespace Elsa.Activities.Primitives
             set => SetState(value);
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var value = await workflowExecutionContext.EvaluateAsync(Value, activityExecutionContext, cancellationToken);
+            var value = await context.EvaluateAsync(Value, cancellationToken);
             return new CorrelateResult(value);
         }
     }

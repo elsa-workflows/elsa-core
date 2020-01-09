@@ -14,38 +14,38 @@ namespace Elsa.Activities.Primitives
     {
         public Inline()
         {
-            Function = (workflowExecutionContext, activityExecutionContext) => Task.FromResult<IActivityExecutionResult>(Done());
+            Function = context => Task.FromResult<IActivityExecutionResult>(Done());
         }
 
-        public Inline(Func<WorkflowExecutionContext, ActivityExecutionContext, Task<IActivityExecutionResult>> function)
+        public Inline(Func<ActivityExecutionContext, Task<IActivityExecutionResult>> function)
         {
             Function = function;
         }
         
-        public Inline(Func<WorkflowExecutionContext, ActivityExecutionContext, Task> function)
+        public Inline(Func<ActivityExecutionContext, Task> function)
         {
-            Function = (workflowExecutionContext, activityExecutionContext) =>
+            Function = context =>
             {
-                function(workflowExecutionContext, activityExecutionContext);
+                function(context);
                 return Task.FromResult<IActivityExecutionResult>(Done());
             };
         }
         
-        public Inline(Action<WorkflowExecutionContext, ActivityExecutionContext> function)
+        public Inline(Action<ActivityExecutionContext> function)
         {
-            Function = (workflowExecutionContext, activityExecutionContext) =>
+            Function = context =>
             {
-                function(workflowExecutionContext, activityExecutionContext);
+                function(context);
                 return Task.FromResult<IActivityExecutionResult>(Done());
             };
         }
         
-        public Inline(Action function) : this((workflowExecutionContext, activityExecutionContext) => function())
+        public Inline(Action function) : this(context => function())
         {
         }
         
-        public Func<WorkflowExecutionContext, ActivityExecutionContext, Task<IActivityExecutionResult>> Function { get; set; }
+        public Func<ActivityExecutionContext, Task<IActivityExecutionResult>> Function { get; set; }
 
-        protected override Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken) => Function(workflowExecutionContext, activityExecutionContext);
+        protected override Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken) => Function(context);
     }
 }

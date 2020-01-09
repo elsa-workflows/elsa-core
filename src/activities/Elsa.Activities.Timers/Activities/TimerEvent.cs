@@ -36,19 +36,16 @@ namespace Elsa.Activities.Timers.Activities
             set => SetState(value);
         }
 
-        protected override async Task<bool> OnCanExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
+        protected override async Task<bool> OnCanExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            return StartTime == null || await IsExpiredAsync(workflowExecutionContext, activityExecutionContext, cancellationToken);
+            return StartTime == null || await IsExpiredAsync(context, cancellationToken);
         }
 
-        protected override IActivityExecutionResult OnExecute(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext)
-        {
-            return Suspend();
-        }
+        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => Suspend();
 
-        protected override async Task<IActivityExecutionResult> OnResumeAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnResumeAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            if (await IsExpiredAsync(workflowExecutionContext, activityExecutionContext, cancellationToken))
+            if (await IsExpiredAsync(context, cancellationToken))
             {
                 StartTime = null;
                 return Done();
@@ -57,14 +54,14 @@ namespace Elsa.Activities.Timers.Activities
             return Suspend();
         }
 
-        private async Task<bool> IsExpiredAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
+        private async Task<bool> IsExpiredAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
             var now = clock.GetCurrentInstant();
 
             if (StartTime == null)
                 StartTime = now;
             
-            var timeSpan = await workflowExecutionContext.EvaluateAsync(Timeout, activityExecutionContext, cancellationToken);
+            var timeSpan = await context.EvaluateAsync(Timeout, cancellationToken);
             var expiresAt = StartTime.Value.ToDateTimeUtc() + timeSpan;
             
             return now.ToDateTimeUtc() >= expiresAt;

@@ -15,22 +15,19 @@ using Microsoft.Extensions.Options;
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
 {
-    public static class HttpActivitiesServiceCollectionExtensions
+    public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddHttpActivities(
-            this IServiceCollection services,
-            Action<OptionsBuilder<HttpActivityOptions>> options = null)
+        public static IServiceCollection AddHttp(this IServiceCollection services, Action<OptionsBuilder<HttpActivityOptions>> options = null) =>
+            services
+                .AddHttpServices(options)
+                .AddHttpActivities();
+        
+        public static IServiceCollection AddHttpServices(this IServiceCollection services, Action<OptionsBuilder<HttpActivityOptions>> options = null)
         {
             options?.Invoke(services.AddOptions<HttpActivityOptions>());
 
             services.TryAddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddHttpClient(nameof(SendHttpRequest));
-
-            services
-                .AddActivity<ReceiveHttpRequest>()
-                .AddActivity<WriteHttpResponse>()
-                .AddActivity<SendHttpRequest>()
-                .AddActivity<Redirect>();
 
             services
                 .AddSingleton<ITokenService, TokenService>()
@@ -42,20 +39,21 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IActionContextAccessor, ActionContextAccessor>()
                 .AddSingleton<IAbsoluteUrlProvider, DefaultAbsoluteUrlProvider>()
                 .AddHttpContextAccessor()
-                .AddNotificationHandlers(typeof(HttpActivitiesServiceCollectionExtensions))
+                .AddNotificationHandlers(typeof(ServiceCollectionExtensions))
                 .AddDataProtection();
-            
-            //services.AddLiquidFilter<SignalUrlFilter>("signal_url");
             
             return services
                 .AddRequestHandler<TriggerRequestHandler>()
                 .AddRequestHandler<SignalRequestHandler>();
         }
+        
+        public static IServiceCollection AddHttpActivities(this IServiceCollection services) =>
+            services
+                .AddActivity<ReceiveHttpRequest>()
+                .AddActivity<WriteHttpResponse>()
+                .AddActivity<SendHttpRequest>()
+                .AddActivity<Redirect>();
 
-        public static IServiceCollection AddRequestHandler<THandler>(this IServiceCollection services)
-            where THandler : class, IRequestHandler
-        {
-            return services.AddScoped<THandler>();
-        }
+        public static IServiceCollection AddRequestHandler<THandler>(this IServiceCollection services) where THandler : class, IRequestHandler => services.AddScoped<THandler>();
     }
 }

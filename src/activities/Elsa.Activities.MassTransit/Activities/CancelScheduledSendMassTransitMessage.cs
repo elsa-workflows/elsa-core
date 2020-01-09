@@ -34,14 +34,11 @@ namespace Elsa.Activities.MassTransit.Activities
         }
 
 
-        protected override bool OnCanExecute(ActivityExecutionContext context)
-        {
-            return TokenId != null && options.SchedulerAddress != null;
-        }
+        protected override bool OnCanExecute(ActivityExecutionContext context) => TokenId != null && options.SchedulerAddress != null;
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
         {
-            var tokenId = await context.EvaluateAsync(TokenId, cancellationToken);
+            var tokenId = await activityExecutionContext.EvaluateAsync(TokenId, cancellationToken);
             var endpoint = await SendEndpointProvider.GetSendEndpoint(options.SchedulerAddress);
 
             await endpoint.CancelScheduledSend(tokenId);
