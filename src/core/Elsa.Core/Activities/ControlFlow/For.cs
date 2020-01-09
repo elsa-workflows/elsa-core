@@ -34,11 +34,10 @@ namespace Elsa.Activities.ControlFlow
             get => GetState<IWorkflowExpression<int>>(() => new CodeExpression<int>(() => 1));
             set => SetState(value);
         }
-
-        [Outlet(OutcomeNames.Iterate)]
-        public IActivity Activity
+        
+        private int? CurrentValue
         {
-            get => GetState<IActivity>();
+            get => GetState<int?>();
             set => SetState(value);
         }
 
@@ -47,12 +46,18 @@ namespace Elsa.Activities.ControlFlow
             var startValue = await workflowExecutionContext.EvaluateAsync(Start, activityExecutionContext, cancellationToken);
             var endValue = await workflowExecutionContext.EvaluateAsync(End, activityExecutionContext, cancellationToken);
             var step = await workflowExecutionContext.EvaluateAsync(Step, activityExecutionContext, cancellationToken);
-            var scheduledActivities = new List<ScheduledActivity>();
-            
-            for (var i = endValue; i > startValue; i -= step) 
-                scheduledActivities.Add(new ScheduledActivity(Activity, Variable.From(i)));
+            var currentValue = CurrentValue ?? startValue;
 
-            return Schedule(scheduledActivities);
+            if (currentValue < endValue)
+            {
+                var input = currentValue;
+                currentValue += step;
+                CurrentValue = currentValue;
+                return Combine(Schedule(this), Done(OutcomeNames.Iterate, Variable.From(input)));
+            }
+
+            CurrentValue = null;
+            return Done();
         }
     }
 }

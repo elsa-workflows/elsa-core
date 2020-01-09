@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Services;
+using WorkflowInstance = Elsa.Models.WorkflowInstance;
 
 namespace Elsa.Persistence.Memory
 {
@@ -46,7 +47,7 @@ namespace Elsa.Persistence.Memory
             return Task.FromResult(workflows);
         }
 
-        public Task<IEnumerable<(WorkflowInstance, IActivity)>> ListByBlockingActivityAsync(
+        public Task<IEnumerable<(WorkflowInstance, BlockingActivity)>> ListByBlockingActivityAsync(
             string activityType,
             string? correlationId = default, 
             CancellationToken cancellationToken = default)

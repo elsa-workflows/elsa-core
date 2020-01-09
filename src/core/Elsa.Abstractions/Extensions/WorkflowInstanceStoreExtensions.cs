@@ -11,7 +11,7 @@ namespace Elsa.Extensions
 {
     public static class WorkflowInstanceStoreExtensions
     {
-        public static async Task<IEnumerable<(WorkflowInstance, IActivity)>> ListByBlockingActivityAsync<TActivity>(
+        public static async Task<IEnumerable<(WorkflowInstance, BlockingActivity)>> ListByBlockingActivityAsync<TActivity>(
             this IWorkflowInstanceStore store,
             string? correlationId = default,
             CancellationToken cancellationToken = default) where TActivity : IActivity

@@ -16,50 +16,29 @@ namespace Elsa.Services
     {
         internal const string CacheKey = "elsa:workflow-registry";
         private readonly IServiceProvider serviceProvider;
-        private readonly IMemoryCache cache;
-        private readonly ISignal signal;
 
         public WorkflowRegistry(
-            IMemoryCache cache,
-            ISignal signal,
             IServiceProvider serviceProvider)
         {
-            this.cache = cache;
-            this.signal = signal;
             this.serviceProvider = serviceProvider;
+        }
+        
+        public async Task<IEnumerable<Workflow>> GetWorkflowsAsync(CancellationToken cancellationToken)
+        {
+            using var scope = serviceProvider.CreateScope();
+            var providers = scope.ServiceProvider.GetServices<IWorkflowProvider>();
+            var tasks = await Task.WhenAll(providers.Select(x => x.GetWorkflowsAsync(cancellationToken)));
+            return tasks.SelectMany(x => x).ToList();
         }
 
         public async Task<Workflow> GetWorkflowAsync(string id, VersionOptions version, CancellationToken cancellationToken)
         {
-            var processDefinitions = await ReadCacheAsync(cancellationToken);
+            var workflows = await GetWorkflowsAsync(cancellationToken).ToListAsync();
 
-            return processDefinitions
+            return workflows
                 .Where(x => x.DefinitionId == id)
                 .OrderByDescending(x => x.Version)
                 .WithVersion(version).FirstOrDefault();
-        }
-
-        private async Task<ICollection<Workflow>> ReadCacheAsync(CancellationToken cancellationToken)
-        {
-            return await cache.GetOrCreateAsync(
-                CacheKey,
-                async entry =>
-                {
-                    var workflowDefinitions = await GetWorkflowsAsync(cancellationToken);
-
-                    entry.SlidingExpiration = TimeSpan.FromHours(1);
-                    entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(4);
-                    entry.Monitor(signal.GetToken(CacheKey));
-                    return workflowDefinitions;
-                });
-        }
-
-        private async Task<ICollection<Workflow>> GetWorkflowsAsync(CancellationToken cancellationToken)
-        {
-            using var scope = serviceProvider.CreateScope();
-            var providers = scope.ServiceProvider.GetServices<IWorkflowProvider>();
-            var tasks = await Task.WhenAll(providers.Select(x => x.GetProcessesAsync(cancellationToken)));
-            return tasks.SelectMany(x => x).ToList();
         }
     }
 }

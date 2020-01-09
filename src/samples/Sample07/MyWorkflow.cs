@@ -1,8 +1,6 @@
 using System;
-using Elsa.Activities.ControlFlow;
-using Elsa.Activities.Primitives;
+using System.Linq;
 using Elsa.Builders;
-using Elsa.Expressions;
 
 namespace Sample07
 {
@@ -15,21 +13,9 @@ namespace Sample07
     {
         public void Build(IWorkflowBuilder builder)
         {
-            var goodBye = new Inline(() => Console.WriteLine("Goodbye cruel world..."));
-
             builder
-                .StartWith(() => Console.WriteLine("Step 0"))
-                .If(() => true)
-                .Then<IfElse>(x =>
-                {
-                    x.Condition = new CodeExpression<bool>(() => true);
-                    x.True = new Inline(() => WriteLine("So true."));
-                    x.False = new Inline(() => WriteLine("So not true."));
-                })
-                .Then(() => Console.WriteLine("Step 1"))
-                .Then(() => Console.WriteLine("Step 2"))
-                .Then(() => Console.WriteLine("Step 3"))
-                .Then(goodBye);
+                .SetVariable("RandomNumber", () => new Random().Next())
+                .Then((w, a) => WriteLine($"Your lucky number is: {w.GetVariable<int>("RandomNumber")}"));
         }
     }
 }

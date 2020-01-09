@@ -26,18 +26,18 @@ namespace Sample03
             var scheduler = services.GetRequiredService<IScheduler>();
 
             // Create a sequence activity.
-            var sequence = new Sequence(
-                new Inline(() => WriteLine("What's your age?")),
-                new SetVariable("Age", new CodeExpression<int>(() => int.Parse(ReadLine()))),
-                new IfElse(
-                    (w, a) => w.GetVariable<int>("Age") > 21, 
-                    () => WriteLine("Here's your drink."),
-                    () => WriteLine("Here's your soda.")),
-                new Inline(() => WriteLine("Enjoy!"))
-            );
-
-            // Schedule an activity for execution.
-            await scheduler.ScheduleActivityAsync(sequence);
+            // var sequence = new Sequence(
+            //     new Inline(() => WriteLine("What's your age?")),
+            //     new SetVariable("Age", new CodeExpression<int>(() => int.Parse(ReadLine()))),
+            //     new IfElse(
+            //         (w, a) => w.GetVariable<int>("Age") > 21, 
+            //         () => WriteLine("Here's your drink."),
+            //         () => WriteLine("Here's your soda.")),
+            //     new Inline(() => WriteLine("Enjoy!"))
+            // );
+            //
+            // // Schedule an activity for execution.
+            // await scheduler.ScheduleActivityAsync(sequence);
         }
     }
 }

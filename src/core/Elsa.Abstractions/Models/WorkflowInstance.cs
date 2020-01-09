@@ -8,7 +8,7 @@ namespace Elsa.Models
     {
         public WorkflowInstance()
         {
-            Scopes = new Stack<WorkflowExecutionScope>();
+            Variables = new Variables();
             BlockingActivities = new HashSet<BlockingActivity>(new BlockingActivityEqualityComparer());
             ExecutionLog = new List<LogEntry>();
             ScheduledActivities = new Stack<ScheduledActivity>();
@@ -24,8 +24,7 @@ namespace Elsa.Models
         public Instant? FinishedAt { get; set; }
         public Instant? FaultedAt { get; set; }
         public Instant? AbortedAt { get; set; }
-        public ActivityInstance Start { get; set; }
-        public Stack<WorkflowExecutionScope> Scopes { get; set; }
+        public Variables Variables { get; set; }
         public Variable? Input { get; set; }
         public Variable? Output { get; set; }
         public HashSet<BlockingActivity> BlockingActivities { get; set; }

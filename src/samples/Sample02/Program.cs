@@ -23,15 +23,15 @@ using Elsa.Activities.Primitives;
              // Get the scheduler.
              var scheduler = services.GetRequiredService<IScheduler>();
  
-             // Create a sequence activity.
-             var sequence = new Sequence(
-                 new Inline(() => WriteLine("Line 1")),
-                 new Inline(() => WriteLine("Line 2")),
-                 new Inline(() => WriteLine("Line 3"))
-             );
- 
-             // Schedule an activity for execution.
-             await scheduler.ScheduleActivityAsync(sequence);
+             // // Create a sequence activity.
+             // var sequence = new Sequence(
+             //     new Inline(() => WriteLine("Line 1")),
+             //     new Inline(() => WriteLine("Line 2")),
+             //     new Inline(() => WriteLine("Line 3"))
+             // );
+             //
+             // // Schedule an activity for execution.
+             // await scheduler.ScheduleActivityAsync(sequence);
          }
      }
  }

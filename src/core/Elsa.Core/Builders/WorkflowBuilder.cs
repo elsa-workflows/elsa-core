@@ -13,6 +13,8 @@ namespace Elsa.Builders
     {
         private readonly IActivityResolver activityResolver;
         private readonly IIdGenerator idGenerator;
+        private readonly IList<ActivityBuilder> activityBuilders;
+        private readonly IList<ConnectionBuilder> connectionBuilders;
 
         public WorkflowBuilder(
             IActivityResolver activityResolver,
@@ -24,8 +26,8 @@ namespace Elsa.Builders
             ServiceProvider = serviceProvider;
             Id = idGenerator.Generate();
             Version = 1;
-            Activities = new List<IActivity>();
-            Connections = new List<ConnectionBuilder>();
+            activityBuilders = new List<ActivityBuilder>();
+            connectionBuilders = new List<ConnectionBuilder>();
         }
 
         public IServiceProvider ServiceProvider { get; }
@@ -36,8 +38,6 @@ namespace Elsa.Builders
         public bool IsSingleton { get; private set; }
         public WorkflowPersistenceBehavior PersistenceBehavior { get; private set; }
         public bool DeleteCompletedInstances { get; private set; }
-        public ICollection<IActivity> Activities { get; set; }
-        public ICollection<ConnectionBuilder> Connections { get; }
 
         public IWorkflowBuilder WithId(string value)
         {
@@ -98,7 +98,8 @@ namespace Elsa.Builders
         public Workflow Build()
         {
             var definitionId = !string.IsNullOrWhiteSpace(Id) ? Id : idGenerator.Generate();
-            var connections = Connections.Where(x => x.Connection.Target != null).Select(x => x.Connection).ToList();
+            var activities = activityBuilders.Select(x => x.BuildActivity()).ToList();
+            var connections = connectionBuilders.Select(x => x.BuildConnection()).ToList();
             
             var workflow = new Workflow(
                 definitionId, 
@@ -109,14 +110,13 @@ namespace Elsa.Builders
                 Description, 
                 true, 
                 true, 
-                Activities,
+                activities,
                 connections);
 
             // Generate deterministic activity ids.
             var id = 1;
-            var activities = workflow?.SelectActivities().ToList();
-            
-            foreach (var activity in activities)
+
+            foreach (var activity in workflow.Activities)
             {
                 if (string.IsNullOrEmpty(activity.Id))
                     activity.Id = $"activity-{id++}";
@@ -125,34 +125,49 @@ namespace Elsa.Builders
             return workflow;
         }
 
-        public ConnectionBuilder StartWith<T>(Action<T>? setup = default) where T : class, IActivity
+        public ActivityBuilder StartWith<T>(Action<T>? setup = default, Action<ActivityBuilder> branch = default) where T : class, IActivity
         {
             var activity = activityResolver.ResolveActivity<T>();
             setup?.Invoke(activity);
-            return StartWith(activity);
+            return StartWith(activity, branch);
         }
         
-        public ConnectionBuilder StartWith<T>(T activity) where T : class, IActivity
+        public ActivityBuilder StartWith<T>(T activity, Action<ActivityBuilder> branch = default) where T : class, IActivity
         {
-            return new ConnectionBuilder(this, activityResolver, ServiceProvider, activity);
+            return Add(activity, branch);
         }
         
-        public IWorkflowBuilder Add<T>(Action<T>? setup = default) where T : class, IActivity
+        public ActivityBuilder Add<T>(Action<T>? setup = default, Action<ActivityBuilder> branch = default) where T : class, IActivity
         {
             var activity = activityResolver.ResolveActivity(setup);
-            return Add(activity);
+            return Add(activity, branch);
         }
         
-        public IWorkflowBuilder Add<T>(T activity) where T : class, IActivity
+        public ActivityBuilder Add<T>(T activity, Action<ActivityBuilder> branch = default) where T : class, IActivity
         {
-            Activities.Add(activity);
-            return this;
+            var activityBuilder = new ActivityBuilder(this, activity);
+            branch?.Invoke(activityBuilder);
+            activityBuilders.Add(activityBuilder);
+            return activityBuilder;
         }
         
-        public IWorkflowBuilder Add(ConnectionBuilder connectionBuilder)
+        public ConnectionBuilder Connect(
+            ActivityBuilder source,
+            ActivityBuilder target,
+            string outcome = default)
         {
-            Connections.Add(connectionBuilder);
-            return this;
+            return Connect(() => source, () => target, outcome);
+        }
+
+        public ConnectionBuilder Connect(
+            Func<ActivityBuilder> source,
+            Func<ActivityBuilder> target,
+            string outcome = default)
+        {
+            var connectionBuilder = new ConnectionBuilder(this, source, target, outcome);
+
+            connectionBuilders.Add(connectionBuilder);
+            return connectionBuilder;
         }
         
         public Workflow Build(IWorkflow workflow)

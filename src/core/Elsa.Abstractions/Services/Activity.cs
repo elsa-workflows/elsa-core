@@ -89,6 +89,8 @@ namespace Elsa.Services
         protected ScheduleActivitiesResult Schedule(IActivity activity, object input) => Schedule(new[] { activity }, input);
         protected ScheduleActivitiesResult Schedule(IActivity activity, Variable input) => Schedule(new[] { activity }, input);
         protected ScheduleActivitiesResult Schedule(IEnumerable<ScheduledActivity> activities) => new ScheduleActivitiesResult(activities);
+        protected CombinedResult Combine(IEnumerable<IActivityExecutionResult> results) => new CombinedResult(results);
+        protected CombinedResult Combine(params IActivityExecutionResult[] results) => new CombinedResult(results);
         protected FaultResult Fault(LocalizedString message) => new FaultResult(message);
     }
 }

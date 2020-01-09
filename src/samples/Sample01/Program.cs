@@ -24,7 +24,7 @@
              var scheduler = services.GetRequiredService<IScheduler>();
              
              // Schedule an activity for execution.
-             await scheduler.ScheduleActivityAsync(() => WriteLine("Hello World!"));
+             // await scheduler.ScheduleActivityAsync(() => WriteLine("Hello World!"));
          }
      }
  }

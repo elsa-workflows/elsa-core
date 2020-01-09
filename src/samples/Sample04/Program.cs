@@ -25,7 +25,7 @@ namespace Sample04
             var scheduler = services.GetRequiredService<IScheduler>();
 
             // Run the workflow.
-            await scheduler.ScheduleActivityAsync(workflow);
+            //await scheduler.ScheduleActivityAsync(workflow);
         }
     }
 }

@@ -1,12 +1,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using Elsa.Models;
-using Elsa.Results;
-using Elsa.Services.Models;
 
-namespace Elsa.Services
+namespace Elsa.Services.Models
 {
-    public class Workflow : Activity
+    public class Workflow
     {
         public Workflow()
         {
@@ -36,7 +34,7 @@ namespace Elsa.Services
             Connections = connections?.ToList() ?? new List<Connection>();
         }
 
-        public string? DefinitionId { get; }
+        public string? DefinitionId { get; set; }
         public int Version { get; set; }
         public bool IsSingleton { get; set; }
         public bool IsDisabled { get; set; }

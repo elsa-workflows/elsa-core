@@ -8,17 +8,15 @@ namespace Elsa.Extensions
 {
     public static class WorkflowInstanceCollectionExtensions
     {
-        public static IEnumerable<(WorkflowInstance, IActivity)> GetBlockingActivities(this IEnumerable<WorkflowInstance> instances, string activityType = null)
+        public static IEnumerable<(WorkflowInstance, BlockingActivity)> GetBlockingActivities(this IEnumerable<WorkflowInstance> instances, string activityType = null)
         {
             var query =
                 from workflowInstance in instances
                 from blockingActivity in workflowInstance.BlockingActivities
-                let activityDictionary = workflowInstance.Start?.State.SelectActivities().Distinct().ToDictionary(x => x.Id)
-                let activity = activityDictionary[blockingActivity.ActivityId]
-                select (workflowInstance, activity);
+                select (workflowInstance, blockingActivity);
             
             if (!string.IsNullOrWhiteSpace(activityType))
-                query = query.Where(x => x.activity.Type == activityType);
+                query = query.Where(x => x.blockingActivity.ActivityType == activityType);
             
             return query.Distinct();
         }

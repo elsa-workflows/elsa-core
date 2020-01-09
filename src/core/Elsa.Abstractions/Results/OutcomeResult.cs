@@ -1,13 +1,13 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Elsa.Models;
+using Elsa.Services;
 using Elsa.Services.Models;
 
 namespace Elsa.Results
 {
-    public class OutcomeResult : IActivityExecutionResult
+    public class OutcomeResult : ActivityExecutionResult
     {
         public OutcomeResult(IEnumerable<string> outcomes = default, Variable? output = default)
         {
@@ -23,11 +23,25 @@ namespace Elsa.Results
         public IReadOnlyCollection<string> Outcomes { get; }
         public Variable? Output { get; }
 
-        public Task ExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
+        protected override void Execute(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext)
         {
             activityExecutionContext.Output = Output;
             activityExecutionContext.Outcomes = Outcomes.ToList();
-            return Task.CompletedTask;
+
+            var nextActivities = GetNextActivities(workflowExecutionContext, activityExecutionContext.Activity, Outcomes).ToList();
+            
+            workflowExecutionContext.ScheduleActivities(nextActivities, Output);
+        }
+        
+        private IEnumerable<IActivity> GetNextActivities(WorkflowExecutionContext workflowContext, IActivity source, IEnumerable<string> outcomes)
+        {
+            var query =
+                from connection in workflowContext.Connections
+                from outcome in outcomes
+                where connection.Source.Activity == source && (connection.Source.Outcome ?? OutcomeNames.Done).Equals(outcome, StringComparison.OrdinalIgnoreCase)
+                select connection.Target.Activity;
+
+            return query.Distinct();
         }
     }
 }

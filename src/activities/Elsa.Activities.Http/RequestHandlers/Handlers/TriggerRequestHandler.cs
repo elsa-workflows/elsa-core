@@ -6,11 +6,9 @@ using System.Threading.Tasks;
 using Elsa.Activities.Http.Activities;
 using Elsa.Activities.Http.RequestHandlers.Results;
 using Elsa.Activities.Http.Services;
-using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services;
-using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Activities.Http.RequestHandlers.Handlers

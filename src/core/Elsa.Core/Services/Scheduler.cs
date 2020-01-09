@@ -9,7 +9,6 @@ using Elsa.Results;
 using Elsa.Services.Models;
 using MediatR;
 using ScheduledActivity = Elsa.Services.Models.ScheduledActivity;
-using WorkflowExecutionScope = Elsa.Services.Models.WorkflowExecutionScope;
 
 namespace Elsa.Services
 {
@@ -22,7 +21,6 @@ namespace Elsa.Services
 
         private readonly IServiceProvider serviceProvider;
         private readonly IExpressionEvaluator expressionEvaluator;
-        private readonly IIdGenerator idGenerator;
         private readonly IMediator mediator;
 
         public Scheduler(
@@ -33,30 +31,19 @@ namespace Elsa.Services
         {
             this.serviceProvider = serviceProvider;
             this.expressionEvaluator = expressionEvaluator;
-            this.idGenerator = idGenerator;
             this.mediator = mediator;
         }
 
         public WorkflowExecutionContext CreateWorkflowExecutionContext(
             string workflowInstanceId,
+            IEnumerable<IActivity> activities,
+            IEnumerable<Connection> connections,
             IEnumerable<ScheduledActivity>? scheduledActivities = default,
             IEnumerable<IActivity>? blockingActivities = default,
-            IEnumerable<WorkflowExecutionScope>? scopes = default,
+            Variables? variables = default,
             WorkflowStatus status = WorkflowStatus.Running,
             WorkflowPersistenceBehavior persistenceBehavior = WorkflowPersistenceBehavior.WorkflowExecuted)
-            => new WorkflowExecutionContext(expressionEvaluator, serviceProvider, workflowInstanceId, scheduledActivities, blockingActivities, scopes, status, persistenceBehavior);
-
-        public async Task<WorkflowExecutionContext> ScheduleActivityAsync(IActivity activity, object? input = default, CancellationToken cancellationToken = default)
-        {
-            var instanceId = idGenerator.Generate();
-            var workflowExecutionContext = CreateWorkflowExecutionContext(instanceId);
-
-            workflowExecutionContext.ScheduleActivity(activity, input);
-
-            await RunAsync(workflowExecutionContext, cancellationToken);
-
-            return workflowExecutionContext;
-        }
+            => new WorkflowExecutionContext(expressionEvaluator, serviceProvider, workflowInstanceId, activities, connections, scheduledActivities, blockingActivities, variables, status, persistenceBehavior);
 
         public async Task<WorkflowExecutionContext> ResumeAsync(WorkflowExecutionContext workflowExecutionContext, IActivity blockingActivity, object? input, CancellationToken cancellationToken = default)
         {
@@ -82,24 +69,6 @@ namespace Elsa.Services
                 var result = await activityOperation(workflowExecutionContext, activityExecutionContext, currentActivity, cancellationToken);
 
                 await result.ExecuteAsync(workflowExecutionContext, activityExecutionContext, cancellationToken);
-
-                WorkflowExecutionScope? currentScope;
-                
-                do
-                {
-                    currentScope = workflowExecutionContext.CurrentScope;
-                    
-                    if (currentScope?.Container != null && currentActivity != currentScope.Container)
-                    {
-                        var containerActivityExecutionContext = new ActivityExecutionContext(currentScope.Container, activityExecutionContext.Output);
-                        var containerResult = await currentScope.Container.ChildActivityExecutedAsync(workflowExecutionContext, containerActivityExecutionContext, activityExecutionContext, cancellationToken);
-                        await containerResult.ExecuteAsync(workflowExecutionContext, containerActivityExecutionContext, cancellationToken);
-
-                        if (currentScope != workflowExecutionContext.CurrentScope)
-                            activityExecutionContext = containerActivityExecutionContext;
-                    }
-                } while (currentScope != workflowExecutionContext.CurrentScope);
-
                 await mediator.Publish(new ActivityExecuted(workflowExecutionContext, activityExecutionContext), cancellationToken);
 
                 activityOperation = Execute;

@@ -15,26 +15,33 @@ namespace Elsa.Activities.ControlFlow
     [ActivityDefinition(Category = "Control Flow", Description = "Iterate over a collection.", Icon = "far fa-circle")]
     public class ForEach : Activity
     {
-        [ActivityProperty(Hint = "Enter an expression that evaluates to an array of items to iterate over.")]
-        public IWorkflowExpression<IList<object>> Collection
+        [ActivityProperty(Hint = "Enter an expression that evaluates to a collection of items to iterate over.")]
+        public IWorkflowExpression<ICollection<object>> Collection
         {
-            get => GetState<IWorkflowExpression<IList<object>>>();
+            get => GetState<IWorkflowExpression<ICollection<object>>>();
             set => SetState(value);
         }
-
-        [Outlet(OutcomeNames.Iterate)]
-        public IActivity Activity
+        
+        private int? CurrentIndex
         {
-            get => GetState<IActivity>();
+            get => GetState<int?>();
             set => SetState(value);
         }
 
         protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
         {
-            var collection = await workflowExecutionContext.EvaluateAsync(Collection, activityExecutionContext, cancellationToken) ?? new object[0];
-            var scheduledActivities = collection.Reverse().Select(x => new ScheduledActivity(Activity, Variable.From(x))).ToList();
+            var collection = (await workflowExecutionContext.EvaluateAsync(Collection, activityExecutionContext, cancellationToken))?.ToArray() ?? new object[0];
+            var currentIndex = CurrentIndex ?? 0;
 
-            return Schedule(scheduledActivities);
+            if (currentIndex < collection.Length)
+            {
+                var input = collection[currentIndex];
+                CurrentIndex = currentIndex + 1;
+                return Combine(Schedule(this), Done(OutcomeNames.Iterate, Variable.From(input)));
+            }
+
+            CurrentIndex = null;
+            return Done();
         }
     }
 }

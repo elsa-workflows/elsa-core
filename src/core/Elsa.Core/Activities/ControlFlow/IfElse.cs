@@ -19,47 +19,33 @@ namespace Elsa.Activities.ControlFlow
     )]
     public class IfElse : Activity
     {
-        public IfElse(IWorkflowExpression<bool> condition, IActivity trueBranch, IActivity falseBranch)
+        public IfElse()
         {
-            Condition = condition;
-            True = trueBranch;
-            False = falseBranch;
         }
         
-        public IfElse(Func<WorkflowExecutionContext, ActivityExecutionContext, bool> condition, Action trueBranch, Action falseBranch)
+        public IfElse(IWorkflowExpression<bool> condition)
+        {
+            Condition = condition;
+        }
+        
+        public IfElse(Func<WorkflowExecutionContext, ActivityExecutionContext, bool> condition)
         {
             Condition = new CodeExpression<bool>(condition);
-            True = new Inline(trueBranch);
-            False = new Inline(falseBranch);
         }
         
         [ActivityProperty(Hint = "The expression to evaluate. The evaluated value will be used to switch on.")]
-        public IWorkflowExpression<bool> Condition
+        public IWorkflowExpression<bool>? Condition
         {
             get => GetState<IWorkflowExpression<bool>>();
-            set => SetState(value);
-        }
-
-        [Outlet(OutcomeNames.True)]
-        public IActivity True
-        {
-            get => GetState<IActivity>();
-            set => SetState(value);
-        }
-        
-        [Outlet(OutcomeNames.False)]
-        public IActivity False
-        {
-            get => GetState<IActivity>();
             set => SetState(value);
         }
 
         protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
         {
             var result = await workflowExecutionContext.EvaluateAsync(Condition, activityExecutionContext, cancellationToken);
-            var nextActivity = result ? True : False;
+            var outcome = result ? OutcomeNames.True : OutcomeNames.False;
 
-            return Schedule(nextActivity);
+            return Done(outcome);
         }
     }
 }

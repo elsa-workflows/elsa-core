@@ -6,13 +6,11 @@ namespace Elsa.Models
         {
         }
 
-        public WorkflowExecutionScope(Variables variables, string containerActivityId)
+        public WorkflowExecutionScope(Variables variables)
         {
             Variables = variables;
-            ContainerActivityId = containerActivityId;
         }
         
         public Variables Variables { get; }
-        public string ContainerActivityId { get; }
     }
 }

@@ -49,7 +49,7 @@ namespace Elsa.Activities.Primitives
                 cancellationToken
             );
 
-            return new SetVariableResult(VariableName, value);
+            return Combine(new SetVariableResult(VariableName, value), Done());
         }
     }
 }

@@ -15,15 +15,13 @@ namespace Elsa.WorkflowProviders
     public class StoreWorkflowProvider : IWorkflowProvider
     {
         private readonly IWorkflowDefinitionStore store;
-        private readonly IActivityResolver activityResolver;
 
-        public StoreWorkflowProvider(IWorkflowDefinitionStore store, IActivityResolver activityResolver)
+        public StoreWorkflowProvider(IWorkflowDefinitionStore store)
         {
             this.store = store;
-            this.activityResolver = activityResolver;
         }
 
-        public async Task<IEnumerable<Workflow>> GetProcessesAsync(CancellationToken cancellationToken)
+        public async Task<IEnumerable<Workflow>> GetWorkflowsAsync(CancellationToken cancellationToken)
         {
             var workflowDefinitions = await store.ListAsync(VersionOptions.All, cancellationToken);
             return workflowDefinitions.Select(CreateWorkflow);
@@ -33,10 +31,10 @@ namespace Elsa.WorkflowProviders
         {
             var workflow = new Workflow
             {
+                DefinitionId = definition.Id,
                 Description = definition.Description, 
                 Name = definition.Name,
                 Version = definition.Version,
-                Id = definition.Id,
                 IsLatest = definition.IsLatest,
                 IsPublished = definition.IsPublished,
                 IsDisabled = definition.IsDisabled,
@@ -46,17 +44,6 @@ namespace Elsa.WorkflowProviders
             };
 
             return workflow;
-        }
-
-        private IActivity ResolveActivity(ActivityDefinition activityDefinition)
-        {
-            var activity = activityResolver.ResolveActivity(activityDefinition.Type);
-            activity.Description = activityDefinition.Description;
-            activity.Id = activityDefinition.Id;
-            activity.Name = activityDefinition.Name;
-            activity.DisplayName = activityDefinition.DisplayName;
-            activity.State = activityDefinition.State;
-            return activity;
         }
     }
 }

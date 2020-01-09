@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
@@ -7,9 +8,7 @@ namespace Elsa.Services
 {
     public interface IWorkflowRegistry
     {
-        Task<Workflow> GetWorkflowAsync(
-            string id,
-            VersionOptions version,
-            CancellationToken cancellationToken = default);
+        Task<IEnumerable<Workflow>> GetWorkflowsAsync(CancellationToken cancellationToken = default);
+        Task<Workflow> GetWorkflowAsync(string id, VersionOptions version, CancellationToken cancellationToken = default);
     }
 }

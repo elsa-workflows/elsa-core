@@ -6,7 +6,7 @@ using NodaTime;
 
 namespace Elsa.Extensions
 {
-    public static class ProcessExtensions
+    public static class WorkflowInstanceExtensions
     {
         public static bool IsRunning(this WorkflowInstance workflow) => workflow.Status == WorkflowStatus.Running;
 
