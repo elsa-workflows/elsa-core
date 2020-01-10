@@ -170,6 +170,9 @@ namespace Elsa.Builders
             return connectionBuilder;
         }
         
+        public ActivityBuilder Then<T>(Action<T>? setup = default, Action<ActivityBuilder> branch = default) where T : class, IActivity => StartWith(setup, branch);
+        public ActivityBuilder Then<T>(T activity, Action<ActivityBuilder> branch = default) where T : class, IActivity => StartWith(activity, branch);
+        
         public Workflow Build(IWorkflow workflow)
         {
             WithId(workflow.GetType().Name);

@@ -20,13 +20,10 @@ namespace Sample07
                 .AddWorkflow<MyWorkflow>() // Register the workflow.
                 .BuildServiceProvider();
 
-            var registry = services.GetRequiredService<IWorkflowRegistry>();
-            
             // Get a workflow host.
             var host = services.GetRequiredService<IWorkflowHost>();
 
             // Run the workflow.
-            await host.RunAsync<MyWorkflow>();
             await host.RunAsync<MyWorkflow>();
         }
     }

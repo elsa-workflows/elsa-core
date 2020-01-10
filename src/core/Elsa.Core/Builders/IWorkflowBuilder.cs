@@ -6,7 +6,7 @@ using Elsa.Services.Models;
 
 namespace Elsa.Builders
 {
-    public interface IWorkflowBuilder
+    public interface IWorkflowBuilder : IBuilder
     {
         string Id { get; }
         string Name { get; }

@@ -10,6 +10,7 @@ using Elsa.Services;
 using Elsa.Services.Models;
 using ScheduledActivity = Elsa.Services.Models.ScheduledActivity;
 
+// ReSharper disable once CheckNamespace
 namespace Elsa.Activities.ControlFlow
 {
     [ActivityDefinition(Category = "Control Flow", Description = "Iterate over a collection.", Icon = "far fa-circle")]
@@ -28,9 +29,9 @@ namespace Elsa.Activities.ControlFlow
             set => SetState(value);
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var collection = (await workflowExecutionContext.EvaluateAsync(Collection, activityExecutionContext, cancellationToken))?.ToArray() ?? new object[0];
+            var collection = (await context.EvaluateAsync(Collection, cancellationToken))?.ToArray() ?? new object[0];
             var currentIndex = CurrentIndex ?? 0;
 
             if (currentIndex < collection.Length)

@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
+using Elsa.Models;
 using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -42,12 +43,12 @@ namespace Elsa.Activities.ControlFlow
             set => SetState(value);
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var result = await workflowExecutionContext.EvaluateAsync(Value, activityExecutionContext, cancellationToken);
+            var result = await context.EvaluateAsync(Value, cancellationToken);
 
             if (ContainsCase(result) || !ContainsCase(OutcomeNames.Default))
-                return Done(result, result);
+                return Done(result, Variable.From(result));
 
             return Done(OutcomeNames.Default, result);
         }

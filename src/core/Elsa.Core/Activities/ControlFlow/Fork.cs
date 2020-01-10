@@ -22,9 +22,6 @@ namespace Elsa.Activities.ControlFlow
             set => SetState(value);
         }
 
-        protected override IActivityExecutionResult OnExecute(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext context)
-        {
-            return Done(Branches);
-        }
+        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => Done(Branches);
     }
 }

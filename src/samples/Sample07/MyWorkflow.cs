@@ -1,6 +1,10 @@
 using System;
 using System.Linq;
+using Elsa.Activities.Console.Activities;
+using Elsa.Activities.ControlFlow;
+using Elsa.Activities.Primitives;
 using Elsa.Builders;
+using Elsa.Expressions;
 
 namespace Sample07
 {
@@ -14,8 +18,15 @@ namespace Sample07
         public void Build(IWorkflowBuilder builder)
         {
             builder
-                .SetVariable("RandomNumber", () => new Random().Next())
-                .Then((w, a) => WriteLine($"Your lucky number is: {w.GetVariable<int>("RandomNumber")}"));
+                .For(-15, 15, 5, iteration => iteration.Then(context => WriteLine($"Value: {context.Input.Value}")))
+                .For(-15, 15, 5, iteration => iteration.Then<WriteLine>(writeLine => writeLine.With(x => x.Text, new CodeExpression<string>(e => $"Value: {e.Input.Value}"))))
+                .SetVariable("Counter", () => 0)
+                .While(
+                    context => context.GetCounter() < 10, 
+                    iteration => iteration
+                        .Then(context => WriteLine($"Counter: {context.GetCounter()}"))
+                        .SetVariable<int>("Counter", current => current + 1))
+                .Then(context => WriteLine($"Your lucky number is: {context.GetCounter()}"));
         }
     }
 }

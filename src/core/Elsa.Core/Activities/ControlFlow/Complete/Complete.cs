@@ -7,6 +7,7 @@ using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 
+// ReSharper disable once CheckNamespace
 namespace Elsa.Activities.ControlFlow
 {
     [ActivityDefinition(
@@ -17,20 +18,20 @@ namespace Elsa.Activities.ControlFlow
     public class Complete : Activity
     {
         [ActivityProperty(Hint = "An expression that evaluates to the activity's output.'")]
-        public IWorkflowExpression<Variable> Output
+        public IWorkflowExpression OutputValue
         {
-            get => GetState<IWorkflowExpression<Variable>>();
+            get => GetState<IWorkflowExpression>();
             set => SetState(value);
         }
 
         protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var output = await context.EvaluateAsync(Output, cancellationToken) ?? new Variable();
+            var output = await context.EvaluateAsync(OutputValue, cancellationToken) ?? new Variable();
             
             context.WorkflowExecutionContext.BlockingActivities.Clear();
-            context.WorkflowExecutionContext.Status = WorkflowStatus.Completed;
+            context.WorkflowExecutionContext.Complete();
             
-            return Done(output);
+            return Done(Variable.From(output));
         }
     }
 }

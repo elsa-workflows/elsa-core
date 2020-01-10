@@ -28,7 +28,7 @@ namespace Elsa.Activities.ControlFlow
             Condition = condition;
         }
         
-        public IfElse(Func<WorkflowExecutionContext, ActivityExecutionContext, bool> condition)
+        public IfElse(Func<ActivityExecutionContext, bool> condition)
         {
             Condition = new CodeExpression<bool>(condition);
         }
@@ -40,9 +40,9 @@ namespace Elsa.Activities.ControlFlow
             set => SetState(value);
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var result = await workflowExecutionContext.EvaluateAsync(Condition, activityExecutionContext, cancellationToken);
+            var result = await context.EvaluateAsync(Condition, cancellationToken);
             var outcome = result ? OutcomeNames.True : OutcomeNames.False;
 
             return Done(outcome);

@@ -18,19 +18,12 @@ namespace Elsa.Activities.ControlFlow
             set => SetState(value);
         }
 
-        [Outlet(OutcomeNames.Iterate)]
-        public IActivity Activity
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            get => GetState<IActivity>();
-            set => SetState(value);
-        }
-
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
-        {
-            var loop = await workflowExecutionContext.EvaluateAsync(Condition, activityExecutionContext, cancellationToken);
+            var loop = await context.EvaluateAsync(Condition, cancellationToken);
 
             if (loop)
-                return Schedule(new[] { this, Activity }, activityExecutionContext.Input);
+                return Combine(Schedule(this), Done(OutcomeNames.Iterate));
 
             return Done();
         }

@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
@@ -7,8 +6,8 @@ using Elsa.Models;
 using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
-using ScheduledActivity = Elsa.Services.Models.ScheduledActivity;
 
+// ReSharper disable once CheckNamespace
 namespace Elsa.Activities.ControlFlow
 {
     [ActivityDefinition(Category = "Control Flow", Description = "Iterate between two numbers.", Icon = "far fa-circle")]
@@ -41,11 +40,11 @@ namespace Elsa.Activities.ControlFlow
             set => SetState(value);
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var startValue = await workflowExecutionContext.EvaluateAsync(Start, activityExecutionContext, cancellationToken);
-            var endValue = await workflowExecutionContext.EvaluateAsync(End, activityExecutionContext, cancellationToken);
-            var step = await workflowExecutionContext.EvaluateAsync(Step, activityExecutionContext, cancellationToken);
+            var startValue = await context.EvaluateAsync(Start, cancellationToken);
+            var endValue = await context.EvaluateAsync(End, cancellationToken);
+            var step = await context.EvaluateAsync(Step, cancellationToken);
             var currentValue = CurrentValue ?? startValue;
 
             if (currentValue < endValue)

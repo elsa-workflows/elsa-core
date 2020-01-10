@@ -5,7 +5,7 @@ using Elsa.Services.Models;
 
 namespace Elsa.Builders
 {
-    public class OutcomeBuilder
+    public class OutcomeBuilder : IBuilder
     {
         public OutcomeBuilder(IWorkflowBuilder workflowBuilder, ActivityBuilder source, string outcome)
         {
@@ -18,7 +18,7 @@ namespace Elsa.Builders
         public ActivityBuilder Source { get; }
         public string Outcome { get; }
 
-        public ActivityBuilder Then<T>(Action<T> setup = default, Action<ActivityBuilder> branch = default) where T : class, IActivity
+        public ActivityBuilder Then<T>(Action<T>? setup = default, Action<ActivityBuilder> branch = default) where T : class, IActivity
         {
             return Then(WorkflowBuilder.Add(setup), branch);
         }

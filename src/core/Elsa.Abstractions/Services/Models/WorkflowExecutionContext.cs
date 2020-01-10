@@ -15,7 +15,7 @@ namespace Elsa.Services.Models
     {
         public WorkflowExecutionContext(
             IExpressionEvaluator expressionEvaluator, 
-            IServiceProvider serviceProvider, 
+            IServiceProvider serviceProvider,
             string instanceId, 
             IEnumerable<IActivity> activities,
             IEnumerable<Connection> connections,
@@ -37,10 +37,10 @@ namespace Elsa.Services.Models
             PersistenceBehavior = persistenceBehavior;
         }
 
-        public WorkflowStatus Status { get; set; }
         public IServiceProvider ServiceProvider { get; }
         public ICollection<IActivity> Activities { get; }
         public ICollection<Connection> Connections { get; }
+        public WorkflowStatus Status { get; set; }
         public Stack<ScheduledActivity> ScheduledActivities { get; }
         public HashSet<IActivity> BlockingActivities { get; }
         public Variables Variables { get; }
@@ -76,10 +76,10 @@ namespace Elsa.Services.Models
         public object GetVariable(string name) => Variables.GetVariable(name);
 
         public Task<T> EvaluateAsync<T>(IWorkflowExpression<T> expression, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken) => 
-            ExpressionEvaluator.EvaluateAsync(expression, this, activityExecutionContext, cancellationToken);
+            ExpressionEvaluator.EvaluateAsync(expression, activityExecutionContext, cancellationToken);
 
         public Task<object> EvaluateAsync(IWorkflowExpression expression, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken) =>
-            ExpressionEvaluator.EvaluateAsync(expression, this, activityExecutionContext, cancellationToken);
+            ExpressionEvaluator.EvaluateAsync(expression, activityExecutionContext, cancellationToken);
 
         public void Suspend()
         {

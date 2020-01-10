@@ -4,7 +4,7 @@ using Elsa.Services.Models;
 
 namespace Elsa.Builders
 {
-    public class ActivityBuilder
+    public class ActivityBuilder : IBuilder
     {
         public ActivityBuilder(IWorkflowBuilder workflowBuilder, IActivity activity)
         {

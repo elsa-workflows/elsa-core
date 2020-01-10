@@ -25,20 +25,13 @@ namespace Elsa.Activities.Signaling
             set => SetState(value);
         }
 
-        protected override async Task<bool> OnCanExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
+        protected override async Task<bool> OnCanExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var signal = await workflowExecutionContext.EvaluateAsync(Signal, activityExecutionContext, cancellationToken);
-            return activityExecutionContext.Input.GetValue<string>() == signal;
+            var signal = await context.EvaluateAsync(Signal, cancellationToken);
+            return context.Input.GetValue<string>() == signal;
         }
 
-        protected override IActivityExecutionResult OnExecute(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext)
-        {
-            return Suspend();
-        }
-
-        protected override IActivityExecutionResult OnResume(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext context)
-        {
-            return Done();
-        }
+        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => Suspend();
+        protected override IActivityExecutionResult OnResume(ActivityExecutionContext context) => Done();
     }
 }

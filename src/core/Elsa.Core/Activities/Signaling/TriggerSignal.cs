@@ -40,17 +40,17 @@ namespace Elsa.Activities.Signaling
             set => SetState(value);
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var signal = await workflowExecutionContext.EvaluateAsync(Signal, activityExecutionContext, cancellationToken);
-            var correlationId = await workflowExecutionContext.EvaluateAsync(CorrelationId, activityExecutionContext, cancellationToken);
+            var signal = await context.EvaluateAsync(Signal, cancellationToken);
+            var correlationId = await context.EvaluateAsync(CorrelationId, cancellationToken);
 
-            // await workflowHost.TriggerAsync(
-            //     nameof(Signaled),
-            //     Variable.From(signal),
-            //     correlationId,
-            //     cancellationToken: cancellationToken
-            // );
+            await workflowHost.TriggerAsync(
+                nameof(Signaled),
+                Variable.From(signal),
+                correlationId,
+                cancellationToken: cancellationToken
+            );
 
             return Done();
         }

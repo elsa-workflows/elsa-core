@@ -14,10 +14,10 @@ namespace Elsa.Services
 {
     public class Scheduler : IScheduler
     {
-        private delegate Task<IActivityExecutionResult> ActivityOperation(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, IActivity activity, CancellationToken cancellationToken);
+        private delegate Task<IActivityExecutionResult> ActivityOperation(ActivityExecutionContext activityExecutionContext, IActivity activity, CancellationToken cancellationToken);
 
-        private static readonly ActivityOperation Execute = (workflowExecutionContext, activityExecutionContext, activity, cancellationToken) => activity.ExecuteAsync(workflowExecutionContext, activityExecutionContext, cancellationToken);
-        private static readonly ActivityOperation Resume = (workflowExecutionContext, activityExecutionContext, activity, cancellationToken) => activity.ResumeAsync(workflowExecutionContext, activityExecutionContext, cancellationToken);
+        private static readonly ActivityOperation Execute = (context, activity, cancellationToken) => activity.ExecuteAsync(context, cancellationToken);
+        private static readonly ActivityOperation Resume = (context, activity, cancellationToken) => activity.ResumeAsync(context, cancellationToken);
 
         private readonly IServiceProvider serviceProvider;
         private readonly IExpressionEvaluator expressionEvaluator;
@@ -65,8 +65,8 @@ namespace Elsa.Services
             {
                 var scheduledActivity = workflowExecutionContext.PopScheduledActivity();
                 var currentActivity = scheduledActivity.Activity;
-                var activityExecutionContext = new ActivityExecutionContext(currentActivity, scheduledActivity.Input);
-                var result = await activityOperation(workflowExecutionContext, activityExecutionContext, currentActivity, cancellationToken);
+                var activityExecutionContext = new ActivityExecutionContext(workflowExecutionContext, currentActivity, scheduledActivity.Input);
+                var result = await activityOperation(activityExecutionContext, currentActivity, cancellationToken);
 
                 await result.ExecuteAsync(workflowExecutionContext, activityExecutionContext, cancellationToken);
                 await mediator.Publish(new ActivityExecuted(workflowExecutionContext, activityExecutionContext), cancellationToken);

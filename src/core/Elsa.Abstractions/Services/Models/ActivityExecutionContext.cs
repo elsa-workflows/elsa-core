@@ -30,5 +30,7 @@ namespace Elsa.Services.Models
             WorkflowExecutionContext.EvaluateAsync(expression, this, cancellationToken);
 
         public void SetVariable(string name, object value) => WorkflowExecutionContext.SetVariable(name, value);
+        public object GetVariable(string name) => WorkflowExecutionContext.GetVariable(name);
+        public T GetVariable<T>(string name) => WorkflowExecutionContext.GetVariable<T>(name);
     }
 }

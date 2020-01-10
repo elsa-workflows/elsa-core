@@ -63,8 +63,7 @@ namespace Elsa.Extensions
             return workflow.GetInboundActivityPathInternal(activityId, activityId).Distinct().ToList();
         }
 
-        private static IEnumerable<string> GetInboundActivityPathInternal(this Workflow workflowInstance,
-            string activityId, string startingPointActivityId)
+        private static IEnumerable<string> GetInboundActivityPathInternal(this Workflow workflowInstance, string activityId, string startingPointActivityId)
         {
             foreach (var connection in workflowInstance.GetInboundConnections(activityId))
             {

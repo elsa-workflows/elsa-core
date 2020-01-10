@@ -10,12 +10,11 @@ namespace Elsa.Expressions
 
         public Task<object> EvaluateAsync(
             IWorkflowExpression expression,
-            WorkflowExecutionContext workflowExecutionContext,
-            ActivityExecutionContext activityExecutionContext,
+            ActivityExecutionContext context,
             CancellationToken cancellationToken)
         {
             var codeExpression = (CodeExpression)expression;
-            var result = codeExpression.Expression(workflowExecutionContext, activityExecutionContext);
+            var result = codeExpression.Expression(context);
             return Task.FromResult(result);
         }
     }

@@ -9,8 +9,7 @@ namespace Elsa.Expressions
         string Type { get; }
         Task<object> EvaluateAsync(
             IWorkflowExpression expression,
-            WorkflowExecutionContext workflowExecutionContext,
-            ActivityExecutionContext activityExecutionContext,
+            ActivityExecutionContext context,
             CancellationToken cancellationToken);
     }
 }
