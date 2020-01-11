@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Extensions;
 using Elsa.Models;
-using Elsa.Services;
 using WorkflowInstance = Elsa.Models.WorkflowInstance;
 
 namespace Elsa.Persistence.Memory

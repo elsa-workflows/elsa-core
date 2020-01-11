@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -124,11 +123,24 @@ namespace Elsa.Builders
             
             return workflow;
         }
+        
+        public T New<T>(T activity, Action<ActivityBuilder> branch = default) where T : class, IActivity
+        {
+            var activityBuilder = new ActivityBuilder(this, activity);
+            branch?.Invoke(activityBuilder);
+            return activity;
+        }
 
-        public ActivityBuilder StartWith<T>(Action<T>? setup = default, Action<ActivityBuilder> branch = default) where T : class, IActivity
+        public T New<T>(Action<T>? setup, Action<ActivityBuilder> branch = default) where T : class, IActivity
         {
             var activity = activityResolver.ResolveActivity<T>();
             setup?.Invoke(activity);
+            return New(activity, branch);
+        }
+
+        public ActivityBuilder StartWith<T>(Action<T>? setup = default, Action<ActivityBuilder> branch = default) where T : class, IActivity
+        {
+            var activity = New(setup, branch);
             return StartWith(activity, branch);
         }
         
@@ -139,7 +151,7 @@ namespace Elsa.Builders
         
         public ActivityBuilder Add<T>(Action<T>? setup = default, Action<ActivityBuilder> branch = default) where T : class, IActivity
         {
-            var activity = activityResolver.ResolveActivity(setup);
+            var activity = New(setup, branch);
             return Add(activity, branch);
         }
         

@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -21,6 +20,8 @@ namespace Elsa.Builders
         IWorkflowBuilder WithVersion(int value);
         IWorkflowBuilder AsSingleton();
         IWorkflowBuilder AsTransient();
+        T New<T>(Action<T>? setup = default, Action<ActivityBuilder> branch = default) where T : class, IActivity;
+        T New<T>(T activity, Action<ActivityBuilder> branch = default) where T : class, IActivity;
         ActivityBuilder StartWith<T>(Action<T>? setup = default, Action<ActivityBuilder> branch = default) where T : class, IActivity;
         ActivityBuilder StartWith<T>(T activity, Action<ActivityBuilder> branch = default) where T : class, IActivity;
         ActivityBuilder Add<T>(Action<T>? setup = default, Action<ActivityBuilder> branch = default) where T : class, IActivity;

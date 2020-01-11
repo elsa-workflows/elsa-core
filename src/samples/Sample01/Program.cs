@@ -1,13 +1,10 @@
 ﻿using System;
  using System.Threading.Tasks;
- using Elsa.Extensions;
- using Elsa.Services;
+using Elsa.Services;
  using Microsoft.Extensions.DependencyInjection;
  
  namespace Sample01
  {
-     using static Console;
-     
      /// <summary>
      /// A minimal workflows program that writes a simple Hello World message.
      /// </summary>

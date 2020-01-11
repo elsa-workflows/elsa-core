@@ -1,15 +1,10 @@
 using System;
 using System.Threading.Tasks;
-using Elsa.Activities.ControlFlow;
-using Elsa.Activities.Primitives;
-using Elsa.Expressions;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Sample03
 {
-    using static Console;
-    
     /// <summary>
     /// A sequential workflow with if/else branching.
     /// </summary>

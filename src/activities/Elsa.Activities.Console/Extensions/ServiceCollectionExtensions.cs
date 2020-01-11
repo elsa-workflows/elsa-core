@@ -1,5 +1,4 @@
-using Elsa.Activities.Console.Activities;
-using Microsoft.Extensions.DependencyInjection;
+using Elsa.Activities.Console;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection

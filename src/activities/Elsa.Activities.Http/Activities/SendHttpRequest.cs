@@ -12,7 +12,6 @@ using Elsa.Activities.Http.Services;
 using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Expressions;
-using Elsa.Models;
 using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;

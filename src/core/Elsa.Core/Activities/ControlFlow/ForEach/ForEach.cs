@@ -8,7 +8,6 @@ using Elsa.Models;
 using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
-using ScheduledActivity = Elsa.Services.Models.ScheduledActivity;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.ControlFlow

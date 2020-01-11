@@ -6,7 +6,6 @@ using System.Reflection;
 using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Services;
-using Elsa.Services.Models;
 using Humanizer;
 
 namespace Elsa.Metadata

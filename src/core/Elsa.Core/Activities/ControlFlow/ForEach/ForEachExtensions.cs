@@ -12,6 +12,6 @@ namespace Elsa.Activities.ControlFlow
         public static ForEach WithCollection(this ForEach activity, IWorkflowExpression<ICollection<object>> value) => activity.With(x => x.Collection, value);
         public static ForEach WithCollection(this ForEach activity, Func<ActivityExecutionContext, ICollection<object>> value) => activity.WithCollection(new CodeExpression<ICollection<object>>(value));
         public static ForEach WithCollection(this ForEach activity, Func<ICollection<object>> value) => activity.WithCollection(new CodeExpression<ICollection<object>>(value));
-        public static ForEach WithCollection(this ForEach activity, ICollection<object> value) => activity.WithCollection(() => value);
+        public static ForEach WithCollection(this ForEach activity, ICollection<object> value) => activity.WithCollection(new CodeExpression<ICollection<object>>(value));
     }
 }

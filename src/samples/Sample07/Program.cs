@@ -1,7 +1,4 @@
-using System;
 using System.Threading.Tasks;
-using Elsa.Activities.Console.Activities;
-using Elsa.Models;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 

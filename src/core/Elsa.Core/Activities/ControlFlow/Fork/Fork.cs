@@ -4,6 +4,7 @@ using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 
+// ReSharper disable once CheckNamespace
 namespace Elsa.Activities.ControlFlow
 {
     [ActivityDefinition(
@@ -16,9 +17,9 @@ namespace Elsa.Activities.ControlFlow
         [ActivityProperty(
             Hint = "Enter one or more names representing branches, separated with a comma. Example: Branch 1, Branch 2"
         )]
-        public IList<string> Branches
+        public HashSet<string> Branches
         {
-            get => GetState(() => new List<string>());
+            get => GetState(() => new HashSet<string>());
             set => SetState(value);
         }
 

@@ -55,6 +55,13 @@ namespace Elsa.Activities.ControlFlow
             int step,
             Action<OutcomeBuilder> iteration) =>
             builder.For(a => a.WithStart(start).WithEnd(end).WithStep(step), iteration);
+        
+        public static OutcomeBuilder For(
+            this IBuilder builder,
+            int start,
+            int end,
+            Action<OutcomeBuilder> iteration) =>
+            builder.For(start, end, 1, iteration);
 
         private static OutcomeBuilder For(ActivityBuilder @for, Action<OutcomeBuilder> iteration)
         {

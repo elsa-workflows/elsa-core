@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Elsa.Activities.MassTransit.Activities;
 using Elsa.Activities.MassTransit.Consumers.MessageCorrelation;
-using Elsa.Expressions;
 using Elsa.Models;
 using Elsa.Services;
 using MassTransit;

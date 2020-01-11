@@ -1,5 +1,4 @@
 using System;
-using System.Runtime.CompilerServices;
 using Elsa.Services.Models;
 
 namespace Elsa.Expressions
@@ -28,6 +27,10 @@ namespace Elsa.Expressions
         }
         
         public CodeExpression(Func<T> expression) : base(context => expression(), typeof(T))
+        {
+        }
+        
+        public CodeExpression(T value) : base(() => value, typeof(T))
         {
         }
     }

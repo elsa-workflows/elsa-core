@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Elsa.Services.Models;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Services

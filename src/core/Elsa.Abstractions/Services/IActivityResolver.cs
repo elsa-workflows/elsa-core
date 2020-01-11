@@ -1,5 +1,4 @@
 using System;
-using Elsa.Services.Models;
 
 namespace Elsa.Services
 {

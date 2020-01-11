@@ -1,7 +1,5 @@
-using System.Collections.Generic;
 using Elsa.Models;
 using Elsa.Services;
-using Elsa.Services.Models;
 using NodaTime;
 
 namespace Elsa.Extensions

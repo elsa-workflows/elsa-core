@@ -1,12 +1,8 @@
 using System;
-using Elsa.Activities.Console.Activities;
-using Elsa.Activities.Primitives;
 using Elsa.Builders;
 
 namespace Sample09
 {
-    using static Console;
-
     public class MyMixedWorkflow : IWorkflow
     {
         public void Build(IWorkflowBuilder builder)

@@ -10,6 +10,7 @@ using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 
+// ReSharper disable once CheckNamespace
 namespace Elsa.Activities.ControlFlow
 {
     [ActivityDefinition(
@@ -23,7 +24,7 @@ namespace Elsa.Activities.ControlFlow
     {
         public Switch()
         {
-            Cases = new List<string>()
+            Cases = new HashSet<string>()
             {
                 OutcomeNames.Default
             };
@@ -37,10 +38,10 @@ namespace Elsa.Activities.ControlFlow
         }
 
         [ActivityProperty(Hint = "A comma-separated list of possible outcomes of the expression.")]
-        public IReadOnlyCollection<string> Cases
+        public HashSet<string> Cases
         {
-            get => GetState<IReadOnlyCollection<string>>();
-            set => SetState(value);
+            get => GetState<HashSet<string>>();
+            set => SetState(new HashSet<string>(value, StringComparer.OrdinalIgnoreCase));
         }
 
         protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
@@ -50,9 +51,9 @@ namespace Elsa.Activities.ControlFlow
             if (ContainsCase(result) || !ContainsCase(OutcomeNames.Default))
                 return Done(result, Variable.From(result));
 
-            return Done(OutcomeNames.Default, result);
+            return Done(OutcomeNames.Default, Variable.From(result));
         }
 
-        private bool ContainsCase(string @case) => Cases.Contains(@case, StringComparer.OrdinalIgnoreCase);
+        private bool ContainsCase(string @case) => Cases.Contains(@case);
     }
 }

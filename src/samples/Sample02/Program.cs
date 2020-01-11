@@ -1,13 +1,10 @@
 ﻿using System;
  using System.Threading.Tasks;
-using Elsa.Activities.Primitives;
- using Elsa.Services;
+using Elsa.Services;
  using Microsoft.Extensions.DependencyInjection;
  
  namespace Sample02
  {
-     using static Console;
-     
      /// <summary>
      /// A sequential workflow writing out messages. Notice that workflows can be created entirely programmatically.
      /// </summary>

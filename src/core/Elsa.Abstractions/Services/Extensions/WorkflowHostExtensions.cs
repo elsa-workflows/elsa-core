@@ -1,7 +1,5 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Models;
-using Elsa.Services.Models;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Services
