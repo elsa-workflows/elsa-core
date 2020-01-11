@@ -1,4 +1,3 @@
-using System;
 using Elsa.Activities.Console;
 using Elsa.Activities.ControlFlow;
 using Elsa.Builders;
@@ -14,8 +13,8 @@ namespace Sample07
         {
             builder
                 .SetVariable("Counter", 0)
-                .While(x => x.GetVariable<int>("Counter") <= 10, whileTrue => whileTrue
-                    .WriteLine(x => $"Counter: {x.GetVariable<int>("Counter")}")
+                .While(x => x.GetCounter() <= 10, whileTrue => whileTrue
+                    .WriteLine(x => $"Counter: {x.GetCounter()}")
                     .SetVariable<int>("Counter", current => current + 1)
                 )
                 .WriteLine("Done");

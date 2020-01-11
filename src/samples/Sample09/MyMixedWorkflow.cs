@@ -1,4 +1,3 @@
-using System;
 using Elsa.Builders;
 
 namespace Sample09
