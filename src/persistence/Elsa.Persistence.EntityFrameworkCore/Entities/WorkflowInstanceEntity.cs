@@ -10,17 +10,17 @@ namespace Elsa.Persistence.EntityFrameworkCore.Entities
         public string InstanceId { get; set; }
         public string DefinitionId { get; set; }
         public int Version { get; set; }
-        public ProcessStatus Status { get; set; }
+        public WorkflowStatus Status { get; set; }
         public string CorrelationId { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? StartedAt { get; set; }
         public DateTime? FinishedAt { get; set; }
         public DateTime? FaultedAt { get; set; }
         public DateTime? AbortedAt { get; set; }
-        public Stack<ProcessExecutionScope> Scopes { get; set; }
+        public Variables Variables { get; set; }
         public Variables Input { get; set; }
         public ICollection<LogEntry> ExecutionLog { get; set; }
-        public ProcessFault Fault { get; set; }
+        public WorkflowFault Fault { get; set; }
         public ICollection<ActivityInstanceEntity> Activities { get; set; }
         public ICollection<BlockingActivityEntity> BlockingActivities { get; set; }
         public Stack<string> ScheduledActivities { get; set; }

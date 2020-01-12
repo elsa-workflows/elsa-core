@@ -8,8 +8,8 @@ namespace Elsa.Persistence.DocumentDb.Mapping
     {
         public DocumentProfile()
         {
-            CreateMap<ProcessDefinitionVersion, WorkflowDefinitionVersionDocument>().ReverseMap();
-            CreateMap<ProcessInstance, WorkflowInstanceDocument>().ReverseMap();
+            CreateMap<WorkflowDefinitionVersion, WorkflowDefinitionVersionDocument>().ReverseMap();
+            CreateMap<WorkflowInstance, WorkflowInstanceDocument>().ReverseMap();
         }
     }
 }

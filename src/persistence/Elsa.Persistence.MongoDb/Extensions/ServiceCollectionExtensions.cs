@@ -12,6 +12,7 @@ using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Conventions;
 using MongoDB.Driver;
 
+// ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
 {
     public static class ServiceCollectionExtensions
@@ -26,7 +27,6 @@ namespace Microsoft.Extensions.DependencyInjection
             NodaTimeSerializers.Register();
             RegisterEnumAsStringConvention();
             BsonSerializer.RegisterSerializer(new JObjectSerializer());
-            BsonSerializer.RegisterSerializer(new WorkflowExecutionScopeSerializer());
 
             elsaBuilder.Services
                 .AddSingleton(sp => CreateDbClient(configuration, connectionStringName))
@@ -51,7 +51,7 @@ namespace Microsoft.Extensions.DependencyInjection
             this MongoElsaBuilder configuration)
         {
             configuration.Services
-                .AddMongoDbCollection<ProcessInstance>("WorkflowInstances")
+                .AddMongoDbCollection<WorkflowInstance>("WorkflowInstances")
                 .AddScoped<IWorkflowInstanceStore, MongoWorkflowInstanceStore>();
 
             return configuration;
@@ -61,7 +61,7 @@ namespace Microsoft.Extensions.DependencyInjection
             this MongoElsaBuilder configuration)
         {
             configuration.Services
-                .AddMongoDbCollection<ProcessDefinitionVersion>("WorkflowDefinitions")
+                .AddMongoDbCollection<WorkflowDefinitionVersion>("WorkflowDefinitions")
                 .AddScoped<IWorkflowDefinitionStore, MongoWorkflowDefinitionStore>();
 
             return configuration;

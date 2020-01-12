@@ -21,7 +21,7 @@ namespace Elsa.Persistence.DocumentDb.Services
             this.mapper = mapper;
         }
 
-        public async Task<ProcessDefinitionVersion> AddAsync(ProcessDefinitionVersion definition, CancellationToken cancellationToken = default)
+        public async Task<WorkflowDefinitionVersion> AddAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken = default)
         {
             var document = Map(definition);
             var client = storage.Client;
@@ -29,7 +29,7 @@ namespace Elsa.Persistence.DocumentDb.Services
             return Map(document);
         }
 
-        public Task<ProcessDefinitionVersion> GetByIdAsync(string id, CancellationToken cancellationToken = default)
+        public Task<WorkflowDefinitionVersion> GetByIdAsync(string id, CancellationToken cancellationToken = default)
         {
             var client = storage.Client;
             var query = client.CreateDocumentQuery<WorkflowDefinitionVersionDocument>(storage.CollectionUri).Where(c => c.Id == id);
@@ -37,7 +37,7 @@ namespace Elsa.Persistence.DocumentDb.Services
             return Task.FromResult(Map(document));
         }
 
-        public Task<ProcessDefinitionVersion> GetByIdAsync(string definitionId, VersionOptions version, CancellationToken cancellationToken = default)
+        public Task<WorkflowDefinitionVersion> GetByIdAsync(string definitionId, VersionOptions version, CancellationToken cancellationToken = default)
         {
             var client = storage.Client;
             var query = client.CreateDocumentQuery<WorkflowDefinitionVersionDocument>(storage.CollectionUri)
@@ -57,16 +57,16 @@ namespace Elsa.Persistence.DocumentDb.Services
             return workflowDefinitionDocuments.Count;
         }
 
-        public Task<IEnumerable<ProcessDefinitionVersion>> ListAsync(VersionOptions version, CancellationToken cancellationToken = default)
+        public Task<IEnumerable<WorkflowDefinitionVersion>> ListAsync(VersionOptions version, CancellationToken cancellationToken = default)
         {
             var client = storage.Client;
             var query = client.CreateDocumentQuery<WorkflowDefinitionVersionDocument>(storage.CollectionUri)
                 .WithVersion(version).ToList();
            
-            return Task.FromResult(mapper.Map<IEnumerable<ProcessDefinitionVersion>>(query));
+            return Task.FromResult(mapper.Map<IEnumerable<WorkflowDefinitionVersion>>(query));
         }
 
-        public async Task<ProcessDefinitionVersion> SaveAsync(ProcessDefinitionVersion definition, CancellationToken cancellationToken = default)
+        public async Task<WorkflowDefinitionVersion> SaveAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken = default)
         {
             var document = Map(definition);
             var client = storage.Client;
@@ -74,7 +74,7 @@ namespace Elsa.Persistence.DocumentDb.Services
             return definition;
         }
 
-        public async Task<ProcessDefinitionVersion> UpdateAsync(ProcessDefinitionVersion definition, CancellationToken cancellationToken = default)
+        public async Task<WorkflowDefinitionVersion> UpdateAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken = default)
         {
             var document = Map(definition);
             var client = storage.Client;
@@ -82,14 +82,14 @@ namespace Elsa.Persistence.DocumentDb.Services
             return Map(document);
         }
 
-        private WorkflowDefinitionVersionDocument Map(ProcessDefinitionVersion source)
+        private WorkflowDefinitionVersionDocument Map(WorkflowDefinitionVersion source)
         {
             return mapper.Map<WorkflowDefinitionVersionDocument>(source);
         }
 
-        private ProcessDefinitionVersion Map(WorkflowDefinitionVersionDocument source)
+        private WorkflowDefinitionVersion Map(WorkflowDefinitionVersionDocument source)
         {
-            return mapper.Map<ProcessDefinitionVersion>(source);
+            return mapper.Map<WorkflowDefinitionVersion>(source);
         }
     }
 }
