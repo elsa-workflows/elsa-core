@@ -1,7 +1,6 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Activities.Timers.Activities;
 using Elsa.Activities.Timers.Options;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;

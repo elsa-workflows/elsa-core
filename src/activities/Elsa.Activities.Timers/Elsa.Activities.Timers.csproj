@@ -19,6 +19,7 @@
         <RepositoryType>GitHub</RepositoryType>
         <PackageTags>elsa, workflows, timers, background tasks</PackageTags>
         <PackageIcon>icon.png</PackageIcon>
+        <Nullable>enable</Nullable>
     </PropertyGroup>
 
     <ItemGroup>

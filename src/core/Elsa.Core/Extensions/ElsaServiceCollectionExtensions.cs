@@ -158,7 +158,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddActivity<Join>()
                 .AddActivity<IfElse>()
                 .AddActivity<Switch>()
-                .AddActivity<TriggerWorkflow>()
+                .AddActivity<TriggerEvent>()
                 .AddActivity<Correlate>()
                 .AddActivity<Signaled>()
                 .AddActivity<TriggerSignal>()

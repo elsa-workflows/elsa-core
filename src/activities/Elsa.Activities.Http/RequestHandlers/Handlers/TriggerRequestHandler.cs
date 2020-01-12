@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Activities.Http.Activities;
 using Elsa.Activities.Http.RequestHandlers.Results;
 using Elsa.Activities.Http.Services;
 using Elsa.Models;

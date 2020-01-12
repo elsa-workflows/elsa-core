@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Elsa.Activities.MassTransit.Activities;
 using Elsa.Activities.MassTransit.Consumers;
 using Elsa.Activities.MassTransit.Options;
 using MassTransit;

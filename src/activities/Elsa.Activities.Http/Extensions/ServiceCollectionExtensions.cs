@@ -1,5 +1,5 @@
 using System;
-using Elsa.Activities.Http.Activities;
+using Elsa.Activities.Http;
 using Elsa.Activities.Http.Options;
 using Elsa.Activities.Http.Parsers;
 using Elsa.Activities.Http.RequestHandlers.Handlers;
