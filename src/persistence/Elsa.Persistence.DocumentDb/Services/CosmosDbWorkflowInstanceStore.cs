@@ -60,7 +60,7 @@ namespace Elsa.Persistence.DocumentDb.Services
             return Task.FromResult(mapper.Map<IEnumerable<WorkflowInstance>>(query));
         }
 
-        public Task<IEnumerable<(WorkflowInstance, ActivityInstance)>> ListByBlockingActivityAsync(
+        public Task<IEnumerable<(WorkflowInstance, BlockingActivity)>> ListByBlockingActivityAsync(
             string activityType,
             string correlationId = null,
             CancellationToken cancellationToken = default)
@@ -69,12 +69,10 @@ namespace Elsa.Persistence.DocumentDb.Services
 
             var query = client
                 .CreateDocumentQuery<WorkflowInstanceDocument>(storage.CollectionUri)
-                .Where(x => x.Status == WorkflowStatus.Running);
+                .Where(x => x.Status == WorkflowStatus.Suspended);
 
-            if (!string.IsNullOrWhiteSpace(correlationId))
-            {
+            if (!string.IsNullOrWhiteSpace(correlationId)) 
                 query = query.Where(x => x.CorrelationId == correlationId);
-            }
 
             query = query.Where(x => x.BlockingActivities.Any(y => y.ActivityType == activityType));
             query = query.OrderByDescending(x => x.CreatedAt);
@@ -106,9 +104,7 @@ namespace Elsa.Persistence.DocumentDb.Services
             return Task.FromResult(Map(query.ToList()));
         }
 
-        public Task<IEnumerable<WorkflowInstance>> ListByStatusAsync(
-            WorkflowStatus status,
-            CancellationToken cancellationToken = default)
+        public Task<IEnumerable<WorkflowInstance>> ListByStatusAsync(WorkflowStatus status, CancellationToken cancellationToken = default)
         {
             var client = storage.Client;
             var query = client.CreateDocumentQuery<WorkflowInstanceDocument>(storage.CollectionUri)
@@ -117,9 +113,7 @@ namespace Elsa.Persistence.DocumentDb.Services
             return Task.FromResult(Map(query.ToList()));
         }
 
-        public async Task<WorkflowInstance> SaveAsync(
-            WorkflowInstance instance,
-            CancellationToken cancellationToken = default)
+        public async Task<WorkflowInstance> SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
         {
             var document = Map(instance);
             var client = storage.Client;
@@ -135,7 +129,6 @@ namespace Elsa.Persistence.DocumentDb.Services
         private WorkflowInstanceDocument Map(WorkflowInstance source) => mapper.Map<WorkflowInstanceDocument>(source);
         private WorkflowInstance Map(WorkflowInstanceDocument source) => mapper.Map<WorkflowInstance>(source);
 
-        private IEnumerable<WorkflowInstance> Map(IEnumerable<WorkflowInstanceDocument> source) =>
-            mapper.Map<IEnumerable<WorkflowInstance>>(source);
+        private IEnumerable<WorkflowInstance> Map(IEnumerable<WorkflowInstanceDocument> source) => mapper.Map<IEnumerable<WorkflowInstance>>(source);
     }
 }

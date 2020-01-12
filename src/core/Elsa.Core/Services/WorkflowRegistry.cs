@@ -3,11 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Caching;
 using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Services.Models;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Services
@@ -16,64 +14,29 @@ namespace Elsa.Services
     {
         internal const string CacheKey = "elsa:workflow-registry";
         private readonly IServiceProvider serviceProvider;
-        private readonly IMemoryCache cache;
-        private readonly ISignal signal;
 
         public WorkflowRegistry(
-            IMemoryCache cache,
-            ISignal signal,
             IServiceProvider serviceProvider)
         {
-            this.cache = cache;
-            this.signal = signal;
             this.serviceProvider = serviceProvider;
         }
-
-        public async Task<IEnumerable<(WorkflowBlueprint, IActivity)>> ListByStartActivityAsync(string activityType, CancellationToken cancellationToken)
-        {
-            var workflowBlueprints = await ReadCacheAsync(cancellationToken);
-
-            var query =
-                from workflow in workflowBlueprints
-                where workflow.IsPublished
-                from activity in workflow.GetStartActivities()
-                where activity.Type == activityType
-                select (workflow, activity);
-
-            return query.Distinct();
-        }
-
-        public async Task<WorkflowBlueprint> GetWorkflowBlueprintAsync(string id, VersionOptions version, CancellationToken cancellationToken)
-        {
-            var workflowDefinitions = await ReadCacheAsync(cancellationToken);
-
-            return workflowDefinitions
-                .Where(x => x.DefinitionId == id)
-                .OrderByDescending(x => x.Version)
-                .WithVersion(version).FirstOrDefault();
-        }
-
-        private async Task<ICollection<WorkflowBlueprint>> ReadCacheAsync(CancellationToken cancellationToken)
-        {
-            return await cache.GetOrCreateAsync(
-                CacheKey,
-                async entry =>
-                {
-                    var workflowDefinitions = await LoadWorkflowDefinitionsAsync(cancellationToken);
-
-                    entry.SlidingExpiration = TimeSpan.FromHours(1);
-                    entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(4);
-                    entry.Monitor(signal.GetToken(CacheKey));
-                    return workflowDefinitions;
-                });
-        }
-
-        private async Task<ICollection<WorkflowBlueprint>> LoadWorkflowDefinitionsAsync(CancellationToken cancellationToken)
+        
+        public async Task<IEnumerable<Workflow>> GetWorkflowsAsync(CancellationToken cancellationToken)
         {
             using var scope = serviceProvider.CreateScope();
             var providers = scope.ServiceProvider.GetServices<IWorkflowProvider>();
-            var tasks = await Task.WhenAll(providers.Select(x => x.GetWorkflowDefinitionsAsync(cancellationToken)));
+            var tasks = await Task.WhenAll(providers.Select(x => x.GetWorkflowsAsync(cancellationToken)));
             return tasks.SelectMany(x => x).ToList();
+        }
+
+        public async Task<Workflow> GetWorkflowAsync(string id, VersionOptions version, CancellationToken cancellationToken)
+        {
+            var workflows = await GetWorkflowsAsync(cancellationToken).ToListAsync();
+
+            return workflows
+                .Where(x => x.DefinitionId == id)
+                .OrderByDescending(x => x.Version)
+                .WithVersion(version).FirstOrDefault();
         }
     }
 }

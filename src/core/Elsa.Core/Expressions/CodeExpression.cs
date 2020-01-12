@@ -11,17 +11,26 @@ namespace Elsa.Expressions
         {
             Expression = expression;
         }
+        
+        public CodeExpression(Func<object> expression, Type returnType) : base(ExpressionType, returnType)
+        {
+            Expression = context => expression();
+        }
 
         public Func<ActivityExecutionContext, object> Expression { get; }
     }
 
     public class CodeExpression<T> : CodeExpression, IWorkflowExpression<T>
     {
-        public CodeExpression(Func<ActivityExecutionContext, T> expression) : base(x => expression(x), typeof(T))
+        public CodeExpression(Func<ActivityExecutionContext, T> expression) : base(context => expression(context), typeof(T))
         {
         }
         
-        public CodeExpression(Func<T> expression) : base(x => expression(), typeof(T))
+        public CodeExpression(Func<T> expression) : base(context => expression(), typeof(T))
+        {
+        }
+        
+        public CodeExpression(T value) : base(() => value, typeof(T))
         {
         }
     }

@@ -1,4 +1,4 @@
-using System.Linq;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Models;
@@ -15,25 +15,22 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
     {
         private readonly HttpContext httpContext;
         private readonly ITokenService tokenService;
-        private readonly IWorkflowRunner workflowRunner;
+        private readonly IWorkflowHost workflowHost;
         private readonly IWorkflowRegistry workflowRegistry;
-        private readonly IWorkflowFactory workflowFactory;
         private readonly IWorkflowInstanceStore workflowInstanceStore;
         private readonly CancellationToken cancellationToken;
 
         public SignalRequestHandler(
             IHttpContextAccessor httpContextAccessor,
             ITokenService tokenService,
-            IWorkflowRunner workflowRunner,
+            IWorkflowHost workflowHost,
             IWorkflowRegistry workflowRegistry,
-            IWorkflowFactory workflowFactory,
             IWorkflowInstanceStore workflowInstanceStore)
         {
             httpContext = httpContextAccessor.HttpContext;
             this.tokenService = tokenService;
-            this.workflowRunner = workflowRunner;
+            this.workflowHost = workflowHost;
             this.workflowRegistry = workflowRegistry;
-            this.workflowFactory = workflowFactory;
             this.workflowInstanceStore = workflowInstanceStore;
             cancellationToken = httpContext.RequestAborted;
         }
@@ -71,18 +68,19 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
         private bool CheckIfExecuting(WorkflowInstance workflowInstance) => 
             workflowInstance.Status == WorkflowStatus.Running;
 
-        private async Task ResumeWorkflowAsync(WorkflowInstance workflowInstance, Signal signal)
+        private async Task ResumeWorkflowAsync(WorkflowInstance workflowInstanceModel, Signal signal)
         {
             var input = Variable.From(signal.Name);
 
-            var workflowDefinition = await workflowRegistry.GetWorkflowBlueprintAsync(
-                workflowInstance.DefinitionId,
-                VersionOptions.SpecificVersion(workflowInstance.Version),
+            var workflowDefinition = await workflowRegistry.GetWorkflowAsync(
+                workflowInstanceModel.DefinitionId,
+                VersionOptions.SpecificVersion(workflowInstanceModel.Version),
                 cancellationToken);
 
-            var workflow = workflowFactory.CreateWorkflow(workflowDefinition, input, workflowInstance);
-            var blockingSignalActivities = workflow.BlockingActivities.ToList();
-            await workflowRunner.ResumeAsync(workflow, blockingSignalActivities, cancellationToken);
+            //var processInstance = processFactory.CreateProcessInstance(workflowDefinition, input, processInstanceModel);
+            //var blockingSignalActivities = processInstance.BlockingActivities.ToList();
+            //await workflowRunner.ResumeAsync(processInstance, blockingSignalActivities, cancellationToken);
+            throw new NotImplementedException();
         }
     }
 }

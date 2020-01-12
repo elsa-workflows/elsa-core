@@ -4,6 +4,7 @@ using Elsa.Activities.Dropbox.Models;
 using Elsa.Activities.Dropbox.Services;
 using Elsa.Attributes;
 using Elsa.Expressions;
+using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 

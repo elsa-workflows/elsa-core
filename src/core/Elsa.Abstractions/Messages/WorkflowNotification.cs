@@ -8,11 +8,11 @@ namespace Elsa.Messages
     /// </summary>
     public abstract class WorkflowNotification : INotification
     {
-        protected WorkflowNotification(Workflow workflow)
+        protected WorkflowNotification(WorkflowExecutionContext workflowExecutionContext)
         {
-            Workflow = workflow;
+            WorkflowExecutionContext = workflowExecutionContext;
         }
         
-        public Workflow Workflow { get; }
+        public WorkflowExecutionContext WorkflowExecutionContext { get; }
     }
 }

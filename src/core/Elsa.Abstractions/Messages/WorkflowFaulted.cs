@@ -7,7 +7,7 @@ namespace Elsa.Messages
     /// </summary>
     public class WorkflowFaulted : WorkflowNotification
     {
-        public WorkflowFaulted(Workflow workflow) : base(workflow)
+        public WorkflowFaulted(WorkflowExecutionContext workflowExecutionContext) : base(workflowExecutionContext)
         {
         }
     }

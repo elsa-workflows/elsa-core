@@ -6,13 +6,8 @@ namespace Elsa.Services.Models
         {
         }
 
-        public Connection(IActivity sourceActivity, IActivity targetActivity) 
-            : this(new SourceEndpoint(sourceActivity), new TargetEndpoint(targetActivity))
-        {
-        }
-        
-        public Connection(IActivity sourceActivity, IActivity targetActivity, string sourceEndpointName) 
-            : this(new SourceEndpoint(sourceActivity, sourceEndpointName), new TargetEndpoint(targetActivity))
+        public Connection(IActivity sourceActivity, IActivity targetActivity, string sourceOutcome = OutcomeNames.Done) 
+            : this(new SourceEndpoint(sourceActivity, sourceOutcome), new TargetEndpoint(targetActivity))
         {
         }
 
@@ -22,7 +17,7 @@ namespace Elsa.Services.Models
             Target = target;
         }
 
-        public SourceEndpoint? Source { get; set; }
-        public TargetEndpoint? Target { get; set; }
+        public SourceEndpoint Source { get; set; }
+        public TargetEndpoint Target { get; set; }
     }
 }

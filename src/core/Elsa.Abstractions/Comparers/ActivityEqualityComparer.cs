@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Elsa.Services.Models;
+using Elsa.Services;
 
 namespace Elsa.Comparers
 {

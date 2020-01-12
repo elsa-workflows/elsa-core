@@ -4,11 +4,11 @@ namespace Elsa.Messages
 {
     public class ExecutingActivity : WorkflowNotification
     {
-        public ExecutingActivity(Workflow workflow, IActivity activity) : base(workflow)
+        public ExecutingActivity(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext) : base(workflowExecutionContext)
         {
-            Activity = activity;
+            ActivityExecutionContext = activityExecutionContext;
         }
         
-        public IActivity Activity { get; }
+        public ActivityExecutionContext ActivityExecutionContext { get; }
     }
 }

@@ -11,6 +11,6 @@ namespace Elsa.Services.Models
             Activity = activity;
         }
         
-        public IActivity? Activity { get; set; }
+        public IActivity Activity { get; set; }
     }
 }

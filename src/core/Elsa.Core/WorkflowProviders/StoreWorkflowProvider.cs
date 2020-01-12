@@ -15,23 +15,35 @@ namespace Elsa.WorkflowProviders
     public class StoreWorkflowProvider : IWorkflowProvider
     {
         private readonly IWorkflowDefinitionStore store;
-        private readonly IWorkflowFactory workflowFactory;
 
-        public StoreWorkflowProvider(IWorkflowDefinitionStore store, IWorkflowFactory workflowFactory)
+        public StoreWorkflowProvider(IWorkflowDefinitionStore store)
         {
             this.store = store;
-            this.workflowFactory = workflowFactory;
         }
 
-        public async Task<IEnumerable<WorkflowBlueprint>> GetWorkflowDefinitionsAsync(CancellationToken cancellationToken)
+        public async Task<IEnumerable<Workflow>> GetWorkflowsAsync(CancellationToken cancellationToken)
         {
             var workflowDefinitions = await store.ListAsync(VersionOptions.All, cancellationToken);
-            return workflowDefinitions.Select(CreateWorkflowBlueprint);
+            return workflowDefinitions.Select(CreateWorkflow);
         }
 
-        private WorkflowBlueprint CreateWorkflowBlueprint(WorkflowDefinitionVersion definition)
+        private Workflow CreateWorkflow(WorkflowDefinitionVersion definition)
         {
-            return workflowFactory.CreateWorkflowBlueprint(definition);
+            var workflow = new Workflow
+            {
+                DefinitionId = definition.Id,
+                Description = definition.Description, 
+                Name = definition.Name,
+                Version = definition.Version,
+                IsLatest = definition.IsLatest,
+                IsPublished = definition.IsPublished,
+                IsDisabled = definition.IsDisabled,
+                IsSingleton = definition.IsSingleton,
+                PersistenceBehavior = definition.PersistenceBehavior,
+                DeleteCompletedInstances = definition.DeleteCompletedInstances
+            };
+
+            return workflow;
         }
     }
 }

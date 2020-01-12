@@ -20,7 +20,7 @@ namespace Elsa.Persistence.YesSql.Indexes
         public string ActivityId { get; set; }
         public string ActivityType { get; set; }
         public string CorrelationId { get; set; }
-        public WorkflowStatus WorkflowStatus { get; set; }
+        public WorkflowStatus ProcessStatus { get; set; }
         public DateTime CreatedAt { get; set; }
     }
 
@@ -48,7 +48,7 @@ namespace Elsa.Persistence.YesSql.Indexes
                                 ActivityId = activity.ActivityId,
                                 ActivityType = activity.ActivityType,
                                 CorrelationId = workflowInstance.CorrelationId,
-                                WorkflowStatus = workflowInstance.Status,
+                                ProcessStatus = workflowInstance.Status,
                                 CreatedAt = workflowInstance.CreatedAt
                             }));
         }

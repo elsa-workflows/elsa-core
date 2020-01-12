@@ -108,7 +108,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             return Map(documents);
         }
 
-        public async Task<IEnumerable<(WorkflowInstance, ActivityInstance)>> ListByBlockingActivityAsync(
+        public async Task<IEnumerable<(WorkflowInstance, BlockingActivity)>> ListByBlockingActivityAsync(
             string activityType,
             string correlationId = default,
             CancellationToken cancellationToken = default)
@@ -119,7 +119,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
                 .Include(x => x.BlockingActivities)
                 .AsQueryable();
 
-            query = query.Where(x => x.Status == WorkflowStatus.Running);
+            query = query.Where(x => x.Status == WorkflowStatus.Suspended);
 
             if (!string.IsNullOrWhiteSpace(correlationId))
                 query = query.Where(x => x.CorrelationId == correlationId);
@@ -149,9 +149,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             return Map(documents);
         }
 
-        public async Task<IEnumerable<WorkflowInstance>> ListByStatusAsync(
-            WorkflowStatus status,
-            CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<WorkflowInstance>> ListByStatusAsync(WorkflowStatus status, CancellationToken cancellationToken = default)
         {
             var documents = await dbContext
                 .WorkflowInstances
@@ -164,9 +162,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             return Map(documents);
         }
 
-        public async Task DeleteAsync(
-            string id,
-            CancellationToken cancellationToken = default)
+        public async Task DeleteAsync(string id, CancellationToken cancellationToken = default)
         {
             var record = await dbContext.WorkflowInstances.FirstOrDefaultAsync(x => x.InstanceId == id, cancellationToken);
 

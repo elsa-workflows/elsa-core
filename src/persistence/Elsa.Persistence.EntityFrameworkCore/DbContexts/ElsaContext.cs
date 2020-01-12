@@ -80,10 +80,10 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
             entity.Property(x => x.Status).HasConversion<string>();
             
             entity
-                .Property(x => x.Scopes)
+                .Property(x => x.Variables)
                 .HasConversion(
                     x => Serialize(x),
-                    x => Deserialize<Stack<WorkflowExecutionScope>>(x)
+                    x => Deserialize<Variables>(x)
                 );
             
             entity

@@ -2,6 +2,7 @@
 using System.Linq;
 using Elsa.Attributes;
 using Elsa.Design;
+using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -33,15 +34,12 @@ namespace Elsa.Activities.UserTask.Activities
             return Actions.Contains(userAction, StringComparer.OrdinalIgnoreCase);
         }
 
-        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
-        {
-            return Suspend(true);
-        }
+        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => Suspend();
 
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
         {
             var userAction = GetUserAction(context);
-            return Outcome(userAction);
+            return Done(userAction);
         }
 
         private string GetUserAction(ActivityExecutionContext context) => context.Input?.GetValue<string>();

@@ -63,14 +63,14 @@ namespace Elsa.Persistence.MongoDb.Services
                 .ToListAsync(cancellationToken);
         }
 
-        public async Task<IEnumerable<(WorkflowInstance, ActivityInstance)>> ListByBlockingActivityAsync(
+        public async Task<IEnumerable<(WorkflowInstance, BlockingActivity)>> ListByBlockingActivityAsync(
             string activityType,
             string correlationId = default,
             CancellationToken cancellationToken = default)
         {
             var query = collection.AsQueryable();
 
-            query = query.Where(x => x.Status == WorkflowStatus.Running);
+            query = query.Where(x => x.Status == WorkflowStatus.Suspended);
 
             if (!string.IsNullOrWhiteSpace(correlationId))
                 query = query.Where(x => x.CorrelationId == correlationId);

@@ -39,17 +39,17 @@ namespace Elsa.Persistence.DocumentDb.Documents
         public DateTime? AbortedAt { get; set; }
 
         [JsonProperty(PropertyName = "activities")]
-        public IDictionary<string, ActivityInstance> Activities { get; set; } =
-            new Dictionary<string, ActivityInstance>();
+        public IDictionary<string, ActivityInstance> Activities { get; set; } = new Dictionary<string, ActivityInstance>();
 
-        [JsonProperty(PropertyName = "scopes")]
-        public Stack<WorkflowExecutionScope> Scopes { get; set; }
+        [JsonProperty(PropertyName = "variables")]
+        public Variables Variables { get; set; }
 
-        [JsonProperty(PropertyName = "input")] public Variables Input { get; set; }
+        [JsonProperty(PropertyName = "input")] public Variable? Input { get; set; }
+        [JsonProperty(PropertyName = "input")] public Variable? Output { get; set; }
 
         [JsonProperty(PropertyName = "blockingActivities")]
         public HashSet<BlockingActivity> BlockingActivities { get; set; }
-        
+
         [JsonProperty(PropertyName = "scheduledActivities")]
         public Stack<string> ScheduledActivities { get; set; }
 

@@ -1,6 +1,5 @@
-using System.Collections.Generic;
 using Elsa.Extensions;
-using Elsa.Services.Models;
+using Elsa.Services;
 
 namespace Elsa.Models
 {
@@ -23,10 +22,10 @@ namespace Elsa.Models
             State = new Variables();
         }
 
-        public string? Id { get; set; }
-        public string? Type { get; set; }
+        public string Id { get; set; }
+        public string Type { get; set; }
 
-        public string? Name
+        public string Name
         {
             get => State.GetState<string>();
             set => State.SetState(value);

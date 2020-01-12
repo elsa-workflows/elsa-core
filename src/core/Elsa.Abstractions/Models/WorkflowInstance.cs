@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Elsa.Comparers;
 using NodaTime;
 
 namespace Elsa.Models
@@ -7,11 +8,10 @@ namespace Elsa.Models
     {
         public WorkflowInstance()
         {
-            Activities = new List<ActivityInstance>();
-            Scopes = new Stack<WorkflowExecutionScope>();
-            BlockingActivities = new HashSet<BlockingActivity>();
+            Variables = new Variables();
+            BlockingActivities = new HashSet<BlockingActivity>(new BlockingActivityEqualityComparer());
             ExecutionLog = new List<LogEntry>();
-            ScheduledActivities = new HashSet<ScheduledActivity>();
+            ScheduledActivities = new Stack<ScheduledActivity>();
         }
         
         public string? Id { get; set; }
@@ -24,13 +24,12 @@ namespace Elsa.Models
         public Instant? FinishedAt { get; set; }
         public Instant? FaultedAt { get; set; }
         public Instant? AbortedAt { get; set; }
-        public ICollection<ActivityInstance> Activities { get; set; }
-        public Stack<WorkflowExecutionScope> Scopes { get; set; }
+        public Variables Variables { get; set; }
         public Variable? Input { get; set; }
         public Variable? Output { get; set; }
         public HashSet<BlockingActivity> BlockingActivities { get; set; }
         public ICollection<LogEntry> ExecutionLog { get; set; }
         public WorkflowFault? Fault { get; set; }
-        public HashSet<ScheduledActivity> ScheduledActivities { get; set; }
+        public Stack<ScheduledActivity> ScheduledActivities { get; set; }
     }
 }

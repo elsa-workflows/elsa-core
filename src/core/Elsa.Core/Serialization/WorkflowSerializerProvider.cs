@@ -1,4 +1,3 @@
-using System;
 using Elsa.Converters;
 using Elsa.Serialization.Extensions;
 using Newtonsoft.Json;

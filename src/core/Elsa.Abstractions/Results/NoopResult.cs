@@ -1,16 +1,14 @@
-﻿using Elsa.Services;
+using System.Threading;
+using System.Threading.Tasks;
 using Elsa.Services.Models;
 
 namespace Elsa.Results
 {
-    /// <summary>
-    /// A result that does nothing.
-    /// </summary>
-    public class NoopResult : ActivityExecutionResult
+    public class NoopResult : IActivityExecutionResult
     {
-        protected override void Execute(IWorkflowRunner runner, WorkflowExecutionContext workflowContext)
+        public Task ExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
         {
-            // Noop.
+            return Task.CompletedTask;
         }
     }
 }
