@@ -19,12 +19,12 @@ To create the database, run the migrations.
 Example command:
 
  ```bash
-SET EF_CONNECTIONSTRING="Data Source=c:\data\elsa.db;Cache=Shared"
+SET EF_CONNECTIONSTRING=Data Source=c:\data\elsa.db;Cache=Shared
 dotnet ef database update --context SqliteContext
 
-SET EF_CONNECTIONSTRING="Server=localhost;Database=Elsa;User=sa;Password=Secret_password123!;"
+SET EF_CONNECTIONSTRING=Server=localhost;Database=Elsa;User=sa;Password=Secret_password123!;
 dotnet ef database update --context SqlServerContext
 
-SET EF_CONNECTIONSTRING="Server=localhost;Database=Elsa;Port=5432;User Id=postgres;Password=Secret_password123!"
+SET EF_CONNECTIONSTRING=Server=localhost;Database=Elsa;Port=5432;User Id=postgres;Password=Secret_password123!
 dotnet ef database update --context PostgreSqlContext
 ``` 
