@@ -20,7 +20,13 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
             serializerSettings = new JsonSerializerSettings().ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
             DbContextCustomSchema = options.GetDbContextCustomSchema();
         }
-        
+
+        protected ElsaContext(DbContextOptions options) : base(options)
+        {
+            serializerSettings = new JsonSerializerSettings().ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
+            DbContextCustomSchema = options.GetDbContextCustomSchema();
+        }
+
         /// <summary>
         /// The CustomSchemaModelCacheKeyFactory will not resolve services from the DI container for constructor injection
         /// so this is necessary in order to set the custom schema for the Model Cache.
