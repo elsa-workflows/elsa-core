@@ -75,7 +75,7 @@ namespace Sample23
                 .AddElsa(
                     elsaBuilder =>
                         elsaBuilder.AddCustomSchema("elsa")
-                        .AddEntityFrameworkStores(
+                        .AddEntityFrameworkStores<SqliteContext>(
                             options => options                                                           
                                 .UseSqlite(@"Data Source=c:\data\elsa.entity-framework-core.db;Cache=Shared",
                                 x =>

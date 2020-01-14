@@ -4,7 +4,6 @@ using Elsa.Activities.Console.Extensions;
 using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Persistence;
-using Elsa.Persistence.EntityFrameworkCore;
 using Elsa.Persistence.EntityFrameworkCore.DbContexts;
 using Elsa.Persistence.EntityFrameworkCore.Extensions;
 using Elsa.Runtime;
@@ -12,17 +11,22 @@ using Elsa.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Sample22
+namespace Sample24
 {
     /// <summary>
-    /// A simple demonstration of using Entity Framework Core persistence providers with SQL Server.
-    /// To run the EF migration, run the command: `dotnet ef database update` within the context of the "Elsa.Persistence.EntityFrameworkCore" project root.
+    /// A simple demonstration of using Entity Framework Core MySql persistence provider. A migration is also demonstrated.
     /// </summary>
     public class Program
     {
         public static async Task Main(string[] args)
         {
             var services = BuildServices();
+
+            await CreateDatabase(services);
+
+            // Invoke startup tasks.
+            var startupRunner = services.GetRequiredService<IStartupRunner>();
+            await startupRunner.StartupAsync();
 
             // Create a workflow definition.
             var registry = services.GetService<IWorkflowRegistry>();
@@ -34,9 +38,6 @@ namespace Sample22
 
             using var scope = services.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ElsaContext>();
-
-            // Ensure DB exists.
-            await dbContext.Database.EnsureCreatedAsync();
 
             // Persist the workflow definition.
             var definitionStore = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionStore>();
@@ -63,13 +64,24 @@ namespace Sample22
             await dbContext.SaveChangesAsync();
         }
 
+        private static async Task CreateDatabase(IServiceProvider services)
+        {
+            using var scope = services.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<ElsaContext>();
+
+            // Ensure DB exists.
+            await dbContext.Database.MigrateAsync();
+        }
+
         private static IServiceProvider BuildServices()
         {
             return new ServiceCollection()
                 .AddElsa(
-                    x => x.AddEntityFrameworkStores<SqlServerContext>(
+                    x => x.AddEntityFrameworkStores<MySqlContext>(
                         options => options
-                            .UseSqlServer(@"Server=localhost;Database=Elsa;User=sa;Password=Secret_password123!;")))
+                            .UseMySql(@"Server=localhost;Database=Elsa_Sample24;uid=developer;pwd=developer",
+                                builder => builder.MigrationsAssembly(typeof(MySqlContext).Assembly.FullName))))
+                .AddStartupRunner()
                 .AddConsoleActivities()
                 .AddWorkflow<HelloWorldWorkflow>()
                 .BuildServiceProvider();

@@ -11,16 +11,17 @@ namespace Elsa.Persistence.EntityFrameworkCore.Extensions
 {
     public static class EFCoreServiceCollectionExtensions
     {
-        public static EntityFrameworkCoreElsaBuilder AddEntityFrameworkCoreProvider(
+        public static EntityFrameworkCoreElsaBuilder AddEntityFrameworkCoreProvider<TElsaContext>(
             this ElsaBuilder configuration,
             Action<DbContextOptionsBuilder> configureOptions,
             bool usePooling = true)
+            where TElsaContext : ElsaContext
         {
             var services = configuration.Services;
             if (usePooling)
-                services.AddDbContextPool<ElsaContext>(configureOptions);
+                services.AddDbContextPool<ElsaContext, TElsaContext>(configureOptions);
             else
-                services.AddDbContext<ElsaContext>(configureOptions);
+                services.AddDbContext<ElsaContext, TElsaContext>(configureOptions);
 
             services
                 .AddAutoMapperProfile<NodaTimeProfile>(ServiceLifetime.Singleton)
@@ -29,13 +30,14 @@ namespace Elsa.Persistence.EntityFrameworkCore.Extensions
             return new EntityFrameworkCoreElsaBuilder(configuration.Services);
         }
 
-        public static EntityFrameworkCoreElsaBuilder AddEntityFrameworkStores(
+        public static EntityFrameworkCoreElsaBuilder AddEntityFrameworkStores<TElsaContext>(
             this ElsaBuilder configuration,
             Action<DbContextOptionsBuilder> configureOptions,
             bool usePooling = true)
+            where TElsaContext : ElsaContext
         {
             return configuration
-                .AddEntityFrameworkCoreProvider(configureOptions, usePooling)
+                .AddEntityFrameworkCoreProvider<TElsaContext>(configureOptions, usePooling)
                 .AddWorkflowDefinitionStore()
                 .AddWorkflowInstanceStore();
         }
