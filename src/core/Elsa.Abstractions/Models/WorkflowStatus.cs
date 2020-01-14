@@ -2,6 +2,7 @@
 {
     public enum WorkflowStatus
     {
+        Idle,
         Running,
         Completed,
         Suspended,

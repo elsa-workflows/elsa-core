@@ -10,16 +10,28 @@ using Elsa.Caching;
 using Elsa.Converters;
 using Elsa.Expressions;
 using Elsa.Mapping;
+using Elsa.Messages;
+using Elsa.Messages.Distributed;
+using Elsa.Messages.Distributed.Handlers;
 using Elsa.Persistence;
 using Elsa.Persistence.Memory;
+using Elsa.Runtime;
 using Elsa.Serialization;
 using Elsa.Serialization.Formatters;
 using Elsa.Serialization.Handlers;
 using Elsa.Services;
+using Elsa.StartupTasks;
 using Elsa.WorkflowProviders;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using NodaTime;
+using Rebus.Bus;
+using Rebus.Handlers;
+using Rebus.Messages.Control;
+using Rebus.Persistence.InMem;
+using Rebus.Routing.TypeBased;
+using Rebus.ServiceProvider;
+using Rebus.Transport.InMem;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -36,6 +48,8 @@ namespace Microsoft.Extensions.DependencyInjection
             configure?.Invoke(configuration);
             EnsurePersistence(configuration);
             EnsureCaching(configuration);
+            EnsureLockProvider(configuration);
+            EnsureServiceBus(configuration);
 
             return services;
         }
@@ -48,7 +62,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddTransient<IActivity>(sp => sp.GetRequiredService<T>());
         }
 
-        public static IServiceCollection AddWorkflow<T>(this IServiceCollection services) where T: class, IWorkflow
+        public static IServiceCollection AddWorkflow<T>(this IServiceCollection services) where T : class, IWorkflow
         {
             return services
                 .AddTransient<T>()
@@ -58,7 +72,8 @@ namespace Microsoft.Extensions.DependencyInjection
         public static IServiceCollection AddTypeNameValueHandler<T>(this IServiceCollection services) where T : class, IValueHandler => services.AddTransient<IValueHandler, T>();
         public static IServiceCollection AddTypeAlias<T>(this IServiceCollection services, string alias) => services.AddTypeAlias(typeof(T), alias);
         public static IServiceCollection AddTypeAlias(this IServiceCollection services, Type type, string alias) => services.AddTransient<ITypeAlias>(sp => new TypeAlias(type, alias));
-
+        public static IServiceCollection AddConsumer<TMessage, TConsumer>(this IServiceCollection services) where TConsumer : class, IHandleMessages<TMessage> => services.AddTransient<IHandleMessages<TMessage>, TConsumer>();  
+        
         private static IServiceCollection AddMediatR(this ElsaBuilder configuration)
         {
             return configuration.Services.AddMediatR(
@@ -90,14 +105,23 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddScoped<IExpressionEvaluator, ExpressionEvaluator>()
                 .AddSingleton<IWorkflowSerializerProvider, WorkflowSerializerProvider>()
                 .AddTransient<IWorkflowRegistry, WorkflowRegistry>()
+                .AddSingleton<IWorkflowScheduler, WorkflowScheduler>()
                 .AddScoped<IWorkflowHost, WorkflowHost>()
-                .AddScoped<IScheduler, Scheduler>()
+                .AddStartupRunner()
                 .AddScoped<IActivityResolver, ActivityResolver>()
                 .AddTransient<IWorkflowProvider, StoreWorkflowProvider>()
                 .AddTransient<IWorkflowProvider, CodeWorkflowProvider>()
                 .AddTransient<WorkflowBuilder>()
                 .AddTransient<Func<WorkflowBuilder>>(sp => sp.GetRequiredService<WorkflowBuilder>)
                 .AddAutoMapperProfile<WorkflowDefinitionProfile>(ServiceLifetime.Singleton)
+                .AddSerializationHandlers()
+                .AddPrimitiveActivities();
+
+            return configuration;
+        }
+        
+        private static IServiceCollection AddSerializationHandlers(this IServiceCollection services) =>
+            services
                 .AddTypeNameValueHandler<AnnualDateHandler>()
                 .AddTypeNameValueHandler<DateTimeHandler>()
                 .AddTypeNameValueHandler<DefaultValueHandler>()
@@ -123,11 +147,23 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddTypeAlias<IActivity>("Activity")
                 .AddTypeAlias(typeof(IList<>), "List")
                 .AddTypeAlias(typeof(ICollection<>), "Collection")
-                .AddTypeAlias(typeof(LiteralExpression<>), "LiteralExpression")
-                .AddPrimitiveActivities();
+                .AddTypeAlias(typeof(LiteralExpression<>), "LiteralExpression");
 
-            return configuration;
-        }
+        private static IServiceCollection AddPrimitiveActivities(this IServiceCollection services) =>
+            services
+                .AddActivity<Complete>()
+                .AddActivity<For>()
+                .AddActivity<ForEach>()
+                .AddActivity<Fork>()
+                .AddActivity<IfElse>()
+                .AddActivity<Join>()
+                .AddActivity<Switch>()
+                .AddActivity<While>()
+                .AddActivity<Correlate>()
+                .AddActivity<SetVariable>()
+                .AddActivity<Signaled>()
+                .AddActivity<TriggerEvent>()
+                .AddActivity<TriggerSignal>();
 
         private static void EnsurePersistence(ElsaBuilder configuration)
         {
@@ -148,21 +184,24 @@ namespace Microsoft.Extensions.DependencyInjection
             configuration.Services.AddMemoryCache();
         }
 
-        private static IServiceCollection AddPrimitiveActivities(this IServiceCollection services)
+        private static void EnsureLockProvider(ElsaBuilder configuration)
         {
-            return services
-                .AddActivity<SetVariable>()
-                .AddActivity<ForEach>()
-                .AddActivity<While>()
-                .AddActivity<Fork>()
-                .AddActivity<Join>()
-                .AddActivity<IfElse>()
-                .AddActivity<Switch>()
-                .AddActivity<TriggerEvent>()
-                .AddActivity<Correlate>()
-                .AddActivity<Signaled>()
-                .AddActivity<TriggerSignal>()
-                .AddActivity<Complete>();;
+            if (!configuration.HasService<IDistributedLockProvider>())
+                configuration.Services.AddSingleton<IDistributedLockProvider, DefaultLockProvider>();
+        }
+
+        private static void EnsureServiceBus(ElsaBuilder configuration)
+        {
+            if (!configuration.HasService<IBus>())
+            {
+                configuration.WithServiceBus(rebus => rebus
+                    .Subscriptions(s => s.StoreInMemory(new InMemorySubscriberStore()))
+                    .Routing(r => r.TypeBased())
+                    .Transport(t => t.UseInMemoryTransport(new InMemNetwork(), "Messages")));
+            }
+
+            configuration.Services.AddStartupTask<StartServiceBusTask>();
+            configuration.Services.AddConsumer<RunWorkflow, RunWorkflowHandler>();
         }
     }
 }

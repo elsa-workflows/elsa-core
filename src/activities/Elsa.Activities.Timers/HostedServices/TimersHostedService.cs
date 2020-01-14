@@ -13,15 +13,18 @@ namespace Elsa.Activities.Timers.HostedServices
     public class TimersHostedService : BackgroundService
     {
         private readonly IServiceProvider serviceProvider;
+        private readonly IDistributedLockProvider distributedLockProvider;
         private readonly IOptions<TimersOptions> options;
         private readonly ILogger<TimersHostedService> logger;
 
         public TimersHostedService(
             IServiceProvider serviceProvider,
+            IDistributedLockProvider distributedLockProvider,
             IOptions<TimersOptions> options, 
             ILogger<TimersHostedService> logger)
         {
             this.serviceProvider = serviceProvider;
+            this.distributedLockProvider = distributedLockProvider;
             this.options = options;
             this.logger = logger;
         }
@@ -30,17 +33,24 @@ namespace Elsa.Activities.Timers.HostedServices
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                try
+                if (await distributedLockProvider.AcquireLockAsync(GetType().Name, stoppingToken))
                 {
-                    using var scope = serviceProvider.CreateScope();
-                    var workflowInvoker = scope.ServiceProvider.GetRequiredService<IWorkflowHost>(); 
-                    await workflowInvoker.TriggerAsync(nameof(TimerEvent), cancellationToken: stoppingToken);
-                    await workflowInvoker.TriggerAsync(nameof(CronEvent), cancellationToken:stoppingToken);
-                    await workflowInvoker.TriggerAsync(nameof(InstantEvent), cancellationToken: stoppingToken);
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, $"Exception occurred while invoking workflows.");
+                    try
+                    {
+                        using var scope = serviceProvider.CreateScope();
+                        var workflowScheduler = scope.ServiceProvider.GetRequiredService<IWorkflowScheduler>();
+                        await workflowScheduler.TriggerWorkflowsAsync(nameof(TimerEvent), cancellationToken: stoppingToken);
+                        await workflowScheduler.TriggerWorkflowsAsync(nameof(CronEvent), cancellationToken: stoppingToken);
+                        await workflowScheduler.TriggerWorkflowsAsync(nameof(InstantEvent), cancellationToken: stoppingToken);
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex, $"Exception occurred while invoking workflows.");
+                    }
+                    finally
+                    {
+                        await distributedLockProvider.ReleaseLockAsync(GetType().Name, stoppingToken);
+                    }
                 }
 
                 await Task.Delay(options.Value.SweepInterval.ToDuration().ToTimeSpan(), stoppingToken);

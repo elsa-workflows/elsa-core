@@ -12,7 +12,6 @@ namespace Elsa.Services
 {
     public class WorkflowRegistry : IWorkflowRegistry
     {
-        internal const string CacheKey = "elsa:workflow-registry";
         private readonly IServiceProvider serviceProvider;
 
         public WorkflowRegistry(

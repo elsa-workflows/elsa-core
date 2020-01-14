@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Elsa.Expressions;
 using Elsa.Models;
 using Microsoft.Extensions.Localization;
+using NodaTime;
 
 namespace Elsa.Services.Models
 {
@@ -14,17 +15,25 @@ namespace Elsa.Services.Models
         public WorkflowExecutionContext(
             IExpressionEvaluator expressionEvaluator, 
             IServiceProvider serviceProvider,
+            string definitionId,
             string instanceId, 
+            int version,
             IEnumerable<IActivity> activities,
             IEnumerable<Connection> connections,
             IEnumerable<ScheduledActivity>? scheduledActivities = default,
             IEnumerable<IActivity>? blockingActivities = default,
+            string correlationId = default,
             Variables variables = default,
             WorkflowStatus status = WorkflowStatus.Running,
-            WorkflowPersistenceBehavior persistenceBehavior = WorkflowPersistenceBehavior.WorkflowExecuted)
+            WorkflowPersistenceBehavior persistenceBehavior = WorkflowPersistenceBehavior.WorkflowExecuted,
+            WorkflowFault? workflowFault = default,
+            IEnumerable<ExecutionLogEntry> executionLog = default)
         {
             ServiceProvider = serviceProvider;
+            DefinitionId = definitionId;
             InstanceId = instanceId;
+            Version = version;
+            CorrelationId = correlationId;
             Activities = activities.ToList();
             Connections = connections.ToList();
             ExpressionEvaluator = expressionEvaluator;
@@ -33,9 +42,12 @@ namespace Elsa.Services.Models
             Variables = variables ?? new Variables();
             Status = status;
             PersistenceBehavior = persistenceBehavior;
+            WorkflowFault = workflowFault;
+            ExecutionLog = executionLog?.ToList() ?? new List<ExecutionLogEntry>();
         }
 
         public IServiceProvider ServiceProvider { get; }
+        public string DefinitionId { get; }
         public ICollection<IActivity> Activities { get; }
         public ICollection<Connection> Connections { get; }
         public WorkflowStatus Status { get; set; }
@@ -44,6 +56,8 @@ namespace Elsa.Services.Models
         public Variables Variables { get; }
         public bool HasScheduledActivities => ScheduledActivities.Any();
         public ScheduledActivity? ScheduledActivity { get; private set; }
+        public WorkflowFault? WorkflowFault { get; private set; }
+        public Variable? Output { get; set; }
 
         public void ScheduleActivities(IEnumerable<IActivity> activities, Variable? input = default)
         {
@@ -65,9 +79,12 @@ namespace Elsa.Services.Models
         public ScheduledActivity PeekScheduledActivity() => ScheduledActivities.Peek();
         public IExpressionEvaluator ExpressionEvaluator { get; }
         public string InstanceId { get; set; }
+        public int Version { get; }
         public string CorrelationId { get; set; }
         public WorkflowPersistenceBehavior PersistenceBehavior { get; set; }
         public bool DeleteCompletedInstances { get; set; }
+        public ICollection<ExecutionLogEntry> ExecutionLog { get; }
+
         public bool AddBlockingActivity(IActivity activity) => BlockingActivities.Add(activity);
         public void SetVariable(string name, object value) => Variables.SetVariable(name, value);
         public T GetVariable<T>(string name) => (T)GetVariable(name);
@@ -84,9 +101,10 @@ namespace Elsa.Services.Models
             Status = WorkflowStatus.Suspended;
         }
 
-        public void Fault(IActivity activity, LocalizedString message)
+        public void Fault(IActivity? activity, LocalizedString? message)
         {
             Status = WorkflowStatus.Faulted;
+            WorkflowFault = new WorkflowFault(activity, message);
         }
 
         public void Complete()
