@@ -1,25 +1,19 @@
 using Microsoft.Azure.Documents.Client;
 using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace Elsa.Persistence.DocumentDb
 {
     public class DocumentDbStorageOptions
     {
-        /// <summary>
-        /// Gets or sets the name of the database.
-        /// </summary>
-        /// <value>
-        /// The name of the database.
-        /// </value>
-        internal string DatabaseName { get; set; }
-
-        /// <summary>
-        /// Gets or sets the name of the collection.
-        /// </summary>
-        /// <value>
-        /// The name of the collection.
-        /// </value>
-        internal string CollectionName { get; set; }
+        [Required]
+        public Uri Url { get; set; }
+        
+        [Required]
+        public string Secret { get; set; }
+        
+        [Required]
+        public string DatabaseName { get; set; }
 
         /// <summary>
         /// Get or sets the request timeout for DocumentDB client. Default value set to 30 seconds

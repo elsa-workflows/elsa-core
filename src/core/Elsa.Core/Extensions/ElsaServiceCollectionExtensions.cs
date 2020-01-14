@@ -40,9 +40,9 @@ namespace Microsoft.Extensions.DependencyInjection
     {
         public static IServiceCollection AddElsaCore(
             this IServiceCollection services,
-            Action<ElsaBuilder> configure = null)
+            Action<ElsaOptions> configure = null)
         {
-            var configuration = new ElsaBuilder(services);
+            var configuration = new ElsaOptions(services);
             configuration.AddWorkflowsCore();
             configuration.AddMediatR();
             configure?.Invoke(configuration);
@@ -74,14 +74,14 @@ namespace Microsoft.Extensions.DependencyInjection
         public static IServiceCollection AddTypeAlias(this IServiceCollection services, Type type, string alias) => services.AddTransient<ITypeAlias>(sp => new TypeAlias(type, alias));
         public static IServiceCollection AddConsumer<TMessage, TConsumer>(this IServiceCollection services) where TConsumer : class, IHandleMessages<TMessage> => services.AddTransient<IHandleMessages<TMessage>, TConsumer>();  
         
-        private static IServiceCollection AddMediatR(this ElsaBuilder configuration)
+        private static IServiceCollection AddMediatR(this ElsaOptions configuration)
         {
             return configuration.Services.AddMediatR(
                 mediatr => mediatr.AsSingleton(),
                 typeof(ElsaServiceCollectionExtensions));
         }
 
-        private static ElsaBuilder AddWorkflowsCore(this ElsaBuilder configuration)
+        private static ElsaOptions AddWorkflowsCore(this ElsaOptions configuration)
         {
             var services = configuration.Services;
             services.TryAddSingleton<IClock>(SystemClock.Instance);
@@ -165,7 +165,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddActivity<TriggerEvent>()
                 .AddActivity<TriggerSignal>();
 
-        private static void EnsurePersistence(ElsaBuilder configuration)
+        private static void EnsurePersistence(ElsaOptions configuration)
         {
             var hasDefinitionStore = configuration.HasService<IWorkflowDefinitionStore>();
             var hasInstanceStore = configuration.HasService<IWorkflowInstanceStore>();
@@ -176,7 +176,7 @@ namespace Microsoft.Extensions.DependencyInjection
             configuration.Services.Decorate<IWorkflowDefinitionStore, PublishingWorkflowDefinitionStore>();
         }
 
-        private static void EnsureCaching(ElsaBuilder configuration)
+        private static void EnsureCaching(ElsaOptions configuration)
         {
             if (!configuration.HasService<ISignal>())
                 configuration.Services.AddSingleton<ISignal, Signal>();
@@ -184,13 +184,13 @@ namespace Microsoft.Extensions.DependencyInjection
             configuration.Services.AddMemoryCache();
         }
 
-        private static void EnsureLockProvider(ElsaBuilder configuration)
+        private static void EnsureLockProvider(ElsaOptions configuration)
         {
             if (!configuration.HasService<IDistributedLockProvider>())
                 configuration.Services.AddSingleton<IDistributedLockProvider, DefaultLockProvider>();
         }
 
-        private static void EnsureServiceBus(ElsaBuilder configuration)
+        private static void EnsureServiceBus(ElsaOptions configuration)
         {
             if (!configuration.HasService<IBus>())
             {

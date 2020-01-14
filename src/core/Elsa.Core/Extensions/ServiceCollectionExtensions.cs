@@ -50,7 +50,7 @@ namespace Microsoft.Extensions.DependencyInjection
         public static bool HasService<T>(this IServiceCollection services) =>
             services.Any(x => x.ServiceType == typeof(T));
 
-        public static bool HasService<T>(this ElsaBuilder configuration) =>
+        public static bool HasService<T>(this ElsaOptions configuration) =>
             configuration.Services.HasService<T>();
     }
 }

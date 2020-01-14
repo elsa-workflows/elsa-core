@@ -11,8 +11,8 @@ namespace Elsa.Persistence.EntityFrameworkCore.Extensions
 {
     public static class EFCoreServiceCollectionExtensions
     {
-        public static EntityFrameworkCoreElsaBuilder AddEntityFrameworkCoreProvider(
-            this ElsaBuilder configuration,
+        public static EntityFrameworkCoreElsaOptions AddEntityFrameworkCoreProvider(
+            this ElsaOptions configuration,
             Action<DbContextOptionsBuilder> configureOptions,
             bool usePooling = true)
         {
@@ -26,11 +26,11 @@ namespace Elsa.Persistence.EntityFrameworkCore.Extensions
                 .AddAutoMapperProfile<NodaTimeProfile>(ServiceLifetime.Singleton)
                 .AddAutoMapperProfile<EntitiesProfile>(ServiceLifetime.Singleton);
 
-            return new EntityFrameworkCoreElsaBuilder(configuration.Services);
+            return new EntityFrameworkCoreElsaOptions(configuration.Services);
         }
 
-        public static EntityFrameworkCoreElsaBuilder AddEntityFrameworkStores(
-            this ElsaBuilder configuration,
+        public static EntityFrameworkCoreElsaOptions AddEntityFrameworkStores(
+            this ElsaOptions configuration,
             Action<DbContextOptionsBuilder> configureOptions,
             bool usePooling = true)
         {
@@ -40,7 +40,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Extensions
                 .AddWorkflowInstanceStore();
         }
 
-        public static EntityFrameworkCoreElsaBuilder AddWorkflowInstanceStore(this EntityFrameworkCoreElsaBuilder configuration)
+        public static EntityFrameworkCoreElsaOptions AddWorkflowInstanceStore(this EntityFrameworkCoreElsaOptions configuration)
         {
             configuration.Services
                 .AddScoped<IWorkflowInstanceStore, EntityFrameworkCoreWorkflowInstanceStore>();
@@ -48,7 +48,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Extensions
             return configuration;
         }
 
-        public static EntityFrameworkCoreElsaBuilder AddWorkflowDefinitionStore(this EntityFrameworkCoreElsaBuilder configuration)
+        public static EntityFrameworkCoreElsaOptions AddWorkflowDefinitionStore(this EntityFrameworkCoreElsaOptions configuration)
         {
             configuration.Services
                 .AddScoped<IWorkflowDefinitionStore, EntityFrameworkCoreWorkflowDefinitionStore>();

@@ -15,8 +15,8 @@ namespace Elsa.Persistence.YesSql.Extensions
 {
     public static class YesSqlServiceCollectionExtensions
     {
-        public static YesSqlElsaBuilder AddYesSqlProvider(
-            this ElsaBuilder configuration,
+        public static YesSqlElsaOptions AddYesSqlProvider(
+            this ElsaOptions configuration,
             Action<IConfiguration> configure)
         {
             configuration.Services
@@ -29,26 +29,26 @@ namespace Elsa.Persistence.YesSql.Extensions
                 .AddAutoMapperProfile<DocumentProfile>(ServiceLifetime.Singleton)
                 .AddStartupTask<InitializeStoreTask>();
 
-            return new YesSqlElsaBuilder(configuration.Services);
+            return new YesSqlElsaOptions(configuration.Services);
         }
 
-        public static YesSqlElsaBuilder AddYesSqlStores(
-            this ElsaBuilder configuration,
+        public static YesSqlElsaOptions AddYesSqlStores(
+            this ElsaOptions configuration,
             Action<IConfiguration> configure)
         {
             return configuration.AddYesSqlProvider(configure).AddWorkflowDefinitionStore()
                 .AddWorkflowInstanceStore();
         }
 
-        public static YesSqlElsaBuilder AddWorkflowInstanceStore(
-            this YesSqlElsaBuilder configuration)
+        public static YesSqlElsaOptions AddWorkflowInstanceStore(
+            this YesSqlElsaOptions configuration)
         {
             configuration.Services.AddScoped<IWorkflowInstanceStore, YesSqlWorkflowInstanceStore>();
             return configuration;
         }
 
-        public static YesSqlElsaBuilder AddWorkflowDefinitionStore(
-            this YesSqlElsaBuilder configuration)
+        public static YesSqlElsaOptions AddWorkflowDefinitionStore(
+            this YesSqlElsaOptions configuration)
         {
             configuration.Services
                 .AddScoped<IWorkflowDefinitionStore, YesSqlWorkflowDefinitionStore>();

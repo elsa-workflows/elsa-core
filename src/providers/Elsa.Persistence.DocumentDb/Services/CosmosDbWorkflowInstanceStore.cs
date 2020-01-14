@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -14,11 +15,13 @@ namespace Elsa.Persistence.DocumentDb.Services
     {
         private readonly IMapper mapper;
         private readonly DocumentDbStorage storage;
+        private Uri? collectionUrl;
 
         public CosmosDbWorkflowInstanceStore(DocumentDbStorage storage, IMapper mapper)
         {
             this.storage = storage;
             this.mapper = mapper;
+            collectionUrl = default;
         }
 
         public async Task DeleteAsync(
@@ -29,46 +32,49 @@ namespace Elsa.Persistence.DocumentDb.Services
             await client.DeleteDocumentAsync(id, cancellationToken: cancellationToken);
         }
 
-        public Task<WorkflowInstance> GetByCorrelationIdAsync(
+        public async Task<WorkflowInstance> GetByCorrelationIdAsync(
             string correlationId,
             CancellationToken cancellationToken = default)
         {
             var client = storage.Client;
-            var query = client.CreateDocumentQuery<WorkflowInstanceDocument>(storage.CollectionUri)
+            var collectionUrl = await GetCollectionUriAsync(cancellationToken);
+            var query = client.CreateDocumentQuery<WorkflowInstanceDocument>(collectionUrl)
                 .Where(c => c.CorrelationId == correlationId);
             var document = query.AsEnumerable().FirstOrDefault();
-            return Task.FromResult(Map(document));
+            return Map(document);
         }
 
-        public Task<WorkflowInstance> GetByIdAsync(
+        public async Task<WorkflowInstance> GetByIdAsync(
             string id,
             CancellationToken cancellationToken = default)
         {
             var client = storage.Client;
-            var query = client.CreateDocumentQuery<WorkflowInstanceDocument>(storage.CollectionUri)
+            var collectionUrl = await GetCollectionUriAsync(cancellationToken);
+            var query = client.CreateDocumentQuery<WorkflowInstanceDocument>(collectionUrl)
                 .Where(c => c.Id == id);
             var document = query.AsEnumerable().FirstOrDefault();
-            return Task.FromResult(Map(document));
+            return Map(document);
         }
 
-        public Task<IEnumerable<WorkflowInstance>> ListAllAsync(CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<WorkflowInstance>> ListAllAsync(CancellationToken cancellationToken = default)
         {
             var client = storage.Client;
+            var collectionUrl = await GetCollectionUriAsync(cancellationToken);
             var query = client
-                .CreateDocumentQuery<WorkflowInstanceDocument>(storage.CollectionUri)
+                .CreateDocumentQuery<WorkflowInstanceDocument>(collectionUrl)
                 .OrderByDescending(x => x.CreatedAt);
-            return Task.FromResult(mapper.Map<IEnumerable<WorkflowInstance>>(query));
+            return mapper.Map<IEnumerable<WorkflowInstance>>(query);
         }
 
-        public Task<IEnumerable<(WorkflowInstance, BlockingActivity)>> ListByBlockingActivityAsync(
+        public async Task<IEnumerable<(WorkflowInstance, BlockingActivity)>> ListByBlockingActivityAsync(
             string activityType,
-            string correlationId = null,
+            string? correlationId = null,
             CancellationToken cancellationToken = default)
         {
             var client = storage.Client;
-
+            var collectionUrl = await GetCollectionUriAsync(cancellationToken);
             var query = client
-                .CreateDocumentQuery<WorkflowInstanceDocument>(storage.CollectionUri)
+                .CreateDocumentQuery<WorkflowInstanceDocument>(collectionUrl)
                 .Where(x => x.Status == WorkflowStatus.Suspended);
 
             if (!string.IsNullOrWhiteSpace(correlationId)) 
@@ -78,52 +84,64 @@ namespace Elsa.Persistence.DocumentDb.Services
             query = query.OrderByDescending(x => x.CreatedAt);
 
             var instances = Map(query.ToList());
-            return Task.FromResult(instances.GetBlockingActivities(activityType));
+            return instances.GetBlockingActivities(activityType);
         }
 
-        public Task<IEnumerable<WorkflowInstance>> ListByDefinitionAsync(
+        public async Task<IEnumerable<WorkflowInstance>> ListByDefinitionAsync(
             string definitionId,
             CancellationToken cancellationToken = default)
         {
             var client = storage.Client;
-            var query = client.CreateDocumentQuery<WorkflowInstanceDocument>(storage.CollectionUri)
+            var collectionUrl = await GetCollectionUriAsync(cancellationToken);
+            var query = client.CreateDocumentQuery<WorkflowInstanceDocument>(collectionUrl)
                 .Where(c => c.DefinitionId == definitionId)
                 .OrderByDescending(x => x.CreatedAt);
-            return Task.FromResult(Map(query.ToList()));
+            return Map(query.ToList());
         }
 
-        public Task<IEnumerable<WorkflowInstance>> ListByStatusAsync(
+        public async Task<IEnumerable<WorkflowInstance>> ListByStatusAsync(
             string definitionId,
             WorkflowStatus status,
             CancellationToken cancellationToken = default)
         {
             var client = storage.Client;
-            var query = client.CreateDocumentQuery<WorkflowInstanceDocument>(storage.CollectionUri)
+            var collectionUrl = await GetCollectionUriAsync(cancellationToken);
+            var query = client.CreateDocumentQuery<WorkflowInstanceDocument>(collectionUrl)
                 .Where(c => c.DefinitionId == definitionId && c.Status == status)
                 .OrderByDescending(x => x.CreatedAt);
-            return Task.FromResult(Map(query.ToList()));
+            return Map(query.ToList());
         }
 
-        public Task<IEnumerable<WorkflowInstance>> ListByStatusAsync(WorkflowStatus status, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<WorkflowInstance>> ListByStatusAsync(WorkflowStatus status, CancellationToken cancellationToken = default)
         {
             var client = storage.Client;
-            var query = client.CreateDocumentQuery<WorkflowInstanceDocument>(storage.CollectionUri)
+            var collectionUrl = await GetCollectionUriAsync(cancellationToken);
+            var query = client.CreateDocumentQuery<WorkflowInstanceDocument>(collectionUrl)
                 .Where(c => c.Status == status)
                 .OrderByDescending(x => x.CreatedAt);
-            return Task.FromResult(Map(query.ToList()));
+            return Map(query.ToList());
         }
 
         public async Task<WorkflowInstance> SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
         {
             var document = Map(instance);
             var client = storage.Client;
+            var collectionUrl = await GetCollectionUriAsync(cancellationToken);
             var response = await client.UpsertDocumentWithRetriesAsync(
-                storage.CollectionUri,
+                collectionUrl,
                 document,
                 cancellationToken: cancellationToken);
 
             document = (dynamic)response.Resource;
             return Map(document);
+        }
+        
+        private async Task<Uri> GetCollectionUriAsync(CancellationToken cancellationToken)
+        {
+            if (collectionUrl == null) 
+                collectionUrl = await storage.GetCollectionAsync("WorkflowInstances", cancellationToken);
+
+            return collectionUrl;
         }
 
         private WorkflowInstanceDocument Map(WorkflowInstance source) => mapper.Map<WorkflowInstanceDocument>(source);

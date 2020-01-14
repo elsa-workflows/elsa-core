@@ -9,7 +9,7 @@ namespace Microsoft.Extensions.DependencyInjection
     {
         public static IServiceCollection AddElsa(
             this IServiceCollection services,
-            Action<ElsaBuilder> configure = null)
+            Action<ElsaOptions> configure = null)
         {
             return services
                 .AddElsaCore(configure)

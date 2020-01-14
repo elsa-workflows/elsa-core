@@ -3,6 +3,7 @@ using Microsoft.Azure.Documents.Client;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Elsa.Persistence.DocumentDb
@@ -11,18 +12,10 @@ namespace Elsa.Persistence.DocumentDb
     {
         private DocumentDbStorageOptions Options { get; }
         internal DocumentClient Client { get; }
-        internal Uri CollectionUri { get; private set; }
 
-        public DocumentDbStorage(
-            string url,
-            string authSecret,
-            string database,
-            string collection,
-            DocumentDbStorageOptions options = null)
+        public DocumentDbStorage(DocumentDbStorageOptions options)
         {
-            Options = options ?? new DocumentDbStorageOptions();
-            Options.DatabaseName = database;
-            Options.CollectionName = collection;
+            Options = options;
 
             var settings = new JsonSerializerSettings
             {
@@ -44,43 +37,21 @@ namespace Elsa.Persistence.DocumentDb
                 MaxRetryAttemptsOnThrottledRequests = 5
             };
 
-            Client = new DocumentClient(new Uri(url), authSecret, settings, connectionPolicy);
-            var task = Client.OpenAsync();
-            var continueTask = task.ContinueWith(t => Initialize(), TaskContinuationOptions.OnlyOnRanToCompletion);
-            continueTask.Wait();
+            Client = new DocumentClient(options.Url, options.Secret, settings, connectionPolicy);
         }
 
-        /// <summary>
-        /// Return the name of the database.
-        /// </summary>
         public override string ToString() => $"DocumentDb Database: {Options.DatabaseName}";
 
-        private void Initialize()
+        public async Task<Uri> GetCollectionAsync(string collectionName, CancellationToken cancellationToken = default)
         {
-            var databaseTask = Client.CreateDatabaseIfNotExistsAsync(new Database { Id = Options.DatabaseName });
+            var database = await Client.CreateDatabaseIfNotExistsAsync(new Database { Id = Options.DatabaseName });
+            var databaseUri = UriFactory.CreateDatabaseUri(database.Resource.Id);
+            
+            var collection = await Client.CreateDocumentCollectionIfNotExistsAsync(
+                databaseUri,
+                new DocumentCollection { Id = collectionName });
 
-            var collectionTask = databaseTask.ContinueWith(
-                    t =>
-                    {
-                        var databaseUri = UriFactory.CreateDatabaseUri(t.Result.Resource.Id);
-                        return Client.CreateDocumentCollectionIfNotExistsAsync(
-                            databaseUri,
-                            new DocumentCollection { Id = Options.CollectionName });
-                    },
-                    TaskContinuationOptions.OnlyOnRanToCompletion)
-                .Unwrap();
-
-            var continueTask = collectionTask.ContinueWith(
-                t =>
-                {
-                    CollectionUri = UriFactory.CreateDocumentCollectionUri(Options.DatabaseName, t.Result.Resource.Id);
-                },
-                TaskContinuationOptions.OnlyOnRanToCompletion);
-            continueTask.Wait();
-            if (continueTask.IsFaulted || continueTask.IsCanceled)
-            {
-                throw new ApplicationException("Unable to setup the storage database", databaseTask.Exception);
-            }
+            return UriFactory.CreateDocumentCollectionUri(Options.DatabaseName, collection.Resource.Id);
         }
     }
 }

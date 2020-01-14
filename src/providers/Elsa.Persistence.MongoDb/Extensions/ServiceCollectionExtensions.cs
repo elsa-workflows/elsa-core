@@ -17,8 +17,8 @@ namespace Microsoft.Extensions.DependencyInjection
 {
     public static class ServiceCollectionExtensions
     {
-        public static MongoElsaBuilder AddMongoDbProvider(
-            this ElsaBuilder elsaBuilder,
+        public static MongoElsaOptions AddMongoDbProvider(
+            this ElsaOptions elsaOptions,
             IConfiguration configuration,
             string databaseName,
             string connectionStringName
@@ -28,27 +28,27 @@ namespace Microsoft.Extensions.DependencyInjection
             RegisterEnumAsStringConvention();
             BsonSerializer.RegisterSerializer(new JObjectSerializer());
 
-            elsaBuilder.Services
+            elsaOptions.Services
                 .AddSingleton(sp => CreateDbClient(configuration, connectionStringName))
                 .AddSingleton(sp => CreateDatabase(sp, databaseName));
 
-            return new MongoElsaBuilder(elsaBuilder.Services);
+            return new MongoElsaOptions(elsaOptions.Services);
         }
 
-        public static MongoElsaBuilder AddMongoDbStores(
-            this ElsaBuilder elsaBuilder,
+        public static MongoElsaOptions AddMongoDbStores(
+            this ElsaOptions elsaOptions,
             IConfiguration configuration,
             string databaseName,
             string connectionStringName)
         {
-            return elsaBuilder
+            return elsaOptions
                 .AddMongoDbProvider(configuration, databaseName, connectionStringName)
                 .AddMongoDbWorkflowDefinitionStore()
                 .AddMongoDbWorkflowInstanceStore();
         }
 
-        public static MongoElsaBuilder AddMongoDbWorkflowInstanceStore(
-            this MongoElsaBuilder configuration)
+        public static MongoElsaOptions AddMongoDbWorkflowInstanceStore(
+            this MongoElsaOptions configuration)
         {
             configuration.Services
                 .AddMongoDbCollection<WorkflowInstance>("WorkflowInstances")
@@ -57,8 +57,8 @@ namespace Microsoft.Extensions.DependencyInjection
             return configuration;
         }
 
-        public static MongoElsaBuilder AddMongoDbWorkflowDefinitionStore(
-            this MongoElsaBuilder configuration)
+        public static MongoElsaOptions AddMongoDbWorkflowDefinitionStore(
+            this MongoElsaOptions configuration)
         {
             configuration.Services
                 .AddMongoDbCollection<WorkflowDefinitionVersion>("WorkflowDefinitions")

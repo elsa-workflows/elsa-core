@@ -8,19 +8,19 @@ namespace Elsa.Persistence.EntityFrameworkCore.CustomSchema
 {
     public static class CustomSchemaDbContextBuilderExtensions
     {
-        public static EntityFrameworkCoreElsaBuilder AddCustomSchema(this ElsaBuilder configuration, string schema, string migrationHistoryTableName = null)
+        public static EntityFrameworkCoreElsaOptions AddCustomSchema(this ElsaOptions configuration, string schema, string migrationHistoryTableName = null)
         {
-            EntityFrameworkCoreElsaBuilder frameworkCoreElsaBuilder = new EntityFrameworkCoreElsaBuilder(configuration.Services);
+            EntityFrameworkCoreElsaOptions frameworkCoreElsaOptions = new EntityFrameworkCoreElsaOptions(configuration.Services);
             if (string.IsNullOrWhiteSpace(schema))
             {
-                return frameworkCoreElsaBuilder;
+                return frameworkCoreElsaOptions;
             }
             DbContextCustomSchema dbContextCustomSchema = new DbContextCustomSchema(schema,
                     !string.IsNullOrWhiteSpace(migrationHistoryTableName) ? migrationHistoryTableName : DbContextCustomSchema.DefaultMigrationsHistoryTableName);
 
             configuration.Services.AddSingleton<IDbContextCustomSchema>(dbContextCustomSchema);
 
-            return frameworkCoreElsaBuilder;
+            return frameworkCoreElsaOptions;
         }
 
         public static SqliteDbContextOptionsBuilder AddCustomSchemaModelSupport(this SqliteDbContextOptionsBuilder sqliteDbContextOptionsBuilder, DbContextOptionsBuilder dbContextOptionsBuilder, IServiceCollection services)
