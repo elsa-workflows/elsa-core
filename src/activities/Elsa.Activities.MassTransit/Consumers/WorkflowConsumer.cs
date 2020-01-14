@@ -18,11 +18,11 @@ namespace Elsa.Activities.MassTransit.Consumers
             new PropertyCorrelationIdSelector<T>("CommandId")
         };
 
-        private readonly IWorkflowHost workflowHost;
+        private readonly IWorkflowScheduler workflowScheduler;
 
-        public WorkflowConsumer(IWorkflowHost workflowHost)
+        public WorkflowConsumer(IWorkflowScheduler workflowScheduler)
         {
-            this.workflowHost = workflowHost;
+            this.workflowScheduler = workflowScheduler;
         }
 
         public async Task Consume(ConsumeContext<T> context)
@@ -37,7 +37,7 @@ namespace Elsa.Activities.MassTransit.Consumers
                     break;
             }
 
-            await workflowHost.TriggerAsync(
+            await workflowScheduler.TriggerWorkflowsAsync(
                 activityType,
                 Variable.From(message),
                 correlationId?.ToString(),

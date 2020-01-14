@@ -11,25 +11,32 @@ namespace Elsa.StartupTasks
     /// If there are workflows in the Running state while the server starts, it means the workflow instance never finished execution, e.g. because the workflow host terminated.
     /// This startup task resumes such workflows.
     /// </summary>
-    // TODO: How would this work when adding multi-node support? E.g. we don't want new nodes to start running workflows while another node is already running them.
     public class ResumeRunningWorkflowsTask : IStartupTask
     {
         private readonly IWorkflowInstanceStore workflowInstanceStore;
-        private readonly IWorkflowHost workflowHost;
+        private readonly IWorkflowScheduler workflowScheduler;
+        private readonly IDistributedLockProvider distributedLockProvider;
 
-        public ResumeRunningWorkflowsTask(IWorkflowInstanceStore workflowInstanceStore, IWorkflowHost workflowHost)
+        public ResumeRunningWorkflowsTask(
+            IWorkflowInstanceStore workflowInstanceStore, 
+            IWorkflowScheduler workflowScheduler,
+            IDistributedLockProvider distributedLockProvider)
         {
             this.workflowInstanceStore = workflowInstanceStore;
-            this.workflowHost = workflowHost;
+            this.workflowScheduler = workflowScheduler;
+            this.distributedLockProvider = distributedLockProvider;
         }
         
         public async Task ExecuteAsync(CancellationToken cancellationToken = default)
         {
+            if (!await distributedLockProvider.TryAcquireLockAsync(GetType().Name, cancellationToken))
+                return;
+            
             var instances = await workflowInstanceStore.ListByStatusAsync(WorkflowStatus.Running, cancellationToken);
 
             foreach (var instance in instances)
             {
-                //await processRunner.RunAsync(instance, cancellationToken: cancellationToken);
+                await workflowScheduler.ScheduleNewWorkflowAsync(instance.Id, cancellationToken: cancellationToken);
             }
         }
     }

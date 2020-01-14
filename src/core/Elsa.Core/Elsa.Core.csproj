@@ -31,7 +31,6 @@
         <PackageReference Include="AutoMapper" Version="9.0.0" />
         <PackageReference Include="Humanizer.Core" Version="2.7.9" />
         <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="7.0.0" />
-        <PackageReference Include="Microsoft.AspNetCore.Hosting.Server.Abstractions" Version="2.2.0" />
         <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
         <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="3.1.0" />
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="3.1.0" />
@@ -43,6 +42,7 @@
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="3.1.0" />
         <PackageReference Include="NodaTime.Serialization.JsonNet" Version="2.2.0" />
         <PackageReference Include="Elsa.Scrutor" Version="3.0.2.26" />
+        <PackageReference Include="Rebus.ServiceProvider" Version="4.0.2" />
 
         <PackageReference Include="YamlDotNet.NetStandard" Version="4.0.0" />
     </ItemGroup>
@@ -50,6 +50,10 @@
     <ItemGroup>
         <ProjectReference Include="..\..\utils\Elsa.AutoMapper.Extensions\Elsa.AutoMapper.Extensions.csproj" />
         <ProjectReference Include="..\Elsa.Abstractions\Elsa.Abstractions.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Messages\Domain" />
     </ItemGroup>
 
 </Project>

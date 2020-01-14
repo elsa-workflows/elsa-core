@@ -18,15 +18,5 @@ namespace Elsa.Runtime
             return services
                 .AddTransient<IStartupTask, TStartupTask>();
         }
-
-        /// <summary>
-        /// Registers a TaskExecutingServer that automatically invokes <see cref="IStartupRunner"/> when Kestrel starts.
-        /// </summary>
-        public static IServiceCollection AddTaskExecutingServer(this IServiceCollection services)
-        {
-            return services
-                .AddStartupRunner()
-                .Decorate<IServer, TaskExecutingServer>();
-        }
     }
 }

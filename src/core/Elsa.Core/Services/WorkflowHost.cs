@@ -6,154 +6,113 @@ using System.Threading.Tasks;
 using Elsa.Comparers;
 using Elsa.Expressions;
 using Elsa.Extensions;
+using Elsa.Messages;
 using Elsa.Models;
 using Elsa.Persistence;
+using Elsa.Results;
 using Elsa.Services.Models;
-using NodaTime;
+using MediatR;
 using ScheduledActivity = Elsa.Services.Models.ScheduledActivity;
 
 namespace Elsa.Services
 {
     public class WorkflowHost : IWorkflowHost
     {
-        private readonly IScheduler scheduler;
+        private delegate Task<IActivityExecutionResult> ActivityOperation(ActivityExecutionContext activityExecutionContext, IActivity activity, CancellationToken cancellationToken);
+
+        private static readonly ActivityOperation Execute = (context, activity, cancellationToken) => activity.ExecuteAsync(context, cancellationToken);
+        private static readonly ActivityOperation Resume = (context, activity, cancellationToken) => activity.ResumeAsync(context, cancellationToken);
+
         private readonly IWorkflowRegistry workflowRegistry;
         private readonly IWorkflowInstanceStore workflowInstanceStore;
         private readonly IExpressionEvaluator expressionEvaluator;
         private readonly IIdGenerator idGenerator;
-        private readonly IClock clock;
+        private readonly IMediator mediator;
         private readonly IServiceProvider serviceProvider;
 
         public WorkflowHost(
-            IScheduler scheduler,
             IWorkflowRegistry workflowRegistry,
             IWorkflowInstanceStore workflowInstanceStore,
             IExpressionEvaluator expressionEvaluator,
             IIdGenerator idGenerator,
-            IClock clock,
+            IMediator mediator,
             IServiceProvider serviceProvider)
         {
-            this.scheduler = scheduler;
             this.workflowRegistry = workflowRegistry;
             this.workflowInstanceStore = workflowInstanceStore;
             this.expressionEvaluator = expressionEvaluator;
             this.idGenerator = idGenerator;
-            this.clock = clock;
+            this.mediator = mediator;
             this.serviceProvider = serviceProvider;
         }
 
-        public async Task RunAsync(string id, object? input = default, CancellationToken cancellationToken = default)
+        public async Task RunAsync(string workflowInstanceId, string? activityId = default, object? input = default, CancellationToken cancellationToken = default)
         {
-            var workflow = await workflowRegistry.GetWorkflowAsync(id, VersionOptions.Published, cancellationToken);
-            var instanceId = idGenerator.Generate();
-            var startActivities = workflow.GetStartActivities();
-            var scheduledActivities = startActivities.Select(x => new ScheduledActivity(x, input)).ToList();
-            var workflowExecutionContext = new WorkflowExecutionContext(expressionEvaluator, serviceProvider, instanceId, workflow.Activities, workflow.Connections, scheduledActivities, persistenceBehavior: workflow.PersistenceBehavior);
+            var workflowInstance = await workflowInstanceStore.GetByIdAsync(workflowInstanceId, cancellationToken);
+            var workflow = await workflowRegistry.GetWorkflowAsync(workflowInstance.DefinitionId, VersionOptions.SpecificVersion(workflowInstance.Version), cancellationToken);
+            var workflowExecutionContext = CreateWorkflowExecutionContext(workflow, workflowInstance);
+            var activity = activityId != null ? workflow.GetActivity(activityId) : default;
 
-            workflowExecutionContext = await scheduler.RunAsync(workflowExecutionContext, cancellationToken);
-
-            var workflowInstance = CreateWorkflowInstance(workflow, workflowExecutionContext);
-            await workflowInstanceStore.SaveAsync(workflowInstance, cancellationToken);
+            switch (workflowExecutionContext.Status)
+            {
+                case WorkflowStatus.Idle:
+                    await BeginWorkflow(workflowExecutionContext, activity, input, cancellationToken);
+                    break;
+                case WorkflowStatus.Running:
+                    await RunWorkflowAsync(workflowExecutionContext, cancellationToken);
+                    break;
+                case WorkflowStatus.Suspended:
+                    await ResumeWorkflowAsync(workflowExecutionContext, activity, input, cancellationToken);
+                    break;
+            }
         }
 
-        public async Task TriggerAsync(string activityType, object? input = default, string? correlationId = default, Func<Variables, bool>? activityStatePredicate = default, CancellationToken cancellationToken = default)
+        private async Task BeginWorkflow(WorkflowExecutionContext workflowExecutionContext, IActivity activity, object? input, CancellationToken cancellationToken)
         {
-            await RunWorkflowsAsync(activityType, input, correlationId, activityStatePredicate, cancellationToken);
-            await ResumeWorkflowsAsync(activityType, input, correlationId, activityStatePredicate, cancellationToken);
+            workflowExecutionContext.Status = WorkflowStatus.Running;
+            workflowExecutionContext.ScheduleActivity(activity, input);
+            await RunAsync(workflowExecutionContext, Execute, cancellationToken);
+        }
+        
+        private async Task RunWorkflowAsync(WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
+        {
+            await RunAsync(workflowExecutionContext, Execute, cancellationToken);
         }
 
-        /// <summary>
-        /// Find workflows exposing activities with the specified activity type as workflow triggers.
-        /// </summary>
-        private async Task RunWorkflowsAsync(
-            string activityType,
-            object? input = default,
-            string? correlationId = default,
-            Func<Variables, bool>? activityStatePredicate = default,
+        private async Task ResumeWorkflowAsync(WorkflowExecutionContext workflowExecutionContext, IActivity activity, object? input, CancellationToken cancellationToken)
+        {
+            workflowExecutionContext.BlockingActivities.Remove(activity);
+            workflowExecutionContext.Status = WorkflowStatus.Running;
+            workflowExecutionContext.ScheduleActivity(activity, input);
+            await RunAsync(workflowExecutionContext, Resume, cancellationToken);
+        }
+
+        private async Task RunAsync(
+            WorkflowExecutionContext workflowExecutionContext,
+            ActivityOperation activityOperation,
             CancellationToken cancellationToken = default)
         {
-            var workflows = await workflowRegistry.GetWorkflowsAsync(cancellationToken);
-
-            var query =
-                from workflow in workflows
-                where workflow.IsPublished
-                from activity in workflow.GetStartActivities()
-                where activity.Type == activityType
-                select (workflow, activity);
-
-            if (activityStatePredicate != null)
-                query = query.Where(x => activityStatePredicate(x.Item2.State));
-
-            var tuples = (IList<(Workflow, IActivity)>)query.ToList();
-
-            tuples = (await FilterRunningSingletonsAsync(tuples, cancellationToken)).ToList();
-
-            foreach (var (workflow, activity) in tuples)
+            while (workflowExecutionContext.HasScheduledActivities)
             {
-                var scheduledActivities = new Stack<ScheduledActivity>(new[] { new ScheduledActivity(activity, input) });
-                var instanceId = idGenerator.Generate();
-                var workflowExecutionContext = new WorkflowExecutionContext(expressionEvaluator, serviceProvider, instanceId, workflow.Activities, workflow.Connections, scheduledActivities, persistenceBehavior: workflow.PersistenceBehavior);
+                var scheduledActivity = workflowExecutionContext.PopScheduledActivity();
+                var currentActivity = scheduledActivity.Activity;
+                var activityExecutionContext = new ActivityExecutionContext(workflowExecutionContext, currentActivity, scheduledActivity.Input);
+                var result = await activityOperation(activityExecutionContext, currentActivity, cancellationToken);
 
-                await scheduler.RunAsync(workflowExecutionContext, cancellationToken);
+                await result.ExecuteAsync(workflowExecutionContext, activityExecutionContext, cancellationToken);
+                await mediator.Publish(new ActivityExecuted(workflowExecutionContext, activityExecutionContext), cancellationToken);
+
+                activityOperation = Execute;
             }
-        }
 
-        /// <summary>
-        /// Find suspended workflow instances that are blocked on activities with the specified activity type.
-        /// </summary>
-        private async Task ResumeWorkflowsAsync(string activityType, object? input, string? correlationId, Func<Variables, bool>? activityStatePredicate, CancellationToken cancellationToken)
-        {
-            var tuples = await workflowInstanceStore.ListByBlockingActivityAsync(activityType, correlationId, cancellationToken);
-
-            foreach (var (workflowInstance, blockingActivity) in tuples)
-            {
-                var workflow = await workflowRegistry.GetWorkflowAsync(workflowInstance.DefinitionId, VersionOptions.SpecificVersion(workflowInstance.Version), cancellationToken);
-                var activity = workflow.GetActivity(blockingActivity.ActivityId);
-
-                if (activityStatePredicate != null)
-                {
-                    if (!activityStatePredicate(activity.State))
-                        continue;
-                }
-
-                var workflowExecutionContext = CreateWorkflowExecutionContext(workflow, workflowInstance);
-
-                await scheduler.ResumeAsync(workflowExecutionContext, activity, input, cancellationToken);
-            }
+            if (workflowExecutionContext.Status == WorkflowStatus.Running)
+                workflowExecutionContext.Complete();
         }
 
         private ScheduledActivity CreateScheduledActivity(Elsa.Models.ScheduledActivity scheduledActivityModel, IDictionary<string, IActivity> activityLookup)
         {
             var activity = activityLookup[scheduledActivityModel.ActivityId];
             return new ScheduledActivity(activity, scheduledActivityModel.Input);
-        }
-
-        private WorkflowInstance CreateWorkflowInstance(Workflow workflow, WorkflowExecutionContext workflowExecutionContext)
-        {
-            var workflowInstance = new WorkflowInstance
-            {
-                Id = workflowExecutionContext.InstanceId,
-                Variables = workflowExecutionContext.Variables,
-                ScheduledActivities = new Stack<Elsa.Models.ScheduledActivity>(workflowExecutionContext.ScheduledActivities.Select(x => new Elsa.Models.ScheduledActivity(x.Activity.Id, x.Input))),
-                BlockingActivities = new HashSet<BlockingActivity>(workflowExecutionContext.BlockingActivities.Select(x => new BlockingActivity(x.Id, x.Type)), new BlockingActivityEqualityComparer()),
-                Status = workflowExecutionContext.Status,
-                Version = workflow.Version,
-                CorrelationId = workflowExecutionContext.CorrelationId,
-                DefinitionId = workflow.DefinitionId,
-            };
-
-            return workflowInstance;
-        }
-
-        private WorkflowInstance UpdateWorkflowInstance(WorkflowInstance workflowInstance, WorkflowExecutionContext workflowExecutionContext)
-        {
-            workflowInstance.Variables = workflowExecutionContext.Variables;
-            workflowInstance.ScheduledActivities = new Stack<Elsa.Models.ScheduledActivity>(workflowExecutionContext.ScheduledActivities.Select(x => new Elsa.Models.ScheduledActivity(x.Activity.Id, x.Input)));
-            workflowInstance.BlockingActivities = new HashSet<BlockingActivity>(workflowExecutionContext.BlockingActivities.Select(x => new BlockingActivity(x.Id, x.Type)), new BlockingActivityEqualityComparer());
-            workflowInstance.Status = workflowExecutionContext.Status;
-            workflowInstance.CorrelationId = workflowExecutionContext.CorrelationId;
-
-            return workflowInstance;
         }
 
         private WorkflowExecutionContext CreateWorkflowExecutionContext(Workflow workflow, WorkflowInstance workflowInstance)
@@ -164,31 +123,45 @@ namespace Elsa.Services
             var variables = workflowInstance.Variables;
             var status = workflowInstance.Status;
             var persistenceBehavior = workflow.PersistenceBehavior;
-            return new WorkflowExecutionContext(expressionEvaluator, serviceProvider, workflowInstance.Id, workflow.Activities, workflow.Connections, scheduledActivities, blockingActivities, variables, status, persistenceBehavior);
+            return CreateWorkflowExecutionContext(
+                workflowInstance.Id,
+                workflow.DefinitionId,
+                workflow.Version,
+                workflow.Activities,
+                workflow.Connections,
+                scheduledActivities,
+                blockingActivities,
+                workflowInstance.CorrelationId,
+                variables,
+                status,
+                persistenceBehavior);
         }
 
-        private async Task<IEnumerable<(Workflow, IActivity)>> FilterRunningSingletonsAsync(
-            IEnumerable<(Workflow, IActivity)> workflows,
-            CancellationToken cancellationToken)
-        {
-            var definitions = workflows.ToList();
-            var transients = definitions.Where(x => !x.Item1.IsSingleton).ToList();
-            var singletons = definitions.Where(x => x.Item1.IsSingleton).ToList();
-            var result = transients.ToList();
-
-            foreach (var definition in singletons)
-            {
-                var instances = await workflowInstanceStore.ListByStatusAsync(
-                    definition.Item1.DefinitionId,
-                    WorkflowStatus.Suspended,
-                    cancellationToken
-                );
-
-                if (!instances.Any())
-                    result.Add(definition);
-            }
-
-            return result;
-        }
+        private WorkflowExecutionContext CreateWorkflowExecutionContext(
+            string workflowInstanceId,
+            string workflowDefinitionId,
+            int version,
+            IEnumerable<IActivity> activities,
+            IEnumerable<Connection> connections,
+            IEnumerable<ScheduledActivity>? scheduledActivities = default,
+            IEnumerable<IActivity>? blockingActivities = default,
+            string correlationId = default,
+            Variables? variables = default,
+            WorkflowStatus status = WorkflowStatus.Running,
+            WorkflowPersistenceBehavior persistenceBehavior = WorkflowPersistenceBehavior.WorkflowExecuted)
+            => new WorkflowExecutionContext(
+                expressionEvaluator,
+                serviceProvider,
+                workflowDefinitionId,
+                workflowInstanceId,
+                version,
+                activities,
+                connections,
+                scheduledActivities,
+                blockingActivities,
+                correlationId,
+                variables,
+                status,
+                persistenceBehavior);
     }
 }
