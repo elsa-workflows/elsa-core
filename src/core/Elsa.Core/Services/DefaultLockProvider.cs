@@ -15,7 +15,7 @@ namespace Elsa.Services
     {
         private readonly HashSet<string> locks = new HashSet<string>();
 
-        public Task<bool> TryAcquireLockAsync(string name, CancellationToken cancellationToken = default)
+        public Task<bool> AcquireLockAsync(string name, CancellationToken cancellationToken = default)
         {
             lock (locks)
             {

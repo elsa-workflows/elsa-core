@@ -29,7 +29,7 @@ namespace Elsa.StartupTasks
         
         public async Task ExecuteAsync(CancellationToken cancellationToken = default)
         {
-            if (!await distributedLockProvider.TryAcquireLockAsync(GetType().Name, cancellationToken))
+            if (!await distributedLockProvider.AcquireLockAsync(GetType().Name, cancellationToken))
                 return;
             
             var instances = await workflowInstanceStore.ListByStatusAsync(WorkflowStatus.Running, cancellationToken);

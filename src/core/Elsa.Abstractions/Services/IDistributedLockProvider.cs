@@ -11,7 +11,7 @@ namespace Elsa.Services
     /// </remarks>
     public interface IDistributedLockProvider
     {
-        Task<bool> TryAcquireLockAsync(string name, CancellationToken cancellationToken = default);
+        Task<bool> AcquireLockAsync(string name, CancellationToken cancellationToken = default);
         Task ReleaseLockAsync(string name, CancellationToken cancellationToken = default);
     }
 }

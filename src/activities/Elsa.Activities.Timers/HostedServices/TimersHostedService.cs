@@ -33,7 +33,7 @@ namespace Elsa.Activities.Timers.HostedServices
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                if (await distributedLockProvider.TryAcquireLockAsync(GetType().Name, stoppingToken))
+                if (await distributedLockProvider.AcquireLockAsync(GetType().Name, stoppingToken))
                 {
                     try
                     {

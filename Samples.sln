@@ -94,6 +94,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.Timers", "src\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.AspNetCore.Startup", "src\providers\Elsa.AspNetCore.Startup\Elsa.AspNetCore.Startup.csproj", "{3589E547-5A8C-44E9-B545-0037A6C5C3A1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.DistributedLocking.SqlServer", "src\providers\Elsa.DistributedLocking.SqlServer\Elsa.DistributedLocking.SqlServer.csproj", "{150EF356-E8BC-4922-91C2-362017479409}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -212,6 +214,10 @@ Global
 		{3589E547-5A8C-44E9-B545-0037A6C5C3A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3589E547-5A8C-44E9-B545-0037A6C5C3A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3589E547-5A8C-44E9-B545-0037A6C5C3A1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{150EF356-E8BC-4922-91C2-362017479409}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{150EF356-E8BC-4922-91C2-362017479409}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{150EF356-E8BC-4922-91C2-362017479409}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{150EF356-E8BC-4922-91C2-362017479409}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -255,6 +261,7 @@ Global
 		{DA825F41-EE97-47B3-801E-C694A6C53AEC} = {600C4AE0-0585-4181-9CEC-2BB43430C713}
 		{071DD6EC-D00C-4513-82B6-3FE8438061E3} = {5E5E1E84-DDBC-40D6-B891-0D563A15A44A}
 		{3589E547-5A8C-44E9-B545-0037A6C5C3A1} = {600C4AE0-0585-4181-9CEC-2BB43430C713}
+		{150EF356-E8BC-4922-91C2-362017479409} = {600C4AE0-0585-4181-9CEC-2BB43430C713}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}
