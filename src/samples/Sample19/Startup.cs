@@ -2,6 +2,7 @@ using Elsa.Activities.Email.Extensions;
 using Elsa.Activities.Http.Extensions;
 using Elsa.Activities.Timers.Extensions;
 using Elsa.Dashboard.Extensions;
+using Elsa.Persistence.EntityFrameworkCore.DbContexts;
 using Elsa.Persistence.EntityFrameworkCore.Extensions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -27,7 +28,7 @@ namespace Sample19
 
             services
                 // Add workflow services.
-                .AddElsa(x => x.AddEntityFrameworkStores(x => x.UseSqlite(Configuration.GetConnectionString("Sqlite"))))
+                .AddElsa(x => x.AddEntityFrameworkStores<SqliteContext>(x => x.UseSqlite(Configuration.GetConnectionString("Sqlite"))))
 
                 // Add activities we'd like to use.
                 .AddHttpActivities(options => options.Bind(elsaSection.GetSection("Http")))

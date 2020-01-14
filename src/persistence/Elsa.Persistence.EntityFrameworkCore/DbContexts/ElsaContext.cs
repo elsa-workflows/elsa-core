@@ -20,7 +20,19 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
             serializerSettings = new JsonSerializerSettings().ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
             DbContextCustomSchema = options.GetDbContextCustomSchema();
         }
-        
+
+        /// <summary>
+        /// Constructor to initialise a new <see cref="ElsaContext"/> that will be ignored by Dependency Injection.
+        /// Use this constructor when creating derived classes, i.e. for each database provider implementation.
+        /// </summary>
+        /// <param name="options"></param>
+        /// <remarks>Protected for following reason: https://github.com/aspnet/EntityFramework.Docs/issues/594</remarks>
+        protected ElsaContext(DbContextOptions options) : base(options)
+        {
+            serializerSettings = new JsonSerializerSettings().ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
+            DbContextCustomSchema = options.GetDbContextCustomSchema();
+        }
+
         /// <summary>
         /// The CustomSchemaModelCacheKeyFactory will not resolve services from the DI container for constructor injection
         /// so this is necessary in order to set the custom schema for the Model Cache.

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Elsa.Activities.Console.Extensions;
 using Elsa.Extensions;
@@ -71,7 +71,7 @@ namespace Sample14
         {
             return new ServiceCollection()
                 .AddElsa(
-                    x => x.AddEntityFrameworkStores(
+                    x => x.AddEntityFrameworkStores<SqliteContext>(
                         options => options
                             .UseSqlite(@"Data Source=c:\data\elsa.entity-framework-core.db;Cache=Shared")))
                 .AddStartupRunner()
