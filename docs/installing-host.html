@@ -54,7 +54,7 @@
                 };
               }
             });
-        </script></nav></div><div class="container mainContainer"><div class="wrapper"><div class="post"><header class="postHeader"><h1 class="postHeaderTitle">Using Elsa as a Workflow Host</h1></header><article><div><span><p>In order to automatically execute workflows, you will need to start various background services and install various middleware.</p>
+        </script></nav></div><div class="container mainContainer docsContainer"><div class="wrapper"><div class="post"><header class="postHeader"><h1 id="__docusaurus" class="postHeaderTitle">Using Elsa as a Workflow Host</h1></header><article><div><span><p>In order to automatically execute workflows, you will need to start various background services and install various middleware.</p>
 <p>For example, in order to trigger the <code>TimerEvent</code> activity, the <code>TimersHostedService</code> needs to be registered with your <a href="https://docs.microsoft.com/en-us/aspnet/core/fundamentals/host/generic-host">.NET Core host</a>.</p>
 <p>In order to trigger the <code>HttpRequestEvent</code> activity, the <code>RequestHandlerMiddleware&lt;TriggerRequestHandler&gt;</code> middleware needs to be added to the ASP.NET Core middleware pipeline.</p>
 <p>And should you be using <a href="https://masstransit-project.com/">MassTransit</a>, you will want to register some more hosted services that will listen for incoming messages.</p>
