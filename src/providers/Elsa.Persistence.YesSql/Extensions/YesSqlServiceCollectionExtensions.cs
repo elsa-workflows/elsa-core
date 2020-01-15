@@ -15,11 +15,49 @@ namespace Elsa.Persistence.YesSql.Extensions
 {
     public static class YesSqlServiceCollectionExtensions
     {
-        public static YesSqlElsaBuilder AddYesSqlProvider(
-            this ElsaBuilder configuration,
+        public static ElsaOptions AddYesSqlStores(
+            this ElsaOptions options,
             Action<IConfiguration> configure)
         {
-            configuration.Services
+            return options
+                .UseYesSqlWorkflowDefinitionStore(configure)
+                .UseYesSqlWorkflowInstanceStore(configure);
+        }
+
+        public static ElsaOptions UseYesSqlWorkflowInstanceStore(
+            this ElsaOptions options,
+            Action<IConfiguration> configure)
+        {
+            options
+                .AddYesSqlProvider(configure)
+                .UseWorkflowInstanceStore(sp => sp.GetRequiredService<YesSqlWorkflowInstanceStore>())
+                .Services
+                .AddScoped<IWorkflowInstanceStore, YesSqlWorkflowInstanceStore>();
+
+            return options;
+        }
+
+        public static ElsaOptions UseYesSqlWorkflowDefinitionStore(
+            this ElsaOptions options,
+            Action<IConfiguration> configure)
+        {
+            options
+                .AddYesSqlProvider(configure)
+                .UseWorkflowDefinitionStore(sp => sp.GetRequiredService<YesSqlWorkflowDefinitionStore>())
+                .Services
+                .AddScoped<YesSqlWorkflowDefinitionStore>();
+
+            return options;
+        }
+
+        private static ElsaOptions AddYesSqlProvider(
+            this ElsaOptions options,
+            Action<IConfiguration> configure)
+        {
+            if (options.Services.HasService<IStore>())
+                return options;
+
+            options.Services
                 .AddSingleton(sp => StoreFactory.CreateStore(sp, configure))
                 .AddSingleton<IIndexProvider, WorkflowDefinitionIndexProvider>()
                 .AddSingleton<IIndexProvider, WorkflowInstanceIndexProvider>()
@@ -29,31 +67,7 @@ namespace Elsa.Persistence.YesSql.Extensions
                 .AddAutoMapperProfile<DocumentProfile>(ServiceLifetime.Singleton)
                 .AddStartupTask<InitializeStoreTask>();
 
-            return new YesSqlElsaBuilder(configuration.Services);
-        }
-
-        public static YesSqlElsaBuilder AddYesSqlStores(
-            this ElsaBuilder configuration,
-            Action<IConfiguration> configure)
-        {
-            return configuration.AddYesSqlProvider(configure).AddWorkflowDefinitionStore()
-                .AddWorkflowInstanceStore();
-        }
-
-        public static YesSqlElsaBuilder AddWorkflowInstanceStore(
-            this YesSqlElsaBuilder configuration)
-        {
-            configuration.Services.AddScoped<IWorkflowInstanceStore, YesSqlWorkflowInstanceStore>();
-            return configuration;
-        }
-
-        public static YesSqlElsaBuilder AddWorkflowDefinitionStore(
-            this YesSqlElsaBuilder configuration)
-        {
-            configuration.Services
-                .AddScoped<IWorkflowDefinitionStore, YesSqlWorkflowDefinitionStore>();
-
-            return configuration;
+            return new ElsaOptions(options.Services);
         }
 
         private static ISession CreateSession(IServiceProvider services)

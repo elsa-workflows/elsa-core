@@ -17,54 +17,45 @@ namespace Microsoft.Extensions.DependencyInjection
 {
     public static class ServiceCollectionExtensions
     {
-        public static MongoElsaBuilder AddMongoDbProvider(
-            this ElsaBuilder elsaBuilder,
-            IConfiguration configuration,
+        public static ElsaOptions UseMongoDbWorkflowStores(
+            this ElsaOptions options,
             string databaseName,
-            string connectionStringName
-        )
+            string connectionString)
         {
-            NodaTimeSerializers.Register();
-            RegisterEnumAsStringConvention();
-            BsonSerializer.RegisterSerializer(new JObjectSerializer());
-
-            elsaBuilder.Services
-                .AddSingleton(sp => CreateDbClient(configuration, connectionStringName))
-                .AddSingleton(sp => CreateDatabase(sp, databaseName));
-
-            return new MongoElsaBuilder(elsaBuilder.Services);
+            return options
+                .AddMongoDbProvider(databaseName, connectionString)
+                .UseMongoDbWorkflowDefinitionStore(databaseName, connectionString)
+                .UseMongoDbWorkflowInstanceStore(databaseName, connectionString);
         }
 
-        public static MongoElsaBuilder AddMongoDbStores(
-            this ElsaBuilder elsaBuilder,
-            IConfiguration configuration,
+        public static ElsaOptions UseMongoDbWorkflowInstanceStore(
+            this ElsaOptions options,
             string databaseName,
-            string connectionStringName)
+            string connectionString)
         {
-            return elsaBuilder
-                .AddMongoDbProvider(configuration, databaseName, connectionStringName)
-                .AddMongoDbWorkflowDefinitionStore()
-                .AddMongoDbWorkflowInstanceStore();
-        }
-
-        public static MongoElsaBuilder AddMongoDbWorkflowInstanceStore(
-            this MongoElsaBuilder configuration)
-        {
-            configuration.Services
+            options
+                .AddMongoDbProvider(databaseName, connectionString)
+                .UseWorkflowInstanceStore(sp => sp.GetRequiredService<MongoWorkflowInstanceStore>())
+                .Services
                 .AddMongoDbCollection<WorkflowInstance>("WorkflowInstances")
-                .AddScoped<IWorkflowInstanceStore, MongoWorkflowInstanceStore>();
+                .AddScoped<MongoWorkflowInstanceStore>();
 
-            return configuration;
+            return options;
         }
 
-        public static MongoElsaBuilder AddMongoDbWorkflowDefinitionStore(
-            this MongoElsaBuilder configuration)
+        public static ElsaOptions UseMongoDbWorkflowDefinitionStore(
+            this ElsaOptions options,
+            string databaseName,
+            string connectionString)
         {
-            configuration.Services
+            options
+                .AddMongoDbProvider(databaseName, connectionString)
+                .UseWorkflowDefinitionStore(sp => sp.GetRequiredService<MongoWorkflowDefinitionStore>())
+                .Services
                 .AddMongoDbCollection<WorkflowDefinitionVersion>("WorkflowDefinitions")
                 .AddScoped<IWorkflowDefinitionStore, MongoWorkflowDefinitionStore>();
 
-            return configuration;
+            return options;
         }
 
         public static IServiceCollection AddMongoDbCollection<T>(
@@ -74,6 +65,26 @@ namespace Microsoft.Extensions.DependencyInjection
             return services.AddSingleton(sp => CreateCollection<T>(sp, collectionName));
         }
 
+        private static ElsaOptions AddMongoDbProvider(
+            this ElsaOptions options,
+            string databaseName,
+            string connectionString
+        )
+        {
+            if (options.Services.HasService<IMongoClient>())
+                return options;
+            
+            NodaTimeSerializers.Register();
+            RegisterEnumAsStringConvention();
+            BsonSerializer.RegisterSerializer(new JObjectSerializer());
+
+            options.Services
+                .AddSingleton(sp => CreateDbClient(connectionString))
+                .AddSingleton(sp => CreateDatabase(sp, databaseName));
+
+            return options;
+        }
+        
         private static IMongoCollection<T> CreateCollection<T>(IServiceProvider serviceProvider, string collectionName)
         {
             var database = serviceProvider.GetRequiredService<IMongoDatabase>();
@@ -86,11 +97,7 @@ namespace Microsoft.Extensions.DependencyInjection
             return client.GetDatabase(databaseName);
         }
 
-        private static IMongoClient CreateDbClient(IConfiguration configuration, string connectionStringName)
-        {
-            var connectionString = configuration.GetConnectionString(connectionStringName);
-            return new MongoClient(connectionString);
-        }
+        private static IMongoClient CreateDbClient(string connectionString) => new MongoClient(connectionString);
 
         private static void RegisterEnumAsStringConvention()
         {

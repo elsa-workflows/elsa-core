@@ -40,16 +40,20 @@ namespace Microsoft.Extensions.DependencyInjection
     {
         public static IServiceCollection AddElsaCore(
             this IServiceCollection services,
-            Action<ElsaBuilder> configure = null)
+            Action<ElsaOptions> configure = null)
         {
-            var configuration = new ElsaBuilder(services);
-            configuration.AddWorkflowsCore();
-            configuration.AddMediatR();
-            configure?.Invoke(configuration);
-            EnsurePersistence(configuration);
-            EnsureCaching(configuration);
-            EnsureLockProvider(configuration);
-            EnsureServiceBus(configuration);
+            var options = new ElsaOptions(services);
+            configure?.Invoke(options);
+
+            services
+                .AddTransient(options.WorkflowDefinitionStoreFactory)
+                .AddTransient(options.WorkflowInstanceStoreFactory)
+                .AddSingleton(options.DistributedLockProviderFactory)
+                .AddSingleton(options.SignalFactory);
+
+            options.AddWorkflowsCore();
+            options.AddServiceBus();
+            options.AddMediatR();
 
             return services;
         }
@@ -72,16 +76,16 @@ namespace Microsoft.Extensions.DependencyInjection
         public static IServiceCollection AddTypeNameValueHandler<T>(this IServiceCollection services) where T : class, IValueHandler => services.AddTransient<IValueHandler, T>();
         public static IServiceCollection AddTypeAlias<T>(this IServiceCollection services, string alias) => services.AddTypeAlias(typeof(T), alias);
         public static IServiceCollection AddTypeAlias(this IServiceCollection services, Type type, string alias) => services.AddTransient<ITypeAlias>(sp => new TypeAlias(type, alias));
-        public static IServiceCollection AddConsumer<TMessage, TConsumer>(this IServiceCollection services) where TConsumer : class, IHandleMessages<TMessage> => services.AddTransient<IHandleMessages<TMessage>, TConsumer>();  
-        
-        private static IServiceCollection AddMediatR(this ElsaBuilder configuration)
+        public static IServiceCollection AddConsumer<TMessage, TConsumer>(this IServiceCollection services) where TConsumer : class, IHandleMessages<TMessage> => services.AddTransient<IHandleMessages<TMessage>, TConsumer>();
+
+        private static IServiceCollection AddMediatR(this ElsaOptions configuration)
         {
             return configuration.Services.AddMediatR(
                 mediatr => mediatr.AsSingleton(),
                 typeof(ElsaServiceCollectionExtensions));
         }
 
-        private static ElsaBuilder AddWorkflowsCore(this ElsaBuilder configuration)
+        private static ElsaOptions AddWorkflowsCore(this ElsaOptions configuration)
         {
             var services = configuration.Services;
             services.TryAddSingleton<IClock>(SystemClock.Instance);
@@ -89,6 +93,7 @@ namespace Microsoft.Extensions.DependencyInjection
             services
                 .AddLogging()
                 .AddLocalization()
+                .AddMemoryCache()
                 .AddTransient<Func<IEnumerable<IActivity>>>(sp => sp.GetServices<IActivity>)
                 .AddSingleton<IIdGenerator, IdGenerator>()
                 .AddSingleton<IWorkflowSerializer, WorkflowSerializer>()
@@ -113,13 +118,15 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddTransient<IWorkflowProvider, CodeWorkflowProvider>()
                 .AddTransient<WorkflowBuilder>()
                 .AddTransient<Func<WorkflowBuilder>>(sp => sp.GetRequiredService<WorkflowBuilder>)
+                .AddStartupTask<StartServiceBusTask>()
+                .AddConsumer<RunWorkflow, RunWorkflowHandler>()
                 .AddAutoMapperProfile<WorkflowDefinitionProfile>(ServiceLifetime.Singleton)
                 .AddSerializationHandlers()
                 .AddPrimitiveActivities();
 
             return configuration;
         }
-        
+
         private static IServiceCollection AddSerializationHandlers(this IServiceCollection services) =>
             services
                 .AddTypeNameValueHandler<AnnualDateHandler>()
@@ -165,43 +172,10 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddActivity<TriggerEvent>()
                 .AddActivity<TriggerSignal>();
 
-        private static void EnsurePersistence(ElsaBuilder configuration)
+        private static ElsaOptions AddServiceBus(this ElsaOptions options)
         {
-            var hasDefinitionStore = configuration.HasService<IWorkflowDefinitionStore>();
-            var hasInstanceStore = configuration.HasService<IWorkflowInstanceStore>();
-
-            if (!hasDefinitionStore || !hasInstanceStore)
-                configuration.WithMemoryStores();
-
-            configuration.Services.Decorate<IWorkflowDefinitionStore, PublishingWorkflowDefinitionStore>();
-        }
-
-        private static void EnsureCaching(ElsaBuilder configuration)
-        {
-            if (!configuration.HasService<ISignal>())
-                configuration.Services.AddSingleton<ISignal, Signal>();
-
-            configuration.Services.AddMemoryCache();
-        }
-
-        private static void EnsureLockProvider(ElsaBuilder configuration)
-        {
-            if (!configuration.HasService<IDistributedLockProvider>())
-                configuration.Services.AddSingleton<IDistributedLockProvider, DefaultLockProvider>();
-        }
-
-        private static void EnsureServiceBus(ElsaBuilder configuration)
-        {
-            if (!configuration.HasService<IBus>())
-            {
-                configuration.WithServiceBus(rebus => rebus
-                    .Subscriptions(s => s.StoreInMemory(new InMemorySubscriberStore()))
-                    .Routing(r => r.TypeBased())
-                    .Transport(t => t.UseInMemoryTransport(new InMemNetwork(), "Messages")));
-            }
-
-            configuration.Services.AddStartupTask<StartServiceBusTask>();
-            configuration.Services.AddConsumer<RunWorkflow, RunWorkflowHandler>();
+            options.WithServiceBus(options.ServiceBusConfigurer);
+            return options;
         }
     }
 }

@@ -8,21 +8,6 @@ namespace Elsa.Persistence.EntityFrameworkCore.CustomSchema
 {
     public static class CustomSchemaDbContextBuilderExtensions
     {
-        public static EntityFrameworkCoreElsaBuilder AddCustomSchema(this ElsaBuilder configuration, string schema, string migrationHistoryTableName = null)
-        {
-            EntityFrameworkCoreElsaBuilder frameworkCoreElsaBuilder = new EntityFrameworkCoreElsaBuilder(configuration.Services);
-            if (string.IsNullOrWhiteSpace(schema))
-            {
-                return frameworkCoreElsaBuilder;
-            }
-            DbContextCustomSchema dbContextCustomSchema = new DbContextCustomSchema(schema,
-                    !string.IsNullOrWhiteSpace(migrationHistoryTableName) ? migrationHistoryTableName : DbContextCustomSchema.DefaultMigrationsHistoryTableName);
-
-            configuration.Services.AddSingleton<IDbContextCustomSchema>(dbContextCustomSchema);
-
-            return frameworkCoreElsaBuilder;
-        }
-
         public static SqliteDbContextOptionsBuilder AddCustomSchemaModelSupport(this SqliteDbContextOptionsBuilder sqliteDbContextOptionsBuilder, DbContextOptionsBuilder dbContextOptionsBuilder, IServiceCollection services)
         {
             services.AddTransient<CustomSchemaOptionsExtension>();
@@ -68,25 +53,21 @@ namespace Elsa.Persistence.EntityFrameworkCore.CustomSchema
         {
             var infrastructure = npgsqlDbContextOptionsBuilder as IRelationalDbContextOptionsBuilderInfrastructure;
             infrastructure.AddCustomSchemaExtension(services);
-            return npgsqlDbContextOptionsBuilder;            
+            return npgsqlDbContextOptionsBuilder;
         }
 
         static void AddCustomSchemaExtension(this IRelationalDbContextOptionsBuilderInfrastructure relationalDbContextOptionsBuilderInfrastructure, IServiceCollection services)
         {
             if (relationalDbContextOptionsBuilderInfrastructure != null)
             {
-                var builder = relationalDbContextOptionsBuilderInfrastructure.OptionsBuilder as IDbContextOptionsBuilderInfrastructure;
-                if (builder != null)
+                if (relationalDbContextOptionsBuilderInfrastructure.OptionsBuilder is IDbContextOptionsBuilderInfrastructure builder)
                 {
-                    // if the extension is registered already then we keep it 
-                    // otherwise we create a new one
+                    // If the extension is registered already then we keep it, otherwise we create a new one.
                     var extension = relationalDbContextOptionsBuilderInfrastructure.OptionsBuilder.Options.FindExtension<CustomSchemaOptionsExtension>();
                     if (extension == null)
                     {
-                        using (var scope = services.BuildServiceProvider().CreateScope())
-                        {
-                            builder.AddOrUpdateExtension(scope.ServiceProvider.GetService<CustomSchemaOptionsExtension>());
-                        }
+                        using var scope = services.BuildServiceProvider().CreateScope();
+                        builder.AddOrUpdateExtension(scope.ServiceProvider.GetService<CustomSchemaOptionsExtension>());
                     }
                 }
             }
@@ -96,13 +77,12 @@ namespace Elsa.Persistence.EntityFrameworkCore.CustomSchema
         {
             if (sqliteDbContextOptionsBuilder != null)
             {
-                IDbContextCustomSchema dbContextCustomSchema = optionsBuilder.GetDbContextCustomSchema();
+                var dbContextCustomSchema = optionsBuilder.GetDbContextCustomSchema();
 
-                if (dbContextCustomSchema != null && dbContextCustomSchema.UseCustomSchema)
-                {
+                if (dbContextCustomSchema != null && dbContextCustomSchema.UseCustomSchema) 
                     sqliteDbContextOptionsBuilder.MigrationsHistoryTable(dbContextCustomSchema.MigrationsHistoryTableName, dbContextCustomSchema.Schema);
-                }
             }
+
             return sqliteDbContextOptionsBuilder;
         }
 
@@ -110,13 +90,12 @@ namespace Elsa.Persistence.EntityFrameworkCore.CustomSchema
         {
             if (sqlServerDbContextOptionsBuilder != null)
             {
-                IDbContextCustomSchema dbContextCustomSchema = optionsBuilder.GetDbContextCustomSchema();
+                var dbContextCustomSchema = optionsBuilder.GetDbContextCustomSchema();
 
-                if (dbContextCustomSchema != null && dbContextCustomSchema.UseCustomSchema)
-                {
+                if (dbContextCustomSchema != null && dbContextCustomSchema.UseCustomSchema) 
                     sqlServerDbContextOptionsBuilder.MigrationsHistoryTable(dbContextCustomSchema.MigrationsHistoryTableName, dbContextCustomSchema.Schema);
-                }
             }
+
             return sqlServerDbContextOptionsBuilder;
         }
 
@@ -124,43 +103,17 @@ namespace Elsa.Persistence.EntityFrameworkCore.CustomSchema
         {
             if (npgsqlDbContextOptionsBuilder != null)
             {
-                IDbContextCustomSchema dbContextCustomSchema = optionsBuilder.GetDbContextCustomSchema();
+                var dbContextCustomSchema = optionsBuilder.GetDbContextCustomSchema();
 
-                if (dbContextCustomSchema != null && dbContextCustomSchema.UseCustomSchema)
-                {
+                if (dbContextCustomSchema != null && dbContextCustomSchema.UseCustomSchema) 
                     npgsqlDbContextOptionsBuilder.MigrationsHistoryTable(dbContextCustomSchema.MigrationsHistoryTableName, dbContextCustomSchema.Schema);
-                }
             }
+
             return npgsqlDbContextOptionsBuilder;
         }
 
-        public static IDbContextCustomSchema GetDbContextCustomSchema(this DbContextOptionsBuilder optionsBuilder)
-        {
-            IDbContextCustomSchema dbContextCustomSchema = null;
-            if (optionsBuilder != null)
-            {
-                return optionsBuilder.Options.GetDbContextCustomSchema();
-            }
-            return dbContextCustomSchema;
-        }
-
-        public static IDbContextCustomSchema GetDbContextCustomSchema(this DbContextOptions<ElsaContext> options)
-        {
-            return GetDbContextCustomSchema((DbContextOptions)options);
-        }
-
-        public static IDbContextCustomSchema GetDbContextCustomSchema(this DbContextOptions options)
-        {
-            IDbContextCustomSchema dbContextCustomSchema = null;
-            if (options != null)
-            {
-                var extension = options.FindExtension<CustomSchemaOptionsExtension>();
-                if (extension != null)
-                {
-                    dbContextCustomSchema = extension.ContextCustomSchema;
-                }
-            }
-            return dbContextCustomSchema;
-        }
+        public static IDbContextCustomSchema? GetDbContextCustomSchema(this DbContextOptionsBuilder optionsBuilder) => optionsBuilder?.Options.GetDbContextCustomSchema();
+        public static IDbContextCustomSchema GetDbContextCustomSchema(this DbContextOptions<ElsaContext> options) => GetDbContextCustomSchema((DbContextOptions)options);
+        public static IDbContextCustomSchema GetDbContextCustomSchema(this DbContextOptions options) => options?.FindExtension<CustomSchemaOptionsExtension>()?.ContextCustomSchema;
     }
 }
