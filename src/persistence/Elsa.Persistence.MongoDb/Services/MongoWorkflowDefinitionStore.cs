@@ -28,7 +28,7 @@ namespace Elsa.Persistence.MongoDb.Services
             await workflowDefinitionCollection.ReplaceOneAsync(
                 x => x.Id == definition.Id && x.Version == definition.Version,
                 definition,
-                new UpdateOptions { IsUpsert = true },
+                new ReplaceOptions { IsUpsert = true },
                 cancellationToken
             );
 
@@ -68,7 +68,7 @@ namespace Elsa.Persistence.MongoDb.Services
             await workflowDefinitionCollection.ReplaceOneAsync(
                 x => x.Id == definition.Id && x.Version == definition.Version,
                 definition,
-                new UpdateOptions { IsUpsert = false },
+                new ReplaceOptions { IsUpsert = false },
                 cancellationToken
             );
 
