@@ -28,7 +28,7 @@ namespace Sample08
                 .AddElsa()
                 .AddTaskExecutingServer()
                 .AddHttpActivities()
-                .AddTimerActivities(options => options.Configure(x => x.SweepInterval = Period.FromSeconds(10)))
+                .AddTimerActivities(options => options.Configure(x => x.SweepInterval = Duration.FromSeconds(10)))
                 .AddEmailActivities(options => options.Bind(Configuration.GetSection("Smtp")))
                 .AddRabbitMqActivities(
                     options => options.Bind(Configuration.GetSection("MassTransit:RabbitMq")),

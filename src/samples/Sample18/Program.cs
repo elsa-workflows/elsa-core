@@ -55,7 +55,7 @@ namespace Sample18
                         smtp.PickupDirectoryLocation = PickupLocation;
                     }))
                 .AddWorkflow<EmailReminderWorkflow>()
-                .AddTimerActivities(options => options.Configure(x => x.SweepInterval = Period.FromSeconds(1)));
+                .AddTimerActivities(options => options.Configure(x => x.SweepInterval = Duration.FromSeconds(1)));
         }
     }
 }

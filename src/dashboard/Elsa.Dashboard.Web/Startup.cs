@@ -33,7 +33,7 @@ namespace Elsa.Dashboard.Web
                 // Otherwise it's only necessary to register activities for the workflow designer to discover.
                 .AddHttpActivities(options => options.Bind(elsaSection.GetSection("Http")))
                 .AddEmailActivities(options => options.Bind(elsaSection.GetSection("Smtp")))
-                .AddTimerActivities(options => options.Bind(elsaSection.GetSection("BackgroundRunner")))
+                .AddTimerActivities(options => options.Bind(elsaSection.GetSection("Timers")))
                 
                 // Add Dashboard services.
                 .AddElsaDashboard();

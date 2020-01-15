@@ -6,9 +6,9 @@ namespace Elsa.Activities.Timers.Options
     {
         public TimersOptions()
         {
-            SweepInterval = Period.FromMinutes(1);
+            SweepInterval = Duration.FromMinutes(1);
         }
         
-        public Period SweepInterval { get; set; }
+        public Duration SweepInterval { get; set; }
     }
 }

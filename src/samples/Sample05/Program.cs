@@ -34,7 +34,7 @@ namespace Sample05
                 .AddElsa()
                 .AddConsoleActivities()
                 .AddWorkflow<RecurringWorkflow>()
-                .AddTimerActivities(options => options.Configure(x => x.SweepInterval = Period.FromSeconds(1)));
+                .AddTimerActivities(options => options.Configure(x => x.SweepInterval = Duration.FromSeconds(1)));
         }
     }
 }
