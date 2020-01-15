@@ -48,7 +48,7 @@ namespace Elsa.Activities.Timers.HostedServices
                     logger.LogError(ex, $"Exception occurred while invoking workflows.");
                 }
 
-                await Task.Delay(options.Value.SweepInterval.ToDuration().ToTimeSpan(), stoppingToken);
+                await Task.Delay(options.Value.SweepInterval.ToTimeSpan(), stoppingToken);
             }
         }
     }
