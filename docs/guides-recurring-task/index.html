@@ -134,7 +134,7 @@ This is desirable in this example, because we don't want to spawn a new workflow
             services
                 .AddWorkflows()
                 .AddConsoleActivities()
-                .AddTimerActivities(options =&gt; options.Configure(x =&gt; x.SweepInterval = Period.FromSeconds(<span class="hljs-number">1</span>)))
+                .AddTimerActivities(options =&gt; options.Configure(x =&gt; x.SweepInterval = Duration.FromSeconds(<span class="hljs-number">1</span>)))
                 .AddWorkflow&lt;RecurringTaskWorkflow&gt;();
         }
     }
