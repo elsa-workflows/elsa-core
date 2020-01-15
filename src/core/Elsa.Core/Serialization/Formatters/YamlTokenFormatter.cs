@@ -11,8 +11,8 @@ namespace Elsa.Serialization.Formatters
     public class YamlTokenFormatter : ITokenFormatter
     {
         public const string FormatName = "YAML";
-        private readonly Serializer serializer;
-        private readonly Deserializer deserializer;
+        private readonly ISerializer serializer;
+        private readonly IDeserializer deserializer;
         private readonly JsonSerializerSettings jsonSerializerSettings;
 
         public YamlTokenFormatter()
