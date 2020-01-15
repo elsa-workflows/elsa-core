@@ -4,7 +4,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
 {
     public class SqlServerContext : ElsaContext
     {
-        public SqlServerContext(DbContextOptions<ElsaContext> options) : base(options)
+        public SqlServerContext(DbContextOptions<SqlServerContext> options) : base(options)
         {
         }
     }
