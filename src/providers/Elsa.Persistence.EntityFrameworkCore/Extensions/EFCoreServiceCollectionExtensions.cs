@@ -1,6 +1,7 @@
 using System;
 using Elsa.AutoMapper.Extensions;
 using Elsa.AutoMapper.Extensions.NodaTime;
+using Elsa.Persistence.EntityFrameworkCore.CustomSchema;
 using Elsa.Persistence.EntityFrameworkCore.DbContexts;
 using Elsa.Persistence.EntityFrameworkCore.Mapping;
 using Elsa.Persistence.EntityFrameworkCore.Services;
@@ -11,12 +12,58 @@ namespace Elsa.Persistence.EntityFrameworkCore.Extensions
 {
     public static class EFCoreServiceCollectionExtensions
     {
-        public static EntityFrameworkCoreElsaOptions AddEntityFrameworkCoreProvider(
-            this ElsaOptions configuration,
+        public static ElsaOptions UseEntityFrameworkWorkflowStores(
+            this ElsaOptions options,
             Action<DbContextOptionsBuilder> configureOptions,
-            bool usePooling = true)
+            bool usePooling = true,
+            string? schema = default, 
+            string? migrationHistoryTableName = default)
         {
-            var services = configuration.Services;
+            return options
+                .UseEntityFrameworkWorkflowDefinitionStore(configureOptions, usePooling, schema, migrationHistoryTableName)
+                .UseEntityFrameworkWorkflowInstanceStore(configureOptions, usePooling);
+        }
+        
+        public static ElsaOptions UseEntityFrameworkWorkflowInstanceStore(
+            this ElsaOptions options,
+            Action<DbContextOptionsBuilder> configureOptions,
+            bool usePooling = true,
+            string? schema = default, 
+            string? migrationHistoryTableName = default)
+        {
+            options.AddEntityFrameworkCoreProvider(configureOptions, usePooling, schema, migrationHistoryTableName);
+            options.Services.AddScoped<EntityFrameworkCoreWorkflowInstanceStore>();
+            options.UseWorkflowInstanceStore(sp => sp.GetRequiredService<EntityFrameworkCoreWorkflowInstanceStore>());
+
+            return options;
+        }
+
+        public static ElsaOptions UseEntityFrameworkWorkflowDefinitionStore(
+            this ElsaOptions options,
+            Action<DbContextOptionsBuilder> configureOptions,
+            bool usePooling = true,
+            string? schema = default, 
+            string? migrationHistoryTableName = default)
+        {
+            options.AddEntityFrameworkCoreProvider(configureOptions, usePooling, schema, migrationHistoryTableName);
+            options.Services.AddScoped<EntityFrameworkCoreWorkflowDefinitionStore>();
+            options.UseWorkflowDefinitionStore(sp => sp.GetRequiredService<EntityFrameworkCoreWorkflowDefinitionStore>());
+
+            return options;
+        }
+        
+        private static ElsaOptions AddEntityFrameworkCoreProvider(
+            this ElsaOptions options,
+            Action<DbContextOptionsBuilder> configureOptions,
+            bool usePooling = true,
+            string? schema = default, 
+            string? migrationHistoryTableName = default)
+        {
+            var services = options.Services;
+
+            if (services.HasService<ElsaContext>())
+                return options;
+            
             if (usePooling)
                 services.AddDbContextPool<ElsaContext>(configureOptions);
             else
@@ -25,35 +72,19 @@ namespace Elsa.Persistence.EntityFrameworkCore.Extensions
             services
                 .AddAutoMapperProfile<NodaTimeProfile>(ServiceLifetime.Singleton)
                 .AddAutoMapperProfile<EntitiesProfile>(ServiceLifetime.Singleton);
+            
+            if (!string.IsNullOrWhiteSpace(schema))
+            {
+                var historyTableName = !string.IsNullOrWhiteSpace(migrationHistoryTableName) 
+                    ? migrationHistoryTableName 
+                    : DbContextCustomSchema.DefaultMigrationsHistoryTableName;
+                
+                var dbContextCustomSchema = new DbContextCustomSchema(schema, historyTableName);
 
-            return new EntityFrameworkCoreElsaOptions(configuration.Services);
-        }
-
-        public static EntityFrameworkCoreElsaOptions AddEntityFrameworkStores(
-            this ElsaOptions configuration,
-            Action<DbContextOptionsBuilder> configureOptions,
-            bool usePooling = true)
-        {
-            return configuration
-                .AddEntityFrameworkCoreProvider(configureOptions, usePooling)
-                .AddWorkflowDefinitionStore()
-                .AddWorkflowInstanceStore();
-        }
-
-        public static EntityFrameworkCoreElsaOptions AddWorkflowInstanceStore(this EntityFrameworkCoreElsaOptions configuration)
-        {
-            configuration.Services
-                .AddScoped<IWorkflowInstanceStore, EntityFrameworkCoreWorkflowInstanceStore>();
-
-            return configuration;
-        }
-
-        public static EntityFrameworkCoreElsaOptions AddWorkflowDefinitionStore(this EntityFrameworkCoreElsaOptions configuration)
-        {
-            configuration.Services
-                .AddScoped<IWorkflowDefinitionStore, EntityFrameworkCoreWorkflowDefinitionStore>();
-
-            return configuration;
+                services.AddSingleton<IDbContextCustomSchema>(dbContextCustomSchema);    
+            }
+            
+            return options;
         }
     }
 }

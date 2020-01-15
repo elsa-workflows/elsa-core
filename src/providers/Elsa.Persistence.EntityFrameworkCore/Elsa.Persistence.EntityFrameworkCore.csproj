@@ -16,6 +16,7 @@
         <RepositoryType>GitHub</RepositoryType>
         <PackageTags>elsa, workflows, entity framework core</PackageTags>
         <PackageIcon>icon.png</PackageIcon>
+        <Nullable>enable</Nullable>
     </PropertyGroup>
 
     <ItemGroup>
