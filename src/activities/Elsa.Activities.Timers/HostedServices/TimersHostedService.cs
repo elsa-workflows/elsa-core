@@ -53,7 +53,7 @@ namespace Elsa.Activities.Timers.HostedServices
                     }
                 }
 
-                await Task.Delay(options.Value.SweepInterval.ToDuration().ToTimeSpan(), stoppingToken);
+                await Task.Delay(options.Value.SweepInterval.ToTimeSpan(), stoppingToken);
             }
         }
     }

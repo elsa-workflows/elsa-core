@@ -22,12 +22,12 @@ namespace Elsa.Services.Models
             IEnumerable<Connection> connections,
             IEnumerable<ScheduledActivity>? scheduledActivities = default,
             IEnumerable<IActivity>? blockingActivities = default,
-            string correlationId = default,
-            Variables variables = default,
+            string? correlationId = default,
+            Variables? variables = default,
             WorkflowStatus status = WorkflowStatus.Running,
             WorkflowPersistenceBehavior persistenceBehavior = WorkflowPersistenceBehavior.WorkflowExecuted,
             WorkflowFault? workflowFault = default,
-            IEnumerable<ExecutionLogEntry> executionLog = default)
+            IEnumerable<ExecutionLogEntry>? executionLog = default)
         {
             ServiceProvider = serviceProvider;
             DefinitionId = definitionId;

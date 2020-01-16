@@ -1,4 +1,3 @@
-using Elsa.Activities.Console.Extensions;
 using Elsa.Runtime;
 using Elsa.Server.GraphQL.Extensions;
 using Elsa.StartupTasks;
@@ -31,12 +30,13 @@ namespace Elsa.Server.Host
 
             services
                 .AddElsa(elsa => elsa
-                    .AddMongoDbStores(Configuration, "ElsaServer", "MongoDb")
-                    .AddGraphQL(options => Configuration.GetSection("GraphQL").Bind(options)))
-                
+                    .UseMongoDbWorkflowStores("ElsaServer", Configuration.GetConnectionString("MongoDb")));
+
+            services
+                .AddGraphQL(options => Configuration.GetSection("GraphQL").Bind(options))
                 .AddConsoleActivities()
-                .AddHttpActivities(options => options.Bind(elsaSection.GetSection("Http")))
-                .AddEmailActivities(options => options.Bind(elsaSection.GetSection("Smtp")))
+                .AddHttp(options => options.Bind(elsaSection.GetSection("Http")))
+                .AddEmail(options => options.Bind(elsaSection.GetSection("Smtp")))
                 .AddTimerActivities(options => options.Bind(elsaSection.GetSection("BackgroundRunner")))
                 .AddElsaManagement()
                 .AddStartupTask<ResumeRunningWorkflowsTask>();

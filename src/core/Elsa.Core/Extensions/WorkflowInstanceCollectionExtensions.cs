@@ -6,7 +6,7 @@ namespace Elsa.Extensions
 {
     public static class WorkflowInstanceCollectionExtensions
     {
-        public static IEnumerable<(WorkflowInstance, BlockingActivity)> GetBlockingActivities(this IEnumerable<WorkflowInstance> instances, string activityType = null)
+        public static IEnumerable<(WorkflowInstance, BlockingActivity)> GetBlockingActivities(this IEnumerable<WorkflowInstance> instances, string? activityType = null)
         {
             var query =
                 from workflowInstance in instances

@@ -10,7 +10,7 @@ namespace Elsa.Builders
         public Func<ActivityBuilder> Target{ get; }
         public string Outcome { get; }
 
-        public ConnectionBuilder(IWorkflowBuilder workflowBuilder, Func<ActivityBuilder> source, Func<ActivityBuilder> target, string outcome = null)
+        public ConnectionBuilder(IWorkflowBuilder workflowBuilder, Func<ActivityBuilder> source, Func<ActivityBuilder> target, string? outcome = null)
         {
             Source = source;
             Target = target;

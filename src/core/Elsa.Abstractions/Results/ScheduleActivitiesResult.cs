@@ -9,24 +9,16 @@ using ScheduledActivity = Elsa.Services.Models.ScheduledActivity;
 
 namespace Elsa.Results
 {
-    public class ScheduleActivitiesResult : IActivityExecutionResult
+    public class ScheduleActivitiesResult : ActivityExecutionResult
     {
-        public ScheduleActivitiesResult(IEnumerable<IActivity> activities, Variable? input = default)
-        {
+        public ScheduleActivitiesResult(IEnumerable<IActivity> activities, Variable? input = default) => 
             Activities = activities.Select(x => new ScheduledActivity(x, input));
-        }
-        
-        public ScheduleActivitiesResult(IEnumerable<ScheduledActivity> activities)
-        {
-            Activities = activities;
-        }
-        
+
+        public ScheduleActivitiesResult(IEnumerable<ScheduledActivity> activities) => Activities = activities;
+
         public IEnumerable<ScheduledActivity> Activities { get; }
 
-        public Task ExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
-        {
-            workflowExecutionContext.ScheduleActivities(Activities);
-            return Task.CompletedTask;
-        }
+        protected override void Execute(ActivityExecutionContext activityExecutionContext) => 
+            activityExecutionContext.WorkflowExecutionContext.ScheduleActivities(Activities);
     }
 }

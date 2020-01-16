@@ -1,16 +1,13 @@
-using System.Threading;
-using System.Threading.Tasks;
 using Elsa.Services.Models;
 
 namespace Elsa.Results
 {
-    public class SuspendResult : IActivityExecutionResult
+    public class SuspendResult : ActivityExecutionResult
     {
-        public Task ExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
+        protected override void Execute(ActivityExecutionContext activityExecutionContext)
         {
-            workflowExecutionContext.BlockingActivities.Add(activityExecutionContext.Activity);
-            workflowExecutionContext.Suspend();
-            return Task.CompletedTask;
+            activityExecutionContext.WorkflowExecutionContext.BlockingActivities.Add(activityExecutionContext.Activity);
+            activityExecutionContext.WorkflowExecutionContext.Suspend();
         }
     }
 }

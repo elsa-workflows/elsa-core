@@ -19,23 +19,20 @@ namespace Elsa.Services
     public class WorkflowScheduler : IWorkflowScheduler
     {
         private readonly IBus serviceBus;
+        private readonly IWorkflowActivator workflowActivator;
         private readonly IWorkflowRegistry workflowRegistry;
         private readonly IWorkflowInstanceStore workflowInstanceStore;
-        private readonly IIdGenerator idGenerator;
-        private readonly IClock clock;
 
         public WorkflowScheduler(
             IBus serviceBus,
+            IWorkflowActivator workflowActivator,
             IWorkflowRegistry workflowRegistry,
-            IWorkflowInstanceStore workflowInstanceStore,
-            IIdGenerator idGenerator,
-            IClock clock)
+            IWorkflowInstanceStore workflowInstanceStore)
         {
             this.serviceBus = serviceBus;
+            this.workflowActivator = workflowActivator;
             this.workflowRegistry = workflowRegistry;
             this.workflowInstanceStore = workflowInstanceStore;
-            this.idGenerator = idGenerator;
-            this.clock = clock;
         }
 
         public async Task ScheduleWorkflowAsync(string instanceId, string? activityId = default, object? input = default, CancellationToken cancellationToken = default)
@@ -54,28 +51,10 @@ namespace Elsa.Services
 
             foreach (var activity in startActivities)
             {
-                var workflowInstance = await CreateWorkflowInstanceAsync(workflow, correlationId, cancellationToken);
+                var workflowInstance = await workflowActivator.ActivateAsync(workflow, correlationId, cancellationToken);
                 await workflowInstanceStore.SaveAsync(workflowInstance, cancellationToken);
                 await ScheduleWorkflowAsync(workflowInstance.Id, activity.Id, input, cancellationToken);
             }
-        }
-
-        private async Task<WorkflowInstance> CreateWorkflowInstanceAsync(
-            Workflow workflow,
-            string? correlationId = default,
-            CancellationToken cancellationToken = default)
-        {
-            var workflowInstance = new WorkflowInstance
-            {
-                Id = idGenerator.Generate(),
-                Status = WorkflowStatus.Idle,
-                Version = workflow.Version,
-                CorrelationId = correlationId,
-                CreatedAt = clock.GetCurrentInstant(),
-                DefinitionId = workflow.DefinitionId
-            };
-
-            return await workflowInstanceStore.SaveAsync(workflowInstance, cancellationToken);
         }
 
         public async Task TriggerWorkflowsAsync(
@@ -117,7 +96,8 @@ namespace Elsa.Services
 
             foreach (var (workflow, activity) in tuples)
             {
-                var workflowInstance = await CreateWorkflowInstanceAsync(workflow, correlationId, cancellationToken);
+                var workflowInstance = await workflowActivator.ActivateAsync(workflow, correlationId, cancellationToken);
+                await workflowInstanceStore.SaveAsync(workflowInstance, cancellationToken);
                 await ScheduleWorkflowAsync(workflowInstance.Id, activity.Id, input, cancellationToken);
             }
         }

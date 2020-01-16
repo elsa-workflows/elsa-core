@@ -18,8 +18,8 @@ namespace Elsa
         {
             Services = services;
 
-            WorkflowDefinitionStoreFactory = sp => new MemoryWorkflowDefinitionStore();
-            WorkflowInstanceStoreFactory = sp => new MemoryWorkflowInstanceStore();
+            WorkflowDefinitionStoreFactory = sp => sp.GetRequiredService<MemoryWorkflowDefinitionStore>();
+            WorkflowInstanceStoreFactory = sp => sp.GetRequiredService<MemoryWorkflowInstanceStore>();
             DistributedLockProviderFactory = sp => new DefaultLockProvider();
             SignalFactory = sp => new Signal();
             ServiceBusConfigurer = ConfigureInMemoryServiceBus;

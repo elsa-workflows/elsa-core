@@ -36,9 +36,9 @@ namespace Elsa.Services
         protected void SetState(object value, [CallerMemberName] string? name = null) => State.SetState(value, name);
         protected NoopResult Noop() => new NoopResult();
         protected OutcomeResult Done() => new OutcomeResult();
-        protected OutcomeResult Done(string outcome, Variable output) => Done(new[] { outcome }, output);
-        protected OutcomeResult Done(IEnumerable<string> outcomes, Variable output) => new OutcomeResult(outcomes, output);
-        protected OutcomeResult Done(IEnumerable<string> outcomes, object output) => Done(outcomes, Variable.From(output));
+        protected OutcomeResult Done(string outcome, Variable? output) => Done(new[] { outcome }, output);
+        protected OutcomeResult Done(IEnumerable<string> outcomes, Variable? output) => new OutcomeResult(outcomes, output);
+        protected OutcomeResult Done(IEnumerable<string> outcomes, object? output) => Done(outcomes, Variable.From(output));
         protected OutcomeResult Done(IEnumerable<string> outcomes) => Done(outcomes, default);
         protected OutcomeResult Done(params string[] outcomes) => Done(outcomes, default);
         protected OutcomeResult Done(Variable? output) => new OutcomeResult(null, output);

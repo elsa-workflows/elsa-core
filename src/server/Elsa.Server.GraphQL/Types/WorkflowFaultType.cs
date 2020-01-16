@@ -3,7 +3,7 @@ using GraphQL.Types;
 
 namespace Elsa.Server.GraphQL.Types
 {
-    public class WorkflowFaultType : ObjectGraphType<ProcessFault>
+    public class WorkflowFaultType : ObjectGraphType<WorkflowFault>
     {
         public WorkflowFaultType()
         {

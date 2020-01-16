@@ -8,8 +8,8 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
     {
         public SqliteContext CreateDbContext(string[] args)
         {
-            var optionsBuilder = new DbContextOptionsBuilder<ElsaContext>();
-            var migrationAssembly = typeof(ElsaContext).Assembly.FullName;
+            var optionsBuilder = new DbContextOptionsBuilder<SqliteContext>();
+            var migrationAssembly = typeof(SqliteContext).Assembly.FullName;
             var connectionString = Environment.GetEnvironmentVariable("EF_CONNECTIONSTRING");
 
             if(connectionString == null)

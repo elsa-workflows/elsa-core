@@ -17,17 +17,17 @@ namespace Elsa.Builders
         public ActivityBuilder Source { get; }
         public string Outcome { get; }
 
-        public ActivityBuilder Then<T>(Action<T>? setup = default, Action<ActivityBuilder> branch = default) where T : class, IActivity
+        public ActivityBuilder Then<T>(Action<T>? setup = default, Action<ActivityBuilder>? branch = default) where T : class, IActivity
         {
             return Then(WorkflowBuilder.Add(setup), branch);
         }
         
-        public ActivityBuilder Then<T>(T activity, Action<ActivityBuilder> branch = default) where T : class, IActivity
+        public ActivityBuilder Then<T>(T activity, Action<ActivityBuilder>? branch = default) where T : class, IActivity
         {
             return Then(WorkflowBuilder.Add(activity), branch);
         }
         
-        private ActivityBuilder Then(ActivityBuilder activityBuilder, Action<ActivityBuilder> branch = default)
+        private ActivityBuilder Then(ActivityBuilder activityBuilder, Action<ActivityBuilder>? branch = default)
         {
             branch?.Invoke(activityBuilder);
             WorkflowBuilder.Connect(Source, activityBuilder, Outcome);

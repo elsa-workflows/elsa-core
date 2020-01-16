@@ -6,13 +6,13 @@ namespace Elsa.Results
 {
     public abstract class ActivityExecutionResult : IActivityExecutionResult
     {
-        public virtual Task ExecuteAsync(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
+        public virtual Task ExecuteAsync(ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
         {
-            Execute(workflowExecutionContext, activityExecutionContext);
+            Execute(activityExecutionContext);
             return Task.CompletedTask;
         }
 
-        protected virtual void Execute(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext)
+        protected virtual void Execute(ActivityExecutionContext activityExecutionContext)
         {
         }
     }

@@ -8,8 +8,8 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
     {
         public PostgreSqlContext CreateDbContext(string[] args)
         {
-            var optionsBuilder = new DbContextOptionsBuilder<ElsaContext>();
-            var migrationAssembly = typeof(ElsaContext).Assembly.FullName;
+            var optionsBuilder = new DbContextOptionsBuilder<PostgreSqlContext>();
+            var migrationAssembly = typeof(PostgreSqlContext).Assembly.FullName;
             var connectionString = Environment.GetEnvironmentVariable("EF_CONNECTIONSTRING");
 
             if (connectionString == null)

@@ -9,7 +9,7 @@ namespace Elsa.Results
 {
     public class OutcomeResult : ActivityExecutionResult
     {
-        public OutcomeResult(IEnumerable<string> outcomes = default, Variable? output = default)
+        public OutcomeResult(IEnumerable<string>? outcomes = default, Variable? output = default)
         {
             var outcomeList = outcomes?.ToList() ?? new List<string>(1);
 
@@ -23,11 +23,12 @@ namespace Elsa.Results
         public IReadOnlyCollection<string> Outcomes { get; }
         public Variable? Output { get; }
 
-        protected override void Execute(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext)
+        protected override void Execute(ActivityExecutionContext activityExecutionContext)
         {
             activityExecutionContext.Output = Output;
             activityExecutionContext.Outcomes = Outcomes.ToList();
 
+            var workflowExecutionContext = activityExecutionContext.WorkflowExecutionContext;
             var nextActivities = GetNextActivities(workflowExecutionContext, activityExecutionContext.Activity, Outcomes).ToList();
             
             workflowExecutionContext.ScheduleActivities(nextActivities, Output);

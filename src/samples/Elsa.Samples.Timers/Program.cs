@@ -1,8 +1,8 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Elsa.Runtime;
-using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using NodaTime;
 
 namespace Elsa.Samples.Timers
 {
@@ -10,17 +10,19 @@ namespace Elsa.Samples.Timers
     {
         private static async Task Main()
         {
-            await using var services = new ServiceCollection()
-                .AddElsa()
-                .AddWorkflow<HelloWorldWorkflow>()
-                .BuildServiceProvider();
-
-            await services.StartElsaAsync();
-            var scheduler = services.GetRequiredService<IWorkflowScheduler>();
-
-            await scheduler.ScheduleNewWorkflow<HelloWorldWorkflow>();
-
-            Console.ReadKey();
+            var host = CreateHostBuilder().UseConsoleLifetime().Build();
+            await host.Services.StartElsaAsync();
+            await host.RunAsync();
         }
+        
+        public static IHostBuilder CreateHostBuilder() =>
+            Host.CreateDefaultBuilder()
+                .ConfigureServices((hostContext, services) =>
+                {
+                    services
+                        .AddElsa()
+                        .AddTimerActivities(options => options.Configure(timer => timer.SweepInterval = Duration.FromSeconds(1)))
+                        .AddWorkflow<RecurringTaskWorkflow>();
+                });
     }
 }

@@ -11,7 +11,7 @@ namespace Elsa.Services.Models
         }
 
         public Workflow(
-            string definitionId = default,
+            string? definitionId = default,
             int version = 1,
             bool isSingleton = false,
             bool isDisabled = false,

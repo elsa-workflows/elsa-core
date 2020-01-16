@@ -23,7 +23,7 @@ namespace Elsa.Persistence.MongoDb.Services
             await collection.ReplaceOneAsync(
                 x => x.Id == instance.Id,
                 instance,
-                new UpdateOptions { IsUpsert = true },
+                new ReplaceOptions { IsUpsert = true },
                 cancellationToken);
 
             return instance;
