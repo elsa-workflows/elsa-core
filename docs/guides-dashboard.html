@@ -141,6 +141,11 @@
 <h2><a class="anchor" aria-hidden="true" id="run-ef-migrations"></a><a href="#run-ef-migrations" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Run EF Migrations</h2>
 <p>Before the application becomes operational, we need to create the Sqlite database.
 The <code>Elsa.Persistence.EntityFrameworkCore</code> package comes with the necessary migrations that we can run, including implementations of <code>IDesignTimeDbContextFactory</code> for each database provider currently supported by Elsa.</p>
+<blockquote>
+<p><strong>EF Core Tools</strong>
+Before you can run the dotnet tool <code>dotnet ef</code>, you will need to install it. When you do, make sure to include the version number (3.1 at the time of writing). If you don't, odds are you will get a message that dotnet could not find the tool <code>dotnet ef</code>.
+To install dotnet ef, run the following command from your terminal: <code>dotnet tool install --global dotnet-ef --version 3.1.0</code></p>
+</blockquote>
 <p>Open a terminal window and navigate to the <code>src\Elsa.Guides.Dashboard.WebApp</code> folder.
 The <code>IDesignTimeDbContextFactory</code> implementations expect the following environment variable to be present:</p>
 <ul>
