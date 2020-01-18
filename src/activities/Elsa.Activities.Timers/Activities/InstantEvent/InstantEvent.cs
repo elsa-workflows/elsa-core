@@ -32,19 +32,30 @@ namespace Elsa.Activities.Timers
             get => GetState<IWorkflowExpression<Instant>>();
             set => SetState(value);
         }
-
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        
+        public Instant? ExecutedAt
         {
-            var isExpired = await IsExpiredAsync(context, cancellationToken);
-
-            return isExpired ? (IActivityExecutionResult)Done() : Suspend();
+            get => GetState<Instant?>();
+            set => SetState(value);
         }
+        
+        protected override async Task<bool> OnCanExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        {
+            return ExecutedAt == null || await IsExpiredAsync(context, cancellationToken);
+        }
+
+        protected override Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken) => 
+            OnResumeAsync(context, cancellationToken);
 
         protected override async Task<IActivityExecutionResult> OnResumeAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var isExpired = await IsExpiredAsync(context, cancellationToken);
+            if (await IsExpiredAsync(context, cancellationToken))
+            {
+                ExecutedAt = clock.GetCurrentInstant();
+                return Done();
+            }
 
-            return isExpired ? (IActivityExecutionResult)Done() : Suspend();
+            return Suspend();
         }
 
         private async Task<bool> IsExpiredAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
