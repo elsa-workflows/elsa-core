@@ -2,6 +2,7 @@
 using Elsa.Runtime;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using NodaTime;
 
 namespace Elsa.Samples.Timers
@@ -10,13 +11,12 @@ namespace Elsa.Samples.Timers
     {
         private static async Task Main()
         {
-            var host = CreateHostBuilder().UseConsoleLifetime().Build();
-            await host.Services.StartElsaAsync();
-            await host.RunAsync();
+            await CreateHostBuilder().UseConsoleLifetime().Build().RunAsync();
         }
         
         public static IHostBuilder CreateHostBuilder() =>
             Host.CreateDefaultBuilder()
+                .ConfigureLogging(logging => logging.AddConsole().SetMinimumLevel(LogLevel.Debug))
                 .ConfigureServices((hostContext, services) =>
                 {
                     services

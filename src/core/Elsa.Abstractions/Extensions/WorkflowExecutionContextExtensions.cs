@@ -40,6 +40,7 @@ namespace Elsa.Extensions
         {
             workflowInstance.Variables = workflowExecutionContext.Variables;
             workflowInstance.ScheduledActivities = new Stack<Models.ScheduledActivity>(workflowExecutionContext.ScheduledActivities.Select(x => new Models.ScheduledActivity(x.Activity.Id, x.Input)));
+            workflowInstance.Activities = workflowExecutionContext.Activities.Select(x => new ActivityInstance(x.Id, x.Type, x.State, x.Output)).ToList();
             workflowInstance.BlockingActivities = new HashSet<BlockingActivity>(workflowExecutionContext.BlockingActivities.Select(x => new BlockingActivity(x.Id, x.Type)), new BlockingActivityEqualityComparer());
             workflowInstance.Status = workflowExecutionContext.Status;
             workflowInstance.CorrelationId = workflowExecutionContext.CorrelationId;

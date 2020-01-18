@@ -7,11 +7,13 @@ using Elsa.Comparers;
 using Elsa.Expressions;
 using Elsa.Extensions;
 using Elsa.Messages;
+using Elsa.Messages.Domain;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Results;
 using Elsa.Services.Models;
 using MediatR;
+using Microsoft.Extensions.Logging;
 using ScheduledActivity = Elsa.Services.Models.ScheduledActivity;
 
 namespace Elsa.Services
@@ -30,6 +32,7 @@ namespace Elsa.Services
         private readonly IIdGenerator idGenerator;
         private readonly IMediator mediator;
         private readonly IServiceProvider serviceProvider;
+        private readonly ILogger logger;
 
         public WorkflowHost(
             IWorkflowRegistry workflowRegistry,
@@ -38,7 +41,8 @@ namespace Elsa.Services
             IExpressionEvaluator expressionEvaluator,
             IIdGenerator idGenerator,
             IMediator mediator,
-            IServiceProvider serviceProvider)
+            IServiceProvider serviceProvider,
+            ILogger<WorkflowHost> logger)
         {
             this.workflowRegistry = workflowRegistry;
             this.workflowInstanceStore = workflowInstanceStore;
@@ -47,11 +51,19 @@ namespace Elsa.Services
             this.idGenerator = idGenerator;
             this.mediator = mediator;
             this.serviceProvider = serviceProvider;
+            this.logger = logger;
         }
 
-        public async Task<WorkflowExecutionContext> RunWorkflowInstanceAsync(string workflowInstanceId, string? activityId = default, object? input = default, CancellationToken cancellationToken = default)
+        public async Task<WorkflowExecutionContext?> RunWorkflowInstanceAsync(string workflowInstanceId, string? activityId = default, object? input = default, CancellationToken cancellationToken = default)
         {
             var workflowInstance = await workflowInstanceStore.GetByIdAsync(workflowInstanceId, cancellationToken);
+
+            if (workflowInstance == null)
+            {
+                logger.LogDebug("Workflow instance {WorkflowInstanceId} does not exist.", workflowInstanceId);
+                return null;
+            }
+            
             var workflow = await workflowRegistry.GetWorkflowAsync(workflowInstance.DefinitionId, VersionOptions.SpecificVersion(workflowInstance.Version), cancellationToken);
             return await RunAsync(workflow, workflowInstance, activityId, input, cancellationToken);
         }
@@ -127,13 +139,36 @@ namespace Elsa.Services
                 var result = await activityOperation(activityExecutionContext, currentActivity, cancellationToken);
 
                 await result.ExecuteAsync(activityExecutionContext, cancellationToken);
-                await mediator.Publish(new ActivityExecuted(workflowExecutionContext, activityExecutionContext), cancellationToken);
+                await mediator.Publish(new ActivityExecuted(activityExecutionContext), cancellationToken);
 
                 activityOperation = Execute;
             }
 
             if (workflowExecutionContext.Status == WorkflowStatus.Running)
                 workflowExecutionContext.Complete();
+
+            await mediator.Publish(new WorkflowExecuted(workflowExecutionContext), cancellationToken);
+            
+            var statusEvent = default(object);
+            
+            switch (workflowExecutionContext.Status)
+            {
+                case WorkflowStatus.Cancelled:
+                    statusEvent = new WorkflowCancelled(workflowExecutionContext);
+                    break;
+                case WorkflowStatus.Completed:
+                    statusEvent = new WorkflowCompleted(workflowExecutionContext);
+                    break;
+                case WorkflowStatus.Faulted:
+                    statusEvent = new WorkflowFaulted(workflowExecutionContext);
+                    break;
+                case WorkflowStatus.Suspended:
+                    statusEvent = new WorkflowSuspended(workflowExecutionContext);
+                    break;
+            }
+
+            if (statusEvent != null)
+                await mediator.Publish(statusEvent, cancellationToken);
         }
 
         private ScheduledActivity CreateScheduledActivity(Elsa.Models.ScheduledActivity scheduledActivityModel, IDictionary<string, IActivity> activityLookup)
@@ -145,11 +180,23 @@ namespace Elsa.Services
         private WorkflowExecutionContext CreateWorkflowExecutionContext(Workflow workflow, WorkflowInstance workflowInstance)
         {
             var activityLookup = workflow.Activities.ToDictionary(x => x.Id);
+            var activityInstanceLookup = workflowInstance.Activities.ToDictionary(x => x.Id);
             var scheduledActivities = new Stack<ScheduledActivity>(workflowInstance.ScheduledActivities.Reverse().Select(x => CreateScheduledActivity(x, activityLookup)));
             var blockingActivities = new HashSet<IActivity>(workflowInstance.BlockingActivities.Select(x => activityLookup[x.ActivityId]));
             var variables = workflowInstance.Variables;
             var status = workflowInstance.Status;
             var persistenceBehavior = workflow.PersistenceBehavior;
+
+            foreach (var activity in workflow.Activities)
+            {
+                if (!activityInstanceLookup.ContainsKey(activity.Id))
+                    continue;
+
+                var activityInstance = activityInstanceLookup[activity.Id];
+                activity.State = activityInstance.State;
+                activity.Output = activityInstance.Output;
+            }
+            
             return CreateWorkflowExecutionContext(
                 workflowInstance.Id,
                 workflow.DefinitionId,

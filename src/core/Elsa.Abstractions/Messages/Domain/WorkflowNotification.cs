@@ -1,7 +1,7 @@
 ﻿using Elsa.Services.Models;
 using MediatR;
 
-namespace Elsa.Messages
+namespace Elsa.Messages.Domain
 {
     /// <summary>
     /// Common base for workflow-related events.

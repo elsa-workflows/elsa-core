@@ -8,7 +8,7 @@ namespace Elsa.Services
     {
         Task<WorkflowExecutionContext> RunWorkflowAsync(Workflow workflow, string? activityId = default, object? input = default, string? correlationId = default, CancellationToken cancellationToken = default);
         
-        Task<WorkflowExecutionContext> RunWorkflowInstanceAsync(string workflowInstanceId, string? activityId = default, object? input = default, CancellationToken cancellationToken = default);
+        Task<WorkflowExecutionContext?> RunWorkflowInstanceAsync(string workflowInstanceId, string? activityId = default, object? input = default, CancellationToken cancellationToken = default);
         
         /// <summary>
         /// Run a registered workflow by its ID.

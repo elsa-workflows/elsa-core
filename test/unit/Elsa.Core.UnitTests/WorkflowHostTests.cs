@@ -19,11 +19,11 @@ using Xunit;
 
 namespace Elsa.Core.UnitTests
 {
-    public class WorkflowRunnerTests
+    public class WorkflowHostTests
     {
         private readonly WorkflowHost workflowHost;
 
-        public WorkflowRunnerTests()
+        public WorkflowHostTests()
         {
             var fixture = new Fixture().Customize(new NodaTimeCustomization());
             var workflowActivatorMock = new Mock<IWorkflowActivator>();
@@ -44,7 +44,8 @@ namespace Elsa.Core.UnitTests
                 workflowExpressionEvaluatorMock.Object,
                 idGeneratorMock.Object,
                 mediatorMock.Object,
-                serviceProvider);
+                serviceProvider,
+                logger);
         }
 
         [Fact(DisplayName = "Can run simple workflow to completed state.")]

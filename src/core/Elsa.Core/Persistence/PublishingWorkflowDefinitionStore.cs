@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Messages;
+using Elsa.Messages.Domain;
 using Elsa.Models;
 using MediatR;
 

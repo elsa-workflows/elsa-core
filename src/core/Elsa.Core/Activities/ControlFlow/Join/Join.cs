@@ -6,6 +6,7 @@ using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Extensions;
 using Elsa.Messages;
+using Elsa.Messages.Domain;
 using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;

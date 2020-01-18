@@ -1,19 +1,11 @@
-﻿using Elsa.Services;
-using Elsa.Services.Models;
-using MediatR;
+﻿using Elsa.Services.Models;
 
-namespace Elsa.Messages
+namespace Elsa.Messages.Domain
 {
-    public class ActivityExecuted : INotification
+    public class ActivityExecuted : ActivityNotification
     {
-        public ActivityExecuted(WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext)
+        public ActivityExecuted(ActivityExecutionContext activityExecutionContext) : base(activityExecutionContext)
         {
-            WorkflowExecutionContext = workflowExecutionContext;
-            ActivityExecutionContext = activityExecutionContext;
         }
-
-        public WorkflowExecutionContext WorkflowExecutionContext { get; }
-        public ActivityExecutionContext ActivityExecutionContext { get; }
-        public IActivity Activity => ActivityExecutionContext.Activity;
     }
 }
