@@ -1,6 +1,6 @@
 using Elsa.Models;
 
-namespace Elsa.Messages.Distributed
+namespace Elsa.Messaging.Distributed
 {
     public class RunWorkflow
     {

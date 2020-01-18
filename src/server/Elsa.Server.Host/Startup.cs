@@ -1,3 +1,4 @@
+using Elsa.Activities.Http.Extensions;
 using Elsa.Runtime;
 using Elsa.Server.GraphQL.Extensions;
 using Elsa.StartupTasks;

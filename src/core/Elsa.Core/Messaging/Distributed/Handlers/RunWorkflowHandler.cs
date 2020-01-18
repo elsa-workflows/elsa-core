@@ -2,7 +2,7 @@ using System.Threading.Tasks;
 using Elsa.Services;
 using Rebus.Handlers;
 
-namespace Elsa.Messages.Distributed.Handlers
+namespace Elsa.Messaging.Distributed.Handlers
 {
     public class RunWorkflowHandler : IHandleMessages<RunWorkflow>
     {

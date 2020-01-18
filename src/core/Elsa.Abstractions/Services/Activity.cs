@@ -21,6 +21,7 @@ namespace Elsa.Services
         public string? Name { get; set; }
         public string? DisplayName{ get; set; }
         public string? Description{ get; set; }
+        public bool PersistWorkflow { get; set; }
 
         public Task<bool> CanExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken) => OnCanExecuteAsync(context, cancellationToken);
         public Task<IActivityExecutionResult> ExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken) => OnExecuteAsync(context, cancellationToken);

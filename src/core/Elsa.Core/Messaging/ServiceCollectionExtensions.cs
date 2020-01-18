@@ -3,7 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Rebus.Config;
 using Rebus.ServiceProvider;
 
-namespace Elsa.Messages
+namespace Elsa.Messaging
 {
     public static class ServiceCollectionExtensions
     {

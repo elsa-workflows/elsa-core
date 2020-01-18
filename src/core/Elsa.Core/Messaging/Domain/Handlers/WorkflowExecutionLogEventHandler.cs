@@ -4,7 +4,7 @@ using Elsa.Services.Models;
 using MediatR;
 using NodaTime;
 
-namespace Elsa.Messages.Domain.Handlers
+namespace Elsa.Messaging.Domain.Handlers
 {
     public class WorkflowExecutionLogEventHandler : INotificationHandler<ActivityExecuted>
     {

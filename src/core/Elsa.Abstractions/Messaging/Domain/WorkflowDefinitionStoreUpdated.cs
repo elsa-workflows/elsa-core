@@ -1,6 +1,6 @@
 ﻿using MediatR;
 
-namespace Elsa.Messages.Domain
+namespace Elsa.Messaging.Domain
 {
     /// <summary>
     /// Published when the workflow definition store is updated. 
