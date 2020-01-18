@@ -36,13 +36,14 @@
         <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="3.1.1" />
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="3.1.1" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.1" />
+        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="3.1.1" />
         <PackageReference Include="Microsoft.Extensions.Localization" Version="3.1.1" />
         <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.1" />
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.1" />
         <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="3.1.1" />
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="3.1.1" />
         <PackageReference Include="NodaTime.Serialization.JsonNet" Version="2.2.0" />
-        <PackageReference Include="Elsa.Scrutor" Version="3.0.2.26" />
+        <PackageReference Include="Elsa.Scrutor" Version="3.0.2.27" />
         <PackageReference Include="YamlDotNet" Version="8.0.0" />
     </ItemGroup>
 

@@ -26,7 +26,7 @@ namespace Elsa.Runtime
         {
             return services
                 .AddStartupRunner()
-                .Decorate<IServer, TaskExecutingServer>();
+                .AddHostedService<StartupRunnerHostedService>();
         }
     }
 }
