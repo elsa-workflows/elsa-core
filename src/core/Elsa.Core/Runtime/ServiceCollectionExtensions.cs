@@ -1,6 +1,4 @@
-using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Elsa.Runtime
 {
@@ -8,8 +6,9 @@ namespace Elsa.Runtime
     {
         public static IServiceCollection AddStartupRunner(this IServiceCollection services)
         {
-            services.TryAddTransient<IStartupRunner, StartupRunner>();
-            return services;
+            return services
+                .AddTransient<IStartupRunner, StartupRunner>()
+                .AddHostedService<StartupRunnerHostedService>();
         }
 
         public static IServiceCollection AddStartupTask<TStartupTask>(this IServiceCollection services)
