@@ -93,6 +93,7 @@ namespace Elsa.Services
             var tuples = (IList<(Workflow, IActivity)>)query.ToList();
 
             tuples = (await FilterRunningSingletonsAsync(tuples, cancellationToken)).ToList();
+            tuples = (await FilterStartedWorkflowsAsync(tuples, cancellationToken)).ToList();
 
             foreach (var (workflow, activity) in tuples)
             {
@@ -125,24 +126,45 @@ namespace Elsa.Services
         }
 
         private async Task<IEnumerable<(Workflow, IActivity)>> FilterRunningSingletonsAsync(
-            IEnumerable<(Workflow, IActivity)> workflows,
+            IEnumerable<(Workflow Workflow, IActivity Activity)> tuples,
             CancellationToken cancellationToken)
         {
-            var definitions = workflows.ToList();
-            var transients = definitions.Where(x => !x.Item1.IsSingleton).ToList();
-            var singletons = definitions.Where(x => x.Item1.IsSingleton).ToList();
+            var tupleList = tuples.ToList();
+            var transients = tupleList.Where(x => !x.Workflow.IsSingleton).ToList();
+            var singletons = tupleList.Where(x => x.Workflow.IsSingleton).ToList();
             var result = transients.ToList();
 
-            foreach (var definition in singletons)
+            foreach (var tuple in singletons)
             {
                 var instances = await workflowInstanceStore.ListByStatusAsync(
-                    definition.Item1.DefinitionId,
+                    tuple.Workflow.DefinitionId,
                     WorkflowStatus.Suspended,
                     cancellationToken
                 );
 
                 if (!instances.Any())
-                    result.Add(definition);
+                    result.Add(tuple);
+            }
+
+            return result;
+        }
+        
+        private async Task<IEnumerable<(Workflow, IActivity)>> FilterStartedWorkflowsAsync(
+            IEnumerable<(Workflow Workflow, IActivity Activity)> tuples,
+            CancellationToken cancellationToken)
+        {
+            var tupleList = tuples.ToList();
+            var result = new List<(Workflow, IActivity)>();
+
+            foreach (var tuple in tupleList)
+            {
+                var suspendedInstances = await workflowInstanceStore.ListByStatusAsync(tuple.Workflow.DefinitionId, WorkflowStatus.Suspended, cancellationToken);
+                var idleInstances = await workflowInstanceStore.ListByStatusAsync(tuple.Workflow.DefinitionId, WorkflowStatus.Idle, cancellationToken);
+                var startActivities = tuple.Workflow.GetStartActivities().Select(x => x.Id).ToList();
+                var hasStartedInstances = suspendedInstances.Any(x => x.BlockingActivities.Any(y => startActivities.Contains(y.ActivityId)));
+
+                if(!hasStartedInstances && !idleInstances.Any())
+                    result.Add(tuple);
             }
 
             return result;

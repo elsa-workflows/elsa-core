@@ -10,9 +10,9 @@ namespace Elsa.Activities.MassTransit
 {
     public static class TimerEventExtensions
     {
-        public static TimerEvent WithTimeout(this TimerEvent activity, IWorkflowExpression<TimeSpan> value) => activity.With(x => x.Timeout, value);
-        public static TimerEvent WithTimeout(this TimerEvent activity, Func<ActivityExecutionContext, TimeSpan> value) => activity.With(x => x.Timeout, new CodeExpression<TimeSpan>(value));
-        public static TimerEvent WithTimeout(this TimerEvent activity, Func<TimeSpan> value) => activity.With(x => x.Timeout, new CodeExpression<TimeSpan>(value));
-        public static TimerEvent WithTimeout(this TimerEvent activity, TimeSpan value) => activity.With(x => x.Timeout, new CodeExpression<TimeSpan>(value));
+        public static TimerEvent WithTimeout(this TimerEvent activity, IWorkflowExpression<Duration> value) => activity.With(x => x.Timeout, value);
+        public static TimerEvent WithTimeout(this TimerEvent activity, Func<ActivityExecutionContext, Duration> value) => activity.With(x => x.Timeout, new CodeExpression<Duration>(value));
+        public static TimerEvent WithTimeout(this TimerEvent activity, Func<Duration> value) => activity.With(x => x.Timeout, new CodeExpression<Duration>(value));
+        public static TimerEvent WithTimeout(this TimerEvent activity, Duration value) => activity.With(x => x.Timeout, new CodeExpression<Duration>(value));
     }
 }

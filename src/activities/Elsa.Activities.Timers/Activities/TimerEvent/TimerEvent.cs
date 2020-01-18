@@ -24,10 +24,10 @@ namespace Elsa.Activities.Timers
             this.clock = clock;
         }
 
-        [ActivityProperty(Hint = "An expression that evaluates to a TimeSpan value")]
-        public IWorkflowExpression<TimeSpan> Timeout
+        [ActivityProperty(Hint = "An expression that evaluates to a Duration value")]
+        public IWorkflowExpression<Duration> Timeout
         {
-            get => GetState<IWorkflowExpression<TimeSpan>>(() => new LiteralExpression<TimeSpan>("00:01:00"));
+            get => GetState<IWorkflowExpression<Duration>>(() => new LiteralExpression<Duration>("00:01:00"));
             set => SetState(value);
         }
 
@@ -42,9 +42,10 @@ namespace Elsa.Activities.Timers
             return StartTime == null || await IsExpiredAsync(context, cancellationToken);
         }
 
-        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => Suspend();
+        protected override Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken) => ExecuteInternalAsync(context, cancellationToken);
+        protected override Task<IActivityExecutionResult> OnResumeAsync(ActivityExecutionContext context, CancellationToken cancellationToken) => ExecuteInternalAsync(context, cancellationToken);
 
-        protected override async Task<IActivityExecutionResult> OnResumeAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        private async Task<IActivityExecutionResult> ExecuteInternalAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
             if (await IsExpiredAsync(context, cancellationToken))
             {
@@ -61,11 +62,12 @@ namespace Elsa.Activities.Timers
 
             if (StartTime == null)
                 StartTime = now;
+
+            var startTime = StartTime.Value;
+            var timeout = await context.EvaluateAsync(Timeout, cancellationToken);
+            var expiresAt = startTime + timeout - Duration.FromMilliseconds(1000);
             
-            var timeSpan = await context.EvaluateAsync(Timeout, cancellationToken);
-            var expiresAt = StartTime.Value.ToDateTimeUtc() + timeSpan;
-            
-            return now.ToDateTimeUtc() >= expiresAt;
+            return now >= expiresAt;
         }
     }
 }

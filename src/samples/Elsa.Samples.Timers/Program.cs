@@ -21,7 +21,7 @@ namespace Elsa.Samples.Timers
                 {
                     services
                         .AddElsa()
-                        .AddTimerActivities(options => options.Configure(timer => timer.SweepInterval = Duration.FromSeconds(1)))
+                        .AddTimerActivities(options => options.Configure(timer => timer.SweepInterval = Duration.FromSeconds(5)))
                         .AddWorkflow<RecurringTaskWorkflow>();
                 });
     }
