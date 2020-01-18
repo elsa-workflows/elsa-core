@@ -1,6 +1,6 @@
 ﻿using Elsa.Services.Models;
 
-namespace Elsa.Messages.Domain
+namespace Elsa.Messaging.Domain
 {
     public class ExecutingWorkflow : WorkflowNotification
     {

@@ -54,7 +54,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Messages\Domain" />
+      <Folder Include="Messaging\Domain" />
     </ItemGroup>
 
 </Project>

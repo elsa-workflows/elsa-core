@@ -37,6 +37,11 @@ namespace Elsa.Services
         /// Description of this activity.
         /// </summary>
         string? Description { get; set; }
+        
+        /// <summary>
+        /// A value indicating whether the workflow instance will be persisted automatically upon executing this activity.
+        /// </summary>
+        bool PersistWorkflow { get; set; }
 
         /// <summary>
         /// Activity output.

@@ -1,4 +1,3 @@
-using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Extensions;
@@ -8,7 +7,7 @@ using Elsa.Services.Models;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
-namespace Elsa.Messages.Domain.Handlers
+namespace Elsa.Messaging.Domain.Handlers
 {
     public class PersistenceWorkflowEventHandler :
         INotificationHandler<WorkflowExecuted>,
@@ -39,7 +38,7 @@ namespace Elsa.Messages.Domain.Handlers
 
         public async Task Handle(ActivityExecuted notification, CancellationToken cancellationToken)
         {
-            if (notification.WorkflowExecutionContext.PersistenceBehavior == WorkflowPersistenceBehavior.ActivityExecuted)
+            if (notification.WorkflowExecutionContext.PersistenceBehavior == WorkflowPersistenceBehavior.ActivityExecuted || notification.Activity.PersistWorkflow)
                 await SaveWorkflowAsync(notification.WorkflowExecutionContext, cancellationToken);
         }
 
