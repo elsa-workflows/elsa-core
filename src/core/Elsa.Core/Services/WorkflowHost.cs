@@ -173,6 +173,7 @@ namespace Elsa.Services
                 var activityExecutionContext = new ActivityExecutionContext(workflowExecutionContext, currentActivity, scheduledActivity.Input);
                 var result = await activityOperation(activityExecutionContext, currentActivity, cancellationToken);
 
+                await mediator.Publish(new ActivityExecuting(activityExecutionContext), cancellationToken);
                 await result.ExecuteAsync(activityExecutionContext, cancellationToken);
                 await mediator.Publish(new ActivityExecuted(activityExecutionContext), cancellationToken);
 

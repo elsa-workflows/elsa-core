@@ -68,6 +68,7 @@ namespace Elsa
         private static RebusConfigurer ConfigureInMemoryServiceBus(RebusConfigurer rebus, IServiceProvider serviceProvider)
         {
             return rebus
+                .Logging(logging => logging.None())
                 .Subscriptions(s => s.StoreInMemory(new InMemorySubscriberStore()))
                 .Routing(r => r.TypeBased())
                 .Transport(t => t.UseInMemoryTransport(new InMemNetwork(), "Messages"));

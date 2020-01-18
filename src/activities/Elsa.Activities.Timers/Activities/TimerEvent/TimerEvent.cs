@@ -65,7 +65,7 @@ namespace Elsa.Activities.Timers
 
             var startTime = StartTime.Value;
             var timeout = await context.EvaluateAsync(Timeout, cancellationToken);
-            var expiresAt = startTime + timeout - Duration.FromMilliseconds(1000);
+            var expiresAt = startTime + timeout;
             
             return now >= expiresAt;
         }

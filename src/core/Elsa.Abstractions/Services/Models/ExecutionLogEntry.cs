@@ -4,7 +4,7 @@ namespace Elsa.Services.Models
 {
     public class ExecutionLogEntry
     {
-        public ExecutionLogEntry(IActivity activity, Instant timestamp, string message)
+        public ExecutionLogEntry(IActivity activity, Instant timestamp)
         {
             Activity = activity;
             Timestamp = timestamp;

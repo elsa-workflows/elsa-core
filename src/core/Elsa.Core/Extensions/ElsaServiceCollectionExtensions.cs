@@ -111,6 +111,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IWorkflowSerializerProvider, WorkflowSerializerProvider>()
                 .AddTransient<IWorkflowRegistry, WorkflowRegistry>()
                 .AddSingleton<IWorkflowScheduler, WorkflowScheduler>()
+                .AddSingleton<IWorkflowSchedulerQueue, WorkflowSchedulerQueue>()
                 .AddScoped<IWorkflowHost, WorkflowHost>()
                 .AddSingleton<IWorkflowActivator, WorkflowActivator>()
                 .AddSingleton<MemoryWorkflowDefinitionStore>()
