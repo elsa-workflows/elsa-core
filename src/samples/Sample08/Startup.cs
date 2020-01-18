@@ -26,7 +26,6 @@ namespace Sample08
         {
             services
                 .AddElsa()
-                .AddTaskExecutingServer()
                 .AddHttpActivities()
                 .AddTimerActivities(options => options.Configure(x => x.SweepInterval = Duration.FromSeconds(10)))
                 .AddEmailActivities(options => options.Bind(Configuration.GetSection("Smtp")))

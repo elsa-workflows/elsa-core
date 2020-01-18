@@ -36,7 +36,6 @@ namespace Elsa.Dashboard.Extensions
                 optionsBuilder.Configure(x => x.DiscoverActivities());
             
             services
-                .AddTaskExecutingServer()
                 .AddTempData();
 
             services.AddMvcCore(

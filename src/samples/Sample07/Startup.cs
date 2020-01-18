@@ -22,7 +22,6 @@ namespace Sample07
         {
             services
                 .AddElsa()
-                .AddTaskExecutingServer()
                 .AddHttpActivities(options => options.Bind(Configuration.GetSection("Http")))
                 .AddEmailActivities(options => options.Bind(Configuration.GetSection("Smtp")))
                 .AddTimerActivities(options => options.Bind(Configuration.GetSection("BackgroundRunner")))
