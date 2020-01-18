@@ -23,6 +23,6 @@ namespace Elsa.Persistence.EntityFrameworkCore.Entities
         public WorkflowFault Fault { get; set; }
         public ICollection<ActivityInstanceEntity> Activities { get; set; }
         public ICollection<BlockingActivityEntity> BlockingActivities { get; set; }
-        public Stack<string> ScheduledActivities { get; set; }
+        public Stack<ScheduledActivityEntity> ScheduledActivities { get; set; }
     }
 }

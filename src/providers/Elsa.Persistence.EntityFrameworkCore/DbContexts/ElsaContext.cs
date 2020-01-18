@@ -54,6 +54,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
             ConfigureActivityDefinition(modelBuilder);
             ConfigureActivityInstance(modelBuilder);
             ConfigureBlockingActivity(modelBuilder);
+            ConfigureScheduledActivity(modelBuilder);
             ConfigureConnectionDefinition(modelBuilder);
         }
 
@@ -78,6 +79,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
                 modelBuilder.ApplyConfiguration(new SchemaEntityTypeConfiguration<ActivityDefinitionEntity>(DbContextCustomSchema));
                 modelBuilder.ApplyConfiguration(new SchemaEntityTypeConfiguration<ActivityInstanceEntity>(DbContextCustomSchema));
                 modelBuilder.ApplyConfiguration(new SchemaEntityTypeConfiguration<BlockingActivityEntity>(DbContextCustomSchema));
+                modelBuilder.ApplyConfiguration(new SchemaEntityTypeConfiguration<ScheduledActivityEntity>(DbContextCustomSchema));
                 modelBuilder.ApplyConfiguration(new SchemaEntityTypeConfiguration<ConnectionDefinitionEntity>(DbContextCustomSchema));
                 modelBuilder.ApplyConfiguration(new SchemaEntityTypeConfiguration<WorkflowDefinitionVersionEntity>(DbContextCustomSchema));
                 modelBuilder.ApplyConfiguration(new SchemaEntityTypeConfiguration<WorkflowInstanceEntity>(DbContextCustomSchema));
@@ -128,11 +130,8 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
                 .WithOne(x => x.WorkflowInstance);
             
             entity
-                .Property(x => x.ScheduledActivities)
-                .HasConversion(
-                    x => Serialize(x),
-                    x => Deserialize<Stack<string>>(x)
-                );
+                .HasMany(x => x.ScheduledActivities)
+                .WithOne(x => x.WorkflowInstance);
         }
         
         private void ConfigureActivityDefinition(ModelBuilder modelBuilder)
@@ -143,7 +142,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
 
             entity
                 .Property(x => x.State)
-                .HasConversion(x => Serialize(x), x => Deserialize<JObject>(x));
+                .HasConversion(x => Serialize(x), x => Deserialize<Variables>(x));
         }
         
         private void ConfigureConnectionDefinition(ModelBuilder modelBuilder)
@@ -161,11 +160,11 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
             
             entity
                 .Property(x => x.State)
-                .HasConversion(x => Serialize(x), x => Deserialize<JObject>(x));
+                .HasConversion(x => Serialize(x), x => Deserialize<Variables>(x));
             
             entity
                 .Property(x => x.Output)
-                .HasConversion(x => Serialize(x), x => Deserialize<JObject>(x));
+                .HasConversion(x => Serialize(x), x => Deserialize<Variables>(x));
         }
         
         private void ConfigureBlockingActivity(ModelBuilder modelBuilder)
@@ -173,6 +172,17 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
             var entity = modelBuilder.Entity<BlockingActivityEntity>();
 
             entity.HasKey(x => x.Id);
+        }
+        
+        private void ConfigureScheduledActivity(ModelBuilder modelBuilder)
+        {
+            var entity = modelBuilder.Entity<ScheduledActivityEntity>();
+
+            entity.HasKey(x => x.Id);
+
+            entity
+                .Property(x => x.Input)
+                .HasConversion(x => Serialize(x), x => Deserialize<Variable>(x));
         }
 
         private string Serialize(object value)

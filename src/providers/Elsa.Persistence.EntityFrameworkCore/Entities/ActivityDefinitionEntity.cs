@@ -1,3 +1,4 @@
+using Elsa.Models;
 using Newtonsoft.Json.Linq;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Entities
@@ -10,6 +11,6 @@ namespace Elsa.Persistence.EntityFrameworkCore.Entities
         public string Type { get; set; }
         public int Left { get; set; }
         public int Top { get; set; }
-        public JObject State { get; set; }
+        public Variables State { get; set; }
     }
 }
