@@ -98,6 +98,7 @@ namespace Elsa.Services
                 
                 if (startedInstances.Any())
                 {
+                    // There's already a workflow instance pending to be started, so queue this workflow for launch right after the current instance completes. 
                     queue.Enqueue(workflow, activity, input, correlationId);
                 }
                 else
