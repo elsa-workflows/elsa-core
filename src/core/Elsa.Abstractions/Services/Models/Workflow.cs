@@ -8,6 +8,8 @@ namespace Elsa.Services.Models
     {
         public Workflow()
         {
+            Activities = new List<IActivity>();
+            Connections = new List<Connection>();
         }
 
         public Workflow(

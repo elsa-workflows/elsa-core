@@ -13,6 +13,7 @@ using Elsa.Results;
 using Elsa.Services.Models;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using NodaTime;
 using ScheduledActivity = Elsa.Services.Models.ScheduledActivity;
 
 namespace Elsa.Services
@@ -28,7 +29,7 @@ namespace Elsa.Services
         private readonly IWorkflowInstanceStore workflowInstanceStore;
         private readonly IWorkflowActivator workflowActivator;
         private readonly IExpressionEvaluator expressionEvaluator;
-        private readonly IIdGenerator idGenerator;
+        private readonly IClock clock;
         private readonly IMediator mediator;
         private readonly IServiceProvider serviceProvider;
         private readonly ILogger logger;
@@ -38,7 +39,7 @@ namespace Elsa.Services
             IWorkflowInstanceStore workflowInstanceStore,
             IWorkflowActivator workflowActivator,
             IExpressionEvaluator expressionEvaluator,
-            IIdGenerator idGenerator,
+            IClock clock,
             IMediator mediator,
             IServiceProvider serviceProvider,
             ILogger<WorkflowHost> logger)
@@ -47,7 +48,7 @@ namespace Elsa.Services
             this.workflowInstanceStore = workflowInstanceStore;
             this.workflowActivator = workflowActivator;
             this.expressionEvaluator = expressionEvaluator;
-            this.idGenerator = idGenerator;
+            this.clock = clock;
             this.mediator = mediator;
             this.serviceProvider = serviceProvider;
             this.logger = logger;
@@ -237,6 +238,7 @@ namespace Elsa.Services
             WorkflowPersistenceBehavior persistenceBehavior = WorkflowPersistenceBehavior.WorkflowExecuted)
             => new WorkflowExecutionContext(
                 expressionEvaluator,
+                clock,
                 serviceProvider,
                 workflowDefinitionId,
                 workflowInstanceId,

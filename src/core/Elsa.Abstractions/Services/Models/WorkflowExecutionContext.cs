@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Comparers;
 using Elsa.Expressions;
 using Elsa.Models;
 using Microsoft.Extensions.Localization;
@@ -13,7 +14,8 @@ namespace Elsa.Services.Models
     public class WorkflowExecutionContext
     {
         public WorkflowExecutionContext(
-            IExpressionEvaluator expressionEvaluator, 
+            IExpressionEvaluator expressionEvaluator,
+            IClock clock,
             IServiceProvider serviceProvider,
             string definitionId,
             string instanceId, 
@@ -37,6 +39,7 @@ namespace Elsa.Services.Models
             Activities = activities.ToList();
             Connections = connections.ToList();
             ExpressionEvaluator = expressionEvaluator;
+            Clock = clock;
             ScheduledActivities = scheduledActivities != null ? new Stack<ScheduledActivity>(scheduledActivities) : new Stack<ScheduledActivity>();
             BlockingActivities = blockingActivities != null ? new HashSet<IActivity>(blockingActivities) : new HashSet<IActivity>();
             Variables = variables ?? new Variables();
@@ -78,6 +81,7 @@ namespace Elsa.Services.Models
         public ScheduledActivity PopScheduledActivity() => ScheduledActivity = ScheduledActivities.Pop();
         public ScheduledActivity PeekScheduledActivity() => ScheduledActivities.Peek();
         public IExpressionEvaluator ExpressionEvaluator { get; }
+        public IClock Clock { get; }
         public string InstanceId { get; set; }
         public int Version { get; }
         public string CorrelationId { get; set; }
@@ -110,6 +114,42 @@ namespace Elsa.Services.Models
         public void Complete()
         {
             Status = WorkflowStatus.Completed;
+        }
+        
+        public IActivity GetActivity(string id) => Activities.FirstOrDefault(x => x.Id == id);
+
+        public WorkflowInstance CreateWorkflowInstance()
+        {
+            return UpdateWorkflowInstance(new WorkflowInstance
+            {
+                Id = InstanceId,
+                DefinitionId = DefinitionId,
+                Version = Version,
+                CreatedAt = Clock.GetCurrentInstant()
+            });
+        }
+        
+        public WorkflowInstance UpdateWorkflowInstance(WorkflowInstance workflowInstance)
+        {
+            workflowInstance.Variables = Variables;
+            workflowInstance.ScheduledActivities = new Stack<Elsa.Models.ScheduledActivity>(ScheduledActivities.Select(x => new Elsa.Models.ScheduledActivity(x.Activity.Id, x.Input)));
+            workflowInstance.Activities = Activities.Select(x => new ActivityInstance(x.Id, x.Type, x.State, x.Output)).ToList();
+            workflowInstance.BlockingActivities = new HashSet<BlockingActivity>(BlockingActivities.Select(x => new BlockingActivity(x.Id, x.Type)), new BlockingActivityEqualityComparer());
+            workflowInstance.Status = Status;
+            workflowInstance.CorrelationId = CorrelationId;
+            workflowInstance.Output = Output;
+            workflowInstance.ExecutionLog = ExecutionLog.Select(x => new Elsa.Models.ExecutionLogEntry(x.Activity.Id, x.Timestamp)).ToList();
+
+            if (WorkflowFault != null)
+            {
+                workflowInstance.Fault = new Elsa.Models.WorkflowFault
+                {
+                    FaultedActivityId = WorkflowFault.FaultedActivity?.Id,
+                    Message = WorkflowFault.Message
+                };
+            }
+            
+            return workflowInstance;
         }
     }
 }

@@ -19,14 +19,14 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\..\src\core\Elsa.Core\Elsa.Core.csproj" />
-      <ProjectReference Include="..\..\shared\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
       <None Update="Elsa.Core.UnitTests.xunit.runner.json">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\src\core\Elsa.Core\Elsa.Core.csproj" />
+      <ProjectReference Include="..\..\shared\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj" />
     </ItemGroup>
 
 </Project>

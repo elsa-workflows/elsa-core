@@ -21,11 +21,12 @@ namespace Elsa.Core.UnitTests
 {
     public class WorkflowHostTests
     {
+        private readonly IFixture fixture;
         private readonly WorkflowHost workflowHost;
 
         public WorkflowHostTests()
         {
-            var fixture = new Fixture().Customize(new NodaTimeCustomization());
+            fixture = new Fixture().Customize(new NodaTimeCustomization());
             var workflowActivatorMock = new Mock<IWorkflowActivator>();
             var idGeneratorMock = new Mock<IIdGenerator>();
             var workflowRegistryMock = new Mock<IWorkflowRegistry>();
@@ -33,16 +34,20 @@ namespace Elsa.Core.UnitTests
             var workflowExpressionEvaluatorMock = new Mock<IExpressionEvaluator>();
             var mediatorMock = new Mock<IMediator>();
             var now = fixture.Create<Instant>();
-            var fakeClock = new FakeClock(now);
+            var clock = new FakeClock(now);
             var logger = new NullLogger<WorkflowHost>();
             var serviceProvider = new ServiceCollection().BuildServiceProvider();
+
+            workflowActivatorMock
+                .Setup(x => x.ActivateAsync(It.IsAny<Workflow>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((Workflow workflow, string? correlationId, CancellationToken cancellationToken) => new WorkflowInstance());
 
             workflowHost = new WorkflowHost(
                 workflowRegistryMock.Object,
                 workflowInstanceStoreMock.Object,
                 workflowActivatorMock.Object,
                 workflowExpressionEvaluatorMock.Object,
-                idGeneratorMock.Object,
+                clock,
                 mediatorMock.Object,
                 serviceProvider,
                 logger);
@@ -51,7 +56,8 @@ namespace Elsa.Core.UnitTests
         [Fact(DisplayName = "Can run simple workflow to completed state.")]
         public async Task RunAsync01()
         {
-            var activity = CreateActivity();
+            var activityExecutionResultMock = new Mock<IActivityExecutionResult>();
+            var activity = CreateActivity(activityExecutionResult: activityExecutionResultMock.Object);
             var workflow = CreateWorkflow(activity);
             var executionContext = await workflowHost.RunWorkflowAsync(workflow);
 
@@ -73,7 +79,10 @@ namespace Elsa.Core.UnitTests
         private IActivity CreateActivity(bool canExecute = true, IActivityExecutionResult? activityExecutionResult = null)
         {
             var activityMock = new Mock<IActivity>();
+            var activityId = fixture.Create<string>();
 
+            activityMock.Setup(x => x.Id).Returns(activityId);
+            
             activityMock
                 .Setup(x => x.CanExecuteAsync(It.IsAny<ActivityExecutionContext>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(canExecute);
