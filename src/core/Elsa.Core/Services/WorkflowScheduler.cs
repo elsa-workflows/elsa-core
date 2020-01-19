@@ -115,21 +115,10 @@ namespace Elsa.Services
         /// </summary>
         private async Task ScheduleSuspendedWorkflowsAsync(string activityType, object? input, string? correlationId, Func<Variables, bool>? activityStatePredicate, CancellationToken cancellationToken)
         {
-            var tuples = await workflowInstanceStore.ListByBlockingActivityAsync(activityType, correlationId, cancellationToken);
+            var tuples = await workflowInstanceStore.ListByBlockingActivityAsync(activityType, correlationId, activityStatePredicate, cancellationToken);
 
-            foreach (var (workflowInstance, blockingActivity) in tuples)
-            {
-                var workflow = await workflowRegistry.GetWorkflowAsync(workflowInstance.DefinitionId, VersionOptions.SpecificVersion(workflowInstance.Version), cancellationToken);
-                var activity = workflow.GetActivity(blockingActivity.ActivityId);
-
-                if (activityStatePredicate != null)
-                {
-                    if (!activityStatePredicate(activity.State))
-                        continue;
-                }
-
+            foreach (var (workflowInstance, blockingActivity) in tuples) 
                 await ScheduleWorkflowAsync(workflowInstance.Id, blockingActivity.ActivityId, input, cancellationToken);
-            }
         }
 
         private async Task ScheduleWorkflowAsync(Workflow workflow, IActivity activity, object? input, string? correlationId, CancellationToken cancellationToken)

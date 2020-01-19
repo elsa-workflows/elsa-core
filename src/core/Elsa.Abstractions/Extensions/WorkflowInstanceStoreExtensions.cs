@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -10,13 +11,32 @@ namespace Elsa.Extensions
 {
     public static class WorkflowInstanceStoreExtensions
     {
-        public static async Task<IEnumerable<(WorkflowInstance, BlockingActivity)>> ListByBlockingActivityAsync<TActivity>(
+        public static Task<IEnumerable<(WorkflowInstance WorkflowInstance, BlockingActivity BlockingActivity)>> ListByBlockingActivityAsync<TActivity>(
             this IWorkflowInstanceStore store,
             string? correlationId = default,
-            CancellationToken cancellationToken = default) where TActivity : IActivity
+            Func<Variables, bool>? activityStatePredicate = default,
+            CancellationToken cancellationToken = default) where TActivity : IActivity =>
+            store.ListByBlockingActivityAsync(typeof(TActivity).Name, correlationId, activityStatePredicate, cancellationToken);
+
+        public static async Task<IEnumerable<(WorkflowInstance WorkflowInstance, BlockingActivity BLockingActivity)>> ListByBlockingActivityAsync(
+            this IWorkflowInstanceStore store,
+            string activityType,
+            string? correlationId,
+            Func<Variables, bool>? activityStatePredicate = default,
+            CancellationToken cancellationToken = default)
         {
-            var items = await store.ListByBlockingActivityAsync(typeof(TActivity).Name, correlationId, cancellationToken);
-            return items.Select(x => (x.Item1, x.Item2));
+            var tuples = await store.ListByBlockingActivityAsync(activityType, correlationId, cancellationToken);
+
+            if (activityStatePredicate != null)
+            {
+                tuples = tuples.Where(tuple =>
+                {
+                    var activityInstance = tuple.WorkflowInstance.Activities.First(x => x.Id == tuple.BlockingActivity.ActivityId);
+                    return activityStatePredicate(activityInstance.State);
+                });
+            }
+
+            return tuples;
         }
     }
 }
