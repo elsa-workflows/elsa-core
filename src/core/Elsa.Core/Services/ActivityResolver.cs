@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Elsa.Services.Models;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Services
@@ -39,7 +38,7 @@ namespace Elsa.Services
             return ActivityTypeLookup[activityTypeName];
         }
 
-        public IActivity ResolveActivity(string activityTypeName, Action<IActivity> setup = null)
+        public IActivity ResolveActivity(string activityTypeName, Action<IActivity>? setup = null)
         {
             var activityType = ResolveActivityType(activityTypeName);
             var activity = (IActivity)ActivatorUtilities.GetServiceOrCreateInstance(serviceProvider, activityType);
@@ -48,7 +47,7 @@ namespace Elsa.Services
             return activity;
         }
 
-        public T ResolveActivity<T>(Action<T> setup = null) where T : class, IActivity
+        public T ResolveActivity<T>(Action<T>? setup = null) where T : class, IActivity
         {
             var activity = ActivatorUtilities.GetServiceOrCreateInstance<T>(serviceProvider);
             setup?.Invoke(activity);

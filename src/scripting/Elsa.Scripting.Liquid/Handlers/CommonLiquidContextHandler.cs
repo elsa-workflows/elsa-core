@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Scripting.Liquid.Helpers;
 using Elsa.Scripting.Liquid.Messages;
+using Elsa.Services;
 using Elsa.Services.Models;
 using Fluid;
 using Fluid.Values;
@@ -29,7 +30,7 @@ namespace Elsa.Scripting.Liquid.Handlers
 
             context.MemberAccessStrategy.Register<LiquidPropertyAccessor, FluidValue>((x, name) => x.GetValueAsync(name));
             context.MemberAccessStrategy.Register<ActivityExecutionContext, FluidValue>("Input", x => ToFluidValue(x.Input));
-            context.MemberAccessStrategy.Register<ActivityExecutionContext, LiquidPropertyAccessor>("Variables", x => new LiquidPropertyAccessor(name => ToFluidValue(x.WorkflowExecutionContext.GetVariables(), name)));
+            context.MemberAccessStrategy.Register<ActivityExecutionContext, LiquidPropertyAccessor>("Variables", x => new LiquidPropertyAccessor(name => ToFluidValue(x.WorkflowExecutionContext.Variables, name)));
             context.MemberAccessStrategy.Register<ActivityExecutionContext, LiquidObjectAccessor<IActivity>>("Activities", x => new LiquidObjectAccessor<IActivity>(name => GetActivityAsync(x, name)));
             context.MemberAccessStrategy.Register<LiquidObjectAccessor<IActivity>, object>(GetActivityOutput);
             context.MemberAccessStrategy.Register<LiquidObjectAccessor<object>, object>((x, name) => x.GetValueAsync(name));
@@ -51,6 +52,6 @@ namespace Elsa.Scripting.Liquid.Handlers
         }
 
         private Task<IActivity> GetActivityAsync(ActivityExecutionContext context, string name) 
-            => Task.FromResult(context.WorkflowExecutionContext.Workflow.Blueprint.Activities.FirstOrDefault(x => x.Name == name));
+            => Task.FromResult(context.WorkflowExecutionContext.Activities.FirstOrDefault(x => x.Name == name));
     }
 }

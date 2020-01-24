@@ -4,7 +4,7 @@ using Elsa.Services.Models;
 
 namespace Elsa.Expressions
 {
-    public class VariableHandler : IWorkflowExpressionHandler
+    public class VariableHandler : IExpressionHandler
     {
         public string Type => VariableExpression.ExpressionType;
 

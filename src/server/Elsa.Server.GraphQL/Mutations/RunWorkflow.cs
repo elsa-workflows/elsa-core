@@ -1,4 +1,5 @@
-﻿using Elsa.Models;
+﻿using Elsa.Extensions;
+using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Server.GraphQL.Services;
 using Elsa.Server.GraphQL.Types;
@@ -9,12 +10,12 @@ namespace Elsa.Server.GraphQL.Mutations
 {
     public class RunWorkflow : IMutationProvider
     {
-        private readonly IWorkflowRunner workflowRunner;
+        private readonly IWorkflowHost workflowHost;
         private readonly IWorkflowDefinitionStore workflowDefinitionStore;
 
-        public RunWorkflow(IWorkflowRunner workflowRunner, IWorkflowDefinitionStore workflowDefinitionStore)
+        public RunWorkflow(IWorkflowHost workflowHost, IWorkflowDefinitionStore workflowDefinitionStore)
         {
-            this.workflowRunner = workflowRunner;
+            this.workflowHost = workflowHost;
             this.workflowDefinitionStore = workflowDefinitionStore;
         }
 
@@ -30,14 +31,9 @@ namespace Elsa.Server.GraphQL.Mutations
                 async context =>
                 {
                     var workflowDefinitionId = context.GetArgument<string>("workflowDefinitionId");
-                    var workflowDefinition = await workflowDefinitionStore.GetByIdAsync(workflowDefinitionId, VersionOptions.Published, context.CancellationToken);
-
-                    if (workflowDefinition == null)
-                        return null;
-
                     var correlationId = context.GetArgument<string>("correlationId");
-                    var executionContext = await workflowRunner.RunAsync(workflowDefinition, correlationId: correlationId, cancellationToken: context.CancellationToken);
-                    return executionContext.Workflow.ToInstance();
+                    var executionContext = await workflowHost.RunWorkflowInstanceAsync(workflowDefinitionId, correlationId, null, context.CancellationToken);
+                    return executionContext.CreateWorkflowInstance();
                 });
         }
     }

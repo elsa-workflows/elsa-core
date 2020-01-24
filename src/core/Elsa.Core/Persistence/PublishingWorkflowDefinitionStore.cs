@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Messages;
+using Elsa.Messaging.Domain;
 using Elsa.Models;
 using MediatR;
 

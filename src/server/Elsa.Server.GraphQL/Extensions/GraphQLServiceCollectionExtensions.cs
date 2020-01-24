@@ -16,10 +16,8 @@ namespace Microsoft.Extensions.DependencyInjection
 {
     public static class GraphQLServiceCollectionExtensions
     {
-        public static ElsaBuilder AddGraphQL(this ElsaBuilder builder, Action<GraphQLOptions> configure = null)
+        public static IServiceCollection AddGraphQL(this IServiceCollection services, Action<GraphQLOptions> configure = null)
         {
-            var services = builder.Services;
-
             services
                 .AddScoped<ElsaSchema>()
                 .AddSingleton<InstantGraphType>()
@@ -42,17 +40,13 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddGraphQL(graphQLOptions)
                 .AddGraphTypes(ServiceLifetime.Scoped);
 
-            return builder;
+            return services;
         }
 
-        public static IServiceCollection AddMutationProvider<T>(this IServiceCollection services) where T : class, IMutationProvider
-        {
-            return services.AddScoped<IMutationProvider, T>();
-        }
-        
-        public static IServiceCollection AddQueryProvider<T>(this IServiceCollection services) where T : class, IQueryProvider
-        {
-            return services.AddScoped<IQueryProvider, T>();
-        }
+        public static IServiceCollection AddMutationProvider<T>(this IServiceCollection services) where T : class, IMutationProvider => 
+            services.AddScoped<IMutationProvider, T>();
+
+        public static IServiceCollection AddQueryProvider<T>(this IServiceCollection services) where T : class, IQueryProvider => 
+            services.AddScoped<IQueryProvider, T>();
     }
 }

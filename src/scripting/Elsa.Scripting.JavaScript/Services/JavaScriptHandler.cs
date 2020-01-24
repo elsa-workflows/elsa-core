@@ -21,7 +21,7 @@ using NodaTime.Serialization.JsonNet;
 
 namespace Elsa.Scripting.JavaScript.Services
 {
-    public class JavaScriptHandler : IWorkflowScriptExpressionHandler
+    public class JavaScriptHandler : IExpressionHandler
     {
         private readonly IMediator mediator;
         private readonly IMapper mapper;
@@ -58,9 +58,9 @@ namespace Elsa.Scripting.JavaScript.Services
                 options.AllowClr();
         }
 
-        private async Task ConfigureEngineAsync(Engine engine, ActivityExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
+        private async Task ConfigureEngineAsync(Engine engine, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
         {
-            await mediator.Publish(new EvaluatingJavaScriptExpression(engine, workflowExecutionContext), cancellationToken);
+            await mediator.Publish(new EvaluatingJavaScriptExpression(engine, activityExecutionContext), cancellationToken);
         }
 
         private object ConvertValue(JsValue value, Type targetType)

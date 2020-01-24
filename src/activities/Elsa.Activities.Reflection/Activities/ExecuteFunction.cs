@@ -5,9 +5,11 @@ using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
 using Elsa.Models;
+using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Localization;
 
 namespace Elsa.Activities.Reflection.Activities
 {
@@ -22,6 +24,13 @@ namespace Elsa.Activities.Reflection.Activities
     )]
     public class ExecuteMethod : Activity
     {
+        public ExecuteMethod(IStringLocalizer<ExecuteMethod> localizer)
+        {
+            T = localizer;
+        }
+
+        public IStringLocalizer T { get; set; }
+
         [ActivityProperty(Hint = "An expression that returns an array of arguments to the method. Leave empty if the method does not accept any arguments.")]
         public IWorkflowExpression<object[]> Arguments
         {
@@ -48,7 +57,7 @@ namespace Elsa.Activities.Reflection.Activities
             var type = System.Type.GetType(TypeName);
 
             if (type == null)
-                return Fault($"Type {TypeName} not found.");
+                return Fault(T["Type {0} not found.", TypeName]);
 
             var inputValues = await context.EvaluateAsync(Arguments, cancellationToken) ?? new object[0];
 
@@ -58,14 +67,13 @@ namespace Elsa.Activities.Reflection.Activities
                 .FirstOrDefault(x => x.Name == MethodName);
 
             if (method == null)
-                return Fault($"Type {TypeName} does not have a method called {MethodName}.");
+                return Fault(T["Type {0} does not have a method called {1}.", TypeName, MethodName]);
 
 
             var instance = method.IsStatic ? default : ActivatorUtilities.GetServiceOrCreateInstance(context.WorkflowExecutionContext.ServiceProvider, type);
             var result = method.Invoke(instance, inputValues);
 
-            Output = new Variable(result);
-            return Outcome(OutcomeNames.Done);
+            return Done(OutcomeNames.Done, Variable.From(result));
         }
     }
 }

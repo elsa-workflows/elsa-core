@@ -17,6 +17,7 @@
         <RepositoryType>GitHub</RepositoryType>
         <PackageTags>elsa, workflows, dropbox</PackageTags>
         <PackageIcon>icon.png</PackageIcon>
+        <Nullable>enable</Nullable>
     </PropertyGroup>
 
     <ItemGroup>
@@ -31,7 +32,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Microsoft.Extensions.Http" Version="3.1.0" />
+      <PackageReference Include="Microsoft.Extensions.Http" Version="3.1.1" />
     </ItemGroup>
     
 </Project>

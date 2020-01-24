@@ -1,7 +1,4 @@
-﻿using Elsa.Converters;
-using Newtonsoft.Json;
-
-namespace Elsa.Models
+﻿namespace Elsa.Models
 {
     public class Variable
     {

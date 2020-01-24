@@ -5,7 +5,7 @@ using Elsa.Services.Models;
 
 namespace Elsa.Expressions
 {
-    public class LiteralHandler : IWorkflowExpressionHandler
+    public class LiteralHandler : IExpressionHandler
     {
         public string Type => LiteralExpression.ExpressionType;
 

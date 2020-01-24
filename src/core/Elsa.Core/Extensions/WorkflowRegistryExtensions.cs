@@ -7,9 +7,9 @@ namespace Elsa.Extensions
 {
     public static class WorkflowRegistryExtensions
     {
-        public static Task<WorkflowBlueprint> GetWorkflowDefinitionAsync<T>(this IWorkflowRegistry workflowRegistry)
+        public static Task<Workflow> GetProcess<T>(this IWorkflowRegistry workflowRegistry)
         {
-            return workflowRegistry.GetWorkflowBlueprintAsync(typeof(T).Name, VersionOptions.Latest);            
+            return workflowRegistry.GetWorkflowAsync(typeof(T).Name, VersionOptions.Latest);            
         }
     }
 }

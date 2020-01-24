@@ -19,6 +19,7 @@
         <RepositoryType>GitHub</RepositoryType>
         <PackageTags>elsa, workflows, timers, background tasks</PackageTags>
         <PackageIcon>icon.png</PackageIcon>
+        <Nullable>enable</Nullable>
     </PropertyGroup>
 
     <ItemGroup>
@@ -33,7 +34,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="3.1.0" />
+        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="3.1.1" />
         <PackageReference Include="NCrontab" Version="3.3.1" />
     </ItemGroup>
 

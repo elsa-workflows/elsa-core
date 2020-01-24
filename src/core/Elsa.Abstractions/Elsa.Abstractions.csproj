@@ -28,13 +28,15 @@
 
     <ItemGroup>
       <PackageReference Include="MediatR" Version="7.0.0" />
-      <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="3.1.0" />
-      <PackageReference Include="Microsoft.Extensions.Localization.Abstractions" Version="3.1.0" />
-      <PackageReference Include="Microsoft.Extensions.Primitives" Version="3.1.0" />
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="3.1.1" />
+      <PackageReference Include="Microsoft.Extensions.Localization.Abstractions" Version="3.1.1" />
+      <PackageReference Include="Microsoft.Extensions.Primitives" Version="3.1.1" />
       <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
       <PackageReference Include="NodaTime" Version="3.0.0-beta01" />
       <PackageReference Include="NodaTime.Serialization.JsonNet" Version="2.2.0" />
+      <PackageReference Include="Rebus" Version="5.4.1" />
       <PackageReference Include="System.ComponentModel.Annotations" Version="4.7.0" />
+      <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.2" />
     </ItemGroup>
 
 </Project>

@@ -2,7 +2,8 @@ using System;
 using Elsa.Services;
 using MassTransit;
 
-namespace Elsa.Activities.MassTransit.Activities
+// ReSharper disable once CheckNamespace
+namespace Elsa.Activities.MassTransit
 {
     public abstract class MassTransitBusActivity : Activity
     {

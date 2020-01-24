@@ -18,7 +18,7 @@ namespace Elsa.Metadata
         public string RuntimeDescription { get; set; }
         public string Category { get; set; }
         public string Icon { get; set; }
-        public object Outcomes { get; set; }
+        public object? Outcomes { get; set; }
         public ActivityPropertyDescriptor[] Properties { get; set; }
     }
 }

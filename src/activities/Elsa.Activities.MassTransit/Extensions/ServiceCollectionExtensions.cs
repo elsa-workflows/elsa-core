@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Elsa.Activities.MassTransit.Activities;
 using Elsa.Activities.MassTransit.Consumers;
 using Elsa.Activities.MassTransit.Options;
 using MassTransit;
@@ -58,7 +57,7 @@ namespace Elsa.Activities.MassTransit.Extensions
 
             return services;
 
-            // local function to configure consumers
+            // Local function to configure consumers.
             void ConfigureMassTransit(IServiceCollectionConfigurator configurator)
             {
                 foreach (var messageType in messageTypes)
@@ -67,11 +66,8 @@ namespace Elsa.Activities.MassTransit.Extensions
                 }
             }
 
-            // local function to create the bus
-            IBusControl CreateBus(IServiceProvider sp)
-            {
-                return CreateUsingRabbitMq(sp, messageTypes);
-            }
+            // Local function to create the bus.
+            IBusControl CreateBus(IServiceProvider sp) => CreateUsingRabbitMq(sp, messageTypes);
         }
 
         public static void ConfigureWorkflowConsumer<TMessage>(
@@ -135,9 +131,6 @@ namespace Elsa.Activities.MassTransit.Extensions
             generic.Invoke(null, new object[]{destinationAddress});
         }
 
-        private static Type CreateConsumerType(Type messageType)
-        {
-            return typeof(WorkflowConsumer<>).MakeGenericType(messageType);
-        }
+        private static Type CreateConsumerType(Type messageType) => typeof(WorkflowConsumer<>).MakeGenericType(messageType);
     }
 }
