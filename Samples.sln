@@ -58,33 +58,48 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.Reflection"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "server", "server", "{468E498C-59DB-4541-8D8A-0D89DE9083AB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Server.Core", "src\server\Elsa.Server.Core\Elsa.Server.Core.csproj", "{D91E2F7B-D5B7-4D1C-A3F0-B0475C33F539}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Server.Core", "src\server\Elsa.Server.Core\Elsa.Server.Core.csproj", "{D91E2F7B-D5B7-4D1C-A3F0-B0475C33F539}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Server.GraphQL", "src\server\Elsa.Server.GraphQL\Elsa.Server.GraphQL.csproj", "{60888617-B40D-4275-B303-BDD482029CCA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Server.GraphQL", "src\server\Elsa.Server.GraphQL\Elsa.Server.GraphQL.csproj", "{60888617-B40D-4275-B303-BDD482029CCA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Server.Host", "src\server\Elsa.Server.Host\Elsa.Server.Host.csproj", "{FC54EDBA-71FB-4A87-8FD5-54759DF77CCE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Server.Host", "src\server\Elsa.Server.Host\Elsa.Server.Host.csproj", "{FC54EDBA-71FB-4A87-8FD5-54759DF77CCE}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{AB1AE008-6FD6-414C-8E88-D735F42E1FA6}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "unit", "unit", "{0A3C36AB-2ACF-4175-A512-66B4C3DB9371}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Core.UnitTests", "test\unit\Elsa.Core.UnitTests\Elsa.Core.UnitTests.csproj", "{475EEB95-ED27-4366-88EA-97C5000AC8E8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Core.UnitTests", "test\unit\Elsa.Core.UnitTests\Elsa.Core.UnitTests.csproj", "{475EEB95-ED27-4366-88EA-97C5000AC8E8}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "shared", "shared", "{0A6747EA-7AC6-4B6F-BC0C-C40C8A80C44D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Testing.Shared", "test\shared\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj", "{E7C689EB-5AD6-4E91-A007-6116EEA702FC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Testing.Shared", "test\shared\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj", "{E7C689EB-5AD6-4E91-A007-6116EEA702FC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.DocumentDb", "src\providers\Elsa.Persistence.DocumentDb\Elsa.Persistence.DocumentDb.csproj", "{C042677F-973C-4672-AFA1-31B389962FE5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Persistence.DocumentDb", "src\providers\Elsa.Persistence.DocumentDb\Elsa.Persistence.DocumentDb.csproj", "{C042677F-973C-4672-AFA1-31B389962FE5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.EntityFrameworkCore", "src\providers\Elsa.Persistence.EntityFrameworkCore\Elsa.Persistence.EntityFrameworkCore.csproj", "{3F43514A-927E-4C62-B153-AFCAD7B1A7FC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Persistence.EntityFrameworkCore", "src\providers\Elsa.Persistence.EntityFrameworkCore\Elsa.Persistence.EntityFrameworkCore.csproj", "{3F43514A-927E-4C62-B153-AFCAD7B1A7FC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.MongoDb", "src\providers\Elsa.Persistence.MongoDb\Elsa.Persistence.MongoDb.csproj", "{36A6F881-1B40-438D-9B6D-80F01CE76D51}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Persistence.MongoDb", "src\providers\Elsa.Persistence.MongoDb\Elsa.Persistence.MongoDb.csproj", "{36A6F881-1B40-438D-9B6D-80F01CE76D51}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.YesSql", "src\providers\Elsa.Persistence.YesSql\Elsa.Persistence.YesSql.csproj", "{DA825F41-EE97-47B3-801E-C694A6C53AEC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Persistence.YesSql", "src\providers\Elsa.Persistence.YesSql\Elsa.Persistence.YesSql.csproj", "{DA825F41-EE97-47B3-801E-C694A6C53AEC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.Timers", "src\samples\Elsa.Samples.Timers\Elsa.Samples.Timers.csproj", "{071DD6EC-D00C-4513-82B6-3FE8438061E3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.Timers", "src\samples\Elsa.Samples.Timers\Elsa.Samples.Timers.csproj", "{071DD6EC-D00C-4513-82B6-3FE8438061E3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.DistributedLocking.SqlServer", "src\providers\Elsa.DistributedLocking.SqlServer\Elsa.DistributedLocking.SqlServer.csproj", "{150EF356-E8BC-4922-91C2-362017479409}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.DistributedLocking.SqlServer", "src\providers\Elsa.DistributedLocking.SqlServer\Elsa.DistributedLocking.SqlServer.csproj", "{150EF356-E8BC-4922-91C2-362017479409}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dashboard", "dashboard", "{FE198B7B-DC70-417E-8F93-EC88D57BB187}"
+	ProjectSection(SolutionItems) = preProject
+		src\dashboard\global.json = src\dashboard\global.json
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Dashboard", "src\dashboard\Elsa.Dashboard\Elsa.Dashboard.csproj", "{6C707992-DD1A-4FB0-9A79-919B270CA031}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Dashboard.Web", "src\dashboard\Elsa.Dashboard.Web\Elsa.Dashboard.Web.csproj", "{548DB75A-AF08-4C73-B024-EA72073DD5C8}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.WorkflowDesigner", "src\dashboard\Elsa.WorkflowDesigner\Elsa.WorkflowDesigner.csproj", "{E298664E-7324-4335-84B0-7FB566D3E872}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DocumentApprovalEF", "DocumentApprovalEF", "{421132A2-9E65-46C9-B639-8D81C85640FC}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sample16", "src\samples\DocumentApprovalEF\Sample16.csproj", "{D35DA783-B4FB-4A61-9E2B-DD0285685E03}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -192,6 +207,22 @@ Global
 		{150EF356-E8BC-4922-91C2-362017479409}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{150EF356-E8BC-4922-91C2-362017479409}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{150EF356-E8BC-4922-91C2-362017479409}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6C707992-DD1A-4FB0-9A79-919B270CA031}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6C707992-DD1A-4FB0-9A79-919B270CA031}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6C707992-DD1A-4FB0-9A79-919B270CA031}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6C707992-DD1A-4FB0-9A79-919B270CA031}.Release|Any CPU.Build.0 = Release|Any CPU
+		{548DB75A-AF08-4C73-B024-EA72073DD5C8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{548DB75A-AF08-4C73-B024-EA72073DD5C8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{548DB75A-AF08-4C73-B024-EA72073DD5C8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{548DB75A-AF08-4C73-B024-EA72073DD5C8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E298664E-7324-4335-84B0-7FB566D3E872}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E298664E-7324-4335-84B0-7FB566D3E872}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E298664E-7324-4335-84B0-7FB566D3E872}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E298664E-7324-4335-84B0-7FB566D3E872}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D35DA783-B4FB-4A61-9E2B-DD0285685E03}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D35DA783-B4FB-4A61-9E2B-DD0285685E03}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D35DA783-B4FB-4A61-9E2B-DD0285685E03}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D35DA783-B4FB-4A61-9E2B-DD0285685E03}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -231,6 +262,12 @@ Global
 		{DA825F41-EE97-47B3-801E-C694A6C53AEC} = {600C4AE0-0585-4181-9CEC-2BB43430C713}
 		{071DD6EC-D00C-4513-82B6-3FE8438061E3} = {5E5E1E84-DDBC-40D6-B891-0D563A15A44A}
 		{150EF356-E8BC-4922-91C2-362017479409} = {600C4AE0-0585-4181-9CEC-2BB43430C713}
+		{FE198B7B-DC70-417E-8F93-EC88D57BB187} = {DA71CDAA-8DD3-4D5F-9FBD-8E4B37A2D925}
+		{6C707992-DD1A-4FB0-9A79-919B270CA031} = {FE198B7B-DC70-417E-8F93-EC88D57BB187}
+		{548DB75A-AF08-4C73-B024-EA72073DD5C8} = {FE198B7B-DC70-417E-8F93-EC88D57BB187}
+		{E298664E-7324-4335-84B0-7FB566D3E872} = {FE198B7B-DC70-417E-8F93-EC88D57BB187}
+		{421132A2-9E65-46C9-B639-8D81C85640FC} = {5E5E1E84-DDBC-40D6-B891-0D563A15A44A}
+		{D35DA783-B4FB-4A61-9E2B-DD0285685E03} = {421132A2-9E65-46C9-B639-8D81C85640FC}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}

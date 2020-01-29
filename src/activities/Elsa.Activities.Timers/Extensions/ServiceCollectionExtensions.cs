@@ -2,10 +2,11 @@ using System;
 using Elsa.Activities.Timers;
 using Elsa.Activities.Timers.HostedServices;
 using Elsa.Activities.Timers.Options;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
 // ReSharper disable once CheckNamespace
-namespace Microsoft.Extensions.DependencyInjection
+namespace Elsa.Activities.Timers.Extensions
 {
     public static class ServiceCollectionExtensions
     {

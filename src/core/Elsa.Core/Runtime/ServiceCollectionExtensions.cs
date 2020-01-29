@@ -17,5 +17,12 @@ namespace Elsa.Runtime
             return services
                 .AddTransient<IStartupTask, TStartupTask>();
         }
+
+        public static IServiceCollection AddTaskExecutingServer(this IServiceCollection services)
+        {
+            return services
+                .AddStartupRunner()
+                .AddHostedService<StartupRunnerHostedService>();
+        }
     }
 }

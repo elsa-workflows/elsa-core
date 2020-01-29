@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Elsa.Models
 {
@@ -9,6 +10,29 @@ namespace Elsa.Models
             Variables = new Variables();
             Activities = new List<ActivityDefinition>();
             Connections = new List<ConnectionDefinition>();
+        }
+
+        public WorkflowDefinitionVersion(string id,
+            string definitionId,
+            int version, 
+            string name, 
+            string description, 
+            IEnumerable<ActivityDefinition> activities, 
+            IEnumerable<ConnectionDefinition> connections, 
+            bool isSingleton, 
+            bool isDisabled, 
+            Variables variables)
+        {
+            Id = id;
+            DefinitionId = definitionId;
+            Version = version;
+            Name = name;
+            Description = description;
+            Activities = activities.ToList();
+            Connections = connections.ToList();
+            IsSingleton = isSingleton;
+            IsDisabled = isDisabled;
+            Variables = variables;
         }
 
         public string? Id { get; set; }

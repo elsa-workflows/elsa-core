@@ -22,6 +22,15 @@ namespace Elsa.Models
             State = new Variables();
         }
 
+        public ActivityDefinition(string id, string type, Variables state, int left = 0, int top = 0)
+        {
+            Id = id;
+            Type = type;
+            Left = left;
+            Top = top;
+            State = new Variables(state);
+        }
+
         public string Id { get; set; }
         public string Type { get; set; }
 

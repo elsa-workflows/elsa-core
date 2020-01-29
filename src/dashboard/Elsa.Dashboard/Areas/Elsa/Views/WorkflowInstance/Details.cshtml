@@ -1,0 +1,74 @@
+@using System.Globalization
+@model WorkflowInstanceDetailsModel
+<div id="workflowViewer" class="container-fluid mt-7">
+    <div class="row">
+        <div class="col-9">
+            <div class="card bg-secondary shadow">
+                <div class="card-header bg-white border-0">
+                    <div class="row align-items-center">
+                        <div class="col-8">
+                            <h3 id="editorCaption" class="mb-0">@Model.WorkflowDefinition.Name</h3>
+                            <small id="editorDescription" class="text-muted">@Model.WorkflowDefinition.Description</small>
+                        </div>
+                        <div class="col-4 text-right">
+                            <a href="#!" class="btn btn-secondary" onclick="exportWorkflow()">Download</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <vc:workflow-designer id="designerHost" activity-definitions="@Model.ActivityDefinitions" workflow="@Model.WorkflowModel" is-readonly="@true"/>
+                    <div class="text-center">
+                        <a href="@Model.ReturnUrl" class="btn btn-primary mt-4">Back</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-3" id="executionLog">
+            <div class="card shadow">
+                <div class="card-header bg-white border-0">
+                    <div class="row align-items-center">
+                        <div class="col-8">
+                            <h3 class="mb-0">Execution Log</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table align-items-center table-flush">
+                        <thead class="thead-light">
+                        <tr>
+                            <th scope="col">Timestamp</th>
+                            <th scope="col">Activity ID</th>
+                            <th scope="col">Message</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var item in Model.WorkflowInstance.ExecutionLog.OrderBy(x => x.Timestamp))
+                        {
+                            var statusClass = item.Faulted ? "bg-warning" : "bg-success";
+                            var message = item.Faulted ? item.Message : "";
+
+                            <tr data-activity-id="@item.ActivityId">
+                                <td>
+                                    <span class="badge badge-dot mr-4">
+                                        <i class=@statusClass></i>
+                                    </span>
+                                    @item.Timestamp.ToString("g", CultureInfo.CurrentCulture)
+                                </td>
+                                <td>@item.ActivityId</td>
+                                <td>@message</td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer py-4">
+                </div>
+            </div>
+        </div>
+        @await Html.PartialAsync("Footer")
+    </div>
+</div>
+
+@section FootScripts{
+    <script src="~/_content/Elsa.Dashboard/assets/js/workflow-instance-viewer.js"></script>
+}

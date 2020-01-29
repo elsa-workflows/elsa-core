@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Elsa.Comparers;
 using NodaTime;
 
@@ -21,6 +21,10 @@ namespace Elsa.Models
         public WorkflowStatus Status { get; set; }
         public string? CorrelationId { get; set; }
         public Instant CreatedAt { get; set; }
+        public Instant? StartedAt { get; set; }
+        public Instant? FinishedAt { get; set; }
+        public Instant? FaultedAt { get; set; }
+        public Instant? AbortedAt { get; set; }
         public Variables Variables { get; set; }
         public Variable? Output { get; set; }
         public ICollection<ActivityInstance> Activities { get; set; }

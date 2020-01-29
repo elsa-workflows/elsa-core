@@ -11,6 +11,10 @@ using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Elsa.Persistence.MongoDb.Extensions;
+using Elsa.Activities.Email.Extensions;
+using Elsa.Activities.Timers.Extensions;
+
 
 namespace Elsa.Server.Host
 {

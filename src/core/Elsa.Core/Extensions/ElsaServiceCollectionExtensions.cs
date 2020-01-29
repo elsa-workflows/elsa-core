@@ -117,7 +117,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<MemoryWorkflowDefinitionStore>()
                 .AddSingleton<MemoryWorkflowInstanceStore>()
                 .AddStartupRunner()
-                .AddScoped<IActivityResolver, ActivityResolver>()
+                .AddTransient<IActivityResolver, ActivityResolver>()
                 .AddTransient<IWorkflowProvider, StoreWorkflowProvider>()
                 .AddTransient<IWorkflowProvider, CodeWorkflowProvider>()
                 .AddTransient<WorkflowBuilder>()
