@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>netcoreapp3.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <Compile Remove="Migrations\20191021193326_InitialCreate.cs" />
+      <Compile Remove="Migrations\20191021193326_InitialCreate.Designer.cs" />
+      <Compile Remove="Migrations\20200129125911_SecondMigration.cs" />
+      <Compile Remove="Migrations\20200129125911_SecondMigration.Designer.cs" />
+      <Compile Remove="Migrations\20200129130547_InitialCreateByMilan.cs" />
+      <Compile Remove="Migrations\20200129130547_InitialCreateByMilan.Designer.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\core\Elsa\Elsa.csproj" />
+        <ProjectReference Include="..\..\providers\Elsa.Persistence.EntityFrameworkCore\Elsa.Persistence.EntityFrameworkCore.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="3.1.1" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="3.1.1" />
+    </ItemGroup>
+
+</Project>
