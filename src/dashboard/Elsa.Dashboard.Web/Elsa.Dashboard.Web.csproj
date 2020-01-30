@@ -8,7 +8,6 @@
         <ProjectReference Include="..\..\core\Elsa\Elsa.csproj" />
         <ProjectReference Include="..\..\dashboard\Elsa.Dashboard\Elsa.Dashboard.csproj" />
         <ProjectReference Include="..\..\providers\Elsa.Persistence.EntityFrameworkCore\Elsa.Persistence.EntityFrameworkCore.csproj" />
-        <ProjectReference Include="..\..\providers\Elsa.Persistence.MongoDb\Elsa.Persistence.MongoDb.csproj" />
     </ItemGroup>
 
 </Project>
