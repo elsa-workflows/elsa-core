@@ -7,10 +7,10 @@ using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
-namespace Elsa.Persistence.EntityFrameworkCore.Migrations.Sqlite
+namespace Elsa.Persistence.EntityFrameworkCore.Migrations
 {
     [DbContext(typeof(SqliteContext))]
-    [Migration("20200130145051_InitialCreate")]
+    [Migration("20200131093524_InitialCreate")]
     partial class InitialCreate
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

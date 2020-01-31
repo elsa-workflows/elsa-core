@@ -1,4 +1,4 @@
-﻿using Elsa.Models;
+using Elsa.Models;
 using GraphQL.Types;
 
 namespace Elsa.Server.GraphQL.Types
@@ -11,7 +11,7 @@ namespace Elsa.Server.GraphQL.Types
 
             Field(x => x.SourceActivityId).Description("The source activity ID to connect from.");
             Field(x => x.Outcome).Description("The source activity outcome to connect from.");
-            Field(x => x.TargetActivityId).Description("The destination activity ID to connect to.");
+            Field(x => x.DestinationActivityId).Description("The destination activity ID to connect to.");
         }
     }
 }
