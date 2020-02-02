@@ -1,19 +1,19 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
     <PropertyGroup>
-        <TargetFramework>netcoreapp3.0</TargetFramework>
+        <TargetFramework>netcoreapp3.1</TargetFramework>
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\providers\Elsa.Persistence.MongoDb\Elsa.Persistence.MongoDb.csproj" />
-      <ProjectReference Include="..\Elsa.Server.Core\Elsa.Server.Core.csproj" />
-      <ProjectReference Include="..\Elsa.Server.GraphQL\Elsa.Server.GraphQL.csproj" />
+        <ProjectReference Include="..\..\providers\Elsa.Persistence.MongoDb\Elsa.Persistence.MongoDb.csproj"/>
+        <ProjectReference Include="..\Elsa.Server.Core\Elsa.Server.Core.csproj"/>
+        <ProjectReference Include="..\Elsa.Server.GraphQL2\Elsa.Server.GraphQL2.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="GraphQL.Server.Ui.GraphiQL" Version="3.4.0" />
-      <PackageReference Include="GraphQL.Server.Ui.Playground" Version="3.4.0" />
-      <PackageReference Include="GraphQL.Server.Ui.Voyager" Version="3.4.0" />
+        <PackageReference Include="GraphQL.Server.Ui.GraphiQL" Version="3.4.0"/>
+        <PackageReference Include="GraphQL.Server.Ui.Playground" Version="3.4.0"/>
+        <PackageReference Include="GraphQL.Server.Ui.Voyager" Version="3.4.0"/>
     </ItemGroup>
 
 </Project>

@@ -1,17 +1,7 @@
 version: '3.7'
 
 services:
-    elsa-dashboard:
-        build: .
-        environment:
-            - Elsa:Smtp:Host=smtp4dev
-            - ConnectionStrings:MongoDb=mongodb://mongodb
-        ports:
-            - "22174:80"
-        depends_on:
-            - mongodb
-            - smtp4dev
-
+    
     mongodb:
         image: mongo
         ports:

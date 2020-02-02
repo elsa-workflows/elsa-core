@@ -5,9 +5,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.RequestHandlers.Results;
 using Elsa.Activities.Http.Services;
+using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services;
+using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Activities.Http.RequestHandlers.Handlers
@@ -35,42 +37,37 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
 
         public async Task<IRequestHandlerResult> HandleRequestAsync()
         {
-            // // TODO: Optimize this by building up a hash of routes and workflows to execute.
-            // var requestPath = new Uri(httpContext.Request.Path.ToString(), UriKind.Relative);
-            // var method = httpContext.Request.Method;
-            // var httpWorkflows = await registry.ListByStartActivityAsync(nameof(ReceiveHttpRequest), cancellationToken);
-            // var workflowsToStart = Filter(httpWorkflows, requestPath, method).ToList();
-            // var haltedHttpWorkflows = await workflowInstanceStore.ListByBlockingActivityAsync<ReceiveHttpRequest>(
-            //     cancellationToken: cancellationToken);
-            //
-            // var workflowsToResume = Filter(haltedHttpWorkflows, requestPath, method).ToList();
-            //
-            // if (!workflowsToStart.Any() && !workflowsToResume.Any())
-            //     return new NextResult();
-            //
-            // await InvokeWorkflowsToStartAsync(workflowsToStart);
-            // await InvokeWorkflowsToResumeAsync(workflowsToResume);
+            // TODO: Optimize this by building up a hash of routes and workflows to execute.
+            var requestPath = new Uri(httpContext.Request.Path.ToString(), UriKind.Relative);
+            var method = httpContext.Request.Method;
+            var httpWorkflows = await registry.GetWorkflowsByStartActivityAsync<ReceiveHttpRequest>(cancellationToken);
+            var workflowsToStart = Filter(httpWorkflows, requestPath, method).ToList();
+            var suspendedWorkflows = await workflowInstanceStore.ListByBlockingActivityAsync<ReceiveHttpRequest>(cancellationToken: cancellationToken);
+
+            var workflowsToResume = Filter(suspendedWorkflows, requestPath, method).ToList();
+
+            if (!workflowsToStart.Any() && !workflowsToResume.Any())
+                return new NextResult();
+
+            await InvokeWorkflowsToStartAsync(workflowsToStart);
+            await InvokeWorkflowsToResumeAsync(workflowsToResume);
 
             return !httpContext.Items.ContainsKey(WorkflowHttpResult.Instance)
                 ? (IRequestHandlerResult)new AcceptedResult()
                 : new EmptyResult();
         }
 
-        private IEnumerable<(WorkflowInstance, ActivityInstance)> Filter(
-            IEnumerable<(WorkflowInstance, ActivityInstance)> items,
+        private IEnumerable<(WorkflowInstance WorkflowInstance, ActivityInstance BlockingActivity)> Filter(
+            IEnumerable<(WorkflowInstance WorkflowInstance, ActivityInstance BlockingActivity)> items,
             Uri path,
-            string method)
-        {
-            return items.Where(x => IsMatch(x.Item2.State, path, method));
-        }
+            string method) =>
+            items.Where(x => IsMatch(x.BlockingActivity.State, path, method));
 
-        // private IEnumerable<(WorkflowBlueprint, IActivity)> Filter(
-        //     IEnumerable<(WorkflowBlueprint, IActivity)> items,
-        //     Uri path,
-        //     string method)
-        // {
-        //     return items.Where(x => IsMatch(x.Item2.State, path, method));
-        // }
+        private IEnumerable<(Workflow Workflow, IActivity Activity)> Filter(
+            IEnumerable<(Workflow Workflow, IActivity Activity)> items,
+            Uri path,
+            string method) =>
+            items.Where(x => IsMatch(x.Activity.State, path, method));
 
         private bool IsMatch(Variables state, Uri path, string method)
         {
@@ -79,28 +76,26 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
             return (string.IsNullOrWhiteSpace(m) || m == method) && p == path;
         }
 
-        // private async Task InvokeWorkflowsToStartAsync(
-        //     IEnumerable<(WorkflowBlueprint, IActivity)> items)
-        // {
-        //     foreach (var item in items)
-        //     {
-        //         await workflowRunner.RunAsync(
-        //             item.Item1,
-        //             default,
-        //             new[] { item.Item2.Id },
-        //             cancellationToken: cancellationToken);
-        //     }
-        // }
+        private async Task InvokeWorkflowsToStartAsync(
+            IEnumerable<(Workflow Workflow, IActivity Activity)> items)
+        {
+            foreach (var (workflow, activity) in items)
+            {
+                await workflowHost.RunWorkflowAsync(
+                    workflow,
+                    activity.Id,
+                    cancellationToken: cancellationToken);
+            }
+        }
 
         private async Task InvokeWorkflowsToResumeAsync(IEnumerable<(WorkflowInstance, ActivityInstance)> items)
         {
             foreach (var (workflowInstance, activity) in items)
             {
-                // await processRunner.ResumeAsync(
-                //     workflowInstance,
-                //     default,
-                //     new[] { activity.Id },
-                //     cancellationToken);
+                await workflowHost.RunWorkflowInstanceAsync(
+                    workflowInstance,
+                    activity.Id,
+                    cancellationToken: cancellationToken);
             }
         }
     }

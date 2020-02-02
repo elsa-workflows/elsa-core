@@ -53,7 +53,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .UseWorkflowDefinitionStore(sp => sp.GetRequiredService<MongoWorkflowDefinitionStore>())
                 .Services
                 .AddMongoDbCollection<WorkflowDefinitionVersion>("WorkflowDefinitions")
-                .AddScoped<IWorkflowDefinitionStore, MongoWorkflowDefinitionStore>();
+                .AddScoped<MongoWorkflowDefinitionStore>();
 
             return options;
         }

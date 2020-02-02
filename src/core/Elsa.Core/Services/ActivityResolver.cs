@@ -53,5 +53,7 @@ namespace Elsa.Services
             setup?.Invoke(activity);
             return activity;
         }
+
+        public IEnumerable<Type> GetActivityTypes() => ActivityTypeLookup.Values.ToList();
     }
 }

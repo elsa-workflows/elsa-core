@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\core\Elsa\Elsa.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="HotChocolate.AspNetCore" Version="10.3.5" />
+      <PackageReference Include="HotChocolate.AspNetCore.Playground" Version="10.3.5" />
+      <PackageReference Include="HotChocolate.AspNetCore.Voyager" Version="10.3.5" />
+    </ItemGroup>
+
+</Project>

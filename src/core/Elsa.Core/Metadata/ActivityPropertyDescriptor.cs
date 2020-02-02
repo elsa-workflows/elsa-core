@@ -13,8 +13,8 @@ namespace Elsa.Metadata
         
         public string Name { get; }
         public string Type { get; }
-        public string Label { get; }
-        public string Hint { get; }
-        public object Options { get; }
+        public string? Label { get; }
+        public string? Hint { get; }
+        public object? Options { get; }
     }
 }
