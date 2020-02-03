@@ -1,0 +1,25 @@
+{
+  "entries": [
+    "components\\context-menu\\context-menu-item.js",
+    "components\\field-editors\\boolean-field\\boolean-field.js",
+    "components\\field-editors\\list-field\\list-field.js",
+    "components\\field-editors\\text-field\\text-field.js",
+    "components\\field-editors\\expression-field\\expression-field.js",
+    "components\\field-editors\\select-field\\select-field.js",
+    "components\\context-menu\\context-menu.js",
+    "components\\workflow-designer\\activity-editor\\activity-editor.js",
+    "components\\workflow-designer\\activity-picker\\activity-picker.js",
+    "components\\workflow-designer\\activity-renderer\\activity-renderer.js",
+    "components\\workflow-designer\\import-export\\export-button.js",
+    "components\\workflow-designer\\import-export\\import-export.js",
+    "components\\workflow-designer\\designer-host\\designer-host.js",
+    "components\\workflow-designer\\designer\\designer.js"
+  ],
+  "compiler": {
+    "name": "@stencil/core",
+    "version": "1.2.3",
+    "typescriptVersion": "3.5.3"
+  },
+  "collections": [],
+  "bundles": []
+}

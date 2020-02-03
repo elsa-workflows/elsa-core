@@ -110,7 +110,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddScoped<IExpressionEvaluator, ExpressionEvaluator>()
                 .AddSingleton<IWorkflowSerializerProvider, WorkflowSerializerProvider>()
                 .AddTransient<IWorkflowRegistry, WorkflowRegistry>()
-                .AddSingleton<IWorkflowScheduler, WorkflowScheduler>()
+                .AddScoped<IWorkflowScheduler, WorkflowScheduler>()
                 .AddSingleton<IWorkflowSchedulerQueue, WorkflowSchedulerQueue>()
                 .AddScoped<IWorkflowHost, WorkflowHost>()
                 .AddSingleton<IWorkflowActivator, WorkflowActivator>()

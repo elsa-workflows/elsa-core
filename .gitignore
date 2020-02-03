@@ -39,8 +39,6 @@ packages/
 #Rider
 .idea
 
-#wwwroot
-wwwroot/
 
 #npm
 node_modules/
