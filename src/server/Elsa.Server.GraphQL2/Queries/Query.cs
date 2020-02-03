@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Elsa.Metadata;
-using Elsa.Models;
 using Elsa.Services;
 
 namespace Elsa.Server.GraphQL2.Queries
@@ -17,5 +16,12 @@ namespace Elsa.Server.GraphQL2.Queries
 
         public IEnumerable<ActivityDescriptor> GetActivityDescriptors() => 
             activityResolver.GetActivityTypes().Select(ActivityDescriber.Describe).ToList();
+        
+        public ActivityDescriptor? GetActivityDescriptor(string typeName)
+        {
+            var type = activityResolver.GetActivityType(typeName);
+
+            return type == null ? default : ActivityDescriber.Describe(type);
+        }
     }
 }

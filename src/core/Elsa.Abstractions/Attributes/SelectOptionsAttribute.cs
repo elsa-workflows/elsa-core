@@ -11,10 +11,8 @@ namespace Elsa.Attributes
         {
         }
 
-        public SelectOptionsAttribute(params string[] items)
-        {
-            Items = items.Cast<object>().ToArray();
-        }
+        public SelectOptionsAttribute(params string[] items) => 
+            Items = items.Select(x => new SelectOption(x)).ToArray();
 
         public SelectOptionsAttribute(string optionsProviderMethod, Type providerType)
         {
@@ -22,72 +20,53 @@ namespace Elsa.Attributes
             ProviderType = providerType;
         }
 
-        public object[]? Items { get; }
+        public SelectOption[] Items { get; }
         public string? OptionsProviderMethod { get; }
         public Type? ProviderType { get; }
 
         public override object GetOptions()
         {
             if (Items != null)
-                return new
-                {
-                    Items
-                };
+                return new SelectOptions(Items);
 
-            
             var selectItems = GetItemsFromProvider();
-            return new
-            {
-                Items = selectItems.Select(ToObject).ToArray()
-            };
+
+            return new SelectOptions(selectItems);
         }
 
-        private IEnumerable<object> GetItemsFromProvider()
+        private IEnumerable<SelectOption> GetItemsFromProvider()
         {
+            if (ProviderType == null || OptionsProviderMethod == null)
+                return Enumerable.Empty<SelectOption>();
+
             var method = ProviderType.GetMethod(OptionsProviderMethod, BindingFlags.Public | BindingFlags.Static);
 
-            return (IEnumerable<object>) method.Invoke(null, null);
-        }
+            if (method == null)
+                throw new InvalidOperationException($"No static method called {OptionsProviderMethod} exists on type ${ProviderType}");
 
-        private object ToObject(object item)
-        {
-            if ((item is SelectItem selectItem) && selectItem.Options != null && selectItem.Label == null)
-                return selectItem.Options;
-
-            return item;
+            return (IEnumerable<SelectOption>)method.Invoke(null, null);
         }
     }
 
-    public class SelectItem
-    {
-        public string? Label { get; set; }
-        public object[]? Options { get; set; }
-    }
-    
-    public class SelectOption<T>
+    public class SelectOption
     {
         public SelectOption()
         {
         }
 
-        public SelectOption(string? label, T value)
+        public SelectOption(string label, string value = default)
         {
             Label = label;
             Value = value;
         }
-        
-        public string? Label { get; set; }
-        public T Value { get; set; }
-    }
-    
-    public class SelectOption : SelectOption<string>
-    {
-        public SelectOption()
-        {
-        }
 
-        public SelectOption(string label, string value) : base(label, value)
-        {
-        }
+        public string? Value { get; set; }
+        public string Label { get; set; }
+    }
+
+    public class SelectOptions
+    {
+        public SelectOptions(IEnumerable<SelectOption> items) => Items = items;
+        public IEnumerable<SelectOption> Items { get; }
     }
 }

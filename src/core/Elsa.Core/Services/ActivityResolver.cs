@@ -55,5 +55,6 @@ namespace Elsa.Services
         }
 
         public IEnumerable<Type> GetActivityTypes() => ActivityTypeLookup.Values.ToList();
+        public Type? GetActivityType(string activityTypeName) => ActivityTypeLookup.ContainsKey(activityTypeName) ? ActivityTypeLookup[activityTypeName] : default;
     }
 }

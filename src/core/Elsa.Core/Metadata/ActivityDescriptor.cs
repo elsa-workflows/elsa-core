@@ -9,7 +9,7 @@ namespace Elsa.Metadata
             Category = "Miscellaneous";
             DisplayName = "Activity";
             Properties = new ActivityPropertyDescriptor[0];
-            Outcomes = null;
+            Outcomes = new string[0];
         }
         
         public string Type { get; set; }
@@ -18,7 +18,7 @@ namespace Elsa.Metadata
         public string RuntimeDescription { get; set; }
         public string Category { get; set; }
         public string? Icon { get; set; }
-        public object? Outcomes { get; set; }
+        public string[] Outcomes { get; set; }
         public ActivityPropertyDescriptor[] Properties { get; set; }
     }
 }

@@ -11,6 +11,6 @@ namespace Elsa.Attributes
         public string? RuntimeDescription { get; set; }
         public string? Category { get; set; }
         public string? Icon { get; set; }
-        public object? Outcomes { get; set; }
+        public string[]? Outcomes { get; set; }
     }
 }

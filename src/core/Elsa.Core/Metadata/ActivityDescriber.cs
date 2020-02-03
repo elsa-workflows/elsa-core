@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using Elsa.Attributes;
 using Elsa.Design;
+using Elsa.Expressions;
 using Elsa.Services;
 using Humanizer;
 
@@ -60,7 +61,7 @@ namespace Elsa.Metadata
                 yield return new ActivityPropertyDescriptor
                 (
                     (activityProperty.Name ?? propertyInfo.Name).Camelize(),
-                    (activityProperty.Type ?? DeterminePropertyType(propertyInfo)).Camelize(),
+                    (activityProperty.Type ?? DeterminePropertyType(propertyInfo)).Pascalize(),
                     activityProperty.Label ?? propertyInfo.Name.Humanize(LetterCasing.Title),
                     activityProperty.Hint,
                     GetPropertyTypeOptions(propertyInfo)
@@ -72,15 +73,15 @@ namespace Elsa.Metadata
         {
             var optionsAttribute = propertyInfo.GetCustomAttribute<ActivityPropertyOptionsAttribute>();
 
-            return optionsAttribute?.GetOptions() ?? new object();
+            return optionsAttribute?.GetOptions();
         }
 
         private static string DeterminePropertyType(PropertyInfo propertyInfo)
         {
             var type = propertyInfo.PropertyType;
 
-            // if (typeof(IWorkflowScriptExpression).IsAssignableFrom(type))
-            //     return ActivityPropertyTypes.Expression;
+            if (typeof(IWorkflowExpression).IsAssignableFrom(type))
+                return ActivityPropertyTypes.Expression;
 
             if (type == typeof(bool) || type == typeof(bool?))
                 return ActivityPropertyTypes.Boolean;

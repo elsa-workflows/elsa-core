@@ -12,7 +12,12 @@ using Elsa.Services.Models;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.ControlFlow
 {
-    [ActivityDefinition(Category = "Control Flow", Description = "Iterate over a collection.", Icon = "far fa-circle")]
+    [ActivityDefinition(
+        Category = "Control Flow",
+        Description = "Iterate over a collection.",
+        Icon = "far fa-circle",
+        Outcomes = new[] { OutcomeNames.Iterate, OutcomeNames.Done }
+    )]
     public class ForEach : Activity
     {
         [ActivityProperty(Hint = "Enter an expression that evaluates to a collection of items to iterate over.")]
@@ -21,7 +26,7 @@ namespace Elsa.Activities.ControlFlow
             get => GetState<IWorkflowExpression<ICollection<object>>>();
             set => SetState(value);
         }
-        
+
         private int? CurrentIndex
         {
             get => GetState<int?>();

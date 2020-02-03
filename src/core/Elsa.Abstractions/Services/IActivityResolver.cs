@@ -8,5 +8,6 @@ namespace Elsa.Services
         IActivity ResolveActivity(string activityTypeName, Action<IActivity>? setup = default);
         T ResolveActivity<T>(Action<T>? configure = default) where T : class, IActivity;
         IEnumerable<Type> GetActivityTypes();
+        Type? GetActivityType(string activityTypeName);
     }
 }

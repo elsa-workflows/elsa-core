@@ -4,12 +4,16 @@ namespace Elsa.Attributes
     {
         public bool Multiline { get; set; }
 
-        public override object GetOptions()
+        public override object GetOptions() => new ExpressionOptions(Multiline);
+    }
+
+    public class ExpressionOptions
+    {
+        public ExpressionOptions(bool multiline)
         {
-            return new
-            {
-                Multiline
-            };
+            Multiline = multiline;
         }
+
+        public bool Multiline { get; }
     }
 }

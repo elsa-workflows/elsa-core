@@ -6,6 +6,8 @@ services:
         image: mongo
         ports:
             - "27017:27017"
+        volumes:
+            - /var/lib/mongodb:/var/lib/mongodb
 
     smtp4dev:
         image: opvolger/rnwoodsmtp4dev

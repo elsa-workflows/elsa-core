@@ -11,7 +11,7 @@ namespace Elsa.Activities.ControlFlow
         Category = "Control Flow",
         Description = "Fork workflow execution into multiple branches.",
         Icon = "fas fa-code-branch fa-rotate-180",
-        Outcomes = "x => x.state.branches")]
+        Outcomes = new[] { "x => x.state.branches" })]
     public class Fork : Activity
     {
         [ActivityProperty(

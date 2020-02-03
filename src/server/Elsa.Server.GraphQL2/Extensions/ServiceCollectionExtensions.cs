@@ -13,6 +13,9 @@ namespace Elsa.Server.GraphQL2.Extensions
                 .AddServices(sp)
                 .AddQueryType<Query>()
                 .AddType<ActivityDescriptorType>()
+                .AddType<ActivityPropertyDescriptorType>()
+                .AddType<SelectOptionsType>()
+                .AddType<ExpressionOptionsType>()
                 .Create());
         }
     }

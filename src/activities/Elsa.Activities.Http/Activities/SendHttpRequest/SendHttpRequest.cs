@@ -24,8 +24,7 @@ namespace Elsa.Activities.Http
         Category = "HTTP",
         DisplayName = "Send HTTP Request",
         Description = "Send an HTTP request.",
-        RuntimeDescription = "x => !!x.state.url ? `Send HTTP <strong>${ x.state.method } ${ x.state.url.expression }</strong>.` : x.definition.description",
-        Outcomes = "x => !!x.state.supportedStatusCodes ? ['Done', 'UnSupportedStatusCode', ...x.state.supportedStatusCodes] : ['Done', 'UnSupportedStatusCode']"
+        Outcomes = new[] { OutcomeNames.Done, "x => !!x.state.supportedStatusCodes ? ['UnSupportedStatusCode', ...x.state.supportedStatusCodes] : ['UnSupportedStatusCode']" }
     )]
     public class SendHttpRequest : Activity
     {
@@ -155,8 +154,8 @@ namespace Elsa.Activities.Http
             var statusOutcome = statusCode.ToString();
             var isSupportedStatusCode = SupportedStatusCodes.Contains(statusCode);
             var outcomes = new List<string> { OutcomeNames.Done, statusOutcome };
-            
-            if(!isSupportedStatusCode)
+
+            if (!isSupportedStatusCode)
                 outcomes.Add("UnSupportedStatusCode");
 
             return Done(outcomes, responseModel);
@@ -183,7 +182,7 @@ namespace Elsa.Activities.Http
                 var body = await context.EvaluateAsync(Content, cancellationToken);
                 var contentType = await context.EvaluateAsync(ContentType, cancellationToken);
 
-                if (!string.IsNullOrWhiteSpace(body)) 
+                if (!string.IsNullOrWhiteSpace(body))
                     request.Content = new StringContent(body, Encoding.UTF8, contentType);
             }
 

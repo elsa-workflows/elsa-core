@@ -33,6 +33,12 @@ namespace Elsa.Server.Host
             services
                 .AddElsaServer()
                 .AddElsaGraphQL()
+                
+                .AddCors(options => options.AddDefaultPolicy(cors => cors
+                    .AllowAnyOrigin()
+                    .AllowAnyMethod()
+                    .AllowAnyHeader()))
+                
                 .AddConsoleActivities()
                 .AddHttp(options => options.Bind(elsaSection.GetSection("Http")))
                 .AddEmail(options => options.Bind(elsaSection.GetSection("Smtp")))
@@ -48,7 +54,7 @@ namespace Elsa.Server.Host
             }
 
             app
-                .UseWebSockets()
+                .UseCors()
                 .UseGraphQL("/graphql")
                 .UsePlayground("/graphql")
                 .UseVoyager("/graphql")
