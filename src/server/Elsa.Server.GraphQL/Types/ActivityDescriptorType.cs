@@ -1,7 +1,7 @@
 using Elsa.Metadata;
 using HotChocolate.Types;
 
-namespace Elsa.Server.GraphQL2.Types
+namespace Elsa.Server.GraphQL.Types
 {
     public class ActivityDescriptorType : ObjectType<ActivityDescriptor>
     {

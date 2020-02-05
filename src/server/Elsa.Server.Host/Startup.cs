@@ -1,5 +1,5 @@
 using Elsa.Runtime;
-using Elsa.Server.GraphQL2.Extensions;
+using Elsa.Server.GraphQL.Extensions;
 using Elsa.StartupTasks;
 using HotChocolate.AspNetCore;
 using HotChocolate.AspNetCore.Voyager;

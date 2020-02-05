@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Elsa.Attributes;
 using Elsa.Design;
+using Elsa.Models;
 using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;

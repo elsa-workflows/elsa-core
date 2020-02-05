@@ -1,7 +1,6 @@
-using Elsa.Server.GraphQL2.Queries;
 using HotChocolate.Types;
 
-namespace Elsa.Server.GraphQL2.Types
+namespace Elsa.Server.GraphQL.Types
 {
     public class QueryType : ObjectType<Query>
     {

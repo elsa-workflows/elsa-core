@@ -8,16 +8,16 @@ namespace Elsa.Services
     {
         WorkflowDefinitionVersion New();
         
-        Task<WorkflowDefinitionVersion> PublishAsync(string id, CancellationToken cancellationToken);
+        Task<WorkflowDefinitionVersion> PublishAsync(string id, CancellationToken cancellationToken = default);
 
         Task<WorkflowDefinitionVersion> PublishAsync(
             WorkflowDefinitionVersion workflowDefinition,
-            CancellationToken cancellationToken);
+            CancellationToken cancellationToken = default);
 
-        Task<WorkflowDefinitionVersion> GetDraftAsync(string id, CancellationToken cancellationToken);
+        Task<WorkflowDefinitionVersion> GetDraftAsync(string id, CancellationToken cancellationToken= default);
 
         Task<WorkflowDefinitionVersion> SaveDraftAsync(
             WorkflowDefinitionVersion workflowDefinition,
-            CancellationToken cancellationToken);
+            CancellationToken cancellationToken = default);
     }
 }
