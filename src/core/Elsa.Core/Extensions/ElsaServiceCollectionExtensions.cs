@@ -99,7 +99,6 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IWorkflowSerializerProvider, WorkflowSerializerProvider>()
                 .AddSingleton<IWorkflowSerializer, WorkflowSerializer>()
                 .AddSingleton<VariableConverter>()
-                //.AddScoped<ActivityConverter>()
                 .AddSingleton<TypeConverter>()
                 .AddSingleton<ITypeMap, TypeMap>()
                 .TryAddProvider<ITokenFormatter, JsonTokenFormatter>(ServiceLifetime.Singleton)

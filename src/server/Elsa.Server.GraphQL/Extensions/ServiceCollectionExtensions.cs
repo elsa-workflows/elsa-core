@@ -13,6 +13,7 @@ namespace Elsa.Server.GraphQL.Extensions
         {
             return services
                 .AddScoped<IWorkflowPublisher, WorkflowPublisher>()
+                .AddSingleton<VersionOptionsConverter>()
                 .AddAutoMapperProfile<MappingProfile>(ServiceLifetime.Singleton)
                 .AddGraphQL(sp => SchemaBuilder.New()
                     .AddServices(sp)
@@ -28,6 +29,7 @@ namespace Elsa.Server.GraphQL.Extensions
                     .AddType<ActivityDefinitionInputType>()
                     .AddType<ConnectionDefinitionType>()
                     .AddType<WorkflowDefinitionVersionType>()
+                    .AddType<VersionOptionsInputType>()
                     .Create());
         }
     }

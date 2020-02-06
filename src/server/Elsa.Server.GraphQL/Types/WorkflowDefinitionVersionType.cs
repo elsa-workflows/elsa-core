@@ -7,7 +7,7 @@ namespace Elsa.Server.GraphQL.Types
     {
         protected override void Configure(IObjectTypeDescriptor<WorkflowDefinitionVersion> descriptor)
         {
-            descriptor.Field(x => x.Variables).Type<AnyType>();
+            descriptor.Field(x => x.Variables).Type<VariablesType>();
         }
     }
 }

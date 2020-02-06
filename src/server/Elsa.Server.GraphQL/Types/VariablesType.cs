@@ -29,7 +29,7 @@ namespace Elsa.Server.GraphQL.Types
 
             if (literal is StringValueNode stringNode)
             {
-                var variables = serializer.Deserialize<Variables>(stringNode.Value);
+                var variables = serializer.Deserialize<Variables>(stringNode.Value, JsonTokenFormatter.FormatName);
                 return variables;
             }
 
@@ -63,7 +63,7 @@ namespace Elsa.Server.GraphQL.Types
 
             if (serialized is string s)
             {
-                value = serializer.Deserialize<Variables>(s);
+                value = serializer.Deserialize<Variables>(s, JsonTokenFormatter.FormatName);
                 return true;
             }
 

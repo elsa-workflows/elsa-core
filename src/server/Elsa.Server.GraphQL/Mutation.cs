@@ -33,7 +33,7 @@ namespace Elsa.Server.GraphQL
             WorkflowInput workflowInput,
             CancellationToken cancellationToken)
         {
-            var workflowDefinition = await store.GetByIdAsync(id, VersionOptions.Latest, cancellationToken);
+            var workflowDefinition = await store.GetByIdAsync(id, cancellationToken);
 
             if (workflowInput.Activities != null)
                 workflowDefinition.Activities = workflowInput.Activities.Select(ToActivityDefinition).ToList();

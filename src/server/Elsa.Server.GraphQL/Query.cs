@@ -2,9 +2,11 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using AutoMapper;
 using Elsa.Metadata;
 using Elsa.Models;
 using Elsa.Persistence;
+using Elsa.Server.GraphQL.Models;
 using Elsa.Services;
 using HotChocolate;
 
@@ -23,19 +25,29 @@ namespace Elsa.Server.GraphQL
             return type == null ? default : ActivityDescriber.Describe(type);
         }
 
-        public async Task<IEnumerable<WorkflowDefinitionVersion>> GetWorkflowDefinitions([Service] IWorkflowDefinitionStore store, CancellationToken cancellationToken)
+        public async Task<IEnumerable<WorkflowDefinitionVersion>> GetWorkflowDefinitions(
+            VersionOptionsInput? version,
+            [Service] IWorkflowDefinitionStore store,
+            [Service] IMapper mapper,
+            CancellationToken cancellationToken)
         {
-            var x = (await store.ListAsync(VersionOptions.Latest, cancellationToken)).ToList();
-
-            foreach (var workflowDefinitionVersion in x)
-            {
-                workflowDefinitionVersion.Variables = new Variables(new Dictionary<string, object>
-                {
-                    ["Foo"] = "Bar"
-                });
-            }
+            var mappedVersion = mapper.Map<VersionOptions?>(version);
+            return await store.ListAsync(mappedVersion ?? VersionOptions.Latest, cancellationToken);
+        }
+        
+        public async Task<WorkflowDefinitionVersion> GetWorkflowDefinition(
+            string? id,
+            string? definitionId,
+            VersionOptionsInput? version,
+            [Service] IWorkflowDefinitionStore store,
+            [Service] IMapper mapper,
+            CancellationToken cancellationToken)
+        {
+            if (id != null)
+                return await store.GetByIdAsync(id, cancellationToken);
             
-            return x;
+            var mappedVersion = mapper.Map<VersionOptions?>(version);
+            return await store.GetByIdAsync(definitionId, mappedVersion ?? VersionOptions.Latest, cancellationToken);
         }
     }
 }
