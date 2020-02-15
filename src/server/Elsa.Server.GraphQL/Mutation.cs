@@ -14,34 +14,24 @@ namespace Elsa.Server.GraphQL
 {
     public class Mutation
     {
-        private readonly IWorkflowDefinitionStore workflowDefinitionStore;
-        private readonly IWorkflowInstanceStore workflowInstanceStore;
-        private readonly ITokenSerializer serializer;
-        private readonly IWorkflowPublisher publisher;
         private readonly IMapper mapper;
 
-        public Mutation(
-            IWorkflowDefinitionStore workflowDefinitionStore,
-            IWorkflowInstanceStore workflowInstanceStore,
-            ITokenSerializer serializer, 
-            IWorkflowPublisher publisher, 
-            IMapper mapper)
+        public Mutation(IMapper mapper)
         {
-            this.workflowDefinitionStore = workflowDefinitionStore;
-            this.workflowInstanceStore = workflowInstanceStore;
-            this.serializer = serializer;
-            this.publisher = publisher;
             this.mapper = mapper;
         }
-
+        
         public async Task<WorkflowDefinitionVersion> SaveWorkflowDefinition(
             string? id,
             WorkflowSaveAction saveAction,
             WorkflowInput workflowInput,
+            [Service] IWorkflowDefinitionStore store,
             [Service] IIdGenerator idGenerator,
+            [Service] ITokenSerializer serializer,
+            [Service] IWorkflowPublisher publisher,
             CancellationToken cancellationToken)
         {
-            var workflowDefinition = id != null ? await workflowDefinitionStore.GetByIdAsync(id, cancellationToken) : default;
+            var workflowDefinition = id != null ? await store.GetByIdAsync(id, cancellationToken) : default;
 
             if (workflowDefinition == null)
             {
@@ -89,9 +79,12 @@ namespace Elsa.Server.GraphQL
             return workflowDefinition;
         }
 
-        public async Task<int> DeleteWorkflowDefinition(string id, CancellationToken cancellationToken)
+        public async Task<int> DeleteWorkflowDefinition(
+            string id,
+            [Service] IWorkflowDefinitionStore store,
+            CancellationToken cancellationToken)
         {
-            return await workflowDefinitionStore.DeleteAsync(id, cancellationToken);
+            return await store.DeleteAsync(id, cancellationToken);
         }
 
         private ActivityDefinition ToActivityDefinition(ActivityDefinitionInput source) => mapper.Map<ActivityDefinition>(source);

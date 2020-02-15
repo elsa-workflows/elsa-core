@@ -53,5 +53,25 @@ namespace Elsa.Server.GraphQL
             var mappedVersion = mapper.Map<VersionOptions?>(version);
             return await store.GetByIdAsync(definitionId, mappedVersion ?? VersionOptions.Latest, cancellationToken);
         }
+
+        public async Task<IEnumerable<WorkflowInstance>> GetWorkflowInstances(
+            string definitionId, 
+            WorkflowStatus? status,
+            [Service] IWorkflowInstanceStore store,
+            CancellationToken cancellationToken)
+        {
+            if(status == null)
+                return await store.ListByDefinitionAsync(definitionId, cancellationToken);
+
+            return await store.ListByStatusAsync(definitionId, status.Value, cancellationToken);
+        }
+        
+        public async Task<WorkflowInstance> GetWorkflowInstance(
+            string id,
+            [Service] IWorkflowInstanceStore store,
+            CancellationToken cancellationToken)
+        {
+            return await store.GetByIdAsync(id, cancellationToken);
+        }
     }
 }

@@ -141,7 +141,9 @@ namespace Elsa.Services.Models
             workflowInstance.Status = Status;
             workflowInstance.CorrelationId = CorrelationId;
             workflowInstance.Output = Output;
-            workflowInstance.ExecutionLog = ExecutionLog.Select(x => new Elsa.Models.ExecutionLogEntry(x.Activity.Id, x.Timestamp)).ToList();
+
+            var executionLog = workflowInstance.ExecutionLog.Concat(ExecutionLog.Select(x => new Elsa.Models.ExecutionLogEntry(x.Activity.Id, x.Timestamp)));
+            workflowInstance.ExecutionLog = executionLog.ToList();
 
             if (WorkflowFault != null)
             {

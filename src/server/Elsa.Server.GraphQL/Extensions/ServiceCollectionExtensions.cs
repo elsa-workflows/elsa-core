@@ -31,6 +31,7 @@ namespace Elsa.Server.GraphQL.Extensions
                     .AddType<ConnectionDefinitionType>()
                     .AddType<WorkflowDefinitionVersionType>()
                     .AddType<VersionOptionsInputType>()
+                    .AddType<InstantType>()
                     .Create());
         }
     }

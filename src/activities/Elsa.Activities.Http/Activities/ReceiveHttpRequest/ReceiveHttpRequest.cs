@@ -87,8 +87,8 @@ namespace Elsa.Activities.Http
 
         protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            return context.WorkflowExecutionContext.IsFirstPass 
-                ? await ExecuteInternalAsync(context, cancellationToken) 
+            return context.WorkflowExecutionContext.IsFirstPass
+                ? await ExecuteInternalAsync(context, cancellationToken)
                 : Suspend();
         }
 
