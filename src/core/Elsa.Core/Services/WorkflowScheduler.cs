@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Comparers;
-using Elsa.Expressions;
 using Elsa.Extensions;
 using Elsa.Messaging.Distributed;
 using Elsa.Messaging.Domain;
@@ -12,9 +10,7 @@ using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services.Models;
 using MediatR;
-using NodaTime;
 using Rebus.Bus;
-using ScheduledActivity = Elsa.Services.Models.ScheduledActivity;
 
 namespace Elsa.Services
 {
@@ -118,7 +114,7 @@ namespace Elsa.Services
             var tuples = await workflowInstanceStore.ListByBlockingActivityAsync(activityType, correlationId, activityStatePredicate, cancellationToken);
 
             foreach (var (workflowInstance, blockingActivity) in tuples) 
-                await ScheduleWorkflowAsync(workflowInstance.Id, blockingActivity.ActivityId, input, cancellationToken);
+                await ScheduleWorkflowAsync(workflowInstance.Id, blockingActivity.Id, input, cancellationToken);
         }
 
         private async Task ScheduleWorkflowAsync(Workflow workflow, IActivity activity, object? input, string? correlationId, CancellationToken cancellationToken)

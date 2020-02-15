@@ -1,13 +1,9 @@
 using System;
-using System.Collections.Generic;
 using System.Net;
-using Elsa.Activities.Http;
 using Elsa.Activities.Http.Models;
 using Elsa.Builders;
 using Elsa.Expressions;
 using Elsa.Services.Models;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Headers;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.Http

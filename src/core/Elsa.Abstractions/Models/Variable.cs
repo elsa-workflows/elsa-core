@@ -17,7 +17,6 @@
         }
         
         public object? Value { get; set; }
-
-        public T GetValue<T>() => (T)Value;
+        public string Test { get; set; } = "Test";
     }
 }

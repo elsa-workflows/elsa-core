@@ -1,7 +1,4 @@
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Models;
@@ -52,7 +49,7 @@ namespace Elsa.Activities.Http
         /// The content to send along with the response
         /// </summary>
         [ActivityProperty(Hint = "The HTTP content to write.")]
-        [ExpressionOptions(Multiline = true)]
+        [WorkflowExpressionOptions(Multiline = true)]
         public IWorkflowExpression<string> Content
         {
             get => GetState<IWorkflowExpression<string>>();

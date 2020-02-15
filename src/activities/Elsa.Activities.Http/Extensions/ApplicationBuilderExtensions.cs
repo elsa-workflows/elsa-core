@@ -2,6 +2,7 @@ using Elsa.Activities.Http.Middleware;
 using Elsa.Activities.Http.RequestHandlers.Handlers;
 using Elsa.Activities.Http.Services;
 
+// ReSharper disable once CheckNamespace
 namespace Microsoft.AspNetCore.Builder
 {
     public static class ApplicationBuilderExtensions

@@ -1,12 +1,12 @@
+using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 
 namespace Elsa.Models
 {
     public class Variables : Dictionary<string, Variable>
     {
-        public static readonly Variables Empty = new Variables();
-
-        public Variables()
+        public Variables() : base(0, StringComparer.OrdinalIgnoreCase)
         {
         }
 
@@ -33,7 +33,19 @@ namespace Elsa.Models
 
         public T GetVariable<T>(string name)
         {
-            return ContainsKey(name) ? (T)this[name]?.Value : default;
+            if (!HasVariable(name))
+                return default;
+
+            var value = this[name]?.Value;
+
+            if (value == null)
+                return default;
+
+            if (value is T v)
+                return v;
+
+            var converter = TypeDescriptor.GetConverter(typeof(T));
+            return (T)converter.ConvertFrom(value);
         }
 
         public Variables SetVariable(string name, object value)
@@ -59,9 +71,6 @@ namespace Elsa.Models
             return this;
         }
 
-        public bool HasVariable(string name)
-        {
-            return ContainsKey(name);
-        }
+        public bool HasVariable(string name) => ContainsKey(name);
     }
 }

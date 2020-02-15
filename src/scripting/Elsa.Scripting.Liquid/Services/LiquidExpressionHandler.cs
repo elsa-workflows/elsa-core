@@ -23,12 +23,12 @@ namespace Elsa.Scripting.Liquid.Services
 
         public string Type => LiquidExpression.ExpressionType;
 
-        public async Task<object> EvaluateAsync(IWorkflowExpression expression, ActivityExecutionContext context, CancellationToken cancellationToken)
+        public async Task<object> EvaluateAsync(IWorkflowExpression expression, Type returnType, ActivityExecutionContext context, CancellationToken cancellationToken)
         {
             var liquidExpression = (LiquidExpression)expression;
             var templateContext = await CreateTemplateContextAsync(context);
-            var result = await liquidTemplateManager.RenderAsync(liquidExpression.Script, templateContext);
-            return string.IsNullOrWhiteSpace(result) ? default : Convert.ChangeType(result, liquidExpression.ReturnType);
+            var result = await liquidTemplateManager.RenderAsync(liquidExpression.Expression, templateContext);
+            return string.IsNullOrWhiteSpace(result) ? default : Convert.ChangeType(result, returnType);
         }
 
         private async Task<TemplateContext> CreateTemplateContextAsync(ActivityExecutionContext workflowContext)

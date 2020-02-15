@@ -18,7 +18,7 @@ namespace Elsa.Services.Models
             IClock clock,
             IServiceProvider serviceProvider,
             string definitionId,
-            string instanceId, 
+            string instanceId,
             int version,
             IEnumerable<IActivity> activities,
             IEnumerable<Connection> connections,
@@ -47,6 +47,7 @@ namespace Elsa.Services.Models
             PersistenceBehavior = persistenceBehavior;
             WorkflowFault = workflowFault;
             ExecutionLog = executionLog?.ToList() ?? new List<ExecutionLogEntry>();
+            IsFirstPass = true;
         }
 
         public IServiceProvider ServiceProvider { get; }
@@ -67,7 +68,7 @@ namespace Elsa.Services.Models
             foreach (var activity in activities)
                 ScheduleActivity(activity, input);
         }
-        
+
         public void ScheduleActivities(IEnumerable<ScheduledActivity> activities)
         {
             foreach (var activity in activities)
@@ -88,17 +89,19 @@ namespace Elsa.Services.Models
         public WorkflowPersistenceBehavior PersistenceBehavior { get; set; }
         public bool DeleteCompletedInstances { get; set; }
         public ICollection<ExecutionLogEntry> ExecutionLog { get; }
+        public bool IsFirstPass { get; private set; }
 
         public bool AddBlockingActivity(IActivity activity) => BlockingActivities.Add(activity);
         public void SetVariable(string name, object value) => Variables.SetVariable(name, value);
         public T GetVariable<T>(string name) => (T)GetVariable(name);
         public object GetVariable(string name) => Variables.GetVariable(name);
+        public void CompletePass() => IsFirstPass = false;
 
-        public Task<T> EvaluateAsync<T>(IWorkflowExpression<T> expression, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken) => 
+        public Task<T> EvaluateAsync<T>(IWorkflowExpression<T> expression, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken) =>
             ExpressionEvaluator.EvaluateAsync(expression, activityExecutionContext, cancellationToken);
 
-        public Task<object> EvaluateAsync(IWorkflowExpression expression, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken) =>
-            ExpressionEvaluator.EvaluateAsync(expression, activityExecutionContext, cancellationToken);
+        public Task<object> EvaluateAsync(IWorkflowExpression expression, Type targetType, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken) =>
+            ExpressionEvaluator.EvaluateAsync(expression, targetType, activityExecutionContext, cancellationToken);
 
         public void Suspend()
         {
@@ -115,7 +118,7 @@ namespace Elsa.Services.Models
         {
             Status = WorkflowStatus.Completed;
         }
-        
+
         public IActivity GetActivity(string id) => Activities.FirstOrDefault(x => x.Id == id);
 
         public WorkflowInstance CreateWorkflowInstance()
@@ -128,7 +131,7 @@ namespace Elsa.Services.Models
                 CreatedAt = Clock.GetCurrentInstant()
             });
         }
-        
+
         public WorkflowInstance UpdateWorkflowInstance(WorkflowInstance workflowInstance)
         {
             workflowInstance.Variables = Variables;
@@ -138,7 +141,9 @@ namespace Elsa.Services.Models
             workflowInstance.Status = Status;
             workflowInstance.CorrelationId = CorrelationId;
             workflowInstance.Output = Output;
-            workflowInstance.ExecutionLog = ExecutionLog.Select(x => new Elsa.Models.ExecutionLogEntry(x.Activity.Id, x.Timestamp)).ToList();
+
+            var executionLog = workflowInstance.ExecutionLog.Concat(ExecutionLog.Select(x => new Elsa.Models.ExecutionLogEntry(x.Activity.Id, x.Timestamp)));
+            workflowInstance.ExecutionLog = executionLog.ToList();
 
             if (WorkflowFault != null)
             {
@@ -148,7 +153,7 @@ namespace Elsa.Services.Models
                     Message = WorkflowFault.Message
                 };
             }
-            
+
             return workflowInstance;
         }
     }

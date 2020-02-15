@@ -1,8 +1,7 @@
-using Elsa.Activities.Console;
 using Elsa.Builders;
 
 // ReSharper disable once CheckNamespace
-namespace Elsa.Activities.ControlFlow
+namespace Elsa.Activities.Console
 {
     public static class ReadLineBuilderExtensions
     {

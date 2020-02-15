@@ -26,9 +26,9 @@ namespace Elsa.Activities.Http
     )]
     public class ReceiveHttpRequest : Activity
     {
-        public static Uri GetPath(Variables state)
+        public static PathString GetPath(Variables state)
         {
-            return state.GetState<Uri>(nameof(Path));
+            return state.GetState<PathString>(nameof(Path));
         }
 
         public static string GetMethod(Variables state)
@@ -85,9 +85,16 @@ namespace Elsa.Activities.Http
             set => SetState(value);
         }
 
-        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => Suspend();
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        {
+            return context.WorkflowExecutionContext.IsFirstPass
+                ? await ExecuteInternalAsync(context, cancellationToken)
+                : Suspend();
+        }
 
-        protected override async Task<IActivityExecutionResult> OnResumeAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        protected override Task<IActivityExecutionResult> OnResumeAsync(ActivityExecutionContext context, CancellationToken cancellationToken) => ExecuteInternalAsync(context, cancellationToken);
+
+        private async Task<IActivityExecutionResult> ExecuteInternalAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
             var request = httpContextAccessor.HttpContext.Request;
             var model = new HttpRequestModel

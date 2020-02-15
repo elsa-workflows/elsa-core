@@ -1,5 +1,6 @@
 using System;
 using Elsa.Activities.Http;
+using Elsa.Activities.Http.Models;
 using Elsa.Activities.Http.Options;
 using Elsa.Activities.Http.Parsers;
 using Elsa.Activities.Http.RequestHandlers.Handlers;
@@ -36,6 +37,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IHttpResponseBodyParser, JsonHttpResponseBodyParser>()
                 .AddSingleton<IActionContextAccessor, ActionContextAccessor>()
                 .AddSingleton<IAbsoluteUrlProvider, DefaultAbsoluteUrlProvider>()
+                .AddTypeAlias<HttpResponseHeaders>()
                 .AddHttpContextAccessor()
                 .AddNotificationHandlers(typeof(ServiceCollectionExtensions))
                 .AddDataProtection();

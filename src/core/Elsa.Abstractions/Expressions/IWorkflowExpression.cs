@@ -1,5 +1,3 @@
-using System;
-
 namespace Elsa.Expressions
 {
     public interface IWorkflowExpression<T> : IWorkflowExpression
@@ -9,6 +7,5 @@ namespace Elsa.Expressions
     public interface IWorkflowExpression
     {
         string Type { get; }
-        Type ReturnType { get; }
     }
 }

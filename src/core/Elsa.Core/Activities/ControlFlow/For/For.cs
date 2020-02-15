@@ -10,7 +10,12 @@ using Elsa.Services.Models;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.ControlFlow
 {
-    [ActivityDefinition(Category = "Control Flow", Description = "Iterate between two numbers.", Icon = "far fa-circle")]
+    [ActivityDefinition(
+        Category = "Control Flow",
+        Description = "Iterate between two numbers.",
+        Icon = "far fa-circle",
+        Outcomes = new[] { OutcomeNames.Iterate, OutcomeNames.Done }
+    )]
     public class For : Activity
     {
         [ActivityProperty(Hint = "An expression that evaluates to the starting number.")]
@@ -33,7 +38,7 @@ namespace Elsa.Activities.ControlFlow
             get => GetState<IWorkflowExpression<int>>(() => new CodeExpression<int>(() => 1));
             set => SetState(value);
         }
-        
+
         private int? CurrentValue
         {
             get => GetState<int?>();

@@ -1,11 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
-using Elsa.Comparers;
-using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Microsoft.Extensions.DependencyInjection;
-using NodaTime;
 
 namespace Elsa.Extensions
 {
