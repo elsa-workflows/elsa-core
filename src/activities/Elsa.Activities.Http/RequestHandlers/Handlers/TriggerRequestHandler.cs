@@ -38,7 +38,7 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
         public async Task<IRequestHandlerResult> HandleRequestAsync()
         {
             // TODO: Optimize this by building up a hash of routes and workflows to execute.
-            var requestPath = new Uri(httpContext.Request.Path.ToString(), UriKind.Relative);
+            var requestPath = httpContext.Request.Path;
             var method = httpContext.Request.Method;
             var httpWorkflows = await registry.GetWorkflowsByStartActivityAsync<ReceiveHttpRequest>(cancellationToken);
             var workflowsToStart = Filter(httpWorkflows, requestPath, method).ToList();
@@ -59,17 +59,17 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
 
         private IEnumerable<(WorkflowInstance WorkflowInstance, ActivityInstance BlockingActivity)> Filter(
             IEnumerable<(WorkflowInstance WorkflowInstance, ActivityInstance BlockingActivity)> items,
-            Uri path,
+            PathString path,
             string method) =>
             items.Where(x => IsMatch(x.BlockingActivity.State, path, method));
 
         private IEnumerable<(Workflow Workflow, IActivity Activity)> Filter(
             IEnumerable<(Workflow Workflow, IActivity Activity)> items,
-            Uri path,
+            PathString path,
             string method) =>
             items.Where(x => IsMatch(x.Activity.State, path, method));
 
-        private bool IsMatch(Variables state, Uri path, string method)
+        private bool IsMatch(Variables state, PathString path, string method)
         {
             var m = ReceiveHttpRequest.GetMethod(state);
             var p = ReceiveHttpRequest.GetPath(state);

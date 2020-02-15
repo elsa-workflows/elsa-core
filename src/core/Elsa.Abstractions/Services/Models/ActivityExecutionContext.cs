@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Expressions;
@@ -25,8 +26,11 @@ namespace Elsa.Services.Models
         public Task<T> EvaluateAsync<T>(IWorkflowExpression<T> expression, CancellationToken cancellationToken) =>
             WorkflowExecutionContext.EvaluateAsync(expression, this, cancellationToken);
         
+        public Task<object> EvaluateAsync(IWorkflowExpression expression, Type targetType, CancellationToken cancellationToken) =>
+            WorkflowExecutionContext.EvaluateAsync(expression, targetType, this, cancellationToken);
+        
         public Task<object> EvaluateAsync(IWorkflowExpression expression, CancellationToken cancellationToken) =>
-            WorkflowExecutionContext.EvaluateAsync(expression, this, cancellationToken);
+            WorkflowExecutionContext.EvaluateAsync(expression, typeof(object), this, cancellationToken);
 
         public void SetVariable(string name, object value) => WorkflowExecutionContext.SetVariable(name, value);
         public object GetVariable(string name) => WorkflowExecutionContext.GetVariable(name);

@@ -86,6 +86,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.DistributedLocking.Sql
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Server.GraphQL", "src\server\Elsa.Server.GraphQL\Elsa.Server.GraphQL.csproj", "{12D29DDC-A885-4CAA-908C-106D845B10C0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.Serialization", "src\samples\Elsa.Samples.Serialization\Elsa.Samples.Serialization.csproj", "{DF47517F-9029-44DF-A29F-F2DE15041473}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -192,6 +194,10 @@ Global
 		{12D29DDC-A885-4CAA-908C-106D845B10C0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{12D29DDC-A885-4CAA-908C-106D845B10C0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{12D29DDC-A885-4CAA-908C-106D845B10C0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DF47517F-9029-44DF-A29F-F2DE15041473}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DF47517F-9029-44DF-A29F-F2DE15041473}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DF47517F-9029-44DF-A29F-F2DE15041473}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DF47517F-9029-44DF-A29F-F2DE15041473}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -231,6 +237,7 @@ Global
 		{071DD6EC-D00C-4513-82B6-3FE8438061E3} = {5E5E1E84-DDBC-40D6-B891-0D563A15A44A}
 		{150EF356-E8BC-4922-91C2-362017479409} = {600C4AE0-0585-4181-9CEC-2BB43430C713}
 		{12D29DDC-A885-4CAA-908C-106D845B10C0} = {468E498C-59DB-4541-8D8A-0D89DE9083AB}
+		{DF47517F-9029-44DF-A29F-F2DE15041473} = {5E5E1E84-DDBC-40D6-B891-0D563A15A44A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}

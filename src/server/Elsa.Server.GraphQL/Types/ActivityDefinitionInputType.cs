@@ -6,7 +6,9 @@ namespace Elsa.Server.GraphQL.Types
     {
         protected override void Configure(IInputObjectTypeDescriptor<ActivityDefinitionInput> descriptor)
         {
-            descriptor.Field(x => x.State).Type<VariablesType>();
+            descriptor.Field(x => x.State).Type<StringType>();
+            //descriptor.Field(x => x.State).Type<MyAnyType>();
+            //descriptor.Field(x => x.State).Type<AnyType>();
         }
     }
 }

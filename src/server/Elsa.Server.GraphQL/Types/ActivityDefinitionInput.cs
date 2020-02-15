@@ -1,5 +1,3 @@
-using Elsa.Models;
-
 namespace Elsa.Server.GraphQL.Types
 {
     public class ActivityDefinitionInput
@@ -11,6 +9,6 @@ namespace Elsa.Server.GraphQL.Types
         public string? Description { get; set; }
         public int? Left { get; set; }
         public int? Top { get; set; }
-        public Variables? State { get; set; }
+        public string? State { get; set; }
     }
 }

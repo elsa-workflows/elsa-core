@@ -1,32 +1,32 @@
-﻿using MongoDB.Bson;
+﻿using Elsa.Serialization;
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
 using Newtonsoft.Json;
-using NodaTime;
-using NodaTime.Serialization.JsonNet;
 
 namespace Elsa.Persistence.MongoDb.Serialization
 {
     public abstract class JsonSerializerBase<T> : SerializerBase<T>
     {
-        private readonly JsonSerializerSettings serializerSettings;
+        private readonly ITokenSerializer serializer;
 
-        protected JsonSerializerBase()
+        protected JsonSerializerBase(ITokenSerializer serializer)
         {
-            serializerSettings = new JsonSerializerSettings().ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
-            serializerSettings.NullValueHandling = NullValueHandling.Ignore;
+            this.serializer = serializer;
         }
         
         public override T Deserialize(BsonDeserializationContext context, BsonDeserializationArgs args)
         {
             var document = BsonDocumentSerializer.Instance.Deserialize(context);
-            return JsonConvert.DeserializeObject<T>(document.ToString(), serializerSettings);
+            var value = serializer.Deserialize<T>(document.ToString());
+
+            return value;
         }
 
         public override void Serialize(BsonSerializationContext context, BsonSerializationArgs args, T value)
         {
-            var json = value != null ? JsonConvert.SerializeObject(value, serializerSettings) : null;
-            var document = json != null ? BsonDocument.Parse(json) : new BsonDocument();
+            var json = value != null ? serializer.Serialize(value) : null;
+            var document = json != null ? BsonDocument.Parse(json.ToString(Formatting.None)) : new BsonDocument();
             BsonDocumentSerializer.Instance.Serialize(context, document);
         }
     }

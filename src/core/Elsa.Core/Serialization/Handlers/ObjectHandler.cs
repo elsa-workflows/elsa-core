@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using Elsa.Serialization.Extensions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -21,7 +22,7 @@ namespace Elsa.Serialization.Handlers
         
         public object Deserialize(JsonSerializer serializer, JToken token)
         {
-            var typeName = token[TypeFieldName]?.Value<string>();
+            var typeName = token.GetValue<string>(TypeFieldName);
             
             if(typeName == null)
                 throw new InvalidOperationException();

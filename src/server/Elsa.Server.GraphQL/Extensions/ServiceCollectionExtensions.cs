@@ -1,4 +1,5 @@
 using Elsa.AutoMapper.Extensions;
+using Elsa.Metadata;
 using Elsa.Server.GraphQL.Mapping;
 using Elsa.Server.GraphQL.Types;
 using Elsa.Services;
@@ -14,6 +15,8 @@ namespace Elsa.Server.GraphQL.Extensions
             return services
                 .AddScoped<IWorkflowPublisher, WorkflowPublisher>()
                 .AddSingleton<VersionOptionsConverter>()
+                .AddSingleton<ActivityStateResolver>()
+                .AddSingleton<IActivityDescriber, ActivityDescriber>()
                 .AddAutoMapperProfile<MappingProfile>(ServiceLifetime.Singleton)
                 .AddGraphQL(sp => SchemaBuilder.New()
                     .AddServices(sp)
@@ -22,8 +25,6 @@ namespace Elsa.Server.GraphQL.Extensions
                     .AddType<VariableType>()
                     .AddType<ActivityDescriptorType>()
                     .AddType<ActivityPropertyDescriptorType>()
-                    .AddType<SelectOptionsType>()
-                    .AddType<ExpressionOptionsType>()
                     .AddType<WorkflowInputType>()
                     .AddType<ActivityDefinitionType>()
                     .AddType<ActivityDefinitionInputType>()

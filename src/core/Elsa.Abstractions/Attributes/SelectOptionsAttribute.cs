@@ -5,7 +5,7 @@ using System.Reflection;
 
 namespace Elsa.Attributes
 {
-    public class SelectOptionsAttribute : ActivityPropertyOptionsAttribute
+    public class SelectOptionsAttribute : Attribute
     {
         public SelectOptionsAttribute()
         {
@@ -24,15 +24,7 @@ namespace Elsa.Attributes
         public string? OptionsProviderMethod { get; }
         public Type? ProviderType { get; }
 
-        public override object GetOptions()
-        {
-            if (Items != null)
-                return new SelectOptions(Items);
-
-            var selectItems = GetItemsFromProvider();
-
-            return new SelectOptions(selectItems);
-        }
+        public IEnumerable<SelectOption> GetOptions() => Items ?? GetItemsFromProvider();
 
         private IEnumerable<SelectOption> GetItemsFromProvider()
         {
@@ -62,11 +54,5 @@ namespace Elsa.Attributes
 
         public string? Value { get; set; }
         public string Label { get; set; }
-    }
-
-    public class SelectOptions
-    {
-        public SelectOptions(IEnumerable<SelectOption> items) => Items = items;
-        public IEnumerable<SelectOption> Items { get; }
     }
 }

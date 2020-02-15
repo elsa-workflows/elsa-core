@@ -2,7 +2,7 @@ using Newtonsoft.Json;
 
 namespace Elsa.Serialization
 {
-    public interface IWorkflowSerializerProvider
+    public interface ITokenSerializerProvider
     {
         JsonSerializerSettings CreateJsonSerializerSettings();
         JsonSerializer CreateJsonSerializer();

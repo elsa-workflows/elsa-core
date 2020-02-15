@@ -1,7 +1,6 @@
 using System;
 using Elsa.Models;
 using Elsa.Serialization;
-using Elsa.Serialization.Formatters;
 using HotChocolate.Language;
 using HotChocolate.Types;
 
@@ -9,9 +8,9 @@ namespace Elsa.Server.GraphQL.Types
 {
     public class VariableType : ScalarType
     {
-        private readonly IWorkflowSerializer serializer;
+        private readonly ITokenSerializer serializer;
 
-        public VariableType(IWorkflowSerializer serializer) : base("Variable")
+        public VariableType(ITokenSerializer serializer) : base("Variable")
         {
             this.serializer = serializer;
         }
@@ -36,8 +35,8 @@ namespace Elsa.Server.GraphQL.Types
 
         public override IValueNode ParseValue(object value)
         {
-            var stringValue = serializer.Serialize(value, JsonTokenFormatter.FormatName);
-            return new StringValueNode(stringValue);
+            var stringValue = serializer.Serialize(value);
+            return new ObjectValueNode();
         }
 
         public override object Serialize(object value)
@@ -45,7 +44,7 @@ namespace Elsa.Server.GraphQL.Types
             if (value == null)
                 return null;
 
-            return serializer.Serialize(value, JsonTokenFormatter.FormatName);
+            return serializer.Serialize(value);
         }
 
         public override bool TryDeserialize(object serialized, out object value)

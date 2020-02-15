@@ -23,6 +23,7 @@ namespace Elsa.Models
         public string? Description { get; set; }
         public int? Left { get; set; }
         public int? Top { get; set; }
+        public bool PersistWorkflow { get; set; }
         public Variables? State { get; set; }
     }
 

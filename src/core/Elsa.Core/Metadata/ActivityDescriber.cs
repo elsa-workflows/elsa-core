@@ -8,17 +8,20 @@ using Elsa.Design;
 using Elsa.Expressions;
 using Elsa.Services;
 using Humanizer;
+using Newtonsoft.Json.Linq;
 
 namespace Elsa.Metadata
 {
-    public static class ActivityDescriber
+    public class ActivityDescriber : IActivityDescriber
     {
-        public static ActivityDescriptor Describe<T>() where T : IActivity
+        private readonly IEnumerable<IActivityPropertyOptionsProvider> optionsProviders;
+
+        public ActivityDescriber(IEnumerable<IActivityPropertyOptionsProvider> optionsProviders)
         {
-            return Describe(typeof(T));
+            this.optionsProviders = optionsProviders;
         }
         
-        public static ActivityDescriptor Describe(Type activityType)
+        public ActivityDescriptor Describe(Type activityType)
         {
             var activityDefinitionAttribute = activityType.GetCustomAttribute<ActivityDefinitionAttribute>();
             var typeName = activityDefinitionAttribute?.Type ?? activityType.Name;
@@ -47,7 +50,7 @@ namespace Elsa.Metadata
             };
         }
 
-        private static IEnumerable<ActivityPropertyDescriptor> DescribeProperties(Type activityType)
+        private IEnumerable<ActivityPropertyDescriptor> DescribeProperties(Type activityType)
         {
             var properties = activityType.GetProperties();
 
@@ -69,14 +72,17 @@ namespace Elsa.Metadata
             }
         }
         
-        private static object GetPropertyTypeOptions(PropertyInfo propertyInfo)
+        private JObject GetPropertyTypeOptions(PropertyInfo propertyInfo)
         {
-            var optionsAttribute = propertyInfo.GetCustomAttribute<ActivityPropertyOptionsAttribute>();
+            var options = new JObject();
 
-            return optionsAttribute?.GetOptions();
+            foreach (var provider in optionsProviders.Where(x => x.SupportsProperty(propertyInfo))) 
+                provider.SupplyOptions(propertyInfo, options);
+
+            return options;
         }
 
-        private static string DeterminePropertyType(PropertyInfo propertyInfo)
+        private string DeterminePropertyType(PropertyInfo propertyInfo)
         {
             var type = propertyInfo.PropertyType;
 

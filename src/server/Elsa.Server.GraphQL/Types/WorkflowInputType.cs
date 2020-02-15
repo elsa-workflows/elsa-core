@@ -1,4 +1,3 @@
-using Elsa.Models;
 using Elsa.Server.GraphQL.Models;
 using HotChocolate.Types;
 
@@ -8,7 +7,7 @@ namespace Elsa.Server.GraphQL.Types
     {
         protected override void Configure(IInputObjectTypeDescriptor<WorkflowInput> descriptor)
         {
-            descriptor.Field(x => x.Variables).Type<VariablesType>();
+            descriptor.Field(x => x.Variables).Type<StringType>();
         }
     }
 }

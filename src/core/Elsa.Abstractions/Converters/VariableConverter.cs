@@ -42,9 +42,13 @@ namespace Elsa.Converters
             var variableToken = JToken.ReadFrom(reader);
 
             if (variableToken.Type == JTokenType.Null)
-                return Variable.From(null);
+                return null;
             
             var token = variableToken.Type == JTokenType.String ? variableToken : variableToken["value"];
+            
+            if(token == null)
+                return null;
+            
             var handler = GetHandler(x => x.CanDeserialize(token));
             var value = handler.Deserialize(serializer, token);
 

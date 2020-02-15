@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Comparers;
-using Elsa.Expressions;
 using Elsa.Extensions;
 using Elsa.Messaging.Distributed;
 using Elsa.Messaging.Domain;
@@ -12,9 +10,7 @@ using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services.Models;
 using MediatR;
-using NodaTime;
 using Rebus.Bus;
-using ScheduledActivity = Elsa.Services.Models.ScheduledActivity;
 
 namespace Elsa.Services
 {

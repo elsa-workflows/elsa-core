@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Extensions;
@@ -11,6 +12,7 @@ namespace Elsa.Expressions
 
         public Task<object> EvaluateAsync(
             IWorkflowExpression expression,
+            Type returnType,
             ActivityExecutionContext context,
             CancellationToken cancellationToken)
         {
@@ -18,7 +20,7 @@ namespace Elsa.Expressions
             if (string.IsNullOrWhiteSpace(literalExpression.Expression))
                 return Task.FromResult(default(object));
             
-            return Task.FromResult(literalExpression.Expression.Parse(expression.ReturnType));
+            return Task.FromResult(literalExpression.Expression.Parse(returnType));
         }
     }
 }

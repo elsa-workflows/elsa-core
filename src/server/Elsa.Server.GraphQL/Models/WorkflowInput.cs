@@ -11,7 +11,7 @@ namespace Elsa.Server.GraphQL.Models
         public bool? IsSingleton { get; set; }
         public bool? IsDisabled { get; set; }
         public bool? DeleteCompletedInstances { get; set; }
-        public Variables? Variables { get; set; }
+        public string? Variables { get; set; }
         public WorkflowPersistenceBehavior? PersistenceBehavior { get; set; }
         public ICollection<ActivityDefinitionInput>? Activities { get; set; }
         public ICollection<ConnectionDefinition>? Connections { get; set; }

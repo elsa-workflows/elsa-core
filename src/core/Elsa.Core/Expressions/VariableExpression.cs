@@ -1,12 +1,10 @@
-using System;
-
 namespace Elsa.Expressions
 {
     public class VariableExpression : WorkflowExpression
     {
         public static string ExpressionType => "Variable";
 
-        public VariableExpression(string variableName, Type returnType) : base(ExpressionType, returnType)
+        public VariableExpression(string variableName) : base(ExpressionType)
         {
             VariableName = variableName;
         }
@@ -16,7 +14,7 @@ namespace Elsa.Expressions
 
     public class VariableExpression<T> : VariableExpression, IWorkflowExpression<T>
     {
-        public VariableExpression(string variableName) : base(variableName, typeof(T))
+        public VariableExpression(string variableName) : base(variableName)
         {
         }
     }

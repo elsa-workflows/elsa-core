@@ -2,14 +2,15 @@
 using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Elsa.Serialization.Extensions;
 
 namespace Elsa.Serialization.Handlers
 {
     public abstract class PrimitiveValueHandler<T> : IValueHandler
     {
         public virtual int Priority => 0;
-        public bool CanSerialize( JToken token, Type type, object value) => type == typeof(T);
-        public bool CanDeserialize(JToken token) => token.Type == JTokenType.Object && token["Type"]?.Value<string>() == TypeName;
+        public bool CanSerialize(JToken token, Type type, object value) => type == typeof(T);
+        public bool CanDeserialize(JToken token) => token.Type == JTokenType.Object && token.GetValue<string>("Type") == TypeName;
         protected virtual string TypeName => typeof(T).Name;
 
         public virtual object Deserialize(JsonSerializer serializer, JToken token)
@@ -28,7 +29,7 @@ namespace Elsa.Serialization.Handlers
             };
             token.WriteTo(writer, serializer.Converters.ToArray());
         }
-        
+
         protected abstract object ParseValue(JToken value);
     }
 }

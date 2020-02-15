@@ -67,7 +67,7 @@ namespace Elsa.Activities.Http
         /// The body to send along with the request.
         /// </summary>
         [ActivityProperty(Hint = "The HTTP content to send along with the request.")]
-        [ExpressionOptions(Multiline = true)]
+        [WorkflowExpressionOptions(Multiline = true)]
         public IWorkflowExpression<string>? Content
         {
             get => GetState<IWorkflowExpression<string>>();
@@ -101,7 +101,7 @@ namespace Elsa.Activities.Http
         /// The headers to send along with the request.
         /// </summary>
         [ActivityProperty(Hint = "The headers to send along with the request.")]
-        [ExpressionOptions(Multiline = true)]
+        [WorkflowExpressionOptions(Multiline = true)]
         public IWorkflowExpression<HttpRequestHeaders>? RequestHeaders
         {
             get => GetState<IWorkflowExpression<HttpRequestHeaders>>();

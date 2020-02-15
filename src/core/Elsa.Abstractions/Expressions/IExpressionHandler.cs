@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Services.Models;
 
@@ -9,6 +10,7 @@ namespace Elsa.Expressions
         string Type { get; }
         Task<object> EvaluateAsync(
             IWorkflowExpression expression,
+            Type returnType,
             ActivityExecutionContext context,
             CancellationToken cancellationToken);
     }

@@ -1,4 +1,3 @@
-using System;
 using Elsa.Expressions;
 
 namespace Elsa.Scripting.Liquid
@@ -7,17 +6,17 @@ namespace Elsa.Scripting.Liquid
     {
         public const string ExpressionType = "Liquid";
 
-        public LiquidExpression(string script, Type returnType) : base(ExpressionType, returnType)
+        public LiquidExpression(string expression) : base(ExpressionType)
         {
-            Script = script;
+            Expression = expression;
         }
 
-        public string Script { get; }
+        public string Expression { get; }
     }
 
     public class LiquidExpression<T> : LiquidExpression, IWorkflowExpression<T>
     {
-        public LiquidExpression(string script) : base(script, typeof(T))
+        public LiquidExpression(string expression) : base(expression)
         {
         }
     }

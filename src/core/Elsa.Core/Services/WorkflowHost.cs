@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Comparers;
 using Elsa.Expressions;
 using Elsa.Extensions;
 using Elsa.Messaging.Domain;
@@ -183,6 +182,7 @@ namespace Elsa.Services
                 await mediator.Publish(new ActivityExecuted(activityExecutionContext), cancellationToken);
 
                 activityOperation = Execute;
+                workflowExecutionContext.CompletePass();
             }
 
             if (workflowExecutionContext.Status == WorkflowStatus.Running)

@@ -7,7 +7,7 @@ namespace Elsa.Server.GraphQL.Types
     {
         protected override void Configure(IObjectTypeDescriptor<ActivityPropertyDescriptor> descriptor)
         {
-            descriptor.Field(x => x.Options).Type<ActivityPropertyOptionsUnionType>();
+            descriptor.Field(x => x.Options).Type<JObjectType>();
         }
     }
 }

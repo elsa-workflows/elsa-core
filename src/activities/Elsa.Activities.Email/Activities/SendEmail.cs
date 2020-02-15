@@ -47,7 +47,7 @@ namespace Elsa.Activities.Email.Activities
         }
 
         [ActivityProperty(Hint = "The body of the email message.")]
-        [ExpressionOptions(Multiline = true)]
+        [WorkflowExpressionOptions(Multiline = true)]
         public IWorkflowExpression<string> Body
         {
             get => GetState<IWorkflowExpression<string>>();

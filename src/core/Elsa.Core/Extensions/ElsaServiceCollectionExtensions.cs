@@ -6,14 +6,14 @@ using Elsa.Activities.Primitives;
 using Elsa.Activities.Signaling;
 using Elsa.AutoMapper.Extensions;
 using Elsa.Builders;
-using Elsa.Caching;
 using Elsa.Converters;
 using Elsa.Expressions;
 using Elsa.Mapping;
 using Elsa.Messaging;
 using Elsa.Messaging.Distributed;
 using Elsa.Messaging.Distributed.Handlers;
-using Elsa.Persistence;
+using Elsa.Metadata;
+using Elsa.Metadata.Handlers;
 using Elsa.Persistence.Memory;
 using Elsa.Runtime;
 using Elsa.Serialization;
@@ -23,15 +23,10 @@ using Elsa.Services;
 using Elsa.StartupTasks;
 using Elsa.WorkflowProviders;
 using MediatR;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using NodaTime;
-using Rebus.Bus;
 using Rebus.Handlers;
-using Rebus.Messages.Control;
-using Rebus.Persistence.InMem;
-using Rebus.Routing.TypeBased;
-using Rebus.ServiceProvider;
-using Rebus.Transport.InMem;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -75,13 +70,14 @@ namespace Microsoft.Extensions.DependencyInjection
 
         public static IServiceCollection AddTypeNameValueHandler<T>(this IServiceCollection services) where T : class, IValueHandler => services.AddTransient<IValueHandler, T>();
         public static IServiceCollection AddTypeAlias<T>(this IServiceCollection services, string alias) => services.AddTypeAlias(typeof(T), alias);
+        public static IServiceCollection AddTypeAlias<T>(this IServiceCollection services) => services.AddTypeAlias<T>(typeof(T).Name);
         public static IServiceCollection AddTypeAlias(this IServiceCollection services, Type type, string alias) => services.AddTransient<ITypeAlias>(sp => new TypeAlias(type, alias));
         public static IServiceCollection AddConsumer<TMessage, TConsumer>(this IServiceCollection services) where TConsumer : class, IHandleMessages<TMessage> => services.AddTransient<IHandleMessages<TMessage>, TConsumer>();
 
         private static IServiceCollection AddMediatR(this ElsaOptions configuration)
         {
             return configuration.Services.AddMediatR(
-                mediatr => mediatr.AsSingleton(),
+                mediatr => mediatr.AsScoped(),
                 typeof(ElsaServiceCollectionExtensions));
         }
 
@@ -96,7 +92,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddMemoryCache()
                 .AddTransient<Func<IEnumerable<IActivity>>>(sp => sp.GetServices<IActivity>)
                 .AddSingleton<IIdGenerator, IdGenerator>()
-                .AddSingleton<IWorkflowSerializerProvider, WorkflowSerializerProvider>()
+                .AddSingleton<ITokenSerializerProvider, TokenSerializerProvider>()
+                .AddSingleton<ITokenSerializer, TokenSerializer>()
                 .AddSingleton<IWorkflowSerializer, WorkflowSerializer>()
                 .AddSingleton<VariableConverter>()
                 .AddSingleton<TypeConverter>()
@@ -116,7 +113,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<MemoryWorkflowDefinitionStore>()
                 .AddSingleton<MemoryWorkflowInstanceStore>()
                 .AddStartupRunner()
-                .AddScoped<IActivityResolver, ActivityResolver>()
+                .AddTransient<IActivityResolver, ActivityResolver>()
                 .AddTransient<IWorkflowProvider, StoreWorkflowProvider>()
                 .AddTransient<IWorkflowProvider, CodeWorkflowProvider>()
                 .AddTransient<WorkflowBuilder>()
@@ -125,10 +122,16 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddConsumer<RunWorkflow, RunWorkflowHandler>()
                 .AddAutoMapperProfile<WorkflowDefinitionProfile>(ServiceLifetime.Singleton)
                 .AddSerializationHandlers()
+                .AddMetadataHandlers()
                 .AddPrimitiveActivities();
 
             return configuration;
         }
+
+        private static IServiceCollection AddMetadataHandlers(this IServiceCollection services) =>
+            services
+                .AddSingleton<IActivityPropertyOptionsProvider, SelectOptionsProvider>()
+                .AddSingleton<IActivityPropertyOptionsProvider, WorkflowExpressionOptionsProvider>();
 
         private static IServiceCollection AddSerializationHandlers(this IServiceCollection services) =>
             services
@@ -147,16 +150,16 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddTypeNameValueHandler<OffsetTimeHandler>()
                 .AddTypeNameValueHandler<YearMonthHandler>()
                 .AddTypeNameValueHandler<ZonedDateTimeHandler>()
-                //.AddTypeNameValueHandler<ActivityHandler>()
-                .AddTypeAlias<object>("Object")
-                .AddTypeAlias<bool>("Boolean")
-                .AddTypeAlias<int>("Int32")
-                .AddTypeAlias<long>("Int64")
-                .AddTypeAlias<decimal>("Decimal")
-                .AddTypeAlias<string>("String")
+                .AddTypeAlias<object>()
+                .AddTypeAlias<bool>()
+                .AddTypeAlias<int>()
+                .AddTypeAlias<long>()
+                .AddTypeAlias<decimal>()
+                .AddTypeAlias<string>()
                 .AddTypeAlias<IActivity>("Activity")
                 .AddTypeAlias(typeof(IList<>), "List")
                 .AddTypeAlias(typeof(ICollection<>), "Collection")
+                .AddTypeAlias<PathString>()
                 .AddTypeAlias(typeof(LiteralExpression<>), "LiteralExpression");
 
         private static IServiceCollection AddPrimitiveActivities(this IServiceCollection services) =>

@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services;
@@ -15,10 +16,12 @@ namespace Elsa.WorkflowProviders
     public class StoreWorkflowProvider : IWorkflowProvider
     {
         private readonly IWorkflowDefinitionStore store;
+        private readonly IActivityResolver activityResolver;
 
-        public StoreWorkflowProvider(IWorkflowDefinitionStore store)
+        public StoreWorkflowProvider(IWorkflowDefinitionStore store, IActivityResolver activityResolver)
         {
             this.store = store;
+            this.activityResolver = activityResolver;
         }
 
         public async Task<IEnumerable<Workflow>> GetWorkflowsAsync(CancellationToken cancellationToken)
@@ -29,10 +32,12 @@ namespace Elsa.WorkflowProviders
 
         private Workflow CreateWorkflow(WorkflowDefinitionVersion definition)
         {
+            var resolvedActivities = definition.Activities.Select(ResolveActivity).ToDictionary(x => x.Id);
+
             var workflow = new Workflow
             {
-                DefinitionId = definition.Id,
-                Description = definition.Description, 
+                DefinitionId = definition.DefinitionId,
+                Description = definition.Description,
                 Name = definition.Name,
                 Version = definition.Version,
                 IsLatest = definition.IsLatest,
@@ -40,10 +45,23 @@ namespace Elsa.WorkflowProviders
                 IsDisabled = definition.IsDisabled,
                 IsSingleton = definition.IsSingleton,
                 PersistenceBehavior = definition.PersistenceBehavior,
-                DeleteCompletedInstances = definition.DeleteCompletedInstances
+                DeleteCompletedInstances = definition.DeleteCompletedInstances,
+                Activities = resolvedActivities.Values,
+                Connections = definition.Connections.Select(x => ResolveConnection(x, resolvedActivities)).ToList()
             };
 
             return workflow;
         }
+
+        private static Connection ResolveConnection(ConnectionDefinition connectionDefinition, IReadOnlyDictionary<string?, IActivity> activityDictionary)
+        {
+            var source = activityDictionary[connectionDefinition.SourceActivityId];
+            var target = activityDictionary[connectionDefinition.TargetActivityId];
+            var outcome = connectionDefinition.Outcome;
+
+            return new Connection(source, target, outcome);
+        }
+
+        private IActivity ResolveActivity(ActivityDefinition activityDefinition) => activityResolver.ResolveActivity(activityDefinition);
     }
 }

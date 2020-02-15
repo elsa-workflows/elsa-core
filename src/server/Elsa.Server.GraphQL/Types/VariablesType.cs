@@ -1,39 +1,33 @@
 using System;
+using System.Collections.Generic;
 using Elsa.Models;
 using Elsa.Serialization;
 using Elsa.Serialization.Formatters;
-using HotChocolate;
 using HotChocolate.Language;
 using HotChocolate.Types;
-using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Elsa.Server.GraphQL.Types
 {
     public class VariablesType : ScalarType
     {
-        private readonly IWorkflowSerializer serializer;
+        private readonly ITokenSerializer serializer;
 
-        public VariablesType(IWorkflowSerializer serializer) : base("Variables")
+        public VariablesType(ITokenSerializer serializer) : base("Variables")
         {
             this.serializer = serializer;
         }
 
         public override Type ClrType => typeof(Variables);
 
-        public override bool IsInstanceOfType(IValueNode literal) => literal == null || literal is StringValueNode || literal is NullValueNode;
+        public override bool IsInstanceOfType(IValueNode literal)
+        {
+            return literal == null || literal is ObjectValueNode || literal is NullValueNode;
+        }
 
         public override object ParseLiteral(IValueNode literal)
         {
-            if (literal == null || literal is NullValueNode)
-                return new Variables();
-
-            if (literal is StringValueNode stringNode)
-            {
-                var variables = serializer.Deserialize<Variables>(stringNode.Value, JsonTokenFormatter.FormatName);
-                return variables;
-            }
-
-            throw new ArgumentException("The Variable type can only parse string literals.", nameof(literal));
+            return new Variables();
         }
 
         public override IValueNode ParseValue(object value)
@@ -41,32 +35,28 @@ namespace Elsa.Server.GraphQL.Types
             if (value is null)
                 return NullValueNode.Default;
 
-            var stringValue = serializer.Serialize(value, JsonTokenFormatter.FormatName);
-            return new StringValueNode(stringValue);
+            return new ObjectValueNode();
         }
 
         public override object Serialize(object value)
         {
             if (value == null)
                 return null;
+            
+            var variables = (Variables)value;
+            var dictionary = new Dictionary<string, object>();
 
-            return serializer.Serialize(value, JsonTokenFormatter.FormatName);
+            foreach (var variable in variables)
+            {
+                var v = serializer.Serialize(variable.Value);
+                dictionary[variable.Key] = v;
+            }
+            
+            return dictionary;
         }
 
         public override bool TryDeserialize(object serialized, out object value)
         {
-            if (serialized is null)
-            {
-                value = null;
-                return true;
-            }
-
-            if (serialized is string s)
-            {
-                value = serializer.Deserialize<Variables>(s, JsonTokenFormatter.FormatName);
-                return true;
-            }
-
             value = null;
             return false;
         }
