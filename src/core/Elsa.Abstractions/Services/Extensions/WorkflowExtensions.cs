@@ -58,24 +58,31 @@ namespace Elsa.Services.Extensions
         /// </summary>
         public static IEnumerable<string> GetInboundActivityPath(this Workflow workflow, string activityId)
         {
-            return workflow.GetInboundActivityPathInternal(activityId, activityId).Distinct().ToList();
+            var inspectedActivityIDs = new HashSet<string>();
+
+            return workflow.GetInboundActivityPathInternal(activityId, activityId, inspectedActivityIDs)
+                           .Distinct().ToList();
         }
 
         private static IEnumerable<string> GetInboundActivityPathInternal(this Workflow workflowInstance,
-            string activityId, string startingPointActivityId)
+            string activityId, 
+            string startingPointActivityId,
+            HashSet<string> inspectedActivityIDs)
         {
             foreach (var connection in workflowInstance.GetInboundConnections(activityId))
             {
                 // Circuit breaker: Detect workflows that implement repeating flows to prevent an infinite loop here.
-                if (connection.Source.Activity.Id == startingPointActivityId)
+                if (inspectedActivityIDs.Contains(connection.Source.Activity.Id))
                     yield break;
 
                 yield return connection.Source.Activity.Id;
 
-                foreach (var parentActivityId in workflowInstance
-                    .GetInboundActivityPathInternal(connection.Source.Activity.Id, startingPointActivityId)
-                    .Distinct())
+                foreach (var parentActivityId in workflowInstance.GetInboundActivityPathInternal(connection.Source.Activity.Id, startingPointActivityId, inspectedActivityIDs)
+                                                                 .Distinct())
+                {
+                    inspectedActivityIDs.Add(parentActivityId);
                     yield return parentActivityId;
+                }
             }
         }
     }
