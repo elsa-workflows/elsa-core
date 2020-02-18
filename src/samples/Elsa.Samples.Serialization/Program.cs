@@ -18,8 +18,10 @@ namespace Elsa.Samples.Serialization
                 .AddElsa()
                 .AddConsoleActivities()
                 .BuildServiceProvider();
+            
             var activityResolver = services.GetRequiredService<IActivityResolver>();
             var writeLine = activityResolver.ResolveActivity<WriteLine>().WithText(new LiteralExpression<string>("Foo"));
+            
             var workflowDefinition = new WorkflowDefinitionVersion
             {
                 Activities = new List<ActivityDefinition> { ActivityDefinition.FromActivity(writeLine) }
@@ -29,8 +31,6 @@ namespace Elsa.Samples.Serialization
             var json = serializer.Serialize(workflowDefinition, JsonTokenFormatter.FormatName);
             
             Console.WriteLine(json);
-            
-            var workflowDefinition2 = serializer.Deserialize<WorkflowDefinitionVersion>(json, JsonTokenFormatter.FormatName);
             
         }
     }

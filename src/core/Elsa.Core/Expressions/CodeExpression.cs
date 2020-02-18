@@ -22,11 +22,11 @@ namespace Elsa.Expressions
 
     public class CodeExpression<T> : CodeExpression, IWorkflowExpression<T>
     {
-        public CodeExpression(Func<ActivityExecutionContext, T> expression) : base(context => expression(context))
+        public CodeExpression(Func<ActivityExecutionContext, T> expression) : base(context => expression != null ? expression(context) : default)
         {
         }
         
-        public CodeExpression(Func<T> expression) : base(context => expression())
+        public CodeExpression(Func<T> expression) : base(context => expression != null ? expression() : default)
         {
         }
         

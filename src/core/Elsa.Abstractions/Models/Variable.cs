@@ -17,6 +17,5 @@
         }
         
         public object? Value { get; set; }
-        public string Test { get; set; } = "Test";
     }
 }

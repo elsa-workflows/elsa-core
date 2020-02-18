@@ -48,6 +48,6 @@ namespace Elsa.Expressions
             IWorkflowExpression<T> expression,
             ActivityExecutionContext context,
             CancellationToken cancellationToken = default) 
-            => (T)await EvaluateAsync((IWorkflowExpression)expression, typeof(T), context, cancellationToken);
+            => (T)await EvaluateAsync(expression, typeof(T), context, cancellationToken);
     }
 }
