@@ -76,13 +76,15 @@ namespace Elsa.Scripting.JavaScript.Services
             if (value.IsNull())
                 return default;
 
-            if (targetType == typeof(bool) && value.IsBoolean())
+            var targetIsObject = targetType == typeof(object);
+            
+            if (value.IsBoolean())
                 return value.AsBoolean();
 
-            if (targetType == typeof(DateTime) && value.IsDate())
+            if ((targetIsObject || targetType == typeof(DateTime)) && value.IsDate())
                 return value.AsDate().ToDateTime();
 
-            if (targetType.IsNumeric() && value.IsNumber())
+            if ((targetIsObject || targetType.IsNumeric()) && value.IsNumber())
                 return Convert.ChangeType(value.AsNumber(), targetType);
 
             if (targetType == typeof(string))
