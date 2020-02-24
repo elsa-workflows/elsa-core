@@ -17,7 +17,7 @@ namespace Elsa.Activities.Reflection.Activities
         Category = "Reflection",
         Description = "Split object in multiple parts to process separately.",
         RuntimeDescription = "Split object in multiple parts to process separately.",
-        Outcomes = "x => x.state.properties.map(c => c.toString())"
+        Outcomes = new[] { "x => x.state.properties.map(c => c.toString())" }
     )]
     public class SplitObject : Activity
     {
@@ -43,7 +43,7 @@ namespace Elsa.Activities.Reflection.Activities
         protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
             var splitObject = await context.EvaluateAsync(Object, cancellationToken);
-            
+
             if (splitObject != null)
             {
                 foreach (var property in Properties)
@@ -66,8 +66,8 @@ namespace Elsa.Activities.Reflection.Activities
                 value = property.GetValue(value, null);
                 currentType = property.PropertyType;
             }
+
             return value;
         }
-
     }
 }

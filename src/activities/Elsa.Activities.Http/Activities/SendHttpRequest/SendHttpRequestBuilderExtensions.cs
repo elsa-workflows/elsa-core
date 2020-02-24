@@ -1,8 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Net.Http;
-using Elsa.Activities.ControlFlow;
-using Elsa.Activities.Http;
 using Elsa.Activities.Http.Models;
 using Elsa.Builders;
 using Elsa.Expressions;

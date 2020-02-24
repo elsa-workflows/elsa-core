@@ -1,10 +1,9 @@
 using System.Threading.Tasks;
-using Elsa.Runtime;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using NodaTime;
 using Elsa.Activities.Timers.Extensions;
+using NodaTime;
 
 namespace Elsa.Samples.Timers
 {

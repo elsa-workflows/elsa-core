@@ -2,7 +2,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using AutoFixture;
 using Elsa.Expressions;
-using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Results;

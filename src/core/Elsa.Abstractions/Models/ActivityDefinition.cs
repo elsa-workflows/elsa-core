@@ -1,4 +1,3 @@
-using Elsa.Extensions;
 using Elsa.Services;
 
 namespace Elsa.Models
@@ -17,34 +16,26 @@ namespace Elsa.Models
             };
         }
 
-        public ActivityDefinition()
-        {
-            State = new Variables();
-        }
+        public ActivityDefinition() { }
 
-        public ActivityDefinition(string id, string type, Variables state, int left = 0, int top = 0)
+        public ActivityDefinition(string id, string type, Variables? state, int? left, int? top)
         {
             Id = id;
             Type = type;
+            State = state;
             Left = left;
             Top = top;
-            State = new Variables(state);
         }
 
         public string Id { get; set; }
         public string Type { get; set; }
-
-        public string Name
-        {
-            get => State.GetState<string>();
-            set => State.SetState(value);
-        }
-
+        public string? Name { get; set; }
         public string? DisplayName { get; set; }
         public string? Description { get; set; }
-        public int Left { get; set; }
-        public int Top { get; set; }
-        public Variables State { get; set; }
+        public int? Left { get; set; }
+        public int? Top { get; set; }
+        public bool PersistWorkflow { get; set; }
+        public Variables? State { get; set; }
     }
 
     public class ActivityDefinition<T> : ActivityDefinition where T : IActivity

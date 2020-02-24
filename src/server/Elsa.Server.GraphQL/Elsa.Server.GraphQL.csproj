@@ -2,18 +2,19 @@
 
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="GraphQL" Version="3.0.0-preview-1271" />
-      <PackageReference Include="GraphQL.NodaTime" Version="0.0.8" />
-      <PackageReference Include="GraphQL.Server.Transports.AspNetCore" Version="3.5.0-alpha0027" />
-      <PackageReference Include="Microsoft.AspNetCore.Server.IIS" Version="2.2.6" />
-      <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="2.2.0" />
+        <ProjectReference Include="..\..\core\Elsa\Elsa.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\core\Elsa\Elsa.csproj" />
+      <PackageReference Include="GraphQL" Version="2.4.0" />
+      <PackageReference Include="HotChocolate.AspNetCore" Version="10.3.5" />
+      <PackageReference Include="HotChocolate.AspNetCore.Playground" Version="10.3.5" />
+      <PackageReference Include="HotChocolate.AspNetCore.Voyager" Version="10.3.5" />
     </ItemGroup>
 
 </Project>

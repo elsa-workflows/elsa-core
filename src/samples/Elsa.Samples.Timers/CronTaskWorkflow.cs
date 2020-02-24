@@ -2,7 +2,6 @@ using System;
 using Elsa.Activities.Console;
 using Elsa.Activities.MassTransit;
 using Elsa.Builders;
-using NodaTime;
 
 namespace Elsa.Samples.Timers
 {

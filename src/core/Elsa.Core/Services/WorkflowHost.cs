@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Comparers;
 using Elsa.Expressions;
 using Elsa.Extensions;
 using Elsa.Messaging.Domain;
@@ -64,6 +63,11 @@ namespace Elsa.Services
                 return null;
             }
 
+            return await RunWorkflowInstanceAsync(workflowInstance, activityId, input, cancellationToken);
+        }
+
+        public async Task<WorkflowExecutionContext?> RunWorkflowInstanceAsync(WorkflowInstance workflowInstance, string? activityId = default, object? input = default, CancellationToken cancellationToken = default)
+        {
             var workflow = await workflowRegistry.GetWorkflowAsync(workflowInstance.DefinitionId, VersionOptions.SpecificVersion(workflowInstance.Version), cancellationToken);
             return await RunAsync(workflow, workflowInstance, activityId, input, cancellationToken);
         }
@@ -178,6 +182,7 @@ namespace Elsa.Services
                 await mediator.Publish(new ActivityExecuted(activityExecutionContext), cancellationToken);
 
                 activityOperation = Execute;
+                workflowExecutionContext.CompletePass();
             }
 
             if (workflowExecutionContext.Status == WorkflowStatus.Running)

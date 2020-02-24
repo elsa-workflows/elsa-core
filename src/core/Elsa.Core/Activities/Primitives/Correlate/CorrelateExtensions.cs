@@ -1,7 +1,6 @@
 using System;
 using Elsa.Builders;
 using Elsa.Expressions;
-using Elsa.Services;
 using Elsa.Services.Models;
 
 // ReSharper disable once CheckNamespace

@@ -15,9 +15,9 @@ namespace Elsa.WorkflowProviders
     public class CodeWorkflowProvider : IWorkflowProvider
     {
         private readonly IEnumerable<IWorkflow> workflows;
-        private readonly Func<WorkflowBuilder> workflowBuilder;
+        private readonly Func<IWorkflowBuilder> workflowBuilder;
 
-        public CodeWorkflowProvider(IEnumerable<IWorkflow> workflows, Func<WorkflowBuilder> workflowBuilder)
+        public CodeWorkflowProvider(IEnumerable<IWorkflow> workflows, Func<IWorkflowBuilder> workflowBuilder)
         {
             this.workflows = workflows;
             this.workflowBuilder = workflowBuilder;

@@ -1,11 +1,10 @@
 using System;
-using Elsa.Activities.Console;
 using Elsa.Builders;
 using Elsa.Expressions;
 using Elsa.Services.Models;
 
 // ReSharper disable once CheckNamespace
-namespace Elsa.Activities.ControlFlow
+namespace Elsa.Activities.Console
 {
     public static class WriteLineExtensions
     {

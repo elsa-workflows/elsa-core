@@ -2,33 +2,25 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Elsa.Serialization.Formatters;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Elsa.Serialization
 {
     public class WorkflowSerializer : IWorkflowSerializer
     {
+        private readonly ITokenSerializer tokenSerializer;
         private readonly IDictionary<string, ITokenFormatter> formatters;
 
-        public WorkflowSerializer(IEnumerable<ITokenFormatter> formatters, IWorkflowSerializerProvider serializerProvider)
+        public WorkflowSerializer(IEnumerable<ITokenFormatter> formatters, ITokenSerializer tokenSerializer)
         {
+            this.tokenSerializer = tokenSerializer;
             this.formatters = formatters.ToDictionary(x => x.Format, StringComparer.OrdinalIgnoreCase);
-            Serializer = serializerProvider.CreateJsonSerializer();
         }
         
-        public JsonSerializer Serializer { get; }
-
         public string Serialize<T>(T workflow, string format)
         {
-            var token = JObject.FromObject(workflow, Serializer);
-            return Serialize((JToken)token, format);
-        }
-
-        public string Serialize(JToken token, string format)
-        {
-            var formatter = formatters[format];
-            return formatter.ToString(token);
+            var token = tokenSerializer.Serialize(workflow);
+            return Serialize(token, format);
         }
 
         public T Deserialize<T>(string data, string format)
@@ -37,10 +29,13 @@ namespace Elsa.Serialization
             var token = formatter.FromString(data);
             return Deserialize<T>(token);
         }
-
-        public T Deserialize<T>(JToken token)
+        
+        private string Serialize(JToken token, string format)
         {
-            return token.ToObject<T>(Serializer);
+            var formatter = formatters[format];
+            return formatter.ToString(token);
         }
+
+        private T Deserialize<T>(JToken token) => tokenSerializer.Deserialize<T>(token);
     }
 }

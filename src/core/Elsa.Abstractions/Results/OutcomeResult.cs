@@ -25,7 +25,9 @@ namespace Elsa.Results
 
         protected override void Execute(ActivityExecutionContext activityExecutionContext)
         {
-            activityExecutionContext.Output = Output;
+            if(Output != null)
+                activityExecutionContext.Output = Output;
+            
             activityExecutionContext.Outcomes = Outcomes.ToList();
 
             var workflowExecutionContext = activityExecutionContext.WorkflowExecutionContext;

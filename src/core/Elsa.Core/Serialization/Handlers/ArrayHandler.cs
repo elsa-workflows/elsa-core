@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using Elsa.Serialization.Extensions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -15,7 +16,7 @@ namespace Elsa.Serialization.Handlers
 
         public int Priority => 0;
         public bool CanSerialize(JToken token, Type type, object value) => token.Type == JTokenType.Array;
-        public bool CanDeserialize(JToken token) => token.Type == JTokenType.Object && token[ElementTypeFieldName] != null;
+        public bool CanDeserialize(JToken token) => token.Type == JTokenType.Object && token.HasKey(ElementTypeFieldName);
         
         public void Serialize(JsonWriter writer, JsonSerializer serializer, Type type, JToken token, object? value)
         {

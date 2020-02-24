@@ -1,5 +1,4 @@
 using Elsa.Models;
-using Newtonsoft.Json.Linq;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Entities
 {

@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Elsa.Attributes;
 using Elsa.Design;
+using Elsa.Models;
 using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -13,7 +15,8 @@ namespace Elsa.Activities.UserTask.Activities
     /// </summary>
     [ActivityDefinition(
         Category = "User Tasks",
-        Description = "Triggers when a user action is received."
+        Description = "Triggers when a user action is received.",
+        Outcomes = new[] { OutcomeNames.Done, "x => x.state.actions" }
     )]
     public class UserTask : Activity
     {
@@ -21,7 +24,7 @@ namespace Elsa.Activities.UserTask.Activities
             Type = ActivityPropertyTypes.List,
             Hint = "Enter a comma-separated list of available actions"
         )]
-        public string[] Actions
+        public ICollection<string> Actions
         {
             get => GetState(() => new string[0]);
             set => SetState(value);

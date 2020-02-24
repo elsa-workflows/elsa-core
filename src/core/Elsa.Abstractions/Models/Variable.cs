@@ -17,7 +17,5 @@
         }
         
         public object? Value { get; set; }
-
-        public T GetValue<T>() => (T)Value;
     }
 }

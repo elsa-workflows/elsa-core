@@ -1,11 +1,8 @@
 using System;
 using Elsa;
 using Elsa.Models;
-using Elsa.Persistence;
-using Elsa.Persistence.MongoDb;
 using Elsa.Persistence.MongoDb.Serialization;
 using Elsa.Persistence.MongoDb.Services;
-using Microsoft.Extensions.Configuration;
 using MongoDB.Bson;
 using MongoDb.Bson.NodaTime;
 using MongoDB.Bson.Serialization;
@@ -54,7 +51,7 @@ namespace Elsa.Persistence.MongoDb.Extensions
                 .UseWorkflowDefinitionStore(sp => sp.GetRequiredService<MongoWorkflowDefinitionStore>())
                 .Services
                 .AddMongoDbCollection<WorkflowDefinitionVersion>("WorkflowDefinitions")
-                .AddScoped<IWorkflowDefinitionStore, MongoWorkflowDefinitionStore>();
+                .AddScoped<MongoWorkflowDefinitionStore>();
 
             return options;
         }
@@ -74,13 +71,18 @@ namespace Elsa.Persistence.MongoDb.Extensions
         {
             if (options.Services.HasService<IMongoClient>())
                 return options;
-            
-            NodaTimeSerializers.Register();
-            RegisterEnumAsStringConvention();
-            BsonSerializer.RegisterSerializer(new JObjectSerializer());
 
             options.Services
-                .AddSingleton(sp => CreateDbClient(connectionString))
+                .AddTransient<JObjectSerializer>()
+                .AddTransient<VariableSerializer>()
+                .AddSingleton(sp =>
+                {
+                    NodaTimeSerializers.Register();
+                    RegisterEnumAsStringConvention();
+                    BsonSerializer.RegisterSerializer(sp.GetRequiredService<JObjectSerializer>());
+                    BsonSerializer.RegisterSerializer(sp.GetRequiredService<VariableSerializer>());
+                    return CreateDbClient(connectionString);
+                })
                 .AddSingleton(sp => CreateDatabase(sp, databaseName));
 
             return options;

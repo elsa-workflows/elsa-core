@@ -9,7 +9,7 @@ namespace Elsa.WorkflowDesigner.Models
         {
         }
 
-        public ActivityModel(string id, string type, int left, int top, Variables state, bool blocking, bool executed, bool faulted, ActivityMessageModel? message = null)
+        public ActivityModel(string id, string type, int? left, int? top, Variables state, bool blocking, bool executed, bool faulted, ActivityMessageModel? message = null)
         {
             Id = id;
             Type = type;
@@ -33,7 +33,7 @@ namespace Elsa.WorkflowDesigner.Models
             false)
         {
         }
-        
+
         public ActivityModel(ActivityDefinition activityDefinition, bool blocking, bool executed, bool faulted, ActivityMessageModel? message = null) : this(
             activityDefinition.Id,
             activityDefinition.Type,
@@ -49,8 +49,8 @@ namespace Elsa.WorkflowDesigner.Models
 
         public string? Id { get; set; }
         public string? Type { get; set; }
-        public int Left { get; set; }
-        public int Top { get; set; }
+        public int? Left { get; set; }
+        public int? Top { get; set; }
         public Variables? State { get; set; }
         public bool Blocking { get; set; }
         public bool Executed { get; set; }

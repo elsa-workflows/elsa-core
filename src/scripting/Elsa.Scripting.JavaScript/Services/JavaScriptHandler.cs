@@ -40,15 +40,15 @@ namespace Elsa.Scripting.JavaScript.Services
 
         public string Type => JavaScriptExpression.ExpressionType;
 
-        public async Task<object> EvaluateAsync(IWorkflowExpression expression, ActivityExecutionContext context, CancellationToken cancellationToken)
+        public async Task<object> EvaluateAsync(IWorkflowExpression expression, Type returnType, ActivityExecutionContext context, CancellationToken cancellationToken)
         {
             var javaScriptExpression = (JavaScriptExpression)expression;
             var engine = new Engine(ConfigureJintEngine);
 
             await ConfigureEngineAsync(engine, context, cancellationToken);
-            engine.Execute(javaScriptExpression.Script);
+            engine.Execute(javaScriptExpression.Expression);
 
-            return ConvertValue(engine.GetCompletionValue(), javaScriptExpression.ReturnType);
+            return ConvertValue(engine.GetCompletionValue(), returnType);
         }
 
         // ReSharper disable once ParameterHidesMember

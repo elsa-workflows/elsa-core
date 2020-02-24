@@ -8,8 +8,6 @@ using Elsa.Models;
 using Elsa.Persistence.DocumentDb.Documents;
 using Elsa.Persistence.DocumentDb.Extensions;
 using Elsa.Persistence.DocumentDb.Helpers;
-using Microsoft.Azure.Documents;
-using Microsoft.Azure.Documents.Client;
 
 namespace Elsa.Persistence.DocumentDb.Services
 {
