@@ -28,7 +28,7 @@ export class Designer {
         };
         this.deleteActivity = async (activity) => {
             const activities = this.workflow.activities.filter(x => x.id !== activity.id);
-            const connections = this.workflow.connections.filter(x => x.sourceActivityId != activity.id && x.destinationActivityId != activity.id);
+            const connections = this.workflow.connections.filter(x => x.sourceActivityId != activity.id && x.targetActivityId != activity.id);
             this.workflow = Object.assign({}, this.workflow, { activities, connections });
         };
         this.setupJsPlumb = () => {
@@ -74,7 +74,7 @@ export class Designer {
             for (let connection of this.workflow.connections) {
                 const sourceEndpointId = JsPlumbUtils.createEndpointUuid(connection.sourceActivityId, connection.outcome);
                 const sourceEndpoint = this.jsPlumb.getEndpoint(sourceEndpointId);
-                const destinationElementId = `wf-activity-${connection.destinationActivityId}`;
+                const destinationElementId = `wf-activity-${connection.targetActivityId}`;
                 this.jsPlumb.connect({
                     source: sourceEndpoint,
                     target: destinationElementId
@@ -105,12 +105,12 @@ export class Designer {
             // Check if we already have this connection.
             const sourceActivity = this.findActivityByElement(info.source);
             const destinationActivity = this.findActivityByElement(info.target);
-            const wfConnection = this.workflow.connections.find(x => x.sourceActivityId === sourceActivity.id && x.destinationActivityId == destinationActivity.id);
+            const wfConnection = this.workflow.connections.find(x => x.sourceActivityId === sourceActivity.id && x.targetActivityId == destinationActivity.id);
             if (!wfConnection) {
                 // Add created connection to list.
                 const connections = [...this.workflow.connections, {
                         sourceActivityId: sourceActivity.id,
-                        destinationActivityId: destinationActivity.id,
+                    targetActivityId: destinationActivity.id,
                         outcome: outcome
                     }];
                 this.workflow = Object.assign({}, this.workflow, { connections });
@@ -121,7 +121,7 @@ export class Designer {
             const outcome = sourceEndpoint.getParameter('outcome');
             const sourceActivity = this.findActivityByElement(info.source);
             const destinationActivity = this.findActivityByElement(info.target);
-            const connections = this.workflow.connections.filter(x => !(x.sourceActivityId === sourceActivity.id && x.destinationActivityId === destinationActivity.id && x.outcome === outcome));
+            const connections = this.workflow.connections.filter(x => !(x.sourceActivityId === sourceActivity.id && x.targetActivityId === destinationActivity.id && x.outcome === outcome));
             this.workflow = Object.assign({}, this.workflow, { connections });
         };
         this.onAddActivityClick = (e) => {
@@ -166,7 +166,7 @@ export class Designer {
             });
         });
         this.workflow.connections.forEach(function (connection) {
-            g.setEdge(connection.sourceActivityId, connection.destinationActivityId);
+            g.setEdge(connection.sourceActivityId, connection.targetActivityId);
         });
         dagre.layout(g);
         g.nodes().forEach(function (n) {

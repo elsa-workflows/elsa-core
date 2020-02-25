@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Migrations.Sqlite
@@ -35,20 +35,20 @@ namespace Elsa.Persistence.EntityFrameworkCore.Migrations.Sqlite
                 {
                     Id = table.Column<int>(nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    InstanceId = table.Column<string>(nullable: false),
-                    DefinitionId = table.Column<string>(nullable: false),
-                    Version = table.Column<int>(nullable: false),
-                    Status = table.Column<string>(nullable: false),
-                    CorrelationId = table.Column<string>(nullable: false),
-                    CreatedAt = table.Column<DateTime>(nullable: false),
+                    InstanceId = table.Column<string>(nullable: true),
+                    DefinitionId = table.Column<string>(nullable: true),
+                    CorrelationId = table.Column<string>(nullable: true),
+                    Version = table.Column<int>(nullable: true),
+                    CreatedAt = table.Column<DateTime>(nullable: true),
                     StartedAt = table.Column<DateTime>(nullable: true),
                     FinishedAt = table.Column<DateTime>(nullable: true),
                     FaultedAt = table.Column<DateTime>(nullable: true),
                     AbortedAt = table.Column<DateTime>(nullable: true),
-                    Variables = table.Column<string>(nullable: false),
-                    Input = table.Column<string>(nullable: false),
-                    ExecutionLog = table.Column<string>(nullable: false),
-                    Fault = table.Column<string>(nullable: false)
+                    Status = table.Column<string>(nullable: true),
+                    Fault = table.Column<string>(nullable: true),
+                    Variables = table.Column<string>(nullable: true),
+                    Input = table.Column<string>(nullable: true),
+                    ExecutionLog = table.Column<string>(nullable: false)
                 },
                 constraints: table =>
                 {
@@ -87,7 +87,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Migrations.Sqlite
                         .Annotation("Sqlite:Autoincrement", true),
                     WorkflowDefinitionVersionId = table.Column<int>(nullable: false),
                     SourceActivityId = table.Column<string>(nullable: false),
-                    DestinationActivityId = table.Column<string>(nullable: true),
+                    TargetActivityId = table.Column<string>(nullable: true),
                     Outcome = table.Column<string>(nullable: false)
                 },
                 constraints: table =>
@@ -111,7 +111,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Migrations.Sqlite
                     WorkflowInstanceId = table.Column<int>(nullable: false),
                     Type = table.Column<string>(nullable: false),
                     State = table.Column<string>(nullable: false),
-                    Output = table.Column<string>(nullable: false)
+                    Output = table.Column<string>(nullable: true)
                 },
                 constraints: table =>
                 {
@@ -132,7 +132,8 @@ namespace Elsa.Persistence.EntityFrameworkCore.Migrations.Sqlite
                         .Annotation("Sqlite:Autoincrement", true),
                     WorkflowInstanceId = table.Column<int>(nullable: false),
                     ActivityId = table.Column<string>(nullable: false),
-                    ActivityType = table.Column<string>(nullable: false)
+                    ActivityType = table.Column<string>(nullable: false),
+                    Tag = table.Column<string>(nullable: true)
                 },
                 constraints: table =>
                 {

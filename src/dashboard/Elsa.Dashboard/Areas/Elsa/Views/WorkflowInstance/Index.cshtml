@@ -69,10 +69,12 @@
                                     </td>
                                     <td>@workflowInstance.Version</td>
                                     <td>@workflowInstance.CorrelationId</td>
-                                    <td>@workflowInstance.StartedAt</td>
-                                    <td>@workflowInstance.FinishedAt</td>
-                                    <td>@workflowInstance.FaultedAt</td>
-                                    <td>@workflowInstance.AbortedAt</td>
+
+                                    @* This is temporarily commented out until we figure out if it's necessary because              WorkflowInstance.cs of elsa-2.0 doesn't have it originally. 
+                                         <td>@workflowInstance.StartedAt</td>
+                                         <td>@workflowInstance.FinishedAt</td>
+                                         <td>@workflowInstance.FaultedAt</td>
+                                         <td>@workflowInstance.AbortedAt</td>*@
                                     <td class="text-right">
                                         <div class="dropdown">
                                             <a class="btn btn-sm btn-icon-only text-light" href="#" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">

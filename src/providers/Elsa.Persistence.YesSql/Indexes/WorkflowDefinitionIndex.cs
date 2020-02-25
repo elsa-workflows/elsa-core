@@ -31,7 +31,7 @@ namespace Elsa.Persistence.YesSql.Indexes
                 .Map(
                     document => new WorkflowDefinitionIndex
                     {
-                        VersionId =  document.VersionId,
+                        VersionId = document.VersionId,
                         WorkflowDefinitionId = document.WorkflowDefinitionId,
                         Version = document.Version,
                         IsPublished = document.IsPublished,
@@ -53,11 +53,11 @@ namespace Elsa.Persistence.YesSql.Indexes
                         )
                 );
         }
-        
+
         private static IEnumerable<ActivityDefinition> GetStartActivities(WorkflowDefinitionVersionDocument workflow)
         {
-            var targetActivityIds = workflow.Connections.Select(x => x.DestinationActivityId).Distinct().ToLookup(x => x);
-            
+            var targetActivityIds = workflow.Connections.Select(x => x.TargetActivityId).Distinct().ToLookup(x => x);
+
             var query =
                 from activity in workflow.Activities
                 where !targetActivityIds.Contains(activity.Id)

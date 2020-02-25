@@ -1,8 +1,6 @@
 using Elsa.Activities.Email.Extensions;
-using Elsa.Activities.Http.Extensions;
 using Elsa.Activities.Timers.Extensions;
 using Elsa.Activities.UserTask.Extensions;
-using Elsa.Dashboard.Extensions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -10,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Elsa.Persistence.EntityFrameworkCore.Extensions;
 using Microsoft.EntityFrameworkCore;
-using Elsa.Persistence.EntityFrameworkCore.DbContexts;
+using Elsa.Dashboard.Extensions;
 
 namespace Elsa.Dashboard.Web
 {
@@ -38,6 +36,7 @@ namespace Elsa.Dashboard.Web
                 .AddUserTaskActivities()
                 .AddTimerActivities(options => options.Bind(elsaSection.GetSection("Timers")))
                 .AddElsaDashboard();
+
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -47,6 +46,7 @@ namespace Elsa.Dashboard.Web
 
             app
                 .UseStaticFiles()
+                .UseHttpActivities()
                 .UseRouting()
                 .UseEndpoints(endpoints => endpoints.MapControllers())
                 .UseWelcomePage();

@@ -14,5 +14,6 @@ namespace Elsa.Models
         
         public string? ActivityId { get; set; }
         public string? ActivityType { get; set; }
+        public string Tag { get; set; }
     }
 }

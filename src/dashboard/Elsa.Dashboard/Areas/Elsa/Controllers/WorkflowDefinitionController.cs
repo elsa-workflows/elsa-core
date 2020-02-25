@@ -154,7 +154,7 @@ namespace Elsa.Dashboard.Areas.Elsa.Controllers
                 .ToList();
 
             workflow.Connections = postedWorkflow.Connections.Select(
-                x => new ConnectionDefinition(x.SourceActivityId, x.DestinationActivityId, x.Outcome)).ToList();
+                x => new ConnectionDefinition(x.SourceActivityId, x.TargetActivityId, x.Outcome)).ToList();
 
             workflow.Description = model.Description;
             workflow.Name = model.Name;

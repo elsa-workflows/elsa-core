@@ -45,4 +45,10 @@
         <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Migrations\PostgreSql\" />
+      <Folder Include="Migrations\Sqlite\" />
+      <Folder Include="Migrations\SqlServer\" />
+    </ItemGroup>
+
 </Project>

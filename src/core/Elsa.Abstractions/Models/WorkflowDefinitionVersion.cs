@@ -14,25 +14,26 @@ namespace Elsa.Models
 
         public WorkflowDefinitionVersion(string id,
             string definitionId,
-            int version, 
-            string name, 
-            string description, 
-            IEnumerable<ActivityDefinition> activities, 
-            IEnumerable<ConnectionDefinition> connections, 
-            bool isSingleton, 
-            bool isDisabled, 
-            Variables variables)
+            int version,
+            string name,
+            string description,
+            Variables variables,
+            bool isSingleton,
+            IEnumerable<ActivityDefinition> activities,
+            IEnumerable<ConnectionDefinition> connections,
+            bool isDisabled
+            )
         {
             Id = id;
             DefinitionId = definitionId;
             Version = version;
             Name = name;
             Description = description;
+            Variables = variables;
+            IsSingleton = isSingleton;
             Activities = activities.ToList();
             Connections = connections.ToList();
-            IsSingleton = isSingleton;
             IsDisabled = isDisabled;
-            Variables = variables;
         }
 
         public string? Id { get; set; }

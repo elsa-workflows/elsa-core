@@ -52,7 +52,6 @@ namespace Elsa.Dashboard.Extensions
             
             services
                 .AddSingleton<IIdGenerator, IdGenerator>()
-                .AddSingleton<IWorkflowSerializerProvider, WorkflowSerializerProvider>()
                 .AddSingleton<IWorkflowSerializer, WorkflowSerializer>()
                 .TryAddProvider<ITokenFormatter, JsonTokenFormatter>(ServiceLifetime.Singleton)
                 .TryAddProvider<ITokenFormatter, YamlTokenFormatter>(ServiceLifetime.Singleton)

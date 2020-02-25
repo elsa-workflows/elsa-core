@@ -6,8 +6,8 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\core\Elsa\Elsa.csproj" />
-        <ProjectReference Include="..\..\dashboard\Elsa.Dashboard\Elsa.Dashboard.csproj" />
         <ProjectReference Include="..\..\providers\Elsa.Persistence.EntityFrameworkCore\Elsa.Persistence.EntityFrameworkCore.csproj" />
+        <ProjectReference Include="..\Elsa.Dashboard\Elsa.Dashboard.csproj" />
     </ItemGroup>
 
 </Project>

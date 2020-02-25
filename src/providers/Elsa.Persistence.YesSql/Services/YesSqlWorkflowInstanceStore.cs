@@ -78,6 +78,23 @@ namespace Elsa.Persistence.YesSql.Services
                 .ListAsync();
             return mapper.Map<IEnumerable<WorkflowInstance>>(documents);
         }
+        public async Task<IEnumerable<(WorkflowInstance, BlockingActivity)>> ListByBlockingActivityTagAsync(string activityType, string tag, string correlationId = null, CancellationToken cancellationToken = default)
+        {
+            var query = session.Query<WorkflowInstanceDocument, WorkflowInstanceBlockingActivitiesIndex>();
+
+            query = query.Where(x => x.ProcessStatus == WorkflowStatus.Suspended);
+
+            if (!string.IsNullOrWhiteSpace(correlationId))
+                query = query.Where(x => x.CorrelationId == correlationId);
+
+            query = query.Where(x => x.ActivityType == activityType && x.Tag == tag);
+            query = query.OrderByDescending(x => x.CreatedAt);
+
+            var documents = await query.ListAsync();
+            var instances = mapper.Map<IEnumerable<WorkflowInstance>>(documents);
+
+            return instances.GetBlockingActivities(activityType);
+        }
 
         public async Task<IEnumerable<(WorkflowInstance, BlockingActivity)>> ListByBlockingActivityAsync(
             string activityType,

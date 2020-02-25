@@ -163,7 +163,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
             
             entity
                 .Property(x => x.Output)
-                .HasConversion(x => Serialize(x), x => Deserialize<Variables>(x));
+                .HasConversion(x => Serialize(x), x => Deserialize<Variable>(x));
         }
         
         private void ConfigureBlockingActivity(ModelBuilder modelBuilder)
