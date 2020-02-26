@@ -65,6 +65,27 @@ namespace Elsa.Persistence.DocumentDb.Services
                 .OrderByDescending(x => x.CreatedAt);
             return mapper.Map<IEnumerable<WorkflowInstance>>(query);
         }
+        public async Task<IEnumerable<(WorkflowInstance, BlockingActivity)>> ListByBlockingActivityTagAsync(
+            string activityType,
+            string tag,
+            string? correlationId = null,
+            CancellationToken cancellationToken = default)
+        {
+            var client = storage.Client;
+            var collectionUrl = await GetCollectionUriAsync(cancellationToken);
+            var query = client
+                .CreateDocumentQuery<WorkflowInstanceDocument>(collectionUrl)
+                .Where(x => x.Status == WorkflowStatus.Suspended);
+
+            if (!string.IsNullOrWhiteSpace(correlationId))
+                query = query.Where(x => x.CorrelationId == correlationId);
+
+            query = query.Where(x => x.BlockingActivities.Any(y => y.ActivityType == activityType && y.Tag == tag));
+            query = query.OrderByDescending(x => x.CreatedAt);
+
+            var instances = Map(query.ToList());
+            return instances.GetBlockingActivities(activityType);
+        }
 
         public async Task<IEnumerable<(WorkflowInstance, BlockingActivity)>> ListByBlockingActivityAsync(
             string activityType,
@@ -77,7 +98,7 @@ namespace Elsa.Persistence.DocumentDb.Services
                 .CreateDocumentQuery<WorkflowInstanceDocument>(collectionUrl)
                 .Where(x => x.Status == WorkflowStatus.Suspended);
 
-            if (!string.IsNullOrWhiteSpace(correlationId)) 
+            if (!string.IsNullOrWhiteSpace(correlationId))
                 query = query.Where(x => x.CorrelationId == correlationId);
 
             query = query.Where(x => x.BlockingActivities.Any(y => y.ActivityType == activityType));
@@ -135,10 +156,10 @@ namespace Elsa.Persistence.DocumentDb.Services
             document = (dynamic)response.Resource;
             return Map(document);
         }
-        
+
         private async Task<Uri> GetCollectionUriAsync(CancellationToken cancellationToken)
         {
-            if (collectionUrl == null) 
+            if (collectionUrl == null)
                 collectionUrl = await storage.GetCollectionAsync("WorkflowInstances", cancellationToken);
 
             return collectionUrl;

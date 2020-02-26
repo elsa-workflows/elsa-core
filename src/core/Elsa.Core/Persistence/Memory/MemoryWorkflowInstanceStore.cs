@@ -45,10 +45,29 @@ namespace Elsa.Persistence.Memory
             var workflows = workflowInstances.Values.AsEnumerable();
             return Task.FromResult(workflows);
         }
+        public Task<IEnumerable<(WorkflowInstance, BlockingActivity)>> ListByBlockingActivityTagAsync(
+            string activityType,
+            string tag,
+            string? correlationId = null,
+            CancellationToken cancellationToken = default)
+        {
+            var query = workflowInstances.Values.AsQueryable();
+
+            query = query.Where(x => x.Status == WorkflowStatus.Suspended);
+
+            if (!string.IsNullOrWhiteSpace(correlationId))
+                query = query.Where(x => x.CorrelationId == correlationId);
+
+            query = query.Where(
+                x => x.BlockingActivities.Any(y => y.ActivityType == activityType && y.Tag == tag)
+            );
+
+            return Task.FromResult(query.AsEnumerable().GetBlockingActivities());
+        }
 
         public Task<IEnumerable<(WorkflowInstance, BlockingActivity)>> ListByBlockingActivityAsync(
             string activityType,
-            string? correlationId = default, 
+            string? correlationId = default,
             CancellationToken cancellationToken = default)
         {
             var query = workflowInstances.Values.AsQueryable();
