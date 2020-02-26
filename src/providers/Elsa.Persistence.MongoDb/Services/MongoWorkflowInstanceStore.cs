@@ -63,6 +63,26 @@ namespace Elsa.Persistence.MongoDb.Services
                 .ToListAsync(cancellationToken);
         }
 
+        public async Task<IEnumerable<(WorkflowInstance, BlockingActivity)>> ListByBlockingActivityTagAsync(
+            string activityType,
+            string tag,
+            string correlationId = null,
+            CancellationToken cancellationToken = default)
+        {
+            var query = collection.AsQueryable();
+
+            query = query.Where(x => x.Status == WorkflowStatus.Suspended);
+
+            if (!string.IsNullOrWhiteSpace(correlationId))
+                query = query.Where(x => x.CorrelationId == correlationId);
+
+            query = query.Where(x => x.BlockingActivities.Any(y => y.ActivityType == activityType && y.Tag == tag));
+            query = query.OrderByDescending(x => x.CreatedAt);
+
+            var instances = await query.ToListAsync(cancellationToken);
+
+            return instances.GetBlockingActivities(activityType);
+        }
         public async Task<IEnumerable<(WorkflowInstance, BlockingActivity)>> ListByBlockingActivityAsync(
             string activityType,
             string correlationId = default,
@@ -77,7 +97,7 @@ namespace Elsa.Persistence.MongoDb.Services
 
             query = query.Where(x => x.BlockingActivities.Any(y => y.ActivityType == activityType));
             query = query.OrderByDescending(x => x.CreatedAt);
-            
+
             var instances = await query.ToListAsync(cancellationToken);
 
             return instances.GetBlockingActivities(activityType);
