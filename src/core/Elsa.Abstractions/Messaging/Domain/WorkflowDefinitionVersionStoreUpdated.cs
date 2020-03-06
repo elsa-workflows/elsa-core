@@ -1,11 +1,11 @@
-﻿using MediatR;
+using MediatR;
 
 namespace Elsa.Messaging.Domain
 {
     /// <summary>
     /// Published when the workflow definition store is updated. 
     /// </summary>
-    public class WorkflowDefinitionStoreUpdated : INotification
+    public class WorkflowDefinitionVersionStoreUpdated : INotification
     {
     }
 }

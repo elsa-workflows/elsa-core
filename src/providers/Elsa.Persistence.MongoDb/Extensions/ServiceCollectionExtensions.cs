@@ -8,9 +8,10 @@ using MongoDb.Bson.NodaTime;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Conventions;
 using MongoDB.Driver;
+using Microsoft.Extensions.DependencyInjection;
 
 // ReSharper disable once CheckNamespace
-namespace Microsoft.Extensions.DependencyInjection
+namespace Elsa.Persistence.MongoDb.Extensions
 {
     public static class ServiceCollectionExtensions
     {
@@ -22,6 +23,7 @@ namespace Microsoft.Extensions.DependencyInjection
             return options
                 .AddMongoDbProvider(databaseName, connectionString)
                 .UseMongoDbWorkflowDefinitionStore(databaseName, connectionString)
+                .UseMongoDbWorkflowDefinitionVersionStore(databaseName, connectionString)
                 .UseMongoDbWorkflowInstanceStore(databaseName, connectionString);
         }
 
@@ -40,6 +42,20 @@ namespace Microsoft.Extensions.DependencyInjection
             return options;
         }
 
+        public static ElsaOptions UseMongoDbWorkflowDefinitionVersionStore(
+            this ElsaOptions options,
+            string databaseName,
+            string connectionString)
+        {
+            options
+                .AddMongoDbProvider(databaseName, connectionString)
+                .UseWorkflowDefinitionVersionStore(sp => sp.GetRequiredService<MongoWorkflowDefinitionVersionStore>())
+                .Services
+                .AddMongoDbCollection<WorkflowDefinitionVersion>("WorkflowDefinitionVersions")
+                .AddScoped<MongoWorkflowDefinitionVersionStore>();
+
+            return options;
+        }
         public static ElsaOptions UseMongoDbWorkflowDefinitionStore(
             this ElsaOptions options,
             string databaseName,
@@ -49,7 +65,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddMongoDbProvider(databaseName, connectionString)
                 .UseWorkflowDefinitionStore(sp => sp.GetRequiredService<MongoWorkflowDefinitionStore>())
                 .Services
-                .AddMongoDbCollection<WorkflowDefinitionVersion>("WorkflowDefinitions")
+                .AddMongoDbCollection<WorkflowDefinition>("WorkflowDefinitions")
                 .AddScoped<MongoWorkflowDefinitionStore>();
 
             return options;
@@ -86,7 +102,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
             return options;
         }
-        
+
         private static IMongoCollection<T> CreateCollection<T>(IServiceProvider serviceProvider, string collectionName)
         {
             var database = serviceProvider.GetRequiredService<IMongoDatabase>();

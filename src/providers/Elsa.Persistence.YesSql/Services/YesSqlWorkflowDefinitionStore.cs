@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -5,7 +6,6 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Elsa.Models;
 using Elsa.Persistence.YesSql.Documents;
-using Elsa.Persistence.YesSql.Extensions;
 using Elsa.Persistence.YesSql.Indexes;
 using YesSql;
 
@@ -15,77 +15,53 @@ namespace Elsa.Persistence.YesSql.Services
     {
         private readonly ISession session;
         private readonly IMapper mapper;
-
         public YesSqlWorkflowDefinitionStore(ISession session, IMapper mapper)
         {
             this.session = session;
             this.mapper = mapper;
         }
-
-        public async Task<WorkflowDefinitionVersion> SaveAsync(
-            WorkflowDefinitionVersion definition,
-            CancellationToken cancellationToken = default)
+        public async Task<WorkflowDefinition> SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
         {
-            var document = mapper.Map<WorkflowDefinitionVersionDocument>(definition);
+            var document = mapper.Map<WorkflowDefinitionDocument>(definition);
             session.Save(document);
             await session.CommitAsync();
-            return mapper.Map<WorkflowDefinitionVersion>(document);
+            return mapper.Map<WorkflowDefinition>(document);
         }
-
-        public async Task<WorkflowDefinitionVersion> AddAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken = default)
+        public async Task<WorkflowDefinition> AddAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
         {
-            var document = mapper.Map<WorkflowDefinitionVersionDocument>(definition);
+            var document = mapper.Map<WorkflowDefinitionDocument>(definition);
 
             session.Save(document);
             await session.CommitAsync();
-            return mapper.Map<WorkflowDefinitionVersion>(document);
+            return mapper.Map<WorkflowDefinition>(document);
         }
 
-        public async Task<WorkflowDefinitionVersion> GetByIdAsync(string id, CancellationToken cancellationToken = default)
+        public async Task<WorkflowDefinition> GetByIdAsync(string id, CancellationToken cancellationToken = default)
         {
             var query = session
-                .Query<WorkflowDefinitionVersionDocument, WorkflowDefinitionIndex>()
-                .Where(x => x.VersionId == id);
+                .Query<WorkflowDefinitionDocument, WorkflowDefinitionIndex>()
+                .Where(x => x.Id == id);
 
             var document = await query.FirstOrDefaultAsync();
 
-            return mapper.Map<WorkflowDefinitionVersion>(document);
+            return mapper.Map<WorkflowDefinition>(document);
         }
 
-        public async Task<WorkflowDefinitionVersion> GetByIdAsync(
-            string definitionId,
-            VersionOptions version,
-            CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<WorkflowDefinition>> ListAsync(string tenantId = "", CancellationToken cancellationToken = default)
         {
-            var query = session
-                .Query<WorkflowDefinitionVersionDocument, WorkflowDefinitionIndex>()
-                .Where(x => x.WorkflowDefinitionId == definitionId)
-                .WithVersion(version);
+            var query = tenantId != "" ?
+                session.Query<WorkflowDefinitionDocument, WorkflowDefinitionIndex>().Where(x => x.TenantId == tenantId) :
+                session.Query<WorkflowDefinitionDocument, WorkflowDefinitionIndex>();
 
-            var document = await query.FirstOrDefaultAsync();
-
-            return mapper.Map<WorkflowDefinitionVersion>(document);
-        }
-
-        public async Task<IEnumerable<WorkflowDefinitionVersion>> ListAsync(
-            VersionOptions version,
-            CancellationToken cancellationToken = default)
-        {
-            var query = session.Query<WorkflowDefinitionVersionDocument, WorkflowDefinitionIndex>()
-                .WithVersion(version);
             var documents = await query.ListAsync();
 
-            return mapper.Map<IEnumerable<WorkflowDefinitionVersion>>(documents);
+            return mapper.Map<IEnumerable<WorkflowDefinition>>(documents);
         }
-
-        public async Task<WorkflowDefinitionVersion> UpdateAsync(
-            WorkflowDefinitionVersion definition,
-            CancellationToken cancellationToken)
+        public async Task<WorkflowDefinition> UpdateAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
         {
             var query = session
-                .Query<WorkflowDefinitionVersionDocument, WorkflowDefinitionIndex>()
-                .Where(x => x.WorkflowDefinitionId == definition.DefinitionId)
-                .WithVersion(VersionOptions.SpecificVersion(definition.Version));
+                .Query<WorkflowDefinitionDocument, WorkflowDefinitionIndex>()
+                .Where(x => x.Id == definition.Id);
 
             var document = await query.FirstOrDefaultAsync();
 
@@ -93,34 +69,33 @@ namespace Elsa.Persistence.YesSql.Services
             session.Save(document);
             await session.CommitAsync();
 
-            return mapper.Map<WorkflowDefinitionVersion>(document);
+            return mapper.Map<WorkflowDefinition>(document);
         }
-
         public async Task<int> DeleteAsync(string id, CancellationToken cancellationToken = default)
         {
-            var instanceDocuments = (await session.Query<WorkflowInstanceDocument, WorkflowInstanceIndex>()
-                    .Where(x => x.WorkflowDefinitionId == id)
+            var definitionDocuments = (await session.Query<WorkflowDefinitionDocument, WorkflowDefinitionIndex>()
+                    .Where(x => x.Id == id)
                     .ListAsync())
                 .ToList();
 
-            var definitionDocuments = (await session
-                    .Query<WorkflowDefinitionVersionDocument, WorkflowDefinitionIndex>()
+            var definitionVersionDocuments = (await session
+                    .Query<WorkflowDefinitionVersionDocument, WorkflowDefinitionVersionIndex>()
                     .Where(x => x.WorkflowDefinitionId == id)
                     .ListAsync())
                 .ToList();
-
-            foreach (var document in instanceDocuments)
-            {
-                session.Delete(document);
-            }
 
             foreach (var document in definitionDocuments)
             {
                 session.Delete(document);
             }
 
+            foreach (var document in definitionVersionDocuments)
+            {
+                session.Delete(document);
+            }
+
             await session.CommitAsync();
-            return definitionDocuments.Count;
+            return definitionVersionDocuments.Count;
         }
     }
 }

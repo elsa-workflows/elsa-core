@@ -16,19 +16,20 @@ namespace Elsa.Persistence.EntityFrameworkCore.Extensions
             this ElsaOptions options,
             Action<DbContextOptionsBuilder> configureOptions,
             bool usePooling = true,
-            string? schema = default, 
+            string? schema = default,
             string? migrationHistoryTableName = default)
         {
             return options
+                .UseEntityFrameworkWorkflowDefinitionVersionStore(configureOptions, usePooling, schema, migrationHistoryTableName)
                 .UseEntityFrameworkWorkflowDefinitionStore(configureOptions, usePooling, schema, migrationHistoryTableName)
                 .UseEntityFrameworkWorkflowInstanceStore(configureOptions, usePooling);
         }
-        
+
         public static ElsaOptions UseEntityFrameworkWorkflowInstanceStore(
             this ElsaOptions options,
             Action<DbContextOptionsBuilder> configureOptions,
             bool usePooling = true,
-            string? schema = default, 
+            string? schema = default,
             string? migrationHistoryTableName = default)
         {
             options.AddEntityFrameworkCoreProvider(configureOptions, usePooling, schema, migrationHistoryTableName);
@@ -38,11 +39,24 @@ namespace Elsa.Persistence.EntityFrameworkCore.Extensions
             return options;
         }
 
+        public static ElsaOptions UseEntityFrameworkWorkflowDefinitionVersionStore(
+            this ElsaOptions options,
+            Action<DbContextOptionsBuilder> configureOptions,
+            bool usePooling = true,
+            string? schema = default,
+            string? migrationHistoryTableName = default)
+        {
+            options.AddEntityFrameworkCoreProvider(configureOptions, usePooling, schema, migrationHistoryTableName);
+            options.Services.AddScoped<EntityFrameworkCoreWorkflowDefinitionVersionStore>();
+            options.UseWorkflowDefinitionVersionStore(sp => sp.GetRequiredService<EntityFrameworkCoreWorkflowDefinitionVersionStore>());
+
+            return options;
+        }
         public static ElsaOptions UseEntityFrameworkWorkflowDefinitionStore(
             this ElsaOptions options,
             Action<DbContextOptionsBuilder> configureOptions,
             bool usePooling = true,
-            string? schema = default, 
+            string? schema = default,
             string? migrationHistoryTableName = default)
         {
             options.AddEntityFrameworkCoreProvider(configureOptions, usePooling, schema, migrationHistoryTableName);
@@ -51,19 +65,19 @@ namespace Elsa.Persistence.EntityFrameworkCore.Extensions
 
             return options;
         }
-        
+
         private static ElsaOptions AddEntityFrameworkCoreProvider(
             this ElsaOptions options,
             Action<DbContextOptionsBuilder> configureOptions,
             bool usePooling = true,
-            string? schema = default, 
+            string? schema = default,
             string? migrationHistoryTableName = default)
         {
             var services = options.Services;
 
             if (services.HasService<ElsaContext>())
                 return options;
-            
+
             if (usePooling)
                 services.AddDbContextPool<ElsaContext>(configureOptions);
             else
@@ -72,18 +86,18 @@ namespace Elsa.Persistence.EntityFrameworkCore.Extensions
             services
                 .AddAutoMapperProfile<NodaTimeProfile>(ServiceLifetime.Singleton)
                 .AddAutoMapperProfile<EntitiesProfile>(ServiceLifetime.Singleton);
-            
+
             if (!string.IsNullOrWhiteSpace(schema))
             {
-                var historyTableName = !string.IsNullOrWhiteSpace(migrationHistoryTableName) 
-                    ? migrationHistoryTableName 
+                var historyTableName = !string.IsNullOrWhiteSpace(migrationHistoryTableName)
+                    ? migrationHistoryTableName
                     : DbContextCustomSchema.DefaultMigrationsHistoryTableName;
-                
+
                 var dbContextCustomSchema = new DbContextCustomSchema(schema, historyTableName);
 
-                services.AddSingleton<IDbContextCustomSchema>(dbContextCustomSchema);    
+                services.AddSingleton<IDbContextCustomSchema>(dbContextCustomSchema);
             }
-            
+
             return options;
         }
     }

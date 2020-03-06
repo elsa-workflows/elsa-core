@@ -1,13 +1,13 @@
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using AutoMapper;
 using Elsa.Models;
 using Elsa.Persistence.EntityFrameworkCore.DbContexts;
 using Elsa.Persistence.EntityFrameworkCore.Entities;
-using Elsa.Persistence.EntityFrameworkCore.Extensions;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Services
 {
@@ -21,148 +21,81 @@ namespace Elsa.Persistence.EntityFrameworkCore.Services
             this.dbContext = dbContext;
             this.mapper = mapper;
         }
-
-        public async Task<WorkflowDefinitionVersion> SaveAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken = default)
+        public async Task<WorkflowDefinition> SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
         {
             var existingEntity =
                 await dbContext
-                    .WorkflowDefinitionVersions
-                    .Include(x => x.Activities)
-                    .Include(x => x.Connections)
-                    .FirstOrDefaultAsync(x => x.VersionId == definition.Id, cancellationToken);
+                    .WorkflowDefinitions
+                    .FirstOrDefaultAsync(x => x.Id == definition.Id, cancellationToken);
 
             if (existingEntity == null)
                 return await AddAsync(definition, cancellationToken);
 
             return await UpdateAsync(definition, cancellationToken);
         }
-
-        public async Task<WorkflowDefinitionVersion> AddAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken = default)
+        public async Task<WorkflowDefinition> AddAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
         {
             var entity = Map(definition);
-            await dbContext.WorkflowDefinitionVersions.AddAsync(entity, cancellationToken);
+            await dbContext.WorkflowDefinitions.AddAsync(entity, cancellationToken);
             await dbContext.SaveChangesAsync(cancellationToken);
             return Map(entity);
         }
 
-        public async Task<WorkflowDefinitionVersion> GetByIdAsync(string id, CancellationToken cancellationToken = default)
+        public async Task<WorkflowDefinition> GetByIdAsync(string id, CancellationToken cancellationToken = default)
         {
             var query = dbContext
-                .WorkflowDefinitionVersions
-                .Include(x => x.Activities)
-                .Include(x => x.Connections)
-                .Where(x => x.VersionId == id);
+                .WorkflowDefinitions
+                .Include(x => x.WorkflowDefinitionVersions)
+                .Where(x => x.Id == id);
 
             var entity = await query.FirstOrDefaultAsync(cancellationToken);
-            
-            return Map(entity);
-        }
-
-        public async Task<WorkflowDefinitionVersion> GetByIdAsync(
-            string definitionId,
-            VersionOptions version,
-            CancellationToken cancellationToken = default)
-        {
-            var query = dbContext
-                .WorkflowDefinitionVersions
-                .Include(x => x.Activities)
-                .Include(x => x.Connections)
-                .AsQueryable()
-                .Where(x => x.DefinitionId == definitionId)
-                .WithVersion(version);
-
-            var entity = await query.FirstOrDefaultAsync(cancellationToken);
-            
-            return Map(entity);
-        }
-        
-        public async Task<WorkflowDefinitionVersion> UpdateAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken)
-        {
-            var entity = await dbContext
-                .WorkflowDefinitionVersions
-                .Include(x => x.Activities)
-                .Include(x => x.Connections)
-                .FirstOrDefaultAsync(x => x.VersionId == definition.Id, cancellationToken);
-
-            DeleteActivities(entity);
-            DeleteConnections(entity);
-            
-            entity = mapper.Map(definition, entity);
-            
-            dbContext.WorkflowDefinitionVersions.Update(entity);
-
-            await dbContext.SaveChangesAsync(cancellationToken);
 
             return Map(entity);
         }
-
-        public async Task<IEnumerable<WorkflowDefinitionVersion>> ListAsync(
-            VersionOptions version,
-            CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<WorkflowDefinition>> ListAsync(string tenantId = "", CancellationToken cancellationToken = default)
         {
-            var query = dbContext
-                .WorkflowDefinitionVersions
-                .Include(x => x.Activities)
-                .Include(x => x.Connections)
-                .AsQueryable()
-                .WithVersion(version);
+            var query = tenantId != "" ?
+                dbContext.WorkflowDefinitions.Where(x => x.TenantId == tenantId).Include(x => x.WorkflowDefinitionVersions).AsQueryable() :
+                dbContext.WorkflowDefinitions.Include(x => x.WorkflowDefinitionVersions).AsQueryable();
 
             var entities = await query.ToListAsync(cancellationToken);
 
-            return mapper.Map<IEnumerable<WorkflowDefinitionVersion>>(entities);
+            return mapper.Map<IEnumerable<WorkflowDefinition>>(entities);
         }
-
-        public async Task<int> DeleteAsync(string id, CancellationToken cancellationToken = default)
+        public async Task<WorkflowDefinition> UpdateAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
         {
-            var definitionRecords = await dbContext.WorkflowDefinitionVersions
-                .Where(x => x.DefinitionId == id)
-                .ToListAsync(cancellationToken);
+            var entity = await dbContext
+                .WorkflowDefinitions
+                .FirstOrDefaultAsync(x => x.Id == definition.Id, cancellationToken);
 
-            var instanceRecords = await dbContext
-                .WorkflowInstances.Where(x => x.DefinitionId == id)
-                .ToListAsync(cancellationToken);
+            entity = mapper.Map(definition, entity);
 
-            var activityDefinitionRecords = await dbContext.ActivityDefinitions
-                .Where(x => x.WorkflowDefinitionVersion.DefinitionId == id)
-                .ToListAsync(cancellationToken);
-
-            var connectionRecords = await dbContext.ConnectionDefinitions
-                .Where(x => x.WorkflowDefinitionVersion.DefinitionId == id)
-                .ToListAsync(cancellationToken);
-
-            var activityInstanceRecords = await dbContext.ActivityInstances
-                .Where(x => x.WorkflowInstance.DefinitionId == id)
-                .ToListAsync(cancellationToken);
-
-            var blockingActivityRecords = await dbContext.BlockingActivities
-                .Where(x => x.WorkflowInstance.DefinitionId == id)
-                .ToListAsync(cancellationToken);
-
-            dbContext.WorkflowInstances.RemoveRange(instanceRecords);
-            dbContext.WorkflowDefinitionVersions.RemoveRange(definitionRecords);
-            dbContext.ActivityDefinitions.RemoveRange(activityDefinitionRecords);
-            dbContext.ConnectionDefinitions.RemoveRange(connectionRecords);
-            dbContext.ActivityInstances.RemoveRange(activityInstanceRecords);
-            dbContext.BlockingActivities.RemoveRange(blockingActivityRecords);
+            dbContext.WorkflowDefinitions.Update(entity);
 
             await dbContext.SaveChangesAsync(cancellationToken);
 
-            return definitionRecords.Count;
+            return Map(entity);
         }
-        
-        private void DeleteActivities(WorkflowDefinitionVersionEntity entity)
+        public async Task<int> DeleteAsync(string id, CancellationToken cancellationToken = default)
         {
-            dbContext.ActivityDefinitions.RemoveRange(entity.Activities);
-            entity.Activities.Clear();
-        }
-        
-        private void DeleteConnections(WorkflowDefinitionVersionEntity entity)
-        {
-            dbContext.ConnectionDefinitions.RemoveRange(entity.Connections);
-            entity.Connections.Clear();
+            var definitions = await dbContext.WorkflowDefinitions
+                .Where(x => x.Id == id)
+                .Include(x => x.WorkflowDefinitionVersions)
+                .ToListAsync(cancellationToken);
+
+            foreach (var definition in definitions)
+            {
+                dbContext.WorkflowDefinitionVersions.RemoveRange(definition.WorkflowDefinitionVersions);
+            }
+
+            dbContext.WorkflowDefinitions.RemoveRange(definitions);
+
+            await dbContext.SaveChangesAsync(cancellationToken);
+
+            return definitions.Count;
         }
 
-        private WorkflowDefinitionVersionEntity Map(WorkflowDefinitionVersion source) => mapper.Map<WorkflowDefinitionVersionEntity>(source);
-        private WorkflowDefinitionVersion Map(WorkflowDefinitionVersionEntity source) => mapper.Map<WorkflowDefinitionVersion>(source);
+        private WorkflowDefinitionEntity Map(WorkflowDefinition source) => mapper.Map<WorkflowDefinitionEntity>(source);
+        private WorkflowDefinition Map(WorkflowDefinitionEntity source) => mapper.Map<WorkflowDefinition>(source);
     }
 }

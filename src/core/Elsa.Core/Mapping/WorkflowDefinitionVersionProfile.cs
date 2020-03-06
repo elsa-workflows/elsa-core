@@ -3,9 +3,9 @@ using Elsa.Models;
 
 namespace Elsa.Mapping
 {
-    public class WorkflowDefinitionProfile : Profile
+    public class WorkflowDefinitionVersionProfile : Profile
     {
-        public WorkflowDefinitionProfile()
+        public WorkflowDefinitionVersionProfile()
         {
             CreateMap<WorkflowDefinitionVersion, WorkflowDefinitionVersion>();
         }

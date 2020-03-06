@@ -7,8 +7,8 @@ namespace Elsa.Persistence.YesSql.Extensions
 {
     public static class WorkflowDefinitionExtensions
     {
-        public static IQuery<WorkflowDefinitionVersionDocument, WorkflowDefinitionIndex> WithVersion(
-            this IQuery<WorkflowDefinitionVersionDocument, WorkflowDefinitionIndex> query, 
+        public static IQuery<WorkflowDefinitionVersionDocument, WorkflowDefinitionVersionIndex> WithVersion(
+            this IQuery<WorkflowDefinitionVersionDocument, WorkflowDefinitionVersionIndex> query,
             VersionOptions version)
         {
             if (version.IsDraft)

@@ -36,7 +36,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
         /// so this is necessary in order to set the custom schema for the Model Cache.
         /// </summary>
         internal IDbContextCustomSchema DbContextCustomSchema { get; }
-
+        public DbSet<WorkflowDefinitionEntity> WorkflowDefinitions { get; set; }
         public DbSet<WorkflowDefinitionVersionEntity> WorkflowDefinitionVersions { get; set; }
         public DbSet<WorkflowInstanceEntity> WorkflowInstances { get; set; }
         public DbSet<ActivityDefinitionEntity> ActivityDefinitions { get; set; }
@@ -48,6 +48,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
         {
             ConfigureCustomSchema(modelBuilder);
             base.OnModelCreating(modelBuilder);
+            ConfigureWorkflowDefinition(modelBuilder);
             ConfigureWorkflowDefinitionVersion(modelBuilder);
             ConfigureWorkflowInstance(modelBuilder);
             ConfigureActivityDefinition(modelBuilder);
@@ -55,6 +56,12 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
             ConfigureBlockingActivity(modelBuilder);
             ConfigureScheduledActivity(modelBuilder);
             ConfigureConnectionDefinition(modelBuilder);
+        }
+
+        private void ConfigureWorkflowDefinition(ModelBuilder modelBuilder)
+        {
+            var entity = modelBuilder.Entity<WorkflowDefinitionEntity>();
+            entity.HasMany(x => x.WorkflowDefinitionVersions).WithOne(x => x.WorkflowDefinition);
         }
 
         private void ConfigureWorkflowDefinitionVersion(ModelBuilder modelBuilder)
@@ -66,10 +73,11 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
             entity.Property(x => x.Variables).HasConversion(x => Serialize(x), x => Deserialize<Variables>(x));
             entity.HasMany(x => x.Activities).WithOne(x => x.WorkflowDefinitionVersion);
             entity.HasMany(x => x.Connections).WithOne(x => x.WorkflowDefinitionVersion);
+            entity.HasOne(x => x.WorkflowDefinition).WithMany(x => x.WorkflowDefinitionVersions).HasForeignKey(x => x.DefinitionId);
         }
 
         private void ConfigureCustomSchema(ModelBuilder modelBuilder)
-        {            
+        {
             if (DbContextCustomSchema != null && DbContextCustomSchema.UseCustomSchema)
             {
                 modelBuilder.HasDefaultSchema(DbContextCustomSchema.Schema);
@@ -80,6 +88,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
                 modelBuilder.ApplyConfiguration(new SchemaEntityTypeConfiguration<BlockingActivityEntity>(DbContextCustomSchema));
                 modelBuilder.ApplyConfiguration(new SchemaEntityTypeConfiguration<ScheduledActivityEntity>(DbContextCustomSchema));
                 modelBuilder.ApplyConfiguration(new SchemaEntityTypeConfiguration<ConnectionDefinitionEntity>(DbContextCustomSchema));
+                modelBuilder.ApplyConfiguration(new SchemaEntityTypeConfiguration<WorkflowDefinitionEntity>(DbContextCustomSchema));
                 modelBuilder.ApplyConfiguration(new SchemaEntityTypeConfiguration<WorkflowDefinitionVersionEntity>(DbContextCustomSchema));
                 modelBuilder.ApplyConfiguration(new SchemaEntityTypeConfiguration<WorkflowInstanceEntity>(DbContextCustomSchema));
             }
@@ -91,14 +100,14 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
 
             entity.Property(x => x.Id).UseIdentityColumn();
             entity.Property(x => x.Status).HasConversion<string>();
-            
+
             entity
                 .Property(x => x.Variables)
                 .HasConversion(
                     x => Serialize(x),
                     x => Deserialize<Variables>(x)
                 );
-            
+
             entity
                 .Property(x => x.ExecutionLog)
                 .HasConversion(
@@ -112,7 +121,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
                     x => Serialize(x),
                     x => Deserialize<WorkflowFault>(x)
                 );
-            
+
             entity
                 .Property(x => x.Input)
                 .HasConversion(
@@ -123,16 +132,16 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
             entity
                 .HasMany(x => x.Activities)
                 .WithOne(x => x.WorkflowInstance);
-            
+
             entity
                 .HasMany(x => x.BlockingActivities)
                 .WithOne(x => x.WorkflowInstance);
-            
+
             entity
                 .HasMany(x => x.ScheduledActivities)
                 .WithOne(x => x.WorkflowInstance);
         }
-        
+
         private void ConfigureActivityDefinition(ModelBuilder modelBuilder)
         {
             var entity = modelBuilder.Entity<ActivityDefinitionEntity>();
@@ -143,36 +152,36 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
                 .Property(x => x.State)
                 .HasConversion(x => Serialize(x), x => Deserialize<Variables>(x));
         }
-        
+
         private void ConfigureConnectionDefinition(ModelBuilder modelBuilder)
         {
             var entity = modelBuilder.Entity<ConnectionDefinitionEntity>();
 
             entity.Property(x => x.Id).UseIdentityColumn();
         }
-        
+
         private void ConfigureActivityInstance(ModelBuilder modelBuilder)
         {
             var entity = modelBuilder.Entity<ActivityInstanceEntity>();
 
             entity.Property(x => x.Id).UseIdentityColumn();
-            
+
             entity
                 .Property(x => x.State)
                 .HasConversion(x => Serialize(x), x => Deserialize<Variables>(x));
-            
+
             entity
                 .Property(x => x.Output)
                 .HasConversion(x => Serialize(x), x => Deserialize<Variables>(x));
         }
-        
+
         private void ConfigureBlockingActivity(ModelBuilder modelBuilder)
         {
             var entity = modelBuilder.Entity<BlockingActivityEntity>();
 
             entity.HasKey(x => x.Id);
         }
-        
+
         private void ConfigureScheduledActivity(ModelBuilder modelBuilder)
         {
             var entity = modelBuilder.Entity<ScheduledActivityEntity>();

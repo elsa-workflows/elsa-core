@@ -44,7 +44,12 @@ namespace Elsa.Persistence.YesSql.StartupTasks
             PerformUpdates(builder =>
             {
                 builder
-                    .CreateMapIndexTable(nameof(WorkflowDefinitionIndex), table => table
+                .CreateMapIndexTable(nameof(WorkflowDefinitionIndex), table => table
+                        .Column<string>("Id")
+                        .Column<string>("TenantId")
+                        .Column<DateTime>("CreatedAt")
+                    )
+                    .CreateMapIndexTable(nameof(WorkflowDefinitionVersionIndex), table => table
                         .Column<string>("VersionId")
                         .Column<string>("WorkflowDefinitionId")
                         .Column<int>("Version")
@@ -52,7 +57,7 @@ namespace Elsa.Persistence.YesSql.StartupTasks
                         .Column<bool>("IsLatest")
                         .Column<bool>("IsDisabled")
                     )
-                    .CreateMapIndexTable(nameof(WorkflowDefinitionStartActivitiesIndex), table => table
+                    .CreateMapIndexTable(nameof(WorkflowDefinitionVersionStartActivitiesIndex), table => table
                         .Column<string>("StartActivityId")
                         .Column<string>("StartActivityType")
                         .Column<bool>("IsDisabled")

@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Messaging.Domain;
@@ -7,27 +7,27 @@ using MediatR;
 
 namespace Elsa.Persistence
 {
-    public class PublishingWorkflowDefinitionStore : IWorkflowDefinitionStore
+    public class PublishingWorkflowDefinitionVersionStore : IWorkflowDefinitionVersionStore
     {
-        private readonly IWorkflowDefinitionStore decoratedStore;
+        private readonly IWorkflowDefinitionVersionStore decoratedStore;
         private readonly IMediator mediator;
 
-        public PublishingWorkflowDefinitionStore(IWorkflowDefinitionStore decoratedStore, IMediator mediator)
+        public PublishingWorkflowDefinitionVersionStore(IWorkflowDefinitionVersionStore decoratedStore, IMediator mediator)
         {
             this.decoratedStore = decoratedStore;
             this.mediator = mediator;
         }
         
-        public async Task<WorkflowDefinitionVersion> SaveAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken = default)
+        public async Task<WorkflowDefinitionVersion> SaveAsync(WorkflowDefinitionVersion definitionVersion, CancellationToken cancellationToken = default)
         {
-            var savedDefinition = await decoratedStore.SaveAsync(definition, cancellationToken);
+            var savedDefinitionVersion = await decoratedStore.SaveAsync(definitionVersion, cancellationToken);
             await PublishUpdateEventAsync(cancellationToken);
-            return savedDefinition;
+            return savedDefinitionVersion;
         }
 
-        public async Task<WorkflowDefinitionVersion> AddAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken = default)
+        public async Task<WorkflowDefinitionVersion> AddAsync(WorkflowDefinitionVersion definitionVersion, CancellationToken cancellationToken = default)
         {
-            var result = await decoratedStore.AddAsync(definition, cancellationToken);
+            var result = await decoratedStore.AddAsync(definitionVersion, cancellationToken);
             await PublishUpdateEventAsync(cancellationToken);
             return result;
         }
@@ -47,11 +47,11 @@ namespace Elsa.Persistence
             return decoratedStore.ListAsync(version, cancellationToken);
         }
 
-        public async Task<WorkflowDefinitionVersion> UpdateAsync(WorkflowDefinitionVersion definition, CancellationToken cancellationToken = default)
+        public async Task<WorkflowDefinitionVersion> UpdateAsync(WorkflowDefinitionVersion definitionVersion, CancellationToken cancellationToken = default)
         {
-            var updatedDefinition = await decoratedStore.UpdateAsync(definition, cancellationToken);
+            var updatedDefinitionVersion = await decoratedStore.UpdateAsync(definitionVersion, cancellationToken);
             await PublishUpdateEventAsync(cancellationToken);
-            return updatedDefinition;
+            return updatedDefinitionVersion;
         }
 
         public async Task<int> DeleteAsync(string id, CancellationToken cancellationToken = default)
@@ -63,7 +63,7 @@ namespace Elsa.Persistence
 
         private Task PublishUpdateEventAsync(CancellationToken cancellationToken)
         {
-            return mediator.Publish(new WorkflowDefinitionStoreUpdated(), cancellationToken);
+            return mediator.Publish(new WorkflowDefinitionVersionStoreUpdated(), cancellationToken);
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Elsa.Activities.Console;
 using Elsa.Expressions;
@@ -18,20 +18,20 @@ namespace Elsa.Samples.Serialization
                 .AddElsa()
                 .AddConsoleActivities()
                 .BuildServiceProvider();
-            
+
             var activityResolver = services.GetRequiredService<IActivityResolver>();
             var writeLine = activityResolver.ResolveActivity<WriteLine>().WithText(new LiteralExpression<string>("Foo"));
-            
-            var workflowDefinition = new WorkflowDefinitionVersion
+
+            var workflowDefinitionVersion = new WorkflowDefinitionVersion
             {
                 Activities = new List<ActivityDefinition> { ActivityDefinition.FromActivity(writeLine) }
             };
 
             var serializer = services.GetRequiredService<IWorkflowSerializer>();
-            var json = serializer.Serialize(workflowDefinition, JsonTokenFormatter.FormatName);
-            
+            var json = serializer.Serialize(workflowDefinitionVersion, JsonTokenFormatter.FormatName);
+
             Console.WriteLine(json);
-            
+
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Elsa.Caching;
 using Elsa.Persistence;
 using Elsa.Persistence.Memory;
@@ -17,29 +17,36 @@ namespace Elsa
         {
             Services = services;
 
-            WorkflowDefinitionStoreFactory = sp => sp.GetRequiredService<MemoryWorkflowDefinitionStore>();
+            WorkflowDefinitionVersionStoreFactory = sp => sp.GetRequiredService<MemoryWorkflowDefinitionVersionStore>();
             WorkflowInstanceStoreFactory = sp => sp.GetRequiredService<MemoryWorkflowInstanceStore>();
+            WorkflowDefinitionStoreFactory = sp => sp.GetRequiredService<MemoryWorkflowDefinitionStore>();
             DistributedLockProviderFactory = sp => new DefaultLockProvider();
             SignalFactory = sp => new Signal();
             ServiceBusConfigurer = ConfigureInMemoryServiceBus;
         }
 
         public IServiceCollection Services { get; }
-        internal Func<IServiceProvider, IWorkflowDefinitionStore> WorkflowDefinitionStoreFactory { get; private set; }
+        internal Func<IServiceProvider, IWorkflowDefinitionVersionStore> WorkflowDefinitionVersionStoreFactory { get; private set; }
         internal Func<IServiceProvider, IWorkflowInstanceStore> WorkflowInstanceStoreFactory { get; private set; }
+        internal Func<IServiceProvider, IWorkflowDefinitionStore> WorkflowDefinitionStoreFactory { get; private set; }
         internal Func<IServiceProvider, IDistributedLockProvider> DistributedLockProviderFactory { get; private set; }
         internal Func<IServiceProvider, ISignal> SignalFactory { get; private set; }
         internal Func<RebusConfigurer, IServiceProvider, RebusConfigurer> ServiceBusConfigurer { get; private set; }
 
-        public ElsaOptions UseWorkflowDefinitionStore(Func<IServiceProvider, IWorkflowDefinitionStore> factory)
+        public ElsaOptions UseWorkflowDefinitionVersionStore(Func<IServiceProvider, IWorkflowDefinitionVersionStore> factory)
         {
-            WorkflowDefinitionStoreFactory = factory;
+            WorkflowDefinitionVersionStoreFactory = factory;
             return this;
         }
 
         public ElsaOptions UseWorkflowInstanceStore(Func<IServiceProvider, IWorkflowInstanceStore> factory)
         {
             WorkflowInstanceStoreFactory = factory;
+            return this;
+        }
+        public ElsaOptions UseWorkflowDefinitionStore(Func<IServiceProvider, IWorkflowDefinitionStore> factory)
+        {
+            WorkflowDefinitionStoreFactory = factory;
             return this;
         }
 
@@ -60,8 +67,8 @@ namespace Elsa
             ServiceBusConfigurer = configure;
             return this;
         }
-        
-        public ElsaOptions ConfigureServiceBus(Func<RebusConfigurer, RebusConfigurer> configure) => 
+
+        public ElsaOptions ConfigureServiceBus(Func<RebusConfigurer, RebusConfigurer> configure) =>
             ConfigureServiceBus((bus, _) => configure(bus));
 
         private static RebusConfigurer ConfigureInMemoryServiceBus(RebusConfigurer rebus, IServiceProvider serviceProvider)

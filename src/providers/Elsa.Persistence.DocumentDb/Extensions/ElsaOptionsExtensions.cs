@@ -13,17 +13,26 @@ namespace Elsa.Persistence.DocumentDb.Extensions
             options
                 .AddCosmosDbProvider(dbOptions)
                 .UseWorkflowDefinitionStore(sp => sp.GetRequiredService<CosmosDbWorkflowDefinitionStore>());
-            
+
             options.Services.AddSingleton<CosmosDbWorkflowDefinitionStore>();
             return options;
         }
-        
+        public static ElsaOptions UseCosmosDbWorkflowDefinitionVersionStore(this ElsaOptions options, DocumentDbStorageOptions dbOptions)
+        {
+            options
+                .AddCosmosDbProvider(dbOptions)
+                .UseWorkflowDefinitionVersionStore(sp => sp.GetRequiredService<CosmosDbWorkflowDefinitionVersionStore>());
+
+            options.Services.AddSingleton<CosmosDbWorkflowDefinitionVersionStore>();
+            return options;
+        }
+
         public static ElsaOptions UseCosmosDbWorkflowInstanceStore(this ElsaOptions options, DocumentDbStorageOptions dbOptions)
         {
             options
                 .AddCosmosDbProvider(dbOptions)
                 .UseWorkflowInstanceStore(sp => sp.GetRequiredService<CosmosDbWorkflowInstanceStore>());
-            
+
             options.Services.AddSingleton<IWorkflowInstanceStore, CosmosDbWorkflowInstanceStore>();
             return options;
         }
@@ -34,7 +43,7 @@ namespace Elsa.Persistence.DocumentDb.Extensions
         {
             if (options.HasService<DocumentDbStorage>())
                 return options;
-            
+
             var storage = new DocumentDbStorage(documentDbOptions);
 
             options.Services

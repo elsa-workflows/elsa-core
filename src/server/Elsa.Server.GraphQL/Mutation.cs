@@ -20,22 +20,22 @@ namespace Elsa.Server.GraphQL
         {
             this.mapper = mapper;
         }
-        
-        public async Task<WorkflowDefinitionVersion> SaveWorkflowDefinition(
+
+        public async Task<WorkflowDefinitionVersion> SaveWorkflowDefinitionVersion(
             string? id,
             WorkflowSaveAction saveAction,
             WorkflowInput workflowInput,
-            [Service] IWorkflowDefinitionStore store,
+            [Service] IWorkflowDefinitionVersionStore store,
             [Service] IIdGenerator idGenerator,
             [Service] ITokenSerializer serializer,
             [Service] IWorkflowPublisher publisher,
             CancellationToken cancellationToken)
         {
-            var workflowDefinition = id != null ? await store.GetByIdAsync(id, cancellationToken) : default;
+            var workflowDefinitionVersion = id != null ? await store.GetByIdAsync(id, cancellationToken) : default;
 
-            if (workflowDefinition == null)
+            if (workflowDefinitionVersion == null)
             {
-                workflowDefinition = new WorkflowDefinitionVersion
+                workflowDefinitionVersion = new WorkflowDefinitionVersion
                 {
                     Id = idGenerator.Generate(),
                     DefinitionId = idGenerator.Generate(),
@@ -45,43 +45,43 @@ namespace Elsa.Server.GraphQL
             }
 
             if (workflowInput.Activities != null)
-                workflowDefinition.Activities = workflowInput.Activities.Select(ToActivityDefinition).ToList();
+                workflowDefinitionVersion.Activities = workflowInput.Activities.Select(ToActivityDefinition).ToList();
 
             if (workflowInput.Connections != null)
-                workflowDefinition.Connections = workflowInput.Connections;
+                workflowDefinitionVersion.Connections = workflowInput.Connections;
 
             if (workflowInput.Description != null)
-                workflowDefinition.Description = workflowInput.Description.Trim();
+                workflowDefinitionVersion.Description = workflowInput.Description.Trim();
 
             if (workflowInput.Name != null)
-                workflowDefinition.Name = workflowInput.Name.Trim();
+                workflowDefinitionVersion.Name = workflowInput.Name.Trim();
 
             if (workflowInput.IsDisabled != null)
-                workflowDefinition.IsDisabled = workflowInput.IsDisabled.Value;
+                workflowDefinitionVersion.IsDisabled = workflowInput.IsDisabled.Value;
 
             if (workflowInput.IsSingleton != null)
-                workflowDefinition.IsSingleton = workflowInput.IsSingleton.Value;
+                workflowDefinitionVersion.IsSingleton = workflowInput.IsSingleton.Value;
 
             if (workflowInput.DeleteCompletedInstances != null)
-                workflowDefinition.DeleteCompletedInstances = workflowInput.DeleteCompletedInstances.Value;
+                workflowDefinitionVersion.DeleteCompletedInstances = workflowInput.DeleteCompletedInstances.Value;
 
             if (workflowInput.Variables != null)
-                workflowDefinition.Variables = serializer.Deserialize<Variables>(workflowInput.Variables);
+                workflowDefinitionVersion.Variables = serializer.Deserialize<Variables>(workflowInput.Variables);
 
             if (workflowInput.PersistenceBehavior != null)
-                workflowDefinition.PersistenceBehavior = workflowInput.PersistenceBehavior.Value;
+                workflowDefinitionVersion.PersistenceBehavior = workflowInput.PersistenceBehavior.Value;
 
             if (saveAction == WorkflowSaveAction.Publish)
-                workflowDefinition = await publisher.PublishAsync(workflowDefinition, cancellationToken);
+                workflowDefinitionVersion = await publisher.PublishAsync(workflowDefinitionVersion, cancellationToken);
             else
-                workflowDefinition = await publisher.SaveDraftAsync(workflowDefinition, cancellationToken);
+                workflowDefinitionVersion = await publisher.SaveDraftAsync(workflowDefinitionVersion, cancellationToken);
 
-            return workflowDefinition;
+            return workflowDefinitionVersion;
         }
 
-        public async Task<int> DeleteWorkflowDefinition(
+        public async Task<int> DeleteWorkflowDefinitionVersion(
             string id,
-            [Service] IWorkflowDefinitionStore store,
+            [Service] IWorkflowDefinitionVersionStore store,
             CancellationToken cancellationToken)
         {
             return await store.DeleteAsync(id, cancellationToken);

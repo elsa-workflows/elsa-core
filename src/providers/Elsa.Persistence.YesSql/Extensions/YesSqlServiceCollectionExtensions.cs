@@ -21,6 +21,7 @@ namespace Elsa.Persistence.YesSql.Extensions
         {
             return options
                 .UseYesSqlWorkflowDefinitionStore(configure)
+                .UseYesSqlWorkflowDefinitionVersionStore(configure)
                 .UseYesSqlWorkflowInstanceStore(configure);
         }
 
@@ -37,6 +38,18 @@ namespace Elsa.Persistence.YesSql.Extensions
             return options;
         }
 
+        public static ElsaOptions UseYesSqlWorkflowDefinitionVersionStore(
+            this ElsaOptions options,
+            Action<IConfiguration> configure)
+        {
+            options
+                .AddYesSqlProvider(configure)
+                .UseWorkflowDefinitionVersionStore(sp => sp.GetRequiredService<YesSqlWorkflowDefinitionVersionStore>())
+                .Services
+                .AddScoped<YesSqlWorkflowDefinitionVersionStore>();
+
+            return options;
+        }
         public static ElsaOptions UseYesSqlWorkflowDefinitionStore(
             this ElsaOptions options,
             Action<IConfiguration> configure)
@@ -59,7 +72,7 @@ namespace Elsa.Persistence.YesSql.Extensions
 
             options.Services
                 .AddSingleton(sp => StoreFactory.CreateStore(sp, configure))
-                .AddSingleton<IIndexProvider, WorkflowDefinitionIndexProvider>()
+                .AddSingleton<IIndexProvider, WorkflowDefinitionVersionIndexProvider>()
                 .AddSingleton<IIndexProvider, WorkflowInstanceIndexProvider>()
                 .AddTransient<ISchemaVersionStore, SchemaVersionStore>()
                 .AddScoped(CreateSession)

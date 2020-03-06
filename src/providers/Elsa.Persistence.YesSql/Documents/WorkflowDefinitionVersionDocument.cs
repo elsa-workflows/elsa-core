@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Elsa.Models;
 
 namespace Elsa.Persistence.YesSql.Documents
@@ -10,6 +10,7 @@ namespace Elsa.Persistence.YesSql.Documents
         public int Version { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
+        public WorkflowDefinition WorkflowDefinition { get; set; }
         public ICollection<ActivityDefinition> Activities { get; set; }
         public IList<ConnectionDefinition> Connections { get; set; }
         public Variables Variables { get; set; }

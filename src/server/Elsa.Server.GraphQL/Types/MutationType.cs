@@ -7,11 +7,11 @@ namespace Elsa.Server.GraphQL.Types
         protected override void Configure(IObjectTypeDescriptor<Mutation> descriptor)
         {
             descriptor
-                .Field(x => x.SaveWorkflowDefinition(default, default, default, default, default, default, default, default))
+                .Field(x => x.SaveWorkflowDefinitionVersion(default, default, default, default, default, default, default, default))
                 .Argument("id", x => x.Type<IdType>());
 
             descriptor
-                .Field(x => x.DeleteWorkflowDefinition(default, default, default))
+                .Field(x => x.DeleteWorkflowDefinitionVersion(default, default, default))
                 .Argument("id", x => x.Type<IdType>());
         }
     }
