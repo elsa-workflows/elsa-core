@@ -3,7 +3,7 @@
     "windowsAuthentication": false, 
     "anonymousAuthentication": true, 
     "iisExpress": {
-      "applicationUrl": "http://localhost:16398"
+      "applicationUrl": "http://localhost:11000"
     }
   },
   "profiles": {
@@ -17,7 +17,7 @@
     "Elsa.Server.Host": {
       "commandName": "Project",
       "launchBrowser": false,
-      "applicationUrl": "http://localhost:16398",
+      "applicationUrl": "http://localhost:11000",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }

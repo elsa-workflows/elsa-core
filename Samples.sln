@@ -94,7 +94,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.HelloWorldHttp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.CustomActivities", "src\samples\Elsa.Samples.CustomActivities\Elsa.Samples.CustomActivities.csproj", "{554C21D7-10BE-48E6-B0EF-9FCA43B32A0F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.TimeSheetApproval", "src\samples\Elsa.Samples.TimeSheetApproval\Elsa.Samples.TimeSheetApproval.csproj", "{1678743A-9095-4683-8DCD-5763F41924E2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.TimesheetApproval", "src\samples\Elsa.Samples.TimesheetApproval\Elsa.Samples.TimesheetApproval.csproj", "{1678743A-9095-4683-8DCD-5763F41924E2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

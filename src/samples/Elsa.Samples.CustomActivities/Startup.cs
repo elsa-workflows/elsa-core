@@ -9,7 +9,7 @@ namespace Elsa.Samples.CustomActivities
         {
             services
                 .AddElsa()
-                .AddHttp()
+                .AddHttpActivities()
                 .AddActivity<ReadQueryString>()
                 .AddWorkflow<EchoQueryStringWorkflow>();
         }

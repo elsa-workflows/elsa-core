@@ -1,5 +1,5 @@
 using System;
-using Elsa.Activities.Email.Activities;
+using Elsa.Activities.Email;
 using Elsa.Activities.Email.Options;
 using Elsa.Activities.Email.Services;
 using Microsoft.Extensions.Options;
@@ -9,10 +9,10 @@ namespace Microsoft.Extensions.DependencyInjection
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddEmail(this IServiceCollection services, Action<OptionsBuilder<SmtpOptions>> options = null) =>
+        public static IServiceCollection AddEmailActivities(this IServiceCollection services, Action<OptionsBuilder<SmtpOptions>> options = null) =>
             services
                 .AddEmailServices(options)
-                .AddEmailActivities();
+                .AddEmailActivitiesInternal();
         
         public static IServiceCollection AddEmailServices(this IServiceCollection services, Action<OptionsBuilder<SmtpOptions>> options = null)
         {
@@ -23,7 +23,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddOptions()
                 .AddSingleton<ISmtpService, SmtpService>();
         }
-        
-        public static IServiceCollection AddEmailActivities(this IServiceCollection services) => services.AddActivity<SendEmail>();
+
+        private static IServiceCollection AddEmailActivitiesInternal(this IServiceCollection services) => services.AddActivity<SendEmail>();
     }
 }

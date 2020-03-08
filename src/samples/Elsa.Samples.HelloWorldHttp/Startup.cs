@@ -9,7 +9,7 @@ namespace Elsa.Samples.HelloWorldHttp
         {
             services
                 .AddElsa()
-                .AddHttp()
+                .AddHttpActivities()
                 .AddWorkflow<HelloHttpWorkflow>();
         }
 

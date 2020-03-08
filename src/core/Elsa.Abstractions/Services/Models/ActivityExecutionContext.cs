@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Expressions;
 using Elsa.Models;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Services.Models
 {
@@ -35,5 +36,6 @@ namespace Elsa.Services.Models
         public void SetVariable(string name, object value) => WorkflowExecutionContext.SetVariable(name, value);
         public object GetVariable(string name) => WorkflowExecutionContext.GetVariable(name);
         public T GetVariable<T>(string name) => WorkflowExecutionContext.GetVariable<T>(name);
+        public T GetService<T>() => WorkflowExecutionContext.ServiceProvider.GetService<T>();
     }
 }

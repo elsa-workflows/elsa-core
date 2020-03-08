@@ -16,10 +16,10 @@ namespace Microsoft.Extensions.DependencyInjection
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddHttp(this IServiceCollection services, Action<OptionsBuilder<HttpActivityOptions>> options = null) =>
+        public static IServiceCollection AddHttpActivities(this IServiceCollection services, Action<OptionsBuilder<HttpActivityOptions>> options = null) =>
             services
                 .AddHttpServices(options)
-                .AddHttpActivities();
+                .AddHttpActivitiesInternal();
         
         public static IServiceCollection AddHttpServices(this IServiceCollection services, Action<OptionsBuilder<HttpActivityOptions>> options = null)
         {
@@ -46,8 +46,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddRequestHandler<TriggerRequestHandler>()
                 .AddRequestHandler<SignalRequestHandler>();
         }
-        
-        public static IServiceCollection AddHttpActivities(this IServiceCollection services) =>
+
+        private static IServiceCollection AddHttpActivitiesInternal(this IServiceCollection services) =>
             services
                 .AddActivity<ReceiveHttpRequest>()
                 .AddActivity<WriteHttpResponse>()

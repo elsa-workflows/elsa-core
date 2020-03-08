@@ -27,7 +27,7 @@ namespace Elsa.Activities.Http.Services
                 return httpContext.Request.ToAbsoluteUrl(relativePath);
 
             var baseUrl = options.Value.BaseUrl;
-            return baseUrl != null ? new Uri(baseUrl, relativePath) : new Uri(relativePath, UriKind.Relative);
+            return new Uri(baseUrl, relativePath);
         }
     }
 }
