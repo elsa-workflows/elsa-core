@@ -157,7 +157,6 @@ namespace Elsa.Services
             {
                 WorkflowDefinition newDefinition = new WorkflowDefinition();
                 newDefinition.Id = idGenerator.Generate();
-                newDefinition.TenantId = "Milan";
                 newDefinition.CreatedAt = clock.GetCurrentInstant();
                 await definitionStore.AddAsync(newDefinition);
                 workflowDefinitionVersion.DefinitionId = newDefinition.Id;
