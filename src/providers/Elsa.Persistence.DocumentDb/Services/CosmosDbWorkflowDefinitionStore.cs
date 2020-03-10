@@ -37,22 +37,20 @@ namespace Elsa.Persistence.DocumentDb.Services
             await client.CreateDocumentWithRetriesAsync(collectionUrl, document, cancellationToken: cancellationToken);
             return Map(document);
         }
-        public async Task<WorkflowDefinition> GetByIdAsync(string id, CancellationToken cancellationToken = default)
+        public async Task<WorkflowDefinition> GetByIdAsync(string tenantId, string id, CancellationToken cancellationToken = default)
         {
             var client = storage.Client;
             var collectionUrl = await GetCollectionUriAsync(cancellationToken);
-            var query = client.CreateDocumentQuery<WorkflowDefinitionDocument>(collectionUrl).Where(c => c.Id == id);
+            var query = client.CreateDocumentQuery<WorkflowDefinitionDocument>(collectionUrl).Where(c => c.TenantId == tenantId && c.Id == id);
             var document = query.FirstOrDefault();
             return Map(document);
         }
 
-        public async Task<IEnumerable<WorkflowDefinition>> ListAsync(string tenantId = "", CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<WorkflowDefinition>> ListAsync(string tenantId, CancellationToken cancellationToken = default)
         {
             var client = storage.Client;
             var collectionUrl = await GetCollectionUriAsync(cancellationToken);
-            var query = tenantId != "" ?
-                client.CreateDocumentQuery<WorkflowDefinitionDocument>(collectionUrl).Where(x => x.TenantId == tenantId).ToList() :
-                client.CreateDocumentQuery<WorkflowDefinitionDocument>(collectionUrl).ToList();
+            var query = client.CreateDocumentQuery<WorkflowDefinitionDocument>(collectionUrl).Where(x => x.TenantId == tenantId).ToList();
 
             return mapper.Map<IEnumerable<WorkflowDefinition>>(query);
         }
@@ -65,11 +63,11 @@ namespace Elsa.Persistence.DocumentDb.Services
             return Map(document);
         }
 
-        public async Task<int> DeleteAsync(string id, CancellationToken cancellationToken = default)
+        public async Task<int> DeleteAsync(string tenantId, string id, CancellationToken cancellationToken = default)
         {
             var client = storage.Client;
             var collectionUrl = await GetCollectionUriAsync(cancellationToken);
-            var workflowDefinitionDocuments = await client.CreateDocumentQuery<WorkflowDefinitionDocument>(collectionUrl).Where(c => c.Id == id).ToQueryResultAsync();
+            var workflowDefinitionDocuments = await client.CreateDocumentQuery<WorkflowDefinitionDocument>(collectionUrl).Where(c => c.TenantId == tenantId && c.Id == id).ToQueryResultAsync();
 
             foreach (var record in workflowDefinitionDocuments)
             {

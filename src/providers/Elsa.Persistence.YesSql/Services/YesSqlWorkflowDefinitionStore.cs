@@ -36,23 +36,20 @@ namespace Elsa.Persistence.YesSql.Services
             return mapper.Map<WorkflowDefinition>(document);
         }
 
-        public async Task<WorkflowDefinition> GetByIdAsync(string id, CancellationToken cancellationToken = default)
+        public async Task<WorkflowDefinition> GetByIdAsync(string tenantId, string id, CancellationToken cancellationToken = default)
         {
             var query = session
                 .Query<WorkflowDefinitionDocument, WorkflowDefinitionIndex>()
-                .Where(x => x.Id == id);
+                .Where(x => x.TenantId == tenantId && x.Id == id);
 
             var document = await query.FirstOrDefaultAsync();
 
             return mapper.Map<WorkflowDefinition>(document);
         }
 
-        public async Task<IEnumerable<WorkflowDefinition>> ListAsync(string tenantId = "", CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<WorkflowDefinition>> ListAsync(string tenantId, CancellationToken cancellationToken = default)
         {
-            var query = tenantId != "" ?
-                session.Query<WorkflowDefinitionDocument, WorkflowDefinitionIndex>().Where(x => x.TenantId == tenantId) :
-                session.Query<WorkflowDefinitionDocument, WorkflowDefinitionIndex>();
-
+            var query = session.Query<WorkflowDefinitionDocument, WorkflowDefinitionIndex>().Where(x => x.TenantId == tenantId);
             var documents = await query.ListAsync();
 
             return mapper.Map<IEnumerable<WorkflowDefinition>>(documents);
@@ -61,7 +58,7 @@ namespace Elsa.Persistence.YesSql.Services
         {
             var query = session
                 .Query<WorkflowDefinitionDocument, WorkflowDefinitionIndex>()
-                .Where(x => x.Id == definition.Id);
+                .Where(x => x.TenantId == definition.TenantId && x.Id == definition.Id);
 
             var document = await query.FirstOrDefaultAsync();
 
@@ -71,10 +68,10 @@ namespace Elsa.Persistence.YesSql.Services
 
             return mapper.Map<WorkflowDefinition>(document);
         }
-        public async Task<int> DeleteAsync(string id, CancellationToken cancellationToken = default)
+        public async Task<int> DeleteAsync(string tenantId, string id, CancellationToken cancellationToken = default)
         {
             var definitionDocuments = (await session.Query<WorkflowDefinitionDocument, WorkflowDefinitionIndex>()
-                    .Where(x => x.Id == id)
+                    .Where(x => x.TenantId == tenantId && x.Id == id)
                     .ListAsync())
                 .ToList();
 

@@ -16,7 +16,7 @@ namespace Elsa.Persistence.Memory
         }
         public async Task<WorkflowDefinition> SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
         {
-            var existingDefinition = await GetByIdAsync(definition.Id, cancellationToken);
+            var existingDefinition = await GetByIdAsync(definition.TenantId, definition.Id, cancellationToken);
 
             if (existingDefinition == null)
                 await AddAsync(definition, cancellationToken);
@@ -27,7 +27,7 @@ namespace Elsa.Persistence.Memory
         }
         public async Task<WorkflowDefinition> AddAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
         {
-            var existingDefinition = await GetByIdAsync(definition.Id, cancellationToken);
+            var existingDefinition = await GetByIdAsync(definition.TenantId, definition.Id, cancellationToken);
 
             if (existingDefinition != null)
             {
@@ -37,29 +37,29 @@ namespace Elsa.Persistence.Memory
             definitions.Add(definition);
             return definition;
         }
-        public Task<WorkflowDefinition> GetByIdAsync(string id, CancellationToken cancellationToken = default)
+        public Task<WorkflowDefinition> GetByIdAsync(string tenantId, string id, CancellationToken cancellationToken = default)
         {
-            var definition = definitions.FirstOrDefault(x => x.Id == id);
+            var definition = definitions.FirstOrDefault(x => x.TenantId == tenantId && x.Id == id);
             return Task.FromResult(definition);
         }
-        public Task<IEnumerable<WorkflowDefinition>> ListAsync(string tenantId = "", CancellationToken cancellationToken = default)
+        public Task<IEnumerable<WorkflowDefinition>> ListAsync(string tenantId, CancellationToken cancellationToken = default)
         {
-            var query = tenantId != "" ? definitions.Where(x => x.TenantId == tenantId).AsQueryable() : definitions.AsQueryable();
+            var query = definitions.Where(x => x.TenantId == tenantId).AsQueryable();
             return Task.FromResult(query.AsEnumerable());
         }
 
         public async Task<WorkflowDefinition> UpdateAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
         {
-            var existingDefinition = await GetByIdAsync(definition.Id, cancellationToken);
+            var existingDefinition = await GetByIdAsync(definition.TenantId, definition.Id, cancellationToken);
             var index = definitions.IndexOf(existingDefinition);
 
             definitions[index] = definition;
             return definition;
         }
 
-        public Task<int> DeleteAsync(string id, CancellationToken cancellationToken = default)
+        public Task<int> DeleteAsync(string tenantId, string id, CancellationToken cancellationToken = default)
         {
-            var count = definitions.RemoveAll(x => x.Id == id);
+            var count = definitions.RemoveAll(x => x.TenantId == tenantId && x.Id == id);
             return Task.FromResult(count);
         }
     }
