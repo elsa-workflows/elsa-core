@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>8.0</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Elsa.Core" Version="1.2.2.29" />
+    <PackageReference Include="MediatR" Version="8.0.1" />
+    <PackageReference Include="Microsoft.AspNetCore.DataProtection.Abstractions" Version="3.1.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Azure.ServiceBus" Version="4.1.2" />
+    <PackageReference Include="ServiceBus.AttachmentPlugin" Version="6.1.0" />
+  </ItemGroup>
+
+</Project>
