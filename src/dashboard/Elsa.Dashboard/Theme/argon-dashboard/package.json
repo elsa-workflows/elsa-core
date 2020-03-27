@@ -37,7 +37,7 @@
     "url": "https://github.com/creativetimofficial/argon-dashboard/issues"
   },
   "dependencies": {
-    "@elsa-workflows/elsa-workflow-designer": "latest"
+    "@elsa-workflows/elsa-workflow-designer": "0.0.61"
   },
   "devDependencies": {
     "gulp": "^4.0.2",
