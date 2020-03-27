@@ -18,7 +18,8 @@ namespace Elsa.AutoMapper.Extensions
         public static IServiceCollection AddAutoMapperProfile<TProfile>(this IServiceCollection services, ServiceLifetime lifetime) where TProfile : Profile
         {
             services.AddAutoMapper(lifetime);
-            return services.AddTransient<Profile, TProfile>();
+            services.TryAddTransient(typeof(Profile), typeof(TProfile));
+            return services;
         }
 
         private static IConfigurationProvider CreateConfigurationProvider(IServiceProvider serviceProvider)
