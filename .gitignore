@@ -34,7 +34,6 @@ packages/
 
 #Ignore git-related files
 *.orig
-.gitattributes
 
 #Rider
 .idea
