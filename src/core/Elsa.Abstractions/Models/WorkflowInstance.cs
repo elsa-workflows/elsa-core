@@ -19,7 +19,6 @@ namespace Elsa.Models
         public Stack<WorkflowExecutionScope> Scopes { get; set; }
         public Variables Input { get; set; }
         public HashSet<BlockingActivity> BlockingActivities { get; set; }
-        public string[] TestItems { get; set; } = new string[0];
         public ICollection<LogEntry> ExecutionLog { get; set; }
         public WorkflowFault Fault { get; set; }
     }
