@@ -5,10 +5,10 @@ We should generate migration sets per provider as described here: https://docs.m
 Example commands:
 
 ```bash
-dotnet ef migrations add InitialCreate --context SqliteContext --output-dir Migrations/Sqlite
-dotnet ef migrations add InitialCreate --context SqlServerContext --output-dir Migrations/SqlServer
-dotnet ef migrations add InitialCreate --context PostgreSqlContext --output-dir Migrations/PostgreSql
-dotnet ef migrations add InitialCreate --context MySqlContext --output-dir Migrations/MySql
+dotnet ef migrations add Update01 --context SqliteContext --output-dir Migrations/Sqlite
+dotnet ef migrations add Update01 --context SqlServerContext --output-dir Migrations/SqlServer
+dotnet ef migrations add Update01 --context PostgreSqlContext --output-dir Migrations/PostgreSql
+dotnet ef migrations add Update01 --context MySqlContext --output-dir Migrations/MySql
 ```
  
 
