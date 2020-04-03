@@ -89,14 +89,15 @@ namespace Elsa.Services.Models
             Workflow.Status = WorkflowStatus.Executing;
         }
 
-        public void Fault(IActivity activity, Exception exception) => Fault(activity, exception.Message);
+        public void Fault(IActivity activity, Exception exception) => Fault(activity, exception.Message, exception);
 
-        public void Fault(IActivity activity, string errorMessage)
+        public void Fault(IActivity activity, string errorMessage, Exception exception = null)
         {
             Workflow.FaultedAt = clock.GetCurrentInstant();
             Workflow.Fault = new WorkflowFault
             {
                 Message = errorMessage,
+                Exception = exception,
                 FaultedActivity = activity
             };
             Workflow.Status = WorkflowStatus.Faulted;
