@@ -3,9 +3,9 @@ using AutoMapper;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-namespace Elsa.AutoMapper.Extensions
+namespace Elsa.Extensions
 {
-    public static class ServiceCollectionExtensions
+    public static class AutoMapperServiceCollectionExtensions
     {
         public static IServiceCollection AddAutoMapper(this IServiceCollection services, ServiceLifetime lifetime)
         {
@@ -18,7 +18,7 @@ namespace Elsa.AutoMapper.Extensions
         public static IServiceCollection AddAutoMapperProfile<TProfile>(this IServiceCollection services, ServiceLifetime lifetime) where TProfile : Profile
         {
             services.AddAutoMapper(lifetime);
-            services.TryAddTransient(typeof(Profile), typeof(TProfile));
+            services.TryAddProvider<Profile, TProfile>(lifetime);
             return services;
         }
 

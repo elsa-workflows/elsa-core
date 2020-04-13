@@ -5,6 +5,7 @@ using Elsa.Activities;
 using Elsa.AutoMapper.Extensions;
 using Elsa.Caching;
 using Elsa.Expressions;
+using Elsa.Extensions;
 using Elsa.Mapping;
 using Elsa.Persistence;
 using Elsa.Persistence.Memory;

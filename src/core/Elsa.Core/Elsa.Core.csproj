@@ -48,7 +48,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\utils\Elsa.AutoMapper.Extensions\Elsa.AutoMapper.Extensions.csproj" />
         <ProjectReference Include="..\Elsa.Abstractions\Elsa.Abstractions.csproj" />
     </ItemGroup>
 
