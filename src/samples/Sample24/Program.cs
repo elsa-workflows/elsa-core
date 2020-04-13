@@ -77,10 +77,10 @@ namespace Sample24
         {
             return new ServiceCollection()
                 .AddElsa(
-                    x => x.AddEntityFrameworkStores<MySqlContext>(
+                    x => x.AddEntityFrameworkStores<SqliteContext>(
                         options => options
-                            .UseMySql(@"Server=localhost;Database=Elsa_Sample24;uid=developer;pwd=developer",
-                                builder => builder.MigrationsAssembly(typeof(MySqlContext).Assembly.FullName))))
+                            .UseSqlite(@"Data Source=c:\data\elsa.entity-framework-core.db;Cache=Shared",
+                                builder => builder.MigrationsAssembly(typeof(SqliteContext).Assembly.FullName))))
                 .AddStartupRunner()
                 .AddConsoleActivities()
                 .AddWorkflow<HelloWorldWorkflow>()
