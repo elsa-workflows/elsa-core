@@ -1,4 +1,4 @@
-﻿using Elsa.Extensions;
+using Elsa.Extensions;
 using Elsa.Persistence;
 using Elsa.Services;
 using MediatR;
@@ -40,8 +40,7 @@ namespace Elsa.AzureServiceBus.MessageHandlers
 
                     var sbusWorkflows = await registry.ListByStartActivityAsync(nameof(ServiceBusSignalReceived), cancellationToken);
 
-                    var haltedSbusWorkflows = await workflowInstanceStore.ListByBlockingActivityAsync<ServiceBusSignalReceived>(
-                        cancellationToken: cancellationToken);
+                    var haltedSbusWorkflows = await workflowInstanceStore.ListByBlockingActivityAsync<ServiceBusSignalReceived>(cancellationToken: cancellationToken);
 
                     //get the list of workflows to start and resume from this signal
                     var workflowsToStart = Filter(sbusWorkflows, notification.ConsumerName, notification.Message.BodyType).ToList();
@@ -56,19 +55,8 @@ namespace Elsa.AzureServiceBus.MessageHandlers
                     {
                         await InvokeWorkflowsToResumeAsync(workflowInvoker, cancellationToken, workflowsToResume, notification.Message);
                     }
-
-
-
-
-
                 }
-
-
             }
-
-
-
-
         }
 
         private IEnumerable<(WorkflowInstance, ActivityInstance)> Filter(

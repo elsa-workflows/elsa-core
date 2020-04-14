@@ -1,4 +1,4 @@
-﻿using Elsa;
+using Elsa;
 using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Expressions;
@@ -26,7 +26,6 @@ namespace Elsa.AzureServiceBus.Activities
          RuntimeDescription = "x => !!x.state.queue ? `<strong>${x.state.dataExpression.expression}</strong> -> <strong>${x.state.queue}</strong><br/>${x.state.dataExpression.syntax}` : x.definition.description",
         Icon = "fas fa-traffic-light",
         Outcomes = "x => !!x.state.signals ? x.state.signals : []")]
-
     public class ServiceBusSignaled : Activity
     {
         public const string INPUT_VARIABLE_NAME = "AzureServiceBus_Signal";
@@ -77,8 +76,6 @@ namespace Elsa.AzureServiceBus.Activities
             set => SetState(value);
         }
 
-
-
         protected override async Task<ActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
         {
             var data = await context.EvaluateAsync(DataExpression, cancellationToken);
@@ -96,8 +93,6 @@ namespace Elsa.AzureServiceBus.Activities
                     actions.Add(signal, _tokenService.CreateToken(new Signal(signal, workflowInstanceId)));
                 }
 
-
-
                 var jsonData = JsonConvert.SerializeObject(new ServiceBusSignalMessage<object>
                 {
                     Actions = actions,
@@ -110,8 +105,6 @@ namespace Elsa.AzureServiceBus.Activities
 
                 };
 
-
-
                 var client = _serviceBusProvider.Create(Queue);
 
                 await client.SendAsync(message);
@@ -123,11 +116,8 @@ namespace Elsa.AzureServiceBus.Activities
             return Halt(false);
         }
 
-
-
         protected override Task<bool> OnCanExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
         {
-
             bool result = false;
 
             //check to see if any of the signals have been triggered
@@ -143,20 +133,12 @@ namespace Elsa.AzureServiceBus.Activities
             }
 
             return Task.FromResult(result);
-
-
-
         }
-
 
         protected async override Task<ActivityExecutionResult> OnResumeAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
         {
-
             return await Task.FromResult(Outcome(context.Workflow.Input.GetVariable<string>(INPUT_VARIABLE_NAME)));
         }
-
-
-
 
         public static string GetConsumerName(JObject state)
         {

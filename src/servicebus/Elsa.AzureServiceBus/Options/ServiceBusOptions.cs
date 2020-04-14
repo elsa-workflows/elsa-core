@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -10,12 +10,11 @@ namespace Elsa.AzureServiceBus.Options
         /// Options for configuring the service bus details when sending
         /// </summary>
         public ServiceBusSenderOptions Sender { get; set; }
+
         /// <summary>
         /// Options for configuring the service bus details for consuming 
         /// </summary>
         public ServiceBusConsumerOptions[] Consumer { get; set; }
-
-
     }
 
     public class ServiceBusSenderOptions
@@ -61,5 +60,4 @@ namespace Elsa.AzureServiceBus.Options
         /// </summary>
         public string QueueName { get; set; }
     }
-
 }

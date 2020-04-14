@@ -1,4 +1,4 @@
-﻿using Elsa.AzureServiceBus.Options;
+using Elsa.AzureServiceBus.Options;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.Options;
 using System;
@@ -15,9 +15,6 @@ namespace Elsa.AzureServiceBus.Services
         public ServiceBusClientFactory(IOptions<ServiceBusOptions> options)
         {
             _options = options;
-
-
-
         }
 
         public Microsoft.Azure.ServiceBus.Core.ISenderClient Create(string queueName)
@@ -41,7 +38,5 @@ namespace Elsa.AzureServiceBus.Services
 
             return sender;
         }
-
-
     }
 }

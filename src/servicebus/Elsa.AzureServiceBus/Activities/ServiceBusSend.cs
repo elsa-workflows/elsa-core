@@ -1,4 +1,4 @@
-﻿using Elsa;
+using Elsa;
 using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Expressions;
@@ -18,11 +18,10 @@ namespace Elsa.AzureServiceBus.Activities
 {
     [ActivityDefinition(
         Category = "Azure",
-        Description = "Send a message via azure service bus",
+        Description = "Send a message via Azure Service Bus.",
         RuntimeDescription = "x =>  x.state.queue ? `Send <strong></strong> to <strong>${x.state.queue}</strong>` :  x.definition.description)",
         //Icon = "fas fa-user-plus",
         Outcomes = new[] { OutcomeNames.Done })]
-
     public class ServiceBusSend : Activity
     {
         private readonly IServiceBusClientFactory _serviceBusProvider;
@@ -33,7 +32,7 @@ namespace Elsa.AzureServiceBus.Activities
         }
 
         /// <summary>
-        /// A list of HTTP status codes this activity can handle.
+        /// The Azure Service Bus queue to send to
         /// </summary>
 
         [ActivityProperty(
@@ -52,8 +51,6 @@ namespace Elsa.AzureServiceBus.Activities
             get => GetState(() => new WorkflowExpression<object>(LiteralEvaluator.SyntaxName, ""));
             set => SetState(value);
         }
-
-
 
         protected override async Task<ActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
         {
@@ -74,12 +71,8 @@ namespace Elsa.AzureServiceBus.Activities
                 await client.CloseAsync();
             }
 
-
             return Done();
 
         }
-
-
-
     }
 }

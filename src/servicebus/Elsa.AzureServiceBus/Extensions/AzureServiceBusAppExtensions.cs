@@ -1,4 +1,4 @@
-﻿using Elsa.AzureServiceBus.Services;
+using Elsa.AzureServiceBus.Services;
 using Microsoft.AspNetCore.Builder;
 using System;
 using System.Collections.Generic;

@@ -1,4 +1,4 @@
-﻿using Elsa;
+using Elsa;
 using Elsa.Attributes;
 using Elsa.Extensions;
 using Elsa.Results;
@@ -15,7 +15,7 @@ namespace Elsa.AzureServiceBus.Activities
 {
     [ActivityDefinition(
         Category = "Azure",
-        Description = "Wait for an azure message to be receid to start the activity",
+        Description = "Wait for an Azure Service Bus message to be receivedd to start the activity",
         //Icon = "fas fa-traffic-light", 
         Outcomes = new[] { OutcomeNames.Done }
      )]
@@ -47,8 +47,6 @@ namespace Elsa.AzureServiceBus.Activities
             set => SetState(value);
         }
 
-
-
         protected override ActivityExecutionResult OnExecute(WorkflowExecutionContext context)
         {
             return Halt(true);
@@ -60,9 +58,7 @@ namespace Elsa.AzureServiceBus.Activities
             {
                 if (context.Workflow.Input.TryGetValue(INPUT_VARIABLE_NAME, out var msg) == true)
                 {
-
                     context.CurrentScope.LastResult = Output.SetVariable(INPUT_VARIABLE_NAME, msg);
-
                 }
             }
 
@@ -78,6 +74,5 @@ namespace Elsa.AzureServiceBus.Activities
         {
             return state.GetState<string>(nameof(MessageType));
         }
-
     }
 }

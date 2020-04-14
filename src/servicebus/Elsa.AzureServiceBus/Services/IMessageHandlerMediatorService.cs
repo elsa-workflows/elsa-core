@@ -1,4 +1,4 @@
-﻿using Elsa.AzureServiceBus.Notifications;
+using Elsa.AzureServiceBus.Notifications;
 using Microsoft.Azure.ServiceBus;
 using System;
 using System.Collections.Generic;

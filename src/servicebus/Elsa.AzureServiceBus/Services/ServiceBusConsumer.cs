@@ -1,4 +1,4 @@
-﻿using Microsoft.Azure.ServiceBus;
+using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -18,7 +18,6 @@ namespace Elsa.AzureServiceBus.Services
     {
         private readonly IMessageHandlerMediatorService _messageProcessMediator;
 
-
         private readonly IReadOnlyDictionary<string, QueueClient> _queueClients;
 
         private readonly ILogger _logger;
@@ -31,8 +30,6 @@ namespace Elsa.AzureServiceBus.Services
             _logger = logger;
 
             _queueClients = options.Value.Consumer.Select(q => new { q.Name, Client = new QueueClient(q.ServiceBusConnectionString, q.QueueName) }).ToDictionary(k => k.Name, v => v.Client);
-
-
         }
 
         public void RegisterOnMessageHandlerAndReceiveMessages()
@@ -72,10 +69,7 @@ namespace Elsa.AzureServiceBus.Services
                 _logger.LogDebug($"- MessageId: {message.MessageId}");
 
                 throw;
-
             }
-
-
         }
 
         private Task ExceptionReceivedHandler(ExceptionReceivedEventArgs exceptionReceivedEventArgs)

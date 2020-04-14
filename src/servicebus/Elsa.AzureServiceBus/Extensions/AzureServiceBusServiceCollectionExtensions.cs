@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
@@ -26,8 +26,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<ITokenService, TokenService>()
                 .AddSingleton<IServiceBusConsumer, ServiceBusConsumer>()
                 .AddNotificationHandlers(typeof(AzureServiceBusServiceCollectionExtensions))
-            ;
-            //.AddActivity<MBSActivities.Orders.SalesConfirmation>();
+            ;            
         }
     }
 }
