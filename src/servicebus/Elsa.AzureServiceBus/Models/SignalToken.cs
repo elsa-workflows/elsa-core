@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -15,7 +15,6 @@ namespace Elsa.AzureServiceBus.Models
             Name = name;
             WorkflowInstanceId = workflowInstanceId;
         }
-
 
         public string Name { get; set; }
         public string WorkflowInstanceId { get; set; }

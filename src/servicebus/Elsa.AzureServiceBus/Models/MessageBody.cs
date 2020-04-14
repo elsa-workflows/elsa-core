@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -8,7 +8,6 @@ namespace Elsa.AzureServiceBus.Models
     {
         public MessageBody()
         {
-
         }
 
         public MessageBody(string bodyType, byte[] data)

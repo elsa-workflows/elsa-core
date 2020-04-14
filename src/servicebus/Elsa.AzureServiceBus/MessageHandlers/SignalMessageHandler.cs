@@ -1,4 +1,4 @@
-﻿using Elsa.Models;
+using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services;
 using MediatR;
@@ -35,58 +35,46 @@ namespace Elsa.AzureServiceBus.MessageHandlers
 
         public async Task Handle(ProcessMessageNotification notification, CancellationToken cancellationToken)
         {
-            if (notification.Message != null)
+            if (notification.Message == null || !string.Equals(notification.Message.BodyType, "ACTION_SIGNAL", StringComparison.InvariantCultureIgnoreCase))
             {
-                if (notification.Message.BodyType == "ACTION_SIGNAL")
-                {
-                    var encodedSignal = Encoding.UTF8.GetString(notification.Message.Data);
-
-
-                    if (_tokenService.TryDecryptToken(encodedSignal, out Signal signal))
-                    {
-                        using (var scope = _serviceProvider.CreateScope())
-                        {
-                            var workflowInstanceStore = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
-
-                            var workflowInstance = await workflowInstanceStore.GetByIdAsync(signal.WorkflowInstanceId, cancellationToken);
-
-
-                            if (workflowInstance != null)
-                            {
-                                var workflowInvoker = scope.ServiceProvider.GetRequiredService<IWorkflowInvoker>();
-                                var workflowFactory = scope.ServiceProvider.GetRequiredService<IWorkflowFactory>();
-                                var workflowRegistry = scope.ServiceProvider.GetRequiredService<IWorkflowRegistry>();
-
-                                var input = new Variables();
-                                input.SetVariable(ServiceBusSignaled.INPUT_VARIABLE_NAME, signal.Name);
-
-                                var workflowDefinition = await workflowRegistry.GetWorkflowDefinitionAsync(
-                                    workflowInstance.DefinitionId,
-                                    VersionOptions.SpecificVersion(workflowInstance.Version),
-                                    cancellationToken);
-
-
-
-                                var workflow = workflowFactory.CreateWorkflow(workflowDefinition, input, workflowInstance);
-                                var blockingSignalActivities = Filter(workflow.BlockingActivities.ToList(), notification.ConsumerName);
-
-                                if (blockingSignalActivities.Any())
-                                {
-                                    await workflowInvoker.ResumeAsync(workflow, blockingSignalActivities, cancellationToken);
-                                }
-
-                            }
-
-                        }
-
-                    }
-
-
-
-                }
+                return;
             }
 
+            var encodedSignal = Encoding.UTF8.GetString(notification.Message.Data);
 
+
+            if (_tokenService.TryDecryptToken(encodedSignal, out Signal signal))
+            {
+                using (var scope = _serviceProvider.CreateScope())
+                {
+                    var workflowInstanceStore = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
+
+                    var workflowInstance = await workflowInstanceStore.GetByIdAsync(signal.WorkflowInstanceId, cancellationToken);
+
+                    if (workflowInstance != null)
+                    {
+                        var workflowInvoker = scope.ServiceProvider.GetRequiredService<IWorkflowInvoker>();
+                        var workflowFactory = scope.ServiceProvider.GetRequiredService<IWorkflowFactory>();
+                        var workflowRegistry = scope.ServiceProvider.GetRequiredService<IWorkflowRegistry>();
+
+                        var input = new Variables();
+                        input.SetVariable(ServiceBusSignaled.INPUT_VARIABLE_NAME, signal.Name);
+
+                        var workflowDefinition = await workflowRegistry.GetWorkflowDefinitionAsync(
+                            workflowInstance.DefinitionId,
+                            VersionOptions.SpecificVersion(workflowInstance.Version),
+                            cancellationToken);
+
+                        var workflow = workflowFactory.CreateWorkflow(workflowDefinition, input, workflowInstance);
+                        var blockingSignalActivities = Filter(workflow.BlockingActivities.ToList(), notification.ConsumerName);
+
+                        if (blockingSignalActivities.Any())
+                        {
+                            await workflowInvoker.ResumeAsync(workflow, blockingSignalActivities, cancellationToken);
+                        }
+                    }
+                }
+            }
         }
 
         private IEnumerable<IActivity> Filter(
@@ -103,7 +91,5 @@ namespace Elsa.AzureServiceBus.MessageHandlers
 
             return string.IsNullOrWhiteSpace(c) || c == "*" || string.Compare(c, consumerName, true) == 0;
         }
-
-
     }
 }

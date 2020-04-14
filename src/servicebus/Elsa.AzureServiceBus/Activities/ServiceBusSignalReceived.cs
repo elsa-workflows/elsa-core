@@ -15,7 +15,7 @@ namespace Elsa.AzureServiceBus.Activities
 {
     [ActivityDefinition(
         Category = "Azure",
-        Description = "Wait for an Azure Service Bus message to be receivedd to start the activity",
+        Description = "Wait for an Azure Service Bus message to be receivedd to start the activity.",
         //Icon = "fas fa-traffic-light", 
         Outcomes = new[] { OutcomeNames.Done }
      )]
