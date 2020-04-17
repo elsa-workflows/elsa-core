@@ -17,7 +17,7 @@ namespace Elsa.Expressions
             CancellationToken cancellationToken)
         {
             var literalExpression = (LiteralExpression)expression;
-            if (string.IsNullOrWhiteSpace(literalExpression.Expression))
+            if (string.IsNullOrEmpty(literalExpression.Expression))
                 return Task.FromResult(default(object));
             
             return Task.FromResult(literalExpression.Expression.Parse(returnType));
