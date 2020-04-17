@@ -8,6 +8,7 @@ using Elsa.AutoMapper.Extensions;
 using Elsa.Builders;
 using Elsa.Converters;
 using Elsa.Expressions;
+using Elsa.Extensions;
 using Elsa.Mapping;
 using Elsa.Messaging;
 using Elsa.Messaging.Distributed;

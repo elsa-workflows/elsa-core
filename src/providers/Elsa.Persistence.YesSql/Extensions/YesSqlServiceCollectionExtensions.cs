@@ -1,6 +1,7 @@
 using System;
 using Elsa.AutoMapper.Extensions;
 using Elsa.AutoMapper.Extensions.NodaTime;
+using Elsa.Extensions;
 using Elsa.Persistence.YesSql.Indexes;
 using Elsa.Persistence.YesSql.Mapping;
 using Elsa.Persistence.YesSql.Schema;

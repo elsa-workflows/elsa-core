@@ -192,3 +192,12 @@ In order to build & run Elsa on your local machine, follow these steps:
 3. Execute gulp build from the directory src\dashboard\Elsa.Dashboard\Theme\argon-dashboard
 4. Open a shell and navigate to `src/samples/Sample16` and run `dotnet run`.
 5. Navigate to https://localhost:8632/elsa/home
+
+# Code of Conduct
+
+This project has adopted the code of conduct defined by the Contributor Covenant to clarify expected behavior in our community.
+For more information see the [.NET Foundation Code of Conduct](https://dotnetfoundation.org/code-of-conduct). 
+
+### .NET Foundation
+
+This project is supported by the [.NET Foundation](https://dotnetfoundation.org).
