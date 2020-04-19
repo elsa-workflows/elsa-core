@@ -38,8 +38,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.UserTask", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Activities.Dropbox", "src\activities\Elsa.Activities.Dropbox\Elsa.Activities.Dropbox.csproj", "{5A3C9D59-21FE-4BE3-A00A-FF3F198EEC97}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripting", "scripting", "{5E230C5F-7A64-4E95-A790-DF40CC66DA31}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Scripting.Liquid", "src\scripting\Elsa.Scripting.Liquid\Elsa.Scripting.Liquid.csproj", "{9A2D1E3E-328F-4E02-86F8-84974925C1E3}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa", "src\core\Elsa\Elsa.csproj", "{ED2A4FE5-821B-46F7-B72F-E66DE0D66C93}"

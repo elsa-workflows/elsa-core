@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using Elsa.Builders;
 using Elsa.Expressions;
 using Elsa.Services.Models;

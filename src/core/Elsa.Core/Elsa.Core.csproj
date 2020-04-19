@@ -29,23 +29,22 @@
 
     <ItemGroup>
         <PackageReference Include="AutoMapper" Version="9.0.0" />
-        <PackageReference Include="Humanizer.Core" Version="2.7.9" />
-        <PackageReference Include="MediatR" Version="8.0.0" />
+        <PackageReference Include="Humanizer.Core" Version="2.8.2" />
+        <PackageReference Include="MediatR" Version="8.0.1" />
         <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="8.0.0" />
         <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-        <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="3.1.1" />
-        <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="3.1.1" />
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.1" />
-        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="3.1.1" />
-        <PackageReference Include="Microsoft.Extensions.Localization" Version="3.1.1" />
-        <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.1" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.1" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="3.1.1" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="3.1.1" />
+        <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="3.1.3" />
+        <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="3.1.3" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.3" />
+        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="3.1.3" />
+        <PackageReference Include="Microsoft.Extensions.Localization" Version="3.1.3" />
+        <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.3" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.3" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="3.1.3" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="3.1.3" />
         <PackageReference Include="NodaTime.Serialization.JsonNet" Version="2.2.0" />
-        <PackageReference Include="Elsa.Scrutor" Version="3.0.2.27" />
-        <PackageReference Include="YamlDotNet" Version="8.0.0" />
-	<PackageReference Include="Rebus.ServiceProvider" Version="4.0.2" />
+        <PackageReference Include="YamlDotNet" Version="8.1.0" />
+	<PackageReference Include="Rebus.ServiceProvider" Version="5.0.6" />
     </ItemGroup>
 
     <ItemGroup>

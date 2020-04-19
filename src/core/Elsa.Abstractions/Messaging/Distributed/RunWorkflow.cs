@@ -1,5 +1,3 @@
-using Elsa.Models;
-
 namespace Elsa.Messaging.Distributed
 {
     public class RunWorkflow

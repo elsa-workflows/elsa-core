@@ -1,6 +1,5 @@
 using System;
 using Elsa.Builders;
-using Microsoft.AspNetCore.Http;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.Http

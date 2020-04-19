@@ -97,10 +97,10 @@ namespace Elsa.Services.Models
         public object GetVariable(string name) => Variables.GetVariable(name);
         public void CompletePass() => IsFirstPass = false;
 
-        public Task<T> EvaluateAsync<T>(IWorkflowExpression<T> expression, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken) =>
+        public Task<T> EvaluateAsync<T>(IWorkflowExpression<T>? expression, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken) =>
             ExpressionEvaluator.EvaluateAsync(expression, activityExecutionContext, cancellationToken);
 
-        public Task<object> EvaluateAsync(IWorkflowExpression expression, Type targetType, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken) =>
+        public Task<object> EvaluateAsync(IWorkflowExpression? expression, Type targetType, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken) =>
             ExpressionEvaluator.EvaluateAsync(expression, targetType, activityExecutionContext, cancellationToken);
 
         public void Suspend()

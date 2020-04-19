@@ -10,7 +10,7 @@ namespace Elsa.Messaging.Distributed.Handlers
 
         public RunWorkflowHandler(IWorkflowHost workflowHost) => this.workflowHost = workflowHost;
 
-        public Task Handle(RunWorkflow message) => workflowHost.RunWorkflowInstanceAsync(
+        public async Task Handle(RunWorkflow message) => await workflowHost.RunWorkflowInstanceAsync(
             message.InstanceId,
             message.ActivityId,
             message.Input);

@@ -23,7 +23,6 @@ using Elsa.Services;
 using Elsa.StartupTasks;
 using Elsa.WorkflowProviders;
 using MediatR;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using NodaTime;
 using Rebus.Handlers;
@@ -162,7 +161,6 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddTypeAlias<IActivity>("Activity")
                 .AddTypeAlias(typeof(IList<>), "List")
                 .AddTypeAlias(typeof(ICollection<>), "Collection")
-                .AddTypeAlias<PathString>()
                 .AddTypeAlias(typeof(LiteralExpression<>), "LiteralExpression");
 
         private static IServiceCollection AddPrimitiveActivities(this IServiceCollection services) =>

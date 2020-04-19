@@ -3,7 +3,18 @@
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
         <LangVersion>latest</LangVersion>
-        <Nullable>enable</Nullable>
+        <PackageVersion>1.0.0</PackageVersion>
+        <Authors>Elsa Contributors</Authors>
+        <Description>
+            Elsa is a set of workflow libraries and tools that enable super-fast workflowing capabilities in any .NET Core application.
+            This package provides a GraphQL endpoint to interface with the workflow host.
+        </Description>
+        <Copyright>2019</Copyright>
+        <PackageProjectUrl>https://github.com/elsa-workflows/elsa-core</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/elsa-workflows/elsa-core</RepositoryUrl>
+        <RepositoryType>GitHub</RepositoryType>
+        <PackageTags>elsa, workflows</PackageTags>
+        <PackageIcon>icon.png</PackageIcon>
     </PropertyGroup>
 
     <ItemGroup>
@@ -11,9 +22,16 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="HotChocolate.AspNetCore" Version="10.3.5" />
-      <PackageReference Include="HotChocolate.AspNetCore.Playground" Version="10.3.5" />
-      <PackageReference Include="HotChocolate.AspNetCore.Voyager" Version="10.3.5" />
+        <PackageReference Include="HotChocolate.AspNetCore" Version="10.4.1" />
+        <PackageReference Include="HotChocolate.AspNetCore.Playground" Version="10.4.1" />
+        <PackageReference Include="HotChocolate.AspNetCore.Voyager" Version="10.4.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="icon.png">
+            <Pack>True</Pack>
+            <PackagePath />
+        </None>
     </ItemGroup>
 
 </Project>
