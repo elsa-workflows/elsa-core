@@ -15,10 +15,7 @@ jobs:
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 3.1.102
-        source-url: https://nuget.pkg.github.com/<organization>/index.json
-      env:
-        NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}    
+        dotnet-version: 3.1.102    
 
     - name: Install dependencies
       run: dotnet restore Elsa.sln
@@ -27,4 +24,4 @@ jobs:
       run: dotnet pack Elsa.sln --include-symbols -c Release -o out
 
     - name: Push to GitHub registry
-      run: dotnet nuget push ./out/*.nupkg --skip-duplicate --no-symbols true
+      run: dotnet nuget push ./out/*.nupkg --api-key ${{secrets.MYGET_ELSA_2}} --skip-duplicate --source https://www.myget.org/F/elsa-2/api/v2/package
