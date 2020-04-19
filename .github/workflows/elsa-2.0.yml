@@ -12,6 +12,21 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
+    - name: Fetch all history for all tags and branches
+      run: git fetch --prune --unshallow
+
+    - name: Install GitVersion
+      uses: gittools/actions/gitversion/setup@v0.9
+      with:
+          versionSpec: '5.1.x'
+
+    - name: Use GitVersion
+      id: gitversion # step id used as reference for output values
+      uses: gittools/actions/gitversion/execute@v0.9
+    - run: |
+        echo "NuGetVersionV2: ${{ steps.gitversion.outputs.nuGetVersionV2 }}"
+        echo "NuGetPreReleaseTagV2: ${{ steps.gitversion.outputs.CommitsSinceVersionSourcePadded }}"
+
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v1
       with:
@@ -21,7 +36,9 @@ jobs:
       run: dotnet restore Elsa.sln
 
     - name: Build
-      run: dotnet pack Elsa.sln --include-symbols -c Release -o out
+      run: dotnet pack Elsa.sln --include-symbols -c Release -o out -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersionV2 }}-${{ steps.gitversion.outputs.CommitsSinceVersionSourcePadded }}
 
-    - name: Push to GitHub registry
-      run: dotnet nuget push ./out/*.nupkg --api-key ${{secrets.MYGET_ELSA_2}} --skip-duplicate --source https://www.myget.org/F/elsa-2/api/v2/package
+    - name: Push to MyGet registry
+      run: |
+        cd out
+        dotnet nuget push *.nupkg --api-key ${{secrets.MYGET_ELSA_2}} --source https://www.myget.org/F/elsa-2/api/v2/package
