@@ -37,7 +37,7 @@ jobs:
       run: dotnet restore Elsa.sln
 
     - name: Build
-      run: dotnet pack Elsa.sln --include-symbols -c Release -o out -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersionV2 }}-${{ steps.gitversion.outputs.CommitsSinceVersionSourcePadded }}
+      run: dotnet pack Elsa.sln --include-symbols --no-restore -c Release -o out -p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersionV2 }}-${{ steps.gitversion.outputs.CommitsSinceVersionSourcePadded }}
 
     - name: Push to MyGet registry
       run: |
