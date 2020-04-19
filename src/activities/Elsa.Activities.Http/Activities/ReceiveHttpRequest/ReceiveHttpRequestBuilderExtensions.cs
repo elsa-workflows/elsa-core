@@ -6,7 +6,7 @@ namespace Elsa.Activities.Http
 {
     public static class ReceiveHttpRequestBuilderExtensions
     {
-        public static ActivityBuilder ReceiveHttpRequest(
+        public static IActivityBuilder ReceiveHttpRequest(
             this IBuilder builder,
             PathString path,
             string method = default,

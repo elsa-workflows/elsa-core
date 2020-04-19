@@ -24,13 +24,16 @@ namespace Elsa.Activities.Timers
         }
 
         [ActivityProperty(Hint = "An expression that evaluates to a Duration value")]
-        public IWorkflowExpression<Duration> Timeout
-        {
-            get => GetState<IWorkflowExpression<Duration>>(() => new LiteralExpression<Duration>("00:01:00"));
-            set => SetState(value);
-        }
-
-        public Instant? StartTime
+        public IWorkflowExpression<Duration> Timeout { get; set; }
+        
+        // [ActivityProperty(Hint = "An expression that evaluates to a Duration value")]
+        // public IWorkflowExpression<Duration> Timeout
+        // {
+        //     get => GetState<IWorkflowExpression<Duration>>(() => new LiteralExpression<Duration>("00:01:00"));
+        //     set => SetState(value);
+        // }
+        
+        private Instant? StartTime
         {
             get => GetState<Instant?>();
             set => SetState(value);

@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Results;
@@ -31,9 +32,9 @@ namespace Elsa.Activities.Http
         private IStringLocalizer<Redirect> T { get; }
 
         [ActivityProperty(Hint = "The URL to redirect to (HTTP 302).")]
-        public IWorkflowExpression<PathString> Location
+        public IWorkflowExpression<Uri> Location
         {
-            get => GetState<IWorkflowExpression<PathString>>();
+            get => GetState<IWorkflowExpression<Uri>>();
             set => SetState(value);
         }
         

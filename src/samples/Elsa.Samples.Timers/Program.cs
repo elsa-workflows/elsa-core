@@ -19,10 +19,12 @@ namespace Elsa.Samples.Timers
                 .ConfigureServices((hostContext, services) =>
                 {
                     services
-                        .AddElsa()
-                        .AddTimerActivities(options => options.Configure(timer => timer.SweepInterval = Duration.FromSeconds(5)))
-                        .AddWorkflow<RecurringTaskWorkflow>()
-                        .AddWorkflow<CronTaskWorkflow>();
+                        .AddElsa(options =>
+                            options.UseMongoDbWorkflowStores("Elsa_Samples_Timers", "mongodb://localhost"))
+                        .AddTimerActivities(options =>
+                            options.Configure(timer => timer.SweepInterval = Duration.FromSeconds(5)))
+                        .AddWorkflow<RecurringTaskWorkflow>();
+                    //.AddWorkflow<CronTaskWorkflow>();
                 });
     }
 }

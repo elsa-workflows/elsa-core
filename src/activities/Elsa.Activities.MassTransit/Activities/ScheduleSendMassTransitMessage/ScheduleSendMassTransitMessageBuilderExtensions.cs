@@ -9,9 +9,9 @@ namespace Elsa.Activities.MassTransit
 {
     public static class ScheduleSendMassTransitMessageBuilderExtensions
     {
-        public static ActivityBuilder ScheduleSendMassTransitMessage(this IBuilder builder, Action<ScheduleSendMassTransitMessage>? setup = default) => builder.Then(setup);
+        public static IActivityBuilder ScheduleSendMassTransitMessage(this IBuilder builder, Action<ScheduleSendMassTransitMessage>? setup = default) => builder.Then(setup);
 
-        public static ActivityBuilder ScheduleSendMassTransitMessage(
+        public static IActivityBuilder ScheduleSendMassTransitMessage(
             this IBuilder builder, 
             IWorkflowExpression message, 
             Uri endpointAddress, 
@@ -21,7 +21,7 @@ namespace Elsa.Activities.MassTransit
                 .WithEndpointAddress(endpointAddress)
                 .WithScheduledTime(scheduledTime));
         
-        public static ActivityBuilder ScheduleSendMassTransitMessage(
+        public static IActivityBuilder ScheduleSendMassTransitMessage(
             this IBuilder builder, 
             Func<ActivityExecutionContext, object> message, 
             Uri endpointAddress, 
@@ -31,7 +31,7 @@ namespace Elsa.Activities.MassTransit
                 .WithEndpointAddress(endpointAddress)
                 .WithScheduledTime(scheduledTime));
         
-        public static ActivityBuilder ScheduleSendMassTransitMessage(
+        public static IActivityBuilder ScheduleSendMassTransitMessage(
             this IBuilder builder, 
             Func<object> message, 
             Uri endpointAddress, 
@@ -41,7 +41,7 @@ namespace Elsa.Activities.MassTransit
                 .WithEndpointAddress(endpointAddress)
                 .WithScheduledTime(scheduledTime));
         
-        public static ActivityBuilder ScheduleSendMassTransitMessage(
+        public static IActivityBuilder ScheduleSendMassTransitMessage(
             this IBuilder builder, 
             object message, 
             Uri endpointAddress, 

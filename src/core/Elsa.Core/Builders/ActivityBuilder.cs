@@ -4,7 +4,7 @@ using Elsa.Services.Models;
 
 namespace Elsa.Builders
 {
-    public class ActivityBuilder : IBuilder
+    public class ActivityBuilder : IActivityBuilder
     {
         public ActivityBuilder(IWorkflowBuilder workflowBuilder, IActivity activity)
         {
@@ -14,28 +14,13 @@ namespace Elsa.Builders
 
         public IWorkflowBuilder WorkflowBuilder { get; }
         public IActivity Activity { get; }
+        public IActivityBuilder Add<T>(Action<T>? setup = default) where T : class, IActivity => WorkflowBuilder.Add(setup);
+        public IOutcomeBuilder When(string? outcome) => new OutcomeBuilder(WorkflowBuilder, this, outcome);
+        public IActivityBuilder Then<T>(Action<T>? setup = null, Action<IActivityBuilder>? branch = null) where T : class, IActivity => When(null).Then(setup, branch);
 
-        public ActivityBuilder Add<T>(Action<T>? setup = default) where T : class, IActivity
-        {
-            return WorkflowBuilder.Add(setup);
-        }
+        public IActivityBuilder Then<T>(T activity, Action<IActivityBuilder>? branch = null) where T : class, IActivity => When(null).Then(activity, branch);
 
-        public OutcomeBuilder When(string? outcome)
-        {
-            return new OutcomeBuilder(WorkflowBuilder, this, outcome);
-        }
-
-        public ActivityBuilder Then<T>(Action<T>? setup = null, Action<ActivityBuilder>? branch = null) where T : class, IActivity
-        {
-            return When(null).Then(setup, branch);
-        }
-        
-        public ActivityBuilder Then<T>(T activity, Action<ActivityBuilder>? branch = null) where T : class, IActivity
-        {
-            return When(null).Then(activity, branch);
-        }
-
-        public ActivityBuilder Then(ActivityBuilder targetActivity)
+        public IActivityBuilder Then(IActivityBuilder targetActivity)
         {
             WorkflowBuilder.Connect(this, targetActivity);
             return this;

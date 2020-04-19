@@ -10,7 +10,7 @@ namespace Elsa.Activities.Http
 {
     public static class WriteHttpResponseBuilderExtensions
     {
-        public static ActivityBuilder WriteHttpResponse(
+        public static IActivityBuilder WriteHttpResponse(
             this IBuilder builder,
             HttpStatusCode statusCode,
             IWorkflowExpression<string> content = default,
@@ -22,7 +22,7 @@ namespace Elsa.Activities.Http
             .WithContentType(contentType)
             .WithResponseHeaders(headers));
         
-        public static ActivityBuilder WriteHttpResponse(
+        public static IActivityBuilder WriteHttpResponse(
             this IBuilder builder,
             HttpStatusCode statusCode,
             Func<ActivityExecutionContext, string> content = default,
@@ -34,7 +34,7 @@ namespace Elsa.Activities.Http
             .WithContentType(contentType)
             .WithResponseHeaders(headers));
         
-        public static ActivityBuilder WriteHttpResponse(
+        public static IActivityBuilder WriteHttpResponse(
             this IBuilder builder,
             HttpStatusCode statusCode,
             Func<string> content = default,
@@ -46,7 +46,7 @@ namespace Elsa.Activities.Http
             .WithContentType(contentType)
             .WithResponseHeaders(headers));
         
-        public static ActivityBuilder WriteHttpResponse(
+        public static IActivityBuilder WriteHttpResponse(
             this IBuilder builder,
             HttpStatusCode statusCode,
             string content = default,

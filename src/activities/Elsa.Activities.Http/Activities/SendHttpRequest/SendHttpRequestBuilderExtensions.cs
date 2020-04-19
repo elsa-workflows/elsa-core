@@ -11,7 +11,7 @@ namespace Elsa.Activities.Http
 {
     public static class SendHttpRequestBuilderExtensions
     {
-        public static ActivityBuilder SendHttpRequest(
+        public static IActivityBuilder SendHttpRequest(
             this IBuilder builder,
             PathString url,
             string? method,
@@ -31,7 +31,7 @@ namespace Elsa.Activities.Http
             .WithRequestHeaders(headers)
             .WithReadContent(readContent));
 
-        public static ActivityBuilder SendHttpRequest(
+        public static IActivityBuilder SendHttpRequest(
             this IBuilder builder,
             PathString url,
             string? method,
@@ -51,7 +51,7 @@ namespace Elsa.Activities.Http
             .WithRequestHeaders(headers)
             .WithReadContent(readContent));
 
-        public static ActivityBuilder SendHttpRequest(
+        public static IActivityBuilder SendHttpRequest(
             this IBuilder builder,
             PathString url,
             string? method,
@@ -71,7 +71,7 @@ namespace Elsa.Activities.Http
             .WithRequestHeaders(headers)
             .WithReadContent(readContent));
 
-        public static ActivityBuilder SendHttpRequest(
+        public static IActivityBuilder SendHttpRequest(
             this IBuilder builder,
             PathString url,
             string? method,

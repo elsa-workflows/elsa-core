@@ -9,12 +9,12 @@ namespace Elsa.Activities.Http
 {
     public static class SendEmailBuilderExtensions
     {
-        public static ActivityBuilder SendEmail(
+        public static IActivityBuilder SendEmail(
             this IBuilder builder,
             Action<SendEmail> setup
         ) => builder.Then(setup);
         
-        public static ActivityBuilder SendEmail(
+        public static IActivityBuilder SendEmail(
             this IBuilder builder,
             IWorkflowExpression<string> from = default,
             IWorkflowExpression<string> to = default,
@@ -26,7 +26,7 @@ namespace Elsa.Activities.Http
             .WithSubject(subject)
             .WithBody(body));
 
-        public static ActivityBuilder SendEmail(
+        public static IActivityBuilder SendEmail(
             this IBuilder builder,
             Func<ActivityExecutionContext, string> from = default,
             Func<ActivityExecutionContext, string> to = default,
@@ -38,7 +38,7 @@ namespace Elsa.Activities.Http
             .WithSubject(subject)
             .WithBody(body));
 
-        public static ActivityBuilder SendEmail(
+        public static IActivityBuilder SendEmail(
             this IBuilder builder,
             Func<string> from = default,
             Func<string> to = default,
@@ -50,7 +50,7 @@ namespace Elsa.Activities.Http
             .WithSubject(subject)
             .WithBody(body));
 
-        public static ActivityBuilder SendEmail(
+        public static IActivityBuilder SendEmail(
             this IBuilder builder,
             string from = default,
             string to = default,

@@ -122,6 +122,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddConsumer<RunWorkflow, RunWorkflowHandler>()
                 .AddAutoMapperProfile<WorkflowDefinitionProfile>(ServiceLifetime.Singleton)
                 .AddTypeAlias(typeof(CodeExpression<>), "CodeExpression")
+                .AddTypeAlias<Duration>("Duration")
                 .AddSerializationHandlers()
                 .AddMetadataHandlers()
                 .AddPrimitiveActivities();
@@ -151,6 +152,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddTypeNameValueHandler<OffsetTimeHandler>()
                 .AddTypeNameValueHandler<YearMonthHandler>()
                 .AddTypeNameValueHandler<ZonedDateTimeHandler>()
+                .AddTypeNameValueHandler<CodeExpressionHandler>()
                 .AddTypeAlias<object>()
                 .AddTypeAlias<bool>()
                 .AddTypeAlias<int>()

@@ -5,16 +5,16 @@ namespace Elsa.Activities.ControlFlow
 {
     public class ForkBuilder
     {
-        private readonly ActivityBuilder activityBuilder;
+        private readonly IActivityBuilder activityBuilder;
         private readonly Fork fork;
         
-        public ForkBuilder(ActivityBuilder activityBuilder)
+        public ForkBuilder(IActivityBuilder activityBuilder)
         {
             this.activityBuilder = activityBuilder;
             fork = (Fork)activityBuilder.Activity;
         }
 
-        public OutcomeBuilder When(string branch)
+        public IOutcomeBuilder When(string branch)
         {
             fork.Branches.Add(branch);
             return activityBuilder.When(branch);

@@ -126,38 +126,38 @@ namespace Elsa.Builders
             return workflow;
         }
         
-        public T New<T>(T activity, Action<ActivityBuilder>? branch = default) where T : class, IActivity
+        public T New<T>(T activity, Action<IActivityBuilder>? branch = default) where T : class, IActivity
         {
             var activityBuilder = new ActivityBuilder(this, activity);
             branch?.Invoke(activityBuilder);
             return activity;
         }
 
-        public T New<T>(Action<T>? setup, Action<ActivityBuilder>? branch = default) where T : class, IActivity
+        public T New<T>(Action<T>? setup, Action<IActivityBuilder>? branch = default) where T : class, IActivity
         {
             var activity = activityResolver.ResolveActivity<T>();
             setup?.Invoke(activity);
             return New(activity, branch);
         }
 
-        public ActivityBuilder StartWith<T>(Action<T>? setup = default, Action<ActivityBuilder>? branch = default) where T : class, IActivity
+        public IActivityBuilder StartWith<T>(Action<T>? setup = default, Action<IActivityBuilder>? branch = default) where T : class, IActivity
         {
             var activity = New(setup, branch);
             return StartWith(activity, branch);
         }
         
-        public ActivityBuilder StartWith<T>(T activity, Action<ActivityBuilder>? branch = default) where T : class, IActivity
+        public IActivityBuilder StartWith<T>(T activity, Action<IActivityBuilder>? branch = default) where T : class, IActivity
         {
             return Add(activity, branch);
         }
         
-        public ActivityBuilder Add<T>(Action<T>? setup = default, Action<ActivityBuilder>? branch = default) where T : class, IActivity
+        public IActivityBuilder Add<T>(Action<T>? setup = default, Action<IActivityBuilder>? branch = default) where T : class, IActivity
         {
             var activity = New(setup, branch);
             return Add(activity, branch);
         }
         
-        public ActivityBuilder Add<T>(T activity, Action<ActivityBuilder>? branch = default) where T : class, IActivity
+        public IActivityBuilder Add<T>(T activity, Action<IActivityBuilder>? branch = default) where T : class, IActivity
         {
             var activityBuilder = new ActivityBuilder(this, activity);
             branch?.Invoke(activityBuilder);
@@ -165,18 +165,18 @@ namespace Elsa.Builders
             return activityBuilder;
         }
         
-        public ConnectionBuilder Connect(
-            ActivityBuilder source,
-            ActivityBuilder target,
-            string? outcome = default)
+        public IConnectionBuilder Connect(
+            IActivityBuilder source,
+            IActivityBuilder target,
+            string outcome = OutcomeNames.Done)
         {
             return Connect(() => source, () => target, outcome);
         }
 
-        public ConnectionBuilder Connect(
-            Func<ActivityBuilder> source,
-            Func<ActivityBuilder> target,
-            string? outcome = default)
+        public IConnectionBuilder Connect(
+            Func<IActivityBuilder> source,
+            Func<IActivityBuilder> target,
+            string outcome = OutcomeNames.Done)
         {
             var connectionBuilder = new ConnectionBuilder(this, source, target, outcome);
 
@@ -184,8 +184,8 @@ namespace Elsa.Builders
             return connectionBuilder;
         }
         
-        public ActivityBuilder Then<T>(Action<T>? setup = default, Action<ActivityBuilder>? branch = default) where T : class, IActivity => StartWith(setup, branch);
-        public ActivityBuilder Then<T>(T activity, Action<ActivityBuilder>? branch = default) where T : class, IActivity => StartWith(activity, branch);
+        public IActivityBuilder Then<T>(Action<T>? setup = default, Action<IActivityBuilder>? branch = default) where T : class, IActivity => StartWith(setup, branch);
+        public IActivityBuilder Then<T>(T activity, Action<IActivityBuilder>? branch = default) where T : class, IActivity => StartWith(activity, branch);
         
         public Workflow Build(IWorkflow workflow)
         {

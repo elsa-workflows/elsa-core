@@ -5,6 +5,6 @@ namespace Elsa.Activities.Console
 {
     public static class ReadLineBuilderExtensions
     {
-        public static ActivityBuilder ReadLine(this IBuilder builder) => builder.Then<ReadLine>();
+        public static IActivityBuilder ReadLine(this IBuilder builder) => builder.Then<ReadLine>();
     }
 }

@@ -8,9 +8,9 @@ namespace Elsa.Activities.MassTransit
 {
     public static class SendMassTransitMessageBuilderExtensions
     {
-        public static ActivityBuilder SendMassTransitMessage(this IBuilder builder, Action<SendMassTransitMessage>? setup = default) => builder.Then(setup);
+        public static IActivityBuilder SendMassTransitMessage(this IBuilder builder, Action<SendMassTransitMessage>? setup = default) => builder.Then(setup);
 
-        public static ActivityBuilder SendMassTransitMessage(
+        public static IActivityBuilder SendMassTransitMessage(
             this IBuilder builder, 
             IWorkflowExpression message, 
             Uri endpointAddress) =>
@@ -18,7 +18,7 @@ namespace Elsa.Activities.MassTransit
                 .WithMessage(message)
                 .WithEndpointAddress(endpointAddress));
         
-        public static ActivityBuilder SendMassTransitMessage(
+        public static IActivityBuilder SendMassTransitMessage(
             this IBuilder builder, 
             Func<ActivityExecutionContext, object> message, 
             Uri endpointAddress) =>
@@ -26,7 +26,7 @@ namespace Elsa.Activities.MassTransit
                 .WithMessage(message)
                 .WithEndpointAddress(endpointAddress));
         
-        public static ActivityBuilder SendMassTransitMessage(
+        public static IActivityBuilder SendMassTransitMessage(
             this IBuilder builder, 
             Func<object> message, 
             Uri endpointAddress) =>
@@ -34,7 +34,7 @@ namespace Elsa.Activities.MassTransit
                 .WithMessage(message)
                 .WithEndpointAddress(endpointAddress));
         
-        public static ActivityBuilder SendMassTransitMessages(
+        public static IActivityBuilder SendMassTransitMessages(
             this IBuilder builder, 
             object message, 
             Uri endpointAddress) =>

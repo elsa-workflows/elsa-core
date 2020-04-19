@@ -2,6 +2,8 @@ using System;
 using Elsa.Activities.Console;
 using Elsa.Activities.MassTransit;
 using Elsa.Builders;
+using Elsa.Expressions;
+using Elsa.Models;
 using NodaTime;
 
 namespace Elsa.Samples.Timers
@@ -11,7 +13,9 @@ namespace Elsa.Samples.Timers
         public void Build(IWorkflowBuilder builder)
         {
             builder
-                .TimerEvent(Duration.FromSeconds(5))
+                .WithPersistenceBehavior(WorkflowPersistenceBehavior.ActivityExecuted)
+                .TimerEvent(Duration.FromSeconds(1))
+                .WriteLine(new CodeExpression<string>("Hello World"))
                 .WriteLine(() => $"Timer event at {DateTime.Now}");
         }
     }

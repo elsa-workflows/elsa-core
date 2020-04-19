@@ -3,14 +3,14 @@ using Elsa.Services.Models;
 
 namespace Elsa.Builders
 {
-    public class ConnectionBuilder
+    public class ConnectionBuilder : IConnectionBuilder
     {
         public IWorkflowBuilder WorkflowBuilder { get; }
-        public Func<ActivityBuilder> Source { get; }
-        public Func<ActivityBuilder> Target{ get; }
+        public Func<IActivityBuilder> Source { get; }
+        public Func<IActivityBuilder> Target{ get; }
         public string Outcome { get; }
 
-        public ConnectionBuilder(IWorkflowBuilder workflowBuilder, Func<ActivityBuilder> source, Func<ActivityBuilder> target, string? outcome = null)
+        public ConnectionBuilder(IWorkflowBuilder workflowBuilder, Func<IActivityBuilder> source, Func<IActivityBuilder> target, string outcome = OutcomeNames.Done)
         {
             Source = source;
             Target = target;
@@ -18,9 +18,6 @@ namespace Elsa.Builders
             Outcome = outcome;
         }
 
-        public Connection BuildConnection()
-        {
-            return new Connection(Source().Activity, Target().Activity, Outcome);
-        }
+        public Connection BuildConnection() => new Connection(Source().Activity, Target().Activity, Outcome);
     }
 }

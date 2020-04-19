@@ -4,9 +4,9 @@ using Elsa.Services.Models;
 
 namespace Elsa.Builders
 {
-    public class OutcomeBuilder : IBuilder
+    public class OutcomeBuilder : IOutcomeBuilder
     {
-        public OutcomeBuilder(IWorkflowBuilder workflowBuilder, ActivityBuilder source, string outcome)
+        public OutcomeBuilder(IWorkflowBuilder workflowBuilder, IActivityBuilder source, string? outcome)
         {
             WorkflowBuilder = workflowBuilder;
             Source = source;
@@ -14,20 +14,14 @@ namespace Elsa.Builders
         }
 
         public IWorkflowBuilder WorkflowBuilder { get; }
-        public ActivityBuilder Source { get; }
-        public string Outcome { get; }
+        public IActivityBuilder Source { get; }
+        public string? Outcome { get; }
 
-        public ActivityBuilder Then<T>(Action<T>? setup = default, Action<ActivityBuilder>? branch = default) where T : class, IActivity
-        {
-            return Then(WorkflowBuilder.Add(setup), branch);
-        }
-        
-        public ActivityBuilder Then<T>(T activity, Action<ActivityBuilder>? branch = default) where T : class, IActivity
-        {
-            return Then(WorkflowBuilder.Add(activity), branch);
-        }
-        
-        private ActivityBuilder Then(ActivityBuilder activityBuilder, Action<ActivityBuilder>? branch = default)
+        public IActivityBuilder Then<T>(Action<T>? setup = default, Action<IActivityBuilder>? branch = default) where T : class, IActivity => Then(WorkflowBuilder.Add(setup), branch);
+
+        public IActivityBuilder Then<T>(T activity, Action<IActivityBuilder>? branch = default) where T : class, IActivity => Then(WorkflowBuilder.Add(activity), branch);
+
+        private IActivityBuilder Then(IActivityBuilder activityBuilder, Action<IActivityBuilder>? branch = default)
         {
             branch?.Invoke(activityBuilder);
             WorkflowBuilder.Connect(Source, activityBuilder, Outcome);

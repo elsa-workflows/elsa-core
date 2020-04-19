@@ -27,13 +27,9 @@ namespace Elsa.Activities.Timers
         }
 
         [ActivityProperty(Hint = "Specify a CRON expression. See https://crontab.guru/ for help.")]
-        public IWorkflowExpression<string> CronExpression
-        {
-            get => GetState<IWorkflowExpression<string>>(() => new LiteralExpression<string>("* * * * *"));
-            set => SetState(value);
-        }
+        public IWorkflowExpression<string> CronExpression { get; set; } = new CodeExpression<string>("* * * * *");
 
-        public Instant? StartTime
+        private Instant? StartTime
         {
             get => GetState<Instant?>();
             set => SetState(value);
