@@ -18,6 +18,13 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <None Include="icon.png">
+            <Pack>True</Pack>
+            <PackagePath />
+        </None>
+    </ItemGroup>
+
+    <ItemGroup>
         <ProjectReference Include="..\..\core\Elsa\Elsa.csproj" />
     </ItemGroup>
 

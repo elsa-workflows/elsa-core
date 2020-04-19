@@ -18,4 +18,10 @@ jobs:
     - name: Install dependencies
       run: dotnet restore Elsa.sln
     - name: Build
-      run: dotnet pack Elsa.sln --include-symbols
+      run: dotnet pack Elsa.sln --include-symbols -c Release -o out
+    - name: Push to GitHub registry
+      with:
+        source-url: https://nuget.pkg.github.com/<organization>/index.json
+        env:
+          NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}    
+      run: dotnet nuget push ./<project>/out/*.nupkg --skip-duplicate --no-symbols true
