@@ -2,6 +2,7 @@ name: Elsa 2.0
 
 on:
   push:
+    tags: *
     branches: [ feature/elsa-2.0 ]
 
 jobs:
