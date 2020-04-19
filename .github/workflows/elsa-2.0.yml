@@ -25,6 +25,6 @@ jobs:
 
     - name: Build
       run: dotnet pack Elsa.sln --include-symbols -c Release -o out
-      
+
     - name: Push to GitHub registry
-      run: dotnet nuget push ./<project>/out/*.nupkg --skip-duplicate --no-symbols true
+      run: dotnet nuget push ./out/*.nupkg --skip-duplicate --no-symbols true
