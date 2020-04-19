@@ -22,6 +22,6 @@ jobs:
     - name: Push to GitHub registry
       with:
         source-url: https://nuget.pkg.github.com/<organization>/index.json
-        env:
-          NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}    
+      env:
+        NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}    
       run: dotnet nuget push ./<project>/out/*.nupkg --skip-duplicate --no-symbols true
