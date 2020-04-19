@@ -4,23 +4,23 @@ using System.ComponentModel;
 
 namespace Elsa.Models
 {
-    public class Variables : Dictionary<string, Variable>
+    public class Variables : Dictionary<string, Variable?>
     {
         public Variables() : base(0, StringComparer.OrdinalIgnoreCase)
         {
         }
 
-        public Variables(Variables other) : this((IEnumerable<KeyValuePair<string, Variable>>) other)
+        public Variables(Variables other) : this((IEnumerable<KeyValuePair<string, Variable?>>) other)
         {
         }
 
-        public Variables(IEnumerable<KeyValuePair<string, Variable>> dictionary)
+        public Variables(IEnumerable<KeyValuePair<string, Variable?>> dictionary)
         {
             foreach (var item in dictionary)
                 this[item.Key] = item.Value;
         }
         
-        public Variables(IEnumerable<KeyValuePair<string, object>> dictionary)
+        public Variables(IEnumerable<KeyValuePair<string, object?>> dictionary)
         {
             foreach (var item in dictionary)
                 SetVariable(item.Key, item.Value);
@@ -48,9 +48,9 @@ namespace Elsa.Models
             return (T)converter.ConvertFrom(value);
         }
 
-        public Variables SetVariable(string name, object value)
+        public Variables SetVariable(string name, object? value)
         {
-            this[name] = new Variable(value);
+            this[name] = Variable.From(value);
             return this;
         }
 
@@ -61,9 +61,9 @@ namespace Elsa.Models
         }
 
         public void SetVariables(Variables variables) =>
-            SetVariables((IEnumerable<KeyValuePair<string, Variable>>) variables);
+            SetVariables((IEnumerable<KeyValuePair<string, Variable?>>) variables);
 
-        public Variables SetVariables(IEnumerable<KeyValuePair<string, Variable>> variables)
+        public Variables SetVariables(IEnumerable<KeyValuePair<string, Variable?>> variables)
         {
             foreach (var variable in variables)
                 SetVariable(variable.Key, variable.Value);

@@ -34,7 +34,7 @@ namespace Elsa.Services
         protected virtual IActivityExecutionResult OnExecute(ActivityExecutionContext context) => Done();
         protected virtual IActivityExecutionResult OnResume(ActivityExecutionContext context) => Done();
         protected T GetState<T>(Func<T>? defaultValue = null, [CallerMemberName] string? name = null) => State.GetState(name, defaultValue);
-        protected void SetState(object value, [CallerMemberName] string? name = null) => State.SetState(value, name);
+        protected void SetState(object? value, [CallerMemberName] string? name = null) => State.SetState(value, name);
         protected NoopResult Noop() => new NoopResult();
         protected OutcomeResult Done() => new OutcomeResult();
         protected OutcomeResult Done(string outcome, Variable? output) => Done(new[] { outcome }, output);

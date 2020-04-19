@@ -8,7 +8,7 @@ namespace Elsa.Messaging.Distributed
         {
         }
 
-        public RunWorkflow(string instanceId, string? activityId = default, Variable? input = default)
+        public RunWorkflow(string instanceId, string? activityId = default, object? input = default)
         {
             InstanceId = instanceId;
             ActivityId = activityId;
@@ -17,6 +17,6 @@ namespace Elsa.Messaging.Distributed
         
         public string InstanceId { get; set; }
         public string? ActivityId { get; set; }
-        public Variable? Input { get; set; }
+        public object? Input { get; set; }
     }
 }

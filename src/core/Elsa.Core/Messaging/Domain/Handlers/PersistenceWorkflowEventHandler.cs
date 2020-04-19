@@ -45,11 +45,13 @@ namespace Elsa.Messaging.Domain.Handlers
         {
             var workflowExecutionContext = notification.WorkflowExecutionContext;
 
-            if (workflowExecutionContext.DeleteCompletedInstances || workflowExecutionContext.PersistenceBehavior == WorkflowPersistenceBehavior.Suspended)
+            if (workflowExecutionContext.DeleteCompletedInstances)
             {
                 logger.LogDebug("Deleting completed workflow instance {WorkflowInstanceId}", workflowExecutionContext.InstanceId);
                 await workflowInstanceStore.DeleteAsync(workflowExecutionContext.InstanceId, cancellationToken);
             }
+            else
+                await SaveWorkflowAsync(notification.WorkflowExecutionContext, cancellationToken);
         }
 
         private async Task SaveWorkflowAsync(WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)

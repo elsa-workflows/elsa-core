@@ -1,10 +1,14 @@
 using System;
+using Elsa.Models;
 using Elsa.Services.Models;
+using Newtonsoft.Json;
 
 namespace Elsa.Expressions
 {
     public class CodeExpression : WorkflowExpression
     {
+        public static CodeExpression<T> GetInput<T>() => new CodeExpression<T>(context => context.Input.GetValue<T>());
+
         public static string ExpressionType => "Code";
 
         public CodeExpression(Func<ActivityExecutionContext, object> expression) : base(ExpressionType)
@@ -17,7 +21,7 @@ namespace Elsa.Expressions
             Expression = context => expression();
         }
 
-        public Func<ActivityExecutionContext, object> Expression { get; }
+        [JsonIgnore] public Func<ActivityExecutionContext, object> Expression { get; }
     }
 
     public class CodeExpression<T> : CodeExpression, IWorkflowExpression<T>

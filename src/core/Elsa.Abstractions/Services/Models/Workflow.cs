@@ -13,7 +13,7 @@ namespace Elsa.Services.Models
         }
 
         public Workflow(
-            string? definitionId = default,
+            string definitionId = default!,
             int version = 1,
             bool isSingleton = false,
             bool isDisabled = false,
@@ -21,6 +21,8 @@ namespace Elsa.Services.Models
             string? description = default,
             bool isLatest = false,
             bool isPublished = false,
+            WorkflowPersistenceBehavior persistenceBehavior = WorkflowPersistenceBehavior.Suspended,
+            bool deleteCompletedInstances = false,
             IEnumerable<IActivity>? activities = default,
             IEnumerable<Connection>? connections = default)
         {
@@ -32,11 +34,13 @@ namespace Elsa.Services.Models
             IsPublished = isPublished;
             Name = name;
             Description = description;
+            PersistenceBehavior = persistenceBehavior;
+            DeleteCompletedInstances = deleteCompletedInstances;
             Activities = activities?.ToList() ?? new List<IActivity>();
             Connections = connections?.ToList() ?? new List<Connection>();
         }
 
-        public string? DefinitionId { get; set; }
+        public string DefinitionId { get; set; } = default!;
         public int Version { get; set; }
         public bool IsSingleton { get; set; }
         public bool IsDisabled { get; set; }

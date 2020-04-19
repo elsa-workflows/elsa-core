@@ -20,6 +20,8 @@ namespace Elsa.Builders
         IWorkflowBuilder WithVersion(int value);
         IWorkflowBuilder AsSingleton();
         IWorkflowBuilder AsTransient();
+        IWorkflowBuilder WithDeleteCompletedInstances(bool value);
+        IWorkflowBuilder WithPersistenceBehavior(WorkflowPersistenceBehavior value);
         T New<T>(Action<T>? setup = default, Action<ActivityBuilder>? branch = default) where T : class, IActivity;
         T New<T>(T activity, Action<ActivityBuilder>? branch = default) where T : class, IActivity;
         ActivityBuilder StartWith<T>(Action<T>? setup = default, Action<ActivityBuilder>? branch = default) where T : class, IActivity;

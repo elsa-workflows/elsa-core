@@ -1,4 +1,4 @@
-using Elsa.AutoMapper.Extensions;
+using Elsa.Extensions;
 using Elsa.Metadata;
 using Elsa.Server.GraphQL.Mapping;
 using Elsa.Server.GraphQL.Types;

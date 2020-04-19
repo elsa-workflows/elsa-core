@@ -108,7 +108,9 @@ namespace Elsa.Builders
                 Name, 
                 Description, 
                 true, 
-                true, 
+                true,
+                PersistenceBehavior,
+                DeleteCompletedInstances,
                 activities,
                 connections);
 

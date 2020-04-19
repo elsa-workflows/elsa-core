@@ -27,7 +27,7 @@ namespace Elsa.Serialization.Handlers
                 ["Type"] = TypeName,
                 ["Value"] = token
             };
-            token.WriteTo(writer, serializer.Converters.ToArray());
+            objectToken.WriteTo(writer, serializer.Converters.ToArray());
         }
 
         protected abstract object ParseValue(JToken value);

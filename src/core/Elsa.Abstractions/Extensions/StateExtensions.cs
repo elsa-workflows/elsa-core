@@ -17,6 +17,6 @@ namespace Elsa.Extensions
             return state.GetVariable<T>(key);
         }
         
-        public static void SetState(this Variables state, object value, [CallerMemberName]string? key = null) => state.SetVariable(key, value);
+        public static void SetState(this Variables state, object? value, [CallerMemberName]string? key = null) => state.SetVariable(key, value);
     }
 }

@@ -1,8 +1,6 @@
 using System;
 using System.Globalization;
 using Elsa.Server.GraphQL.Extensions;
-using Fluid.Values;
-using HotChocolate;
 using HotChocolate.Language;
 using HotChocolate.Types;
 using NodaTime;

@@ -36,7 +36,8 @@ namespace Elsa.Services
             this.queue = queue;
         }
 
-        public async Task ScheduleWorkflowAsync(string instanceId, string? activityId = default, object? input = default, CancellationToken cancellationToken = default) => await serviceBus.Publish(new RunWorkflow(instanceId, activityId, Variable.From(input)));
+        public async Task ScheduleWorkflowAsync(string instanceId, string? activityId = default, object? input = default, CancellationToken cancellationToken = default) => 
+            await serviceBus.Publish(new RunWorkflow(instanceId, activityId, input));
 
         public async Task ScheduleNewWorkflowAsync(
             string definitionId,

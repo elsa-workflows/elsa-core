@@ -14,9 +14,9 @@ namespace Elsa.Models
             ExecutionLog = new List<ExecutionLogEntry>();
             ScheduledActivities = new Stack<ScheduledActivity>();
         }
-        
-        public string? Id { get; set; }
-        public string? DefinitionId { get; set; }
+
+        public string Id { get; set; } = default!;
+        public string DefinitionId { get; set; } = default!;
         public int Version { get; set; }
         public WorkflowStatus Status { get; set; }
         public string? CorrelationId { get; set; }

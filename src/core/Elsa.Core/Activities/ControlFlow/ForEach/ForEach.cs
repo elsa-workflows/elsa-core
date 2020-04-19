@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -16,14 +17,20 @@ namespace Elsa.Activities.ControlFlow
         Category = "Control Flow",
         Description = "Iterate over a collection.",
         Icon = "far fa-circle",
-        Outcomes = new[] { OutcomeNames.Iterate, OutcomeNames.Done }
+        Outcomes = new[] {OutcomeNames.Iterate, OutcomeNames.Done}
     )]
     public class ForEach : Activity
     {
         [ActivityProperty(Hint = "Enter an expression that evaluates to a collection of items to iterate over.")]
-        public IWorkflowExpression<ICollection<object>> Collection
+        public IWorkflowExpression<ICollection> Collection
         {
-            get => GetState<IWorkflowExpression<ICollection<object>>>();
+            get => GetState<IWorkflowExpression<ICollection>>();
+            set => SetState(value);
+        }
+
+        private IList<object>? CollectionCopy
+        {
+            get => GetState<IList<object>?>();
             set => SetState(value);
         }
 
@@ -33,12 +40,20 @@ namespace Elsa.Activities.ControlFlow
             set => SetState(value);
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(
+            ActivityExecutionContext context,
+            CancellationToken cancellationToken)
         {
-            var collection = (await context.EvaluateAsync(Collection, cancellationToken))?.ToArray() ?? new object[0];
+            var collection = CollectionCopy;
+
+            if (collection == null)
+                CollectionCopy = collection =
+                    ((await context.EvaluateAsync(Collection, cancellationToken)) ?? new object[0]).Cast<object>()
+                    .ToList();
+
             var currentIndex = CurrentIndex ?? 0;
 
-            if (currentIndex < collection.Length)
+            if (currentIndex < collection.Count)
             {
                 var input = collection[currentIndex];
                 CurrentIndex = currentIndex + 1;
@@ -46,6 +61,7 @@ namespace Elsa.Activities.ControlFlow
             }
 
             CurrentIndex = null;
+            CollectionCopy = null;
             return Done();
         }
     }

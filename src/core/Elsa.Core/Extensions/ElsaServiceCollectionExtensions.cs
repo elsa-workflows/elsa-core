@@ -4,7 +4,6 @@ using Elsa;
 using Elsa.Activities.ControlFlow;
 using Elsa.Activities.Primitives;
 using Elsa.Activities.Signaling;
-using Elsa.AutoMapper.Extensions;
 using Elsa.Builders;
 using Elsa.Converters;
 using Elsa.Expressions;
@@ -122,6 +121,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddStartupTask<StartServiceBusTask>()
                 .AddConsumer<RunWorkflow, RunWorkflowHandler>()
                 .AddAutoMapperProfile<WorkflowDefinitionProfile>(ServiceLifetime.Singleton)
+                .AddTypeAlias(typeof(CodeExpression<>), "CodeExpression")
                 .AddSerializationHandlers()
                 .AddMetadataHandlers()
                 .AddPrimitiveActivities();
