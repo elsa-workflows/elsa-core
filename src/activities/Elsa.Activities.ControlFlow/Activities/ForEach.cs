@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
@@ -22,9 +22,9 @@ namespace Elsa.Activities.ControlFlow.Activities
         }
 
         [ActivityProperty(Hint = "Enter an expression that evaluates to an array of items to iterate over.")]
-        public WorkflowExpression<IList<object>> CollectionExpression
+        public WorkflowExpression<IList> CollectionExpression
         {
-            get => GetState(() => new JavaScriptExpression<IList<object>>("[]"));
+            get => GetState(() => new JavaScriptExpression<IList>("[]"));
             set => SetState(value);
         }
 
