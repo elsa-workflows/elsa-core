@@ -1,5 +1,5 @@
 ﻿using System;
-using AutoMapper;
+using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -9,32 +9,21 @@ namespace Elsa.Extensions
     {
         public static IServiceCollection AddAutoMapper(this IServiceCollection services, ServiceLifetime lifetime)
         {
-            services.TryAddSingleton(CreateConfigurationProvider);
-            services.TryAdd(new ServiceDescriptor(typeof(IMapper), sp => sp.GetRequiredService<IConfigurationProvider>().CreateMapper(sp.GetService), lifetime));
-
+            services.TryAddSingleton(CreateMapper);
             return services;
         }
 
-        public static IServiceCollection AddAutoMapperProfile<TProfile>(this IServiceCollection services, ServiceLifetime lifetime) where TProfile : Profile
+        public static IServiceCollection AddAutoMapperProfile<TProfile>(this IServiceCollection services, ServiceLifetime lifetime) where TProfile : MapperProfile
         {
             services.AddAutoMapper(lifetime);
-            services.TryAddProvider<Profile, TProfile>(lifetime);
+            services.TryAddProvider<MapperProfile, TProfile>(lifetime);
             return services;
         }
 
-        private static IConfigurationProvider CreateConfigurationProvider(IServiceProvider serviceProvider)
+        private static IMapper CreateMapper(IServiceProvider services)
         {
-            var profiles = serviceProvider.GetServices<Profile>();
-
-            var configuration = new MapperConfiguration(
-                x =>
-                {
-                    foreach (var profile in profiles)
-                        x.AddProfile(profile);
-                }
-            );
-
-            return configuration;
+            var profiles = services.GetServices<MapperProfile>();
+            return new AutoMapperMapper(profiles);
         }
     }
 }

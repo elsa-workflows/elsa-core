@@ -1,7 +1,6 @@
 using System;
-using Elsa.AutoMapper.Extensions;
-using Elsa.AutoMapper.Extensions.NodaTime;
 using Elsa.Extensions;
+using Elsa.Mapping;
 using Elsa.Persistence.EntityFrameworkCore.DbContexts;
 using Elsa.Persistence.EntityFrameworkCore.Mapping;
 using Elsa.Persistence.EntityFrameworkCore.Services;

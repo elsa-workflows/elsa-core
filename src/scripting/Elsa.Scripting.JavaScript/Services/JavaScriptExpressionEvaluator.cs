@@ -19,6 +19,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NodaTime;
 using NodaTime.Serialization.JsonNet;
+using IMapper = Elsa.Services.IMapper;
 
 namespace Elsa.Scripting.JavaScript.Services
 {

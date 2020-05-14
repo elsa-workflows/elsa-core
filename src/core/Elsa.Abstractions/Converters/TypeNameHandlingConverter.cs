@@ -2,12 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using Elsa.Serialization.Handlers;
-using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using NodaTime;
-using NodaTime.Serialization.JsonNet;
-using NodaTime.Text;
 
 namespace Elsa.Converters
 {

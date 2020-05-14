@@ -7,6 +7,8 @@ using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Persistence.DocumentDb.Documents;
 using Elsa.Persistence.DocumentDb.Helpers;
+using Elsa.Services;
+using IMapper = Elsa.Services.IMapper;
 
 namespace Elsa.Persistence.DocumentDb.Services
 {

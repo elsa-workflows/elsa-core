@@ -7,7 +7,9 @@ using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Persistence.EntityFrameworkCore.DbContexts;
 using Elsa.Persistence.EntityFrameworkCore.Entities;
+using Elsa.Services;
 using Microsoft.EntityFrameworkCore;
+using IMapper = Elsa.Services.IMapper;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Services
 {

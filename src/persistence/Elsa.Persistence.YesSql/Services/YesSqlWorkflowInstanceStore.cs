@@ -6,7 +6,9 @@ using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Persistence.YesSql.Documents;
 using Elsa.Persistence.YesSql.Indexes;
+using Elsa.Services;
 using YesSql;
+using IMapper = Elsa.Services.IMapper;
 
 namespace Elsa.Persistence.YesSql.Services
 {
@@ -26,15 +28,15 @@ namespace Elsa.Persistence.YesSql.Services
         public async Task<WorkflowInstance> SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken)
         {
             string instanceId = instance.Id;
-            
+
             WorkflowInstanceDocument existingInstance = await session
-                                         .Query<WorkflowInstanceDocument, WorkflowInstanceIndex>(x => x.WorkflowInstanceId == instanceId)
-                                         .FirstOrDefaultAsync();
+                .Query<WorkflowInstanceDocument, WorkflowInstanceIndex>(x => x.WorkflowInstanceId == instanceId)
+                .FirstOrDefaultAsync();
 
             WorkflowInstanceDocument document = (existingInstance != null)
                 ? mapper.Map(instance, existingInstance)
                 : mapper.Map<WorkflowInstanceDocument>(instance);
-            
+
             session.Save(document);
             await session.CommitAsync();
             return mapper.Map<WorkflowInstance>(document);

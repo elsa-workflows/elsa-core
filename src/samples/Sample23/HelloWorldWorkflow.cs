@@ -10,6 +10,7 @@ namespace Sample23
         public void Build(IWorkflowBuilder builder)
         {
             builder
+                .WithVersion(1)
                 .StartWith<WriteLine>(activity => activity.TextExpression = new LiteralExpression("Hello World!"));
         }
     }

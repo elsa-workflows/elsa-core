@@ -4,7 +4,6 @@ using Elsa.Activities.ControlFlow.Extensions;
 using Elsa.Activities.UserTask.Extensions;
 using Elsa.Activities.Workflows.Extensions;
 using Elsa.Runtime;
-using Elsa.Scripting.JavaScript.Extensions;
 using Elsa.Scripting.Liquid.Extensions;
 
 // ReSharper disable once CheckNamespace

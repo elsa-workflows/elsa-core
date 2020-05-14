@@ -4,7 +4,6 @@ using Elsa.Activities.Email.Extensions;
 using Elsa.Activities.Http.Extensions;
 using Elsa.Activities.MassTransit.Extensions;
 using Elsa.Activities.Timers.Extensions;
-using Elsa.Runtime;
 using GreenPipes;
 using MassTransit;
 using MassTransit.ExtensionsDependencyInjectionIntegration;
