@@ -26,6 +26,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <PackageReference Include="AutoMapper" Version="9.0.0" />
       <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="3.1.1" />
       <PackageReference Include="Microsoft.Extensions.Localization.Abstractions" Version="3.1.1" />
       <PackageReference Include="Microsoft.Extensions.Primitives" Version="3.1.1" />

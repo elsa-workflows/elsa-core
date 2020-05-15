@@ -1,10 +1,10 @@
-using AutoMapper;
 using Elsa.Models;
 using Elsa.Persistence.YesSql.Documents;
+using Elsa.Services;
 
 namespace Elsa.Persistence.YesSql.Mapping
 {
-    public class DocumentProfile : Profile
+    public class DocumentProfile : MappingProfile
     {
         public DocumentProfile()
         {

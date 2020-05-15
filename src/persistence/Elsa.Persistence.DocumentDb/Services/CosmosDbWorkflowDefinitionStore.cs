@@ -2,11 +2,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using AutoMapper;
 using Elsa.Models;
 using Elsa.Persistence.DocumentDb.Documents;
 using Elsa.Persistence.DocumentDb.Extensions;
 using Elsa.Persistence.DocumentDb.Helpers;
+using Elsa.Services;
 
 namespace Elsa.Persistence.DocumentDb.Services
 {

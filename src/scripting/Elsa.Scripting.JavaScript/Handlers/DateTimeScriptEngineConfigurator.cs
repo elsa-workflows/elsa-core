@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Elsa.Scripting.JavaScript.Messages;
 using MediatR;
 using NodaTime;
-using NodaTime.Text;
 
 namespace Elsa.Scripting.JavaScript.Handlers
 {

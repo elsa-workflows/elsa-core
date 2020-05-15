@@ -1,5 +1,4 @@
 ﻿using System.IO;
-using System.Net.Mail;
 using System.Threading.Tasks;
 using Elsa.Activities.Console.Extensions;
 using Elsa.Activities.Email.Extensions;

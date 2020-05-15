@@ -3,10 +3,11 @@ using System.Linq;
 using AutoMapper;
 using Elsa.Models;
 using Elsa.Persistence.EntityFrameworkCore.Entities;
+using Elsa.Services;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Mapping
 {
-    public class EntitiesProfile : Profile
+    public class EntitiesProfile : MappingProfile
     {
         public EntitiesProfile()
         {

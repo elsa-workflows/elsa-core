@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
 using Elsa;
 using Elsa.Activities;
 using Elsa.Activities.Console.Activities;
@@ -40,7 +40,7 @@ namespace Sample20.Workflows
                     x.ValueExpression = new JavaScriptExpression<string>("'Test'");
                 })
                 .Then<ForEach>(
-                    x => x.CollectionExpression = new JavaScriptExpression<IList<object>>("[Customer1, Customer2, Customer3]"),
+                    x => x.CollectionExpression = new JavaScriptExpression<IList>("[Customer1, Customer2, Customer3]"),
                     forEach =>
                     {
                         forEach

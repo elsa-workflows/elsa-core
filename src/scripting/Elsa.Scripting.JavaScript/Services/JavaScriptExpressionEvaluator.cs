@@ -3,7 +3,6 @@ using System.Dynamic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using AutoMapper;
 using Elsa.Expressions;
 using Elsa.Scripting.JavaScript.Converters;
 using Elsa.Scripting.JavaScript.Extensions;
@@ -25,7 +24,6 @@ namespace Elsa.Scripting.JavaScript.Services
     public class JavaScriptExpressionEvaluator : IExpressionEvaluator
     {
         private readonly IMediator mediator;
-        private readonly IMapper mapper;
         private readonly IOptions<ScriptOptions> options;
         private readonly JsonSerializerSettings serializerSettings;
         public const string SyntaxName = "JavaScript";
@@ -38,7 +36,6 @@ namespace Elsa.Scripting.JavaScript.Services
         public JavaScriptExpressionEvaluator(IMediator mediator, IMapper mapper, IOptions<ScriptOptions> options)
         {
             this.mediator = mediator;
-            this.mapper = mapper;
             this.options = options;
 
             serializerSettings = new JsonSerializerSettings().ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);

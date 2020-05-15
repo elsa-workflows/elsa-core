@@ -1,7 +1,6 @@
 using System;
-using Elsa.AutoMapper.Extensions;
-using Elsa.AutoMapper.Extensions.NodaTime;
 using Elsa.Extensions;
+using Elsa.Mapping;
 using Elsa.Persistence.EntityFrameworkCore.DbContexts;
 using Elsa.Persistence.EntityFrameworkCore.Mapping;
 using Elsa.Persistence.EntityFrameworkCore.Services;
@@ -25,8 +24,8 @@ namespace Elsa.Persistence.EntityFrameworkCore.Extensions
                 services.AddDbContext<ElsaContext, TElsaContext>(configureOptions);
 
             services
-                .AddAutoMapperProfile<NodaTimeProfile>(ServiceLifetime.Singleton)
-                .AddAutoMapperProfile<EntitiesProfile>(ServiceLifetime.Singleton);
+                .AddMapperProfile<NodaTimeProfile>(ServiceLifetime.Singleton)
+                .AddMapperProfile<EntitiesProfile>(ServiceLifetime.Singleton);
 
             return new EntityFrameworkCoreElsaBuilder(configuration.Services);
         }
