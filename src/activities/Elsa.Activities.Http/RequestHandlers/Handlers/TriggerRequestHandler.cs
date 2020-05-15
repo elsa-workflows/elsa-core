@@ -46,7 +46,10 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
             var haltedHttpWorkflows = await workflowInstanceStore.ListByBlockingActivityAsync<ReceiveHttpRequest>(
                 cancellationToken: cancellationToken);
 
-            var workflowsToResume = Filter(haltedHttpWorkflows, requestPath, method).ToList();
+            var hasCorrelationIdHeader = httpContext.Request.Headers.TryGetValue("X-Correlation-Id", out var correlationIdHeaderValues);
+            var correlationIds = hasCorrelationIdHeader ? correlationIdHeaderValues.ToArray() : Array.Empty<string>();
+
+            var workflowsToResume = Filter(haltedHttpWorkflows, requestPath, method, correlationIds).ToList();
 
             if (!workflowsToStart.Any() && !workflowsToResume.Any())
                 return new NextResult();
@@ -62,9 +65,11 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
         private IEnumerable<(WorkflowInstance, ActivityInstance)> Filter(
             IEnumerable<(WorkflowInstance, ActivityInstance)> items,
             Uri path,
-            string method)
+            string method,
+            string[] correlationIds)
         {
-            return items.Where(x => IsMatch(x.Item2.State, path, method));
+            var correlatedItems = correlationIds.Any() ? items.Where(x => correlationIds.Contains(x.Item1.CorrelationId)) : items;
+            return correlatedItems.Where(x => IsMatch(x.Item2.State, path, method));
         }
 
         private IEnumerable<(WorkflowDefinitionVersion, ActivityDefinition)> Filter(
