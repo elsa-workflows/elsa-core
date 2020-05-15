@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Extensions;
@@ -12,9 +12,11 @@ namespace Elsa.Results
     public class FaultWorkflowResult : ActivityExecutionResult
     {
         private readonly string errorMessage;
+        private Exception exception;
 
         public FaultWorkflowResult(Exception exception) : this(exception.Message)
         {
+            this.exception = exception;
         }
 
         public FaultWorkflowResult(string errorMessage)
@@ -35,7 +37,7 @@ namespace Elsa.Results
                 x => x.ActivityFaultedAsync(workflowContext, currentActivity, errorMessage, cancellationToken),
                 logger);
 
-            workflowContext.Fault(workflowContext.CurrentActivity, errorMessage);
+            workflowContext.Fault(workflowContext.CurrentActivity, errorMessage, exception);
         }
     }
 }
