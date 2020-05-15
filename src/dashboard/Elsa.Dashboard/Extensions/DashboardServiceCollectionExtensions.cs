@@ -59,7 +59,7 @@ namespace Elsa.Dashboard.Extensions
                 .AddScoped<IWorkflowPublisher, WorkflowPublisher>()
                 .AddScoped<INotifier, Notifier>()
                 .AddScoped<NotifierFilter>()
-                .AddAutoMapperProfile<WorkflowDefinitionProfile>(ServiceLifetime.Singleton);
+                .AddMapperProfile<WorkflowDefinitionProfile>(ServiceLifetime.Singleton);
 
             services.AddScoped(
                 sp =>

@@ -24,8 +24,8 @@ namespace Elsa.Persistence.EntityFrameworkCore.Extensions
                 services.AddDbContext<ElsaContext, TElsaContext>(configureOptions);
 
             services
-                .AddAutoMapperProfile<NodaTimeProfile>(ServiceLifetime.Singleton)
-                .AddAutoMapperProfile<EntitiesProfile>(ServiceLifetime.Singleton);
+                .AddMapperProfile<NodaTimeProfile>(ServiceLifetime.Singleton)
+                .AddMapperProfile<EntitiesProfile>(ServiceLifetime.Singleton);
 
             return new EntityFrameworkCoreElsaBuilder(configuration.Services);
         }

@@ -2,14 +2,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using AutoMapper;
 using Elsa.Models;
 using Elsa.Persistence.YesSql.Documents;
 using Elsa.Persistence.YesSql.Extensions;
 using Elsa.Persistence.YesSql.Indexes;
 using Elsa.Services;
 using YesSql;
-using IMapper = Elsa.Services.IMapper;
 
 namespace Elsa.Persistence.YesSql.Services
 {

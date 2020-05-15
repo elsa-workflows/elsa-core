@@ -5,7 +5,7 @@ using NodaTime;
 
 namespace Elsa.Mapping
 {
-    public class NodaTimeProfile : MapperProfile,
+    public class NodaTimeProfile : MappingProfile,
         ITypeConverter<Instant, DateTime>,
         ITypeConverter<Instant?, DateTime?>,
         ITypeConverter<DateTime, Instant>,

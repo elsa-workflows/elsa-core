@@ -24,8 +24,8 @@ namespace Elsa.Persistence.DocumentDb.Extensions
 
             builder.Services
                 .AddSingleton(storage)
-                .AddAutoMapperProfile<NodaTimeProfile>(ServiceLifetime.Singleton)
-                .AddAutoMapperProfile<DocumentProfile>(ServiceLifetime.Singleton);
+                .AddMapperProfile<NodaTimeProfile>(ServiceLifetime.Singleton)
+                .AddMapperProfile<DocumentProfile>(ServiceLifetime.Singleton);
 
             return new CosmosDbElsaBuilder(builder.Services);
         }

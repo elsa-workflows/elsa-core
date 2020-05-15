@@ -1,5 +1,4 @@
 ﻿using System.Collections;
-using System.Collections.Generic;
 using Elsa;
 using Elsa.Activities;
 using Elsa.Activities.Console.Activities;

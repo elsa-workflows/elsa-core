@@ -3,11 +3,16 @@ using AutoMapper;
 
 namespace Elsa.Services
 {
+    /// <summary>
+    /// A Mapper implementation that uses AutoMapper.
+    /// Using a privately constructed AutoMapper.IMapper instance prevents collisions with other frameworks such as ABP.
+    /// See https://github.com/elsa-workflows/elsa-core/issues/290 
+    /// </summary>
     public class AutoMapperMapper : IMapper
     {
         private readonly AutoMapper.IMapper mapper;
 
-        public AutoMapperMapper(IEnumerable<MapperProfile> profiles)
+        public AutoMapperMapper(IEnumerable<MappingProfile> profiles)
         {
             var configuration = new MapperConfiguration(
                 x =>

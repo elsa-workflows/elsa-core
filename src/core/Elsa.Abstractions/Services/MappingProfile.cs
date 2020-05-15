@@ -2,7 +2,7 @@
 
 namespace Elsa.Services
 {
-    public abstract class MapperProfile : Profile
+    public abstract class MappingProfile : Profile
     {
     }
 }

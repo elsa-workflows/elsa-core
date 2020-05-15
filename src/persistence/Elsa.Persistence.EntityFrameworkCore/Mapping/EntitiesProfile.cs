@@ -7,7 +7,7 @@ using Elsa.Services;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Mapping
 {
-    public class EntitiesProfile : MapperProfile
+    public class EntitiesProfile : MappingProfile
     {
         public EntitiesProfile()
         {

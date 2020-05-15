@@ -87,7 +87,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddTransient<IWorkflowProvider, CodeWorkflowProvider>()
                 .AddTransient<IWorkflowBuilder, WorkflowBuilder>()
                 .AddTransient<Func<IWorkflowBuilder>>(sp => sp.GetRequiredService<IWorkflowBuilder>)
-                .AddAutoMapperProfile<WorkflowDefinitionProfile>(ServiceLifetime.Singleton)
+                .AddMapperProfile<WorkflowDefinitionProfile>(ServiceLifetime.Singleton)
                 .AddPrimitiveActivities();
 
             return configuration;

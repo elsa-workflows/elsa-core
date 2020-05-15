@@ -4,7 +4,7 @@ using Elsa.Services;
 
 namespace Elsa.Persistence.DocumentDb.Mapping
 {
-    public sealed class DocumentProfile : MapperProfile
+    public sealed class DocumentProfile : MappingProfile
     {
         public DocumentProfile()
         {
