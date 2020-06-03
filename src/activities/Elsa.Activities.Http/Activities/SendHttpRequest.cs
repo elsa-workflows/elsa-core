@@ -98,9 +98,9 @@ namespace Elsa.Activities.Http.Activities
             Hint = "The content type to send with the request (if applicable)."
         )]
         [SelectOptions("text/plain", "text/html", "application/json", "application/xml")]
-        public WorkflowExpression<string> ContentType
+        public string ContentType
         {
-            get => GetState(() => new WorkflowExpression<string>(LiteralEvaluator.SyntaxName, ""));
+            get => GetState<string>();
             set => SetState(value);
         }
 
