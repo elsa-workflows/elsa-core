@@ -1,8 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Exceptions;
 using Elsa.Expressions;
 using Elsa.Extensions;
 using Elsa.Messaging.Domain;
@@ -75,8 +76,12 @@ namespace Elsa.Services
         public async Task<WorkflowExecutionContext> RunWorkflowDefinitionAsync(string workflowDefinitionId, string? activityId, object? input = default, string? correlationId = default, CancellationToken cancellationToken = default)
         {
             var workflow = await workflowRegistry.GetWorkflowAsync(workflowDefinitionId, VersionOptions.Published, cancellationToken);
+            if (workflow == null)
+            {
+                logger.LogError("Workflow definition {WorkflowInstanceId} either not registered or not published.", workflowDefinitionId);
+                throw new WorkflowException("The triggered workflow definition either not registered or not published.");
+            }
             var workflowInstance = await workflowActivator.ActivateAsync(workflow, correlationId, cancellationToken);
-
             return await RunAsync(workflow, workflowInstance, activityId, input, cancellationToken);
         }
 
@@ -96,9 +101,11 @@ namespace Elsa.Services
                 case WorkflowStatus.Idle:
                     await BeginWorkflow(workflowExecutionContext, activity, input, cancellationToken);
                     break;
+
                 case WorkflowStatus.Running:
                     await RunWorkflowAsync(workflowExecutionContext, cancellationToken);
                     break;
+
                 case WorkflowStatus.Suspended:
                     await ResumeWorkflowAsync(workflowExecutionContext, activity, input, cancellationToken);
                     break;
@@ -113,12 +120,15 @@ namespace Elsa.Services
                 case WorkflowStatus.Cancelled:
                     statusEvent = new WorkflowCancelled(workflowExecutionContext);
                     break;
+
                 case WorkflowStatus.Completed:
                     statusEvent = new WorkflowCompleted(workflowExecutionContext);
                     break;
+
                 case WorkflowStatus.Faulted:
                     statusEvent = new WorkflowFaulted(workflowExecutionContext);
                     break;
+
                 case WorkflowStatus.Suspended:
                     statusEvent = new WorkflowSuspended(workflowExecutionContext);
                     break;
@@ -126,7 +136,7 @@ namespace Elsa.Services
 
             if (statusEvent != null)
                 await mediator.Publish(statusEvent, cancellationToken);
-            
+
             return workflowExecutionContext;
         }
 
@@ -152,13 +162,13 @@ namespace Elsa.Services
         {
             if (!await CanExecuteAsync(workflowExecutionContext, activity, input, cancellationToken))
                 return;
-            
+
             workflowExecutionContext.BlockingActivities.Remove(activity);
             workflowExecutionContext.Status = WorkflowStatus.Running;
             workflowExecutionContext.ScheduleActivity(activity, input);
             await RunAsync(workflowExecutionContext, Resume, cancellationToken);
         }
-        
+
         private Task<bool> CanExecuteAsync(WorkflowExecutionContext workflowExecutionContext, IActivity activity, object? input, CancellationToken cancellationToken)
         {
             var activityExecutionContext = new ActivityExecutionContext(workflowExecutionContext, activity, Variable.From(input));
