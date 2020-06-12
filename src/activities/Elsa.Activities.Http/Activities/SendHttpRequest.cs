@@ -54,10 +54,10 @@ namespace Elsa.Activities.Http.Activities
                 var url = GetState<WorkflowExpression<string>>();
 
                 if (url != null && !string.IsNullOrWhiteSpace(url.Expression) && Uri.TryCreate(
-                        url.Expression,
-                        UriKind.RelativeOrAbsolute,
-                        out var uri
-                    ))
+                    url.Expression,
+                    UriKind.RelativeOrAbsolute,
+                    out var uri
+                ))
                     return new WorkflowExpression<Uri>(url.Syntax, uri.ToString());
 
                 return new WorkflowExpression<Uri>(LiteralEvaluator.SyntaxName, "");
@@ -100,7 +100,7 @@ namespace Elsa.Activities.Http.Activities
         [SelectOptions("text/plain", "text/html", "application/json", "application/xml")]
         public string ContentType
         {
-            get => GetState<string>();
+            get => GetState<string>(() => "text/plain");
             set => SetState(value);
         }
 
@@ -167,9 +167,9 @@ namespace Elsa.Activities.Http.Activities
 
                 responseModel.Content = await formatter.ParseAsync(response, cancellationToken);
             }
-            
+
             workflowContext.SetLastResult(Output.SetVariable("Response", responseModel));
-            
+
             var statusEndpoint = ((int)response.StatusCode).ToString();
 
             return Outcomes(new[] { OutcomeNames.Done, statusEndpoint });
@@ -179,8 +179,8 @@ namespace Elsa.Activities.Http.Activities
         {
             var formatters = parsers.OrderByDescending(x => x.Priority).ToList();
             return formatters.FirstOrDefault(
-                       x => x.SupportedContentTypes.Contains(contentType, StringComparer.OrdinalIgnoreCase)
-                   ) ?? formatters.Last();
+                x => x.SupportedContentTypes.Contains(contentType, StringComparer.OrdinalIgnoreCase)
+            ) ?? formatters.Last();
         }
 
         private async Task<HttpRequestMessage> CreateRequestAsync(
@@ -202,11 +202,7 @@ namespace Elsa.Activities.Http.Activities
             if (methodSupportsBody)
             {
                 var body = await expressionEvaluator.EvaluateAsync(Content, workflowContext, cancellationToken);
-                var contentType = await expressionEvaluator.EvaluateAsync(
-                    ContentType,
-                    workflowContext,
-                    cancellationToken
-                );
+                var contentType = ContentType;
 
                 if (!string.IsNullOrWhiteSpace(body))
                 {
