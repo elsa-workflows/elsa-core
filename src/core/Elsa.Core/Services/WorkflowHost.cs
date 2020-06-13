@@ -79,7 +79,7 @@ namespace Elsa.Services
             if (workflow == null)
             {
                 logger.LogError("Workflow definition {WorkflowInstanceId} either not registered or not published.", workflowDefinitionId);
-                throw new WorkflowException("The triggered workflow definition either not registered or not published.");
+                throw new WorkflowException("The specified workflow definition is either not registered or not published.");
             }
             var workflowInstance = await workflowActivator.ActivateAsync(workflow, correlationId, cancellationToken);
             return await RunAsync(workflow, workflowInstance, activityId, input, cancellationToken);
