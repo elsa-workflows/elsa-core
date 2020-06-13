@@ -55,7 +55,7 @@ namespace Elsa.Samples.WorkflowDefinition
 
             //Run it
             var invoker = services.GetService<IWorkflowHost>();
-            await invoker.RunWorkflowDefinitionAsync("definition-001", "activity-1");
+            await invoker.RunWorkflowDefinitionAsync("definition-001");
 
             Console.ReadLine();
         }
