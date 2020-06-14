@@ -92,7 +92,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.CustomActiviti
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.TimesheetApproval", "src\samples\Elsa.Samples.TimesheetApproval\Elsa.Samples.TimesheetApproval.csproj", "{1678743A-9095-4683-8DCD-5763F41924E2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.WorkflowDefinition", "src\samples\Elsa.Samples.WorkflowDefinition\Elsa.Samples.WorkflowDefinition.csproj", "{7AC91435-7D10-4353-9064-598A6F8EAED6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.WorkflowDefinition", "src\samples\Elsa.Samples.WorkflowDefinition\Elsa.Samples.WorkflowDefinition.csproj", "{7AC91435-7D10-4353-9064-598A6F8EAED6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.DistributedLocking.Redis", "src\providers\Elsa.DistributedLocking.Redis\Elsa.DistributedLocking.Redis.csproj", "{EBD49CCA-5400-4C36-B5DF-7B28190AA323}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.DistributedLock", "src\samples\Elsa.Samples.DistributedLock\Elsa.Samples.DistributedLock.csproj", "{4D162E3C-0962-43B9-B193-6E806249F81B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -220,6 +224,14 @@ Global
 		{7AC91435-7D10-4353-9064-598A6F8EAED6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7AC91435-7D10-4353-9064-598A6F8EAED6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7AC91435-7D10-4353-9064-598A6F8EAED6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EBD49CCA-5400-4C36-B5DF-7B28190AA323}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EBD49CCA-5400-4C36-B5DF-7B28190AA323}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EBD49CCA-5400-4C36-B5DF-7B28190AA323}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EBD49CCA-5400-4C36-B5DF-7B28190AA323}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4D162E3C-0962-43B9-B193-6E806249F81B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4D162E3C-0962-43B9-B193-6E806249F81B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4D162E3C-0962-43B9-B193-6E806249F81B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4D162E3C-0962-43B9-B193-6E806249F81B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -263,6 +275,8 @@ Global
 		{554C21D7-10BE-48E6-B0EF-9FCA43B32A0F} = {5E5E1E84-DDBC-40D6-B891-0D563A15A44A}
 		{1678743A-9095-4683-8DCD-5763F41924E2} = {5E5E1E84-DDBC-40D6-B891-0D563A15A44A}
 		{7AC91435-7D10-4353-9064-598A6F8EAED6} = {5E5E1E84-DDBC-40D6-B891-0D563A15A44A}
+		{EBD49CCA-5400-4C36-B5DF-7B28190AA323} = {600C4AE0-0585-4181-9CEC-2BB43430C713}
+		{4D162E3C-0962-43B9-B193-6E806249F81B} = {5E5E1E84-DDBC-40D6-B891-0D563A15A44A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}

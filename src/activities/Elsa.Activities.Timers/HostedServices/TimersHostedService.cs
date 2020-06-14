@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Timers.Options;
+using Elsa.DistributedLock;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -20,13 +21,19 @@ namespace Elsa.Activities.Timers.HostedServices
         public TimersHostedService(
             IServiceProvider serviceProvider,
             IDistributedLockProvider distributedLockProvider,
-            IOptions<TimersOptions> options, 
+            IOptions<TimersOptions> options,
             ILogger<TimersHostedService> logger)
         {
             this.serviceProvider = serviceProvider;
             this.distributedLockProvider = distributedLockProvider;
             this.options = options;
             this.logger = logger;
+        }
+
+        public override async Task StartAsync(CancellationToken cancellationToken)
+        {
+            await distributedLockProvider.SetupAsync(cancellationToken);
+            await base.StartAsync(cancellationToken);
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -55,6 +62,12 @@ namespace Elsa.Activities.Timers.HostedServices
 
                 await Task.Delay(options.Value.SweepInterval.ToTimeSpan(), stoppingToken);
             }
+        }
+
+        public override async Task StopAsync(CancellationToken cancellationToken)
+        {
+            await distributedLockProvider.DisposeAsync(cancellationToken);
+            await base.StopAsync(cancellationToken);
         }
     }
 }
