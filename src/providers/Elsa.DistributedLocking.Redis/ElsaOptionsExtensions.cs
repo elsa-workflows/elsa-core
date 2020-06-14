@@ -1,11 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using RedLockNet;
-using RedLockNet.SERedis;
-using RedLockNet.SERedis.Configuration;
 using System;
-using System.Collections.Generic;
-using System.Net;
 
 namespace Elsa.DistributedLocking.Redis
 {
