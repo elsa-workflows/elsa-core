@@ -1,6 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using NodaTime;
 using System;
 
 namespace Elsa.DistributedLocking.AzureBlob
@@ -11,10 +10,9 @@ namespace Elsa.DistributedLocking.AzureBlob
         {
             options
                 .UseDistributedLockProvider(sp => new AzureBlobLockProvider(connectionString,
-                                                                        leaseTime.GetValueOrDefault(TimeSpan.FromSeconds(60)),
-                                                                        renewInterval.GetValueOrDefault(TimeSpan.FromSeconds(45)),
-                                                                        sp.GetRequiredService<ILogger<AzureBlobLockProvider>>(),
-                                                                        sp.GetRequiredService<IClock>()));
+                                                                        leaseTime ?? TimeSpan.FromSeconds(60),
+                                                                        renewInterval ?? TimeSpan.FromSeconds(45),
+                                                                        sp.GetRequiredService<ILogger<AzureBlobLockProvider>>()));
             return options;
         }
     }
