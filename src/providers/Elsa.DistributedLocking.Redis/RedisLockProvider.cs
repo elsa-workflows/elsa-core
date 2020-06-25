@@ -45,18 +45,21 @@ namespace Elsa.DistributedLocking.Redis
 
                 if (redLock.IsAcquired)
                 {
+                    
                     lock (RedLockInstance)
                     {
                         RedLockInstance.Add(redLock);
                     }
+                    _logger.LogInformation($"Lock provider acquired lock for {resourceName}");
+
                     return true;
                 }
                 return false;
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Failed to acquire lock for {resourceName}. Reason > {ex}");
-                throw;
+                _logger.LogWarning($"Failed to acquire lock for {resourceName}. Reason > {ex}");
+                return false;
             }
         }
 
@@ -79,6 +82,7 @@ namespace Elsa.DistributedLocking.Redis
                         {
                             redLock.Dispose();
                             RedLockInstance.Remove(redLock);
+                            _logger.LogInformation($"Lock provider released lock for {resourceName}");
                             break;
                         }
                     }
@@ -86,7 +90,7 @@ namespace Elsa.DistributedLocking.Redis
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Failed to release lock for {resourceName}. Reason > {ex}");
+                _logger.LogWarning($"Failed to release lock for {resourceName}. Reason > {ex}");
             }
             return Task.CompletedTask;
         }
