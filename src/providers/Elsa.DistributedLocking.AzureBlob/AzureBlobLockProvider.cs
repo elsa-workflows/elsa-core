@@ -48,13 +48,24 @@ namespace Elsa.DistributedLocking.AzureBlob
             }
             _renewInterval = renewInterval;
         }
-        public async Task<bool> AcquireLockAsync(string name, CancellationToken cancellationToken = default)
+        public Task<bool> AcquireLockAsync(string name, CancellationToken cancellationToken = default)
+        {
+            if (name == null)
+            {
+                throw new ArgumentNullException(nameof(name));
+            }
+
+            return CreateLockAsync(name, cancellationToken);
+           
+        }
+
+        private async Task<bool> CreateLockAsync(string name, CancellationToken cancellationToken=default)
         {
             var resourceName = $"{Prefix}:{name}";
             var blob = CloudBlobContainer.GetBlockBlobReference(resourceName);
 
-            if (!await blob.ExistsAsync().ConfigureAwait(false))
-                await blob.UploadTextAsync(string.Empty).ConfigureAwait(false);
+            if (!await blob.ExistsAsync(cancellationToken).ConfigureAwait(false))
+                await blob.UploadTextAsync(string.Empty,cancellationToken).ConfigureAwait(false);
 
             _renewTimer = new Timer(RenewLeases, null, _renewInterval, _renewInterval);
             _logger.LogInformation($"Lock provider will try to acquire lock for {resourceName}");
@@ -63,7 +74,7 @@ namespace Elsa.DistributedLocking.AzureBlob
             {
                 try
                 {
-                    var leaseId = await blob.AcquireLeaseAsync(_leaseTime).ConfigureAwait(false);
+                    var leaseId = await blob.AcquireLeaseAsync(_leaseTime, null, cancellationToken).ConfigureAwait(false);
                     _lockedBlobs.Add(new LockedBlob { Blob = blob, LeaseId = leaseId, Identifier = resourceName });
 
                     _logger.LogInformation($"Lock provider acquired lock for {resourceName}");
@@ -81,7 +92,17 @@ namespace Elsa.DistributedLocking.AzureBlob
             }
             return false;
         }
-        public async Task ReleaseLockAsync(string name, CancellationToken cancellationToken = default)
+
+        public Task ReleaseLockAsync(string name, CancellationToken cancellationToken = default)
+        {
+            if (name == null)
+            {
+                throw new ArgumentNullException(nameof(name));
+            }
+
+            return ReleaseLeaseAsync(name, cancellationToken);
+        }
+        private async Task ReleaseLeaseAsync(string name, CancellationToken cancellationToken =default)
         {
             var resourceName = $"{Prefix}:{name}";
             _logger.LogInformation($"Lock provider will try to release lock for {resourceName}");
@@ -96,7 +117,7 @@ namespace Elsa.DistributedLocking.AzureBlob
                     {
                         try
                         {
-                            await lockedBlob.Blob.ReleaseLeaseAsync(AccessCondition.GenerateLeaseCondition(lockedBlob.LeaseId))
+                            await lockedBlob.Blob.ReleaseLeaseAsync(AccessCondition.GenerateLeaseCondition(lockedBlob.LeaseId),cancellationToken)
                                             .ConfigureAwait(false);
 
                             _logger.LogInformation($"Lock provider released lock for {resourceName}");
@@ -115,6 +136,7 @@ namespace Elsa.DistributedLocking.AzureBlob
                 }
             }
         }
+
         private CloudBlobContainer CloudBlobContainer
         {
             get
@@ -173,7 +195,5 @@ namespace Elsa.DistributedLocking.AzureBlob
                 _logger.LogWarning(ex, "Error while renewing lease");
             }
         }
-
-
     }
 }
