@@ -29,18 +29,11 @@ namespace Elsa.Activities.Timers.HostedServices
             this.options = options;
             this.logger = logger;
         }
-
-        public override async Task StartAsync(CancellationToken cancellationToken)
-        {
-            await distributedLockProvider.SetupAsync(cancellationToken);
-            await base.StartAsync(cancellationToken);
-        }
-
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                if (await distributedLockProvider.AcquireLockAsync(GetType().Name, stoppingToken))
+                if (await distributedLockProvider.AcquireLockAsync(GetType().Name, stoppingToken).ConfigureAwait(false))
                 {
                     try
                     {
@@ -62,12 +55,6 @@ namespace Elsa.Activities.Timers.HostedServices
 
                 await Task.Delay(options.Value.SweepInterval.ToTimeSpan(), stoppingToken);
             }
-        }
-
-        public override async Task StopAsync(CancellationToken cancellationToken)
-        {
-            await distributedLockProvider.DisposeAsync(cancellationToken);
-            await base.StopAsync(cancellationToken);
         }
     }
 }

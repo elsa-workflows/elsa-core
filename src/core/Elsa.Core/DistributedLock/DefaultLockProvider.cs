@@ -8,11 +8,11 @@ namespace Elsa.DistributedLock
     /// An in-memory, single-node lock provider. Used by default, and suitable only in single-instance hosting environments.
     /// When hosting in a multi-node environment (kubernetes cluster, docker fleet, web farms etc.), use a distributed implementation.
     /// </summary>
-    public class DefaultLockProvider : DistributedLockProvider
+    public class DefaultLockProvider : IDistributedLockProvider
     {
         private readonly HashSet<string> locks = new HashSet<string>();
 
-        public override Task<bool> AcquireLockAsync(string name, CancellationToken cancellationToken = default)
+        public Task<bool> AcquireLockAsync(string name, CancellationToken cancellationToken = default)
         {
             lock (locks)
             {
@@ -25,7 +25,7 @@ namespace Elsa.DistributedLock
             }
         }
 
-        public override Task ReleaseLockAsync(string name, CancellationToken cancellationToken = default)
+        public Task ReleaseLockAsync(string name, CancellationToken cancellationToken = default)
         {
             lock (locks)
                 locks.Remove(name);
