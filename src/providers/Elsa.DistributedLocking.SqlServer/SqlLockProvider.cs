@@ -5,14 +5,13 @@ using System.Data.SqlClient;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.DistributedLock;
-using Elsa.Services;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.DistributedLocking.SqlServer
 {
     // CREDITS:
     // Implementation taken & adapted from Workflow Core: https://github.com/danielgerlag/workflow-core/blob/master/src/providers/WorkflowCore.LockProviders.SqlServer/SqlLockProvider.cs
-    public class SqlLockProvider : DistributedLockProvider
+    public class SqlLockProvider : IDistributedLockProvider
     {
         private readonly ILogger logger;
         private const string Prefix = "elsa";
@@ -32,7 +31,7 @@ namespace Elsa.DistributedLocking.SqlServer
             this.connectionString = connectionStringBuilder.ToString();
         }
 
-        public override async Task<bool> AcquireLockAsync(string name, CancellationToken cancellationToken)
+        public async Task<bool> AcquireLockAsync(string name, CancellationToken cancellationToken)
         {
             if (!mutex.WaitOne())
                 return false;
@@ -99,7 +98,7 @@ namespace Elsa.DistributedLocking.SqlServer
             }
         }
 
-        public override async Task ReleaseLockAsync(string name, CancellationToken cancellationToken)
+        public async Task ReleaseLockAsync(string name, CancellationToken cancellationToken)
         {
             if (!mutex.WaitOne())
                 return;

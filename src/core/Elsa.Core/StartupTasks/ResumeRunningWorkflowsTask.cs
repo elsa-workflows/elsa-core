@@ -30,8 +30,6 @@ namespace Elsa.StartupTasks
 
         public async Task ExecuteAsync(CancellationToken cancellationToken = default)
         {
-            if (!await distributedLockProvider.SetupAsync(cancellationToken)) return;
-
             if (!await distributedLockProvider.AcquireLockAsync(GetType().Name, cancellationToken))
                 return;
 
@@ -41,8 +39,6 @@ namespace Elsa.StartupTasks
             {
                 await workflowScheduler.ScheduleNewWorkflowAsync(instance.Id, cancellationToken: cancellationToken);
             }
-
-            await distributedLockProvider.DisposeAsync(cancellationToken);
         }
     }
 }

@@ -14,9 +14,5 @@ namespace Elsa.DistributedLock
         Task<bool> AcquireLockAsync(string name, CancellationToken cancellationToken = default);
 
         Task ReleaseLockAsync(string name, CancellationToken cancellationToken = default);
-
-        Task<bool> SetupAsync(CancellationToken cancellationToken = default);
-
-        Task DisposeAsync(CancellationToken cancellationToken = default);
     }
 }
