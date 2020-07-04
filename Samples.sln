@@ -92,6 +92,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.CustomActiviti
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.TimesheetApproval", "src\samples\Elsa.Samples.TimesheetApproval\Elsa.Samples.TimesheetApproval.csproj", "{1678743A-9095-4683-8DCD-5763F41924E2}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.WorkflowDefinition", "src\samples\Elsa.Samples.WorkflowDefinition\Elsa.Samples.WorkflowDefinition.csproj", "{995545FF-8C75-4BC1-9970-726DD49B8DF0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -214,6 +216,10 @@ Global
 		{1678743A-9095-4683-8DCD-5763F41924E2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1678743A-9095-4683-8DCD-5763F41924E2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1678743A-9095-4683-8DCD-5763F41924E2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{995545FF-8C75-4BC1-9970-726DD49B8DF0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{995545FF-8C75-4BC1-9970-726DD49B8DF0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{995545FF-8C75-4BC1-9970-726DD49B8DF0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{995545FF-8C75-4BC1-9970-726DD49B8DF0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -256,6 +262,7 @@ Global
 		{A11D79AE-F4C9-4595-9B73-0E0AB221B90D} = {5E5E1E84-DDBC-40D6-B891-0D563A15A44A}
 		{554C21D7-10BE-48E6-B0EF-9FCA43B32A0F} = {5E5E1E84-DDBC-40D6-B891-0D563A15A44A}
 		{1678743A-9095-4683-8DCD-5763F41924E2} = {5E5E1E84-DDBC-40D6-B891-0D563A15A44A}
+		{995545FF-8C75-4BC1-9970-726DD49B8DF0} = {5E5E1E84-DDBC-40D6-B891-0D563A15A44A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}
