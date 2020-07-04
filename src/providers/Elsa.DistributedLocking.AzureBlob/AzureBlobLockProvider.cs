@@ -24,8 +24,7 @@ namespace Elsa.DistributedLocking.AzureBlob
         private readonly ILogger<AzureBlobLockProvider> _logger;
         private CloudBlobContainer _cloudBlobContainer;
         private readonly TimeSpan _renewInterval;
-        private Timer _renewTimer;
-
+        private Timer _renewTimer; 
         public AzureBlobLockProvider(string connectionString, TimeSpan leaseTime, TimeSpan renewInterval,
                                         ILogger<AzureBlobLockProvider> logger)
         {
@@ -33,8 +32,7 @@ namespace Elsa.DistributedLocking.AzureBlob
             _connectionString = connectionString;
             if (leaseTime > TimeSpan.FromSeconds(60) || leaseTime < TimeSpan.FromSeconds(15))
             {
-                _logger.LogInformation($"Leasetime must be between 15 Seconds and 60 seconds, Found {leaseTime.TotalSeconds} seconds. " +
-                                       "Setting default value of 60 seconds");
+                _logger.LogInformation("Leasetime must be between 15 Seconds and 60 seconds, Found {leaseTime.TotalSeconds} seconds. Setting default value of 60 seconds", leaseTime.TotalSeconds);
                 _leaseTime = TimeSpan.FromSeconds(60);
             }
             else
@@ -43,7 +41,7 @@ namespace Elsa.DistributedLocking.AzureBlob
             }
             if (renewInterval > leaseTime)
             {
-                _logger.LogError($"Renew Interval can not be greater than  LeaseTime {leaseTime.TotalSeconds}.");
+                _logger.LogError("Renew Interval can not be greater than  LeaseTime {leaseTime.TotalSeconds}.", leaseTime.TotalSeconds);
                 throw new InvalidDataException($"Renew Interval can not be greater than  LeaseTime {leaseTime.TotalSeconds}.");
             }
             _renewInterval = renewInterval;
@@ -68,7 +66,7 @@ namespace Elsa.DistributedLocking.AzureBlob
                 await blob.UploadTextAsync(string.Empty,cancellationToken).ConfigureAwait(false);
 
             _renewTimer = new Timer(RenewLeases, null, _renewInterval, _renewInterval);
-            _logger.LogInformation($"Lock provider will try to acquire lock for {resourceName}");
+            _logger.LogInformation("Lock provider will try to acquire lock for {resourceName}",resourceName);
 
             if (_leaseSemaphore.WaitOne())
             {
@@ -77,12 +75,12 @@ namespace Elsa.DistributedLocking.AzureBlob
                     var leaseId = await blob.AcquireLeaseAsync(_leaseTime, null, cancellationToken).ConfigureAwait(false);
                     _lockedBlobs.Add(new LockedBlob { Blob = blob, LeaseId = leaseId, Identifier = resourceName });
 
-                    _logger.LogInformation($"Lock provider acquired lock for {resourceName}");
+                    _logger.LogInformation("Lock provider acquired lock for {resourceName}",resourceName);
                     return true;
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning($"Failed to acquire lock for {resourceName}. Reason > {ex}");
+                    _logger.LogWarning("Failed to acquire lock for {resourceName}. Reason > {ex}",resourceName,ex);
                     return false;
                 }
                 finally
@@ -105,7 +103,7 @@ namespace Elsa.DistributedLocking.AzureBlob
         private async Task ReleaseLeaseAsync(string name, CancellationToken cancellationToken =default)
         {
             var resourceName = $"{Prefix}:{name}";
-            _logger.LogInformation($"Lock provider will try to release lock for {resourceName}");
+            _logger.LogInformation("Lock provider will try to release lock for {resourceName}",resourceName);
 
             if (_leaseSemaphore.WaitOne())
             {
@@ -120,11 +118,11 @@ namespace Elsa.DistributedLocking.AzureBlob
                             await lockedBlob.Blob.ReleaseLeaseAsync(AccessCondition.GenerateLeaseCondition(lockedBlob.LeaseId),cancellationToken)
                                             .ConfigureAwait(false);
 
-                            _logger.LogInformation($"Lock provider released lock for {resourceName}");
+                            _logger.LogInformation("Lock provider released lock for {resourceName}",resourceName);
                         }
                         catch (Exception ex)
                         {
-                            _logger.LogWarning($"Failed to release lock for {resourceName}. Reason > {ex}");
+                            _logger.LogWarning("Failed to release lock for {resourceName}. Reason > {ex}",resourceName,ex);
                         }
                         _lockedBlobs.Remove(lockedBlob);
                     }
@@ -137,7 +135,7 @@ namespace Elsa.DistributedLocking.AzureBlob
             }
         }
 
-        private CloudBlobContainer CloudBlobContainer
+        private async CloudBlobContainer CloudBlobContainer
         {
             get
             {
@@ -151,7 +149,7 @@ namespace Elsa.DistributedLocking.AzureBlob
                                                       .CreateCloudBlobClient();
                             blobClient.DefaultRequestOptions.RetryPolicy = new ExponentialRetry(TimeSpan.FromSeconds(2.0), 3);
                             _cloudBlobContainer = blobClient.GetContainerReference(ContainerName);
-                            if (!_cloudBlobContainer.Exists())
+                            if ( await !_cloudBlobContainer.ExistsAsync())
                             {
                                 _cloudBlobContainer.CreateIfNotExists(BlobContainerPublicAccessType.Off, (BlobRequestOptions)null, (OperationContext)null);
                             }
