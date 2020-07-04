@@ -34,7 +34,7 @@ namespace Elsa.DistributedLocking.Redis
         private async Task<bool> CreateLockAsync(string name, CancellationToken cancellationToken = default)
         {
             var resourceName = $"{Prefix}:{name}";
-            _logger.LogInformation($"Lock provider will try to acquire lock for {resourceName}");
+            _logger.LogInformation("Lock provider will try to acquire lock for {resourceName}",resourceName);
             try
             {
                 var redLock = await _distributedLockFactory.CreateLockAsync(resourceName, _lockTimeout,
@@ -50,7 +50,7 @@ namespace Elsa.DistributedLocking.Redis
                     {
                         RedLockInstance.Add(redLock);
                     }
-                    _logger.LogInformation($"Lock provider acquired lock for {resourceName}");
+                    _logger.LogInformation("Lock provider acquired lock for {resourceName}",resourceName);
 
                     return true;
                 }
@@ -58,7 +58,7 @@ namespace Elsa.DistributedLocking.Redis
             }
             catch (Exception ex)
             {
-                _logger.LogWarning($"Failed to acquire lock for {resourceName}. Reason > {ex}");
+                _logger.LogWarning("Failed to acquire lock for {resourceName}. Reason > {ex}",resourceName,ex);
                 return false;
             }
         }
@@ -71,7 +71,8 @@ namespace Elsa.DistributedLocking.Redis
             }
             var resourceName = $"{Prefix}:{name}";
 
-            _logger.LogInformation($"Lock provider will try to release lock for {resourceName}");
+            _logger.LogInformation("Lock provider will try to release lock for {resourceName}", resourceName);
+                
             try
             {
                 lock (RedLockInstance)
@@ -82,7 +83,7 @@ namespace Elsa.DistributedLocking.Redis
                         {
                             redLock.Dispose();
                             RedLockInstance.Remove(redLock);
-                            _logger.LogInformation($"Lock provider released lock for {resourceName}");
+                            _logger.LogInformation("Lock provider released lock for {resourceName}",resourceName);
                             break;
                         }
                     }
@@ -90,7 +91,7 @@ namespace Elsa.DistributedLocking.Redis
             }
             catch (Exception ex)
             {
-                _logger.LogWarning($"Failed to release lock for {resourceName}. Reason > {ex}");
+                _logger.LogWarning("Failed to release lock for {resourceName}. Reason > {ex}",resourceName,ex);
             }
             return Task.CompletedTask;
         }
