@@ -94,7 +94,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
                 .Property(x => x.Scopes)
                 .HasConversion(
                     x => Serialize(x),
-                    x => Deserialize<Stack<WorkflowExecutionScope>>(x)
+                    x => DeserializeScopes(x)
                 );
             
             entity
@@ -175,6 +175,12 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
         private T Deserialize<T>(string json)
         {
             return JsonConvert.DeserializeObject<T>(json, serializerSettings);
+        }
+
+        private Stack<WorkflowExecutionScope> DeserializeScopes(string json)
+        {
+            var reversedScopes = JsonConvert.DeserializeObject<Stack<WorkflowExecutionScope>>(json, serializerSettings);
+            return reversedScopes is { } ? new Stack<WorkflowExecutionScope>(reversedScopes) : null;
         }
     }
 }
