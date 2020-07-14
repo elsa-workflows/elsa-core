@@ -84,6 +84,7 @@ namespace Elsa.DistributedLocking.Redis
                             redLock.Dispose();
                             RedLockInstance.Remove(redLock);
                             _logger.LogInformation("Lock provider released lock for {resourceName}",resourceName);
+
                             break;
                         }
                     }
