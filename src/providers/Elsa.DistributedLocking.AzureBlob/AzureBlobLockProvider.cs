@@ -12,10 +12,15 @@ using System.Threading.Tasks;
 
 namespace Elsa.DistributedLocking.AzureBlob
 {
+    // See also:
+    // The lock duration can be 15 to 60 seconds, or can be infinite, Reference: https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob
+
     public class AzureBlobLockProvider : IDistributedLockProvider
     {
         private const string Prefix = "elsa";
         private const string ContainerName = "elsa-lock-container";
+        private const int MaxLeaseTime = 60;
+        private const int MinLeaseTime = 15;
         private readonly AutoResetEvent _leaseSemaphore = new AutoResetEvent(true);
         private static readonly object syncRoot = new Object();
         private readonly List<LockedBlob> _lockedBlobs = new List<LockedBlob>();
@@ -24,16 +29,17 @@ namespace Elsa.DistributedLocking.AzureBlob
         private readonly ILogger<AzureBlobLockProvider> _logger;
         private CloudBlobContainer _cloudBlobContainer;
         private readonly TimeSpan _renewInterval;
-        private Timer _renewTimer; 
+        private Timer _renewTimer;
+
         public AzureBlobLockProvider(string connectionString, TimeSpan leaseTime, TimeSpan renewInterval,
                                         ILogger<AzureBlobLockProvider> logger)
         {
             _logger = logger;
             _connectionString = connectionString;
-            if (leaseTime > TimeSpan.FromSeconds(60) || leaseTime < TimeSpan.FromSeconds(15))
+            if (leaseTime >= TimeSpan.FromSeconds(MaxLeaseTime) || leaseTime <= TimeSpan.FromSeconds(MinLeaseTime))
             {
                 _logger.LogInformation("Leasetime must be between 15 Seconds and 60 seconds, Found {leaseTime.TotalSeconds} seconds. Setting default value of 60 seconds", leaseTime.TotalSeconds);
-                _leaseTime = TimeSpan.FromSeconds(60);
+                _leaseTime = TimeSpan.FromSeconds(MaxLeaseTime);
             }
             else
             {
@@ -115,7 +121,8 @@ namespace Elsa.DistributedLocking.AzureBlob
                     {
                         try
                         {
-                            await lockedBlob.Blob.ReleaseLeaseAsync(AccessCondition.GenerateLeaseCondition(lockedBlob.LeaseId),cancellationToken)
+                            await lockedBlob.Blob
+                                            .ReleaseLeaseAsync(AccessCondition.GenerateLeaseCondition(lockedBlob.LeaseId),cancellationToken)
                                             .ConfigureAwait(false);
 
                             _logger.LogInformation("Lock provider released lock for {resourceName}",resourceName);
@@ -135,7 +142,7 @@ namespace Elsa.DistributedLocking.AzureBlob
             }
         }
 
-        private async CloudBlobContainer CloudBlobContainer
+        private CloudBlobContainer CloudBlobContainer
         {
             get
             {
@@ -149,7 +156,7 @@ namespace Elsa.DistributedLocking.AzureBlob
                                                       .CreateCloudBlobClient();
                             blobClient.DefaultRequestOptions.RetryPolicy = new ExponentialRetry(TimeSpan.FromSeconds(2.0), 3);
                             _cloudBlobContainer = blobClient.GetContainerReference(ContainerName);
-                            if ( await !_cloudBlobContainer.ExistsAsync())
+                            if (!_cloudBlobContainer.Exists())
                             {
                                 _cloudBlobContainer.CreateIfNotExists(BlobContainerPublicAccessType.Off, (BlobRequestOptions)null, (OperationContext)null);
                             }
@@ -173,7 +180,7 @@ namespace Elsa.DistributedLocking.AzureBlob
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, $"Error renewing leases - {ex.Message}");
+                    _logger.LogWarning(ex, "Error while renewing leases");
                 }
                 finally
                 {
@@ -186,11 +193,11 @@ namespace Elsa.DistributedLocking.AzureBlob
             try
             {
                 await lockedBlob.Blob.RenewLeaseAsync(AccessCondition.GenerateLeaseCondition(lockedBlob.LeaseId));
-                _logger.LogInformation($"Renewed active leases for {lockedBlob.Identifier}");
+                _logger.LogInformation("Renewed active leases for {lockedBlob.Identifier}", lockedBlob.Identifier);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error while renewing lease");
+                _logger.LogWarning(ex, "Error while renewing lock");
             }
         }
     }
