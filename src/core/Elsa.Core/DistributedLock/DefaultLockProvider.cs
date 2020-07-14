@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Elsa.Services
+namespace Elsa.DistributedLock
 {
     /// <summary>
     /// An in-memory, single-node lock provider. Used by default, and suitable only in single-instance hosting environments.
@@ -29,7 +29,7 @@ namespace Elsa.Services
         {
             lock (locks)
                 locks.Remove(name);
-            
+
             return Task.CompletedTask;
         }
     }

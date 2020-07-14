@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Elsa.Services
+namespace Elsa.DistributedLock
 {
     /// <summary>
     /// Provides functionality to acquire and release locks which are distributed across all instances in a web farm.
@@ -12,6 +12,7 @@ namespace Elsa.Services
     public interface IDistributedLockProvider
     {
         Task<bool> AcquireLockAsync(string name, CancellationToken cancellationToken = default);
+
         Task ReleaseLockAsync(string name, CancellationToken cancellationToken = default);
     }
 }

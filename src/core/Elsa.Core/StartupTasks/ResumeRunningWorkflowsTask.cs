@@ -1,5 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.DistributedLock;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Runtime;
@@ -18,7 +19,7 @@ namespace Elsa.StartupTasks
         private readonly IDistributedLockProvider distributedLockProvider;
 
         public ResumeRunningWorkflowsTask(
-            IWorkflowInstanceStore workflowInstanceStore, 
+            IWorkflowInstanceStore workflowInstanceStore,
             IWorkflowScheduler workflowScheduler,
             IDistributedLockProvider distributedLockProvider)
         {
@@ -26,12 +27,12 @@ namespace Elsa.StartupTasks
             this.workflowScheduler = workflowScheduler;
             this.distributedLockProvider = distributedLockProvider;
         }
-        
+
         public async Task ExecuteAsync(CancellationToken cancellationToken = default)
         {
             if (!await distributedLockProvider.AcquireLockAsync(GetType().Name, cancellationToken))
                 return;
-            
+
             var instances = await workflowInstanceStore.ListByStatusAsync(WorkflowStatus.Running, cancellationToken);
 
             foreach (var instance in instances)

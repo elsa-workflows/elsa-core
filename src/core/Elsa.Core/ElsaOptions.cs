@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using Elsa.Caching;
+using Elsa.DistributedLock;
 using Elsa.Persistence;
 using Elsa.Persistence.Memory;
 using Elsa.Services;
@@ -61,8 +62,8 @@ namespace Elsa
             ServiceBusConfigurer = configure;
             return this;
         }
-        
-        public ElsaOptions ConfigureServiceBus(Func<RebusConfigurer, RebusConfigurer> configure) => 
+
+        public ElsaOptions ConfigureServiceBus(Func<RebusConfigurer, RebusConfigurer> configure) =>
             ConfigureServiceBus((bus, _) => configure(bus));
 
         private static RebusConfigurer ConfigureInMemoryServiceBus(RebusConfigurer rebus, IServiceProvider serviceProvider)
