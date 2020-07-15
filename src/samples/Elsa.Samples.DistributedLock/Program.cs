@@ -12,7 +12,7 @@ namespace Elsa.Samples.DistributedLock
     {
         private static async Task Main()
         {
-            await CreateHostBuilder().UseConsoleLifetime().Build().RunAsync(); 
+            await CreateHostBuilder().UseConsoleLifetime().Build().RunAsync();
         }
 
         public static IHostBuilder CreateHostBuilder() =>
