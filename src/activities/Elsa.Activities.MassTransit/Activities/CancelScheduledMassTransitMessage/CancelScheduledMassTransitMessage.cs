@@ -28,7 +28,7 @@ namespace Elsa.Activities.MassTransit
         }
 
         [ActivityProperty(Hint = "Expression that returns the tokenId of a scheduled message to cancel.")]
-        public IWorkflowExpression<Guid> TokenId
+        public IWorkflowExpression<Guid>? TokenId
         {
             get => GetState<IWorkflowExpression<Guid>>();
             set => SetState(value);
@@ -42,7 +42,7 @@ namespace Elsa.Activities.MassTransit
             var tokenId = await activityExecutionContext.EvaluateAsync(TokenId, cancellationToken);
             var endpoint = await SendEndpointProvider.GetSendEndpoint(options.SchedulerAddress);
 
-            await endpoint.CancelScheduledSend(tokenId);
+            await endpoint.CancelScheduledRecurringSend(tokenId.ToString(), "");
 
             return Done();
         }

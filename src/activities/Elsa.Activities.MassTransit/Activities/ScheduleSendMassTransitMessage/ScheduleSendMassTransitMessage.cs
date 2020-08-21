@@ -8,6 +8,7 @@ using Elsa.Models;
 using Elsa.Results;
 using Elsa.Services.Models;
 using MassTransit;
+using MassTransit.Scheduling;
 using Microsoft.Extensions.Options;
 using NodaTime;
 
@@ -37,14 +38,14 @@ namespace Elsa.Activities.MassTransit
         }
 
         [ActivityProperty(Hint = "The address of a specific endpoint to deliver the message to.")]
-        public Uri EndpointAddress
+        public Uri? EndpointAddress
         {
             get
             {
                 var endpointAddress = GetState<string>();
                 return string.IsNullOrEmpty(endpointAddress) ? null : new Uri(endpointAddress);
             }
-            set => SetState(value.ToString());
+            set => SetState(value?.ToString());
         }
 
         [ActivityProperty(Hint = "An expression that evaluates to the date and time to deliver the message.")]
@@ -64,9 +65,10 @@ namespace Elsa.Activities.MassTransit
             var message = await context.EvaluateAsync(Message, cancellationToken);
             var scheduledTime = await context.EvaluateAsync(ScheduledTime, cancellationToken);
             var endpoint = await SendEndpointProvider.GetSendEndpoint(options.SchedulerAddress);
-            var scheduledMessage = await endpoint.ScheduleSend(EndpointAddress, scheduledTime.ToDateTimeUtc(), message, cancellationToken);
+            //var scheduledMessage = await endpoint.ScheduleRecurringSend(EndpointAddress, new DefaultRecurringSchedule{ scheduledTime.ToDateTimeUtc(), message, cancellationToken)};
 
-            return Done(Variable.From(scheduledMessage.TokenId));
+            //return Done(Variable.From(scheduledMessage.TokenId));
+            return Done();
         }
     }
 }

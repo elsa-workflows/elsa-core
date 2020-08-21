@@ -52,19 +52,19 @@ namespace Elsa.Activities.MassTransit.Extensions
             options?.Invoke(optionsBuilder);
 
             services
-                .AddMassTransitActivities()
-                .AddMassTransit(CreateBus, ConfigureMassTransit);
+                .AddMassTransitActivities();
+                //.AddMassTransit(CreateBus, ConfigureMassTransit);
 
             return services;
 
-            // Local function to configure consumers.
-            void ConfigureMassTransit(IServiceCollectionConfigurator configurator)
-            {
-                foreach (var messageType in messageTypes)
-                {
-                    configurator.AddConsumer(CreateConsumerType(messageType));
-                }
-            }
+            // // Local function to configure consumers.
+            // void ConfigureMassTransit(IServiceCollectionConfigurator configurator)
+            // {
+            //     foreach (var messageType in messageTypes)
+            //     {
+            //         configurator.AddConsumer(CreateConsumerType(messageType));
+            //     }
+            // }
 
             // Local function to create the bus.
             IBusControl CreateBus(IServiceProvider sp) => CreateUsingRabbitMq(sp, messageTypes);
@@ -94,17 +94,17 @@ namespace Elsa.Activities.MassTransit.Extensions
             return Bus.Factory.CreateUsingRabbitMq(
                 bus =>
                 {
-                    var options = sp.GetRequiredService<IOptions<RabbitMqOptions>>().Value;
-                    var host = bus.Host(new Uri(options.Host), h =>
-                    {
-                        if (!string.IsNullOrEmpty(options.Username))
-                        {
-                            h.Username(options.Username);
-
-                            if (!string.IsNullOrEmpty(options.Password))
-                                h.Password(options.Password);
-                        }
-                    });
+                    // var options = sp.GetRequiredService<IOptions<RabbitMqOptions>>().Value;
+                    // var host = bus.Host(new Uri(options.Host), h =>
+                    // {
+                    //     if (!string.IsNullOrEmpty(options.Username))
+                    //     {
+                    //         h.Username(options.Username);
+                    //
+                    //         if (!string.IsNullOrEmpty(options.Password))
+                    //             h.Password(options.Password);
+                    //     }
+                    // });
 
 
                     foreach (var messageType in messageTypes)
@@ -112,14 +112,14 @@ namespace Elsa.Activities.MassTransit.Extensions
                         var queueName = messageType.Name;
                         var consumerType = CreateConsumerType(messageType);
 
-                        bus.ReceiveEndpoint(
-                            queueName,
-                            endpoint =>
-                            {
-                                endpoint.PrefetchCount = 16;
-                                endpoint.ConfigureConsumer(sp, consumerType);
-                                MapEndpointConvention(messageType, endpoint.InputAddress);
-                            });
+                        // bus.ReceiveEndpoint(
+                        //     queueName,
+                        //     endpoint =>
+                        //     {
+                        //         endpoint.PrefetchCount = 16;
+                        //         endpoint.ConfigureConsumer(sp, consumerType);
+                        //         MapEndpointConvention(messageType, endpoint.InputAddress);
+                        //     });
                     }
                 });
         }
