@@ -10,7 +10,7 @@ This list of sample implementations showcase a variety of workflows using ELSA.
 6. [HttpRequest/HttpResponse](Sample06) - Example of a workflow that intercepts a HttpRequest and handles the HttpResponse.
 7. [Document Approval](Sample07) - Example of a Document Approval workflow.
 8. [Create and Handle Orders](Sample08) - Example of a workflow that creates and handles orders.
-9. [Calculator: Defined in Json](Sample9) - A simple console program that loads & executes a workflow designed with the HTML5 workflow designer.
+9. [Calculator: Defined in Json](Sample09) - A simple console program that loads & executes a workflow designed with the HTML5 workflow designer.
 10. [Hellow World: YesSql](Sample10) - A simple demonstration of using YesSql persistence providers.
 11. [Correlation](Sample11) - Demonstrates workflow correlation.
 12. [User Task](Sample12) - Demonstrates workflow correlation & user tasks.
