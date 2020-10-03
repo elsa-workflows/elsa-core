@@ -2,9 +2,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Email.Options;
 using Elsa.Activities.Email.Services;
+using Elsa.ActivityResults;
 using Elsa.Attributes;
-using Elsa.Expressions;
-using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.Options;
@@ -27,52 +26,31 @@ namespace Elsa.Activities.Email
         }
 
         [ActivityProperty(Hint = "The sender's email address.")]
-        public IWorkflowExpression<string> From
-        {
-            get => GetState<IWorkflowExpression<string>>();
-            set => SetState(value);
-        }
+        public string From { get; set; }
 
         [ActivityProperty(Hint = "The recipient's email address.")]
-        public IWorkflowExpression<string> To
-        {
-            get => GetState<IWorkflowExpression<string>>();
-            set => SetState(value);
-        }
+        public string To { get; set; }
 
         [ActivityProperty(Hint = "The subject of the email message.")]
-        public IWorkflowExpression<string> Subject
-        {
-            get => GetState<IWorkflowExpression<string>>();
-            set => SetState(value);
-        }
+        public string Subject { get; set; }
 
         [ActivityProperty(Hint = "The body of the email message.")]
         [WorkflowExpressionOptions(Multiline = true)]
-        public IWorkflowExpression<string> Body
-        {
-            get => GetState<IWorkflowExpression<string>>();
-            set => SetState(value);
-        }
+        public string Body { get; set; }
 
         protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var from = (await context.EvaluateAsync(From, cancellationToken)) ?? options.Value.DefaultSender;
-            var to = await context.EvaluateAsync(To, cancellationToken);
-            var subject = await context.EvaluateAsync(Subject, cancellationToken);
-            var body = await context.EvaluateAsync(Body, cancellationToken);
             var message = new MimeMessage();
             
-            message.From.Add(new MailboxAddress(@from));
-            message.Subject = subject;
+            message.From.Add(MailboxAddress.Parse(From));
+            message.Subject = Subject;
             
             message.Body = new TextPart(TextFormat.Html)
             {
-                Text = body
+                Text = Body
             };
 
-            message.To.Add(new MailboxAddress(to));
-
+            message.To.Add(MailboxAddress.Parse(To));
             await smtpService.SendAsync(message, cancellationToken);
 
             return Done();

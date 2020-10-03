@@ -2,10 +2,8 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.MassTransit.Options;
+using Elsa.ActivityResults;
 using Elsa.Attributes;
-using Elsa.Expressions;
-using Elsa.Models;
-using Elsa.Results;
 using Elsa.Services.Models;
 using MassTransit;
 using MassTransit.Scheduling;
@@ -24,51 +22,37 @@ namespace Elsa.Activities.MassTransit
     {
         private readonly MessageScheduleOptions options;
 
-        public ScheduleSendMassTransitMessage(IBus bus, ConsumeContext consumeContext, IOptions<MessageScheduleOptions> options)
-        : base(bus, consumeContext)
+        public ScheduleSendMassTransitMessage(IBus bus,
+            ConsumeContext consumeContext,
+            IOptions<MessageScheduleOptions> options)
+            : base(bus, consumeContext)
         {
             this.options = options.Value;
         }
 
         [ActivityProperty(Hint = "An expression that evaluates to the message to be delivered.")]
-        public IWorkflowExpression Message
-        {
-            get => GetState<IWorkflowExpression>();
-            set => SetState(value);
-        }
+        public object? Message { get; set; }
 
         [ActivityProperty(Hint = "The address of a specific endpoint to deliver the message to.")]
-        public Uri? EndpointAddress
-        {
-            get
-            {
-                var endpointAddress = GetState<string>();
-                return string.IsNullOrEmpty(endpointAddress) ? null : new Uri(endpointAddress);
-            }
-            set => SetState(value?.ToString());
-        }
+        public Uri EndpointAddress { get; set; }
 
         [ActivityProperty(Hint = "An expression that evaluates to the date and time to deliver the message.")]
-        public IWorkflowExpression<Instant> ScheduledTime
-        {
-            get => GetState<IWorkflowExpression<Instant>>();
-            set => SetState(value);
-        }
+        public Instant ScheduledTime { get; set; }
 
-        protected override bool OnCanExecute(ActivityExecutionContext context)
-        {
-            return Message != null && options.SchedulerAddress != null;
-        }
+        protected override bool OnCanExecute(ActivityExecutionContext context) =>
+            Message != null && options.SchedulerAddress != null;
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context,
+            CancellationToken cancellationToken)
         {
-            var message = await context.EvaluateAsync(Message, cancellationToken);
-            var scheduledTime = await context.EvaluateAsync(ScheduledTime, cancellationToken);
             var endpoint = await SendEndpointProvider.GetSendEndpoint(options.SchedulerAddress);
-            //var scheduledMessage = await endpoint.ScheduleRecurringSend(EndpointAddress, new DefaultRecurringSchedule{ scheduledTime.ToDateTimeUtc(), message, cancellationToken)};
+            var scheduledMessage = await endpoint.ScheduleSend(
+                EndpointAddress,
+                ScheduledTime.ToDateTimeUtc(),
+                Message,
+                cancellationToken);
 
-            //return Done(Variable.From(scheduledMessage.TokenId));
-            return Done();
+            return Done(scheduledMessage.TokenId);
         }
     }
 }

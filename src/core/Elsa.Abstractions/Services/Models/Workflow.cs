@@ -10,21 +10,23 @@ namespace Elsa.Services.Models
         {
             Activities = new List<IActivity>();
             Connections = new List<Connection>();
+            ActivityPropertyValueProviders = new Dictionary<string, IDictionary<string, IActivityPropertyValueProvider>>();
         }
 
         public Workflow(
-            string definitionId = default!,
-            int version = 1,
-            bool isSingleton = false,
-            bool isDisabled = false,
-            string? name = default,
-            string? description = default,
-            bool isLatest = false,
-            bool isPublished = false,
-            WorkflowPersistenceBehavior persistenceBehavior = WorkflowPersistenceBehavior.Suspended,
-            bool deleteCompletedInstances = false,
-            IEnumerable<IActivity>? activities = default,
-            IEnumerable<Connection>? connections = default)
+            string definitionId,
+            int version,
+            bool isSingleton,
+            bool isDisabled,
+            string? name,
+            string? description,
+            bool isLatest,
+            bool isPublished,
+            WorkflowPersistenceBehavior persistenceBehavior,
+            bool deleteCompletedInstances,
+            IEnumerable<IActivity> activities,
+            IEnumerable<Connection> connections,
+            IDictionary<string, IDictionary<string, IActivityPropertyValueProvider>> activityPropertyValueProviders)
         {
             DefinitionId = definitionId;
             Version = version;
@@ -36,8 +38,9 @@ namespace Elsa.Services.Models
             Description = description;
             PersistenceBehavior = persistenceBehavior;
             DeleteCompletedInstances = deleteCompletedInstances;
-            Activities = activities?.ToList() ?? new List<IActivity>();
-            Connections = connections?.ToList() ?? new List<Connection>();
+            Activities = activities.ToList();
+            Connections = connections.ToList();
+            ActivityPropertyValueProviders = activityPropertyValueProviders;
         }
 
         public string DefinitionId { get; set; } = default!;
@@ -53,5 +56,11 @@ namespace Elsa.Services.Models
         public ICollection<IActivity> Activities { get; set; }
 
         public ICollection<Connection> Connections { get; set; }
+
+        public IDictionary<string, IDictionary<string, IActivityPropertyValueProvider>> ActivityPropertyValueProviders
+        {
+            get;
+            set;
+        }
     }
 }

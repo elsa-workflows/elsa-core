@@ -1,5 +1,4 @@
-﻿using Elsa.Models;
-using Elsa.Results;
+﻿using Elsa.ActivityResults;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
@@ -22,7 +21,7 @@ namespace Elsa.Samples.CustomActivities
         {
             var query = _httpContextAccessor.HttpContext.Request.Query;
             
-            return Done(Variable.From(query));
+            return Done(query);
         }
     }
 }

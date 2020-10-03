@@ -6,7 +6,7 @@ using Elsa.Services;
 
 namespace Elsa.Server.GraphQL.Mapping
 {
-    public class ActivityStateResolver : IValueResolver<ActivityDefinitionInput, ActivityDefinition, Variables?>
+    public class ActivityStateResolver : IValueResolver<ActivityDefinitionInput, ActivityDefinitionRecord, Variables?>
     {
         private readonly ITokenSerializer serializer;
         private readonly IActivityResolver activityResolver;
@@ -17,7 +17,7 @@ namespace Elsa.Server.GraphQL.Mapping
             this.activityResolver = activityResolver;
         }
 
-        public Variables? Resolve(ActivityDefinitionInput source, ActivityDefinition destination, Variables? destMember, ResolutionContext context)
+        public Variables? Resolve(ActivityDefinitionInput source, ActivityDefinitionRecord destination, Variables? destMember, ResolutionContext context)
         {
             var json = source.State;
             var variables = json != null ? serializer.Deserialize<Variables>(json) : null;

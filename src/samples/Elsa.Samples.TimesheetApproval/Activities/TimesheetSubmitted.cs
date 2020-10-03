@@ -1,5 +1,4 @@
-﻿using Elsa.Models;
-using Elsa.Results;
+﻿using Elsa.ActivityResults;
 using Elsa.Samples.TimesheetApproval.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -10,7 +9,7 @@ namespace Elsa.Samples.TimesheetApproval.Activities
     {
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
-            var timesheet = (Timesheet) context.Input.Value;
+            var timesheet = (Timesheet) context.Input;
 
             context.SetVariable("Timesheet", timesheet);
             return Done();

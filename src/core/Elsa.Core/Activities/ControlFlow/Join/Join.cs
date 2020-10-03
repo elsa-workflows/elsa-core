@@ -2,11 +2,11 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Extensions;
 using Elsa.Messaging.Domain;
-using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 using MediatR;
@@ -39,22 +39,14 @@ namespace Elsa.Activities.ControlFlow
             Hint = "Either 'WaitAll' or 'WaitAny'")
         ]
         [SelectOptions("WaitAll", "WaitAny")]
-        public JoinMode Mode
-        {
-            get => GetState(() => JoinMode.WaitAll);
-            set => SetState(value);
-        }
+        public JoinMode Mode { get; set; }
 
-        public IReadOnlyCollection<string> InboundTransitions
-        {
-            get => GetState<IReadOnlyCollection<string>>();
-            set => SetState(value);
-        }
+        public IReadOnlyCollection<string> InboundTransitions { get; set; }
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
             var workflowExecutionContext = context.WorkflowExecutionContext;
-            var recordedInboundTransitions = InboundTransitions ?? new List<string>();
+            var recordedInboundTransitions = InboundTransitions;
             var inboundConnections = workflowExecutionContext.GetInboundConnections(this);
             var done = false;
             

@@ -56,7 +56,7 @@ namespace Elsa.Services
             string activityType,
             object? input = default,
             string? correlationId = default,
-            Func<Variables, bool>? activityStatePredicate = default,
+            Func<IActivity, bool>? activityStatePredicate = default,
             CancellationToken cancellationToken = default)
         {
             await ScheduleSuspendedWorkflowsAsync(activityType, input, correlationId, activityStatePredicate, cancellationToken);
@@ -70,7 +70,7 @@ namespace Elsa.Services
             string activityType,
             object? input = default,
             string? correlationId = default,
-            Func<Variables, bool>? activityStatePredicate = default,
+            Func<IActivity, bool>? activityStatePredicate = default,
             CancellationToken cancellationToken = default)
         {
             var workflows = await workflowRegistry.GetWorkflowsAsync(cancellationToken);
@@ -83,7 +83,7 @@ namespace Elsa.Services
                 select (workflow, activity);
 
             if (activityStatePredicate != null)
-                query = query.Where(x => activityStatePredicate(x.Item2.State));
+                query = query.Where(x => activityStatePredicate(x.Item2));
 
             var tuples = (IList<(Workflow Workflow, IActivity Activity)>)query.ToList();
 
@@ -110,7 +110,7 @@ namespace Elsa.Services
         /// <summary>
         /// Find suspended workflow instances that are blocked on activities with the specified activity type.
         /// </summary>
-        private async Task ScheduleSuspendedWorkflowsAsync(string activityType, object? input, string? correlationId, Func<Variables, bool>? activityStatePredicate, CancellationToken cancellationToken)
+        private async Task ScheduleSuspendedWorkflowsAsync(string activityType, object? input, string? correlationId, Func<IActivity, bool>? activityStatePredicate, CancellationToken cancellationToken)
         {
             var tuples = await workflowInstanceStore.ListByBlockingActivityAsync(activityType, correlationId, activityStatePredicate, cancellationToken);
 

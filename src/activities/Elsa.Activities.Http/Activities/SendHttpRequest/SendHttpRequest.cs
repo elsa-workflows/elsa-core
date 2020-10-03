@@ -8,10 +8,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Models;
 using Elsa.Activities.Http.Services;
+using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Design;
-using Elsa.Expressions;
-using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
@@ -24,7 +23,11 @@ namespace Elsa.Activities.Http
         Category = "HTTP",
         DisplayName = "Send HTTP Request",
         Description = "Send an HTTP request.",
-        Outcomes = new[] { OutcomeNames.Done, "x => !!x.state.supportedStatusCodes ? ['UnSupportedStatusCode', ...x.state.supportedStatusCodes] : ['UnSupportedStatusCode']" }
+        Outcomes = new[]
+        {
+            OutcomeNames.Done,
+            "x => !!x.state.supportedStatusCodes ? ['UnSupportedStatusCode', ...x.state.supportedStatusCodes] : ['UnSupportedStatusCode']"
+        }
     )]
     public class SendHttpRequest : Activity
     {
@@ -43,11 +46,7 @@ namespace Elsa.Activities.Http
         /// The URL to invoke. 
         /// </summary>
         [ActivityProperty(Hint = "The URL to send the HTTP request to.")]
-        public IWorkflowExpression<PathString> Url
-        {
-            get => GetState<IWorkflowExpression<PathString>>();
-            set => SetState(value);
-        }
+        public PathString Url { get; set; }
 
         /// <summary>
         /// The HTTP method to use.
@@ -57,22 +56,14 @@ namespace Elsa.Activities.Http
             Hint = "The HTTP method to use when making the request."
         )]
         [SelectOptions("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD")]
-        public string Method
-        {
-            get => GetState(() => "GET");
-            set => SetState(value);
-        }
+        public string Method { get; set; }
 
         /// <summary>
         /// The body to send along with the request.
         /// </summary>
         [ActivityProperty(Hint = "The HTTP content to send along with the request.")]
         [WorkflowExpressionOptions(Multiline = true)]
-        public IWorkflowExpression<string>? Content
-        {
-            get => GetState<IWorkflowExpression<string>>();
-            set => SetState(value);
-        }
+        public string? Content { get; set; }
 
         /// <summary>
         /// The Content Type header to send along with the request body.
@@ -82,38 +73,20 @@ namespace Elsa.Activities.Http
             Hint = "The content type to send with the request (if applicable)."
         )]
         [SelectOptions("text/plain", "text/html", "application/json", "application/xml")]
-        public IWorkflowExpression<string> ContentType
-        {
-            get => GetState<IWorkflowExpression<string>>();
-            set => SetState(value);
-        }
+        public string ContentType { get; set; }
 
-        [ActivityProperty(
-            Hint = "The Authorization header value to send."
-        )]
-        public IWorkflowExpression<string> Authorization
-        {
-            get => GetState<IWorkflowExpression<string>>();
-            set => SetState(value);
-        }
+        [ActivityProperty(Hint = "The Authorization header value to send.")]
+        public string Authorization { get; set; }
 
         /// <summary>
         /// The headers to send along with the request.
         /// </summary>
         [ActivityProperty(Hint = "The headers to send along with the request.")]
         [WorkflowExpressionOptions(Multiline = true)]
-        public IWorkflowExpression<HttpRequestHeaders>? RequestHeaders
-        {
-            get => GetState<IWorkflowExpression<HttpRequestHeaders>>();
-            set => SetState(value);
-        }
+        public HttpRequestHeaders RequestHeaders { get; set; } = new HttpRequestHeaders();
 
         [ActivityProperty(Hint = "Check to read the content of the response.")]
-        public bool ReadContent
-        {
-            get => GetState(() => true);
-            set => SetState(value);
-        }
+        public bool ReadContent { get; set; }
 
         /// <summary>
         /// A list of HTTP status codes this activity can handle.
@@ -122,13 +95,11 @@ namespace Elsa.Activities.Http
             Type = ActivityPropertyTypes.List,
             Hint = "A list of possible HTTP status codes to handle, comma-separated. Example: 200, 400, 404"
         )]
-        public ICollection<int> SupportedStatusCodes
-        {
-            get => GetState(() => new HashSet<int> { 200 });
-            set => SetState(new HashSet<int>(value));
-        }
+        public ICollection<int> SupportedStatusCodes { get; set; } = new HashSet<int>(new[] { 200 });
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(
+            ActivityExecutionContext context,
+            CancellationToken cancellationToken)
         {
             var request = await CreateRequestAsync(context, cancellationToken);
             var response = await httpClient.SendAsync(request, cancellationToken);
@@ -165,22 +136,24 @@ namespace Elsa.Activities.Http
         {
             var formatters = parsers.OrderByDescending(x => x.Priority).ToList();
             return formatters.FirstOrDefault(
-                       x => x.SupportedContentTypes.Contains(contentType, StringComparer.OrdinalIgnoreCase)
-                   ) ?? formatters.Last();
+                x => x.SupportedContentTypes.Contains(contentType, StringComparer.OrdinalIgnoreCase)
+            ) ?? formatters.Last();
         }
 
-        private async Task<HttpRequestMessage> CreateRequestAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        private async Task<HttpRequestMessage> CreateRequestAsync(
+            ActivityExecutionContext context,
+            CancellationToken cancellationToken)
         {
             var methodSupportsBody = GetMethodSupportsBody(Method);
-            var uri = await context.EvaluateAsync(Url, cancellationToken);
-            var request = new HttpRequestMessage(new HttpMethod(Method), uri);
-            var authorizationHeaderValue = await context.EvaluateAsync(Authorization, cancellationToken);
-            var requestHeaders = await ParseRequestHeadersAsync(context, cancellationToken);
+            var url = Url;
+            var request = new HttpRequestMessage(new HttpMethod(Method), url);
+            var authorizationHeaderValue = Authorization;
+            var requestHeaders = new HeaderDictionary(RequestHeaders);
 
             if (methodSupportsBody)
             {
-                var body = await context.EvaluateAsync(Content, cancellationToken);
-                var contentType = await context.EvaluateAsync(ContentType, cancellationToken);
+                var body = Content;
+                var contentType = ContentType;
 
                 if (!string.IsNullOrWhiteSpace(body))
                     request.Content = new StringContent(body, Encoding.UTF8, contentType);
@@ -193,12 +166,6 @@ namespace Elsa.Activities.Http
                 request.Headers.Add(header.Key, header.Value.AsEnumerable());
 
             return request;
-        }
-
-        private async Task<IHeaderDictionary> ParseRequestHeadersAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
-        {
-            var headers = await context.EvaluateAsync(RequestHeaders, cancellationToken);
-            return new HeaderDictionary(headers);
         }
 
         private static bool GetMethodSupportsBody(string method)

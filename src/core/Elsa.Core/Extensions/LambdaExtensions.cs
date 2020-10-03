@@ -8,11 +8,15 @@ namespace Elsa.Extensions
     {
         public static void SetPropertyValue<T, TProperty>(this T target, Expression<Func<T, TProperty>> expression, TProperty value)
         {
-            if (expression.Body is MemberExpression memberExpression)
-            {
-                var property = memberExpression.Member as PropertyInfo;
-                if (property != null) property.SetValue(target, value, null);
-            }
+            var property = expression.GetProperty();
+            
+            if (property != null) 
+                property.SetValue(target, value, null);
         }
+        
+        public static PropertyInfo? GetProperty<T, TProperty>(this Expression<Func<T, TProperty>> expression) =>
+            expression.Body is MemberExpression memberExpression
+                ? memberExpression.Member as PropertyInfo
+                : default;
     }
 }

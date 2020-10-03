@@ -30,12 +30,12 @@ namespace Elsa.Serialization
             return Deserialize<T>(token);
         }
         
-        private string Serialize(JToken token, string format)
+        private string Serialize(JObject token, string format)
         {
             var formatter = formatters[format];
             return formatter.ToString(token);
         }
 
-        private T Deserialize<T>(JToken token) => tokenSerializer.Deserialize<T>(token);
+        private T Deserialize<T>(JObject token) => tokenSerializer.Deserialize<T>(token);
     }
 }

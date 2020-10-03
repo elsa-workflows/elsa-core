@@ -18,14 +18,23 @@ namespace Elsa.Services
             this.clock = clock;
             this.idGenerator = idGenerator;
         }
-        
-        public async Task<WorkflowInstance> ActivateAsync(string definitionId, string? correlationId = default, CancellationToken cancellationToken = default)
+
+        public async Task<WorkflowInstance> ActivateAsync(
+            string definitionId,
+            string? correlationId = default,
+            CancellationToken cancellationToken = default)
         {
-            var workflow = await workflowRegistry.GetWorkflowAsync(definitionId, VersionOptions.Published, cancellationToken);
+            var workflow = await workflowRegistry.GetWorkflowAsync(
+                definitionId,
+                VersionOptions.Published,
+                cancellationToken);
             return await ActivateAsync(workflow, correlationId, cancellationToken);
         }
 
-        public Task<WorkflowInstance> ActivateAsync(Workflow workflow, string? correlationId = default, CancellationToken cancellationToken = default)
+        public Task<WorkflowInstance> ActivateAsync(
+            Workflow workflow,
+            string? correlationId = default,
+            CancellationToken cancellationToken = default)
         {
             var workflowInstance = new WorkflowInstance
             {

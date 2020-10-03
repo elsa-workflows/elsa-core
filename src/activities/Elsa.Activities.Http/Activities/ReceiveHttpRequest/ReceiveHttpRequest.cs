@@ -5,11 +5,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Models;
 using Elsa.Activities.Http.Services;
+using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Design;
-using Elsa.Extensions;
-using Elsa.Models;
-using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
@@ -26,16 +24,6 @@ namespace Elsa.Activities.Http
     )]
     public class ReceiveHttpRequest : Activity
     {
-        public static PathString GetPath(Variables state)
-        {
-            return state.GetState<PathString>(nameof(Path));
-        }
-
-        public static string GetMethod(Variables state)
-        {
-            return state.GetState<string>(nameof(Method));
-        }
-
         private readonly IHttpContextAccessor httpContextAccessor;
         private readonly IEnumerable<IHttpRequestBodyParser> parsers;
 
@@ -51,11 +39,7 @@ namespace Elsa.Activities.Http
         /// The path that triggers this activity. 
         /// </summary>
         [ActivityProperty(Hint = "The relative path that triggers this activity.")]
-        public PathString Path
-        {
-            get => GetState<PathString>();
-            set => SetState(value);
-        }
+        public PathString Path { get; set; }
 
         /// <summary>
         /// The HTTP method that triggers this activity.
@@ -65,11 +49,7 @@ namespace Elsa.Activities.Http
             Hint = "The HTTP method that triggers this activity."
         )]
         [SelectOptions("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD")]
-        public string Method
-        {
-            get => GetState<string>();
-            set => SetState(value);
-        }
+        public string Method { get; set; }
 
         /// <summary>
         /// A value indicating whether the HTTP request content body should be read and stored as part of the HTTP request model.
@@ -79,11 +59,7 @@ namespace Elsa.Activities.Http
             Hint =
                 "A value indicating whether the HTTP request content body should be read and stored as part of the HTTP request model. The stored format depends on the content-type header."
         )]
-        public bool ReadContent
-        {
-            get => GetState<bool>();
-            set => SetState(value);
-        }
+        public bool ReadContent { get; set; }
 
         protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
@@ -111,7 +87,7 @@ namespace Elsa.Activities.Http
                 model.Body = await parser.ParseAsync(request, cancellationToken);
             }
 
-            return Done(Variable.From(model));
+            return Done(model);
         }
 
         private IHttpRequestBodyParser SelectContentParser(string contentType)

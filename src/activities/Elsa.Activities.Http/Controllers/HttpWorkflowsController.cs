@@ -2,7 +2,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Models;
 using Elsa.Activities.Http.Services;
-using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -14,7 +13,6 @@ namespace Elsa.Activities.Http.Controllers
     public class HttpWorkflowsController : ControllerBase
     {
         private readonly ITokenService tokenService;
-        private readonly IWorkflowHost workflowHost;
         private readonly IWorkflowInstanceStore workflowInstanceStore;
 
         public HttpWorkflowsController(
@@ -23,7 +21,6 @@ namespace Elsa.Activities.Http.Controllers
             IWorkflowInstanceStore workflowInstanceStore)
         {
             this.tokenService = tokenService;
-            this.workflowHost = workflowHost;
             this.workflowInstanceStore = workflowInstanceStore;
         }
 
@@ -39,7 +36,7 @@ namespace Elsa.Activities.Http.Controllers
             if (workflowInstance == null)
                 return NotFound();
 
-            var input = Variable.From(signal.Name);
+            var input = signal.Name;
 
             //await processRunner.ResumeAsync(workflowInstance, input, cancellationToken: cancellationToken);
 

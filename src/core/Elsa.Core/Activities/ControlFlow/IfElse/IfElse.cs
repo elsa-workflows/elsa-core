@@ -1,9 +1,8 @@
-using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Expressions;
-using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -19,30 +18,19 @@ namespace Elsa.Activities.ControlFlow
     )]
     public class IfElse : Activity
     {
-        public IfElse()
-        {
-        }
+        private readonly IExpressionEvaluator expressionEvaluator;
 
-        public IfElse(IWorkflowExpression<bool> condition)
+        public IfElse(IExpressionEvaluator expressionEvaluator)
         {
-            Condition = condition;
-        }
-
-        public IfElse(Func<ActivityExecutionContext, bool> condition)
-        {
-            Condition = new CodeExpression<bool>(condition);
+            this.expressionEvaluator = expressionEvaluator;
         }
 
         [ActivityProperty(Hint = "The expression to evaluate. The evaluated value will be used to switch on.")]
-        public IWorkflowExpression<bool>? Condition
-        {
-            get => GetState<IWorkflowExpression<bool>>();
-            set => SetState(value);
-        }
+        public IWorkflowExpression<bool>? Condition { get; set; }
 
         protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var result = await context.EvaluateAsync(Condition, cancellationToken);
+            var result = await expressionEvaluator.EvaluateAsync(Condition, context, cancellationToken);
             var outcome = result ? OutcomeNames.True : OutcomeNames.False;
 
             return Done(OutcomeNames.Done, outcome);

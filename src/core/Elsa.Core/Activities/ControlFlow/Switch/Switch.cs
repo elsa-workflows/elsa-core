@@ -2,10 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.ActivityResults;
 using Elsa.Attributes;
-using Elsa.Expressions;
-using Elsa.Models;
-using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -30,27 +28,24 @@ namespace Elsa.Activities.ControlFlow
         }
 
         [ActivityProperty(Hint = "The value to evaluate. The evaluated value will be used to switch on.")]
-        public IWorkflowExpression<string> Value
-        {
-            get => GetState<IWorkflowExpression<string>>();
-            set => SetState(value);
-        }
+        public string Value { get; set; }
 
+        private HashSet<string> cases;
         [ActivityProperty(Hint = "A comma-separated list of possible outcomes of the expression.")]
         public HashSet<string> Cases
         {
-            get => GetState<HashSet<string>>();
-            set => SetState(new HashSet<string>(value, StringComparer.OrdinalIgnoreCase));
+            get => cases;
+            set => cases = new HashSet<string>(value, StringComparer.OrdinalIgnoreCase);
         }
 
         protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var result = await context.EvaluateAsync(Value, cancellationToken);
+            var result = Value;
 
             if (ContainsCase(result) || !ContainsCase(OutcomeNames.Default))
-                return Done(result, Variable.From(result));
+                return Done(result, (object)result);
 
-            return Done(OutcomeNames.Default, Variable.From(result));
+            return Done(OutcomeNames.Default, (object)result);
         }
 
         private bool ContainsCase(string @case) => Cases.Contains(@case);

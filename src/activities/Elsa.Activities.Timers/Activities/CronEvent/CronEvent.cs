@@ -1,8 +1,5 @@
-using System.Threading;
-using System.Threading.Tasks;
+using Elsa.ActivityResults;
 using Elsa.Attributes;
-using Elsa.Expressions;
-using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 using NCrontab;
@@ -14,7 +11,8 @@ namespace Elsa.Activities.Timers
     [ActivityDefinition(
         Category = "Timers",
         Description = "Triggers periodically based on a specified CRON expression.",
-        RuntimeDescription = "x => !!x.state.cronExpression ? `<strong>${ x.state.cronExpression.expression }</strong>.` : x.definition.description",
+        RuntimeDescription =
+            "x => !!x.state.cronExpression ? `<strong>${ x.state.cronExpression.expression }</strong>.` : x.definition.description",
         Outcomes = new[] { OutcomeNames.Done }
     )]
     public class CronEvent : Activity
@@ -27,24 +25,16 @@ namespace Elsa.Activities.Timers
         }
 
         [ActivityProperty(Hint = "Specify a CRON expression. See https://crontab.guru/ for help.")]
-        public IWorkflowExpression<string> CronExpression { get; set; } = new CodeExpression<string>("* * * * *");
+        public string CronExpression { get; set; } = "* * * * *";
 
-        private Instant? StartTime
+        private Instant? StartTime { get; set; }
+
+        protected override bool OnCanExecute(ActivityExecutionContext context) => StartTime == null || IsExpired();
+        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => OnResume(context);
+
+        protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
         {
-            get => GetState<Instant?>();
-            set => SetState(value);
-        }
-
-        protected override async Task<bool> OnCanExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
-        {
-            return StartTime == null || await IsExpiredAsync(context, cancellationToken);
-        }
-
-        protected override Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken) => OnResumeAsync(context, cancellationToken);
-
-        protected override async Task<IActivityExecutionResult> OnResumeAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
-        {
-            if (await IsExpiredAsync(context, cancellationToken))
+            if (IsExpired())
             {
                 StartTime = null;
                 return Done();
@@ -53,10 +43,9 @@ namespace Elsa.Activities.Timers
             return Suspend();
         }
 
-        private async Task<bool> IsExpiredAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        private bool IsExpired()
         {
-            var cronExpression = await context.EvaluateAsync(CronExpression, cancellationToken);
-            var schedule = CrontabSchedule.Parse(cronExpression);
+            var schedule = CrontabSchedule.Parse(CronExpression);
             var now = clock.GetCurrentInstant();
 
             if (StartTime == null)

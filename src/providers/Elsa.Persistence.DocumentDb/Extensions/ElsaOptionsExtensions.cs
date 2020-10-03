@@ -1,7 +1,6 @@
 using Elsa.Persistence.DocumentDb.Services;
-using Elsa.AutoMapper.Extensions;
-using Elsa.AutoMapper.Extensions.NodaTime;
 using Elsa.Extensions;
+using Elsa.Mapping;
 using Elsa.Persistence.DocumentDb.Mapping;
 using Microsoft.Extensions.DependencyInjection;
 

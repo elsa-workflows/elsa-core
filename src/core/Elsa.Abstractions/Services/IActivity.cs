@@ -1,18 +1,12 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Models;
-using Elsa.Results;
+using Elsa.ActivityResults;
 using Elsa.Services.Models;
 
 namespace Elsa.Services
 {
     public interface IActivity
     {
-        /// <summary>
-        /// Holds persistable activity state.
-        /// </summary>
-        Variables State { get; set; }
-        
         /// <summary>
         /// The type name of this activity.
         /// </summary>
@@ -21,7 +15,7 @@ namespace Elsa.Services
         /// <summary>
         /// Unique identifier of this activity.
         /// </summary>
-        string? Id { get; set; }
+        string Id { get; set; }
         
         /// <summary>
         /// Name identifier of this activity.
@@ -46,7 +40,7 @@ namespace Elsa.Services
         /// <summary>
         /// Activity output.
         /// </summary>
-        Variable? Output { get; set; }
+        object? Output { get; set; }
 
         /// <summary>
         /// Returns a value of whether the specified activity can execute.

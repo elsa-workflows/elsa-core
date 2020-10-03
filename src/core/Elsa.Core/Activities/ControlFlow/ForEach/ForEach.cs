@@ -1,12 +1,11 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.ActivityResults;
 using Elsa.Attributes;
-using Elsa.Expressions;
-using Elsa.Models;
-using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -22,23 +21,11 @@ namespace Elsa.Activities.ControlFlow
     public class ForEach : Activity
     {
         [ActivityProperty(Hint = "Enter an expression that evaluates to a collection of items to iterate over.")]
-        public IWorkflowExpression<ICollection> Collection
-        {
-            get => GetState<IWorkflowExpression<ICollection>>();
-            set => SetState(value);
-        }
+        public ICollection Collection { get; set; } = new Collection<object>();
 
-        private IList<object>? CollectionCopy
-        {
-            get => GetState<IList<object>?>();
-            set => SetState(value);
-        }
+        private IList<object>? CollectionCopy { get; set; }
 
-        private int? CurrentIndex
-        {
-            get => GetState<int?>();
-            set => SetState(value);
-        }
+        private int? CurrentIndex { get; set; }
 
         protected override async Task<IActivityExecutionResult> OnExecuteAsync(
             ActivityExecutionContext context,
@@ -47,9 +34,7 @@ namespace Elsa.Activities.ControlFlow
             var collection = CollectionCopy;
 
             if (collection == null)
-                CollectionCopy = collection =
-                    ((await context.EvaluateAsync(Collection, cancellationToken)) ?? new object[0]).Cast<object>()
-                    .ToList();
+                CollectionCopy = collection = Collection.Cast<object>().ToList();
 
             var currentIndex = CurrentIndex ?? 0;
 
@@ -57,7 +42,7 @@ namespace Elsa.Activities.ControlFlow
             {
                 var input = collection[currentIndex];
                 CurrentIndex = currentIndex + 1;
-                return Combine(Schedule(this), Done(OutcomeNames.Iterate, Variable.From(input)));
+                return Combine(Schedule(this), Done(OutcomeNames.Iterate, input));
             }
 
             CurrentIndex = null;

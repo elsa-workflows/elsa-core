@@ -1,36 +1,45 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Threading.Tasks;
 using Elsa.Activities.Console;
-using Elsa.Expressions;
-using Elsa.Models;
+using Elsa.Builders;
 using Elsa.Serialization;
-using Elsa.Serialization.Formatters;
 using Elsa.Services;
+using Elsa.Services.Models;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Samples.Serialization
 {
     class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
+            // Create a service container with Elsa services.
             var services = new ServiceCollection()
                 .AddElsa()
                 .AddConsoleActivities()
                 .BuildServiceProvider();
             
-            var activityResolver = services.GetRequiredService<IActivityResolver>();
-            var writeLine = activityResolver.ResolveActivity<WriteLine>().WithText(new LiteralExpression<string>("Foo"));
-            
-            var workflowDefinition = new WorkflowDefinitionVersion
-            {
-                Activities = new List<ActivityDefinition> { ActivityDefinition.FromActivity(writeLine) }
-            };
+            // Build a new workflow.
+            var workflow = services.GetService<IWorkflowBuilder>()
+                //.Then<WriteLine>(writeLine => writeLine.)
+                .WriteLine("Hello World!")
+                .Build();
 
+            // Get a reference to the workflow serializer. 
             var serializer = services.GetRequiredService<IWorkflowSerializer>();
-            var json = serializer.Serialize(workflowDefinition, JsonTokenFormatter.FormatName);
             
+            // Serialize the workflow.
+            var json = serializer.Serialize(workflow, SerializationFormats.Json);
             Console.WriteLine(json);
+            
+            // Deserialize the workflow.
+            var deserializedWorkflow = serializer.Deserialize<Workflow>(json, SerializationFormats.Json);
+            
+            // Get the workflow host.
+            var workflowHost = services.GetService<IWorkflowHost>();
+            
+            // Execute the workflow.
+            await workflowHost.RunWorkflowAsync(deserializedWorkflow);
             
         }
     }

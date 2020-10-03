@@ -1,16 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Expressions;
-using Elsa.Models;
+using Elsa.Attributes;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Services.Models
 {
     public class ActivityExecutionContext
     {
-        public ActivityExecutionContext(WorkflowExecutionContext workflowExecutionContext, IActivity activity, Variable? input = null)
+        public ActivityExecutionContext(
+            WorkflowExecutionContext workflowExecutionContext,
+            IActivity activity,
+            object? input = null)
         {
             WorkflowExecutionContext = workflowExecutionContext;
             Activity = activity;
@@ -20,22 +23,33 @@ namespace Elsa.Services.Models
 
         public WorkflowExecutionContext WorkflowExecutionContext { get; }
         public IActivity Activity { get; }
-        public Variable? Input { get; }
-        public Variable? Output { get; set; }
+        public object? Input { get; }
+        public object? Output { get; set; }
         public IReadOnlyCollection<string> Outcomes { get; set; }
 
-        public Task<T> EvaluateAsync<T>(IWorkflowExpression<T>? expression, CancellationToken cancellationToken) =>
-            WorkflowExecutionContext.EvaluateAsync(expression, this, cancellationToken);
-        
-        public Task<object> EvaluateAsync(IWorkflowExpression? expression, Type targetType, CancellationToken cancellationToken) =>
-            WorkflowExecutionContext.EvaluateAsync(expression, targetType, this, cancellationToken);
-        
-        public Task<object> EvaluateAsync(IWorkflowExpression? expression, CancellationToken cancellationToken) =>
-            WorkflowExecutionContext.EvaluateAsync(expression, typeof(object), this, cancellationToken);
-
-        public void SetVariable(string name, object value) => WorkflowExecutionContext.SetVariable(name, value);
-        public object GetVariable(string name) => WorkflowExecutionContext.GetVariable(name);
+        public void SetVariable(string name, object? value) => WorkflowExecutionContext.SetVariable(name, value);
+        public object? GetVariable(string name) => WorkflowExecutionContext.GetVariable(name);
         public T GetVariable<T>(string name) => WorkflowExecutionContext.GetVariable<T>(name);
         public T GetService<T>() => WorkflowExecutionContext.ServiceProvider.GetService<T>();
+
+        public async ValueTask SetActivityPropertiesAsync(CancellationToken cancellationToken = default)
+        {
+            var properties = Activity.GetType().GetProperties().Where(IsActivityProperty).ToList();
+            var activityPropertyValueProviders = WorkflowExecutionContext.ActivityPropertyValueProviders;
+            var propertyValueProvider = activityPropertyValueProviders[Activity.Id];
+
+            foreach (var property in properties)
+            {
+                if(!propertyValueProvider.ContainsKey(property.Name))
+                    continue;
+                
+                var provider = propertyValueProvider[property.Name];
+                var value = await provider.GetValueAsync( this, cancellationToken);
+                property.SetValue(Activity, value);
+            }
+        }
+
+        private bool IsActivityProperty(PropertyInfo property) =>
+            property.GetCustomAttribute<ActivityPropertyAttribute>() != null;
     }
 }

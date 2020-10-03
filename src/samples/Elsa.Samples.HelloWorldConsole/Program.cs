@@ -23,7 +23,7 @@ namespace Elsa.Samples.HelloWorldConsole
                 .WriteLine("Hello World!")
                 .WriteLine("What's your name?")
                 .ReadLine()
-                .WriteLine(context => $"Greetings, {context.Input.Value}!")
+                .WriteLine(context => $"Greetings, {context.Input}!")
                 .Build();
             
             // Get the workflow host.

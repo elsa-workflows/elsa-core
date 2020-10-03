@@ -9,7 +9,7 @@ namespace Elsa.Models
         public WorkflowInstance()
         {
             Variables = new Variables();
-            Activities = new List<ActivityInstance>();
+            Activities = new List<ActivityInstanceRecord>();
             BlockingActivities = new HashSet<BlockingActivity>(new BlockingActivityEqualityComparer());
             ExecutionLog = new List<ExecutionLogEntry>();
             ScheduledActivities = new Stack<ScheduledActivity>();
@@ -22,8 +22,8 @@ namespace Elsa.Models
         public string? CorrelationId { get; set; }
         public Instant CreatedAt { get; set; }
         public Variables Variables { get; set; }
-        public Variable? Output { get; set; }
-        public ICollection<ActivityInstance> Activities { get; set; }
+        public object? Output { get; set; }
+        public ICollection<ActivityInstanceRecord> Activities { get; set; }
         public HashSet<BlockingActivity> BlockingActivities { get; set; }
         public ICollection<ExecutionLogEntry> ExecutionLog { get; set; }
         public WorkflowFault? Fault { get; set; }

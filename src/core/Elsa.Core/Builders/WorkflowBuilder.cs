@@ -12,8 +12,8 @@ namespace Elsa.Builders
     {
         private readonly IActivityResolver activityResolver;
         private readonly IIdGenerator idGenerator;
-        private readonly IList<ActivityBuilder> activityBuilders;
-        private readonly IList<ConnectionBuilder> connectionBuilders;
+        private readonly IList<IActivityBuilder> activityBuilders;
+        private readonly IList<IConnectionBuilder> connectionBuilders;
 
         public WorkflowBuilder(
             IActivityResolver activityResolver,
@@ -25,8 +25,8 @@ namespace Elsa.Builders
             ServiceProvider = serviceProvider;
             Id = idGenerator.Generate();
             Version = 1;
-            activityBuilders = new List<ActivityBuilder>();
-            connectionBuilders = new List<ConnectionBuilder>();
+            activityBuilders = new List<IActivityBuilder>();
+            connectionBuilders = new List<IConnectionBuilder>();
         }
 
         public IServiceProvider ServiceProvider { get; }
@@ -99,79 +99,106 @@ namespace Elsa.Builders
             var definitionId = !string.IsNullOrWhiteSpace(Id) ? Id : idGenerator.Generate();
             var activities = activityBuilders.Select(x => x.BuildActivity()).ToList();
             var connections = connectionBuilders.Select(x => x.BuildConnection()).ToList();
-            
-            var workflow = new Workflow(
-                definitionId, 
-                Version, 
-                IsSingleton, 
-                false, 
-                Name, 
-                Description, 
-                true, 
-                true,
-                PersistenceBehavior,
-                DeleteCompletedInstances,
-                activities,
-                connections);
 
             // Generate deterministic activity ids.
             var id = 1;
 
-            foreach (var activity in workflow.Activities)
-            {
-                if (string.IsNullOrEmpty(activity.Id))
-                    activity.Id = $"activity-{id++}";
-            }
-            
+            foreach (var activity in activities.Where(activity => string.IsNullOrEmpty(activity.Id)))
+                activity.Id = $"activity-{id++}";
+
+            var activityPropertyValueProviders = activityBuilders
+                .Select(x => (x.Activity.Id, x.PropertyValueProviders))
+                .ToDictionary(x => x.Id, x => x.PropertyValueProviders!);
+
+            var workflow = new Workflow(
+                definitionId,
+                Version,
+                IsSingleton,
+                false,
+                Name,
+                Description,
+                true,
+                true,
+                PersistenceBehavior,
+                DeleteCompletedInstances,
+                activities,
+                connections,
+                activityPropertyValueProviders);
+
+
             return workflow;
         }
-        
-        public T New<T>(T activity, Action<IActivityBuilder>? branch = default) where T : class, IActivity
+
+        public IActivityBuilder New<T>(T activity,
+            Action<IActivityBuilder>? branch = default,
+            IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders = default)
+            where T : class, IActivity
         {
-            var activityBuilder = new ActivityBuilder(this, activity);
+            var activityBuilder = new ActivityBuilder(this, activity, propertyValueProviders);
             branch?.Invoke(activityBuilder);
-            return activity;
+            return activityBuilder;
         }
 
-        public T New<T>(Action<T>? setup, Action<IActivityBuilder>? branch = default) where T : class, IActivity
+        public IActivityBuilder New<T>(Action<ISetupActivity<T>>? setup = default,
+            Action<IActivityBuilder>? branch = default) where T : class, IActivity
         {
             var activity = activityResolver.ResolveActivity<T>();
-            setup?.Invoke(activity);
-            return New(activity, branch);
+            var propertyValuesBuilder = new SetupActivity<T>();
+            setup?.Invoke(propertyValuesBuilder);
+
+            var valueProviders = propertyValuesBuilder.ValueProviders.ToDictionary(
+                x => x.Key,
+                x => (IActivityPropertyValueProvider)new DelegateActivityPropertyValueProvider(x.Value));
+
+            return New(activity, branch, valueProviders);
         }
 
-        public IActivityBuilder StartWith<T>(Action<T>? setup = default, Action<IActivityBuilder>? branch = default) where T : class, IActivity
+        public IActivityBuilder StartWith<T>(
+            Action<ISetupActivity<T>>? setup = default,
+            Action<IActivityBuilder>? branch = default) where T : class, IActivity
         {
-            var activity = New(setup, branch);
-            return StartWith(activity, branch);
+            var activityBuilder = New(setup, branch);
+            return Add(activityBuilder, branch);
         }
-        
-        public IActivityBuilder StartWith<T>(T activity, Action<IActivityBuilder>? branch = default) where T : class, IActivity
+
+        public IActivityBuilder StartWith<T>(T activity, Action<IActivityBuilder>? branch = default)
+            where T : class, IActivity
         {
             return Add(activity, branch);
         }
-        
-        public IActivityBuilder Add<T>(Action<T>? setup = default, Action<IActivityBuilder>? branch = default) where T : class, IActivity
+
+        public IActivityBuilder Add<T>(
+            Action<ISetupActivity<T>>? setup = default,
+            Action<IActivityBuilder>? branch = default) where T : class, IActivity
         {
-            var activity = New(setup, branch);
-            return Add(activity, branch);
+            var activityBuilder = New(setup, branch);
+            return Add(activityBuilder, branch);
+        }
+
+        public IActivityBuilder Add<T>(
+            T activity,
+            Action<IActivityBuilder>? branch = default,
+            IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders = default)
+            where T : class, IActivity
+        {
+            var activityBuilder = new ActivityBuilder(this, activity, propertyValueProviders);
+            return Add(activityBuilder);
         }
         
-        public IActivityBuilder Add<T>(T activity, Action<IActivityBuilder>? branch = default) where T : class, IActivity
+        public IActivityBuilder Add(
+            IActivityBuilder activityBuilder,
+            Action<IActivityBuilder>? branch = default)
         {
-            var activityBuilder = new ActivityBuilder(this, activity);
             branch?.Invoke(activityBuilder);
             activityBuilders.Add(activityBuilder);
             return activityBuilder;
         }
-        
+
         public IConnectionBuilder Connect(
             IActivityBuilder source,
             IActivityBuilder target,
-            string outcome = OutcomeNames.Done)
-        {
-            return Connect(() => source, () => target, outcome);
-        }
+            string outcome = OutcomeNames.Done) =>
+            Connect(() => source, () => target, outcome);
 
         public IConnectionBuilder Connect(
             Func<IActivityBuilder> source,
@@ -179,14 +206,18 @@ namespace Elsa.Builders
             string outcome = OutcomeNames.Done)
         {
             var connectionBuilder = new ConnectionBuilder(this, source, target, outcome);
-
             connectionBuilders.Add(connectionBuilder);
             return connectionBuilder;
         }
-        
-        public IActivityBuilder Then<T>(Action<T>? setup = default, Action<IActivityBuilder>? branch = default) where T : class, IActivity => StartWith(setup, branch);
-        public IActivityBuilder Then<T>(T activity, Action<IActivityBuilder>? branch = default) where T : class, IActivity => StartWith(activity, branch);
-        
+
+        public IActivityBuilder Then<T>(
+            Action<ISetupActivity<T>>? setup = default,
+            Action<IActivityBuilder>? branch = default)
+            where T : class, IActivity => StartWith(setup, branch);
+
+        public IActivityBuilder Then<T>(T activity, Action<IActivityBuilder>? branch = default)
+            where T : class, IActivity => StartWith(activity, branch);
+
         public Workflow Build(IWorkflow workflow)
         {
             WithId(workflow.GetType().Name);

@@ -1,10 +1,10 @@
 using System.Threading;
 using System.Threading.Tasks;
 using AutoFixture;
+using Elsa.ActivityResults;
 using Elsa.Expressions;
 using Elsa.Models;
 using Elsa.Persistence;
-using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Elsa.Testing.Shared.Autofixture;

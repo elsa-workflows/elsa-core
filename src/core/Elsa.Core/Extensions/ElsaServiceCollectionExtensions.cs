@@ -34,7 +34,7 @@ namespace Microsoft.Extensions.DependencyInjection
     {
         public static IServiceCollection AddElsaCore(
             this IServiceCollection services,
-            Action<ElsaOptions> configure = null)
+            Action<ElsaOptions> configure = default!)
         {
             var options = new ElsaOptions(services);
             configure?.Invoke(options);
@@ -94,14 +94,12 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<ITokenSerializerProvider, TokenSerializerProvider>()
                 .AddSingleton<ITokenSerializer, TokenSerializer>()
                 .AddSingleton<IWorkflowSerializer, WorkflowSerializer>()
-                .AddSingleton<VariableConverter>()
                 .AddSingleton<TypeConverter>()
                 .AddSingleton<ITypeMap, TypeMap>()
                 .TryAddProvider<ITokenFormatter, JsonTokenFormatter>(ServiceLifetime.Singleton)
                 .TryAddProvider<ITokenFormatter, YamlTokenFormatter>(ServiceLifetime.Singleton)
                 .TryAddProvider<ITokenFormatter, XmlTokenFormatter>(ServiceLifetime.Singleton)
                 .TryAddProvider<IExpressionHandler, LiteralHandler>(ServiceLifetime.Singleton)
-                .TryAddProvider<IExpressionHandler, CodeHandler>(ServiceLifetime.Singleton)
                 .TryAddProvider<IExpressionHandler, VariableHandler>(ServiceLifetime.Singleton)
                 .AddScoped<IExpressionEvaluator, ExpressionEvaluator>()
                 .AddTransient<IWorkflowRegistry, WorkflowRegistry>()
@@ -120,9 +118,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddStartupTask<StartServiceBusTask>()
                 .AddConsumer<RunWorkflow, RunWorkflowHandler>()
                 .AddAutoMapperProfile<WorkflowDefinitionProfile>(ServiceLifetime.Singleton)
-                .AddTypeAlias(typeof(CodeExpression<>), "CodeExpression")
                 .AddTypeAlias<Duration>("Duration")
-                .AddSerializationHandlers()
                 .AddMetadataHandlers()
                 .AddPrimitiveActivities();
 
@@ -133,35 +129,6 @@ namespace Microsoft.Extensions.DependencyInjection
             services
                 .AddSingleton<IActivityPropertyOptionsProvider, SelectOptionsProvider>()
                 .AddSingleton<IActivityPropertyOptionsProvider, WorkflowExpressionOptionsProvider>();
-
-        private static IServiceCollection AddSerializationHandlers(this IServiceCollection services) =>
-            services
-                .AddTypeNameValueHandler<AnnualDateHandler>()
-                .AddTypeNameValueHandler<DateTimeHandler>()
-                .AddTypeNameValueHandler<DefaultValueHandler>()
-                .AddTypeNameValueHandler<DurationHandler>()
-                .AddTypeNameValueHandler<InstantHandler>()
-                .AddTypeNameValueHandler<LocalDateHandler>()
-                .AddTypeNameValueHandler<LocalDateTimeHandler>()
-                .AddTypeNameValueHandler<LocalTimeHandler>()
-                .AddTypeNameValueHandler<ObjectHandler>()
-                .AddTypeNameValueHandler<ArrayHandler>()
-                .AddTypeNameValueHandler<OffsetDateHandler>()
-                .AddTypeNameValueHandler<OffsetHandler>()
-                .AddTypeNameValueHandler<OffsetTimeHandler>()
-                .AddTypeNameValueHandler<YearMonthHandler>()
-                .AddTypeNameValueHandler<ZonedDateTimeHandler>()
-                .AddTypeNameValueHandler<CodeExpressionHandler>()
-                .AddTypeAlias<object>()
-                .AddTypeAlias<bool>()
-                .AddTypeAlias<int>()
-                .AddTypeAlias<long>()
-                .AddTypeAlias<decimal>()
-                .AddTypeAlias<string>()
-                .AddTypeAlias<IActivity>("Activity")
-                .AddTypeAlias(typeof(IList<>), "List")
-                .AddTypeAlias(typeof(ICollection<>), "Collection")
-                .AddTypeAlias(typeof(LiteralExpression<>), "LiteralExpression");
 
         private static IServiceCollection AddPrimitiveActivities(this IServiceCollection services) =>
             services

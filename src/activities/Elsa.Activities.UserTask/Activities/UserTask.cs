@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Design;
-using Elsa.Models;
-using Elsa.Results;
+using Elsa.Serialization;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -20,14 +20,17 @@ namespace Elsa.Activities.UserTask.Activities
     )]
     public class UserTask : Activity
     {
+        private readonly ITokenSerializer serializer;
+
         [ActivityProperty(
             Type = ActivityPropertyTypes.List,
             Hint = "Enter a comma-separated list of available actions"
         )]
-        public ICollection<string> Actions
+        public ICollection<string> Actions { get; set; } = new List<string>();
+
+        public UserTask(ITokenSerializer serializer)
         {
-            get => GetState(() => new string[0]);
-            set => SetState(value);
+            this.serializer = serializer;
         }
 
         protected override bool OnCanExecute(ActivityExecutionContext context)
@@ -45,6 +48,6 @@ namespace Elsa.Activities.UserTask.Activities
             return Done(userAction);
         }
 
-        private string GetUserAction(ActivityExecutionContext context) => context.Input?.GetValue<string>();
+        private string GetUserAction(ActivityExecutionContext context) => (string)context.Input;
     }
 }

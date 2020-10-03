@@ -1,8 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.ActivityResults;
 using Elsa.Attributes;
-using Elsa.Expressions;
-using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -22,31 +21,21 @@ namespace Elsa.Activities.Primitives
         {
         }
 
-        public SetVariable(string name, IWorkflowExpression value)
+        public SetVariable(string name, object? value)
         {
             VariableName = name;
             Value = value;
         }
         
         [ActivityProperty(Hint = "The name of the variable to store the value into.")]
-        public string VariableName
-        {
-            get => GetState<string>();
-            set => SetState(value);
-        }
+        public string VariableName { get; set; }
 
         [ActivityProperty(Hint = "An expression that evaluates to the value to store in the variable.")]
-        public IWorkflowExpression Value
-        {
-            get => GetState<IWorkflowExpression>();
-            set => SetState(value);
-        }
+        public object? Value { get; set; }
 
         protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var value = await context.EvaluateAsync(Value, cancellationToken);
-
-            context.SetVariable(VariableName, value);
+            context.SetVariable(VariableName, Value);
             return Done();
         }
     }

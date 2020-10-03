@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -8,8 +9,9 @@ namespace Elsa.Builders
     {
         IWorkflowBuilder WorkflowBuilder { get; }
         IActivity Activity { get; }
-        IActivityBuilder Add<T>(Action<T>? setup = default) where T : class, IActivity;
-        IOutcomeBuilder When(string? outcome);
+        IDictionary<string, IActivityPropertyValueProvider>? PropertyValueProviders { get; }
+        IActivityBuilder Add<T>(Action<ISetupActivity<T>>? setup = default) where T : class, IActivity;
+        IOutcomeBuilder When(string outcome);
         IActivityBuilder Then(IActivityBuilder targetActivity);
         IActivity BuildActivity();
         Workflow Build();

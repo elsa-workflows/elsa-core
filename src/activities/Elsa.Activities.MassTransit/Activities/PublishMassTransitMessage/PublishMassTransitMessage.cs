@@ -1,8 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.ActivityResults;
 using Elsa.Attributes;
-using Elsa.Expressions;
-using Elsa.Results;
 using Elsa.Services.Models;
 using MassTransit;
 
@@ -21,19 +20,13 @@ namespace Elsa.Activities.MassTransit
         }
 
         [ActivityProperty(Hint = "An expression that evaluates to the event to publish.")]
-        public IWorkflowExpression Message
-        {
-            get => GetState<IWorkflowExpression>();
-            set => SetState(value);
-        }
+        public object? Message { get; set; }
 
         protected override bool OnCanExecute(ActivityExecutionContext context) => Message != null;
 
         protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var message = await context.EvaluateAsync(Message, cancellationToken);
-
-            await PublishEndpoint.Publish(message, cancellationToken);
+            await PublishEndpoint.Publish(Message!, cancellationToken);
 
             return Done();
         }

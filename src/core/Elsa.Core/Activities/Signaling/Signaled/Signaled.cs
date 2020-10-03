@@ -1,10 +1,6 @@
 using System;
-using System.Threading;
-using System.Threading.Tasks;
+using Elsa.ActivityResults;
 using Elsa.Attributes;
-using Elsa.Expressions;
-using Elsa.Models;
-using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -22,24 +18,20 @@ namespace Elsa.Activities.Signaling
     public class Signaled : Activity
     {
         [ActivityProperty(Hint = "An expression that evaluates to the name of the signal to wait for.")]
-        public IWorkflowExpression<string> Signal
-        {
-            get => GetState<IWorkflowExpression<string>>();
-            set => SetState(value);
-        }
+        public string Signal { get; set; } = default!;
 
-        protected override async Task<bool> OnCanExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        protected override bool OnCanExecute(ActivityExecutionContext context)
         {
-            var signal = await context.EvaluateAsync(Signal, cancellationToken);
-            var triggeredSignal = context.Input.GetValue<TriggeredSignal>();
+            var signal = Signal;
+            var triggeredSignal = (TriggeredSignal)context.Input!;
             return string.Equals(triggeredSignal.SignalName, signal, StringComparison.OrdinalIgnoreCase);
         }
 
-        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => Suspend();
+        protected override IActivityExecutionResult OnExecute() => Suspend();
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
         {
-            var triggeredSignal = context.Input.GetValue<TriggeredSignal>();
-            return Done(Variable.From(triggeredSignal.Input));
+            var triggeredSignal = (TriggeredSignal)context.Input!;
+            return Done(triggeredSignal.Input);
         }
     }
 }

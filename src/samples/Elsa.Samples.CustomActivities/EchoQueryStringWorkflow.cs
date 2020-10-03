@@ -14,14 +14,16 @@ namespace Elsa.Samples.CustomActivities
             builder
                 .ReceiveHttpRequest("/hello")
                 .Then<ReadQueryString>()
-                .WriteHttpResponse(HttpStatusCode.OK, GenerateSomeHtml, "text/html");
+                .WriteHttpResponse(_ => HttpStatusCode.OK, GenerateSomeHtml, _ => "text/html");
         }
 
         private string GenerateSomeHtml(ActivityExecutionContext context)
         {
-            var query = (IQueryCollection) context.Input.Value; // the output of the previous activity will be available as input to this one.
-            var items = query.Select(x => $"<li>{x.Key}: {x.Value}</li>");
+            var query = (IQueryCollection)context
+                .Input; // the output of the previous activity will be available as input to this one.
             
+            var items = query.Select(x => $"<li>{x.Key}: {x.Value}</li>");
+
             return $"<ul>{string.Join("\n", items)}</ul>";
         }
     }

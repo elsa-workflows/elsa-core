@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services;
@@ -35,20 +34,21 @@ namespace Elsa.WorkflowProviders
             var resolvedActivities = definition.Activities.Select(ResolveActivity).ToDictionary(x => x.Id);
 
             var workflow = new Workflow
-            {
-                DefinitionId = definition.DefinitionId,
-                Description = definition.Description,
-                Name = definition.Name,
-                Version = definition.Version,
-                IsLatest = definition.IsLatest,
-                IsPublished = definition.IsPublished,
-                IsDisabled = definition.IsDisabled,
-                IsSingleton = definition.IsSingleton,
-                PersistenceBehavior = definition.PersistenceBehavior,
-                DeleteCompletedInstances = definition.DeleteCompletedInstances,
-                Activities = resolvedActivities.Values,
-                Connections = definition.Connections.Select(x => ResolveConnection(x, resolvedActivities)).ToList()
-            };
+            (
+                definition.DefinitionId,
+                definition.Version,
+                definition.IsSingleton,
+                definition.IsDisabled,
+                definition.Name,
+                definition.Description,
+                definition.IsLatest,
+                definition.IsPublished,
+                definition.PersistenceBehavior,
+                definition.DeleteCompletedInstances,
+                resolvedActivities.Values,
+                definition.Connections.Select(x => ResolveConnection(x, resolvedActivities)).ToList(),
+                new Dictionary<string, IDictionary<string, IActivityPropertyValueProvider>>()
+            );
 
             return workflow;
         }
@@ -59,9 +59,9 @@ namespace Elsa.WorkflowProviders
             var target = activityDictionary[connectionDefinition.TargetActivityId];
             var outcome = connectionDefinition.Outcome;
 
-            return new Connection(source, target, outcome);
+            return new Connection(source, target, outcome!);
         }
 
-        private IActivity ResolveActivity(ActivityDefinition activityDefinition) => activityResolver.ResolveActivity(activityDefinition);
+        private IActivity ResolveActivity(ActivityDefinitionRecord activityDefinitionRecord) => activityResolver.ResolveActivity(activityDefinitionRecord);
     }
 }

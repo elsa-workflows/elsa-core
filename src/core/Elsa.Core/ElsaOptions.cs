@@ -3,7 +3,6 @@ using Elsa.Caching;
 using Elsa.DistributedLock;
 using Elsa.Persistence;
 using Elsa.Persistence.Memory;
-using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Rebus.Config;
 using Rebus.DataBus.InMem;

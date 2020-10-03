@@ -6,7 +6,7 @@ namespace Elsa.Builders
 {
     public class OutcomeBuilder : IOutcomeBuilder
     {
-        public OutcomeBuilder(IWorkflowBuilder workflowBuilder, IActivityBuilder source, string? outcome)
+        public OutcomeBuilder(IWorkflowBuilder workflowBuilder, IActivityBuilder source, string outcome = "Done")
         {
             WorkflowBuilder = workflowBuilder;
             Source = source;
@@ -15,11 +15,15 @@ namespace Elsa.Builders
 
         public IWorkflowBuilder WorkflowBuilder { get; }
         public IActivityBuilder Source { get; }
-        public string? Outcome { get; }
+        public string Outcome { get; }
 
-        public IActivityBuilder Then<T>(Action<T>? setup = default, Action<IActivityBuilder>? branch = default) where T : class, IActivity => Then(WorkflowBuilder.Add(setup), branch);
+        public IActivityBuilder Then<T>(
+            Action<ISetupActivity<T>>? setup = default,
+            Action<IActivityBuilder>? branch = default) where T : class, IActivity =>
+            Then(WorkflowBuilder.Add(setup), branch);
 
-        public IActivityBuilder Then<T>(T activity, Action<IActivityBuilder>? branch = default) where T : class, IActivity => Then(WorkflowBuilder.Add(activity), branch);
+        public IActivityBuilder Then<T>(T activity, Action<IActivityBuilder>? branch = default)
+            where T : class, IActivity => Then(WorkflowBuilder.Add(activity), branch);
 
         private IActivityBuilder Then(IActivityBuilder activityBuilder, Action<IActivityBuilder>? branch = default)
         {

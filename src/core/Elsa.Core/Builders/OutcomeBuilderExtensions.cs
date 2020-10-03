@@ -1,7 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Elsa.Activities.Primitives;
-using Elsa.Results;
+using Elsa.ActivityResults;
 using Elsa.Services.Models;
 
 namespace Elsa.Builders

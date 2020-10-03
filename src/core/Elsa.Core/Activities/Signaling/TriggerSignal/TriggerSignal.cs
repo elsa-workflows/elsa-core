@@ -1,8 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.ActivityResults;
 using Elsa.Attributes;
-using Elsa.Expressions;
-using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -27,37 +26,22 @@ namespace Elsa.Activities.Signaling
         }
 
         [ActivityProperty(Hint = "An expression that evaluates to the name of the signal to trigger.")]
-        public IWorkflowExpression<string> Signal
-        {
-            get => GetState<IWorkflowExpression<string>>();
-            set => SetState(value);
-        }
+        public string Signal { get; set; } = default!;
 
         [ActivityProperty(Hint = "An expression that evaluates to the correlation ID to use when signaling.")]
-        public IWorkflowExpression<string>? CorrelationId
-        {
-            get => GetState<IWorkflowExpression<string>?>();
-            set => SetState(value);
-        }
+        public string? CorrelationId { get; set; }
         
         [ActivityProperty(Hint = "An expression that evaluates to an input value when triggering the signal.")]
-        public IWorkflowExpression? Input
-        {
-            get => GetState<IWorkflowExpression?>();
-            set => SetState(value);
-        }
+        public object? Input  { get; set; }
 
         protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var signal = await context.EvaluateAsync(Signal, cancellationToken);
-            var correlationId = await context.EvaluateAsync(CorrelationId, cancellationToken);
-            var input = await context.EvaluateAsync(Input, cancellationToken);
-            var triggeredSignal = new TriggeredSignal(signal, input);
+            var triggeredSignal = new TriggeredSignal(Signal, Input);
 
             await workflowScheduler.TriggerWorkflowsAsync(
                 nameof(Signaled),
                 triggeredSignal,
-                correlationId,
+                CorrelationId,
                 cancellationToken: cancellationToken
             );
 

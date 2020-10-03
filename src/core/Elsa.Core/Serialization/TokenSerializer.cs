@@ -5,22 +5,12 @@ namespace Elsa.Serialization
 {
     public class TokenSerializer : ITokenSerializer
     {
-        public TokenSerializer(ITokenSerializerProvider serializerProvider)
-        {
+        public TokenSerializer(ITokenSerializerProvider serializerProvider) =>
             Serializer = serializerProvider.CreateJsonSerializer();
-        }
 
         private JsonSerializer Serializer { get; }
-
-        public JToken Serialize<T>(T value)
-        {
-            return JObject.FromObject(value, Serializer);
-        }
-
-        public T Deserialize<T>(JToken token)
-        {
-            return token.ToObject<T>(Serializer);
-        }
+        public JObject Serialize<T>(T value) => JObject.FromObject(value, Serializer);
+        public T Deserialize<T>(JToken token) => token.ToObject<T>(Serializer);
 
         public T Deserialize<T>(string json)
         {

@@ -1,9 +1,8 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.ActivityResults;
 using Elsa.Attributes;
-using Elsa.Expressions;
-using Elsa.Results;
 using Elsa.Services.Models;
 using MassTransit;
 
@@ -22,22 +21,10 @@ namespace Elsa.Activities.MassTransit
         }
 
         [ActivityProperty(Hint = "An expression that evaluates to the message to send.")]
-        public IWorkflowExpression Message
-        {
-            get => GetState<IWorkflowExpression>();
-            set => SetState(value);
-        }
+        public object? Message { get; set; }
 
         [ActivityProperty(Hint = "The address of a specific endpoint to send the message to.")]
-        public Uri EndpointAddress
-        {
-            get
-            {
-                var endpointAddress = GetState<string>();
-                return string.IsNullOrEmpty(endpointAddress) ? null : new Uri(endpointAddress);
-            }
-            set => SetState(value.ToString());
-        }
+        public Uri EndpointAddress { get; set; }
 
         protected override bool OnCanExecute(ActivityExecutionContext context)
         {
@@ -46,7 +33,7 @@ namespace Elsa.Activities.MassTransit
 
         protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var message = await context.EvaluateAsync(Message, cancellationToken);
+            var message = Message;
 
             if (EndpointAddress != null)
             {

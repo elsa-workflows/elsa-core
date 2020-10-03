@@ -22,7 +22,6 @@ namespace Elsa.Server.GraphQL.Extensions
                     .AddServices(sp)
                     .AddQueryType<QueryType>()
                     .AddMutationType<MutationType>()
-                    .AddType<VariableType>()
                     .AddType<ActivityDescriptorType>()
                     .AddType<ActivityPropertyDescriptorType>()
                     .AddType<WorkflowInputType>()

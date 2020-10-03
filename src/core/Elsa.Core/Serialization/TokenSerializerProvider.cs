@@ -9,12 +9,10 @@ namespace Elsa.Serialization
 {
     public class TokenSerializerProvider : ITokenSerializerProvider
     {
-        private readonly VariableConverter variableConverter;
         private readonly TypeConverter typeConverter;
 
-        public TokenSerializerProvider(VariableConverter variableConverter, TypeConverter typeConverter)
+        public TokenSerializerProvider(TypeConverter typeConverter)
         {
-            this.variableConverter = variableConverter;
             this.typeConverter = typeConverter;
         }
 
@@ -32,7 +30,6 @@ namespace Elsa.Serialization
                     },
                 }
                 .ConfigureForNodaTime(DateTimeZoneProviders.Tzdb)
-                .WithConverter(variableConverter)
                 .WithConverter(typeConverter);
         }
 
@@ -41,6 +38,10 @@ namespace Elsa.Serialization
             var jsonSerializer = new JsonSerializer();
             jsonSerializer.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
             jsonSerializer.NullValueHandling = NullValueHandling.Ignore;
+            jsonSerializer.ReferenceLoopHandling = ReferenceLoopHandling.Serialize;
+            jsonSerializer.PreserveReferencesHandling = PreserveReferencesHandling.Objects;
+            jsonSerializer.TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Simple;
+            jsonSerializer.TypeNameHandling = TypeNameHandling.Objects;
             jsonSerializer.ContractResolver = new CamelCasePropertyNamesContractResolver
             {
                 NamingStrategy = new CamelCaseNamingStrategy
@@ -48,7 +49,6 @@ namespace Elsa.Serialization
                     ProcessDictionaryKeys = false
                 }
             };
-            jsonSerializer.Converters.Add(variableConverter);
             jsonSerializer.Converters.Add(typeConverter);
             return jsonSerializer;
         }

@@ -1,5 +1,5 @@
 using System;
-using Elsa.Results;
+using Elsa.ActivityResults;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
 

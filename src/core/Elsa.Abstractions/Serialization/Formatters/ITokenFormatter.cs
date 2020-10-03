@@ -6,7 +6,7 @@ namespace Elsa.Serialization.Formatters
     {
         string Format { get; }
         string ContentType { get; }
-        string ToString(JToken token);
-        JToken FromString(string data);
+        string ToString(JObject token);
+        JObject FromString(string data);
     }
 }

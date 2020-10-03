@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.ActivityResults;
 using Elsa.Exceptions;
 using Elsa.Expressions;
 using Elsa.Extensions;
 using Elsa.Messaging.Domain;
 using Elsa.Models;
 using Elsa.Persistence;
-using Elsa.Results;
 using Elsa.Services.Models;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -171,7 +171,7 @@ namespace Elsa.Services
 
         private Task<bool> CanExecuteAsync(WorkflowExecutionContext workflowExecutionContext, IActivity activity, object? input, CancellationToken cancellationToken)
         {
-            var activityExecutionContext = new ActivityExecutionContext(workflowExecutionContext, activity, Variable.From(input));
+            var activityExecutionContext = new ActivityExecutionContext(workflowExecutionContext, activity, input);
             return activity.CanExecuteAsync(activityExecutionContext, cancellationToken);
         }
 
@@ -185,6 +185,7 @@ namespace Elsa.Services
                 var scheduledActivity = workflowExecutionContext.PopScheduledActivity();
                 var currentActivity = scheduledActivity.Activity;
                 var activityExecutionContext = new ActivityExecutionContext(workflowExecutionContext, currentActivity, scheduledActivity.Input);
+                await activityExecutionContext.SetActivityPropertiesAsync(cancellationToken);
                 var result = await activityOperation(activityExecutionContext, currentActivity, cancellationToken);
 
                 await mediator.Publish(new ActivityExecuting(activityExecutionContext), cancellationToken);
@@ -221,7 +222,7 @@ namespace Elsa.Services
                     continue;
 
                 var activityInstance = activityInstanceLookup[activity.Id];
-                activity.State = activityInstance.State;
+                //activity.State = activityInstance.State;
                 activity.Output = activityInstance.Output;
             }
 
@@ -236,11 +237,11 @@ namespace Elsa.Services
                 workflowInstance.CorrelationId,
                 variables,
                 status,
-                persistenceBehavior);
+                persistenceBehavior,
+                workflow.ActivityPropertyValueProviders);
         }
 
-        private WorkflowExecutionContext CreateWorkflowExecutionContext(
-            string workflowInstanceId,
+        private WorkflowExecutionContext CreateWorkflowExecutionContext(string workflowInstanceId,
             string workflowDefinitionId,
             int version,
             IEnumerable<IActivity> activities,
@@ -250,7 +251,8 @@ namespace Elsa.Services
             string? correlationId = default,
             Variables? variables = default,
             WorkflowStatus status = WorkflowStatus.Running,
-            WorkflowPersistenceBehavior persistenceBehavior = WorkflowPersistenceBehavior.WorkflowExecuted)
+            WorkflowPersistenceBehavior persistenceBehavior = WorkflowPersistenceBehavior.WorkflowExecuted,
+            IDictionary<string, IDictionary<string, IActivityPropertyValueProvider>>? activityPropertyValueProviders = default)
             => new WorkflowExecutionContext(
                 expressionEvaluator,
                 clock,
@@ -265,6 +267,7 @@ namespace Elsa.Services
                 correlationId,
                 variables,
                 status,
-                persistenceBehavior);
+                persistenceBehavior,
+                activityPropertyValueProviders);
     }
 }

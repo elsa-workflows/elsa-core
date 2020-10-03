@@ -1,10 +1,6 @@
-using System.Threading;
-using System.Threading.Tasks;
+using Elsa.ActivityResults;
 using Elsa.Attributes;
-using Elsa.Expressions;
-using Elsa.Results;
 using Elsa.Services;
-using Elsa.Services.Models;
 using NodaTime;
 
 // ReSharper disable once CheckNamespace
@@ -24,51 +20,34 @@ namespace Elsa.Activities.Timers
         }
 
         [ActivityProperty(Hint = "An expression that evaluates to a Duration value")]
-        public IWorkflowExpression<Duration> Timeout { get; set; }
-        
-        // [ActivityProperty(Hint = "An expression that evaluates to a Duration value")]
-        // public IWorkflowExpression<Duration> Timeout
-        // {
-        //     get => GetState<IWorkflowExpression<Duration>>(() => new LiteralExpression<Duration>("00:01:00"));
-        //     set => SetState(value);
-        // }
-        
-        private Instant? StartTime
-        {
-            get => GetState<Instant?>();
-            set => SetState(value);
-        }
+        public Duration Timeout { get; set; } = default!;
 
-        protected override async Task<bool> OnCanExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
-        {
-            return StartTime == null || await IsExpiredAsync(context, cancellationToken);
-        }
+        private Instant? StartTime { get; set; }
 
-        protected override Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken) => ExecuteInternalAsync(context, cancellationToken);
-        protected override Task<IActivityExecutionResult> OnResumeAsync(ActivityExecutionContext context, CancellationToken cancellationToken) => ExecuteInternalAsync(context, cancellationToken);
+        protected override bool OnCanExecute() => StartTime == null || IsExpired();
+        protected override IActivityExecutionResult OnExecute() => ExecuteInternal();
+        protected override IActivityExecutionResult OnResume() => ExecuteInternal();
 
-        private async Task<IActivityExecutionResult> ExecuteInternalAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        private IActivityExecutionResult ExecuteInternal()
         {
-            if (await IsExpiredAsync(context, cancellationToken))
+            if (IsExpired())
             {
                 StartTime = null;
                 return Done();
             }
-            
+
             return Suspend();
         }
 
-        private async Task<bool> IsExpiredAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        private bool IsExpired()
         {
             var now = clock.GetCurrentInstant();
 
-            if (StartTime == null)
-                StartTime = now;
+            StartTime ??= now;
 
             var startTime = StartTime.Value;
-            var timeout = await context.EvaluateAsync(Timeout, cancellationToken);
-            var expiresAt = startTime + timeout;
-            
+            var expiresAt = startTime + Timeout;
+
             return now >= expiresAt;
         }
     }

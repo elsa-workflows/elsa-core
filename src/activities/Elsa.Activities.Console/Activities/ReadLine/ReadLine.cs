@@ -1,9 +1,8 @@
 ﻿using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.ActivityResults;
 using Elsa.Attributes;
-using Elsa.Models;
-using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -17,7 +16,8 @@ namespace Elsa.Activities.Console
         Category = "Console",
         Description = "Read text from standard in.",
         Icon = "fas fa-terminal",
-        RuntimeDescription = "a => !!a.state.variableName ? `Read text from standard in and store into <strong>${ a.state.variableName }</strong>.` : 'Read text from standard in.'",
+        RuntimeDescription =
+            "a => !!a.state.variableName ? `Read text from standard in and store into <strong>${ a.state.variableName }</strong>.` : 'Read text from standard in.'",
         Outcomes = new[] { OutcomeNames.Done }
     )]
     public class ReadLine : Activity
@@ -33,7 +33,9 @@ namespace Elsa.Activities.Console
             this.input = input;
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        protected override async Task<IActivityExecutionResult> OnExecuteAsync(
+            ActivityExecutionContext context,
+            CancellationToken cancellationToken)
         {
             if (input == null)
                 return Suspend();
@@ -44,10 +46,10 @@ namespace Elsa.Activities.Console
 
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
         {
-            var receivedInput = context.Input?.GetValue<string>();
+            var receivedInput = (string)context.Input;
             return Execute(receivedInput);
         }
 
-        private IActivityExecutionResult Execute(string receivedInput) => Done(Variable.From(receivedInput));
+        private IActivityExecutionResult Execute(string receivedInput) => Done((object)receivedInput);
     }
 }

@@ -1,10 +1,6 @@
-using System.Threading;
-using System.Threading.Tasks;
+using Elsa.ActivityResults;
 using Elsa.Attributes;
-using Elsa.Expressions;
-using Elsa.Results;
 using Elsa.Services;
-using Elsa.Services.Models;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.Primitives
@@ -20,16 +16,8 @@ namespace Elsa.Activities.Primitives
     public class Correlate : Activity
     {
         [ActivityProperty(Hint = "An expression that evaluates to the value to store as the correlation ID.")]
-        public IWorkflowExpression<string> Value
-        {
-            get => GetState<IWorkflowExpression<string>>();
-            set => SetState(value);
-        }
+        public string Value { get; set; } = default!;
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
-        {
-            var value = await context.EvaluateAsync(Value, cancellationToken);
-            return new CorrelateResult(value);
-        }
+        protected override IActivityExecutionResult OnExecute() => new CorrelateResult(Value);
     }
 }

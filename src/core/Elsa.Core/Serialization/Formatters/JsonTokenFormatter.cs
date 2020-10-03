@@ -8,7 +8,7 @@ namespace Elsa.Serialization.Formatters
 {
     public class JsonTokenFormatter : ITokenFormatter
     {
-        public const string FormatName = "JSON";
+        public const string FormatName = SerializationFormats.Json;
         private readonly JsonSerializerSettings serializerSettings;
 
         public JsonTokenFormatter()
@@ -24,7 +24,7 @@ namespace Elsa.Serialization.Formatters
 
         public string Format => FormatName;
         public string ContentType => "application/json";
-        public string ToString(JToken token) => token.ToString(Formatting.Indented);
-        public JToken FromString(string data) => JsonConvert.DeserializeObject<JToken>(data, serializerSettings);
+        public string ToString(JObject token) => token.ToString(Formatting.Indented);
+        public JObject FromString(string data) => JsonConvert.DeserializeObject<JObject>(data, serializerSettings);
     }
 }

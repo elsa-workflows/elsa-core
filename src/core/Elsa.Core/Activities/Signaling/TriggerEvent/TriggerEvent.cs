@@ -1,8 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.ActivityResults;
 using Elsa.Attributes;
-using Elsa.Expressions;
-using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -24,38 +23,22 @@ namespace Elsa.Activities.Signaling
         }
 
         [ActivityProperty(Hint = "An expression that evaluates to the activity type to use when triggering workflows.")]
-        public IWorkflowExpression<string> ActivityType
-        {
-            get => GetState<IWorkflowExpression<string>>();
-            set => SetState(value);
-        }
+        public string ActivityType { get; set; } = default!;
 
         [ActivityProperty(
             Hint = "An expression that evaluates to a dictionary to be provided as input when triggering workflows."
         )]
-        public IWorkflowExpression Input
-        {
-            get => GetState<IWorkflowExpression>();
-            set => SetState(value);
-        }
+        public object? Input { get; set; }
 
         [ActivityProperty(Hint = "An expression that evaluates to the correlation ID to use when triggering workflows.")]
-        public IWorkflowExpression<string> CorrelationId
-        {
-            get => GetState<IWorkflowExpression<string>>();
-            set => SetState(value);
-        }
+        public string? CorrelationId { get; set; }
 
         protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var activityType = await context.EvaluateAsync(ActivityType, cancellationToken);
-            var input = await context.EvaluateAsync(Input, cancellationToken);
-            var correlationId = await context.EvaluateAsync(CorrelationId, cancellationToken);
-
             await workflowScheduler.TriggerWorkflowsAsync(
-                activityType,
-                input,
-                correlationId,
+                ActivityType,
+                Input,
+                CorrelationId,
                 cancellationToken: cancellationToken
             );
 

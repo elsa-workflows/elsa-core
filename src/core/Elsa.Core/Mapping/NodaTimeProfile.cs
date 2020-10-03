@@ -2,7 +2,7 @@ using System;
 using AutoMapper;
 using NodaTime;
 
-namespace Elsa.AutoMapper.Extensions.NodaTime
+namespace Elsa.Mapping
 {
     public class NodaTimeProfile : Profile,
         ITypeConverter<Instant, DateTime>,

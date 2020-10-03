@@ -11,18 +11,18 @@ namespace Elsa.Extensions
 {
     public static class WorkflowInstanceStoreExtensions
     {
-        public static Task<IEnumerable<(WorkflowInstance WorkflowInstance, ActivityInstance BlockingActivity)>> ListByBlockingActivityAsync<TActivity>(
+        public static Task<IEnumerable<(WorkflowInstance WorkflowInstance, IActivity BlockingActivity)>> ListByBlockingActivityAsync<TActivity>(
             this IWorkflowInstanceStore store,
             string? correlationId = default,
-            Func<Variables, bool>? activityStatePredicate = default,
+            Func<IActivity, bool>? activityStatePredicate = default,
             CancellationToken cancellationToken = default) where TActivity : IActivity =>
             store.ListByBlockingActivityAsync(typeof(TActivity).Name, correlationId, activityStatePredicate, cancellationToken);
 
-        public static async Task<IEnumerable<(WorkflowInstance WorkflowInstance, ActivityInstance BLockingActivity)>> ListByBlockingActivityAsync(
+        public static async Task<IEnumerable<(WorkflowInstance WorkflowInstance, IActivity BLockingActivity)>> ListByBlockingActivityAsync(
             this IWorkflowInstanceStore store,
             string activityType,
             string? correlationId,
-            Func<Variables, bool>? activityStatePredicate = default,
+            Func<IActivity, bool>? activityStatePredicate = default,
             CancellationToken cancellationToken = default)
         {
             var tuples = await store.ListByBlockingActivityAsync(activityType, correlationId, cancellationToken);
@@ -31,11 +31,12 @@ namespace Elsa.Extensions
                 let workflowInstance = item.WorkflowInstance
                 let blockingActivity = item.BlockingActivity
                 let activityInstance = workflowInstance.Activities.First(x => x.Id == blockingActivity.ActivityId)
-                select (workflowInstance, activityInstance);
+                let activity = (IActivity)null
+                select (workflowInstance, activity);
 
             if (activityStatePredicate != null)
             {
-                query = query.Where(tuple => activityStatePredicate(tuple.activityInstance.State));
+                query = query.Where(tuple => activityStatePredicate(tuple.activity));
             }
 
             return query;

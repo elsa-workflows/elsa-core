@@ -87,6 +87,6 @@ namespace Elsa.Server.GraphQL
             return await store.DeleteAsync(id, cancellationToken);
         }
 
-        private ActivityDefinition ToActivityDefinition(ActivityDefinitionInput source) => mapper.Map<ActivityDefinition>(source);
+        private ActivityDefinitionRecord ToActivityDefinition(ActivityDefinitionInput source) => mapper.Map<ActivityDefinitionRecord>(source);
     }
 }

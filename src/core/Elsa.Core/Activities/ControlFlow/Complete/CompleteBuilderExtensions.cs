@@ -6,6 +6,6 @@ namespace Elsa.Activities.ControlFlow
 {
     public static class CompleteBuilderExtensions
     {
-        public static IActivityBuilder Complete(this IBuilder builder, Action<Complete>? setup = default) => builder.Then(setup);
+        public static IActivityBuilder Complete(this IBuilder builder, Action<ISetupActivity<Complete>>? setup = default) => builder.Then(setup);
     }
 }

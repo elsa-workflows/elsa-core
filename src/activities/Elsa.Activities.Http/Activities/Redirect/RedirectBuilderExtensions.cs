@@ -9,8 +9,9 @@ namespace Elsa.Activities.Http
         public static IActivityBuilder Redirect(
             this IBuilder builder,
             Uri location,
-            bool permanent = default) => builder.Then<Redirect>(x => x
-            .WithLocation(location)
-            .WithPermanent(permanent));
+            bool permanent = default) => builder.Then<Redirect>(
+            redirect => redirect
+                .Set(x => x.Location, location)
+                .Set(x => x.Permanent, permanent));
     }
 }

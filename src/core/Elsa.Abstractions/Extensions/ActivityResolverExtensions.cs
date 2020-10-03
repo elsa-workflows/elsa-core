@@ -1,19 +1,18 @@
 using Elsa.Models;
 using Elsa.Services;
 
-namespace Elsa.Extensions
+namespace Elsa
 {
     public static class ActivityResolverExtensions
     {
-        public static IActivity ResolveActivity(this IActivityResolver activityResolver, ActivityDefinition activityDefinition)
+        public static IActivity ResolveActivity(this IActivityResolver activityResolver, ActivityDefinitionRecord activityDefinitionRecord)
         {
-            var activity = activityResolver.ResolveActivity(activityDefinition.Type);
-            activity.Description = activityDefinition.Description;
-            activity.Id = activityDefinition.Id;
-            activity.Name = activityDefinition.Name;
-            activity.DisplayName = activityDefinition.DisplayName;
-            activity.PersistWorkflow = activityDefinition.PersistWorkflow;
-            activity.State = activityDefinition.State;
+            var activity = activityResolver.ResolveActivity(activityDefinitionRecord.Type);
+            activity.Description = activityDefinitionRecord.Description;
+            activity.Id = activityDefinitionRecord.Id;
+            activity.Name = activityDefinitionRecord.Name;
+            activity.DisplayName = activityDefinitionRecord.DisplayName;
+            activity.PersistWorkflow = activityDefinitionRecord.PersistWorkflow;
             return activity;
         }
     }

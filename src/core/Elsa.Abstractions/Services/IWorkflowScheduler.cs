@@ -1,7 +1,6 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Models;
 
 namespace Elsa.Services
 {
@@ -20,6 +19,6 @@ namespace Elsa.Services
         /// <summary>
         /// Schedules new workflows that start with the specified activity type or are blocked on the specified activity type.
         /// </summary>
-        Task TriggerWorkflowsAsync(string activityType, object? input = default, string? correlationId = default, Func<Variables, bool>? activityStatePredicate = default, CancellationToken cancellationToken = default);
+        Task TriggerWorkflowsAsync(string activityType, object? input = default, string? correlationId = default, Func<IActivity, bool>? activityStatePredicate = default, CancellationToken cancellationToken = default);
     }
 }

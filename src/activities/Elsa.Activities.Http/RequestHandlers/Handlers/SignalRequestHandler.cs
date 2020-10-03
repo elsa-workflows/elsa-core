@@ -55,14 +55,14 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
             return new EmptyResult();
         }
 
-        private Signal DecryptToken()
+        private Signal? DecryptToken()
         {
             var token = httpContext.Request.Query["token"];
 
             return tokenService.TryDecryptToken(token, out Signal signal) ? signal : default;
         }
 
-        private async Task<WorkflowInstance> GetWorkflowInstanceAsync(Signal signal) => 
+        private async Task<WorkflowInstance?> GetWorkflowInstanceAsync(Signal signal) => 
             await workflowInstanceStore.GetByIdAsync(signal.WorkflowInstanceId, cancellationToken);
 
         private bool CheckIfExecuting(WorkflowInstance workflowInstance) => 
@@ -70,7 +70,7 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
 
         private async Task ResumeWorkflowAsync(WorkflowInstance workflowInstanceModel, Signal signal)
         {
-            var input = Variable.From(signal.Name);
+            var input = signal.Name;
 
             var workflowDefinition = await workflowRegistry.GetWorkflowAsync(
                 workflowInstanceModel.DefinitionId,

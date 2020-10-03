@@ -1,8 +1,8 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Expressions;
-using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -17,16 +17,19 @@ namespace Elsa.Activities.ControlFlow
     )]
     public class While : Activity
     {
-        [ActivityProperty(Hint = "Enter an expression that evaluates to a boolean value.")]
-        public IWorkflowExpression<bool> Condition
+        private readonly IExpressionEvaluator expressionEvaluator;
+
+        public While(IExpressionEvaluator expressionEvaluator)
         {
-            get => GetState<IWorkflowExpression<bool>>();
-            set => SetState(value);
+            this.expressionEvaluator = expressionEvaluator;
         }
+        
+        [ActivityProperty(Hint = "Enter an expression that evaluates to a boolean value.")]
+        public IWorkflowExpression<bool> Condition { get; set; }
 
         protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var loop = await context.EvaluateAsync(Condition, cancellationToken);
+            var loop = await expressionEvaluator.EvaluateAsync(Condition, context, cancellationToken);
 
             if (loop)
                 return Combine(Schedule(this), Done(OutcomeNames.Iterate));

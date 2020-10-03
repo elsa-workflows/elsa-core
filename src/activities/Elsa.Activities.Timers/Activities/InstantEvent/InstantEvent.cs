@@ -1,10 +1,6 @@
-using System.Threading;
-using System.Threading.Tasks;
+using Elsa.ActivityResults;
 using Elsa.Attributes;
-using Elsa.Expressions;
-using Elsa.Results;
 using Elsa.Services;
-using Elsa.Services.Models;
 using NodaTime;
 
 // ReSharper disable once CheckNamespace
@@ -27,29 +23,16 @@ namespace Elsa.Activities.Timers
         /// An expression that evaluates to an <see cref="NodaTime.Instant"/>
         /// </summary>
         [ActivityProperty(Hint = "An expression that evaluates to a NodaTime Instant")]
-        public IWorkflowExpression<Instant> Instant
-        {
-            get => GetState<IWorkflowExpression<Instant>>();
-            set => SetState(value);
-        }
-        
-        public Instant? ExecutedAt
-        {
-            get => GetState<Instant?>();
-            set => SetState(value);
-        }
-        
-        protected override async Task<bool> OnCanExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
-        {
-            return ExecutedAt == null || await IsExpiredAsync(context, cancellationToken);
-        }
+        public Instant Instant { get; set; }
 
-        protected override Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken) => 
-            OnResumeAsync(context, cancellationToken);
+        public Instant? ExecutedAt { get; set; }
 
-        protected override async Task<IActivityExecutionResult> OnResumeAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        protected override bool OnCanExecute() => ExecutedAt == null || IsExpired();
+        protected override IActivityExecutionResult OnExecute() => OnResume();
+
+        protected override IActivityExecutionResult OnResume()
         {
-            if (await IsExpiredAsync(context, cancellationToken))
+            if (IsExpired())
             {
                 ExecutedAt = clock.GetCurrentInstant();
                 return Done();
@@ -58,12 +41,10 @@ namespace Elsa.Activities.Timers
             return Suspend();
         }
 
-        private async Task<bool> IsExpiredAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        private bool IsExpired()
         {
-            var instant = await context.EvaluateAsync(Instant, cancellationToken);
             var now = clock.GetCurrentInstant();
-
-            return now >= instant;
+            return now >= Instant;
         }
     }
 }

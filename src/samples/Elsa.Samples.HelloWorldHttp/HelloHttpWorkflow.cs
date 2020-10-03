@@ -1,6 +1,5 @@
 ﻿using System.Net;
 using Elsa.Activities.Http;
-using Elsa.Activities.Primitives;
 using Elsa.Builders;
 
 namespace Elsa.Samples.HelloWorldHttp
@@ -11,7 +10,7 @@ namespace Elsa.Samples.HelloWorldHttp
         {
             builder
                 .ReceiveHttpRequest("/hello")
-                .WriteHttpResponse(HttpStatusCode.OK, "Hello World!");
+                .WriteHttpResponse(HttpStatusCode.OK, "Hello World!", "text/html");
         }
     }
 }

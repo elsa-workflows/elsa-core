@@ -13,11 +13,14 @@ namespace Elsa.Extensions
         public static Task<Workflow> GetWorkflowAsync<T>(this IWorkflowRegistry workflowRegistry, CancellationToken cancellationToken) =>
             workflowRegistry.GetWorkflowAsync(typeof(T).Name, VersionOptions.Latest, cancellationToken);
 
-        public static Task<IEnumerable<(Workflow Workflow, IActivity Activity)>> GetWorkflowsByStartActivityAsync<T>(
+        public static async Task<IEnumerable<(Workflow Workflow, T Activity)>> GetWorkflowsByStartActivityAsync<T>(
             this IWorkflowRegistry workflowRegistry,
             CancellationToken cancellationToken = default)
-            where T : IActivity =>
-            workflowRegistry.GetWorkflowsByStartActivityAsync(typeof(T).Name, cancellationToken);
+            where T : IActivity
+        {
+            var results = await workflowRegistry.GetWorkflowsByStartActivityAsync(typeof(T).Name, cancellationToken);
+            return results.Select(x => (x.Workflow, (T)x.Activity));
+        }
 
         public static async Task<IEnumerable<(Workflow Workflow, IActivity Activity)>> GetWorkflowsByStartActivityAsync(
             this IWorkflowRegistry workflowRegistry,

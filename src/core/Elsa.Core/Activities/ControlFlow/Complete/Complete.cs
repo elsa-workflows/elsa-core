@@ -1,9 +1,5 @@
-using System.Threading;
-using System.Threading.Tasks;
+using Elsa.ActivityResults;
 using Elsa.Attributes;
-using Elsa.Expressions;
-using Elsa.Models;
-using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -18,20 +14,14 @@ namespace Elsa.Activities.ControlFlow
     public class Complete : Activity
     {
         [ActivityProperty(Hint = "An expression that evaluates to the activity's output.'")]
-        public IWorkflowExpression OutputValue
-        {
-            get => GetState<IWorkflowExpression>();
-            set => SetState(value);
-        }
+        public object? OutputValue { get; set; }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
-            var output = await context.EvaluateAsync(OutputValue, cancellationToken) ?? new Variable();
-            
             context.WorkflowExecutionContext.BlockingActivities.Clear();
             context.WorkflowExecutionContext.Complete();
             
-            return Done(Variable.From(output));
+            return Done(OutputValue);
         }
     }
 }

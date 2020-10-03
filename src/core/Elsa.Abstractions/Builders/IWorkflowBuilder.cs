@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -22,17 +23,44 @@ namespace Elsa.Builders
         IWorkflowBuilder AsTransient();
         IWorkflowBuilder WithDeleteCompletedInstances(bool value);
         IWorkflowBuilder WithPersistenceBehavior(WorkflowPersistenceBehavior value);
-        T New<T>(Action<T>? setup = default, Action<IActivityBuilder>? branch = default) where T : class, IActivity;
-        T New<T>(T activity, Action<IActivityBuilder>? branch = default) where T : class, IActivity;
-        IActivityBuilder StartWith<T>(Action<T>? setup = default, Action<IActivityBuilder>? branch = default) where T : class, IActivity;
-        IActivityBuilder StartWith<T>(T activity, Action<IActivityBuilder>? branch = default) where T : class, IActivity;
-        IActivityBuilder Add<T>(Action<T>? setup = default, Action<IActivityBuilder>? branch = default) where T : class, IActivity;
-        IActivityBuilder Add<T>(T activity, Action<IActivityBuilder>? branch = default) where T : class, IActivity;
-        IConnectionBuilder Connect(IActivityBuilder source, IActivityBuilder target, string outcome = OutcomeNames.Done);
-        IConnectionBuilder Connect(Func<IActivityBuilder> source, Func<IActivityBuilder> target, string outcome = OutcomeNames.Done);
+
+        IActivityBuilder New<T>(T activity,
+            Action<IActivityBuilder>? branch = default,
+            IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders = default)
+            where T : class, IActivity;
+
+        IActivityBuilder New<T>(Action<ISetupActivity<T>>? setup = default,
+            Action<IActivityBuilder>? branch = default) where T : class, IActivity;
+
+        IActivityBuilder StartWith<T>(
+            Action<ISetupActivity<T>>? setup = default,
+            Action<IActivityBuilder>? branch = default) where T : class, IActivity;
+
+        IActivityBuilder StartWith<T>(T activity, Action<IActivityBuilder>? branch = default)
+            where T : class, IActivity;
+
+        IActivityBuilder Add<T>(
+            Action<ISetupActivity<T>>? setup = default,
+            Action<IActivityBuilder>? branch = default) where T : class, IActivity;
+
+        IActivityBuilder Add<T>(
+            T activity,
+            Action<IActivityBuilder>? branch = default,
+            IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders = default)
+            where T : class, IActivity;
+
+        IConnectionBuilder Connect(IActivityBuilder source,
+            IActivityBuilder target,
+            string outcome = OutcomeNames.Done);
+
+        IConnectionBuilder Connect(
+            Func<IActivityBuilder> source,
+            Func<IActivityBuilder> target,
+            string outcome = OutcomeNames.Done);
+
         Workflow Build();
         Workflow Build(IWorkflow workflow);
         Workflow Build(Type workflowType);
-        Workflow Build<T>() where T:IWorkflow;
+        Workflow Build<T>() where T : IWorkflow;
     }
 }

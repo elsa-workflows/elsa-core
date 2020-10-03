@@ -1,5 +1,4 @@
 using Elsa.Activities.Console;
-using Elsa.Expressions;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services;
@@ -27,21 +26,21 @@ namespace Elsa.Samples.WorkflowDefinition
             var activityResolver = services.GetRequiredService<IActivityResolver>();
             var activity1 = activityResolver.ResolveActivity<WriteLine>()
                                             .WithId("activity-1")
-                                            .WithText(new LiteralExpression<string>("Hello world!"));
+                                            .WithText("Hello world!");
 
             var activity2 = activityResolver.ResolveActivity<WriteLine>()
                                             .WithId("activity-2")
-                                            .WithText(new LiteralExpression<string>("Goodbye cruel world...!"));
+                                            .WithText("Goodbye cruel world...!");
 
-            //Create Workflow Definition
+            // Create Workflow Definition.
             var workflowDefinition = new WorkflowDefinitionVersion
             {
                 DefinitionId = "definition-001",
                 IsPublished = true,
-                Activities = new List<ActivityDefinition>
+                Activities = new List<ActivityDefinitionRecord>
                 {
-                    ActivityDefinition.FromActivity(activity1),
-                    ActivityDefinition.FromActivity(activity2)
+                    ActivityDefinitionRecord.FromActivity(activity1),
+                    ActivityDefinitionRecord.FromActivity(activity2)
                 },
                 Connections = new[]
                 {
@@ -49,11 +48,11 @@ namespace Elsa.Samples.WorkflowDefinition
                 }
             };
 
-            //Register it
-            var workflowDefination = services.GetService<IWorkflowDefinitionStore>();
-            await workflowDefination.AddAsync(workflowDefinition);
+            // Register it.
+            var workflowDefinitionStore = services.GetService<IWorkflowDefinitionStore>();
+            await workflowDefinitionStore.AddAsync(workflowDefinition);
 
-            //Run it
+            // Run it.
             var invoker = services.GetService<IWorkflowHost>();
             await invoker.RunWorkflowDefinitionAsync("definition-001");
 

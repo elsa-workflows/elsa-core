@@ -2,10 +2,9 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Models;
+using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Design;
-using Elsa.Expressions;
-using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
@@ -39,22 +38,14 @@ namespace Elsa.Activities.Http
             Type = ActivityPropertyTypes.Select,
             Hint = "The HTTP status code to write."
         )]
-        public HttpStatusCode StatusCode
-        {
-            get => GetState(() => HttpStatusCode.OK);
-            set => SetState(value);
-        }
+        public HttpStatusCode StatusCode { get; set; }
 
         /// <summary>
         /// The content to send along with the response
         /// </summary>
         [ActivityProperty(Hint = "The HTTP content to write.")]
         [WorkflowExpressionOptions(Multiline = true)]
-        public IWorkflowExpression<string> Content
-        {
-            get => GetState<IWorkflowExpression<string>>();
-            set => SetState(value);
-        }
+        public string Content  { get; set; }
 
         /// <summary>
         /// The Content-Type header to send along with the response.
@@ -64,21 +55,13 @@ namespace Elsa.Activities.Http
             Hint = "The HTTP content type header to write."
         )]
         [SelectOptions("text/plain", "text/html", "application/json", "application/xml")]
-        public string ContentType
-        {
-            get => GetState<string>();
-            set => SetState(value);
-        }
+        public string ContentType { get; set; }
 
         /// <summary>
         /// The headers to send along with the response. One 'header: value' pair per line.
         /// </summary>
         [ActivityProperty(Hint = "The headers to send along with the response.")]
-        public IWorkflowExpression<HttpResponseHeaders>? ResponseHeaders
-        {
-            get => GetState<IWorkflowExpression<HttpResponseHeaders>>();
-            set => SetState(value);
-        }
+        public HttpResponseHeaders? ResponseHeaders  { get; set; }
 
         protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
@@ -90,7 +73,7 @@ namespace Elsa.Activities.Http
             response.StatusCode = (int)StatusCode;
             response.ContentType = ContentType;
 
-            var headers = await context.EvaluateAsync(ResponseHeaders, cancellationToken);
+            var headers = ResponseHeaders;
 
             if (headers != null)
             {
@@ -98,7 +81,7 @@ namespace Elsa.Activities.Http
                     response.Headers[header.Key] = header.Value;
             }
 
-            var bodyText = await context.EvaluateAsync(Content, cancellationToken);
+            var bodyText = Content;
 
             if (!string.IsNullOrWhiteSpace(bodyText)) 
                 await response.WriteAsync(bodyText, cancellationToken);

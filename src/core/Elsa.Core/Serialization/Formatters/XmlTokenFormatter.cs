@@ -6,21 +6,21 @@ namespace Elsa.Serialization.Formatters
 {
     public class XmlTokenFormatter : ITokenFormatter
     {
-        public const string FormatName = "XML";
+        public const string FormatName = SerializationFormats.Xml;
         public string Format => FormatName;
         public string ContentType => "application/xml";
 
-        public string ToString(JToken token)
+        public string ToString(JObject token)
         {
             var document = JsonConvert.DeserializeXNode(token.ToString(), "workflow");
             return document.ToString();
         }
 
-        public JToken FromString(string data)
+        public JObject FromString(string data)
         {
             var document = XDocument.Parse(data);
             var json = JsonConvert.SerializeXNode(document, Formatting.Indented, false);
-            return JToken.Parse(json);
+            return JObject.Parse(json);
         }
     }
 }

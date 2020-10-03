@@ -1,11 +1,6 @@
-using System.Threading;
-using System.Threading.Tasks;
+using Elsa.ActivityResults;
 using Elsa.Attributes;
-using Elsa.Expressions;
-using Elsa.Models;
-using Elsa.Results;
 using Elsa.Services;
-using Elsa.Services.Models;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.ControlFlow
@@ -19,45 +14,26 @@ namespace Elsa.Activities.ControlFlow
     public class For : Activity
     {
         [ActivityProperty(Hint = "An expression that evaluates to the starting number.")]
-        public IWorkflowExpression<int> Start
-        {
-            get => GetState<IWorkflowExpression<int>>();
-            set => SetState(value);
-        }
+        public int Start { get; set; }
 
         [ActivityProperty(Hint = "An expression that evaluates to the ending number.")]
-        public IWorkflowExpression<int> End
-        {
-            get => GetState<IWorkflowExpression<int>>();
-            set => SetState(value);
-        }
+        public int End { get; set; }
 
         [ActivityProperty(Hint = "An expression that evaluates to the incrementing number on each step.")]
-        public IWorkflowExpression<int> Step
-        {
-            get => GetState<IWorkflowExpression<int>>(() => new CodeExpression<int>(() => 1));
-            set => SetState(value);
-        }
+        public int Step { get; set; }
 
-        private int? CurrentValue
-        {
-            get => GetState<int?>();
-            set => SetState(value);
-        }
+        private int? CurrentValue { get; set; }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        protected override IActivityExecutionResult OnExecute()
         {
-            var startValue = await context.EvaluateAsync(Start, cancellationToken);
-            var endValue = await context.EvaluateAsync(End, cancellationToken);
-            var step = await context.EvaluateAsync(Step, cancellationToken);
-            var currentValue = CurrentValue ?? startValue;
+            var currentValue = CurrentValue ?? Start;
 
-            if (currentValue < endValue)
+            if (currentValue < End)
             {
                 var input = currentValue;
-                currentValue += step;
+                currentValue += Step;
                 CurrentValue = currentValue;
-                return Combine(Schedule(this), Done(OutcomeNames.Iterate, Variable.From(input)));
+                return Combine(Schedule(this), Done(OutcomeNames.Iterate, input));
             }
 
             CurrentValue = null;

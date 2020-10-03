@@ -2,9 +2,8 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Results;
+using Elsa.ActivityResults;
 using Elsa.Attributes;
-using Elsa.Expressions;
-using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
@@ -32,18 +31,10 @@ namespace Elsa.Activities.Http
         private IStringLocalizer<Redirect> T { get; }
 
         [ActivityProperty(Hint = "The URL to redirect to (HTTP 302).")]
-        public IWorkflowExpression<Uri> Location
-        {
-            get => GetState<IWorkflowExpression<Uri>>();
-            set => SetState(value);
-        }
+        public Uri Location { get; set; }
         
         [ActivityProperty(Hint = "Whether or not the redirect is permanent (HTTP 301).")]
-        public bool Permanent
-        {
-            get => GetState(() => false);
-            set => SetState(value);
-        }
+        public bool Permanent { get; set; }
 
         protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
@@ -51,9 +42,8 @@ namespace Elsa.Activities.Http
 
             if (response.HasStarted)
                 return Fault(T["Response has already started"]);
-
-            var location = await context.EvaluateAsync(Location, cancellationToken);
-            return new RedirectResult(httpContextAccessor, location, Permanent);
+            
+            return new RedirectResult(httpContextAccessor, Location, Permanent);
         }
     }
 }
