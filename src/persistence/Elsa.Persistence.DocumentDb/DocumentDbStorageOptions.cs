@@ -23,10 +23,10 @@ namespace Elsa.Persistence.DocumentDb
         public string Url { get; set; }
 
         /// <summary>
-        /// Gets or sets the secert to access DocumentDB.
+        /// Gets or sets the secret to access DocumentDB.
         /// </summary>
         /// <value>
-        /// The secert to access DocumentDB.
+        /// The secret to access DocumentDB.
         /// </value>
         public string AuthSecret { get; set; }
 
