@@ -35,7 +35,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
         /// The CustomSchemaModelCacheKeyFactory will not resolve services from the DI container for constructor injection
         /// so this is necessary in order to set the custom schema for the Model Cache.
         /// </summary>
-        internal IDbContextCustomSchema DbContextCustomSchema { get; }
+        internal IDbContextCustomSchema? DbContextCustomSchema { get; }
 
         public DbSet<WorkflowDefinitionVersionEntity> WorkflowDefinitionVersions { get; set; }
         public DbSet<WorkflowInstanceEntity> WorkflowInstances { get; set; }
