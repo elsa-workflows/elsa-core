@@ -47,24 +47,24 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
             var workflowsToStart = Filter(httpWorkflows, requestPath, method).ToList();
             var suspendedWorkflows = await workflowInstanceStore.ListByBlockingActivityAsync<ReceiveHttpRequest>(cancellationToken: cancellationToken);
 
-            var workflowsToResume = Filter(suspendedWorkflows, requestPath, method).ToList();
+            //var workflowsToResume = Filter(suspendedWorkflows, requestPath, method).ToList();
 
-            if (!workflowsToStart.Any() && !workflowsToResume.Any())
-                return new NextResult();
-
-            await InvokeWorkflowsToStartAsync(workflowsToStart);
-            await InvokeWorkflowsToResumeAsync(workflowsToResume);
+            // if (!workflowsToStart.Any() && !workflowsToResume.Any())
+            //     return new NextResult();
+            //
+            // await InvokeWorkflowsToStartAsync(workflowsToStart);
+            // await InvokeWorkflowsToResumeAsync(workflowsToResume);
 
             return !httpContext.Items.ContainsKey(WorkflowHttpResult.Instance)
                 ? (IRequestHandlerResult)new AcceptedResult()
                 : new EmptyResult();
         }
 
-        private IEnumerable<(WorkflowInstance WorkflowInstance, ActivityInstanceRecord BlockingActivity)> Filter(
-            IEnumerable<(WorkflowInstance WorkflowInstance, ActivityInstanceRecord BlockingActivity)> items,
-            PathString path,
-            string method) =>
-            items.Where(x => IsMatch(x.BlockingActivity, path, method));
+        // private IEnumerable<(WorkflowInstance WorkflowInstance, ActivityInstanceRecord BlockingActivity)> Filter(
+        //     IEnumerable<(WorkflowInstance WorkflowInstance, ActivityInstanceRecord BlockingActivity)> items,
+        //     PathString path,
+        //     string method) =>
+        //     items.Where(x => IsMatch(x.BlockingActivity, path, method));
 
         private IEnumerable<(Workflow Workflow, ReceiveHttpRequest Activity)> Filter(
             IEnumerable<(Workflow Workflow, ReceiveHttpRequest Activity)> items,
