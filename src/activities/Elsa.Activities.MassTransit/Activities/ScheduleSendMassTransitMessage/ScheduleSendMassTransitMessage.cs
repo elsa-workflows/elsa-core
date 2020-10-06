@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.MassTransit.Activities.ScheduleSendMassTransitMessage;
 using Elsa.Activities.MassTransit.Options;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
@@ -34,7 +35,7 @@ namespace Elsa.Activities.MassTransit
         public object? Message { get; set; }
 
         [ActivityProperty(Hint = "The address of a specific endpoint to deliver the message to.")]
-        public Uri EndpointAddress { get; set; }
+        public Uri EndpointAddress { get; set; } = default!;
 
         [ActivityProperty(Hint = "An expression that evaluates to the date and time to deliver the message.")]
         public Instant ScheduledTime { get; set; }
@@ -46,13 +47,13 @@ namespace Elsa.Activities.MassTransit
             CancellationToken cancellationToken)
         {
             var endpoint = await SendEndpointProvider.GetSendEndpoint(options.SchedulerAddress);
-            var scheduledMessage = await endpoint.ScheduleSend(
+            var scheduledMessage = await endpoint.ScheduleRecurringSend(
                 EndpointAddress,
-                ScheduledTime.ToDateTimeUtc(),
+                new InstantRecurringSchedule(ScheduledTime), 
                 Message,
                 cancellationToken);
 
-            return Done(scheduledMessage.TokenId);
+            return Done(scheduledMessage);
         }
     }
 }

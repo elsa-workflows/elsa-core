@@ -7,8 +7,8 @@ namespace Elsa.Activities.MassTransit
 {
     public static class CancelScheduledMassTransitMessageExtensions
     {
-        public static CancelScheduledMassTransitMessage WithTokenId(this CancelScheduledMassTransitMessage activity, Func<ActivityExecutionContext, Guid?>? value) => activity.With(x => x.TokenId, value);
-        public static CancelScheduledMassTransitMessage WithTokenId(this CancelScheduledMassTransitMessage activity, Func<Guid?>? value) => activity.With(x => x.TokenId, value);
-        public static CancelScheduledMassTransitMessage WithTokenId(this CancelScheduledMassTransitMessage activity, Guid? value) => activity.With(x => x.TokenId, value);
+        public static CancelScheduledMassTransitMessage WithTokenId(this CancelScheduledMassTransitMessage activity, Func<ActivityExecutionContext, string?>? value) => activity.With(x => x.TokenId, value);
+        public static CancelScheduledMassTransitMessage WithTokenId(this CancelScheduledMassTransitMessage activity, Func<string?>? value) => activity.With(x => x.TokenId, value);
+        public static CancelScheduledMassTransitMessage WithTokenId(this CancelScheduledMassTransitMessage activity, string? value) => activity.With(x => x.TokenId, value);
     }
 }
