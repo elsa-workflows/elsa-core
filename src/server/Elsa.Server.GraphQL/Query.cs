@@ -29,7 +29,7 @@ namespace Elsa.Server.GraphQL
             return type == null ? default : describer.Describe(type);
         }
 
-        public async Task<IEnumerable<WorkflowDefinitionVersion>> GetWorkflowDefinitions(
+        public async Task<IEnumerable<WorkflowDefinition>> GetWorkflowDefinitions(
             VersionOptionsInput? version,
             [Service] IWorkflowDefinitionStore store,
             [Service] IMapper mapper,
@@ -39,7 +39,7 @@ namespace Elsa.Server.GraphQL
             return await store.ListAsync(mappedVersion ?? VersionOptions.Latest, cancellationToken);
         }
         
-        public async Task<WorkflowDefinitionVersion> GetWorkflowDefinition(
+        public async Task<WorkflowDefinition> GetWorkflowDefinition(
             string? id,
             string? definitionId,
             VersionOptionsInput? version,

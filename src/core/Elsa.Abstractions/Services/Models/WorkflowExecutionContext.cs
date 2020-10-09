@@ -148,7 +148,7 @@ namespace Elsa.Services.Models
             workflowInstance.Variables = Variables;
             workflowInstance.ScheduledActivities = new Stack<Elsa.Models.ScheduledActivity>(
                 ScheduledActivities.Select(x => new Elsa.Models.ScheduledActivity(x.Activity.Id, x.Input)));
-            workflowInstance.Activities = Activities.Select(x => new ActivityInstanceRecord(x.Id, x.Type, x.Output)).ToList();
+            workflowInstance.Activities = Activities.Select(x => new ActivityInstance(x.Id, x.Type, x.Output)).ToList();
             workflowInstance.BlockingActivities = new HashSet<BlockingActivity>(
                 BlockingActivities.Select(x => new BlockingActivity(x.Id, x.Type)),
                 new BlockingActivityEqualityComparer());

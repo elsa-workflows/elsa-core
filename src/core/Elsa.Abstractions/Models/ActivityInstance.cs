@@ -1,12 +1,12 @@
 namespace Elsa.Models
 {
-    public class ActivityInstanceRecord
+    public class ActivityInstance
     {
-        public ActivityInstanceRecord()
+        public ActivityInstance()
         {
         }
 
-        public ActivityInstanceRecord(string id, string type, object? output)
+        public ActivityInstance(string id, string type, object? output)
         {
             Id = id;
             Type = type;

@@ -8,13 +8,13 @@ using Elsa.Builders;
 using Elsa.Converters;
 using Elsa.Expressions;
 using Elsa.Extensions;
+using Elsa.Indexes;
 using Elsa.Mapping;
 using Elsa.Messaging;
 using Elsa.Messaging.Distributed;
 using Elsa.Messaging.Distributed.Handlers;
 using Elsa.Metadata;
 using Elsa.Metadata.Handlers;
-using Elsa.Persistence.Memory;
 using Elsa.Runtime;
 using Elsa.Serialization;
 using Elsa.Serialization.Formatters;
@@ -26,6 +26,7 @@ using MediatR;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using NodaTime;
 using Rebus.Handlers;
+using YesSql.Indexes;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -40,8 +41,6 @@ namespace Microsoft.Extensions.DependencyInjection
             configure?.Invoke(options);
 
             services
-                .AddTransient(options.WorkflowDefinitionStoreFactory)
-                .AddTransient(options.WorkflowInstanceStoreFactory)
                 .AddSingleton(options.DistributedLockProviderFactory)
                 .AddSingleton(options.SignalFactory);
 
@@ -107,8 +106,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IWorkflowSchedulerQueue, WorkflowSchedulerQueue>()
                 .AddScoped<IWorkflowHost, WorkflowHost>()
                 .AddSingleton<IWorkflowActivator, WorkflowActivator>()
-                .AddSingleton<MemoryWorkflowDefinitionStore>()
-                .AddSingleton<MemoryWorkflowInstanceStore>()
+                .AddSingleton<IIndexProvider, WorkflowDefinitionIndexProvider>()
                 .AddStartupRunner()
                 .AddTransient<IActivityResolver, ActivityResolver>()
                 .AddTransient<IWorkflowProvider, StoreWorkflowProvider>()

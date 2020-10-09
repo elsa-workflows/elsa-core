@@ -2,11 +2,11 @@ using Elsa.Services;
 
 namespace Elsa.Models
 {
-    public class ActivityDefinitionRecord
+    public class ActivityDefinition
     {
-        public static ActivityDefinitionRecord FromActivity(IActivity activity)
+        public static ActivityDefinition FromActivity(IActivity activity)
         {
-            return new ActivityDefinitionRecord
+            return new ActivityDefinition
             {
                 Id = activity.Id,
                 Type = activity.Type,
@@ -27,9 +27,9 @@ namespace Elsa.Models
         public Variables? State { get; set; }
     }
 
-    public class ActivityDefinitionRecord<T> : ActivityDefinitionRecord where T : IActivity
+    public class ActivityDefinition<T> : ActivityDefinition where T : IActivity
     {
-        public ActivityDefinitionRecord()
+        public ActivityDefinition()
         {
             Type = typeof(T).Name;
         }

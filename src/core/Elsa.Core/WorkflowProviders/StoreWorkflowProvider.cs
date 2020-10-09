@@ -6,6 +6,7 @@ using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services;
 using Elsa.Services.Models;
+using YesSql;
 
 namespace Elsa.WorkflowProviders
 {
@@ -14,31 +15,31 @@ namespace Elsa.WorkflowProviders
     /// </summary>
     public class StoreWorkflowProvider : IWorkflowProvider
     {
-        private readonly IWorkflowDefinitionStore _store;
+        private readonly IWorkflowDefinitionManager _workflowDefinitionManager;
         private readonly IActivityResolver _activityResolver;
 
-        public StoreWorkflowProvider(IWorkflowDefinitionStore store, IActivityResolver activityResolver)
+        public StoreWorkflowProvider(IWorkflowDefinitionManager workflowDefinitionManager,
+            IActivityResolver activityResolver)
         {
-            this._store = store;
-            this._activityResolver = activityResolver;
+            _workflowDefinitionManager = workflowDefinitionManager;
+            _activityResolver = activityResolver;
         }
 
         public async Task<IEnumerable<Workflow>> GetWorkflowsAsync(CancellationToken cancellationToken)
         {
-            var workflowDefinitions = await _store.ListAsync(VersionOptions.All, cancellationToken);
+            var workflowDefinitions = await _workflowDefinitionManager.ListAsync(VersionOptions.All, cancellationToken);
             return workflowDefinitions.Select(CreateWorkflow);
         }
 
-        private Workflow CreateWorkflow(WorkflowDefinitionVersion definition)
+        private Workflow CreateWorkflow(WorkflowDefinition definition)
         {
             var resolvedActivities = definition.Activities.Select(ResolveActivity).ToDictionary(x => x.Id);
 
-            var workflow = new Workflow
-            (
-                definition.DefinitionId,
+            var workflow = new Workflow(
+                definition.WorkflowDefinitionVersionId,
                 definition.Version,
                 definition.IsSingleton,
-                definition.IsDisabled,
+                definition.IsEnabled,
                 definition.Name,
                 definition.Description,
                 definition.IsLatest,
@@ -53,7 +54,8 @@ namespace Elsa.WorkflowProviders
             return workflow;
         }
 
-        private static Connection ResolveConnection(ConnectionDefinition connectionDefinition, IReadOnlyDictionary<string?, IActivity> activityDictionary)
+        private static Connection ResolveConnection(ConnectionDefinition connectionDefinition,
+            IReadOnlyDictionary<string?, IActivity> activityDictionary)
         {
             var source = activityDictionary[connectionDefinition.SourceActivityId];
             var target = activityDictionary[connectionDefinition.TargetActivityId];
@@ -62,6 +64,7 @@ namespace Elsa.WorkflowProviders
             return new Connection(source, target, outcome!);
         }
 
-        private IActivity ResolveActivity(ActivityDefinitionRecord activityDefinitionRecord) => _activityResolver.ResolveActivity(activityDefinitionRecord);
+        private IActivity ResolveActivity(ActivityDefinition activityDefinition) =>
+            _activityResolver.ResolveActivity(activityDefinition);
     }
 }

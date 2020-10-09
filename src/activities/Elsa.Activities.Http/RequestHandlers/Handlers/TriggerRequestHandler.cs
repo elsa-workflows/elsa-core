@@ -91,7 +91,7 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
             }
         }
 
-        private async Task InvokeWorkflowsToResumeAsync(IEnumerable<(WorkflowInstance, ActivityInstanceRecord)> items)
+        private async Task InvokeWorkflowsToResumeAsync(IEnumerable<(WorkflowInstance, ActivityInstance)> items)
         {
             foreach (var (workflowInstance, activity) in items)
             {

@@ -1,14 +1,13 @@
 using System;
 using Elsa.Caching;
 using Elsa.DistributedLock;
-using Elsa.Persistence;
-using Elsa.Persistence.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Rebus.Config;
 using Rebus.DataBus.InMem;
 using Rebus.Persistence.InMem;
 using Rebus.Routing.TypeBased;
 using Rebus.Transport.InMem;
+using YesSql;
 
 namespace Elsa
 {
@@ -18,31 +17,17 @@ namespace Elsa
         {
             Services = services;
 
-            WorkflowDefinitionStoreFactory = sp => sp.GetRequiredService<MemoryWorkflowDefinitionStore>();
-            WorkflowInstanceStoreFactory = sp => sp.GetRequiredService<MemoryWorkflowInstanceStore>();
+            SessionFactory = sp => sp.GetRequiredService<ISession>();
             DistributedLockProviderFactory = sp => new DefaultLockProvider();
             SignalFactory = sp => new Signal();
             ServiceBusConfigurer = ConfigureInMemoryServiceBus;
         }
 
         public IServiceCollection Services { get; }
-        internal Func<IServiceProvider, IWorkflowDefinitionStore> WorkflowDefinitionStoreFactory { get; private set; }
-        internal Func<IServiceProvider, IWorkflowInstanceStore> WorkflowInstanceStoreFactory { get; private set; }
+        internal Func<IServiceProvider, ISession> SessionFactory { get; private set; }
         internal Func<IServiceProvider, IDistributedLockProvider> DistributedLockProviderFactory { get; private set; }
         internal Func<IServiceProvider, ISignal> SignalFactory { get; private set; }
         internal Func<RebusConfigurer, IServiceProvider, RebusConfigurer> ServiceBusConfigurer { get; private set; }
-
-        public ElsaOptions UseWorkflowDefinitionStore(Func<IServiceProvider, IWorkflowDefinitionStore> factory)
-        {
-            WorkflowDefinitionStoreFactory = factory;
-            return this;
-        }
-
-        public ElsaOptions UseWorkflowInstanceStore(Func<IServiceProvider, IWorkflowInstanceStore> factory)
-        {
-            WorkflowInstanceStoreFactory = factory;
-            return this;
-        }
 
         public ElsaOptions UseDistributedLockProvider(Func<IServiceProvider, IDistributedLockProvider> factory)
         {

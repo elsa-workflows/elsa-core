@@ -9,7 +9,7 @@ namespace Elsa.Server.GraphQL.Mapping
     {
         public MappingProfile()
         {
-            CreateMap<ActivityDefinitionInput, ActivityDefinitionRecord>()
+            CreateMap<ActivityDefinitionInput, ActivityDefinition>()
                 .ForMember(d => d.State, d => d.MapFrom<ActivityStateResolver>());
             
             CreateMap<VersionOptionsInput, VersionOptions>().ConvertUsing<VersionOptionsConverter>();

@@ -21,7 +21,7 @@ namespace Elsa.Server.GraphQL
             this._mapper = mapper;
         }
         
-        public async Task<WorkflowDefinitionVersion> SaveWorkflowDefinition(
+        public async Task<WorkflowDefinition> SaveWorkflowDefinition(
             string? id,
             WorkflowSaveAction saveAction,
             WorkflowInput workflowInput,
@@ -35,10 +35,10 @@ namespace Elsa.Server.GraphQL
 
             if (workflowDefinition == null)
             {
-                workflowDefinition = new WorkflowDefinitionVersion
+                workflowDefinition = new WorkflowDefinition
                 {
-                    Id = idGenerator.Generate(),
-                    DefinitionId = idGenerator.Generate(),
+                    WorkflowDefinitionId = idGenerator.Generate(),
+                    WorkflowDefinitionVersionId = idGenerator.Generate(),
                     Version = 1,
                     IsLatest = true
                 };
@@ -87,6 +87,6 @@ namespace Elsa.Server.GraphQL
             return await store.DeleteAsync(id, cancellationToken);
         }
 
-        private ActivityDefinitionRecord ToActivityDefinition(ActivityDefinitionInput source) => _mapper.Map<ActivityDefinitionRecord>(source);
+        private ActivityDefinition ToActivityDefinition(ActivityDefinitionInput source) => _mapper.Map<ActivityDefinition>(source);
     }
 }

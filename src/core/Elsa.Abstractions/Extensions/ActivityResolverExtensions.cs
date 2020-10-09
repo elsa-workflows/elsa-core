@@ -5,14 +5,14 @@ namespace Elsa
 {
     public static class ActivityResolverExtensions
     {
-        public static IActivity ResolveActivity(this IActivityResolver activityResolver, ActivityDefinitionRecord activityDefinitionRecord)
+        public static IActivity ResolveActivity(this IActivityResolver activityResolver, ActivityDefinition activityDefinition)
         {
-            var activity = activityResolver.ResolveActivity(activityDefinitionRecord.Type);
-            activity.Description = activityDefinitionRecord.Description;
-            activity.Id = activityDefinitionRecord.Id;
-            activity.Name = activityDefinitionRecord.Name;
-            activity.DisplayName = activityDefinitionRecord.DisplayName;
-            activity.PersistWorkflow = activityDefinitionRecord.PersistWorkflow;
+            var activity = activityResolver.ResolveActivity(activityDefinition.Type);
+            activity.Description = activityDefinition.Description;
+            activity.Id = activityDefinition.Id;
+            activity.Name = activityDefinition.Name;
+            activity.DisplayName = activityDefinition.DisplayName;
+            activity.PersistWorkflow = activityDefinition.PersistWorkflow;
             return activity;
         }
     }

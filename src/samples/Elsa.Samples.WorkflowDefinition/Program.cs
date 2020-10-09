@@ -33,14 +33,14 @@ namespace Elsa.Samples.WorkflowDefinition
                                             .WithText("Goodbye cruel world...!");
 
             // Create Workflow Definition.
-            var workflowDefinition = new WorkflowDefinitionVersion
+            var workflowDefinition = new Models.WorkflowDefinition
             {
-                DefinitionId = "definition-001",
+                WorkflowDefinitionVersionId = "definition-001",
                 IsPublished = true,
-                Activities = new List<ActivityDefinitionRecord>
+                Activities = new List<ActivityDefinition>
                 {
-                    ActivityDefinitionRecord.FromActivity(activity1),
-                    ActivityDefinitionRecord.FromActivity(activity2)
+                    ActivityDefinition.FromActivity(activity1),
+                    ActivityDefinition.FromActivity(activity2)
                 },
                 Connections = new[]
                 {
@@ -49,8 +49,8 @@ namespace Elsa.Samples.WorkflowDefinition
             };
 
             // Register it.
-            var workflowDefinitionStore = services.GetService<IWorkflowDefinitionStore>();
-            await workflowDefinitionStore.AddAsync(workflowDefinition);
+            //var workflowDefinitionStore = services.GetService<IWorkflowDefinitionStore>();
+            //await workflowDefinitionStore.AddAsync(workflowDefinition);
 
             // Run it.
             var invoker = services.GetService<IWorkflowHost>();

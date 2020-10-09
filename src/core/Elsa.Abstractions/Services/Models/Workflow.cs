@@ -17,7 +17,7 @@ namespace Elsa.Services.Models
             string definitionId,
             int version,
             bool isSingleton,
-            bool isDisabled,
+            bool isEnabled,
             string? name,
             string? description,
             bool isLatest,
@@ -31,7 +31,7 @@ namespace Elsa.Services.Models
             DefinitionId = definitionId;
             Version = version;
             IsSingleton = isSingleton;
-            IsDisabled = isDisabled;
+            IsEnabled = isEnabled;
             IsLatest = isLatest;
             IsPublished = isPublished;
             Name = name;
@@ -46,7 +46,7 @@ namespace Elsa.Services.Models
         public string DefinitionId { get; set; } = default!;
         public int Version { get; set; }
         public bool IsSingleton { get; set; }
-        public bool IsDisabled { get; set; }
+        public bool IsEnabled { get; set; }
         public string? Name { get; set; }
         public string? Description { get; set; }
         public bool IsPublished { get; set; }
