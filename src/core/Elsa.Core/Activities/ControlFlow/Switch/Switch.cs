@@ -30,12 +30,12 @@ namespace Elsa.Activities.ControlFlow
         [ActivityProperty(Hint = "The value to evaluate. The evaluated value will be used to switch on.")]
         public string Value { get; set; }
 
-        private HashSet<string> cases;
+        private HashSet<string> _cases;
         [ActivityProperty(Hint = "A comma-separated list of possible outcomes of the expression.")]
         public HashSet<string> Cases
         {
-            get => cases;
-            set => cases = new HashSet<string>(value, StringComparer.OrdinalIgnoreCase);
+            get => _cases;
+            set => _cases = new HashSet<string>(value, StringComparer.OrdinalIgnoreCase);
         }
 
         protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)

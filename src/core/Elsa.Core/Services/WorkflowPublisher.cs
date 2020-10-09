@@ -8,26 +8,26 @@ namespace Elsa.Services
 {
     public class WorkflowPublisher : IWorkflowPublisher
     {
-        private readonly IWorkflowDefinitionStore store;
-        private readonly IIdGenerator idGenerator;
-        private readonly IMapper mapper;
+        private readonly IWorkflowDefinitionStore _store;
+        private readonly IIdGenerator _idGenerator;
+        private readonly IMapper _mapper;
 
         public WorkflowPublisher(
             IWorkflowDefinitionStore store,
             IIdGenerator idGenerator,
             IMapper mapper)
         {
-            this.store = store;
-            this.idGenerator = idGenerator;
-            this.mapper = mapper;
+            this._store = store;
+            this._idGenerator = idGenerator;
+            this._mapper = mapper;
         }
 
         public WorkflowDefinitionVersion New()
         {
             var definition = new WorkflowDefinitionVersion
             {
-                Id = idGenerator.Generate(),
-                DefinitionId = idGenerator.Generate(),
+                Id = _idGenerator.Generate(),
+                DefinitionId = _idGenerator.Generate(),
                 Name = "New Workflow",
                 Version = 1,
                 IsLatest = true,
@@ -43,7 +43,7 @@ namespace Elsa.Services
             string id,
             CancellationToken cancellationToken)
         {
-            var definition = await store.GetByIdAsync(id, VersionOptions.Latest, cancellationToken);
+            var definition = await _store.GetByIdAsync(id, VersionOptions.Latest, cancellationToken);
 
             if (definition == null)
                 return null;
@@ -55,9 +55,9 @@ namespace Elsa.Services
             WorkflowDefinitionVersion workflowDefinition,
             CancellationToken cancellationToken)
         {
-            var definition = mapper.Map<WorkflowDefinitionVersion>(workflowDefinition);
+            var definition = _mapper.Map<WorkflowDefinitionVersion>(workflowDefinition);
 
-            var publishedDefinition = await store.GetByIdAsync(
+            var publishedDefinition = await _store.GetByIdAsync(
                 definition.DefinitionId,
                 VersionOptions.Published,
                 cancellationToken);
@@ -66,12 +66,12 @@ namespace Elsa.Services
             {
                 publishedDefinition.IsPublished = false;
                 publishedDefinition.IsLatest = false;
-                await store.UpdateAsync(publishedDefinition, cancellationToken);
+                await _store.UpdateAsync(publishedDefinition, cancellationToken);
             }
 
             if (definition.IsPublished)
             {
-                definition.Id = idGenerator.Generate();
+                definition.Id = _idGenerator.Generate();
                 definition.Version++;
             }
             else
@@ -82,7 +82,7 @@ namespace Elsa.Services
             definition.IsLatest = true;
             definition = Initialize(definition);
             
-            await store.SaveAsync(definition, cancellationToken);
+            await _store.SaveAsync(definition, cancellationToken);
 
             return definition;
         }
@@ -91,7 +91,7 @@ namespace Elsa.Services
             string id,
             CancellationToken cancellationToken)
         {
-            var definition = await store.GetByIdAsync(id, VersionOptions.Latest, cancellationToken);
+            var definition = await _store.GetByIdAsync(id, VersionOptions.Latest, cancellationToken);
 
             if (definition == null)
                 return null;
@@ -99,8 +99,8 @@ namespace Elsa.Services
             if (!definition.IsPublished)
                 return definition;
 
-            var draft = mapper.Map<WorkflowDefinitionVersion>(definition);
-            draft.Id = idGenerator.Generate();
+            var draft = _mapper.Map<WorkflowDefinitionVersion>(definition);
+            draft.Id = _idGenerator.Generate();
             draft.IsPublished = false;
             draft.IsLatest = true;
             draft.Version++;
@@ -112,9 +112,9 @@ namespace Elsa.Services
             WorkflowDefinitionVersion workflowDefinition,
             CancellationToken cancellationToken)
         {
-            var draft = mapper.Map<WorkflowDefinitionVersion>(workflowDefinition);
+            var draft = _mapper.Map<WorkflowDefinitionVersion>(workflowDefinition);
             
-            var latestVersion = await store.GetByIdAsync(
+            var latestVersion = await _store.GetByIdAsync(
                 workflowDefinition.DefinitionId,
                 VersionOptions.Latest,
                 cancellationToken);
@@ -122,17 +122,17 @@ namespace Elsa.Services
             if (latestVersion != null && latestVersion.IsPublished && latestVersion.IsLatest)
             {
                 latestVersion.IsLatest = false;
-                draft.Id = idGenerator.Generate();
+                draft.Id = _idGenerator.Generate();
                 draft.Version++;
                 
-                await store.UpdateAsync(latestVersion, cancellationToken);
+                await _store.UpdateAsync(latestVersion, cancellationToken);
             }
    
             draft.IsLatest = true;
             draft.IsPublished = false;
             draft = Initialize(draft);
             
-            await store.SaveAsync(draft, cancellationToken);
+            await _store.SaveAsync(draft, cancellationToken);
 
             return draft;
         }
@@ -140,13 +140,13 @@ namespace Elsa.Services
         private WorkflowDefinitionVersion Initialize(WorkflowDefinitionVersion workflowDefinition)
         {
             if (workflowDefinition.Id == null)
-                workflowDefinition.Id = idGenerator.Generate();
+                workflowDefinition.Id = _idGenerator.Generate();
 
             if (workflowDefinition.Version == 0)
                 workflowDefinition.Version = 1;
 
             if (workflowDefinition.DefinitionId == null)
-                workflowDefinition.DefinitionId = idGenerator.Generate();
+                workflowDefinition.DefinitionId = _idGenerator.Generate();
 
             return workflowDefinition;
         }

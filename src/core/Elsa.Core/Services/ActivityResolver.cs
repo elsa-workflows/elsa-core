@@ -7,13 +7,13 @@ namespace Elsa.Services
 {
     public class ActivityResolver : IActivityResolver
     {
-        private readonly IServiceProvider serviceProvider;
-        private readonly Lazy<IDictionary<string, Type>> lazyActivityTypeLookup;
+        private readonly IServiceProvider _serviceProvider;
+        private readonly Lazy<IDictionary<string, Type>> _lazyActivityTypeLookup;
 
         public ActivityResolver(IServiceProvider serviceProvider, Func<IEnumerable<IActivity>> activitiesFunc)
         {
-            this.serviceProvider = serviceProvider;
-            lazyActivityTypeLookup = new Lazy<IDictionary<string, Type>>(
+            this._serviceProvider = serviceProvider;
+            _lazyActivityTypeLookup = new Lazy<IDictionary<string, Type>>(
                 () =>
                 {
                     var activities = activitiesFunc();
@@ -21,7 +21,7 @@ namespace Elsa.Services
                 });
         }
 
-        private IDictionary<string, Type> ActivityTypeLookup => lazyActivityTypeLookup.Value;
+        private IDictionary<string, Type> ActivityTypeLookup => _lazyActivityTypeLookup.Value;
 
         public Type ResolveActivityType(string activityTypeName)
         {
@@ -41,7 +41,7 @@ namespace Elsa.Services
         public IActivity ResolveActivity(string activityTypeName, Action<IActivity>? setup = null)
         {
             var activityType = ResolveActivityType(activityTypeName);
-            var activity = (IActivity)ActivatorUtilities.GetServiceOrCreateInstance(serviceProvider, activityType);
+            var activity = (IActivity)ActivatorUtilities.GetServiceOrCreateInstance(_serviceProvider, activityType);
 
             setup?.Invoke(activity);
             return activity;
@@ -49,7 +49,7 @@ namespace Elsa.Services
 
         public T ResolveActivity<T>(Action<T>? setup = null) where T : class, IActivity
         {
-            var activity = ActivatorUtilities.GetServiceOrCreateInstance<T>(serviceProvider);
+            var activity = ActivatorUtilities.GetServiceOrCreateInstance<T>(_serviceProvider);
             setup?.Invoke(activity);
             return activity;
         }

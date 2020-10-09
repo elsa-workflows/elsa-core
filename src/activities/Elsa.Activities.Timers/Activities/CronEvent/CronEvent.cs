@@ -17,11 +17,11 @@ namespace Elsa.Activities.Timers
     )]
     public class CronEvent : Activity
     {
-        private readonly IClock clock;
+        private readonly IClock _clock;
 
         public CronEvent(IClock clock)
         {
-            this.clock = clock;
+            this._clock = clock;
         }
 
         [ActivityProperty(Hint = "Specify a CRON expression. See https://crontab.guru/ for help.")]
@@ -46,7 +46,7 @@ namespace Elsa.Activities.Timers
         private bool IsExpired()
         {
             var schedule = CrontabSchedule.Parse(CronExpression);
-            var now = clock.GetCurrentInstant();
+            var now = _clock.GetCurrentInstant();
 
             if (StartTime == null)
                 StartTime = now;

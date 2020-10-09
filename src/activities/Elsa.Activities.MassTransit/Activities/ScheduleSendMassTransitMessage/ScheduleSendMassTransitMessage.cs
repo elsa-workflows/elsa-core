@@ -21,14 +21,14 @@ namespace Elsa.Activities.MassTransit
     )]
     public class ScheduleSendMassTransitMessage : MassTransitBusActivity
     {
-        private readonly MessageScheduleOptions options;
+        private readonly MessageScheduleOptions _options;
 
         public ScheduleSendMassTransitMessage(IBus bus,
             ConsumeContext consumeContext,
             IOptions<MessageScheduleOptions> options)
             : base(bus, consumeContext)
         {
-            this.options = options.Value;
+            this._options = options.Value;
         }
 
         [ActivityProperty(Hint = "An expression that evaluates to the message to be delivered.")]
@@ -41,12 +41,12 @@ namespace Elsa.Activities.MassTransit
         public Instant ScheduledTime { get; set; }
 
         protected override bool OnCanExecute(ActivityExecutionContext context) =>
-            Message != null && options.SchedulerAddress != null;
+            Message != null && _options.SchedulerAddress != null;
 
         protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context,
             CancellationToken cancellationToken)
         {
-            var endpoint = await SendEndpointProvider.GetSendEndpoint(options.SchedulerAddress);
+            var endpoint = await SendEndpointProvider.GetSendEndpoint(_options.SchedulerAddress);
             var scheduledMessage = await endpoint.ScheduleRecurringSend(
                 EndpointAddress,
                 new InstantRecurringSchedule(ScheduledTime), 

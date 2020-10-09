@@ -8,25 +8,25 @@ namespace Elsa.Activities.Http.Services
 {
     public class DefaultAbsoluteUrlProvider : IAbsoluteUrlProvider
     {
-        private readonly IHttpContextAccessor httpContextAccessor;
-        private readonly IOptions<HttpActivityOptions> options;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IOptions<HttpActivityOptions> _options;
 
         public DefaultAbsoluteUrlProvider(
             IHttpContextAccessor httpContextAccessor,
             IOptions<HttpActivityOptions> options)
         {
-            this.httpContextAccessor = httpContextAccessor;
-            this.options = options;
+            this._httpContextAccessor = httpContextAccessor;
+            this._options = options;
         }
 
         public Uri ToAbsoluteUrl(string relativePath)
         {
-            var httpContext = httpContextAccessor.HttpContext;
+            var httpContext = _httpContextAccessor.HttpContext;
 
             if (httpContext != null)
                 return httpContext.Request.ToAbsoluteUrl(relativePath);
 
-            var baseUrl = options.Value.BaseUrl;
+            var baseUrl = _options.Value.BaseUrl;
             return new Uri(baseUrl, relativePath);
         }
     }

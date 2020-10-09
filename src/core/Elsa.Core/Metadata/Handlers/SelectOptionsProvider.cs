@@ -9,11 +9,11 @@ namespace Elsa.Metadata.Handlers
 {
     public class SelectOptionsProvider : IActivityPropertyOptionsProvider
     {
-        private readonly JsonSerializer serializer;
+        private readonly JsonSerializer _serializer;
 
         public SelectOptionsProvider(ITokenSerializerProvider serializerProvider)
         {
-            serializer = serializerProvider.CreateJsonSerializer();
+            _serializer = serializerProvider.CreateJsonSerializer();
         }
         
         public bool SupportsProperty(PropertyInfo property) => property.GetCustomAttribute<SelectOptionsAttribute>() != null || property.PropertyType.IsEnum;
@@ -23,12 +23,12 @@ namespace Elsa.Metadata.Handlers
             var attr = property.GetCustomAttribute<SelectOptionsAttribute>();
             
             if(attr != null)
-                options["Items"] = JToken.FromObject(attr.GetOptions(), serializer);
+                options["Items"] = JToken.FromObject(attr.GetOptions(), _serializer);
             else
             {
                 var enumValues = property.PropertyType.GetEnumNames().OrderBy(x => x);
                 var items = enumValues.Select(x => new SelectOption(x)).ToList();
-                options["Items"] = JToken.FromObject(items, serializer);
+                options["Items"] = JToken.FromObject(items, _serializer);
             }
         }
     }

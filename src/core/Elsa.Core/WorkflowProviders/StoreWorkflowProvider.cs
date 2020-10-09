@@ -14,18 +14,18 @@ namespace Elsa.WorkflowProviders
     /// </summary>
     public class StoreWorkflowProvider : IWorkflowProvider
     {
-        private readonly IWorkflowDefinitionStore store;
-        private readonly IActivityResolver activityResolver;
+        private readonly IWorkflowDefinitionStore _store;
+        private readonly IActivityResolver _activityResolver;
 
         public StoreWorkflowProvider(IWorkflowDefinitionStore store, IActivityResolver activityResolver)
         {
-            this.store = store;
-            this.activityResolver = activityResolver;
+            this._store = store;
+            this._activityResolver = activityResolver;
         }
 
         public async Task<IEnumerable<Workflow>> GetWorkflowsAsync(CancellationToken cancellationToken)
         {
-            var workflowDefinitions = await store.ListAsync(VersionOptions.All, cancellationToken);
+            var workflowDefinitions = await _store.ListAsync(VersionOptions.All, cancellationToken);
             return workflowDefinitions.Select(CreateWorkflow);
         }
 
@@ -62,6 +62,6 @@ namespace Elsa.WorkflowProviders
             return new Connection(source, target, outcome!);
         }
 
-        private IActivity ResolveActivity(ActivityDefinitionRecord activityDefinitionRecord) => activityResolver.ResolveActivity(activityDefinitionRecord);
+        private IActivity ResolveActivity(ActivityDefinitionRecord activityDefinitionRecord) => _activityResolver.ResolveActivity(activityDefinitionRecord);
     }
 }

@@ -18,11 +18,11 @@ namespace Elsa.Activities.MassTransit.Consumers
                 new PropertyCorrelationIdSelector<T>("CommandId")
             };
 
-        private readonly IWorkflowScheduler workflowScheduler;
+        private readonly IWorkflowScheduler _workflowScheduler;
 
         public WorkflowConsumer(IWorkflowScheduler workflowScheduler)
         {
-            this.workflowScheduler = workflowScheduler;
+            this._workflowScheduler = workflowScheduler;
         }
 
         public async Task Consume(ConsumeContext<T> context)
@@ -34,7 +34,7 @@ namespace Elsa.Activities.MassTransit.Consumers
                 if (item.TryGetCorrelationId(message, out correlationId))
                     break;
 
-            await workflowScheduler.TriggerWorkflowsAsync<ReceiveMassTransitMessage>(
+            await _workflowScheduler.TriggerWorkflowsAsync<ReceiveMassTransitMessage>(
                 message,
                 correlationId?.ToString(),
                 x => x.MessageType == message.GetType(),

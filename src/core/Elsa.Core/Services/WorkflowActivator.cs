@@ -8,15 +8,15 @@ namespace Elsa.Services
 {
     public class WorkflowActivator : IWorkflowActivator
     {
-        private readonly IWorkflowRegistry workflowRegistry;
-        private readonly IClock clock;
-        private readonly IIdGenerator idGenerator;
+        private readonly IWorkflowRegistry _workflowRegistry;
+        private readonly IClock _clock;
+        private readonly IIdGenerator _idGenerator;
 
         public WorkflowActivator(IWorkflowRegistry workflowRegistry, IClock clock, IIdGenerator idGenerator)
         {
-            this.workflowRegistry = workflowRegistry;
-            this.clock = clock;
-            this.idGenerator = idGenerator;
+            this._workflowRegistry = workflowRegistry;
+            this._clock = clock;
+            this._idGenerator = idGenerator;
         }
 
         public async Task<WorkflowInstance> ActivateAsync(
@@ -24,7 +24,7 @@ namespace Elsa.Services
             string? correlationId = default,
             CancellationToken cancellationToken = default)
         {
-            var workflow = await workflowRegistry.GetWorkflowAsync(
+            var workflow = await _workflowRegistry.GetWorkflowAsync(
                 definitionId,
                 VersionOptions.Published,
                 cancellationToken);
@@ -38,11 +38,11 @@ namespace Elsa.Services
         {
             var workflowInstance = new WorkflowInstance
             {
-                Id = idGenerator.Generate(),
+                Id = _idGenerator.Generate(),
                 Status = WorkflowStatus.Idle,
                 Version = workflow.Version,
                 CorrelationId = correlationId,
-                CreatedAt = clock.GetCurrentInstant(),
+                CreatedAt = _clock.GetCurrentInstant(),
                 DefinitionId = workflow.DefinitionId
             };
 

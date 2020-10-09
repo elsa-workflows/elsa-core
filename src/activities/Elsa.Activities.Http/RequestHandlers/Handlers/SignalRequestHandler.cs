@@ -13,12 +13,12 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
 {
     public class SignalRequestHandler : IRequestHandler
     {
-        private readonly HttpContext httpContext;
-        private readonly ITokenService tokenService;
-        private readonly IWorkflowHost workflowHost;
-        private readonly IWorkflowRegistry workflowRegistry;
-        private readonly IWorkflowInstanceStore workflowInstanceStore;
-        private readonly CancellationToken cancellationToken;
+        private readonly HttpContext _httpContext;
+        private readonly ITokenService _tokenService;
+        private readonly IWorkflowHost _workflowHost;
+        private readonly IWorkflowRegistry _workflowRegistry;
+        private readonly IWorkflowInstanceStore _workflowInstanceStore;
+        private readonly CancellationToken _cancellationToken;
 
         public SignalRequestHandler(
             IHttpContextAccessor httpContextAccessor,
@@ -27,12 +27,12 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
             IWorkflowRegistry workflowRegistry,
             IWorkflowInstanceStore workflowInstanceStore)
         {
-            httpContext = httpContextAccessor.HttpContext;
-            this.tokenService = tokenService;
-            this.workflowHost = workflowHost;
-            this.workflowRegistry = workflowRegistry;
-            this.workflowInstanceStore = workflowInstanceStore;
-            cancellationToken = httpContext.RequestAborted;
+            _httpContext = httpContextAccessor.HttpContext;
+            this._tokenService = tokenService;
+            this._workflowHost = workflowHost;
+            this._workflowRegistry = workflowRegistry;
+            this._workflowInstanceStore = workflowInstanceStore;
+            _cancellationToken = _httpContext.RequestAborted;
         }
 
         public async Task<IRequestHandlerResult> HandleRequestAsync()
@@ -57,13 +57,13 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
 
         private Signal? DecryptToken()
         {
-            var token = httpContext.Request.Query["token"];
+            var token = _httpContext.Request.Query["token"];
 
-            return tokenService.TryDecryptToken(token, out Signal signal) ? signal : default;
+            return _tokenService.TryDecryptToken(token, out Signal signal) ? signal : default;
         }
 
         private async Task<WorkflowInstance?> GetWorkflowInstanceAsync(Signal signal) => 
-            await workflowInstanceStore.GetByIdAsync(signal.WorkflowInstanceId, cancellationToken);
+            await _workflowInstanceStore.GetByIdAsync(signal.WorkflowInstanceId, _cancellationToken);
 
         private bool CheckIfExecuting(WorkflowInstance workflowInstance) => 
             workflowInstance.Status == WorkflowStatus.Running;
@@ -72,10 +72,10 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
         {
             var input = signal.Name;
 
-            var workflowDefinition = await workflowRegistry.GetWorkflowAsync(
+            var workflowDefinition = await _workflowRegistry.GetWorkflowAsync(
                 workflowInstanceModel.DefinitionId,
                 VersionOptions.SpecificVersion(workflowInstanceModel.Version),
-                cancellationToken);
+                _cancellationToken);
 
             //var processInstance = processFactory.CreateProcessInstance(workflowDefinition, input, processInstanceModel);
             //var blockingSignalActivities = processInstance.BlockingActivities.ToList();

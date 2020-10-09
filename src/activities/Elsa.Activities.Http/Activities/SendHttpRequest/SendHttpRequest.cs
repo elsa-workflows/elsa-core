@@ -31,15 +31,15 @@ namespace Elsa.Activities.Http
     )]
     public class SendHttpRequest : Activity
     {
-        private readonly HttpClient httpClient;
-        private readonly IEnumerable<IHttpResponseBodyParser> parsers;
+        private readonly HttpClient _httpClient;
+        private readonly IEnumerable<IHttpResponseBodyParser> _parsers;
 
         public SendHttpRequest(
             IHttpClientFactory httpClientFactory,
             IEnumerable<IHttpResponseBodyParser> parsers)
         {
-            httpClient = httpClientFactory.CreateClient(nameof(SendHttpRequest));
-            this.parsers = parsers;
+            _httpClient = httpClientFactory.CreateClient(nameof(SendHttpRequest));
+            this._parsers = parsers;
         }
 
         /// <summary>
@@ -102,7 +102,7 @@ namespace Elsa.Activities.Http
             CancellationToken cancellationToken)
         {
             var request = await CreateRequestAsync(context, cancellationToken);
-            var response = await httpClient.SendAsync(request, cancellationToken);
+            var response = await _httpClient.SendAsync(request, cancellationToken);
             var hasContent = response.Content != null;
             var contentType = response.Content?.Headers.ContentType.MediaType;
 
@@ -134,7 +134,7 @@ namespace Elsa.Activities.Http
 
         private IHttpResponseBodyParser SelectContentParser(string contentType)
         {
-            var formatters = parsers.OrderByDescending(x => x.Priority).ToList();
+            var formatters = _parsers.OrderByDescending(x => x.Priority).ToList();
             return formatters.FirstOrDefault(
                 x => x.SupportedContentTypes.Contains(contentType, StringComparer.OrdinalIgnoreCase)
             ) ?? formatters.Last();

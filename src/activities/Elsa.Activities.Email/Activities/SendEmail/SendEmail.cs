@@ -16,13 +16,13 @@ namespace Elsa.Activities.Email
     [ActivityDefinition(Category = "Email", Description = "Send an email message.")]
     public class SendEmail : Activity
     {
-        private readonly ISmtpService smtpService;
-        private readonly IOptions<SmtpOptions> options;
+        private readonly ISmtpService _smtpService;
+        private readonly IOptions<SmtpOptions> _options;
 
         public SendEmail(ISmtpService smtpService, IOptions<SmtpOptions> options)
         {
-            this.smtpService = smtpService;
-            this.options = options;
+            this._smtpService = smtpService;
+            this._options = options;
         }
 
         [ActivityProperty(Hint = "The sender's email address.")]
@@ -51,7 +51,7 @@ namespace Elsa.Activities.Email
             };
 
             message.To.Add(MailboxAddress.Parse(To));
-            await smtpService.SendAsync(message, cancellationToken);
+            await _smtpService.SendAsync(message, cancellationToken);
 
             return Done();
         }

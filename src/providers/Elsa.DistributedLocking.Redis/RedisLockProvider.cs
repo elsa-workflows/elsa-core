@@ -14,7 +14,7 @@ namespace Elsa.DistributedLocking.Redis
         private readonly ILogger _logger;
         private readonly TimeSpan _lockTimeout;
         private readonly IDistributedLockFactory _distributedLockFactory;
-        private readonly List<IRedLock> RedLockInstance = new List<IRedLock>();
+        private readonly List<IRedLock> _redLockInstance = new List<IRedLock>();
 
         public RedisLockProvider(IDistributedLockFactory distributedLockFactory, TimeSpan lockTimeout, ILogger<RedisLockProvider> logger)
         {
@@ -46,9 +46,9 @@ namespace Elsa.DistributedLocking.Redis
                 if (redLock.IsAcquired)
                 {
                     
-                    lock (RedLockInstance)
+                    lock (_redLockInstance)
                     {
-                        RedLockInstance.Add(redLock);
+                        _redLockInstance.Add(redLock);
                     }
                     _logger.LogInformation("Lock provider acquired lock for {resourceName}",resourceName);
 
@@ -75,14 +75,14 @@ namespace Elsa.DistributedLocking.Redis
                 
             try
             {
-                lock (RedLockInstance)
+                lock (_redLockInstance)
                 {
-                    foreach (var redLock in RedLockInstance)
+                    foreach (var redLock in _redLockInstance)
                     {
                         if (redLock.Resource == $"{Prefix}:{name}")
                         {
                             redLock.Dispose();
-                            RedLockInstance.Remove(redLock);
+                            _redLockInstance.Remove(redLock);
                             _logger.LogInformation("Lock provider released lock for {resourceName}",resourceName);
 
                             break;

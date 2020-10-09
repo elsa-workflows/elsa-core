@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Elsa.Persistence.Core.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -20,7 +21,7 @@ namespace Elsa.Samples.Timers
                 {
                     services
                         .AddElsa(options =>
-                            options.UseMongoDbWorkflowStores("Elsa_Samples_Timers", "mongodb://localhost"))
+                            options.UsePersistence(_ => { }))
                         .AddTimerActivities(options =>
                             options.Configure(timer => timer.SweepInterval = Duration.FromSeconds(5)))
                         .AddWorkflow<RecurringTaskWorkflow>();

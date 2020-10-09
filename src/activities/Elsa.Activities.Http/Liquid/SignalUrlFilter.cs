@@ -11,13 +11,13 @@ namespace Elsa.Activities.Http.Liquid
 {
     public class SignalUrlFilter : ILiquidFilter
     {
-        private readonly ITokenService tokenService;
-        private readonly IAbsoluteUrlProvider absoluteUrlProvider;
+        private readonly ITokenService _tokenService;
+        private readonly IAbsoluteUrlProvider _absoluteUrlProvider;
 
         public SignalUrlFilter(ITokenService tokenService, IAbsoluteUrlProvider absoluteUrlProvider)
         {
-            this.tokenService = tokenService;
-            this.absoluteUrlProvider = absoluteUrlProvider;
+            this._tokenService = tokenService;
+            this._absoluteUrlProvider = absoluteUrlProvider;
         }
 
         public ValueTask<FluidValue> ProcessAsync(FluidValue input, FilterArguments arguments, TemplateContext context)
@@ -37,10 +37,10 @@ namespace Elsa.Activities.Http.Liquid
         {
             var workflowInstanceId = workflowExecutionContext.InstanceId;
             var payload = new Signal(signal, workflowInstanceId);
-            var token = tokenService.CreateToken(payload);
+            var token = _tokenService.CreateToken(payload);
             var url = $"/workflows/signal?token={token}";
 
-            return absoluteUrlProvider.ToAbsoluteUrl(url).ToString();
+            return _absoluteUrlProvider.ToAbsoluteUrl(url).ToString();
         }
     }
 }

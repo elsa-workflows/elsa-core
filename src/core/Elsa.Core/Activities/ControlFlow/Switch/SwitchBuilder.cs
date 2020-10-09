@@ -5,19 +5,19 @@ namespace Elsa.Activities.ControlFlow
 {
     public class SwitchBuilder
     {
-        private readonly IActivityBuilder activityBuilder;
-        private readonly Switch @switch;
+        private readonly IActivityBuilder _activityBuilder;
+        private readonly Switch _switch;
         
         public SwitchBuilder(IActivityBuilder activityBuilder)
         {
-            this.activityBuilder = activityBuilder;
-            @switch = (Switch)activityBuilder.Activity;
+            this._activityBuilder = activityBuilder;
+            _switch = (Switch)activityBuilder.Activity;
         }
 
         public IOutcomeBuilder When(string @case)
         {
-            @switch.Cases.Add(@case);
-            return activityBuilder.When(@case);
+            _switch.Cases.Add(@case);
+            return _activityBuilder.When(@case);
         }
     }
 }

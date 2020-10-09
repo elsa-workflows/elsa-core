@@ -20,7 +20,7 @@ namespace Elsa.Activities.UserTask.Activities
     )]
     public class UserTask : Activity
     {
-        private readonly ITokenSerializer serializer;
+        private readonly ITokenSerializer _serializer;
 
         [ActivityProperty(
             Type = ActivityPropertyTypes.List,
@@ -30,7 +30,7 @@ namespace Elsa.Activities.UserTask.Activities
 
         public UserTask(ITokenSerializer serializer)
         {
-            this.serializer = serializer;
+            this._serializer = serializer;
         }
 
         protected override bool OnCanExecute(ActivityExecutionContext context)

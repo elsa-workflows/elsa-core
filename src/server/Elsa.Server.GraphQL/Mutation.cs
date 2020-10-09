@@ -14,11 +14,11 @@ namespace Elsa.Server.GraphQL
 {
     public class Mutation
     {
-        private readonly IMapper mapper;
+        private readonly IMapper _mapper;
 
         public Mutation(IMapper mapper)
         {
-            this.mapper = mapper;
+            this._mapper = mapper;
         }
         
         public async Task<WorkflowDefinitionVersion> SaveWorkflowDefinition(
@@ -87,6 +87,6 @@ namespace Elsa.Server.GraphQL
             return await store.DeleteAsync(id, cancellationToken);
         }
 
-        private ActivityDefinitionRecord ToActivityDefinition(ActivityDefinitionInput source) => mapper.Map<ActivityDefinitionRecord>(source);
+        private ActivityDefinitionRecord ToActivityDefinition(ActivityDefinitionInput source) => _mapper.Map<ActivityDefinitionRecord>(source);
     }
 }

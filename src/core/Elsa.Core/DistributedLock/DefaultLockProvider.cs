@@ -10,16 +10,16 @@ namespace Elsa.DistributedLock
     /// </summary>
     public class DefaultLockProvider : IDistributedLockProvider
     {
-        private readonly HashSet<string> locks = new HashSet<string>();
+        private readonly HashSet<string> _locks = new HashSet<string>();
 
         public Task<bool> AcquireLockAsync(string name, CancellationToken cancellationToken = default)
         {
-            lock (locks)
+            lock (_locks)
             {
-                if (locks.Contains(name))
+                if (_locks.Contains(name))
                     return Task.FromResult(false);
 
-                locks.Add(name);
+                _locks.Add(name);
 
                 return Task.FromResult(true);
             }
@@ -27,8 +27,8 @@ namespace Elsa.DistributedLock
 
         public Task ReleaseLockAsync(string name, CancellationToken cancellationToken = default)
         {
-            lock (locks)
-                locks.Remove(name);
+            lock (_locks)
+                _locks.Remove(name);
 
             return Task.CompletedTask;
         }

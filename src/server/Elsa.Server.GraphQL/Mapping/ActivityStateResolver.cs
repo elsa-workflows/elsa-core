@@ -8,19 +8,19 @@ namespace Elsa.Server.GraphQL.Mapping
 {
     public class ActivityStateResolver : IValueResolver<ActivityDefinitionInput, ActivityDefinitionRecord, Variables?>
     {
-        private readonly ITokenSerializer serializer;
-        private readonly IActivityResolver activityResolver;
+        private readonly ITokenSerializer _serializer;
+        private readonly IActivityResolver _activityResolver;
 
         public ActivityStateResolver(ITokenSerializer serializer, IActivityResolver activityResolver)
         {
-            this.serializer = serializer;
-            this.activityResolver = activityResolver;
+            this._serializer = serializer;
+            this._activityResolver = activityResolver;
         }
 
         public Variables? Resolve(ActivityDefinitionInput source, ActivityDefinitionRecord destination, Variables? destMember, ResolutionContext context)
         {
             var json = source.State;
-            var variables = json != null ? serializer.Deserialize<Variables>(json) : null;
+            var variables = json != null ? _serializer.Deserialize<Variables>(json) : null;
 
             return variables;
         }

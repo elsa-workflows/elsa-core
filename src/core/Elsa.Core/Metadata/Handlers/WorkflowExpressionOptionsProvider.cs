@@ -8,11 +8,11 @@ namespace Elsa.Metadata.Handlers
 {
     public class WorkflowExpressionOptionsProvider : IActivityPropertyOptionsProvider
     {
-        private readonly ITypeMap typeMap;
+        private readonly ITypeMap _typeMap;
 
         public WorkflowExpressionOptionsProvider(ITypeMap typeMap)
         {
-            this.typeMap = typeMap;
+            this._typeMap = typeMap;
         }
         
         public bool SupportsProperty(PropertyInfo property) => typeof(IWorkflowExpression).IsAssignableFrom(property.PropertyType);
@@ -20,7 +20,7 @@ namespace Elsa.Metadata.Handlers
         public void SupplyOptions(PropertyInfo property, JObject options)
         {
             var returnType = property.PropertyType.GetGenericArguments().FirstOrDefault() ?? typeof(object);
-            var alias = typeMap.GetAlias(returnType);
+            var alias = _typeMap.GetAlias(returnType);
 
             options["ReturnType"] = JToken.FromObject(alias);
         }

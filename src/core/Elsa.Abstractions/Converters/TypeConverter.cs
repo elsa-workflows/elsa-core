@@ -6,11 +6,11 @@ namespace Elsa.Converters
 {
     public class TypeConverter : JsonConverter<Type>
     {
-        private readonly ITypeMap typeMap;
+        private readonly ITypeMap _typeMap;
 
         public TypeConverter(ITypeMap typeMap)
         {
-            this.typeMap = typeMap;
+            this._typeMap = typeMap;
         }
         
         public override bool CanRead => true;
@@ -18,14 +18,14 @@ namespace Elsa.Converters
 
         public override void WriteJson(JsonWriter writer, Type value, JsonSerializer serializer)
         {
-            var typeName = typeMap.GetAlias(value);
+            var typeName = _typeMap.GetAlias(value);
             serializer.Serialize(writer, typeName);
         }
 
         public override Type ReadJson(JsonReader reader, Type objectType, Type existingValue, bool hasExistingValue, JsonSerializer serializer)
         {
             var typeName = serializer.Deserialize<string>(reader);
-            return typeMap.GetType(typeName);
+            return _typeMap.GetType(typeName);
         }
     }
 }

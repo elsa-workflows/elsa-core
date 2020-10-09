@@ -17,11 +17,11 @@ namespace Elsa.Activities.ControlFlow
     )]
     public class While : Activity
     {
-        private readonly IExpressionEvaluator expressionEvaluator;
+        private readonly IExpressionEvaluator _expressionEvaluator;
 
         public While(IExpressionEvaluator expressionEvaluator)
         {
-            this.expressionEvaluator = expressionEvaluator;
+            this._expressionEvaluator = expressionEvaluator;
         }
         
         [ActivityProperty(Hint = "Enter an expression that evaluates to a boolean value.")]
@@ -29,7 +29,7 @@ namespace Elsa.Activities.ControlFlow
 
         protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var loop = await expressionEvaluator.EvaluateAsync(Condition, context, cancellationToken);
+            var loop = await _expressionEvaluator.EvaluateAsync(Condition, context, cancellationToken);
 
             if (loop)
                 return Combine(Schedule(this), Done(OutcomeNames.Iterate));

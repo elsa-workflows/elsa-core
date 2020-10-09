@@ -1,3 +1,4 @@
+using Elsa.Persistence.Core.Extensions;
 using Elsa.Samples.TimesheetApproval.Models;
 using Elsa.Samples.TimesheetApproval.Services;
 using Elsa.Samples.TimesheetApproval.Workflows;
@@ -27,11 +28,10 @@ namespace Elsa.Samples.TimesheetApproval
             
             // Add custom application services.
             services
-                .AddScoped<TimesheetManager>()
-                .AddMongoDbCollection<Timesheet>("Timesheets");
+                .AddScoped<TimesheetManager>();
 
             // Add Elsa services
-            services.AddElsa(elsa => elsa.UseMongoDbWorkflowStores("TimesheetApprovals", connectionString));
+            services.AddElsa(elsa => elsa.UsePersistence(_ => { }));
             
             // Add activities and their services.
             services

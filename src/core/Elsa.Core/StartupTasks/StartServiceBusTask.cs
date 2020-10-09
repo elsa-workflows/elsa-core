@@ -8,8 +8,8 @@ namespace Elsa.StartupTasks
 {
     public class StartServiceBusTask : IStartupTask
     {
-        private readonly IBus serviceBus;
-        public StartServiceBusTask(IBus serviceBus) => this.serviceBus = serviceBus;
-        public Task ExecuteAsync(CancellationToken cancellationToken = default) => serviceBus.Subscribe<RunWorkflow>();
+        private readonly IBus _serviceBus;
+        public StartServiceBusTask(IBus serviceBus) => this._serviceBus = serviceBus;
+        public Task ExecuteAsync(CancellationToken cancellationToken = default) => _serviceBus.Subscribe<RunWorkflow>();
     }
 }

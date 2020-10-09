@@ -7,13 +7,13 @@ namespace Elsa.Activities.MassTransit
 {
     public abstract class MassTransitBusActivity : Activity
     {
-        private readonly ConsumeContext consumeContext;
-        private readonly IBus bus;
+        private readonly ConsumeContext _consumeContext;
+        private readonly IBus _bus;
 
         protected MassTransitBusActivity(IBus bus, ConsumeContext consumeContext)
         {
-            this.bus = bus ?? throw new ArgumentNullException(nameof(bus));
-            this.consumeContext = consumeContext;
+            this._bus = bus ?? throw new ArgumentNullException(nameof(bus));
+            this._consumeContext = consumeContext;
         }
 
         /// <summary>
@@ -24,9 +24,9 @@ namespace Elsa.Activities.MassTransit
         /// the conversation and correlation id.
         /// </remarks>
         protected IPublishEndpoint PublishEndpoint =>
-            consumeContext != null
-                ? (IPublishEndpoint)consumeContext
-                : (IPublishEndpoint)bus;
+            _consumeContext != null
+                ? (IPublishEndpoint)_consumeContext
+                : (IPublishEndpoint)_bus;
 
         /// <summary>
         /// Gets the send endpoint provider to use.
@@ -36,9 +36,9 @@ namespace Elsa.Activities.MassTransit
         /// the conversation and correlation id.
         /// </remarks>
         protected ISendEndpointProvider SendEndpointProvider =>
-            consumeContext != null
-                ? (ISendEndpointProvider)consumeContext
-                : (ISendEndpointProvider)bus;
+            _consumeContext != null
+                ? (ISendEndpointProvider)_consumeContext
+                : (ISendEndpointProvider)_bus;
 
     }
 }

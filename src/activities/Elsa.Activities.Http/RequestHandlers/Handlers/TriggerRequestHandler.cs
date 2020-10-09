@@ -16,12 +16,12 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
 {
     public class TriggerRequestHandler : IRequestHandler
     {
-        private readonly HttpContext httpContext;
-        private readonly IWorkflowHost workflowHost;
-        private readonly IWorkflowRegistry registry;
-        private readonly IWorkflowInstanceStore workflowInstanceStore;
-        private readonly ITokenSerializer serializer;
-        private readonly CancellationToken cancellationToken;
+        private readonly HttpContext _httpContext;
+        private readonly IWorkflowHost _workflowHost;
+        private readonly IWorkflowRegistry _registry;
+        private readonly IWorkflowInstanceStore _workflowInstanceStore;
+        private readonly ITokenSerializer _serializer;
+        private readonly CancellationToken _cancellationToken;
 
         public TriggerRequestHandler(
             IHttpContextAccessor httpContext,
@@ -30,22 +30,22 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
             IWorkflowInstanceStore workflowInstanceStore,
             ITokenSerializer serializer)
         {
-            this.httpContext = httpContext.HttpContext;
-            this.workflowHost = workflowHost;
-            this.registry = registry;
-            this.workflowInstanceStore = workflowInstanceStore;
-            this.serializer = serializer;
-            cancellationToken = httpContext.HttpContext.RequestAborted;
+            this._httpContext = httpContext.HttpContext;
+            this._workflowHost = workflowHost;
+            this._registry = registry;
+            this._workflowInstanceStore = workflowInstanceStore;
+            this._serializer = serializer;
+            _cancellationToken = httpContext.HttpContext.RequestAborted;
         }
 
         public async Task<IRequestHandlerResult> HandleRequestAsync()
         {
             // TODO: Optimize this by building up a hash of routes and workflows to execute.
-            var requestPath = httpContext.Request.Path;
-            var method = httpContext.Request.Method;
-            var httpWorkflows = await registry.GetWorkflowsByStartActivityAsync<ReceiveHttpRequest>(cancellationToken);
+            var requestPath = _httpContext.Request.Path;
+            var method = _httpContext.Request.Method;
+            var httpWorkflows = await _registry.GetWorkflowsByStartActivityAsync<ReceiveHttpRequest>(_cancellationToken);
             var workflowsToStart = Filter(httpWorkflows, requestPath, method).ToList();
-            var suspendedWorkflows = await workflowInstanceStore.ListByBlockingActivityAsync<ReceiveHttpRequest>(cancellationToken: cancellationToken);
+            var suspendedWorkflows = await _workflowInstanceStore.ListByBlockingActivityAsync<ReceiveHttpRequest>(cancellationToken: _cancellationToken);
 
             //var workflowsToResume = Filter(suspendedWorkflows, requestPath, method).ToList();
 
@@ -55,7 +55,7 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
             // await InvokeWorkflowsToStartAsync(workflowsToStart);
             // await InvokeWorkflowsToResumeAsync(workflowsToResume);
 
-            return !httpContext.Items.ContainsKey(WorkflowHttpResult.Instance)
+            return !_httpContext.Items.ContainsKey(WorkflowHttpResult.Instance)
                 ? (IRequestHandlerResult)new AcceptedResult()
                 : new EmptyResult();
         }
@@ -84,10 +84,10 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
         {
             foreach (var (workflow, activity) in items)
             {
-                await workflowHost.RunWorkflowAsync(
+                await _workflowHost.RunWorkflowAsync(
                     workflow,
                     activity.Id,
-                    cancellationToken: cancellationToken);
+                    cancellationToken: _cancellationToken);
             }
         }
 
@@ -95,10 +95,10 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
         {
             foreach (var (workflowInstance, activity) in items)
             {
-                await workflowHost.RunWorkflowInstanceAsync(
+                await _workflowHost.RunWorkflowInstanceAsync(
                     workflowInstance,
                     activity.Id,
-                    cancellationToken: cancellationToken);
+                    cancellationToken: _cancellationToken);
             }
         }
     }

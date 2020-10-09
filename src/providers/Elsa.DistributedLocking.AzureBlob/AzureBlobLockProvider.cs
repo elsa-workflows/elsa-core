@@ -22,7 +22,7 @@ namespace Elsa.DistributedLocking.AzureBlob
         private const int MaxLeaseTime = 60;
         private const int MinLeaseTime = 15;
         private readonly AutoResetEvent _leaseSemaphore = new AutoResetEvent(true);
-        private static readonly object syncRoot = new Object();
+        private static readonly object SyncRoot = new Object();
         private readonly List<LockedBlob> _lockedBlobs = new List<LockedBlob>();
         private readonly string _connectionString;
         private TimeSpan _leaseTime;
@@ -148,7 +148,7 @@ namespace Elsa.DistributedLocking.AzureBlob
             {
                 if (_cloudBlobContainer == null)
                 {
-                    lock (syncRoot)
+                    lock (SyncRoot)
                     {
                         if (_cloudBlobContainer == null)
                         {

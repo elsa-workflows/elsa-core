@@ -15,9 +15,9 @@ namespace Elsa.Activities.Timers
     )]
     public class InstantEvent : Activity
     {
-        private readonly IClock clock;
+        private readonly IClock _clock;
 
-        public InstantEvent(IClock clock) => this.clock = clock;
+        public InstantEvent(IClock clock) => this._clock = clock;
 
         /// <summary>
         /// An expression that evaluates to an <see cref="NodaTime.Instant"/>
@@ -34,7 +34,7 @@ namespace Elsa.Activities.Timers
         {
             if (IsExpired())
             {
-                ExecutedAt = clock.GetCurrentInstant();
+                ExecutedAt = _clock.GetCurrentInstant();
                 return Done();
             }
 
@@ -43,7 +43,7 @@ namespace Elsa.Activities.Timers
 
         private bool IsExpired()
         {
-            var now = clock.GetCurrentInstant();
+            var now = _clock.GetCurrentInstant();
             return now >= Instant;
         }
     }

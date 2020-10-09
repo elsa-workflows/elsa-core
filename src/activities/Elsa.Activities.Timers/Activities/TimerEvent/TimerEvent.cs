@@ -12,11 +12,11 @@ namespace Elsa.Activities.Timers
     )]
     public class TimerEvent : Activity
     {
-        private readonly IClock clock;
+        private readonly IClock _clock;
 
         public TimerEvent(IClock clock)
         {
-            this.clock = clock;
+            this._clock = clock;
         }
 
         [ActivityProperty(Hint = "An expression that evaluates to a Duration value")]
@@ -41,7 +41,7 @@ namespace Elsa.Activities.Timers
 
         private bool IsExpired()
         {
-            var now = clock.GetCurrentInstant();
+            var now = _clock.GetCurrentInstant();
 
             StartTime ??= now;
 

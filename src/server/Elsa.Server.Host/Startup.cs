@@ -1,3 +1,4 @@
+using Elsa.Persistence.Core.Extensions;
 using Elsa.Runtime;
 using Elsa.Server.GraphQL.Extensions;
 using Elsa.StartupTasks;
@@ -28,7 +29,7 @@ namespace Elsa.Server.Host
 
             services
                 .AddElsa(elsa => elsa
-                    .UseMongoDbWorkflowStores("ElsaServer", Configuration.GetConnectionString("MongoDb")));
+                    .UsePersistence(_ => { }));
 
             services
                 .AddElsaServer()

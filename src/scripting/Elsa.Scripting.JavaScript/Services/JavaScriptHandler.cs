@@ -23,19 +23,19 @@ namespace Elsa.Scripting.JavaScript.Services
 {
     public class JavaScriptHandler : IExpressionHandler
     {
-        private readonly IMediator mediator;
-        private readonly IMapper mapper;
-        private readonly IOptions<ScriptOptions> options;
-        private readonly JsonSerializerSettings serializerSettings;
+        private readonly IMediator _mediator;
+        private readonly IMapper _mapper;
+        private readonly IOptions<ScriptOptions> _options;
+        private readonly JsonSerializerSettings _serializerSettings;
 
         public JavaScriptHandler(IMediator mediator, IMapper mapper, IOptions<ScriptOptions> options)
         {
-            this.mediator = mediator;
-            this.mapper = mapper;
-            this.options = options;
+            this._mediator = mediator;
+            this._mapper = mapper;
+            this._options = options;
 
-            serializerSettings = new JsonSerializerSettings().ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
-            serializerSettings.Converters.Add(new TruncatingNumberJsonConverter());
+            _serializerSettings = new JsonSerializerSettings().ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
+            _serializerSettings.Converters.Add(new TruncatingNumberJsonConverter());
         }
 
         public string Type => JavaScriptExpression.ExpressionType;
@@ -54,13 +54,13 @@ namespace Elsa.Scripting.JavaScript.Services
         // ReSharper disable once ParameterHidesMember
         private void ConfigureJintEngine(Jint.Options options)
         {
-            if (this.options.Value.AllowClr)
+            if (this._options.Value.AllowClr)
                 options.AllowClr();
         }
 
         private async Task ConfigureEngineAsync(Engine engine, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
         {
-            await mediator.Publish(new EvaluatingJavaScriptExpression(engine, activityExecutionContext), cancellationToken);
+            await _mediator.Publish(new EvaluatingJavaScriptExpression(engine, activityExecutionContext), cancellationToken);
         }
 
         private object ConvertValue(JsValue value, Type targetType)
@@ -136,8 +136,8 @@ namespace Elsa.Scripting.JavaScript.Services
                 {
                     case ExpandoObject _:
                     {
-                        var json = JsonConvert.SerializeObject(obj, serializerSettings);
-                        return JsonConvert.DeserializeObject(json, targetType, serializerSettings);
+                        var json = JsonConvert.SerializeObject(obj, _serializerSettings);
+                        return JsonConvert.DeserializeObject(json, targetType, _serializerSettings);
                     }
                     case JValue jValue:
                         return jValue.Value;

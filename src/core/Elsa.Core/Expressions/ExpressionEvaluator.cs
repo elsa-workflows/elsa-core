@@ -11,13 +11,13 @@ namespace Elsa.Expressions
 {
     public class ExpressionEvaluator : IExpressionEvaluator
     {
-        private readonly IDictionary<string, IExpressionHandler> evaluators;
-        private readonly ILogger logger;
+        private readonly IDictionary<string, IExpressionHandler> _evaluators;
+        private readonly ILogger _logger;
 
         public ExpressionEvaluator(IEnumerable<IExpressionHandler> evaluators, ILogger<ExpressionEvaluator> logger)
         {
-            this.evaluators = evaluators.ToDictionary(x => x.Type);
-            this.logger = logger;
+            this._evaluators = evaluators.ToDictionary(x => x.Type);
+            this._logger = logger;
         }
 
         public async Task<object> EvaluateAsync(
@@ -29,7 +29,7 @@ namespace Elsa.Expressions
             if (expression == null)
                 return default;
             
-            var evaluator = evaluators[expression.Type];
+            var evaluator = _evaluators[expression.Type];
 
             try
             {
@@ -39,7 +39,7 @@ namespace Elsa.Expressions
             {
                 var message = $"Error while evaluating {expression}. Message: {e.Message}";
 
-                logger.LogError(e, message);
+                _logger.LogError(e, message);
                 throw new WorkflowException(message);
             }
         }

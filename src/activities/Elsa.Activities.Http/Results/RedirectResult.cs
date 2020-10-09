@@ -7,13 +7,13 @@ namespace Elsa.Activities.Http.Results
 {
     public class RedirectResult : ActivityExecutionResult
     {
-        private readonly IHttpContextAccessor httpContextAccessor;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
         public RedirectResult(IHttpContextAccessor httpContextAccessor, Uri location, bool permanent)
         {
             Location = location;
             Permanent = permanent;
-            this.httpContextAccessor = httpContextAccessor;
+            this._httpContextAccessor = httpContextAccessor;
         }
         
         public Uri Location { get; }
@@ -21,7 +21,7 @@ namespace Elsa.Activities.Http.Results
         
         protected override void Execute(ActivityExecutionContext activityExecutionContext)
         {
-            var response = httpContextAccessor.HttpContext.Response;
+            var response = _httpContextAccessor.HttpContext.Response;
             response.Redirect(Location.ToString(), Permanent);
         }
     }

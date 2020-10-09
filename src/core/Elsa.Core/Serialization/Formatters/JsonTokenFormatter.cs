@@ -9,11 +9,11 @@ namespace Elsa.Serialization.Formatters
     public class JsonTokenFormatter : ITokenFormatter
     {
         public const string FormatName = SerializationFormats.Json;
-        private readonly JsonSerializerSettings serializerSettings;
+        private readonly JsonSerializerSettings _serializerSettings;
 
         public JsonTokenFormatter()
         {
-            serializerSettings = new JsonSerializerSettings
+            _serializerSettings = new JsonSerializerSettings
                 {
                     NullValueHandling = NullValueHandling.Ignore,
                     ContractResolver = new CamelCasePropertyNamesContractResolver(),
@@ -25,6 +25,6 @@ namespace Elsa.Serialization.Formatters
         public string Format => FormatName;
         public string ContentType => "application/json";
         public string ToString(JObject token) => token.ToString(Formatting.Indented);
-        public JObject FromString(string data) => JsonConvert.DeserializeObject<JObject>(data, serializerSettings);
+        public JObject FromString(string data) => JsonConvert.DeserializeObject<JObject>(data, _serializerSettings);
     }
 }

@@ -22,7 +22,7 @@ namespace Elsa.Activities.Console
     )]
     public class ReadLine : Activity
     {
-        private readonly TextReader input;
+        private readonly TextReader _input;
 
         public ReadLine()
         {
@@ -30,17 +30,17 @@ namespace Elsa.Activities.Console
 
         public ReadLine(TextReader input)
         {
-            this.input = input;
+            this._input = input;
         }
 
         protected override async Task<IActivityExecutionResult> OnExecuteAsync(
             ActivityExecutionContext context,
             CancellationToken cancellationToken)
         {
-            if (input == null)
+            if (_input == null)
                 return Suspend();
 
-            var receivedInput = await input.ReadLineAsync();
+            var receivedInput = await _input.ReadLineAsync();
             return Execute(receivedInput);
         }
 

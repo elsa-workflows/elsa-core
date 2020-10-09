@@ -7,14 +7,14 @@ namespace Elsa.Serialization
 {
     public class TypeMap : ITypeMap
     {
-        private readonly IDictionary<string, Type> byAlias;
-        private readonly IDictionary<Type, string> byType;
+        private readonly IDictionary<string, Type> _byAlias;
+        private readonly IDictionary<Type, string> _byType;
 
         public TypeMap(IEnumerable<ITypeAlias> aliases)
         {
             var list = aliases.ToArray();
-            byAlias = list.ToDictionary(x => x.Alias, x => x.Type);
-            byType = list.ToDictionary(x => x.Type, x => x.Alias);
+            _byAlias = list.ToDictionary(x => x.Alias, x => x.Type);
+            _byType = list.ToDictionary(x => x.Type, x => x.Alias);
         }
         
         public Type GetType(string alias)
@@ -33,11 +33,11 @@ namespace Elsa.Serialization
             }
             else
             {
-                return byType.TryGetValue(type, out var alias) ? alias : type.AssemblyQualifiedName;    
+                return _byType.TryGetValue(type, out var alias) ? alias : type.AssemblyQualifiedName;    
             }
         }
         
-        private Type ResolveAlias(string alias) => byAlias.TryGetValue(alias, out var type) ? type : Type.GetType(alias);
+        private Type ResolveAlias(string alias) => _byAlias.TryGetValue(alias, out var type) ? type : Type.GetType(alias);
 
         public Type MakeGenericType(IList<IList<Type>> stack)
         {

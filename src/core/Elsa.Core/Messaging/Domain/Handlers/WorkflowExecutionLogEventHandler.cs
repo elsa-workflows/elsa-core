@@ -8,16 +8,16 @@ namespace Elsa.Messaging.Domain.Handlers
 {
     public class WorkflowExecutionLogEventHandler : INotificationHandler<ActivityExecuted>
     {
-        private readonly IClock clock;
+        private readonly IClock _clock;
 
         public WorkflowExecutionLogEventHandler(IClock clock)
         {
-            this.clock = clock;
+            this._clock = clock;
         }
 
         public Task Handle(ActivityExecuted notification, CancellationToken cancellationToken)
         {
-            notification.WorkflowExecutionContext.ExecutionLog.Add(new ExecutionLogEntry(notification.Activity, clock.GetCurrentInstant()));
+            notification.WorkflowExecutionContext.ExecutionLog.Add(new ExecutionLogEntry(notification.Activity, _clock.GetCurrentInstant()));
             return Task.CompletedTask;
         }
     }

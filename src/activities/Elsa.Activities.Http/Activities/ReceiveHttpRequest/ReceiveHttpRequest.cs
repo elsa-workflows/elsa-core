@@ -24,15 +24,15 @@ namespace Elsa.Activities.Http
     )]
     public class ReceiveHttpRequest : Activity
     {
-        private readonly IHttpContextAccessor httpContextAccessor;
-        private readonly IEnumerable<IHttpRequestBodyParser> parsers;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IEnumerable<IHttpRequestBodyParser> _parsers;
 
         public ReceiveHttpRequest(
             IHttpContextAccessor httpContextAccessor,
             IEnumerable<IHttpRequestBodyParser> parsers)
         {
-            this.httpContextAccessor = httpContextAccessor;
-            this.parsers = parsers;
+            this._httpContextAccessor = httpContextAccessor;
+            this._parsers = parsers;
         }
 
         /// <summary>
@@ -72,7 +72,7 @@ namespace Elsa.Activities.Http
 
         private async Task<IActivityExecutionResult> ExecuteInternalAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var request = httpContextAccessor.HttpContext.Request;
+            var request = _httpContextAccessor.HttpContext.Request;
             var model = new HttpRequestModel
             {
                 Path = new Uri(request.Path.ToString(), UriKind.Relative),
@@ -92,7 +92,7 @@ namespace Elsa.Activities.Http
 
         private IHttpRequestBodyParser SelectContentParser(string contentType)
         {
-            var formatters = parsers.OrderByDescending(x => x.Priority).ToList();
+            var formatters = _parsers.OrderByDescending(x => x.Priority).ToList();
             return formatters.FirstOrDefault(
                        x => x.SupportedContentTypes.Contains(contentType, StringComparer.OrdinalIgnoreCase)
                    ) ?? formatters.Last();

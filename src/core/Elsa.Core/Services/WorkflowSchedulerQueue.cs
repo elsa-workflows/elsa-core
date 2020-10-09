@@ -5,22 +5,22 @@ namespace Elsa.Services
 {
     public class WorkflowSchedulerQueue : IWorkflowSchedulerQueue
     {
-        private readonly IDictionary<(string WorkflowDefinitionId, string ActivityId), (Workflow Workflow, IActivity Activity, object? Input, string? CorrelationId)> nextWorkflowInstances;
+        private readonly IDictionary<(string WorkflowDefinitionId, string ActivityId), (Workflow Workflow, IActivity Activity, object? Input, string? CorrelationId)> _nextWorkflowInstances;
 
         public WorkflowSchedulerQueue() =>
-            nextWorkflowInstances = new Dictionary<(string WorkflowDefinitionId, string ActivityId), (Workflow Workflow, IActivity Activity, object? Input, string? CorrelationId)>();
+            _nextWorkflowInstances = new Dictionary<(string WorkflowDefinitionId, string ActivityId), (Workflow Workflow, IActivity Activity, object? Input, string? CorrelationId)>();
 
         public void Enqueue(Workflow workflow, IActivity activity, object? input, string? correlationId)
-            => nextWorkflowInstances[(workflow.DefinitionId, activity.Id)] = (workflow, activity, input, correlationId);
+            => _nextWorkflowInstances[(workflow.DefinitionId, activity.Id)] = (workflow, activity, input, correlationId);
 
         public (Workflow Workflow, IActivity Activity, object? Input, string? CorrelationId)? Dequeue(string workflowDefinitionId, string activityId)
         {
             var key = (workflowDefinitionId, activityId);
-            if(!nextWorkflowInstances.ContainsKey(key))
+            if(!_nextWorkflowInstances.ContainsKey(key))
                 return default;
             
-            var entry = nextWorkflowInstances[key];
-            nextWorkflowInstances.Remove(key);
+            var entry = _nextWorkflowInstances[key];
+            _nextWorkflowInstances.Remove(key);
             
             return entry;
         }

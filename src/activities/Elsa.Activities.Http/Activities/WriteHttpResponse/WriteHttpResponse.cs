@@ -21,12 +21,12 @@ namespace Elsa.Activities.Http
     )]
     public class WriteHttpResponse : Activity
     {
-        private readonly IHttpContextAccessor httpContextAccessor;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
         public WriteHttpResponse(IHttpContextAccessor httpContextAccessor, IStringLocalizer<WriteHttpResponse> localizer)
         {
             T = localizer;
-            this.httpContextAccessor = httpContextAccessor;
+            this._httpContextAccessor = httpContextAccessor;
         }
         
         public IStringLocalizer T { get; }
@@ -65,7 +65,7 @@ namespace Elsa.Activities.Http
 
         protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var response = httpContextAccessor.HttpContext.Response;
+            var response = _httpContextAccessor.HttpContext.Response;
 
             if (response.HasStarted)
                 return Fault(T["Response has already started"]);

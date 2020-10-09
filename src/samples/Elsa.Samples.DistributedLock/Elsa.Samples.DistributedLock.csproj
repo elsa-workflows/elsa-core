@@ -15,7 +15,6 @@
     <ProjectReference Include="..\..\core\Elsa\Elsa.csproj" />
     <ProjectReference Include="..\..\providers\Elsa.DistributedLocking.AzureBlob\Elsa.DistributedLocking.AzureBlob.csproj" />
     <ProjectReference Include="..\..\providers\Elsa.DistributedLocking.Redis\Elsa.DistributedLocking.Redis.csproj" />
-    <ProjectReference Include="..\..\providers\Elsa.Persistence.MongoDb\Elsa.Persistence.MongoDb.csproj" />
   </ItemGroup>
 
 </Project>

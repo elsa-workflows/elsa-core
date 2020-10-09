@@ -12,13 +12,13 @@ namespace Elsa.Scripting.Liquid.Services
 {
     public class LiquidExpressionHandler : IExpressionHandler
     {
-        private readonly ILiquidTemplateManager liquidTemplateManager;
-        private readonly IMediator mediator;
+        private readonly ILiquidTemplateManager _liquidTemplateManager;
+        private readonly IMediator _mediator;
 
         public LiquidExpressionHandler(ILiquidTemplateManager liquidTemplateManager, IMediator mediator)
         {
-            this.liquidTemplateManager = liquidTemplateManager;
-            this.mediator = mediator;
+            this._liquidTemplateManager = liquidTemplateManager;
+            this._mediator = mediator;
         }
 
         public string Type => LiquidExpression.ExpressionType;
@@ -27,7 +27,7 @@ namespace Elsa.Scripting.Liquid.Services
         {
             var liquidExpression = (LiquidExpression)expression;
             var templateContext = await CreateTemplateContextAsync(context);
-            var result = await liquidTemplateManager.RenderAsync(liquidExpression.Expression, templateContext);
+            var result = await _liquidTemplateManager.RenderAsync(liquidExpression.Expression, templateContext);
             return string.IsNullOrWhiteSpace(result) ? default : Convert.ChangeType(result, returnType);
         }
 
@@ -35,7 +35,7 @@ namespace Elsa.Scripting.Liquid.Services
         {
             var context = new TemplateContext();
             context.SetValue("WorkflowExecutionContext", workflowContext);
-            await mediator.Publish(new EvaluatingLiquidExpression(context, workflowContext));
+            await _mediator.Publish(new EvaluatingLiquidExpression(context, workflowContext));
             context.Model = workflowContext;
             return context;
         }

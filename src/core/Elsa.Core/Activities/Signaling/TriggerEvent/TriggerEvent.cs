@@ -15,11 +15,11 @@ namespace Elsa.Activities.Signaling
     )]
     public class TriggerEvent : Activity
     {
-        private readonly IWorkflowScheduler workflowScheduler;
+        private readonly IWorkflowScheduler _workflowScheduler;
 
         public TriggerEvent(IWorkflowScheduler workflowScheduler)
         {
-            this.workflowScheduler = workflowScheduler;
+            this._workflowScheduler = workflowScheduler;
         }
 
         [ActivityProperty(Hint = "An expression that evaluates to the activity type to use when triggering workflows.")]
@@ -35,7 +35,7 @@ namespace Elsa.Activities.Signaling
 
         protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            await workflowScheduler.TriggerWorkflowsAsync(
+            await _workflowScheduler.TriggerWorkflowsAsync(
                 ActivityType,
                 Input,
                 CorrelationId,

@@ -26,17 +26,17 @@ namespace Elsa.Activities.Console
         
         public WriteLine(TextWriter output)
         {
-            this.output = output;
+            this._output = output;
         }
 
         [ActivityProperty(Hint = "The text to write.")]
         public string Text { get; set; }
         
-        private readonly TextWriter output;
+        private readonly TextWriter _output;
 
         protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            await output.WriteLineAsync(Text);
+            await _output.WriteLineAsync(Text);
             return Done();
         }
     }

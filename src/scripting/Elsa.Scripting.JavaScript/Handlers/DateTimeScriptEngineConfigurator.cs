@@ -10,11 +10,11 @@ namespace Elsa.Scripting.JavaScript.Handlers
 {
     public class DateTimeScriptEngineConfigurator : INotificationHandler<EvaluatingJavaScriptExpression>
     {
-        private readonly IClock clock;
+        private readonly IClock _clock;
 
         public DateTimeScriptEngineConfigurator(IClock clock)
         {
-            this.clock = clock;
+            this._clock = clock;
         }
 
         public Task Handle(EvaluatingJavaScriptExpression notification, CancellationToken cancellationToken)
@@ -27,30 +27,30 @@ namespace Elsa.Scripting.JavaScript.Handlers
 
             engine.SetValue(
                 "currentInstant",
-                (Func<Instant>) (() => clock.GetCurrentInstant())
+                (Func<Instant>) (() => _clock.GetCurrentInstant())
             );
 
             engine.SetValue(
                 "currentYear",
-                (Func<int>) (() => clock.GetCurrentInstant().InUtc().Year)
+                (Func<int>) (() => _clock.GetCurrentInstant().InUtc().Year)
             );
 
             engine.SetValue(
                 "startOfMonth",
                 (Func<Instant?, LocalDate>) (instant =>
-                    (instant ?? clock.GetCurrentInstant()).InUtc().LocalDateTime.With(DateAdjusters.StartOfMonth).Date)
+                    (instant ?? _clock.GetCurrentInstant()).InUtc().LocalDateTime.With(DateAdjusters.StartOfMonth).Date)
             );
 
             engine.SetValue(
                 "endOfMonth",
                 (Func<Instant?, LocalDate>) (instant =>
-                    (instant ?? clock.GetCurrentInstant()).InUtc().LocalDateTime.With(DateAdjusters.EndOfMonth).Date)
+                    (instant ?? _clock.GetCurrentInstant()).InUtc().LocalDateTime.With(DateAdjusters.EndOfMonth).Date)
             );
 
             engine.SetValue(
                 "startOfPreviousMonth",
                 (Func<Instant?, LocalDate>) (instant =>
-                    GetStartOfMonth(GetStartOfMonth(instant ?? clock.GetCurrentInstant()).Minus(Period.FromDays(14)))
+                    GetStartOfMonth(GetStartOfMonth(instant ?? _clock.GetCurrentInstant()).Minus(Period.FromDays(14)))
                         .Date)
             );
 

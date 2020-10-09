@@ -14,30 +14,30 @@ namespace Elsa.StartupTasks
     /// </summary>
     public class ResumeRunningWorkflowsTask : IStartupTask
     {
-        private readonly IWorkflowInstanceStore workflowInstanceStore;
-        private readonly IWorkflowScheduler workflowScheduler;
-        private readonly IDistributedLockProvider distributedLockProvider;
+        private readonly IWorkflowInstanceStore _workflowInstanceStore;
+        private readonly IWorkflowScheduler _workflowScheduler;
+        private readonly IDistributedLockProvider _distributedLockProvider;
 
         public ResumeRunningWorkflowsTask(
             IWorkflowInstanceStore workflowInstanceStore,
             IWorkflowScheduler workflowScheduler,
             IDistributedLockProvider distributedLockProvider)
         {
-            this.workflowInstanceStore = workflowInstanceStore;
-            this.workflowScheduler = workflowScheduler;
-            this.distributedLockProvider = distributedLockProvider;
+            this._workflowInstanceStore = workflowInstanceStore;
+            this._workflowScheduler = workflowScheduler;
+            this._distributedLockProvider = distributedLockProvider;
         }
 
         public async Task ExecuteAsync(CancellationToken cancellationToken = default)
         {
-            if (!await distributedLockProvider.AcquireLockAsync(GetType().Name, cancellationToken))
+            if (!await _distributedLockProvider.AcquireLockAsync(GetType().Name, cancellationToken))
                 return;
 
-            var instances = await workflowInstanceStore.ListByStatusAsync(WorkflowStatus.Running, cancellationToken);
+            var instances = await _workflowInstanceStore.ListByStatusAsync(WorkflowStatus.Running, cancellationToken);
 
             foreach (var instance in instances)
             {
-                await workflowScheduler.ScheduleNewWorkflowAsync(instance.Id, cancellationToken: cancellationToken);
+                await _workflowScheduler.ScheduleNewWorkflowAsync(instance.Id, cancellationToken: cancellationToken);
             }
         }
     }

@@ -10,23 +10,23 @@ namespace Elsa.Builders
 {
     public class WorkflowBuilder : IWorkflowBuilder
     {
-        private readonly IActivityResolver activityResolver;
-        private readonly IIdGenerator idGenerator;
-        private readonly IList<IActivityBuilder> activityBuilders;
-        private readonly IList<IConnectionBuilder> connectionBuilders;
+        private readonly IActivityResolver _activityResolver;
+        private readonly IIdGenerator _idGenerator;
+        private readonly IList<IActivityBuilder> _activityBuilders;
+        private readonly IList<IConnectionBuilder> _connectionBuilders;
 
         public WorkflowBuilder(
             IActivityResolver activityResolver,
             IIdGenerator idGenerator,
             IServiceProvider serviceProvider)
         {
-            this.activityResolver = activityResolver;
-            this.idGenerator = idGenerator;
+            this._activityResolver = activityResolver;
+            this._idGenerator = idGenerator;
             ServiceProvider = serviceProvider;
             Id = idGenerator.Generate();
             Version = 1;
-            activityBuilders = new List<IActivityBuilder>();
-            connectionBuilders = new List<IConnectionBuilder>();
+            _activityBuilders = new List<IActivityBuilder>();
+            _connectionBuilders = new List<IConnectionBuilder>();
         }
 
         public IServiceProvider ServiceProvider { get; }
@@ -88,7 +88,7 @@ namespace Elsa.Builders
 
         public T BuildActivity<T>(Action<T>? setup = default) where T : class, IActivity
         {
-            var activity = activityResolver.ResolveActivity<T>();
+            var activity = _activityResolver.ResolveActivity<T>();
 
             setup?.Invoke(activity);
             return activity;
@@ -96,9 +96,9 @@ namespace Elsa.Builders
 
         public Workflow Build()
         {
-            var definitionId = !string.IsNullOrWhiteSpace(Id) ? Id : idGenerator.Generate();
-            var activities = activityBuilders.Select(x => x.BuildActivity()).ToList();
-            var connections = connectionBuilders.Select(x => x.BuildConnection()).ToList();
+            var definitionId = !string.IsNullOrWhiteSpace(Id) ? Id : _idGenerator.Generate();
+            var activities = _activityBuilders.Select(x => x.BuildActivity()).ToList();
+            var connections = _connectionBuilders.Select(x => x.BuildConnection()).ToList();
 
             // Generate deterministic activity ids.
             var id = 1;
@@ -106,7 +106,7 @@ namespace Elsa.Builders
             foreach (var activity in activities.Where(activity => string.IsNullOrEmpty(activity.Id)))
                 activity.Id = $"activity-{id++}";
 
-            var activityPropertyValueProviders = activityBuilders
+            var activityPropertyValueProviders = _activityBuilders
                 .Select(x => (x.Activity.Id, x.PropertyValueProviders))
                 .ToDictionary(x => x.Id, x => x.PropertyValueProviders!);
 
@@ -142,7 +142,7 @@ namespace Elsa.Builders
         public IActivityBuilder New<T>(Action<ISetupActivity<T>>? setup = default,
             Action<IActivityBuilder>? branch = default) where T : class, IActivity
         {
-            var activity = activityResolver.ResolveActivity<T>();
+            var activity = _activityResolver.ResolveActivity<T>();
             var propertyValuesBuilder = new SetupActivity<T>();
             setup?.Invoke(propertyValuesBuilder);
 
@@ -190,7 +190,7 @@ namespace Elsa.Builders
             Action<IActivityBuilder>? branch = default)
         {
             branch?.Invoke(activityBuilder);
-            activityBuilders.Add(activityBuilder);
+            _activityBuilders.Add(activityBuilder);
             return activityBuilder;
         }
 
@@ -206,7 +206,7 @@ namespace Elsa.Builders
             string outcome = OutcomeNames.Done)
         {
             var connectionBuilder = new ConnectionBuilder(this, source, target, outcome);
-            connectionBuilders.Add(connectionBuilder);
+            _connectionBuilders.Add(connectionBuilder);
             return connectionBuilder;
         }
 

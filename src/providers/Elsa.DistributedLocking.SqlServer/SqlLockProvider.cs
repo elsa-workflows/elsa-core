@@ -13,32 +13,32 @@ namespace Elsa.DistributedLocking.SqlServer
     // Implementation taken & adapted from Workflow Core: https://github.com/danielgerlag/workflow-core/blob/master/src/providers/WorkflowCore.LockProviders.SqlServer/SqlLockProvider.cs
     public class SqlLockProvider : IDistributedLockProvider
     {
-        private readonly ILogger logger;
+        private readonly ILogger _logger;
         private const string Prefix = "elsa";
-        private readonly string connectionString;
-        private readonly IDictionary<string, SqlConnection> locks = new Dictionary<string, SqlConnection>();
-        private readonly AutoResetEvent mutex = new AutoResetEvent(true);
+        private readonly string _connectionString;
+        private readonly IDictionary<string, SqlConnection> _locks = new Dictionary<string, SqlConnection>();
+        private readonly AutoResetEvent _mutex = new AutoResetEvent(true);
 
         public SqlLockProvider(string connectionString, ILogger<SqlLockProvider> logger)
         {
-            this.logger = logger;
+            this._logger = logger;
             var connectionStringBuilder = new SqlConnectionStringBuilder(connectionString)
             {
                 Pooling = true,
                 ApplicationName = "Elsa Distributed Lock Provider"
             };
 
-            this.connectionString = connectionStringBuilder.ToString();
+            this._connectionString = connectionStringBuilder.ToString();
         }
 
         public async Task<bool> AcquireLockAsync(string name, CancellationToken cancellationToken)
         {
-            if (!mutex.WaitOne())
+            if (!_mutex.WaitOne())
                 return false;
 
             try
             {
-                var connection = new SqlConnection(connectionString);
+                var connection = new SqlConnection(_connectionString);
                 await connection.OpenAsync(cancellationToken);
                 try
                 {
@@ -59,25 +59,25 @@ namespace Elsa.DistributedLocking.SqlServer
                     switch (result)
                     {
                         case -1:
-                            logger.LogDebug($"The lock request timed out for {name}");
+                            _logger.LogDebug($"The lock request timed out for {name}");
                             break;
 
                         case -2:
-                            logger.LogDebug($"The lock request was canceled for {name}");
+                            _logger.LogDebug($"The lock request was canceled for {name}");
                             break;
 
                         case -3:
-                            logger.LogDebug($"The lock request was chosen as a deadlock victim for {name}");
+                            _logger.LogDebug($"The lock request was chosen as a deadlock victim for {name}");
                             break;
 
                         case -999:
-                            logger.LogError($"Lock provider error for {name}");
+                            _logger.LogError($"Lock provider error for {name}");
                             break;
                     }
 
                     if (result >= 0)
                     {
-                        locks[name] = connection;
+                        _locks[name] = connection;
                         return true;
                     }
                     else
@@ -94,21 +94,21 @@ namespace Elsa.DistributedLocking.SqlServer
             }
             finally
             {
-                mutex.Set();
+                _mutex.Set();
             }
         }
 
         public async Task ReleaseLockAsync(string name, CancellationToken cancellationToken)
         {
-            if (!mutex.WaitOne())
+            if (!_mutex.WaitOne())
                 return;
 
             try
             {
-                if (!locks.ContainsKey(name))
+                if (!_locks.ContainsKey(name))
                     return;
 
-                var connection = locks[name];
+                var connection = _locks[name];
 
                 if (connection == null)
                     return;
@@ -128,17 +128,17 @@ namespace Elsa.DistributedLocking.SqlServer
                     var result = Convert.ToInt32(returnParameter.Value);
 
                     if (result < 0)
-                        logger.LogError($"Unable to release lock for {name}");
+                        _logger.LogError($"Unable to release lock for {name}");
                 }
                 finally
                 {
                     connection.Close();
-                    locks.Remove(name);
+                    _locks.Remove(name);
                 }
             }
             finally
             {
-                mutex.Set();
+                _mutex.Set();
             }
         }
     }

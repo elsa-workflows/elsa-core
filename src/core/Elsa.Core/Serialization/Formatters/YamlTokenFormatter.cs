@@ -11,20 +11,20 @@ namespace Elsa.Serialization.Formatters
     public class YamlTokenFormatter : ITokenFormatter
     {
         public const string FormatName = SerializationFormats.Yaml;
-        private readonly ISerializer serializer;
-        private readonly IDeserializer deserializer;
-        private readonly JsonSerializerSettings jsonSerializerSettings;
+        private readonly ISerializer _serializer;
+        private readonly IDeserializer _deserializer;
+        private readonly JsonSerializerSettings _jsonSerializerSettings;
 
         public YamlTokenFormatter()
         {
-            serializer = new SerializerBuilder().Build();
-            deserializer = new DeserializerBuilder().Build();
+            _serializer = new SerializerBuilder().Build();
+            _deserializer = new DeserializerBuilder().Build();
 
-            jsonSerializerSettings = new JsonSerializerSettings {
+            _jsonSerializerSettings = new JsonSerializerSettings {
                 NullValueHandling = NullValueHandling.Ignore,
             };
                 
-            jsonSerializerSettings
+            _jsonSerializerSettings
                 .ConfigureForNodaTime(DateTimeZoneProviders.Tzdb)
                 .Converters.Add(new ExpandoObjectConverter());
         }
@@ -35,16 +35,16 @@ namespace Elsa.Serialization.Formatters
         public string ToString(JObject token)
         {
             var json = token.ToString(Formatting.None);
-            var expandoObject = JsonConvert.DeserializeObject<ExpandoObject>(json, jsonSerializerSettings);
-            return serializer.Serialize(expandoObject);
+            var expandoObject = JsonConvert.DeserializeObject<ExpandoObject>(json, _jsonSerializerSettings);
+            return _serializer.Serialize(expandoObject);
         }
 
         public JObject FromString(string data)
         {
-            var expandoObject = deserializer.Deserialize<ExpandoObject>(data);
-            var json = JsonConvert.SerializeObject(expandoObject, jsonSerializerSettings);
+            var expandoObject = _deserializer.Deserialize<ExpandoObject>(data);
+            var json = JsonConvert.SerializeObject(expandoObject, _jsonSerializerSettings);
 
-            return JsonConvert.DeserializeObject<JObject>(json, jsonSerializerSettings);
+            return JsonConvert.DeserializeObject<JObject>(json, _jsonSerializerSettings);
         }
     }
 }

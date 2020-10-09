@@ -15,11 +15,11 @@ namespace Elsa.Activities.Dropbox.Activities
         Icon = "fab fa-dropbox")]
     public class SaveToDropbox : Activity
     {
-        private readonly IFilesApi filesApi;
+        private readonly IFilesApi _filesApi;
 
         public SaveToDropbox(IFilesApi filesApi)
         {
-            this.filesApi = filesApi;
+            this._filesApi = filesApi;
         }
 
         [ActivityProperty(Hint = "An expression evaluating to a byte array to store.")]
@@ -32,7 +32,7 @@ namespace Elsa.Activities.Dropbox.Activities
             ActivityExecutionContext context,
             CancellationToken cancellationToken)
         {
-            await filesApi.UploadAsync(
+            await _filesApi.UploadAsync(
                 new UploadRequest
                 {
                     Mode = new UploadMode

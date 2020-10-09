@@ -21,8 +21,7 @@ namespace Elsa.Samples.DistributedLock
                     services
                         .AddElsa(options =>
                             options
-                            .UseMongoDbWorkflowStores("Elsa_Samples_Timers", "mongodb://localhost")
-                            .UseAzureBlobLockProvider("UseDevelopmentStorage=true"))
+                                .UseAzureBlobLockProvider("UseDevelopmentStorage=true"))
                             //.UseRedisLockProvider("redis-16642.xx.redislabs.com:16642,password=xxxxxx"))
 
                         .AddConsoleActivities()

@@ -14,13 +14,13 @@ namespace Elsa.Messaging.Domain.Handlers
         INotificationHandler<ActivityExecuted>,
         INotificationHandler<WorkflowCompleted>
     {
-        private readonly IWorkflowInstanceStore workflowInstanceStore;
-        private readonly ILogger logger;
+        private readonly IWorkflowInstanceStore _workflowInstanceStore;
+        private readonly ILogger _logger;
 
         public PersistenceWorkflowEventHandler(IWorkflowInstanceStore workflowInstanceStore, ILogger<PersistenceWorkflowEventHandler> logger)
         {
-            this.workflowInstanceStore = workflowInstanceStore;
-            this.logger = logger;
+            this._workflowInstanceStore = workflowInstanceStore;
+            this._logger = logger;
         }
 
         public async Task Handle(WorkflowSuspended notification, CancellationToken cancellationToken)
@@ -47,8 +47,8 @@ namespace Elsa.Messaging.Domain.Handlers
 
             if (workflowExecutionContext.DeleteCompletedInstances)
             {
-                logger.LogDebug("Deleting completed workflow instance {WorkflowInstanceId}", workflowExecutionContext.InstanceId);
-                await workflowInstanceStore.DeleteAsync(workflowExecutionContext.InstanceId, cancellationToken);
+                _logger.LogDebug("Deleting completed workflow instance {WorkflowInstanceId}", workflowExecutionContext.InstanceId);
+                await _workflowInstanceStore.DeleteAsync(workflowExecutionContext.InstanceId, cancellationToken);
             }
             else
                 await SaveWorkflowAsync(notification.WorkflowExecutionContext, cancellationToken);
@@ -56,14 +56,14 @@ namespace Elsa.Messaging.Domain.Handlers
 
         private async Task SaveWorkflowAsync(WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
         {
-            var workflowInstance = await workflowInstanceStore.GetByIdAsync(workflowExecutionContext.InstanceId, cancellationToken);
+            var workflowInstance = await _workflowInstanceStore.GetByIdAsync(workflowExecutionContext.InstanceId, cancellationToken);
 
             if (workflowInstance == null)
                 workflowInstance = workflowExecutionContext.CreateWorkflowInstance();
             else
                 workflowInstance = workflowExecutionContext.UpdateWorkflowInstance(workflowInstance);
 
-            await workflowInstanceStore.SaveAsync(workflowInstance, cancellationToken);
+            await _workflowInstanceStore.SaveAsync(workflowInstance, cancellationToken);
         }
     }
 }

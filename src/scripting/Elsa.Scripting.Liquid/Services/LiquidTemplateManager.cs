@@ -12,15 +12,15 @@ namespace Elsa.Scripting.Liquid.Services
 {
     public class LiquidTemplateManager : ILiquidTemplateManager
     {
-        private readonly IMemoryCache memoryCache;
-        private readonly IServiceProvider serviceProvider;
-        private readonly LiquidOptions options;
+        private readonly IMemoryCache _memoryCache;
+        private readonly IServiceProvider _serviceProvider;
+        private readonly LiquidOptions _options;
 
         public LiquidTemplateManager(IMemoryCache memoryCache, IOptions<LiquidOptions> options, IServiceProvider serviceProvider)
         {
-            this.memoryCache = memoryCache;
-            this.serviceProvider = serviceProvider;
-            this.options = options.Value;
+            this._memoryCache = memoryCache;
+            this._serviceProvider = serviceProvider;
+            this._options = options.Value;
         }
 
         public async Task<string> RenderAsync(string source, TemplateContext context, TextEncoder encoder)
@@ -28,7 +28,7 @@ namespace Elsa.Scripting.Liquid.Services
             if (string.IsNullOrWhiteSpace(source))
                 return default;
 
-            context.AddAsyncFilters(options, serviceProvider);
+            context.AddAsyncFilters(_options, _serviceProvider);
             var result = GetCachedTemplate(source);
 
             return await result.RenderAsync(context, encoder);
@@ -38,7 +38,7 @@ namespace Elsa.Scripting.Liquid.Services
         {
             IEnumerable<string> errors;
 
-            var result = memoryCache.GetOrCreate(
+            var result = _memoryCache.GetOrCreate(
                 source,
                 e =>
                 {

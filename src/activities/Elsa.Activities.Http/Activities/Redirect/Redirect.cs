@@ -20,12 +20,12 @@ namespace Elsa.Activities.Http
     )]
     public class Redirect : Activity
     {
-        private readonly IHttpContextAccessor httpContextAccessor;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
         public Redirect(IHttpContextAccessor httpContextAccessor, IStringLocalizer<Redirect> localizer)
         {
             T = localizer;
-            this.httpContextAccessor = httpContextAccessor;
+            this._httpContextAccessor = httpContextAccessor;
         }
         
         private IStringLocalizer<Redirect> T { get; }
@@ -38,12 +38,12 @@ namespace Elsa.Activities.Http
 
         protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var response = httpContextAccessor.HttpContext.Response;
+            var response = _httpContextAccessor.HttpContext.Response;
 
             if (response.HasStarted)
                 return Fault(T["Response has already started"]);
             
-            return new RedirectResult(httpContextAccessor, Location, Permanent);
+            return new RedirectResult(_httpContextAccessor, Location, Permanent);
         }
     }
 }

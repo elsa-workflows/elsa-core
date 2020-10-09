@@ -6,11 +6,11 @@ namespace Elsa.Activities.Http.Middleware
 {
     public class RequestHandlerMiddleware<THandler> where THandler : IRequestHandler
     {
-        private readonly RequestDelegate next;
+        private readonly RequestDelegate _next;
 
         public RequestHandlerMiddleware(RequestDelegate next)
         {
-            this.next = next;
+            this._next = next;
         }
 
         public async Task InvokeAsync(HttpContext httpContext, THandler handler)
@@ -18,7 +18,7 @@ namespace Elsa.Activities.Http.Middleware
             var result = await handler.HandleRequestAsync();
 
             if (result != null && !httpContext.Response.HasStarted)
-                await result.ExecuteResultAsync(httpContext, next);
+                await result.ExecuteResultAsync(httpContext, _next);
         }
     }
 }

@@ -13,11 +13,11 @@ namespace Elsa.Metadata
 {
     public class ActivityDescriber : IActivityDescriber
     {
-        private readonly IEnumerable<IActivityPropertyOptionsProvider> optionsProviders;
+        private readonly IEnumerable<IActivityPropertyOptionsProvider> _optionsProviders;
 
         public ActivityDescriber(IEnumerable<IActivityPropertyOptionsProvider> optionsProviders)
         {
-            this.optionsProviders = optionsProviders;
+            this._optionsProviders = optionsProviders;
         }
         
         public ActivityDescriptor Describe(Type activityType)
@@ -75,7 +75,7 @@ namespace Elsa.Metadata
         {
             var options = new JObject();
 
-            foreach (var provider in optionsProviders.Where(x => x.SupportsProperty(propertyInfo))) 
+            foreach (var provider in _optionsProviders.Where(x => x.SupportsProperty(propertyInfo))) 
                 provider.SupplyOptions(propertyInfo, options);
 
             return options;

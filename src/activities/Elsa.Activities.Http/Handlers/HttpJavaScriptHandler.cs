@@ -12,18 +12,18 @@ namespace Elsa.Activities.Http.Handlers
 {
     public class HttpJavaScriptHandler : INotificationHandler<EvaluatingJavaScriptExpression>
     {
-        private readonly ITokenService tokenService;
-        private readonly IAbsoluteUrlProvider absoluteUrlProvider;
-        private readonly IHttpContextAccessor httpContextAccessor;
+        private readonly ITokenService _tokenService;
+        private readonly IAbsoluteUrlProvider _absoluteUrlProvider;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
         public HttpJavaScriptHandler(
             ITokenService tokenService,
             IAbsoluteUrlProvider absoluteUrlProvider,
             IHttpContextAccessor httpContextAccessor)
         {
-            this.tokenService = tokenService;
-            this.absoluteUrlProvider = absoluteUrlProvider;
-            this.httpContextAccessor = httpContextAccessor;
+            this._tokenService = tokenService;
+            this._absoluteUrlProvider = absoluteUrlProvider;
+            this._httpContextAccessor = httpContextAccessor;
         }
 
         public Task Handle(EvaluatingJavaScriptExpression notification, CancellationToken cancellationToken)
@@ -33,11 +33,11 @@ namespace Elsa.Activities.Http.Handlers
 
             engine.SetValue(
                 "queryString",
-                (Func<string, string>)(key => httpContextAccessor.HttpContext.Request.Query[key].ToString())
+                (Func<string, string>)(key => _httpContextAccessor.HttpContext.Request.Query[key].ToString())
             );
             engine.SetValue(
                 "absoluteUrl",
-                (Func<string, string>)(url => absoluteUrlProvider.ToAbsoluteUrl(url).ToString())
+                (Func<string, string>)(url => _absoluteUrlProvider.ToAbsoluteUrl(url).ToString())
             );
             engine.SetValue(
                 "signalUrl",
@@ -51,10 +51,10 @@ namespace Elsa.Activities.Http.Handlers
         {
             var workflowInstanceId = activityExecutionContext.WorkflowExecutionContext.InstanceId;
             var payload = new Signal(signal, workflowInstanceId);
-            var token = tokenService.CreateToken(payload);
+            var token = _tokenService.CreateToken(payload);
             var url = $"/workflows/signal?token={token}";
 
-            return absoluteUrlProvider.ToAbsoluteUrl(url).ToString();
+            return _absoluteUrlProvider.ToAbsoluteUrl(url).ToString();
         }
     }
 }

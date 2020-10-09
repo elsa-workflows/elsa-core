@@ -5,16 +5,16 @@ namespace Elsa.Activities.MassTransit.Consumers.MessageCorrelation
 {
     public class PropertyCorrelationIdSelector<T> : ICorrelationIdSelector<T> where T : class
     {
-        readonly string propertyName;
+        readonly string _propertyName;
 
         public PropertyCorrelationIdSelector(string propertyName)
         {
-            this.propertyName = propertyName;
+            this._propertyName = propertyName;
         }
 
         public bool TryGetCorrelationId(T message, out Guid? correlationId)
         {
-            var propertyInfo = typeof(T).GetProperty(propertyName);
+            var propertyInfo = typeof(T).GetProperty(_propertyName);
             if (propertyInfo != null && propertyInfo.PropertyType == typeof(Guid))
             {
                 var property = ReadPropertyCache<T>.GetProperty<Guid>(propertyInfo);

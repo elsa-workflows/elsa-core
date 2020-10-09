@@ -9,11 +9,11 @@ namespace Elsa.Serialization
 {
     public class TokenSerializerProvider : ITokenSerializerProvider
     {
-        private readonly TypeConverter typeConverter;
+        private readonly TypeConverter _typeConverter;
 
         public TokenSerializerProvider(TypeConverter typeConverter)
         {
-            this.typeConverter = typeConverter;
+            this._typeConverter = typeConverter;
         }
 
         public JsonSerializerSettings CreateJsonSerializerSettings()
@@ -30,7 +30,7 @@ namespace Elsa.Serialization
                     },
                 }
                 .ConfigureForNodaTime(DateTimeZoneProviders.Tzdb)
-                .WithConverter(typeConverter);
+                .WithConverter(_typeConverter);
         }
 
         public JsonSerializer CreateJsonSerializer()
@@ -49,7 +49,7 @@ namespace Elsa.Serialization
                     ProcessDictionaryKeys = false
                 }
             };
-            jsonSerializer.Converters.Add(typeConverter);
+            jsonSerializer.Converters.Add(_typeConverter);
             return jsonSerializer;
         }
     }

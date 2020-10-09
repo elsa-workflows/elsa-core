@@ -18,11 +18,11 @@ namespace Elsa.Activities.ControlFlow
     )]
     public class IfElse : Activity
     {
-        private readonly IExpressionEvaluator expressionEvaluator;
+        private readonly IExpressionEvaluator _expressionEvaluator;
 
         public IfElse(IExpressionEvaluator expressionEvaluator)
         {
-            this.expressionEvaluator = expressionEvaluator;
+            this._expressionEvaluator = expressionEvaluator;
         }
 
         [ActivityProperty(Hint = "The expression to evaluate. The evaluated value will be used to switch on.")]
@@ -30,7 +30,7 @@ namespace Elsa.Activities.ControlFlow
 
         protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var result = await expressionEvaluator.EvaluateAsync(Condition, context, cancellationToken);
+            var result = await _expressionEvaluator.EvaluateAsync(Condition, context, cancellationToken);
             var outcome = result ? OutcomeNames.True : OutcomeNames.False;
 
             return Done(OutcomeNames.Done, outcome);

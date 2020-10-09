@@ -25,14 +25,14 @@ namespace Elsa.Services
         private static readonly ActivityOperation Execute = (context, activity, cancellationToken) => activity.ExecuteAsync(context, cancellationToken);
         private static readonly ActivityOperation Resume = (context, activity, cancellationToken) => activity.ResumeAsync(context, cancellationToken);
 
-        private readonly IWorkflowRegistry workflowRegistry;
-        private readonly IWorkflowInstanceStore workflowInstanceStore;
-        private readonly IWorkflowActivator workflowActivator;
-        private readonly IExpressionEvaluator expressionEvaluator;
-        private readonly IClock clock;
-        private readonly IMediator mediator;
-        private readonly IServiceProvider serviceProvider;
-        private readonly ILogger logger;
+        private readonly IWorkflowRegistry _workflowRegistry;
+        private readonly IWorkflowInstanceStore _workflowInstanceStore;
+        private readonly IWorkflowActivator _workflowActivator;
+        private readonly IExpressionEvaluator _expressionEvaluator;
+        private readonly IClock _clock;
+        private readonly IMediator _mediator;
+        private readonly IServiceProvider _serviceProvider;
+        private readonly ILogger _logger;
 
         public WorkflowHost(
             IWorkflowRegistry workflowRegistry,
@@ -44,23 +44,23 @@ namespace Elsa.Services
             IServiceProvider serviceProvider,
             ILogger<WorkflowHost> logger)
         {
-            this.workflowRegistry = workflowRegistry;
-            this.workflowInstanceStore = workflowInstanceStore;
-            this.workflowActivator = workflowActivator;
-            this.expressionEvaluator = expressionEvaluator;
-            this.clock = clock;
-            this.mediator = mediator;
-            this.serviceProvider = serviceProvider;
-            this.logger = logger;
+            this._workflowRegistry = workflowRegistry;
+            this._workflowInstanceStore = workflowInstanceStore;
+            this._workflowActivator = workflowActivator;
+            this._expressionEvaluator = expressionEvaluator;
+            this._clock = clock;
+            this._mediator = mediator;
+            this._serviceProvider = serviceProvider;
+            this._logger = logger;
         }
 
         public async Task<WorkflowExecutionContext?> RunWorkflowInstanceAsync(string workflowInstanceId, string? activityId = default, object? input = default, CancellationToken cancellationToken = default)
         {
-            var workflowInstance = await workflowInstanceStore.GetByIdAsync(workflowInstanceId, cancellationToken);
+            var workflowInstance = await _workflowInstanceStore.GetByIdAsync(workflowInstanceId, cancellationToken);
 
             if (workflowInstance == null)
             {
-                logger.LogDebug("Workflow instance {WorkflowInstanceId} does not exist.", workflowInstanceId);
+                _logger.LogDebug("Workflow instance {WorkflowInstanceId} does not exist.", workflowInstanceId);
                 return null;
             }
 
@@ -69,25 +69,25 @@ namespace Elsa.Services
 
         public async Task<WorkflowExecutionContext?> RunWorkflowInstanceAsync(WorkflowInstance workflowInstance, string? activityId = default, object? input = default, CancellationToken cancellationToken = default)
         {
-            var workflow = await workflowRegistry.GetWorkflowAsync(workflowInstance.DefinitionId, VersionOptions.SpecificVersion(workflowInstance.Version), cancellationToken);
+            var workflow = await _workflowRegistry.GetWorkflowAsync(workflowInstance.DefinitionId, VersionOptions.SpecificVersion(workflowInstance.Version), cancellationToken);
             return await RunAsync(workflow, workflowInstance, activityId, input, cancellationToken);
         }
 
         public async Task<WorkflowExecutionContext> RunWorkflowDefinitionAsync(string workflowDefinitionId, string? activityId = default, object? input = default, string? correlationId = default, CancellationToken cancellationToken = default)
         {
-            var workflow = await workflowRegistry.GetWorkflowAsync(workflowDefinitionId, VersionOptions.Published, cancellationToken);
+            var workflow = await _workflowRegistry.GetWorkflowAsync(workflowDefinitionId, VersionOptions.Published, cancellationToken);
             if (workflow == null)
             {
-                logger.LogError("Workflow definition {WorkflowInstanceId} either not registered or not published.", workflowDefinitionId);
+                _logger.LogError("Workflow definition {WorkflowInstanceId} either not registered or not published.", workflowDefinitionId);
                 throw new WorkflowException("The specified workflow definition is either not registered or not published.");
             }
-            var workflowInstance = await workflowActivator.ActivateAsync(workflow, correlationId, cancellationToken);
+            var workflowInstance = await _workflowActivator.ActivateAsync(workflow, correlationId, cancellationToken);
             return await RunAsync(workflow, workflowInstance, activityId, input, cancellationToken);
         }
 
         public async Task<WorkflowExecutionContext> RunWorkflowAsync(Workflow workflow, string? activityId = default, object? input = default, string? correlationId = default, CancellationToken cancellationToken = default)
         {
-            var workflowInstance = await workflowActivator.ActivateAsync(workflow, correlationId, cancellationToken);
+            var workflowInstance = await _workflowActivator.ActivateAsync(workflow, correlationId, cancellationToken);
             return await RunAsync(workflow, workflowInstance, activityId, input, cancellationToken);
         }
 
@@ -111,7 +111,7 @@ namespace Elsa.Services
                     break;
             }
 
-            await mediator.Publish(new WorkflowExecuted(workflowExecutionContext), cancellationToken);
+            await _mediator.Publish(new WorkflowExecuted(workflowExecutionContext), cancellationToken);
 
             var statusEvent = default(object);
 
@@ -135,7 +135,7 @@ namespace Elsa.Services
             }
 
             if (statusEvent != null)
-                await mediator.Publish(statusEvent, cancellationToken);
+                await _mediator.Publish(statusEvent, cancellationToken);
 
             return workflowExecutionContext;
         }
@@ -188,9 +188,9 @@ namespace Elsa.Services
                 await activityExecutionContext.SetActivityPropertiesAsync(cancellationToken);
                 var result = await activityOperation(activityExecutionContext, currentActivity, cancellationToken);
 
-                await mediator.Publish(new ActivityExecuting(activityExecutionContext), cancellationToken);
+                await _mediator.Publish(new ActivityExecuting(activityExecutionContext), cancellationToken);
                 await result.ExecuteAsync(activityExecutionContext, cancellationToken);
-                await mediator.Publish(new ActivityExecuted(activityExecutionContext), cancellationToken);
+                await _mediator.Publish(new ActivityExecuted(activityExecutionContext), cancellationToken);
 
                 activityOperation = Execute;
                 workflowExecutionContext.CompletePass();
@@ -254,9 +254,9 @@ namespace Elsa.Services
             WorkflowPersistenceBehavior persistenceBehavior = WorkflowPersistenceBehavior.WorkflowExecuted,
             IDictionary<string, IDictionary<string, IActivityPropertyValueProvider>>? activityPropertyValueProviders = default)
             => new WorkflowExecutionContext(
-                expressionEvaluator,
-                clock,
-                serviceProvider,
+                _expressionEvaluator,
+                _clock,
+                _serviceProvider,
                 workflowDefinitionId,
                 workflowInstanceId,
                 version,
