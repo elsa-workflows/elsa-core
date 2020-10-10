@@ -1,30 +1,28 @@
 ﻿using Microsoft.Azure.Documents;
 using Microsoft.Azure.Documents.Client;
-using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
-using NodaTime;
-using NodaTime.Serialization.JsonNet;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Elsa.Persistence.DocumentDb
 {
-    internal class DocumentDbStorage : IDocumentDbStorage
+    public class DocumentDbStorage
     {
-        private readonly SemaphoreSlim clientInstanceLock;
-        private readonly DocumentDbStorageOptions options;
-        private DocumentClient client;
-        private Dictionary<string, (string Name, Uri Uri)> collectionUris;
+        private DocumentDbStorageOptions Options { get; }
+        internal DocumentClient Client { get; }
+        internal Uri CollectionUri { get; private set; }
 
-        public DocumentDbStorage(IOptions<DocumentDbStorageOptions> options)
+        public DocumentDbStorage(
+            string url,
+            string authSecret,
+            string database,
+            string collection,
+            DocumentDbStorageOptions options = null)
         {
-            clientInstanceLock = new SemaphoreSlim(1, 1);
-
-            this.options = options.Value;
+            Options = options ?? new DocumentDbStorageOptions();
+            Options.DatabaseName = database;
+            Options.CollectionName = collection;
 
             var settings = new JsonSerializerSettings
             {
@@ -34,68 +32,55 @@ namespace Elsa.Persistence.DocumentDb
                 {
                     NamingStrategy = new CamelCaseNamingStrategy(false, false)
                 }
-            }.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
+            };
 
             var connectionPolicy = ConnectionPolicy.Default;
-            connectionPolicy.ConnectionMode = this.options.ConnectionMode;
-            connectionPolicy.ConnectionProtocol = this.options.ConnectionProtocol;
-            connectionPolicy.RequestTimeout = this.options.RequestTimeout;
+            connectionPolicy.ConnectionMode = Options.ConnectionMode;
+            connectionPolicy.ConnectionProtocol = Options.ConnectionProtocol;
+            connectionPolicy.RequestTimeout = Options.RequestTimeout;
             connectionPolicy.RetryOptions = new RetryOptions
             {
                 MaxRetryWaitTimeInSeconds = 10,
                 MaxRetryAttemptsOnThrottledRequests = 5
             };
 
-            client = new DocumentClient(new Uri(this.options.Url), this.options.AuthSecret, settings, connectionPolicy);
+            Client = new DocumentClient(new Uri(url), authSecret, settings, connectionPolicy);
+            var task = Client.OpenAsync();
+            var continueTask = task.ContinueWith(t => Initialize(), TaskContinuationOptions.OnlyOnRanToCompletion);
+            continueTask.Wait();
         }
 
-        public override string ToString() => $"DocumentDb Database: {options.DatabaseName}";
+        /// <summary>
+        /// Return the name of the database.
+        /// </summary>
+        public override string ToString() => $"DocumentDb Database: {Options.DatabaseName}";
 
-        public async Task<DocumentClient> GetDocumentClient()
+        private void Initialize()
         {
-            await clientInstanceLock.WaitAsync();
+            var databaseTask = Client.CreateDatabaseIfNotExistsAsync(new Database { Id = Options.DatabaseName });
 
-            try
-            {
-                if (collectionUris != null)
-                {
-                    return client;
-                }
-
-                await client.OpenAsync();
-
-                var database = await client.CreateDatabaseIfNotExistsAsync(new Database
-                {
-                    Id = options.DatabaseName
-                });
-
-
-
-                var tasks = options.CollectionNames.Select(async collectionName =>
-                {
-                    var databaseUri = UriFactory.CreateDatabaseUri(database.Resource.Id);
-                    var collection = await client.CreateDocumentCollectionIfNotExistsAsync(databaseUri, new DocumentCollection
+            var collectionTask = databaseTask.ContinueWith(
+                    t =>
                     {
-                        Id = collectionName.Value
-                    });
-                    var uri = UriFactory.CreateDocumentCollectionUri(options.DatabaseName, collection.Resource.Id);
+                        var databaseUri = UriFactory.CreateDatabaseUri(t.Result.Resource.Id);
+                        return Client.CreateDocumentCollectionIfNotExistsAsync(
+                            databaseUri,
+                            new DocumentCollection { Id = Options.CollectionName });
+                    },
+                    TaskContinuationOptions.OnlyOnRanToCompletion)
+                .Unwrap();
 
-                    return (collectionName.Key, Name: collectionName.Value, Uri: uri);
-                });
-
-                var results = await Task.WhenAll(tasks);
-
-                collectionUris = results.ToDictionary(x => x.Key, x => (x.Name, x.Uri));
-
-                return client;
-            }
-            finally
+            var continueTask = collectionTask.ContinueWith(
+                t =>
+                {
+                    CollectionUri = UriFactory.CreateDocumentCollectionUri(Options.DatabaseName, t.Result.Resource.Id);
+                },
+                TaskContinuationOptions.OnlyOnRanToCompletion);
+            continueTask.Wait();
+            if (continueTask.IsFaulted || continueTask.IsCanceled)
             {
-                clientInstanceLock.Release();
+                throw new ApplicationException("Unable to setup the storage database", databaseTask.Exception);
             }
         }
-
-        public Uri GetWorkflowDefinitionCollectionUri() => collectionUris["WorkflowDefinition"].Uri;
-        public Uri GetWorkflowInstanceCollectionUri() => collectionUris["WorkflowInstance"].Uri;
     }
 }

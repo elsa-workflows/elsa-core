@@ -4,7 +4,6 @@ using Elsa.Extensions;
 using Elsa.Mapping;
 using Elsa.Persistence.DocumentDb.Mapping;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 
 namespace Elsa.Persistence.DocumentDb.Extensions
 {
@@ -12,18 +11,35 @@ namespace Elsa.Persistence.DocumentDb.Extensions
     {
         public static CosmosDbElsaBuilder AddCosmosDbProvider(
             this ElsaBuilder builder,
-            Action<OptionsBuilder<DocumentDbStorageOptions>> options)
+            string url,
+            string authSecret,
+            string database,
+            string collection,
+            DocumentDbStorageOptions options = null)
         {
-            options?.Invoke(builder.Services.AddOptions<DocumentDbStorageOptions>());
+            if (string.IsNullOrEmpty(url)) throw new ArgumentNullException(nameof(url));
+            if (string.IsNullOrEmpty(authSecret)) throw new ArgumentNullException(nameof(authSecret));
+
+            var storage = new DocumentDbStorage(url, authSecret, database, collection, options);
 
             builder.Services
-                .AddSingleton<IDocumentDbStorage, DocumentDbStorage>()
-                .AddSingleton<IWorkflowInstanceStore, CosmosDbWorkflowInstanceStore>()
-                .AddSingleton<IWorkflowDefinitionStore, CosmosDbWorkflowDefinitionStore>()
+                .AddSingleton(storage)
                 .AddMapperProfile<NodaTimeProfile>(ServiceLifetime.Singleton)
                 .AddMapperProfile<DocumentProfile>(ServiceLifetime.Singleton);
 
             return new CosmosDbElsaBuilder(builder.Services);
+        }
+
+        public static CosmosDbElsaBuilder AddWorkflowInstanceStore(this CosmosDbElsaBuilder configuration)
+        {
+            configuration.Services.AddSingleton<IWorkflowInstanceStore, CosmosDbWorkflowInstanceStore>();
+            return configuration;
+        }
+
+        public static CosmosDbElsaBuilder AddWorkflowDefinitionStore(this CosmosDbElsaBuilder configuration)
+        {
+            configuration.Services.AddSingleton<IWorkflowDefinitionStore, CosmosDbWorkflowDefinitionStore>();
+            return configuration;
         }
     }
 }

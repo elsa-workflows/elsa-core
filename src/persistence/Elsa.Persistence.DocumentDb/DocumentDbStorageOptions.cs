@@ -1,6 +1,5 @@
 using Microsoft.Azure.Documents.Client;
 using System;
-using System.Collections.Generic;
 
 namespace Elsa.Persistence.DocumentDb
 {
@@ -12,31 +11,15 @@ namespace Elsa.Persistence.DocumentDb
         /// <value>
         /// The name of the database.
         /// </value>
-        public string DatabaseName { get; set; }
+        internal string DatabaseName { get; set; }
 
         /// <summary>
-        /// Gets or sets the url of the DocumentDB.
+        /// Gets or sets the name of the collection.
         /// </summary>
         /// <value>
-        /// The url of the DocumentDB.
+        /// The name of the collection.
         /// </value>
-        public string Url { get; set; }
-
-        /// <summary>
-        /// Gets or sets the secret to access DocumentDB.
-        /// </summary>
-        /// <value>
-        /// The secret to access DocumentDB.
-        /// </value>
-        public string AuthSecret { get; set; }
-
-        /// <summary>
-        /// Gets or sets the collection names under the DocumentDB.
-        /// </summary>
-        /// <value>
-        /// The collection names.
-        /// </value>
-        public IDictionary<string, string> CollectionNames { get; set; }
+        internal string CollectionName { get; set; }
 
         /// <summary>
         /// Get or sets the request timeout for DocumentDB client. Default value set to 30 seconds

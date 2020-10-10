@@ -4,8 +4,9 @@ using System.Collections.Generic;
 
 namespace Elsa.Persistence.DocumentDb.Documents
 {
-    public class WorkflowDefinitionVersionDocument : DocumentBase
+    public class WorkflowDefinitionVersionDocument
     {
+        [JsonProperty(PropertyName = "id")] public string Id { get; set; }
         [JsonProperty(PropertyName = "type")] public string Type { get; } = nameof(WorkflowDefinitionVersionDocument);
 
         [JsonProperty(PropertyName = "definitionId")]
