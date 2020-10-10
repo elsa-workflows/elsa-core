@@ -5,10 +5,8 @@ using System.Collections.Generic;
 
 namespace Elsa.Persistence.DocumentDb.Documents
 {
-    public class WorkflowInstanceDocument
+    public class WorkflowInstanceDocument : DocumentBase
     {
-        [JsonProperty(PropertyName = "id")] public string Id { get; set; }
-
         [JsonProperty(PropertyName = "definitionId")]
         public string DefinitionId { get; set; }
 

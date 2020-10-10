@@ -29,9 +29,10 @@ namespace Elsa.Models
 
         public string Name
         {
-            get => State.ContainsKey(nameof(Name)) ? State[nameof(Name)].Value<string>() : default;
-            set => State[nameof(Name)] = value;
+            get => State.ContainsKey(nameof(Name).ToLower()) ? State[nameof(Name).ToLower()].Value<string>() : default;
+            set => State[nameof(Name).ToLower()] = value;
         }
+
 
         public string DisplayName { get; set; }
         public string Description { get; set; }
