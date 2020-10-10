@@ -31,8 +31,8 @@ namespace Elsa.Activities.Http
             IHttpContextAccessor httpContextAccessor,
             IEnumerable<IHttpRequestBodyParser> parsers)
         {
-            this._httpContextAccessor = httpContextAccessor;
-            this._parsers = parsers;
+            _httpContextAccessor = httpContextAccessor;
+            _parsers = parsers;
         }
 
         /// <summary>

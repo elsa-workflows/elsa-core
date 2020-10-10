@@ -21,7 +21,7 @@ namespace Elsa.Activities.Timers
 
         public CronEvent(IClock clock)
         {
-            this._clock = clock;
+            _clock = clock;
         }
 
         [ActivityProperty(Hint = "Specify a CRON expression. See https://crontab.guru/ for help.")]

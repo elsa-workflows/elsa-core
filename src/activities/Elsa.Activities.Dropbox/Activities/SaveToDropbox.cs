@@ -19,7 +19,7 @@ namespace Elsa.Activities.Dropbox.Activities
 
         public SaveToDropbox(IFilesApi filesApi)
         {
-            this._filesApi = filesApi;
+            _filesApi = filesApi;
         }
 
         [ActivityProperty(Hint = "An expression evaluating to a byte array to store.")]

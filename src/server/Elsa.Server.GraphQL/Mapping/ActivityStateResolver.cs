@@ -13,8 +13,8 @@ namespace Elsa.Server.GraphQL.Mapping
 
         public ActivityStateResolver(ITokenSerializer serializer, IActivityResolver activityResolver)
         {
-            this._serializer = serializer;
-            this._activityResolver = activityResolver;
+            _serializer = serializer;
+            _activityResolver = activityResolver;
         }
 
         public Variables? Resolve(ActivityDefinitionInput source, ActivityDefinition destination, Variables? destMember, ResolutionContext context)

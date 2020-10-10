@@ -11,7 +11,7 @@ namespace Elsa.Services
             _nextWorkflowInstances = new Dictionary<(string WorkflowDefinitionId, string ActivityId), (Workflow Workflow, IActivity Activity, object? Input, string? CorrelationId)>();
 
         public void Enqueue(Workflow workflow, IActivity activity, object? input, string? correlationId)
-            => _nextWorkflowInstances[(workflow.DefinitionId, activity.Id)] = (workflow, activity, input, correlationId);
+            => _nextWorkflowInstances[(workflow.WorkflowDefinitionId, activity.Id)] = (workflow, activity, input, correlationId);
 
         public (Workflow Workflow, IActivity Activity, object? Input, string? CorrelationId)? Dequeue(string workflowDefinitionId, string activityId)
         {

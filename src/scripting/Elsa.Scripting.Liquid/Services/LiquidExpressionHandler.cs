@@ -17,8 +17,8 @@ namespace Elsa.Scripting.Liquid.Services
 
         public LiquidExpressionHandler(ILiquidTemplateManager liquidTemplateManager, IMediator mediator)
         {
-            this._liquidTemplateManager = liquidTemplateManager;
-            this._mediator = mediator;
+            _liquidTemplateManager = liquidTemplateManager;
+            _mediator = mediator;
         }
 
         public string Type => LiquidExpression.ExpressionType;

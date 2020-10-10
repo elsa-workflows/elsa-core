@@ -10,23 +10,31 @@ using Elsa.Extensions;
 using Elsa.Messaging.Domain;
 using Elsa.Models;
 using Elsa.Persistence;
+using Elsa.Queries;
 using Elsa.Services.Models;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using NodaTime;
+using YesSql;
 using ScheduledActivity = Elsa.Services.Models.ScheduledActivity;
 
 namespace Elsa.Services
 {
     public class WorkflowHost : IWorkflowHost
     {
-        private delegate Task<IActivityExecutionResult> ActivityOperation(ActivityExecutionContext activityExecutionContext, IActivity activity, CancellationToken cancellationToken);
+        private delegate Task<IActivityExecutionResult> ActivityOperation(
+            ActivityExecutionContext activityExecutionContext,
+            IActivity activity,
+            CancellationToken cancellationToken);
 
-        private static readonly ActivityOperation Execute = (context, activity, cancellationToken) => activity.ExecuteAsync(context, cancellationToken);
-        private static readonly ActivityOperation Resume = (context, activity, cancellationToken) => activity.ResumeAsync(context, cancellationToken);
+        private static readonly ActivityOperation Execute = (context, activity, cancellationToken) =>
+            activity.ExecuteAsync(context, cancellationToken);
 
+        private static readonly ActivityOperation Resume = (context, activity, cancellationToken) =>
+            activity.ResumeAsync(context, cancellationToken);
+
+        private readonly ISession _session;
         private readonly IWorkflowRegistry _workflowRegistry;
-        private readonly IWorkflowInstanceStore _workflowInstanceStore;
         private readonly IWorkflowActivator _workflowActivator;
         private readonly IExpressionEvaluator _expressionEvaluator;
         private readonly IClock _clock;
@@ -35,8 +43,8 @@ namespace Elsa.Services
         private readonly ILogger _logger;
 
         public WorkflowHost(
+            ISession session,
             IWorkflowRegistry workflowRegistry,
-            IWorkflowInstanceStore workflowInstanceStore,
             IWorkflowActivator workflowActivator,
             IExpressionEvaluator expressionEvaluator,
             IClock clock,
@@ -44,19 +52,23 @@ namespace Elsa.Services
             IServiceProvider serviceProvider,
             ILogger<WorkflowHost> logger)
         {
-            this._workflowRegistry = workflowRegistry;
-            this._workflowInstanceStore = workflowInstanceStore;
-            this._workflowActivator = workflowActivator;
-            this._expressionEvaluator = expressionEvaluator;
-            this._clock = clock;
-            this._mediator = mediator;
-            this._serviceProvider = serviceProvider;
-            this._logger = logger;
+            _session = session;
+            _workflowRegistry = workflowRegistry;
+            _workflowActivator = workflowActivator;
+            _expressionEvaluator = expressionEvaluator;
+            _clock = clock;
+            _mediator = mediator;
+            _serviceProvider = serviceProvider;
+            _logger = logger;
         }
 
-        public async Task<WorkflowExecutionContext?> RunWorkflowInstanceAsync(string workflowInstanceId, string? activityId = default, object? input = default, CancellationToken cancellationToken = default)
+        public async Task<WorkflowExecutionContext?> RunWorkflowInstanceAsync(
+            string workflowInstanceId,
+            string? activityId = default,
+            object? input = default,
+            CancellationToken cancellationToken = default)
         {
-            var workflowInstance = await _workflowInstanceStore.GetByIdAsync(workflowInstanceId, cancellationToken);
+            var workflowInstance = await _session.GetWorkflowInstanceByIdAsync(workflowInstanceId, cancellationToken);
 
             if (workflowInstance == null)
             {
@@ -67,31 +79,61 @@ namespace Elsa.Services
             return await RunWorkflowInstanceAsync(workflowInstance, activityId, input, cancellationToken);
         }
 
-        public async Task<WorkflowExecutionContext?> RunWorkflowInstanceAsync(WorkflowInstance workflowInstance, string? activityId = default, object? input = default, CancellationToken cancellationToken = default)
+        public async Task<WorkflowExecutionContext?> RunWorkflowInstanceAsync(
+            WorkflowInstance workflowInstance,
+            string? activityId = default,
+            object? input = default,
+            CancellationToken cancellationToken = default)
         {
-            var workflow = await _workflowRegistry.GetWorkflowAsync(workflowInstance.DefinitionId, VersionOptions.SpecificVersion(workflowInstance.Version), cancellationToken);
-            return await RunAsync(workflow, workflowInstance, activityId, input, cancellationToken);
-        }
+            var workflow = await _workflowRegistry.GetWorkflowAsync(
+                workflowInstance.WorkflowDefinitionId,
+                VersionOptions.SpecificVersion(workflowInstance.Version),
+                cancellationToken);
 
-        public async Task<WorkflowExecutionContext> RunWorkflowDefinitionAsync(string workflowDefinitionId, string? activityId = default, object? input = default, string? correlationId = default, CancellationToken cancellationToken = default)
-        {
-            var workflow = await _workflowRegistry.GetWorkflowAsync(workflowDefinitionId, VersionOptions.Published, cancellationToken);
             if (workflow == null)
-            {
-                _logger.LogError("Workflow definition {WorkflowInstanceId} either not registered or not published.", workflowDefinitionId);
-                throw new WorkflowException("The specified workflow definition is either not registered or not published.");
-            }
+                throw new WorkflowException(
+                    $"The specified workflow definition {workflowInstance.WorkflowDefinitionId} is either not registered or not published.");
+
+            return await RunAsync(workflow, workflowInstance, activityId, input, cancellationToken);
+        }
+
+        public async Task<WorkflowExecutionContext> RunWorkflowDefinitionAsync(
+            string workflowDefinitionId,
+            string? activityId = default,
+            object? input = default,
+            string? correlationId = default,
+            CancellationToken cancellationToken = default)
+        {
+            var workflow = await _workflowRegistry.GetWorkflowAsync(
+                workflowDefinitionId,
+                VersionOptions.Published,
+                cancellationToken);
+
+            if (workflow == null)
+                throw new WorkflowException(
+                    $"The specified workflow definition {workflowDefinitionId} is either not registered or not published.");
+
             var workflowInstance = await _workflowActivator.ActivateAsync(workflow, correlationId, cancellationToken);
             return await RunAsync(workflow, workflowInstance, activityId, input, cancellationToken);
         }
 
-        public async Task<WorkflowExecutionContext> RunWorkflowAsync(Workflow workflow, string? activityId = default, object? input = default, string? correlationId = default, CancellationToken cancellationToken = default)
+        public async Task<WorkflowExecutionContext> RunWorkflowAsync(
+            Workflow workflow,
+            string? activityId = default,
+            object? input = default,
+            string? correlationId = default,
+            CancellationToken cancellationToken = default)
         {
             var workflowInstance = await _workflowActivator.ActivateAsync(workflow, correlationId, cancellationToken);
             return await RunAsync(workflow, workflowInstance, activityId, input, cancellationToken);
         }
 
-        private async Task<WorkflowExecutionContext> RunAsync(Workflow workflow, WorkflowInstance workflowInstance, string? activityId = default, object? input = default, CancellationToken cancellationToken = default)
+        private async Task<WorkflowExecutionContext> RunAsync(
+            Workflow workflow,
+            WorkflowInstance workflowInstance,
+            string? activityId = default,
+            object? input = default,
+            CancellationToken cancellationToken = default)
         {
             var workflowExecutionContext = CreateWorkflowExecutionContext(workflow, workflowInstance);
             var activity = activityId != null ? workflow.GetActivity(activityId) : default;
@@ -140,7 +182,10 @@ namespace Elsa.Services
             return workflowExecutionContext;
         }
 
-        private async Task BeginWorkflow(WorkflowExecutionContext workflowExecutionContext, IActivity? activity, object? input, CancellationToken cancellationToken)
+        private async Task BeginWorkflow(WorkflowExecutionContext workflowExecutionContext,
+            IActivity? activity,
+            object? input,
+            CancellationToken cancellationToken)
         {
             if (activity == null)
                 activity = workflowExecutionContext.GetStartActivities().First();
@@ -153,12 +198,16 @@ namespace Elsa.Services
             await RunAsync(workflowExecutionContext, Execute, cancellationToken);
         }
 
-        private async Task RunWorkflowAsync(WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
+        private async Task RunWorkflowAsync(WorkflowExecutionContext workflowExecutionContext,
+            CancellationToken cancellationToken)
         {
             await RunAsync(workflowExecutionContext, Execute, cancellationToken);
         }
 
-        private async Task ResumeWorkflowAsync(WorkflowExecutionContext workflowExecutionContext, IActivity activity, object? input, CancellationToken cancellationToken)
+        private async Task ResumeWorkflowAsync(WorkflowExecutionContext workflowExecutionContext,
+            IActivity activity,
+            object? input,
+            CancellationToken cancellationToken)
         {
             if (!await CanExecuteAsync(workflowExecutionContext, activity, input, cancellationToken))
                 return;
@@ -169,7 +218,10 @@ namespace Elsa.Services
             await RunAsync(workflowExecutionContext, Resume, cancellationToken);
         }
 
-        private Task<bool> CanExecuteAsync(WorkflowExecutionContext workflowExecutionContext, IActivity activity, object? input, CancellationToken cancellationToken)
+        private Task<bool> CanExecuteAsync(WorkflowExecutionContext workflowExecutionContext,
+            IActivity activity,
+            object? input,
+            CancellationToken cancellationToken)
         {
             var activityExecutionContext = new ActivityExecutionContext(workflowExecutionContext, activity, input);
             return activity.CanExecuteAsync(activityExecutionContext, cancellationToken);
@@ -184,7 +236,10 @@ namespace Elsa.Services
             {
                 var scheduledActivity = workflowExecutionContext.PopScheduledActivity();
                 var currentActivity = scheduledActivity.Activity;
-                var activityExecutionContext = new ActivityExecutionContext(workflowExecutionContext, currentActivity, scheduledActivity.Input);
+                var activityExecutionContext = new ActivityExecutionContext(
+                    workflowExecutionContext,
+                    currentActivity,
+                    scheduledActivity.Input);
                 await activityExecutionContext.SetActivityPropertiesAsync(cancellationToken);
                 var result = await activityOperation(activityExecutionContext, currentActivity, cancellationToken);
 
@@ -200,21 +255,18 @@ namespace Elsa.Services
                 workflowExecutionContext.Complete();
         }
 
-        private ScheduledActivity CreateScheduledActivity(Elsa.Models.ScheduledActivity scheduledActivityModel, IDictionary<string, IActivity> activityLookup)
+        private ScheduledActivity CreateScheduledActivity(Elsa.Models.ScheduledActivity scheduledActivityModel,
+            IDictionary<string, IActivity> activityLookup)
         {
             var activity = activityLookup[scheduledActivityModel.ActivityId];
             return new ScheduledActivity(activity, scheduledActivityModel.Input);
         }
 
-        private WorkflowExecutionContext CreateWorkflowExecutionContext(Workflow workflow, WorkflowInstance workflowInstance)
+        private WorkflowExecutionContext CreateWorkflowExecutionContext(
+            Workflow workflow,
+            WorkflowInstance workflowInstance)
         {
-            var activityLookup = workflow.Activities.ToDictionary(x => x.Id);
             var activityInstanceLookup = workflowInstance.Activities.ToDictionary(x => x.Id);
-            var scheduledActivities = new Stack<ScheduledActivity>(workflowInstance.ScheduledActivities.Reverse().Select(x => CreateScheduledActivity(x, activityLookup)));
-            var blockingActivities = new HashSet<IActivity>(workflowInstance.BlockingActivities.Select(x => activityLookup[x.ActivityId]));
-            var variables = workflowInstance.Variables;
-            var status = workflowInstance.Status;
-            var persistenceBehavior = workflow.PersistenceBehavior;
 
             foreach (var activity in workflow.Activities)
             {
@@ -222,52 +274,15 @@ namespace Elsa.Services
                     continue;
 
                 var activityInstance = activityInstanceLookup[activity.Id];
-                //activity.State = activityInstance.State;
                 activity.Output = activityInstance.Output;
             }
 
-            return CreateWorkflowExecutionContext(
-                workflowInstance.Id,
-                workflow.DefinitionId,
-                workflow.Version,
-                workflow.Activities,
-                workflow.Connections,
-                scheduledActivities,
-                blockingActivities,
-                workflowInstance.CorrelationId,
-                variables,
-                status,
-                persistenceBehavior,
-                workflow.ActivityPropertyValueProviders);
-        }
-
-        private WorkflowExecutionContext CreateWorkflowExecutionContext(string workflowInstanceId,
-            string workflowDefinitionId,
-            int version,
-            IEnumerable<IActivity> activities,
-            IEnumerable<Connection> connections,
-            IEnumerable<ScheduledActivity>? scheduledActivities = default,
-            IEnumerable<IActivity>? blockingActivities = default,
-            string? correlationId = default,
-            Variables? variables = default,
-            WorkflowStatus status = WorkflowStatus.Running,
-            WorkflowPersistenceBehavior persistenceBehavior = WorkflowPersistenceBehavior.WorkflowExecuted,
-            IDictionary<string, IDictionary<string, IActivityPropertyValueProvider>>? activityPropertyValueProviders = default)
-            => new WorkflowExecutionContext(
+            return new WorkflowExecutionContext(
                 _expressionEvaluator,
                 _clock,
                 _serviceProvider,
-                workflowDefinitionId,
-                workflowInstanceId,
-                version,
-                activities,
-                connections,
-                scheduledActivities,
-                blockingActivities,
-                correlationId,
-                variables,
-                status,
-                persistenceBehavior,
-                activityPropertyValueProviders);
+                workflow,
+                workflowInstance);
+        }
     }
 }

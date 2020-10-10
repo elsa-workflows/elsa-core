@@ -14,7 +14,7 @@ namespace Elsa.Activities.Dropbox.Services
 
         public FilesApi(HttpClient httpClient)
         {
-            this._httpClient = httpClient;
+            _httpClient = httpClient;
         }
         
         public async Task<UploadResponse> UploadAsync(UploadRequest request, byte[] file, CancellationToken cancellationToken)

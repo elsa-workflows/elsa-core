@@ -21,8 +21,8 @@ namespace Elsa.Activities.Email
 
         public SendEmail(ISmtpService smtpService, IOptions<SmtpOptions> options)
         {
-            this._smtpService = smtpService;
-            this._options = options;
+            _smtpService = smtpService;
+            _options = options;
         }
 
         [ActivityProperty(Hint = "The sender's email address.")]

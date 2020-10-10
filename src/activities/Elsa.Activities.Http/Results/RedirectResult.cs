@@ -13,7 +13,7 @@ namespace Elsa.Activities.Http.Results
         {
             Location = location;
             Permanent = permanent;
-            this._httpContextAccessor = httpContextAccessor;
+            _httpContextAccessor = httpContextAccessor;
         }
         
         public Uri Location { get; }

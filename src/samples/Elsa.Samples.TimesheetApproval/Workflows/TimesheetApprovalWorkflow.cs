@@ -21,7 +21,7 @@ namespace Elsa.Samples.TimesheetApproval.Workflows
                         var user = timesheet.User;
                         var hours = timesheet.TotalHours;
                         var urlProvider = context.GetService<IAbsoluteUrlProvider>();
-                        var timesheetUrl = urlProvider.ToAbsoluteUrl($"/api/timesheets/{timesheet.Id}");
+                        var timesheetUrl = urlProvider.ToAbsoluteUrl($"/api/timesheets/{timesheet.TimesheetId}");
                         return $"Hi!<br>User {user} just submitted their timesheet with a total of {hours} hours. Please <a href=\"{timesheetUrl}\">review</a> and then <a hre\"\">Approve</a> or <a href=\"\">Reject</a>";
                     }));
         }

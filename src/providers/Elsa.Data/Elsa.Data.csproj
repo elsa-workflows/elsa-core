@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
-        <TargetFramework>netcoreapp3.0</TargetFramework>
+        <RootNamespace>Elsa.Data</RootNamespace>
         <LangVersion>latest</LangVersion>
         <PackageVersion>1.0.0</PackageVersion>
         <Authors>Elsa Contributors</Authors>
@@ -27,11 +27,11 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="YesSql.Core" Version="2.0.0-beta-1541" />
+        <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
+      <PackageReference Include="YesSql.Core" Version="2.0.0-beta-1547" />
     </ItemGroup>
 
 </Project>

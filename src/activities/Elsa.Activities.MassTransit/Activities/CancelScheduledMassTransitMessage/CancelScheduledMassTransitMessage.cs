@@ -23,7 +23,7 @@ namespace Elsa.Activities.MassTransit
         public CancelScheduledMassTransitMessage(IBus bus, ConsumeContext consumeContext, IOptions<MessageScheduleOptions> options)
             : base(bus, consumeContext)
         {
-            this._options = options.Value;
+            _options = options.Value;
         }
 
         [ActivityProperty(Hint = "Expression that returns the tokenId of a scheduled message to cancel.")]

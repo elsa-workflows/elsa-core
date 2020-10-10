@@ -8,13 +8,13 @@ namespace Elsa.Services
     {
         WorkflowDefinition New();
         
-        Task<WorkflowDefinition> PublishAsync(string id, CancellationToken cancellationToken = default);
+        Task<WorkflowDefinition?> PublishAsync(string id, CancellationToken cancellationToken = default);
 
         Task<WorkflowDefinition> PublishAsync(
             WorkflowDefinition workflowDefinition,
             CancellationToken cancellationToken = default);
 
-        Task<WorkflowDefinition> GetDraftAsync(string id, CancellationToken cancellationToken= default);
+        Task<WorkflowDefinition?> GetDraftAsync(string id, CancellationToken cancellationToken= default);
 
         Task<WorkflowDefinition> SaveDraftAsync(
             WorkflowDefinition workflowDefinition,

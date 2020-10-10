@@ -12,7 +12,7 @@ namespace Elsa.Scripting.Liquid.Helpers
 
         public LiquidObjectAccessor(Func<string, Task<T>> getter)
         {
-            this._getter = getter;
+            _getter = getter;
         }
 
         public Task<T> GetValueAsync(string identifier)

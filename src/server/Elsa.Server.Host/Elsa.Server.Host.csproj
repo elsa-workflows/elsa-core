@@ -5,7 +5,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\providers\Elsa.Persistence.Core\Elsa.Persistence.Core.csproj" />
+        <ProjectReference Include="..\..\providers\Elsa.Data\Elsa.Data.csproj" />
         <ProjectReference Include="..\Elsa.Server.Core\Elsa.Server.Core.csproj" />
         <ProjectReference Include="..\Elsa.Server.GraphQL\Elsa.Server.GraphQL.csproj" />
     </ItemGroup>
@@ -14,6 +14,7 @@
         <PackageReference Include="GraphQL.Server.Ui.GraphiQL" Version="3.4.0" />
         <PackageReference Include="GraphQL.Server.Ui.Playground" Version="3.4.0" />
         <PackageReference Include="GraphQL.Server.Ui.Voyager" Version="3.4.0" />
+        <PackageReference Include="YesSql.Provider.Sqlite" Version="1.0.0-beta-1547" />
     </ItemGroup>
 
 </Project>

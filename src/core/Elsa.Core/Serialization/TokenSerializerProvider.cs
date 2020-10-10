@@ -13,7 +13,7 @@ namespace Elsa.Serialization
 
         public TokenSerializerProvider(TypeConverter typeConverter)
         {
-            this._typeConverter = typeConverter;
+            _typeConverter = typeConverter;
         }
 
         public JsonSerializerSettings CreateJsonSerializerSettings()

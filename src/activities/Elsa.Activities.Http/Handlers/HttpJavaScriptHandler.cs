@@ -21,9 +21,9 @@ namespace Elsa.Activities.Http.Handlers
             IAbsoluteUrlProvider absoluteUrlProvider,
             IHttpContextAccessor httpContextAccessor)
         {
-            this._tokenService = tokenService;
-            this._absoluteUrlProvider = absoluteUrlProvider;
-            this._httpContextAccessor = httpContextAccessor;
+            _tokenService = tokenService;
+            _absoluteUrlProvider = absoluteUrlProvider;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public Task Handle(EvaluatingJavaScriptExpression notification, CancellationToken cancellationToken)
@@ -49,7 +49,7 @@ namespace Elsa.Activities.Http.Handlers
 
         private string GenerateUrl(string signal, ActivityExecutionContext activityExecutionContext)
         {
-            var workflowInstanceId = activityExecutionContext.WorkflowExecutionContext.InstanceId;
+            var workflowInstanceId = activityExecutionContext.WorkflowExecutionContext.WorkflowInstanceId;
             var payload = new Signal(signal, workflowInstanceId);
             var token = _tokenService.CreateToken(payload);
             var url = $"/workflows/signal?token={token}";

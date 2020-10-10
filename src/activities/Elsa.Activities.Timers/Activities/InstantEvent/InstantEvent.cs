@@ -17,7 +17,7 @@ namespace Elsa.Activities.Timers
     {
         private readonly IClock _clock;
 
-        public InstantEvent(IClock clock) => this._clock = clock;
+        public InstantEvent(IClock clock) => _clock = clock;
 
         /// <summary>
         /// An expression that evaluates to an <see cref="NodaTime.Instant"/>

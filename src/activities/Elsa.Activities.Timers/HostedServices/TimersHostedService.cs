@@ -24,10 +24,10 @@ namespace Elsa.Activities.Timers.HostedServices
             IOptions<TimersOptions> options,
             ILogger<TimersHostedService> logger)
         {
-            this._serviceProvider = serviceProvider;
-            this._distributedLockProvider = distributedLockProvider;
-            this._options = options;
-            this._logger = logger;
+            _serviceProvider = serviceProvider;
+            _distributedLockProvider = distributedLockProvider;
+            _options = options;
+            _logger = logger;
         }
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {

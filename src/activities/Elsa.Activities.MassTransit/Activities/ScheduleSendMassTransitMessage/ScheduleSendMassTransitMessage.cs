@@ -28,7 +28,7 @@ namespace Elsa.Activities.MassTransit
             IOptions<MessageScheduleOptions> options)
             : base(bus, consumeContext)
         {
-            this._options = options.Value;
+            _options = options.Value;
         }
 
         [ActivityProperty(Hint = "An expression that evaluates to the message to be delivered.")]

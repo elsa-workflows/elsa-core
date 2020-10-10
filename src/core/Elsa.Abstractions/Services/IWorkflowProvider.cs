@@ -6,7 +6,7 @@ using Elsa.Services.Models;
 namespace Elsa.Services
 {
     /// <summary>
-    /// Represents a source of processes for <see cref="IWorkflowRegistry"/>
+    /// Represents a source of workflows for the <see cref="IWorkflowRegistry"/>
     /// </summary>
     public interface IWorkflowProvider
     {

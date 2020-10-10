@@ -21,7 +21,7 @@ namespace Elsa.Activities.ControlFlow
 
         public While(IExpressionEvaluator expressionEvaluator)
         {
-            this._expressionEvaluator = expressionEvaluator;
+            _expressionEvaluator = expressionEvaluator;
         }
         
         [ActivityProperty(Hint = "Enter an expression that evaluates to a boolean value.")]

@@ -12,7 +12,7 @@ namespace Elsa.Messaging.Domain.Handlers
 
         public WorkflowExecutionLogEventHandler(IClock clock)
         {
-            this._clock = clock;
+            _clock = clock;
         }
 
         public Task Handle(ActivityExecuted notification, CancellationToken cancellationToken)

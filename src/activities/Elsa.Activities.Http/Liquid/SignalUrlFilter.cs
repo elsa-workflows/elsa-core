@@ -16,8 +16,8 @@ namespace Elsa.Activities.Http.Liquid
 
         public SignalUrlFilter(ITokenService tokenService, IAbsoluteUrlProvider absoluteUrlProvider)
         {
-            this._tokenService = tokenService;
-            this._absoluteUrlProvider = absoluteUrlProvider;
+            _tokenService = tokenService;
+            _absoluteUrlProvider = absoluteUrlProvider;
         }
 
         public ValueTask<FluidValue> ProcessAsync(FluidValue input, FilterArguments arguments, TemplateContext context)
@@ -35,7 +35,7 @@ namespace Elsa.Activities.Http.Liquid
 
         private string GenerateUrl(string signal, WorkflowExecutionContext workflowExecutionContext)
         {
-            var workflowInstanceId = workflowExecutionContext.InstanceId;
+            var workflowInstanceId = workflowExecutionContext.WorkflowInstanceId;
             var payload = new Signal(signal, workflowInstanceId);
             var token = _tokenService.CreateToken(payload);
             var url = $"/workflows/signal?token={token}";

@@ -13,13 +13,13 @@ namespace Elsa.Samples.TimesheetApproval.Handlers
 
         public TimesheetEventsHandler(IWorkflowScheduler workflowScheduler)
         {
-            this._workflowScheduler = workflowScheduler;
+            _workflowScheduler = workflowScheduler;
         }
 
         public async Task Handle(TimesheetSubmitted notification, CancellationToken cancellationToken) => 
             await TriggerWorkflowsAsync<Activities.TimesheetSubmitted>(notification.Timesheet, cancellationToken);
 
         private async Task TriggerWorkflowsAsync<T>(Timesheet timesheet, CancellationToken cancellationToken) where T:IActivity => 
-            await _workflowScheduler.TriggerWorkflowsAsync(typeof(T).Name, timesheet, timesheet.Id, cancellationToken: cancellationToken);
+            await _workflowScheduler.TriggerWorkflowsAsync(typeof(T).Name, timesheet, timesheet.TimesheetId, cancellationToken: cancellationToken);
     }
 }

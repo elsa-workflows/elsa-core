@@ -19,6 +19,6 @@ namespace Elsa.Services
         /// <summary>
         /// Schedules new workflows that start with the specified activity type or are blocked on the specified activity type.
         /// </summary>
-        Task TriggerWorkflowsAsync(string activityType, object? input = default, string? correlationId = default, Func<IActivity, bool>? activityStatePredicate = default, CancellationToken cancellationToken = default);
+        Task TriggerWorkflowsAsync(string activityType, object? input = default, string? correlationId = default, CancellationToken cancellationToken = default);
     }
 }

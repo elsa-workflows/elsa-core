@@ -9,7 +9,7 @@ namespace Elsa.Activities.MassTransit.Consumers.MessageCorrelation
 
         public PropertyCorrelationIdSelector(string propertyName)
         {
-            this._propertyName = propertyName;
+            _propertyName = propertyName;
         }
 
         public bool TryGetCorrelationId(T message, out Guid? correlationId)

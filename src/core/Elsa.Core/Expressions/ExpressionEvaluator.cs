@@ -16,8 +16,8 @@ namespace Elsa.Expressions
 
         public ExpressionEvaluator(IEnumerable<IExpressionHandler> evaluators, ILogger<ExpressionEvaluator> logger)
         {
-            this._evaluators = evaluators.ToDictionary(x => x.Type);
-            this._logger = logger;
+            _evaluators = evaluators.ToDictionary(x => x.Type);
+            _logger = logger;
         }
 
         public async Task<object> EvaluateAsync(

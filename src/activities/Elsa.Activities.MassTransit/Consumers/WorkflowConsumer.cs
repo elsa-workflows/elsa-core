@@ -22,7 +22,7 @@ namespace Elsa.Activities.MassTransit.Consumers
 
         public WorkflowConsumer(IWorkflowScheduler workflowScheduler)
         {
-            this._workflowScheduler = workflowScheduler;
+            _workflowScheduler = workflowScheduler;
         }
 
         public async Task Consume(ConsumeContext<T> context)

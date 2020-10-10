@@ -2,7 +2,8 @@
 {
     public class Timesheet
     {
-        public string Id { get; set; }
+        public int Id { get; set; }
+        public string TimesheetId { get; set; }
         public string User { get; set; }
         public float TotalHours { get; set; }
         public TimesheetStatus Status { get; set; } = TimesheetStatus.Draft;

@@ -10,7 +10,7 @@ namespace Elsa.Activities.Http.Middleware
 
         public RequestHandlerMiddleware(RequestDelegate next)
         {
-            this._next = next;
+            _next = next;
         }
 
         public async Task InvokeAsync(HttpContext httpContext, THandler handler)

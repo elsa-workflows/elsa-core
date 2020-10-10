@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoFixture;
@@ -15,21 +16,26 @@ using Moq;
 using NodaTime;
 using NodaTime.Testing;
 using Xunit;
+using YesSql;
+using YesSql.Provider.Sqlite;
+using IIdGenerator = Elsa.Services.IIdGenerator;
 
 namespace Elsa.Core.UnitTests
 {
-    public class WorkflowHostTests
+    public class WorkflowHostTests : IDisposable
     {
         private readonly IFixture _fixture;
         private readonly WorkflowHost _workflowHost;
+        private TemporaryFolder _tempFolder;
+        private ISession _session;
 
         public WorkflowHostTests()
         {
             _fixture = new Fixture().Customize(new NodaTimeCustomization());
+            _session = CreateSession();
+            
             var workflowActivatorMock = new Mock<IWorkflowActivator>();
-            var idGeneratorMock = new Mock<IIdGenerator>();
             var workflowRegistryMock = new Mock<IWorkflowRegistry>();
-            var workflowInstanceStoreMock = new Mock<IWorkflowInstanceStore>();
             var workflowExpressionEvaluatorMock = new Mock<IExpressionEvaluator>();
             var mediatorMock = new Mock<IMediator>();
             var now = _fixture.Create<Instant>();
@@ -40,16 +46,27 @@ namespace Elsa.Core.UnitTests
             workflowActivatorMock
                 .Setup(x => x.ActivateAsync(It.IsAny<Workflow>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((Workflow workflow, string? correlationId, CancellationToken cancellationToken) => new WorkflowInstance());
-
+            
             _workflowHost = new WorkflowHost(
+                _session,
                 workflowRegistryMock.Object,
-                workflowInstanceStoreMock.Object,
                 workflowActivatorMock.Object,
                 workflowExpressionEvaluatorMock.Object,
                 clock,
                 mediatorMock.Object,
                 serviceProvider,
                 logger);
+        }
+        
+        public void Dispose() => _session.Dispose();
+
+        private ISession CreateSession()
+        {
+            _tempFolder = new TemporaryFolder();
+            var connectionString = $@"Data Source={_tempFolder.Folder}elsa.db;Cache=Shared";
+            var config = new Configuration().UseSqLite(connectionString).UseDefaultIdGenerator();
+            var store = StoreFactory.CreateAndInitializeAsync(config).GetAwaiter().GetResult();
+            return store.CreateSession();
         }
 
         [Fact(DisplayName = "Can run simple workflow to completed state.")]
@@ -60,7 +77,7 @@ namespace Elsa.Core.UnitTests
             var workflow = CreateWorkflow(activity);
             var executionContext = await _workflowHost.RunWorkflowAsync(workflow);
 
-            Assert.Equal(WorkflowStatus.Completed, executionContext.CreateWorkflowInstance().Status);
+            Assert.Equal(WorkflowStatus.Completed, executionContext.UpdateWorkflowInstance().Status);
         }
 
         [Fact(DisplayName = "Invokes returned activity execution result.")]

@@ -21,14 +21,14 @@ namespace Elsa.DistributedLocking.SqlServer
 
         public SqlLockProvider(string connectionString, ILogger<SqlLockProvider> logger)
         {
-            this._logger = logger;
+            _logger = logger;
             var connectionStringBuilder = new SqlConnectionStringBuilder(connectionString)
             {
                 Pooling = true,
                 ApplicationName = "Elsa Distributed Lock Provider"
             };
 
-            this._connectionString = connectionStringBuilder.ToString();
+            _connectionString = connectionStringBuilder.ToString();
         }
 
         public async Task<bool> AcquireLockAsync(string name, CancellationToken cancellationToken)

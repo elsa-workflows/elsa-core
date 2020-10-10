@@ -10,7 +10,7 @@ namespace Elsa.Activities.ControlFlow
         
         public SwitchBuilder(IActivityBuilder activityBuilder)
         {
-            this._activityBuilder = activityBuilder;
+            _activityBuilder = activityBuilder;
             _switch = (Switch)activityBuilder.Activity;
         }
 

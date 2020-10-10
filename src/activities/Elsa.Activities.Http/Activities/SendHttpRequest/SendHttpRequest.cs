@@ -39,7 +39,7 @@ namespace Elsa.Activities.Http
             IEnumerable<IHttpResponseBodyParser> parsers)
         {
             _httpClient = httpClientFactory.CreateClient(nameof(SendHttpRequest));
-            this._parsers = parsers;
+            _parsers = parsers;
         }
 
         /// <summary>

@@ -11,7 +11,7 @@ namespace Elsa.Runtime
 
         public StartupRunner(IServiceProvider serviceProvider)
         {
-            this._serviceProvider = serviceProvider;
+            _serviceProvider = serviceProvider;
         }
         
         public async Task StartupAsync(CancellationToken cancellationToken = default)

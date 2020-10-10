@@ -23,8 +23,8 @@ namespace Elsa.Activities.Email.Services
             ILogger<SmtpService> logger
         )
         {
-            this._options = options.Value;
-            this._logger = logger;
+            _options = options.Value;
+            _logger = logger;
         }
 
         public async Task SendAsync(MimeMessage message, CancellationToken cancellationToken)

@@ -10,7 +10,7 @@ namespace Elsa.Converters
 
         public TypeConverter(ITypeMap typeMap)
         {
-            this._typeMap = typeMap;
+            _typeMap = typeMap;
         }
         
         public override bool CanRead => true;

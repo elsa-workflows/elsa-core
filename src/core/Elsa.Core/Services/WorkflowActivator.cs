@@ -1,5 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Exceptions;
 using Elsa.Models;
 using Elsa.Services.Models;
 using NodaTime;
@@ -8,27 +9,13 @@ namespace Elsa.Services
 {
     public class WorkflowActivator : IWorkflowActivator
     {
-        private readonly IWorkflowRegistry _workflowRegistry;
         private readonly IClock _clock;
         private readonly IIdGenerator _idGenerator;
 
-        public WorkflowActivator(IWorkflowRegistry workflowRegistry, IClock clock, IIdGenerator idGenerator)
+        public WorkflowActivator(IClock clock, IIdGenerator idGenerator)
         {
-            this._workflowRegistry = workflowRegistry;
-            this._clock = clock;
-            this._idGenerator = idGenerator;
-        }
-
-        public async Task<WorkflowInstance> ActivateAsync(
-            string definitionId,
-            string? correlationId = default,
-            CancellationToken cancellationToken = default)
-        {
-            var workflow = await _workflowRegistry.GetWorkflowAsync(
-                definitionId,
-                VersionOptions.Published,
-                cancellationToken);
-            return await ActivateAsync(workflow, correlationId, cancellationToken);
+            _clock = clock;
+            _idGenerator = idGenerator;
         }
 
         public Task<WorkflowInstance> ActivateAsync(
@@ -38,12 +25,12 @@ namespace Elsa.Services
         {
             var workflowInstance = new WorkflowInstance
             {
-                Id = _idGenerator.Generate(),
-                Status = WorkflowStatus.Idle,
+                WorkflowInstanceId = _idGenerator.Generate(),
+                WorkflowDefinitionId = workflow.WorkflowDefinitionId,
                 Version = workflow.Version,
+                Status = WorkflowStatus.Idle,
                 CorrelationId = correlationId,
                 CreatedAt = _clock.GetCurrentInstant(),
-                DefinitionId = workflow.DefinitionId
             };
 
             return Task.FromResult(workflowInstance);

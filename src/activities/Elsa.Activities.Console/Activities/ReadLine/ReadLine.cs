@@ -30,7 +30,7 @@ namespace Elsa.Activities.Console
 
         public ReadLine(TextReader input)
         {
-            this._input = input;
+            _input = input;
         }
 
         protected override async Task<IActivityExecutionResult> OnExecuteAsync(

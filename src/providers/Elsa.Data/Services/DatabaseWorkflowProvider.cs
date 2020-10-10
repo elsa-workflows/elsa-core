@@ -2,32 +2,33 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Extensions;
 using Elsa.Models;
-using Elsa.Persistence;
 using Elsa.Services;
 using Elsa.Services.Models;
 using YesSql;
 
-namespace Elsa.WorkflowProviders
+namespace Elsa.Data.Services
 {
     /// <summary>
-    /// Provides workflow definitions from the workflow definition store.
+    /// Provides workflows from the workflow definition store.
     /// </summary>
-    public class StoreWorkflowProvider : IWorkflowProvider
+    public class DatabaseWorkflowProvider : IWorkflowProvider
     {
-        private readonly IWorkflowDefinitionManager _workflowDefinitionManager;
+        private readonly ISession _session;
         private readonly IActivityResolver _activityResolver;
 
-        public StoreWorkflowProvider(IWorkflowDefinitionManager workflowDefinitionManager,
+        public DatabaseWorkflowProvider(
+            ISession session,
             IActivityResolver activityResolver)
         {
-            _workflowDefinitionManager = workflowDefinitionManager;
+            _session = session;
             _activityResolver = activityResolver;
         }
 
         public async Task<IEnumerable<Workflow>> GetWorkflowsAsync(CancellationToken cancellationToken)
         {
-            var workflowDefinitions = await _workflowDefinitionManager.ListAsync(VersionOptions.All, cancellationToken);
+            var workflowDefinitions = await _session.QueryWorkflowDefinitions().ListAsync();
             return workflowDefinitions.Select(CreateWorkflow);
         }
 
@@ -54,11 +55,12 @@ namespace Elsa.WorkflowProviders
             return workflow;
         }
 
-        private static Connection ResolveConnection(ConnectionDefinition connectionDefinition,
-            IReadOnlyDictionary<string?, IActivity> activityDictionary)
+        private static Connection ResolveConnection(
+            ConnectionDefinition connectionDefinition,
+            IReadOnlyDictionary<string, IActivity> activityDictionary)
         {
-            var source = activityDictionary[connectionDefinition.SourceActivityId];
-            var target = activityDictionary[connectionDefinition.TargetActivityId];
+            var source = activityDictionary[connectionDefinition.SourceActivityId!];
+            var target = activityDictionary[connectionDefinition.TargetActivityId!];
             var outcome = connectionDefinition.Outcome;
 
             return new Connection(source, target, outcome!);

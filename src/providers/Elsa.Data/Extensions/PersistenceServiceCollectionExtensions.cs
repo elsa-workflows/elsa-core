@@ -1,11 +1,13 @@
 using System;
 using System.Linq;
-using Elsa.Persistence.Core.Services;
+using Elsa.Data.Services;
+using Elsa.Persistence;
+using Elsa.Runtime;
 using Microsoft.Extensions.DependencyInjection;
 using YesSql;
 using YesSql.Indexes;
 
-namespace Elsa.Persistence.Core.Extensions
+namespace Elsa.Data.Extensions
 {
     public static class PersistenceServiceCollectionExtensions
     {
@@ -14,11 +16,21 @@ namespace Elsa.Persistence.Core.Extensions
             Action<IServiceProvider, Configuration> configure)
         {
             var services = options.Services;
-            services.AddSingleton(sp => CreateStore(sp, configure));
-            services.AddScoped(CreateSession);
+
+            services
+                .AddWorkflowProvider<DatabaseWorkflowProvider>()
+                .AddSingleton(sp => CreateStore(sp, configure))
+                .AddScoped(CreateSession)
+                .AddStartupTask<DatabaseInitializer>()
+                .AddStartupTask<DataMigrationsRunner>();
 
             return options;
         }
+
+        public static ElsaOptions UsePersistence(
+            this ElsaOptions options,
+            Action<Configuration> configure) =>
+            options.UsePersistence((sp, config) => configure(config));
 
         private static IStore CreateStore(
             IServiceProvider serviceProvider,
@@ -27,8 +39,7 @@ namespace Elsa.Persistence.Core.Extensions
             var configuration = new Configuration();
             configure(serviceProvider, configuration);
 
-            // TODO: Instantiate Store manually without using the factory as soon as Sebastien Ros makes the constructor public (see https://github.com/sebastienros/yessql/issues/188)
-            var store = StoreFactory.CreateAsync(configuration).GetAwaiter().GetResult();
+            var store = StoreFactory.Create(configuration);
             var indexes = serviceProvider.GetServices<IIndexProvider>();
             store.RegisterIndexes(indexes);
 

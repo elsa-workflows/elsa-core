@@ -1,14 +1,20 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
+using Elsa.Extensions;
+using Elsa.Indexes;
 using Elsa.Metadata;
 using Elsa.Models;
 using Elsa.Persistence;
+using Elsa.Queries;
 using Elsa.Server.GraphQL.Models;
 using Elsa.Services;
 using HotChocolate;
+using YesSql;
 
 namespace Elsa.Server.GraphQL
 {
@@ -20,7 +26,7 @@ namespace Elsa.Server.GraphQL
             activityResolver.GetActivityTypes().Select(describer.Describe).ToList();
 
         public ActivityDescriptor? GetActivityDescriptor(
-            [Service]IActivityResolver activityResolver,
+            [Service] IActivityResolver activityResolver,
             [Service] IActivityDescriber describer,
             string typeName)
         {
@@ -31,47 +37,57 @@ namespace Elsa.Server.GraphQL
 
         public async Task<IEnumerable<WorkflowDefinition>> GetWorkflowDefinitions(
             VersionOptionsInput? version,
-            [Service] IWorkflowDefinitionStore store,
+            [Service] ISession session,
             [Service] IMapper mapper,
             CancellationToken cancellationToken)
         {
             var mappedVersion = mapper.Map<VersionOptions?>(version);
-            return await store.ListAsync(mappedVersion ?? VersionOptions.Latest, cancellationToken);
+            return await session.QueryWorkflowDefinitions().WithVersion(mappedVersion ?? VersionOptions.Latest)
+                .ListAsync();
         }
-        
-        public async Task<WorkflowDefinition> GetWorkflowDefinition(
-            string? id,
-            string? definitionId,
+
+        public async Task<WorkflowDefinition?> GetWorkflowDefinition(
+            string? workflowDefinitionVersionId,
+            string? workflowDefinitionId,
             VersionOptionsInput? version,
-            [Service] IWorkflowDefinitionStore store,
+            [Service] ISession session,
             [Service] IMapper mapper,
             CancellationToken cancellationToken)
         {
-            if (id != null)
-                return await store.GetByIdAsync(id, cancellationToken);
-            
+            if (workflowDefinitionVersionId != null)
+                return await session.QueryWorkflowDefinitions<WorkflowDefinitionIndex>(
+                    x => x.WorkflowDefinitionVersionId == workflowDefinitionVersionId).FirstOrDefaultAsync();
+
             var mappedVersion = mapper.Map<VersionOptions?>(version);
-            return await store.GetByIdAsync(definitionId, mappedVersion ?? VersionOptions.Latest, cancellationToken);
+
+            return await session.GetWorkflowDefinitionAsync(
+                workflowDefinitionId!,
+                mappedVersion ?? VersionOptions.Latest,
+                cancellationToken);
         }
 
         public async Task<IEnumerable<WorkflowInstance>> GetWorkflowInstances(
-            string definitionId, 
+            string definitionId,
             WorkflowStatus? status,
-            [Service] IWorkflowInstanceStore store,
+            [Service] ISession session,
             CancellationToken cancellationToken)
         {
-            if(status == null)
-                return await store.ListByDefinitionAsync(definitionId, cancellationToken);
+            Expression<Func<WorkflowInstanceIndex, bool>> predicate;
 
-            return await store.ListByStatusAsync(definitionId, status.Value, cancellationToken);
+            if (status == null)
+                predicate = x => x.WorkflowDefinitionId == definitionId;
+            else
+                predicate = x => x.WorkflowDefinitionId == definitionId && x.WorkflowStatus == status;
+
+            return await session.QueryWorkflowInstances(predicate).ListAsync();
         }
-        
-        public async Task<WorkflowInstance> GetWorkflowInstance(
+
+        public async Task<WorkflowInstance?> GetWorkflowInstance(
             string id,
-            [Service] IWorkflowInstanceStore store,
+            [Service] ISession session,
             CancellationToken cancellationToken)
         {
-            return await store.GetByIdAsync(id, cancellationToken);
+            return await session.GetWorkflowInstanceByIdAsync(id, cancellationToken);
         }
     }
 }

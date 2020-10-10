@@ -15,8 +15,8 @@ namespace Elsa.Activities.Http.Services
             IHttpContextAccessor httpContextAccessor,
             IOptions<HttpActivityOptions> options)
         {
-            this._httpContextAccessor = httpContextAccessor;
-            this._options = options;
+            _httpContextAccessor = httpContextAccessor;
+            _options = options;
         }
 
         public Uri ToAbsoluteUrl(string relativePath)

@@ -29,7 +29,6 @@ namespace Elsa.Services
                 typeof(T).Name,
                 input,
                 correlationId,
-                activityStatePredicate == null ? (Func<IActivity, bool>?)default : a => activityStatePredicate((T)a),
                 cancellationToken);
         }
     }

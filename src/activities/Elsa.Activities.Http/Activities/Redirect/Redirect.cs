@@ -25,7 +25,7 @@ namespace Elsa.Activities.Http
         public Redirect(IHttpContextAccessor httpContextAccessor, IStringLocalizer<Redirect> localizer)
         {
             T = localizer;
-            this._httpContextAccessor = httpContextAccessor;
+            _httpContextAccessor = httpContextAccessor;
         }
         
         private IStringLocalizer<Redirect> T { get; }

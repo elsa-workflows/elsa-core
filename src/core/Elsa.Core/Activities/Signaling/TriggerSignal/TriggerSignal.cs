@@ -22,7 +22,7 @@ namespace Elsa.Activities.Signaling
 
         public TriggerSignal(IWorkflowScheduler workflowScheduler)
         {
-            this._workflowScheduler = workflowScheduler;
+            _workflowScheduler = workflowScheduler;
         }
 
         [ActivityProperty(Hint = "An expression that evaluates to the name of the signal to trigger.")]

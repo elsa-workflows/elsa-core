@@ -13,8 +13,8 @@ namespace Elsa.Serialization
 
         public WorkflowSerializer(IEnumerable<ITokenFormatter> formatters, ITokenSerializer tokenSerializer)
         {
-            this._tokenSerializer = tokenSerializer;
-            this._formatters = formatters.ToDictionary(x => x.Format, StringComparer.OrdinalIgnoreCase);
+            _tokenSerializer = tokenSerializer;
+            _formatters = formatters.ToDictionary(x => x.Format, StringComparer.OrdinalIgnoreCase);
         }
         
         public string Serialize<T>(T workflow, string format)

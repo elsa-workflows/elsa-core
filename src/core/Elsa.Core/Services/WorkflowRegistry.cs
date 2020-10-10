@@ -7,6 +7,7 @@ using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Services.Models;
 using Microsoft.Extensions.DependencyInjection;
+using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Services
 {
@@ -17,9 +18,9 @@ namespace Elsa.Services
         public WorkflowRegistry(
             IServiceProvider serviceProvider)
         {
-            this._serviceProvider = serviceProvider;
+            _serviceProvider = serviceProvider;
         }
-        
+
         public async Task<IEnumerable<Workflow>> GetWorkflowsAsync(CancellationToken cancellationToken)
         {
             using var scope = _serviceProvider.CreateScope();
@@ -28,14 +29,18 @@ namespace Elsa.Services
             return tasks.SelectMany(x => x).ToList();
         }
 
-        public async Task<Workflow> GetWorkflowAsync(string id, VersionOptions version, CancellationToken cancellationToken)
+        public async Task<Workflow?> GetWorkflowAsync(
+            string id,
+            VersionOptions version,
+            CancellationToken cancellationToken)
         {
-            var workflows = await GetWorkflowsAsync(cancellationToken).ToListAsync();
+            var workflows = await GetWorkflowsAsync(cancellationToken).ToList();
 
             return workflows
-                .Where(x => x.DefinitionId == id)
+                .Where(x => x.WorkflowDefinitionId == id)
                 .OrderByDescending(x => x.Version)
-                .WithVersion(version).FirstOrDefault();
+                .WithVersion(version)
+                .FirstOrDefault();
         }
     }
 }

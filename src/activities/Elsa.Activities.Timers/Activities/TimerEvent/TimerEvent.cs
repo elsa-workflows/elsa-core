@@ -16,7 +16,7 @@ namespace Elsa.Activities.Timers
 
         public TimerEvent(IClock clock)
         {
-            this._clock = clock;
+            _clock = clock;
         }
 
         [ActivityProperty(Hint = "An expression that evaluates to a Duration value")]

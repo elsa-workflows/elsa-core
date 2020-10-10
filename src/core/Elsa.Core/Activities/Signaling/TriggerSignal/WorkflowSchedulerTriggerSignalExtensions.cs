@@ -12,9 +12,8 @@ namespace Elsa
         public static async Task TriggerSignalAsync(
             this IWorkflowScheduler workflowHost,
             string signalName,
-            Func<IActivity, bool>? activityStatePredicate = null,
             string? correlationId = default,
             CancellationToken cancellationToken = default) =>
-            await workflowHost.TriggerWorkflowsAsync(nameof(Signaled), signalName, correlationId, activityStatePredicate, cancellationToken);
+            await workflowHost.TriggerWorkflowsAsync(nameof(Signaled), signalName, correlationId, cancellationToken);
     }
 }

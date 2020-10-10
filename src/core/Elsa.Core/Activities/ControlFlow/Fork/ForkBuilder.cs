@@ -10,7 +10,7 @@ namespace Elsa.Activities.ControlFlow
         
         public ForkBuilder(IActivityBuilder activityBuilder)
         {
-            this._activityBuilder = activityBuilder;
+            _activityBuilder = activityBuilder;
             _fork = (Fork)activityBuilder.Activity;
         }
 

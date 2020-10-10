@@ -14,7 +14,7 @@ namespace Elsa.Services.Models
         }
 
         public Workflow(
-            string definitionId,
+            string workflowDefinitionId,
             int version,
             bool isSingleton,
             bool isEnabled,
@@ -28,7 +28,7 @@ namespace Elsa.Services.Models
             IEnumerable<Connection> connections,
             IDictionary<string, IDictionary<string, IActivityPropertyValueProvider>> activityPropertyValueProviders)
         {
-            DefinitionId = definitionId;
+            WorkflowDefinitionId = workflowDefinitionId;
             Version = version;
             IsSingleton = isSingleton;
             IsEnabled = isEnabled;
@@ -43,7 +43,7 @@ namespace Elsa.Services.Models
             ActivityPropertyValueProviders = activityPropertyValueProviders;
         }
 
-        public string DefinitionId { get; set; } = default!;
+        public string WorkflowDefinitionId { get; set; } = default!;
         public int Version { get; set; }
         public bool IsSingleton { get; set; }
         public bool IsEnabled { get; set; }

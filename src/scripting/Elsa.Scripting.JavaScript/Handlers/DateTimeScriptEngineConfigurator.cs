@@ -14,7 +14,7 @@ namespace Elsa.Scripting.JavaScript.Handlers
 
         public DateTimeScriptEngineConfigurator(IClock clock)
         {
-            this._clock = clock;
+            _clock = clock;
         }
 
         public Task Handle(EvaluatingJavaScriptExpression notification, CancellationToken cancellationToken)

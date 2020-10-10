@@ -12,7 +12,7 @@ namespace Elsa.Services
 
         public ActivityResolver(IServiceProvider serviceProvider, Func<IEnumerable<IActivity>> activitiesFunc)
         {
-            this._serviceProvider = serviceProvider;
+            _serviceProvider = serviceProvider;
             _lazyActivityTypeLookup = new Lazy<IDictionary<string, Type>>(
                 () =>
                 {

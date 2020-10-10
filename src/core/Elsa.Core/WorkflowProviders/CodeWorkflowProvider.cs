@@ -19,11 +19,11 @@ namespace Elsa.WorkflowProviders
 
         public CodeWorkflowProvider(IEnumerable<IWorkflow> workflows, Func<IWorkflowBuilder> workflowBuilder)
         {
-            this._workflows = workflows;
-            this._workflowBuilder = workflowBuilder;
+            _workflows = workflows;
+            _workflowBuilder = workflowBuilder;
         }
 
-        public Task<IEnumerable<Workflow>> GetWorkflowsAsync(CancellationToken cancellationToken) => Task.FromResult(GetProcesses());
-        private IEnumerable<Workflow> GetProcesses() => from process in _workflows let builder = _workflowBuilder() select builder.Build(process);
+        public Task<IEnumerable<Workflow>> GetWorkflowsAsync(CancellationToken cancellationToken) => Task.FromResult(GetWorkflows());
+        private IEnumerable<Workflow> GetWorkflows() => from workflow in _workflows let builder = _workflowBuilder() select builder.Build(workflow);
     }
 }

@@ -18,9 +18,9 @@ namespace Elsa.Scripting.Liquid.Services
 
         public LiquidTemplateManager(IMemoryCache memoryCache, IOptions<LiquidOptions> options, IServiceProvider serviceProvider)
         {
-            this._memoryCache = memoryCache;
-            this._serviceProvider = serviceProvider;
-            this._options = options.Value;
+            _memoryCache = memoryCache;
+            _serviceProvider = serviceProvider;
+            _options = options.Value;
         }
 
         public async Task<string> RenderAsync(string source, TemplateContext context, TextEncoder encoder)

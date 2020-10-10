@@ -17,7 +17,7 @@ namespace Elsa.Metadata
 
         public ActivityDescriber(IEnumerable<IActivityPropertyOptionsProvider> optionsProviders)
         {
-            this._optionsProviders = optionsProviders;
+            _optionsProviders = optionsProviders;
         }
         
         public ActivityDescriptor Describe(Type activityType)

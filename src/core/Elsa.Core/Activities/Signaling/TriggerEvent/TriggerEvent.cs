@@ -19,7 +19,7 @@ namespace Elsa.Activities.Signaling
 
         public TriggerEvent(IWorkflowScheduler workflowScheduler)
         {
-            this._workflowScheduler = workflowScheduler;
+            _workflowScheduler = workflowScheduler;
         }
 
         [ActivityProperty(Hint = "An expression that evaluates to the activity type to use when triggering workflows.")]

@@ -12,7 +12,7 @@ namespace Elsa.Metadata.Handlers
 
         public WorkflowExpressionOptionsProvider(ITypeMap typeMap)
         {
-            this._typeMap = typeMap;
+            _typeMap = typeMap;
         }
         
         public bool SupportsProperty(PropertyInfo property) => typeof(IWorkflowExpression).IsAssignableFrom(property.PropertyType);

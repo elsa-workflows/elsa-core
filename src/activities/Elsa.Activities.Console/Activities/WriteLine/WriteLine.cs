@@ -26,7 +26,7 @@ namespace Elsa.Activities.Console
         
         public WriteLine(TextWriter output)
         {
-            this._output = output;
+            _output = output;
         }
 
         [ActivityProperty(Hint = "The text to write.")]

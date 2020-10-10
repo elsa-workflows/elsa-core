@@ -30,7 +30,7 @@ namespace Elsa.Activities.UserTask.Activities
 
         public UserTask(ITokenSerializer serializer)
         {
-            this._serializer = serializer;
+            _serializer = serializer;
         }
 
         protected override bool OnCanExecute(ActivityExecutionContext context)

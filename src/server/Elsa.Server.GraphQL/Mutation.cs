@@ -4,11 +4,15 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Elsa.Models;
 using Elsa.Persistence;
+using Elsa.Queries;
 using Elsa.Serialization;
 using Elsa.Server.GraphQL.Models;
 using Elsa.Server.GraphQL.Types;
 using Elsa.Services;
 using HotChocolate;
+using Open.Linq.AsyncExtensions;
+using YesSql;
+using IIdGenerator = Elsa.Services.IIdGenerator;
 
 namespace Elsa.Server.GraphQL
 {
@@ -18,20 +22,22 @@ namespace Elsa.Server.GraphQL
 
         public Mutation(IMapper mapper)
         {
-            this._mapper = mapper;
+            _mapper = mapper;
         }
-        
+
         public async Task<WorkflowDefinition> SaveWorkflowDefinition(
             string? id,
             WorkflowSaveAction saveAction,
             WorkflowInput workflowInput,
-            [Service] IWorkflowDefinitionStore store,
+            [Service] ISession session,
             [Service] IIdGenerator idGenerator,
             [Service] ITokenSerializer serializer,
             [Service] IWorkflowPublisher publisher,
             CancellationToken cancellationToken)
         {
-            var workflowDefinition = id != null ? await store.GetByIdAsync(id, cancellationToken) : default;
+            var workflowDefinition = id != null
+                ? await session.GetWorkflowDefinitionAsync(id, VersionOptions.Latest, cancellationToken)
+                : default;
 
             if (workflowDefinition == null)
             {
@@ -56,8 +62,8 @@ namespace Elsa.Server.GraphQL
             if (workflowInput.Name != null)
                 workflowDefinition.Name = workflowInput.Name.Trim();
 
-            if (workflowInput.IsDisabled != null)
-                workflowDefinition.IsDisabled = workflowInput.IsDisabled.Value;
+            if (workflowInput.IsEnabled != null)
+                workflowDefinition.IsEnabled = workflowInput.IsEnabled.Value;
 
             if (workflowInput.IsSingleton != null)
                 workflowDefinition.IsSingleton = workflowInput.IsSingleton.Value;
@@ -81,12 +87,20 @@ namespace Elsa.Server.GraphQL
 
         public async Task<int> DeleteWorkflowDefinition(
             string id,
-            [Service] IWorkflowDefinitionStore store,
+            [Service] ISession session,
             CancellationToken cancellationToken)
         {
-            return await store.DeleteAsync(id, cancellationToken);
+            var workflowDefinitions = await session.QueryWorkflowDefinitionByIdAndVersion(id, VersionOptions.All)
+                .ListAsync()
+                .ToList();
+
+            foreach (var workflowDefinition in workflowDefinitions)
+                session.Delete(workflowDefinition);
+
+            return workflowDefinitions.Count;
         }
 
-        private ActivityDefinition ToActivityDefinition(ActivityDefinitionInput source) => _mapper.Map<ActivityDefinition>(source);
+        private ActivityDefinition ToActivityDefinition(ActivityDefinitionInput source) =>
+            _mapper.Map<ActivityDefinition>(source);
     }
 }

@@ -4,19 +4,19 @@ using System.Threading.Tasks;
 using Elsa.Samples.TimesheetApproval.Messages;
 using Elsa.Samples.TimesheetApproval.Models;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
+using YesSql;
 
 namespace Elsa.Samples.TimesheetApproval.Services
 {
     public class TimesheetManager
     {
-        private readonly DbSet<Timesheet> _timesheetCollection;
+        private readonly ISession _session;
         private readonly IMediator _mediator;
 
-        public TimesheetManager(DbSet<Timesheet> timesheetCollection, IMediator mediator)
+        public TimesheetManager(ISession session, IMediator mediator)
         {
-            this._timesheetCollection = timesheetCollection;
-            this._mediator = mediator;
+            _session = session;
+            _mediator = mediator;
         }
 
         public async Task SubmitTimesheet(Timesheet timesheet, CancellationToken cancellationToken = default)
@@ -42,16 +42,10 @@ namespace Elsa.Samples.TimesheetApproval.Services
 
         public async Task SaveAsync(Timesheet timesheet, CancellationToken cancellationToken = default)
         {
-            if (timesheet.Id == null)
-                timesheet.Id = Guid.NewGuid().ToString("N");
+            if (timesheet.TimesheetId == null)
+                timesheet.TimesheetId = Guid.NewGuid().ToString("N");
 
-            // await timesheetCollection.ReplaceOneAsync(
-            //     x => x.Id == timesheet.Id,
-            //     timesheet, new ReplaceOptions
-            //     {
-            //         IsUpsert = true,
-            //     },
-            //     cancellationToken);
+            _session.Save(timesheet);
         }
     }
 }

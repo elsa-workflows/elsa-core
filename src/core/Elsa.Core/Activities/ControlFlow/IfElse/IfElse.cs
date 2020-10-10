@@ -22,7 +22,7 @@ namespace Elsa.Activities.ControlFlow
 
         public IfElse(IExpressionEvaluator expressionEvaluator)
         {
-            this._expressionEvaluator = expressionEvaluator;
+            _expressionEvaluator = expressionEvaluator;
         }
 
         [ActivityProperty(Hint = "The expression to evaluate. The evaluated value will be used to switch on.")]

@@ -30,9 +30,9 @@ namespace Elsa.Scripting.JavaScript.Services
 
         public JavaScriptHandler(IMediator mediator, IMapper mapper, IOptions<ScriptOptions> options)
         {
-            this._mediator = mediator;
-            this._mapper = mapper;
-            this._options = options;
+            _mediator = mediator;
+            _mapper = mapper;
+            _options = options;
 
             _serializerSettings = new JsonSerializerSettings().ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
             _serializerSettings.Converters.Add(new TruncatingNumberJsonConverter());
@@ -54,7 +54,7 @@ namespace Elsa.Scripting.JavaScript.Services
         // ReSharper disable once ParameterHidesMember
         private void ConfigureJintEngine(Jint.Options options)
         {
-            if (this._options.Value.AllowClr)
+            if (_options.Value.AllowClr)
                 options.AllowClr();
         }
 

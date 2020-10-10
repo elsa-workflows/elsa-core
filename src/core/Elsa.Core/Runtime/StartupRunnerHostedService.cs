@@ -10,7 +10,7 @@ namespace Elsa.Runtime
 
         public StartupRunnerHostedService(IStartupRunner startupRunner)
         {
-            this._startupRunner = startupRunner;
+            _startupRunner = startupRunner;
         }
 
         public async Task StartAsync(CancellationToken cancellationToken) => 

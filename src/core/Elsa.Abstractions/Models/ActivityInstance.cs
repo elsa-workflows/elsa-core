@@ -1,3 +1,5 @@
+using Newtonsoft.Json.Linq;
+
 namespace Elsa.Models
 {
     public class ActivityInstance
@@ -6,17 +8,17 @@ namespace Elsa.Models
         {
         }
 
-        public ActivityInstance(string id, string type, object? output)
+        public ActivityInstance(string id, string type, object? output, JObject data)
         {
             Id = id;
             Type = type;
-            //State = state;
+            Data = data;
             Output = output;
         }
         
         public string? Id { get; set; }
         public string? Type { get; set; }
-        public Variables? State { get; set; }
+        public JObject Data { get; set; } = new JObject();
         public object? Output { get; set; }
     }
 }

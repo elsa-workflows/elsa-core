@@ -26,7 +26,7 @@ namespace Elsa.Activities.Http
         public WriteHttpResponse(IHttpContextAccessor httpContextAccessor, IStringLocalizer<WriteHttpResponse> localizer)
         {
             T = localizer;
-            this._httpContextAccessor = httpContextAccessor;
+            _httpContextAccessor = httpContextAccessor;
         }
         
         public IStringLocalizer T { get; }

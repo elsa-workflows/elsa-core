@@ -20,8 +20,8 @@ namespace Elsa.Builders
             IIdGenerator idGenerator,
             IServiceProvider serviceProvider)
         {
-            this._activityResolver = activityResolver;
-            this._idGenerator = idGenerator;
+            _activityResolver = activityResolver;
+            _idGenerator = idGenerator;
             ServiceProvider = serviceProvider;
             Id = idGenerator.Generate();
             Version = 1;
