@@ -1,10 +1,14 @@
 using System;
+using System.Data;
 using System.Linq;
+using Dapper;
 using Elsa.Data.Services;
 using Elsa.Runtime;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using YesSql;
 using YesSql.Indexes;
+using ISession = YesSql.ISession;
 
 namespace Elsa.Data.Extensions
 {
@@ -20,7 +24,8 @@ namespace Elsa.Data.Extensions
                 .AddScoped(CreateSession)
                 .AddSingleton<IDataMigrationManager, DataMigrationManager>()
                 .AddStartupTask<DatabaseInitializer>()
-                .AddStartupTask<DataMigrationsRunner>();
+                .AddStartupTask<DataMigrationsRunner>()
+                .AddDataMigration<Migrations>();
 
             return services;
         }
@@ -35,6 +40,8 @@ namespace Elsa.Data.Extensions
             // The following line is a temporary workaround until the bug in YesSql is fixed: https://github.com/sebastienros/yessql/pull/280
             var store = StoreFactory.CreateAndInitializeAsync(configuration).GetAwaiter().GetResult();
             //var store = StoreFactory.Create(configuration);
+            
+            SqlMapper.AddTypeMap(typeof(PathString), DbType.String);
             
             var indexes = serviceProvider.GetServices<IIndexProvider>();
             store.RegisterIndexes(indexes);

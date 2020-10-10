@@ -5,7 +5,6 @@ using Elsa.Builders;
 using Elsa.Runtime;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
-using YesSql.Provider.Sqlite;
 
 namespace Elsa.Samples.HelloWorldConsole
 {
@@ -14,8 +13,7 @@ namespace Elsa.Samples.HelloWorldConsole
         static async Task Main(string[] args)
         {
             // Create a service container with Elsa services.
-            var services = new ServiceCollection() 
-                //.AddElsa(options => options.UsePersistence(config => config.UseSqLite("Data Source=elsa.db;Cache=Shared")))
+            var services = new ServiceCollection()
                 .AddElsa()
                 .AddConsoleActivities()
                 .AddSingleton(Console.In)

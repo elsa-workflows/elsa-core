@@ -1,11 +1,14 @@
 using System;
 using Elsa.Activities.Http;
+using Elsa.Activities.Http.Indexes;
 using Elsa.Activities.Http.Models;
 using Elsa.Activities.Http.Options;
 using Elsa.Activities.Http.Parsers;
 using Elsa.Activities.Http.RequestHandlers.Handlers;
 using Elsa.Activities.Http.Services;
+using Elsa.Data;
 using Elsa.Extensions;
+using Elsa.Indexes;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -37,7 +40,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IHttpResponseBodyParser, JsonHttpResponseBodyParser>()
                 .AddSingleton<IActionContextAccessor, ActionContextAccessor>()
                 .AddSingleton<IAbsoluteUrlProvider, DefaultAbsoluteUrlProvider>()
-                .AddTypeAlias<HttpResponseHeaders>()
+                .AddIndexProvider<WorkflowInstanceByReceiveHttpRequestIndexProvider>()
+                .AddDataMigration<Migrations>()
                 .AddHttpContextAccessor()
                 .AddNotificationHandlers(typeof(ServiceCollectionExtensions))
                 .AddDataProtection();

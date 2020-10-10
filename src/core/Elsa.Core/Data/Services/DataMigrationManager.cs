@@ -40,7 +40,7 @@ namespace Elsa.Data.Services
         public async Task RunAllAsync()
         {
             var migrationsToUpdate = await GetMigrationsThatNeedUpdateAsync();
-
+            
             foreach (var migration in migrationsToUpdate)
             {
                 try
@@ -52,6 +52,8 @@ namespace Elsa.Data.Services
                     _logger.LogError(ex, "Could not run migrations automatically on '{FeatureName}'", migration);
                 }
             }
+
+            await _session.CommitAsync();
         }
 
         public async Task<IEnumerable<IDataMigration>> GetMigrationsThatNeedUpdateAsync()
@@ -241,7 +243,8 @@ namespace Elsa.Data.Services
         {
             var flags = BindingFlags.Public | BindingFlags.Instance; 
             var methodInfo = dataMigration.GetType().GetMethod(name, flags);
-            return methodInfo != null && methodInfo.ReturnType == typeof(Task<int>) ? methodInfo : null;
+            var returnType = methodInfo?.ReturnType;
+            return returnType != null && (returnType == typeof(Task<int>) || returnType == typeof(int)) ? methodInfo : null;
         }
     }
 }

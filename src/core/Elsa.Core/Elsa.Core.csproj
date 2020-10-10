@@ -32,6 +32,7 @@
         <PackageReference Include="Humanizer.Core" Version="2.8.26" />
         <PackageReference Include="MediatR" Version="8.1.0" />
         <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="8.1.0" />
+        <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
         <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
         <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="3.1.7" />
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="3.1.7" />

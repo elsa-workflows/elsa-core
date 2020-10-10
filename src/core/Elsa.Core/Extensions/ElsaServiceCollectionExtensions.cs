@@ -6,6 +6,7 @@ using Elsa.Activities.Primitives;
 using Elsa.Activities.Signaling;
 using Elsa.Builders;
 using Elsa.Converters;
+using Elsa.Data;
 using Elsa.Data.Extensions;
 using Elsa.Expressions;
 using Elsa.Extensions;
@@ -107,7 +108,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IWorkflowSchedulerQueue, WorkflowSchedulerQueue>()
                 .AddScoped<IWorkflowHost, WorkflowHost>()
                 .AddSingleton<IWorkflowActivator, WorkflowActivator>()
-                .AddSingleton<IIndexProvider, WorkflowDefinitionIndexProvider>()
+                .AddIndexProvider<WorkflowDefinitionIndexProvider>()
+                .AddIndexProvider<WorkflowInstanceIndexProvider>()
                 .AddStartupRunner()
                 .AddTransient<IActivityResolver, ActivityResolver>()
                 .AddWorkflowProvider<CodeWorkflowProvider>()
