@@ -24,14 +24,12 @@ namespace Elsa.Scripting.JavaScript.Services
     public class JavaScriptHandler : IExpressionHandler
     {
         private readonly IMediator _mediator;
-        private readonly IMapper _mapper;
         private readonly IOptions<ScriptOptions> _options;
         private readonly JsonSerializerSettings _serializerSettings;
 
-        public JavaScriptHandler(IMediator mediator, IMapper mapper, IOptions<ScriptOptions> options)
+        public JavaScriptHandler(IMediator mediator, IOptions<ScriptOptions> options)
         {
             _mediator = mediator;
-            _mapper = mapper;
             _options = options;
 
             _serializerSettings = new JsonSerializerSettings().ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);

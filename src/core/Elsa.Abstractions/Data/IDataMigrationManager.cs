@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace Elsa.Persistence
+namespace Elsa.Data
 {
     /// <summary>
     /// Represents a contract to manage database migrations.

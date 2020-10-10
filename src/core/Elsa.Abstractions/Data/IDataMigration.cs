@@ -1,6 +1,6 @@
 ﻿using YesSql.Sql;
 
-namespace Elsa.Persistence
+namespace Elsa.Data
 {
     /// <summary>
     /// Represents a contract for a database migration.

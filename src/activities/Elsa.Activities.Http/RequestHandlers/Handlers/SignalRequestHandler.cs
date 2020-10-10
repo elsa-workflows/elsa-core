@@ -6,7 +6,6 @@ using Elsa.Activities.Http.Models;
 using Elsa.Activities.Http.RequestHandlers.Results;
 using Elsa.Activities.Http.Services;
 using Elsa.Models;
-using Elsa.Persistence;
 using Elsa.Queries;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;

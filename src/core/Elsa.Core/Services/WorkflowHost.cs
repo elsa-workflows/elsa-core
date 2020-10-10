@@ -9,7 +9,6 @@ using Elsa.Expressions;
 using Elsa.Extensions;
 using Elsa.Messaging.Domain;
 using Elsa.Models;
-using Elsa.Persistence;
 using Elsa.Queries;
 using Elsa.Services.Models;
 using MediatR;

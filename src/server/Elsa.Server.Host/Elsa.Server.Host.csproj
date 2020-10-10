@@ -5,7 +5,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\providers\Elsa.Data\Elsa.Data.csproj" />
         <ProjectReference Include="..\Elsa.Server.Core\Elsa.Server.Core.csproj" />
         <ProjectReference Include="..\Elsa.Server.GraphQL\Elsa.Server.GraphQL.csproj" />
     </ItemGroup>

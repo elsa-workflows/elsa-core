@@ -1,4 +1,4 @@
-﻿namespace Elsa.Persistence
+﻿namespace Elsa.Data
 {
     public static class CollectionNames
     {

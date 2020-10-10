@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using Elsa.Data;
 using Elsa.Models;
-using Elsa.Persistence;
 using YesSql;
 using YesSql.Indexes;
 

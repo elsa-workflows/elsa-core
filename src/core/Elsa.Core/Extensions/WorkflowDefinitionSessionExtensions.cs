@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq.Expressions;
+using Elsa.Data;
 using Elsa.Models;
-using Elsa.Persistence;
 using YesSql;
 using YesSql.Indexes;
 

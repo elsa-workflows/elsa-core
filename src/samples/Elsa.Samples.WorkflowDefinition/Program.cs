@@ -1,6 +1,5 @@
 using Elsa.Activities.Console;
 using Elsa.Models;
-using Elsa.Persistence;
 using Elsa.Services;
 using Elsa.Builders;
 

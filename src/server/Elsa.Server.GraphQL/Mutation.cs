@@ -3,7 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
 using Elsa.Models;
-using Elsa.Persistence;
 using Elsa.Queries;
 using Elsa.Serialization;
 using Elsa.Server.GraphQL.Models;

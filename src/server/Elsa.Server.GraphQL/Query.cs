@@ -9,7 +9,6 @@ using Elsa.Extensions;
 using Elsa.Indexes;
 using Elsa.Metadata;
 using Elsa.Models;
-using Elsa.Persistence;
 using Elsa.Queries;
 using Elsa.Server.GraphQL.Models;
 using Elsa.Services;

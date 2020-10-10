@@ -1,6 +1,5 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Persistence;
 using Elsa.Runtime;
 
 namespace Elsa.Data.Services

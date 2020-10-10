@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Elsa.Data.Extensions;
+using Elsa.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;

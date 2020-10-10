@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using Elsa.Data.Services;
-using Elsa.Persistence;
 using Elsa.Runtime;
 using Microsoft.Extensions.DependencyInjection;
 using YesSql;
@@ -11,26 +10,20 @@ namespace Elsa.Data.Extensions
 {
     public static class PersistenceServiceCollectionExtensions
     {
-        public static ElsaOptions UsePersistence(
-            this ElsaOptions options,
-            Action<IServiceProvider, Configuration> configure)
+        public static IServiceCollection AddPersistence(
+            this IServiceCollection services,
+            Action<IServiceProvider, IConfiguration> configure)
         {
-            var services = options.Services;
-
             services
                 .AddWorkflowProvider<DatabaseWorkflowProvider>()
                 .AddSingleton(sp => CreateStore(sp, configure))
                 .AddScoped(CreateSession)
+                .AddSingleton<IDataMigrationManager, DataMigrationManager>()
                 .AddStartupTask<DatabaseInitializer>()
                 .AddStartupTask<DataMigrationsRunner>();
 
-            return options;
+            return services;
         }
-
-        public static ElsaOptions UsePersistence(
-            this ElsaOptions options,
-            Action<Configuration> configure) =>
-            options.UsePersistence((sp, config) => configure(config));
 
         private static IStore CreateStore(
             IServiceProvider serviceProvider,
@@ -38,8 +31,11 @@ namespace Elsa.Data.Extensions
         {
             var configuration = new Configuration();
             configure(serviceProvider, configuration);
-
-            var store = StoreFactory.Create(configuration);
+            
+            // The following line is a temporary workaround until the bug in YesSql is fixed: https://github.com/sebastienros/yessql/pull/280
+            var store = StoreFactory.CreateAndInitializeAsync(configuration).GetAwaiter().GetResult();
+            //var store = StoreFactory.Create(configuration);
+            
             var indexes = serviceProvider.GetServices<IIndexProvider>();
             store.RegisterIndexes(indexes);
 

@@ -1,5 +1,4 @@
-﻿using Elsa.Persistence;
-using Elsa.Services;
+﻿using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 using YesSql.Indexes;
 

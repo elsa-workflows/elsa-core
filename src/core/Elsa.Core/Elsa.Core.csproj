@@ -53,16 +53,19 @@
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="3.1.8" />
         <PackageReference Include="NodaTime.Serialization.JsonNet" Version="3.0.0" />
         <PackageReference Include="Open.Linq.AsyncExtensions" Version="1.2.0" />
+        <PackageReference Include="Scrutor" Version="3.2.2" />
         <PackageReference Include="YamlDotNet" Version="8.1.2" />
         <PackageReference Include="Rebus.ServiceProvider" Version="5.0.6" />
+        <PackageReference Include="YesSql.Provider.Sqlite" Version="1.0.0-beta-1547" />
     </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\Elsa.Abstractions\Elsa.Abstractions.csproj" />
-        <ProjectReference Include="..\Elsa.Data.Abstractions\Elsa.Data.Abstractions.csproj" />
+        <ProjectReference Include="..\YesSql.Provider.Sqlite.InMemory\YesSql.Provider.Sqlite.InMemory.csproj" />
     </ItemGroup>
 
     <ItemGroup>
+        <Folder Include="Data" />
         <Folder Include="Messaging\Domain" />
     </ItemGroup>
 

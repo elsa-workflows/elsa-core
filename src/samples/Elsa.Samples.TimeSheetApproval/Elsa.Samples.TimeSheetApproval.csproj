@@ -6,11 +6,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\core\Elsa\Elsa.csproj" />
-        <ProjectReference Include="..\..\providers\Elsa.Data\Elsa.Data.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <PackageReference Include="YesSql.Provider.Sqlite" Version="1.0.0-beta-1547" />
     </ItemGroup>
 
 </Project>

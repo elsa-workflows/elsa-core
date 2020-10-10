@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Data;
 using Elsa.Indexes;
 using Elsa.Models;
-using Elsa.Persistence;
 using YesSql;
 
 namespace Elsa.Queries

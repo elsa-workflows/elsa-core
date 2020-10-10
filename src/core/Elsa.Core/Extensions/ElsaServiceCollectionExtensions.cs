@@ -6,6 +6,7 @@ using Elsa.Activities.Primitives;
 using Elsa.Activities.Signaling;
 using Elsa.Builders;
 using Elsa.Converters;
+using Elsa.Data.Extensions;
 using Elsa.Expressions;
 using Elsa.Extensions;
 using Elsa.Indexes;
@@ -42,11 +43,12 @@ namespace Microsoft.Extensions.DependencyInjection
 
             services
                 .AddSingleton(options.DistributedLockProviderFactory)
-                .AddSingleton(options.SignalFactory);
+                .AddSingleton(options.SignalFactory)
+                .AddPersistence(options.ConfigurePersistence);
 
             options.AddWorkflowsCore();
-            options.AddServiceBus();
             options.AddMediatR();
+            options.AddServiceBus();
 
             return services;
         }
@@ -65,16 +67,15 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddTransient<T>()
                 .AddTransient<IWorkflow>(sp => sp.GetRequiredService<T>());
         }
-
-        public static IServiceCollection AddTypeNameValueHandler<T>(this IServiceCollection services) where T : class, IValueHandler => services.AddTransient<IValueHandler, T>();
+        
         public static IServiceCollection AddTypeAlias<T>(this IServiceCollection services, string alias) => services.AddTypeAlias(typeof(T), alias);
         public static IServiceCollection AddTypeAlias<T>(this IServiceCollection services) => services.AddTypeAlias<T>(typeof(T).Name);
         public static IServiceCollection AddTypeAlias(this IServiceCollection services, Type type, string alias) => services.AddTransient<ITypeAlias>(sp => new TypeAlias(type, alias));
         public static IServiceCollection AddConsumer<TMessage, TConsumer>(this IServiceCollection services) where TConsumer : class, IHandleMessages<TMessage> => services.AddTransient<IHandleMessages<TMessage>, TConsumer>();
 
-        private static IServiceCollection AddMediatR(this ElsaOptions configuration)
+        private static IServiceCollection AddMediatR(this ElsaOptions options)
         {
-            return configuration.Services.AddMediatR(
+            return options.Services.AddMediatR(
                 mediatr => mediatr.AsScoped(),
                 typeof(ElsaServiceCollectionExtensions));
         }
