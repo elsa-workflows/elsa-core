@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -26,8 +26,8 @@ namespace Elsa.Services
         
         [ActivityProperty(Label = "Name", Hint = "Optionally provide a name for this activity. You can reference named activities from expressions.")]
         public string Name {
-            get => GetState<string>();
-            set => SetState(value);
+            get => State.GetState<string>("name");
+            set => State.SetState("name", value);
         }
 
         [ActivityProperty(Hint = "Optionally provide a custom title for this activity.")]
