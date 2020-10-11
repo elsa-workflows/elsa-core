@@ -1,10 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
-using AutoMapper;
-using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Queries;
-using YesSql;
 
 namespace Elsa.Services
 {

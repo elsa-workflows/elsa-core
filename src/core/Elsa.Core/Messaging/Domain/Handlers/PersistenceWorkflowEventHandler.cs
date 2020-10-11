@@ -1,12 +1,10 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using YesSql;
 
 namespace Elsa.Messaging.Domain.Handlers
 {

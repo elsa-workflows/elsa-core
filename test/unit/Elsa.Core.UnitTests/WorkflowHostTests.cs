@@ -17,7 +17,6 @@ using NodaTime.Testing;
 using Xunit;
 using YesSql;
 using YesSql.Provider.Sqlite;
-using IIdGenerator = Elsa.Services.IIdGenerator;
 
 namespace Elsa.Core.UnitTests
 {

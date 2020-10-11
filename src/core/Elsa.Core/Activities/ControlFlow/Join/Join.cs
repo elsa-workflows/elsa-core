@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Design;
-using Elsa.Extensions;
 using Elsa.Messaging.Domain;
 using Elsa.Services;
 using Elsa.Services.Models;

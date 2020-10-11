@@ -4,7 +4,6 @@ using Elsa.Scripting.JavaScript.Services;
 using Microsoft.Extensions.Options;
 using System;
 using Elsa.Expressions;
-using Elsa.Scripting.JavaScript;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection

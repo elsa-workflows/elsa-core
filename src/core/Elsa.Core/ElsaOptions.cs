@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using Elsa.Caching;
 using Elsa.DistributedLock;
 using Microsoft.Extensions.DependencyInjection;
@@ -9,7 +8,6 @@ using Rebus.Persistence.InMem;
 using Rebus.Routing.TypeBased;
 using Rebus.Transport.InMem;
 using YesSql;
-using YesSql.Provider.Sqlite;
 using YesSql.Provider.Sqlite.InMemory;
 
 namespace Elsa

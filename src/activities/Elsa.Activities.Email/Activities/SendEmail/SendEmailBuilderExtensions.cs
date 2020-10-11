@@ -1,7 +1,6 @@
 using System;
 using Elsa.Activities.Email;
 using Elsa.Builders;
-using Elsa.Services.Models;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.Http

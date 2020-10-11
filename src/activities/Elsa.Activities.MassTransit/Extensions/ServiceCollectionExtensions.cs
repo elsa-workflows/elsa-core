@@ -3,9 +3,7 @@ using System.Collections.Generic;
 using Elsa.Activities.MassTransit.Consumers;
 using Elsa.Activities.MassTransit.Options;
 using MassTransit;
-using MassTransit.AspNetCoreIntegration;
 using MassTransit.ConsumeConfigurators;
-using MassTransit.ExtensionsDependencyInjectionIntegration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 

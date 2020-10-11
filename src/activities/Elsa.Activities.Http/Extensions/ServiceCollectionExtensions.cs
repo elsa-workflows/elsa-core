@@ -1,14 +1,12 @@
 using System;
 using Elsa.Activities.Http;
 using Elsa.Activities.Http.Indexes;
-using Elsa.Activities.Http.Models;
 using Elsa.Activities.Http.Options;
 using Elsa.Activities.Http.Parsers;
 using Elsa.Activities.Http.RequestHandlers.Handlers;
 using Elsa.Activities.Http.Services;
 using Elsa.Data;
 using Elsa.Extensions;
-using Elsa.Indexes;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.Extensions.DependencyInjection.Extensions;

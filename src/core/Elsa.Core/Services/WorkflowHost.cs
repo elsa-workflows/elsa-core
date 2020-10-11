@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Elsa.ActivityResults;
 using Elsa.Exceptions;
 using Elsa.Expressions;
-using Elsa.Extensions;
 using Elsa.Messaging.Domain;
 using Elsa.Models;
 using Elsa.Queries;
@@ -14,7 +13,6 @@ using Elsa.Services.Models;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using NodaTime;
-using YesSql;
 using ScheduledActivity = Elsa.Services.Models.ScheduledActivity;
 
 namespace Elsa.Services

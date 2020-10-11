@@ -7,7 +7,6 @@ using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Services.Models;
 using MassTransit;
-using MassTransit.Scheduling;
 using Microsoft.Extensions.Options;
 using NodaTime;
 

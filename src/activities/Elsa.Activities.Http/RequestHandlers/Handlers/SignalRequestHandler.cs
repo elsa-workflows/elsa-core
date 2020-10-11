@@ -1,5 +1,3 @@
-using System;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Models;
@@ -9,7 +7,6 @@ using Elsa.Models;
 using Elsa.Queries;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;
-using ISession = YesSql.ISession;
 
 namespace Elsa.Activities.Http.RequestHandlers.Handlers
 {

@@ -3,7 +3,6 @@ using System.Dynamic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using AutoMapper;
 using Elsa.Expressions;
 using Elsa.Scripting.JavaScript.Converters;
 using Elsa.Scripting.JavaScript.Extensions;

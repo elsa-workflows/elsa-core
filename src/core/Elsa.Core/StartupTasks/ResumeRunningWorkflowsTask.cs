@@ -1,13 +1,10 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.DistributedLock;
-using Elsa.Extensions;
-using Elsa.Indexes;
 using Elsa.Models;
 using Elsa.Queries;
 using Elsa.Runtime;
 using Elsa.Services;
-using YesSql;
 
 namespace Elsa.StartupTasks
 {

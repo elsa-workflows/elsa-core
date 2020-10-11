@@ -1,19 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
-using Elsa.Extensions;
-using Elsa.Indexes;
 using Elsa.Metadata;
 using Elsa.Models;
 using Elsa.Queries;
 using Elsa.Server.GraphQL.Models;
 using Elsa.Services;
 using HotChocolate;
-using YesSql;
 
 namespace Elsa.Server.GraphQL
 {

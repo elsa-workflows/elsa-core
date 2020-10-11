@@ -2,7 +2,6 @@ using System;
 using System.Threading.Tasks;
 using Elsa.Activities.Primitives;
 using Elsa.ActivityResults;
-using Elsa.Expressions;
 using Elsa.Services.Models;
 
 namespace Elsa.Builders

@@ -10,7 +10,6 @@ using Elsa.Server.GraphQL.Types;
 using Elsa.Services;
 using HotChocolate;
 using Open.Linq.AsyncExtensions;
-using YesSql;
 using IIdGenerator = Elsa.Services.IIdGenerator;
 
 namespace Elsa.Server.GraphQL

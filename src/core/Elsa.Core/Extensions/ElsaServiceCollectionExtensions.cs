@@ -9,9 +9,7 @@ using Elsa.Converters;
 using Elsa.Data;
 using Elsa.Data.Extensions;
 using Elsa.Expressions;
-using Elsa.Extensions;
 using Elsa.Indexes;
-using Elsa.Mapping;
 using Elsa.Messaging;
 using Elsa.Messaging.Distributed;
 using Elsa.Messaging.Distributed.Handlers;
@@ -20,7 +18,6 @@ using Elsa.Metadata.Handlers;
 using Elsa.Runtime;
 using Elsa.Serialization;
 using Elsa.Serialization.Formatters;
-using Elsa.Serialization.Handlers;
 using Elsa.Services;
 using Elsa.StartupTasks;
 using Elsa.WorkflowProviders;
@@ -28,7 +25,6 @@ using MediatR;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using NodaTime;
 using Rebus.Handlers;
-using YesSql.Indexes;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection

@@ -5,7 +5,6 @@ using Elsa.Activities.Http.Services;
 using Elsa.Queries;
 using Elsa.Services;
 using Microsoft.AspNetCore.Mvc;
-using YesSql;
 
 namespace Elsa.Activities.Http.Controllers
 {
