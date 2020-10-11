@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Exceptions;
 using Elsa.Extensions;
 using Elsa.Indexes;
 using Elsa.Messaging.Distributed;
@@ -14,27 +15,26 @@ using Elsa.Services.Models;
 using MediatR;
 using Open.Linq.AsyncExtensions;
 using Rebus.Bus;
-using YesSql;
 
 namespace Elsa.Services
 {
     public class WorkflowScheduler : IWorkflowScheduler, INotificationHandler<WorkflowCompleted>
     {
         private readonly IBus _serviceBus;
-        private readonly ISession _session;
+        private readonly IWorkflowInstanceManager _workflowInstanceManager;
         private readonly IWorkflowActivator _workflowActivator;
         private readonly IWorkflowRegistry _workflowRegistry;
         private readonly IWorkflowSchedulerQueue _queue;
 
         public WorkflowScheduler(
             IBus serviceBus,
-            ISession session,
+            IWorkflowInstanceManager workflowInstanceManager,
             IWorkflowActivator workflowActivator,
             IWorkflowRegistry workflowRegistry,
             IWorkflowSchedulerQueue queue)
         {
             _serviceBus = serviceBus;
-            _session = session;
+            _workflowInstanceManager = workflowInstanceManager;
             _workflowActivator = workflowActivator;
             _workflowRegistry = workflowRegistry;
             _queue = queue;
@@ -56,6 +56,10 @@ namespace Elsa.Services
                 definitionId,
                 VersionOptions.Published,
                 cancellationToken);
+            
+            if(workflow == null)
+                throw new WorkflowException($"No workflow definition found by ID {definitionId}");
+            
             var startActivities = workflow.GetStartActivities();
 
             foreach (var activity in startActivities)
@@ -119,7 +123,7 @@ namespace Elsa.Services
                         correlationId,
                         cancellationToken);
 
-                    _session.Save(workflowInstance);
+                    await _workflowInstanceManager.SaveAsync(workflowInstance, cancellationToken);
 
                     await ScheduleWorkflowAsync(
                         workflowInstance.WorkflowInstanceId,
@@ -146,7 +150,7 @@ namespace Elsa.Services
             else
                 predicate = x => x.ActivityType == activityType;
 
-            var query = _session.QueryWorkflowInstances().With<WorkflowInstanceBlockingActivitiesIndex>()
+            var query = _workflowInstanceManager.Query<WorkflowInstanceBlockingActivitiesIndex>()
                 .Where(predicate);
 
             var workflowInstances = await query.ListAsync();
@@ -167,7 +171,7 @@ namespace Elsa.Services
             CancellationToken cancellationToken)
         {
             var workflowInstance = await _workflowActivator.ActivateAsync(workflow, correlationId, cancellationToken);
-            _session.Save(workflowInstance);
+            await _workflowInstanceManager.SaveAsync(workflowInstance, cancellationToken);
             await ScheduleWorkflowAsync(workflowInstance.WorkflowInstanceId, activity.Id, input, cancellationToken);
         }
 
@@ -183,9 +187,8 @@ namespace Elsa.Services
             {
                 var workflowDefinitionId = tuple.Workflow.WorkflowDefinitionId;
 
-                var instances = await _session
-                    .QueryWorkflowInstanceByDefinitionAndStatus(workflowDefinitionId, WorkflowStatus.Suspended)
-                    .ListAsync();
+                var instances = await _workflowInstanceManager
+                    .ListByDefinitionAndStatusAsync(workflowDefinitionId, WorkflowStatus.Suspended);
 
                 if (!instances.Any())
                     result.Add(tuple);
@@ -198,13 +201,11 @@ namespace Elsa.Services
         {
             var workflowDefinitionId = workflow.WorkflowDefinitionId;
 
-            var suspendedInstances = await _session
-                .QueryWorkflowInstanceByDefinitionAndStatus(workflowDefinitionId, WorkflowStatus.Suspended)
-                .ListAsync();
+            var suspendedInstances = await _workflowInstanceManager
+                .ListByDefinitionAndStatusAsync(workflowDefinitionId, WorkflowStatus.Suspended);
 
-            var idleInstances = await _session
-                .QueryWorkflowInstanceByDefinitionAndStatus(workflowDefinitionId, WorkflowStatus.Idle)
-                .ListAsync();
+            var idleInstances = await _workflowInstanceManager
+                .ListByDefinitionAndStatusAsync(workflowDefinitionId, WorkflowStatus.Idle);
 
             var startActivities = workflow.GetStartActivities().Select(x => x.Id).ToList();
 

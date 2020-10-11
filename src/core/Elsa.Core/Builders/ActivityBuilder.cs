@@ -30,6 +30,11 @@ namespace Elsa.Builders
             Action<ISetupActivity<T>>? setup = null,
             Action<IActivityBuilder>? branch = null)
             where T : class, IActivity => When(OutcomeNames.Done).Then(setup, branch);
+        
+        public IActivityBuilder Then<T>(
+            Action<T> setup,
+            Action<IActivityBuilder>? branch = null)
+            where T : class, IActivity => When(OutcomeNames.Done).Then(setup, branch);
 
         public IActivityBuilder Then<T>(T activity, Action<IActivityBuilder>? branch = null)
             where T : class, IActivity => When(OutcomeNames.Done).Then(activity, branch);

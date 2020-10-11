@@ -1,5 +1,4 @@
 ﻿using System.Linq;
-using Elsa.Indexes;
 using Elsa.Models;
 using YesSql.Indexes;
 
@@ -16,17 +15,6 @@ namespace Elsa.Activities.Http.Indexes
     {
         public override void Describe(DescribeContext<WorkflowInstance> context)
         {
-            context.For<WorkflowInstanceIndex>()
-                .Map(
-                    workflowInstance => new WorkflowInstanceIndex
-                    {
-                        WorkflowInstanceId = workflowInstance.WorkflowInstanceId,
-                        WorkflowDefinitionId = workflowInstance.WorkflowDefinitionId,
-                        WorkflowStatus = workflowInstance.Status,
-                        CorrelationId = workflowInstance.CorrelationId,
-                        CreatedAt = workflowInstance.CreatedAt
-                    });
-
             context.For<WorkflowInstanceByReceiveHttpRequestIndex>()
                 .Map(
                     workflowInstance => workflowInstance.BlockingActivities

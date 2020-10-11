@@ -35,6 +35,7 @@ namespace Elsa.Core.UnitTests
             
             var workflowActivatorMock = new Mock<IWorkflowActivator>();
             var workflowRegistryMock = new Mock<IWorkflowRegistry>();
+            var workflowInstanceManager = new WorkflowInstanceManager(_session);
             var workflowExpressionEvaluatorMock = new Mock<IExpressionEvaluator>();
             var mediatorMock = new Mock<IMediator>();
             var now = _fixture.Create<Instant>();
@@ -47,7 +48,7 @@ namespace Elsa.Core.UnitTests
                 .ReturnsAsync((Workflow workflow, string? correlationId, CancellationToken cancellationToken) => new WorkflowInstance());
             
             _workflowHost = new WorkflowHost(
-                _session,
+                workflowInstanceManager,
                 workflowRegistryMock.Object,
                 workflowActivatorMock.Object,
                 workflowExpressionEvaluatorMock.Object,

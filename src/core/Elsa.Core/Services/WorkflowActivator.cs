@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Exceptions;
@@ -31,6 +32,7 @@ namespace Elsa.Services
                 Status = WorkflowStatus.Idle,
                 CorrelationId = correlationId,
                 CreatedAt = _clock.GetCurrentInstant(),
+                //Activities = workflow.Activities.Select(x => new ActivityInstance(x.Id, x.Type, x.Output, x.da))
             };
 
             return Task.FromResult(workflowInstance);

@@ -15,8 +15,7 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             return services
                 .TryAddProvider<IExpressionHandler, JavaScriptHandler>(ServiceLifetime.Scoped)
-                .AddNotificationHandlers(typeof(JavaScriptServiceCollectionExtensions))
-                .AddTypeAlias(typeof(JavaScriptExpression<>), "JavaScriptExpression");
+                .AddNotificationHandlers(typeof(JavaScriptServiceCollectionExtensions));
         }
 
         public static IServiceCollection WithJavaScriptOptions(this IServiceCollection services, Action<OptionsBuilder<ScriptOptions>> options)

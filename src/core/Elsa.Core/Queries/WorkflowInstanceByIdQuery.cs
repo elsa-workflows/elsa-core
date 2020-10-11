@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Elsa.Data;
 using Elsa.Indexes;
 using Elsa.Models;
+using Elsa.Services;
 using YesSql;
 
 namespace Elsa.Queries
@@ -23,20 +24,12 @@ namespace Elsa.Queries
                 x => x.WorkflowInstanceId == WorkflowInstanceId);
     }
 
-    public static class WorkflowInstanceByIdQuerySessionExtensions
+    public static class WorkflowInstanceByIdQueryWorkflowInstanceManagerExtensions
     {
-        public static IQuery<WorkflowInstance> QueryWorkflowInstanceById(
-            this ISession session,
-            string workflowInstanceId) =>
-            session
-                .ExecuteQuery(
-                    new WorkflowInstanceByIdQuery(workflowInstanceId),
-                    CollectionNames.WorkflowInstances);
-
-        public static async Task<WorkflowInstance?> GetWorkflowInstanceByIdAsync(
-            this ISession session,
+        public static async Task<WorkflowInstance?> GetByWorkflowInstanceIdAsync(
+            this IWorkflowInstanceManager manager,
             string workflowInstanceId,
             CancellationToken cancellationToken = default) =>
-            await session.QueryWorkflowInstanceById(workflowInstanceId).FirstOrDefaultAsync();
+            await manager.ExecuteQuery(new WorkflowInstanceByIdQuery(workflowInstanceId)).FirstOrDefaultAsync();
     }
 }

@@ -40,7 +40,7 @@ namespace Elsa.Services.Models
 
             foreach (var property in properties)
             {
-                if(!propertyValueProvider.ContainsKey(property.Name))
+                if(propertyValueProvider == null || !propertyValueProvider.ContainsKey(property.Name))
                     continue;
                 
                 var provider = propertyValueProvider[property.Name];

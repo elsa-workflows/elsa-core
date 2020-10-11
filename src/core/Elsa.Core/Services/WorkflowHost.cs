@@ -32,7 +32,7 @@ namespace Elsa.Services
         private static readonly ActivityOperation Resume = (context, activity, cancellationToken) =>
             activity.ResumeAsync(context, cancellationToken);
 
-        private readonly ISession _session;
+        private readonly IWorkflowInstanceManager _workflowInstanceManager;
         private readonly IWorkflowRegistry _workflowRegistry;
         private readonly IWorkflowActivator _workflowActivator;
         private readonly IExpressionEvaluator _expressionEvaluator;
@@ -42,7 +42,7 @@ namespace Elsa.Services
         private readonly ILogger _logger;
 
         public WorkflowHost(
-            ISession session,
+            IWorkflowInstanceManager workflowInstanceManager,
             IWorkflowRegistry workflowRegistry,
             IWorkflowActivator workflowActivator,
             IExpressionEvaluator expressionEvaluator,
@@ -51,7 +51,7 @@ namespace Elsa.Services
             IServiceProvider serviceProvider,
             ILogger<WorkflowHost> logger)
         {
-            _session = session;
+            _workflowInstanceManager = workflowInstanceManager;
             _workflowRegistry = workflowRegistry;
             _workflowActivator = workflowActivator;
             _expressionEvaluator = expressionEvaluator;
@@ -67,7 +67,7 @@ namespace Elsa.Services
             object? input = default,
             CancellationToken cancellationToken = default)
         {
-            var workflowInstance = await _session.GetWorkflowInstanceByIdAsync(workflowInstanceId, cancellationToken);
+            var workflowInstance = await _workflowInstanceManager.GetByWorkflowInstanceIdAsync(workflowInstanceId, cancellationToken);
 
             if (workflowInstance == null)
             {

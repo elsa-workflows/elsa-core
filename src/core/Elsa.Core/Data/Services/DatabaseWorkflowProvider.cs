@@ -2,11 +2,9 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
-using YesSql;
 
 namespace Elsa.Data.Services
 {
@@ -15,20 +13,20 @@ namespace Elsa.Data.Services
     /// </summary>
     public class DatabaseWorkflowProvider : IWorkflowProvider
     {
-        private readonly ISession _session;
+        private readonly IWorkflowDefinitionManager _workflowDefinitionManager;
         private readonly IActivityResolver _activityResolver;
 
         public DatabaseWorkflowProvider(
-            ISession session,
+            IWorkflowDefinitionManager workflowDefinitionManager,
             IActivityResolver activityResolver)
         {
-            _session = session;
+            _workflowDefinitionManager = workflowDefinitionManager;
             _activityResolver = activityResolver;
         }
 
         public async Task<IEnumerable<Workflow>> GetWorkflowsAsync(CancellationToken cancellationToken)
         {
-            var workflowDefinitions = await _session.QueryWorkflowDefinitions().ListAsync();
+            var workflowDefinitions = await _workflowDefinitionManager.ListAsync(cancellationToken);
             return workflowDefinitions.Select(CreateWorkflow);
         }
 

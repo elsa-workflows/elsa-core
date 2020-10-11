@@ -69,9 +69,6 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddTransient<IWorkflow>(sp => sp.GetRequiredService<T>());
         }
         
-        public static IServiceCollection AddTypeAlias<T>(this IServiceCollection services, string alias) => services.AddTypeAlias(typeof(T), alias);
-        public static IServiceCollection AddTypeAlias<T>(this IServiceCollection services) => services.AddTypeAlias<T>(typeof(T).Name);
-        public static IServiceCollection AddTypeAlias(this IServiceCollection services, Type type, string alias) => services.AddTransient<ITypeAlias>(sp => new TypeAlias(type, alias));
         public static IServiceCollection AddConsumer<TMessage, TConsumer>(this IServiceCollection services) where TConsumer : class, IHandleMessages<TMessage> => services.AddTransient<IHandleMessages<TMessage>, TConsumer>();
 
         private static IServiceCollection AddMediatR(this ElsaOptions options)
@@ -108,6 +105,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IWorkflowSchedulerQueue, WorkflowSchedulerQueue>()
                 .AddScoped<IWorkflowHost, WorkflowHost>()
                 .AddSingleton<IWorkflowActivator, WorkflowActivator>()
+                .AddScoped<IWorkflowDefinitionManager, WorkflowDefinitionManager>()
+                .AddScoped<IWorkflowInstanceManager, WorkflowInstanceManager>()
                 .AddIndexProvider<WorkflowDefinitionIndexProvider>()
                 .AddIndexProvider<WorkflowInstanceIndexProvider>()
                 .AddStartupRunner()
@@ -117,7 +116,6 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddTransient<Func<IWorkflowBuilder>>(sp => sp.GetRequiredService<IWorkflowBuilder>)
                 .AddStartupTask<StartServiceBusTask>()
                 .AddConsumer<RunWorkflow, RunWorkflowHandler>()
-                .AddTypeAlias<Duration>("Duration")
                 .AddMetadataHandlers()
                 .AddPrimitiveActivities();
 

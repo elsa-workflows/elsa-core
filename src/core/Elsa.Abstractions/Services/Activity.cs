@@ -12,7 +12,7 @@ namespace Elsa.Services
     {
         public object? Output { get; set; }
         public virtual string Type => GetType().Name;
-        public string? Id { get; set; }
+        public string Id { get; set; } = default!;
         public string? Name { get; set; }
         public string? DisplayName{ get; set; }
         public string? Description{ get; set; }

@@ -2,6 +2,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Extensions;
 using Elsa.Models;
+using Elsa.Services;
 using Elsa.Services.Models;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -15,58 +16,58 @@ namespace Elsa.Messaging.Domain.Handlers
         INotificationHandler<ActivityExecuted>,
         INotificationHandler<WorkflowCompleted>
     {
-        private readonly ISession _session;
+        private readonly IWorkflowInstanceManager _workflowInstanceManager;
         private readonly ILogger _logger;
 
-        public PersistenceWorkflowEventHandler(ISession session, ILogger<PersistenceWorkflowEventHandler> logger)
+        public PersistenceWorkflowEventHandler(
+            IWorkflowInstanceManager workflowInstanceManager,
+            ILogger<PersistenceWorkflowEventHandler> logger)
         {
-            _session = session;
+            _workflowInstanceManager = workflowInstanceManager;
             _logger = logger;
         }
 
-        public Task Handle(WorkflowSuspended notification, CancellationToken cancellationToken)
+        public async Task Handle(WorkflowSuspended notification, CancellationToken cancellationToken)
         {
             if (notification.WorkflowExecutionContext.PersistenceBehavior == WorkflowPersistenceBehavior.Suspended)
-                SaveWorkflow(notification.WorkflowExecutionContext);
-            
-            return Task.CompletedTask;
+                await SaveWorkflowAsync(notification.WorkflowExecutionContext, cancellationToken);
         }
 
-        public Task Handle(WorkflowExecuted notification, CancellationToken cancellationToken)
+        public async Task Handle(WorkflowExecuted notification, CancellationToken cancellationToken)
         {
-            if (notification.WorkflowExecutionContext.PersistenceBehavior == WorkflowPersistenceBehavior.WorkflowExecuted)
-                SaveWorkflow(notification.WorkflowExecutionContext);
-            
-            return Task.CompletedTask;
+            if (notification.WorkflowExecutionContext.PersistenceBehavior ==
+                WorkflowPersistenceBehavior.WorkflowExecuted)
+                await SaveWorkflowAsync(notification.WorkflowExecutionContext, cancellationToken);
         }
 
-        public Task Handle(ActivityExecuted notification, CancellationToken cancellationToken)
+        public async Task Handle(ActivityExecuted notification, CancellationToken cancellationToken)
         {
-            if (notification.WorkflowExecutionContext.PersistenceBehavior == WorkflowPersistenceBehavior.ActivityExecuted || notification.Activity.PersistWorkflow)
-                SaveWorkflow(notification.WorkflowExecutionContext);
-            
-            return Task.CompletedTask;
+            if (notification.WorkflowExecutionContext.PersistenceBehavior ==
+                WorkflowPersistenceBehavior.ActivityExecuted || notification.Activity.PersistWorkflow)
+                await SaveWorkflowAsync(notification.WorkflowExecutionContext, cancellationToken);
         }
 
-        public Task Handle(WorkflowCompleted notification, CancellationToken cancellationToken)
+        public async Task Handle(WorkflowCompleted notification, CancellationToken cancellationToken)
         {
             var workflowExecutionContext = notification.WorkflowExecutionContext;
 
             if (workflowExecutionContext.DeleteCompletedInstances)
             {
-                _logger.LogDebug("Deleting completed workflow instance {WorkflowInstanceId}", workflowExecutionContext.WorkflowInstanceId);
-                _session.Delete(workflowExecutionContext.WorkflowInstance);
+                _logger.LogDebug(
+                    "Deleting completed workflow instance {WorkflowInstanceId}",
+                    workflowExecutionContext.WorkflowInstanceId);
+                await _workflowInstanceManager.DeleteAsync(workflowExecutionContext.WorkflowInstance, cancellationToken);
             }
             else
-                SaveWorkflow(notification.WorkflowExecutionContext);
-            
-            return Task.CompletedTask;
+            {
+                await SaveWorkflowAsync(notification.WorkflowExecutionContext, cancellationToken);
+            }
         }
 
-        private void SaveWorkflow(WorkflowExecutionContext workflowExecutionContext)
+        private async ValueTask SaveWorkflowAsync(WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
         {
             var workflowInstance = workflowExecutionContext.UpdateWorkflowInstance();
-            _session.Save(workflowInstance);
+            await _workflowInstanceManager.SaveAsync(workflowInstance, cancellationToken);
         }
     }
 }

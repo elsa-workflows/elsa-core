@@ -4,6 +4,7 @@ using Elsa.DistributedLock;
 using Elsa.Extensions;
 using Elsa.Indexes;
 using Elsa.Models;
+using Elsa.Queries;
 using Elsa.Runtime;
 using Elsa.Services;
 using YesSql;
@@ -16,16 +17,16 @@ namespace Elsa.StartupTasks
     /// </summary>
     public class ResumeRunningWorkflowsTask : IStartupTask
     {
-        private readonly ISession _session;
+        private readonly IWorkflowInstanceManager _workflowInstanceManager;
         private readonly IWorkflowScheduler _workflowScheduler;
         private readonly IDistributedLockProvider _distributedLockProvider;
 
         public ResumeRunningWorkflowsTask(
-            ISession session,
+            IWorkflowInstanceManager workflowInstanceManager,
             IWorkflowScheduler workflowScheduler,
             IDistributedLockProvider distributedLockProvider)
         {
-            _session = session;
+            _workflowInstanceManager = workflowInstanceManager;
             _workflowScheduler = workflowScheduler;
             _distributedLockProvider = distributedLockProvider;
         }
@@ -35,8 +36,7 @@ namespace Elsa.StartupTasks
             if (!await _distributedLockProvider.AcquireLockAsync(GetType().Name, cancellationToken))
                 return;
 
-            var instances = await _session.QueryWorkflowInstances<WorkflowInstanceIndex>()
-                .Where(x => x.WorkflowStatus == WorkflowStatus.Running).ListAsync();
+            var instances = await _workflowInstanceManager.ListByStatusAsync(WorkflowStatus.Running, cancellationToken);
 
             foreach (var instance in instances)
                 await _workflowScheduler.ScheduleWorkflowAsync(

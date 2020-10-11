@@ -28,14 +28,14 @@ namespace Elsa.Server.GraphQL
             string? id,
             WorkflowSaveAction saveAction,
             WorkflowInput workflowInput,
-            [Service] ISession session,
+            [Service] IWorkflowDefinitionManager manager,
             [Service] IIdGenerator idGenerator,
             [Service] ITokenSerializer serializer,
             [Service] IWorkflowPublisher publisher,
             CancellationToken cancellationToken)
         {
             var workflowDefinition = id != null
-                ? await session.GetWorkflowDefinitionAsync(id, VersionOptions.Latest, cancellationToken)
+                ? await manager.GetAsync(id, VersionOptions.Latest, cancellationToken)
                 : default;
 
             if (workflowDefinition == null)
@@ -86,15 +86,15 @@ namespace Elsa.Server.GraphQL
 
         public async Task<int> DeleteWorkflowDefinition(
             string id,
-            [Service] ISession session,
+            [Service] IWorkflowDefinitionManager manager,
             CancellationToken cancellationToken)
         {
-            var workflowDefinitions = await session.QueryWorkflowDefinitionByIdAndVersion(id, VersionOptions.All)
+            var workflowDefinitions = await manager.QueryByIdAndVersion(id, VersionOptions.All)
                 .ListAsync()
                 .ToList();
 
             foreach (var workflowDefinition in workflowDefinitions)
-                session.Delete(workflowDefinition);
+                await manager.DeleteAsync(workflowDefinition, cancellationToken);
 
             return workflowDefinitions.Count;
         }

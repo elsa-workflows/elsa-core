@@ -10,32 +10,27 @@ using YesSql;
 
 namespace Elsa.Queries
 {
-    public class WorkflowInstanceByDefinitionAndStatusQuery : ICompiledQuery<WorkflowInstance>
+    public class WorkflowInstanceByDefinitionQuery : ICompiledQuery<WorkflowInstance>
     {
         public string WorkflowDefinitionId { get; }
-        public WorkflowStatus Status { get; }
 
-        public WorkflowInstanceByDefinitionAndStatusQuery(string workflowDefinitionId, WorkflowStatus status)
-        {
+        public WorkflowInstanceByDefinitionQuery(string workflowDefinitionId) =>
             WorkflowDefinitionId = workflowDefinitionId;
-            Status = status;
-        }
 
         public Expression<Func<IQuery<WorkflowInstance>, IQuery<WorkflowInstance>>> Query() => query =>
             query.With<WorkflowInstanceIndex>().Where(
-                x => x.WorkflowDefinitionId == WorkflowDefinitionId && x.WorkflowStatus == Status);
+                x => x.WorkflowDefinitionId == WorkflowDefinitionId);
     }
 
-    public static class WorkflowInstanceByDefinitionAndStatusQueryWorkflowInstanceManagerExtensions
+    public static class WorkflowInstanceByDefinitionQueryWorkflowInstanceManagerExtensions
     {
-        public static Task<IEnumerable<WorkflowInstance>> ListByDefinitionAndStatusAsync(
+        public static Task<IEnumerable<WorkflowInstance>> ListByDefinitionAsync(
             this IWorkflowInstanceManager manager,
             string workflowDefinitionId,
-            WorkflowStatus workflowStatus,
             CancellationToken cancellationToken = default) =>
             manager
                 .ExecuteQuery(
-                    new WorkflowInstanceByDefinitionAndStatusQuery(workflowDefinitionId, workflowStatus))
+                    new WorkflowInstanceByDefinitionQuery(workflowDefinitionId))
                 .ListAsync();
     }
 }

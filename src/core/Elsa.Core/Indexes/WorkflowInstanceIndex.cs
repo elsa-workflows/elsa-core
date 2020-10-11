@@ -1,6 +1,6 @@
+using System;
 using System.Linq;
 using Elsa.Models;
-using NodaTime;
 using YesSql.Indexes;
 
 namespace Elsa.Indexes
@@ -11,7 +11,7 @@ namespace Elsa.Indexes
         public string WorkflowDefinitionId { get; set; } = default!;
         public string? CorrelationId { get; set; }
         public WorkflowStatus WorkflowStatus { get; set; }
-        public Instant CreatedAt { get; set; }
+        public DateTimeOffset CreatedAt { get; set; }
     }
 
     public class WorkflowInstanceBlockingActivitiesIndex : MapIndex
@@ -20,7 +20,7 @@ namespace Elsa.Indexes
         public string ActivityType { get; set; } = default!;
         public string? CorrelationId { get; set; }
         public WorkflowStatus WorkflowStatus { get; set; }
-        public Instant CreatedAt { get; set; }
+        public DateTimeOffset CreatedAt { get; set; }
     }
 
     public class WorkflowInstanceIndexProvider : IndexProvider<WorkflowInstance>
@@ -35,7 +35,7 @@ namespace Elsa.Indexes
                         WorkflowDefinitionId = workflowInstance.WorkflowDefinitionId,
                         WorkflowStatus = workflowInstance.Status,
                         CorrelationId = workflowInstance.CorrelationId,
-                        CreatedAt = workflowInstance.CreatedAt
+                        CreatedAt = workflowInstance.CreatedAt.ToDateTimeOffset()
                     });
 
             context.For<WorkflowInstanceBlockingActivitiesIndex>()
@@ -48,7 +48,7 @@ namespace Elsa.Indexes
                                 ActivityType = activity.ActivityType,
                                 CorrelationId = workflowInstance.CorrelationId,
                                 WorkflowStatus = workflowInstance.Status,
-                                CreatedAt = workflowInstance.CreatedAt
+                                CreatedAt = workflowInstance.CreatedAt.ToDateTimeOffset()
                             }));
         }
     }

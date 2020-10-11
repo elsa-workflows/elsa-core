@@ -7,12 +7,10 @@ using Elsa.Activities.Http.RequestHandlers.Results;
 using Elsa.Activities.Http.Services;
 using Elsa.Extensions;
 using Elsa.Models;
-using Elsa.Serialization;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
 using Open.Linq.AsyncExtensions;
-using ISession = YesSql.ISession;
 
 namespace Elsa.Activities.Http.RequestHandlers.Handlers
 {
@@ -21,27 +19,26 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
         private readonly HttpContext _httpContext;
         private readonly IWorkflowHost _workflowHost;
         private readonly IWorkflowRegistry _registry;
-        private readonly ISession _session;
+        private readonly IWorkflowInstanceManager _workflowInstanceManager;
         private readonly CancellationToken _cancellationToken;
 
         public TriggerRequestHandler(
             IHttpContextAccessor httpContext,
             IWorkflowHost workflowHost,
             IWorkflowRegistry registry,
-            ISession session,
-            ITokenSerializer serializer)
+            IWorkflowInstanceManager workflowInstanceManager)
         {
             _httpContext = httpContext.HttpContext;
             _workflowHost = workflowHost;
             _registry = registry;
-            _session = session;
+            _workflowInstanceManager = workflowInstanceManager;
             _cancellationToken = httpContext.HttpContext.RequestAborted;
         }
 
         public async Task<IRequestHandlerResult> HandleRequestAsync()
         {
             // TODO: Optimize this by building up a hash of routes and workflows to execute.
-            var requestPath = _httpContext.Request.Path;
+            var requestPath = _httpContext.Request.Path.ToString();
             var method = _httpContext.Request.Method;
 
             var httpWorkflows =
@@ -50,10 +47,9 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
             var workflowsToStart = Filter(httpWorkflows, requestPath, method).ToList();
 
             var workflowsToResume =
-                await _session
-                    .QueryWorkflowInstances()
-                    .With<WorkflowInstanceByReceiveHttpRequestIndex>()
-                    .Where(x => x.RequestPath == requestPath && x.RequestMethod == null || x.RequestMethod == method)
+                await _workflowInstanceManager
+                    .Query<WorkflowInstanceByReceiveHttpRequestIndex>(
+                        x => x.RequestPath == requestPath && x.RequestMethod == null || x.RequestMethod == method)
                     .ListAsync()
                     .ToList();
 

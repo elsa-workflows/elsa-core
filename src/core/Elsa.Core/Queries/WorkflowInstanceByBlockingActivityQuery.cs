@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Elsa.Data;
 using Elsa.Indexes;
 using Elsa.Models;
+using Elsa.Services;
 using YesSql;
 
 namespace Elsa.Queries
@@ -24,25 +25,24 @@ namespace Elsa.Queries
                 x => x.ActivityType == ActivityType);
     }
 
-    public static class WorkflowInstanceByBlockingActivityQuerySessionExtensions
+    public static class WorkflowInstanceByBlockingActivityQueryWorkflowInstanceManagerExtensions
     {
-        public static IQuery<WorkflowInstance> QueryWorkflowInstanceByBlockingActivity(
-            this ISession session,
+        public static IQuery<WorkflowInstance> QueryByBlockingActivity(
+            this IWorkflowInstanceManager manager,
             string activityType) =>
-            session
+            manager
                 .ExecuteQuery(
-                    new WorkflowInstanceByBlockingActivityQuery(activityType),
-                    CollectionNames.WorkflowInstances);
+                    new WorkflowInstanceByBlockingActivityQuery(activityType));
 
-        public static async Task<IEnumerable<WorkflowInstance>> ListWorkflowInstancesByBlockingActivityAsync(
-            this ISession session,
+        public static async Task<IEnumerable<WorkflowInstance>> ListByBlockingActivityAsync(
+            this IWorkflowInstanceManager manager,
             string activityType,
-            CancellationToken cancellationToken) =>
-            await session.QueryWorkflowInstanceByBlockingActivity(activityType).ListAsync();
+            CancellationToken cancellationToken = default) =>
+            await manager.QueryByBlockingActivity(activityType).ListAsync();
 
-        public static async Task<IEnumerable<WorkflowInstance>> ListWorkflowInstancesByBlockingActivityAsync<TActivity>(
-            this ISession session,
-            CancellationToken cancellationToken) =>
-            await session.QueryWorkflowInstanceByBlockingActivity(typeof(TActivity).Name).ListAsync();
+        public static async Task<IEnumerable<WorkflowInstance>> ListByBlockingActivityAsync<TActivity>(
+            this IWorkflowInstanceManager manager,
+            CancellationToken cancellationToken = default) =>
+            await manager.ListByBlockingActivityAsync(typeof(TActivity).Name, cancellationToken);
     }
 }

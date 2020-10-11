@@ -15,16 +15,16 @@ namespace Elsa.Activities.Http.Controllers
     {
         private readonly ITokenService _tokenService;
         private readonly IWorkflowHost _workflowHost;
-        private readonly ISession _session;
+        private readonly IWorkflowInstanceManager _workflowInstanceManager;
 
         public HttpWorkflowsController(
             ITokenService tokenService,
             IWorkflowHost workflowHost,
-            ISession session)
+            IWorkflowInstanceManager workflowInstanceManager)
         {
             _tokenService = tokenService;
             _workflowHost = workflowHost;
-            _session = session;
+            _workflowInstanceManager = workflowInstanceManager;
         }
 
         [Route("trigger/{token}")]
@@ -34,7 +34,7 @@ namespace Elsa.Activities.Http.Controllers
             if (!_tokenService.TryDecryptToken(token, out Signal signal))
                 return NotFound();
 
-            var workflowInstance = await _session.GetWorkflowInstanceByIdAsync(signal.WorkflowInstanceId, cancellationToken);
+            var workflowInstance = await _workflowInstanceManager.GetByWorkflowInstanceIdAsync(signal.WorkflowInstanceId, cancellationToken);
 
             if (workflowInstance == null)
                 return NotFound();

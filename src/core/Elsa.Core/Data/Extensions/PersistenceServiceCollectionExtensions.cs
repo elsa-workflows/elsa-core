@@ -37,12 +37,10 @@ namespace Elsa.Data.Extensions
             var configuration = new Configuration();
             configure(serviceProvider, configuration);
             
-            // The following line is a temporary workaround until the bug in YesSql is fixed: https://github.com/sebastienros/yessql/pull/280
+            // TODO: The following line is a temporary workaround until the bug in YesSql is fixed: https://github.com/sebastienros/yessql/pull/280
             var store = StoreFactory.CreateAndInitializeAsync(configuration).GetAwaiter().GetResult();
             //var store = StoreFactory.Create(configuration);
-            
-            SqlMapper.AddTypeMap(typeof(PathString), DbType.String);
-            
+
             var indexes = serviceProvider.GetServices<IIndexProvider>();
             store.RegisterIndexes(indexes);
 

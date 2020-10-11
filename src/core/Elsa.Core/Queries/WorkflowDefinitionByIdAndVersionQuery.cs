@@ -2,11 +2,10 @@
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Attributes;
-using Elsa.Data;
 using Elsa.Extensions;
 using Elsa.Indexes;
 using Elsa.Models;
+using Elsa.Services;
 using YesSql;
 
 namespace Elsa.Queries
@@ -30,24 +29,23 @@ namespace Elsa.Queries
         }
     }
 
-    public static class WorkflowDefinitionByIdAndVersionQuerySessionExtensions
+    public static class WorkflowDefinitionByIdAndVersionQueryWorkflowDefinitionManagerExtensions
     {
-        public static IQuery<WorkflowDefinition> QueryWorkflowDefinitionByIdAndVersion(
-            this ISession session,
+        public static IQuery<WorkflowDefinition> QueryByIdAndVersion(
+            this IWorkflowDefinitionManager manager,
             string workflowDefinitionId,
             VersionOptions versionOptions)
         {
-            return session.ExecuteQuery(
-                new WorkflowDefinitionByIdAndVersionQuery(workflowDefinitionId, versionOptions),
-                CollectionNames.WorkflowDefinitions);
+            return manager.ExecuteQuery(
+                new WorkflowDefinitionByIdAndVersionQuery(workflowDefinitionId, versionOptions));
         }
 
-        public static async Task<WorkflowDefinition?> GetWorkflowDefinitionAsync(
-            this ISession session,
+        public static async Task<WorkflowDefinition?> GetAsync(
+            this IWorkflowDefinitionManager manager,
             string workflowDefinitionId,
             VersionOptions versionOptions,
             CancellationToken cancellationToken = default) =>
-            await session.QueryWorkflowDefinitionByIdAndVersion(workflowDefinitionId, versionOptions)
+            await manager.QueryByIdAndVersion(workflowDefinitionId, versionOptions)
                 .FirstOrDefaultAsync();
     }
 }

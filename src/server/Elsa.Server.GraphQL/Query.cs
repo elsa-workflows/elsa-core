@@ -36,30 +36,28 @@ namespace Elsa.Server.GraphQL
 
         public async Task<IEnumerable<WorkflowDefinition>> GetWorkflowDefinitions(
             VersionOptionsInput? version,
-            [Service] ISession session,
+            [Service] IWorkflowDefinitionManager manager,
             [Service] IMapper mapper,
             CancellationToken cancellationToken)
         {
             var mappedVersion = mapper.Map<VersionOptions?>(version);
-            return await session.QueryWorkflowDefinitions().WithVersion(mappedVersion ?? VersionOptions.Latest)
-                .ListAsync();
+            return await manager.ListAsync(mappedVersion ?? VersionOptions.Latest, cancellationToken);
         }
 
         public async Task<WorkflowDefinition?> GetWorkflowDefinition(
             string? workflowDefinitionVersionId,
             string? workflowDefinitionId,
             VersionOptionsInput? version,
-            [Service] ISession session,
+            [Service] IWorkflowDefinitionManager manager,
             [Service] IMapper mapper,
             CancellationToken cancellationToken)
         {
             if (workflowDefinitionVersionId != null)
-                return await session.QueryWorkflowDefinitions<WorkflowDefinitionIndex>(
-                    x => x.WorkflowDefinitionVersionId == workflowDefinitionVersionId).FirstOrDefaultAsync();
+                return await manager.GetByVersionIdAsync(workflowDefinitionVersionId, cancellationToken);
 
             var mappedVersion = mapper.Map<VersionOptions?>(version);
 
-            return await session.GetWorkflowDefinitionAsync(
+            return await manager.GetAsync(
                 workflowDefinitionId!,
                 mappedVersion ?? VersionOptions.Latest,
                 cancellationToken);
@@ -68,25 +66,16 @@ namespace Elsa.Server.GraphQL
         public async Task<IEnumerable<WorkflowInstance>> GetWorkflowInstances(
             string definitionId,
             WorkflowStatus? status,
-            [Service] ISession session,
-            CancellationToken cancellationToken)
-        {
-            Expression<Func<WorkflowInstanceIndex, bool>> predicate;
-
-            if (status == null)
-                predicate = x => x.WorkflowDefinitionId == definitionId;
-            else
-                predicate = x => x.WorkflowDefinitionId == definitionId && x.WorkflowStatus == status;
-
-            return await session.QueryWorkflowInstances(predicate).ListAsync();
-        }
+            [Service] IWorkflowInstanceManager manager,
+            CancellationToken cancellationToken) =>
+            status == null
+                ? await manager.ListByDefinitionAsync(definitionId, cancellationToken)
+                : await manager.ListByDefinitionAndStatusAsync(definitionId, status.Value, cancellationToken);
 
         public async Task<WorkflowInstance?> GetWorkflowInstance(
             string id,
-            [Service] ISession session,
-            CancellationToken cancellationToken)
-        {
-            return await session.GetWorkflowInstanceByIdAsync(id, cancellationToken);
-        }
+            [Service] IWorkflowInstanceManager manager,
+            CancellationToken cancellationToken) =>
+            await manager.GetByWorkflowInstanceIdAsync(id, cancellationToken);
     }
 }
