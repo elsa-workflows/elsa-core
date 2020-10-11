@@ -22,12 +22,12 @@ namespace Elsa.Samples.WorkflowDefinition
                                .AddSingleton(Console.In)
                                .BuildServiceProvider();
 
-            var activityResolver = services.GetRequiredService<IActivityResolver>();
-            var activity1 = activityResolver.ResolveActivity<WriteLine>()
+            var activityResolver = services.GetRequiredService<IActivityActivator>();
+            var activity1 = activityResolver.ActivateActivity<WriteLine>()
                                             .WithId("activity-1")
                                             .WithText("Hello world!");
 
-            var activity2 = activityResolver.ResolveActivity<WriteLine>()
+            var activity2 = activityResolver.ActivateActivity<WriteLine>()
                                             .WithId("activity-2")
                                             .WithText("Goodbye cruel world...!");
 

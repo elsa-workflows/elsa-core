@@ -14,27 +14,27 @@ namespace Elsa.Data.Services
     public class DatabaseWorkflowProvider : IWorkflowProvider
     {
         private readonly IWorkflowDefinitionManager _workflowDefinitionManager;
-        private readonly IActivityResolver _activityResolver;
+        private readonly IActivityActivator _activityActivator;
 
         public DatabaseWorkflowProvider(
             IWorkflowDefinitionManager workflowDefinitionManager,
-            IActivityResolver activityResolver)
+            IActivityActivator activityActivator)
         {
             _workflowDefinitionManager = workflowDefinitionManager;
-            _activityResolver = activityResolver;
+            _activityActivator = activityActivator;
         }
 
-        public async Task<IEnumerable<Workflow>> GetWorkflowsAsync(CancellationToken cancellationToken)
+        public async Task<IEnumerable<WorkflowBlueprint>> GetWorkflowsAsync(CancellationToken cancellationToken)
         {
             var workflowDefinitions = await _workflowDefinitionManager.ListAsync(cancellationToken);
             return workflowDefinitions.Select(CreateWorkflow);
         }
 
-        private Workflow CreateWorkflow(WorkflowDefinition definition)
+        private WorkflowBlueprint CreateWorkflow(WorkflowDefinition definition)
         {
             var resolvedActivities = definition.Activities.Select(ResolveActivity).ToDictionary(x => x.Id);
 
-            var workflow = new Workflow(
+            var workflow = new WorkflowBlueprint(
                 definition.WorkflowDefinitionVersionId,
                 definition.Version,
                 definition.IsSingleton,
@@ -65,6 +65,6 @@ namespace Elsa.Data.Services
         }
 
         private IActivity ResolveActivity(ActivityDefinition activityDefinition) =>
-            _activityResolver.ResolveActivity(activityDefinition);
+            _activityActivator.ActivateActivity(activityDefinition);
     }
 }

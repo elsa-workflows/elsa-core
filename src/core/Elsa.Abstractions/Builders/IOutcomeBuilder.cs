@@ -7,6 +7,6 @@ namespace Elsa.Builders
         IWorkflowBuilder WorkflowBuilder { get; }
         IActivityBuilder Source { get; }
         string? Outcome { get; }
-        Workflow Build();
+        WorkflowBlueprint Build();
     }
 }

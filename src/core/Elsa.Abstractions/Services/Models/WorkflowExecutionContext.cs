@@ -14,67 +14,60 @@ namespace Elsa.Services.Models
     {
         public WorkflowExecutionContext(
             IExpressionEvaluator expressionEvaluator,
-            IClock clock,
             IServiceProvider serviceProvider,
-            Workflow workflow,
-            WorkflowInstance workflowInstance,
-            WorkflowFault? workflowFault = default,
-            IEnumerable<ExecutionLogEntry>? executionLog = default)
+            WorkflowDefinition workflowDefinition,
+            WorkflowInstance workflowInstance
+            //IWorkflow workflow,
+            //WorkflowStatus status,
+            //Variables variables,
+            //string correlationId,
+            //IWorkflowFault? workflowFault,
+            //ICollection<IScheduledActivity> scheduledActivities,
+            //ICollection<IActivity> blockingActivities,
+            //IEnumerable<IExecutionLogEntry>? executionLog = default
+            )
         {
             ServiceProvider = serviceProvider;
-            Workflow = workflow;
+            WorkflowDefinition = workflowDefinition;
             WorkflowInstance = workflowInstance;
-            CorrelationId = workflowInstance.CorrelationId;
-            Activities = workflow.Activities.ToList();
-            Connections = workflow.Connections.ToList();
+            //Workflow = workflow;
+            //CorrelationId = correlationId;
             ExpressionEvaluator = expressionEvaluator;
-            Clock = clock;
-
-            var activityLookup = workflow.Activities.ToDictionary(x => x.Id);
-            
-            ScheduledActivities = new Stack<ScheduledActivity>(
-                workflowInstance.ScheduledActivities.Reverse().Select(x => CreateScheduledActivity(x, activityLookup)));
-            
-            BlockingActivities = new HashSet<IActivity>(
-                workflowInstance.BlockingActivities.Select(x => activityLookup[x.ActivityId]));
-
-            Variables = workflowInstance.Variables;
-            Status = workflowInstance.Status;
-            PersistenceBehavior = workflow.PersistenceBehavior;
-            ActivityPropertyValueProviders = workflow.ActivityPropertyValueProviders;
-            WorkflowFault = workflowFault;
-            ExecutionLog = executionLog?.ToList() ?? new List<ExecutionLogEntry>();
+            //ScheduledActivities = new Stack<IScheduledActivity>(scheduledActivities.Reverse());
+            //BlockingActivities = new HashSet<IActivity>(blockingActivities);
+            //Variables = variables;
+            //Status = status;
+            //PersistenceBehavior = workflow.PersistenceBehavior;
+            //ActivityPropertyProviders = workflow.ActivityPropertyProviders;
+            //WorkflowFault = workflowFault;
+            //ExecutionLog = executionLog?.ToList() ?? new List<IExecutionLogEntry>();
             IsFirstPass = true;
         }
-        
-        private ScheduledActivity CreateScheduledActivity(Elsa.Models.ScheduledActivity scheduledActivityModel,
-            IDictionary<string, IActivity> activityLookup)
+
+        private IScheduledActivity CreateScheduledActivity(Elsa.Models.ScheduledActivity scheduledActivityModel,
+            IDictionary<string, ActivityDefinition> activityLookup)
         {
             var activity = activityLookup[scheduledActivityModel.ActivityId];
             return new ScheduledActivity(activity, scheduledActivityModel.Input);
         }
 
+        public IWorkflowBlueprint WorkflowBlueprint { get; }
         public IServiceProvider ServiceProvider { get; }
-        public Workflow Workflow { get; }
+        public WorkflowDefinition WorkflowDefinition { get; }
         public WorkflowInstance WorkflowInstance { get; }
-        public string WorkflowDefinitionId => Workflow.WorkflowDefinitionId;
-        public string WorkflowInstanceId => WorkflowInstance.WorkflowInstanceId;
-        public int Version => WorkflowInstance.Version;
-        public ICollection<IActivity> Activities { get; }
-        public ICollection<Connection> Connections { get; }
         public WorkflowStatus Status { get; set; }
-        public Stack<ScheduledActivity> ScheduledActivities { get; }
-        public HashSet<IActivity> BlockingActivities { get; }
+        public Stack<IScheduledActivity> ScheduledActivities { get; }
+        public HashSet<BlockingActivity> BlockingActivities { get; } = new HashSet<BlockingActivity>(new BlockingActivityEqualityComparer());
         public Variables Variables { get; }
         public bool HasScheduledActivities => ScheduledActivities.Any();
-        public ScheduledActivity? ScheduledActivity { get; private set; }
-        public WorkflowFault? WorkflowFault { get; private set; }
+        public IScheduledActivity? ScheduledActivity { get; private set; }
+        public IWorkflowFault? WorkflowFault { get; private set; }
         public object? Output { get; set; }
 
-        public void ScheduleActivities(IEnumerable<IActivity> activities, object? input = default)
+        public void ScheduleActivities(IEnumerable<ActivityDefinition> activityDefinitions, object? input = default)
         {
-            foreach (var activity in activities)
-                ScheduleActivity(activity, input);
+            foreach (var activityDefinition in activityDefinitions)
+                ScheduleActivity(activityDefinition, input);
         }
 
         public void ScheduleActivities(IEnumerable<ScheduledActivity> activities)
@@ -83,28 +76,22 @@ namespace Elsa.Services.Models
                 ScheduleActivity(activity);
         }
 
-        public void ScheduleActivity(IActivity activity, object? input = default) =>
-            ScheduleActivity(new ScheduledActivity(activity, input));
+        public void ScheduleActivity(ActivityDefinition activityDefinition, object? input = default) =>
+            ScheduleActivity(new ScheduledActivity(activityDefinition, input));
 
         public void ScheduleActivity(ScheduledActivity activity) => ScheduledActivities.Push(activity);
-        public ScheduledActivity PopScheduledActivity() => ScheduledActivity = ScheduledActivities.Pop();
-        public ScheduledActivity PeekScheduledActivity() => ScheduledActivities.Peek();
+        public IScheduledActivity PopScheduledActivity() => ScheduledActivity = ScheduledActivities.Pop();
+        public IScheduledActivity PeekScheduledActivity() => ScheduledActivities.Peek();
         public IExpressionEvaluator ExpressionEvaluator { get; }
-        public IClock Clock { get; }
         public string? CorrelationId { get; set; }
-        public WorkflowPersistenceBehavior PersistenceBehavior { get; set; }
-
-        public IDictionary<string, IDictionary<string, IActivityPropertyValueProvider>> ActivityPropertyValueProviders
-        {
-            get;
-        }
-
+        public WorkflowPersistenceBehavior PersistenceBehavior { get; }
+        public IActivityPropertyProviders ActivityPropertyProviders { get; }
         public bool DeleteCompletedInstances { get; set; }
-        public ICollection<ExecutionLogEntry> ExecutionLog { get; }
+        public ICollection<IExecutionLogEntry> ExecutionLog { get; }
         public bool IsFirstPass { get; private set; }
 
-        public bool AddBlockingActivity(IActivity activity) => BlockingActivities.Add(activity);
-        public void SetVariable(string name, object? value) => Variables.Set(name, JToken.FromObject(value));
+        public bool AddBlockingActivity(IActivity activity) => BlockingActivities.Add(new BlockingActivity(activity.Id, activity.Type));
+        public void SetVariable(string name, object? value) => Variables.Set(name, JToken.FromObject(value!));
         public T GetVariable<T>(string name) => (T)GetVariable(name)!;
         public object? GetVariable(string name) => Variables.Get(name);
         public void CompletePass() => IsFirstPass = false;
@@ -119,29 +106,26 @@ namespace Elsa.Services.Models
 
         public void Complete() => Status = WorkflowStatus.Completed;
 
-        public IActivity? GetActivity(string id) => Activities.FirstOrDefault(x => x.Id == id);
+        public IActivity? GetActivity(string id) => WorkflowBlueprint.Activities.FirstOrDefault(x => x.Id == id);
 
-        public WorkflowInstance UpdateWorkflowInstance()
+        public void UpdateWorkflowInstance(WorkflowInstance workflowInstance)
         {
-            var workflowInstance = WorkflowInstance;
             workflowInstance.Variables = Variables;
 
             workflowInstance.ScheduledActivities = new Stack<Elsa.Models.ScheduledActivity>(
-                ScheduledActivities.Select(x => new Elsa.Models.ScheduledActivity(x.Activity.Id, x.Input)));
+                ScheduledActivities.Select(x => new Elsa.Models.ScheduledActivity(x.ActivityDefinition.Id, x.Input)));
 
-            workflowInstance.Activities = Activities.Select(x => new ActivityInstance(x.Id, x.Type, x.Output, Serialize(x))).ToList();
-            
-            workflowInstance.BlockingActivities = new HashSet<BlockingActivity>(
-                BlockingActivities.Select(x => new BlockingActivity(x.Id, x.Type)),
-                new BlockingActivityEqualityComparer());
-            
+            workflowInstance.Activities =
+                WorkflowBlueprint.Activities.Select(x => new ActivityInstance(x.Id, x.Type, x.Output, Serialize(x))).ToList();
+
+            workflowInstance.BlockingActivities = BlockingActivities;
             workflowInstance.Status = Status;
             workflowInstance.CorrelationId = CorrelationId;
             workflowInstance.Output = Output;
 
             var executionLog = workflowInstance.ExecutionLog.Concat(
                 ExecutionLog.Select(x => new Elsa.Models.ExecutionLogEntry(x.Activity.Id, x.Timestamp)));
-            
+
             workflowInstance.ExecutionLog = executionLog.ToList();
 
             if (WorkflowFault != null)
@@ -152,8 +136,6 @@ namespace Elsa.Services.Models
                     Message = WorkflowFault.Message
                 };
             }
-
-            return workflowInstance;
         }
 
         private JObject Serialize(IActivity activity) => JObject.FromObject(activity);

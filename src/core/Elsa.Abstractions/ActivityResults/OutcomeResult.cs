@@ -30,7 +30,7 @@ namespace Elsa.ActivityResults
             activityExecutionContext.Outcomes = Outcomes.ToList();
 
             var workflowExecutionContext = activityExecutionContext.WorkflowExecutionContext;
-            var nextActivities = GetNextActivities(workflowExecutionContext, activityExecutionContext.Activity, Outcomes).ToList();
+            var nextActivities = GetNextActivities(workflowExecutionContext, activityExecutionContext.ActivityDefinition, Outcomes).ToList();
             
             workflowExecutionContext.ScheduleActivities(nextActivities, Output);
         }

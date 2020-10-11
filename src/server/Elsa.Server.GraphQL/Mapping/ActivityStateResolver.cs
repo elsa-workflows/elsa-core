@@ -9,12 +9,12 @@ namespace Elsa.Server.GraphQL.Mapping
     public class ActivityStateResolver : IValueResolver<ActivityDefinitionInput, ActivityDefinition, Variables?>
     {
         private readonly ITokenSerializer _serializer;
-        private readonly IActivityResolver _activityResolver;
+        private readonly IActivityActivator _activityActivator;
 
-        public ActivityStateResolver(ITokenSerializer serializer, IActivityResolver activityResolver)
+        public ActivityStateResolver(ITokenSerializer serializer, IActivityActivator activityActivator)
         {
             _serializer = serializer;
-            _activityResolver = activityResolver;
+            _activityActivator = activityActivator;
         }
 
         public Variables? Resolve(ActivityDefinitionInput source, ActivityDefinition destination, Variables? destMember, ResolutionContext context)

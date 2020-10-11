@@ -6,7 +6,7 @@ namespace Elsa.ActivityResults
     {
         protected override void Execute(ActivityExecutionContext activityExecutionContext)
         {
-            activityExecutionContext.WorkflowExecutionContext.BlockingActivities.Add(activityExecutionContext.Activity);
+            activityExecutionContext.WorkflowExecutionContext.BlockingActivities.Add(activityExecutionContext.ActivityDefinition);
             activityExecutionContext.WorkflowExecutionContext.Suspend();
         }
     }

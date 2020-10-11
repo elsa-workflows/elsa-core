@@ -33,7 +33,7 @@ namespace Elsa.Samples.Serialization
             Console.WriteLine(json);
             
             // Deserialize the workflow.
-            var deserializedWorkflow = serializer.Deserialize<Workflow>(json, SerializationFormats.Json);
+            var deserializedWorkflow = serializer.Deserialize<WorkflowBlueprint>(json, SerializationFormats.Json);
             
             // Get the workflow host.
             var workflowHost = services.GetService<IWorkflowHost>();

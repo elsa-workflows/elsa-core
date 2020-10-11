@@ -2,7 +2,7 @@
 
 namespace Elsa.Services.Models
 {
-    public class WorkflowFault
+    public class WorkflowFault : IWorkflowFault
     {
         public WorkflowFault(IActivity? activity = default, LocalizedString? message = default)
         {

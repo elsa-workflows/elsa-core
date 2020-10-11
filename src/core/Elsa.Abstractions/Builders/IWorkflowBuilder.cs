@@ -24,7 +24,7 @@ namespace Elsa.Builders
         IWorkflowBuilder WithDeleteCompletedInstances(bool value);
         IWorkflowBuilder WithPersistenceBehavior(WorkflowPersistenceBehavior value);
 
-        IActivityBuilder New<T>(T activity,
+        IActivityBuilder New<T>(
             Action<IActivityBuilder>? branch = default,
             IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders = default)
             where T : class, IActivity;
@@ -36,7 +36,7 @@ namespace Elsa.Builders
             Action<ISetupActivity<T>>? setup = default,
             Action<IActivityBuilder>? branch = default) where T : class, IActivity;
 
-        IActivityBuilder StartWith<T>(T activity, Action<IActivityBuilder>? branch = default)
+        IActivityBuilder StartWith<T>(Action<IActivityBuilder>? branch = default)
             where T : class, IActivity;
 
         IActivityBuilder Add<T>(
@@ -48,7 +48,6 @@ namespace Elsa.Builders
             Action<IActivityBuilder>? branch = default) where T : class, IActivity;
 
         IActivityBuilder Add<T>(
-            T activity,
             Action<IActivityBuilder>? branch = default,
             IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders = default)
             where T : class, IActivity;
@@ -62,9 +61,9 @@ namespace Elsa.Builders
             Func<IActivityBuilder> target,
             string outcome = OutcomeNames.Done);
 
-        Workflow Build();
-        Workflow Build(IWorkflow workflow);
-        Workflow Build(Type workflowType);
-        Workflow Build<T>() where T : IWorkflow;
+        IWorkflowBlueprint Build();
+        IWorkflowBlueprint Build(IWorkflow workflow);
+        IWorkflowBlueprint Build(Type workflowType);
+        IWorkflowBlueprint Build<T>() where T : IWorkflow;
     }
 }

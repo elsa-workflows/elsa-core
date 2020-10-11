@@ -4,17 +4,17 @@ using Elsa.Models;
 
 namespace Elsa.Services.Models
 {
-    public class Workflow
+    public class WorkflowBlueprint : IWorkflowBlueprint
     {
-        public Workflow()
+        public WorkflowBlueprint()
         {
-            Activities = new List<IActivity>();
-            Connections = new List<Connection>();
-            ActivityPropertyValueProviders = new Dictionary<string, IDictionary<string, IActivityPropertyValueProvider>>();
+            Activities = new List<IActivityBlueprint>();
+            Connections = new List<IConnection>();
+            ActivityPropertyProviders = new ActivityPropertyProviders();
         }
-
-        public Workflow(
-            string workflowDefinitionId,
+    
+        public WorkflowBlueprint(
+            string definitionId,
             int version,
             bool isSingleton,
             bool isEnabled,
@@ -24,11 +24,11 @@ namespace Elsa.Services.Models
             bool isPublished,
             WorkflowPersistenceBehavior persistenceBehavior,
             bool deleteCompletedInstances,
-            IEnumerable<IActivity> activities,
-            IEnumerable<Connection> connections,
-            IDictionary<string, IDictionary<string, IActivityPropertyValueProvider>> activityPropertyValueProviders)
+            IEnumerable<IActivityBlueprint> activities,
+            IEnumerable<IConnection> connections,
+            IActivityPropertyProviders activityPropertyValueProviders)
         {
-            WorkflowDefinitionId = workflowDefinitionId;
+            DefinitionId = definitionId;
             Version = version;
             IsSingleton = isSingleton;
             IsEnabled = isEnabled;
@@ -40,10 +40,11 @@ namespace Elsa.Services.Models
             DeleteCompletedInstances = deleteCompletedInstances;
             Activities = activities.ToList();
             Connections = connections.ToList();
-            ActivityPropertyValueProviders = activityPropertyValueProviders;
+            ActivityPropertyProviders = activityPropertyValueProviders;
         }
-
-        public string WorkflowDefinitionId { get; set; } = default!;
+    
+        public string Id { get; set; } = default!;
+        public string DefinitionId { get; set; } = default!;
         public int Version { get; set; }
         public bool IsSingleton { get; set; }
         public bool IsEnabled { get; set; }
@@ -53,14 +54,10 @@ namespace Elsa.Services.Models
         public bool IsLatest { get; set; }
         public WorkflowPersistenceBehavior PersistenceBehavior { get; set; }
         public bool DeleteCompletedInstances { get; set; }
-        public ICollection<IActivity> Activities { get; set; }
-
-        public ICollection<Connection> Connections { get; set; }
-
-        public IDictionary<string, IDictionary<string, IActivityPropertyValueProvider>> ActivityPropertyValueProviders
-        {
-            get;
-            set;
-        }
+        public ICollection<IActivityBlueprint> Activities { get; set; }
+    
+        public ICollection<IConnection> Connections { get; set; }
+    
+        public IActivityPropertyProviders ActivityPropertyProviders { get; set; }
     }
 }

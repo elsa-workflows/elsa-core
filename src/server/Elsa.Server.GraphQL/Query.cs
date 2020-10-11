@@ -15,16 +15,16 @@ namespace Elsa.Server.GraphQL
     public class Query
     {
         public IEnumerable<ActivityDescriptor> GetActivityDescriptors(
-            [Service] IActivityResolver activityResolver,
+            [Service] IActivityActivator activityActivator,
             [Service] IActivityDescriber describer) =>
-            activityResolver.GetActivityTypes().Select(describer.Describe).ToList();
+            activityActivator.GetActivityTypes().Select(describer.Describe).ToList();
 
         public ActivityDescriptor? GetActivityDescriptor(
-            [Service] IActivityResolver activityResolver,
+            [Service] IActivityActivator activityActivator,
             [Service] IActivityDescriber describer,
             string typeName)
         {
-            var type = activityResolver.GetActivityType(typeName);
+            var type = activityActivator.GetActivityType(typeName);
 
             return type == null ? default : describer.Describe(type);
         }

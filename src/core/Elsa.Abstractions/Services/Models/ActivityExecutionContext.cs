@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
+using Elsa.Models;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Services.Models
@@ -12,17 +13,17 @@ namespace Elsa.Services.Models
     {
         public ActivityExecutionContext(
             WorkflowExecutionContext workflowExecutionContext,
-            IActivity activity,
+            ActivityDefinition activityDefinition,
             object? input = null)
         {
             WorkflowExecutionContext = workflowExecutionContext;
-            Activity = activity;
+            ActivityDefinition = activityDefinition;
             Input = input;
             Outcomes = new List<string>(0);
         }
 
         public WorkflowExecutionContext WorkflowExecutionContext { get; }
-        public IActivity Activity { get; }
+        public ActivityDefinition ActivityDefinition { get; }
         public object? Input { get; }
         public object? Output { get; set; }
         public IReadOnlyCollection<string> Outcomes { get; set; }
@@ -32,24 +33,11 @@ namespace Elsa.Services.Models
         public T GetVariable<T>(string name) => WorkflowExecutionContext.GetVariable<T>(name);
         public T GetService<T>() => WorkflowExecutionContext.ServiceProvider.GetService<T>();
 
-        public async ValueTask SetActivityPropertiesAsync(CancellationToken cancellationToken = default)
-        {
-            var properties = Activity.GetType().GetProperties().Where(IsActivityProperty).ToList();
-            var activityPropertyValueProviders = WorkflowExecutionContext.ActivityPropertyValueProviders;
-            var propertyValueProvider = activityPropertyValueProviders[Activity.Id];
-
-            foreach (var property in properties)
-            {
-                if(propertyValueProvider == null || !propertyValueProvider.ContainsKey(property.Name))
-                    continue;
-                
-                var provider = propertyValueProvider[property.Name];
-                var value = await provider.GetValueAsync( this, cancellationToken);
-                property.SetValue(Activity, value);
-            }
-        }
-
-        private bool IsActivityProperty(PropertyInfo property) =>
-            property.GetCustomAttribute<ActivityPropertyAttribute>() != null;
+        public async ValueTask SetActivityPropertiesAsync(IActivity activity,
+            CancellationToken cancellationToken = default) =>
+            await WorkflowExecutionContext.ActivityPropertyProviders.SetActivityPropertiesAsync(
+                activity,
+                this,
+                cancellationToken);
     }
 }

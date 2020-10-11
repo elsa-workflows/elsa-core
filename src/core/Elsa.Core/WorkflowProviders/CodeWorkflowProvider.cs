@@ -23,7 +23,7 @@ namespace Elsa.WorkflowProviders
             _workflowBuilder = workflowBuilder;
         }
 
-        public Task<IEnumerable<Workflow>> GetWorkflowsAsync(CancellationToken cancellationToken) => Task.FromResult(GetWorkflows());
-        private IEnumerable<Workflow> GetWorkflows() => from workflow in _workflows let builder = _workflowBuilder() select builder.Build(workflow);
+        public Task<IEnumerable<WorkflowBlueprint>> GetWorkflowsAsync(CancellationToken cancellationToken) => Task.FromResult(GetWorkflows());
+        private IEnumerable<WorkflowBlueprint> GetWorkflows() => from workflow in _workflows let builder = _workflowBuilder() select builder.Build(workflow);
     }
 }

@@ -13,7 +13,7 @@ namespace Elsa.Services
         string Type { get; }
         
         /// <summary>
-        /// Unique identifier of this activity.
+        /// Unique identifier of this activity within the workflow.
         /// </summary>
         string Id { get; set; }
         
@@ -45,16 +45,16 @@ namespace Elsa.Services
         /// <summary>
         /// Returns a value of whether the specified activity can execute.
         /// </summary>
-        Task<bool> CanExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken = default);
+        ValueTask<bool> CanExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Executes the specified activity.
         /// </summary>
-        Task<IActivityExecutionResult> ExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken = default);
+        ValueTask<IActivityExecutionResult> ExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Resumes the specified activity.
         /// </summary>
-        Task<IActivityExecutionResult> ResumeAsync(ActivityExecutionContext context, CancellationToken cancellationToken = default);
+        ValueTask<IActivityExecutionResult> ResumeAsync(ActivityExecutionContext context, CancellationToken cancellationToken = default);
     }
 }

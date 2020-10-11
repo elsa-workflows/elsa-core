@@ -9,6 +9,6 @@ namespace Elsa.ActivityResults
         public LocalizedString Message { get; }
         
         protected override void Execute(ActivityExecutionContext activityExecutionContext) => 
-            activityExecutionContext.WorkflowExecutionContext.Fault(activityExecutionContext.Activity, Message);
+            activityExecutionContext.WorkflowExecutionContext.Fault(activityExecutionContext.ActivityDefinition, Message);
     }
 }

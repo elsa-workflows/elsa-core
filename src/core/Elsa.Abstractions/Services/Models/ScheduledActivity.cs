@@ -1,15 +1,16 @@
-﻿namespace Elsa.Services.Models
+﻿using Elsa.Models;
+
+namespace Elsa.Services.Models
 {
-    public class ScheduledActivity
+    public class ScheduledActivity : IScheduledActivity
     {
-        public ScheduledActivity(IActivity activity, object? input = default)
+        public ScheduledActivity(ActivityDefinition activityDefinition, object? input = default)
         {
-            Activity = activity;
+            ActivityDefinition = activityDefinition;
             Input = input;
         }
-        
-        
-        public IActivity Activity { get; }
+
+        public ActivityDefinition ActivityDefinition { get; }
         public object? Input { get; }
     }
 }

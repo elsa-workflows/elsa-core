@@ -32,7 +32,7 @@ namespace Elsa.Core.UnitTests
             _fixture = new Fixture().Customize(new NodaTimeCustomization());
             _session = CreateSession();
             
-            var workflowActivatorMock = new Mock<IWorkflowActivator>();
+            var workflowActivatorMock = new Mock<IWorkflowFactory>();
             var workflowRegistryMock = new Mock<IWorkflowRegistry>();
             var workflowInstanceManager = new WorkflowInstanceManager(_session);
             var workflowExpressionEvaluatorMock = new Mock<IExpressionEvaluator>();
@@ -43,8 +43,8 @@ namespace Elsa.Core.UnitTests
             var serviceProvider = new ServiceCollection().BuildServiceProvider();
 
             workflowActivatorMock
-                .Setup(x => x.ActivateAsync(It.IsAny<Workflow>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync((Workflow workflow, string? correlationId, CancellationToken cancellationToken) => new WorkflowInstance());
+                .Setup(x => x.InstantiateAsync(It.IsAny<WorkflowBlueprint>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((WorkflowBlueprint workflow, string? correlationId, CancellationToken cancellationToken) => new WorkflowInstance());
             
             _workflowHost = new WorkflowHost(
                 workflowInstanceManager,
@@ -110,9 +110,9 @@ namespace Elsa.Core.UnitTests
             return activityMock.Object;
         }
 
-        private Workflow CreateWorkflow(IActivity activity)
+        private WorkflowBlueprint CreateWorkflow(IActivity activity)
         {
-            var workflow = new Workflow();
+            var workflow = new WorkflowBlueprint();
             workflow.Activities.Add(activity);
             return workflow;
         }

@@ -5,10 +5,10 @@ using Elsa.Services.Models;
 
 namespace Elsa.Services
 {
-    public interface IWorkflowActivator
+    public interface IWorkflowFactory
     {
-        Task<WorkflowInstance> ActivateAsync(
-            Workflow workflow, 
+        Task<WorkflowInstance> InstantiateAsync(
+            WorkflowDefinition workflowDefinition, 
             string? correlationId = default, 
             CancellationToken cancellationToken = default);
     }

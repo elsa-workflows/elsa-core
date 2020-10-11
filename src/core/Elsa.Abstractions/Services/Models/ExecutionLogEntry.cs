@@ -2,7 +2,7 @@ using NodaTime;
 
 namespace Elsa.Services.Models
 {
-    public class ExecutionLogEntry
+    public class ExecutionLogEntry : IExecutionLogEntry
     {
         public ExecutionLogEntry(IActivity activity, Instant timestamp)
         {

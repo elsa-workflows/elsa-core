@@ -74,8 +74,8 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
                 : new EmptyResult();
         }
 
-        private IEnumerable<(Workflow Workflow, ReceiveHttpRequest Activity)> Filter(
-            IEnumerable<(Workflow Workflow, ReceiveHttpRequest Activity)> items,
+        private IEnumerable<(WorkflowBlueprint Workflow, ReceiveHttpRequest Activity)> Filter(
+            IEnumerable<(WorkflowBlueprint Workflow, ReceiveHttpRequest Activity)> items,
             PathString path,
             string method) =>
             items.Where(x => IsMatch(x.Activity, path, method));
@@ -88,7 +88,7 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
         }
 
         private async Task InvokeWorkflowsToStartAsync(
-            IEnumerable<(Workflow Workflow, ReceiveHttpRequest Activity)> items)
+            IEnumerable<(WorkflowBlueprint Workflow, ReceiveHttpRequest Activity)> items)
         {
             foreach (var (workflow, activity) in items)
             {

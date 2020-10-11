@@ -7,6 +7,6 @@ namespace Elsa.Builders
     {
         IActivityBuilder Then<T>(Action<ISetupActivity<T>>? setup = default, Action<IActivityBuilder>? branch = default) where T : class, IActivity;
         IActivityBuilder Then<T>(Action<T> setup, Action<IActivityBuilder>? branch = default) where T : class, IActivity;
-        IActivityBuilder Then<T>(T activity, Action<IActivityBuilder>? branch = default) where T : class, IActivity;
+        IActivityBuilder Then<T>(Action<IActivityBuilder>? branch = default) where T : class, IActivity;
     }
 }
