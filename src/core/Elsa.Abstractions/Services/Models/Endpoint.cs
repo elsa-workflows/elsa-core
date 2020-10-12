@@ -2,15 +2,11 @@ namespace Elsa.Services.Models
 {
     public abstract class Endpoint
     {
-        protected Endpoint()
-        {
-        }
-
-        protected Endpoint(IActivity activity)
+        protected Endpoint(IActivityBlueprint activity)
         {
             Activity = activity;
         }
         
-        public IActivity Activity { get; set; }
+        public IActivityBlueprint Activity { get; set; }
     }
 }

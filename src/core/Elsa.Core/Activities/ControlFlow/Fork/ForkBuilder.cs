@@ -11,7 +11,7 @@ namespace Elsa.Activities.ControlFlow
         public ForkBuilder(IActivityBuilder activityBuilder)
         {
             _activityBuilder = activityBuilder;
-            _fork = (Fork)activityBuilder.Activity;
+            //_fork = (Fork)activityBuilder.Activity;
         }
 
         public IOutcomeBuilder When(string branch)

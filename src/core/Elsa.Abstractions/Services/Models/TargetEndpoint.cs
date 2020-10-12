@@ -2,7 +2,7 @@ namespace Elsa.Services.Models
 {
     public class TargetEndpoint : Endpoint, ITargetEndpoint
     {
-        public TargetEndpoint(IActivity activity) : base(activity)
+        public TargetEndpoint(IActivityBlueprint activity) : base(activity)
         {
         }
     }

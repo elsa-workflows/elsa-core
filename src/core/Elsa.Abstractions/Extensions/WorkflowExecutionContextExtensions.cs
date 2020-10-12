@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -18,23 +19,35 @@ namespace Elsa
         //
         //     return query;
         // }
-        
-        public static IEnumerable<Connection> GetInboundConnections(this WorkflowExecutionContext workflowExecutionContext, IActivity activity) => workflowExecutionContext.Connections.Where(x => x.Target.Activity == activity);
-        public static IEnumerable<Connection> GetOutboundConnections(this WorkflowExecutionContext workflowExecutionContext, IActivity activity) => workflowExecutionContext.Connections.Where(x => x.Source.Activity == activity);
-        public static IEnumerable<string> GetInboundActivityPath(this WorkflowExecutionContext workflowExecutionContext, IActivity activity) => workflowExecutionContext.GetInboundActivityPathInternal(activity, activity).Distinct();
 
-        private static IEnumerable<string> GetInboundActivityPathInternal(this WorkflowExecutionContext workflowExecutionContext, IActivity activity, IActivity startingPointActivity)
+        public static IEnumerable<ConnectionDefinition>
+            GetInboundConnections(this WorkflowExecutionContext workflowExecutionContext, string activityId) =>
+            workflowExecutionContext.WorkflowDefinition.Connections.Where(x => x.TargetActivityId == activityId);
+
+        public static IEnumerable<ConnectionDefinition> GetOutboundConnections(
+            this WorkflowExecutionContext workflowExecutionContext,
+            string activityId) =>
+            workflowExecutionContext.WorkflowDefinition.Connections.Where(x => x.SourceActivityId == activityId);
+
+        public static IEnumerable<string> GetInboundActivityPath(this WorkflowExecutionContext workflowExecutionContext,
+            string activityId) =>
+            workflowExecutionContext.GetInboundActivityPathInternal(activityId, activityId).Distinct();
+
+        private static IEnumerable<string> GetInboundActivityPathInternal(
+            this WorkflowExecutionContext workflowExecutionContext,
+            string activityId,
+            string startingPointActivityId)
         {
-            foreach (var connection in workflowExecutionContext.GetInboundConnections(activity))
+            foreach (var connection in workflowExecutionContext.GetInboundConnections(activityId))
             {
                 // Circuit breaker: Detect workflows that implement repeating flows to prevent an infinite loop here.
-                if (connection.Source.Activity == startingPointActivity)
+                if (connection.SourceActivityId == startingPointActivityId)
                     yield break;
 
-                yield return connection.Source.Activity.Id;
+                yield return connection.SourceActivityId!;
 
                 foreach (var parentActivityId in workflowExecutionContext
-                    .GetInboundActivityPathInternal(connection.Source.Activity, startingPointActivity)
+                    .GetInboundActivityPathInternal(connection.SourceActivityId!, startingPointActivityId)
                     .Distinct())
                     yield return parentActivityId;
             }

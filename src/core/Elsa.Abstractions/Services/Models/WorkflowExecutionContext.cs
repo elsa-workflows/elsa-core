@@ -98,7 +98,7 @@ namespace Elsa.Services.Models
 
         public void Suspend() => Status = WorkflowStatus.Suspended;
 
-        public void Fault(IActivity? activity, LocalizedString? message)
+        public void Fault(ActivityDefinition? activity, LocalizedString? message)
         {
             Status = WorkflowStatus.Faulted;
             WorkflowFault = new WorkflowFault(activity, message);
@@ -106,7 +106,7 @@ namespace Elsa.Services.Models
 
         public void Complete() => Status = WorkflowStatus.Completed;
 
-        public IActivity? GetActivity(string id) => WorkflowBlueprint.Activities.FirstOrDefault(x => x.Id == id);
+        public IActivityBlueprint? GetActivity(string id) => WorkflowBlueprint.Activities.FirstOrDefault(x => x.Id == id);
 
         public void UpdateWorkflowInstance(WorkflowInstance workflowInstance)
         {
@@ -115,8 +115,8 @@ namespace Elsa.Services.Models
             workflowInstance.ScheduledActivities = new Stack<Elsa.Models.ScheduledActivity>(
                 ScheduledActivities.Select(x => new Elsa.Models.ScheduledActivity(x.ActivityDefinition.Id, x.Input)));
 
-            workflowInstance.Activities =
-                WorkflowBlueprint.Activities.Select(x => new ActivityInstance(x.Id, x.Type, x.Output, Serialize(x))).ToList();
+            //workflowInstance.Activities =
+            //    WorkflowBlueprint.Activities.Select(x => new ActivityInstance(x.Id, x.Type, x.Output, Serialize(x))).ToList();
 
             workflowInstance.BlockingActivities = BlockingActivities;
             workflowInstance.Status = Status;

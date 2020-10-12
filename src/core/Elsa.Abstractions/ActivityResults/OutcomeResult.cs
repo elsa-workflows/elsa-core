@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -12,7 +13,7 @@ namespace Elsa.ActivityResults
         {
             var outcomeList = outcomes?.ToList() ?? new List<string>(1);
 
-            if (!outcomeList.Any()) 
+            if (!outcomeList.Any())
                 outcomeList.Add(OutcomeNames.Done);
 
             Outcomes = outcomeList;
@@ -24,24 +25,34 @@ namespace Elsa.ActivityResults
 
         protected override void Execute(ActivityExecutionContext activityExecutionContext)
         {
-            if(Output != null)
+            if (Output != null)
                 activityExecutionContext.Output = Output;
-            
+
             activityExecutionContext.Outcomes = Outcomes.ToList();
 
             var workflowExecutionContext = activityExecutionContext.WorkflowExecutionContext;
-            var nextActivities = GetNextActivities(workflowExecutionContext, activityExecutionContext.ActivityDefinition, Outcomes).ToList();
-            
+            var nextActivities = GetNextActivities(
+                workflowExecutionContext,
+                activityExecutionContext.ActivityDefinition,
+                Outcomes).ToList();
+
             workflowExecutionContext.ScheduleActivities(nextActivities, Output);
         }
-        
-        private IEnumerable<IActivity> GetNextActivities(WorkflowExecutionContext workflowContext, IActivity source, IEnumerable<string> outcomes)
+
+        private IEnumerable<ActivityDefinition> GetNextActivities(
+            WorkflowExecutionContext workflowContext,
+            ActivityDefinition source,
+            IEnumerable<string> outcomes)
         {
             var query =
-                from connection in workflowContext.Connections
+                from connection in workflowContext.WorkflowDefinition.Connections
                 from outcome in outcomes
-                where connection.Source.Activity == source && (connection.Source.Outcome ?? OutcomeNames.Done).Equals(outcome, StringComparison.OrdinalIgnoreCase)
-                select connection.Target.Activity;
+                let connectionOutcome = connection.Outcome ?? OutcomeNames.Done
+                let isConnectionOutcome = connectionOutcome.Equals(outcome, StringComparison.OrdinalIgnoreCase)
+                where connection.SourceActivityId == source.Id && isConnectionOutcome
+                from activityDefinition in workflowContext.WorkflowDefinition.Activities
+                where activityDefinition.Id == connection.TargetActivityId
+                select activityDefinition;
 
             return query.Distinct();
         }

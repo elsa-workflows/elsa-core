@@ -2,6 +2,6 @@
 {
     public interface IEndpoint
     {
-        IActivity Activity { get; }
+        IActivityBlueprint Activity { get; }
     }
 }

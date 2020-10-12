@@ -16,7 +16,7 @@ namespace Elsa.Activities.ControlFlow
         Category = "Control Flow",
         Description = "Iterate over a collection.",
         Icon = "far fa-circle",
-        Outcomes = new[] {OutcomeNames.Iterate, OutcomeNames.Done}
+        Outcomes = new[] { OutcomeNames.Iterate, OutcomeNames.Done }
     )]
     public class ForEach : Activity
     {
@@ -27,9 +27,7 @@ namespace Elsa.Activities.ControlFlow
 
         private int? CurrentIndex { get; set; }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(
-            ActivityExecutionContext context,
-            CancellationToken cancellationToken)
+        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
             var collection = CollectionCopy;
 
@@ -42,7 +40,7 @@ namespace Elsa.Activities.ControlFlow
             {
                 var input = collection[currentIndex];
                 CurrentIndex = currentIndex + 1;
-                return Combine(Schedule(this), Done(OutcomeNames.Iterate, input));
+                return Combine(Schedule(context.ActivityDefinition), Done(OutcomeNames.Iterate, input));
             }
 
             CurrentIndex = null;

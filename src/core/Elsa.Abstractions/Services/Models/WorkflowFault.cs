@@ -1,16 +1,17 @@
-﻿using Microsoft.Extensions.Localization;
+﻿using Elsa.Models;
+using Microsoft.Extensions.Localization;
 
 namespace Elsa.Services.Models
 {
     public class WorkflowFault : IWorkflowFault
     {
-        public WorkflowFault(IActivity? activity = default, LocalizedString? message = default)
+        public WorkflowFault(ActivityDefinition? activity = default, LocalizedString? message = default)
         {
             FaultedActivity = activity;
             Message = message;
         }
 
-        public IActivity? FaultedActivity { get; }
+        public ActivityDefinition? FaultedActivity { get; }
         public LocalizedString? Message { get; }
     }
 }

@@ -1,3 +1,4 @@
+using Elsa.Models;
 using Elsa.Services.Models;
 
 namespace Elsa.ActivityResults
@@ -6,7 +7,9 @@ namespace Elsa.ActivityResults
     {
         protected override void Execute(ActivityExecutionContext activityExecutionContext)
         {
-            activityExecutionContext.WorkflowExecutionContext.BlockingActivities.Add(activityExecutionContext.ActivityDefinition);
+            var activityDefinition = activityExecutionContext.ActivityDefinition;
+            var blockingActivity = new BlockingActivity(activityDefinition.Id, activityDefinition.Type);
+            activityExecutionContext.WorkflowExecutionContext.BlockingActivities.Add(blockingActivity);
             activityExecutionContext.WorkflowExecutionContext.Suspend();
         }
     }

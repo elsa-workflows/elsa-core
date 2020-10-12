@@ -2,7 +2,7 @@ namespace Elsa.Services.Models
 {
     public class Connection : IConnection
     {
-        public Connection(IActivity sourceActivity, IActivity targetActivity, string sourceOutcome)
+        public Connection(IActivityBlueprint sourceActivity, IActivityBlueprint targetActivity, string sourceOutcome)
             : this(new SourceEndpoint(sourceActivity, sourceOutcome), new TargetEndpoint(targetActivity))
         {
         }

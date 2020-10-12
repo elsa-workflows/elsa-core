@@ -9,6 +9,6 @@ namespace Elsa.Builders
         Func<IActivityBuilder> Source { get; }
         Func<IActivityBuilder> Target{ get; }
         string Outcome { get; }
-        Connection BuildConnection();
+        //Connection BuildConnection();
     }
 }

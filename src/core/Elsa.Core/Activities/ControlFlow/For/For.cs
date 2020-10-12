@@ -1,6 +1,7 @@
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Services;
+using Elsa.Services.Models;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.ControlFlow
@@ -24,7 +25,7 @@ namespace Elsa.Activities.ControlFlow
 
         private int? CurrentValue { get; set; }
 
-        protected override IActivityExecutionResult OnExecute()
+        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
             var currentValue = CurrentValue ?? Start;
 
@@ -33,7 +34,7 @@ namespace Elsa.Activities.ControlFlow
                 var input = currentValue;
                 currentValue += Step;
                 CurrentValue = currentValue;
-                return Combine(Schedule(this), Done(OutcomeNames.Iterate, input));
+                return Combine(Schedule(context.ActivityDefinition), Done(OutcomeNames.Iterate, input));
             }
 
             CurrentValue = null;

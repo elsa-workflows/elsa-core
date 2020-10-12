@@ -18,6 +18,6 @@ namespace Elsa.Builders
             Outcome = outcome;
         }
 
-        public Connection BuildConnection() => new Connection(Source().Activity, Target().Activity, Outcome);
+        //public Connection BuildConnection() => new Connection(Source, Target().Activity, Outcome);
     }
 }
