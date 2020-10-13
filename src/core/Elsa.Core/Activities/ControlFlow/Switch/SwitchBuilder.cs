@@ -11,7 +11,7 @@ namespace Elsa.Activities.ControlFlow
         public SwitchBuilder(IActivityBuilder activityBuilder)
         {
             _activityBuilder = activityBuilder;
-            _switch = (Switch)activityBuilder.Activity;
+            //_switch = (Switch)activityBuilder.Activity;
         }
 
         public IOutcomeBuilder When(string @case)

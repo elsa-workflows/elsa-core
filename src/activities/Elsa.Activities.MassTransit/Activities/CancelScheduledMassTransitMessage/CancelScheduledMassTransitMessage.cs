@@ -30,7 +30,7 @@ namespace Elsa.Activities.MassTransit
 
         protected override bool OnCanExecute(ActivityExecutionContext context) => TokenId != null && _options.SchedulerAddress != null;
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
+        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
         {
             var endpoint = await SendEndpointProvider.GetSendEndpoint(_options.SchedulerAddress);
             await endpoint.CancelScheduledRecurringSend(TokenId!, "");

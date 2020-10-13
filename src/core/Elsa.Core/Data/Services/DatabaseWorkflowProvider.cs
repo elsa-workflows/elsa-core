@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
+using Newtonsoft.Json.Linq;
 
 namespace Elsa.Data.Services
 {
@@ -32,7 +33,7 @@ namespace Elsa.Data.Services
 
         private WorkflowBlueprint CreateWorkflow(WorkflowDefinition definition)
         {
-            var resolvedActivities = definition.Activities.Select(ResolveActivity).ToDictionary(x => x.Id);
+            var activityBlueprints = definition.Activities.Select(CreateBlueprint).ToDictionary(x => x.Id);
 
             var workflow = new WorkflowBlueprint(
                 definition.WorkflowDefinitionVersionId,
@@ -45,9 +46,9 @@ namespace Elsa.Data.Services
                 definition.IsPublished,
                 definition.PersistenceBehavior,
                 definition.DeleteCompletedInstances,
-                resolvedActivities.Values,
-                definition.Connections.Select(x => ResolveConnection(x, resolvedActivities)).ToList(),
-                new Dictionary<string, IDictionary<string, IActivityPropertyValueProvider>>()
+                activityBlueprints.Values,
+                definition.Connections.Select(x => ResolveConnection(x, activityBlueprints)).ToList(),
+                new ActivityPropertyProviders()
             );
 
             return workflow;
@@ -55,7 +56,7 @@ namespace Elsa.Data.Services
 
         private static Connection ResolveConnection(
             ConnectionDefinition connectionDefinition,
-            IReadOnlyDictionary<string, IActivity> activityDictionary)
+            IReadOnlyDictionary<string, IActivityBlueprint> activityDictionary)
         {
             var source = activityDictionary[connectionDefinition.SourceActivityId!];
             var target = activityDictionary[connectionDefinition.TargetActivityId!];
@@ -64,7 +65,35 @@ namespace Elsa.Data.Services
             return new Connection(source, target, outcome!);
         }
 
-        private IActivity ResolveActivity(ActivityDefinition activityDefinition) =>
-            _activityActivator.ActivateActivity(activityDefinition);
+        private IActivityBlueprint CreateBlueprint(ActivityDefinition activityDefinition)
+        {
+            return new ActivityBlueprint
+            {
+                Id = activityDefinition.Id,
+                Type = activityDefinition.Type,
+                Data = new JObject(activityDefinition.Data),
+                CreateActivityAsync = (context, cancellationToken) =>
+                    CreateActivityAsync(activityDefinition, context, cancellationToken)
+            };
+        }
+
+        private ValueTask<IActivity> CreateActivityAsync(
+            ActivityDefinition activityDefinition,
+            ActivityExecutionContext context,
+            CancellationToken cancellationToken)
+        {
+            var activity = context.ActivateActivity();
+
+            activity.Description = activityDefinition.Description;
+            activity.Id = activityDefinition.Id;
+            activity.Name = activityDefinition.Name;
+            activity.Type = activityDefinition.Type;
+            activity.DisplayName = activityDefinition.DisplayName;
+            activity.PersistWorkflow = activityDefinition.PersistWorkflow;
+            
+            // TODO: Initialize each activity property with data from activity definition.
+
+            return new ValueTask<IActivity>(activity);
+        }
     }
 }

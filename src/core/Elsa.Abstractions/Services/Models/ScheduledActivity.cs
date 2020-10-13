@@ -4,13 +4,13 @@ namespace Elsa.Services.Models
 {
     public class ScheduledActivity : IScheduledActivity
     {
-        public ScheduledActivity(ActivityDefinition activityDefinition, object? input = default)
+        public ScheduledActivity(string activityId, object? input = default)
         {
-            ActivityDefinition = activityDefinition;
+            ActivityId = activityId;
             Input = input;
         }
 
-        public ActivityDefinition ActivityDefinition { get; }
+        public string ActivityId { get; }
         public object? Input { get; }
     }
 }

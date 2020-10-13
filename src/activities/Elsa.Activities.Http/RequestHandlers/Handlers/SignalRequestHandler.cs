@@ -69,7 +69,7 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
         {
             var input = signal.Name;
 
-            await _workflowHost.RunWorkflowInstanceAsync(
+            await _workflowHost.RunWorkflowAsync(
                 workflowInstance,
                 input,
                 cancellationToken: _cancellationToken);

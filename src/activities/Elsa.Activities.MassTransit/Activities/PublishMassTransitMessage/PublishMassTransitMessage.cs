@@ -24,7 +24,7 @@ namespace Elsa.Activities.MassTransit
 
         protected override bool OnCanExecute(ActivityExecutionContext context) => Message != null;
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
             await PublishEndpoint.Publish(Message!, cancellationToken);
 

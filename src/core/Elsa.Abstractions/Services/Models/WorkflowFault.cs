@@ -5,13 +5,13 @@ namespace Elsa.Services.Models
 {
     public class WorkflowFault : IWorkflowFault
     {
-        public WorkflowFault(ActivityDefinition? activity = default, LocalizedString? message = default)
+        public WorkflowFault(string? activityId = default, LocalizedString? message = default)
         {
-            FaultedActivity = activity;
+            FaultedActivityId = activityId;
             Message = message;
         }
 
-        public ActivityDefinition? FaultedActivity { get; }
+        public string? FaultedActivityId { get; }
         public LocalizedString? Message { get; }
     }
 }

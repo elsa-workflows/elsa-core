@@ -9,7 +9,7 @@ namespace Elsa.ActivityResults
 {
     public class OutcomeResult : ActivityExecutionResult
     {
-        public OutcomeResult(IEnumerable<string>? outcomes = default, object? output = default)
+        public OutcomeResult(IEnumerable<string>? outcomes = default)
         {
             var outcomeList = outcomes?.ToList() ?? new List<string>(1);
 
@@ -17,42 +17,37 @@ namespace Elsa.ActivityResults
                 outcomeList.Add(OutcomeNames.Done);
 
             Outcomes = outcomeList;
-            Output = output;
         }
 
         public IReadOnlyCollection<string> Outcomes { get; }
-        public object? Output { get; }
 
         protected override void Execute(ActivityExecutionContext activityExecutionContext)
         {
-            if (Output != null)
-                activityExecutionContext.Output = Output;
-
             activityExecutionContext.Outcomes = Outcomes.ToList();
 
             var workflowExecutionContext = activityExecutionContext.WorkflowExecutionContext;
             var nextActivities = GetNextActivities(
                 workflowExecutionContext,
-                activityExecutionContext.ActivityDefinition,
+                activityExecutionContext.ActivityBlueprint.Id,
                 Outcomes).ToList();
 
-            workflowExecutionContext.ScheduleActivities(nextActivities, Output);
+            workflowExecutionContext.ScheduleActivities(nextActivities, activityExecutionContext.Output);
         }
 
-        private IEnumerable<ActivityDefinition> GetNextActivities(
+        private IEnumerable<string> GetNextActivities(
             WorkflowExecutionContext workflowContext,
-            ActivityDefinition source,
+            string sourceId,
             IEnumerable<string> outcomes)
         {
             var query =
-                from connection in workflowContext.WorkflowDefinition.Connections
+                from connection in workflowContext.WorkflowBlueprint.Connections
                 from outcome in outcomes
-                let connectionOutcome = connection.Outcome ?? OutcomeNames.Done
+                let connectionOutcome = connection.Source.Outcome ?? OutcomeNames.Done
                 let isConnectionOutcome = connectionOutcome.Equals(outcome, StringComparison.OrdinalIgnoreCase)
-                where connection.SourceActivityId == source.Id && isConnectionOutcome
-                from activityDefinition in workflowContext.WorkflowDefinition.Activities
-                where activityDefinition.Id == connection.TargetActivityId
-                select activityDefinition;
+                where connection.Source.Activity.Id == sourceId && isConnectionOutcome
+                from activityBlueprint in workflowContext.WorkflowBlueprint.Activities
+                where activityBlueprint.Id == connection.Target.Activity.Id
+                select activityBlueprint.Id;
 
             return query.Distinct();
         }

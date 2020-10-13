@@ -28,7 +28,7 @@ namespace Elsa.Activities.Dropbox.Activities
         [ActivityProperty(Hint = "An expression evaluating to the path to which the file should be saved.")]
         public string Path { get; set; }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(
+        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(
             ActivityExecutionContext context,
             CancellationToken cancellationToken)
         {

@@ -33,7 +33,7 @@ namespace Elsa.Activities.Console
             _input = input;
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(
+        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(
             ActivityExecutionContext context,
             CancellationToken cancellationToken)
         {

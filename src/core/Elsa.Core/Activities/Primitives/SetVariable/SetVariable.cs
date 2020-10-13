@@ -12,7 +12,8 @@ namespace Elsa.Activities.Primitives
         DisplayName = "Set Variable",
         Description = "Set variable on the workflow.",
         Category = "Primitives",
-        RuntimeDescription = "x => !!x.state.variableName ? `<strong>${x.state.variableName}</strong> = <strong>${x.state.valueExpression.expression}</strong><br/>${x.state.valueExpression.syntax}` : x.definition.description",
+        RuntimeDescription =
+            "x => !!x.state.variableName ? `<strong>${x.state.variableName}</strong> = <strong>${x.state.valueExpression.expression}</strong><br/>${x.state.valueExpression.syntax}` : x.definition.description",
         Outcomes = new[] { OutcomeNames.Done }
     )]
     public class SetVariable : Activity
@@ -26,14 +27,14 @@ namespace Elsa.Activities.Primitives
             VariableName = name;
             Value = value;
         }
-        
+
         [ActivityProperty(Hint = "The name of the variable to store the value into.")]
         public string VariableName { get; set; }
 
         [ActivityProperty(Hint = "An expression that evaluates to the value to store in the variable.")]
         public object? Value { get; set; }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
             context.SetVariable(VariableName, Value);
             return Done();

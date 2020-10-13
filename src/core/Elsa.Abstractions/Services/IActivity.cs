@@ -10,7 +10,7 @@ namespace Elsa.Services
         /// <summary>
         /// The type name of this activity.
         /// </summary>
-        string Type { get; }
+        string Type { get; set; }
         
         /// <summary>
         /// Unique identifier of this activity within the workflow.
@@ -36,11 +36,6 @@ namespace Elsa.Services
         /// A value indicating whether the workflow instance will be persisted automatically upon executing this activity.
         /// </summary>
         bool PersistWorkflow { get; set; }
-
-        /// <summary>
-        /// Activity output.
-        /// </summary>
-        object? Output { get; set; }
 
         /// <summary>
         /// Returns a value of whether the specified activity can execute.

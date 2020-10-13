@@ -17,7 +17,7 @@ namespace Elsa.Builders
         IOutcomeBuilder When(string outcome);
         IActivityBuilder Then(IActivityBuilder targetActivity);
         IActivityBuilder WithId(string id);
-        Func<ActivityExecutionContext, CancellationToken, Task<IActivity>> BuildActivityAsync();
+        Func<ActivityExecutionContext, CancellationToken, ValueTask<IActivity>> BuildActivityAsync();
         IWorkflowBlueprint Build();
     }
 }

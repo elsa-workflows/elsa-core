@@ -7,21 +7,21 @@ namespace Elsa.Services
 {
     public interface IWorkflowHost
     {
-        ValueTask<WorkflowExecutionContext> RunWorkflowInstanceAsync(
+        ValueTask<WorkflowInstance> RunWorkflowAsync(
             WorkflowInstance workflowInstance,
             string? activityId = default,
             object? input = default,
             CancellationToken cancellationToken = default);
         
-        ValueTask<WorkflowExecutionContext> RunWorkflowInstanceAsync(
-            WorkflowDefinition workflowDefinition,
+        ValueTask<WorkflowInstance> RunWorkflowAsync(
+            IWorkflowBlueprint workflowDefinition,
             WorkflowInstance workflowInstance,
             string? activityId = default,
             object? input = default,
             CancellationToken cancellationToken = default);
 
-        ValueTask<WorkflowExecutionContext> RunWorkflowDefinitionAsync(
-            WorkflowDefinition workflowDefinition,
+        ValueTask<WorkflowInstance> RunWorkflowAsync(
+            IWorkflowBlueprint workflowBlueprint,
             string? activityId = default,
             object? input = default,
             string? correlationId = default,

@@ -117,7 +117,7 @@ namespace Elsa.Builders
         public IActivityBuilder New<T>(
             Action<T>? setup,
             Action<IActivityBuilder>? branch = default) where T : class, IActivity =>
-            New(typeof(T),  x => setup?.Invoke((T)x), branch);
+            New(typeof(T), x => setup?.Invoke((T)x), branch);
 
         public IActivityBuilder StartWith<T>(
             Action<ISetupActivity<T>>? setup = default,
@@ -177,12 +177,6 @@ namespace Elsa.Builders
         public IConnectionBuilder Connect(
             IActivityBuilder source,
             IActivityBuilder target,
-            string outcome = OutcomeNames.Done) =>
-            Connect(() => source, () => target, outcome);
-
-        public IConnectionBuilder Connect(
-            Func<IActivityBuilder> source,
-            Func<IActivityBuilder> target,
             string outcome = OutcomeNames.Done)
         {
             var connectionBuilder = new ConnectionBuilder(this, source, target, outcome);
@@ -209,12 +203,21 @@ namespace Elsa.Builders
             workflow.Build(this);
             return Build();
         }
-        
+
         public IWorkflowBlueprint Build()
         {
             var definitionId = !string.IsNullOrWhiteSpace(Id) ? Id : _idGenerator.Generate();
-            var activities = _activityBuilders.Select(x => new ActivityBlueprint(x.BuildActivityAsync())).ToList();
-            var connections = _connectionBuilders.Select(x => x.BuildConnection()).ToList();
+
+            var builtActivities = _activityBuilders
+                .Select(
+                    activityBuilder => (activityBuilder, new ActivityBlueprint(activityBuilder.BuildActivityAsync())))
+                .ToDictionary(x => x.activityBuilder);
+
+            var activities = builtActivities.Select(x => x.Value.Item2).ToList();
+            
+            var connections = _connectionBuilders.Select(
+                    x => new Connection(builtActivities[x.Source].Item2, builtActivities[x.Target].Item2, x.Outcome))
+                .ToList();
 
             // Generate deterministic activity ids.
             var id = 1;

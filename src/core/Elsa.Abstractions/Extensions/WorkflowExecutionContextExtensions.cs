@@ -20,14 +20,14 @@ namespace Elsa
         //     return query;
         // }
 
-        public static IEnumerable<ConnectionDefinition>
+        public static IEnumerable<IConnection>
             GetInboundConnections(this WorkflowExecutionContext workflowExecutionContext, string activityId) =>
-            workflowExecutionContext.WorkflowDefinition.Connections.Where(x => x.TargetActivityId == activityId);
+            workflowExecutionContext.WorkflowBlueprint.Connections.Where(x => x.Target.Activity.Id == activityId);
 
-        public static IEnumerable<ConnectionDefinition> GetOutboundConnections(
+        public static IEnumerable<IConnection> GetOutboundConnections(
             this WorkflowExecutionContext workflowExecutionContext,
             string activityId) =>
-            workflowExecutionContext.WorkflowDefinition.Connections.Where(x => x.SourceActivityId == activityId);
+            workflowExecutionContext.WorkflowBlueprint.Connections.Where(x => x.Source.Activity.Id == activityId);
 
         public static IEnumerable<string> GetInboundActivityPath(this WorkflowExecutionContext workflowExecutionContext,
             string activityId) =>
@@ -41,13 +41,13 @@ namespace Elsa
             foreach (var connection in workflowExecutionContext.GetInboundConnections(activityId))
             {
                 // Circuit breaker: Detect workflows that implement repeating flows to prevent an infinite loop here.
-                if (connection.SourceActivityId == startingPointActivityId)
+                if (connection.Source.Activity.Id == startingPointActivityId)
                     yield break;
 
-                yield return connection.SourceActivityId!;
+                yield return connection.Source.Activity.Id!;
 
                 foreach (var parentActivityId in workflowExecutionContext
-                    .GetInboundActivityPathInternal(connection.SourceActivityId!, startingPointActivityId)
+                    .GetInboundActivityPathInternal(connection.Source.Activity.Id!, startingPointActivityId)
                     .Distinct())
                     yield return parentActivityId;
             }

@@ -6,18 +6,16 @@ namespace Elsa.Builders
     public class ConnectionBuilder : IConnectionBuilder
     {
         public IWorkflowBuilder WorkflowBuilder { get; }
-        public Func<IActivityBuilder> Source { get; }
-        public Func<IActivityBuilder> Target{ get; }
+        public IActivityBuilder Source { get; }
+        public IActivityBuilder Target{ get; }
         public string Outcome { get; }
-
-        public ConnectionBuilder(IWorkflowBuilder workflowBuilder, Func<IActivityBuilder> source, Func<IActivityBuilder> target, string outcome = OutcomeNames.Done)
+        
+        public ConnectionBuilder(IWorkflowBuilder workflowBuilder, IActivityBuilder source, IActivityBuilder target, string outcome = OutcomeNames.Done)
         {
             Source = source;
             Target = target;
             WorkflowBuilder = workflowBuilder;
             Outcome = outcome;
         }
-
-        //public Connection BuildConnection() => new Connection(Source, Target().Activity, Outcome);
     }
 }

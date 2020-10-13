@@ -23,12 +23,14 @@ namespace Elsa.Activities.Http
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public WriteHttpResponse(IHttpContextAccessor httpContextAccessor, IStringLocalizer<WriteHttpResponse> localizer)
+        public WriteHttpResponse(
+            IHttpContextAccessor httpContextAccessor,
+            IStringLocalizer<WriteHttpResponse> localizer)
         {
             T = localizer;
             _httpContextAccessor = httpContextAccessor;
         }
-        
+
         public IStringLocalizer T { get; }
 
         /// <summary>
@@ -45,7 +47,7 @@ namespace Elsa.Activities.Http
         /// </summary>
         [ActivityProperty(Hint = "The HTTP content to write.")]
         [WorkflowExpressionOptions(Multiline = true)]
-        public string Content  { get; set; }
+        public string Content { get; set; }
 
         /// <summary>
         /// The Content-Type header to send along with the response.
@@ -61,9 +63,11 @@ namespace Elsa.Activities.Http
         /// The headers to send along with the response. One 'header: value' pair per line.
         /// </summary>
         [ActivityProperty(Hint = "The headers to send along with the response.")]
-        public HttpResponseHeaders? ResponseHeaders  { get; set; }
+        public HttpResponseHeaders? ResponseHeaders { get; set; }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(
+            ActivityExecutionContext context,
+            CancellationToken cancellationToken)
         {
             var response = _httpContextAccessor.HttpContext.Response;
 
@@ -77,13 +81,13 @@ namespace Elsa.Activities.Http
 
             if (headers != null)
             {
-                foreach (var header in headers) 
+                foreach (var header in headers)
                     response.Headers[header.Key] = header.Value;
             }
 
             var bodyText = Content;
 
-            if (!string.IsNullOrWhiteSpace(bodyText)) 
+            if (!string.IsNullOrWhiteSpace(bodyText))
                 await response.WriteAsync(bodyText, cancellationToken);
 
             return Done();

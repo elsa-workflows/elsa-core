@@ -52,6 +52,7 @@ namespace Elsa.Services.Models
         public string? Description { get; set; }
         public bool IsPublished { get; set; }
         public bool IsLatest { get; set; }
+        public Variables Variables { get; set; } = new Variables();
         public WorkflowPersistenceBehavior PersistenceBehavior { get; set; }
         public bool DeleteCompletedInstances { get; set; }
         public ICollection<IActivityBlueprint> Activities { get; set; }

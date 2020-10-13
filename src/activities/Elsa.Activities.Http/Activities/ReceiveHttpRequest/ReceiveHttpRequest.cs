@@ -19,7 +19,8 @@ namespace Elsa.Activities.Http
         Category = "HTTP",
         DisplayName = "Receive HTTP Request",
         Description = "Receive an incoming HTTP request.",
-        RuntimeDescription = "x => !!x.state.path ? `Handle <strong>${ x.state.method } ${ x.state.path }</strong>.` : x.definition.description",
+        RuntimeDescription =
+            "x => !!x.state.path ? `Handle <strong>${ x.state.method } ${ x.state.path }</strong>.` : x.definition.description",
         Outcomes = new[] { OutcomeNames.Done }
     )]
     public class ReceiveHttpRequest : Activity
@@ -61,16 +62,22 @@ namespace Elsa.Activities.Http
         )]
         public bool ReadContent { get; set; }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(
+            ActivityExecutionContext context,
+            CancellationToken cancellationToken)
         {
             return context.WorkflowExecutionContext.IsFirstPass
                 ? await ExecuteInternalAsync(context, cancellationToken)
                 : Suspend();
         }
 
-        protected override Task<IActivityExecutionResult> OnResumeAsync(ActivityExecutionContext context, CancellationToken cancellationToken) => ExecuteInternalAsync(context, cancellationToken);
+        protected override ValueTask<IActivityExecutionResult> OnResumeAsync(
+            ActivityExecutionContext context,
+            CancellationToken cancellationToken) => ExecuteInternalAsync(context, cancellationToken);
 
-        private async Task<IActivityExecutionResult> ExecuteInternalAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        private async ValueTask<IActivityExecutionResult> ExecuteInternalAsync(
+            ActivityExecutionContext context,
+            CancellationToken cancellationToken)
         {
             var request = _httpContextAccessor.HttpContext.Request;
             var model = new HttpRequestModel
@@ -94,8 +101,8 @@ namespace Elsa.Activities.Http
         {
             var formatters = _parsers.OrderByDescending(x => x.Priority).ToList();
             return formatters.FirstOrDefault(
-                       x => x.SupportedContentTypes.Contains(contentType, StringComparer.OrdinalIgnoreCase)
-                   ) ?? formatters.Last();
+                x => x.SupportedContentTypes.Contains(contentType, StringComparer.OrdinalIgnoreCase)
+            ) ?? formatters.Last();
         }
     }
 }

@@ -31,10 +31,9 @@ namespace Elsa.Activities.ControlFlow
 
             if (currentValue < End)
             {
-                var input = currentValue;
                 currentValue += Step;
                 CurrentValue = currentValue;
-                return Combine(Schedule(context.ActivityDefinition), Done(OutcomeNames.Iterate, input));
+                return Combine(Schedule(Id), Output(currentValue), Done(OutcomeNames.Iterate));
             }
 
             CurrentValue = null;

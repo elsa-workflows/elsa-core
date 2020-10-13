@@ -2,6 +2,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
+using Elsa.Services.Models;
 using Newtonsoft.Json.Linq;
 using NodaTime;
 
@@ -19,29 +20,29 @@ namespace Elsa.Services
         }
 
         public Task<WorkflowInstance> InstantiateAsync(
-            WorkflowDefinition workflowDefinition,
+            IWorkflowBlueprint workflowBlueprint,
             string? correlationId = default,
             CancellationToken cancellationToken = default)
         {
             var workflowInstance = new WorkflowInstance
             {
                 WorkflowInstanceId = _idGenerator.Generate(),
-                WorkflowDefinitionId = workflowDefinition.WorkflowDefinitionId,
-                Version = workflowDefinition.Version,
+                WorkflowDefinitionId = workflowBlueprint.Id,
+                Version = workflowBlueprint.Version,
                 Status = WorkflowStatus.Idle,
                 CorrelationId = correlationId,
                 CreatedAt = _clock.GetCurrentInstant(),
-                Activities = workflowDefinition.Activities.Select(CreateInstance).ToList(),
-                Variables = workflowDefinition.Variables != null ? new Variables(workflowDefinition.Variables) : new Variables(),
+                Activities = workflowBlueprint.Activities.Select(CreateInstance).ToList(),
+                Variables = new Variables(workflowBlueprint.Variables)
             };
 
             return Task.FromResult(workflowInstance);
         }
 
-        private ActivityInstance CreateInstance(ActivityDefinition activityDefinition) => new ActivityInstance(
-            activityDefinition.Id,
-            activityDefinition.Type,
+        private ActivityInstance CreateInstance(IActivityBlueprint activityBlueprint) => new ActivityInstance(
+            activityBlueprint.Id,
+            activityBlueprint.Type,
             null,
-            new JObject(activityDefinition.Data));
+            new JObject(activityBlueprint.Data));
     }
 }

@@ -20,7 +20,7 @@ namespace Elsa.Services
             _serviceProvider = serviceProvider;
         }
 
-        public async Task<IEnumerable<WorkflowBlueprint>> GetWorkflowsAsync(CancellationToken cancellationToken)
+        public async Task<IEnumerable<IWorkflowBlueprint>> GetWorkflowsAsync(CancellationToken cancellationToken)
         {
             using var scope = _serviceProvider.CreateScope();
             var providers = scope.ServiceProvider.GetServices<IWorkflowProvider>();
@@ -28,7 +28,7 @@ namespace Elsa.Services
             return tasks.SelectMany(x => x).ToList();
         }
 
-        public async Task<WorkflowBlueprint?> GetWorkflowAsync(
+        public async Task<IWorkflowBlueprint?> GetWorkflowAsync(
             string id,
             VersionOptions version,
             CancellationToken cancellationToken)

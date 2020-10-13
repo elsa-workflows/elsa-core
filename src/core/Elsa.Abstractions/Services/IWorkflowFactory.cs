@@ -8,7 +8,7 @@ namespace Elsa.Services
     public interface IWorkflowFactory
     {
         Task<WorkflowInstance> InstantiateAsync(
-            WorkflowDefinition workflowDefinition, 
+            IWorkflowBlueprint workflowBlueprint, 
             string? correlationId = default, 
             CancellationToken cancellationToken = default);
     }

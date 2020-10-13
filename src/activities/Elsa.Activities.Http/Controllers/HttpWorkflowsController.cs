@@ -40,7 +40,7 @@ namespace Elsa.Activities.Http.Controllers
 
             var input = signal.Name;
 
-            await _workflowHost.RunWorkflowInstanceAsync(workflowInstance, input, cancellationToken: cancellationToken);
+            await _workflowHost.RunWorkflowAsync(workflowInstance, input, cancellationToken: cancellationToken);
 
             return HttpContext.Items.ContainsKey(WorkflowHttpResult.Instance)
                 ? (IActionResult)new EmptyResult()

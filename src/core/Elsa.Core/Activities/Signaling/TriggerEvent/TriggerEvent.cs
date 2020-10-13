@@ -33,13 +33,13 @@ namespace Elsa.Activities.Signaling
         [ActivityProperty(Hint = "An expression that evaluates to the correlation ID to use when triggering workflows.")]
         public string? CorrelationId { get; set; }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
             await _workflowScheduler.TriggerWorkflowsAsync(
                 ActivityType,
                 Input,
                 CorrelationId,
-                cancellationToken: cancellationToken
+                cancellationToken
             );
 
             return Done();

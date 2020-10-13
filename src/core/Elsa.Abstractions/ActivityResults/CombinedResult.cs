@@ -15,7 +15,9 @@ namespace Elsa.ActivityResults
 
         public IReadOnlyCollection<IActivityExecutionResult> Results { get; }
 
-        public override async Task ExecuteAsync(ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
+        public override async ValueTask ExecuteAsync(
+            ActivityExecutionContext activityExecutionContext,
+            CancellationToken cancellationToken)
         {
             foreach (var result in Results) 
                 await result.ExecuteAsync(activityExecutionContext, cancellationToken);

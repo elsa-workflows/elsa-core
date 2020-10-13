@@ -46,7 +46,7 @@ namespace Elsa.Activities.ControlFlow
         {
             var workflowExecutionContext = context.WorkflowExecutionContext;
             var recordedInboundTransitions = InboundTransitions;
-            var inboundConnections = workflowExecutionContext.GetInboundConnections(this);
+            var inboundConnections = workflowExecutionContext.GetInboundConnections(Id);
             var done = false;
             
             switch (Mode)
@@ -62,9 +62,9 @@ namespace Elsa.Activities.ControlFlow
             if (done)
             {
                 // Remove any inbound blocking activities.
-                var ancestorActivityIds = workflowExecutionContext.GetInboundActivityPath(this).ToList();
+                var ancestorActivityIds = workflowExecutionContext.GetInboundActivityPath(Id).ToList();
                 var blockingActivities =
-                    workflowExecutionContext.BlockingActivities.Where(x => ancestorActivityIds.Contains(x.Id)).ToList();
+                    workflowExecutionContext.BlockingActivities.Where(x => ancestorActivityIds.Contains(x.ActivityId)).ToList();
             
                 foreach (var blockingActivity in blockingActivities) 
                     workflowExecutionContext.BlockingActivities.Remove(blockingActivity);
@@ -78,10 +78,10 @@ namespace Elsa.Activities.ControlFlow
             return Done();
         }
 
-        private void RecordInboundTransitions(WorkflowExecutionContext workflowExecutionContext, IActivity activity)
+        private void RecordInboundTransitions(WorkflowExecutionContext workflowExecutionContext, IActivityBlueprint activity)
         {
             // Get outbound connections of the executing activity.
-            var outboundConnections = workflowExecutionContext.GetOutboundConnections(activity);
+            var outboundConnections = workflowExecutionContext.GetOutboundConnections(activity.Id);
             
             // Get any connection that is pointing to this activity.
             var inboundTransitionsQuery =
@@ -95,16 +95,15 @@ namespace Elsa.Activities.ControlFlow
             // For each inbound connection, record the transition.
             foreach (var inboundConnection in inboundConnections)
             {
-                var joinActivity = (Join)inboundConnection.Target.Activity;
-                var inboundTransitions = joinActivity.InboundTransitions ?? new List<string>();
-                joinActivity.InboundTransitions = inboundTransitions
+                var inboundTransitions = InboundTransitions;
+                InboundTransitions = inboundTransitions
                     .Union(new[] { GetTransitionKey(inboundConnection) })
                     .Distinct()
                     .ToList();
             }
         }
 
-        private string GetTransitionKey(Connection connection)
+        private string GetTransitionKey(IConnection connection)
         {
             var sourceActivityId = connection.Source.Activity.Id;
             var sourceOutcomeName = connection.Source.Outcome;

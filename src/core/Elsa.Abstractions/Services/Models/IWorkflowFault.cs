@@ -5,7 +5,7 @@ namespace Elsa.Services.Models
 {
     public interface IWorkflowFault
     {
-        ActivityDefinition? FaultedActivity { get; }
+        string? FaultedActivityId { get; }
         LocalizedString? Message { get; }
     }
 }

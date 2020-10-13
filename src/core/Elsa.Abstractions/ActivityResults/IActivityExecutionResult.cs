@@ -6,6 +6,6 @@ namespace Elsa.ActivityResults
 {
     public interface IActivityExecutionResult
     {
-        Task ExecuteAsync(ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken);
+        ValueTask ExecuteAsync(ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken);
     }
 }

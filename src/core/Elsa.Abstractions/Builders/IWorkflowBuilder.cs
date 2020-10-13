@@ -29,7 +29,8 @@ namespace Elsa.Builders
             IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders = default)
             where T : class, IActivity;
 
-        IActivityBuilder New<T>(Action<ISetupActivity<T>>? setup = default,
+        IActivityBuilder New<T>(
+            Action<ISetupActivity<T>>? setup = default,
             Action<IActivityBuilder>? branch = default) where T : class, IActivity;
 
         IActivityBuilder StartWith<T>(
@@ -39,10 +40,13 @@ namespace Elsa.Builders
         IActivityBuilder StartWith<T>(Action<IActivityBuilder>? branch = default)
             where T : class, IActivity;
 
+        IActivityBuilder StartWith<T>(Action<T> setup, Action<IActivityBuilder>? branch = default)
+            where T : class, IActivity;
+
         IActivityBuilder Add<T>(
             Action<ISetupActivity<T>>? setup = default,
             Action<IActivityBuilder>? branch = default) where T : class, IActivity;
-        
+
         IActivityBuilder Add<T>(
             Action<T> setup,
             Action<IActivityBuilder>? branch = default) where T : class, IActivity;
@@ -52,13 +56,9 @@ namespace Elsa.Builders
             IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders = default)
             where T : class, IActivity;
 
-        IConnectionBuilder Connect(IActivityBuilder source,
-            IActivityBuilder target,
-            string outcome = OutcomeNames.Done);
-
         IConnectionBuilder Connect(
-            Func<IActivityBuilder> source,
-            Func<IActivityBuilder> target,
+            IActivityBuilder source,
+            IActivityBuilder target,
             string outcome = OutcomeNames.Done);
 
         IWorkflowBlueprint Build();

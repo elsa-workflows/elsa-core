@@ -1,10 +1,8 @@
-﻿using Elsa.Models;
-
-namespace Elsa.Services.Models
+﻿namespace Elsa.Services.Models
 {
     public interface IScheduledActivity
     {
-        ActivityDefinition ActivityDefinition { get; }
+        string ActivityId { get; }
         object? Input { get; }
     }
 }

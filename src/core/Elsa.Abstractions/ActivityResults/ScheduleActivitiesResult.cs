@@ -9,8 +9,8 @@ namespace Elsa.ActivityResults
 {
     public class ScheduleActivitiesResult : ActivityExecutionResult
     {
-        public ScheduleActivitiesResult(IEnumerable<ActivityDefinition> activities, object? input = default) => 
-            Activities = activities.Select(x => new ScheduledActivity(x, input));
+        public ScheduleActivitiesResult(IEnumerable<string> activityIds, object? input = default) => 
+            Activities = activityIds.Select(x => new ScheduledActivity(x, input));
 
         public ScheduleActivitiesResult(IEnumerable<ScheduledActivity> activities) => Activities = activities;
 

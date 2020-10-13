@@ -9,16 +9,12 @@ namespace Elsa.Builders
 {
     public class ActivityBuilder : IActivityBuilder
     {
-        private readonly IActivityActivator _activityActivator;
-
         public ActivityBuilder(
             Type activityType,
             Action<IActivity>? setupActivity,
             IWorkflowBuilder workflowBuilder,
-            IActivityActivator activityActivator,
             IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders)
         {
-            _activityActivator = activityActivator;
             ActivityType = activityType;
             SetupActivity = setupActivity;
             WorkflowBuilder = workflowBuilder;
@@ -62,10 +58,10 @@ namespace Elsa.Builders
             return this;
         }
 
-        public Func<ActivityExecutionContext, CancellationToken, Task<IActivity>> BuildActivityAsync() =>
+        public Func<ActivityExecutionContext, CancellationToken, ValueTask<IActivity>> BuildActivityAsync() =>
             async (context, cancellationToken) =>
             {
-                var activity = _activityActivator.ActivateActivity(SetupActivity);
+                var activity = context.ActivateActivity(SetupActivity);
                 await context.SetActivityPropertiesAsync(activity, cancellationToken);
                 return activity;
             };

@@ -97,11 +97,11 @@ namespace Elsa.Activities.Http
         )]
         public ICollection<int> SupportedStatusCodes { get; set; } = new HashSet<int>(new[] { 200 });
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(
+        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(
             ActivityExecutionContext context,
             CancellationToken cancellationToken)
         {
-            var request = await CreateRequestAsync(context, cancellationToken);
+            var request = CreateRequest();
             var response = await _httpClient.SendAsync(request, cancellationToken);
             var hasContent = response.Content != null;
             var contentType = response.Content?.Headers.ContentType.MediaType;
@@ -116,8 +116,7 @@ namespace Elsa.Activities.Http
 
             if (hasContent && ReadContent)
             {
-                var formatter = SelectContentParser(contentType);
-
+                var formatter = SelectContentParser(contentType!);
                 responseModel.Content = await formatter.ParseAsync(response, cancellationToken);
             }
 
@@ -129,7 +128,7 @@ namespace Elsa.Activities.Http
             if (!isSupportedStatusCode)
                 outcomes.Add("UnSupportedStatusCode");
 
-            return Done(outcomes, responseModel);
+            return Combine(Outcomes(outcomes), Output(responseModel));
         }
 
         private IHttpResponseBodyParser SelectContentParser(string contentType)
@@ -140,9 +139,7 @@ namespace Elsa.Activities.Http
             ) ?? formatters.Last();
         }
 
-        private async Task<HttpRequestMessage> CreateRequestAsync(
-            ActivityExecutionContext context,
-            CancellationToken cancellationToken)
+        private HttpRequestMessage CreateRequest()
         {
             var methodSupportsBody = GetMethodSupportsBody(Method);
             var url = Url;

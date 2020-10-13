@@ -13,6 +13,7 @@ namespace Elsa.Services.Models
         public string? Description { get; }
         public bool IsPublished { get; }
         public bool IsLatest { get; }
+        public Variables Variables { get; }
         public WorkflowPersistenceBehavior PersistenceBehavior { get; }
         public bool DeleteCompletedInstances { get; }
         public ICollection<IActivityBlueprint> Activities { get; }

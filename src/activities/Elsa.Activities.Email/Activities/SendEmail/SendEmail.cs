@@ -38,7 +38,7 @@ namespace Elsa.Activities.Email
         [WorkflowExpressionOptions(Multiline = true)]
         public string Body { get; set; }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
             var message = new MimeMessage();
             

@@ -36,7 +36,7 @@ namespace Elsa.Activities.Http
         [ActivityProperty(Hint = "Whether or not the redirect is permanent (HTTP 301).")]
         public bool Permanent { get; set; }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
             var response = _httpContextAccessor.HttpContext.Response;
 

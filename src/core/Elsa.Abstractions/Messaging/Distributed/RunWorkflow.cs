@@ -2,18 +2,14 @@ namespace Elsa.Messaging.Distributed
 {
     public class RunWorkflow
     {
-        public RunWorkflow()
+        public RunWorkflow(string workflowInstanceId, string? activityId = default, object? input = default)
         {
-        }
-
-        public RunWorkflow(string instanceId, string? activityId = default, object? input = default)
-        {
-            InstanceId = instanceId;
+            WorkflowInstanceId = workflowInstanceId;
             ActivityId = activityId;
             Input = input;
         }
-        
-        public string InstanceId { get; set; }
+
+        public string WorkflowInstanceId { get; set; }
         public string? ActivityId { get; set; }
         public object? Input { get; set; }
     }

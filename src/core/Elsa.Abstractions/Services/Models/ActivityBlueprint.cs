@@ -1,5 +1,7 @@
 ﻿using System;
-using Elsa.ActivityResults;
+using System.Threading;
+using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
 
 namespace Elsa.Services.Models
 {
@@ -8,19 +10,24 @@ namespace Elsa.Services.Models
         public ActivityBlueprint()
         {
         }
-        
-        public ActivityBlueprint(Func<ActivityExecutionContext, IActivity> createActivity)
-        {
-            CreateActivity = createActivity;
-        }
-        
-        public ActivityBlueprint(string id, Func<ActivityExecutionContext, IActivity> createActivity)
+
+        public ActivityBlueprint(
+            Func<ActivityExecutionContext, CancellationToken, ValueTask<IActivity>> createActivity) =>
+            CreateActivityAsync = createActivity;
+
+        public ActivityBlueprint(
+            string id,
+            Func<ActivityExecutionContext, CancellationToken, ValueTask<IActivity>> createActivity)
         {
             Id = id;
-            CreateActivity = createActivity;
+            CreateActivityAsync = createActivity;
         }
 
         public string Id { get; set; } = default!;
-        public Func<ActivityExecutionContext, IActivity> CreateActivity { get; set; } = default!;
+        public string Type { get; set; } = default!;
+        public JObject Data { get; set; } = new JObject();
+
+        public Func<ActivityExecutionContext, CancellationToken, ValueTask<IActivity>> CreateActivityAsync { get; set; }
+            = default!;
     }
 }

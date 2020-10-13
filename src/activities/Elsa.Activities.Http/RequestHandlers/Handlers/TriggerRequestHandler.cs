@@ -74,21 +74,21 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
                 : new EmptyResult();
         }
 
-        private IEnumerable<(WorkflowBlueprint Workflow, ReceiveHttpRequest Activity)> Filter(
-            IEnumerable<(WorkflowBlueprint Workflow, ReceiveHttpRequest Activity)> items,
+        private IEnumerable<(IWorkflowBlueprint Workflow, IActivityBlueprint Activity)> Filter(
+            IEnumerable<(IWorkflowBlueprint Workflow, IActivityBlueprint Activity)> items,
             PathString path,
             string method) =>
             items.Where(x => IsMatch(x.Activity, path, method));
 
-        private bool IsMatch(ReceiveHttpRequest activity, PathString path, string method)
+        private bool IsMatch(IActivityBlueprint activity, PathString path, string method)
         {
-            var m = activity.Method;
-            var p = activity.Path;
+            var m = activity.Data.Value<string>("Method");
+            var p = activity.Data.Value<string>("Path");
             return (string.IsNullOrWhiteSpace(m) || m == method) && p == path;
         }
 
         private async Task InvokeWorkflowsToStartAsync(
-            IEnumerable<(WorkflowBlueprint Workflow, ReceiveHttpRequest Activity)> items)
+            IEnumerable<(IWorkflowBlueprint Workflow, IActivityBlueprint Activity)> items)
         {
             foreach (var (workflow, activity) in items)
             {
@@ -103,7 +103,7 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
         {
             foreach (var (workflowInstance, activity) in items)
             {
-                await _workflowHost.RunWorkflowInstanceAsync(
+                await _workflowHost.RunWorkflowAsync(
                     workflowInstance,
                     activity.Id,
                     cancellationToken: _cancellationToken);

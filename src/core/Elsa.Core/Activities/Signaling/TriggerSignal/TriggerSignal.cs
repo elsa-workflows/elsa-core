@@ -30,11 +30,13 @@ namespace Elsa.Activities.Signaling
 
         [ActivityProperty(Hint = "An expression that evaluates to the correlation ID to use when signaling.")]
         public string? CorrelationId { get; set; }
-        
-        [ActivityProperty(Hint = "An expression that evaluates to an input value when triggering the signal.")]
-        public object? Input  { get; set; }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        [ActivityProperty(Hint = "An expression that evaluates to an input value when triggering the signal.")]
+        public object? Input { get; set; }
+
+        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(
+            ActivityExecutionContext context,
+            CancellationToken cancellationToken)
         {
             var triggeredSignal = new TriggeredSignal(Signal, Input);
 
@@ -42,7 +44,7 @@ namespace Elsa.Activities.Signaling
                 nameof(Signaled),
                 triggeredSignal,
                 CorrelationId,
-                cancellationToken: cancellationToken
+                cancellationToken
             );
 
             return Done();

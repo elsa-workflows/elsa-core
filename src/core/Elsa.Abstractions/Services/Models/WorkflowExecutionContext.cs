@@ -15,7 +15,7 @@ namespace Elsa.Services.Models
         public WorkflowExecutionContext(
             IExpressionEvaluator expressionEvaluator,
             IServiceProvider serviceProvider,
-            WorkflowDefinition workflowDefinition,
+            IWorkflowBlueprint workflowBlueprint,
             WorkflowInstance workflowInstance
             //IWorkflow workflow,
             //WorkflowStatus status,
@@ -28,7 +28,8 @@ namespace Elsa.Services.Models
             )
         {
             ServiceProvider = serviceProvider;
-            WorkflowDefinition = workflowDefinition;
+            WorkflowBlueprint = workflowBlueprint;
+            //WorkflowDefinition = workflowDefinition;
             WorkflowInstance = workflowInstance;
             //Workflow = workflow;
             //CorrelationId = correlationId;
@@ -44,16 +45,12 @@ namespace Elsa.Services.Models
             IsFirstPass = true;
         }
 
-        private IScheduledActivity CreateScheduledActivity(Elsa.Models.ScheduledActivity scheduledActivityModel,
-            IDictionary<string, ActivityDefinition> activityLookup)
-        {
-            var activity = activityLookup[scheduledActivityModel.ActivityId];
-            return new ScheduledActivity(activity, scheduledActivityModel.Input);
-        }
+        private IScheduledActivity CreateScheduledActivity(Elsa.Models.ScheduledActivity scheduledActivityModel) =>
+            new ScheduledActivity(scheduledActivityModel.ActivityId, scheduledActivityModel.Input);
 
         public IWorkflowBlueprint WorkflowBlueprint { get; }
         public IServiceProvider ServiceProvider { get; }
-        public WorkflowDefinition WorkflowDefinition { get; }
+        // public WorkflowDefinition WorkflowDefinition { get; }
         public WorkflowInstance WorkflowInstance { get; }
         public WorkflowStatus Status { get; set; }
         public Stack<IScheduledActivity> ScheduledActivities { get; }
@@ -64,10 +61,10 @@ namespace Elsa.Services.Models
         public IWorkflowFault? WorkflowFault { get; private set; }
         public object? Output { get; set; }
 
-        public void ScheduleActivities(IEnumerable<ActivityDefinition> activityDefinitions, object? input = default)
+        public void ScheduleActivities(IEnumerable<string> activityIds, object? input = default)
         {
-            foreach (var activityDefinition in activityDefinitions)
-                ScheduleActivity(activityDefinition, input);
+            foreach (var activityId in activityIds)
+                ScheduleActivity(activityId, input);
         }
 
         public void ScheduleActivities(IEnumerable<ScheduledActivity> activities)
@@ -76,8 +73,8 @@ namespace Elsa.Services.Models
                 ScheduleActivity(activity);
         }
 
-        public void ScheduleActivity(ActivityDefinition activityDefinition, object? input = default) =>
-            ScheduleActivity(new ScheduledActivity(activityDefinition, input));
+        public void ScheduleActivity(string activityId, object? input = default) =>
+            ScheduleActivity(new ScheduledActivity(activityId, input));
 
         public void ScheduleActivity(ScheduledActivity activity) => ScheduledActivities.Push(activity);
         public IScheduledActivity PopScheduledActivity() => ScheduledActivity = ScheduledActivities.Pop();
@@ -98,10 +95,10 @@ namespace Elsa.Services.Models
 
         public void Suspend() => Status = WorkflowStatus.Suspended;
 
-        public void Fault(ActivityDefinition? activity, LocalizedString? message)
+        public void Fault(string? activityId, LocalizedString? message)
         {
             Status = WorkflowStatus.Faulted;
-            WorkflowFault = new WorkflowFault(activity, message);
+            WorkflowFault = new WorkflowFault(activityId, message);
         }
 
         public void Complete() => Status = WorkflowStatus.Completed;
@@ -113,7 +110,7 @@ namespace Elsa.Services.Models
             workflowInstance.Variables = Variables;
 
             workflowInstance.ScheduledActivities = new Stack<Elsa.Models.ScheduledActivity>(
-                ScheduledActivities.Select(x => new Elsa.Models.ScheduledActivity(x.ActivityDefinition.Id, x.Input)));
+                ScheduledActivities.Select(x => new Elsa.Models.ScheduledActivity(x.ActivityId, x.Input)));
 
             //workflowInstance.Activities =
             //    WorkflowBlueprint.Activities.Select(x => new ActivityInstance(x.Id, x.Type, x.Output, Serialize(x))).ToList();
@@ -132,7 +129,7 @@ namespace Elsa.Services.Models
             {
                 workflowInstance.Fault = new Elsa.Models.WorkflowFault
                 {
-                    FaultedActivityId = WorkflowFault.FaultedActivity?.Id,
+                    FaultedActivityId = WorkflowFault.FaultedActivityId,
                     Message = WorkflowFault.Message
                 };
             }

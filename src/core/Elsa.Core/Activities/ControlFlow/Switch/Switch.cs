@@ -38,14 +38,14 @@ namespace Elsa.Activities.ControlFlow
             set => _cases = new HashSet<string>(value, StringComparer.OrdinalIgnoreCase);
         }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
             var result = Value;
 
             if (ContainsCase(result) || !ContainsCase(OutcomeNames.Default))
-                return Done(result, (object)result);
+                return Outcome(result, result);
 
-            return Done(OutcomeNames.Default, (object)result);
+            return Done(result);
         }
 
         private bool ContainsCase(string @case) => Cases.Contains(@case);

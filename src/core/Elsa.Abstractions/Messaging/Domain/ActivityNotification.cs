@@ -14,6 +14,6 @@ namespace Elsa.Messaging.Domain
 
         public ActivityExecutionContext ActivityExecutionContext { get; }
         public WorkflowExecutionContext WorkflowExecutionContext => ActivityExecutionContext.WorkflowExecutionContext;
-        public ActivityDefinition Activity => ActivityExecutionContext.ActivityDefinition;
+        public IActivityBlueprint Activity => ActivityExecutionContext.ActivityBlueprint;
     }
 }

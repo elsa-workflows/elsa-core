@@ -13,7 +13,8 @@ namespace Elsa.Activities.ControlFlow
         DisplayName = "If/Else",
         Category = "Control Flow",
         Description = "Evaluate a Boolean expression and continue execution depending on the result.",
-        RuntimeDescription = "x => !!x.state.expression ? `Evaluate <strong>${ x.state.expression.expression }</strong> and continue execution depending on the result.` : x.definition.description",
+        RuntimeDescription =
+            "x => !!x.state.expression ? `Evaluate <strong>${ x.state.expression.expression }</strong> and continue execution depending on the result.` : x.definition.description",
         Outcomes = new[] { OutcomeNames.True, OutcomeNames.False, OutcomeNames.Done }
     )]
     public class IfElse : Activity
@@ -28,12 +29,14 @@ namespace Elsa.Activities.ControlFlow
         [ActivityProperty(Hint = "The expression to evaluate. The evaluated value will be used to switch on.")]
         public IWorkflowExpression<bool>? Condition { get; set; }
 
-        protected override async Task<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(
+            ActivityExecutionContext context,
+            CancellationToken cancellationToken)
         {
             var result = await _expressionEvaluator.EvaluateAsync(Condition, context, cancellationToken);
             var outcome = result ? OutcomeNames.True : OutcomeNames.False;
 
-            return Done(OutcomeNames.Done, outcome);
+            return Outcomes(OutcomeNames.Done, outcome);
         }
     }
 }

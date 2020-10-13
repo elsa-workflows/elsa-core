@@ -38,9 +38,9 @@ namespace Elsa.Activities.ControlFlow
 
             if (currentIndex < collection.Count)
             {
-                var input = collection[currentIndex];
+                var output = collection[currentIndex];
                 CurrentIndex = currentIndex + 1;
-                return Combine(Schedule(context.ActivityDefinition), Done(OutcomeNames.Iterate, input));
+                return Combine(Schedule(Id), Output(output), Done(OutcomeNames.Iterate));
             }
 
             CurrentIndex = null;
