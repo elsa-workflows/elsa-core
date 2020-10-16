@@ -32,6 +32,7 @@ namespace Elsa.Services.Models
         public IServiceProvider ServiceProvider { get; }
         public bool HasScheduledActivities => scheduledActivities.Any();
         public bool HasScheduledHaltingActivities => scheduledHaltingActivities.Any();
+        public IEnumerable<IActivity> ScheduledActivities => scheduledActivities;
         public bool IsFirstPass { get; set; }
         public LogEntry CurrentLogEntry => Workflow.ExecutionLog.LastOrDefault();
         public WorkflowExecutionScope CurrentScope => Workflow.Scopes.Peek();

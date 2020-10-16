@@ -94,8 +94,7 @@ namespace Elsa.Services
             CancellationToken cancellationToken = default) where T : IWorkflow, new()
         {
             var workflow = workflowFactory.CreateWorkflow<T>(input, workflowInstance);
-            var startActivities = workflow.Activities.Find(startActivityIds);
-            return ExecuteAsync(workflow, true, startActivities, cancellationToken);
+            return ResumeAsync(workflow, startActivityIds, cancellationToken);
         }
 
         public async Task<WorkflowExecutionContext> ResumeAsync(
@@ -108,8 +107,19 @@ namespace Elsa.Services
                 workflowInstance.DefinitionId,
                 VersionOptions.SpecificVersion(workflowInstance.Version),
                 cancellationToken);
+
             var workflow = workflowFactory.CreateWorkflow(definition, input, workflowInstance);
-            return await ExecuteAsync(workflow, true, startActivityIds, cancellationToken);
+            return await ResumeAsync(workflow, startActivityIds, cancellationToken);
+        }
+        
+        public Task<WorkflowExecutionContext> ResumeAsync(
+            Workflow workflow,
+            IEnumerable<string> startActivityIds = default,
+            CancellationToken cancellationToken = default)
+        {
+            startActivityIds ??= workflow.BlockingActivities.Select(x => x.Id);
+            var startActivities = workflow.Activities.Find(startActivityIds);
+            return ExecuteAsync(workflow, true, startActivities, cancellationToken);
         }
 
         public async Task<IEnumerable<WorkflowExecutionContext>> TriggerAsync(
@@ -419,7 +429,7 @@ namespace Elsa.Services
 
             if (workflowExecutionContext.HasScheduledActivities)
             {
-                workflow.BlockingActivities.RemoveWhere(startActivityList.Contains);
+                workflow.BlockingActivities.RemoveWhere(workflowExecutionContext.ScheduledActivities.Contains);
 
                 if (workflowExecutionContext.Workflow.Status == WorkflowStatus.Idle)
                     workflowExecutionContext.Start();

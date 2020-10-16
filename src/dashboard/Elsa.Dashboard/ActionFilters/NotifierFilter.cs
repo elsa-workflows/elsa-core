@@ -1,6 +1,5 @@
 using Elsa.Dashboard.Extensions;
 using Elsa.Dashboard.Services;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 
