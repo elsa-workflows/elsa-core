@@ -15,7 +15,6 @@ namespace Elsa.Server.GraphQL.Extensions
             return services
                 .AddScoped<IWorkflowPublisher, WorkflowPublisher>()
                 .AddSingleton<VersionOptionsConverter>()
-                .AddSingleton<ActivityStateResolver>()
                 .AddSingleton<IActivityDescriber, ActivityDescriber>()
                 .AddAutoMapperProfile<MappingProfile>(ServiceLifetime.Singleton)
                 .AddGraphQL(sp => SchemaBuilder.New()

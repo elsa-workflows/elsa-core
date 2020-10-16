@@ -40,7 +40,8 @@ namespace Elsa.Services
             _queue = queue;
         }
 
-        public async Task ScheduleWorkflowAsync(string instanceId,
+        public async Task ScheduleWorkflowAsync(
+            string instanceId,
             string? activityId = default,
             object? input = default,
             CancellationToken cancellationToken = default) =>
@@ -56,10 +57,10 @@ namespace Elsa.Services
                 definitionId,
                 VersionOptions.Published,
                 cancellationToken);
-            
-            if(workflow == null)
+
+            if (workflow == null)
                 throw new WorkflowException($"No workflow definition found by ID {definitionId}");
-            
+
             var startActivities = workflow.GetStartActivities();
 
             foreach (var activity in startActivities)
@@ -103,7 +104,7 @@ namespace Elsa.Services
                 where activity.Type == activityType
                 select (workflow, activity);
 
-            var tuples = (IList<(WorkflowBlueprint Workflow, IActivity Activity)>)query.ToList();
+            var tuples = (IList<(IWorkflowBlueprint Workflow, IActivityBlueprint Activity)>)query.ToList();
 
             tuples = await FilterRunningSingletonsAsync(tuples).ToList();
 
@@ -164,8 +165,9 @@ namespace Elsa.Services
                     cancellationToken);
         }
 
-        private async Task ScheduleWorkflowAsync(WorkflowBlueprint workflowBlueprint,
-            IActivity activity,
+        private async Task ScheduleWorkflowAsync(
+            IWorkflowBlueprint workflowBlueprint,
+            IActivityBlueprint activity,
             object? input,
             string? correlationId,
             CancellationToken cancellationToken)
@@ -175,8 +177,7 @@ namespace Elsa.Services
             await ScheduleWorkflowAsync(workflowInstance.WorkflowInstanceId, activity.Id, input, cancellationToken);
         }
 
-        private async Task<IEnumerable<(WorkflowBlueprint, IActivity)>> FilterRunningSingletonsAsync(
-            IEnumerable<(WorkflowBlueprint Workflow, IActivity Activity)> tuples)
+        private async Task<IEnumerable<(IWorkflowBlueprint, IActivityBlueprint)>> FilterRunningSingletonsAsync(IEnumerable<(IWorkflowBlueprint Workflow, IActivityBlueprint Activity)> tuples)
         {
             var tupleList = tuples.ToList();
             var transients = tupleList.Where(x => !x.Workflow.IsSingleton).ToList();
@@ -197,7 +198,7 @@ namespace Elsa.Services
             return result;
         }
 
-        private async Task<IEnumerable<WorkflowInstance>> GetStartedWorkflowsAsync(WorkflowBlueprint workflowBlueprint)
+        private async Task<IEnumerable<WorkflowInstance>> GetStartedWorkflowsAsync(IWorkflowBlueprint workflowBlueprint)
         {
             var workflowDefinitionId = workflowBlueprint.Id;
 
@@ -218,8 +219,8 @@ namespace Elsa.Services
         public async Task Handle(WorkflowCompleted notification, CancellationToken cancellationToken)
         {
             var workflowExecutionContext = notification.WorkflowExecutionContext;
-            var workflowDefinitionId = workflowExecutionContext.WorkflowDefinitionId;
-            var startActivityId = workflowExecutionContext.ExecutionLog.Select(x => x.Activity.Id).FirstOrDefault();
+            var workflowDefinitionId = workflowExecutionContext.WorkflowBlueprint.Id;
+            var startActivityId = workflowExecutionContext.ExecutionLog.Select(x => x.ActivityId).FirstOrDefault();
 
             if (startActivityId == null)
                 return;

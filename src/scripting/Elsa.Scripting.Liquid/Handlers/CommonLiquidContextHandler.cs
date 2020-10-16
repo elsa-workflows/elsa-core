@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
 using System.Threading;
@@ -39,9 +40,9 @@ namespace Elsa.Scripting.Liquid.Handlers
                 "Variables",
                 x => new LiquidPropertyAccessor(name => ToFluidValue(x.WorkflowExecutionContext.Variables, name)));
             
-            context.MemberAccessStrategy.Register<ActivityExecutionContext, LiquidObjectAccessor<IActivity>>(
+            context.MemberAccessStrategy.Register<ActivityExecutionContext, LiquidObjectAccessor<IActivityBlueprint>>(
                 "Activities",
-                x => new LiquidObjectAccessor<IActivity>(name => GetActivityAsync(x, name)));
+                x => new LiquidObjectAccessor<IActivityBlueprint>(name => GetActivityAsync(x, name)));
             
             context.MemberAccessStrategy.Register<LiquidObjectAccessor<IActivity>, object>(GetActivityOutput);
             
@@ -64,10 +65,11 @@ namespace Elsa.Scripting.Liquid.Handlers
         private async Task<object?> GetActivityOutput(LiquidObjectAccessor<IActivity> accessor, string activityName)
         {
             var activity = await accessor.GetValueAsync(activityName);
-            return activity?.Output;
+            //return activity?.Output;
+            throw new NotImplementedException();
         }
 
-        private Task<IActivity> GetActivityAsync(ActivityExecutionContext context, string name)
-            => Task.FromResult(context.WorkflowExecutionContext.Activities.FirstOrDefault(x => x.Name == name));
+        private Task<IActivityBlueprint> GetActivityAsync(ActivityExecutionContext context, string name)
+            => Task.FromResult(context.WorkflowExecutionContext.WorkflowBlueprint.Activities.FirstOrDefault(x => x.Name == name));
     }
 }

@@ -11,7 +11,7 @@ namespace Elsa.Services
 {
     public abstract class Activity : IActivity
     {
-        public virtual string Type => GetType().Name;
+        public string Type => GetType().Name;
         public string Id { get; set; } = default!;
         public string? Name { get; set; }
         public string? DisplayName { get; set; }

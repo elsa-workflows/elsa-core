@@ -25,7 +25,7 @@ namespace Elsa.Data.Services
             _activityActivator = activityActivator;
         }
 
-        public async Task<IEnumerable<WorkflowBlueprint>> GetWorkflowsAsync(CancellationToken cancellationToken)
+        public async Task<IEnumerable<IWorkflowBlueprint>> GetWorkflowsAsync(CancellationToken cancellationToken)
         {
             var workflowDefinitions = await _workflowDefinitionManager.ListAsync(cancellationToken);
             return workflowDefinitions.Select(CreateWorkflow);
@@ -87,7 +87,6 @@ namespace Elsa.Data.Services
             activity.Description = activityDefinition.Description;
             activity.Id = activityDefinition.Id;
             activity.Name = activityDefinition.Name;
-            activity.Type = activityDefinition.Type;
             activity.DisplayName = activityDefinition.DisplayName;
             activity.PersistWorkflow = activityDefinition.PersistWorkflow;
             

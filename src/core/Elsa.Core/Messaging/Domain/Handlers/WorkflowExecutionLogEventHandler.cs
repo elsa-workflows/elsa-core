@@ -17,7 +17,9 @@ namespace Elsa.Messaging.Domain.Handlers
 
         public Task Handle(ActivityExecuted notification, CancellationToken cancellationToken)
         {
-            notification.WorkflowExecutionContext.ExecutionLog.Add(new ExecutionLogEntry(notification.Activity, _clock.GetCurrentInstant()));
+            notification.WorkflowExecutionContext.ExecutionLog.Add(
+                new ExecutionLogEntry(notification.Activity.Id, _clock.GetCurrentInstant()));
+            
             return Task.CompletedTask;
         }
     }

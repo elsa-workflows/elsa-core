@@ -30,11 +30,11 @@ namespace Elsa.Builders
             where T : class, IActivity;
 
         IActivityBuilder New<T>(
-            Action<ISetupActivity<T>>? setup = default,
+            Action<ISetupActivity<T>>? setup,
             Action<IActivityBuilder>? branch = default) where T : class, IActivity;
 
         IActivityBuilder StartWith<T>(
-            Action<ISetupActivity<T>>? setup = default,
+            Action<ISetupActivity<T>>? setup,
             Action<IActivityBuilder>? branch = default) where T : class, IActivity;
 
         IActivityBuilder StartWith<T>(Action<IActivityBuilder>? branch = default)

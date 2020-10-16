@@ -68,12 +68,7 @@ namespace Elsa.Services
                 correlationId,
                 cancellationToken);
 
-            return await RunWorkflowAsync(
-                workflowBlueprint,
-                workflowInstance,
-                activityId,
-                input,
-                cancellationToken);
+            return await RunWorkflowAsync(workflowBlueprint, workflowInstance, activityId, input, cancellationToken);
         }
 
 
@@ -89,8 +84,7 @@ namespace Elsa.Services
                 cancellationToken);
 
             if (workflowBlueprint == null)
-                throw new WorkflowException(
-                    $"Workflow instance {workflowInstance.Id} references workflow definition {workflowInstance.WorkflowDefinitionId} version {workflowInstance.Version}, but no such workflow definition was found.");
+                throw new WorkflowException($"Workflow instance {workflowInstance.Id} references workflow definition {workflowInstance.WorkflowDefinitionId} version {workflowInstance.Version}, but no such workflow definition was found.");
 
             return await RunWorkflowAsync(workflowBlueprint, workflowInstance, activityId, input, cancellationToken);
         }
@@ -147,8 +141,7 @@ namespace Elsa.Services
             if (statusEvent != null)
                 await _mediator.Publish(statusEvent, cancellationToken);
 
-            workflowExecutionContext.UpdateWorkflowInstance(workflowInstance);
-            return workflowInstance;
+            return workflowExecutionContext.UpdateWorkflowInstance();
         }
 
         private async Task BeginWorkflow(
@@ -204,7 +197,7 @@ namespace Elsa.Services
                 activityBlueprint,
                 input);
 
-            var activity = await activityBlueprint.CreateActivityAsync();
+            var activity = await activityBlueprint.CreateActivityAsync(activityExecutionContext, cancellationToken);
             return await activity.CanExecuteAsync(activityExecutionContext, cancellationToken);
         }
 
@@ -227,8 +220,7 @@ namespace Elsa.Services
                         activityBlueprint,
                         scheduledActivity.Input);
 
-                    var activity = await activityBlueprint.CreateActivityAsync();
-
+                    var activity = await activityBlueprint.CreateActivityAsync(activityExecutionContext, cancellationToken);
                     var result = await activityOperation(activityExecutionContext, activity, cancellationToken);
                     await _mediator.Publish(new ActivityExecuting(activityExecutionContext), cancellationToken);
                     await result.ExecuteAsync(activityExecutionContext, cancellationToken);

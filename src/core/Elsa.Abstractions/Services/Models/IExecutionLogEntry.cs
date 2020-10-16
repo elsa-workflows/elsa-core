@@ -4,7 +4,7 @@ namespace Elsa.Services.Models
 {
     public interface IExecutionLogEntry
     {
-        IActivity Activity { get; }
+        string ActivityId { get; }
         Instant Timestamp { get; }
     }
 }

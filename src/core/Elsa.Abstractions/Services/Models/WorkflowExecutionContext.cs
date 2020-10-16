@@ -25,7 +25,7 @@ namespace Elsa.Services.Models
             //ICollection<IScheduledActivity> scheduledActivities,
             //ICollection<IActivity> blockingActivities,
             //IEnumerable<IExecutionLogEntry>? executionLog = default
-            )
+        )
         {
             ServiceProvider = serviceProvider;
             WorkflowBlueprint = workflowBlueprint;
@@ -49,12 +49,17 @@ namespace Elsa.Services.Models
             new ScheduledActivity(scheduledActivityModel.ActivityId, scheduledActivityModel.Input);
 
         public IWorkflowBlueprint WorkflowBlueprint { get; }
+
         public IServiceProvider ServiceProvider { get; }
+
         // public WorkflowDefinition WorkflowDefinition { get; }
         public WorkflowInstance WorkflowInstance { get; }
         public WorkflowStatus Status { get; set; }
         public Stack<IScheduledActivity> ScheduledActivities { get; }
-        public HashSet<BlockingActivity> BlockingActivities { get; } = new HashSet<BlockingActivity>(new BlockingActivityEqualityComparer());
+
+        public HashSet<BlockingActivity> BlockingActivities { get; } =
+            new HashSet<BlockingActivity>(new BlockingActivityEqualityComparer());
+
         public Variables Variables { get; }
         public bool HasScheduledActivities => ScheduledActivities.Any();
         public IScheduledActivity? ScheduledActivity { get; private set; }
@@ -87,7 +92,9 @@ namespace Elsa.Services.Models
         public ICollection<IExecutionLogEntry> ExecutionLog { get; }
         public bool IsFirstPass { get; private set; }
 
-        public bool AddBlockingActivity(IActivity activity) => BlockingActivities.Add(new BlockingActivity(activity.Id, activity.Type));
+        public bool AddBlockingActivity(IActivity activity) =>
+            BlockingActivities.Add(new BlockingActivity(activity.Id, activity.Type));
+
         public void SetVariable(string name, object? value) => Variables.Set(name, JToken.FromObject(value!));
         public T GetVariable<T>(string name) => (T)GetVariable(name)!;
         public object? GetVariable(string name) => Variables.Get(name);
@@ -103,10 +110,12 @@ namespace Elsa.Services.Models
 
         public void Complete() => Status = WorkflowStatus.Completed;
 
-        public IActivityBlueprint? GetActivity(string id) => WorkflowBlueprint.Activities.FirstOrDefault(x => x.Id == id);
+        public IActivityBlueprint? GetActivity(string id) =>
+            WorkflowBlueprint.Activities.FirstOrDefault(x => x.Id == id);
 
-        public void UpdateWorkflowInstance(WorkflowInstance workflowInstance)
+        public WorkflowInstance UpdateWorkflowInstance()
         {
+            var workflowInstance = WorkflowInstance;
             workflowInstance.Variables = Variables;
 
             workflowInstance.ScheduledActivities = new Stack<Elsa.Models.ScheduledActivity>(
@@ -121,7 +130,7 @@ namespace Elsa.Services.Models
             workflowInstance.Output = Output;
 
             var executionLog = workflowInstance.ExecutionLog.Concat(
-                ExecutionLog.Select(x => new Elsa.Models.ExecutionLogEntry(x.Activity.Id, x.Timestamp)));
+                ExecutionLog.Select(x => new Elsa.Models.ExecutionLogEntry(x.ActivityId, x.Timestamp)));
 
             workflowInstance.ExecutionLog = executionLog.ToList();
 
@@ -133,6 +142,8 @@ namespace Elsa.Services.Models
                     Message = WorkflowFault.Message
                 };
             }
+
+            return workflowInstance;
         }
 
         private JObject Serialize(IActivity activity) => JObject.FromObject(activity);

@@ -10,7 +10,7 @@ namespace Elsa.Services
         /// <summary>
         /// The type name of this activity.
         /// </summary>
-        string Type { get; set; }
+        string Type { get;}
         
         /// <summary>
         /// Unique identifier of this activity within the workflow.
