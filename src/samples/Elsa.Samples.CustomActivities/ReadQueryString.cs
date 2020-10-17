@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Http;
 namespace Elsa.Samples.CustomActivities
 {
     /// <summary>
-    /// A basic activity that simply reads the query string and returns them as an output value for consumption by other activities.
+    /// A basic activity that reads and returns the query string as an output value.
     /// </summary>
     public class ReadQueryString : Activity
     {
