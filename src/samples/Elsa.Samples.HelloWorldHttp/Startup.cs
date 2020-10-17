@@ -9,7 +9,7 @@ namespace Elsa.Samples.HelloWorldHttp
         public void ConfigureServices(IServiceCollection services)
         {
             services
-                .AddElsa()
+                .AddElsa(option => option.UsePersistence(db => db.UseSqLite("Data Source=elsa.db;Cache=Shared")))
                 .AddHttpActivities()
                 .AddWorkflow<HelloHttpWorkflow>();
         }
