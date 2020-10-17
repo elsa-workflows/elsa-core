@@ -91,7 +91,6 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IWorkflowSerializer, WorkflowSerializer>()
                 .AddSingleton<IActivitySerializer, ActivitySerializer>()
                 .AddSingleton<TypeConverter>()
-                .AddSingleton<ITypeMap, TypeMap>()
                 .TryAddProvider<ITokenFormatter, JsonTokenFormatter>(ServiceLifetime.Singleton)
                 .TryAddProvider<ITokenFormatter, YamlTokenFormatter>(ServiceLifetime.Singleton)
                 .TryAddProvider<ITokenFormatter, XmlTokenFormatter>(ServiceLifetime.Singleton)

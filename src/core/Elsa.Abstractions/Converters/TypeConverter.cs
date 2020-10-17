@@ -1,31 +1,25 @@
 using System;
 using Elsa.Serialization;
 using Newtonsoft.Json;
+using Rebus.Extensions;
 
 namespace Elsa.Converters
 {
     public class TypeConverter : JsonConverter<Type>
     {
-        private readonly ITypeMap _typeMap;
-
-        public TypeConverter(ITypeMap typeMap)
-        {
-            _typeMap = typeMap;
-        }
-        
         public override bool CanRead => true;
         public override bool CanWrite => true;
 
-        public override void WriteJson(JsonWriter writer, Type value, JsonSerializer serializer)
+        public override void WriteJson(JsonWriter writer, Type? value, JsonSerializer serializer)
         {
-            var typeName = _typeMap.GetAlias(value);
+            var typeName = value.GetSimpleAssemblyQualifiedName();
             serializer.Serialize(writer, typeName);
         }
 
-        public override Type ReadJson(JsonReader reader, Type objectType, Type existingValue, bool hasExistingValue, JsonSerializer serializer)
+        public override Type ReadJson(JsonReader reader, Type objectType, Type? existingValue, bool hasExistingValue, JsonSerializer serializer)
         {
-            var typeName = serializer.Deserialize<string>(reader);
-            return _typeMap.GetType(typeName);
+            var typeName = serializer.Deserialize<string>(reader)!;
+            return Type.GetType(typeName)!;
         }
     }
 }
