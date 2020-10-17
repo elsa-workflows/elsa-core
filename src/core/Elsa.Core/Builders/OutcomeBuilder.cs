@@ -22,11 +22,6 @@ namespace Elsa.Builders
             Action<IActivityBuilder>? branch = default) where T : class, IActivity =>
             Then(WorkflowBuilder.Add(setup), branch);
 
-        public IActivityBuilder Then<T>(
-            Action<T> setup, 
-            Action<IActivityBuilder>? branch = default)
-            where T : class, IActivity => Then(WorkflowBuilder.Add(setup), branch);
-
         public IActivityBuilder Then<T>(Action<IActivityBuilder>? branch = default)
             where T : class, IActivity => Then(WorkflowBuilder.Add<T>(branch));
 

@@ -10,17 +10,17 @@ namespace Elsa.Builders
     {
         public static IActivityBuilder Then(this IBuilder builder,
             Func<ActivityExecutionContext, ValueTask<IActivityExecutionResult>> activity) =>
-            builder.Then<Inline>(x => x.Function = RunInline(activity));
+            builder.Then<Inline>(inline => inline.Set(x => x.Function, RunInline(activity)));
 
         public static IActivityBuilder
             Then(this IBuilder builder, Func<ActivityExecutionContext, ValueTask> activity) =>
-            builder.Then<Inline>(x => x.Function = RunInline(activity));
-
+            builder.Then<Inline>(inline => inline.Set(x => x.Function, RunInline(activity)));
+        
         public static IActivityBuilder Then(this IBuilder builder, Action<ActivityExecutionContext> activity) =>
-            builder.Then<Inline>(x => x.Function = RunInline(activity));
-
+            builder.Then<Inline>(inline => inline.Set(x => x.Function, RunInline(activity)));
+        
         public static IActivityBuilder Then(this IBuilder builder, Action activity) =>
-            builder.Then<Inline>(x => x.Function = RunInline(activity));
+            builder.Then<Inline>(inline => inline.Set(x => x.Function, RunInline(activity)));
 
         private static Func<ActivityExecutionContext, ValueTask<IActivityExecutionResult>> RunInline(
             Func<ActivityExecutionContext, ValueTask<IActivityExecutionResult>> activity) =>

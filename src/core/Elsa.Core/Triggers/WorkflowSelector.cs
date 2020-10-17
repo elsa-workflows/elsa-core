@@ -5,7 +5,6 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Services;
-using Elsa.Services.Models;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Triggers

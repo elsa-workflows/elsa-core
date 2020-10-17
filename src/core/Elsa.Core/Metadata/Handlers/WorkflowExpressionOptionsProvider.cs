@@ -1,7 +1,6 @@
 using System.Linq;
 using System.Reflection;
 using Elsa.Expressions;
-using Elsa.Serialization;
 using Newtonsoft.Json.Linq;
 using Rebus.Extensions;
 

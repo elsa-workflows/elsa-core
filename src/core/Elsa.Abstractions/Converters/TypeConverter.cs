@@ -1,5 +1,4 @@
 using System;
-using Elsa.Serialization;
 using Newtonsoft.Json;
 using Rebus.Extensions;
 

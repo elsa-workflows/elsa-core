@@ -12,7 +12,6 @@ using Elsa.Expressions;
 using Elsa.Indexes;
 using Elsa.Messages;
 using Elsa.Messaging;
-using Elsa.Messaging.Distributed;
 using Elsa.Messaging.Distributed.Handlers;
 using Elsa.Metadata;
 using Elsa.Metadata.Handlers;

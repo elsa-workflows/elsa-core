@@ -13,10 +13,6 @@ namespace Elsa.Activities.Http
             this IBuilder builder,
             Action<ISetupActivity<ReceiveHttpRequest>> setup) => builder.Then(setup);
 
-        public static IActivityBuilder ReceiveHttpRequest(
-            this IBuilder builder,
-            Action<ReceiveHttpRequest> setup) => builder.Then(setup);
-
         public static IActivityBuilder ReceiveHttpRequest(this IBuilder builder,
             Func<ActivityExecutionContext, ValueTask<PathString>> path) =>
             builder.ReceiveHttpRequest(setup => setup.Set(x => x.Path, path));
@@ -32,6 +28,6 @@ namespace Elsa.Activities.Http
             builder.ReceiveHttpRequest(setup => setup.Set(x => x.Path, path));
 
         public static IActivityBuilder ReceiveHttpRequest(this IBuilder builder, PathString path) =>
-            builder.ReceiveHttpRequest(x => x.Path = path);
+            builder.ReceiveHttpRequest(setup => setup.Set(x => x.Path, path));
     }
 }

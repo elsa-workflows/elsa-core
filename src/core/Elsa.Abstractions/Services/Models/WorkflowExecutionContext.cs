@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Elsa.Comparers;
-using Elsa.Expressions;
 using Elsa.Models;
 using Microsoft.Extensions.Localization;
 using Newtonsoft.Json.Linq;

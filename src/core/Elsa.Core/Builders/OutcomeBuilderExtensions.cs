@@ -12,27 +12,27 @@ namespace Elsa.Builders
             this IOutcomeBuilder outcomeBuilder,
             Func<ActivityExecutionContext, ValueTask<IActivityExecutionResult>> activity,
             Action<IActivityBuilder>? branch = default) =>
-            outcomeBuilder.Then<Inline>(x => x.Function = activity, branch);
+            outcomeBuilder.Then<Inline>(inline => inline.Set(x => x.Function, activity), branch);
 
         public static IActivityBuilder Then(
             this IOutcomeBuilder outcomeBuilder,
             Func<ActivityExecutionContext, ValueTask> activity,
             Action<IActivityBuilder>? branch = default) => outcomeBuilder.Then<Inline>(
-            x => x.Function = RunInline(activity),
+            inline => inline.Set(x => x.Function, RunInline(activity)),
             branch);
 
         public static IActivityBuilder Then(
             this IOutcomeBuilder outcomeBuilder,
             Action<ActivityExecutionContext> activity,
             Action<IActivityBuilder>? branch = default) => outcomeBuilder.Then<Inline>(
-            x => x.Function = RunInline(activity),
+            inline => inline.Set(x => x.Function, RunInline(activity)),
             branch);
 
         public static IActivityBuilder Then(
             this IOutcomeBuilder outcomeBuilder,
             Action activity,
             Action<IActivityBuilder>? branch = default) => outcomeBuilder.Then<Inline>(
-            x => x.Function = RunInline(activity),
+            inline => inline.Set(x => x.Function, RunInline(activity)),
             branch);
 
         private static Func<ActivityExecutionContext, ValueTask<IActivityExecutionResult>> RunInline(

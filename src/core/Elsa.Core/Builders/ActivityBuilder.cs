@@ -11,18 +11,15 @@ namespace Elsa.Builders
     {
         public ActivityBuilder(
             Type activityType,
-            Action<IActivity>? setupActivity,
             IWorkflowBuilder workflowBuilder,
             IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders)
         {
             ActivityType = activityType;
-            SetupActivity = setupActivity;
             WorkflowBuilder = workflowBuilder;
             PropertyValueProviders = propertyValueProviders;
         }
 
         public Type ActivityType { get; }
-        public Action<IActivity>? SetupActivity { get; }
         public IWorkflowBuilder WorkflowBuilder { get; }
         public string ActivityId { get; set; } = default!;
         public string? Name { get; set; }
@@ -38,11 +35,6 @@ namespace Elsa.Builders
 
         public IActivityBuilder Then<T>(
             Action<ISetupActivity<T>>? setup = null,
-            Action<IActivityBuilder>? branch = null)
-            where T : class, IActivity => When(OutcomeNames.Done).Then(setup, branch);
-
-        public IActivityBuilder Then<T>(
-            Action<T> setup,
             Action<IActivityBuilder>? branch = null)
             where T : class, IActivity => When(OutcomeNames.Done).Then(setup, branch);
 
@@ -64,7 +56,8 @@ namespace Elsa.Builders
         public Func<ActivityExecutionContext, CancellationToken, ValueTask<IActivity>> BuildActivityAsync() =>
             async (context, cancellationToken) =>
             {
-                var activity = context.ActivateActivity(context.ActivityBlueprint.Type, SetupActivity);
+                //var activity = context.ActivateActivity(context.ActivityBlueprint.Type, SetupActivity);
+                var activity = context.ActivateActivity(context.ActivityBlueprint.Type);
                 activity.Id = ActivityId;
                 activity.Name = Name;
                 activity.Description = Description;

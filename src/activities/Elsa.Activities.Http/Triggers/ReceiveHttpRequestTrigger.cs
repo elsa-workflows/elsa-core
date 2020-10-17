@@ -2,10 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Security.Cryptography.Xml;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Elsa.Triggers;
@@ -50,8 +48,8 @@ namespace Elsa.Activities.Http.Triggers
                 yield return new ReceiveHttpRequestTrigger
                 {
                     ActivityId = activity.Id,
-                    Path = (PathString)(await workflowBlueprint.ActivityPropertyProviders.GetProvider(activity.Id, nameof(ReceiveHttpRequest.Path))!.GetValueAsync(activityExecutionContext, cancellationToken))!,
-                    Method = (string)(await workflowBlueprint.ActivityPropertyProviders.GetProvider(activity.Id, nameof(ReceiveHttpRequest.Method))!.GetValueAsync(activityExecutionContext, cancellationToken))!,
+                    Path = await workflowBlueprint.GetActivityPropertyValue<ReceiveHttpRequest, PathString>(activity.Id, x => x.Path, activityExecutionContext, cancellationToken),
+                    Method = await workflowBlueprint.GetActivityPropertyValue<ReceiveHttpRequest, string?>(activity.Id, x => x.Method, activityExecutionContext, cancellationToken)
                 };
             }
         }

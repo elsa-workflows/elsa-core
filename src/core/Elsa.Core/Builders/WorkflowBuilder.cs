@@ -92,11 +92,10 @@ namespace Elsa.Builders
 
         public IActivityBuilder New(
             Type activityType,
-            Action<IActivity>? setupActivity = default,
             Action<IActivityBuilder>? branch = default,
             IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders = default)
         {
-            var activityBuilder = new ActivityBuilder(activityType, setupActivity, this, propertyValueProviders);
+            var activityBuilder = new ActivityBuilder(activityType, this, propertyValueProviders);
             branch?.Invoke(activityBuilder);
             return activityBuilder;
         }
@@ -105,7 +104,7 @@ namespace Elsa.Builders
             Action<IActivityBuilder>? branch = default,
             IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders = default)
             where T : class, IActivity =>
-            New(typeof(T), null, branch, propertyValueProviders);
+            New(typeof(T), branch, propertyValueProviders);
 
         public IActivityBuilder New<T>(
             Action<ISetupActivity<T>>? setup = default,
@@ -121,21 +120,8 @@ namespace Elsa.Builders
             return New<T>(branch, valueProviders);
         }
 
-        public IActivityBuilder New<T>(
-            Action<T>? setup,
-            Action<IActivityBuilder>? branch = default) where T : class, IActivity =>
-            New(typeof(T), x => setup?.Invoke((T)x), branch);
-
         public IActivityBuilder StartWith<T>(
             Action<ISetupActivity<T>>? setup = default,
-            Action<IActivityBuilder>? branch = default) where T : class, IActivity
-        {
-            var activityBuilder = New(setup, branch);
-            return Add(activityBuilder, branch);
-        }
-
-        public IActivityBuilder StartWith<T>(
-            Action<T>? setup,
             Action<IActivityBuilder>? branch = default) where T : class, IActivity
         {
             var activityBuilder = New(setup, branch);
@@ -155,20 +141,11 @@ namespace Elsa.Builders
         }
 
         public IActivityBuilder Add<T>(
-            Action<T> setup,
-            Action<IActivityBuilder>? branch = default)
-            where T : class, IActivity
-        {
-            var activityBuilder = New(setup, branch);
-            return Add(activityBuilder, branch);
-        }
-
-        public IActivityBuilder Add<T>(
             Action<IActivityBuilder>? branch = default,
             IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders = default)
             where T : class, IActivity
         {
-            var activityBuilder = new ActivityBuilder(typeof(T), null, this, propertyValueProviders);
+            var activityBuilder = new ActivityBuilder(typeof(T),  this, propertyValueProviders);
             return Add(activityBuilder);
         }
 
@@ -193,11 +170,6 @@ namespace Elsa.Builders
 
         public IActivityBuilder Then<T>(
             Action<ISetupActivity<T>>? setup = default,
-            Action<IActivityBuilder>? branch = default)
-            where T : class, IActivity => StartWith(setup, branch);
-
-        public IActivityBuilder Then<T>(
-            Action<T>? setup = default,
             Action<IActivityBuilder>? branch = default)
             where T : class, IActivity => StartWith(setup, branch);
 

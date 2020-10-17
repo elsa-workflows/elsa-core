@@ -9,21 +9,21 @@ namespace Elsa.Builders
     public static class WorkflowBuilderExtensions
     {
         public static IActivityBuilder StartWith(this IWorkflowBuilder builder, Action action) =>
-            builder.StartWith<Inline>(x => x.Function = RunInline(action));
+            builder.StartWith<Inline>(inline => inline.Set(x => x.Function, RunInline(action)));
 
         public static IActivityBuilder
             StartWith(this IWorkflowBuilder builder, Action<ActivityExecutionContext> action) =>
-            builder.StartWith<Inline>(x => x.Function = RunInline(action));
+            builder.StartWith<Inline>(inline => inline.Set(x => x.Function, RunInline(action)));
 
         public static IActivityBuilder StartWith(
             this IWorkflowBuilder builder,
             Func<ActivityExecutionContext, ValueTask> action) =>
-            builder.StartWith<Inline>(x => x.Function = RunInline(action));
+            builder.StartWith<Inline>(inline => inline.Set(x => x.Function, RunInline(action)));
 
         public static IActivityBuilder StartWith(
             this IWorkflowBuilder builder,
             Func<ActivityExecutionContext, ValueTask<IActivityExecutionResult>> action) =>
-            builder.StartWith<Inline>(x => x.Function = RunInline(action));
+            builder.StartWith<Inline>(inline => inline.Set(x => x.Function, RunInline(action)));
 
         public static IActivityBuilder SetVariable(this IWorkflowBuilder builder, string variableName, object? value) =>
             builder.StartWith<SetVariable>(

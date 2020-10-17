@@ -36,14 +36,12 @@ namespace Elsa.Services
         public IDictionary<string, IActivityPropertyValueProvider>? GetProviders(string activityId) =>
             _providers.TryGetValue(activityId, out var properties) ? properties : null;
 
-        public IActivityPropertyValueProvider? GetProvider(string activityId, string propertyName)
-        {
-            if (_providers.TryGetValue(activityId, out var properties))
-                if (properties.TryGetValue(propertyName, out var provider))
-                    return provider;
-
-            return null;
-        }
+        public IActivityPropertyValueProvider? GetProvider(string activityId, string propertyName) =>
+            _providers.TryGetValue(activityId, out var properties) 
+            && properties != null 
+            && properties.TryGetValue(propertyName, out var provider) 
+                ? provider 
+                : null;
 
         public async ValueTask SetActivityPropertiesAsync(
             IActivity activity,

@@ -48,7 +48,6 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddDataProtection();
             
             return services
-                .AddRequestHandler<TriggerRequestHandler>()
                 .AddRequestHandler<SignalRequestHandler>();
         }
 

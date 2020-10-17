@@ -6,18 +6,6 @@ namespace Elsa
 {
     public static class WorkflowExecutionContextExtensions
     {
-        // public static IEnumerable<IActivity> GetStartActivities(this WorkflowExecutionContext workflowExecutionContext)
-        // {
-        //     var targetActivities = workflowExecutionContext.Connections.Select(x => x.Target.Activity).Distinct().ToLookup(x => x);
-        //
-        //     var query =
-        //         from activity in workflowExecutionContext.Activities
-        //         where !targetActivities.Contains(activity)
-        //         select activity;
-        //
-        //     return query;
-        // }
-
         public static IEnumerable<IConnection>
             GetInboundConnections(this WorkflowExecutionContext workflowExecutionContext, string activityId) =>
             workflowExecutionContext.WorkflowBlueprint.Connections.Where(x => x.Target.Activity.Id == activityId);
