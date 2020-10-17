@@ -29,7 +29,7 @@ namespace Elsa.Server.GraphQL
             WorkflowInput workflowInput,
             [Service] IWorkflowDefinitionManager manager,
             [Service] IIdGenerator idGenerator,
-            [Service] ITokenSerializer serializer,
+            [Service] IJsonSerializer serializer,
             [Service] IWorkflowPublisher publisher,
             CancellationToken cancellationToken)
         {

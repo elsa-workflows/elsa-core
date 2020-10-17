@@ -24,6 +24,7 @@ using Elsa.Triggers;
 using Elsa.WorkflowProviders;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Newtonsoft.Json;
 using NodaTime;
 using Rebus.Handlers;
 
@@ -40,6 +41,7 @@ namespace Microsoft.Extensions.DependencyInjection
             configure?.Invoke(options);
 
             services
+                .AddSingleton(options)
                 .AddSingleton(options.DistributedLockProviderFactory)
                 .AddSingleton(options.SignalFactory)
                 .AddPersistence(options.ConfigurePersistence);
@@ -65,7 +67,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddTransient<T>()
                 .AddTransient<IWorkflow>(sp => sp.GetRequiredService<T>());
         }
-        
+
         public static IServiceCollection AddConsumer<TMessage, TConsumer>(this IServiceCollection services) where TConsumer : class, IHandleMessages<TMessage> => services.AddTransient<IHandleMessages<TMessage>, TConsumer>();
 
         private static IServiceCollection AddMediatR(this ElsaOptions options)
@@ -86,14 +88,10 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddMemoryCache()
                 .AddTransient<Func<IEnumerable<IActivity>>>(sp => sp.GetServices<IActivity>)
                 .AddSingleton<IIdGenerator, IdGenerator>()
-                .AddSingleton<ITokenSerializerProvider, TokenSerializerProvider>()
-                .AddSingleton<ITokenSerializer, TokenSerializer>()
-                .AddSingleton<IWorkflowSerializer, WorkflowSerializer>()
+                .AddSingleton(sp => sp.GetRequiredService<ElsaOptions>().CreateJsonSerializer(sp))
+                .AddSingleton<IJsonSerializer, DefaultJsonSerializer>()
                 .AddSingleton<IActivitySerializer, ActivitySerializer>()
                 .AddSingleton<TypeConverter>()
-                .TryAddProvider<ITokenFormatter, JsonTokenFormatter>(ServiceLifetime.Singleton)
-                .TryAddProvider<ITokenFormatter, YamlTokenFormatter>(ServiceLifetime.Singleton)
-                .TryAddProvider<ITokenFormatter, XmlTokenFormatter>(ServiceLifetime.Singleton)
                 .TryAddProvider<IExpressionHandler, LiteralHandler>(ServiceLifetime.Singleton)
                 .TryAddProvider<IExpressionHandler, VariableHandler>(ServiceLifetime.Singleton)
                 .AddScoped<IExpressionEvaluator, ExpressionEvaluator>()

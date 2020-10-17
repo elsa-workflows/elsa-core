@@ -4,6 +4,7 @@ using Elsa.Attributes;
 using Elsa.Serialization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using JsonSerializer = Newtonsoft.Json.JsonSerializer;
 
 namespace Elsa.Metadata.Handlers
 {
@@ -11,9 +12,9 @@ namespace Elsa.Metadata.Handlers
     {
         private readonly JsonSerializer _serializer;
 
-        public SelectOptionsProvider(ITokenSerializerProvider serializerProvider)
+        public SelectOptionsProvider(JsonSerializer serializer)
         {
-            _serializer = serializerProvider.CreateJsonSerializer();
+            _serializer = serializer;
         }
         
         public bool SupportsProperty(PropertyInfo property) => property.GetCustomAttribute<SelectOptionsAttribute>() != null || property.PropertyType.IsEnum;

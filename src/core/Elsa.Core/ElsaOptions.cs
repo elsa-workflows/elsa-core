@@ -1,7 +1,9 @@
 using System;
 using Elsa.Caching;
 using Elsa.DistributedLock;
+using Elsa.Serialization;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
 using Rebus.Config;
 using Rebus.DataBus.InMem;
 using Rebus.Persistence.InMem;
@@ -22,6 +24,14 @@ namespace Elsa
             DistributedLockProviderFactory = sp => new DefaultLockProvider();
             SignalFactory = sp => new Signal();
             ServiceBusConfigurer = ConfigureInMemoryServiceBus;
+            JsonSerializerConfigurer = (sp, serializer) => {};
+            
+            CreateJsonSerializer = sp =>
+            {
+                var serializer = DefaultJsonSerializer.CreateDefaultJsonSerializer();
+                JsonSerializerConfigurer(sp, serializer);
+                return serializer;
+            };
         }
 
         public IServiceCollection Services { get; }
@@ -29,6 +39,8 @@ namespace Elsa
         internal Func<IServiceProvider, IDistributedLockProvider> DistributedLockProviderFactory { get; private set; }
         internal Func<IServiceProvider, ISignal> SignalFactory { get; private set; }
         internal Func<RebusConfigurer, IServiceProvider, RebusConfigurer> ServiceBusConfigurer { get; private set; }
+        internal Func<IServiceProvider, JsonSerializer> CreateJsonSerializer { get; private set; }
+        internal Action<IServiceProvider, JsonSerializer> JsonSerializerConfigurer { get; private set; }
 
         public ElsaOptions UseDistributedLockProvider(Func<IServiceProvider, IDistributedLockProvider> factory)
         {
@@ -42,8 +54,7 @@ namespace Elsa
             return this;
         }
 
-        public ElsaOptions UsePersistence(Action<IConfiguration> configure) =>
-            UsePersistence((sp, config) => configure(config));
+        public ElsaOptions UsePersistence(Action<IConfiguration> configure) => UsePersistence((sp, config) => configure(config));
 
         public ElsaOptions UsePersistence(Action<IServiceProvider, IConfiguration> configure)
         {
@@ -57,8 +68,19 @@ namespace Elsa
             return this;
         }
 
-        public ElsaOptions ConfigureServiceBus(Func<RebusConfigurer, RebusConfigurer> configure) =>
-            ConfigureServiceBus((bus, _) => configure(bus));
+        public ElsaOptions ConfigureServiceBus(Func<RebusConfigurer, RebusConfigurer> configure) => ConfigureServiceBus((bus, _) => configure(bus));
+
+        public ElsaOptions UseJsonSerializer(Func<IServiceProvider, JsonSerializer> factory)
+        {
+            CreateJsonSerializer = factory;
+            return this;
+        }
+
+        public ElsaOptions ConfigureJsonSerializer(Action<IServiceProvider, JsonSerializer> configure)
+        {
+            JsonSerializerConfigurer = configure;
+            return this;
+        }
 
         private static RebusConfigurer ConfigureInMemoryServiceBus(RebusConfigurer rebus,
             IServiceProvider serviceProvider)

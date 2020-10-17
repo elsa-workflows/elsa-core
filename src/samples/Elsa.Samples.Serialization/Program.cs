@@ -1,7 +1,10 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Elsa.Activities.Console;
 using Elsa.Expressions;
 using Elsa.Models;
+using Elsa.Scripting.Liquid.Services;
+using Elsa.Serialization;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -41,7 +44,7 @@ namespace Elsa.Samples.Serialization
                         {
                             [nameof(WriteLine.Text)] = new ActivityDefinitionPropertyValue
                             {
-                                Syntax = LiteralHandler.SyntaxName,
+                                Syntax = LiquidExpressionHandler.SyntaxName,
                                 Expression = "Hello World!",
                                 Type = typeof(string)
                             }
@@ -50,9 +53,18 @@ namespace Elsa.Samples.Serialization
                 }
             };
             
+            // Serialize workflow definition to JSON.
+            var serializer = services.GetRequiredService<IJsonSerializer>();
+            var json = serializer.Serialize(workflowDefinition);
+            
+            Console.WriteLine(json);
+            
+            // Deserialize workflow definition from JSON.
+            var deserializedWorkflowDefinition = serializer.Deserialize<WorkflowDefinition>(json);
+            
             // Materialize workflow.
             var materializer = services.GetRequiredService<IWorkflowBlueprintMaterializer>();
-            var workflowBlueprint = materializer.CreateWorkflowBlueprint(workflowDefinition);
+            var workflowBlueprint = materializer.CreateWorkflowBlueprint(deserializedWorkflowDefinition);
             
             // Execute workflow.
             var workflowHost = services.GetRequiredService<IWorkflowHost>();

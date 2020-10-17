@@ -1,39 +1,31 @@
+using System;
 using Elsa.Converters;
-using Elsa.Serialization.Extensions;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 using NodaTime;
 using NodaTime.Serialization.JsonNet;
 
 namespace Elsa.Serialization
 {
-    public class TokenSerializerProvider : ITokenSerializerProvider
+    public class DefaultJsonSerializer : IJsonSerializer
     {
-        private readonly TypeConverter _typeConverter;
-
-        public TokenSerializerProvider(TypeConverter typeConverter)
+        public DefaultJsonSerializer(JsonSerializer serializer)
         {
-            _typeConverter = typeConverter;
+            Serializer = serializer;
         }
 
-        public JsonSerializerSettings CreateJsonSerializerSettings()
-        {
-            return new JsonSerializerSettings
-                {
-                    NullValueHandling = NullValueHandling.Ignore,
-                    ContractResolver = new CamelCasePropertyNamesContractResolver
-                    {
-                        NamingStrategy = new CamelCaseNamingStrategy
-                        {
-                            ProcessDictionaryKeys = false
-                        }
-                    },
-                }
-                .ConfigureForNodaTime(DateTimeZoneProviders.Tzdb)
-                .WithConverter(_typeConverter);
-        }
+        private JsonSerializer Serializer { get; }
+        public JObject Serialize<T>(T value) => JObject.FromObject(value!, Serializer);
+        public T Deserialize<T>(JToken token) => token.ToObject<T>(Serializer)!;
 
-        public JsonSerializer CreateJsonSerializer()
+        public T Deserialize<T>(string json)
+        {
+            var token = JObject.Parse(json);
+            return Deserialize<T>(token);
+        }
+        
+        public static JsonSerializer CreateDefaultJsonSerializer()
         {
             var jsonSerializer = new JsonSerializer();
             jsonSerializer.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
@@ -49,7 +41,7 @@ namespace Elsa.Serialization
                     ProcessDictionaryKeys = false
                 }
             };
-            jsonSerializer.Converters.Add(_typeConverter);
+            jsonSerializer.Converters.Add(new TypeConverter());
             return jsonSerializer;
         }
     }
