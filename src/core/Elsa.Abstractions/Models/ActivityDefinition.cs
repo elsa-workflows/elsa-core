@@ -1,5 +1,3 @@
-using Newtonsoft.Json.Linq;
-
 namespace Elsa.Models
 {
     public class ActivityDefinition
@@ -12,6 +10,6 @@ namespace Elsa.Models
         public int? Left { get; set; }
         public int? Top { get; set; }
         public bool PersistWorkflow { get; set; }
-        public JObject Data { get; set; } = new JObject();
+        public ActivityDefinitionProperties Properties { get; set; } = new ActivityDefinitionProperties();
     }
 }

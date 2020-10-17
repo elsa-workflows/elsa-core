@@ -1,5 +1,3 @@
-using System.Threading;
-using System.Threading.Tasks;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Expressions;
@@ -23,13 +21,13 @@ namespace Elsa.Activities.ControlFlow
         {
             _expressionEvaluator = expressionEvaluator;
         }
-        
-        [ActivityProperty(Hint = "Enter an expression that evaluates to a boolean value.")]
-        public IWorkflowExpression<bool> Condition { get; set; }
 
-        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        [ActivityProperty(Hint = "The condition to evaluate.")]
+        public bool Condition { get; set; }
+
+        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
-            var loop = await _expressionEvaluator.EvaluateAsync(Condition, context, cancellationToken);
+            var loop = Condition;
 
             if (loop)
                 return Combine(Schedule(Id), Done(OutcomeNames.Iterate));

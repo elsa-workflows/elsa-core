@@ -16,12 +16,20 @@ namespace Elsa.Expressions
 
         public ExpressionEvaluator(IEnumerable<IExpressionHandler> evaluators, ILogger<ExpressionEvaluator> logger)
         {
-            _evaluators = evaluators.ToDictionary(x => x.Type);
+            _evaluators = evaluators.ToDictionary(x => x.Syntax);
             _logger = logger;
         }
 
-        public async Task<object> EvaluateAsync(
-            IWorkflowExpression expression,
+        public async Task<T> EvaluateAsync<T>(
+            string? expression,
+            string syntax,
+            ActivityExecutionContext context,
+            CancellationToken cancellationToken = default) 
+            => (T)(await EvaluateAsync(expression, syntax, typeof(T), context, cancellationToken))!;
+        
+        public async Task<object?> EvaluateAsync(
+            string? expression,
+            string syntax,
             Type returnType,
             ActivityExecutionContext context,
             CancellationToken cancellationToken = default)
@@ -29,7 +37,7 @@ namespace Elsa.Expressions
             if (expression == null)
                 return default;
             
-            var evaluator = _evaluators[expression.Type];
+            var evaluator = _evaluators[syntax];
 
             try
             {
@@ -43,11 +51,5 @@ namespace Elsa.Expressions
                 throw new WorkflowException(message);
             }
         }
-
-        public async Task<T> EvaluateAsync<T>(
-            IWorkflowExpression<T> expression,
-            ActivityExecutionContext context,
-            CancellationToken cancellationToken = default) 
-            => (T)await EvaluateAsync(expression, typeof(T), context, cancellationToken);
     }
 }

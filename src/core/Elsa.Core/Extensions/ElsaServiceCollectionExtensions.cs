@@ -102,6 +102,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IWorkflowSchedulerQueue, WorkflowSchedulerQueue>()
                 .AddScoped<IWorkflowHost, WorkflowHost>()
                 .AddSingleton<IWorkflowFactory, WorkflowFactory>()
+                .AddSingleton<IWorkflowBlueprintMaterializer, WorkflowBlueprintMaterializer>()
                 .AddSingleton<IWorkflowSelector, WorkflowSelector>()
                 .AddScoped<IWorkflowDefinitionManager, WorkflowDefinitionManager>()
                 .AddScoped<IWorkflowInstanceManager, WorkflowInstanceManager>()
@@ -122,8 +123,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
         private static IServiceCollection AddMetadataHandlers(this IServiceCollection services) =>
             services
-                .AddSingleton<IActivityPropertyOptionsProvider, SelectOptionsProvider>()
-                .AddSingleton<IActivityPropertyOptionsProvider, WorkflowExpressionOptionsProvider>();
+                .AddSingleton<IActivityPropertyOptionsProvider, SelectOptionsProvider>();
 
         private static IServiceCollection AddPrimitiveActivities(this IServiceCollection services) =>
             services

@@ -1,26 +1,26 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Extensions;
 using Elsa.Services.Models;
 
 namespace Elsa.Expressions
 {
     public class LiteralHandler : IExpressionHandler
     {
-        public string Type => LiteralExpression.ExpressionType;
+        public const string SyntaxName = "Literal";
+        public string Syntax => SyntaxName;
 
-        public Task<object> EvaluateAsync(
-            IWorkflowExpression expression,
+        public Task<object?> EvaluateAsync(
+            string expression,
             Type returnType,
             ActivityExecutionContext context,
             CancellationToken cancellationToken)
         {
-            var literalExpression = (LiteralExpression)expression;
-            if (string.IsNullOrEmpty(literalExpression.Expression))
-                return Task.FromResult(default(object));
-            
-            return Task.FromResult(literalExpression.Expression.Parse(returnType));
+            if (returnType == typeof(string))
+                return Task.FromResult<object?>(expression);
+
+            var value = Convert.ChangeType(expression, returnType);
+            return Task.FromResult(value)!;
         }
     }
 }

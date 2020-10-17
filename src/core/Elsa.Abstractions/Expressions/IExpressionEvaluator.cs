@@ -7,7 +7,7 @@ namespace Elsa.Expressions
 {
     public interface IExpressionEvaluator
     {
-        Task<object> EvaluateAsync(IWorkflowExpression? expression, Type returnType, ActivityExecutionContext context, CancellationToken cancellationToken = default);
-        Task<T> EvaluateAsync<T>(IWorkflowExpression<T>? expression, ActivityExecutionContext context, CancellationToken cancellationToken = default);
+        Task<object?> EvaluateAsync(string? expression, string syntax, Type returnType, ActivityExecutionContext context, CancellationToken cancellationToken = default);
+        Task<T> EvaluateAsync<T>(string? expression, string syntax, ActivityExecutionContext context, CancellationToken cancellationToken = default);
     }
 }

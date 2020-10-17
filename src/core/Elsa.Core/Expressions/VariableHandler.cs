@@ -7,16 +7,15 @@ namespace Elsa.Expressions
 {
     public class VariableHandler : IExpressionHandler
     {
-        public string Type => VariableExpression.ExpressionType;
+        public string Syntax => "Variable";
 
-        public Task<object> EvaluateAsync(
-            IWorkflowExpression expression,
+        public Task<object?> EvaluateAsync(
+            string expression,
             Type returnType,
             ActivityExecutionContext context,
             CancellationToken cancellationToken)
         {
-            var variableExpression = (VariableExpression)expression;
-            var result = context.GetVariable(variableExpression.VariableName);
+            var result = context.GetVariable(expression);
             return Task.FromResult(result);
         }
     }

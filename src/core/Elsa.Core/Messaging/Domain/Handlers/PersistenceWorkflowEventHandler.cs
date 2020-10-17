@@ -35,7 +35,7 @@ namespace Elsa.Messaging.Domain.Handlers
         public async Task Handle(WorkflowExecuted notification, CancellationToken cancellationToken)
         {
             if (notification.WorkflowExecutionContext.WorkflowBlueprint.PersistenceBehavior ==
-                WorkflowPersistenceBehavior.WorkflowExecuted)
+                WorkflowPersistenceBehavior.WorkflowPassCompleted)
                 await SaveWorkflowAsync(notification.WorkflowExecutionContext, cancellationToken);
         }
 

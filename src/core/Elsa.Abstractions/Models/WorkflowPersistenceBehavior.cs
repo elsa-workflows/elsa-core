@@ -10,7 +10,7 @@
         /// <summary>
         /// Workflow instances are persisted after the workflow executed scheduled activities.
         /// </summary>
-        WorkflowExecuted,
+        WorkflowPassCompleted,
         
         /// <summary>
         /// Workflow instances are persisted after each activity that executed.

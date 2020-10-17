@@ -20,7 +20,7 @@ namespace Elsa.Attributes
             ProviderType = providerType;
         }
 
-        public SelectOption[] Items { get; }
+        public SelectOption[] Items { get; } = new SelectOption[0];
         public string? OptionsProviderMethod { get; }
         public Type? ProviderType { get; }
 
@@ -42,11 +42,7 @@ namespace Elsa.Attributes
 
     public class SelectOption
     {
-        public SelectOption()
-        {
-        }
-
-        public SelectOption(string label, string value = default)
+        public SelectOption(string label, string? value = default)
         {
             Label = label;
             Value = value;

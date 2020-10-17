@@ -12,6 +12,7 @@ namespace Elsa.Scripting.Liquid.Services
 {
     public class LiquidExpressionHandler : IExpressionHandler
     {
+        public const string SyntaxName = "Liquid";
         private readonly ILiquidTemplateManager _liquidTemplateManager;
         private readonly IMediator _mediator;
 
@@ -21,13 +22,12 @@ namespace Elsa.Scripting.Liquid.Services
             _mediator = mediator;
         }
 
-        public string Type => LiquidExpression.ExpressionType;
+        public string Syntax => SyntaxName;
 
-        public async Task<object> EvaluateAsync(IWorkflowExpression expression, Type returnType, ActivityExecutionContext context, CancellationToken cancellationToken)
+        public async Task<object?> EvaluateAsync(string expression, Type returnType, ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var liquidExpression = (LiquidExpression)expression;
             var templateContext = await CreateTemplateContextAsync(context);
-            var result = await _liquidTemplateManager.RenderAsync(liquidExpression.Expression, templateContext);
+            var result = await _liquidTemplateManager.RenderAsync(expression, templateContext);
             return string.IsNullOrWhiteSpace(result) ? default : Convert.ChangeType(result, returnType);
         }
 

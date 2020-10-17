@@ -22,6 +22,7 @@ namespace Elsa.Scripting.JavaScript.Services
 {
     public class JavaScriptHandler : IExpressionHandler
     {
+        public const string SyntaxName = "JavaScript";
         private readonly IMediator _mediator;
         private readonly IOptions<ScriptOptions> _options;
         private readonly JsonSerializerSettings _serializerSettings;
@@ -35,20 +36,18 @@ namespace Elsa.Scripting.JavaScript.Services
             _serializerSettings.Converters.Add(new TruncatingNumberJsonConverter());
         }
 
-        public string Type => JavaScriptExpression.ExpressionType;
+        public string Syntax => SyntaxName;
 
-        public async Task<object> EvaluateAsync(IWorkflowExpression expression, Type returnType, ActivityExecutionContext context, CancellationToken cancellationToken)
+        public async Task<object> EvaluateAsync(string expression, Type returnType, ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var javaScriptExpression = (JavaScriptExpression)expression;
             var engine = new Engine(ConfigureJintEngine);
 
             await ConfigureEngineAsync(engine, context, cancellationToken);
-            engine.Execute(javaScriptExpression.Expression);
+            engine.Execute(expression);
 
             return ConvertValue(engine.GetCompletionValue(), returnType);
         }
-
-        // ReSharper disable once ParameterHidesMember
+        
         private void ConfigureJintEngine(Jint.Options options)
         {
             if (_options.Value.AllowClr)

@@ -5,7 +5,6 @@ using System.Linq;
 using System.Reflection;
 using Elsa.Attributes;
 using Elsa.Design;
-using Elsa.Expressions;
 using Humanizer;
 using Newtonsoft.Json.Linq;
 
@@ -84,9 +83,6 @@ namespace Elsa.Metadata
         private string DeterminePropertyType(PropertyInfo propertyInfo)
         {
             var type = propertyInfo.PropertyType;
-
-            if (typeof(IWorkflowExpression).IsAssignableFrom(type))
-                return ActivityPropertyTypes.Expression;
 
             if (type == typeof(bool) || type == typeof(bool?))
                 return ActivityPropertyTypes.Boolean;

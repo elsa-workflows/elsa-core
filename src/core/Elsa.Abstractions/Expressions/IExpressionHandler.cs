@@ -7,9 +7,9 @@ namespace Elsa.Expressions
 {
     public interface IExpressionHandler
     {
-        string Type { get; }
-        Task<object> EvaluateAsync(
-            IWorkflowExpression expression,
+        string Syntax { get; }
+        Task<object?> EvaluateAsync(
+            string expression,
             Type returnType,
             ActivityExecutionContext context,
             CancellationToken cancellationToken);

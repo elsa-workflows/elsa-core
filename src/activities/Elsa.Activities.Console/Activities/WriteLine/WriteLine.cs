@@ -34,9 +34,7 @@ namespace Elsa.Activities.Console
 
         private readonly TextWriter _output;
 
-        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(
-            ActivityExecutionContext context,
-            CancellationToken cancellationToken)
+        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
             await _output.WriteLineAsync(Text);
             return Done();
