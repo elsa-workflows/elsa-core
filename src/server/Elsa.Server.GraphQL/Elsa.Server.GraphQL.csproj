@@ -23,9 +23,9 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="HotChocolate.AspNetCore" Version="10.5.2" />
-        <PackageReference Include="HotChocolate.AspNetCore.Playground" Version="10.5.2" />
-        <PackageReference Include="HotChocolate.AspNetCore.Voyager" Version="10.5.2" />
+        <PackageReference Include="HotChocolate.AspNetCore" Version="10.5.3" />
+        <PackageReference Include="HotChocolate.AspNetCore.Playground" Version="10.5.3" />
+        <PackageReference Include="HotChocolate.AspNetCore.Voyager" Version="10.5.3" />
     </ItemGroup>
 
     <ItemGroup>

@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.ActivityResults;
@@ -9,51 +11,41 @@ using Elsa.Expressions;
 using Elsa.Messaging.Domain;
 using Elsa.Models;
 using Elsa.Services.Models;
+using Elsa.Triggers;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Services
 {
     public class WorkflowHost : IWorkflowHost
     {
-        private delegate ValueTask<IActivityExecutionResult> ActivityOperation(
-            ActivityExecutionContext activityExecutionContext,
-            IActivity activity,
-            CancellationToken cancellationToken);
+        private delegate ValueTask<IActivityExecutionResult> ActivityOperation(ActivityExecutionContext activityExecutionContext, IActivity activity, CancellationToken cancellationToken);
 
-        private static readonly ActivityOperation Execute = (context, activity, cancellationToken) =>
-            activity.ExecuteAsync(context, cancellationToken);
+        private static readonly ActivityOperation Execute = (context, activity, cancellationToken) => activity.ExecuteAsync(context, cancellationToken);
+        private static readonly ActivityOperation Resume = (context, activity, cancellationToken) => activity.ResumeAsync(context, cancellationToken);
 
-        private static readonly ActivityOperation Resume = (context, activity, cancellationToken) =>
-            activity.ResumeAsync(context, cancellationToken);
-
-        private readonly IWorkflowDefinitionManager _workflowDefinitionManager;
-        private readonly IWorkflowInstanceManager _workflowInstanceManager;
         private readonly IWorkflowRegistry _workflowRegistry;
         private readonly IWorkflowFactory _workflowFactory;
-        private readonly IExpressionEvaluator _expressionEvaluator;
         private readonly IMediator _mediator;
         private readonly IServiceProvider _serviceProvider;
+        private readonly IEnumerable<ITriggerProvider> _triggerProviders;
         private readonly ILogger _logger;
 
         public WorkflowHost(
-            IWorkflowDefinitionManager workflowDefinitionManager,
-            IWorkflowInstanceManager workflowInstanceManager,
             IWorkflowRegistry workflowRegistry,
             IWorkflowFactory workflowFactory,
-            IExpressionEvaluator expressionEvaluator,
             IMediator mediator,
             IServiceProvider serviceProvider,
+            IEnumerable<ITriggerProvider> triggerProviders,
             ILogger<WorkflowHost> logger)
         {
-            _workflowDefinitionManager = workflowDefinitionManager;
-            _workflowInstanceManager = workflowInstanceManager;
             _workflowRegistry = workflowRegistry;
             _workflowFactory = workflowFactory;
-            _expressionEvaluator = expressionEvaluator;
             _mediator = mediator;
             _serviceProvider = serviceProvider;
+            _triggerProviders = triggerProviders;
             _logger = logger;
         }
 
@@ -71,7 +63,6 @@ namespace Elsa.Services
 
             return await RunWorkflowAsync(workflowBlueprint, workflowInstance, activityId, input, cancellationToken);
         }
-
 
         public async ValueTask<WorkflowInstance> RunWorkflowAsync(
             WorkflowInstance workflowInstance,
@@ -236,12 +227,11 @@ namespace Elsa.Services
                 workflowExecutionContext.Complete();
         }
 
-        private WorkflowExecutionContext CreateWorkflowExecutionContext(
+        private static WorkflowExecutionContext CreateWorkflowExecutionContext(
             IWorkflowBlueprint workflowBlueprint,
             WorkflowInstance workflowInstance,
             IServiceScope serviceScope) =>
             new WorkflowExecutionContext(
-                _expressionEvaluator,
                 serviceScope.ServiceProvider,
                 workflowBlueprint,
                 workflowInstance);

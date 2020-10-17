@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Runtime

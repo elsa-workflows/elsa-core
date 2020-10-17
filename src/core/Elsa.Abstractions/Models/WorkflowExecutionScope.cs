@@ -4,6 +4,7 @@ namespace Elsa.Models
     {
         public WorkflowExecutionScope()
         {
+            Variables = new Variables();
         }
 
         public WorkflowExecutionScope(Variables variables)

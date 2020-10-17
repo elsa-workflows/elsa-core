@@ -21,6 +21,7 @@ using Elsa.Serialization;
 using Elsa.Serialization.Formatters;
 using Elsa.Services;
 using Elsa.StartupTasks;
+using Elsa.Triggers;
 using Elsa.WorkflowProviders;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -34,7 +35,7 @@ namespace Microsoft.Extensions.DependencyInjection
     {
         public static IServiceCollection AddElsaCore(
             this IServiceCollection services,
-            Action<ElsaOptions> configure = default!)
+            Action<ElsaOptions>? configure = default)
         {
             var options = new ElsaOptions(services);
             configure?.Invoke(options);
@@ -102,6 +103,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IWorkflowSchedulerQueue, WorkflowSchedulerQueue>()
                 .AddScoped<IWorkflowHost, WorkflowHost>()
                 .AddSingleton<IWorkflowFactory, WorkflowFactory>()
+                .AddSingleton<IWorkflowSelector, WorkflowSelector>()
                 .AddScoped<IWorkflowDefinitionManager, WorkflowDefinitionManager>()
                 .AddScoped<IWorkflowInstanceManager, WorkflowInstanceManager>()
                 .AddIndexProvider<WorkflowDefinitionIndexProvider>()

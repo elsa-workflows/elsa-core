@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Elsa.Messages;
 using Elsa.Messaging.Distributed;
 using Elsa.Runtime;
+using Elsa.Services;
 using Rebus.Bus;
 
 namespace Elsa.StartupTasks

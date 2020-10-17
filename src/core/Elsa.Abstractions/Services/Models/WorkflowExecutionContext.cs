@@ -12,7 +12,6 @@ namespace Elsa.Services.Models
     public class WorkflowExecutionContext
     {
         public WorkflowExecutionContext(
-            IExpressionEvaluator expressionEvaluator,
             IServiceProvider serviceProvider,
             IWorkflowBlueprint workflowBlueprint,
             WorkflowInstance workflowInstance
@@ -21,7 +20,6 @@ namespace Elsa.Services.Models
             ServiceProvider = serviceProvider;
             WorkflowBlueprint = workflowBlueprint;
             WorkflowInstance = workflowInstance;
-            ExpressionEvaluator = expressionEvaluator;
             ExecutionLog = new List<ExecutionLogEntry>(workflowInstance.ExecutionLog);
             IsFirstPass = true;
         }
@@ -53,7 +51,6 @@ namespace Elsa.Services.Models
         public void ScheduleActivity(ScheduledActivity activity) => WorkflowInstance.ScheduledActivities.Push(activity);
         public ScheduledActivity PopScheduledActivity() => WorkflowInstance.ScheduledActivities.Pop();
         public ScheduledActivity PeekScheduledActivity() => WorkflowInstance.ScheduledActivities.Peek();
-        public IExpressionEvaluator ExpressionEvaluator { get; }
         public string? CorrelationId { get; set; }
         public bool DeleteCompletedInstances { get; set; }
         public ICollection<ExecutionLogEntry> ExecutionLog { get; }

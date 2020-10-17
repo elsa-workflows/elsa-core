@@ -10,9 +10,9 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="GraphQL.Server.Ui.GraphiQL" Version="3.4.0" />
-        <PackageReference Include="GraphQL.Server.Ui.Playground" Version="3.4.0" />
-        <PackageReference Include="GraphQL.Server.Ui.Voyager" Version="3.4.0" />
+        <PackageReference Include="GraphQL.Server.Ui.GraphiQL" Version="4.0.1" />
+        <PackageReference Include="GraphQL.Server.Ui.Playground" Version="4.0.1" />
+        <PackageReference Include="GraphQL.Server.Ui.Voyager" Version="4.0.1" />
         <PackageReference Include="YesSql.Provider.Sqlite" Version="1.0.0-beta-1547" />
     </ItemGroup>
 

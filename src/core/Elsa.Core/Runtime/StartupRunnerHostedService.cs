@@ -1,5 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Services;
 using Microsoft.Extensions.Hosting;
 
 namespace Elsa.Runtime
