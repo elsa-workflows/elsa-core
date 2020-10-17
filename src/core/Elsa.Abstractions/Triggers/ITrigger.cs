@@ -2,6 +2,5 @@
 {
     public interface ITrigger
     {
-        string ActivityId { get; set; }
     }
 }

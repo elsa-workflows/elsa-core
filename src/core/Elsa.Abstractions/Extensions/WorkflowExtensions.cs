@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Elsa.Models;
+using Elsa.Services;
 using Elsa.Services.Models;
 
 namespace Elsa
@@ -46,6 +48,10 @@ namespace Elsa
 
             return query;
         }
+
+        public static IEnumerable<IActivityBlueprint> GetStartActivities(this IWorkflowBlueprint workflowBlueprint, string activityType) => workflowBlueprint.GetStartActivities().Where(x => x.Type == activityType);
+        public static IEnumerable<IActivityBlueprint> GetStartActivities(this IWorkflowBlueprint workflowBlueprint, Type activityType) => workflowBlueprint.GetStartActivities(activityType.Name);
+        public static IEnumerable<IActivityBlueprint> GetStartActivities<T>(this IWorkflowBlueprint workflowBlueprint) where T : IActivity => workflowBlueprint.GetStartActivities(typeof(T));
 
         public static IActivityBlueprint? GetActivity(this IWorkflowBlueprint workflowBlueprint, string id) =>
             workflowBlueprint.Activities.FirstOrDefault(x => x.Id == id);

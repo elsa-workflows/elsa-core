@@ -1,5 +1,4 @@
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Triggers;
 using Elsa.Services;
@@ -22,10 +21,10 @@ namespace Elsa.Activities.Http.Middleware
             var path = httpContext.Request.Path;
             var method = httpContext.Request.Method;
             var cancellationToken = httpContext.RequestAborted;
-            
+
             var results = await workflowSelector.SelectWorkflowsAsync<ReceiveHttpRequestTrigger>(
-                    x => x.Path == path && x.Method == null || x.Method == method,
-                    cancellationToken).ToListAsync(cancellationToken);
+                x => x.Path == path && x.Method == null || x.Method == method,
+                cancellationToken);
 
             var result = results.FirstOrDefault();
             

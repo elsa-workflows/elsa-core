@@ -1,13 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading;
-using Elsa.Services.Models;
+using System.Threading.Tasks;
 
 namespace Elsa.Triggers
 {
     public interface ITriggerProvider
     {
         Type ForType();
-        IAsyncEnumerable<ITrigger> GetTriggersAsync(IWorkflowBlueprint workflowBlueprint, CancellationToken cancellationToken = default);
+        Type ForActivityType();
+        ValueTask<ITrigger> GetTriggerAsync(TriggerProviderContext context, CancellationToken cancellationToken = default);
     }
 }

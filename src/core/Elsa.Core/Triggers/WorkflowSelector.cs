@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Services;
+using Elsa.Services.Models;
+using Microsoft.Extensions.DependencyInjection;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Triggers
@@ -12,31 +13,71 @@ namespace Elsa.Triggers
     public class WorkflowSelector : IWorkflowSelector
     {
         private readonly IWorkflowRegistry _workflowRegistry;
+        private readonly IWorkflowFactory _workflowFactory;
         private readonly IEnumerable<ITriggerProvider> _triggerProviders;
+        private readonly IServiceProvider _serviceProvider;
+        private ICollection<TriggerDescriptor>? _descriptors;
 
-        public WorkflowSelector(IWorkflowRegistry workflowRegistry, IEnumerable<ITriggerProvider> triggerProviders)
+        public WorkflowSelector(IWorkflowRegistry workflowRegistry, IWorkflowFactory workflowFactory, IEnumerable<ITriggerProvider> triggerProviders, IServiceProvider serviceProvider)
         {
             _workflowRegistry = workflowRegistry;
+            _workflowFactory = workflowFactory;
             _triggerProviders = triggerProviders;
+            _serviceProvider = serviceProvider;
         }
 
-        public async IAsyncEnumerable<WorkflowSelectorResult> SelectWorkflowsAsync(
+        public async Task<IEnumerable<WorkflowSelectorResult>> SelectWorkflowsAsync(
             Type triggerType,
             Func<ITrigger, bool> evaluate,
-            [EnumeratorCancellation] CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default)
         {
-            var providers = _triggerProviders.Where(x => x.ForType() == triggerType).ToList();
-            var workflowBlueprints = await _workflowRegistry.GetWorkflowsAsync(cancellationToken).ToList();
+            _descriptors ??= await BuildDescriptorsAsync(cancellationToken).ToList();
 
-            foreach (var provider in providers)
+            var query =
+                from descriptor in _descriptors
+                let trigger = descriptor.Trigger
+                where trigger.GetType() == triggerType && evaluate(trigger)
+                select new WorkflowSelectorResult(descriptor.WorkflowBlueprint, descriptor.ActivityId);
+
+            return query;
+        }
+
+        private async Task<IEnumerable<TriggerDescriptor>> BuildDescriptorsAsync(CancellationToken cancellationToken)
+        {
+            var providers = _triggerProviders.ToList();
+            var workflowBlueprints = await _workflowRegistry.GetWorkflowsAsync(cancellationToken).ToList();
+            var descriptors = new List<TriggerDescriptor>();
+
+            using var scope = _serviceProvider.CreateScope();
+
             foreach (var workflowBlueprint in workflowBlueprints)
             {
-                var triggers = provider.GetTriggersAsync(workflowBlueprint, cancellationToken);
+                var workflowInstance = await _workflowFactory.InstantiateAsync(workflowBlueprint, cancellationToken: cancellationToken);
+                var workflowExecutionContext = new WorkflowExecutionContext(scope.ServiceProvider, workflowBlueprint, workflowInstance);
+                var startActivities = workflowBlueprint.GetStartActivities();
 
-                await foreach (var trigger in triggers.WithCancellation(cancellationToken))
-                    if (evaluate(trigger))
-                        yield return new WorkflowSelectorResult(workflowBlueprint, trigger.ActivityId);
+                foreach (var startActivity in startActivities)
+                {
+                    var activityExecutionContext = new ActivityExecutionContext(workflowExecutionContext, scope.ServiceProvider, startActivity);
+                    var providerContext = new TriggerProviderContext(activityExecutionContext);
+
+                    foreach (var provider in providers)
+                    {
+                        var trigger = await provider.GetTriggerAsync(providerContext, cancellationToken);
+                        var descriptor = new TriggerDescriptor
+                        {
+                            ActivityId = startActivity.Id,
+                            ActivityType = startActivity.Type,
+                            WorkflowBlueprint = workflowBlueprint,
+                            Trigger = trigger,
+                        };
+
+                        descriptors.Add(descriptor);
+                    }
+                }
             }
+
+            return descriptors;
         }
     }
 }

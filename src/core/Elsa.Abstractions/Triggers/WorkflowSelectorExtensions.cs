@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Elsa.Triggers
 {
     public static class WorkflowSelectorExtensions
     {
-        public static IAsyncEnumerable<WorkflowSelectorResult> SelectWorkflowsAsync<T>(
+        public static Task<IEnumerable<WorkflowSelectorResult>> SelectWorkflowsAsync<T>(
             this IWorkflowSelector workflowSelector,
             Func<T, bool> evaluate,
             CancellationToken cancellationToken = default) where T : ITrigger =>
