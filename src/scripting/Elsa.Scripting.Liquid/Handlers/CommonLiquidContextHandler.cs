@@ -38,13 +38,13 @@ namespace Elsa.Scripting.Liquid.Handlers
             
             context.MemberAccessStrategy.Register<ActivityExecutionContext, LiquidPropertyAccessor>(
                 "Variables",
-                x => new LiquidPropertyAccessor(name => ToFluidValue(x.WorkflowExecutionContext.Variables, name)));
+                x => new LiquidPropertyAccessor(name => ToFluidValue(x.WorkflowExecutionContext.WorkflowInstance.Variables, name)));
             
             context.MemberAccessStrategy.Register<ActivityExecutionContext, LiquidObjectAccessor<IActivityBlueprint>>(
                 "Activities",
                 x => new LiquidObjectAccessor<IActivityBlueprint>(name => GetActivityAsync(x, name)));
             
-            context.MemberAccessStrategy.Register<LiquidObjectAccessor<IActivity>, object>(GetActivityOutput);
+            context.MemberAccessStrategy.Register<LiquidObjectAccessor<IActivity>, object?>(GetActivityOutput);
             
             context.MemberAccessStrategy.Register<LiquidObjectAccessor<object>, object>(
                 (x, name) => x.GetValueAsync(name));
@@ -52,7 +52,7 @@ namespace Elsa.Scripting.Liquid.Handlers
             context.MemberAccessStrategy.Register<ExpandoObject, object>(
                 (x, name) => ((IDictionary<string, object>)x)[name]);
             
-            context.MemberAccessStrategy.Register<JObject, object>((source, name) => source[name]);
+            context.MemberAccessStrategy.Register<JObject, object?>((source, name) => source[name]);
 
             return Task.CompletedTask;
         }

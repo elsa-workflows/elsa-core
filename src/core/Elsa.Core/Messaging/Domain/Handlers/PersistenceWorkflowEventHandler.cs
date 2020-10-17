@@ -68,7 +68,7 @@ namespace Elsa.Messaging.Domain.Handlers
             WorkflowExecutionContext workflowExecutionContext,
             CancellationToken cancellationToken)
         {
-            var workflowInstance = workflowExecutionContext.UpdateWorkflowInstance();
+            var workflowInstance = workflowExecutionContext.WorkflowInstance;
             await _workflowInstanceManager.SaveAsync(workflowInstance, cancellationToken);
         }
     }

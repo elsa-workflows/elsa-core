@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Newtonsoft.Json.Linq;
 
 namespace Elsa.Services.Models
 {
@@ -30,8 +29,7 @@ namespace Elsa.Services.Models
         public string Type { get; set; } = default!;
 
         public bool PersistWorkflow { get; set; }
-
-        //public JObject Data { get; set; } = new JObject();
+        
         public Func<ActivityExecutionContext, CancellationToken, ValueTask<IActivity>> CreateActivityAsync { get; set; } = default!;
     }
 }

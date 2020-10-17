@@ -1,6 +1,4 @@
-﻿using Elsa.Models;
-using Elsa.Services;
-using Elsa.Services.Models;
+﻿using Elsa.Services.Models;
 using MediatR;
 
 namespace Elsa.Messaging.Domain

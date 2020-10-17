@@ -1,6 +1,3 @@
-using System;
-using Elsa.Services.Models;
-
 namespace Elsa.Builders
 {
     public class ConnectionBuilder : IConnectionBuilder

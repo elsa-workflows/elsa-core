@@ -1,7 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
-using Elsa.Services.Models;
 using MediatR;
 using NodaTime;
 

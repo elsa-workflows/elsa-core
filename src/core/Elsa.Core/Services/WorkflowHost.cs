@@ -141,7 +141,7 @@ namespace Elsa.Services
             if (statusEvent != null)
                 await _mediator.Publish(statusEvent, cancellationToken);
 
-            return workflowExecutionContext.UpdateWorkflowInstance();
+            return workflowExecutionContext.WorkflowInstance;
         }
 
         private async Task BeginWorkflow(
@@ -156,7 +156,7 @@ namespace Elsa.Services
             if (!await CanExecuteAsync(workflowExecutionContext, activity, input, cancellationToken))
                 return;
 
-            workflowExecutionContext.Status = WorkflowStatus.Running;
+            workflowExecutionContext.Begin();
             workflowExecutionContext.ScheduleActivity(activity.Id, input);
             await RunAsync(workflowExecutionContext, Execute, cancellationToken);
         }
@@ -178,7 +178,7 @@ namespace Elsa.Services
                 return;
 
             workflowExecutionContext.BlockingActivities.RemoveWhere(x => x.ActivityId == activityBlueprint.Id);
-            workflowExecutionContext.Status = WorkflowStatus.Running;
+            workflowExecutionContext.Resume();
             workflowExecutionContext.ScheduleActivity(activityBlueprint.Id, input);
             await RunAsync(workflowExecutionContext, Resume, cancellationToken);
         }
