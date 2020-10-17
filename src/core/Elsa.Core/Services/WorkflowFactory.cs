@@ -43,6 +43,6 @@ namespace Elsa.Services
             activityBlueprint.Id,
             activityBlueprint.Type,
             null,
-            new JObject(activityBlueprint.Data));
+            new JObject());
     }
 }

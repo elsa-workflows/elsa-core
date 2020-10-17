@@ -24,7 +24,10 @@ namespace Elsa.Builders
         public Type ActivityType { get; }
         public Action<IActivity>? SetupActivity { get; }
         public IWorkflowBuilder WorkflowBuilder { get; }
-        public string? ActivityId { get; private set; }
+        public string ActivityId { get; set; } = default!;
+        public string? Name { get; set; }
+        public string? Description { get; set; }
+        public bool PersistWorkflow { get; set; }
         public IDictionary<string, IActivityPropertyValueProvider>? PropertyValueProviders { get; }
 
         public IActivityBuilder Add<T>(
@@ -61,7 +64,10 @@ namespace Elsa.Builders
         public Func<ActivityExecutionContext, CancellationToken, ValueTask<IActivity>> BuildActivityAsync() =>
             async (context, cancellationToken) =>
             {
-                var activity = context.ActivateActivity(SetupActivity);
+                var activity = context.ActivateActivity(context.ActivityBlueprint.Type, SetupActivity);
+                activity.Id = ActivityId;
+                activity.Name = Name;
+                activity.Description = Description;
                 await context.SetActivityPropertiesAsync(activity, cancellationToken);
                 return activity;
             };

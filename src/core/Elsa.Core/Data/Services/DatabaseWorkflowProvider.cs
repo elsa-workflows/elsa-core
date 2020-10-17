@@ -71,7 +71,6 @@ namespace Elsa.Data.Services
             {
                 Id = activityDefinition.Id,
                 Type = activityDefinition.Type,
-                Data = new JObject(activityDefinition.Data),
                 CreateActivityAsync = (context, cancellationToken) =>
                     CreateActivityAsync(activityDefinition, context, cancellationToken)
             };
@@ -82,8 +81,7 @@ namespace Elsa.Data.Services
             ActivityExecutionContext context,
             CancellationToken cancellationToken)
         {
-            var activity = context.ActivateActivity();
-
+            var activity = context.ActivateActivity(activityDefinition.Type);
             activity.Description = activityDefinition.Description;
             activity.Id = activityDefinition.Id;
             activity.Name = activityDefinition.Name;

@@ -40,15 +40,15 @@ namespace Elsa.Services.Models
         public async ValueTask SetActivityPropertiesAsync(
             IActivity activity,
             CancellationToken cancellationToken = default) =>
-            await WorkflowExecutionContext.ActivityPropertyProviders.SetActivityPropertiesAsync(
+            await WorkflowExecutionContext.WorkflowBlueprint.ActivityPropertyProviders.SetActivityPropertiesAsync(
                 activity,
                 this,
                 cancellationToken);
 
-        public IActivity ActivateActivity(Action<IActivity>? setupActivity = default)
+        public IActivity ActivateActivity(string activityType, Action<IActivity>? setupActivity = default)
         {
             var activityActivator = ServiceProvider.GetRequiredService<IActivityActivator>();
-            return activityActivator.ActivateActivity(setupActivity);
+            return activityActivator.ActivateActivity(activityType, setupActivity);
         }
     }
 }

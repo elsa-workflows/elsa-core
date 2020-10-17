@@ -11,8 +11,11 @@ namespace Elsa.Builders
     {
         IWorkflowBuilder WorkflowBuilder { get; }
         public Type ActivityType { get; }
-        string? ActivityId { get;  }
+        string ActivityId { get; set; }
+        public string? Name { get; set; }
+        public string? Description { get; set; }
         IDictionary<string, IActivityPropertyValueProvider>? PropertyValueProviders { get; }
+        bool PersistWorkflow { get; set; }
         IActivityBuilder Add<T>(Action<ISetupActivity<T>>? setup = default) where T : class, IActivity;
         IOutcomeBuilder When(string outcome);
         IActivityBuilder Then(IActivityBuilder targetActivity);

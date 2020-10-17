@@ -34,6 +34,7 @@ namespace Elsa.Builders
         public bool IsSingleton { get; private set; }
         public WorkflowPersistenceBehavior PersistenceBehavior { get; private set; }
         public bool DeleteCompletedInstances { get; private set; }
+        public bool IsEnabled { get; private set; }
 
         public IWorkflowBuilder WithId(string value)
         {
@@ -74,6 +75,12 @@ namespace Elsa.Builders
         public IWorkflowBuilder WithPersistenceBehavior(WorkflowPersistenceBehavior value)
         {
             PersistenceBehavior = value;
+            return this;
+        }
+
+        public IWorkflowBuilder Enable(bool value)
+        {
+            IsEnabled = value;
             return this;
         }
 
@@ -208,22 +215,19 @@ namespace Elsa.Builders
         {
             var definitionId = !string.IsNullOrWhiteSpace(Id) ? Id : _idGenerator.Generate();
 
-            var builtActivities = _activityBuilders
-                .Select(
-                    activityBuilder => (activityBuilder, new ActivityBlueprint(activityBuilder.BuildActivityAsync())))
-                .ToDictionary(x => x.activityBuilder);
+            // Assign automatic ids to activity builders
+            var index = 0;
+            foreach (var activityBuilder in _activityBuilders.Where(x => string.IsNullOrWhiteSpace(x.ActivityId))) activityBuilder.ActivityId = $"activity-{++index}";
 
-            var activities = builtActivities.Select(x => x.Value.Item2).ToList();
-            
-            var connections = _connectionBuilders.Select(
-                    x => new Connection(builtActivities[x.Source].Item2, builtActivities[x.Target].Item2, x.Outcome))
+            var activityBlueprints = _activityBuilders
+                .Select(BuildActivityBlueprint)
                 .ToList();
 
-            // Generate deterministic activity ids.
-            var id = 1;
+            var activityBlueprintDictionary = activityBlueprints.ToDictionary(x => x.Id);
 
-            foreach (var activity in activities.Where(activity => string.IsNullOrEmpty(activity.Id)))
-                activity.Id = $"activity-{id++}";
+            var connections = _connectionBuilders
+                .Select(x => new Connection(activityBlueprintDictionary[x.Source.ActivityId], activityBlueprintDictionary[x.Target.ActivityId], x.Outcome))
+                .ToList();
 
             var activityPropertyValueProviders = _activityBuilders
                 .Select(x => (x.ActivityId, x.PropertyValueProviders))
@@ -233,18 +237,17 @@ namespace Elsa.Builders
                 definitionId,
                 Version,
                 IsSingleton,
-                false,
+                IsEnabled,
                 Name,
                 Description,
                 true,
                 true,
                 PersistenceBehavior,
                 DeleteCompletedInstances,
-                activities,
+                activityBlueprints,
                 connections,
                 new ActivityPropertyProviders(activityPropertyValueProviders));
-
-
+            
             return workflow;
         }
 
@@ -255,5 +258,7 @@ namespace Elsa.Builders
         }
 
         public IWorkflowBlueprint Build<T>() where T : IWorkflow => Build(typeof(T));
+
+        private IActivityBlueprint BuildActivityBlueprint(IActivityBuilder builder, int index) => new ActivityBlueprint(builder.ActivityId, builder.Name, builder.ActivityType.Name, builder.PersistWorkflow, builder.BuildActivityAsync());
     }
 }

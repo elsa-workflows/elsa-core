@@ -1,9 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Elsa.Models;
-using Elsa.Services;
 using Elsa.Services.Models;
-using ScheduledActivity = Elsa.Services.Models.ScheduledActivity;
 
 namespace Elsa.ActivityResults
 {

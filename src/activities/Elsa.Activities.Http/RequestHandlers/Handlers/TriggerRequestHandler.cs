@@ -44,7 +44,7 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
             var httpWorkflows =
                 await _registry.GetWorkflowsByStartActivityAsync<ReceiveHttpRequest>(_cancellationToken);
 
-            var workflowsToStart = Filter(httpWorkflows, requestPath, method).ToList();
+            var workflowsToStart = httpWorkflows;
 
             var workflowsToResume =
                 await _workflowInstanceManager
@@ -72,19 +72,6 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
             return !_httpContext.Items.ContainsKey(WorkflowHttpResult.Instance)
                 ? (IRequestHandlerResult)new AcceptedResult()
                 : new EmptyResult();
-        }
-
-        private IEnumerable<(IWorkflowBlueprint Workflow, IActivityBlueprint Activity)> Filter(
-            IEnumerable<(IWorkflowBlueprint Workflow, IActivityBlueprint Activity)> items,
-            PathString path,
-            string method) =>
-            items.Where(x => IsMatch(x.Activity, path, method));
-
-        private bool IsMatch(IActivityBlueprint activity, PathString path, string method)
-        {
-            var m = activity.Data.Value<string>("Method");
-            var p = activity.Data.Value<string>("Path");
-            return (string.IsNullOrWhiteSpace(m) || m == method) && p == path;
         }
 
         private async Task InvokeWorkflowsToStartAsync(

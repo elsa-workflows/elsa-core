@@ -107,7 +107,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddIndexProvider<WorkflowDefinitionIndexProvider>()
                 .AddIndexProvider<WorkflowInstanceIndexProvider>()
                 .AddStartupRunner()
-                .AddTransient<IActivityActivator, ActivityActivator>()
+                .AddSingleton<IActivityActivator, ActivityActivator>()
                 .AddWorkflowProvider<CodeWorkflowProvider>()
                 .AddTransient<IWorkflowBuilder, WorkflowBuilder>()
                 .AddTransient<Func<IWorkflowBuilder>>(sp => sp.GetRequiredService<IWorkflowBuilder>)

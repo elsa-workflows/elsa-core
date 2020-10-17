@@ -5,7 +5,6 @@ using Elsa.ActivityResults;
 using Elsa.Models;
 using Elsa.Services.Models;
 using Microsoft.Extensions.Localization;
-using ScheduledActivity = Elsa.Services.Models.ScheduledActivity;
 
 namespace Elsa.Services
 {

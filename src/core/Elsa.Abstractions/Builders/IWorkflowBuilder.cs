@@ -14,6 +14,7 @@ namespace Elsa.Builders
         int Version { get; }
         WorkflowPersistenceBehavior PersistenceBehavior { get; }
         bool DeleteCompletedInstances { get; }
+        bool IsEnabled { get; }
         IServiceProvider ServiceProvider { get; }
         IWorkflowBuilder WithId(string value);
         IWorkflowBuilder WithName(string value);
@@ -23,6 +24,7 @@ namespace Elsa.Builders
         IWorkflowBuilder AsTransient();
         IWorkflowBuilder WithDeleteCompletedInstances(bool value);
         IWorkflowBuilder WithPersistenceBehavior(WorkflowPersistenceBehavior value);
+        IWorkflowBuilder Enable(bool value);
 
         IActivityBuilder New<T>(
             Action<IActivityBuilder>? branch = default,
