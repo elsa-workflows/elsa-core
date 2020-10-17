@@ -1,5 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Messages;
 using Elsa.Messaging.Distributed;
 using Elsa.Runtime;
 using Rebus.Bus;

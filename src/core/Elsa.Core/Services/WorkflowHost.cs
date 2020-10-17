@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.ActivityResults;
+using Elsa.Events;
 using Elsa.Exceptions;
 using Elsa.Expressions;
 using Elsa.Messaging.Domain;

@@ -1,4 +1,4 @@
-namespace Elsa.Messaging.Distributed
+namespace Elsa.Messages
 {
     public class RunWorkflow
     {

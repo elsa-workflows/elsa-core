@@ -1,6 +1,6 @@
 ﻿using Elsa.Services.Models;
 
-namespace Elsa.Messaging.Domain
+namespace Elsa.Events
 {
     /// <summary>
     /// Published when a burst of execution finished.

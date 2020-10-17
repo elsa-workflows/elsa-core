@@ -10,6 +10,7 @@ using Elsa.Data;
 using Elsa.Data.Extensions;
 using Elsa.Expressions;
 using Elsa.Indexes;
+using Elsa.Messages;
 using Elsa.Messaging;
 using Elsa.Messaging.Distributed;
 using Elsa.Messaging.Distributed.Handlers;

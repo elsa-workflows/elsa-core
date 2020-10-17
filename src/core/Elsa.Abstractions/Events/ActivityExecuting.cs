@@ -1,6 +1,6 @@
 ﻿using Elsa.Services.Models;
 
-namespace Elsa.Messaging.Domain
+namespace Elsa.Events
 {
     public class ActivityExecuting : ActivityNotification
     {

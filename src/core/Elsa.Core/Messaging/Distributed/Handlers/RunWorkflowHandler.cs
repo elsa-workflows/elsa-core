@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using Elsa.Exceptions;
+using Elsa.Messages;
 using Elsa.Queries;
 using Elsa.Services;
 using Rebus.Handlers;

@@ -1,7 +1,7 @@
 ﻿using Elsa.Services.Models;
 using MediatR;
 
-namespace Elsa.Messaging.Domain
+namespace Elsa.Events
 {
     public abstract class ActivityNotification : INotification
     {
