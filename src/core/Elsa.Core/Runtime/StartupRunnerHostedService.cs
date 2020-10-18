@@ -1,21 +1,23 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Services;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 namespace Elsa.Runtime
 {
     public class StartupRunnerHostedService : IHostedService
     {
-        private readonly IStartupRunner _startupRunner;
+        private readonly IServiceProvider _serviceProvider;
+        public StartupRunnerHostedService(IServiceProvider serviceProvider) => _serviceProvider = serviceProvider;
 
-        public StartupRunnerHostedService(IStartupRunner startupRunner)
+        public async Task StartAsync(CancellationToken cancellationToken)
         {
-            _startupRunner = startupRunner;
+            using var scope = _serviceProvider.CreateScope();
+            var startupRunner = scope.ServiceProvider.GetRequiredService<IStartupRunner>();
+            await startupRunner.StartupAsync(cancellationToken);
         }
-
-        public async Task StartAsync(CancellationToken cancellationToken) => 
-            await _startupRunner.StartupAsync(cancellationToken);
 
         public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     }

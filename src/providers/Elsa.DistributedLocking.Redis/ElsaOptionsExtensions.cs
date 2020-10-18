@@ -14,10 +14,13 @@ namespace Elsa.DistributedLocking.Redis
         public static ElsaOptions UseRedisLockProvider(this ElsaOptions options, string connectionString, TimeSpan? lockTimeout = null)
         {
             options.UseStackExchangeConnectionMultiplexer(connectionString)
-                   .UseRedLockFactory()
-                   .UseDistributedLockProvider(sp => new RedisLockProvider(sp.GetRequiredService<IDistributedLockFactory>(),
-                                                                        lockTimeout ?? TimeSpan.FromMinutes(1),
-                                                                        sp.GetRequiredService<ILogger<RedisLockProvider>>()));
+                .UseRedLockFactory()
+                .UseDistributedLockProvider(
+                    sp => new RedisLockProvider(
+                        sp.GetRequiredService<IDistributedLockFactory>(),
+                        lockTimeout ?? TimeSpan.FromMinutes(1),
+                        sp.GetRequiredService<ILogger<RedisLockProvider>>()));
+
             return options;
         }
 
@@ -27,17 +30,20 @@ namespace Elsa.DistributedLocking.Redis
             {
                 throw new ArgumentNullException(nameof(connectionString));
             }
+
             options.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(connectionString));
 
             return options;
         }
+
         private static ElsaOptions UseRedLockFactory(this ElsaOptions options)
         {
-            options.Services.AddSingleton<IDistributedLockFactory, RedLockFactory>(sp => 
-                                                    RedLockFactory.Create(new List<RedLockMultiplexer>
-                                                    {
-                                                        new RedLockMultiplexer(sp.GetRequiredService<IConnectionMultiplexer>())
-                                                    }));
+            options.Services.AddSingleton<IDistributedLockFactory, RedLockFactory>(
+                sp => RedLockFactory.Create(
+                    new List<RedLockMultiplexer>
+                    {
+                        new RedLockMultiplexer(sp.GetRequiredService<IConnectionMultiplexer>())
+                    }));
 
             return options;
         }

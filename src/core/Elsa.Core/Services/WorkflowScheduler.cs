@@ -201,18 +201,10 @@ namespace Elsa.Services
         private async Task<IEnumerable<WorkflowInstance>> GetStartedWorkflowsAsync(IWorkflowBlueprint workflowBlueprint)
         {
             var workflowDefinitionId = workflowBlueprint.Id;
-
-            var suspendedInstances = await _workflowInstanceManager
-                .ListByDefinitionAndStatusAsync(workflowDefinitionId, WorkflowStatus.Suspended);
-
-            var idleInstances = await _workflowInstanceManager
-                .ListByDefinitionAndStatusAsync(workflowDefinitionId, WorkflowStatus.Idle);
-
+            var suspendedInstances = await _workflowInstanceManager.ListByDefinitionAndStatusAsync(workflowDefinitionId, WorkflowStatus.Suspended);
+            var idleInstances = await _workflowInstanceManager.ListByDefinitionAndStatusAsync(workflowDefinitionId, WorkflowStatus.Idle);
             var startActivities = workflowBlueprint.GetStartActivities().Select(x => x.Id).ToList();
-
-            var startedInstances = suspendedInstances
-                .Where(x => x.BlockingActivities.Any(y => startActivities.Contains(y.ActivityId))).ToList();
-
+            var startedInstances = suspendedInstances.Where(x => x.BlockingActivities.Any(y => startActivities.Contains(y.ActivityId))).ToList();
             return idleInstances.Concat(startedInstances);
         }
 

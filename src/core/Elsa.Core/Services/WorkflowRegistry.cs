@@ -12,18 +12,16 @@ namespace Elsa.Services
 {
     public class WorkflowRegistry : IWorkflowRegistry
     {
-        private readonly IServiceProvider _serviceProvider;
+        private readonly IEnumerable<IWorkflowProvider> _workflowProviders;
 
-        public WorkflowRegistry(
-            IServiceProvider serviceProvider)
+        public WorkflowRegistry(IEnumerable<IWorkflowProvider> workflowProviders)
         {
-            _serviceProvider = serviceProvider;
+            _workflowProviders = workflowProviders;
         }
 
         public async Task<IEnumerable<IWorkflowBlueprint>> GetWorkflowsAsync(CancellationToken cancellationToken)
         {
-            using var scope = _serviceProvider.CreateScope();
-            var providers = scope.ServiceProvider.GetServices<IWorkflowProvider>();
+            var providers = _workflowProviders;
             var tasks = await Task.WhenAll(providers.Select(x => x.GetWorkflowsAsync(cancellationToken)));
             return tasks.SelectMany(x => x).ToList();
         }

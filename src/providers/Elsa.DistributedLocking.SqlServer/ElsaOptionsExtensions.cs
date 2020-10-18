@@ -5,7 +5,7 @@ namespace Elsa.DistributedLocking.SqlServer
 {
     public static class ElsaOptionsExtensions
     {
-        public static ElsaOptions AddSqlServerLockProvider(this ElsaOptions options, string connectionString)
+        public static ElsaOptions UseSqlServerLockProvider(this ElsaOptions options, string connectionString)
         {
             return options.UseDistributedLockProvider(sp => new SqlLockProvider(connectionString, sp.GetRequiredService<ILogger<SqlLockProvider>>()));
         }

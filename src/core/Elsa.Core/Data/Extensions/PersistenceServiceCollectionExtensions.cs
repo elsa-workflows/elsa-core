@@ -19,7 +19,7 @@ namespace Elsa.Data.Extensions
                 .AddWorkflowProvider<DatabaseWorkflowProvider>()
                 .AddSingleton(sp => CreateStore(sp, configure))
                 .AddScoped(CreateSession)
-                .AddSingleton<IDataMigrationManager, DataMigrationManager>()
+                .AddScoped<IDataMigrationManager, DataMigrationManager>()
                 .AddStartupTask<DatabaseInitializer>()
                 .AddStartupTask<DataMigrationsRunner>()
                 .AddDataMigration<Migrations>();

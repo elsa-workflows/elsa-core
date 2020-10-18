@@ -40,7 +40,7 @@ namespace Elsa.Data.Services
         public async Task RunAllAsync()
         {
             var migrationsToUpdate = await GetMigrationsThatNeedUpdateAsync();
-            
+
             foreach (var migration in migrationsToUpdate)
             {
                 try
@@ -52,14 +52,11 @@ namespace Elsa.Data.Services
                     _logger.LogError(ex, "Could not run migrations automatically on '{FeatureName}'", migration);
                 }
             }
-
-            await _session.CommitAsync();
         }
 
         public async Task<IEnumerable<IDataMigration>> GetMigrationsThatNeedUpdateAsync()
         {
-            var currentVersions = (await GetDataMigrationsDocumentAsync()).DataMigrations
-                .ToDictionary(r => r.DataMigrationClass);
+            var currentVersions = (await GetDataMigrationsDocumentAsync()).DataMigrations.ToDictionary(r => r.DataMigrationClass);
 
             var outOfDateMigrations = _dataMigrations.Where(
                 dataMigration =>
@@ -80,7 +77,7 @@ namespace Elsa.Data.Services
                 return;
 
             var migrationName = dataMigration.GetType().FullName;
-            
+
             _processedMigrations.Add(dataMigration);
             _logger.LogInformation("Running migration '{MigrationName}'", migrationName);
 
@@ -105,10 +102,7 @@ namespace Elsa.Data.Services
             }
             else
             {
-                dataMigrationRecord = new DataMigrationRecord
-                {
-                    DataMigrationClass = dataMigration.GetType().FullName!
-                };
+                dataMigrationRecord = new DataMigrationRecord { DataMigrationClass = dataMigration.GetType().FullName! };
 
                 dataMigrationsDocument.DataMigrations.Add(dataMigrationRecord);
             }
@@ -235,13 +229,13 @@ namespace Elsa.Data.Services
         /// Returns the CreateAsync method from a data migration class if it's found
         /// </summary>
         private static MethodInfo? GetCreateAsyncMethod(IDataMigration dataMigration) => GetMethod(dataMigration, "CreateAsync");
-        
+
         /// <summary>
         /// Returns the CreateAsync method from a data migration class if it's found
         /// </summary>
         private static MethodInfo? GetMethod(IDataMigration dataMigration, string name)
         {
-            var flags = BindingFlags.Public | BindingFlags.Instance; 
+            var flags = BindingFlags.Public | BindingFlags.Instance;
             var methodInfo = dataMigration.GetType().GetMethod(name, flags);
             var returnType = methodInfo?.ReturnType;
             return returnType != null && (returnType == typeof(Task<int>) || returnType == typeof(int)) ? methodInfo : null;

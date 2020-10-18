@@ -16,7 +16,8 @@ namespace Elsa.Runtime
             where TStartupTask : class, IStartupTask
         {
             return services
-                .AddTransient<IStartupTask, TStartupTask>();
+                .AddTransient<IStartupTask, TStartupTask>()
+                .AddTransient<TStartupTask>();
         }
     }
 }
