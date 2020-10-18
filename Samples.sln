@@ -88,11 +88,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.DistributedLocking.Azu
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "locking", "locking", "{7CD5C8D5-EC78-4A99-A514-F01CA7197AC8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "YesSql.Provider.Sqlite.InMemory", "src\core\YesSql.Provider.Sqlite.InMemory\YesSql.Provider.Sqlite.InMemory.csproj", "{E2D63391-1986-45C8-A18F-4D58F3D71057}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.ForLoopConsole", "src\samples\Elsa.Samples.ForLoopConsole\Elsa.Samples.ForLoopConsole.csproj", "{F755FB1F-72FB-4F7B-8270-F5F40F4D6952}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.ReadLineEchoConsole", "src\samples\Elsa.Samples.ReadLineEchoConsole\Elsa.Samples.ReadLineEchoConsole.csproj", "{867CB845-B803-4D40-9360-3D11ADBD9CE9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.YesSql.Provider.Sqlite.InMemory", "src\core\Elsa.YesSql.Provider.Sqlite.InMemory\Elsa.YesSql.Provider.Sqlite.InMemory.csproj", "{D0364288-3072-44F4-877C-7721C20BC27F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -209,10 +209,6 @@ Global
 		{E20238CE-5C64-4F87-8753-3B4E1EC9A740}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E20238CE-5C64-4F87-8753-3B4E1EC9A740}.Release|Any CPU.Build.0 = Release|Any CPU
 
-		{E2D63391-1986-45C8-A18F-4D58F3D71057}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E2D63391-1986-45C8-A18F-4D58F3D71057}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E2D63391-1986-45C8-A18F-4D58F3D71057}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E2D63391-1986-45C8-A18F-4D58F3D71057}.Release|Any CPU.Build.0 = Release|Any CPU
 		{F755FB1F-72FB-4F7B-8270-F5F40F4D6952}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F755FB1F-72FB-4F7B-8270-F5F40F4D6952}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F755FB1F-72FB-4F7B-8270-F5F40F4D6952}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -221,6 +217,10 @@ Global
 		{867CB845-B803-4D40-9360-3D11ADBD9CE9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{867CB845-B803-4D40-9360-3D11ADBD9CE9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{867CB845-B803-4D40-9360-3D11ADBD9CE9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D0364288-3072-44F4-877C-7721C20BC27F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D0364288-3072-44F4-877C-7721C20BC27F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D0364288-3072-44F4-877C-7721C20BC27F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D0364288-3072-44F4-877C-7721C20BC27F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -261,9 +261,9 @@ Global
 		{E20238CE-5C64-4F87-8753-3B4E1EC9A740} = {7CD5C8D5-EC78-4A99-A514-F01CA7197AC8}
 		{EBD49CCA-5400-4C36-B5DF-7B28190AA323} = {7CD5C8D5-EC78-4A99-A514-F01CA7197AC8}
 		{150EF356-E8BC-4922-91C2-362017479409} = {7CD5C8D5-EC78-4A99-A514-F01CA7197AC8}
-		{E2D63391-1986-45C8-A18F-4D58F3D71057} = {35F44BE9-13D0-417C-A01A-F0787BEE6DC3}
 		{F755FB1F-72FB-4F7B-8270-F5F40F4D6952} = {5E5E1E84-DDBC-40D6-B891-0D563A15A44A}
 		{867CB845-B803-4D40-9360-3D11ADBD9CE9} = {5E5E1E84-DDBC-40D6-B891-0D563A15A44A}
+		{D0364288-3072-44F4-877C-7721C20BC27F} = {35F44BE9-13D0-417C-A01A-F0787BEE6DC3}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}
