@@ -26,7 +26,7 @@ namespace Elsa.Server.Host
         public void ConfigureServices(IServiceCollection services)
         {
             var elsaSection = Configuration.GetSection("Elsa");
-            var connectionString = Configuration.GetConnectionString("SqLite");
+            var connectionString = Configuration.GetConnectionString("Sqlite");
 
             services
                 .AddElsa(elsa => elsa

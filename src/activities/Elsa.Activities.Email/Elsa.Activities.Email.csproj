@@ -6,7 +6,7 @@
         <LangVersion>latest</LangVersion>
         <Authors>Elsa Contributors</Authors>
         <Description>
-            Elsa is a set of workflow libraries and tools that enable super-fast workflowing capabilities in any .NET Core application.
+            Elsa is a set of workflow libraries and tools that enable lean and mean workflowing capabilities in any .NET Core application.
             This package provides the following Email activities:
 
             * SendEmail

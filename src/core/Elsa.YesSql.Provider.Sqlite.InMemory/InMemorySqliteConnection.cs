@@ -1,6 +1,6 @@
 ﻿using Microsoft.Data.Sqlite;
 
-namespace YesSql.Provider.Sqlite.InMemory
+namespace Elsa.YesSql.Provider.Sqlite.InMemory
 {
     public class InMemorySqliteConnection : SqliteConnection
     {

@@ -1,7 +1,9 @@
 using System;
 using System.Data;
+using YesSql;
+using YesSql.Provider.Sqlite;
 
-namespace YesSql.Provider.Sqlite.InMemory
+namespace Elsa.YesSql.Provider.Sqlite.InMemory
 {
     public static class InMemorySqliteDbProviderOptionsExtensions
     {

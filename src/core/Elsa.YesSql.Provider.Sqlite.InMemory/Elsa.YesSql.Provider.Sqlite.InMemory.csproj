@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
@@ -7,30 +7,25 @@
         <Authors>Elsa Contributors</Authors>
         <Description>
             Elsa is a set of workflow libraries and tools that enable lean and mean workflowing capabilities in any .NET Core application.
-            This package provides a Liquid expression evaluator based on Fluid.
+            This package provides an in-memory Sqlite YesSQL provider, the default provider for Elsa. 
         </Description>
         <Copyright>2019</Copyright>
         <PackageProjectUrl>https://github.com/elsa-workflows/elsa-core</PackageProjectUrl>
         <RepositoryUrl>https://github.com/elsa-workflows/elsa-core</RepositoryUrl>
         <RepositoryType>GitHub</RepositoryType>
-        <PackageTags>elsa, workflows, liquid, fluid</PackageTags>
+        <PackageTags>elsa, workflows, orchard</PackageTags>
         <PackageIcon>icon.png</PackageIcon>
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
     <ItemGroup>
-        <None Include="icon.png">
-            <Pack>True</Pack>
-            <PackagePath />
-        </None>
+      <PackageReference Include="YesSql.Provider.Sqlite" Version="1.0.0-beta-1547" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Fluid.Core" Version="1.0.0-beta-9605" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
+      <None Update="icon.png">
+        <Pack>True</Pack>
+      </None>
     </ItemGroup>
 
 </Project>

@@ -11,7 +11,7 @@ using Rebus.Persistence.InMem;
 using Rebus.Routing.TypeBased;
 using Rebus.Transport.InMem;
 using YesSql;
-using YesSql.Provider.Sqlite.InMemory;
+using Elsa.YesSql.Provider.Sqlite.InMemory;
 
 namespace Elsa
 {

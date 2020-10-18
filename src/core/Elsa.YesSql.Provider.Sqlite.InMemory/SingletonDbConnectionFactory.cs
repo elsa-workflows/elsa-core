@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Data.Common;
+using YesSql;
 
-namespace YesSql.Provider.Sqlite.InMemory
+namespace Elsa.YesSql.Provider.Sqlite.InMemory
 {
     public class SingletonDbConnectionFactory<TDbConnection> : IConnectionFactory
         where TDbConnection : DbConnection, new()

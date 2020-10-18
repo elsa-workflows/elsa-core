@@ -70,7 +70,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.DistributedLocking.Azu
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "locking", "locking", "{7CD5C8D5-EC78-4A99-A514-F01CA7197AC8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "YesSql.Provider.Sqlite.InMemory", "src\core\YesSql.Provider.Sqlite.InMemory\YesSql.Provider.Sqlite.InMemory.csproj", "{E2D63391-1986-45C8-A18F-4D58F3D71057}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.YesSql.Provider.Sqlite.InMemory", "src\core\Elsa.YesSql.Provider.Sqlite.InMemory\Elsa.YesSql.Provider.Sqlite.InMemory.csproj", "{E2D63391-1986-45C8-A18F-4D58F3D71057}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
