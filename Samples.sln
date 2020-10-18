@@ -90,7 +90,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "locking", "locking", "{7CD5
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "YesSql.Provider.Sqlite.InMemory", "src\core\YesSql.Provider.Sqlite.InMemory\YesSql.Provider.Sqlite.InMemory.csproj", "{E2D63391-1986-45C8-A18F-4D58F3D71057}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.ForEachConsole", "src\samples\Elsa.Samples.ForEachConsole\Elsa.Samples.ForEachConsole.csproj", "{F755FB1F-72FB-4F7B-8270-F5F40F4D6952}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.ForLoopConsole", "src\samples\Elsa.Samples.ForLoopConsole\Elsa.Samples.ForLoopConsole.csproj", "{F755FB1F-72FB-4F7B-8270-F5F40F4D6952}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.ReadLineEchoConsole", "src\samples\Elsa.Samples.ReadLineEchoConsole\Elsa.Samples.ReadLineEchoConsole.csproj", "{867CB845-B803-4D40-9360-3D11ADBD9CE9}"
 EndProject

@@ -3,7 +3,7 @@ using Elsa.Activities.Console;
 using Elsa.Activities.ControlFlow;
 using Elsa.Builders;
 
-namespace Elsa.Samples.ForEachConsole
+namespace Elsa.Samples.ForLoopConsole
 {
     /// <summary>
     /// This workflow prompts the user to enter an integer start value, then iterates back from that value to 0.

@@ -2,7 +2,7 @@
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Samples.ForEachConsole
+namespace Elsa.Samples.ForLoopConsole
 {
     /// <summary>
     /// Demonstrates a workflow with a For looping construct.
