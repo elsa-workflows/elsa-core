@@ -27,7 +27,11 @@ namespace Elsa.Activities.Timers
         [ActivityProperty(Hint = "Specify a CRON expression. See https://crontab.guru/ for help.")]
         public string CronExpression { get; set; } = "* * * * *";
 
-        private Instant? StartTime { get; set; }
+        private Instant? StartTime
+        {
+            get => GetState<Instant?>();
+            set => SetState(value);
+        }
 
         protected override bool OnCanExecute(ActivityExecutionContext context) => StartTime == null || IsExpired();
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => OnResume(context);
