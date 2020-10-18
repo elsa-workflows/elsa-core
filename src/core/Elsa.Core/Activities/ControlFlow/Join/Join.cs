@@ -64,10 +64,10 @@ namespace Elsa.Activities.ControlFlow
                 // Remove any inbound blocking activities.
                 var ancestorActivityIds = workflowExecutionContext.GetInboundActivityPath(Id).ToList();
                 var blockingActivities =
-                    workflowExecutionContext.BlockingActivities.Where(x => ancestorActivityIds.Contains(x.ActivityId)).ToList();
+                    workflowExecutionContext.WorkflowInstance.BlockingActivities.Where(x => ancestorActivityIds.Contains(x.ActivityId)).ToList();
             
                 foreach (var blockingActivity in blockingActivities) 
-                    workflowExecutionContext.BlockingActivities.Remove(blockingActivity);
+                    workflowExecutionContext.WorkflowInstance.BlockingActivities.Remove(blockingActivity);
             }
             
             if (!done)

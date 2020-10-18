@@ -84,8 +84,7 @@ namespace Elsa.Services
             object? input = default,
             CancellationToken cancellationToken = default)
         {
-            using var scope = _serviceProvider.CreateScope();
-            var workflowExecutionContext = CreateWorkflowExecutionContext(workflowBlueprint, workflowInstance, scope);
+            var workflowExecutionContext = CreateWorkflowExecutionContext(workflowBlueprint, workflowInstance, _serviceProvider);
             var activity = activityId != null ? workflowBlueprint.GetActivity(activityId) : default;
 
             switch (workflowExecutionContext.Status)
@@ -165,7 +164,7 @@ namespace Elsa.Services
             if (!await CanExecuteAsync(workflowExecutionContext, activityBlueprint, input, cancellationToken))
                 return;
 
-            workflowExecutionContext.BlockingActivities.RemoveWhere(x => x.ActivityId == activityBlueprint.Id);
+            workflowExecutionContext.WorkflowInstance.BlockingActivities.RemoveWhere(x => x.ActivityId == activityBlueprint.Id);
             workflowExecutionContext.Resume();
             workflowExecutionContext.ScheduleActivity(activityBlueprint.Id, input);
             await RunAsync(workflowExecutionContext, Resume, cancellationToken);
@@ -177,11 +176,9 @@ namespace Elsa.Services
             object? input,
             CancellationToken cancellationToken)
         {
-            using var scope = _serviceProvider.CreateScope();
-
             var activityExecutionContext = new ActivityExecutionContext(
                 workflowExecutionContext,
-                scope.ServiceProvider,
+                _serviceProvider,
                 activityBlueprint,
                 input);
 
@@ -199,22 +196,13 @@ namespace Elsa.Services
                 var scheduledActivity = workflowExecutionContext.PopScheduledActivity();
                 var currentActivityId = scheduledActivity.ActivityId;
                 var activityBlueprint = workflowExecutionContext.WorkflowBlueprint.GetActivity(currentActivityId)!;
-
-                using (var scope = _serviceProvider.CreateScope())
-                {
-                    var activityExecutionContext = new ActivityExecutionContext(
-                        workflowExecutionContext,
-                        scope.ServiceProvider,
-                        activityBlueprint,
-                        scheduledActivity.Input);
-
-                    var activity = await activityBlueprint.CreateActivityAsync(activityExecutionContext, cancellationToken);
-                    var result = await activityOperation(activityExecutionContext, activity, cancellationToken);
-                    await _mediator.Publish(new ActivityExecuting(activityExecutionContext), cancellationToken);
-                    await result.ExecuteAsync(activityExecutionContext, cancellationToken);
-                    await _mediator.Publish(new ActivityExecuted(activityExecutionContext), cancellationToken);
-                }
-
+                var activityExecutionContext = new ActivityExecutionContext(workflowExecutionContext, _serviceProvider, activityBlueprint, scheduledActivity.Input);
+                var activity = await activityBlueprint.CreateActivityAsync(activityExecutionContext, cancellationToken);
+                var result = await activityOperation(activityExecutionContext, activity, cancellationToken);
+                await _mediator.Publish(new ActivityExecuting(activityExecutionContext), cancellationToken);
+                await result.ExecuteAsync(activityExecutionContext, cancellationToken);
+                await _mediator.Publish(new ActivityExecuted(activityExecutionContext), cancellationToken);
+                
                 activityOperation = Execute;
                 workflowExecutionContext.CompletePass();
             }
@@ -223,13 +211,7 @@ namespace Elsa.Services
                 workflowExecutionContext.Complete();
         }
 
-        private static WorkflowExecutionContext CreateWorkflowExecutionContext(
-            IWorkflowBlueprint workflowBlueprint,
-            WorkflowInstance workflowInstance,
-            IServiceScope serviceScope) =>
-            new WorkflowExecutionContext(
-                serviceScope.ServiceProvider,
-                workflowBlueprint,
-                workflowInstance);
+        private static WorkflowExecutionContext CreateWorkflowExecutionContext(IWorkflowBlueprint workflowBlueprint, WorkflowInstance workflowInstance, IServiceProvider serviceProvider) =>
+            new WorkflowExecutionContext(serviceProvider, workflowBlueprint, workflowInstance);
     }
 }

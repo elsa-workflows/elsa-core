@@ -18,7 +18,7 @@ namespace Elsa.Activities.ControlFlow
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
-            context.WorkflowExecutionContext.BlockingActivities.Clear();
+            context.WorkflowExecutionContext.WorkflowInstance.BlockingActivities.Clear();
             context.WorkflowExecutionContext.Complete();
             
             return Done(OutputValue);

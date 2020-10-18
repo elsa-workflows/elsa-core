@@ -26,10 +26,6 @@ namespace Elsa.Services.Models
         public IWorkflowBlueprint WorkflowBlueprint { get; }
         public IServiceProvider ServiceProvider { get; }
         public WorkflowInstance WorkflowInstance { get; }
-
-        public HashSet<BlockingActivity> BlockingActivities { get; } =
-            new HashSet<BlockingActivity>(new BlockingActivityEqualityComparer());
-        
         public bool HasScheduledActivities => WorkflowInstance.ScheduledActivities.Any();
         public IWorkflowFault? WorkflowFault { get; private set; }
         public bool IsFirstPass { get; private set; }

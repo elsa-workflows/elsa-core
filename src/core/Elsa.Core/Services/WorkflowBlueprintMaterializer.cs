@@ -14,7 +14,7 @@ namespace Elsa.Services
             var activityBlueprints = workflowDefinition.Activities.Select(CreateBlueprint).ToDictionary(x => x.Id);
 
             return new WorkflowBlueprint(
-                workflowDefinition.WorkflowDefinitionVersionId,
+                workflowDefinition.WorkflowDefinitionId,
                 workflowDefinition.Version,
                 workflowDefinition.IsSingleton,
                 workflowDefinition.IsEnabled,

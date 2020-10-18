@@ -1,10 +1,13 @@
+using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.ActivityResults;
 using Elsa.Models;
 using Elsa.Services.Models;
 using Microsoft.Extensions.Localization;
+using Newtonsoft.Json.Linq;
 
 namespace Elsa.Services
 {
@@ -16,6 +19,7 @@ namespace Elsa.Services
         public string? DisplayName { get; set; }
         public string? Description { get; set; }
         public bool PersistWorkflow { get; set; }
+        public JObject Data { get; set; } = default!;
 
         public ValueTask<bool> CanExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken) =>
             OnCanExecuteAsync(context, cancellationToken);
@@ -76,5 +80,9 @@ namespace Elsa.Services
         protected CombinedResult Combine(IEnumerable<IActivityExecutionResult> results) => new CombinedResult(results);
         protected CombinedResult Combine(params IActivityExecutionResult[] results) => new CombinedResult(results);
         protected FaultResult Fault(LocalizedString message) => new FaultResult(message);
+        
+        protected T GetState<T>(Func<T>? defaultValue = null, [CallerMemberName] string name = null!) => Data.GetState(name, defaultValue);
+        protected T GetState<T>(Type type, Func<T>? defaultValue = null, [CallerMemberName] string name = null!) => Data.GetState(type, name, defaultValue);
+        protected void SetState(object? value, [CallerMemberName] string name = null!) => Data.SetState(name, value);
     }
 }

@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Models;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Services.Models
@@ -27,6 +29,7 @@ namespace Elsa.Services.Models
         public object? Input { get; }
         public object? Output { get; set; }
         public IReadOnlyCollection<string> Outcomes { get; set; }
+        public ActivityInstance ActivityInstance => WorkflowExecutionContext.WorkflowInstance.Activities.First(x => x.Id == ActivityBlueprint.Id);
 
         public void SetVariable(string name, object? value) => WorkflowExecutionContext.SetVariable(name, value);
         public object? GetVariable(string name) => WorkflowExecutionContext.GetVariable(name);
@@ -44,7 +47,9 @@ namespace Elsa.Services.Models
         public IActivity ActivateActivity(string activityType, Action<IActivity>? setupActivity = default)
         {
             var activityActivator = ServiceProvider.GetRequiredService<IActivityActivator>();
-            return activityActivator.ActivateActivity(activityType, setupActivity);
+            var activity = activityActivator.ActivateActivity(activityType, setupActivity);
+            activity.Data = ActivityInstance.Data;
+            return activity;
         }
     }
 }

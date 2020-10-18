@@ -6,10 +6,7 @@ using NodaTime;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.Timers
 {
-    [ActivityDefinition(
-        Category = "Timers",
-        Description = "Triggers at a specified interval."
-    )]
+    [ActivityDefinition(Category = "Timers", Description = "Triggers at a specified interval.")]
     public class TimerEvent : Activity
     {
         private readonly IClock _clock;
@@ -19,11 +16,15 @@ namespace Elsa.Activities.Timers
             _clock = clock;
         }
 
-        [ActivityProperty(Hint = "An expression that evaluates to a Duration value")]
+        [ActivityProperty(Hint = "An expression that evaluates to a Duration value.")]
         public Duration Timeout { get; set; } = default!;
 
-        private Instant? StartTime { get; set; }
-
+        private Instant? StartTime
+        {
+            get => GetState<Instant?>();
+            set => SetState(value);
+        }
+        
         protected override bool OnCanExecute() => StartTime == null || IsExpired();
         protected override IActivityExecutionResult OnExecute() => ExecuteInternal();
         protected override IActivityExecutionResult OnResume() => ExecuteInternal();

@@ -56,7 +56,6 @@ namespace Elsa.Builders
         public Func<ActivityExecutionContext, CancellationToken, ValueTask<IActivity>> BuildActivityAsync() =>
             async (context, cancellationToken) =>
             {
-                //var activity = context.ActivateActivity(context.ActivityBlueprint.Type, SetupActivity);
                 var activity = context.ActivateActivity(context.ActivityBlueprint.Type);
                 activity.Id = ActivityId;
                 activity.Name = Name;

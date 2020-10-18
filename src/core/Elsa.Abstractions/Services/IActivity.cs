@@ -2,6 +2,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.ActivityResults;
 using Elsa.Services.Models;
+using Newtonsoft.Json.Linq;
 
 namespace Elsa.Services
 {
@@ -36,6 +37,11 @@ namespace Elsa.Services
         /// A value indicating whether the workflow instance will be persisted automatically upon executing this activity.
         /// </summary>
         bool PersistWorkflow { get; set; }
+        
+        /// <summary>
+        /// A data store for the activity to store information that needs to be persisted as part of the workflow instance.
+        /// </summary>
+        JObject Data { get; set; }
 
         /// <summary>
         /// Returns a value of whether the specified activity can execute.

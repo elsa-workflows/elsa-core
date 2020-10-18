@@ -9,7 +9,7 @@ namespace Elsa.ActivityResults
         {
             var activityDefinition = activityExecutionContext.ActivityBlueprint;
             var blockingActivity = new BlockingActivity(activityDefinition.Id, activityDefinition.Type);
-            activityExecutionContext.WorkflowExecutionContext.BlockingActivities.Add(blockingActivity);
+            activityExecutionContext.WorkflowExecutionContext.WorkflowInstance.BlockingActivities.Add(blockingActivity);
             activityExecutionContext.WorkflowExecutionContext.Suspend();
         }
     }

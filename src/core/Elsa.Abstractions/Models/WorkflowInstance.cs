@@ -6,11 +6,12 @@ namespace Elsa.Models
 {
     public class WorkflowInstance
     {
+        private HashSet<BlockingActivity> _blockingActivities = new HashSet<BlockingActivity>(BlockingActivityEqualityComparer.Instance);
+        
         public WorkflowInstance()
         {
             Variables = new Variables();
             Activities = new List<ActivityInstance>();
-            BlockingActivities = new HashSet<BlockingActivity>(new BlockingActivityEqualityComparer());
             ExecutionLog = new List<ExecutionLogEntry>();
             ScheduledActivities = new Stack<ScheduledActivity>();
         }
@@ -25,7 +26,13 @@ namespace Elsa.Models
         public Variables Variables { get; set; }
         public object? Output { get; set; }
         public ICollection<ActivityInstance> Activities { get; set; }
-        public HashSet<BlockingActivity> BlockingActivities { get; set; }
+
+        public HashSet<BlockingActivity> BlockingActivities
+        {
+            get => _blockingActivities;
+            set => _blockingActivities = new HashSet<BlockingActivity>(value, BlockingActivityEqualityComparer.Instance);
+        }
+        
         public ICollection<ExecutionLogEntry> ExecutionLog { get; set; }
         public WorkflowFault? Fault { get; set; }
         public Stack<ScheduledActivity> ScheduledActivities { get; set; }

@@ -151,9 +151,7 @@ namespace Elsa.Services
             else
                 predicate = x => x.ActivityType == activityType;
 
-            var query = _workflowInstanceManager.Query<WorkflowInstanceBlockingActivitiesIndex>()
-                .Where(predicate);
-
+            var query = _workflowInstanceManager.Query<WorkflowInstanceBlockingActivitiesIndex>().Where(predicate);
             var workflowInstances = await query.ListAsync();
             var tuples = workflowInstances.GetBlockingActivities();
 
