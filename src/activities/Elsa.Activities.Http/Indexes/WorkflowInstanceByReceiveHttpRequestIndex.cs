@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using Elsa.Data;
 using Elsa.Models;
 using YesSql.Indexes;
 
@@ -13,6 +14,8 @@ namespace Elsa.Activities.Http.Indexes
 
     public class WorkflowInstanceByReceiveHttpRequestIndexProvider : IndexProvider<WorkflowInstance>
     {
+        public WorkflowInstanceByReceiveHttpRequestIndexProvider() => CollectionName = CollectionNames.WorkflowInstances;
+
         public override void Describe(DescribeContext<WorkflowInstance> context)
         {
             context.For<WorkflowInstanceByReceiveHttpRequestIndex>()

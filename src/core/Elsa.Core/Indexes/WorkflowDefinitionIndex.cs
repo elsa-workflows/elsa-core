@@ -1,4 +1,5 @@
-﻿using Elsa.Models;
+﻿using Elsa.Data;
+using Elsa.Models;
 using YesSql.Indexes;
 
 namespace Elsa.Indexes
@@ -15,6 +16,8 @@ namespace Elsa.Indexes
     
     public class WorkflowDefinitionIndexProvider : IndexProvider<WorkflowDefinition>
     {
+        public WorkflowDefinitionIndexProvider() => CollectionName = CollectionNames.WorkflowDefinitions;
+
         public override void Describe(DescribeContext<WorkflowDefinition> context)
         {
             context.For<WorkflowDefinitionIndex>()
