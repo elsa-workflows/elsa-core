@@ -31,9 +31,9 @@ namespace Elsa.Data.Extensions
             IServiceProvider serviceProvider,
             Action<IServiceProvider, Configuration> configure)
         {
-            var configuration = new Configuration();
+            var configuration = new Configuration { ContentSerializer = new CustomJsonContentSerializer() };
             configure(serviceProvider, configuration);
-            
+
             // TODO: The following line is a temporary workaround until the bug in YesSql is fixed: https://github.com/sebastienros/yessql/pull/280
             var store = StoreFactory.CreateAndInitializeAsync(configuration).GetAwaiter().GetResult();
             //var store = StoreFactory.Create(configuration);

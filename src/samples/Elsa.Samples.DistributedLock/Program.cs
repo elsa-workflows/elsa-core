@@ -24,7 +24,7 @@ namespace Elsa.Samples.DistributedLock
                     {
                         services
                             .AddElsa(options => options
-                                .UsePersistence(db => db.UseSqLite("Data Source=elsa2.db;Cache=Shared"))
+                                .UsePersistence(db => db.UseSqLite("Data Source=elsa.db;Cache=Shared"))
                                 .UseRedisLockProvider("localhost:6379,abortConnect=false"))
                             .AddConsoleActivities()
                             .AddTimerActivities(options => options.Configure(timer => timer.SweepInterval = Duration.FromSeconds(5)))
