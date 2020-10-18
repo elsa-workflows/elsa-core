@@ -1,15 +1,22 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Messages;
 using Elsa.Services;
-using Rebus.Bus;
+using Rebus.ServiceProvider;
 
 namespace Elsa.StartupTasks
 {
     public class StartServiceBusTask : IStartupTask
     {
-        private readonly IBus _serviceBus;
-        public StartServiceBusTask(IBus serviceBus) => _serviceBus = serviceBus;
-        public Task ExecuteAsync(CancellationToken cancellationToken = default) => _serviceBus.Subscribe<RunWorkflow>();
+        private readonly IServiceProvider _serviceProvider;
+        public StartServiceBusTask(IServiceProvider serviceProvider) => _serviceProvider = serviceProvider;
+        
+        public Task ExecuteAsync(CancellationToken cancellationToken = default)
+        {
+            _serviceProvider.UseRebus(x => x.Subscribe<RunWorkflow>());
+            return Task.CompletedTask;
+        }
     }
+    
 }
