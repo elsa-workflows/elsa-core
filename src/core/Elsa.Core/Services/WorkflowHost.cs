@@ -4,13 +4,13 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.ActivityResults;
+using Elsa.Builders;
 using Elsa.Events;
 using Elsa.Exceptions;
 using Elsa.Models;
 using Elsa.Services.Models;
 using Elsa.Triggers;
 using MediatR;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Services
@@ -24,6 +24,7 @@ namespace Elsa.Services
 
         private readonly IWorkflowRegistry _workflowRegistry;
         private readonly IWorkflowFactory _workflowFactory;
+        private readonly IWorkflowBuilder _workflowBuilder;
         private readonly IMediator _mediator;
         private readonly IServiceProvider _serviceProvider;
         private readonly IEnumerable<ITriggerProvider> _triggerProviders;
@@ -32,6 +33,7 @@ namespace Elsa.Services
         public WorkflowHost(
             IWorkflowRegistry workflowRegistry,
             IWorkflowFactory workflowFactory,
+            IWorkflowBuilder workflowBuilder,
             IMediator mediator,
             IServiceProvider serviceProvider,
             IEnumerable<ITriggerProvider> triggerProviders,
@@ -39,6 +41,7 @@ namespace Elsa.Services
         {
             _workflowRegistry = workflowRegistry;
             _workflowFactory = workflowFactory;
+            _workflowBuilder = workflowBuilder;
             _mediator = mediator;
             _serviceProvider = serviceProvider;
             _triggerProviders = triggerProviders;
@@ -59,6 +62,22 @@ namespace Elsa.Services
 
             return await RunWorkflowAsync(workflowBlueprint, workflowInstance, activityId, input, cancellationToken);
         }
+
+        public async ValueTask<WorkflowInstance> RunWorkflowAsync<T>(
+            string? activityId = default,
+            object? input = default,
+            string? correlationId = default,
+            CancellationToken cancellationToken = default)
+            where T : IWorkflow =>
+            await RunWorkflowAsync(_workflowBuilder.Build<T>(), activityId, input, correlationId, cancellationToken);
+
+        public async ValueTask<WorkflowInstance> RunWorkflowAsync<T>(
+            WorkflowInstance workflowInstance,
+            string? activityId = default,
+            object? input = default,
+            CancellationToken cancellationToken = default)
+            where T : IWorkflow =>
+            await RunWorkflowAsync(_workflowBuilder.Build<T>(), workflowInstance, activityId, input, cancellationToken);
 
         public async ValueTask<WorkflowInstance> RunWorkflowAsync(
             WorkflowInstance workflowInstance,
@@ -202,7 +221,7 @@ namespace Elsa.Services
                 await _mediator.Publish(new ActivityExecuting(activityExecutionContext), cancellationToken);
                 await result.ExecuteAsync(activityExecutionContext, cancellationToken);
                 await _mediator.Publish(new ActivityExecuted(activityExecutionContext), cancellationToken);
-                
+
                 activityOperation = Execute;
                 workflowExecutionContext.CompletePass();
             }

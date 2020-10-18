@@ -1,4 +1,3 @@
-using System;
 using Elsa.Converters;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;

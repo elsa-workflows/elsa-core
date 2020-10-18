@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Elsa.Activities.Console;
-using Elsa.Expressions;
 using Elsa.Models;
 using Elsa.Scripting.Liquid.Services;
 using Elsa.Serialization;

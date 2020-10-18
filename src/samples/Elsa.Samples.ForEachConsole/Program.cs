@@ -2,28 +2,31 @@
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Samples.HelloWorldConsole
+namespace Elsa.Samples.ForEachConsole
 {
-    class Program
+    /// <summary>
+    /// Demonstrates a workflow with a For looping construct.
+    /// </summary>
+    static class Program
     {
-        static async Task Main(string[] args)
+        private static async Task Main()
         {
             // Create a service container with Elsa services.
             var services = new ServiceCollection()
                 .AddElsa()
                 .AddConsoleActivities()
-                .AddWorkflow<HelloWorld>()
+                .AddWorkflow<LoopingWorkflow>()
                 .BuildServiceProvider();
             
             // Run startup actions (not needed when registering Elsa with a Host).
             var startupRunner = services.GetRequiredService<IStartupRunner>();
             await startupRunner.StartupAsync();
             
-            // Get a workflow host.
+            // Get the workflow host.
             var workflowHost = services.GetService<IWorkflowHost>();
 
             // Execute the workflow.
-            await workflowHost.RunWorkflowAsync<HelloWorld>();
+            await workflowHost.RunWorkflowAsync<LoopingWorkflow>();
         }
     }
 }

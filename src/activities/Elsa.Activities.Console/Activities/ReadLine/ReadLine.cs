@@ -50,6 +50,6 @@ namespace Elsa.Activities.Console
             return Execute(receivedInput);
         }
 
-        private IActivityExecutionResult Execute(string receivedInput) => Done((object)receivedInput);
+        private IActivityExecutionResult Execute(string receivedInput) => Done(receivedInput);
     }
 }

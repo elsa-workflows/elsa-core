@@ -16,6 +16,7 @@ namespace Elsa.Samples.HelloWorldHttp
 
         public void Configure(IApplicationBuilder app)
         {
+            // Add HTTP activities middleware.
             app.UseHttpActivities();
         }
     }

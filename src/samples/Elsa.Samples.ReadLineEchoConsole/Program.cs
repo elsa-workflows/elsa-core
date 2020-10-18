@@ -1,8 +1,10 @@
 ﻿using System.Threading.Tasks;
+using Elsa.Activities.Console;
+using Elsa.Builders;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Samples.HelloWorldConsole
+namespace Elsa.Samples.ReadLineEchoConsole
 {
     class Program
     {
@@ -12,18 +14,24 @@ namespace Elsa.Samples.HelloWorldConsole
             var services = new ServiceCollection()
                 .AddElsa()
                 .AddConsoleActivities()
-                .AddWorkflow<HelloWorld>()
                 .BuildServiceProvider();
             
             // Run startup actions (not needed when registering Elsa with a Host).
             var startupRunner = services.GetRequiredService<IStartupRunner>();
             await startupRunner.StartupAsync();
             
-            // Get a workflow host.
+            // Build a new workflow.
+            var workflow = services.GetService<IWorkflowBuilder>()
+                .WriteLine("What's your name?")
+                .ReadLine()
+                .WriteLine(context => $"Greetings, {context.Input}!")
+                .Build();
+            
+            // Get the workflow host.
             var workflowHost = services.GetService<IWorkflowHost>();
 
             // Execute the workflow.
-            await workflowHost.RunWorkflowAsync<HelloWorld>();
+            await workflowHost.RunWorkflowAsync(workflow);
         }
     }
 }

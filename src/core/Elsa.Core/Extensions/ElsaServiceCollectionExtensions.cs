@@ -17,14 +17,12 @@ using Elsa.Metadata;
 using Elsa.Metadata.Handlers;
 using Elsa.Runtime;
 using Elsa.Serialization;
-using Elsa.Serialization.Formatters;
 using Elsa.Services;
 using Elsa.StartupTasks;
 using Elsa.Triggers;
 using Elsa.WorkflowProviders;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Newtonsoft.Json;
 using NodaTime;
 using Rebus.Handlers;
 

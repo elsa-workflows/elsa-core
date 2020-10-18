@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Elsa.Comparers;
 using Elsa.Models;
 using Microsoft.Extensions.Localization;
 using Newtonsoft.Json.Linq;
@@ -52,7 +51,7 @@ namespace Elsa.Services.Models
         public WorkflowStatus Status => WorkflowInstance.Status;
 
         public void SetVariable(string name, object? value) => WorkflowInstance.Variables.Set(name, JToken.FromObject(value!));
-        public T GetVariable<T>(string name) => (T)GetVariable(name)!;
+        public T GetVariable<T>(string name) => WorkflowInstance.Variables.Get<T>(name);
         public object? GetVariable(string name) => WorkflowInstance.Variables.Get(name);
         public void CompletePass() => IsFirstPass = false;
         public void Begin() => WorkflowInstance.Status = WorkflowStatus.Running;

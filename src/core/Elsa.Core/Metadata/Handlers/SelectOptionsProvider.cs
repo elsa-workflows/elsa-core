@@ -1,8 +1,6 @@
 using System.Linq;
 using System.Reflection;
 using Elsa.Attributes;
-using Elsa.Serialization;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using JsonSerializer = Newtonsoft.Json.JsonSerializer;
 

@@ -1,3 +1,4 @@
+using System;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Services;
@@ -21,19 +22,34 @@ namespace Elsa.Activities.ControlFlow
         public int End { get; set; }
 
         [ActivityProperty(Hint = "An expression that evaluates to the incrementing number on each step.")]
-        public int Step { get; set; }
+        public int Step { get; set; } = 1;
 
-        private int? CurrentValue { get; set; }
+        [ActivityProperty(Hint = "The operator to use when comparing the current value against the end value.")]
+        public Operator Operator { get; set; } = Operator.LessThan;
+
+        private int? CurrentValue
+        {
+            get => GetState<int?>();
+            set => SetState(value);
+        }
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
             var currentValue = CurrentValue ?? Start;
-
-            if (currentValue < End)
+            
+            var loop = Operator switch
             {
-                currentValue += Step;
-                CurrentValue = currentValue;
-                return Combine(Schedule(Id), Output(currentValue), Done(OutcomeNames.Iterate));
+                Operator.LessThan => currentValue < End,
+                Operator.LessThanOrEqual => currentValue <= End,
+                Operator.GreaterThan => currentValue > End,
+                Operator.GreaterThanOrEqual => currentValue >= End,
+                _ => throw new NotSupportedException()
+            };
+
+            if (loop)
+            {
+                CurrentValue = currentValue + Step;
+                return Combine(Schedule(Id), Output(currentValue), Outcome(OutcomeNames.Iterate));
             }
 
             CurrentValue = null;

@@ -7,6 +7,7 @@ namespace Elsa.Models
     {
         public Variables()
         {
+            Data = new JObject();
         }
 
         public Variables(Variables other) : this(other.Data)
@@ -21,6 +22,7 @@ namespace Elsa.Models
         public JObject Data { get; set; }
         
         public JToken? Get(string name) => Has(name) ? Data[name] : default;
+        public T Get<T>(string name) => Has(name) ? Data.Value<T>(name) : default!;
 
         public Variables Set(string name, JToken value)
         {
