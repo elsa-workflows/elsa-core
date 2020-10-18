@@ -13,18 +13,13 @@ namespace Elsa.Samples.Timers
 
         public static IHostBuilder CreateHostBuilder() =>
             Host.CreateDefaultBuilder()
-                .ConfigureLogging(logging => logging.AddConsole().SetMinimumLevel(LogLevel.Debug))
                 .ConfigureServices(
                     (hostContext, services) =>
                     {
                         services
-                            .AddElsa(
-                                options =>
-                                    options.UsePersistence(
-                                        config => config.UseSqLite("Data Source=elsa.db;Cache=Shared")))
-                            .AddTimerActivities(
-                                options =>
-                                    options.Configure(timer => timer.SweepInterval = Duration.FromSeconds(5)))
+                            .AddElsa(options => options.UsePersistence(db => db.UseSqLite("Data Source=elsa.db;Cache=Shared")))
+                            .AddConsoleActivities()
+                            .AddTimerActivities(options => options.Configure(timer => timer.SweepInterval = Duration.FromSeconds(5)))
                             .AddWorkflow<RecurringTaskWorkflow>();
                     });
     }

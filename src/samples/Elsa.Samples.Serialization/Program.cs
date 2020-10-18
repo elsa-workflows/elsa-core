@@ -10,6 +10,13 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Samples.Serialization
 {
+    /// <summary>
+    /// Demonstrates how to:
+    /// 1. Serialize a workflow definition model to JSON.
+    /// 2. Deserialize JSON back to a workflow definition model.
+    /// 3. Materialize a workflow definition model into a workflow blueprint.
+    /// 4. Run a workflow blueprint.
+    /// </summary>
     class Program
     {
         static async Task Main(string[] args)
