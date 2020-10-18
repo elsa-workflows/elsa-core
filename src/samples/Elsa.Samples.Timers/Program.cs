@@ -20,7 +20,8 @@ namespace Elsa.Samples.Timers
                             .AddElsa(options => options.UsePersistence(db => db.UseSqLite("Data Source=elsa.db;Cache=Shared")))
                             .AddConsoleActivities()
                             .AddTimerActivities(options => options.Configure(timer => timer.SweepInterval = Duration.FromSeconds(5)))
-                            .AddWorkflow<RecurringTaskWorkflow>();
+                            .AddWorkflow<RecurringTaskWorkflow>()
+                            .AddWorkflow<CronTaskWorkflow>();
                     });
     }
 }
