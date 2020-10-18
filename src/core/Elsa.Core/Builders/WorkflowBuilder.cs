@@ -22,6 +22,7 @@ namespace Elsa.Builders
             ServiceProvider = serviceProvider;
             Id = idGenerator.Generate();
             Version = 1;
+            IsEnabled = true;
             _activityBuilders = new List<IActivityBuilder>();
             _connectionBuilders = new List<IConnectionBuilder>();
         }
