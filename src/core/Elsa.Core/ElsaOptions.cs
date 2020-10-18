@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Rebus.Config;
 using Rebus.DataBus.InMem;
+using Rebus.Logging;
 using Rebus.Persistence.InMem;
 using Rebus.Routing.TypeBased;
 using Rebus.Transport.InMem;
@@ -86,7 +87,7 @@ namespace Elsa
             IServiceProvider serviceProvider)
         {
             return rebus
-                .Logging(logging => logging.ColoredConsole())
+                .Logging(logging => logging.ColoredConsole(LogLevel.Info))
                 .Subscriptions(s => s.StoreInMemory(new InMemorySubscriberStore()))
                 .DataBus(s => s.StoreInMemory(new InMemDataStore()))
                 .Routing(r => r.TypeBased())
