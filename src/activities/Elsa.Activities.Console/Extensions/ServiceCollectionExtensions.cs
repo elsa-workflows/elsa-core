@@ -7,10 +7,11 @@ namespace Microsoft.Extensions.DependencyInjection
 {
     public static class ServiceCollectionExtensions
     {        
-        public static IServiceCollection AddConsoleActivities(this IServiceCollection services, TextReader standardIn = default)
+        public static IServiceCollection AddConsoleActivities(this IServiceCollection services, TextReader? standardIn = default, TextWriter? standardOut = default)
         {
             return services
                 .AddSingleton(standardIn ?? Console.In)
+                .AddSingleton(standardOut ?? Console.Out)
                 .AddActivity<ReadLine>()
                 .AddActivity<WriteLine>();
         }

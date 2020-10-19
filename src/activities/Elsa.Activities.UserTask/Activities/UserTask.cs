@@ -20,7 +20,7 @@ namespace Elsa.Activities.UserTask.Activities
     )]
     public class UserTask : Activity
     {
-        private readonly IJsonSerializer _serializer;
+        private readonly IContentSerializer _serializer;
 
         [ActivityProperty(
             Type = ActivityPropertyTypes.List,
@@ -28,7 +28,7 @@ namespace Elsa.Activities.UserTask.Activities
         )]
         public ICollection<string> Actions { get; set; } = new List<string>();
 
-        public UserTask(IJsonSerializer serializer)
+        public UserTask(IContentSerializer serializer)
         {
             _serializer = serializer;
         }

@@ -60,7 +60,7 @@ namespace Elsa.Samples.Serialization
             };
             
             // Serialize workflow definition to JSON.
-            var serializer = services.GetRequiredService<IJsonSerializer>();
+            var serializer = services.GetRequiredService<IContentSerializer>();
             var json = serializer.Serialize(workflowDefinition);
             
             Console.WriteLine(json);

@@ -18,7 +18,6 @@ namespace Elsa.Services.Models
             ServiceProvider = serviceProvider;
             WorkflowBlueprint = workflowBlueprint;
             WorkflowInstance = workflowInstance;
-            ExecutionLog = new List<ExecutionLogEntry>(workflowInstance.ExecutionLog);
             IsFirstPass = true;
         }
 
@@ -47,7 +46,7 @@ namespace Elsa.Services.Models
         public ScheduledActivity PeekScheduledActivity() => WorkflowInstance.ScheduledActivities.Peek();
         public string? CorrelationId { get; set; }
         public bool DeleteCompletedInstances { get; set; }
-        public ICollection<ExecutionLogEntry> ExecutionLog { get; }
+        public ICollection<ExecutionLogEntry> ExecutionLog => WorkflowInstance.ExecutionLog;
         public WorkflowStatus Status => WorkflowInstance.Status;
 
         public void SetVariable(string name, object? value) => WorkflowInstance.Variables.Set(name, JToken.FromObject(value!));

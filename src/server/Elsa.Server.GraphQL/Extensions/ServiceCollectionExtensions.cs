@@ -6,7 +6,8 @@ using Elsa.Services;
 using HotChocolate;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Server.GraphQL.Extensions
+// ReSharper disable once CheckNamespace
+namespace Microsoft.Extensions.DependencyInjection
 {
     public static class ServiceCollectionExtensions
     {

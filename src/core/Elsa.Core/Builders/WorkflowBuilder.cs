@@ -93,11 +93,9 @@ namespace Elsa.Builders
 
         public IActivityBuilder New(
             Type activityType,
-            Action<IActivityBuilder>? branch = default,
             IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders = default)
         {
             var activityBuilder = new ActivityBuilder(activityType, this, propertyValueProviders);
-            branch?.Invoke(activityBuilder);
             return activityBuilder;
         }
 
@@ -105,7 +103,7 @@ namespace Elsa.Builders
             Action<IActivityBuilder>? branch = default,
             IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders = default)
             where T : class, IActivity =>
-            New(typeof(T), branch, propertyValueProviders);
+            New(typeof(T), propertyValueProviders);
 
         public IActivityBuilder New<T>(
             Action<ISetupActivity<T>>? setup = default,

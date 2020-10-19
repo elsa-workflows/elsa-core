@@ -1,22 +1,26 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Elsa;
 using Elsa.Activities.ControlFlow;
 using Elsa.Activities.Primitives;
 using Elsa.Activities.Signaling;
 using Elsa.Builders;
+using Elsa.Consumers;
 using Elsa.Converters;
 using Elsa.Data;
 using Elsa.Data.Extensions;
+using Elsa.Events;
 using Elsa.Expressions;
+using Elsa.Extensions;
+using Elsa.Handlers;
 using Elsa.Indexes;
 using Elsa.Messages;
-using Elsa.Messaging;
-using Elsa.Messaging.Distributed.Handlers;
 using Elsa.Metadata;
 using Elsa.Metadata.Handlers;
 using Elsa.Runtime;
 using Elsa.Serialization;
+using Elsa.ServiceBus;
 using Elsa.Services;
 using Elsa.StartupTasks;
 using Elsa.Triggers;
@@ -67,13 +71,7 @@ namespace Microsoft.Extensions.DependencyInjection
         }
 
         public static IServiceCollection AddConsumer<TMessage, TConsumer>(this IServiceCollection services) where TConsumer : class, IHandleMessages<TMessage> => services.AddTransient<IHandleMessages<TMessage>, TConsumer>();
-
-        private static IServiceCollection AddMediatR(this ElsaOptions options)
-        {
-            return options.Services.AddMediatR(
-                mediatr => mediatr.AsScoped(),
-                typeof(ElsaServiceCollectionExtensions));
-        }
+        private static IServiceCollection AddMediatR(this ElsaOptions options) => options.Services.AddMediatR(mediatr => mediatr.AsScoped(), typeof(IActivity));
 
         private static ElsaOptions AddWorkflowsCore(this ElsaOptions configuration)
         {
@@ -87,7 +85,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddTransient<Func<IEnumerable<IActivity>>>(sp => sp.GetServices<IActivity>)
                 .AddSingleton<IIdGenerator, IdGenerator>()
                 .AddSingleton(sp => sp.GetRequiredService<ElsaOptions>().CreateJsonSerializer(sp))
-                .AddSingleton<IJsonSerializer, DefaultJsonSerializer>()
+                .AddSingleton<IContentSerializer, ContentSerializer>()
                 .AddSingleton<IActivitySerializer, ActivitySerializer>()
                 .AddSingleton<TypeConverter>()
                 .TryAddProvider<IExpressionHandler, LiteralHandler>(ServiceLifetime.Singleton)
@@ -99,7 +97,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddScoped<IWorkflowHost, WorkflowHost>()
                 .AddSingleton<IWorkflowFactory, WorkflowFactory>()
                 .AddSingleton<IWorkflowBlueprintMaterializer, WorkflowBlueprintMaterializer>()
-                .AddSingleton<IWorkflowSelector, WorkflowSelector>()
+                .AddScoped<IWorkflowSelector, WorkflowSelector>()
                 .AddScoped<IWorkflowDefinitionManager, WorkflowDefinitionManager>()
                 .AddScoped<IWorkflowInstanceManager, WorkflowInstanceManager>()
                 .AddIndexProvider<WorkflowDefinitionIndexProvider>()
@@ -109,8 +107,9 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddWorkflowProvider<CodeWorkflowProvider>()
                 .AddTransient<IWorkflowBuilder, WorkflowBuilder>()
                 .AddTransient<Func<IWorkflowBuilder>>(sp => sp.GetRequiredService<IWorkflowBuilder>)
+                .AddNotificationHandlers(typeof(ElsaServiceCollectionExtensions))
                 .AddStartupTask<StartServiceBusTask>()
-                .AddConsumer<RunWorkflow, RunWorkflowHandler>()
+                .AddConsumer<RunWorkflow, RunWorkflowConsumer>()
                 .AddMetadataHandlers()
                 .AddPrimitiveActivities();
 

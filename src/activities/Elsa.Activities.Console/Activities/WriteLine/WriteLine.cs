@@ -30,7 +30,7 @@ namespace Elsa.Activities.Console
         }
 
         [ActivityProperty(Hint = "The text to write.")]
-        public string Text { get; set; }
+        public string? Text { get; set; }
 
         private readonly TextWriter _output;
 

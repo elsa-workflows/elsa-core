@@ -29,7 +29,7 @@ namespace Elsa
             
             CreateJsonSerializer = sp =>
             {
-                var serializer = DefaultJsonSerializer.CreateDefaultJsonSerializer();
+                var serializer = ContentSerializer.CreateDefaultJsonSerializer();
                 JsonSerializerConfigurer(sp, serializer);
                 return serializer;
             };

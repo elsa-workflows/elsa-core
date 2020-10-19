@@ -22,7 +22,7 @@ namespace Elsa.Activities.Console
     )]
     public class ReadLine : Activity
     {
-        private readonly TextReader _input;
+        private readonly TextReader? _input;
 
         public ReadLine()
         {
@@ -46,7 +46,7 @@ namespace Elsa.Activities.Console
 
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
         {
-            var receivedInput = (string)context.Input;
+            var receivedInput = (string)context.Input!;
             return Execute(receivedInput);
         }
 

@@ -1,8 +1,5 @@
 using Elsa.Runtime;
-using Elsa.Server.GraphQL.Extensions;
 using Elsa.StartupTasks;
-using HotChocolate.AspNetCore;
-using HotChocolate.AspNetCore.Voyager;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -34,7 +31,7 @@ namespace Elsa.Server.Host
 
             services
                 .AddElsaServer()
-                .AddElsaGraphQL()
+                .AddElsaApiEndpoints()
                 
                 .AddCors(options => options.AddDefaultPolicy(cors => cors
                     .AllowAnyOrigin()
@@ -57,9 +54,6 @@ namespace Elsa.Server.Host
 
             app
                 .UseCors()
-                .UseGraphQL("/graphql")
-                .UsePlayground("/graphql")
-                .UseVoyager("/graphql")
                 .UseHttpActivities();
         }
     }

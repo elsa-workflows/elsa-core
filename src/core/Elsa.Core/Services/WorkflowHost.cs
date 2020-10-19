@@ -27,7 +27,6 @@ namespace Elsa.Services
         private readonly IWorkflowBuilder _workflowBuilder;
         private readonly IMediator _mediator;
         private readonly IServiceProvider _serviceProvider;
-        private readonly IEnumerable<ITriggerProvider> _triggerProviders;
         private readonly ILogger _logger;
 
         public WorkflowHost(
@@ -36,7 +35,6 @@ namespace Elsa.Services
             IWorkflowBuilder workflowBuilder,
             IMediator mediator,
             IServiceProvider serviceProvider,
-            IEnumerable<ITriggerProvider> triggerProviders,
             ILogger<WorkflowHost> logger)
         {
             _workflowRegistry = workflowRegistry;
@@ -44,7 +42,6 @@ namespace Elsa.Services
             _workflowBuilder = workflowBuilder;
             _mediator = mediator;
             _serviceProvider = serviceProvider;
-            _triggerProviders = triggerProviders;
             _logger = logger;
         }
 
@@ -78,6 +75,29 @@ namespace Elsa.Services
             CancellationToken cancellationToken = default)
             where T : IWorkflow =>
             await RunWorkflowAsync(_workflowBuilder.Build<T>(), workflowInstance, activityId, input, cancellationToken);
+
+        public async ValueTask<WorkflowInstance> RunWorkflowAsync(
+            IWorkflow workflow, 
+            string? activityId = default, 
+            object? input = default, 
+            string? correlationId = default, 
+            CancellationToken cancellationToken = default)
+        {
+            var workflowBlueprint = _workflowBuilder.Build(workflow);
+            return await RunWorkflowAsync(workflowBlueprint, activityId, input, correlationId, cancellationToken);
+        }
+
+        public async ValueTask<WorkflowInstance> RunWorkflowAsync(
+            IWorkflow workflow,
+            WorkflowInstance workflowInstance,
+            string? activityId = default,
+            object? input = default,
+            string? correlationId = default,
+            CancellationToken cancellationToken = default)
+        {
+            var workflowBlueprint = _workflowBuilder.Build(workflow);
+            return await RunWorkflowAsync(workflowBlueprint, workflowInstance, activityId, input, cancellationToken);
+        }
 
         public async ValueTask<WorkflowInstance> RunWorkflowAsync(
             WorkflowInstance workflowInstance,
