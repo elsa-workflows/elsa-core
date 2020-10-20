@@ -21,12 +21,10 @@ namespace Elsa.Queries
             VersionOptions = versionOptions;
         }
 
-        public Expression<Func<IQuery<WorkflowDefinition>, IQuery<WorkflowDefinition>>> Query()
-        {
-            return query => query
+        public Expression<Func<IQuery<WorkflowDefinition>, IQuery<WorkflowDefinition>>> Query() =>
+            query => query
                 .With<WorkflowDefinitionIndex>(x => x.WorkflowDefinitionId == WorkflowDefinitionId)
                 .WithVersion(VersionOptions);
-        }
     }
 
     public static class WorkflowDefinitionByIdAndVersionQueryWorkflowDefinitionManagerExtensions
@@ -34,18 +32,15 @@ namespace Elsa.Queries
         public static IQuery<WorkflowDefinition> QueryByIdAndVersion(
             this IWorkflowDefinitionManager manager,
             string workflowDefinitionId,
-            VersionOptions versionOptions)
-        {
-            return manager.ExecuteQuery(
-                new WorkflowDefinitionByIdAndVersionQuery(workflowDefinitionId, versionOptions));
-        }
+            VersionOptions versionOptions) =>
+            manager.Query<WorkflowDefinitionIndex>(x => x.WorkflowDefinitionId == workflowDefinitionId).WithVersion(versionOptions);
+            //manager.ExecuteQuery(new WorkflowDefinitionByIdAndVersionQuery(workflowDefinitionId, versionOptions));
 
         public static async Task<WorkflowDefinition?> GetAsync(
             this IWorkflowDefinitionManager manager,
             string workflowDefinitionId,
             VersionOptions versionOptions,
             CancellationToken cancellationToken = default) =>
-            await manager.QueryByIdAndVersion(workflowDefinitionId, versionOptions)
-                .FirstOrDefaultAsync();
+            await manager.QueryByIdAndVersion(workflowDefinitionId, versionOptions).FirstOrDefaultAsync();
     }
 }

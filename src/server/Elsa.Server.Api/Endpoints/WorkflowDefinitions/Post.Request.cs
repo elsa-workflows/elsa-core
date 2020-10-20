@@ -3,7 +3,7 @@ using Elsa.Models;
 
 namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
 {
-    public class CreateWorkflowDefinitionRequest
+    public class SaveWorkflowDefinitionRequest
     {
         public string WorkflowDefinitionId { get; set; } = default!;
         public string? Name { get; set; }

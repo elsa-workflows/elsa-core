@@ -39,7 +39,7 @@ namespace Elsa.ComponentTests.Endpoints.WorkflowDefinitions
             Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         }
 
-        private CreateWorkflowDefinitionRequest CreateWorkflowDefinitionRequest()
+        private SaveWorkflowDefinitionRequest CreateWorkflowDefinitionRequest()
         {
             var writeLine = new ActivityDefinition
             {
@@ -55,7 +55,7 @@ namespace Elsa.ComponentTests.Endpoints.WorkflowDefinitions
             var activities = new[] { writeLine, readLine };
             var connections = new[] { new ConnectionDefinition(writeLine.Id, readLine.Id, OutcomeNames.Done) };
 
-            return _fixture.Build<CreateWorkflowDefinitionRequest>()
+            return _fixture.Build<SaveWorkflowDefinitionRequest>()
                 .With(x => x.Activities, activities)
                 .With(x => x.Connections, connections)
                 .Create();

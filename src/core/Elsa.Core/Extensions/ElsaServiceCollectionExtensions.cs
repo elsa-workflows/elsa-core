@@ -15,6 +15,7 @@ using Elsa.Expressions;
 using Elsa.Extensions;
 using Elsa.Handlers;
 using Elsa.Indexes;
+using Elsa.Mapping;
 using Elsa.Messages;
 using Elsa.Metadata;
 using Elsa.Metadata.Handlers;
@@ -51,6 +52,7 @@ namespace Microsoft.Extensions.DependencyInjection
             options.AddWorkflowsCore();
             options.AddMediatR();
             options.AddServiceBus();
+            options.AddAutoMapper();
 
             return services;
         }
@@ -85,8 +87,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddTransient<Func<IEnumerable<IActivity>>>(sp => sp.GetServices<IActivity>)
                 .AddSingleton<IIdGenerator, IdGenerator>()
                 .AddSingleton(sp => sp.GetRequiredService<ElsaOptions>().CreateJsonSerializer(sp))
-                .AddSingleton<IContentSerializer, ContentSerializer>()
-                .AddSingleton<IActivitySerializer, ActivitySerializer>()
+                .AddSingleton<IContentSerializer, DefaultContentSerializer>()
                 .AddSingleton<TypeConverter>()
                 .TryAddProvider<IExpressionHandler, LiteralHandler>(ServiceLifetime.Singleton)
                 .TryAddProvider<IExpressionHandler, VariableHandler>(ServiceLifetime.Singleton)
@@ -100,6 +101,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddScoped<IWorkflowSelector, WorkflowSelector>()
                 .AddScoped<IWorkflowDefinitionManager, WorkflowDefinitionManager>()
                 .AddScoped<IWorkflowInstanceManager, WorkflowInstanceManager>()
+                .AddScoped<IWorkflowPublisher, WorkflowPublisher>()
                 .AddIndexProvider<WorkflowDefinitionIndexProvider>()
                 .AddIndexProvider<WorkflowInstanceIndexProvider>()
                 .AddStartupRunner()
@@ -107,6 +109,9 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddWorkflowProvider<CodeWorkflowProvider>()
                 .AddTransient<IWorkflowBuilder, WorkflowBuilder>()
                 .AddTransient<Func<IWorkflowBuilder>>(sp => sp.GetRequiredService<IWorkflowBuilder>)
+                .AddAutoMapperProfile<NodaTimeProfile>()
+                .AddAutoMapperProfile<CloningProfile>()
+                .AddSingleton<ICloner, AutoMapperCloner>()
                 .AddNotificationHandlers(typeof(ElsaServiceCollectionExtensions))
                 .AddStartupTask<StartServiceBusTask>()
                 .AddConsumer<RunWorkflow, RunWorkflowConsumer>()

@@ -34,13 +34,7 @@ namespace Elsa.Services
         public async ValueTask<IEnumerable<WorkflowDefinition>> ListAsync(CancellationToken cancellationToken = default) => await Query().ListAsync();
         public IQuery<WorkflowDefinition> Query() => _session.Query<WorkflowDefinition>(CollectionNames.WorkflowDefinitions);
         public IQuery<WorkflowDefinition, TIndex> Query<TIndex>() where TIndex : class, IIndex => _session.Query<WorkflowDefinition, TIndex>(CollectionNames.WorkflowDefinitions);
-
-        public IQuery<WorkflowDefinition, TIndex> Query<TIndex>(Expression<Func<TIndex, bool>> predicate)
-            where TIndex : class, IIndex => _session.Query<WorkflowDefinition, TIndex>(
-            predicate,
-            CollectionNames.WorkflowDefinitions);
-
-        public IQuery<WorkflowDefinition> ExecuteQuery(ICompiledQuery<WorkflowDefinition> query) =>
-            _session.ExecuteQuery(query, CollectionNames.WorkflowDefinitions);
+        public IQuery<WorkflowDefinition, TIndex> Query<TIndex>(Expression<Func<TIndex, bool>> predicate) where TIndex : class, IIndex => _session.Query<WorkflowDefinition, TIndex>(predicate, CollectionNames.WorkflowDefinitions);
+        public IQuery<WorkflowDefinition> ExecuteQuery(ICompiledQuery<WorkflowDefinition> query) => _session.ExecuteQuery(query, CollectionNames.WorkflowDefinitions);
     }
 }

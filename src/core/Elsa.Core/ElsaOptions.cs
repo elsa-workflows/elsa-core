@@ -1,6 +1,7 @@
 using System;
 using Elsa.Caching;
 using Elsa.DistributedLock;
+using Elsa.Extensions;
 using Elsa.Serialization;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
@@ -27,9 +28,15 @@ namespace Elsa
             ServiceBusConfigurer = ConfigureInMemoryServiceBus;
             JsonSerializerConfigurer = (sp, serializer) => {};
             
+            AddAutoMapper = () =>
+            {
+                services.AddAutoMapper(ServiceLifetime.Singleton);
+                services.AddSingleton(sp => sp.CreateAutoMapperConfiguration());
+            };
+            
             CreateJsonSerializer = sp =>
             {
-                var serializer = ContentSerializer.CreateDefaultJsonSerializer();
+                var serializer = DefaultContentSerializer.CreateDefaultJsonSerializer();
                 JsonSerializerConfigurer(sp, serializer);
                 return serializer;
             };
@@ -42,6 +49,7 @@ namespace Elsa
         internal Func<RebusConfigurer, IServiceProvider, RebusConfigurer> ServiceBusConfigurer { get; private set; }
         internal Func<IServiceProvider, JsonSerializer> CreateJsonSerializer { get; private set; }
         internal Action<IServiceProvider, JsonSerializer> JsonSerializerConfigurer { get; private set; }
+        internal Action AddAutoMapper { get; private set; }
 
         public ElsaOptions UseDistributedLockProvider(Func<IServiceProvider, IDistributedLockProvider> factory)
         {
@@ -60,6 +68,12 @@ namespace Elsa
         public ElsaOptions UsePersistence(Action<IServiceProvider, IConfiguration> configure)
         {
             ConfigurePersistence = configure;
+            return this;
+        }
+        
+        public ElsaOptions UseAutoMapper(Action addAutoMapper)
+        {
+            AddAutoMapper = addAutoMapper;
             return this;
         }
 

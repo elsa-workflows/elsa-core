@@ -27,5 +27,7 @@ namespace Elsa
         }
 
         public static void SetState(this JObject state, string key, object? value) => state[key] = value != null ? JToken.FromObject(value, Serializer) : null;
+        
+        public static bool HasKey(this JObject state, string key) => state.ContainsKey(key);
     }
 }

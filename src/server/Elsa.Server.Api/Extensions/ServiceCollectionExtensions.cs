@@ -8,7 +8,7 @@ namespace Microsoft.Extensions.DependencyInjection
     {
         public static IServiceCollection AddElsaApiEndpoints(this IServiceCollection services)
         {
-            services.AddControllers().SetCompatibilityVersion(CompatibilityVersion.Latest).AddJsonSerialization();
+            services.AddControllers().AddJsonSerialization();
             services.AddRouting(options => options.LowercaseUrls = true);
 
             services.AddApiVersioning(

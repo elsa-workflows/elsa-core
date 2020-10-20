@@ -26,17 +26,18 @@ namespace Elsa.Server.Host
             var connectionString = Configuration.GetConnectionString("Sqlite");
 
             services
-                .AddElsa(elsa => elsa
-                    .UsePersistence(config => config.UseSqLite(connectionString)));
+                .AddElsa(
+                    elsa => elsa
+                        .UsePersistence(config => config.UseSqLite(connectionString)));
 
             services
-                .AddElsaServer()
                 .AddElsaApiEndpoints()
-                
-                .AddCors(options => options.AddDefaultPolicy(cors => cors
-                    .AllowAnyOrigin()
-                    .AllowAnyMethod()
-                    .AllowAnyHeader()))
+                .AddCors(
+                    options => options.AddDefaultPolicy(
+                        cors => cors
+                            .AllowAnyOrigin()
+                            .AllowAnyMethod()
+                            .AllowAnyHeader()))
                 
                 .AddConsoleActivities()
                 .AddHttpActivities(options => options.Bind(elsaSection.GetSection("Http")))
@@ -54,7 +55,9 @@ namespace Elsa.Server.Host
 
             app
                 .UseCors()
-                .UseHttpActivities();
+                .UseHttpActivities()
+                .UseRouting()
+                .UseEndpoints(configure => configure.MapControllers());
         }
     }
 }

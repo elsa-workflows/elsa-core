@@ -1,18 +1,18 @@
-﻿using System.Text.Json;
+﻿using System;
+using Elsa.Serialization;
 using Microsoft.Extensions.DependencyInjection;
-using NodaTime;
-using NodaTime.Serialization.SystemTextJson;
+using Newtonsoft.Json;
 
 namespace Elsa.Server.Api.Extensions
 {
     public static class JsonMvcBuilderExtensions
     {
-        public static IMvcBuilder AddJsonSerialization(this IMvcBuilder builder) =>
-            builder.AddJsonOptions(
+        public static IMvcBuilder AddJsonSerialization(this IMvcBuilder builder, Action<JsonSerializerSettings>? configure = default)  =>
+            builder.AddNewtonsoftJson(
                 options =>
                 {
-                    options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-                    options.JsonSerializerOptions.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
+                    configure ??= DefaultContentSerializer.ConfigureDefaultJsonSerializationSettings;
+                    //configure(options.SerializerSettings);
                 });
     }
 }

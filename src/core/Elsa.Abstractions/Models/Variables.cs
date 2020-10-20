@@ -1,9 +1,9 @@
-using Elsa.Serialization.Extensions;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Elsa.Models
 {
-    public class Variables 
+    public class Variables
     {
         public Variables()
         {
@@ -19,8 +19,8 @@ namespace Elsa.Models
             Data = data;
         }
 
-        public JObject Data { get; set; }
-        
+        [JsonExtensionData] public JObject Data { get; set; }
+
         public JToken? Get(string name) => Has(name) ? Data[name] : default;
         public T Get<T>(string name) => Has(name) ? Data.Value<T>(name) : default!;
 

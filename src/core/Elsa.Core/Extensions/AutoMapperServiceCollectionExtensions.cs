@@ -9,20 +9,17 @@ namespace Elsa.Extensions
     {
         public static IServiceCollection AddAutoMapper(this IServiceCollection services, ServiceLifetime lifetime)
         {
-            services.TryAddSingleton(CreateConfigurationProvider);
             services.TryAdd(new ServiceDescriptor(typeof(IMapper), sp => sp.GetRequiredService<IConfigurationProvider>().CreateMapper(sp.GetService), lifetime));
-
             return services;
         }
 
-        public static IServiceCollection AddAutoMapperProfile<TProfile>(this IServiceCollection services, ServiceLifetime lifetime) where TProfile : Profile
+        public static IServiceCollection AddAutoMapperProfile<TProfile>(this IServiceCollection services) where TProfile : Profile
         {
-            services.AddAutoMapper(lifetime);
-            services.TryAddProvider<Profile, TProfile>(lifetime);
+            services.TryAddProvider<Profile, TProfile>(ServiceLifetime.Transient);
             return services;
         }
 
-        private static IConfigurationProvider CreateConfigurationProvider(IServiceProvider serviceProvider)
+        public static IConfigurationProvider CreateAutoMapperConfiguration(this IServiceProvider serviceProvider)
         {
             var profiles = serviceProvider.GetServices<Profile>();
 
