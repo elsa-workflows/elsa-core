@@ -19,18 +19,26 @@ namespace Elsa.Activities.ControlFlow
     public class ForEach : Activity
     {
         [ActivityProperty(Hint = "Enter an expression that evaluates to a collection of items to iterate over.")]
-        public ICollection Collection { get; set; } = new Collection<object>();
+        public ICollection<object> Items { get; set; } = new Collection<object>();
 
-        private IList<object>? CollectionCopy { get; set; }
+        private IList<object>? ItemsCopy
+        {
+            get => GetState<IList<object>>(() => new List<object>());
+            set => SetState(value);
+        }
 
-        private int? CurrentIndex { get; set; }
+        private int? CurrentIndex
+        {
+            get => GetState<int?>();
+            set => SetState(value);
+        }
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
-            var collection = CollectionCopy;
+            var collection = ItemsCopy;
 
             if (collection == null)
-                CollectionCopy = collection = Collection.Cast<object>().ToList();
+                ItemsCopy = collection = Items.ToList();
 
             var currentIndex = CurrentIndex ?? 0;
 
@@ -42,7 +50,7 @@ namespace Elsa.Activities.ControlFlow
             }
 
             CurrentIndex = null;
-            CollectionCopy = null;
+            ItemsCopy = null;
             return Done();
         }
     }
