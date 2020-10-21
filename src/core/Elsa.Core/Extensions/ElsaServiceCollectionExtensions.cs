@@ -130,6 +130,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddActivity<Complete>()
                 .AddActivity<For>()
                 .AddActivity<ForEach>()
+                .AddActivity<ParallelForEach>()
                 .AddActivity<Fork>()
                 .AddActivity<IfElse>()
                 .AddActivity<Join>()
