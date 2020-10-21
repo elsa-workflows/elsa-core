@@ -8,9 +8,9 @@ namespace Elsa.Samples.TimesheetApproval.Workflows
 {
     public class TimesheetApprovalWorkflow : IWorkflow
     {
-        public void Build(IWorkflowBuilder builder)
+        public void Build(IWorkflowBuilder workflow)
         {
-            builder
+            workflow
                 .StartWith<TimesheetSubmitted>()
                 .SendEmail(email => email
                     .WithRecipient("manager@acme.com")

@@ -13,9 +13,9 @@ namespace Elsa.Core.IntegrationTests.Workflows
             _loopCount = loopCount;
         }
         
-        public void Build(IWorkflowBuilder builder)
+        public void Build(IWorkflowBuilder workflow)
         {
-            builder.For(
+            workflow.For(
                 0,
                 _loopCount,
                 iterate => iterate

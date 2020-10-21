@@ -2,6 +2,6 @@ namespace Elsa.Builders
 {
     public interface IWorkflow
     {
-        void Build(IWorkflowBuilder builder);
+        void Build(IWorkflowBuilder workflow);
     }
 }

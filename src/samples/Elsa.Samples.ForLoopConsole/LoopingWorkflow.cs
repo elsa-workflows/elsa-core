@@ -11,9 +11,9 @@ namespace Elsa.Samples.ForLoopConsole
     /// </summary>
     public class LoopingWorkflow : IWorkflow
     {
-        public void Build(IWorkflowBuilder builder)
+        public void Build(IWorkflowBuilder workflow)
         {
-            builder
+            workflow
                 .WriteLine("Enter a number:")
                 .ReadLine()
                 .SetVariable("From", context => int.Parse(((string)context.Input)!))

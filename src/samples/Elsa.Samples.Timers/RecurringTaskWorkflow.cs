@@ -9,9 +9,9 @@ namespace Elsa.Samples.Timers
 {
     public class RecurringTaskWorkflow : IWorkflow
     {
-        public void Build(IWorkflowBuilder builder)
+        public void Build(IWorkflowBuilder workflow)
         {
-            builder
+            workflow
                 .WithPersistenceBehavior(WorkflowPersistenceBehavior.ActivityExecuted)
                 .TimerEvent(Duration.FromSeconds(1))
                 .WriteLine("Hello World")

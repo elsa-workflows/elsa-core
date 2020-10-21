@@ -5,9 +5,9 @@ namespace Elsa.Core.IntegrationTests.Workflows
 {
     public class BasicWorkflow : IWorkflow
     {
-        public void Build(IWorkflowBuilder builder)
+        public void Build(IWorkflowBuilder workflow)
         {
-            builder.WriteLine("Hello xUnit!");
+            workflow.WriteLine("Hello xUnit!");
         }
     }
 }

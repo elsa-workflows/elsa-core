@@ -8,6 +8,6 @@ namespace Elsa.Samples.HelloWorldConsole
     /// </summary>
     public class HelloWorld : IWorkflow
     {
-        public void Build(IWorkflowBuilder builder) => builder.WriteLine("Hello World!");
+        public void Build(IWorkflowBuilder workflow) => workflow.WriteLine("Hello World!");
     }
 }
