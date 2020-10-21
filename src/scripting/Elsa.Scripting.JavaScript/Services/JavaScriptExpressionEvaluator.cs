@@ -100,7 +100,7 @@ namespace Elsa.Scripting.JavaScript.Services
             if (value.IsArray())
             {
                 var arrayInstance = value.AsArray();
-                var elementType = targetType.GetElementType() ?? targetType.GenericTypeArguments.First();
+                var elementType = targetType?.GetElementType() ?? targetType?.GenericTypeArguments?.First() ?? typeof(object);
 
                 if (elementType == typeof(byte))
                 {
