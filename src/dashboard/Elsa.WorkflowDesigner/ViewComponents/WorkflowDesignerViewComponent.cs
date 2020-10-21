@@ -1,3 +1,4 @@
+using System;
 using Elsa.Metadata;
 using Elsa.WorkflowDesigner.Models;
 using Elsa.WorkflowDesigner.ViewModels;
@@ -17,7 +18,7 @@ namespace Elsa.WorkflowDesigner.ViewComponents
         {
             var model = new WorkflowDesignerViewComponentModel(
                 id,
-                Serialize(activityDefinitions ?? new ActivityDescriptor[0]),
+                Serialize(activityDefinitions ?? Array.Empty<ActivityDescriptor>()),
                 Serialize(workflow ?? new WorkflowModel()),
                 isReadonly.GetValueOrDefault()
             );

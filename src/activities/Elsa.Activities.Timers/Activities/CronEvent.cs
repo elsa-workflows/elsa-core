@@ -1,4 +1,4 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
@@ -76,8 +76,7 @@ namespace Elsa.Activities.Timers.Activities
             var schedule = CrontabSchedule.Parse(cronExpression);
             var now = clock.GetCurrentInstant();
 
-            if (StartTime == null)
-                StartTime = now;
+            StartTime ??= now;
 
             var nextOccurrence = schedule.GetNextOccurrence(StartTime.Value.ToDateTimeUtc());
 

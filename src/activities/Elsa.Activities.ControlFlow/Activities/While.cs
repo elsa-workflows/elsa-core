@@ -1,4 +1,4 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
@@ -39,13 +39,12 @@ namespace Elsa.Activities.ControlFlow.Activities
         {
             var loop = await expressionEvaluator.EvaluateAsync(ConditionExpression, context, cancellationToken);
 
-            if(HasStarted)
+            if (HasStarted)
                 context.EndScope();
             
             if (loop)
             {
-                if (!HasStarted) 
-                    HasStarted = true;
+                HasStarted = true;
 
                 context.BeginScope();
                 return Outcome(OutcomeNames.Iterate);

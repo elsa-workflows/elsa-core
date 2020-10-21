@@ -36,7 +36,6 @@ namespace Elsa.Activities.MassTransit.Activities
             set => SetState(value);
         }
 
-
         protected override bool OnCanExecute(WorkflowExecutionContext context)
         {
             return TokenId != null && options.SchedulerAddress != null;

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Scripting.Liquid.Extensions;
@@ -26,16 +26,16 @@ namespace Elsa.Scripting.Liquid.Services
 
         public async Task<object> EvaluateAsync(string expression, Type type, WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
         {
-            var templateContext = await CreateTemplateContextAsync(workflowExecutionContext);
+            var templateContext = await CreateTemplateContextAsync(workflowExecutionContext, cancellationToken);
             var result = await liquidTemplateManager.RenderAsync(expression, templateContext);
             return string.IsNullOrWhiteSpace(result) ? default : type != null ? Convert.ChangeType(result, type) : result;
         }
 
-        private async Task<TemplateContext> CreateTemplateContextAsync(WorkflowExecutionContext workflowContext)
+        private async Task<TemplateContext> CreateTemplateContextAsync(WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
         {
             var context = new TemplateContext();
             context.SetValue("WorkflowExecutionContext", workflowContext);
-            await mediator.Publish(new EvaluatingLiquidExpression(context, workflowContext));
+            await mediator.Publish(new EvaluatingLiquidExpression(context, workflowContext), cancellationToken);
             context.Model = workflowContext;
             return context;
         }

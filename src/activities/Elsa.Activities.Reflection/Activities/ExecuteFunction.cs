@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -50,7 +51,7 @@ namespace Elsa.Activities.Reflection.Activities
             if (type == null)
                 return Fault($"Type {TypeName} not found.");
 
-            var inputValues = await context.EvaluateAsync(Arguments, cancellationToken) ?? new object[0];
+            var inputValues = await context.EvaluateAsync(Arguments, cancellationToken) ?? Array.Empty<object>();
 
             var method = type
                 .GetMethods(BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)

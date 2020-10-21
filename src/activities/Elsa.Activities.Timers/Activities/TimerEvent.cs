@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
@@ -64,8 +64,7 @@ namespace Elsa.Activities.Timers.Activities
         {
             var now = clock.GetCurrentInstant();
 
-            if (StartTime == null)
-                StartTime = now;
+            StartTime ??= now;
             
             var timeSpan = await expressionEvaluator.EvaluateAsync(TimeoutExpression, context, cancellationToken);
             var expiresAt = StartTime.Value.ToDateTimeUtc() + timeSpan;

@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,7 +22,7 @@ namespace Elsa.Activities.ControlFlow.Activities
     {
         public Join()
         {
-            InboundTransitions = new List<string>().AsReadOnly();
+            InboundTransitions = new List<string>();
         }
 
         public enum JoinMode
@@ -50,7 +50,7 @@ namespace Elsa.Activities.ControlFlow.Activities
 
         protected override ActivityExecutionResult OnExecute(WorkflowExecutionContext workflowContext)
         {
-            var recordedInboundTransitions = InboundTransitions ?? new List<string>();
+            var recordedInboundTransitions = InboundTransitions ?? Enumerable.Empty<string>();
             var workflow = workflowContext.Workflow;
             var inboundConnections = workflow.GetInboundConnections(Id);
             var done = false;

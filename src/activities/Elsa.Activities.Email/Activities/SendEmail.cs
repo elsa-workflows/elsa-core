@@ -1,4 +1,4 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Email.Options;
 using Elsa.Activities.Email.Services;
@@ -59,13 +59,13 @@ namespace Elsa.Activities.Email.Activities
 
         protected override async Task<ActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
         {
-            var from = (await expressionEvaluator.EvaluateAsync(From, workflowContext, cancellationToken)) ?? options.Value.DefaultSender;
+            var from = await expressionEvaluator.EvaluateAsync(From, workflowContext, cancellationToken) ?? options.Value.DefaultSender;
             var to = await expressionEvaluator.EvaluateAsync(To, workflowContext, cancellationToken);
             var subject = await expressionEvaluator.EvaluateAsync(Subject, workflowContext, cancellationToken);
             var body = await expressionEvaluator.EvaluateAsync(Body, workflowContext, cancellationToken);
             var message = new MimeMessage();
             
-            message.From.Add(new MailboxAddress(@from));
+            message.From.Add(new MailboxAddress(from));
             message.Subject = subject;
             
             message.Body = new TextPart(TextFormat.Html)

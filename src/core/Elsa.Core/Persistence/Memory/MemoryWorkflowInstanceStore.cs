@@ -21,7 +21,7 @@ namespace Elsa.Persistence.Memory
 
         public Task<WorkflowInstance> GetByIdAsync(string id, CancellationToken cancellationToken)
         {
-            var instance = workflowInstances.ContainsKey(id) ? workflowInstances[id] : default;
+            workflowInstances.TryGetValue(id, out var instance);
             return Task.FromResult(instance);
         }
 
