@@ -103,7 +103,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddIndexProvider<WorkflowInstanceIndexProvider>()
                 .AddStartupRunner()
                 .AddSingleton<IActivityActivator, ActivityActivator>()
-                .AddWorkflowProvider<CodeWorkflowProvider>()
+                .AddWorkflowProvider<ProgrammaticWorkflowProvider>()
                 .AddTransient<IWorkflowBuilder, WorkflowBuilder>()
                 .AddTransient<Func<IWorkflowBuilder>>(sp => sp.GetRequiredService<IWorkflowBuilder>)
                 .AddAutoMapperProfile<NodaTimeProfile>()

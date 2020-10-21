@@ -5,12 +5,12 @@ using System.Threading.Tasks;
 using Elsa.Services;
 using Elsa.Services.Models;
 
-namespace Elsa.Data.Services
+namespace Elsa.WorkflowProviders
 {
     /// <summary>
     /// Provides workflows from the workflow definition store.
     /// </summary>
-    public class DatabaseWorkflowProvider : IWorkflowProvider
+    public class DatabaseWorkflowProvider : WorkflowProvider
     {
         private readonly IWorkflowDefinitionManager _workflowDefinitionManager;
         private readonly IWorkflowBlueprintMaterializer _workflowBlueprintMaterializer;
@@ -21,7 +21,7 @@ namespace Elsa.Data.Services
             _workflowBlueprintMaterializer = workflowBlueprintMaterializer;
         }
 
-        public async Task<IEnumerable<IWorkflowBlueprint>> GetWorkflowsAsync(CancellationToken cancellationToken)
+        protected override async ValueTask<IEnumerable<IWorkflowBlueprint>> OnGetWorkflowsAsync(CancellationToken cancellationToken)
         {
             var workflowDefinitions = await _workflowDefinitionManager.ListAsync(cancellationToken);
             return workflowDefinitions.Select(_workflowBlueprintMaterializer.CreateWorkflowBlueprint);

@@ -95,7 +95,7 @@ namespace Elsa.Services
             string? correlationId = default,
             CancellationToken cancellationToken = default)
         {
-            var workflows = await _workflowRegistry.GetWorkflowsAsync(cancellationToken);
+            var workflows =  await _workflowRegistry.GetWorkflowsAsync(cancellationToken).ToListAsync(cancellationToken);
 
             var query =
                 from workflow in workflows

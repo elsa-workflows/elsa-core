@@ -56,6 +56,7 @@
         <PackageReference Include="NodaTime.Serialization.JsonNet" Version="3.0.0" />
         <PackageReference Include="Open.Linq.AsyncExtensions" Version="1.2.0" />
         <PackageReference Include="Scrutor" Version="3.2.2" />
+        <PackageReference Include="Storage.Net" Version="9.2.7" />
         <PackageReference Include="System.Linq.Async" Version="4.1.1" />
         <PackageReference Include="YamlDotNet" Version="8.1.2" />
         <PackageReference Include="Rebus.ServiceProvider" Version="5.0.6" />

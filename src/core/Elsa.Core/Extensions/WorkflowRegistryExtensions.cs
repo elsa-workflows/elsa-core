@@ -31,7 +31,7 @@ namespace Elsa.Extensions
                 string activityType,
                 CancellationToken cancellationToken = default)
         {
-            var workflows = await workflowRegistry.GetWorkflowsAsync(cancellationToken);
+            var workflows = await workflowRegistry.GetWorkflowsAsync(cancellationToken).ToListAsync(cancellationToken);
 
             var query =
                 from workflow in workflows

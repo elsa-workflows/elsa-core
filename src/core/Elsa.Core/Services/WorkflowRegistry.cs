@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
@@ -17,11 +18,13 @@ namespace Elsa.Services
             _workflowProviders = workflowProviders;
         }
 
-        public async Task<IEnumerable<IWorkflowBlueprint>> GetWorkflowsAsync(CancellationToken cancellationToken)
+        public async IAsyncEnumerable<IWorkflowBlueprint> GetWorkflowsAsync([EnumeratorCancellation] CancellationToken cancellationToken)
         {
             var providers = _workflowProviders;
-            var tasks = await Task.WhenAll(providers.Select(x => x.GetWorkflowsAsync(cancellationToken)));
-            return tasks.SelectMany(x => x).ToList();
+
+            foreach (var provider in providers)
+            await foreach (var workflow in provider.GetWorkflowsAsync(cancellationToken).WithCancellation(cancellationToken))
+                yield return workflow;
         }
 
         public async Task<IWorkflowBlueprint?> GetWorkflowAsync(
@@ -29,7 +32,7 @@ namespace Elsa.Services
             VersionOptions version,
             CancellationToken cancellationToken)
         {
-            var workflows = await GetWorkflowsAsync(cancellationToken).ToList();
+            var workflows = await GetWorkflowsAsync(cancellationToken).ToListAsync(cancellationToken);
 
             return workflows
                 .Where(x => x.Id == id)

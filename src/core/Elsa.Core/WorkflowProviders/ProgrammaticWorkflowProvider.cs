@@ -10,20 +10,20 @@ using Elsa.Services.Models;
 namespace Elsa.WorkflowProviders
 {
     /// <summary>
-    /// Provides processes that have been created as workflow classes in C#.
+    /// Provides programmatic workflows (.NET types).
     /// </summary>
-    public class CodeWorkflowProvider : IWorkflowProvider
+    public class ProgrammaticWorkflowProvider : WorkflowProvider
     {
         private readonly IEnumerable<IWorkflow> _workflows;
         private readonly Func<IWorkflowBuilder> _workflowBuilder;
 
-        public CodeWorkflowProvider(IEnumerable<IWorkflow> workflows, Func<IWorkflowBuilder> workflowBuilder)
+        public ProgrammaticWorkflowProvider(IEnumerable<IWorkflow> workflows, Func<IWorkflowBuilder> workflowBuilder)
         {
             _workflows = workflows;
             _workflowBuilder = workflowBuilder;
         }
 
-        public Task<IEnumerable<IWorkflowBlueprint>> GetWorkflowsAsync(CancellationToken cancellationToken) => Task.FromResult(GetWorkflows());
+        protected override ValueTask<IEnumerable<IWorkflowBlueprint>> OnGetWorkflowsAsync(CancellationToken cancellationToken) => new ValueTask<IEnumerable<IWorkflowBlueprint>>(GetWorkflows());
         private IEnumerable<IWorkflowBlueprint> GetWorkflows() => from workflow in _workflows let builder = _workflowBuilder() select builder.Build(workflow);
     }
 }

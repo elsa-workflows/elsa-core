@@ -61,11 +61,6 @@ namespace Elsa.ComponentTests.Endpoints.WorkflowDefinitions
                 .Create();
         }
 
-        private string CreateWorkflowDefinitionJson()
-        {
-            throw new NotImplementedException();
-        }
-
         public void Dispose()
         {
             _hostApplicationFactory.Dispose();

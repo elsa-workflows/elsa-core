@@ -45,7 +45,7 @@ namespace Elsa.Triggers
         private async Task<IEnumerable<TriggerDescriptor>> BuildDescriptorsAsync(CancellationToken cancellationToken)
         {
             var providers = _triggerProviders.ToList();
-            var workflowBlueprints = await _workflowRegistry.GetWorkflowsAsync(cancellationToken).ToList();
+            var workflowBlueprints = await _workflowRegistry.GetWorkflowsAsync(cancellationToken).ToListAsync(cancellationToken);
             var descriptors = new List<TriggerDescriptor>();
 
             using var scope = _serviceProvider.CreateScope();
