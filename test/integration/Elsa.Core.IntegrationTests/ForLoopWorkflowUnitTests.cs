@@ -1,6 +1,5 @@
 using System.Linq;
 using System.Threading.Tasks;
-using Elsa.Core.IntegrationTests.Helpers;
 using Elsa.Core.IntegrationTests.Workflows;
 using Elsa.Testing.Shared.Helpers;
 using Xunit;
@@ -14,7 +13,7 @@ namespace Elsa.Core.IntegrationTests
         {
         }
         
-        [Fact(DisplayName = "Runs For loop workflow.")]
+        [Fact(DisplayName = "Runs all iterations, even when an activity is blocking.")]
         public async Task Test01()
         {
             const int loopCount = 10;

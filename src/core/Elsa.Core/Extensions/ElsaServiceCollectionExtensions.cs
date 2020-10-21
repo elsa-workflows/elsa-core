@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Elsa;
 using Elsa.Activities.ControlFlow;
 using Elsa.Activities.Primitives;
@@ -10,10 +9,8 @@ using Elsa.Consumers;
 using Elsa.Converters;
 using Elsa.Data;
 using Elsa.Data.Extensions;
-using Elsa.Events;
 using Elsa.Expressions;
 using Elsa.Extensions;
-using Elsa.Handlers;
 using Elsa.Indexes;
 using Elsa.Mapping;
 using Elsa.Messages;

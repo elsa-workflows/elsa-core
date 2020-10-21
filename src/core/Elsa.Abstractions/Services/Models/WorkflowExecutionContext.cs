@@ -25,6 +25,7 @@ namespace Elsa.Services.Models
         public IServiceProvider ServiceProvider { get; }
         public WorkflowInstance WorkflowInstance { get; }
         public bool HasScheduledActivities => WorkflowInstance.ScheduledActivities.Any();
+        public bool HasPostScheduledActivities => WorkflowInstance.PostScheduledActivities.Any();
         public IWorkflowFault? WorkflowFault { get; private set; }
         public bool IsFirstPass { get; private set; }
 
@@ -39,9 +40,17 @@ namespace Elsa.Services.Models
             foreach (var activity in activities)
                 ScheduleActivity(activity);
         }
+        
+        public void PostScheduleActivities(IEnumerable<ScheduledActivity> activities)
+        {
+            foreach (var activity in activities)
+                PostScheduleActivity(activity);
+        }
 
         public void ScheduleActivity(string activityId, object? input = default) => ScheduleActivity(new ScheduledActivity(activityId, input));
         public void ScheduleActivity(ScheduledActivity activity) => WorkflowInstance.ScheduledActivities.Push(activity);
+        public void PostScheduleActivity(string activityId, object? input = default) => PostScheduleActivity(new ScheduledActivity(activityId, input));
+        public void PostScheduleActivity(ScheduledActivity activity) => WorkflowInstance.PostScheduledActivities.Push(activity);
         public ScheduledActivity PopScheduledActivity() => WorkflowInstance.ScheduledActivities.Pop();
         public ScheduledActivity PeekScheduledActivity() => WorkflowInstance.ScheduledActivities.Peek();
         public string? CorrelationId { get; set; }
@@ -69,5 +78,11 @@ namespace Elsa.Services.Models
             WorkflowBlueprint.Activities.FirstOrDefault(x => x.Id == id);
 
         private JObject Serialize(IActivity activity) => JObject.FromObject(activity);
+
+        public void SchedulePostActivities()
+        {
+            while(HasPostScheduledActivities)
+                ScheduleActivity(WorkflowInstance.PostScheduledActivities.Pop());
+        }
     }
 }

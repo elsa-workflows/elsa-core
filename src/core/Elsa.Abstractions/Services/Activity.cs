@@ -62,21 +62,12 @@ namespace Elsa.Services
         protected OutcomeResult Outcome(string outcome) => Outcomes(outcome);
         protected CombinedResult Outcome(string outcome, object output) => Combine(Output(output), Outcome(outcome));
         protected OutputResult Output(object output) => new OutputResult(output);
-
         protected SuspendResult Suspend() => new SuspendResult();
-
-        protected ScheduleActivitiesResult Schedule(params string[] activityIds) =>
-            new ScheduleActivitiesResult(activityIds);
-
-        protected ScheduleActivitiesResult Schedule(IEnumerable<string> activityIds, object input) =>
-            new ScheduleActivitiesResult(activityIds, input);
-
-        protected ScheduleActivitiesResult Schedule(string activityId, object input) =>
-            Schedule(new[] { activityId }, input);
-
-        protected ScheduleActivitiesResult Schedule(IEnumerable<ScheduledActivity> activities) =>
-            new ScheduleActivitiesResult(activities);
-
+        protected ScheduleActivitiesResult Schedule(params string[] activityIds) => new ScheduleActivitiesResult(activityIds);
+        protected ScheduleActivitiesResult Schedule(IEnumerable<string> activityIds, object input) => new ScheduleActivitiesResult(activityIds, input);
+        protected ScheduleActivitiesResult Schedule(string activityId, object input) => Schedule(new[] { activityId }, input);
+        protected ScheduleActivitiesResult Schedule(IEnumerable<ScheduledActivity> activities) => new ScheduleActivitiesResult(activities);
+        protected PostScheduleActivitiesResult PostSchedule(params string[] activityIds) => new PostScheduleActivitiesResult(activityIds);
         protected CombinedResult Combine(IEnumerable<IActivityExecutionResult> results) => new CombinedResult(results);
         protected CombinedResult Combine(params IActivityExecutionResult[] results) => new CombinedResult(results);
         protected FaultResult Fault(LocalizedString message) => new FaultResult(message);

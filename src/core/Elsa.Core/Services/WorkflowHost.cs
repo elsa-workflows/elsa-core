@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,7 +8,6 @@ using Elsa.Events;
 using Elsa.Exceptions;
 using Elsa.Models;
 using Elsa.Services.Models;
-using Elsa.Triggers;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -77,10 +75,10 @@ namespace Elsa.Services
             await RunWorkflowAsync(_workflowBuilder.Build<T>(), workflowInstance, activityId, input, cancellationToken);
 
         public async ValueTask<WorkflowInstance> RunWorkflowAsync(
-            IWorkflow workflow, 
-            string? activityId = default, 
-            object? input = default, 
-            string? correlationId = default, 
+            IWorkflow workflow,
+            string? activityId = default,
+            object? input = default,
+            string? correlationId = default,
             CancellationToken cancellationToken = default)
         {
             var workflowBlueprint = _workflowBuilder.Build(workflow);
@@ -170,11 +168,7 @@ namespace Elsa.Services
             return workflowExecutionContext.WorkflowInstance;
         }
 
-        private async Task BeginWorkflow(
-            WorkflowExecutionContext workflowExecutionContext,
-            IActivityBlueprint? activity,
-            object? input,
-            CancellationToken cancellationToken)
+        private async Task BeginWorkflow(WorkflowExecutionContext workflowExecutionContext, IActivityBlueprint? activity, object? input, CancellationToken cancellationToken)
         {
             if (activity == null)
                 activity = workflowExecutionContext.WorkflowBlueprint.GetStartActivities().First();
@@ -187,18 +181,9 @@ namespace Elsa.Services
             await RunAsync(workflowExecutionContext, Execute, cancellationToken);
         }
 
-        private async Task RunWorkflowAsync(
-            WorkflowExecutionContext workflowExecutionContext,
-            CancellationToken cancellationToken)
-        {
-            await RunAsync(workflowExecutionContext, Execute, cancellationToken);
-        }
+        private async Task RunWorkflowAsync(WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken) => await RunAsync(workflowExecutionContext, Execute, cancellationToken);
 
-        private async Task ResumeWorkflowAsync(
-            WorkflowExecutionContext workflowExecutionContext,
-            IActivityBlueprint activityBlueprint,
-            object? input,
-            CancellationToken cancellationToken)
+        private async Task ResumeWorkflowAsync(WorkflowExecutionContext workflowExecutionContext, IActivityBlueprint activityBlueprint, object? input, CancellationToken cancellationToken)
         {
             if (!await CanExecuteAsync(workflowExecutionContext, activityBlueprint, input, cancellationToken))
                 return;
@@ -209,11 +194,7 @@ namespace Elsa.Services
             await RunAsync(workflowExecutionContext, Resume, cancellationToken);
         }
 
-        private async ValueTask<bool> CanExecuteAsync(
-            WorkflowExecutionContext workflowExecutionContext,
-            IActivityBlueprint activityBlueprint,
-            object? input,
-            CancellationToken cancellationToken)
+        private async ValueTask<bool> CanExecuteAsync(WorkflowExecutionContext workflowExecutionContext, IActivityBlueprint activityBlueprint, object? input, CancellationToken cancellationToken)
         {
             var activityExecutionContext = new ActivityExecutionContext(
                 workflowExecutionContext,
@@ -225,10 +206,7 @@ namespace Elsa.Services
             return await activity.CanExecuteAsync(activityExecutionContext, cancellationToken);
         }
 
-        private async ValueTask RunAsync(
-            WorkflowExecutionContext workflowExecutionContext,
-            ActivityOperation activityOperation,
-            CancellationToken cancellationToken = default)
+        private async ValueTask RunAsync(WorkflowExecutionContext workflowExecutionContext, ActivityOperation activityOperation, CancellationToken cancellationToken = default)
         {
             while (workflowExecutionContext.HasScheduledActivities)
             {
@@ -244,6 +222,16 @@ namespace Elsa.Services
 
                 activityOperation = Execute;
                 workflowExecutionContext.CompletePass();
+
+                // If there are no more scheduled activities, schedule any post-scheduled activities.
+                if (!workflowExecutionContext.HasScheduledActivities && workflowExecutionContext.HasPostScheduledActivities)
+                {
+                    workflowExecutionContext.SchedulePostActivities();
+
+                    // Exit execution loop if workflow has any other status than Running (i.e. Suspended). Otherwise continue the loop.
+                    if (workflowExecutionContext.Status != WorkflowStatus.Running)
+                        break;
+                }
             }
 
             if (workflowExecutionContext.Status == WorkflowStatus.Running)

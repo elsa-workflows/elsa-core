@@ -14,6 +14,7 @@ namespace Elsa.Models
             Activities = new List<ActivityInstance>();
             ExecutionLog = new List<ExecutionLogEntry>();
             ScheduledActivities = new Stack<ScheduledActivity>();
+            PostScheduledActivities = new Stack<ScheduledActivity>();
         }
 
         public int Id { get; set; }
@@ -36,5 +37,6 @@ namespace Elsa.Models
         public ICollection<ExecutionLogEntry> ExecutionLog { get; set; }
         public WorkflowFault? Fault { get; set; }
         public Stack<ScheduledActivity> ScheduledActivities { get; set; }
+        public Stack<ScheduledActivity> PostScheduledActivities { get; set; }
     }
 }

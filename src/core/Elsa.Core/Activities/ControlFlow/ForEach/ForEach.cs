@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -23,7 +22,7 @@ namespace Elsa.Activities.ControlFlow
 
         private IList<object>? ItemsCopy
         {
-            get => GetState<IList<object>>(() => new List<object>());
+            get => GetState<IList<object>>();
             set => SetState(value);
         }
 
@@ -46,7 +45,7 @@ namespace Elsa.Activities.ControlFlow
             {
                 var output = collection[currentIndex];
                 CurrentIndex = currentIndex + 1;
-                return Combine(Schedule(Id), Output(output), Done(OutcomeNames.Iterate));
+                return Combine(PostSchedule(Id), Outcome(OutcomeNames.Iterate, output));
             }
 
             CurrentIndex = null;

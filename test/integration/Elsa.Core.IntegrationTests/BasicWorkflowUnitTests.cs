@@ -1,5 +1,4 @@
 using System.Threading.Tasks;
-using Elsa.Core.IntegrationTests.Helpers;
 using Elsa.Core.IntegrationTests.Workflows;
 using Elsa.Models;
 using Elsa.Testing.Shared.Helpers;
