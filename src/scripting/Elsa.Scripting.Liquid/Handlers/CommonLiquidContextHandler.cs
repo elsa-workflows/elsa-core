@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
 using System.Threading;
@@ -41,7 +41,7 @@ namespace Elsa.Scripting.Liquid.Handlers
         }
 
         private Task<FluidValue> ToFluidValue(IDictionary<string, Variable> dictionary, string key) 
-            => Task.FromResult(!dictionary.ContainsKey(key) ? default : FluidValue.Create(dictionary[key].Value));
+            => Task.FromResult(!dictionary.TryGetValue(key, out var variable) ? default : FluidValue.Create(variable.Value));
 
         private async Task<object> GetActivityOutput(LiquidObjectAccessor<IActivity> accessor, string activityName, string outputKey)
         {

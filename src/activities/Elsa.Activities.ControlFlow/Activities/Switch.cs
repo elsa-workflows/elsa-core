@@ -22,12 +22,11 @@ namespace Elsa.Activities.ControlFlow.Activities
     public class Switch : Activity
     {
         private readonly IWorkflowExpressionEvaluator expressionEvaluator;
-
-
+        
         public Switch(IWorkflowExpressionEvaluator expressionEvaluator)
         {
             this.expressionEvaluator = expressionEvaluator;
-            Cases = new List<string>()
+            Cases = new List<string>
             {
                 "default"
             };

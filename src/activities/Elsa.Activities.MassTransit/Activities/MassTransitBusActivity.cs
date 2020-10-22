@@ -23,9 +23,7 @@ namespace Elsa.Activities.MassTransit.Activities
         /// the conversation and correlation id.
         /// </remarks>
         protected IPublishEndpoint PublishEndpoint =>
-            consumeContext != null
-                ? (IPublishEndpoint)consumeContext
-                : (IPublishEndpoint)bus;
+            consumeContext ?? (IPublishEndpoint)bus;
 
         /// <summary>
         /// Gets the send endpoint provider to use.
@@ -35,9 +33,7 @@ namespace Elsa.Activities.MassTransit.Activities
         /// the conversation and correlation id.
         /// </remarks>
         protected ISendEndpointProvider SendEndpointProvider =>
-            consumeContext != null
-                ? (ISendEndpointProvider)consumeContext
-                : (ISendEndpointProvider)bus;
+            consumeContext ?? (ISendEndpointProvider)bus;
 
     }
 }

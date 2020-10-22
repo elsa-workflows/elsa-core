@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using Elsa.Attributes;
 using Elsa.Design;
@@ -23,7 +23,7 @@ namespace Elsa.Activities.UserTask.Activities
         )]
         public string[] Actions
         {
-            get => GetState(() => new string[0]);
+            get => GetState(() => Array.Empty<string>());
             set => SetState(value);
         }
 
