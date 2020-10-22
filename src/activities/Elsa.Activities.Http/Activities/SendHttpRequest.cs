@@ -143,7 +143,6 @@ namespace Elsa.Activities.Http.Activities
             set => SetState(value);
         }
 
-
         protected override async Task<ActivityExecutionResult> OnExecuteAsync(
             WorkflowExecutionContext workflowContext,
             CancellationToken cancellationToken)
@@ -234,11 +233,11 @@ namespace Elsa.Activities.Http.Activities
             );
             var headers = new HeaderDictionary();
 
-            if (headersText != null)
+            if (!string.IsNullOrWhiteSpace(headersText))
             {
                 var headersQuery =
                     from line in Regex.Split(headersText, "\\n", RegexOptions.Multiline)
-                    let pair = line.Split(':', '=')
+                    let pair = line.Split(new[] { ':', '=' }, 2)
                     select new KeyValuePair<string, string>(pair[0], pair[1]);
 
                 foreach (var header in headersQuery)
@@ -258,7 +257,7 @@ namespace Elsa.Activities.Http.Activities
 
         private bool GetMethodSupportsBody(string method)
         {
-            var methods = new[] { "POST", "PUT", "PATCH" };
+            var methods = new[] { "POST", "PUT", "PATCH", "DELETE" };
             return methods.Contains(method, StringComparer.InvariantCultureIgnoreCase);
         }
     }
