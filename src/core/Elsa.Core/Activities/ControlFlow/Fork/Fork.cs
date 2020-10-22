@@ -13,11 +13,9 @@ namespace Elsa.Activities.ControlFlow
         Outcomes = new[] { "x => x.state.branches" })]
     public class Fork : Activity
     {
-        [ActivityProperty(
-            Hint = "Enter one or more names representing branches, separated with a comma. Example: Branch 1, Branch 2"
-        )]
+        [ActivityProperty(Hint = "Enter one or more names representing branches, separated with a comma. Example: Branch 1, Branch 2")]
         public HashSet<string> Branches { get; set; } = new HashSet<string>();
 
-        protected override IActivityExecutionResult OnExecute() => Done(Branches);
+        protected override IActivityExecutionResult OnExecute() => Combine(Done(), Outcomes(Branches));
     }
 }

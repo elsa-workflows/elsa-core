@@ -36,6 +36,7 @@ namespace Elsa.Builders
         public WorkflowPersistenceBehavior PersistenceBehavior { get; private set; }
         public bool DeleteCompletedInstances { get; private set; }
         public bool IsEnabled { get; private set; }
+        public IReadOnlyCollection<IActivityBuilder> Activities => _activityBuilders.ToList().AsReadOnly();
 
         public IWorkflowBuilder WithId(string value)
         {
@@ -144,7 +145,7 @@ namespace Elsa.Builders
             IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders = default)
             where T : class, IActivity
         {
-            var activityBuilder = new ActivityBuilder(typeof(T),  this, propertyValueProviders);
+            var activityBuilder = new ActivityBuilder(typeof(T), this, propertyValueProviders);
             return Add(activityBuilder);
         }
 
@@ -160,6 +161,13 @@ namespace Elsa.Builders
         public IConnectionBuilder Connect(
             IActivityBuilder source,
             IActivityBuilder target,
+            string outcome = OutcomeNames.Done) =>
+            Connect(() => source, () => target, outcome);
+
+
+        public IConnectionBuilder Connect(
+            Func<IActivityBuilder> source,
+            Func<IActivityBuilder> target,
             string outcome = OutcomeNames.Done)
         {
             var connectionBuilder = new ConnectionBuilder(this, source, target, outcome);
@@ -170,10 +178,12 @@ namespace Elsa.Builders
         public IActivityBuilder Then<T>(
             Action<ISetupActivity<T>>? setup = default,
             Action<IActivityBuilder>? branch = default)
-            where T : class, IActivity => StartWith(setup, branch);
+            where T : class, IActivity =>
+            StartWith(setup, branch);
 
         public IActivityBuilder Then<T>(Action<IActivityBuilder>? branch = default)
-            where T : class, IActivity => StartWith<T>(branch);
+            where T : class, IActivity =>
+            StartWith<T>(branch);
 
         public IWorkflowBlueprint Build(IWorkflow workflow)
         {
@@ -197,7 +207,7 @@ namespace Elsa.Builders
             var activityBlueprintDictionary = activityBlueprints.ToDictionary(x => x.Id);
 
             var connections = _connectionBuilders
-                .Select(x => new Connection(activityBlueprintDictionary[x.Source.ActivityId], activityBlueprintDictionary[x.Target.ActivityId], x.Outcome))
+                .Select(x => new Connection(activityBlueprintDictionary[x.Source().ActivityId], activityBlueprintDictionary[x.Target().ActivityId], x.Outcome))
                 .ToList();
 
             var activityPropertyValueProviders = _activityBuilders
@@ -218,7 +228,7 @@ namespace Elsa.Builders
                 activityBlueprints,
                 connections,
                 new ActivityPropertyProviders(activityPropertyValueProviders));
-            
+
             return workflow;
         }
 

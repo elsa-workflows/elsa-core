@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -24,6 +25,14 @@ namespace Elsa.Builders
 
         public IActivityBuilder Then<T>(Action<IActivityBuilder>? branch = default)
             where T : class, IActivity => Then(WorkflowBuilder.Add<T>(branch));
+
+        public IConnectionBuilder Then(string activityName)
+        {
+            return WorkflowBuilder.Connect(
+                () => Source, 
+                () => WorkflowBuilder.Activities.First(x => x.Name == activityName), 
+                Outcome);
+        }
 
         private IActivityBuilder Then(IActivityBuilder activityBuilder, Action<IActivityBuilder>? branch = default)
         {

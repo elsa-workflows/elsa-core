@@ -53,6 +53,12 @@ namespace Elsa.Builders
             return this;
         }
 
+        public IActivityBuilder WithName(string name)
+        {
+            Name = name;
+            return this;
+        }
+
         public Func<ActivityExecutionContext, CancellationToken, ValueTask<IActivity>> BuildActivityAsync() =>
             async (context, cancellationToken) =>
             {

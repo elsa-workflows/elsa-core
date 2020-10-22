@@ -16,6 +16,7 @@ namespace Elsa.Builders
         bool DeleteCompletedInstances { get; }
         bool IsEnabled { get; }
         IServiceProvider ServiceProvider { get; }
+        IReadOnlyCollection<IActivityBuilder> Activities { get; }
         IWorkflowBuilder WithId(string value);
         IWorkflowBuilder WithName(string value);
         IWorkflowBuilder WithDescription(string value);
@@ -54,6 +55,11 @@ namespace Elsa.Builders
         IConnectionBuilder Connect(
             IActivityBuilder source,
             IActivityBuilder target,
+            string outcome = OutcomeNames.Done);
+        
+        IConnectionBuilder Connect(
+            Func<IActivityBuilder> source,
+            Func<IActivityBuilder> target,
             string outcome = OutcomeNames.Done);
 
         IWorkflowBlueprint Build();

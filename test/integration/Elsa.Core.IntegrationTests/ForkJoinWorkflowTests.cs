@@ -7,16 +7,16 @@ using Xunit.Abstractions;
 
 namespace Elsa.Core.IntegrationTests
 {
-    public class BasicWorkflowUnitTests : WorkflowsUnitTestBase
+    public class ForkJoinWorkflowTests : WorkflowsUnitTestBase
     {
-        public BasicWorkflowUnitTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
+        public ForkJoinWorkflowTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
         {
         }
 
-        [Fact(DisplayName = "Runs simple workflow.")]
+        [Fact(DisplayName = "Runs fork and join workflow.")]
         public async Task Test01()
         {
-            var workflowInstance = await WorkflowHost.RunWorkflowAsync<BasicWorkflow>();
+            var workflowInstance = await WorkflowHost.RunWorkflowAsync<ForkJoinWaitAllWorkflow>();
 
             Assert.Equal(WorkflowStatus.Completed, workflowInstance.Status);
         }
