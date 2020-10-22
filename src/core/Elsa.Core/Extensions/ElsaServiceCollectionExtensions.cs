@@ -124,7 +124,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
         private static IServiceCollection AddPrimitiveActivities(this IServiceCollection services) =>
             services
-                .AddActivity<Complete>()
+                .AddActivity<Finish>()
                 .AddActivity<For>()
                 .AddActivity<ForEach>()
                 .AddActivity<ParallelForEach>()
