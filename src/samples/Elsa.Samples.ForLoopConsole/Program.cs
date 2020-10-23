@@ -22,7 +22,7 @@ namespace Elsa.Samples.ForLoopConsole
             var startupRunner = services.GetRequiredService<IStartupRunner>();
             await startupRunner.StartupAsync();
             
-            // Get the workflow host.
+            // Get a workflow runner.
             var workflowRunner = services.GetService<IWorkflowRunner>();
 
             // Execute the workflow.

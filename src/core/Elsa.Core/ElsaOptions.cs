@@ -75,6 +75,8 @@ namespace Elsa
             return this;
         }
 
+        public ElsaOptions UseStorage(Func<IBlobStorage> factory) => UseStorage(_ => factory());
+
         public ElsaOptions UseStorage(Func<IServiceProvider, IBlobStorage> factory)
         {
             StorageFactory = factory;

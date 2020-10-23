@@ -94,6 +94,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ComponentTests", "test
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Server.Api", "src\server\Elsa.Server.Api\Elsa.Server.Api.csproj", "{44E0B699-A140-4551-A0E9-9FD9F171A9C2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.FileBasedWorkflow", "src\samples\Elsa.Samples.FileBasedWorkflow\Elsa.Samples.FileBasedWorkflow.csproj", "{8DDF71CE-573D-4620-82F7-77507BB198D5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -217,6 +219,10 @@ Global
 		{44E0B699-A140-4551-A0E9-9FD9F171A9C2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{44E0B699-A140-4551-A0E9-9FD9F171A9C2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{44E0B699-A140-4551-A0E9-9FD9F171A9C2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8DDF71CE-573D-4620-82F7-77507BB198D5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8DDF71CE-573D-4620-82F7-77507BB198D5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8DDF71CE-573D-4620-82F7-77507BB198D5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8DDF71CE-573D-4620-82F7-77507BB198D5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -260,6 +266,7 @@ Global
 		{FC47A50F-03B2-47D8-AAFB-075314FBA186} = {AB1AE008-6FD6-414C-8E88-D735F42E1FA6}
 		{BB5819C7-434A-4AC5-8B0E-6C4FA672EBD5} = {FC47A50F-03B2-47D8-AAFB-075314FBA186}
 		{44E0B699-A140-4551-A0E9-9FD9F171A9C2} = {468E498C-59DB-4541-8D8A-0D89DE9083AB}
+		{8DDF71CE-573D-4620-82F7-77507BB198D5} = {5E5E1E84-DDBC-40D6-B891-0D563A15A44A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}

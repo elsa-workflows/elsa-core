@@ -27,7 +27,7 @@ namespace Elsa.Samples.ReadLineEchoConsole
                 .WriteLine(context => $"Greetings, {context.Input}!")
                 .Build();
             
-            // Get the workflow host.
+            // Get a workflow runner.
             var workflowRunner = services.GetService<IWorkflowRunner>();
 
             // Execute the workflow.
