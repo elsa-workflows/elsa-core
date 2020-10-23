@@ -121,7 +121,7 @@ namespace Elsa.Services
             object? input = default,
             CancellationToken cancellationToken = default)
         {
-            var workflowExecutionContext = CreateWorkflowExecutionContext(workflowBlueprint, workflowInstance, _serviceProvider);
+            var workflowExecutionContext = CreateWorkflowExecutionContext(workflowBlueprint, workflowInstance, input, _serviceProvider);
             var activity = activityId != null ? workflowBlueprint.GetActivity(activityId) : default;
 
             switch (workflowExecutionContext.Status)
@@ -233,15 +233,15 @@ namespace Elsa.Services
                         break;
                 }
             }
-            
-            if(workflowExecutionContext.HasBlockingActivities)
+
+            if (workflowExecutionContext.HasBlockingActivities)
                 workflowExecutionContext.Suspend();
 
             if (workflowExecutionContext.Status == WorkflowStatus.Running)
                 workflowExecutionContext.Complete();
         }
 
-        private static WorkflowExecutionContext CreateWorkflowExecutionContext(IWorkflowBlueprint workflowBlueprint, WorkflowInstance workflowInstance, IServiceProvider serviceProvider) =>
-            new WorkflowExecutionContext(serviceProvider, workflowBlueprint, workflowInstance);
+        private static WorkflowExecutionContext CreateWorkflowExecutionContext(IWorkflowBlueprint workflowBlueprint, WorkflowInstance workflowInstance, object? input, IServiceProvider serviceProvider) =>
+            new WorkflowExecutionContext(serviceProvider, workflowBlueprint, workflowInstance, input);
     }
 }

@@ -12,18 +12,21 @@ namespace Elsa.Services.Models
         public WorkflowExecutionContext(
             IServiceProvider serviceProvider,
             IWorkflowBlueprint workflowBlueprint,
-            WorkflowInstance workflowInstance
+            WorkflowInstance workflowInstance,
+            object? input
         )
         {
             ServiceProvider = serviceProvider;
             WorkflowBlueprint = workflowBlueprint;
             WorkflowInstance = workflowInstance;
+            Input = input;
             IsFirstPass = true;
         }
 
         public IWorkflowBlueprint WorkflowBlueprint { get; }
         public IServiceProvider ServiceProvider { get; }
         public WorkflowInstance WorkflowInstance { get; }
+        public object? Input { get; }
         public bool HasScheduledActivities => WorkflowInstance.ScheduledActivities.Any();
         public bool HasPostScheduledActivities => WorkflowInstance.PostScheduledActivities.Any();
         public IWorkflowFault? WorkflowFault { get; private set; }

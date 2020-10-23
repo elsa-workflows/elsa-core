@@ -17,6 +17,8 @@ namespace Elsa.Activities.ControlFlow
     )]
     public class Switch : Activity
     {
+        public const string DefaultOutcome = "Default";
+        
         public Switch()
         {
             Cases = new HashSet<string>()
@@ -25,7 +27,7 @@ namespace Elsa.Activities.ControlFlow
             };
         }
 
-        [ActivityProperty(Hint = "The value to evaluate. The evaluated value will be used to switch on.")]
+        [ActivityProperty(Hint = "The value to switch on.")]
         public string Value { get; set; }
 
         private HashSet<string> _cases;
@@ -39,11 +41,8 @@ namespace Elsa.Activities.ControlFlow
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
             var result = Value;
-
-            if (ContainsCase(result) || !ContainsCase(OutcomeNames.Default))
-                return Outcome(result, result);
-
-            return Done(result);
+            var outcome = ContainsCase(result) ? result : DefaultOutcome;
+            return Outcome(outcome, result);
         }
 
         private bool ContainsCase(string @case) => Cases.Contains(@case);

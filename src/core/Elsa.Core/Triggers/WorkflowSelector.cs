@@ -81,7 +81,7 @@ namespace Elsa.Triggers
             var providers = _triggerProviders.ToList();
             var descriptors = new List<TriggerDescriptor>();
             var workflowInstance = await _workflowFactory.InstantiateAsync(workflowBlueprint, cancellationToken: cancellationToken);
-            var workflowExecutionContext = new WorkflowExecutionContext(_serviceProvider, workflowBlueprint, workflowInstance);
+            var workflowExecutionContext = new WorkflowExecutionContext(_serviceProvider, workflowBlueprint, default!, workflowInstance);
 
             foreach (var blockingActivity in blockingActivities)
             {
