@@ -1,13 +1,12 @@
 using System.Threading.Tasks;
-using Elsa.Core.IntegrationTests.Workflows;
 using Elsa.Models;
 using Elsa.Testing.Shared.Helpers;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Elsa.Core.IntegrationTests
+namespace Elsa.Core.IntegrationTests.Workflows
 {
-    public class BasicWorkflowTests : WorkflowsUnitTestBase
+    public class BasicWorkflowTests : WorkflowsTestBase
     {
         public BasicWorkflowTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
         {
@@ -18,7 +17,7 @@ namespace Elsa.Core.IntegrationTests
         {
             var workflowInstance = await WorkflowRunner.RunWorkflowAsync<BasicWorkflow>();
 
-            Assert.Equal(WorkflowStatus.Completed, workflowInstance.Status);
+            Assert.Equal(WorkflowStatus.Finished, workflowInstance.Status);
         }
     }
 }

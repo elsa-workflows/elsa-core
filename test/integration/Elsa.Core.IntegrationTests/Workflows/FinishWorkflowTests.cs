@@ -1,14 +1,13 @@
 using System.Threading.Tasks;
 using AutoFixture;
-using Elsa.Core.IntegrationTests.Workflows;
 using Elsa.Models;
 using Elsa.Testing.Shared.Helpers;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Elsa.Core.IntegrationTests
+namespace Elsa.Core.IntegrationTests.Workflows
 {
-    public class FinishWorkflowTests : WorkflowsUnitTestBase
+    public class FinishWorkflowTests : WorkflowsTestBase
     {
         private readonly Fixture _fixture;
 
@@ -24,7 +23,7 @@ namespace Elsa.Core.IntegrationTests
             var workflow = new FinishWorkflow(output);
             var workflowInstance = await WorkflowRunner.RunWorkflowAsync(workflow);
 
-            Assert.Equal(WorkflowStatus.Completed, workflowInstance.Status);
+            Assert.Equal(WorkflowStatus.Finished, workflowInstance.Status);
             Assert.Equal(output, workflowInstance.Output);
         }
     }

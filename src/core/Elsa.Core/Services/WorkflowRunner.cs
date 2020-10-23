@@ -149,7 +149,7 @@ namespace Elsa.Services
                     statusEvent = new WorkflowCancelled(workflowExecutionContext);
                     break;
 
-                case WorkflowStatus.Completed:
+                case WorkflowStatus.Finished:
                     statusEvent = new WorkflowCompleted(workflowExecutionContext);
                     break;
 

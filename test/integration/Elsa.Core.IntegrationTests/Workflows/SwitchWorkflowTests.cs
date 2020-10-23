@@ -1,13 +1,12 @@
 using System.Linq;
 using System.Threading.Tasks;
-using Elsa.Core.IntegrationTests.Workflows;
 using Elsa.Testing.Shared.Helpers;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Elsa.Core.IntegrationTests
+namespace Elsa.Core.IntegrationTests.Workflows
 {
-    public class SwitchWorkflowTests : WorkflowsUnitTestBase
+    public class SwitchWorkflowTests : WorkflowsTestBase
     {
         public SwitchWorkflowTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
         {

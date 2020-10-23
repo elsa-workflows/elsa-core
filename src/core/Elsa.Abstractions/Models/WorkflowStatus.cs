@@ -4,7 +4,7 @@
     {
         Idle,
         Running,
-        Completed,
+        Finished,
         Suspended,
         Faulted,
         Cancelled

@@ -78,7 +78,7 @@ namespace Elsa.Services.Models
 
         public void Complete(object? output = default)
         {
-            WorkflowInstance.Status = WorkflowStatus.Completed;
+            WorkflowInstance.Status = WorkflowStatus.Finished;
             WorkflowInstance.Output = output;
         }
 

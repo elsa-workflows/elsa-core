@@ -27,6 +27,8 @@ using MediatR;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using NodaTime;
 using Rebus.Handlers;
+using Storage.Net;
+using Storage.Net.Blobs;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -44,8 +46,9 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton(options)
                 .AddSingleton(options.DistributedLockProviderFactory)
                 .AddSingleton(options.SignalFactory)
+                .AddSingleton(options.StorageFactory)
                 .AddPersistence(options.ConfigurePersistence);
-
+            
             options.AddWorkflowsCore();
             options.AddMediatR();
             options.AddServiceBus();
@@ -104,6 +107,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddStartupRunner()
                 .AddSingleton<IActivityActivator, ActivityActivator>()
                 .AddWorkflowProvider<ProgrammaticWorkflowProvider>()
+                .AddWorkflowProvider<StorageWorkflowProvider>()
                 .AddTransient<IWorkflowBuilder, WorkflowBuilder>()
                 .AddTransient<Func<IWorkflowBuilder>>(sp => sp.GetRequiredService<IWorkflowBuilder>)
                 .AddAutoMapperProfile<NodaTimeProfile>()

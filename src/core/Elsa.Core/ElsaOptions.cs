@@ -13,6 +13,8 @@ using Rebus.Routing.TypeBased;
 using Rebus.Transport.InMem;
 using YesSql;
 using Elsa.YesSql.Provider.Sqlite.InMemory;
+using Storage.Net;
+using Storage.Net.Blobs;
 
 namespace Elsa
 {
@@ -23,6 +25,7 @@ namespace Elsa
             Services = services;
 
             ConfigurePersistence = (sp, config) => config.UseInMemorySqlite();
+            StorageFactory = sp => Storage.Net.StorageFactory.Blobs.InMemory();
             DistributedLockProviderFactory = sp => new DefaultLockProvider();
             SignalFactory = sp => new Signal();
             ServiceBusConfigurer = ConfigureInMemoryServiceBus;
@@ -44,6 +47,7 @@ namespace Elsa
 
         public IServiceCollection Services { get; }
         internal Action<IServiceProvider, IConfiguration> ConfigurePersistence { get; set; }
+        internal Func<IServiceProvider, IBlobStorage> StorageFactory { get; set; }
         internal Func<IServiceProvider, IDistributedLockProvider> DistributedLockProviderFactory { get; private set; }
         internal Func<IServiceProvider, ISignal> SignalFactory { get; private set; }
         internal Func<RebusConfigurer, IServiceProvider, RebusConfigurer> ServiceBusConfigurer { get; private set; }
@@ -68,6 +72,12 @@ namespace Elsa
         public ElsaOptions UsePersistence(Action<IServiceProvider, IConfiguration> configure)
         {
             ConfigurePersistence = configure;
+            return this;
+        }
+
+        public ElsaOptions UseStorage(Func<IServiceProvider, IBlobStorage> factory)
+        {
+            StorageFactory = factory;
             return this;
         }
         
@@ -97,8 +107,7 @@ namespace Elsa
             return this;
         }
 
-        private static RebusConfigurer ConfigureInMemoryServiceBus(RebusConfigurer rebus,
-            IServiceProvider serviceProvider)
+        private static RebusConfigurer ConfigureInMemoryServiceBus(RebusConfigurer rebus, IServiceProvider serviceProvider)
         {
             return rebus
                 .Logging(logging => logging.ColoredConsole(LogLevel.Info))

@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using System.Threading.Tasks;
 
-namespace Elsa.ComponentTests.Helpers
+namespace Elsa.Core.IntegrationTests.Helpers
 {
     public static class AssetHelper
     {

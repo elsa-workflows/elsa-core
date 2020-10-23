@@ -1,20 +1,17 @@
-using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Elsa.Activities.ControlFlow;
 using Elsa.Activities.Signaling;
-using Elsa.Core.IntegrationTests.Workflows;
 using Elsa.Models;
 using Elsa.Services.Models;
 using Elsa.Testing.Shared.Helpers;
 using Open.Linq.AsyncExtensions;
 using Xunit;
 using Xunit.Abstractions;
-using YesSql.Data;
 
-namespace Elsa.Core.IntegrationTests
+namespace Elsa.Core.IntegrationTests.Workflows
 {
-    public class ForkJoinWorkflowTests : WorkflowsUnitTestBase
+    public class ForkJoinWorkflowTests : WorkflowsTestBase
     {
         public ForkJoinWorkflowTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
         {
@@ -48,7 +45,7 @@ namespace Elsa.Core.IntegrationTests
             // Trigger signal 3.
             workflowInstance = await TriggerSignalAsync(workflowBlueprint, workflowInstance, "Signal3");
 
-            Assert.Equal(WorkflowStatus.Completed, workflowInstance.Status);
+            Assert.Equal(WorkflowStatus.Finished, workflowInstance.Status);
             Assert.True(GetIsFinished());
         }
 
@@ -71,7 +68,7 @@ namespace Elsa.Core.IntegrationTests
             // Trigger signal.
             workflowInstance = await TriggerSignalAsync(workflowBlueprint, workflowInstance, signal);
             
-            Assert.Equal(WorkflowStatus.Completed, workflowInstance.Status);
+            Assert.Equal(WorkflowStatus.Finished, workflowInstance.Status);
             Assert.True(GetIsFinished());
         }
 
