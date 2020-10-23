@@ -15,13 +15,8 @@ namespace Elsa.Activities.ControlFlow
     )]
     public class While : Activity
     {
-        private readonly IExpressionEvaluator _expressionEvaluator;
-
-        public While(IExpressionEvaluator expressionEvaluator)
-        {
-            _expressionEvaluator = expressionEvaluator;
-        }
-
+        public const string IterateOutcome = "Iterate";
+        
         [ActivityProperty(Hint = "The condition to evaluate.")]
         public bool Condition { get; set; }
 
@@ -30,7 +25,7 @@ namespace Elsa.Activities.ControlFlow
             var loop = Condition;
 
             if (loop)
-                return Combine(Schedule(Id), Done(OutcomeNames.Iterate));
+                return Combine(PostSchedule(Id), Outcome(IterateOutcome));
 
             return Done();
         }
