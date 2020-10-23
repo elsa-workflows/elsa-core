@@ -1,4 +1,5 @@
-﻿using Elsa.Server.Api.Extensions;
+﻿using Elsa.Metadata;
+using Elsa.Server.Api.Extensions;
 using Microsoft.AspNetCore.Mvc;
 
 // ReSharper disable once CheckNamespace
@@ -10,6 +11,7 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             services.AddControllers().AddJsonSerialization();
             services.AddRouting(options => options.LowercaseUrls = true);
+            services.AddSingleton<IActivityDescriber, ActivityDescriber>();
 
             services.AddApiVersioning(
                 options =>

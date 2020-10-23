@@ -11,15 +11,11 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
     [Route("v{version:apiVersion}/workflow-definitions")]
     public class Post : ControllerBase
     {
-        private readonly IWorkflowDefinitionManager _workflowDefinitionManager;
         private readonly IWorkflowPublisher _workflowPublisher;
-        private readonly ISession _session;
 
         public Post(IWorkflowDefinitionManager workflowDefinitionManager, IWorkflowPublisher workflowPublisher, ISession session)
         {
-            _workflowDefinitionManager = workflowDefinitionManager;
             _workflowPublisher = workflowPublisher;
-            _session = session;
         }
 
         [HttpPost]
