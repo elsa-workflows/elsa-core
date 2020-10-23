@@ -9,10 +9,10 @@ namespace Elsa
     public static class WorkflowSchedulerTriggerSignalExtensions
     {
         public static async Task TriggerSignalAsync(
-            this IWorkflowScheduler workflowHost,
+            this IWorkflowScheduler workflowRunner,
             string signalName,
             string? correlationId = default,
             CancellationToken cancellationToken = default) =>
-            await workflowHost.TriggerWorkflowsAsync(nameof(Signaled), signalName, correlationId, cancellationToken);
+            await workflowRunner.TriggerWorkflowsAsync(nameof(Signaled), signalName, correlationId, cancellationToken);
     }
 }

@@ -28,10 +28,10 @@ namespace Elsa.Samples.ReadLineEchoConsole
                 .Build();
             
             // Get the workflow host.
-            var workflowHost = services.GetService<IWorkflowRunner>();
+            var workflowRunner = services.GetService<IWorkflowRunner>();
 
             // Execute the workflow.
-            await workflowHost.RunWorkflowAsync(workflow);
+            await workflowRunner.RunWorkflowAsync(workflow);
         }
     }
 }
