@@ -1,11 +1,10 @@
 using System;
-using Elsa.Activities.Timers;
 using Elsa.Builders;
 using Elsa.Services.Models;
 using NodaTime;
 
 // ReSharper disable once CheckNamespace
-namespace Elsa.Activities.MassTransit
+namespace Elsa.Activities.Timers
 {
     public static class InstantEventBuilderExtensions
     {

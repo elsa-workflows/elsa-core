@@ -31,7 +31,7 @@ namespace Elsa.Activities.Http
             _httpContextAccessor = httpContextAccessor;
         }
 
-        public IStringLocalizer T { get; }
+        private IStringLocalizer T { get; }
 
         /// <summary>
         /// The HTTP status code to return.

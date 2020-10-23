@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Data.Common;
 using YesSql;
 
@@ -19,15 +19,10 @@ namespace Elsa.YesSql.Provider.Sqlite.InMemory
 
         public DbConnection CreateConnection()
         {
-            if (_connection == null)
+            return _connection ??= new TDbConnection
             {
-                _connection = new TDbConnection
-                {
-                    ConnectionString = _connectionString
-                };
-            }
-            
-            return _connection;
+                ConnectionString = _connectionString
+            };
         }
     }
 }

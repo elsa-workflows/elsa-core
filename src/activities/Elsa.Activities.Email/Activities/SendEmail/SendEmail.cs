@@ -1,12 +1,10 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Activities.Email.Options;
 using Elsa.Activities.Email.Services;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Microsoft.Extensions.Options;
 using MimeKit;
 using MimeKit.Text;
 
@@ -17,12 +15,10 @@ namespace Elsa.Activities.Email
     public class SendEmail : Activity
     {
         private readonly ISmtpService _smtpService;
-        private readonly IOptions<SmtpOptions> _options;
 
-        public SendEmail(ISmtpService smtpService, IOptions<SmtpOptions> options)
+        public SendEmail(ISmtpService smtpService)
         {
             _smtpService = smtpService;
-            _options = options;
         }
 
         [ActivityProperty(Hint = "The sender's email address.")]

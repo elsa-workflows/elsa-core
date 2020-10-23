@@ -26,16 +26,16 @@ namespace Elsa.Scripting.Liquid.Services
 
         public async Task<object?> EvaluateAsync(string expression, Type returnType, ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var templateContext = await CreateTemplateContextAsync(context);
+            var templateContext = await CreateTemplateContextAsync(context, cancellationToken);
             var result = await _liquidTemplateManager.RenderAsync(expression, templateContext);
             return string.IsNullOrWhiteSpace(result) ? default : Convert.ChangeType(result, returnType);
         }
 
-        private async Task<TemplateContext> CreateTemplateContextAsync(ActivityExecutionContext workflowContext)
+        private async Task<TemplateContext> CreateTemplateContextAsync(ActivityExecutionContext workflowContext, CancellationToken cancellationToken)
         {
             var context = new TemplateContext();
             context.SetValue("WorkflowExecutionContext", workflowContext);
-            await _mediator.Publish(new EvaluatingLiquidExpression(context, workflowContext));
+            await _mediator.Publish(new EvaluatingLiquidExpression(context, workflowContext), cancellationToken);
             context.Model = workflowContext;
             return context;
         }

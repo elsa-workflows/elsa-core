@@ -15,7 +15,6 @@ namespace Microsoft.Extensions.DependencyInjection
             options?.Invoke(optionsBuilder);
             
             return services
-                .AddOptions()
                 .AddHostedService<TimersHostedService>()
                 .AddActivity<CronEvent>()
                 .AddActivity<TimerEvent>()

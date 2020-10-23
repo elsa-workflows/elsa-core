@@ -167,7 +167,7 @@ namespace Elsa.Activities.Http
 
         private static bool GetMethodSupportsBody(string method)
         {
-            var methods = new[] { "POST", "PUT", "PATCH" };
+            var methods = new[] { "POST", "PUT", "PATCH", "DELETE" };
             return methods.Contains(method, StringComparer.InvariantCultureIgnoreCase);
         }
     }

@@ -14,7 +14,7 @@ namespace Microsoft.Extensions.DependencyInjection
         public static IServiceCollection AddDropbox(this IServiceCollection services, Action<OptionsBuilder<DropboxOptions>>? options = null) =>
             services
                 .AddDropboxServices(options)
-                .AddActivity<SaveToDropbox>();
+                .AddDropboxActivities();
 
         public static IServiceCollection AddDropboxServices(this IServiceCollection services, Action<OptionsBuilder<DropboxOptions>>? options = null)
         {
