@@ -1,7 +1,9 @@
 using System;
 using System.Threading.Tasks;
+using Elsa.Builders;
 using Elsa.Core.IntegrationTests.Helpers;
 using Elsa.Services;
+using Elsa.Triggers;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 using Xunit.Abstractions;
@@ -25,12 +27,20 @@ namespace Elsa.Testing.Shared.Helpers
             
             configureServices?.Invoke(services);
             ServiceProvider = services.BuildServiceProvider();
-            WorkflowHost = ServiceProvider.GetRequiredService<IWorkflowHost>();
+            WorkflowRunner = ServiceProvider.GetRequiredService<IWorkflowRunner>();
+            WorkflowBlueprintMaterializer = ServiceProvider.GetRequiredService<IWorkflowBlueprintMaterializer>();
+            WorkflowBuilder = ServiceProvider.GetRequiredService<IWorkflowBuilder>();
+            WorkflowRegistry = ServiceProvider.GetRequiredService<IWorkflowRegistry>();
+            WorkflowSelector = ServiceProvider.GetRequiredService<IWorkflowSelector>();
         }
 
         protected ITestOutputHelper TestOutputHelper { get; }
         protected ServiceProvider ServiceProvider { get; }
-        protected IWorkflowHost WorkflowHost { get; }
+        protected IWorkflowRunner WorkflowRunner { get; }
+        protected IWorkflowBlueprintMaterializer WorkflowBlueprintMaterializer { get; }
+        protected IWorkflowBuilder WorkflowBuilder { get; }
+        protected IWorkflowRegistry WorkflowRegistry { get; }
+        protected IWorkflowSelector WorkflowSelector { get; }
         public virtual void Dispose() => _tempFolder.Dispose();
 
         public virtual async Task InitializeAsync()

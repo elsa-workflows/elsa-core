@@ -18,7 +18,7 @@ namespace Elsa.Core.IntegrationTests
         {
             const int loopCount = 10;
             var workflow = new ForLoopWorkflow(loopCount);
-            var workflowInstance = await WorkflowHost.RunWorkflowAsync(workflow);
+            var workflowInstance = await WorkflowRunner.RunWorkflowAsync(workflow);
             var iterationLogs = workflowInstance.ExecutionLog.Where(x => x.ActivityId == "WriteLine").ToList();
 
             Assert.Equal(loopCount, iterationLogs.Count);

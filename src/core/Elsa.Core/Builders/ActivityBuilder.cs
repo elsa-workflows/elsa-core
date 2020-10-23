@@ -53,7 +53,7 @@ namespace Elsa.Builders
             return this;
         }
 
-        public IActivityBuilder WithName(string name)
+        public IActivityBuilder WithName(string? name)
         {
             Name = name;
             return this;

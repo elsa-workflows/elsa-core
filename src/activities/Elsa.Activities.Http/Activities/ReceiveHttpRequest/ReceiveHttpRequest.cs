@@ -50,7 +50,7 @@ namespace Elsa.Activities.Http
             Hint = "The HTTP method that triggers this activity."
         )]
         [SelectOptions("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD")]
-        public string Method { get; set; }
+        public string? Method { get; set; }
 
         /// <summary>
         /// A value indicating whether the HTTP request content body should be read and stored as part of the HTTP request model.

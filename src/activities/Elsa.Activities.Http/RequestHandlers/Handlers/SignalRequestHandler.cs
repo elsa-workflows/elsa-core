@@ -16,18 +16,18 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
         private readonly IWorkflowInstanceManager _workflowInstanceManager;
         private readonly ITokenService _tokenService;
         private readonly CancellationToken _cancellationToken;
-        private readonly IWorkflowHost _workflowHost;
+        private readonly IWorkflowRunner _workflowRunner;
 
         public SignalRequestHandler(
             IWorkflowInstanceManager workflowInstanceManager,
             IHttpContextAccessor httpContextAccessor,
             ITokenService tokenService,
-            IWorkflowHost workflowHost)
+            IWorkflowRunner workflowRunner)
         {
             _httpContext = httpContextAccessor.HttpContext;
             _workflowInstanceManager = workflowInstanceManager;
             _tokenService = tokenService;
-            _workflowHost = workflowHost;
+            _workflowRunner = workflowRunner;
             _cancellationToken = _httpContext.RequestAborted;
         }
 
@@ -69,7 +69,7 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
         {
             var input = signal.Name;
 
-            await _workflowHost.RunWorkflowAsync(
+            await _workflowRunner.RunWorkflowAsync(
                 workflowInstance,
                 input,
                 cancellationToken: _cancellationToken);

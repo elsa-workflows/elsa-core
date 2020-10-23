@@ -13,7 +13,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Elsa.Services
 {
-    public class WorkflowHost : IWorkflowHost
+    public class WorkflowRunner : IWorkflowRunner
     {
         private delegate ValueTask<IActivityExecutionResult> ActivityOperation(ActivityExecutionContext activityExecutionContext, IActivity activity, CancellationToken cancellationToken);
 
@@ -27,13 +27,13 @@ namespace Elsa.Services
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger _logger;
 
-        public WorkflowHost(
+        public WorkflowRunner(
             IWorkflowRegistry workflowRegistry,
             IWorkflowFactory workflowFactory,
             IWorkflowBuilder workflowBuilder,
             IMediator mediator,
             IServiceProvider serviceProvider,
-            ILogger<WorkflowHost> logger)
+            ILogger<WorkflowRunner> logger)
         {
             _workflowRegistry = workflowRegistry;
             _workflowFactory = workflowFactory;
@@ -233,6 +233,9 @@ namespace Elsa.Services
                         break;
                 }
             }
+            
+            if(workflowExecutionContext.HasBlockingActivities)
+                workflowExecutionContext.Suspend();
 
             if (workflowExecutionContext.Status == WorkflowStatus.Running)
                 workflowExecutionContext.Complete();

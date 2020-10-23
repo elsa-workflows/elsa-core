@@ -9,12 +9,12 @@ namespace Elsa.Consumers
 {
     public class RunWorkflowConsumer : IHandleMessages<RunWorkflow>
     {
-        private readonly IWorkflowHost _workflowHost;
+        private readonly IWorkflowRunner _workflowRunner;
         private readonly IWorkflowInstanceManager _workflowInstanceManager;
 
-        public RunWorkflowConsumer(IWorkflowHost workflowHost, IWorkflowInstanceManager workflowInstanceManager)
+        public RunWorkflowConsumer(IWorkflowRunner workflowRunner, IWorkflowInstanceManager workflowInstanceManager)
         {
-            _workflowHost = workflowHost;
+            _workflowRunner = workflowRunner;
             _workflowInstanceManager = workflowInstanceManager;
         }
 
@@ -25,7 +25,7 @@ namespace Elsa.Consumers
             if(workflowInstance == null)
                 throw new WorkflowException($"No workflow instance with ID {message.WorkflowInstanceId} was found.");
             
-            await _workflowHost.RunWorkflowAsync(
+            await _workflowRunner.RunWorkflowAsync(
                 workflowInstance,
                 message.ActivityId,
                 message.Input);

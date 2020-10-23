@@ -57,6 +57,7 @@ namespace Elsa.Services.Models
         public bool DeleteCompletedInstances { get; set; }
         public ICollection<ExecutionLogEntry> ExecutionLog => WorkflowInstance.ExecutionLog;
         public WorkflowStatus Status => WorkflowInstance.Status;
+        public bool HasBlockingActivities => WorkflowInstance.BlockingActivities.Any();
 
         public void SetVariable(string name, object? value) => WorkflowInstance.Variables.Set(name, JToken.FromObject(value!));
         public T GetVariable<T>(string name) => WorkflowInstance.Variables.Get<T>(name);

@@ -1,6 +1,7 @@
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Services;
+using Elsa.Services.Models;
 using NodaTime;
 
 // ReSharper disable once CheckNamespace
@@ -27,7 +28,7 @@ namespace Elsa.Activities.Timers
 
         public Instant? ExecutedAt { get; set; }
 
-        protected override bool OnCanExecute() => ExecutedAt == null || IsExpired();
+        protected override bool OnCanExecute(ActivityExecutionContext context) => ExecutedAt == null || IsExpired();
         protected override IActivityExecutionResult OnExecute() => OnResume();
 
         protected override IActivityExecutionResult OnResume()

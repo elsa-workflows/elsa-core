@@ -19,8 +19,8 @@ namespace Elsa.Builders
         IActivityBuilder Add<T>(Action<ISetupActivity<T>>? setup = default) where T : class, IActivity;
         IOutcomeBuilder When(string outcome);
         IActivityBuilder Then(IActivityBuilder targetActivity);
-        IActivityBuilder WithId(string id);
-        IActivityBuilder WithName(string name);
+        IActivityBuilder WithId(string? id);
+        IActivityBuilder WithName(string? name);
         Func<ActivityExecutionContext, CancellationToken, ValueTask<IActivity>> BuildActivityAsync();
         IWorkflowBlueprint Build();
     }

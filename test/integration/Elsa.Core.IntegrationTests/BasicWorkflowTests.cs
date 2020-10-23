@@ -16,7 +16,7 @@ namespace Elsa.Core.IntegrationTests
         [Fact(DisplayName = "Runs simple workflow.")]
         public async Task Test01()
         {
-            var workflowInstance = await WorkflowHost.RunWorkflowAsync<BasicWorkflow>();
+            var workflowInstance = await WorkflowRunner.RunWorkflowAsync<BasicWorkflow>();
 
             Assert.Equal(WorkflowStatus.Completed, workflowInstance.Status);
         }

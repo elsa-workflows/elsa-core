@@ -22,7 +22,7 @@ namespace Elsa.Core.IntegrationTests
         {
             var output = _fixture.Create<string>();
             var workflow = new FinishWorkflow(output);
-            var workflowInstance = await WorkflowHost.RunWorkflowAsync(workflow);
+            var workflowInstance = await WorkflowRunner.RunWorkflowAsync(workflow);
 
             Assert.Equal(WorkflowStatus.Completed, workflowInstance.Status);
             Assert.Equal(output, workflowInstance.Output);

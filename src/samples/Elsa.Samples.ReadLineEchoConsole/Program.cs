@@ -28,7 +28,7 @@ namespace Elsa.Samples.ReadLineEchoConsole
                 .Build();
             
             // Get the workflow host.
-            var workflowHost = services.GetService<IWorkflowHost>();
+            var workflowHost = services.GetService<IWorkflowRunner>();
 
             // Execute the workflow.
             await workflowHost.RunWorkflowAsync(workflow);

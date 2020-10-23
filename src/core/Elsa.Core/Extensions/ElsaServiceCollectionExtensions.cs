@@ -92,7 +92,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddScoped<IWorkflowRegistry, WorkflowRegistry>()
                 .AddScoped<IWorkflowScheduler, WorkflowScheduler>()
                 .AddSingleton<IWorkflowSchedulerQueue, WorkflowSchedulerQueue>()
-                .AddScoped<IWorkflowHost, WorkflowHost>()
+                .AddScoped<IWorkflowRunner, WorkflowRunner>()
                 .AddSingleton<IWorkflowFactory, WorkflowFactory>()
                 .AddSingleton<IWorkflowBlueprintMaterializer, WorkflowBlueprintMaterializer>()
                 .AddScoped<IWorkflowSelector, WorkflowSelector>()
@@ -135,7 +135,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddActivity<While>()
                 .AddActivity<Correlate>()
                 .AddActivity<SetVariable>()
-                .AddActivity<Signaled>()
+                .AddActivity<Signaled>().AddSingleton<ITriggerProvider, SignaledTriggerProvider>()
                 .AddActivity<TriggerEvent>()
                 .AddActivity<TriggerSignal>();
 

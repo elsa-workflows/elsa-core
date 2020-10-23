@@ -73,7 +73,7 @@ namespace Elsa.Samples.Serialization
             var workflowBlueprint = materializer.CreateWorkflowBlueprint(deserializedWorkflowDefinition);
             
             // Execute workflow.
-            var workflowHost = services.GetRequiredService<IWorkflowHost>();
+            var workflowHost = services.GetRequiredService<IWorkflowRunner>();
             await workflowHost.RunWorkflowAsync(workflowBlueprint);
         }
     }

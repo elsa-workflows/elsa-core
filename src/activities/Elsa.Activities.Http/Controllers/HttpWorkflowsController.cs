@@ -13,16 +13,16 @@ namespace Elsa.Activities.Http.Controllers
     public class HttpWorkflowsController : ControllerBase
     {
         private readonly ITokenService _tokenService;
-        private readonly IWorkflowHost _workflowHost;
+        private readonly IWorkflowRunner _workflowRunner;
         private readonly IWorkflowInstanceManager _workflowInstanceManager;
 
         public HttpWorkflowsController(
             ITokenService tokenService,
-            IWorkflowHost workflowHost,
+            IWorkflowRunner workflowRunner,
             IWorkflowInstanceManager workflowInstanceManager)
         {
             _tokenService = tokenService;
-            _workflowHost = workflowHost;
+            _workflowRunner = workflowRunner;
             _workflowInstanceManager = workflowInstanceManager;
         }
 
@@ -40,7 +40,7 @@ namespace Elsa.Activities.Http.Controllers
 
             var input = signal.Name;
 
-            await _workflowHost.RunWorkflowAsync(workflowInstance, input, cancellationToken: cancellationToken);
+            await _workflowRunner.RunWorkflowAsync(workflowInstance, input, cancellationToken: cancellationToken);
 
             return HttpContext.Items.ContainsKey(WorkflowHttpResult.Instance)
                 ? (IActionResult)new EmptyResult()

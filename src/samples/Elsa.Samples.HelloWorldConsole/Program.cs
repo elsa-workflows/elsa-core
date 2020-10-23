@@ -20,7 +20,7 @@ namespace Elsa.Samples.HelloWorldConsole
             await startupRunner.StartupAsync();
             
             // Get a workflow host.
-            var workflowHost = services.GetService<IWorkflowHost>();
+            var workflowHost = services.GetService<IWorkflowRunner>();
 
             // Execute the workflow.
             await workflowHost.RunWorkflowAsync<HelloWorld>();

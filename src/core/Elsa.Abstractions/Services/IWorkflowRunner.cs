@@ -6,7 +6,7 @@ using Elsa.Services.Models;
 
 namespace Elsa.Services
 {
-    public interface IWorkflowHost
+    public interface IWorkflowRunner
     {
         ValueTask<WorkflowInstance> RunWorkflowAsync(
             WorkflowInstance workflowInstance,

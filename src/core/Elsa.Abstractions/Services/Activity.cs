@@ -20,36 +20,13 @@ namespace Elsa.Services
         public string? Description { get; set; }
         public bool PersistWorkflow { get; set; }
         public JObject Data { get; set; } = new JObject();
-
-        public ValueTask<bool> CanExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken) =>
-            OnCanExecuteAsync(context, cancellationToken);
-
-        public ValueTask<IActivityExecutionResult> ExecuteAsync(
-            ActivityExecutionContext context,
-            CancellationToken cancellationToken) => OnExecuteAsync(context, cancellationToken);
-
-        public ValueTask<IActivityExecutionResult> ResumeAsync(
-            ActivityExecutionContext context,
-            CancellationToken cancellationToken) => OnResumeAsync(context, cancellationToken);
-
-        protected virtual bool OnCanExecute(ActivityExecutionContext context) => OnCanExecute();
-        protected virtual bool OnCanExecute() => true;
-
-        protected virtual ValueTask<bool> OnCanExecuteAsync(
-            ActivityExecutionContext context,
-            CancellationToken cancellationToken) => OnCanExecuteAsync(cancellationToken);
-
-        protected virtual ValueTask<bool> OnCanExecuteAsync(CancellationToken cancellationToken) =>
-            new ValueTask<bool>(OnCanExecute());
-
-        protected virtual ValueTask<IActivityExecutionResult> OnExecuteAsync(
-            ActivityExecutionContext context,
-            CancellationToken cancellationToken) => new ValueTask<IActivityExecutionResult>(OnExecute(context));
-
-        protected virtual ValueTask<IActivityExecutionResult> OnResumeAsync(
-            ActivityExecutionContext context,
-            CancellationToken cancellationToken) => new ValueTask<IActivityExecutionResult>(OnResume(context));
-
+        public ValueTask<bool> CanExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken) => OnCanExecuteAsync(context, cancellationToken);
+        public ValueTask<IActivityExecutionResult> ExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken) => OnExecuteAsync(context, cancellationToken);
+        public ValueTask<IActivityExecutionResult> ResumeAsync(ActivityExecutionContext context, CancellationToken cancellationToken) => OnResumeAsync(context, cancellationToken);
+        protected virtual ValueTask<bool> OnCanExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken) => new ValueTask<bool>(OnCanExecute(context));
+        protected virtual ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken) => new ValueTask<IActivityExecutionResult>(OnExecute(context));
+        protected virtual ValueTask<IActivityExecutionResult> OnResumeAsync(ActivityExecutionContext context, CancellationToken cancellationToken) => new ValueTask<IActivityExecutionResult>(OnResume(context));
+        protected virtual bool OnCanExecute(ActivityExecutionContext context) => true;
         protected virtual IActivityExecutionResult OnExecute(ActivityExecutionContext context) => OnExecute();
         protected virtual IActivityExecutionResult OnExecute() => Done();
         protected virtual IActivityExecutionResult OnResume(ActivityExecutionContext context) => OnResume();
