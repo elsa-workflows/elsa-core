@@ -99,9 +99,6 @@ namespace Elsa.Scripting.JavaScript.Services
 
             if (value.IsArray())
             {
-                if (targetType == null)
-                    targetType = typeof(object[]);
-
                 var arrayInstance = value.AsArray();
                 var elementType = targetType?.GetElementType() ?? targetType?.GenericTypeArguments?.First() ?? typeof(object);
 
