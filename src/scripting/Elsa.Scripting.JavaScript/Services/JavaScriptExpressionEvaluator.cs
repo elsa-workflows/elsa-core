@@ -74,7 +74,7 @@ namespace Elsa.Scripting.JavaScript.Services
                 return default;
 
             var targetIsObject = targetType == typeof(object);
-            
+
             if (value.IsBoolean())
                 return value.AsBoolean();
 
@@ -99,6 +99,9 @@ namespace Elsa.Scripting.JavaScript.Services
 
             if (value.IsArray())
             {
+                if (targetType == null)
+                    targetType = typeof(object[]);
+
                 var arrayInstance = value.AsArray();
                 var elementType = targetType?.GetElementType() ?? targetType?.GenericTypeArguments?.First() ?? typeof(object);
 
@@ -109,7 +112,7 @@ namespace Elsa.Scripting.JavaScript.Services
                     for (uint i = 0; i < arrayInstance.Length; i++)
                     {
                         var jsValue = arrayInstance[i];
-                        bytes[i] = (byte) jsValue.AsNumber();
+                        bytes[i] = (byte)jsValue.AsNumber();
                     }
 
                     return bytes;
