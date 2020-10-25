@@ -1,10 +1,9 @@
 using System;
-using Elsa.Activities.Timers;
 using Elsa.Builders;
 using Elsa.Services.Models;
 
 // ReSharper disable once CheckNamespace
-namespace Elsa.Activities.MassTransit
+namespace Elsa.Activities.Timers
 {
     public static class CronEventBuilderExtensions
     {

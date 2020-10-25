@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.ActivityResults;
@@ -16,15 +16,13 @@ namespace Elsa.Activities.Console
         Category = "Console",
         Description = "Read text from standard in.",
         Icon = "fas fa-terminal",
-        RuntimeDescription =
-            "a => !!a.state.variableName ? `Read text from standard in and store into <strong>${ a.state.variableName }</strong>.` : 'Read text from standard in.'",
         Outcomes = new[] { OutcomeNames.Done }
     )]
     public class ReadLine : Activity
     {
         private readonly TextReader? _input;
 
-        public ReadLine()
+        public ReadLine() : this(System.Console.In)
         {
         }
 

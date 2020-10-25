@@ -1,9 +1,8 @@
 using System;
-using Elsa.Activities.Email;
 using Elsa.Builders;
 
 // ReSharper disable once CheckNamespace
-namespace Elsa.Activities.Http
+namespace Elsa.Activities.Email
 {
     public static class SendEmailBuilderExtensions
     {

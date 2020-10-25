@@ -29,11 +29,12 @@ namespace Elsa.Activities.Timers.HostedServices
             _options = options;
             _logger = logger;
         }
+
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                if (await _distributedLockProvider.AcquireLockAsync(GetType().Name, stoppingToken))
+                if (await _distributedLockProvider.AcquireLockAsync(nameof(TimersHostedService), stoppingToken))
                 {
                     try
                     {

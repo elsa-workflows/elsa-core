@@ -20,7 +20,6 @@ namespace Microsoft.Extensions.DependencyInjection
             options?.Invoke(optionsBuilder);
 
             return services
-                .AddOptions()
                 .AddSingleton<ISmtpService, SmtpService>();
         }
 

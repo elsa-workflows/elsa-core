@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Newtonsoft.Json;
 
 namespace Elsa.Scripting.JavaScript.Converters
@@ -8,13 +8,9 @@ namespace Elsa.Scripting.JavaScript.Converters
     /// </summary>
     public class TruncatingNumberJsonConverter : JsonConverter
     {
-        public TruncatingNumberJsonConverter()
-        {
-        }
-
         public override bool CanRead => false;
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer) => throw new NotImplementedException("Unnecessary because CanRead is false. The type will skip the converter.");
-        public override bool CanConvert(Type objectType) => (objectType == typeof(decimal) || objectType == typeof(float) || objectType == typeof(double));
+        public override bool CanConvert(Type objectType) => objectType == typeof(decimal) || objectType == typeof(float) || objectType == typeof(double);
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer) => writer.WriteRawValue(IsWholeValue(value) ? JsonConvert.ToString(Convert.ToInt64(value)) : JsonConvert.ToString(value));
 
         private static bool IsWholeValue(object value)
@@ -27,7 +23,7 @@ namespace Elsa.Scripting.JavaScript.Converters
 
             if (value is float || value is double)
             {
-                var doubleValue = (double) value;
+                var doubleValue = Convert.ToDouble(value);
                 return doubleValue == Math.Truncate(doubleValue);
             }
 

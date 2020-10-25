@@ -52,8 +52,7 @@ namespace Elsa.Activities.Timers
             var schedule = CrontabSchedule.Parse(CronExpression);
             var now = _clock.GetCurrentInstant();
 
-            if (StartTime == null)
-                StartTime = now;
+            StartTime ??= now;
 
             var nextOccurrence = schedule.GetNextOccurrence(StartTime.Value.ToDateTimeUtc());
 
