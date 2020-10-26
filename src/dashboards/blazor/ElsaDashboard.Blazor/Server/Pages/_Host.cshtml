@@ -18,8 +18,9 @@
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
     <link rel="stylesheet" href="/tailwind.css">
     <link href="ElsaDashboard.Blazor.Server.styles.css" rel="stylesheet"/>
+    <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.3.5/dist/alpine.js" defer=""></script>
 </head>
-<body class="antialiased font-sans bg-gray-200">
+<body class="antialiased font-sans bg-gray-200 overflow-hidden">
 @if (Program.UseBlazorServer)
 {
     <component type="typeof(App)" render-mode="@Program.RenderMode"/>
