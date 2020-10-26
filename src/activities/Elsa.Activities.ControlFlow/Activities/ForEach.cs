@@ -68,8 +68,8 @@ namespace Elsa.Activities.ControlFlow.Activities
                 context.BeginScope();
             }
 
-            context.CurrentScope.SetVariable(IteratorName, value);
-
+            var scope =context. Workflow.Scopes.FirstOrDefault(x => x.Variables.ContainsKey(IteratorName)) ?? context.CurrentScope;
+            scope.SetVariable(IteratorName, value);
             return Outcome(OutcomeNames.Iterate);
         }
     }
