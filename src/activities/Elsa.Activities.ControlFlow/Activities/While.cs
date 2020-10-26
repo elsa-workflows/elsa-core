@@ -39,14 +39,10 @@ namespace Elsa.Activities.ControlFlow.Activities
         {
             var loop = await expressionEvaluator.EvaluateAsync(ConditionExpression, context, cancellationToken);
 
-            if (HasStarted)
-                context.EndScope();
-            
             if (loop)
             {
                 HasStarted = true;
-
-                context.BeginScope();
+                
                 return Outcome(OutcomeNames.Iterate);
             }
 
