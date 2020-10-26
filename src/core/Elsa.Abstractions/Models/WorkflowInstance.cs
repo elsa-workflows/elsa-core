@@ -16,7 +16,7 @@ namespace Elsa.Models
         public Instant? FaultedAt { get; set; }
         public Instant? AbortedAt { get; set; }
         public IDictionary<string, ActivityInstance> Activities { get; set; } = new Dictionary<string, ActivityInstance>();
-        public Stack<WorkflowExecutionScope> Scopes { get; set; }
+        public WorkflowExecutionScope Scope { get; set; }
         public Variables Input { get; set; }
         public HashSet<BlockingActivity> BlockingActivities { get; set; }
         public ICollection<LogEntry> ExecutionLog { get; set; }

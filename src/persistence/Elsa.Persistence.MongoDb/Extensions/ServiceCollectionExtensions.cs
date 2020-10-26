@@ -22,7 +22,7 @@ namespace Elsa.Persistence.MongoDb.Extensions
         )
         {
             NodaTimeSerializers.Register();
-            RegisterEnumAsStringConvention();
+            RegisterConventions();
             BsonSerializer.RegisterSerializer(new JObjectSerializer());
             BsonSerializer.RegisterSerializer(new WorkflowExecutionScopeSerializer());
 
@@ -90,11 +90,17 @@ namespace Elsa.Persistence.MongoDb.Extensions
             return new MongoClient(connectionString);
         }
 
-        private static void RegisterEnumAsStringConvention()
+        private static void RegisterConventions()
         {
             var pack = new ConventionPack { new EnumRepresentationConvention(BsonType.String) };
 
             ConventionRegistry.Register("EnumStringConvention", pack, _ => true);
+            
+            BsonClassMap.RegisterClassMap<WorkflowInstance>(cm =>
+            {
+                cm.AutoMap();
+                cm.SetIgnoreExtraElements(true);
+            });
         }
     }
 }
