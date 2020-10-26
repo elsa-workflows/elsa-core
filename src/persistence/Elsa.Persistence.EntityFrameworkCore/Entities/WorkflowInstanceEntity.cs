@@ -17,7 +17,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Entities
         public DateTime? FinishedAt { get; set; }
         public DateTime? FaultedAt { get; set; }
         public DateTime? AbortedAt { get; set; }
-        public Stack<WorkflowExecutionScope> Scopes { get; set; }
+        public WorkflowExecutionScope Scope { get; set; }
         public Variables Input { get; set; }
         public ICollection<LogEntry> ExecutionLog { get; set; }
         public WorkflowFault Fault { get; set; }

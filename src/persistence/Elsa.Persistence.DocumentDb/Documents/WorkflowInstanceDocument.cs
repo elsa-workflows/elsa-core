@@ -40,8 +40,8 @@ namespace Elsa.Persistence.DocumentDb.Documents
         public IDictionary<string, ActivityInstance> Activities { get; set; } =
             new Dictionary<string, ActivityInstance>();
 
-        [JsonProperty(PropertyName = "scopes")]
-        public Stack<WorkflowExecutionScope> Scopes { get; set; }
+        [JsonProperty(PropertyName = "scope")]
+        public WorkflowExecutionScope Scope { get; set; }
 
         [JsonProperty(PropertyName = "input")] public Variables Input { get; set; }
 
