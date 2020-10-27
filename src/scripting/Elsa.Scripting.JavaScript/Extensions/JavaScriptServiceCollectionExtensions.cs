@@ -1,7 +1,6 @@
 using Elsa.Extensions;
 using Elsa.Scripting.JavaScript.Options;
 using Elsa.Scripting.JavaScript.Services;
-using Microsoft.Extensions.Options;
 using System;
 using Elsa.Expressions;
 
@@ -17,10 +16,9 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddNotificationHandlers(typeof(JavaScriptServiceCollectionExtensions));
         }
 
-        public static IServiceCollection WithJavaScriptOptions(this IServiceCollection services, Action<OptionsBuilder<ScriptOptions>> options)
+        public static IServiceCollection WithJavaScriptOptions(this IServiceCollection services, Action<ScriptOptions> configureOptions)
         {
-            var scriptOptions = services.AddOptions<ScriptOptions>();
-            options(scriptOptions);
+            services.Configure(configureOptions);
 
             return services;
         }

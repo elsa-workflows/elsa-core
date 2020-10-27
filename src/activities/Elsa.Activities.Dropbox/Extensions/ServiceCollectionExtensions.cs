@@ -11,15 +11,17 @@ namespace Microsoft.Extensions.DependencyInjection
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddDropbox(this IServiceCollection services, Action<OptionsBuilder<DropboxOptions>>? options = null) =>
+        public static IServiceCollection AddDropbox(this IServiceCollection services, Action<DropboxOptions>? configureOptions = null) =>
             services
-                .AddDropboxServices(options)
+                .AddDropboxServices(configureOptions)
                 .AddDropboxActivities();
 
-        public static IServiceCollection AddDropboxServices(this IServiceCollection services, Action<OptionsBuilder<DropboxOptions>>? options = null)
+        public static IServiceCollection AddDropboxServices(this IServiceCollection services, Action<DropboxOptions>? configureOptions = null)
         {
-            var optionsBuilder = services.AddOptions<DropboxOptions>();
-            options?.Invoke(optionsBuilder);
+            if (configureOptions != null)
+            {
+                services.Configure(configureOptions);
+            }
 
             services
                 .AddHttpClient<IFilesApi, FilesApi>()

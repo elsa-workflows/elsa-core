@@ -5,7 +5,6 @@ using Elsa.Activities.MassTransit.Options;
 using MassTransit;
 using MassTransit.ConsumeConfigurators;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 
 namespace Elsa.Activities.MassTransit.Extensions
 {
@@ -44,10 +43,12 @@ namespace Elsa.Activities.MassTransit.Extensions
             return services;
         }
 
-        public static IServiceCollection AddRabbitMqActivities(this IServiceCollection services, Action<OptionsBuilder<RabbitMqOptions>> options = null, params Type[] messageTypes)
+        public static IServiceCollection AddRabbitMqActivities(this IServiceCollection services, Action<RabbitMqOptions>? configureOptions = null, params Type[] messageTypes)
         {
-            var optionsBuilder = services.AddOptions<RabbitMqOptions>();
-            options?.Invoke(optionsBuilder);
+            if (configureOptions != null)
+            {
+                services.Configure(configureOptions);
+            }
 
             services
                 .AddMassTransitActivities();
@@ -71,7 +72,7 @@ namespace Elsa.Activities.MassTransit.Extensions
         public static void ConfigureWorkflowConsumer<TMessage>(
             this IReceiveEndpointConfigurator configurator,
             IServiceProvider provider,
-            Action<IConsumerConfigurator<WorkflowConsumer<TMessage>>> configure = null)
+            Action<IConsumerConfigurator<WorkflowConsumer<TMessage>>>? configure = null)
             where TMessage : class
         {
             provider.GetRequiredService<IRegistration>().ConfigureConsumer(configurator, configure);
@@ -81,7 +82,7 @@ namespace Elsa.Activities.MassTransit.Extensions
 
         public static IConsumerRegistrationConfigurator<WorkflowConsumer<TMessage>> AddWorkflowConsumer<TMessage>(
             this IRegistrationConfigurator configurator,
-            Action<IConsumerConfigurator<WorkflowConsumer<TMessage>>> configure = null)
+            Action<IConsumerConfigurator<WorkflowConsumer<TMessage>>>? configure = null)
             where TMessage : class
         {
             return configurator.AddConsumer(configure);

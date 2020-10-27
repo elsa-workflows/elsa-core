@@ -25,7 +25,7 @@ namespace Elsa.Samples.DistributedLock
                                 .UsePersistence(db => db.UseSqLite("Data Source=elsa.db;Cache=Shared"))
                                 .UseRedisLockProvider("localhost:6379,abortConnect=false"))
                             .AddConsoleActivities()
-                            .AddTimerActivities(options => options.Configure(timer => timer.SweepInterval = Duration.FromSeconds(5)))
+                            .AddTimerActivities(timer => timer.SweepInterval = Duration.FromSeconds(5))
                             .AddWorkflow<RecurringWorkflow>();
                     });
     }
