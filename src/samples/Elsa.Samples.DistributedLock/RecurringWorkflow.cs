@@ -1,9 +1,9 @@
 using Elsa.Activities.Console;
-using Elsa.Activities.MassTransit;
 using Elsa.Builders;
 using Elsa.Models;
 using NodaTime;
 using System;
+using Elsa.Activities.Timers;
 
 namespace Elsa.Samples.DistributedLock
 {

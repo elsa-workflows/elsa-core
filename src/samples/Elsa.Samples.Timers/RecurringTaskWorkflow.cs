@@ -1,6 +1,6 @@
 using System;
 using Elsa.Activities.Console;
-using Elsa.Activities.MassTransit;
+using Elsa.Activities.Timers;
 using Elsa.Builders;
 using Elsa.Models;
 using NodaTime;
