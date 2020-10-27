@@ -6,24 +6,25 @@ using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 
-namespace Elsa.Activities.UserTask.Activities
+namespace Elsa.Activities.ApprovalTask.Activities
 {
     /// <summary>
     /// Stores a set of possible user actions and halts the workflow until one of the actions has been performed.
     /// </summary>
     [ActivityDefinition(
-        Category = "User Tasks",
-        Description = "Triggers when a user action is received."
+        Category = "用户任务",
+        Description = "审批活动，当接收到用户操作时触发。",
+        Outcomes = "x => x.state.actions"
     )]
-    public class UserTask : Activity
+    public class ApprovalTask : Activity
     {
         [ActivityProperty(
             Type = ActivityPropertyTypes.List,
-            Hint = "Enter a comma-separated list of available actions"
+            Hint = "输入可用操作的逗号分隔列表"
         )]
-        public string[] Actions
+        public IList[] Actions
         {
-            get => GetState(() => Array.Empty<string>());
+            get => GetState(() => new List<string>());
             set => SetState(value);
         }
 
@@ -46,6 +47,6 @@ namespace Elsa.Activities.UserTask.Activities
         }
 
         private string GetUserAction(WorkflowExecutionContext context) =>
-            (string) context.Workflow.Input.GetVariable("UserAction");
+            (string) context.Workflow.Input.GetVariable("ApprovalAction");
     }
 }
