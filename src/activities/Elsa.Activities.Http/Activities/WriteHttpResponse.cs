@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
@@ -124,11 +124,11 @@ namespace Elsa.Activities.Http.Activities
                 cancellationToken
             );
 
-            if (headersText != null)
+            if (!string.IsNullOrWhiteSpace(headersText))
             {
                 var headersQuery =
                     from line in Regex.Split(headersText, "\\n", RegexOptions.Multiline)
-                    let pair = line.Split(':', '=')
+                    let pair = line.Split(new []{':', '='}, 2)
                     select new KeyValuePair<string, string>(pair[0], pair[1]);
 
                 foreach (var header in headersQuery)

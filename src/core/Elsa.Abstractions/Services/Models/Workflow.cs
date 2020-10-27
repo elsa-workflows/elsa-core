@@ -28,11 +28,9 @@ namespace Elsa.Services.Models
             Input = new Variables(input ?? Variables.Empty);
         }
 
-        
-
         public Workflow()
         {
-            Scopes = new Stack<WorkflowExecutionScope>(new[] { new WorkflowExecutionScope() });
+            Scope = new WorkflowExecutionScope();
             BlockingActivities = new HashSet<IActivity>();
             ExecutionLog = new List<LogEntry>();
         }
@@ -48,7 +46,7 @@ namespace Elsa.Services.Models
         public Instant? AbortedAt { get; set; }
         public ICollection<IActivity> Activities { get; } = new List<IActivity>();
         public IList<Connection> Connections { get; } = new List<Connection>();
-        public Stack<WorkflowExecutionScope> Scopes { get; set; }
+        public WorkflowExecutionScope Scope { get; set; }
         public HashSet<IActivity> BlockingActivities { get; set; }
         public IList<LogEntry> ExecutionLog { get; set; }
         public WorkflowFault Fault { get; set; }
@@ -72,7 +70,7 @@ namespace Elsa.Services.Models
                 FaultedAt = FaultedAt,
                 AbortedAt = AbortedAt,
                 Activities = activities,
-                Scopes = new Stack<WorkflowExecutionScope>(Scopes),
+                Scope = Scope,
                 
                 BlockingActivities = new HashSet<BlockingActivity>(
                     BlockingActivities.Select(x => new BlockingActivity(x.Id, x.Type)),
@@ -100,12 +98,11 @@ namespace Elsa.Services.Models
             FaultedAt = instance.FaultedAt;
             AbortedAt = instance.AbortedAt;
             ExecutionLog = instance.ExecutionLog.ToList();
+            Scope = instance.Scope;
 
             BlockingActivities =
                 new HashSet<IActivity>(instance.BlockingActivities.Select(x => activityLookup[x.ActivityId]));
-
-            Scopes = new Stack<WorkflowExecutionScope>(instance.Scopes);
-
+            
             foreach (var activity in Activities)
             {
                 activity.State = new JObject(instance.Activities[activity.Id].State);

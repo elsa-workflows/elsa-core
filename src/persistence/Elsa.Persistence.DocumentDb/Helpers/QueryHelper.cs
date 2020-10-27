@@ -14,7 +14,7 @@ namespace Elsa.Persistence.DocumentDb.Helpers
 
             while (query.HasMoreResults)
             {
-                var nextResults = await Task.Run(async () => await query.ExecuteNextWithRetriesAsync());
+                var nextResults = await query.ExecuteNextWithRetriesAsync();
                 results.AddRange(nextResults);
             }
 

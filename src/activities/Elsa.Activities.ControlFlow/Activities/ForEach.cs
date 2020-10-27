@@ -55,18 +55,12 @@ namespace Elsa.Activities.ControlFlow.Activities
 
             if (index >= collection.Count)
             {
-                context.EndScope();
                 CurrentIndex = 0;
                 return Done();
             }
 
             var value = collection[index];
             CurrentIndex++;
-
-            if (index == 0)
-            {
-                context.BeginScope();
-            }
 
             context.CurrentScope.SetVariable(IteratorName, value);
 

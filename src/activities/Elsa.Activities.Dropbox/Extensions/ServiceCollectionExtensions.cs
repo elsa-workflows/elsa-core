@@ -2,7 +2,6 @@ using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using Elsa.Activities.Dropbox.Activities;
-using Elsa.Activities.Dropbox.Handlers;
 using Elsa.Activities.Dropbox.Options;
 using Elsa.Activities.Dropbox.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,7 +19,6 @@ namespace Elsa.Activities.Dropbox.Extensions
             options?.Invoke(optionsBuilder);
 
             services
-                .AddTransient<DropboxApiHandler>()
                 .AddHttpClient<IFilesApi, FilesApi>()
                 .ConfigureHttpClient(ConfigureHttpClient);
 

@@ -1,6 +1,4 @@
 using System;
-using System.Threading;
-using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Extensions;
 using Elsa.Results;
@@ -44,13 +42,12 @@ namespace Elsa.Activities.MassTransit.Activities
             return Halt(true);
         }
 
-        protected override Task<ActivityExecutionResult> OnResumeAsync(WorkflowExecutionContext context,
-            CancellationToken cancellationToken)
+        protected override ActivityExecutionResult OnResume(WorkflowExecutionContext context)
         {
             var message = context.Workflow.Input.GetVariable(Constants.MessageInputKey);
             context.SetLastResult(message);
 
-            return Task.FromResult(Done());
+            return Done();
         }
     }
 }
