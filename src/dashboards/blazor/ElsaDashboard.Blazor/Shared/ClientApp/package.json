@@ -1,0 +1,22 @@
+{
+    "scripts": {
+        "serve": "cross-env NODE_ENV=development concurrently \"postcss public/tailwind.css -o public/build/tailwind.css --watch\"  \"live-server ./public\"",
+        "blazor-server": "cross-env NODE_ENV=production postcss public/tailwind.css -o ../../Server/wwwroot/tailwind.css",
+        "blazor-wasm": "cross-env NODE_ENV=production postcss public/tailwind.css -o ../../Client/wwwroot/tailwind.css",
+        "build": "npm run blazor-server && npm run blazor-wasm",
+        "start": "npm run serve"
+    },
+    "dependencies": {
+        "@tailwindcss/ui": "^0.6.2",
+        "autoprefixer": "10.0.1",
+        "tailwindcss": "1.8.10"
+    },
+    "devDependencies": {
+        "concurrently": "^5.3.0",
+        "cross-env": "^7.0.2",
+        "cssnano": "^4.1.10",
+        "live-server": "^1.2.1",
+        "postcss": "8.1.0",
+        "postcss-cli": "8.0.0"
+    }
+}
