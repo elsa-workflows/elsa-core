@@ -51,3 +51,5 @@ node_modules/
 .github/
 
 App_Data/
+/src/samples/Elsa.Samples.HelloWorldHttp/Properties/launchSettings.json
+/src/samples/Elsa.Samples.CustomActivities/Properties/launchSettings.json
