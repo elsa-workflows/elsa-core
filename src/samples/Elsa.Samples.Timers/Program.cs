@@ -1,4 +1,4 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NodaTime;
@@ -18,7 +18,7 @@ namespace Elsa.Samples.Timers
                         services
                             .AddElsa(options => options.UsePersistence(db => db.UseSqLite("Data Source=elsa.db;Cache=Shared")))
                             .AddConsoleActivities()
-                            .AddTimerActivities(options => options.Configure(timer => timer.SweepInterval = Duration.FromSeconds(5)))
+                            .AddTimerActivities(timer => timer.SweepInterval = Duration.FromSeconds(5))
                             .AddWorkflow<RecurringTaskWorkflow>()
                             .AddWorkflow<CronTaskWorkflow>();
                     });

@@ -40,9 +40,9 @@ namespace Elsa.Server.Host
                             .AllowAnyHeader()))
                 
                 .AddConsoleActivities()
-                .AddHttpActivities(options => options.Bind(elsaSection.GetSection("Http")))
-                .AddEmailActivities(options => options.Bind(elsaSection.GetSection("Smtp")))
-                .AddTimerActivities(options => options.Bind(elsaSection.GetSection("BackgroundRunner")))
+                .AddHttpActivities(elsaSection.GetSection("Http").Bind)
+                .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)
+                .AddTimerActivities(elsaSection.GetSection("BackgroundRunner").Bind)
                 .AddStartupTask<ResumeRunningWorkflowsTask>();
         }
 
