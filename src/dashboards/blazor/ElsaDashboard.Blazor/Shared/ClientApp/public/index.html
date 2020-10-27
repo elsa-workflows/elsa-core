@@ -205,7 +205,84 @@
                         <div class="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
                             <!-- Replace with your content -->
                             <div class="py-4">
-                                <div class="border-4 border-dashed border-gray-200 rounded-lg h-96"></div>
+                                <!--
+  Tailwind UI components require Tailwind CSS v1.8 and the @tailwindcss/ui plugin.
+  Read the documentation to get started: https://tailwindui.com/documentation
+-->
+                                <div class="flex flex-col">
+                                    <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+                                        <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+                                            <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+                                                <table class="min-w-full divide-y divide-gray-200">
+                                                    <thead>
+                                                    <tr>
+                                                        <th class="@thClass">
+                                                            Name
+                                                        </th>
+                                                        <th class="@thClass">
+                                                            Instances
+                                                        </th>
+                                                        <th class="@thClass">
+                                                            Latest Version
+                                                        </th>
+                                                        <th class="@thClass">
+                                                            Published Version
+                                                        </th>
+                                                        <th class="px-6 py-3 bg-gray-50"></th>
+                                                    </tr>
+                                                    </thead>
+                                                    <tbody class="bg-white divide-y divide-gray-200">
+                                                    <tr>
+                                                        <td class="px-6 py-4 whitespace-no-wrap">
+                                                            <div class="flex items-center">
+                                                                <div class="ml-4">
+                                                                    <div class="text-sm leading-5 font-medium text-gray-900">
+                                                                        Workflow 1
+                                                                    </div>
+                                                                    <div class="text-sm leading-5 text-gray-500">
+                                                                        Workflow description.
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td class="px-6 py-4 whitespace-no-wrap">
+                                                            <ul>
+                                                                <li>
+                                                                    <span class=" px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-green-800">
+                                                                1 Suspended
+                                                            </span>
+                                                                </li>
+                                                                <li>
+                                                            <span class=" px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                                1 Finished
+                                                            </span>
+                                                                </li>
+                                                                <li>
+                                                                    <span class=" px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-green-800">
+                                                                1 Failed
+                                                            </span>
+                                                                </li>
+                                                            </ul>
+                                                        </td>
+                                                        <td class="px-6 py-4 whitespace-no-wrap">
+                                                            <div class="text-sm leading-5 text-gray-900">1</div>
+                                                        </td>
+                                                        <td class="px-6 py-4 whitespace-no-wrap">
+                                                            <div class="text-sm leading-5 text-gray-900">1</div>
+                                                        </td>
+                                                        <td class="px-6 py-4 whitespace-no-wrap text-right text-sm leading-5 font-medium">
+                                                            <a href="#" class="text-indigo-600 hover:text-indigo-900">Edit</a>
+                                                        </td>
+                                                    </tr>
+
+                                                    <!-- More rows... -->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
                             </div>
                             <!-- /End replace -->
                         </div>

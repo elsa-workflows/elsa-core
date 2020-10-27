@@ -1,5 +1,5 @@
 ﻿<div x-data="{open: true}">
-    <section x-on:click.away="open = false; setTimeout(() => open = true, 1000);" class="absolute inset-y-0 pl-16 max-w-full right-0 flex">
+    <section x-on:click.away="open = false;" class="absolute inset-y-0 pl-16 max-w-full right-0 flex">
         <div class="w-screen max-w-md" x-description="Slide-over panel, show/hide based on slide-over state." x-show="open" x-transition:enter="transform transition ease-in-out duration-500 sm:duration-700" x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0" x-transition:leave="transform transition ease-in-out duration-500 sm:duration-700" x-transition:leave-start="translate-x-0" x-transition:leave-end="translate-x-full">
             <div class="h-full divide-y divide-gray-200 flex flex-col bg-white shadow-xl">
                 <div class="flex-1 h-0 overflow-y-auto">
@@ -9,7 +9,7 @@
                                 New Project
                             </h2>
                             <div class="h-7 flex items-center">
-                                <button x-on:click="open = false; setTimeout(() => open = true, 1000);" aria-label="Close panel" class="text-indigo-200 hover:text-white transition ease-in-out duration-150">
+                                <button x-on:click="open = false;" aria-label="Close panel" class="text-indigo-200 hover:text-white transition ease-in-out duration-150">
                                     <svg class="h-6 w-6" x-description="Heroicon name: x" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                                     </svg>
