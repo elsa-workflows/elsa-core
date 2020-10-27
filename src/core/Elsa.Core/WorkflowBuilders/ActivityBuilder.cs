@@ -12,6 +12,10 @@ namespace Elsa.WorkflowBuilders
         {
             WorkflowBuilder = workflowBuilder;
             Activity = activity;
+            Id = Activity.Id;
+            Name = Activity.Name;
+            Description = Activity.Description;
+            DisplayName = Activity.DisplayName;
         }
 
         public WorkflowBuilder WorkflowBuilder { get; }
