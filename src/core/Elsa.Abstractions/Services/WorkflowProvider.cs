@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Services.Models;
@@ -8,7 +8,14 @@ namespace Elsa.Services
 {
     public abstract class WorkflowProvider : IWorkflowProvider
     {
-        protected virtual async ValueTask<IEnumerable<IWorkflowBlueprint>> OnGetWorkflowsAsync(CancellationToken cancellationToken) => await GetWorkflowsAsync(cancellationToken).ToListAsync(cancellationToken);
-        public virtual IAsyncEnumerable<IWorkflowBlueprint> GetWorkflowsAsync(CancellationToken cancellationToken) => AsyncEnumerable.Empty<IWorkflowBlueprint>();
+        public virtual async IAsyncEnumerable<IWorkflowBlueprint> GetWorkflowsAsync([EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            var workflows = await OnGetWorkflowsAsync(cancellationToken);
+            
+            foreach (var workflow in workflows)
+                yield return workflow;
+        }
+        
+        protected virtual async ValueTask<IEnumerable<IWorkflowBlueprint>> OnGetWorkflowsAsync(CancellationToken cancellationToken) => new IWorkflowBlueprint[0];
     }
 }

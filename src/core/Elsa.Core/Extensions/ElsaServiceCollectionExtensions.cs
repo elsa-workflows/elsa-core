@@ -27,8 +27,6 @@ using MediatR;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using NodaTime;
 using Rebus.Handlers;
-using Storage.Net;
-using Storage.Net.Blobs;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -71,6 +69,13 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddTransient<T>()
                 .AddTransient<IWorkflow>(sp => sp.GetRequiredService<T>());
         }
+        
+        public static IServiceCollection AddWorkflow(this IServiceCollection services, IWorkflow workflow)
+        {
+            return services
+                .AddSingleton(workflow.GetType(), workflow)
+                .AddTransient(sp => workflow);
+        }
 
         public static IServiceCollection AddConsumer<TMessage, TConsumer>(this IServiceCollection services) where TConsumer : class, IHandleMessages<TMessage> => services.AddTransient<IHandleMessages<TMessage>, TConsumer>();
         private static IServiceCollection AddMediatR(this ElsaOptions options) => options.Services.AddMediatR(mediatr => mediatr.AsScoped(), typeof(IActivity));
@@ -105,7 +110,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddIndexProvider<WorkflowDefinitionIndexProvider>()
                 .AddIndexProvider<WorkflowInstanceIndexProvider>()
                 .AddStartupRunner()
-                .AddSingleton<IActivityActivator, ActivityActivator>()
+                .AddScoped<IActivityActivator, ActivityActivator>()
                 .AddWorkflowProvider<ProgrammaticWorkflowProvider>()
                 .AddWorkflowProvider<StorageWorkflowProvider>()
                 .AddTransient<IWorkflowBuilder, WorkflowBuilder>()

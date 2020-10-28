@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,9 +11,9 @@ namespace Elsa.Activities.Http.Parsers
     public class FormHttpRequestBodyParser : IHttpRequestBodyParser
     {
         public int Priority => 0;
-        public IEnumerable<string> SupportedContentTypes => new[] { "application/x-www-form-urlencoded" };
-
-        public async Task<object> ParseAsync(HttpRequest request, CancellationToken cancellationToken)
+        public string?[] SupportedContentTypes => new[] { "application/x-www-form-urlencoded" };
+        
+        public async Task<object> ParseAsync(HttpRequest request, Type? targetType = default, CancellationToken cancellationToken = default)
         {
             var form = await request.ReadFormAsync(cancellationToken);
             return form.ToDictionary(

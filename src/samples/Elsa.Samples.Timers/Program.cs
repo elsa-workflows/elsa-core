@@ -20,7 +20,8 @@ namespace Elsa.Samples.Timers
                             .AddConsoleActivities()
                             .AddTimerActivities(timer => timer.SweepInterval = Duration.FromSeconds(5))
                             .AddWorkflow<RecurringTaskWorkflow>()
-                            .AddWorkflow<CronTaskWorkflow>();
+                            .AddWorkflow<CronTaskWorkflow>()
+                            .AddWorkflow(new OneOffWorkflow(SystemClock.Instance.GetCurrentInstant().Plus(Duration.FromSeconds(15))));
                     });
     }
 }

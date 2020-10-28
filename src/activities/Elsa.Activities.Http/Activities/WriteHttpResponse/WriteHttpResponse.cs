@@ -23,9 +23,7 @@ namespace Elsa.Activities.Http
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public WriteHttpResponse(
-            IHttpContextAccessor httpContextAccessor,
-            IStringLocalizer<WriteHttpResponse> localizer)
+        public WriteHttpResponse(IHttpContextAccessor httpContextAccessor, IStringLocalizer<WriteHttpResponse> localizer)
         {
             T = localizer;
             _httpContextAccessor = httpContextAccessor;
@@ -47,7 +45,7 @@ namespace Elsa.Activities.Http
         /// </summary>
         [ActivityProperty(Hint = "The HTTP content to write.")]
         [WorkflowExpressionOptions(Multiline = true)]
-        public string Content { get; set; }
+        public string? Content { get; set; }
 
         /// <summary>
         /// The Content-Type header to send along with the response.
@@ -57,10 +55,10 @@ namespace Elsa.Activities.Http
             Hint = "The HTTP content type header to write."
         )]
         [SelectOptions("text/plain", "text/html", "application/json", "application/xml")]
-        public string ContentType { get; set; }
+        public string? ContentType { get; set; }
 
         /// <summary>
-        /// The headers to send along with the response. One 'header: value' pair per line.
+        /// The headers to send along with the response.
         /// </summary>
         [ActivityProperty(Hint = "The headers to send along with the response.")]
         public HttpResponseHeaders? ResponseHeaders { get; set; }

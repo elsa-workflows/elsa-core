@@ -5,8 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Microsoft.Extensions.DependencyInjection;
-using NetBox.Extensions;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Triggers
@@ -81,7 +79,7 @@ namespace Elsa.Triggers
             var providers = _triggerProviders.ToList();
             var descriptors = new List<TriggerDescriptor>();
             var workflowInstance = await _workflowFactory.InstantiateAsync(workflowBlueprint, cancellationToken: cancellationToken);
-            var workflowExecutionContext = new WorkflowExecutionContext(_serviceProvider, workflowBlueprint, default!, workflowInstance);
+            var workflowExecutionContext = new WorkflowExecutionContext(_serviceProvider, workflowBlueprint, workflowInstance, default!);
 
             foreach (var blockingActivity in blockingActivities)
             {

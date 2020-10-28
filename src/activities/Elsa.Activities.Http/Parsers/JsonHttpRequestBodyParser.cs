@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+using System;
 using System.Dynamic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,12 +12,13 @@ namespace Elsa.Activities.Http.Parsers
     public class JsonHttpRequestBodyParser : IHttpRequestBodyParser
     {
         public int Priority => 0;
-        public IEnumerable<string> SupportedContentTypes => new[] { "application/json", "text/json" };
-
-        public async Task<object> ParseAsync(HttpRequest request, CancellationToken cancellationToken)
+        public string?[] SupportedContentTypes => new[] { "application/json", "text/json" };
+        
+        public async Task<object> ParseAsync(HttpRequest request, Type? targetType = default, CancellationToken cancellationToken = default)
         {
             var json = await request.ReadContentAsStringAsync(cancellationToken);
-            return JsonConvert.DeserializeObject<ExpandoObject>(json);
+            targetType ??= typeof(ExpandoObject);
+            return JsonConvert.DeserializeObject(json, targetType)!;
         }
     }
 }

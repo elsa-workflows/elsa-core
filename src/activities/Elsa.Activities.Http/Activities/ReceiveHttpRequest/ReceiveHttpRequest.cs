@@ -19,8 +19,7 @@ namespace Elsa.Activities.Http
         Category = "HTTP",
         DisplayName = "Receive HTTP Request",
         Description = "Receive an incoming HTTP request.",
-        RuntimeDescription =
-            "x => !!x.state.path ? `Handle <strong>${ x.state.method } ${ x.state.path }</strong>.` : x.definition.description",
+        RuntimeDescription = "x => !!x.state.path ? `Handle <strong>${ x.state.method } ${ x.state.path }</strong>.` : x.definition.description",
         Outcomes = new[] { OutcomeNames.Done }
     )]
     public class ReceiveHttpRequest : Activity
@@ -45,10 +44,7 @@ namespace Elsa.Activities.Http
         /// <summary>
         /// The HTTP method that triggers this activity.
         /// </summary>
-        [ActivityProperty(
-            Type = ActivityPropertyTypes.Select,
-            Hint = "The HTTP method that triggers this activity."
-        )]
+        [ActivityProperty(Type = ActivityPropertyTypes.Select, Hint = "The HTTP method that triggers this activity.")]
         [SelectOptions("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD")]
         public string? Method { get; set; }
 
@@ -56,28 +52,22 @@ namespace Elsa.Activities.Http
         /// A value indicating whether the HTTP request content body should be read and stored as part of the HTTP request model.
         /// The stored format depends on the content-type header.
         /// </summary>
-        [ActivityProperty(
-            Hint =
-                "A value indicating whether the HTTP request content body should be read and stored as part of the HTTP request model. The stored format depends on the content-type header."
-        )]
+        [ActivityProperty(Hint = "A value indicating whether the HTTP request content body should be read and stored as part of the HTTP request model. The stored format depends on the content-type header.")]
         public bool ReadContent { get; set; }
 
-        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(
-            ActivityExecutionContext context,
-            CancellationToken cancellationToken)
-        {
-            return context.WorkflowExecutionContext.IsFirstPass
-                ? await ExecuteInternalAsync(context, cancellationToken)
-                : Suspend();
-        }
+        /// <summary>
+        /// The <see cref="Type"/> to parse the received request content into if <seealso cref="ReadContent"/> is set to true.
+        /// If not set, the content will be parse into a default type, depending on the parser associated with the received content-type header.
+        /// </summary>
+        [ActivityProperty]
+        public Type? TargetType { get; set; }
 
-        protected override ValueTask<IActivityExecutionResult> OnResumeAsync(
-            ActivityExecutionContext context,
-            CancellationToken cancellationToken) => ExecuteInternalAsync(context, cancellationToken);
+        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken) =>
+            context.WorkflowExecutionContext.IsFirstPass ? await ExecuteInternalAsync(cancellationToken) : Suspend();
 
-        private async ValueTask<IActivityExecutionResult> ExecuteInternalAsync(
-            ActivityExecutionContext context,
-            CancellationToken cancellationToken)
+        protected override ValueTask<IActivityExecutionResult> OnResumeAsync(ActivityExecutionContext context, CancellationToken cancellationToken) => ExecuteInternalAsync(cancellationToken);
+
+        private async ValueTask<IActivityExecutionResult> ExecuteInternalAsync(CancellationToken cancellationToken)
         {
             var request = _httpContextAccessor.HttpContext.Request;
             var model = new HttpRequestModel
@@ -91,7 +81,7 @@ namespace Elsa.Activities.Http
             if (ReadContent)
             {
                 var parser = SelectContentParser(request.ContentType);
-                model.Body = await parser.ParseAsync(request, cancellationToken);
+                model.Body = await parser.ParseAsync(request, TargetType, cancellationToken);
             }
 
             return Done(model);
@@ -100,9 +90,7 @@ namespace Elsa.Activities.Http
         private IHttpRequestBodyParser SelectContentParser(string contentType)
         {
             var formatters = _parsers.OrderByDescending(x => x.Priority).ToList();
-            return formatters.FirstOrDefault(
-                x => x.SupportedContentTypes.Contains(contentType, StringComparer.OrdinalIgnoreCase)
-            ) ?? formatters.Last();
+            return formatters.FirstOrDefault(x => x.SupportedContentTypes.Contains(contentType, StringComparer.OrdinalIgnoreCase)) ?? formatters.Last();
         }
     }
 }

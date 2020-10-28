@@ -20,13 +20,14 @@ namespace Elsa.Activities.Timers
 
         public InstantEvent(IClock clock) => _clock = clock;
 
-        /// <summary>
-        /// An expression that evaluates to an <see cref="NodaTime.Instant"/>
-        /// </summary>
-        [ActivityProperty(Hint = "An expression that evaluates to a NodaTime Instant")]
+        [ActivityProperty(Hint = "An instant in the future at which this activity should execute.")]
         public Instant Instant { get; set; }
 
-        public Instant? ExecutedAt { get; set; }
+        public Instant? ExecutedAt
+        {
+            get => GetState<Instant?>();
+            set => SetState(value);
+        }
 
         protected override bool OnCanExecute(ActivityExecutionContext context) => ExecutedAt == null || IsExpired();
         protected override IActivityExecutionResult OnExecute() => OnResume();

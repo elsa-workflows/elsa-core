@@ -9,6 +9,7 @@ using Elsa.Exceptions;
 using Elsa.Models;
 using Elsa.Services.Models;
 using MediatR;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Services
@@ -196,9 +197,10 @@ namespace Elsa.Services
 
         private async ValueTask<bool> CanExecuteAsync(WorkflowExecutionContext workflowExecutionContext, IActivityBlueprint activityBlueprint, object? input, CancellationToken cancellationToken)
         {
+            using var scope = _serviceProvider.CreateScope();
             var activityExecutionContext = new ActivityExecutionContext(
                 workflowExecutionContext,
-                _serviceProvider,
+                scope.ServiceProvider,
                 activityBlueprint,
                 input);
 
@@ -208,12 +210,13 @@ namespace Elsa.Services
 
         private async ValueTask RunAsync(WorkflowExecutionContext workflowExecutionContext, ActivityOperation activityOperation, CancellationToken cancellationToken = default)
         {
+            using var scope = _serviceProvider.CreateScope();
             while (workflowExecutionContext.HasScheduledActivities)
             {
                 var scheduledActivity = workflowExecutionContext.PopScheduledActivity();
                 var currentActivityId = scheduledActivity.ActivityId;
                 var activityBlueprint = workflowExecutionContext.WorkflowBlueprint.GetActivity(currentActivityId)!;
-                var activityExecutionContext = new ActivityExecutionContext(workflowExecutionContext, _serviceProvider, activityBlueprint, scheduledActivity.Input);
+                var activityExecutionContext = new ActivityExecutionContext(workflowExecutionContext, scope.ServiceProvider, activityBlueprint, scheduledActivity.Input);
                 var activity = await activityBlueprint.CreateActivityAsync(activityExecutionContext, cancellationToken);
                 var result = await activityOperation(activityExecutionContext, activity, cancellationToken);
                 await _mediator.Publish(new ActivityExecuting(activityExecutionContext), cancellationToken);

@@ -82,8 +82,8 @@ namespace Elsa.Services.Models
             WorkflowInstance.Output = output;
         }
 
-        public IActivityBlueprint? GetActivityBlueprint(string id) =>
-            WorkflowBlueprint.Activities.FirstOrDefault(x => x.Id == id);
+        public IActivityBlueprint? GetActivityBlueprintById(string id) => WorkflowBlueprint.Activities.FirstOrDefault(x => x.Id == id);
+        public IActivityBlueprint? GetActivityBlueprintByName(string name) => WorkflowBlueprint.Activities.FirstOrDefault(x => x.Name == name);
 
         private JObject Serialize(IActivity activity) => JObject.FromObject(activity);
 
@@ -91,6 +91,13 @@ namespace Elsa.Services.Models
         {
             while(HasPostScheduledActivities)
                 ScheduleActivity(WorkflowInstance.PostScheduledActivities.Pop());
+        }
+
+        public object? GetOutputFrom(string activityName)
+        {
+            var activityBlueprint = GetActivityBlueprintByName(activityName)!;
+            var activityInstance = WorkflowInstance.Activities.Single(x => x.Id == activityBlueprint.Id);
+            return activityInstance.Output;
         }
     }
 }

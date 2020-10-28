@@ -19,6 +19,7 @@ namespace Elsa.Services.Models
             WorkflowExecutionContext = workflowExecutionContext;
             ServiceProvider = serviceProvider;
             ActivityBlueprint = activityBlueprint;
+            ActivityInstance = WorkflowExecutionContext.WorkflowInstance.Activities.First(x => x.Id == ActivityBlueprint.Id);
             Input = input;
             Outcomes = new List<string>(0);
         }
@@ -26,10 +27,15 @@ namespace Elsa.Services.Models
         public WorkflowExecutionContext WorkflowExecutionContext { get; }
         public IServiceProvider ServiceProvider { get; }
         public IActivityBlueprint ActivityBlueprint { get; }
-        public object? Input { get; }
-        public object? Output { get; set; }
+        public ActivityInstance ActivityInstance { get; }
         public IReadOnlyCollection<string> Outcomes { get; set; }
-        public ActivityInstance ActivityInstance => WorkflowExecutionContext.WorkflowInstance.Activities.First(x => x.Id == ActivityBlueprint.Id);
+        public object? Input { get; }
+
+        public object? Output
+        {
+            get => ActivityInstance.Output;
+            set => ActivityInstance.Output = value;
+        }
 
         public void SetVariable(string name, object? value) => WorkflowExecutionContext.SetVariable(name, value);
         public object? GetVariable(string name) => WorkflowExecutionContext.GetVariable(name);
@@ -51,5 +57,7 @@ namespace Elsa.Services.Models
             activity.Data = ActivityInstance.Data;
             return activity;
         }
+        
+        public object? GetOutputFrom(string activityName) => WorkflowExecutionContext.GetOutputFrom(activityName);
     }
 }
