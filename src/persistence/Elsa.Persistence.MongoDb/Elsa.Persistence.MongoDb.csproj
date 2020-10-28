@@ -29,8 +29,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="MongoDb.Bson.NodaTime" Version="2.0.0" />
-      <PackageReference Include="MongoDB.Driver" Version="2.10.1" />
+      <PackageReference Include="MongoDb.Bson.NodaTime" Version="2.1.0" />
+      <PackageReference Include="MongoDB.Driver" Version="2.11.3" />
     </ItemGroup>
 
 </Project>

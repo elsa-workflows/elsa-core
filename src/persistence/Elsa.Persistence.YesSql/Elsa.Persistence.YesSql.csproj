@@ -30,7 +30,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="3.1.1" />
+        <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="3.1.9" />
         <PackageReference Include="YesSql.Core" Version="2.0.0-beta-1449" />
         <PackageReference Include="YesSql.Provider.MySql" Version="1.0.0-beta-1449" />
         <PackageReference Include="YesSql.Provider.PostgreSql" Version="1.0.0-beta-1449" />

@@ -65,7 +65,7 @@ namespace Elsa.Activities.Email.Activities
             var body = await expressionEvaluator.EvaluateAsync(Body, workflowContext, cancellationToken);
             var message = new MimeMessage();
             
-            message.From.Add(new MailboxAddress(from));
+            message.From.Add(MailboxAddress.Parse(from));
             message.Subject = subject;
             
             message.Body = new TextPart(TextFormat.Html)
@@ -73,7 +73,7 @@ namespace Elsa.Activities.Email.Activities
                 Text = body
             };
 
-            message.To.Add(new MailboxAddress(to));
+            message.To.Add(MailboxAddress.Parse(to));
 
             await smtpService.SendAsync(message, cancellationToken);
 
