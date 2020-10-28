@@ -22,7 +22,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddLiquidExpressionEvaluator()
                 .AddControlFlowActivities()
                 .AddWorkflowActivities()
-                .AddUserTaskActivities();
+                .AddUserTaskActivities()
+                .AddApprovalTaskActivities();
         }
     }
 }

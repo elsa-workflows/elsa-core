@@ -34,6 +34,7 @@
       <ProjectReference Include="..\..\activities\Elsa.Activities.Workflows\Elsa.Activities.Workflows.csproj" />
       <ProjectReference Include="..\..\scripting\Elsa.Scripting.Liquid\Elsa.Scripting.Liquid.csproj" />
       <ProjectReference Include="..\Elsa.Core\Elsa.Core.csproj" />
+      <ProjectReference Include="..\..\activities\Elsa.Activities.Extension\Elsa.Activities.Extension.csproj" />
     </ItemGroup>
 
 </Project>
