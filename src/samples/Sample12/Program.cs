@@ -9,6 +9,7 @@ using Elsa.Services;
 using Elsa.Services.Extensions;
 using Elsa.Services.Models;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json.Linq;
 
 namespace Sample12
 {
@@ -29,11 +30,14 @@ namespace Sample12
             await invoker.StartAsync(workflowDefinition, correlationId: correlationId);
             WorkflowExecutionContext executionContext;
             
+            // Sample code showing how to get a list of available actions from the workflow definition:
+            var availableActions = workflowDefinition.Activities.Single(x => x.Name == "WaitUser").State["Actions"].ToObject<string[]>();
+            
             do
             {
                 // Workflow is now halted on the user task activity. Ask user for input:
-                Console.WriteLine("What action will you take? Choose one of: Accept, Reject, Needs Work");
-                var userAction = Console.ReadLine();
+                Console.WriteLine($"What action will you take? Choose one of: {string.Join(", ", availableActions)}");
+                var userAction = Console.ReadLine(); 
 
                 // Resume the workflow with the received stimulus.
                 var triggeredExecutionContexts = await invoker.TriggerAsync(nameof(UserTask), new Variables { ["UserAction"] = new Variable(userAction)}, correlationId);
