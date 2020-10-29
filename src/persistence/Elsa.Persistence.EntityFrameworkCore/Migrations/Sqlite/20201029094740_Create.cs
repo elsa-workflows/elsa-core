@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Migrations.Sqlite
 {
-    public partial class InitialCreate : Migration
+    public partial class Create : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -45,7 +45,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Migrations.Sqlite
                     FinishedAt = table.Column<DateTime>(nullable: true),
                     FaultedAt = table.Column<DateTime>(nullable: true),
                     AbortedAt = table.Column<DateTime>(nullable: true),
-                    Scopes = table.Column<string>(nullable: true),
+                    Scope = table.Column<string>(nullable: true),
                     Input = table.Column<string>(nullable: true),
                     ExecutionLog = table.Column<string>(nullable: true),
                     Fault = table.Column<string>(nullable: true)
@@ -64,6 +64,9 @@ namespace Elsa.Persistence.EntityFrameworkCore.Migrations.Sqlite
                     ActivityId = table.Column<string>(nullable: true),
                     WorkflowDefinitionVersionId = table.Column<int>(nullable: true),
                     Type = table.Column<string>(nullable: true),
+                    Name = table.Column<string>(nullable: true),
+                    DisplayName = table.Column<string>(nullable: true),
+                    Description = table.Column<string>(nullable: true),
                     Left = table.Column<int>(nullable: false),
                     Top = table.Column<int>(nullable: false),
                     State = table.Column<string>(nullable: true)

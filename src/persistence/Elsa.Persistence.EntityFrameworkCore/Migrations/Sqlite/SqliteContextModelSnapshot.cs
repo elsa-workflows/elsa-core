@@ -15,7 +15,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Migrations.Sqlite
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "3.1.1");
+                .HasAnnotation("ProductVersion", "3.1.9");
 
             modelBuilder.Entity("Elsa.Persistence.EntityFrameworkCore.Entities.ActivityDefinitionEntity", b =>
                 {
