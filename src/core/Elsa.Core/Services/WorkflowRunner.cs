@@ -172,7 +172,7 @@ namespace Elsa.Services
         private async Task BeginWorkflow(WorkflowExecutionContext workflowExecutionContext, IActivityBlueprint? activity, object? input, CancellationToken cancellationToken)
         {
             if (activity == null)
-                activity = workflowExecutionContext.WorkflowBlueprint.GetStartActivities().First();
+                activity = workflowExecutionContext.WorkflowBlueprint.GetStartActivities().FirstOrDefault() ?? workflowExecutionContext.WorkflowBlueprint.Activities.First();
 
             if (!await CanExecuteAsync(workflowExecutionContext, activity, input, cancellationToken))
                 return;
