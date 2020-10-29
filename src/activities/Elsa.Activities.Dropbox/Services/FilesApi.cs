@@ -29,7 +29,7 @@ namespace Elsa.Activities.Dropbox.Services
             
             var json = await response.Content.ReadAsStringAsync();
 
-            return JsonConvert.DeserializeObject<UploadResponse>(json, new JsonSerializerSettings().ConfigureForDropboxApi());
+            return JsonConvert.DeserializeObject<UploadResponse>(json, new JsonSerializerSettings().ConfigureForDropboxApi())!;
         }
     }
 }

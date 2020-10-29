@@ -23,14 +23,12 @@ namespace Elsa.Activities.Dropbox.Activities
         }
 
         [ActivityProperty(Hint = "An expression evaluating to a byte array to store.")]
-        public byte[] Data { get; set; }
+        public byte[] FileData { get; set; } = default!;
 
         [ActivityProperty(Hint = "An expression evaluating to the path to which the file should be saved.")]
-        public string Path { get; set; }
+        public string Path { get; set; } = default!;
 
-        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(
-            ActivityExecutionContext context,
-            CancellationToken cancellationToken)
+        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
             await _filesApi.UploadAsync(
                 new UploadRequest
@@ -41,7 +39,7 @@ namespace Elsa.Activities.Dropbox.Activities
                     },
                     Path = Path,
                 },
-                Data,
+                FileData,
                 cancellationToken
             );
 

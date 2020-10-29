@@ -7,6 +7,6 @@ namespace Elsa.Activities.Dropbox.Models
         [JsonProperty(PropertyName = ".tag")]
         public UploadModeUnion Tag { get; set; }
 
-        public string Update { get; set; }
+        public string Update { get; set; } = default!;
     }
 }
