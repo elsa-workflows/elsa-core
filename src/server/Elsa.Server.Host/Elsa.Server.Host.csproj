@@ -6,7 +6,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Elsa.Server.Api\Elsa.Server.Api.csproj" />
-        <ProjectReference Include="..\Elsa.Server.Core\Elsa.Server.Core.csproj" />
     </ItemGroup>
 
     <ItemGroup>
