@@ -133,6 +133,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
         private static IServiceCollection AddPrimitiveActivities(this IServiceCollection services) =>
             services
+                .AddActivity<Inline>()
                 .AddActivity<Finish>()
                 .AddActivity<For>()
                 .AddActivity<ForEach>()
