@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -37,6 +38,24 @@ namespace Elsa.Activities.Http.Extensions
         {
             var absoluteUrl = $"{request.Scheme}://{request.Host}{relativePath}";
             return new Uri(absoluteUrl, UriKind.Absolute);
+        }
+
+        public static bool TryGetCorrelationId(this HttpRequest request, out string? correlationId)
+        {
+            if (request.Query.ContainsKey("correlation"))
+            {
+                correlationId = request.Query["correlation"];
+                return true;
+            }
+
+            if (request.Headers.ContainsKey("X-Correlation-Id"))
+            {
+                correlationId = request.Headers["X-Correlation-Id"].ToString();
+                return true;
+            }
+
+            correlationId = null;
+            return false;
         }
     }
 }

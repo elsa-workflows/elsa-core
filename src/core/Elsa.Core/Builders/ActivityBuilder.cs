@@ -47,9 +47,9 @@ namespace Elsa.Builders
             return this;
         }
 
-        public IActivityBuilder WithId(string id)
+        public IActivityBuilder WithId(string? id)
         {
-            ActivityId = id;
+            ActivityId = id!;
             return this;
         }
 

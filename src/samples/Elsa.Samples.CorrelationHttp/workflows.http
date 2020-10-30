@@ -1,0 +1,28 @@
+﻿# Register John.
+POST http://localhost:8201/register
+Content-Type: application/json
+
+{
+    "name": "John von Neumann",
+    "email": "john@gmail.com"
+}
+
+###
+# Register Julia.
+POST http://localhost:8201/register
+Content-Type: application/json
+
+{
+"name": "Julia Berger",
+"email": "julia@gmail.com"
+}
+
+###
+# Confirm John's registration
+GET http://localhost:8201/confirm?correlation=john@gmail.com
+Content-Type: application/json
+
+###
+# Confirm Julia's registration
+GET http://localhost:8201/confirm?correlation=julia@gmail.com
+Content-Type: application/json

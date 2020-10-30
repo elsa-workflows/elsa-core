@@ -56,7 +56,13 @@ namespace Elsa.Services.Models
         public void PostScheduleActivity(ScheduledActivity activity) => WorkflowInstance.PostScheduledActivities.Push(activity);
         public ScheduledActivity PopScheduledActivity() => WorkflowInstance.ScheduledActivities.Pop();
         public ScheduledActivity PeekScheduledActivity() => WorkflowInstance.ScheduledActivities.Peek();
-        public string? CorrelationId { get; set; }
+
+        public string? CorrelationId
+        {
+            get => WorkflowInstance.CorrelationId;
+            set => WorkflowInstance.CorrelationId = value;
+        }
+        
         public bool DeleteCompletedInstances { get; set; }
         public ICollection<ExecutionLogEntry> ExecutionLog => WorkflowInstance.ExecutionLog;
         public WorkflowStatus Status => WorkflowInstance.Status;

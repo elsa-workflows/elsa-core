@@ -74,7 +74,7 @@ namespace Elsa.Triggers
                 where descriptor.Trigger == trigger
                 select (entry.Key, descriptor);
 
-            foreach (var (key, descriptor) in query.ToList()) 
+            foreach (var (key, descriptor) in query.ToList())
                 _descriptors[key].Remove(descriptor);
 
             _memoryCache.Set(CacheKey, _descriptors);
@@ -94,10 +94,10 @@ namespace Elsa.Triggers
             return from descriptor in descriptors
                 let workflow = descriptor.WorkflowBlueprint
                 where workflow.IsPublished && workflow.IsEnabled
-                let workflowInstance = descriptor.WorkflowInstance
+                let workflowInstanceId = descriptor.WorkflowInstanceId
                 let trigger = descriptor.Trigger
                 where trigger.GetType() == triggerType && evaluate(trigger)
-                select new WorkflowSelectorResult(workflow, workflowInstance, descriptor.ActivityId, trigger);
+                select new WorkflowSelectorResult(workflow, workflowInstanceId, descriptor.ActivityId, trigger);
         }
 
         private async Task<IDictionary<string, ICollection<TriggerDescriptor>>> BuildDescriptorsAsync(CancellationToken cancellationToken)
@@ -171,7 +171,7 @@ namespace Elsa.Triggers
                         ActivityId = blockingActivity.Id,
                         ActivityType = blockingActivity.Type,
                         WorkflowBlueprint = workflowBlueprint,
-                        WorkflowInstance = workflowInstance,
+                        WorkflowInstanceId = workflowInstance.Id == 0 ? default : workflowInstance.WorkflowInstanceId,
                         Trigger = trigger,
                     };
 

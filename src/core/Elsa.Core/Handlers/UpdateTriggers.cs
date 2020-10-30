@@ -1,15 +1,29 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Events;
+using Elsa.Models;
+using Elsa.Services;
 using Elsa.Triggers;
 using MediatR;
 
 namespace Elsa.Handlers
 {
-    public class UpdateTriggers : INotificationHandler<WorkflowExecuted>
+    public class UpdateTriggers : INotificationHandler<WorkflowInstanceSaved>
     {
         private readonly IWorkflowSelector _workflowSelector;
-        public UpdateTriggers(IWorkflowSelector workflowSelector) => _workflowSelector = workflowSelector;
-        public async Task Handle(WorkflowExecuted notification, CancellationToken cancellationToken) => await _workflowSelector.UpdateTriggersAsync(notification.WorkflowExecutionContext.WorkflowBlueprint, cancellationToken);
+        private readonly IWorkflowRegistry _workflowRegistry;
+
+        public UpdateTriggers(IWorkflowSelector workflowSelector, IWorkflowRegistry workflowRegistry)
+        {
+            _workflowSelector = workflowSelector;
+            _workflowRegistry = workflowRegistry;
+        }
+
+        public async Task Handle(WorkflowInstanceSaved notification, CancellationToken cancellationToken)
+        {
+            var workflowInstance = notification.WorkflowInstance;
+            var workflowBlueprint = await _workflowRegistry.GetWorkflowAsync(workflowInstance.WorkflowDefinitionId, VersionOptions.SpecificVersion(workflowInstance.Version), cancellationToken);
+            await _workflowSelector.UpdateTriggersAsync(workflowBlueprint!, cancellationToken);
+        }
     }
 }

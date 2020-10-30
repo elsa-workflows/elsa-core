@@ -7,7 +7,6 @@ namespace Elsa.ActivityResults
         public CorrelateResult(string correlationId) => CorrelationId = correlationId;
         public string CorrelationId { get; }
         
-        protected override void Execute(ActivityExecutionContext activityExecutionContext) => 
-            activityExecutionContext.WorkflowExecutionContext.CorrelationId = CorrelationId;
+        protected override void Execute(ActivityExecutionContext activityExecutionContext) => activityExecutionContext.WorkflowExecutionContext.CorrelationId = CorrelationId;
     }
 }

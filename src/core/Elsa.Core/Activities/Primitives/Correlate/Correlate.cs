@@ -18,6 +18,6 @@ namespace Elsa.Activities.Primitives
         [ActivityProperty(Hint = "An expression that evaluates to the value to store as the correlation ID.")]
         public string Value { get; set; } = default!;
 
-        protected override IActivityExecutionResult OnExecute() => new CorrelateResult(Value);
+        protected override IActivityExecutionResult OnExecute() => Combine(Done(Value), new CorrelateResult(Value));
     }
 }

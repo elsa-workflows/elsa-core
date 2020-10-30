@@ -9,6 +9,7 @@ namespace Elsa.Activities.Http.Triggers
     {
         public PathString Path { get; set; }
         public string? Method { get; set; }
+        public string? CorrelationId { get; set; }
     }
 
     public class ReceiveHttpRequestTriggerProvider : TriggerProvider<ReceiveHttpRequestTrigger, ReceiveHttpRequest>
@@ -17,7 +18,8 @@ namespace Elsa.Activities.Http.Triggers
             new ReceiveHttpRequestTrigger
             {
                 Path = await context.Activity.GetPropertyValueAsync(x => x.Path, cancellationToken),
-                Method = await context.Activity.GetPropertyValueAsync(x => x.Method, cancellationToken)
+                Method = await context.Activity.GetPropertyValueAsync(x => x.Method, cancellationToken),
+                CorrelationId = context.ActivityExecutionContext.WorkflowExecutionContext.CorrelationId
             };
     }
 }

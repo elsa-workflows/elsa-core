@@ -95,8 +95,8 @@ namespace Elsa.Services
 
             foreach (var result in results)
             {
-                if (result.WorkflowInstance.Id > 0)
-                    await ScheduleWorkflowInstanceAsync(result.WorkflowInstance.WorkflowInstanceId, result.ActivityId, input, cancellationToken);
+                if (result.WorkflowInstanceId != null)
+                    await ScheduleWorkflowInstanceAsync(result.WorkflowInstanceId, result.ActivityId, input, cancellationToken);
                 else
                     await ScheduleWorkflowAsync(result.WorkflowBlueprint, result.WorkflowBlueprint.GetActivity(result.ActivityId)!, input, correlationId, cancellationToken);
 

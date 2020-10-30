@@ -40,6 +40,7 @@ namespace Elsa.Services.Models
         public void SetVariable(string name, object? value) => WorkflowExecutionContext.SetVariable(name, value);
         public object? GetVariable(string name) => WorkflowExecutionContext.GetVariable(name);
         public T GetVariable<T>(string name) => WorkflowExecutionContext.GetVariable<T>(name);
+        public T GetVariable<T>() => GetVariable<T>(typeof(T).Name);
         public T GetService<T>() => WorkflowExecutionContext.ServiceProvider.GetService<T>();
 
         public async ValueTask SetActivityPropertiesAsync(
