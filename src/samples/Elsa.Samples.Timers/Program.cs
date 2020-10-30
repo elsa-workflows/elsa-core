@@ -1,3 +1,4 @@
+using System.Data;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -16,12 +17,12 @@ namespace Elsa.Samples.Timers
                     (hostContext, services) =>
                     {
                         services
-                            .AddElsa(options => options.UsePersistence(db => db.UseSqLite("Data Source=elsa.db;Cache=Shared")))
+                            .AddElsa(options => options.UsePersistence(db => db.UseSqLite("Data Source=elsa.db;Cache=Shared", IsolationLevel.ReadUncommitted)))
                             .AddConsoleActivities()
                             .AddTimerActivities(timer => timer.SweepInterval = Duration.FromSeconds(5))
                             .AddWorkflow<RecurringTaskWorkflow>()
                             .AddWorkflow<CronTaskWorkflow>()
-                            .AddWorkflow(new OneOffWorkflow(SystemClock.Instance.GetCurrentInstant().Plus(Duration.FromSeconds(15))));
+                            .AddWorkflow(new OneOffWorkflow(SystemClock.Instance.GetCurrentInstant().Plus(Duration.FromSeconds(10))));
                     });
     }
 }

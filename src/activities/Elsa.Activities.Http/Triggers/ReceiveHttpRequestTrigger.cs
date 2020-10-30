@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Activities.Http.Triggers
 {
-    public class ReceiveHttpRequestTrigger : ITrigger
+    public class ReceiveHttpRequestTrigger : Trigger
     {
         public PathString Path { get; set; }
         public string? Method { get; set; }

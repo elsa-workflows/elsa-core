@@ -74,8 +74,7 @@ namespace Elsa.Core.IntegrationTests.Workflows
 
         private async Task<WorkflowInstance> TriggerSignalAsync(IWorkflowBlueprint workflowBlueprint, WorkflowInstance workflowInstance, string signal)
         {
-            var blockingActivities = workflowInstance.BlockingActivities.Select(x => workflowBlueprint.GetActivity(x.ActivityId)!).ToList();
-            var signaled = await WorkflowSelector.GetTriggersAsync<SignaledTrigger>(workflowBlueprint, blockingActivities, x => x.Signal == signal).First();
+            var signaled = await WorkflowSelector.GetTriggersAsync<SignaledTrigger>(x => x.Signal == signal).First();
             var triggeredSignal = new TriggeredSignal(signal, null);
             return await WorkflowRunner.RunWorkflowAsync(workflowBlueprint, workflowInstance, signaled.Id, triggeredSignal);
         }

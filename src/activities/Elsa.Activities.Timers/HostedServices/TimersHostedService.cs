@@ -2,12 +2,14 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Timers.Options;
+using Elsa.Activities.Timers.Triggers;
 using Elsa.DistributedLock;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using NodaTime;
 
 namespace Elsa.Activities.Timers.HostedServices
 {
@@ -15,17 +17,20 @@ namespace Elsa.Activities.Timers.HostedServices
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly IDistributedLockProvider _distributedLockProvider;
+        private readonly IClock _clock;
         private readonly IOptions<TimersOptions> _options;
         private readonly ILogger<TimersHostedService> _logger;
 
         public TimersHostedService(
             IServiceProvider serviceProvider,
             IDistributedLockProvider distributedLockProvider,
+            IClock clock,
             IOptions<TimersOptions> options,
             ILogger<TimersHostedService> logger)
         {
             _serviceProvider = serviceProvider;
             _distributedLockProvider = distributedLockProvider;
+            _clock = clock;
             _options = options;
             _logger = logger;
         }
@@ -40,9 +45,10 @@ namespace Elsa.Activities.Timers.HostedServices
                     {
                         using var scope = _serviceProvider.CreateScope();
                         var workflowScheduler = scope.ServiceProvider.GetRequiredService<IWorkflowScheduler>();
+                        var now = _clock.GetCurrentInstant();
                         await workflowScheduler.TriggerWorkflowsAsync(nameof(TimerEvent), cancellationToken: stoppingToken);
                         await workflowScheduler.TriggerWorkflowsAsync(nameof(CronEvent), cancellationToken: stoppingToken);
-                        await workflowScheduler.TriggerWorkflowsAsync(nameof(InstantEvent), cancellationToken: stoppingToken);
+                        await workflowScheduler.TriggerWorkflowsAsync<InstantEventTrigger>(x => x.Instant <= now, cancellationToken: stoppingToken);
                     }
                     catch (Exception ex)
                     {

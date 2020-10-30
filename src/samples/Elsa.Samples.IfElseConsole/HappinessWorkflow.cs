@@ -2,7 +2,6 @@
 using Elsa.Activities.Console;
 using Elsa.Activities.ControlFlow;
 using Elsa.Builders;
-using Elsa.Services.Models;
 
 namespace Elsa.Samples.IfElseConsole
 {

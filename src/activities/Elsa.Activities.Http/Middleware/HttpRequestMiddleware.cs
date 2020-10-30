@@ -27,11 +27,11 @@ namespace Elsa.Activities.Http.Middleware
                 cancellationToken);
 
             var result = results.FirstOrDefault();
-            
+
             if (result == null)
                 await _next(httpContext);
             else
-                await workflowRunner.RunWorkflowAsync(result.WorkflowBlueprint, result.ActivityId, cancellationToken: cancellationToken);
+                await workflowRunner.RunWorkflowAsync(result.WorkflowBlueprint, result.WorkflowInstance, result.ActivityId, cancellationToken: cancellationToken);
         }
     }
 }

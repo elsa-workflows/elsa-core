@@ -5,9 +5,9 @@ using Elsa.Triggers;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.Signaling
 {
-    public class SignaledTrigger : ITrigger
+    public class SignaledTrigger : Trigger
     {
-        public string Signal { get; set; }
+        public string Signal { get; set; } = default!;
     }
 
     public class SignaledTriggerProvider : TriggerProvider<SignaledTrigger, Signaled>

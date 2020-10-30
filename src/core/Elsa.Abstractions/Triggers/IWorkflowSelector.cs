@@ -8,16 +8,14 @@ namespace Elsa.Triggers
 {
     public interface IWorkflowSelector
     {
-        Task<IEnumerable<WorkflowSelectorResult>> SelectWorkflowsAsync(
+        Task<IEnumerable<WorkflowSelectorResult>> SelectWorkflowsAsync(Type triggerType, Func<ITrigger, bool> evaluate, CancellationToken cancellationToken = default);
+
+        public Task<IEnumerable<IActivityBlueprint>> GetTriggersAsync(
             Type triggerType,
             Func<ITrigger, bool> evaluate,
             CancellationToken cancellationToken = default);
 
-        public Task<IEnumerable<IActivityBlueprint>> GetTriggersAsync(
-            IWorkflowBlueprint workflowBlueprint,
-            IEnumerable<IActivityBlueprint> blockingActivities,
-            Type triggerType,
-            Func<ITrigger, bool> evaluate,
-            CancellationToken cancellationToken = default);
+        Task UpdateTriggersAsync(IWorkflowBlueprint workflowBlueprint, CancellationToken cancellationToken = default);
+        Task RemoveTriggerAsync(ITrigger trigger, CancellationToken cancellationToken = default);
     }
 }

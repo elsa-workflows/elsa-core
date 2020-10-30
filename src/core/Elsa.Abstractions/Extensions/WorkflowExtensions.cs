@@ -11,8 +11,8 @@ namespace Elsa
     {
         public static IEnumerable<IWorkflowBlueprint> WithVersion(
             this IEnumerable<IWorkflowBlueprint> query,
-            VersionOptions version)
-            => query.AsQueryable().WithVersion(version);
+            VersionOptions version) =>
+            query.AsQueryable().WithVersion(version);
 
         public static IQueryable<IWorkflowBlueprint> WithVersion(
             this IQueryable<IWorkflowBlueprint> query,
@@ -52,13 +52,16 @@ namespace Elsa
         public static IEnumerable<IActivityBlueprint> GetStartActivities(this IWorkflowBlueprint workflowBlueprint, string activityType) => workflowBlueprint.GetStartActivities().Where(x => x.Type == activityType);
         public static IEnumerable<IActivityBlueprint> GetStartActivities(this IWorkflowBlueprint workflowBlueprint, Type activityType) => workflowBlueprint.GetStartActivities(activityType.Name);
         public static IEnumerable<IActivityBlueprint> GetStartActivities<T>(this IWorkflowBlueprint workflowBlueprint) where T : IActivity => workflowBlueprint.GetStartActivities(typeof(T));
+        public static IActivityBlueprint? GetActivity(this IWorkflowBlueprint workflowBlueprint, string id) => workflowBlueprint.Activities.FirstOrDefault(x => x.Id == id);
+        public static IEnumerable<IActivityBlueprint> GetActivities(this IWorkflowBlueprint workflowBlueprint, IEnumerable<string> ids) => workflowBlueprint.Activities.Where(x => ids.Contains(x.Id));
 
-        public static IActivityBlueprint? GetActivity(this IWorkflowBlueprint workflowBlueprint, string id) =>
-            workflowBlueprint.Activities.FirstOrDefault(x => x.Id == id);
+        public static IEnumerable<IActivityBlueprint> GetBlockingActivities(this IWorkflowBlueprint workflowBlueprint, WorkflowInstance workflowInstance) =>
+            workflowBlueprint.Activities.Where(activity => workflowInstance.BlockingActivities.Select(x => x.ActivityId).Contains(activity.Id));
 
         public static IEnumerable<IConnection> GetInboundConnections(
             this IWorkflowBlueprint workflowBlueprint,
-            string activityId) => workflowBlueprint.Connections.Where(x => x.Target.Activity.Id == activityId).ToList();
+            string activityId) =>
+            workflowBlueprint.Connections.Where(x => x.Target.Activity.Id == activityId).ToList();
 
         public static IEnumerable<IConnection> GetOutboundConnections(
             this IWorkflowBlueprint workflowBlueprint,

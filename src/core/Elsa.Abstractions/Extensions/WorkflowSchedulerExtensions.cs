@@ -14,7 +14,7 @@ namespace Elsa.Services
             object? input = default,
             string? correlationId = default,
             CancellationToken cancellationToken = default)
-            => workflowScheduler.ScheduleNewWorkflowAsync(typeof(T).Name, input, correlationId, cancellationToken);
+            => workflowScheduler.ScheduleWorkflowDefinitionAsync(typeof(T).Name, input, correlationId, cancellationToken);
 
         /// <summary>
         /// Schedules new workflows that start with the specified activity type or are blocked on the specified activity type.

@@ -18,29 +18,21 @@ namespace Elsa.Services
             _session = session;
         }
 
-        public ValueTask SaveAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken = default)
+        public async ValueTask SaveAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken = default)
         {
             _session.Save(workflowInstance, CollectionNames.WorkflowInstances);
-            return new ValueTask();
+            await _session.CommitAsync();
         }
 
-        public ValueTask DeleteAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken = default)
+        public async ValueTask DeleteAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken = default)
         {
             _session.Delete(workflowInstance, CollectionNames.WorkflowInstances);
-            return new ValueTask();
+            await _session.CommitAsync();
         }
 
         public IQuery<WorkflowInstance> Query() => _session.Query<WorkflowInstance>(CollectionNames.WorkflowInstances);
-
-        public IQuery<WorkflowInstance, TIndex> Query<TIndex>() where TIndex : class, IIndex =>
-            _session.Query<WorkflowInstance, TIndex>(CollectionNames.WorkflowInstances);
-
-        public IQuery<WorkflowInstance, TIndex> Query<TIndex>(Expression<Func<TIndex, bool>> predicate)
-            where TIndex : class, IIndex => _session.Query<WorkflowInstance, TIndex>(
-            predicate,
-            CollectionNames.WorkflowInstances);
-
-        public IQuery<WorkflowInstance> ExecuteQuery(ICompiledQuery<WorkflowInstance> query) =>
-            _session.ExecuteQuery(query, CollectionNames.WorkflowInstances);
+        public IQuery<WorkflowInstance, TIndex> Query<TIndex>() where TIndex : class, IIndex => _session.Query<WorkflowInstance, TIndex>(CollectionNames.WorkflowInstances);
+        public IQuery<WorkflowInstance, TIndex> Query<TIndex>(Expression<Func<TIndex, bool>> predicate) where TIndex : class, IIndex => _session.Query<WorkflowInstance, TIndex>(predicate, CollectionNames.WorkflowInstances);
+        public IQuery<WorkflowInstance> ExecuteQuery(ICompiledQuery<WorkflowInstance> query) => _session.ExecuteQuery(query, CollectionNames.WorkflowInstances);
     }
 }

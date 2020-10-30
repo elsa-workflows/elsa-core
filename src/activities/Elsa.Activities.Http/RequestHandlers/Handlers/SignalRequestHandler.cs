@@ -3,8 +3,8 @@ using System.Threading.Tasks;
 using Elsa.Activities.Http.Models;
 using Elsa.Activities.Http.RequestHandlers.Results;
 using Elsa.Activities.Http.Services;
+using Elsa.Extensions;
 using Elsa.Models;
-using Elsa.Queries;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 
@@ -60,7 +60,7 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
         }
 
         private async Task<WorkflowInstance?> GetWorkflowInstanceAsync(Signal signal) =>
-            await _workflowInstanceManager.GetByWorkflowInstanceIdAsync(signal.WorkflowInstanceId, _cancellationToken);
+            await _workflowInstanceManager.GetByIdAsync(signal.WorkflowInstanceId, _cancellationToken);
 
         private bool CheckIfExecuting(WorkflowInstance workflowInstance) =>
             workflowInstance.Status == WorkflowStatus.Running;

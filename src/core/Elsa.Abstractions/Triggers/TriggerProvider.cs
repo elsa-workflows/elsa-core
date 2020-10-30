@@ -11,7 +11,13 @@ namespace Elsa.Triggers
         public Type ForActivityType() => typeof(TActivity);
         public abstract ValueTask<ITrigger> GetTriggerAsync(TriggerProviderContext<TActivity> context, CancellationToken cancellationToken);
 
-        ValueTask<ITrigger> ITriggerProvider.GetTriggerAsync(TriggerProviderContext context, CancellationToken cancellationToken) =>
-            GetTriggerAsync(new TriggerProviderContext<TActivity>(context.ActivityExecutionContext), cancellationToken);
+        async ValueTask<ITrigger> ITriggerProvider.GetTriggerAsync(TriggerProviderContext context, CancellationToken cancellationToken)
+        {
+            var supportedType = ForActivityType().Name;
+            if (context.ActivityExecutionContext.ActivityBlueprint.Type != supportedType)
+                return NullTrigger.Instance;
+            
+            return await GetTriggerAsync(new TriggerProviderContext<TActivity>(context.ActivityExecutionContext), cancellationToken);
+        }
     }
 }

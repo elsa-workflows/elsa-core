@@ -2,7 +2,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Models;
 using Elsa.Activities.Http.Services;
-using Elsa.Queries;
+using Elsa.Extensions;
 using Elsa.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -33,7 +33,7 @@ namespace Elsa.Activities.Http.Controllers
             if (!_tokenService.TryDecryptToken(token, out Signal signal))
                 return NotFound();
 
-            var workflowInstance = await _workflowInstanceManager.GetByWorkflowInstanceIdAsync(signal.WorkflowInstanceId, cancellationToken);
+            var workflowInstance = await _workflowInstanceManager.GetByIdAsync(signal.WorkflowInstanceId, cancellationToken);
 
             if (workflowInstance == null)
                 return NotFound();

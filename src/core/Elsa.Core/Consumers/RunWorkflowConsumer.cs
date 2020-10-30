@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
 using Elsa.Exceptions;
+using Elsa.Extensions;
 using Elsa.Messages;
-using Elsa.Queries;
 using Elsa.Services;
 using Rebus.Handlers;
 
@@ -20,7 +20,7 @@ namespace Elsa.Consumers
 
         public async Task Handle(RunWorkflow message)
         {
-            var workflowInstance = await _workflowInstanceManager.GetByWorkflowInstanceIdAsync(message.WorkflowInstanceId);
+            var workflowInstance = await _workflowInstanceManager.GetByIdAsync(message.WorkflowInstanceId);
 
             if(workflowInstance == null)
                 throw new WorkflowException($"No workflow instance with ID {message.WorkflowInstanceId} was found.");

@@ -10,8 +10,8 @@ using Elsa.Extensions;
 using Elsa.Indexes;
 using Elsa.Messages;
 using Elsa.Models;
-using Elsa.Queries;
 using Elsa.Services.Models;
+using Elsa.Triggers;
 using MediatR;
 using Open.Linq.AsyncExtensions;
 using Rebus.Bus;
@@ -23,6 +23,7 @@ namespace Elsa.Services
         private readonly IBus _serviceBus;
         private readonly IWorkflowInstanceManager _workflowInstanceManager;
         private readonly IWorkflowFactory _workflowFactory;
+        private readonly IWorkflowSelector _workflowSelector;
         private readonly IWorkflowRegistry _workflowRegistry;
         private readonly IWorkflowSchedulerQueue _queue;
 
@@ -30,24 +31,26 @@ namespace Elsa.Services
             IBus serviceBus,
             IWorkflowInstanceManager workflowInstanceManager,
             IWorkflowFactory workflowFactory,
+            IWorkflowSelector workflowSelector,
             IWorkflowRegistry workflowRegistry,
             IWorkflowSchedulerQueue queue)
         {
             _serviceBus = serviceBus;
             _workflowInstanceManager = workflowInstanceManager;
             _workflowFactory = workflowFactory;
+            _workflowSelector = workflowSelector;
             _workflowRegistry = workflowRegistry;
             _queue = queue;
         }
 
-        public async Task ScheduleWorkflowAsync(
+        public async Task ScheduleWorkflowInstanceAsync(
             string instanceId,
             string? activityId = default,
             object? input = default,
             CancellationToken cancellationToken = default) =>
             await _serviceBus.Publish(new RunWorkflow(instanceId, activityId, input));
 
-        public async Task ScheduleNewWorkflowAsync(
+        public async Task ScheduleWorkflowDefinitionAsync(
             string definitionId,
             object? input = default,
             string? correlationId = default,
@@ -86,6 +89,24 @@ namespace Elsa.Services
                 cancellationToken);
         }
 
+        public async Task TriggerWorkflowsAsync<TTrigger>(Func<TTrigger, bool> predicate, object? input = default, string? correlationId = default, CancellationToken cancellationToken = default) where TTrigger : ITrigger
+        {
+            var results = await _workflowSelector.SelectWorkflowsAsync(predicate, cancellationToken).ToList();
+
+            foreach (var result in results)
+            {
+                if (result.WorkflowInstance.Id > 0)
+                    await ScheduleWorkflowInstanceAsync(result.WorkflowInstance.WorkflowInstanceId, result.ActivityId, input, cancellationToken);
+                else
+                    await ScheduleWorkflowAsync(result.WorkflowBlueprint, result.WorkflowBlueprint.GetActivity(result.ActivityId)!, input, correlationId, cancellationToken);
+
+                if (result.Trigger.IsOneOff)
+                {
+                    await _workflowSelector.RemoveTriggerAsync(result.Trigger, cancellationToken);
+                }
+            }
+        }
+
         /// <summary>
         /// Find workflows with the specified activity type as workflow triggers.
         /// </summary>
@@ -95,7 +116,9 @@ namespace Elsa.Services
             string? correlationId = default,
             CancellationToken cancellationToken = default)
         {
-            var workflows =  await _workflowRegistry.GetWorkflowsAsync(cancellationToken).ToListAsync(cancellationToken);
+            var workflows = await _workflowRegistry.GetWorkflowsAsync(cancellationToken).ToListAsync(cancellationToken);
+
+            workflows = await FilterRunningSingletonsAsync(workflows).ToList();
 
             var query =
                 from workflow in workflows
@@ -105,8 +128,6 @@ namespace Elsa.Services
                 select (workflow, activity);
 
             var tuples = (IList<(IWorkflowBlueprint Workflow, IActivityBlueprint Activity)>)query.ToList();
-
-            tuples = await FilterRunningSingletonsAsync(tuples).ToList();
 
             foreach (var (workflow, activity) in tuples)
             {
@@ -126,7 +147,7 @@ namespace Elsa.Services
 
                     await _workflowInstanceManager.SaveAsync(workflowInstance, cancellationToken);
 
-                    await ScheduleWorkflowAsync(
+                    await ScheduleWorkflowInstanceAsync(
                         workflowInstance.WorkflowInstanceId,
                         activity.Id,
                         input,
@@ -156,7 +177,7 @@ namespace Elsa.Services
             var tuples = workflowInstances.GetBlockingActivities();
 
             foreach (var (workflowInstance, blockingActivity) in tuples)
-                await ScheduleWorkflowAsync(
+                await ScheduleWorkflowInstanceAsync(
                     workflowInstance.WorkflowInstanceId,
                     blockingActivity.ActivityId,
                     input,
@@ -172,19 +193,19 @@ namespace Elsa.Services
         {
             var workflowInstance = await _workflowFactory.InstantiateAsync(workflowBlueprint, correlationId, cancellationToken);
             await _workflowInstanceManager.SaveAsync(workflowInstance, cancellationToken);
-            await ScheduleWorkflowAsync(workflowInstance.WorkflowInstanceId, activity.Id, input, cancellationToken);
+            await ScheduleWorkflowInstanceAsync(workflowInstance.WorkflowInstanceId, activity.Id, input, cancellationToken);
         }
 
-        private async Task<IEnumerable<(IWorkflowBlueprint, IActivityBlueprint)>> FilterRunningSingletonsAsync(IEnumerable<(IWorkflowBlueprint Workflow, IActivityBlueprint Activity)> tuples)
+        private async Task<IEnumerable<IWorkflowBlueprint>> FilterRunningSingletonsAsync(IEnumerable<IWorkflowBlueprint> workflows)
         {
-            var tupleList = tuples.ToList();
-            var transients = tupleList.Where(x => !x.Workflow.IsSingleton).ToList();
-            var singletons = tupleList.Where(x => x.Workflow.IsSingleton).ToList();
+            var blueprints = workflows.ToList();
+            var transients = blueprints.Where(x => !x.IsSingleton).ToList();
+            var singletons = blueprints.Where(x => x.IsSingleton).ToList();
             var result = transients.ToList();
 
             foreach (var tuple in singletons)
             {
-                var workflowDefinitionId = tuple.Workflow.Id;
+                var workflowDefinitionId = tuple.Id;
 
                 var instances = await _workflowInstanceManager
                     .ListByDefinitionAndStatusAsync(workflowDefinitionId, WorkflowStatus.Suspended);

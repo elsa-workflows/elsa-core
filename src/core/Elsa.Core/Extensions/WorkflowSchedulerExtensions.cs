@@ -12,6 +12,6 @@ namespace Elsa
             object? input = default,
             string? correlationId = default,
             CancellationToken cancellationToken = default) =>
-            await scheduler.ScheduleNewWorkflowAsync(typeof(T).Name, input, correlationId, cancellationToken);
+            await scheduler.ScheduleWorkflowDefinitionAsync(typeof(T).Name, input, correlationId, cancellationToken);
     }
 }

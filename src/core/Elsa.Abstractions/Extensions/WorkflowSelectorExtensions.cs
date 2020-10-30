@@ -17,10 +17,8 @@ namespace Elsa
 
         public static Task<IEnumerable<IActivityBlueprint>> GetTriggersAsync<T>(
             this IWorkflowSelector workflowSelector,
-            IWorkflowBlueprint workflowBlueprint,
-            IEnumerable<IActivityBlueprint> blockingActivities,
             Func<T, bool> evaluate,
             CancellationToken cancellationToken = default) where T : ITrigger =>
-            workflowSelector.GetTriggersAsync(workflowBlueprint, blockingActivities, typeof(T), t => evaluate((T)t), cancellationToken);
+            workflowSelector.GetTriggersAsync(typeof(T), t => evaluate((T)t), cancellationToken);
     }
 }

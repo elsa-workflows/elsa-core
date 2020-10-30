@@ -35,7 +35,7 @@ namespace Elsa.StartupTasks
             var instances = await _workflowInstanceManager.ListByStatusAsync(WorkflowStatus.Running, cancellationToken);
 
             foreach (var instance in instances)
-                await _workflowScheduler.ScheduleWorkflowAsync(
+                await _workflowScheduler.ScheduleWorkflowInstanceAsync(
                     instance.WorkflowInstanceId,
                     cancellationToken: cancellationToken);
         }
