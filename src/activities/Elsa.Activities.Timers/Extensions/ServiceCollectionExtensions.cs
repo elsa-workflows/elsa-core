@@ -21,6 +21,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddHostedService<TimersHostedService>()
                 .AddTriggerProvider<InstantEventTriggerProvider>()
                 .AddTriggerProvider<TimerEventTriggerProvider>()
+                .AddTriggerProvider<CronEventTriggerProvider>()
                 .AddActivity<CronEvent>()
                 .AddActivity<TimerEvent>()
                 .AddActivity<InstantEvent>();

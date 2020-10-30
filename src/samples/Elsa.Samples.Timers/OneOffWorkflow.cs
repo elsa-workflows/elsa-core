@@ -21,8 +21,9 @@ namespace Elsa.Samples.Timers
         {
             workflow
                 .InstantEvent(_executeAt)
-                .WriteLine("Hello World!")
-                .WriteLine(context => $"Instant event at {context.GetService<IClock>().GetCurrentInstant()}");
+                .WriteLine(context => $"Instant event at {context.GetService<IClock>().GetCurrentInstant()}. Next event happens 3 seconds from now.")
+                .InstantEvent(_executeAt.Plus(Duration.FromSeconds(3)))
+                .WriteLine(context => $"Follow-up instant event at {context.GetService<IClock>().GetCurrentInstant()}.");
         }
     }
 }

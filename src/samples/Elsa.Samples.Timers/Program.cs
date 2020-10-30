@@ -19,10 +19,10 @@ namespace Elsa.Samples.Timers
                         services
                             .AddElsa(options => options.UsePersistence(db => db.UseSqLite("Data Source=elsa.db;Cache=Shared", IsolationLevel.ReadUncommitted)))
                             .AddConsoleActivities()
-                            .AddTimerActivities(timer => timer.SweepInterval = Duration.FromSeconds(5))
+                            .AddTimerActivities(timer => timer.SweepInterval = Duration.FromSeconds(1))
                             .AddWorkflow<RecurringTaskWorkflow>()
                             .AddWorkflow<CronTaskWorkflow>()
-                            .AddWorkflow(new OneOffWorkflow(SystemClock.Instance.GetCurrentInstant().Plus(Duration.FromSeconds(10))));
+                            .AddWorkflow(new OneOffWorkflow(SystemClock.Instance.GetCurrentInstant().Plus(Duration.FromSeconds(5))));
                     });
     }
 }

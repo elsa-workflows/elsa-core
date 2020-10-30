@@ -9,13 +9,21 @@ namespace Elsa.Samples.Timers
 {
     public class RecurringTaskWorkflow : IWorkflow
     {
+        private readonly IClock _clock;
+
+        public RecurringTaskWorkflow(IClock clock)
+        {
+            _clock = clock;
+        }
+        
         public void Build(IWorkflowBuilder workflow)
         {
             workflow
                 .WithPersistenceBehavior(WorkflowPersistenceBehavior.ActivityExecuted)
-                .TimerEvent(Duration.FromSeconds(3))
-                .WriteLine("Hello World")
-                .WriteLine(() => $"Timer event at {DateTime.Now}");
+                .TimerEvent(Duration.FromSeconds(2))
+                .WriteLine(context => $"{context.WorkflowExecutionContext.WorkflowInstance.WorkflowInstanceId} triggered by timer at {_clock.GetCurrentInstant()}.")
+                .TimerEvent(Duration.FromSeconds(2))
+                .WriteLine(context => $"{context.WorkflowExecutionContext.WorkflowInstance.WorkflowInstanceId} resumed by timer at {_clock.GetCurrentInstant()}.");
         }
     }
 }

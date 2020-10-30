@@ -1,6 +1,7 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Extensions;
+using Elsa.Indexes;
 using Elsa.Models;
 using Elsa.Services;
 using Elsa.Triggers;
@@ -34,7 +35,7 @@ namespace Elsa.Activities.Timers.Triggers
         {
             // Only provide a trigger if the workflow hasn't executed already sometime in the past.
             var workflowDefinitionId = context.ActivityExecutionContext.WorkflowExecutionContext.WorkflowBlueprint.Id;
-            var instanceCount = await _workflowInstanceManager.ListByDefinitionAndStatusAsync(workflowDefinitionId, WorkflowStatus.Finished, cancellationToken).Count();
+            var instanceCount = await _workflowInstanceManager.Query<WorkflowInstanceIndex>(x => x.WorkflowDefinitionId == workflowDefinitionId).CountAsync();
             var configuredInstant = await context.Activity.GetPropertyValueAsync(x => x.Instant, cancellationToken);
             var now = _clock.GetCurrentInstant();
 
