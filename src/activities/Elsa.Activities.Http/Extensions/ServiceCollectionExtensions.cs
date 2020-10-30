@@ -6,9 +6,7 @@ using Elsa.Activities.Http.Parsers;
 using Elsa.Activities.Http.RequestHandlers.Handlers;
 using Elsa.Activities.Http.Services;
 using Elsa.Activities.Http.Triggers;
-using Elsa.Data;
 using Elsa.Extensions;
-using Elsa.Triggers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -42,7 +40,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IHttpResponseBodyParser, JsonHttpResponseBodyParser>()
                 .AddSingleton<IActionContextAccessor, ActionContextAccessor>()
                 .AddSingleton<IAbsoluteUrlProvider, DefaultAbsoluteUrlProvider>()
-                .AddSingleton<ITriggerProvider, ReceiveHttpRequestTriggerProvider>()
+                .AddTriggerProvider<ReceiveHttpRequestTriggerProvider>()
                 .AddIndexProvider<WorkflowInstanceByReceiveHttpRequestIndexProvider>()
                 .AddDataMigration<Migrations>()
                 .AddHttpContextAccessor()

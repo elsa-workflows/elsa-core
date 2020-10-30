@@ -7,7 +7,6 @@ using Elsa.Activities.Signaling;
 using Elsa.Builders;
 using Elsa.Consumers;
 using Elsa.Converters;
-using Elsa.Data;
 using Elsa.Data.Extensions;
 using Elsa.Expressions;
 using Elsa.Extensions;
@@ -145,7 +144,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddActivity<While>()
                 .AddActivity<Correlate>()
                 .AddActivity<SetVariable>()
-                .AddActivity<Signaled>().AddSingleton<ITriggerProvider, SignaledTriggerProvider>()
+                .AddActivity<Signaled>()
+                .AddTriggerProvider<SignaledTriggerProvider>()
                 .AddActivity<TriggerEvent>()
                 .AddActivity<TriggerSignal>();
 

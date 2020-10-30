@@ -19,7 +19,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
             return services
                 .AddHostedService<TimersHostedService>()
-                .AddSingleton<ITriggerProvider, InstantEventTriggerProvider>()
+                .AddTriggerProvider<InstantEventTriggerProvider>()
                 .AddActivity<CronEvent>()
                 .AddActivity<TimerEvent>()
                 .AddActivity<InstantEvent>();
