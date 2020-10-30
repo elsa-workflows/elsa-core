@@ -13,7 +13,7 @@ namespace Elsa.Samples.Timers
         {
             workflow
                 .WithPersistenceBehavior(WorkflowPersistenceBehavior.ActivityExecuted)
-                .TimerEvent(Duration.FromSeconds(1))
+                .TimerEvent(Duration.FromSeconds(3))
                 .WriteLine("Hello World")
                 .WriteLine(() => $"Timer event at {DateTime.Now}");
         }

@@ -46,7 +46,7 @@ namespace Elsa.Activities.Timers.HostedServices
                         using var scope = _serviceProvider.CreateScope();
                         var workflowScheduler = scope.ServiceProvider.GetRequiredService<IWorkflowScheduler>();
                         var now = _clock.GetCurrentInstant();
-                        await workflowScheduler.TriggerWorkflowsAsync(nameof(TimerEvent), cancellationToken: stoppingToken);
+                        await workflowScheduler.TriggerWorkflowsAsync<TimerEventTrigger>(x => x.ExecuteAt <= now, cancellationToken: stoppingToken);
                         await workflowScheduler.TriggerWorkflowsAsync(nameof(CronEvent), cancellationToken: stoppingToken);
                         await workflowScheduler.TriggerWorkflowsAsync<InstantEventTrigger>(x => x.Instant <= now, cancellationToken: stoppingToken);
                     }
