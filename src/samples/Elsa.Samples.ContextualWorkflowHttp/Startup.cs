@@ -1,4 +1,6 @@
 using System.Data;
+using Elsa.Samples.ContextualWorkflowHttp.Indexes;
+using Elsa.Samples.ContextualWorkflowHttp.WorkflowContextProviders;
 using Elsa.Samples.ContextualWorkflowHttp.Workflows;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,6 +16,9 @@ namespace Elsa.Samples.ContextualWorkflowHttp
                 .AddElsa(option => option.UsePersistence(db => db.UseSqLite("Data Source=elsa.db;Cache=Shared", IsolationLevel.ReadUncommitted)))
                 .AddHttpActivities()
                 .AddConsoleActivities()
+                .AddDataMigration<Migrations>()
+                .AddIndexProvider<DocumentIndexProvider>()
+                .AddWorkflowContextProvider<DocumentWorkflowContextProvider>()
                 .AddWorkflow<DocumentApprovalWorkflow>();
         }
 

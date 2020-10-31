@@ -1,6 +1,5 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Data;
 using Elsa.Services;
 
 // ReSharper disable once CheckNamespace

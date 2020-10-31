@@ -1,49 +1,41 @@
 ﻿using System;
 using System.Net;
-using Elsa.Activities.Console;
 using Elsa.Activities.ControlFlow;
 using Elsa.Activities.Http;
 using Elsa.Activities.Http.Models;
 using Elsa.Builders;
 using Elsa.Samples.ContextualWorkflowHttp.Models;
 using Elsa.Services.Models;
-using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Samples.ContextualWorkflowHttp.Workflows
 {
     /// <summary>
-    /// Demonstrates loading & saving of the document-to-approve, which is the context (or subject) of the workflow.
+    /// Demonstrates saving & loading of the document-to-approve, which is the context (or subject) of the workflow.
     /// </summary>
     public class DocumentApprovalWorkflow : IWorkflow
     {
         public void Build(IWorkflowBuilder workflow)
         {
+            // Demonstrating that we can create activities and connect to them later on by using the activity builder reference.
+            var join = workflow.Add<Join>(x => x.WithMode(Join.JoinMode.WaitAny));
+            join.Finish();
+            
             workflow
-                .StartWith<WriteLine>()
-                    
-                // The subject type of this workflow.
+                // The workflow context type of this workflow.
                 .WithContextType<Document>()
 
                 // Accept HTTP requests to submit new documents.
-                .ReceiveHttpRequest(activity => activity.WithPath("/documents").WithMethod(HttpMethods.Post).WithTargetType<Document>())
+                .ReceiveHttpPostRequest<Document>("/documents")
 
-                // Store the document as the workflow subject. It will be saved automatically when the workflow gets suspended.
-                .Then(context => context.WorkflowExecutionContext.WorkflowContext = context.Input)
-
-                // Correlate the workflow by document ID.
-                .Correlate(context => ((Document)context.WorkflowExecutionContext.WorkflowContext)!.Id)
+                // Store the document as the workflow context. It will be saved automatically when the workflow gets suspended.
+                .Then(context => context.WorkflowExecutionContext.WorkflowContext = (Document)((HttpRequestModel)context.Input!).Body)
 
                 // Write an HTTP response. 
                 .WriteHttpResponse(
                     activity => activity
                         .WithStatusCode(HttpStatusCode.OK)
                         .WithContentType("text/html")
-                        .WithContent(
-                            context =>
-                            {
-                                var document = (Document)context.WorkflowExecutionContext.WorkflowContext;
-                                return $"Document received with ID {document!.Id}! Awaiting Approve or Reject response.";
-                            }))
+                        .WithContent(context => $"Document received with ID {GetDocumentId(context)}! Awaiting Approve or Reject response."))
 
                 // Fork execution into two branches: an Approve branch and a Reject branch.
                 .Then<Fork>(
@@ -52,27 +44,30 @@ namespace Elsa.Samples.ContextualWorkflowHttp.Workflows
                     {
                         var approveBranch = fork
                             .When("Approve")
-                            .ReceiveHttpRequest(activity => activity.WithPath("/approve").WithMethod(HttpMethods.Post).WithTargetType<Comment>())
+                            .ReceiveHttpPostRequest<Comment>(context => $"/documents/{GetDocumentId(context)}/approve")
                             .Then(StoreComment);
 
                         var rejectBranch = fork
                             .When("Reject")
-                            .ReceiveHttpRequest(activity => activity.WithPath("/reject").WithMethod(HttpMethods.Post).WithTargetType<Comment>())
+                            .ReceiveHttpPostRequest<Comment>(context => $"/documents/{GetDocumentId(context)}/reject")
                             .Then(StoreComment);
 
-                        WriteResponse(approveBranch, document => $"Thanks for approving document {document!.Id}!").Then("Join");
-                        WriteResponse(rejectBranch, document => $"Thanks for rejecting document {document!.Id}!");
+                        WriteResponse(approveBranch, document => $"Thanks for approving document {document!.DocumentId}!").Then(join);
+                        WriteResponse(rejectBranch, document => $"Thanks for rejecting document {document!.DocumentId}!").Then(join);
                     });
         }
 
-        private void StoreComment(ActivityExecutionContext context)
+        private static Document GetDocument(ActivityExecutionContext context) => (Document)context.WorkflowExecutionContext.WorkflowContext!;
+        private static string GetDocumentId(ActivityExecutionContext context) => GetDocument(context).DocumentId;
+
+        private static void StoreComment(ActivityExecutionContext context)
         {
-            var document = (Document)context.WorkflowExecutionContext.WorkflowContext;
+            var document = (Document)context.WorkflowExecutionContext.WorkflowContext!;
             var comment = (Comment)((HttpRequestModel)context.Input)!.Body;
-            document!.Comments.Add(comment);
+            document.Comments.Add(comment);
         }
 
-        private IActivityBuilder WriteResponse(IActivityBuilder builder, Func<Document, string> html) =>
+        private static IActivityBuilder WriteResponse(IBuilder builder, Func<Document, string> html) =>
             builder.WriteHttpResponse(
                 activity => activity
                     .WithStatusCode(HttpStatusCode.OK)
@@ -80,7 +75,7 @@ namespace Elsa.Samples.ContextualWorkflowHttp.Workflows
                     .WithContent(
                         context =>
                         {
-                            var document = (Document)context.WorkflowExecutionContext.WorkflowContext;
+                            var document = GetDocument(context);
                             return html(document);
                         }));
     }

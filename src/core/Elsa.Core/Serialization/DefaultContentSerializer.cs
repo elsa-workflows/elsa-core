@@ -1,3 +1,4 @@
+using System;
 using Elsa.Converters;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -12,19 +13,17 @@ namespace Elsa.Serialization
         public DefaultContentSerializer(JsonSerializer serializer)
         {
             Serializer = serializer;
+            SerializerSettings = CreateDefaultJsonSerializationSettings();
         }
 
+        private JsonSerializerSettings SerializerSettings { get; }
         private JsonSerializer Serializer { get; }
         public string Serialize<T>(T value) => JObject.FromObject(value!, Serializer).ToString();
         public T Deserialize<T>(JToken token) => token.ToObject<T>(Serializer)!;
-
-        public T Deserialize<T>(string json)
-        {
-            var token = JObject.Parse(json);
-            return Deserialize<T>(token);
-        }
-
-        public object GetSettings() => CreateDefaultJsonSerializationSettings();
+        public object? Deserialize(JToken token, Type targetType) => token.ToObject(targetType, Serializer);
+        public T Deserialize<T>(string json) => JsonConvert.DeserializeObject<T>(json, SerializerSettings)!;
+        public object? Deserialize(string json, Type targetType) => JsonConvert.DeserializeObject(json, targetType, SerializerSettings);
+        public object GetSettings() => SerializerSettings;
 
         public static void ConfigureDefaultJsonSerializationSettings(JsonSerializerSettings settings)
         {

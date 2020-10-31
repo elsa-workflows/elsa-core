@@ -3,7 +3,6 @@ using Elsa.Activities.Timers;
 using Elsa.Activities.Timers.HostedServices;
 using Elsa.Activities.Timers.Options;
 using Elsa.Activities.Timers.Triggers;
-using Elsa.Triggers;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection

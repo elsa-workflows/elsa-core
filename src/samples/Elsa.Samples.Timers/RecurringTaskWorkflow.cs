@@ -1,4 +1,3 @@
-using System;
 using Elsa.Activities.Console;
 using Elsa.Activities.Timers;
 using Elsa.Builders;

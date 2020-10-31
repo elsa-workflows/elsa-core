@@ -18,6 +18,7 @@ namespace Elsa.Triggers
         private readonly IWorkflowRegistry _workflowRegistry;
         private readonly IWorkflowFactory _workflowFactory;
         private readonly IWorkflowInstanceManager _workflowInstanceManager;
+        private readonly IWorkflowContextManager _workflowContextManager;
         private readonly IEnumerable<ITriggerProvider> _triggerProviders;
         private readonly IMemoryCache _memoryCache;
         private readonly IServiceProvider _serviceProvider;
@@ -27,6 +28,7 @@ namespace Elsa.Triggers
             IWorkflowRegistry workflowRegistry,
             IWorkflowFactory workflowFactory,
             IWorkflowInstanceManager workflowInstanceManager,
+            IWorkflowContextManager workflowContextManager,
             IEnumerable<ITriggerProvider> triggerProviders,
             IMemoryCache memoryCache,
             IServiceProvider serviceProvider)
@@ -34,6 +36,7 @@ namespace Elsa.Triggers
             _workflowRegistry = workflowRegistry;
             _workflowFactory = workflowFactory;
             _workflowInstanceManager = workflowInstanceManager;
+            _workflowContextManager = workflowContextManager;
             _triggerProviders = triggerProviders;
             _memoryCache = memoryCache;
             _serviceProvider = serviceProvider;
@@ -152,7 +155,9 @@ namespace Elsa.Triggers
         {
             var providers = _triggerProviders.ToList();
             var descriptors = new List<TriggerDescriptor>();
-            var workflowExecutionContext = new WorkflowExecutionContext(_serviceProvider, workflowBlueprint, workflowInstance, default, default);
+            var loadWorkflowContext = new LoadWorkflowContext(workflowBlueprint, workflowInstance);
+            var workflowContext = await _workflowContextManager.LoadContext(loadWorkflowContext, cancellationToken);
+            var workflowExecutionContext = new WorkflowExecutionContext(_serviceProvider, workflowBlueprint, workflowInstance, default, workflowContext);
 
             foreach (var blockingActivity in blockingActivities)
             {

@@ -4,13 +4,20 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Extensions;
 using Elsa.Activities.Http.Services;
+using Elsa.Serialization;
 using Microsoft.AspNetCore.Http;
-using Newtonsoft.Json;
 
 namespace Elsa.Activities.Http.Parsers
 {
     public class JsonHttpRequestBodyParser : IHttpRequestBodyParser
     {
+        private readonly IContentSerializer _serializer;
+
+        public JsonHttpRequestBodyParser(IContentSerializer serializer)
+        {
+            _serializer = serializer;
+        }
+        
         public int Priority => 0;
         public string?[] SupportedContentTypes => new[] { "application/json", "text/json" };
         
@@ -18,7 +25,7 @@ namespace Elsa.Activities.Http.Parsers
         {
             var json = await request.ReadContentAsStringAsync(cancellationToken);
             targetType ??= typeof(ExpandoObject);
-            return JsonConvert.DeserializeObject(json, targetType)!;
+            return _serializer.Deserialize(json, targetType)!;
         }
     }
 }

@@ -1,12 +1,9 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Extensions;
 using Elsa.Indexes;
-using Elsa.Models;
 using Elsa.Services;
 using Elsa.Triggers;
 using NodaTime;
-using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Activities.Timers.Triggers
 {

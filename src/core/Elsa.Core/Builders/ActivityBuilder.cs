@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Services;
@@ -29,23 +30,31 @@ namespace Elsa.Builders
 
         public IActivityBuilder Add<T>(
             Action<ISetupActivity<T>>? setup = default)
-            where T : class, IActivity => WorkflowBuilder.Add(setup);
+            where T : class, IActivity =>
+            WorkflowBuilder.Add(setup);
 
         public IOutcomeBuilder When(string outcome) => new OutcomeBuilder(WorkflowBuilder, this, outcome);
 
         public IActivityBuilder Then<T>(
             Action<ISetupActivity<T>>? setup = null,
             Action<IActivityBuilder>? branch = null)
-            where T : class, IActivity => When(OutcomeNames.Done).Then(setup, branch);
+            where T : class, IActivity =>
+            When(OutcomeNames.Done).Then(setup, branch);
 
         public IActivityBuilder Then<T>(Action<IActivityBuilder>? branch = null)
-            where T : class, IActivity => When(OutcomeNames.Done).Then<T>(branch);
+            where T : class, IActivity =>
+            When(OutcomeNames.Done).Then<T>(branch);
 
         public IActivityBuilder Then(IActivityBuilder targetActivity)
         {
             WorkflowBuilder.Connect(this, targetActivity);
             return this;
         }
+
+        public IConnectionBuilder Then(string activityName) =>
+            WorkflowBuilder.Connect(
+                () => this,
+                () => WorkflowBuilder.Activities.First(x => x.Name == activityName));
 
         public IActivityBuilder WithId(string? id)
         {

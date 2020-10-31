@@ -1,5 +1,4 @@
-﻿using Elsa.Models;
-using Elsa.Services.Models;
+﻿using Elsa.Services.Models;
 
 namespace Elsa.Triggers
 {
