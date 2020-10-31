@@ -34,11 +34,11 @@ namespace Elsa.Activities.MassTransit.Consumers
                 if (item.TryGetCorrelationId(message, out correlationId))
                     break;
 
-            await _workflowScheduler.TriggerWorkflowsAsync<ReceiveMassTransitMessage>(
-                message,
-                correlationId?.ToString(),
-                x => x.MessageType == message.GetType(),
-                context.CancellationToken);
+            throw new NotImplementedException();
+            // await _workflowScheduler.TriggerWorkflowsAsync<ReceiveMassTransitMessage>(
+            //     message,
+            //     correlationId?.ToString(),
+            //     cancellationToken: context.CancellationToken);
         }
     }
 }

@@ -22,6 +22,7 @@ namespace Elsa.Services
         public Task<WorkflowInstance> InstantiateAsync(
             IWorkflowBlueprint workflowBlueprint,
             string? correlationId = default,
+            string? contextId = default,
             CancellationToken cancellationToken = default)
         {
             var workflowInstance = new WorkflowInstance
@@ -31,6 +32,7 @@ namespace Elsa.Services
                 Version = workflowBlueprint.Version,
                 Status = WorkflowStatus.Idle,
                 CorrelationId = correlationId,
+                ContextId = contextId,
                 CreatedAt = _clock.GetCurrentInstant(),
                 Activities = workflowBlueprint.Activities.Select(CreateInstance).ToList(),
                 Variables = new Variables(workflowBlueprint.Variables)

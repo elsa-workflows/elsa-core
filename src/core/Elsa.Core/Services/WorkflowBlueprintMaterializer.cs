@@ -22,6 +22,8 @@ namespace Elsa.Services
                 workflowDefinition.Description,
                 workflowDefinition.IsLatest,
                 workflowDefinition.IsPublished,
+                workflowDefinition.Variables,
+                workflowDefinition.ContextType,
                 workflowDefinition.PersistenceBehavior,
                 workflowDefinition.DeleteCompletedInstances,
                 activityBlueprints.Values,

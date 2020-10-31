@@ -23,6 +23,7 @@ namespace Elsa.Models
         public int Version { get; set; }
         public WorkflowStatus Status { get; set; }
         public string? CorrelationId { get; set; }
+        public string? ContextId { get; set; }
         public Instant CreatedAt { get; set; }
         public Variables Variables { get; set; }
         public object? Output { get; set; }

@@ -106,6 +106,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddScoped<IWorkflowDefinitionManager, WorkflowDefinitionManager>()
                 .AddScoped<IWorkflowInstanceManager, WorkflowInstanceManager>()
                 .AddScoped<IWorkflowPublisher, WorkflowPublisher>()
+                .AddScoped<IWorkflowContextManager, WorkflowContextManager>()
                 .AddIndexProvider<WorkflowDefinitionIndexProvider>()
                 .AddIndexProvider<WorkflowInstanceIndexProvider>()
                 .AddStartupRunner()

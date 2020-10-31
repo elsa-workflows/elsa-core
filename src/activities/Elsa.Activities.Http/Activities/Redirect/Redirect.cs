@@ -29,7 +29,7 @@ namespace Elsa.Activities.Http
         private IStringLocalizer<Redirect> T { get; }
 
         [ActivityProperty(Hint = "The URL to redirect to (HTTP 302).")]
-        public Uri Location { get; set; }
+        public Uri Location { get; set; } = default!;
         
         [ActivityProperty(Hint = "Whether or not the redirect is permanent (HTTP 301).")]
         public bool Permanent { get; set; }

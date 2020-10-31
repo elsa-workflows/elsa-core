@@ -44,7 +44,7 @@ namespace Elsa.Activities.Signaling
                 nameof(Signaled),
                 triggeredSignal,
                 CorrelationId,
-                cancellationToken
+                cancellationToken: cancellationToken
             );
 
             return Done();

@@ -5,24 +5,27 @@ using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Elsa.Builders
 {
     public class WorkflowBuilder : IWorkflowBuilder
     {
         private readonly IIdGenerator _idGenerator;
+        private readonly JsonSerializer _serializer;
         private readonly IList<IActivityBuilder> _activityBuilders;
         private readonly IList<IConnectionBuilder> _connectionBuilders;
 
-        public WorkflowBuilder(
-            IIdGenerator idGenerator,
-            IServiceProvider serviceProvider)
+        public WorkflowBuilder(IIdGenerator idGenerator, JsonSerializer serializer, IServiceProvider serviceProvider)
         {
             _idGenerator = idGenerator;
+            _serializer = serializer;
             ServiceProvider = serviceProvider;
             Id = idGenerator.Generate();
             Version = 1;
             IsEnabled = true;
+            Variables = new Variables();
             _activityBuilders = new List<IActivityBuilder>();
             _connectionBuilders = new List<IConnectionBuilder>();
         }
@@ -33,6 +36,9 @@ namespace Elsa.Builders
         public string? Description { get; private set; }
         public int Version { get; private set; }
         public bool IsSingleton { get; private set; }
+
+        public Variables Variables { get; }
+        public Type? ContextType { get; private set; }
         public WorkflowPersistenceBehavior PersistenceBehavior { get; private set; }
         public bool DeleteCompletedInstances { get; private set; }
         public bool IsEnabled { get; private set; }
@@ -53,6 +59,14 @@ namespace Elsa.Builders
         public IWorkflowBuilder WithDescription(string? value)
         {
             Description = value;
+            return this;
+        }
+
+        public IWorkflowBuilder WithContextType<T>() => WithContextType(typeof(T));
+        
+        public IWorkflowBuilder WithContextType(Type? value)
+        {
+            ContextType = value;
             return this;
         }
 
@@ -89,6 +103,12 @@ namespace Elsa.Builders
         public IWorkflowBuilder WithDeleteCompletedInstances(bool value)
         {
             DeleteCompletedInstances = value;
+            return this;
+        }
+
+        public IWorkflowBuilder WithVariable(string name, object value)
+        {
+            Variables.Set(name, JToken.FromObject(value, _serializer));
             return this;
         }
 
@@ -178,8 +198,11 @@ namespace Elsa.Builders
         public IActivityBuilder Then<T>(
             Action<ISetupActivity<T>>? setup = default,
             Action<IActivityBuilder>? branch = default)
-            where T : class, IActivity =>
-            StartWith(setup, branch);
+            where T : class, IActivity
+        {
+            var activityBuilder = New(setup, branch);
+            return Add(activityBuilder, branch);
+        }
 
         public IActivityBuilder Then<T>(Action<IActivityBuilder>? branch = default)
             where T : class, IActivity =>
@@ -223,6 +246,8 @@ namespace Elsa.Builders
                 Description,
                 true,
                 true,
+                Variables,
+                ContextType,
                 PersistenceBehavior,
                 DeleteCompletedInstances,
                 activityBlueprints,

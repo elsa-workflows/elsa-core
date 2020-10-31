@@ -23,6 +23,8 @@ namespace Elsa.Builders
         IWorkflowBuilder WithVersion(int value);
         IWorkflowBuilder AsSingleton();
         IWorkflowBuilder AsTransient();
+        IWorkflowBuilder WithContextType<T>();
+        IWorkflowBuilder WithContextType(Type? value);
         IWorkflowBuilder WithDeleteCompletedInstances(bool value);
         IWorkflowBuilder WithPersistenceBehavior(WorkflowPersistenceBehavior value);
         IWorkflowBuilder Enable(bool value);

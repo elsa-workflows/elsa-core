@@ -39,7 +39,7 @@ namespace Elsa.Activities.Signaling
                 ActivityType,
                 Input,
                 CorrelationId,
-                cancellationToken
+                cancellationToken: cancellationToken
             );
 
             return Done();

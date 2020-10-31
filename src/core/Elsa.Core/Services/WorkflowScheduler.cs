@@ -54,6 +54,7 @@ namespace Elsa.Services
             string definitionId,
             object? input = default,
             string? correlationId = default,
+            string? contextId = default,
             CancellationToken cancellationToken = default)
         {
             var workflow = await _workflowRegistry.GetWorkflowAsync(
@@ -67,13 +68,14 @@ namespace Elsa.Services
             var startActivities = workflow.GetStartActivities();
 
             foreach (var activity in startActivities)
-                await ScheduleWorkflowAsync(workflow, activity, input, correlationId, cancellationToken);
+                await ScheduleWorkflowAsync(workflow, activity, input, correlationId, contextId, cancellationToken);
         }
 
         public async Task TriggerWorkflowsAsync(
             string activityType,
             object? input = default,
             string? correlationId = default,
+            string? contextId = default,
             CancellationToken cancellationToken = default)
         {
             await ScheduleSuspendedWorkflowsAsync(
@@ -86,10 +88,12 @@ namespace Elsa.Services
                 activityType,
                 input,
                 correlationId,
+                contextId,
                 cancellationToken);
         }
 
-        public async Task TriggerWorkflowsAsync<TTrigger>(Func<TTrigger, bool> predicate, object? input = default, string? correlationId = default, CancellationToken cancellationToken = default) where TTrigger : ITrigger
+        public async Task TriggerWorkflowsAsync<TTrigger>(Func<TTrigger, bool> predicate, object? input = default, string? correlationId = default, string? contextId = default, CancellationToken cancellationToken = default)
+            where TTrigger : ITrigger
         {
             var results = await _workflowSelector.SelectWorkflowsAsync(predicate, cancellationToken).ToList();
 
@@ -98,12 +102,10 @@ namespace Elsa.Services
                 if (result.WorkflowInstanceId != null)
                     await ScheduleWorkflowInstanceAsync(result.WorkflowInstanceId, result.ActivityId, input, cancellationToken);
                 else
-                    await ScheduleWorkflowAsync(result.WorkflowBlueprint, result.WorkflowBlueprint.GetActivity(result.ActivityId)!, input, correlationId, cancellationToken);
+                    await ScheduleWorkflowAsync(result.WorkflowBlueprint, result.WorkflowBlueprint.GetActivity(result.ActivityId)!, input, correlationId, contextId, cancellationToken);
 
                 if (result.Trigger.IsOneOff)
-                {
                     await _workflowSelector.RemoveTriggerAsync(result.Trigger, cancellationToken);
-                }
             }
         }
 
@@ -114,6 +116,7 @@ namespace Elsa.Services
             string activityType,
             object? input = default,
             string? correlationId = default,
+            string? contextId = default,
             CancellationToken cancellationToken = default)
         {
             var workflows = await _workflowRegistry.GetWorkflowsAsync(cancellationToken).ToListAsync(cancellationToken);
@@ -136,13 +139,14 @@ namespace Elsa.Services
                 if (startedInstances.Any())
                 {
                     // There's already a workflow instance pending to be started, so queue this workflow for launch right after the current instance completes. 
-                    _queue.Enqueue(workflow, activity, input, correlationId);
+                    _queue.Enqueue(workflow, activity, input, correlationId, contextId);
                 }
                 else
                 {
                     var workflowInstance = await _workflowFactory.InstantiateAsync(
                         workflow,
                         correlationId,
+                        contextId,
                         cancellationToken);
 
                     await _workflowInstanceManager.SaveAsync(workflowInstance, cancellationToken);
@@ -189,9 +193,10 @@ namespace Elsa.Services
             IActivityBlueprint activity,
             object? input,
             string? correlationId,
+            string? contextId,
             CancellationToken cancellationToken)
         {
-            var workflowInstance = await _workflowFactory.InstantiateAsync(workflowBlueprint, correlationId, cancellationToken);
+            var workflowInstance = await _workflowFactory.InstantiateAsync(workflowBlueprint, correlationId, contextId, cancellationToken);
             await _workflowInstanceManager.SaveAsync(workflowInstance, cancellationToken);
             await ScheduleWorkflowInstanceAsync(workflowInstance.WorkflowInstanceId, activity.Id, input, cancellationToken);
         }
@@ -245,6 +250,7 @@ namespace Elsa.Services
                 entry.Value.Activity,
                 entry.Value.Input,
                 entry.Value.CorrelationId,
+                entry.Value.ContextId,
                 cancellationToken);
         }
     }

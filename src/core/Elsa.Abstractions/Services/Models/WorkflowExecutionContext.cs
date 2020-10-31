@@ -2,7 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Elsa.Models;
+using Elsa.Serialization;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Elsa.Services.Models
@@ -13,19 +16,23 @@ namespace Elsa.Services.Models
             IServiceProvider serviceProvider,
             IWorkflowBlueprint workflowBlueprint,
             WorkflowInstance workflowInstance,
-            object? input
+            object? input,
+            object? workflowContext
         )
         {
             ServiceProvider = serviceProvider;
             WorkflowBlueprint = workflowBlueprint;
             WorkflowInstance = workflowInstance;
             Input = input;
+            WorkflowContext = workflowContext;
             IsFirstPass = true;
+            Serializer = serviceProvider.GetRequiredService<JsonSerializer>();
         }
-
+        
         public IWorkflowBlueprint WorkflowBlueprint { get; }
         public IServiceProvider ServiceProvider { get; }
         public WorkflowInstance WorkflowInstance { get; }
+        public JsonSerializer Serializer { get; }
         public object? Input { get; }
         public bool HasScheduledActivities => WorkflowInstance.ScheduledActivities.Any();
         public bool HasPostScheduledActivities => WorkflowInstance.PostScheduledActivities.Any();
@@ -67,8 +74,9 @@ namespace Elsa.Services.Models
         public ICollection<ExecutionLogEntry> ExecutionLog => WorkflowInstance.ExecutionLog;
         public WorkflowStatus Status => WorkflowInstance.Status;
         public bool HasBlockingActivities => WorkflowInstance.BlockingActivities.Any();
+        public object? WorkflowContext { get; set; }
 
-        public void SetVariable(string name, object? value) => WorkflowInstance.Variables.Set(name, JToken.FromObject(value!));
+        public void SetVariable(string name, object? value) => WorkflowInstance.Variables.Set(name, JToken.FromObject(value!, Serializer));
         public T GetVariable<T>(string name) => WorkflowInstance.Variables.Get<T>(name);
         public object? GetVariable(string name) => WorkflowInstance.Variables.Get(name);
         public void CompletePass() => IsFirstPass = false;
