@@ -75,7 +75,7 @@ namespace Elsa.Services.Models
         public bool HasBlockingActivities => WorkflowInstance.BlockingActivities.Any();
         public object? WorkflowContext { get; set; }
 
-        public void SetVariable(string name, object? value) => WorkflowInstance.Variables.Set(name, JToken.FromObject(value!, Serializer));
+        public void SetVariable(string name, object? value) => WorkflowInstance.Variables.Set(name, value);
         public T GetVariable<T>(string name) => WorkflowInstance.Variables.Get<T>(name);
         public object? GetVariable(string name) => WorkflowInstance.Variables.Get(name);
         public void CompletePass() => IsFirstPass = false;

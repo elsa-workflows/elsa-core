@@ -108,7 +108,7 @@ namespace Elsa.Builders
 
         public IWorkflowBuilder WithVariable(string name, object value)
         {
-            Variables.Set(name, JToken.FromObject(value, _serializer));
+            Variables.Set(name, value);
             return this;
         }
 

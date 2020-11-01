@@ -30,16 +30,16 @@ namespace Elsa.Activities.Workflows
         [ActivityProperty] public string? ContextId { get; set; }
         [ActivityProperty] public RunWorkflowMode Mode { get; set; }
 
-        public ICollection<string> WorkflowInstanceIds
+        public ICollection<string> ChildWorkflowInstanceIds
         {
-            get => GetState<ICollection<string>>();
+            get => GetState<ICollection<string>>(() => new List<string>());
             set => SetState(value);
         }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
             var workflowInstances = await _workflowScheduler.ScheduleWorkflowDefinitionAsync(WorkflowDefinitionId, Input, CorrelationId, ContextId, cancellationToken).ToList();
-            WorkflowInstanceIds = workflowInstances.Select(x => x.WorkflowInstanceId).ToList();
+            ChildWorkflowInstanceIds = workflowInstances.Select(x => x.WorkflowInstanceId).ToList();
 
             return Mode switch
             {
@@ -49,9 +49,13 @@ namespace Elsa.Activities.Workflows
             };
         }
 
-        protected override ValueTask<IActivityExecutionResult> OnResumeAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
         {
-            return base.OnResumeAsync(context, cancellationToken);
+            var input = (FinishedWorkflowModel)context.WorkflowExecutionContext.Input!;
+            var childWorkflowIds = ChildWorkflowInstanceIds;
+            childWorkflowIds.Remove(input.WorkflowInstanceId);
+            ChildWorkflowInstanceIds = childWorkflowIds;
+            return childWorkflowIds.Any() ? (IActivityExecutionResult)Suspend() : Done();
         }
 
         public enum RunWorkflowMode

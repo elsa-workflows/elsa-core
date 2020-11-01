@@ -2,8 +2,10 @@
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Serialization;
 using Elsa.Services;
 using Elsa.Services.Models;
+using Newtonsoft.Json;
 
 namespace Elsa
 {
@@ -35,6 +37,28 @@ namespace Elsa
 
             var value = await provider.GetValueAsync(activityExecutionContext, cancellationToken);
             return (T)value!;
+        }
+        
+        public static T GetActivityState<TActivity, T>(
+            this IWorkflowBlueprint workflowBlueprint, 
+            string activityId, 
+            Expression<Func<TActivity, T>> propertyExpression, 
+            ActivityExecutionContext activityExecutionContext) where TActivity : IActivity
+        {
+            var expression = (MemberExpression)propertyExpression.Body;
+            string propertyName = expression.Member.Name;
+            return GetActivityState<T>(workflowBlueprint, activityId, propertyName, activityExecutionContext);
+        }
+        
+        public static T GetActivityState<T>(
+            this IWorkflowBlueprint workflowBlueprint, 
+            string activityId, 
+            string propertyName, 
+            ActivityExecutionContext activityExecutionContext)
+        {
+            var activity = activityExecutionContext.ActivityInstance;
+            var serializer = activityExecutionContext.GetService<JsonSerializer>();
+            return activity.Data[propertyName]!.ToObject<T>(serializer)!;
         }
     }
 }

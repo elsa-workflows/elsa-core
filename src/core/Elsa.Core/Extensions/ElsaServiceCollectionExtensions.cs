@@ -4,6 +4,7 @@ using Elsa;
 using Elsa.Activities.ControlFlow;
 using Elsa.Activities.Primitives;
 using Elsa.Activities.Signaling;
+using Elsa.Activities.Workflows;
 using Elsa.Builders;
 using Elsa.Consumers;
 using Elsa.Converters;
@@ -12,7 +13,6 @@ using Elsa.Expressions;
 using Elsa.Extensions;
 using Elsa.Indexes;
 using Elsa.Mapping;
-using Elsa.Messages;
 using Elsa.Metadata;
 using Elsa.Metadata.Handlers;
 using Elsa.Runtime;
@@ -26,6 +26,7 @@ using MediatR;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using NodaTime;
 using Rebus.Handlers;
+using RunWorkflow = Elsa.Messages.RunWorkflow;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -149,7 +150,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddTriggerProvider<SignaledTriggerProvider>()
                 .AddActivity<TriggerEvent>()
                 .AddActivity<TriggerSignal>()
-                .AddActivity<Elsa.Activities.Workflows.RunWorkflow>();
+                .AddActivity<Elsa.Activities.Workflows.RunWorkflow>()
+                .AddTriggerProvider<RunWorkflowTriggerProvider>();
 
         private static ElsaOptions AddServiceBus(this ElsaOptions options)
         {

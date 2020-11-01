@@ -16,20 +16,20 @@ namespace Elsa.Activities.ControlFlow
     public class For : Activity
     {
         [ActivityProperty(Hint = "An expression that evaluates to the starting number.")]
-        public int Start { get; set; }
+        public long Start { get; set; }
 
         [ActivityProperty(Hint = "An expression that evaluates to the ending number.")]
-        public int End { get; set; }
+        public long End { get; set; }
 
         [ActivityProperty(Hint = "An expression that evaluates to the incrementing number on each step.")]
-        public int Step { get; set; } = 1;
+        public long Step { get; set; } = 1;
 
         [ActivityProperty(Hint = "The operator to use when comparing the current value against the end value.")]
         public Operator Operator { get; set; } = Operator.LessThan;
 
-        private int? CurrentValue
+        private long? CurrentValue
         {
-            get => GetState<int?>();
+            get => GetState<long?>();
             set => SetState(value);
         }
 
