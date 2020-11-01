@@ -112,6 +112,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.ContextualWork
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.RunChildWorkflowWorker", "src\samples\Elsa.Samples.RunChildWorkflowWorker\Elsa.Samples.RunChildWorkflowWorker.csproj", "{1E5E1669-AEC9-4DA9-9A3D-3D405101A246}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.CompositeActivitiesConsole", "src\samples\Elsa.Samples.CompositeActivitiesConsole\Elsa.Samples.CompositeActivitiesConsole.csproj", "{CC39E9F8-72D2-4A5B-846B-E2764DFE1C19}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -267,6 +269,10 @@ Global
 		{1E5E1669-AEC9-4DA9-9A3D-3D405101A246}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1E5E1669-AEC9-4DA9-9A3D-3D405101A246}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1E5E1669-AEC9-4DA9-9A3D-3D405101A246}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CC39E9F8-72D2-4A5B-846B-E2764DFE1C19}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CC39E9F8-72D2-4A5B-846B-E2764DFE1C19}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CC39E9F8-72D2-4A5B-846B-E2764DFE1C19}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CC39E9F8-72D2-4A5B-846B-E2764DFE1C19}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -319,6 +325,7 @@ Global
 		{565E2F7D-1F5F-45EF-B130-BC09CB3465B1} = {5E5E1E84-DDBC-40D6-B891-0D563A15A44A}
 		{37753BF9-9D9B-4264-AB5B-D057E467D3C5} = {5E5E1E84-DDBC-40D6-B891-0D563A15A44A}
 		{1E5E1669-AEC9-4DA9-9A3D-3D405101A246} = {5E5E1E84-DDBC-40D6-B891-0D563A15A44A}
+		{CC39E9F8-72D2-4A5B-846B-E2764DFE1C19} = {5E5E1E84-DDBC-40D6-B891-0D563A15A44A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}

@@ -1,12 +1,12 @@
-using Elsa.DistributedLock;
-using Microsoft.Extensions.Logging;
-using RedLockNet;
 using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.DistributedLock;
+using Microsoft.Extensions.Logging;
+using RedLockNet;
 
-namespace Elsa.DistributedLocking.Redis
+namespace Elsa
 {
     public class RedisLockProvider : IDistributedLockProvider
     {

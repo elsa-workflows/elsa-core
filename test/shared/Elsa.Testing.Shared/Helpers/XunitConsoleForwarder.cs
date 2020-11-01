@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using Xunit.Abstractions;
 
-namespace Elsa.Core.IntegrationTests.Helpers
+namespace Elsa.Testing.Shared.Helpers
 {
     public class XunitConsoleForwarder : TextWriter
     {

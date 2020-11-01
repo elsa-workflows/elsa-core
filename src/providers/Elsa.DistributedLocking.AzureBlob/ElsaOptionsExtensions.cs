@@ -1,8 +1,8 @@
+using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System;
 
-namespace Elsa.DistributedLocking.AzureBlob
+namespace Elsa
 {
     public static class ElsaOptionsExtensions
     {

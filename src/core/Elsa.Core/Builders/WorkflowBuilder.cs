@@ -5,21 +5,23 @@ using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json;
+using NetBox.Extensions;
 
 namespace Elsa.Builders
 {
     public class WorkflowBuilder : IWorkflowBuilder
     {
         private readonly IIdGenerator _idGenerator;
-        private readonly JsonSerializer _serializer;
+        private readonly IActivityActivator _activityActivator;
+        private readonly Func<IWorkflowBuilder> _workflowBuilderFactory;
         private readonly IList<IActivityBuilder> _activityBuilders;
         private readonly IList<IConnectionBuilder> _connectionBuilders;
 
-        public WorkflowBuilder(IIdGenerator idGenerator, JsonSerializer serializer, IServiceProvider serviceProvider)
+        public WorkflowBuilder(IIdGenerator idGenerator, IActivityActivator activityActivator, Func<IWorkflowBuilder> workflowBuilderFactory, IServiceProvider serviceProvider)
         {
             _idGenerator = idGenerator;
-            _serializer = serializer;
+            _activityActivator = activityActivator;
+            _workflowBuilderFactory = workflowBuilderFactory;
             ServiceProvider = serviceProvider;
             Id = idGenerator.Generate();
             Version = 1;
@@ -62,13 +64,15 @@ namespace Elsa.Builders
         }
 
         public IWorkflowBuilder WithContextType<T>(WorkflowContextFidelity fidelity) => WithContextType(typeof(T), fidelity);
-        
-        public IWorkflowBuilder WithContextType(Type type, WorkflowContextFidelity fidelity = WorkflowContextFidelity.Burst) => WithContextOptions(new WorkflowContextOptions
-        {
-            ContextType = type,
-            ContextFidelity = fidelity
-        });
-        
+
+        public IWorkflowBuilder WithContextType(Type type, WorkflowContextFidelity fidelity = WorkflowContextFidelity.Burst) =>
+            WithContextOptions(
+                new WorkflowContextOptions
+                {
+                    ContextType = type,
+                    ContextFidelity = fidelity
+                });
+
         public IWorkflowBuilder WithContextOptions(WorkflowContextOptions value)
         {
             ContextOptions = value;
@@ -213,34 +217,38 @@ namespace Elsa.Builders
             where T : class, IActivity =>
             StartWith<T>(branch);
 
-        public IWorkflowBlueprint Build(IWorkflow workflow)
+        public IWorkflowBlueprint Build(IWorkflow workflow, string activityIdPrefix = "activity")
         {
             WithId(workflow.GetType().Name);
             workflow.Build(this);
-            return Build();
+            return Build(activityIdPrefix);
         }
 
-        public IWorkflowBlueprint Build()
+        public IWorkflowBlueprint Build(string activityIdPrefix = "activity")
         {
             var definitionId = !string.IsNullOrWhiteSpace(Id) ? Id : _idGenerator.Generate();
+            var activityBlueprints = new List<IActivityBlueprint>();
+            var connections = new List<Connection>();
+            var activityPropertyProviders = new Dictionary<string, IDictionary<string, IActivityPropertyValueProvider>>();
 
             // Assign automatic ids to activity builders
             var index = 0;
-            foreach (var activityBuilder in _activityBuilders.Where(x => string.IsNullOrWhiteSpace(x.ActivityId))) activityBuilder.ActivityId = $"activity-{++index}";
 
-            var activityBlueprints = _activityBuilders
-                .Select(BuildActivityBlueprint)
-                .ToList();
-
+            foreach (var activityBuilder in _activityBuilders.Where(x => string.IsNullOrWhiteSpace(x.ActivityId)))
+                activityBuilder.ActivityId = $"{activityIdPrefix}-{++index}";
+            
+            activityBlueprints.AddRange(_activityBuilders.Select(BuildActivityBlueprint));
+            
+            // Build composite activities.
+            BuildCompositeActivities(_activityBuilders, activityBlueprints, connections, activityPropertyProviders);
+            
             var activityBlueprintDictionary = activityBlueprints.ToDictionary(x => x.Id);
 
-            var connections = _connectionBuilders
-                .Select(x => new Connection(activityBlueprintDictionary[x.Source().ActivityId], activityBlueprintDictionary[x.Target().ActivityId], x.Outcome))
-                .ToList();
+            connections.AddRange(_connectionBuilders.Select(x => new Connection(activityBlueprintDictionary[x.Source().ActivityId], activityBlueprintDictionary[x.Target().ActivityId], x.Outcome)));
 
-            var activityPropertyValueProviders = _activityBuilders
+            activityPropertyProviders.AddRange(_activityBuilders
                 .Select(x => (x.ActivityId, x.PropertyValueProviders))
-                .ToDictionary(x => x.ActivityId!, x => x.PropertyValueProviders!);
+                .ToDictionary(x => x.ActivityId!, x => x.PropertyValueProviders!));
 
             var workflow = new WorkflowBlueprint(
                 definitionId,
@@ -257,18 +265,42 @@ namespace Elsa.Builders
                 DeleteCompletedInstances,
                 activityBlueprints,
                 connections,
-                new ActivityPropertyProviders(activityPropertyValueProviders));
+                new ActivityPropertyProviders(activityPropertyProviders));
 
             return workflow;
         }
 
-        public IWorkflowBlueprint Build(Type workflowType)
+        private void BuildCompositeActivities(IEnumerable<IActivityBuilder> activityBuilders, ICollection<IActivityBlueprint> activityBlueprints, ICollection<Connection> connections, IDictionary<string, IDictionary<string, IActivityPropertyValueProvider>> activityPropertyProviders)
         {
-            var workflow = (IWorkflow)ActivatorUtilities.GetServiceOrCreateInstance(ServiceProvider, workflowType);
-            return Build(workflow);
+            var compositeActivityType = typeof(CompositeActivity);
+            var compositeActivityBuilders = activityBuilders.Where(x => compositeActivityType.IsAssignableFrom(x.ActivityType)).ToList();
+
+            foreach (var activityBuilder in compositeActivityBuilders)
+            {
+                var compositeActivity = (CompositeActivity)_activityActivator.ActivateActivity(activityBuilder.ActivityType.Name);
+                var workflowBuilder = _workflowBuilderFactory();
+                
+                compositeActivity.Build(workflowBuilder);
+                
+                var workflow = workflowBuilder.Build($"composite-{activityBuilder.ActivityId}-activity");
+                var activityDictionary = workflow.Activities.ToDictionary(x => x.Id);
+                
+                activityBlueprints.AddRange(workflow.Activities);
+                connections.AddRange(workflow.Connections.Select(x => new Connection(activityDictionary[x.Source.Activity.Id], activityDictionary[x.Target.Activity.Id], x.Source.Outcome)));
+                activityPropertyProviders.AddRange(workflow.ActivityPropertyProviders);
+                
+                var compositeActivityBlueprint = activityBlueprints.Single(x => x.Id == activityBuilder.ActivityId);
+                compositeActivityBlueprint.ChildWorkflow = workflow;
+            }
         }
 
-        public IWorkflowBlueprint Build<T>() where T : IWorkflow => Build(typeof(T));
+        public IWorkflowBlueprint Build(Type workflowType, string activityIdPrefix = "activity")
+        {
+            var workflow = (IWorkflow)ActivatorUtilities.GetServiceOrCreateInstance(ServiceProvider, workflowType);
+            return Build(workflow, activityIdPrefix);
+        }
+
+        public IWorkflowBlueprint Build<T>(string activityIdPrefix = "activity") where T : IWorkflow => Build(typeof(T), activityIdPrefix);
 
         private IActivityBlueprint BuildActivityBlueprint(IActivityBuilder builder, int index) => new ActivityBlueprint(builder.ActivityId, builder.Name, builder.ActivityType.Name, builder.PersistWorkflow, builder.BuildActivityAsync());
     }

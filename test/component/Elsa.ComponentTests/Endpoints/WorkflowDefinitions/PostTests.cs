@@ -5,10 +5,10 @@ using System.Threading.Tasks;
 using AutoFixture;
 using Elsa.Activities.Console;
 using Elsa.ComponentTests.Helpers;
-using Elsa.Core.IntegrationTests.Helpers;
 using Elsa.Models;
 using Elsa.Server.Api.Endpoints.WorkflowDefinitions;
 using Elsa.Testing.Shared.AutoFixture;
+using Elsa.Testing.Shared.Helpers;
 using Xunit;
 
 namespace Elsa.ComponentTests.Endpoints.WorkflowDefinitions

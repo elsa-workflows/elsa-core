@@ -11,5 +11,6 @@ namespace Elsa.Services.Models
         public string Type { get; }
         public bool PersistWorkflow { get; }
         Func<ActivityExecutionContext, CancellationToken, ValueTask<IActivity>> CreateActivityAsync { get; }
+        IWorkflowBlueprint? ChildWorkflow { get; set; }
     }
 }

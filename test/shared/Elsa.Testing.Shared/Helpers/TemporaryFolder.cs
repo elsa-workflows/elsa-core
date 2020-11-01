@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace Elsa.Core.IntegrationTests.Helpers
+namespace Elsa.Testing.Shared.Helpers
 {
     public class TemporaryFolder : IDisposable
     {

@@ -2,7 +2,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NodaTime;
 using System.Threading.Tasks;
-using Elsa.DistributedLocking.Redis;
 using YesSql.Provider.Sqlite;
 
 namespace Elsa.Samples.DistributedLock

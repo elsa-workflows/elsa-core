@@ -1,7 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace Elsa.DistributedLocking.SqlServer
+namespace Elsa
 {
     public static class ElsaOptionsExtensions
     {

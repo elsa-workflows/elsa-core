@@ -64,9 +64,9 @@ namespace Elsa.Builders
             Func<IActivityBuilder> target,
             string outcome = OutcomeNames.Done);
 
-        IWorkflowBlueprint Build();
-        IWorkflowBlueprint Build(IWorkflow workflow);
-        IWorkflowBlueprint Build(Type workflowType);
-        IWorkflowBlueprint Build<T>() where T : IWorkflow;
+        IWorkflowBlueprint Build(string activityIdPrefix = "activity");
+        IWorkflowBlueprint Build(IWorkflow workflow, string activityIdPrefix = "activity");
+        IWorkflowBlueprint Build(Type workflowType, string activityIdPrefix = "activity");
+        IWorkflowBlueprint Build<T>(string activityIdPrefix = "activity") where T : IWorkflow;
     }
 }

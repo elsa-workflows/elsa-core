@@ -1,6 +1,6 @@
 ﻿using Microsoft.Azure.Storage.Blob;
 
-namespace Elsa.DistributedLocking.AzureBlob
+namespace Elsa
 {
     internal class LockedBlob
     {

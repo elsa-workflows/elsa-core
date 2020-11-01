@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Elsa.DistributedLock;
 using Microsoft.Extensions.Logging;
 
-namespace Elsa.DistributedLocking.SqlServer
+namespace Elsa
 {
     // CREDITS:
     // Implementation taken & adapted from Workflow Core: https://github.com/danielgerlag/workflow-core/blob/master/src/providers/WorkflowCore.LockProviders.SqlServer/SqlLockProvider.cs

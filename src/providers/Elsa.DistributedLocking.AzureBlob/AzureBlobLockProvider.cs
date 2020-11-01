@@ -1,16 +1,16 @@
-using Elsa.DistributedLock;
-using Microsoft.Azure.Storage;
-using Microsoft.Azure.Storage.Blob;
-using Microsoft.Azure.Storage.RetryPolicies;
-using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.DistributedLock;
+using Microsoft.Azure.Storage;
+using Microsoft.Azure.Storage.Blob;
+using Microsoft.Azure.Storage.RetryPolicies;
+using Microsoft.Extensions.Logging;
 
-namespace Elsa.DistributedLocking.AzureBlob
+namespace Elsa
 {
     // See also:
     // The lock duration can be 15 to 60 seconds, or can be infinite, Reference: https://docs.microsoft.com/en-us/rest/api/storageservices/lease-blob

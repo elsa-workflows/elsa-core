@@ -155,8 +155,7 @@ namespace Elsa.Triggers
         {
             var providers = _triggerProviders.ToList();
             var descriptors = new List<TriggerDescriptor>();
-            var loadWorkflowContext = new LoadWorkflowContext(workflowBlueprint, workflowInstance);
-            var workflowContext = await _workflowContextManager.LoadContext(loadWorkflowContext, cancellationToken);
+            var workflowContext = workflowBlueprint.ContextOptions != null ? await _workflowContextManager.LoadContext(new LoadWorkflowContext(workflowBlueprint, workflowInstance), cancellationToken) : default;
             var workflowExecutionContext = new WorkflowExecutionContext(_serviceProvider, workflowBlueprint, workflowInstance, default, workflowContext);
 
             foreach (var blockingActivity in blockingActivities)

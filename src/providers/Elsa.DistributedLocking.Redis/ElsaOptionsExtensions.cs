@@ -1,13 +1,13 @@
+using System;
+using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using RedLockNet;
 using RedLockNet.SERedis;
 using RedLockNet.SERedis.Configuration;
 using StackExchange.Redis;
-using System;
-using System.Collections.Generic;
 
-namespace Elsa.DistributedLocking.Redis
+namespace Elsa
 {
     public static class ElsaOptionsExtensions
     {

@@ -3,18 +3,19 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Services.Models;
-using Newtonsoft.Json.Linq;
 using NodaTime;
 
 namespace Elsa.Services
 {
     public class WorkflowFactory : IWorkflowFactory
     {
+        private readonly IActivityFactory _activityFactory;
         private readonly IClock _clock;
         private readonly IIdGenerator _idGenerator;
 
-        public WorkflowFactory(IClock clock, IIdGenerator idGenerator)
+        public WorkflowFactory(IActivityFactory activityFactory, IClock clock, IIdGenerator idGenerator)
         {
+            _activityFactory = activityFactory;
             _clock = clock;
             _idGenerator = idGenerator;
         }
@@ -41,10 +42,6 @@ namespace Elsa.Services
             return Task.FromResult(workflowInstance);
         }
 
-        private ActivityInstance CreateInstance(IActivityBlueprint activityBlueprint) => new ActivityInstance(
-            activityBlueprint.Id,
-            activityBlueprint.Type,
-            null,
-            new JObject());
+        private ActivityInstance CreateInstance(IActivityBlueprint activityBlueprint) => _activityFactory.Instantiate(activityBlueprint);
     }
 }

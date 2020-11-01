@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -43,10 +44,7 @@ namespace Elsa.Services
                 ? provider 
                 : null;
 
-        public async ValueTask SetActivityPropertiesAsync(
-            IActivity activity,
-            ActivityExecutionContext activityExecutionContext,
-            CancellationToken cancellationToken = default)
+        public async ValueTask SetActivityPropertiesAsync(IActivity activity, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken = default)
         {
             var properties = activity.GetType().GetProperties().Where(IsActivityProperty).ToList();
             var providers = GetProviders(activity.Id);
@@ -64,7 +62,8 @@ namespace Elsa.Services
             }
         }
 
-        private bool IsActivityProperty(PropertyInfo property) =>
-            property.GetCustomAttribute<ActivityPropertyAttribute>() != null;
+        private bool IsActivityProperty(PropertyInfo property) => property.GetCustomAttribute<ActivityPropertyAttribute>() != null;
+        public IEnumerator<KeyValuePair<string, IDictionary<string, IActivityPropertyValueProvider>>> GetEnumerator() => _providers.GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }

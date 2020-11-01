@@ -1,7 +1,6 @@
 using System;
 using System.Threading.Tasks;
 using Elsa.Builders;
-using Elsa.Core.IntegrationTests.Helpers;
 using Elsa.Services;
 using Elsa.Triggers;
 using Microsoft.Extensions.DependencyInjection;
