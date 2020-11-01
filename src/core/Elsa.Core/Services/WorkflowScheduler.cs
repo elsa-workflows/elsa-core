@@ -50,7 +50,7 @@ namespace Elsa.Services
             CancellationToken cancellationToken = default) =>
             await _serviceBus.Publish(new RunWorkflow(instanceId, activityId, input));
 
-        public async Task ScheduleWorkflowDefinitionAsync(
+        public async Task<IEnumerable<WorkflowInstance>> ScheduleWorkflowDefinitionAsync(
             string definitionId,
             object? input = default,
             string? correlationId = default,
@@ -66,9 +66,15 @@ namespace Elsa.Services
                 throw new WorkflowException($"No workflow definition found by ID {definitionId}");
 
             var startActivities = workflow.GetStartActivities();
+            var workflowInstances = new List<WorkflowInstance>();
 
             foreach (var activity in startActivities)
-                await ScheduleWorkflowAsync(workflow, activity, input, correlationId, contextId, cancellationToken);
+            {
+                var workflowInstance  = await ScheduleWorkflowAsync(workflow, activity, input, correlationId, contextId, cancellationToken);
+                workflowInstances.Add(workflowInstance);
+            }
+
+            return workflowInstances;
         }
 
         public async Task TriggerWorkflowsAsync(
@@ -188,7 +194,7 @@ namespace Elsa.Services
                     cancellationToken);
         }
 
-        private async Task ScheduleWorkflowAsync(
+        private async Task<WorkflowInstance> ScheduleWorkflowAsync(
             IWorkflowBlueprint workflowBlueprint,
             IActivityBlueprint activity,
             object? input,
@@ -199,6 +205,7 @@ namespace Elsa.Services
             var workflowInstance = await _workflowFactory.InstantiateAsync(workflowBlueprint, correlationId, contextId, cancellationToken);
             await _workflowInstanceManager.SaveAsync(workflowInstance, cancellationToken);
             await ScheduleWorkflowInstanceAsync(workflowInstance.WorkflowInstanceId, activity.Id, input, cancellationToken);
+            return workflowInstance;
         }
 
         private async Task<IEnumerable<IWorkflowBlueprint>> FilterRunningSingletonsAsync(IEnumerable<IWorkflowBlueprint> workflows)

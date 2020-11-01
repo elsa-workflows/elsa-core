@@ -12,7 +12,7 @@ namespace Elsa.Extensions
     {
         public static Task<IWorkflowBlueprint?> GetWorkflowAsync<T>(
             this IWorkflowRegistry workflowRegistry,
-            CancellationToken cancellationToken) =>
+            CancellationToken cancellationToken = default) =>
             workflowRegistry.GetWorkflowAsync(typeof(T).Name, VersionOptions.Latest, cancellationToken);
 
         public static async Task<IEnumerable<(IWorkflowBlueprint Workflow, IActivityBlueprint Activity)>>
@@ -25,11 +25,10 @@ namespace Elsa.Extensions
             return results.Select(x => (x.Workflow, x.Activity));
         }
 
-        public static async Task<IEnumerable<(IWorkflowBlueprint Workflow, IActivityBlueprint Activity)>>
-            GetWorkflowsByStartActivityAsync(
-                this IWorkflowRegistry workflowRegistry,
-                string activityType,
-                CancellationToken cancellationToken = default)
+        public static async Task<IEnumerable<(IWorkflowBlueprint Workflow, IActivityBlueprint Activity)>> GetWorkflowsByStartActivityAsync(
+            this IWorkflowRegistry workflowRegistry,
+            string activityType,
+            CancellationToken cancellationToken = default)
         {
             var workflows = await workflowRegistry.GetWorkflowsAsync(cancellationToken).ToListAsync(cancellationToken);
 

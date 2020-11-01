@@ -122,7 +122,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddStartupTask<StartServiceBusTask>()
                 .AddConsumer<RunWorkflow, RunWorkflowConsumer>()
                 .AddMetadataHandlers()
-                .AddPrimitiveActivities();
+                .AddCoreActivities();
 
             return configuration;
         }
@@ -131,7 +131,7 @@ namespace Microsoft.Extensions.DependencyInjection
             services
                 .AddSingleton<IActivityPropertyOptionsProvider, SelectOptionsProvider>();
 
-        private static IServiceCollection AddPrimitiveActivities(this IServiceCollection services) =>
+        private static IServiceCollection AddCoreActivities(this IServiceCollection services) =>
             services
                 .AddActivity<Inline>()
                 .AddActivity<Finish>()
@@ -148,7 +148,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddActivity<Signaled>()
                 .AddTriggerProvider<SignaledTriggerProvider>()
                 .AddActivity<TriggerEvent>()
-                .AddActivity<TriggerSignal>();
+                .AddActivity<TriggerSignal>()
+                .AddActivity<Elsa.Activities.Workflows.RunWorkflow>();
 
         private static ElsaOptions AddServiceBus(this ElsaOptions options)
         {
