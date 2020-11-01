@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Elsa.Models;
@@ -25,7 +24,7 @@ namespace Elsa.Services.Models
             bool isLatest,
             bool isPublished,
             Variables? variables,
-            Type? contextType,
+            WorkflowContextOptions? contextOptions,
             WorkflowPersistenceBehavior persistenceBehavior,
             bool deleteCompletedInstances,
             IEnumerable<IActivityBlueprint> activities,
@@ -38,7 +37,7 @@ namespace Elsa.Services.Models
             IsEnabled = isEnabled;
             IsLatest = isLatest;
             IsPublished = isPublished;
-            ContextType = contextType;
+            ContextOptions = contextOptions;
             Variables = variables ?? new Variables();
             Name = name;
             Description = description;
@@ -58,7 +57,7 @@ namespace Elsa.Services.Models
         public bool IsPublished { get; set; }
         public bool IsLatest { get; set; }
         public Variables Variables { get; set; }
-        public Type? ContextType { get; set; }
+        public WorkflowContextOptions? ContextOptions { get; set; }
         public WorkflowPersistenceBehavior PersistenceBehavior { get; set; }
         public bool DeleteCompletedInstances { get; set; }
         public ICollection<IActivityBlueprint> Activities { get; set; }

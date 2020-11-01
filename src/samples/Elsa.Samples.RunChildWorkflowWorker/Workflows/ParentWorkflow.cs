@@ -1,8 +1,6 @@
 ﻿using Elsa.Activities.Console;
-using Elsa.Activities.Timers;
 using Elsa.Activities.Workflows;
 using Elsa.Builders;
-using NodaTime;
 
 namespace Elsa.Samples.RunChildWorkflowWorker.Workflows
 {

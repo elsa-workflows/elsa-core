@@ -6,7 +6,6 @@ using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace Elsa.Builders
 {
@@ -38,7 +37,7 @@ namespace Elsa.Builders
         public bool IsSingleton { get; private set; }
 
         public Variables Variables { get; }
-        public Type? ContextType { get; private set; }
+        public WorkflowContextOptions? ContextOptions { get; private set; }
         public WorkflowPersistenceBehavior PersistenceBehavior { get; private set; }
         public bool DeleteCompletedInstances { get; private set; }
         public bool IsEnabled { get; private set; }
@@ -62,11 +61,17 @@ namespace Elsa.Builders
             return this;
         }
 
-        public IWorkflowBuilder WithContextType<T>() => WithContextType(typeof(T));
+        public IWorkflowBuilder WithContextType<T>(WorkflowContextFidelity fidelity) => WithContextType(typeof(T), fidelity);
         
-        public IWorkflowBuilder WithContextType(Type? value)
+        public IWorkflowBuilder WithContextType(Type type, WorkflowContextFidelity fidelity = WorkflowContextFidelity.Burst) => WithContextOptions(new WorkflowContextOptions
         {
-            ContextType = value;
+            ContextType = type,
+            ContextFidelity = fidelity
+        });
+        
+        public IWorkflowBuilder WithContextOptions(WorkflowContextOptions value)
+        {
+            ContextOptions = value;
             return this;
         }
 
@@ -247,7 +252,7 @@ namespace Elsa.Builders
                 true,
                 true,
                 Variables,
-                ContextType,
+                ContextOptions,
                 PersistenceBehavior,
                 DeleteCompletedInstances,
                 activityBlueprints,

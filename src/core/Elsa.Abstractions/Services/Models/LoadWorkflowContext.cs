@@ -13,7 +13,7 @@ namespace Elsa.Services.Models
 
         public IWorkflowBlueprint WorkflowBlueprint { get; }
         public WorkflowInstance WorkflowInstance { get; }
-        public Type ContextType => WorkflowBlueprint.ContextType!;
+        public Type ContextType => WorkflowBlueprint.ContextOptions!.ContextType;
         public string ContextId => WorkflowInstance.ContextId!;
 
     }

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Elsa.Models;
 
 namespace Elsa.Services.Models
@@ -19,7 +18,7 @@ namespace Elsa.Services.Models
         /// <summary>
         /// An optional context type around which this workflow revolves. For example, a document, a leave request or a job application.
         /// </summary>
-        public Type? ContextType { get; set; }
+        public WorkflowContextOptions? ContextOptions { get; set; }
         public WorkflowPersistenceBehavior PersistenceBehavior { get; }
         public bool DeleteCompletedInstances { get; }
         public ICollection<IActivityBlueprint> Activities { get; }

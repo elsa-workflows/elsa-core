@@ -3,7 +3,6 @@ using Elsa.Samples.RunChildWorkflowWorker.HostedServices;
 using Elsa.Samples.RunChildWorkflowWorker.Workflows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using NodaTime;
 using YesSql.Provider.Sqlite;
 
 namespace Elsa.Samples.RunChildWorkflowWorker

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Elsa.Services.Models;
 
 namespace Elsa.Models
 {
@@ -19,7 +20,7 @@ namespace Elsa.Models
         public string? Name { get; set; }
         public string? Description { get; set; }
         public Variables? Variables { get; set; }
-        public Type? ContextType { get; set; }
+        public WorkflowContextOptions? ContextOptions { get; set; }
         public bool IsSingleton { get; set; }
         public WorkflowPersistenceBehavior PersistenceBehavior { get; set; }
         public bool DeleteCompletedInstances { get; set; }

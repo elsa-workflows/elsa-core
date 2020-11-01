@@ -128,7 +128,7 @@ namespace Elsa.Services
             object? input = default,
             CancellationToken cancellationToken = default)
         {
-            var workflowContext = await LoadWorkflowContextAsync(workflowBlueprint, workflowInstance, cancellationToken);
+            var workflowContext = await LoadWorkflowContextAsync(workflowBlueprint, workflowInstance, WorkflowContextFidelity.Burst, cancellationToken);
             var workflowExecutionContext = CreateWorkflowExecutionContext(workflowBlueprint, workflowInstance, input, workflowContext, _serviceProvider);
             var activity = activityId != null ? workflowBlueprint.GetActivity(activityId) : default;
 
@@ -147,7 +147,7 @@ namespace Elsa.Services
                     break;
             }
             
-            workflowInstance.ContextId = await SaveWorkflowContextAsync(workflowExecutionContext, cancellationToken);
+            workflowInstance.ContextId = await SaveWorkflowContextAsync(workflowExecutionContext, WorkflowContextFidelity.Burst, cancellationToken);
             await _mediator.Publish(new WorkflowExecuted(workflowExecutionContext), cancellationToken);
 
             var statusEvent = workflowExecutionContext.Status switch
@@ -165,20 +165,21 @@ namespace Elsa.Services
             return workflowExecutionContext.WorkflowInstance;
         }
 
-        private async ValueTask<object?> LoadWorkflowContextAsync(IWorkflowBlueprint workflowBlueprint, WorkflowInstance workflowInstance, CancellationToken cancellationToken)
+        private async ValueTask<object?> LoadWorkflowContextAsync(IWorkflowBlueprint workflowBlueprint, WorkflowInstance workflowInstance, WorkflowContextFidelity fidelity, CancellationToken cancellationToken)
         {
-            if (workflowInstance.ContextId == null || workflowBlueprint.ContextType == null)
+            if (workflowInstance.ContextId == null || workflowBlueprint.ContextOptions == null || workflowBlueprint.ContextOptions.ContextFidelity != fidelity)
                 return null;
 
             var context = new LoadWorkflowContext(workflowBlueprint, workflowInstance);
             return await _workflowContextManager.LoadContext(context, cancellationToken);
         }
         
-        private async ValueTask<string?> SaveWorkflowContextAsync(WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
+        private async ValueTask<string?> SaveWorkflowContextAsync(WorkflowExecutionContext workflowExecutionContext, WorkflowContextFidelity fidelity, CancellationToken cancellationToken)
         {
             var workflowContext = workflowExecutionContext.WorkflowContext;
-            if (workflowContext == null)
-                return null;
+            
+            if (workflowContext == null || workflowExecutionContext.WorkflowBlueprint.ContextOptions?.ContextFidelity != fidelity)
+                return workflowExecutionContext.WorkflowInstance.ContextId;
 
             var context = new SaveWorkflowContext(workflowExecutionContext);
             return await _workflowContextManager.SaveContextAsync(context, cancellationToken);
@@ -227,18 +228,24 @@ namespace Elsa.Services
         {
             using var scope = _serviceProvider.CreateScope();
             var serviceProvider = scope.ServiceProvider;
-            
+            var workflowBlueprint = workflowExecutionContext.WorkflowBlueprint;
+            var workflowInstance = workflowExecutionContext.WorkflowInstance;
+                
             while (workflowExecutionContext.HasScheduledActivities)
             {
+                if(workflowBlueprint.ContextOptions?.ContextFidelity == WorkflowContextFidelity.Activity)
+                    workflowExecutionContext.WorkflowContext = await LoadWorkflowContextAsync(workflowBlueprint, workflowInstance, WorkflowContextFidelity.Activity, cancellationToken);
+                
                 var scheduledActivity = workflowExecutionContext.PopScheduledActivity();
                 var currentActivityId = scheduledActivity.ActivityId;
-                var activityBlueprint = workflowExecutionContext.WorkflowBlueprint.GetActivity(currentActivityId)!;
+                var activityBlueprint = workflowBlueprint.GetActivity(currentActivityId)!;
                 var activityExecutionContext = new ActivityExecutionContext(workflowExecutionContext, serviceProvider, activityBlueprint, scheduledActivity.Input);
                 var activity = await activityBlueprint.CreateActivityAsync(activityExecutionContext, cancellationToken);
                 var result = await activityOperation(activityExecutionContext, activity, cancellationToken);
                 await _mediator.Publish(new ActivityExecuting(activityExecutionContext), cancellationToken);
                 await result.ExecuteAsync(activityExecutionContext, cancellationToken);
                 await _mediator.Publish(new ActivityExecuted(activityExecutionContext), cancellationToken);
+                workflowExecutionContext.WorkflowInstance.ContextId = await SaveWorkflowContextAsync(workflowExecutionContext, WorkflowContextFidelity.Activity, cancellationToken);
 
                 activityOperation = Execute;
                 workflowExecutionContext.CompletePass();
