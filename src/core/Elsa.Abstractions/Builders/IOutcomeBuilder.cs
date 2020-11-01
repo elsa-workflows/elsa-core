@@ -4,7 +4,7 @@ namespace Elsa.Builders
 {
     public interface IOutcomeBuilder : IBuilder
     {
-        IWorkflowBuilder WorkflowBuilder { get; }
+        ICompositeActivityBuilder WorkflowBuilder { get; }
         IActivityBuilder Source { get; }
         string? Outcome { get; }
         IConnectionBuilder Then(string activityName);

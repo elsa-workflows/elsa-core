@@ -7,14 +7,14 @@ namespace Elsa.Builders
 {
     public class OutcomeBuilder : IOutcomeBuilder
     {
-        public OutcomeBuilder(IWorkflowBuilder workflowBuilder, IActivityBuilder source, string outcome = "Done")
+        public OutcomeBuilder(ICompositeActivityBuilder workflowBuilder, IActivityBuilder source, string outcome = "Done")
         {
             WorkflowBuilder = workflowBuilder;
             Source = source;
             Outcome = outcome;
         }
 
-        public IWorkflowBuilder WorkflowBuilder { get; }
+        public ICompositeActivityBuilder WorkflowBuilder { get; }
         public IActivityBuilder Source { get; }
         public string Outcome { get; }
 
@@ -41,6 +41,6 @@ namespace Elsa.Builders
             return activityBuilder;
         }
 
-        public IWorkflowBlueprint Build() => WorkflowBuilder.Build();
+        public IWorkflowBlueprint Build() => ((IWorkflowBuilder)WorkflowBuilder).BuildBlueprint();
     }
 }

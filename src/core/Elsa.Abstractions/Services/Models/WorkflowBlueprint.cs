@@ -4,12 +4,10 @@ using Elsa.Models;
 
 namespace Elsa.Services.Models
 {
-    public class WorkflowBlueprint : IWorkflowBlueprint
+    public class WorkflowBlueprint : CompositeActivityBlueprint, IWorkflowBlueprint
     {
         public WorkflowBlueprint()
         {
-            Activities = new List<IActivityBlueprint>();
-            Connections = new List<IConnection>();
             ActivityPropertyProviders = new ActivityPropertyProviders();
             Variables = new Variables();
         }
@@ -29,7 +27,7 @@ namespace Elsa.Services.Models
             bool deleteCompletedInstances,
             IEnumerable<IActivityBlueprint> activities,
             IEnumerable<IConnection> connections,
-            IActivityPropertyProviders activityPropertyValueProviders)
+            IActivityPropertyProviders activityPropertyValueProviders) : base(id, name, id, true, null!)
         {
             Id = id;
             Version = version;
@@ -47,12 +45,10 @@ namespace Elsa.Services.Models
             Connections = connections.ToList();
             ActivityPropertyProviders = activityPropertyValueProviders;
         }
-    
-        public string Id { get; set; } = default!;
+        
         public int Version { get; set; }
         public bool IsSingleton { get; set; }
         public bool IsEnabled { get; set; }
-        public string? Name { get; set; }
         public string? Description { get; set; }
         public bool IsPublished { get; set; }
         public bool IsLatest { get; set; }
@@ -60,10 +56,5 @@ namespace Elsa.Services.Models
         public WorkflowContextOptions? ContextOptions { get; set; }
         public WorkflowPersistenceBehavior PersistenceBehavior { get; set; }
         public bool DeleteCompletedInstances { get; set; }
-        public ICollection<IActivityBlueprint> Activities { get; set; }
-    
-        public ICollection<IConnection> Connections { get; set; }
-    
-        public IActivityPropertyProviders ActivityPropertyProviders { get; set; }
     }
 }

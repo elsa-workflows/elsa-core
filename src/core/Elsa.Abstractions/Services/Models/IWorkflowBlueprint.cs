@@ -1,12 +1,9 @@
-﻿using System.Collections.Generic;
-using Elsa.Models;
+﻿using Elsa.Models;
 
 namespace Elsa.Services.Models
 {
-    public interface IWorkflowBlueprint
+    public interface IWorkflowBlueprint : ICompositeActivityBlueprint
     {
-        public string? Name { get; }
-        public string Id { get; }
         public int Version { get; set; }
         public bool IsSingleton { get; }
         public bool IsEnabled { get; }
@@ -21,8 +18,6 @@ namespace Elsa.Services.Models
         public WorkflowContextOptions? ContextOptions { get; set; }
         public WorkflowPersistenceBehavior PersistenceBehavior { get; }
         public bool DeleteCompletedInstances { get; }
-        public ICollection<IActivityBlueprint> Activities { get; }
-        public ICollection<IConnection> Connections { get; }
         IActivityPropertyProviders ActivityPropertyProviders { get; }
     }
 }

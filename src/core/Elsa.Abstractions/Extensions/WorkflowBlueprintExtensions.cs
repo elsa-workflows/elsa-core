@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Newtonsoft.Json;
@@ -58,6 +61,33 @@ namespace Elsa
             var activity = activityExecutionContext.ActivityInstance;
             var serializer = activityExecutionContext.GetService<JsonSerializer>();
             return activity.Data[propertyName]!.ToObject<T>(serializer)!;
+        }
+        
+        public static IEnumerable<IWorkflowBlueprint> WithVersion(
+            this IEnumerable<IWorkflowBlueprint> query,
+            VersionOptions version) =>
+            query.AsQueryable().WithVersion(version);
+
+        public static IQueryable<IWorkflowBlueprint> WithVersion(
+            this IQueryable<IWorkflowBlueprint> query,
+            VersionOptions version)
+        {
+            if (version.IsDraft)
+                query = query.Where(x => !x.IsPublished);
+            else if (version.IsLatest)
+                query = query.Where(x => x.IsLatest);
+            else if (version.IsPublished)
+                query = query.Where(x => x.IsPublished);
+            else if (version.IsLatestOrPublished)
+                query = query.Where(x => x.IsPublished || x.IsLatest);
+            else if (version.AllVersions)
+            {
+                // Nothing to filter.
+            }
+            else if (version.Version > 0)
+                query = query.Where(x => x.Version == version.Version);
+
+            return query.OrderByDescending(x => x.Version);
         }
     }
 }

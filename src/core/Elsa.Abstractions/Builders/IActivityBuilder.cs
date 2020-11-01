@@ -9,7 +9,7 @@ namespace Elsa.Builders
 {
     public interface IActivityBuilder : IBuilder
     {
-        IWorkflowBuilder WorkflowBuilder { get; }
+        ICompositeActivityBuilder WorkflowBuilder { get; }
         public Type ActivityType { get; }
         string ActivityId { get; set; }
         public string? Name { get; set; }
@@ -23,6 +23,6 @@ namespace Elsa.Builders
         IActivityBuilder WithId(string? id);
         IActivityBuilder WithName(string? name);
         Func<ActivityExecutionContext, CancellationToken, ValueTask<IActivity>> BuildActivityAsync();
-        IWorkflowBlueprint Build();
+        //IWorkflowBlueprint Build();
     }
 }

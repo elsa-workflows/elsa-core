@@ -116,6 +116,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddWorkflowProvider<ProgrammaticWorkflowProvider>()
                 .AddWorkflowProvider<StorageWorkflowProvider>()
                 .AddTransient<IWorkflowBuilder, WorkflowBuilder>()
+                .AddTransient<ICompositeActivityBuilder, CompositeActivityBuilder>()
                 .AddTransient<Func<IWorkflowBuilder>>(sp => sp.GetRequiredService<IWorkflowBuilder>)
                 .AddAutoMapperProfile<NodaTimeProfile>()
                 .AddAutoMapperProfile<CloningProfile>()

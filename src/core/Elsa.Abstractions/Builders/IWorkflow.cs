@@ -1,7 +1,6 @@
 namespace Elsa.Builders
 {
-    public interface IWorkflow
+    public interface IWorkflow : ICompositeActivity<IWorkflowBuilder>
     {
-        void Build(IWorkflowBuilder workflow);
     }
 }

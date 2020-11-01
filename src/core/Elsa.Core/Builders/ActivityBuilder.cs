@@ -12,7 +12,7 @@ namespace Elsa.Builders
     {
         public ActivityBuilder(
             Type activityType,
-            IWorkflowBuilder workflowBuilder,
+            ICompositeActivityBuilder workflowBuilder,
             IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders)
         {
             ActivityType = activityType;
@@ -20,8 +20,8 @@ namespace Elsa.Builders
             PropertyValueProviders = propertyValueProviders;
         }
 
-        public Type ActivityType { get; }
-        public IWorkflowBuilder WorkflowBuilder { get; }
+        public Type ActivityType { get; } = null!;
+        public ICompositeActivityBuilder WorkflowBuilder { get; } = default!;
         public string ActivityId { get; set; } = default!;
         public string? Name { get; set; }
         public string? Description { get; set; }
@@ -79,6 +79,6 @@ namespace Elsa.Builders
                 return activity;
             };
 
-        public IWorkflowBlueprint Build() => WorkflowBuilder.Build();
+        //public IWorkflowBlueprint Build() => WorkflowBuilder.Build();
     }
 }
