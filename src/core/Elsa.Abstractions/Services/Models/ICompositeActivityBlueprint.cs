@@ -6,7 +6,7 @@ namespace Elsa.Services.Models
     {
         public ICollection<IActivityBlueprint> Activities { get; set; }
 
-        public ICollection<IConnection> Connections { get; }
-        IActivityPropertyProviders ActivityPropertyProviders { get; }
+        public ICollection<IConnection> Connections { get; set; }
+        IActivityPropertyProviders ActivityPropertyProviders { get; set; }
     }
 }

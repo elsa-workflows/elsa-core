@@ -9,7 +9,7 @@ namespace Elsa.Builders
 {
     public interface IActivityBuilder : IBuilder
     {
-        ICompositeActivityBuilder WorkflowBuilder { get; }
+        ICompositeActivityBuilder WorkflowBuilder { get; set; }
         public Type ActivityType { get; }
         string ActivityId { get; set; }
         public string? Name { get; set; }

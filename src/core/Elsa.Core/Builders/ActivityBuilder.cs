@@ -19,14 +19,18 @@ namespace Elsa.Builders
             WorkflowBuilder = workflowBuilder;
             PropertyValueProviders = propertyValueProviders;
         }
+        
+        protected ActivityBuilder()
+        {
+        }
 
-        public Type ActivityType { get; } = null!;
-        public ICompositeActivityBuilder WorkflowBuilder { get; } = default!;
+        public Type ActivityType { get; protected set; } = default!;
+        public ICompositeActivityBuilder WorkflowBuilder { get; set; } = default!;
         public string ActivityId { get; set; } = default!;
         public string? Name { get; set; }
         public string? Description { get; set; }
         public bool PersistWorkflow { get; set; }
-        public IDictionary<string, IActivityPropertyValueProvider>? PropertyValueProviders { get; }
+        public IDictionary<string, IActivityPropertyValueProvider>? PropertyValueProviders { get; protected set; }
 
         public IActivityBuilder Add<T>(
             Action<ISetupActivity<T>>? setup = default)
@@ -35,23 +39,23 @@ namespace Elsa.Builders
 
         public IOutcomeBuilder When(string outcome) => new OutcomeBuilder(WorkflowBuilder, this, outcome);
 
-        public IActivityBuilder Then<T>(
+        public virtual IActivityBuilder Then<T>(
             Action<ISetupActivity<T>>? setup = null,
             Action<IActivityBuilder>? branch = null)
             where T : class, IActivity =>
             When(OutcomeNames.Done).Then(setup, branch);
 
-        public IActivityBuilder Then<T>(Action<IActivityBuilder>? branch = null)
+        public virtual IActivityBuilder Then<T>(Action<IActivityBuilder>? branch = null)
             where T : class, IActivity =>
             When(OutcomeNames.Done).Then<T>(branch);
 
-        public IActivityBuilder Then(IActivityBuilder targetActivity)
+        public virtual IActivityBuilder Then(IActivityBuilder targetActivity)
         {
             WorkflowBuilder.Connect(this, targetActivity);
             return this;
         }
 
-        public IConnectionBuilder Then(string activityName) =>
+        public virtual IConnectionBuilder Then(string activityName) =>
             WorkflowBuilder.Connect(
                 () => this,
                 () => WorkflowBuilder.Activities.First(x => x.Name == activityName));
@@ -78,7 +82,5 @@ namespace Elsa.Builders
                 await context.SetActivityPropertiesAsync(activity, cancellationToken);
                 return activity;
             };
-
-        //public IWorkflowBlueprint Build() => WorkflowBuilder.Build();
     }
 }

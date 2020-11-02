@@ -1,4 +1,7 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using Elsa.Activities.Workflows.Workflow;
 using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -16,6 +19,10 @@ namespace Elsa.Builders
             Version = 1;
             IsEnabled = true;
             Variables = new Variables();
+
+            ActivityType = typeof(Workflow);
+            WorkflowBuilder = this;
+            PropertyValueProviders = new Dictionary<string, IActivityPropertyValueProvider>();
         }
 
         public int Version { get; private set; }
@@ -97,7 +104,7 @@ namespace Elsa.Builders
             workflow.Build(this);
             return BuildBlueprint(activityIdPrefix);
         }
-        
+
         public IWorkflowBlueprint Build(Type workflowType, string activityIdPrefix)
         {
             var workflow = (IWorkflow)ActivatorUtilities.GetServiceOrCreateInstance(ServiceProvider, workflowType);
@@ -109,9 +116,9 @@ namespace Elsa.Builders
         public IWorkflowBlueprint BuildBlueprint(string activityIdPrefix)
         {
             var compositeRoot = base.Build(activityIdPrefix);
-            
+
             return new WorkflowBlueprint(
-                compositeRoot.Id,
+                ActivityId,
                 Version,
                 IsSingleton,
                 IsEnabled,
