@@ -143,7 +143,7 @@ namespace Elsa.Services
                     break;
 
                 case WorkflowStatus.Suspended:
-                    await ResumeWorkflowAsync(workflowExecutionContext, activity, input, cancellationToken);
+                    await ResumeWorkflowAsync(workflowExecutionContext, activity!, input, cancellationToken);
                     break;
             }
             

@@ -43,7 +43,7 @@ namespace Elsa.ComponentTests.Endpoints.WorkflowDefinitions
         {
             var writeLine = new ActivityDefinition
             {
-                Id = _fixture.Create<string>(),
+                ActivityId = _fixture.Create<string>(),
                 Type = nameof(WriteLine),
                 Properties = new ActivityDefinitionProperties
                 {
@@ -51,9 +51,9 @@ namespace Elsa.ComponentTests.Endpoints.WorkflowDefinitions
                 }
             };
 
-            var readLine = new ActivityDefinition { Id = _fixture.Create<string>(), Type = nameof(ReadLine) };
+            var readLine = new ActivityDefinition { ActivityId = _fixture.Create<string>(), Type = nameof(ReadLine) };
             var activities = new[] { writeLine, readLine };
-            var connections = new[] { new ConnectionDefinition(writeLine.Id, readLine.Id, OutcomeNames.Done) };
+            var connections = new[] { new ConnectionDefinition(writeLine.ActivityId, readLine.ActivityId, OutcomeNames.Done) };
 
             return _fixture.Build<SaveWorkflowDefinitionRequest>()
                 .With(x => x.Activities, activities)

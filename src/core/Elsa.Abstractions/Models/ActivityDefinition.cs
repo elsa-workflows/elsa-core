@@ -2,7 +2,7 @@ namespace Elsa.Models
 {
     public class ActivityDefinition
     {
-        public string Id { get; set; } = default!;
+        public string ActivityId { get; set; } = default!;
         public string Type { get; set; } = default!;
         public string? Name { get; set; }
         public string? DisplayName { get; set; }

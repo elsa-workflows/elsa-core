@@ -136,6 +136,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
         private static IServiceCollection AddCoreActivities(this IServiceCollection services) =>
             services
+                .AddActivity<CompositeActivity>()
                 .AddActivity<Inline>()
                 .AddActivity<Finish>()
                 .AddActivity<For>()

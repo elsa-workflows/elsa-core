@@ -7,6 +7,6 @@ namespace Elsa.Data
     /// </summary>
     public abstract class DataMigration : IDataMigration
     {
-        public ISchemaBuilder SchemaBuilder { get; set; }
+        public ISchemaBuilder SchemaBuilder { get; set; } = default!;
     }
 }

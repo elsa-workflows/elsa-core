@@ -5,9 +5,11 @@ using Elsa.Services.Models;
 
 namespace Elsa.Services
 {
-    public abstract class CompositeActivity : Activity
+    public class CompositeActivity : Activity
     {
-        public abstract void Build(ICompositeActivityBuilder composite);
+        public virtual void Build(ICompositeActivityBuilder composite)
+        {
+        }
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {

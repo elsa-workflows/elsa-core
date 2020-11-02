@@ -23,10 +23,10 @@ namespace Elsa.Scripting.Liquid.Services
             _options = options.Value;
         }
 
-        public async Task<string> RenderAsync(string source, TemplateContext context, TextEncoder encoder)
+        public async Task<string?> RenderAsync(string source, TemplateContext context, TextEncoder encoder)
         {
             if (string.IsNullOrWhiteSpace(source))
-                return default;
+                return default!;
 
             context.AddAsyncFilters(_options, _serviceProvider);
             var result = GetCachedTemplate(source);

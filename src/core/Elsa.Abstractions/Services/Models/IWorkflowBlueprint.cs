@@ -18,6 +18,5 @@ namespace Elsa.Services.Models
         public WorkflowContextOptions? ContextOptions { get; set; }
         public WorkflowPersistenceBehavior PersistenceBehavior { get; }
         public bool DeleteCompletedInstances { get; }
-        IActivityPropertyProviders ActivityPropertyProviders { get; }
     }
 }

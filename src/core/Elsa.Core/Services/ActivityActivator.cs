@@ -59,7 +59,7 @@ namespace Elsa.Services
         {
             var activity = ActivateActivity(activityDefinition.Type);
             activity.Description = activityDefinition.Description;
-            activity.Id = activityDefinition.Id;
+            activity.Id = activityDefinition.ActivityId;
             activity.Name = activityDefinition.Name;
             activity.DisplayName = activityDefinition.DisplayName;
             activity.PersistWorkflow = activityDefinition.PersistWorkflow;

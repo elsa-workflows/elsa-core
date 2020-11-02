@@ -1,23 +1,18 @@
-﻿using System.Collections.Generic;
-using Elsa.Services.Models;
+﻿using Elsa.Services.Models;
 
 namespace Elsa.Models
 {
-    public class WorkflowDefinition
+    public class WorkflowDefinition : CompositeActivityDefinition
     {
         public WorkflowDefinition()
         {
             Variables = new Variables();
-            Activities = new List<ActivityDefinition>();
-            Connections = new List<ConnectionDefinition>();
         }
 
         public int Id { get; set; }
         public string WorkflowDefinitionId { get; set; } = default!;
         public string WorkflowDefinitionVersionId { get; set; } = default!;
         public int Version { get; set; }
-        public string? Name { get; set; }
-        public string? Description { get; set; }
         public Variables? Variables { get; set; }
         public WorkflowContextOptions? ContextOptions { get; set; }
         public bool IsSingleton { get; set; }
@@ -26,7 +21,5 @@ namespace Elsa.Models
         public bool IsEnabled { get; set; }
         public bool IsPublished { get; set; }
         public bool IsLatest { get; set; }
-        public ICollection<ActivityDefinition> Activities { get; set; }
-        public ICollection<ConnectionDefinition> Connections { get; set; }
     }
 }

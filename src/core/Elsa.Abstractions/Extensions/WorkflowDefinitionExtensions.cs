@@ -8,7 +8,7 @@ namespace Elsa
     {
         public static ActivityDefinition
             GetActivityById(this WorkflowDefinition workflowDefinition, string activityId) =>
-            workflowDefinition.Activities.First(x => x.Id == activityId);
+            workflowDefinition.Activities.First(x => x.ActivityId == activityId);
 
         public static IEnumerable<ActivityDefinition> GetStartActivities(this WorkflowDefinition workflowDefinition)
         {
@@ -20,7 +20,7 @@ namespace Elsa
 
             var query =
                 from activity in workflowDefinition.Activities
-                where !targetActivities.Contains(activity.Id)
+                where !targetActivities.Contains(activity.ActivityId)
                 select activity;
 
             return query;

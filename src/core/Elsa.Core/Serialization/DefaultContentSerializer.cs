@@ -32,13 +32,14 @@ namespace Elsa.Serialization
             settings.ReferenceLoopHandling = ReferenceLoopHandling.Serialize;
             settings.PreserveReferencesHandling = PreserveReferencesHandling.All;
             settings.TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Simple;
-            settings.TypeNameHandling = TypeNameHandling.None;
+            settings.TypeNameHandling = TypeNameHandling.Auto;
             settings.ContractResolver = new CamelCasePropertyNamesContractResolver
             {
                 NamingStrategy = new CamelCaseNamingStrategy
                 {
-                    ProcessDictionaryKeys = true,
-                    ProcessExtensionDataNames = true
+                    ProcessDictionaryKeys = false,
+                    ProcessExtensionDataNames = true,
+                    OverrideSpecifiedNames = false
                 }
             };
             settings.Converters.Add(new TypeConverter());

@@ -23,7 +23,11 @@ namespace Elsa.Handlers
         {
             var workflowInstance = notification.WorkflowInstance;
             var workflowBlueprint = await _workflowRegistry.GetWorkflowAsync(workflowInstance.WorkflowDefinitionId, VersionOptions.SpecificVersion(workflowInstance.Version), cancellationToken);
-            await _workflowSelector.UpdateTriggersAsync(workflowBlueprint!, cancellationToken);
+            
+            if (workflowBlueprint == null)
+                return;
+            
+            await _workflowSelector.UpdateTriggersAsync(workflowBlueprint, cancellationToken);
         }
     }
 }

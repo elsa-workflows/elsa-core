@@ -24,7 +24,7 @@ namespace Elsa.Activities.MassTransit
         public object? Message { get; set; }
 
         [ActivityProperty(Hint = "The address of a specific endpoint to send the message to.")]
-        public Uri EndpointAddress { get; set; }
+        public Uri EndpointAddress { get; set; } = default!;
 
         protected override bool OnCanExecute(ActivityExecutionContext context)
         {

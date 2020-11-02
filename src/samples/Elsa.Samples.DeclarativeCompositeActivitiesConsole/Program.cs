@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Data;
 using System.Threading.Tasks;
-using Elsa.Activities.Console;
 using Elsa.Models;
 using Elsa.Scripting.Liquid.Services;
 using Elsa.Serialization;
@@ -9,34 +8,30 @@ using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 using YesSql.Provider.Sqlite;
 
-namespace Elsa.Samples.Serialization
+namespace Elsa.Samples.DeclarativeCompositeActivitiesConsole
 {
     /// <summary>
-    /// Demonstrates how to:
-    /// 1. Serialize a workflow definition model to JSON.
-    /// 2. Deserialize JSON back to a workflow definition model.
-    /// 3. Materialize a workflow definition model into a workflow blueprint.
-    /// 4. Run a workflow blueprint.
+    /// Demonstrates the use of declarative composite activities.
     /// </summary>
     class Program
     {
-        static async Task Main(string[] args)
+        static async Task Main()
         {
             // Create a service container with Elsa services.
             var services = new ServiceCollection()
                 .AddElsa(option => option.UsePersistence(db => db.UseSqLite("Data Source=elsa.db;Cache=Shared", IsolationLevel.ReadUncommitted)))
                 .AddConsoleActivities()
                 .BuildServiceProvider();
-            
+
             // Run startup actions (not needed when registering Elsa with a Host).
             var startupRunner = services.GetRequiredService<IStartupRunner>();
             await startupRunner.StartupAsync();
-            
+
             // Define a workflow.
             var workflowDefinition = new WorkflowDefinition
             {
                 WorkflowDefinitionId = "SampleWorkflow",
-                WorkflowDefinitionVersionId = "1", 
+                WorkflowDefinitionVersionId = "1",
                 Version = 1,
                 IsPublished = true,
                 IsLatest = true,
@@ -44,39 +39,59 @@ namespace Elsa.Samples.Serialization
                 PersistenceBehavior = WorkflowPersistenceBehavior.Suspended,
                 Activities = new[]
                 {
-                    new ActivityDefinition
+                    WriteLine("write-line-1", "==Composite Activities Demo=="),
+                    new CompositeActivityDefinition
                     {
-                        ActivityId = "activity-1",
-                        Type = nameof(WriteLine),
-                        Properties = new ActivityDefinitionProperties
+                        ActivityId = "composite-1",
+                        Activities = new[]
                         {
-                            [nameof(WriteLine.Text)] = new ActivityDefinitionPropertyValue
-                            {
-                                Syntax = LiquidExpressionHandler.SyntaxName,
-                                Expression = "Hello World!",
-                                Type = typeof(string)
-                            }
+                            WriteLine("write-line-2", "Line 1 of composite activity."),
+                            WriteLine("write-line-3", "Line 2 of composite activity."),
+                        },
+                        Connections = new[]
+                        {
+                            new ConnectionDefinition("write-line-2", "write-line-3", OutcomeNames.Done)
                         }
-                    }, 
+                    },
+                    WriteLine("write-line-4", "==End=="),
+                },
+                Connections = new[]
+                {
+                    new ConnectionDefinition("write-line-1", "composite-1", OutcomeNames.Done),
+                    new ConnectionDefinition("composite-1", "write-line-4", OutcomeNames.Done),
                 }
             };
-            
+
             // Serialize workflow definition to JSON.
             var serializer = services.GetRequiredService<IContentSerializer>();
             var json = serializer.Serialize(workflowDefinition);
-            
-            Console.WriteLine(json);
-            
+
             // Deserialize workflow definition from JSON.
             var deserializedWorkflowDefinition = serializer.Deserialize<WorkflowDefinition>(json);
-            
+
             // Materialize workflow.
             var materializer = services.GetRequiredService<IWorkflowBlueprintMaterializer>();
             var workflowBlueprint = materializer.CreateWorkflowBlueprint(deserializedWorkflowDefinition);
-            
+
             // Execute workflow.
             var workflowRunner = services.GetRequiredService<IWorkflowRunner>();
             await workflowRunner.RunWorkflowAsync(workflowBlueprint);
         }
+
+        private static ActivityDefinition WriteLine(string id, string text) =>
+            new ActivityDefinition
+            {
+                ActivityId = id,
+                Type = nameof(Activities.Console.WriteLine),
+                Properties = new ActivityDefinitionProperties
+                {
+                    [nameof(Activities.Console.WriteLine.Text)] = new ActivityDefinitionPropertyValue
+                    {
+                        Syntax = LiquidExpressionHandler.SyntaxName,
+                        Expression = text,
+                        Type = typeof(string)
+                    }
+                }
+            };
     }
 }

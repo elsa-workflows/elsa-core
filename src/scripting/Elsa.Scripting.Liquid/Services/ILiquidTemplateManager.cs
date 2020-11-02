@@ -13,7 +13,7 @@ namespace Elsa.Scripting.Liquid.Services
         /// <summary>
         /// Renders a Liquid template as a <see cref="string"/>.
         /// </summary>
-        Task<string> RenderAsync(string template, TemplateContext context, TextEncoder encoder);
+        Task<string?> RenderAsync(string template, TemplateContext context, TextEncoder encoder);
 
         /// <summary>
         /// Validates a Liquid template.

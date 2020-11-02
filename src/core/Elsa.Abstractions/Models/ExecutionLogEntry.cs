@@ -14,7 +14,7 @@ namespace Elsa.Models
             Timestamp = timestamp;
         }
 
-        public string ActivityId { get; set; }
-        public Instant Timestamp { get; set; }
+        public string ActivityId { get; set; } = default!;
+        public Instant Timestamp { get; set; }= default!;
     }
 }

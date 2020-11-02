@@ -16,7 +16,7 @@ namespace Elsa.Activities.Primitives
     public class SetVariable : Activity
     {
         [ActivityProperty(Hint = "The name of the variable to store the value into.")]
-        public string VariableName { get; set; }
+        public string VariableName { get; set; } = default!;
 
         [ActivityProperty(Hint = "An expression that evaluates to the value to store in the variable.")]
         public object? Value { get; set; }

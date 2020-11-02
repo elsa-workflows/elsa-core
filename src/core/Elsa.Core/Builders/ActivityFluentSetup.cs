@@ -39,6 +39,6 @@ namespace Elsa.Builders
         public static T With<T, TProperty>(this T activity,
             Expression<Func<T, TProperty>> propertyAccessor,
             Func<ActivityExecutionContext, TProperty>? value) where T : class, IActivity =>
-            value == null ? activity : activity.With(a => a.SetPropertyValue(propertyAccessor, value(null)));
+            value == null ? activity : activity.With(a => a.SetPropertyValue(propertyAccessor, value(null!)));
     }
 }

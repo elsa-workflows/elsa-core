@@ -18,7 +18,7 @@ namespace Elsa.Activities.ControlFlow
     public class Switch : Activity
     {
         public const string DefaultOutcome = "Default";
-        
+
         public Switch()
         {
             Cases = new HashSet<string>()
@@ -28,9 +28,10 @@ namespace Elsa.Activities.ControlFlow
         }
 
         [ActivityProperty(Hint = "The value to switch on.")]
-        public string Value { get; set; }
+        public string Value { get; set; } = default!;
 
-        private HashSet<string> _cases;
+        private HashSet<string> _cases = default!;
+
         [ActivityProperty(Hint = "A comma-separated list of possible outcomes of the expression.")]
         public HashSet<string> Cases
         {
