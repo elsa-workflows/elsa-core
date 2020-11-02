@@ -2,7 +2,7 @@
 
 [![Nuget](https://img.shields.io/nuget/v/Elsa)](https://www.nuget.org/packages/Elsa/)
 [![MyGet (with prereleases)](https://img.shields.io/myget/elsa-2/vpre/Elsa)](https://www.myget.org/gallery/elsa-2)
-[![Build status](https://ci.appveyor.com/api/projects/status/rqg10opfpy78yiga/branch/develop?svg=true)](https://ci.appveyor.com/project/sfmskywalker/elsa-preview/branch/develop)
+[![Build status](https://ci.appveyor.com/api/projects/status/rqg10opfpy78yiga/branch/master?svg=true)](https://ci.appveyor.com/project/sfmskywalker/elsa-1/branch/master)
 [![Gitter](https://badges.gitter.im/elsa-workflows/community.svg)](https://gitter.im/elsa-workflows/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 [![Stack Overflow questions](https://img.shields.io/badge/stackoverflow-elsa_workflows-orange.svg)]( http://stackoverflow.com/questions/tagged/elsa-workflows )
 ![Docker Pulls](https://img.shields.io/docker/pulls/elsaworkflows/elsa-dashboard?label=elsa%20dashboard%3Adocker%20pulls)
