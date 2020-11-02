@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Builders;
 using Elsa.Models;
 using Elsa.Services.Models;
 
@@ -11,7 +12,13 @@ namespace Elsa.Services
     {
         public IWorkflowBlueprint CreateWorkflowBlueprint(WorkflowDefinition workflowDefinition)
         {
-            var activityBlueprints = workflowDefinition.Activities.Select(CreateBlueprint).ToDictionary(x => x.Id);
+            var activityBlueprints = workflowDefinition.Activities.SelectMany(CreateBlueprints).Distinct().ToDictionary(x => x.Id);
+            var compositeActivityBlueprints = activityBlueprints.Values.Where(x => x is ICompositeActivityBlueprint).Cast<ICompositeActivityBlueprint>().ToList(); 
+            var connections = compositeActivityBlueprints.SelectMany(x => x.Connections).Distinct().ToList();
+            var propertyProviders = compositeActivityBlueprints.SelectMany(x => x.ActivityPropertyProviders).ToList();
+            
+            connections.AddRange(workflowDefinition.Connections.Select(x => ResolveConnection(x, activityBlueprints)));
+            propertyProviders.AddRange(CreatePropertyProviders(workflowDefinition));
 
             return new WorkflowBlueprint(
                 workflowDefinition.WorkflowDefinitionId,
@@ -27,11 +34,9 @@ namespace Elsa.Services
                 workflowDefinition.PersistenceBehavior,
                 workflowDefinition.DeleteCompletedInstances,
                 activityBlueprints.Values,
-                workflowDefinition.Connections.Select(x => ResolveConnection(x, activityBlueprints)).ToList(),
-                CreatePropertyProviders(workflowDefinition)
+                connections,
+                new ActivityPropertyProviders(propertyProviders.ToDictionary(x => x.Key, x => x.Value))
             );
-            
-            // TODO: Update workflow blue print with nested activity blueprints, connections and property providers.
         }
 
         private static ActivityPropertyProviders CreatePropertyProviders(CompositeActivityDefinition workflowDefinition)
@@ -62,13 +67,16 @@ namespace Elsa.Services
             return new Connection(source, target, outcome!);
         }
 
-        private static IActivityBlueprint CreateBlueprint(ActivityDefinition activityDefinition)
+        private static IEnumerable<IActivityBlueprint> CreateBlueprints(ActivityDefinition activityDefinition)
         {
             if (activityDefinition is CompositeActivityDefinition compositeActivityDefinition)
             {
-                var activityBlueprints = compositeActivityDefinition.Activities.Select(CreateBlueprint).ToDictionary(x => x.Id);
+                var activityBlueprints = compositeActivityDefinition.Activities.SelectMany(CreateBlueprints).ToDictionary(x => x.Id);
+
+                foreach (var activityBlueprint in activityBlueprints.Values)
+                    yield return activityBlueprint;
                 
-                return new CompositeActivityBlueprint
+                yield return new CompositeActivityBlueprint
                 {
                     Id = activityDefinition.ActivityId,
                     Type = activityDefinition.Type,
@@ -78,13 +86,15 @@ namespace Elsa.Services
                     ActivityPropertyProviders = CreatePropertyProviders(compositeActivityDefinition)
                 };
             }
-
-            return new ActivityBlueprint
+            else
             {
-                Id = activityDefinition.ActivityId,
-                Type = activityDefinition.Type,
-                CreateActivityAsync = (context, cancellationToken) => CreateActivityAsync(activityDefinition, context, cancellationToken)
-            };
+                yield return new ActivityBlueprint
+                {
+                    Id = activityDefinition.ActivityId,
+                    Type = activityDefinition.Type,
+                    CreateActivityAsync = (context, cancellationToken) => CreateActivityAsync(activityDefinition, context, cancellationToken)
+                };    
+            }
         }
 
         private static async ValueTask<IActivity> CreateActivityAsync(ActivityDefinition activityDefinition, ActivityExecutionContext context, CancellationToken cancellationToken)

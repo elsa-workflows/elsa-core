@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Elsa.Activities.Workflows.Workflow;
 using Elsa.Models;
 using Elsa.Services;
@@ -115,7 +114,7 @@ namespace Elsa.Builders
 
         public IWorkflowBlueprint BuildBlueprint(string activityIdPrefix)
         {
-            var compositeRoot = base.Build(activityIdPrefix);
+            var compositeRoot = Build(activityIdPrefix);
 
             return new WorkflowBlueprint(
                 ActivityId,

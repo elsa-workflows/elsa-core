@@ -4,6 +4,9 @@ using Elsa.Services.Models;
 
 namespace Elsa.Builders
 {
+    /// <summary>
+    /// Constructs workflow blueprints from programmatic workflow definitions.
+    /// </summary>
     public interface IWorkflowBuilder : ICompositeActivityBuilder
     {
         int Version { get; }
