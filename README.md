@@ -1,8 +1,8 @@
 ## Elsa Workflows
 
 [![Nuget](https://img.shields.io/nuget/v/Elsa)](https://www.nuget.org/packages/Elsa/)
-[![MyGet (with prereleases)](https://img.shields.io/myget/elsa/vpre/Elsa.Core.svg?label=myget)](https://www.myget.org/gallery/elsa)
-[![Build status](https://ci.appveyor.com/api/projects/status/rqg10opfpy78yiga/branch/develop?svg=true)](https://ci.appveyor.com/project/sfmskywalker/elsa/branch/develop)
+[![MyGet (with prereleases)](https://img.shields.io/myget/elsa-2/vpre/Elsa)](https://www.myget.org/gallery/elsa-2)
+[![Build status](https://ci.appveyor.com/api/projects/status/rqg10opfpy78yiga/branch/develop?svg=true)](https://ci.appveyor.com/project/sfmskywalker/elsa-preview/branch/develop)
 [![Gitter](https://badges.gitter.im/elsa-workflows/community.svg)](https://gitter.im/elsa-workflows/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 [![Stack Overflow questions](https://img.shields.io/badge/stackoverflow-elsa_workflows-orange.svg)]( http://stackoverflow.com/questions/tagged/elsa-workflows )
 ![Docker Pulls](https://img.shields.io/docker/pulls/elsaworkflows/elsa-dashboard?label=elsa%20dashboard%3Adocker%20pulls)
@@ -37,23 +37,20 @@ Version 1.0
 
 Version 2.0
 
-- [ ] Service Bus Messaging
-- [ ] Generic Command & Event Activities
-- [ ] Workflow Host GraphQL API
-- [ ] Workflow Host REST API
-- [ ] Workflow Host gRPC API
-- [ ] Workflow Server
-- [ ] Activity Harvesting
-- [ ] Distributed Hosting Support (support for multi-node environments)
-- [ ] Localization Support
-- [ ] More activities
-- [ ] Workflow Designer UI improvements
-- [ ] Activity Editor UI improvements
 - [x] Container Activities
+- [x] Service Bus Messaging
+- [ ] Generic Command & Event Activities
+- [x] Workflow Host REST API
+- [ ] Workflow Host gRPC API
+- [x] Workflow Server
+- [x] Distributed Hosting Support (support for multi-node environments)
+- [ ] New Workflow Designer + Dashboard
 
 Version 3.0
-
+- [ ] Localization Support
 - [ ] State Machines
+- [ ] Sagas
+
 
 ## Workflow Designer
 
@@ -64,10 +61,10 @@ To manage workflow definitions and instances, Elsa comes with a reusable Razor C
 
 ## Programmatic Workflows
 
-Workflows can be created programmatically and then executed using `IWorkflowInvoker`.
+Workflows can be created programmatically and then executed using `IWorkflowRunner`.
 
 ### Hello World
-The following code snippet demonstrates creating a workflow with two custom activities from code and then invoking it:
+The following code snippet demonstrates creating a workflow with two WriteLine activities from code and then invoking it:
 
 ```c#
 
@@ -77,42 +74,100 @@ public class HelloWorldWorkflow : IWorkflow
     public void Build(IWorkflowBuilder builder)
     {
         builder
-            .StartWith<HelloWorld>()
-            .Then<GoodByeWorld>();
+            .WriteLine("Hello World!")
+            .WriteLine("Goodbye cruel world...");
     }
 }
 
 // Setup a service collection.
 var services = new ServiceCollection()
-    .AddWorkflows()
-    .AddActivity<HelloWorld>()
-    .AddActivity<GoodByeWorld>()
+    .AddElsa()
+    .AddConsoleActivities()
+    .AddWorkflows<HelloWorldWorkflow>()
     .BuildServiceProvider();
 
-// Invoke the workflow.
-var invoker = services.GetService<IWorkflowInvoker>();
-await invoker.InvokeAsync<HelloWorldWorkflow>();
+// Run startup actions (not needed when registering Elsa with a Host).
+var startupRunner = services.GetRequiredService<IStartupRunner>();
+await startupRunner.StartupAsync();
+
+// Get a workflow runner.
+var workflowRunner = services.GetService<IWorkflowRunner>();
+
+// Run the workflow.
+await workflowRunner.RunWorkflowAsync<HelloWorld>();
 
 // Output:
 // /> Hello World!
-// /> Goodbye cruel World...
+// /> Goodbye cruel world...
 ```
 
-### Persistence
+## Declarative Workflows
 
-Workflows can be persisted using virtually any storage mechanism.
-The following providers will be supported:
+Instead of writing C# code to define a workflow, Elsa also supports reading and writing declarative workflows from the database as well as from JSON formats.
+The following is a small example that constructs a workflow using a generic set of workflow and activity models, describing the workflow.
+This models is then serialized to JSON and deserialized back into the model
 
-- In Memory
-- File System
-- SQL Server
-- MongoDB
-- CosmosDB
+```csharp
+// Create a service container with Elsa services.
+var services = new ServiceCollection()
+    .AddElsa(option => option.UsePersistence(db => db.UseSqLite("Data Source=elsa.db;Cache=Shared", IsolationLevel.ReadUncommitted)))
+    .AddConsoleActivities()
+    .BuildServiceProvider();
 
-### Formats
+// Run startup actions (not needed when registering Elsa with a Host).
+var startupRunner = services.GetRequiredService<IStartupRunner>();
+await startupRunner.StartupAsync();
 
-Currently, workflows can be stored in YAML or JSON format.
-The following demonstrates a simple workflow expressed in YAML and JSON, respectively:
+// Define a workflow.
+var workflowDefinition = new WorkflowDefinition
+{
+    WorkflowDefinitionId = "SampleWorkflow",
+    WorkflowDefinitionVersionId = "1", 
+    Version = 1,
+    IsPublished = true,
+    IsLatest = true,
+    IsEnabled = true,
+    PersistenceBehavior = WorkflowPersistenceBehavior.Suspended,
+    Activities = new[]
+    {
+        new ActivityDefinition
+        {
+            ActivityId = "activity-1",
+            Type = nameof(WriteLine),
+            Properties = new ActivityDefinitionProperties
+            {
+                [nameof(WriteLine.Text)] = new ActivityDefinitionPropertyValue
+                {
+                    Syntax = "Literal",
+                    Expression = "Hello World!",
+                    Type = typeof(string)
+                }
+            }
+        }, 
+    }
+};
+
+// Serialize workflow definition to JSON.
+var serializer = services.GetRequiredService<IContentSerializer>();
+var json = serializer.Serialize(workflowDefinition);
+
+Console.WriteLine(json);
+
+// Deserialize workflow definition from JSON.
+var deserializedWorkflowDefinition = serializer.Deserialize<WorkflowDefinition>(json);
+
+// Materialize workflow.
+var materializer = services.GetRequiredService<IWorkflowBlueprintMaterializer>();
+var workflowBlueprint = materializer.CreateWorkflowBlueprint(deserializedWorkflowDefinition);
+
+// Execute workflow.
+var workflowRunner = services.GetRequiredService<IWorkflowRunner>();
+await workflowRunner.RunWorkflowAsync(workflowBlueprint);
+```
+
+## Persistence
+
+Elsa uses [YesSql](https://github.com/sebastienros/yessql) as the ORM of choice for data access, offering the most flexibility in terms of custom querying capabilities (using map/reduce index providers).
 
 ## Long Running Workflows
 
@@ -136,7 +191,7 @@ with Elsa, you simply add triggers anywhere in the workflow, making it easier to
 I've always liked Windows Workflow Foundation, but unfortunately [development appears to have halted](https://forums.dotnetfoundation.org/t/what-is-the-roadmap-of-workflow-foundation/3066).
 Although there's an effort being made to [port WF to .NET Standard](https://github.com/dmetzgar/corewf), there are a few reasons I prefer Elsa:
 
-- Elsa intrinsically supports triggering events that starts new workflows and resumes halted workflow instances in an easy to use manner. E.g. `workflowRunner.TriggerWorkflowAsync("HttpRequestTrigger");"` will start and resume all workflows that either start with or are halted on the `HttpRequestTrigger`. 
+- Elsa intrinsically supports triggering events that starts new workflows and resumes halted workflow instances in an easy to use manner. E.g. `workflowHost.TriggerWorkflowAsync("HttpRequestTrigger");"` will start and resume all workflows that either start with or are halted on the `HttpRequestTrigger`. 
 - Elsa has a web-based workflow designer. I once worked on a project for a customer that was building a huge SaaS platform. One of the requirements was to provide a workflow engine and a web-based editor. Although there are commercial workflow libraries and editors out there, the business model required open-source software. We used WF and the re-hosted Workflow Designer. It worked, but it wasn't great.
 
 ### What about Orchard Workflows?
@@ -149,31 +204,11 @@ In fact, Elsa Workflows is taken & adapted from Orchard Core's Workflows module.
 
 ## Features
 
-The following lists some of Elsa's key features:
-
-- **Small, simple and fast**. The library should be lean & mean, meaning that it should be **easy to use**, **fast to execute** and **easy to extend** with custom activities. 
-- Invoke arbitrary workflows as if they were **functions of my application**.
-- Trigger events that cause the appropriate workflows to **automatically start/resume** based on that event.
-- Support **long-running workflows**. When a workflow executes and encounters an activity that requires e.g. user input, the workflow will halt, be persisted and go out of memory until it's time to resume. this could be a few seconds later, a few minutes, hours, days or even years.
-- **Correlate** workflows with application-specific data. This is a key requirement for long-running workflows.
-- Store workflows in a **file-based** format so I can make it part of source-control.
-- Store workflows in a **database** when I don't want to make them part of source control.
-- A **web-based designer**. Whether I store my workflows on a file system or in a database, and whether I host the designer online or only on my local machine, I need to be able to edit my workflows.
-- Configure workflow activities with **expressions**. Oftentimes, information being processed by a workflow is dynamic in nature, and activities need a way to interact with this information. Workflow expressions allow for this.
-- **Extensible** with application-specific **activities**, **custom stores** and **scripting engines**.
-- Invoke other workflows. This allows for invoking reusable application logic from various workflows. Like invoking general-purpose functions from C# without having to duplicate code.
-- **View & analyze** executed workflow instances. I want to see **which path** a workflow took, its **runtime state**, where it **faulted** and **compensate** faulted workflows.
-- **Embed** the web-based workflow designer in **my own dashboard** application. This gives me the option of creating a single Workflow Host that runs all of my application logic, but also the option of hosting a workflows runtime in individual micro services (allowing for orchestration as well as choreography).
-- **Separation of concerns**: The workflow core library, runtime and designer should all be separated. I.e. when the workflow host should not have a dependency on the web-based designer. This allows one for example to implement a desktop-based designer, or not use a designer at all and just go with YAML files. The host in the end only needs the workflow definitions and access to persistence stores.
-- **On premise** or **managed** in the cloud - both scenarios are supported, because Elsa is just a set of NuGet packages that you reference from your application.
+TODO
 
 ## How to use Elsa
 
-Elsa is distributed as a set of NuGet packages, which makes it easy to add to your application.
-When working with Elsa, you'll typically want to have at least two applications:
-
-1. An ASP.NET Core application to host the workflows designer.
-2. A .NET application that executed workflows
+TODO
 
 ### Setting up a Workflow Designer ASP.NET Core Application
 
@@ -185,13 +220,7 @@ TODO: describe all the steps to add packages and register services.
 
 ### Building & Running Elsa Workflows Dashboard
 
-In order to build & run Elsa on your local machine, follow these steps:
-
-1. Clone the repository.
-2. Run NPM install on all folders containing packages.json (or run `node npm-install.js` - a script in the root that recursively installs the Node packages)
-3. Execute gulp build from the directory src\dashboard\Elsa.Dashboard\Theme\argon-dashboard
-4. Open a shell and navigate to `src/samples/Sample16` and run `dotnet run`.
-5. Navigate to https://localhost:8632/elsa/home
+TODO
 
 # Code of Conduct
 
