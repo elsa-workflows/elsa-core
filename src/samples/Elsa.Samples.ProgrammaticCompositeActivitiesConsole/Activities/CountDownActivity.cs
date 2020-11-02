@@ -2,8 +2,11 @@
 using Elsa.Builders;
 using Elsa.Services;
 
-namespace Elsa.Samples.CompositeActivitiesConsole.Activities
+namespace Elsa.Samples.ProgrammaticCompositeActivitiesConsole.Activities
 {
+    /// <summary>
+    /// Custom activities that inherit from <seealso cref="CompositeActivity"/> declare their own mini-workflow.
+    /// </summary>
     public class CountDownActivity : CompositeActivity
     {
         public override void Build(ICompositeActivityBuilder composite)

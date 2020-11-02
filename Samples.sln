@@ -112,7 +112,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.ContextualWork
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.RunChildWorkflowWorker", "src\samples\Elsa.Samples.RunChildWorkflowWorker\Elsa.Samples.RunChildWorkflowWorker.csproj", "{1E5E1669-AEC9-4DA9-9A3D-3D405101A246}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.CompositeActivitiesConsole", "src\samples\Elsa.Samples.CompositeActivitiesConsole\Elsa.Samples.CompositeActivitiesConsole.csproj", "{CC39E9F8-72D2-4A5B-846B-E2764DFE1C19}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.ProgrammaticCompositeActivitiesConsole", "src\samples\Elsa.Samples.ProgrammaticCompositeActivitiesConsole\Elsa.Samples.ProgrammaticCompositeActivitiesConsole.csproj", "{CC39E9F8-72D2-4A5B-846B-E2764DFE1C19}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
