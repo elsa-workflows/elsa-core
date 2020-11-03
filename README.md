@@ -1,7 +1,7 @@
 ## Elsa Workflows
 
-![Nuget (with prereleases)](https://img.shields.io/nuget/vpre/Elsa)
-![MyGet (with prereleases)](https://img.shields.io/myget/elsa-2/vpre/Elsa?label=myget)
+[![Nuget (with prereleases)](https://img.shields.io/nuget/vpre/Elsa)](https://www.nuget.org/packages/Elsa/2.0.0-preview5-0)
+[![MyGet (with prereleases)](https://img.shields.io/myget/elsa-2/vpre/Elsa?label=myget)](https://www.myget.org/gallery/elsa-2)
 [![Build status](https://ci.appveyor.com/api/projects/status/wix4v6o2inamn153?svg=true)](https://ci.appveyor.com/project/sfmskywalker/elsa-2-builds)
 [![Gitter](https://badges.gitter.im/elsa-workflows/community.svg)](https://gitter.im/elsa-workflows/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 [![Stack Overflow questions](https://img.shields.io/badge/stackoverflow-elsa_workflows-orange.svg)]( http://stackoverflow.com/questions/tagged/elsa-workflows )
