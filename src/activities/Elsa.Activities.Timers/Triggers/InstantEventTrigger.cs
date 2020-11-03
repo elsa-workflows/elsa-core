@@ -1,7 +1,6 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Extensions;
-using Elsa.Indexes;
 using Elsa.Services;
 using Elsa.Triggers;
 using NodaTime;

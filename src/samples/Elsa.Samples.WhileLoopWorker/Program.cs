@@ -3,7 +3,6 @@ using Elsa.Samples.WhileLoopWorker.Workflows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NodaTime;
-using YesSql.Provider.Sqlite;
 
 namespace Elsa.Samples.WhileLoopWorker
 {
@@ -20,7 +19,7 @@ namespace Elsa.Samples.WhileLoopWorker
                     (hostContext, services) =>
                     {
                         services
-                            .AddElsa(options => options.UsePersistence(db => db.UseSqLite("Data Source=elsa.db;Cache=Shared")))
+                            .AddElsa()
                             .AddConsoleActivities()
                             .AddTimerActivities(options => options.SweepInterval = Duration.FromSeconds(1))
                             .AddSingleton<PhoneCallService>()

@@ -65,7 +65,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Elsa.Abstractions\Elsa.Abstractions.csproj" />
-        <ProjectReference Include="..\Elsa.YesSql.Provider.Sqlite.InMemory\Elsa.YesSql.Provider.Sqlite.InMemory.csproj" />
     </ItemGroup>
 
     <ItemGroup>
