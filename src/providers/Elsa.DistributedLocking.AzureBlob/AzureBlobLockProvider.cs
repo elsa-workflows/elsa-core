@@ -26,10 +26,10 @@ namespace Elsa
         private readonly List<LockedBlob> _lockedBlobs = new List<LockedBlob>();
         private readonly string _connectionString;
         private readonly TimeSpan _leaseTime;
-        private readonly ILogger<AzureBlobLockProvider> _logger;
+        private readonly ILogger _logger;
         private readonly TimeSpan _renewInterval;
-        private CloudBlobContainer _cloudBlobContainer;
-        private Timer _renewTimer;
+        private CloudBlobContainer? _cloudBlobContainer;
+        private Timer _renewTimer = default!;
 
         public AzureBlobLockProvider(
             string connectionString,
@@ -39,6 +39,7 @@ namespace Elsa
         {
             _logger = logger;
             _connectionString = connectionString;
+            
             if (leaseTime >= TimeSpan.FromSeconds(MaxLeaseTime) || leaseTime <= TimeSpan.FromSeconds(MinLeaseTime))
             {
                 _logger.LogInformation("Lease time must be between 15 Seconds and 60 seconds, Found {leaseTime.TotalSeconds} seconds. Setting default value of 60 seconds", leaseTime.TotalSeconds);
@@ -58,10 +59,7 @@ namespace Elsa
             _renewInterval = renewInterval;
         }
 
-        public Task<bool> AcquireLockAsync(string name, CancellationToken cancellationToken = default) =>
-            name == null
-                ? throw new ArgumentNullException(nameof(name))
-                : CreateLockAsync(name, cancellationToken);
+        public Task<bool> AcquireLockAsync(string name, CancellationToken cancellationToken = default) => CreateLockAsync(name, cancellationToken);
 
         private async Task<bool> CreateLockAsync(string name, CancellationToken cancellationToken = default)
         {
@@ -161,7 +159,7 @@ namespace Elsa
                             _cloudBlobContainer = blobClient.GetContainerReference(ContainerName);
                             if (!_cloudBlobContainer.Exists())
                             {
-                                _cloudBlobContainer.CreateIfNotExists(BlobContainerPublicAccessType.Off, (BlobRequestOptions)null, (OperationContext)null);
+                                _cloudBlobContainer.CreateIfNotExists(BlobContainerPublicAccessType.Off);
                             }
                         }
                     }

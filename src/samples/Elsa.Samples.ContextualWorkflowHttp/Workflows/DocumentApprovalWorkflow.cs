@@ -63,7 +63,7 @@ namespace Elsa.Samples.ContextualWorkflowHttp.Workflows
         private static void StoreComment(ActivityExecutionContext context)
         {
             var document = (Document)context.WorkflowExecutionContext.WorkflowContext!;
-            var comment = (Comment)((HttpRequestModel)context.Input)!.Body!;
+            var comment = (Comment)((HttpRequestModel)context.Input!).Body!;
             document.Comments.Add(comment);
         }
 

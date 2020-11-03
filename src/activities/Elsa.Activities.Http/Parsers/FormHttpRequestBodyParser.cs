@@ -13,7 +13,7 @@ namespace Elsa.Activities.Http.Parsers
         public int Priority => 0;
         public string?[] SupportedContentTypes => new[] { "application/x-www-form-urlencoded" };
         
-        public async Task<object> ParseAsync(HttpRequest request, Type? targetType = default, CancellationToken cancellationToken = default)
+        public async Task<object?> ParseAsync(HttpRequest request, Type? targetType = default, CancellationToken cancellationToken = default)
         {
             var form = await request.ReadFormAsync(cancellationToken);
             return form.ToDictionary(

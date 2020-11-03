@@ -12,9 +12,7 @@ namespace Elsa.Services
     {
         ValueTask SaveAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken = default);
         ValueTask DeleteAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken = default);
-        IQuery<WorkflowInstance> Query();
         IQuery<WorkflowInstance, TIndex> Query<TIndex>() where TIndex : class, IIndex;
         IQuery<WorkflowInstance, TIndex> Query<TIndex>(Expression<Func<TIndex, bool>> predicate) where TIndex : class, IIndex;
-        IQuery<WorkflowInstance> ExecuteQuery(ICompiledQuery<WorkflowInstance> query);
     }
 }
