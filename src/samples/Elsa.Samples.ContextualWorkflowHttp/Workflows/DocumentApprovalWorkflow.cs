@@ -28,7 +28,7 @@ namespace Elsa.Samples.ContextualWorkflowHttp.Workflows
                 .ReceiveHttpPostRequest<Document>("/documents")
 
                 // Store the document as the workflow context. It will be saved automatically when the workflow gets suspended.
-                .Then(context => context.WorkflowExecutionContext.WorkflowContext = (Document)((HttpRequestModel)context.Input!).Body!)
+                .Then(context => context.SetWorkflowContext(context.GetInput<HttpRequestModel>().GetBody<Document>()))
 
                 // Write an HTTP response. 
                 .WriteHttpResponse(
@@ -57,7 +57,7 @@ namespace Elsa.Samples.ContextualWorkflowHttp.Workflows
                     });
         }
 
-        private static Document GetDocument(ActivityExecutionContext context) => (Document)context.WorkflowExecutionContext.WorkflowContext!;
+        private static Document GetDocument(ActivityExecutionContext context) => context.GetWorkflowContext<Document>();
         private static string GetDocumentId(ActivityExecutionContext context) => GetDocument(context).DocumentId;
 
         private static void StoreComment(ActivityExecutionContext context)

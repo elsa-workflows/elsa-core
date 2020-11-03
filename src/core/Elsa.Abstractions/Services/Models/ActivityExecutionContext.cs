@@ -58,7 +58,11 @@ namespace Elsa.Services.Models
             activity.Data = ActivityInstance.Data;
             return activity;
         }
-        
+
+        public T GetInput<T>() => (T)Input!; 
         public object? GetOutputFrom(string activityName) => WorkflowExecutionContext.GetOutputFrom(activityName);
+        public T GetOutputFrom<T>(string activityName) => (T)GetOutputFrom(activityName)!;
+        public void SetWorkflowContext(object? value) => WorkflowExecutionContext.SetWorkflowContext(value);
+        public T GetWorkflowContext<T>() => WorkflowExecutionContext.GetWorkflowContext<T>();
     }
 }

@@ -27,7 +27,7 @@ namespace Elsa.Services.Models
             IsFirstPass = true;
             Serializer = serviceProvider.GetRequiredService<JsonSerializer>();
         }
-        
+
         public IWorkflowBlueprint WorkflowBlueprint { get; }
         public IServiceProvider ServiceProvider { get; }
         public WorkflowInstance WorkflowInstance { get; }
@@ -49,7 +49,7 @@ namespace Elsa.Services.Models
             foreach (var activity in activities)
                 ScheduleActivity(activity);
         }
-        
+
         public void PostScheduleActivities(IEnumerable<ScheduledActivity> activities)
         {
             foreach (var activity in activities)
@@ -68,7 +68,7 @@ namespace Elsa.Services.Models
             get => WorkflowInstance.CorrelationId;
             set => WorkflowInstance.CorrelationId = value;
         }
-        
+
         public bool DeleteCompletedInstances { get; set; }
         public ICollection<ExecutionLogEntry> ExecutionLog => WorkflowInstance.ExecutionLog;
         public WorkflowStatus Status => WorkflowInstance.Status;
@@ -98,11 +98,9 @@ namespace Elsa.Services.Models
         public IActivityBlueprint? GetActivityBlueprintById(string id) => WorkflowBlueprint.Activities.FirstOrDefault(x => x.Id == id);
         public IActivityBlueprint? GetActivityBlueprintByName(string name) => WorkflowBlueprint.Activities.FirstOrDefault(x => x.Name == name);
 
-        private JObject Serialize(IActivity activity) => JObject.FromObject(activity);
-
         public void SchedulePostActivities()
         {
-            while(HasPostScheduledActivities)
+            while (HasPostScheduledActivities)
                 ScheduleActivity(WorkflowInstance.PostScheduledActivities.Pop());
         }
 
@@ -112,5 +110,9 @@ namespace Elsa.Services.Models
             var activityInstance = WorkflowInstance.Activities.Single(x => x.Id == activityBlueprint.Id);
             return activityInstance.Output;
         }
+
+        public T GetOutputFrom<T>(string activityName) => (T)GetOutputFrom(activityName)!;
+        public void SetWorkflowContext(object? value) => WorkflowContext = value;
+        public T GetWorkflowContext<T>() => (T)WorkflowContext!;
     }
 }
