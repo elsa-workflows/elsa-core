@@ -193,8 +193,8 @@ namespace Elsa.Builders
         {
             var isComposite = typeof(CompositeActivity).IsAssignableFrom(builder.ActivityType);
             return isComposite
-                ? new CompositeActivityBlueprint(builder.ActivityId, builder.Name, builder.ActivityType.Name, builder.PersistWorkflow, builder.LoadWorkflowContext, builder.SaveWorkflowContext, builder.BuildActivityAsync())
-                : new ActivityBlueprint(builder.ActivityId, builder.Name, builder.ActivityType.Name, builder.PersistWorkflow, builder.LoadWorkflowContext, builder.SaveWorkflowContext, builder.BuildActivityAsync());
+                ? new CompositeActivityBlueprint(builder.ActivityId, builder.Name, builder.ActivityType.Name, builder.PersistWorkflow, builder.LoadWorkflowContextEnabled, builder.SaveWorkflowContextEnabled, builder.BuildActivityAsync())
+                : new ActivityBlueprint(builder.ActivityId, builder.Name, builder.ActivityType.Name, builder.PersistWorkflow, builder.LoadWorkflowContextEnabled, builder.SaveWorkflowContextEnabled, builder.BuildActivityAsync());
         }
     }
 }

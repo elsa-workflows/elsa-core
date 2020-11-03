@@ -16,16 +16,16 @@ namespace Elsa.Builders
         public string? Description { get; set; }
         IDictionary<string, IActivityPropertyValueProvider>? PropertyValueProviders { get; }
         bool PersistWorkflow { get; set; }
-        bool LoadWorkflowContext { get; set; }
-        bool SaveWorkflowContext { get; set; }
+        bool LoadWorkflowContextEnabled { get; set; }
+        bool SaveWorkflowContextEnabled { get; set; }
         IActivityBuilder Add<T>(Action<ISetupActivity<T>>? setup = default) where T : class, IActivity;
         IOutcomeBuilder When(string outcome);
         IActivityBuilder Then(IActivityBuilder targetActivity);
         IConnectionBuilder Then(string activityName);
         IActivityBuilder WithId(string? id);
         IActivityBuilder WithName(string? name);
-        IActivityBuilder WithLoadWorkflowContext(bool value = true);
-        IActivityBuilder WithSaveWorkflowContext(bool value = true);
+        IActivityBuilder LoadWorkflowContext(bool value = true);
+        IActivityBuilder SaveWorkflowContext(bool value = true);
         Func<ActivityExecutionContext, CancellationToken, ValueTask<IActivity>> BuildActivityAsync();
     }
 }
