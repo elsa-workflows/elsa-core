@@ -9,7 +9,7 @@ namespace Elsa.Activities.Http.Extensions
 {
     public static class HttpRequestExtensions
     {
-        public static async Task<byte[]> ReadContentAsBytesAsync(
+        public static async Task<byte[]?> ReadContentAsBytesAsync(
             this HttpRequest request,
             CancellationToken cancellationToken = default)
         {
@@ -25,12 +25,12 @@ namespace Elsa.Activities.Http.Extensions
             return content;
         }
 
-        public static async Task<string> ReadContentAsStringAsync(
+        public static async Task<string?> ReadContentAsStringAsync(
             this HttpRequest request,
             CancellationToken cancellationToken = default)
         {
             var bytes = await request.ReadContentAsBytesAsync(cancellationToken);
-            return Encoding.UTF8.GetString(bytes);
+            return bytes != null ? Encoding.UTF8.GetString(bytes) : default;
         }
 
         public static Uri ToAbsoluteUrl(this HttpRequest request, string relativePath)

@@ -21,9 +21,13 @@ namespace Elsa.Activities.Http.Parsers
         public int Priority => 0;
         public string?[] SupportedContentTypes => new[] { "application/json", "text/json" };
         
-        public async Task<object> ParseAsync(HttpRequest request, Type? targetType = default, CancellationToken cancellationToken = default)
+        public async Task<object?> ParseAsync(HttpRequest request, Type? targetType = default, CancellationToken cancellationToken = default)
         {
             var json = await request.ReadContentAsStringAsync(cancellationToken);
+
+            if (json == null)
+                return default;
+            
             targetType ??= typeof(ExpandoObject);
             return _serializer.Deserialize(json, targetType)!;
         }

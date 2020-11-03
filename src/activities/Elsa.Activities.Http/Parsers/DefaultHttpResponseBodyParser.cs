@@ -9,9 +9,7 @@ namespace Elsa.Activities.Http.Parsers
     public class DefaultHttpResponseBodyParser : IHttpResponseBodyParser
     {
         public int Priority => -1;
-        public IEnumerable<string> SupportedContentTypes => new[] { "", default };
-
-        public async Task<object> ParseAsync(HttpResponseMessage response, CancellationToken cancellationToken)
-            => await response.Content.ReadAsStringAsync();
+        public IEnumerable<string?> SupportedContentTypes => new[] { "", default };
+        public async Task<object> ParseAsync(HttpResponseMessage response, CancellationToken cancellationToken) => await response.Content.ReadAsStringAsync();
     }
 }

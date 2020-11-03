@@ -9,6 +9,6 @@ namespace Elsa.Activities.Http.Services
     {
         int Priority { get; }
         string?[] SupportedContentTypes { get; }
-        Task<object> ParseAsync(HttpRequest request, Type? targetType = default, CancellationToken cancellationToken = default);
+        Task<object?> ParseAsync(HttpRequest request, Type? targetType = default, CancellationToken cancellationToken = default);
     }
 }

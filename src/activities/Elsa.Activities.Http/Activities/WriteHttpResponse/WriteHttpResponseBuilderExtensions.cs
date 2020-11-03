@@ -9,14 +9,13 @@ namespace Elsa.Activities.Http
 {
     public static class WriteHttpResponseBuilderExtensions
     {
-        public static IActivityBuilder WriteHttpResponse(this IBuilder builder,
-            Action<ISetupActivity<WriteHttpResponse>> setup) => builder.Then(setup);
+        public static IActivityBuilder WriteHttpResponse(this IBuilder builder, Action<ISetupActivity<WriteHttpResponse>> setup) => builder.Then(setup);
 
         public static IActivityBuilder WriteHttpResponse(
             this IBuilder builder,
             Func<ActivityExecutionContext, HttpStatusCode> statusCode,
-            Func<ActivityExecutionContext, ValueTask<string>> content,
-            Func<ActivityExecutionContext, string> contentType) =>
+            Func<ActivityExecutionContext, ValueTask<string?>> content,
+            Func<ActivityExecutionContext, string?> contentType) =>
             builder.WriteHttpResponse(
                 setup => setup
                     .Set(x => x.StatusCode, statusCode)
@@ -26,8 +25,8 @@ namespace Elsa.Activities.Http
         public static IActivityBuilder WriteHttpResponse(
             this IBuilder builder,
             Func<ActivityExecutionContext, HttpStatusCode> statusCode,
-            Func<ActivityExecutionContext, string> content,
-            Func<ActivityExecutionContext, string> contentType) =>
+            Func<ActivityExecutionContext, string?> content,
+            Func<ActivityExecutionContext, string?> contentType) =>
             builder.WriteHttpResponse(
                 setup => setup
                     .Set(x => x.StatusCode, statusCode)
@@ -37,8 +36,8 @@ namespace Elsa.Activities.Http
         public static IActivityBuilder WriteHttpResponse(
             this IBuilder builder,
             Func<HttpStatusCode> statusCode,
-            Func<string> content,
-            Func<string> contentType) =>
+            Func<string?> content,
+            Func<string?> contentType) =>
             builder.WriteHttpResponse(
                 setup => setup
                     .Set(x => x.StatusCode, statusCode)
@@ -48,8 +47,8 @@ namespace Elsa.Activities.Http
         public static IActivityBuilder WriteHttpResponse(
             this IBuilder builder,
             HttpStatusCode statusCode,
-            string content,
-            string contentType) =>
+            string? content,
+            string? contentType) =>
             builder.WriteHttpResponse(
                 setup => setup
                     .Set(x => x.StatusCode, statusCode)

@@ -28,7 +28,7 @@ namespace Elsa.Samples.ContextualWorkflowHttp.Workflows
                 .ReceiveHttpPostRequest<Document>("/documents")
 
                 // Store the document as the workflow context. It will be saved automatically when the workflow gets suspended.
-                .Then(context => context.WorkflowExecutionContext.WorkflowContext = (Document)((HttpRequestModel)context.Input!).Body)
+                .Then(context => context.WorkflowExecutionContext.WorkflowContext = (Document)((HttpRequestModel)context.Input!).Body!)
 
                 // Write an HTTP response. 
                 .WriteHttpResponse(
@@ -63,7 +63,7 @@ namespace Elsa.Samples.ContextualWorkflowHttp.Workflows
         private static void StoreComment(ActivityExecutionContext context)
         {
             var document = (Document)context.WorkflowExecutionContext.WorkflowContext!;
-            var comment = (Comment)((HttpRequestModel)context.Input)!.Body;
+            var comment = (Comment)((HttpRequestModel)context.Input)!.Body!;
             document.Comments.Add(comment);
         }
 

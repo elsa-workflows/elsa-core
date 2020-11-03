@@ -4,8 +4,8 @@ namespace Elsa.Activities.Http.Models
 {
     public class StringValuesModel
     {
-        public string Value { get; set; }
-        public string[] Values { get; set; }
+        public string? Value { get; set; }
+        public string[]? Values { get; set; }
 
         public StringValuesModel()
         {
@@ -17,20 +17,17 @@ namespace Elsa.Activities.Http.Models
             Values = value.Count != 1 ? value.ToArray() : default;
         }
 
-        public override string ToString()
+        public override string? ToString()
         {
             if (Values == null)
                 return Value;
 
-            switch (Values.Length)
+            return Values.Length switch
             {
-                case 0:
-                    return null;
-                case 1:
-                    return Values[0];
-                default:
-                    return string.Join(",", Values);
-            }
+                0 => default,
+                1 => Values[0],
+                _ => string.Join(",", Values)
+            };
         }
     }
 }

@@ -46,7 +46,7 @@ namespace Elsa.Activities.Http
         /// The URL to invoke. 
         /// </summary>
         [ActivityProperty(Hint = "The URL to send the HTTP request to.")]
-        public PathString Url { get; set; }
+        public PathString? Url { get; set; }
 
         /// <summary>
         /// The HTTP method to use.
@@ -56,7 +56,7 @@ namespace Elsa.Activities.Http
             Hint = "The HTTP method to use when making the request."
         )]
         [SelectOptions("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD")]
-        public string Method { get; set; }
+        public string? Method { get; set; }
 
         /// <summary>
         /// The body to send along with the request.
@@ -73,10 +73,10 @@ namespace Elsa.Activities.Http
             Hint = "The content type to send with the request (if applicable)."
         )]
         [SelectOptions("text/plain", "text/html", "application/json", "application/xml")]
-        public string ContentType { get; set; }
+        public string? ContentType { get; set; }
 
         [ActivityProperty(Hint = "The Authorization header value to send.")]
-        public string Authorization { get; set; }
+        public string? Authorization { get; set; }
 
         /// <summary>
         /// The headers to send along with the request.
@@ -141,7 +141,8 @@ namespace Elsa.Activities.Http
 
         private HttpRequestMessage CreateRequest()
         {
-            var methodSupportsBody = GetMethodSupportsBody(Method);
+            var method = Method ?? HttpMethods.Get;
+            var methodSupportsBody = GetMethodSupportsBody(method);
             var url = Url;
             var request = new HttpRequestMessage(new HttpMethod(Method), url);
             var authorizationHeaderValue = Authorization;

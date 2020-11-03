@@ -21,7 +21,7 @@ namespace Elsa.Activities.Http.Services
 
         public bool TryDecryptToken<T>(string token, out T payload)
         {
-            payload = default;
+            payload = default!;
 
             try
             {

@@ -7,7 +7,7 @@ namespace Elsa.ComponentTests.Helpers
 {
     public class ElsaHostApplicationFactory : WebApplicationFactory<Startup>
     {
-        private string _dbConnectionString;
+        private string _dbConnectionString = default!;
 
         public void SetDbConnectionString(string connectionString)
         {
