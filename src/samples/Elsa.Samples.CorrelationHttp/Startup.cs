@@ -1,8 +1,6 @@
-using System.Data;
 using Elsa.Samples.CorrelationHttp.Workflows;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
-using YesSql.Provider.Sqlite;
 
 namespace Elsa.Samples.CorrelationHttp
 {

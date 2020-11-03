@@ -1,8 +1,6 @@
-﻿using System.Data;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
-using YesSql.Provider.Sqlite;
 
 namespace Elsa.Samples.HelloWorldConsole
 {

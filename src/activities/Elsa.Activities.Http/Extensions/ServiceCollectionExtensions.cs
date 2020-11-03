@@ -1,6 +1,5 @@
 using System;
 using Elsa.Activities.Http;
-using Elsa.Activities.Http.Indexes;
 using Elsa.Activities.Http.Options;
 using Elsa.Activities.Http.Parsers;
 using Elsa.Activities.Http.RequestHandlers.Handlers;
@@ -41,8 +40,6 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IActionContextAccessor, ActionContextAccessor>()
                 .AddSingleton<IAbsoluteUrlProvider, DefaultAbsoluteUrlProvider>()
                 .AddTriggerProvider<ReceiveHttpRequestTriggerProvider>()
-                .AddIndexProvider<WorkflowInstanceByReceiveHttpRequestIndexProvider>()
-                .AddDataMigration<Migrations>()
                 .AddHttpContextAccessor()
                 .AddNotificationHandlers(typeof(ServiceCollectionExtensions))
                 .AddDataProtection();

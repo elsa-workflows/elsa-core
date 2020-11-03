@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Data;
 using System.Threading.Tasks;
 using Elsa.Activities.Console;
 using Elsa.Models;
@@ -7,7 +6,6 @@ using Elsa.Scripting.Liquid.Services;
 using Elsa.Serialization;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
-using YesSql.Provider.Sqlite;
 
 namespace Elsa.Samples.Serialization
 {

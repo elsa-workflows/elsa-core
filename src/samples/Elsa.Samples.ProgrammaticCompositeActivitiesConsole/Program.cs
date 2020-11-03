@@ -1,10 +1,8 @@
-﻿using System.Data;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Elsa.Samples.ProgrammaticCompositeActivitiesConsole.Activities;
 using Elsa.Samples.ProgrammaticCompositeActivitiesConsole.Workflows;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
-using YesSql.Provider.Sqlite;
 
 namespace Elsa.Samples.ProgrammaticCompositeActivitiesConsole
 {

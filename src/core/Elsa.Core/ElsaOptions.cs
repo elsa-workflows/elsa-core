@@ -13,7 +13,6 @@ using Rebus.Persistence.InMem;
 using Rebus.Routing.TypeBased;
 using Rebus.Transport.InMem;
 using YesSql;
-using Elsa.YesSql.Provider.Sqlite.InMemory;
 using Storage.Net;
 using Storage.Net.Blobs;
 using YesSql.Provider.Sqlite;

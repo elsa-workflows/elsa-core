@@ -8,11 +8,9 @@ namespace Elsa.Activities.Http.Extensions
     {
         public static async Task<byte[]> ReadBytesToEndAsync(this Stream input, CancellationToken cancellationToken)
         {
-            using (var ms = new MemoryStream())
-            {
-                await input.CopyToAsync(ms, 16 * 1024, cancellationToken);
-                return ms.ToArray();
-            }
+            using var ms = new MemoryStream();
+            await input.CopyToAsync(ms, 16 * 1024, cancellationToken);
+            return ms.ToArray();
         }
     }
 }
