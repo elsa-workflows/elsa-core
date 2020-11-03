@@ -19,7 +19,9 @@ namespace Elsa.Services.Models
             string? name,
             string type,
             bool persistWorkflow,
-            Func<ActivityExecutionContext, CancellationToken, ValueTask<IActivity>> createActivity) : base(id, name, type, persistWorkflow, createActivity)
+            bool loadWorkflowContext,
+            bool saveWorkflowContext,
+            Func<ActivityExecutionContext, CancellationToken, ValueTask<IActivity>> createActivity) : base(id, name, type, persistWorkflow, loadWorkflowContext, saveWorkflowContext, createActivity)
         {
         }
 

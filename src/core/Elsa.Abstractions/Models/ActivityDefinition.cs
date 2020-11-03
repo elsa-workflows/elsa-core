@@ -10,6 +10,8 @@ namespace Elsa.Models
         public int? Left { get; set; }
         public int? Top { get; set; }
         public bool PersistWorkflow { get; set; }
+        public bool LoadWorkflowContext { get; set; }
+        public bool SaveWorkflowContext { get; set; }
         public ActivityDefinitionProperties Properties { get; set; } = new ActivityDefinitionProperties();
     }
 }

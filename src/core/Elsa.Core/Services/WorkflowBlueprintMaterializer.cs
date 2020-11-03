@@ -98,13 +98,14 @@ namespace Elsa.Services
 
         private static async ValueTask<IActivity> CreateActivityAsync(ActivityDefinition activityDefinition, ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var activity = context.ActivateActivity();
+            var activity = await context.ActivateActivityAsync(cancellationToken);
             activity.Description = activityDefinition.Description;
             activity.Id = activityDefinition.ActivityId;
             activity.Name = activityDefinition.Name;
             activity.DisplayName = activityDefinition.DisplayName;
             activity.PersistWorkflow = activityDefinition.PersistWorkflow;
-            await context.SetActivityPropertiesAsync(activity, cancellationToken);
+            activity.LoadWorkflowContext = activityDefinition.LoadWorkflowContext;
+            activity.SaveWorkflowContext = activityDefinition.SaveWorkflowContext;
 
             return activity;
         }

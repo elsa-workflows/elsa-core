@@ -30,6 +30,8 @@ namespace Elsa.Builders
         public string? Name { get; set; }
         public string? Description { get; set; }
         public bool PersistWorkflow { get; set; }
+        public bool LoadWorkflowContext { get; set; }
+        public bool SaveWorkflowContext { get; set; }
         public IDictionary<string, IActivityPropertyValueProvider>? PropertyValueProviders { get; protected set; }
 
         public IActivityBuilder Add<T>(
@@ -69,6 +71,18 @@ namespace Elsa.Builders
         public IActivityBuilder WithName(string? name)
         {
             Name = name;
+            return this;
+        }
+        
+        public IActivityBuilder WithLoadWorkflowContext(bool value)
+        {
+            LoadWorkflowContext = value;
+            return this;
+        }
+        
+        public IActivityBuilder WithSaveWorkflowContext(bool value)
+        {
+            SaveWorkflowContext = value;
             return this;
         }
 

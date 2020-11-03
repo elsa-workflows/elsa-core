@@ -10,6 +10,8 @@ namespace Elsa.Services.Models
         string? Name { get; }
         public string Type { get; }
         public bool PersistWorkflow { get; }
+        bool LoadWorkflowContext { get; set; }
+        bool SaveWorkflowContext { get; set; }
         Func<ActivityExecutionContext, CancellationToken, ValueTask<IActivity>> CreateActivityAsync { get; }
     }
 }

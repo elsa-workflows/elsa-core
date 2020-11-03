@@ -48,6 +48,13 @@ namespace Elsa.Services
             setup?.Invoke(activity);
             return activity;
         }
+        
+        public T ActivateActivity<T>(Action<T>? setup = null) where T : class, IActivity
+        {
+            var activity = ActivatorUtilities.GetServiceOrCreateInstance<T>(_serviceProvider);
+            setup?.Invoke(activity);
+            return activity;
+        }
 
         public IActivity ActivateActivity(IActivityBlueprint activityBlueprint)
         {
@@ -58,14 +65,9 @@ namespace Elsa.Services
                     activity.Id = activityBlueprint.Id;
                     activity.Name = activityBlueprint.Name;
                     activity.PersistWorkflow = activityBlueprint.PersistWorkflow;
+                    activity.SaveWorkflowContext = activityBlueprint.SaveWorkflowContext;
+                    activity.LoadWorkflowContext = activityBlueprint.LoadWorkflowContext;
                 });
-        }
-
-        public T ActivateActivity<T>(Action<T>? setup = null) where T : class, IActivity
-        {
-            var activity = ActivatorUtilities.GetServiceOrCreateInstance<T>(_serviceProvider);
-            setup?.Invoke(activity);
-            return activity;
         }
 
         public IActivity ActivateActivity(ActivityDefinition activityDefinition)
@@ -76,6 +78,8 @@ namespace Elsa.Services
             activity.Name = activityDefinition.Name;
             activity.DisplayName = activityDefinition.DisplayName;
             activity.PersistWorkflow = activityDefinition.PersistWorkflow;
+            activity.LoadWorkflowContext = activityDefinition.LoadWorkflowContext;
+            activity.SaveWorkflowContext = activityDefinition.SaveWorkflowContext;
             return activity;
         }
 

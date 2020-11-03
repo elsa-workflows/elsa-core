@@ -39,6 +39,16 @@ namespace Elsa.Services
         bool PersistWorkflow { get; set; }
         
         /// <summary>
+        /// A value indicating whether the workflow context (if any) will be refreshed automatically before executing this activity. 
+        /// </summary>
+        bool LoadWorkflowContext { get; set; }
+        
+        /// <summary>
+        /// A value indicating whether the workflow context (if any) will be persisted automatically after executing this activity. 
+        /// </summary>
+        bool SaveWorkflowContext { get; set; }
+        
+        /// <summary>
         /// A data store for the activity to store information that needs to be persisted as part of the workflow instance.
         /// </summary>
         JObject Data { get; set; }
