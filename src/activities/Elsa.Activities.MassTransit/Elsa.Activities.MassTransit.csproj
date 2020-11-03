@@ -29,10 +29,10 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="MassTransit.AspNetCore" Version="7.0.4" />
-      <PackageReference Include="MassTransit.Extensions.DependencyInjection" Version="7.0.4" />
-      <PackageReference Include="MassTransit.Quartz" Version="7.0.4" />
-      <PackageReference Include="MassTransit.RabbitMQ" Version="7.0.4" />
+      <PackageReference Include="MassTransit.AspNetCore" Version="7.0.6" />
+      <PackageReference Include="MassTransit.Extensions.DependencyInjection" Version="7.0.6" />
+      <PackageReference Include="MassTransit.Quartz" Version="7.0.6" />
+      <PackageReference Include="MassTransit.RabbitMQ" Version="7.0.6" />
     </ItemGroup>
 
     <ItemGroup>

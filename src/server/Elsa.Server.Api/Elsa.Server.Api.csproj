@@ -19,16 +19,16 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <FrameworkReference Include="Microsoft.AspNetCore.App"/>
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.AspNetCore" Version="2.2.0"/>
-        <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.2.0"/>
-        <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.1.9"/>
-        <PackageReference Include="Microsoft.AspNetCore.Mvc.Versioning" Version="4.1.1"/>
-        <PackageReference Include="NodaTime.Serialization.SystemTextJson" Version="1.0.0"/>
-        <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="5.6.3"/>
+        <PackageReference Include="Microsoft.AspNetCore" Version="2.2.0" />
+        <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.2.0" />
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.1.9" />
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.Versioning" Version="4.2.0" />
+        <PackageReference Include="NodaTime.Serialization.SystemTextJson" Version="1.0.0" />
+        <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="5.6.3" />
     </ItemGroup>
 
     <ItemGroup>
@@ -38,13 +38,13 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\core\Elsa\Elsa.csproj"/>
+        <ProjectReference Include="..\..\core\Elsa\Elsa.csproj" />
     </ItemGroup>
 
     <ItemGroup>
         <None Include="icon.png">
             <Pack>True</Pack>
-            <PackagePath/>
+            <PackagePath />
         </None>
     </ItemGroup>
 </Project>
