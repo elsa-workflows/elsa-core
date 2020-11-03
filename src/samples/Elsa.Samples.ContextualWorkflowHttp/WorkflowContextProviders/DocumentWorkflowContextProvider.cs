@@ -9,7 +9,7 @@ using IIdGenerator = Elsa.Services.IIdGenerator;
 
 namespace Elsa.Samples.ContextualWorkflowHttp.WorkflowContextProviders
 {
-    public class DocumentWorkflowContextProvider : WorkflowContextProvider<Document>
+    public class DocumentWorkflowContextProvider : WorkflowContextRefresher<Document>
     {
         private readonly ISession _session;
         private readonly IIdGenerator _idGenerator;
@@ -20,10 +20,10 @@ namespace Elsa.Samples.ContextualWorkflowHttp.WorkflowContextProviders
             _idGenerator = idGenerator;
         }
 
-        public override async ValueTask<object?> LoadContextAsync(LoadWorkflowContext context, CancellationToken cancellationToken = default) =>
+        public override async ValueTask<object?> LoadAsync(LoadWorkflowContext context, CancellationToken cancellationToken = default) =>
             await _session.Query<Document, DocumentIndex>(x => x.DocumentUid == context.ContextId).FirstOrDefaultAsync();
 
-        public override ValueTask<string?> SaveContextAsync(SaveWorkflowContext context, CancellationToken cancellationToken = default)
+        public override ValueTask<string?> SaveAsync(SaveWorkflowContext context, CancellationToken cancellationToken = default)
         {
             var document = (Document)context.Context;
 

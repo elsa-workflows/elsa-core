@@ -9,36 +9,42 @@ namespace Elsa.Services
 {
     public class WorkflowContextManager : IWorkflowContextManager
     {
-        private readonly IEnumerable<IWorkflowContextProvider> _providers;
+        private readonly ICollection<ILoadWorkflowContext> _refreshers;
+        private readonly ICollection<ISaveWorkflowContext> _persisters;
 
         public WorkflowContextManager(IEnumerable<IWorkflowContextProvider> providers)
         {
-            _providers = providers;
+            var list = providers.ToList();
+            _refreshers = list.Where(x => x is ILoadWorkflowContext).Cast<ILoadWorkflowContext>().ToList();
+            _persisters = list.Where(x => x is ISaveWorkflowContext).Cast<ISaveWorkflowContext>().ToList();
         }
         
         public async ValueTask<object?> LoadContext(LoadWorkflowContext context, CancellationToken cancellationToken = default)
         {
-            var provider = GetProvider(context.ContextType);
-            return provider == null ? null : await provider.LoadContextAsync(context, cancellationToken);
+            var provider = GetRefresher(context.ContextType);
+            return provider == null ? null : await provider.LoadAsync(context, cancellationToken);
         }
 
         public async ValueTask<string?> SaveContextAsync(SaveWorkflowContext context, CancellationToken cancellationToken = default)
         {
-            var provider = GetProvider(context.ContextType);
-            return provider == null ? null : await provider.SaveContextAsync(context, cancellationToken);
+            var provider = GetPersister(context.ContextType);
+            return provider == null ? null : await provider.SaveAsync(context, cancellationToken);
         }
         
-        public IWorkflowContextProvider? GetProvider(Type contextType)
+        public ILoadWorkflowContext? GetRefresher(Type contextType) => GetProvider(contextType, _refreshers);
+        public ISaveWorkflowContext? GetPersister(Type contextType) => GetProvider(contextType, _persisters);
+
+        public TProvider GetProvider<TProvider>(Type contextType, IEnumerable<TProvider> providers) where TProvider:IWorkflowContextProvider
         {
-            var providers = _providers.Where(x => x.SupportedTypes.Contains(contextType)).ToList();
+            var supportedProviders = providers.Where(x => x.SupportedTypes.Contains(contextType)).ToList();
 
-            if (!providers.Any())
-                return null;
+            if (!supportedProviders.Any())
+                return default!;
             
-            if(providers.Count > 1)
-                throw new Exception($"Multiple context providers found for type {contextType}");
+            if(supportedProviders.Count > 1)
+                throw new Exception($"Multiple providers found for type {contextType}");
 
-            return providers.Single();
+            return supportedProviders.Single();
         }
     }
 }
