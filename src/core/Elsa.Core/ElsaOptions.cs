@@ -1,4 +1,5 @@
 using System;
+using System.Data;
 using Elsa.Caching;
 using Elsa.DistributedLock;
 using Elsa.Extensions;
@@ -15,6 +16,7 @@ using YesSql;
 using Elsa.YesSql.Provider.Sqlite.InMemory;
 using Storage.Net;
 using Storage.Net.Blobs;
+using YesSql.Provider.Sqlite;
 
 namespace Elsa
 {
@@ -24,7 +26,7 @@ namespace Elsa
         {
             Services = services;
 
-            ConfigurePersistence = (sp, config) => config.UseInMemorySqlite();
+            ConfigurePersistence = (sp, config) => config.UseSqLite("Data Source=elsa.db;Cache=Shared", IsolationLevel.ReadUncommitted);
             StorageFactory = sp => Storage.Net.StorageFactory.Blobs.InMemory();
             DistributedLockProviderFactory = sp => new DefaultLockProvider();
             SignalFactory = sp => new Signal();

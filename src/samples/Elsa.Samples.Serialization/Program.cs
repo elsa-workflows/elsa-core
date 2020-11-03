@@ -24,7 +24,7 @@ namespace Elsa.Samples.Serialization
         {
             // Create a service container with Elsa services.
             var services = new ServiceCollection()
-                .AddElsa(option => option.UsePersistence(db => db.UseSqLite("Data Source=elsa.db;Cache=Shared", IsolationLevel.ReadUncommitted)))
+                .AddElsa()
                 .AddConsoleActivities()
                 .BuildServiceProvider();
             

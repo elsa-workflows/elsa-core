@@ -11,7 +11,7 @@ namespace Elsa.Samples.CorrelationHttp
         public void ConfigureServices(IServiceCollection services)
         {
             services
-                .AddElsa(option => option.UsePersistence(db => db.UseSqLite("Data Source=elsa.db;Cache=Shared", IsolationLevel.ReadUncommitted)))
+                .AddElsa()
                 .AddHttpActivities()
                 .AddConsoleActivities()
                 .AddWorkflow<RegistrationWorkflow>();

@@ -1,6 +1,8 @@
-﻿using System.Threading.Tasks;
+﻿using System.Data;
+using System.Threading.Tasks;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
+using YesSql.Provider.Sqlite;
 
 namespace Elsa.Samples.HelloWorldConsole
 {
@@ -19,10 +21,10 @@ namespace Elsa.Samples.HelloWorldConsole
             var startupRunner = services.GetRequiredService<IStartupRunner>();
             await startupRunner.StartupAsync();
             
-            // Get a workflow host.
+            // Get a workflow runner.
             var workflowRunner = services.GetService<IWorkflowRunner>();
 
-            // Execute the workflow.
+            // Run the workflow.
             await workflowRunner.RunWorkflowAsync<HelloWorld>();
         }
     }

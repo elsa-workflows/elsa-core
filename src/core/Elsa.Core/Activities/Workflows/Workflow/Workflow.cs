@@ -1,5 +1,4 @@
-﻿using Elsa.Activities.Primitives;
-using Elsa.Builders;
+﻿using Elsa.Builders;
 using Elsa.Services;
 
 namespace Elsa.Activities.Workflows.Workflow
