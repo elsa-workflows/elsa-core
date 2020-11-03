@@ -1,3 +1,4 @@
+using System;
 using Elsa.Services.Models;
 
 namespace Elsa.Builders
@@ -8,6 +9,7 @@ namespace Elsa.Builders
         IActivityBuilder Source { get; }
         string? Outcome { get; }
         IConnectionBuilder Then(string activityName);
+        IConnectionBuilder Then(IActivityBuilder targetActivity, Action<IActivityBuilder>? branch = default);
         IWorkflowBlueprint Build();
     }
 }

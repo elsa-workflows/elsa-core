@@ -4,6 +4,7 @@ using Elsa;
 using Elsa.Activities.ControlFlow;
 using Elsa.Activities.Primitives;
 using Elsa.Activities.Signaling;
+using Elsa.Activities.Signaling.Services;
 using Elsa.Activities.Workflows;
 using Elsa.Builders;
 using Elsa.Consumers;
@@ -149,10 +150,10 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddActivity<While>()
                 .AddActivity<Correlate>()
                 .AddActivity<SetVariable>()
-                .AddActivity<Signaled>()
-                .AddTriggerProvider<SignaledTriggerProvider>()
-                .AddActivity<TriggerEvent>()
-                .AddActivity<TriggerSignal>()
+                .AddActivity<ReceiveSignal>()
+                .AddTriggerProvider<ReceiveSignalTriggerProvider>()
+                .AddActivity<SendSignal>()
+                .AddScoped<ISignaler, Signaler>()
                 .AddActivity<Elsa.Activities.Workflows.RunWorkflow>()
                 .AddTriggerProvider<RunWorkflowTriggerProvider>();
 

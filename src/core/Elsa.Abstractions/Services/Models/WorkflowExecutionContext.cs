@@ -1,11 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Elsa.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace Elsa.Services.Models
 {
@@ -15,8 +16,8 @@ namespace Elsa.Services.Models
             IServiceProvider serviceProvider,
             IWorkflowBlueprint workflowBlueprint,
             WorkflowInstance workflowInstance,
-            object? input,
-            object? workflowContext
+            object? input = default,
+            object? workflowContext = default
         )
         {
             ServiceProvider = serviceProvider;
@@ -114,5 +115,11 @@ namespace Elsa.Services.Models
         public T GetOutputFrom<T>(string activityName) => (T)GetOutputFrom(activityName)!;
         public void SetWorkflowContext(object? value) => WorkflowContext = value;
         public T GetWorkflowContext<T>() => (T)WorkflowContext!;
+
+        public async ValueTask<IEnumerable<IActivity>> ActivateActivitiesAsync(CancellationToken cancellationToken = default)
+        {
+            var activityExecutionContexts = WorkflowBlueprint.Activities.Select(x => new ActivityExecutionContext(this, ServiceProvider, x));
+            return await Task.WhenAll(activityExecutionContexts.Select(async x => await x.ActivateActivityAsync(cancellationToken)));
+        } 
     }
 }

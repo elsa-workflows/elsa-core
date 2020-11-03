@@ -20,11 +20,20 @@ namespace Elsa.Builders
 
         public IActivityBuilder Then<T>(
             Action<ISetupActivity<T>>? setup = default,
-            Action<IActivityBuilder>? branch = default) where T : class, IActivity =>
-            Then(WorkflowBuilder.Add(setup), branch);
+            Action<IActivityBuilder>? branch = default) where T : class, IActivity
+        {
+            var activityBuilder = WorkflowBuilder.Add(setup);
+            Then(activityBuilder, branch);
+            return activityBuilder;
+        }
 
         public IActivityBuilder Then<T>(Action<IActivityBuilder>? branch = default)
-            where T : class, IActivity => Then(WorkflowBuilder.Add<T>(branch));
+            where T : class, IActivity
+        {
+            var activityBuilder = WorkflowBuilder.Add<T>(branch);
+            Then(activityBuilder);
+            return activityBuilder;
+        }
 
         public IConnectionBuilder Then(string activityName)
         {
@@ -34,11 +43,10 @@ namespace Elsa.Builders
                 Outcome);
         }
 
-        private IActivityBuilder Then(IActivityBuilder activityBuilder, Action<IActivityBuilder>? branch = default)
+        public IConnectionBuilder Then(IActivityBuilder activityBuilder, Action<IActivityBuilder>? branch = default)
         {
             branch?.Invoke(activityBuilder);
-            WorkflowBuilder.Connect(Source, activityBuilder, Outcome);
-            return activityBuilder;
+            return WorkflowBuilder.Connect(Source, activityBuilder, Outcome);
         }
 
         public IWorkflowBlueprint Build() => ((IWorkflowBuilder)WorkflowBuilder).BuildBlueprint();

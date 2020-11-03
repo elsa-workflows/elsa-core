@@ -1,5 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.Signaling.Services;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Services;
@@ -13,16 +14,16 @@ namespace Elsa.Activities.Signaling
     /// </summary>
     [ActivityDefinition(
         Category = "Workflows",
-        Description = "Trigger the specified signal.",
+        Description = "Sends the specified signal.",
         Icon = "fas fa-broadcast-tower"
     )]
-    public class TriggerSignal : Activity
+    public class SendSignal : Activity
     {
-        private readonly IWorkflowScheduler _workflowScheduler;
+        private readonly ISignaler _signaler;
 
-        public TriggerSignal(IWorkflowScheduler workflowScheduler)
+        public SendSignal(ISignaler signaler)
         {
-            _workflowScheduler = workflowScheduler;
+            _signaler = signaler;
         }
 
         [ActivityProperty(Hint = "An expression that evaluates to the name of the signal to trigger.")]
@@ -34,19 +35,9 @@ namespace Elsa.Activities.Signaling
         [ActivityProperty(Hint = "An expression that evaluates to an input value when triggering the signal.")]
         public object? Input { get; set; }
 
-        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(
-            ActivityExecutionContext context,
-            CancellationToken cancellationToken)
+        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var triggeredSignal = new TriggeredSignal(Signal, Input);
-
-            await _workflowScheduler.TriggerWorkflowsAsync(
-                nameof(Signaled),
-                triggeredSignal,
-                CorrelationId,
-                cancellationToken: cancellationToken
-            );
-
+            await _signaler.SendSignal(Signal, Input, CorrelationId, cancellationToken);
             return Done();
         }
     }

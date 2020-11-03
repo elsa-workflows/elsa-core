@@ -98,7 +98,7 @@ namespace Elsa.Services
 
         private static async ValueTask<IActivity> CreateActivityAsync(ActivityDefinition activityDefinition, ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var activity = context.ActivateActivity(activityDefinition.Type);
+            var activity = context.ActivateActivity();
             activity.Description = activityDefinition.Description;
             activity.Id = activityDefinition.ActivityId;
             activity.Name = activityDefinition.Name;

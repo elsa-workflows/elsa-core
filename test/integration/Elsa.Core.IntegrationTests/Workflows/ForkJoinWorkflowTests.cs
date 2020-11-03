@@ -2,10 +2,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using Elsa.Activities.ControlFlow;
 using Elsa.Activities.Signaling;
+using Elsa.Activities.Signaling.Models;
 using Elsa.Models;
 using Elsa.Services.Models;
 using Elsa.Testing.Shared.Helpers;
-using Open.Linq.AsyncExtensions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -58,7 +58,7 @@ namespace Elsa.Core.IntegrationTests.Workflows
             var workflow = new ForkJoinWorkflow(Join.JoinMode.WaitAny);
             var workflowBlueprint = WorkflowBuilder.Build(workflow);
             var workflowInstance = await WorkflowRunner.RunWorkflowAsync(workflowBlueprint);
-
+            
             bool GetActivityHasExecuted(string name) => (from entry in workflowInstance.ExecutionLog let activity = workflowBlueprint.Activities.First(x => x.Id == entry.ActivityId) where activity.Name == name select activity).Any();
             bool GetIsFinished() => GetActivityHasExecuted("Finished");
 
@@ -74,9 +74,14 @@ namespace Elsa.Core.IntegrationTests.Workflows
 
         private async Task<WorkflowInstance> TriggerSignalAsync(IWorkflowBlueprint workflowBlueprint, WorkflowInstance workflowInstance, string signal)
         {
-            var signaled = await WorkflowSelector.GetTriggersAsync<SignaledTrigger>(x => x.Signal == signal).First();
-            var triggeredSignal = new TriggeredSignal(signal, null);
-            return await WorkflowRunner.RunWorkflowAsync(workflowBlueprint, workflowInstance, signaled.Id, triggeredSignal);
+            var workflowExecutionContext = new WorkflowExecutionContext(ServiceProvider, workflowBlueprint, workflowInstance);
+            var activities = await workflowExecutionContext.ActivateActivitiesAsync();
+            var blockingActivityIds = workflowInstance.BlockingActivities.Where(x => x.ActivityType == nameof(ReceiveSignal)).Select(x => x.ActivityId);
+            var receiveSignalActivities = activities.Where(x => blockingActivityIds.Contains(x.Id)).Cast<ReceiveSignal>();
+            var receiveSignal = receiveSignalActivities.Single(x => x.Signal == signal);
+            
+            var triggeredSignal = new Signal(signal);
+            return await WorkflowRunner.RunWorkflowAsync(workflowBlueprint, workflowInstance, receiveSignal.Id, triggeredSignal);
         }
     }
 }

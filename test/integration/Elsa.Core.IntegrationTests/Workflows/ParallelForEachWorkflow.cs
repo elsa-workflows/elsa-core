@@ -23,7 +23,7 @@ namespace Elsa.Core.IntegrationTests.Workflows
                     _items,
                     iterate => iterate
                         .Then<WriteLine>(activity => activity.Set(x => x.Text, context => $"{context.Input}")).WithId("WriteLine")
-                        .Then<Signaled>() /* Block workflow.*/
+                        .Then<ReceiveSignal>() /* Block workflow.*/
                         .WriteLine("Resumed"))
                 .WriteLine("All iterations executing in parallel");
         }

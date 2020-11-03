@@ -43,6 +43,13 @@ namespace Elsa.Services.Models
         public T GetVariable<T>() => GetVariable<T>(typeof(T).Name);
         public T GetService<T>() => WorkflowExecutionContext.ServiceProvider.GetService<T>();
 
+        public async ValueTask<IActivity> ActivateActivityAsync(CancellationToken cancellationToken = default)
+        {
+            var activity = ActivateActivity();
+            await SetActivityPropertiesAsync(activity, cancellationToken);
+            return activity;
+        }
+
         public async ValueTask SetActivityPropertiesAsync(
             IActivity activity,
             CancellationToken cancellationToken = default) =>
@@ -51,10 +58,10 @@ namespace Elsa.Services.Models
                 this,
                 cancellationToken);
 
-        public IActivity ActivateActivity(string activityType, Action<IActivity>? setupActivity = default)
+        public IActivity ActivateActivity()
         {
             var activityActivator = ServiceProvider.GetRequiredService<IActivityActivator>();
-            var activity = activityActivator.ActivateActivity(activityType, setupActivity);
+            var activity = activityActivator.ActivateActivity(ActivityBlueprint);
             activity.Data = ActivityInstance.Data;
             return activity;
         }

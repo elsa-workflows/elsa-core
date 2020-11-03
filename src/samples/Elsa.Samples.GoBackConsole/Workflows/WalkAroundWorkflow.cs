@@ -2,7 +2,6 @@
 using Elsa.Activities.ControlFlow;
 using Elsa.Builders;
 using Elsa.Samples.GoBackConsole.Activities;
-using Elsa.Services.Models;
 
 namespace Elsa.Samples.GoBackConsole.Workflows
 {

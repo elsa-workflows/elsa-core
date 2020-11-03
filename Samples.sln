@@ -116,6 +116,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.DeclarativeCom
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.GoBackConsole", "src\samples\Elsa.Samples.GoBackConsole\Elsa.Samples.GoBackConsole.csproj", "{F4454030-8295-4575-A54C-D816235173C5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.SignalingConsole", "src\samples\Elsa.Samples.SignalingConsole\Elsa.Samples.SignalingConsole.csproj", "{3529F81C-9256-4C24-A1E6-ADC27093AB49}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -279,6 +281,10 @@ Global
 		{F4454030-8295-4575-A54C-D816235173C5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F4454030-8295-4575-A54C-D816235173C5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F4454030-8295-4575-A54C-D816235173C5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3529F81C-9256-4C24-A1E6-ADC27093AB49}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3529F81C-9256-4C24-A1E6-ADC27093AB49}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3529F81C-9256-4C24-A1E6-ADC27093AB49}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3529F81C-9256-4C24-A1E6-ADC27093AB49}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -333,6 +339,7 @@ Global
 		{CC39E9F8-72D2-4A5B-846B-E2764DFE1C19} = {5E5E1E84-DDBC-40D6-B891-0D563A15A44A}
 		{E422689B-9F82-45B6-BE14-62B4EEF43B57} = {5E5E1E84-DDBC-40D6-B891-0D563A15A44A}
 		{F4454030-8295-4575-A54C-D816235173C5} = {5E5E1E84-DDBC-40D6-B891-0D563A15A44A}
+		{3529F81C-9256-4C24-A1E6-ADC27093AB49} = {5E5E1E84-DDBC-40D6-B891-0D563A15A44A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}

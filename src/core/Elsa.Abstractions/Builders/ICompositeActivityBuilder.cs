@@ -27,7 +27,7 @@ namespace Elsa.Builders
             where T : class, IActivity;
 
         IActivityBuilder Add<T>(
-            Action<ISetupActivity<T>>? setup = default,
+            Action<ISetupActivity<T>>? setup,
             Action<IActivityBuilder>? branch = default) where T : class, IActivity;
 
         IActivityBuilder Add<T>(

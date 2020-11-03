@@ -1,9 +1,8 @@
-// ReSharper disable once CheckNamespace
-namespace Elsa.Activities.Signaling
+namespace Elsa.Activities.Signaling.Models
 {
-    public class TriggeredSignal
+    public class Signal
     {
-        public TriggeredSignal(string signalName, object? input)
+        public Signal(string signalName, object? input = default)
         {
             SignalName = signalName;
             Input = input;

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Elsa.Models;
+using Elsa.Services.Models;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Services
@@ -46,6 +47,18 @@ namespace Elsa.Services
 
             setup?.Invoke(activity);
             return activity;
+        }
+
+        public IActivity ActivateActivity(IActivityBlueprint activityBlueprint)
+        {
+            return ActivateActivity(
+                activityBlueprint.Type,
+                activity =>
+                {
+                    activity.Id = activityBlueprint.Id;
+                    activity.Name = activityBlueprint.Name;
+                    activity.PersistWorkflow = activityBlueprint.PersistWorkflow;
+                });
         }
 
         public T ActivateActivity<T>(Action<T>? setup = null) where T : class, IActivity
