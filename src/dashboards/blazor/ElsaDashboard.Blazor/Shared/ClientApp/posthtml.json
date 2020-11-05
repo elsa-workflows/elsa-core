@@ -1,0 +1,13 @@
+{
+    "input": "src/*.html",
+    "output": "public",
+    "plugins": {
+        "posthtml-modules": {
+            "root": "./",
+            "initial": true
+        },
+        "posthtml-include": {
+            "root": "./"
+        }
+    }
+}
