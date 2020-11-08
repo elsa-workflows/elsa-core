@@ -5,3 +5,66 @@
 #blazor-error-ui {
     display: none;
 }
+
+#workflow-canvas{
+    background-image: url(tile.png);
+    background-repeat: repeat;
+    background-size: 30px 30px;
+    background-color: #FBFBFB;
+}
+
+.canvas {
+    width: 100%;
+    height: 100%;
+}
+
+.box {
+    display: inline-block;
+    width: 80%;
+    min-width: 300px;
+    max-width: 300px;
+    min-height: 50px;
+    margin-left: 1rem;
+}
+
+.canvas ul {
+    padding: 0;
+    list-style-type: none;
+    display: inline-block;
+    height: 100%;
+}
+
+.canvas li {
+    margin-top: 50px;
+    height: 100%;
+    text-align: center;
+}
+
+.children ul {
+    display: inline-block;
+    padding: 0;
+    overflow: hidden;
+    text-align: center;
+    height: 100%;
+}
+
+h4 {
+    margin-block-start: 1em;
+}
+
+.children li {
+    float: left;
+    width: 50%;
+}
+
+._jsPlumb_connector {
+    z-index: 1;
+}
+
+._jsPlumb_overlay {
+    z-index: 1;
+}
+
+li {
+    height: 50px;
+}
