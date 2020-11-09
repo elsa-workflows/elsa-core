@@ -13,58 +13,80 @@
     background-color: #FBFBFB;
 }
 
-.canvas {
-    width: 100%;
-    height: 100%;
+div.canvas {
+    position: relative;
+    margin: 0 auto;
 }
 
-.box {
+div.tree {
+    white-space: nowrap;
+    padding-bottom: 30px;
+}
+
+.tree ul {
+    padding-top: 60px;
+    position: relative;
+    transition: all 0.5s;
+    -webkit-transition: all 0.5s;
+    -moz-transition: all 0.5s;
+}
+
+.tree li {
     display: inline-block;
-    width: 80%;
-    min-width: 300px;
-    max-width: 300px;
-    min-height: 50px;
-    margin-left: 1rem;
-}
-
-.canvas ul {
-    padding: 0;
+    vertical-align: top;
+    text-align: center;
     list-style-type: none;
-    display: inline-block;
-    height: 100%;
+    position: relative;
+    padding: 20px 5px 0 5px;
 }
 
-.canvas li {
-    margin-top: 50px;
-    height: 100%;
-    text-align: center;
-}
-
-.children ul {
-    display: inline-block;
-    padding: 0;
-    overflow: hidden;
-    text-align: center;
-    height: 100%;
-}
-
-h4 {
-    margin-block-start: 1em;
-}
-
-.children li {
-    float: left;
+.tree li::before,
+.tree li::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 50%;
     width: 50%;
+    height: 20px;
 }
 
-._jsPlumb_connector {
-    z-index: 1;
+.tree li::after {
+    right: auto;
+    left: 50%;
 }
 
-._jsPlumb_overlay {
-    z-index: 1;
+.tree li:only-child::after,
+.tree li:only-child::before {
+    display: none;
 }
 
-li {
-    height: 50px;
+.tree li:only-child {
+    padding-top: 0;
+}
+
+.tree li:first-child::before,
+.tree li:last-child::after {
+    border: 0 none;
+}
+
+.tree ul ul::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 0;
+    height: 20px;
+}
+
+.activity {
+    min-width: 316px;
+    box-sizing: border-box;
+    overflow-wrap: break-word;
+    white-space: normal;
+    display: inline-block;
+}
+
+svg.jtk-connector path {
+    @apply stroke-current;
+    @apply text-gray-400;
 }
