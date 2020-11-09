@@ -1,0 +1,184 @@
+@implements IAsyncDisposable
+@page "/designer"
+<div class="flex-0 border-b border-gray-200 px-4 py-4 sm:flex sm:items-center sm:justify-between sm:px-6 lg:px-8">
+    <div class="flex-1 min-w-0">
+        <h1 class="text-lg font-medium leading-6 text-gray-900 sm:truncate">
+            Workflow Editor
+        </h1>
+    </div>
+    <div class="mt-4 flex sm:mt-0 sm:ml-4">
+        <span class="order-0 sm:order-1 sm:ml-3 shadow-sm rounded-md">
+            <button type="button" class="inline-flex items-center px-4 py-2 border border-transparent text-sm leading-5 font-medium rounded-md text-white bg-blue-500 hover:bg-blue-400 focus:outline-none focus:shadow-outline-blue focus:border-blue-700 active:bg-blue-700 transition duration-150 ease-in-out">
+                Publish
+            </button>
+        </span>
+    </div>
+</div>
+<div class="relative">
+    <div id="workflow-canvas" class="flex-1 flex">
+        <div class="flex-1 text-gray-200">
+            <div class="p-10">
+
+                <div class="canvas select-none">
+                    <div class="tree">
+                        <ul>
+                            <li>
+                                <Activity ActivityId="activity-1" OnClick="@(async e => await OnActivityClick(e))" />
+                                <ul>
+                                    <li>
+                                        <Activity ActivityId="activity-2" />
+                                        <ul>
+                                            <li>
+                                                <Activity ActivityId="activity-3" />
+                                                <ul>
+                                                    <li>
+                                                        <div class="blockcondition blockyes ">
+                                                            <span style="padding: 6px;">Yes</span>
+                                                        </div>
+                                                        <ul>
+                                                            <li>
+                                                                <Activity ActivityId="activity-4a" />
+                                                                <ul>
+                                                                    <li>
+                                                                        <Activity ActivityId="activity-5" />
+                                                                        <ul>
+                                                                            <li>
+                                                                                <div class="blockcondition blockno ">
+                                                                                    <span style="padding: 6px;">No</span>
+                                                                                </div>
+                                                                                <ul>
+                                                                                    <li>
+                                                                                        <Activity ActivityId="activity-6" />
+                                                                                    </li>
+                                                                                </ul>
+                                                                            </li>
+                                                                            <li>
+                                                                                <div class="blockcondition blockyes ">
+                                                                                    <span style="padding: 6px;">Yes</span>
+                                                                                </div>
+                                                                                <ul>
+                                                                                    <li>
+                                                                                        <Activity ActivityId="activity-7" />
+                                                                                        <ul>
+                                                                                            <li>
+                                                                                                <div class="blockcondition blockyes ">
+                                                                                                    <span style="padding: 6px;">Yes</span>
+                                                                                                </div>
+                                                                                                <ul>
+                                                                                                    <li>
+                                                                                                        <Activity ActivityId="activity-8" />
+                                                                                                    </li>
+                                                                                                </ul>
+                                                                                            </li>
+                                                                                        </ul>
+                                                                                    </li>
+                                                                                </ul>
+                                                                            </li>
+                                                                        </ul>
+                                                                    </li>
+                                                                </ul>
+                                                            </li>
+                                                        </ul>
+                                                    </li>
+                                                    <li>
+                                                        <div class="blockcondition blockno ">
+                                                            <span style="padding: 6px;">No</span>
+                                                        </div>
+                                                        <ul>
+                                                            <li>
+                                                                <Activity ActivityId="activity-4b" />
+                                                                <ul>
+                                                                    <li>
+                                                                        <module href="./src/partials/activity.html"></module>
+                                                                        <ul>
+                                                                            <li>
+                                                                                <div class="blockcondition blockno ">
+                                                                                    <span style="padding: 6px;">No</span>
+                                                                                </div>
+                                                                                <ul>
+                                                                                    <li>
+                                                                                        <Activity ActivityId="activity-9" />
+                                                                                        <ul>
+                                                                                            <li>
+                                                                                                <div class="blockcondition blockyes ">
+                                                                                                    <span style="padding: 6px;">Yes</span>
+                                                                                                </div>
+                                                                                                <ul>
+                                                                                                    <li>
+                                                                                                        <Activity ActivityId="activity-10" />
+                                                                                                        <ul>
+                                                                                                            <li>
+                                                                                                                <Activity ActivityId="activity-11" />
+                                                                                                            </li>
+                                                                                                        </ul>
+                                                                                                    </li>
+                                                                                                </ul>
+                                                                                            </li>
+                                                                                        </ul>
+                                                                                    </li>
+                                                                                </ul>
+                                                                            </li>
+                                                                            <li>
+                                                                                <div class="blockcondition blockyes ">
+                                                                                    <span style="padding: 6px;">Yes</span>
+                                                                                </div>
+                                                                                <ul>
+                                                                                    <li>
+                                                                                        <Activity ActivityId="activity-12" />
+                                                                                        <ul>
+                                                                                            <li>
+                                                                                                <div class="blockcondition blockyes ">
+                                                                                                    <span style="padding: 6px;">Yes</span>
+                                                                                                </div>
+                                                                                                <ul>
+                                                                                                    <li>
+                                                                                                        <Activity ActivityId="activity-13" />
+                                                                                                        <ul>
+                                                                                                            <li>
+                                                                                                                <div class="blockcondition blockyes ">
+                                                                                                                    <span style="padding: 6px;">+</span>
+                                                                                                                </div>
+                                                                                                                <ul>
+                                                                                                                    <li>
+                                                                                                                        <Activity ActivityId="activity-14" />
+                                                                                                                        <ul>
+                                                                                                                            <li>
+                                                                                                                                <Activity ActivityId="activity-15" />
+                                                                                                                                <ul>
+                                                                                                                                    <li>
+                                                                                                                                        <Activity ActivityId="activity-16" />
+                                                                                                                                    </li>
+                                                                                                                                </ul>
+                                                                                                                            </li>
+                                                                                                                        </ul>
+                                                                                                                    </li>
+                                                                                                                </ul>
+                                                                                                            </li>
+                                                                                                        </ul>
+                                                                                                    </li>
+                                                                                                </ul>
+                                                                                            </li>
+                                                                                        </ul>
+                                                                                    </li>
+                                                                                </ul>
+                                                                            </li>
+                                                                        </ul>
+                                                                    </li>
+                                                                </ul>
+                                                            </li>
+                                                        </ul>
+                                                    </li>
+                                                </ul>
+                                            </li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <FlyoutPanel/>
+</div>

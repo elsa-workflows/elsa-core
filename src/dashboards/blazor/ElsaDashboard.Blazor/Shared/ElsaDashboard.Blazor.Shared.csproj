@@ -15,4 +15,9 @@
       <SupportedPlatform Remove="Android" />
       <SupportedPlatform Remove="Windows" />
     </ItemGroup>
+
+    <ItemGroup>
+      <None Include="wwwroot\flyoutPanel.js" />
+      <None Include="wwwroot\workflowDesigner.js" />
+    </ItemGroup>
 </Project>

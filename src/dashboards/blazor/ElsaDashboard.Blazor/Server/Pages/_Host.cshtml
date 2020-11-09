@@ -18,9 +18,10 @@
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
     <link rel="stylesheet" href="/tailwind.css">
     <link href="ElsaDashboard.Blazor.Server.styles.css" rel="stylesheet"/>
-    <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.3.5/dist/alpine.js" defer=""></script>
+    <script src="https://cdn.jsdelivr.net/npm/@@ryangjchandler/spruce@2.0.1/dist/spruce.umd.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.x.x/dist/alpine.js"></script>
 </head>
-<body class="antialiased font-sans bg-gray-200 overflow-hidden">
+<body class="antialiased font-sans bg-gray-200">
 @if (Program.UseBlazorServer)
 {
     <component type="typeof(App)" render-mode="@Program.RenderMode"/>
@@ -51,5 +52,6 @@ else
 {
     <script src="_framework/blazor.webassembly.js"></script>
 }
+<script src="_content/ElsaDashboard.Blazor.Shared/store.js"></script>
 </body>
 </html>

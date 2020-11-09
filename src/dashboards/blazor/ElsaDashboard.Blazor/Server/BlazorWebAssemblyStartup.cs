@@ -24,6 +24,7 @@ namespace ElsaDashboard.Blazor.Server
         {
             services.AddControllersWithViews();
             services.AddRazorPages();
+            services.AddElsaDashboard();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

@@ -12,16 +12,15 @@
     <link rel="stylesheet" href="/tailwind.css">
     <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.3.5/dist/alpine.js" defer=""></script>
 <body class="antialiased font-sans bg-gray-200">
-<div class="" style="">
+<div>
     <div style="min-height: 640px;">
-
-        <div class="h-screen flex overflow-hidden bg-white" x-data="{ sidebarOpen: false }" @keydown.window.escape="sidebarOpen = false">
+        <div class="h-screen flex overflow-hidden bg-white" x-data="{ sidebarOpen: false }" x-on:keydown.window.escape="sidebarOpen = false">
             <module href="navmenu.html"></module>
             <!-- Main column -->
             <div class="flex flex-col w-0 flex-1 overflow-hidden">
                 <!-- Search header -->
                 <div class="relative z-10 flex-shrink-0 flex h-16 bg-white border-b border-gray-200 lg:hidden">
-                    <button x-description="Sidebar toggle, controls the 'sidebarOpen' sidebar state." @click.stop="sidebarOpen = true" class="px-4 border-r border-gray-200 text-gray-500 focus:outline-none focus:bg-gray-100 focus:text-gray-600 lg:hidden" aria-label="Open sidebar">
+                    <button x-description="Sidebar toggle, controls the 'sidebarOpen' sidebar state." x-on:click.stop="sidebarOpen = true" class="px-4 border-r border-gray-200 text-gray-500 focus:outline-none focus:bg-gray-100 focus:text-gray-600 lg:hidden" aria-label="Open sidebar">
                         <svg class="h-6 w-6" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" stroke="currentColor">
                             <path d="M4 6h16M4 12h8m-8 6h16"></path>
                         </svg>
@@ -42,9 +41,9 @@
                         </div>
                         <div class="flex items-center">
                             <!-- Profile dropdown -->
-                            <div @click.away="open = false" class="ml-3 relative" x-data="{ open: false }">
+                            <div x-on:click.away="open = false" class="ml-3 relative" x-data="{ open: false }">
                                 <div>
-                                    <button @click="open = !open" class="max-w-xs flex items-center text-sm rounded-full focus:outline-none focus:shadow-outline" id="user-menu" aria-label="User menu" aria-haspopup="true" x-bind:aria-expanded="open">
+                                    <button x-on:click="open = !open" class="max-w-xs flex items-center text-sm rounded-full focus:outline-none focus:shadow-outline" id="user-menu" aria-label="User menu" aria-haspopup="true" x-bind:aria-expanded="open">
                                         <img class="h-8 w-8 rounded-full" src="https://images.unsplash.com/photo-1502685104226-ee32379fefbe?ixlib=rb-1.2.1&amp;ixid=eyJhcHBfaWQiOjEyMDd9&amp;auto=format&amp;fit=facearea&amp;facepad=2&amp;w=256&amp;h=256&amp;q=80" alt="">
                                     </button>
                                 </div>
@@ -77,6 +76,6 @@
         </div>
     </div>
 </div>
-<div style="clear: both; display: block; height: 0px;"></div>
+<div style="clear: both; display: block; height: 0;"></div>
 </body>
 </html>
