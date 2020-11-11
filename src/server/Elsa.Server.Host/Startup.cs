@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.OpenApi.Models;
 using YesSql.Provider.Sqlite;
 
 namespace Elsa.Server.Host
@@ -31,6 +32,7 @@ namespace Elsa.Server.Host
                         .UsePersistence(config => config.UseSqLite(connectionString)));
 
             services
+                .AddSwaggerGen(c => { c.SwaggerDoc("v1", new OpenApiInfo {Title = "Elsa", Version = "v1"}); })
                 .AddElsaApiEndpoints()
                 .AddCors(
                     options => options.AddDefaultPolicy(
@@ -38,7 +40,6 @@ namespace Elsa.Server.Host
                             .AllowAnyOrigin()
                             .AllowAnyMethod()
                             .AllowAnyHeader()))
-                
                 .AddConsoleActivities()
                 .AddHttpActivities(elsaSection.GetSection("Http").Bind)
                 .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)
@@ -51,6 +52,8 @@ namespace Elsa.Server.Host
             if (Environment.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
+                app.UseSwagger();
+                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Elsa"));
             }
 
             app

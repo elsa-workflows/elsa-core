@@ -5,11 +5,22 @@
   </PropertyGroup>
 
   <ItemGroup>
+    
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="5.0.0" />
+    <PackageReference Include="protobuf-net.Grpc.AspNetCore" Version="1.0.123" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Client\ElsaDashboard.Blazor.WebAssembly.csproj" />
     <ProjectReference Include="..\Shared\ElsaDashboard.Blazor.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <_ContentIncludedByDefault Remove="wwwroot\favicon-16x16.png" />
+    <_ContentIncludedByDefault Remove="wwwroot\favicon-32x32.png" />
+    <_ContentIncludedByDefault Remove="wwwroot\favicon.ico" />
+    <_ContentIncludedByDefault Remove="wwwroot\tailwind.css" />
+    <_ContentIncludedByDefault Remove="wwwroot\tile.png" />
   </ItemGroup>
 
 </Project>

@@ -33,7 +33,7 @@
         <PackageReference Include="MediatR" Version="9.0.0" />
         <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="9.0.0" />
         <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
-        <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="1.1.1" />
+        <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="5.0.0" />
         <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
         <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="3.1.9" />
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="3.1.9" />
@@ -55,9 +55,9 @@
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="3.1.9" />
         <PackageReference Include="NodaTime.Serialization.JsonNet" Version="3.0.0" />
         <PackageReference Include="Open.Linq.AsyncExtensions" Version="1.2.0" />
-        <PackageReference Include="Scrutor" Version="3.2.2" />
+        <PackageReference Include="Scrutor" Version="3.3.0" />
         <PackageReference Include="Storage.Net" Version="9.2.7" />
-        <PackageReference Include="System.Linq.Async" Version="4.1.1" />
+        <PackageReference Include="System.Linq.Async" Version="5.0.0" />
         <PackageReference Include="YamlDotNet" Version="8.1.2" />
         <PackageReference Include="Rebus.ServiceProvider" Version="5.0.6" />
         <PackageReference Include="YesSql.Provider.Sqlite" Version="1.0.0-beta-1547" />

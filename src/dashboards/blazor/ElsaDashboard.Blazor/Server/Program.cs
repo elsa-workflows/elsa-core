@@ -7,10 +7,9 @@ namespace ElsaDashboard.Blazor.Server
 {
     public class Program
     {
-        public static bool UseBlazorServer = true;
+        public static bool UseBlazorServer = false;
         public static RenderMode RenderMode => UseBlazorServer ? RenderMode.Server: RenderMode.WebAssembly;
         private static Type StartupType => UseBlazorServer ? typeof(BlazorServerStartup) : typeof(BlazorWebAssemblyStartup);
-
 
         public static void Main(string[] args)
         {

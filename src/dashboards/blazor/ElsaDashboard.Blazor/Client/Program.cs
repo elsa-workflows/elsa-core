@@ -16,6 +16,7 @@ namespace ElsaDashboard.Blazor.WebAssembly
             
             var services =builder.Services;
             services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
+            services.AddElsaDashboard();
 
             await builder.Build().RunAsync();
         }
