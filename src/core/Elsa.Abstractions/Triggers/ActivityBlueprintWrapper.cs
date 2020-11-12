@@ -26,8 +26,7 @@ namespace Elsa.Triggers
         public T GetState<T>(Expression<Func<TActivity, T>> propertyExpression)
         {
             var workflowBlueprint = _activityExecutionContext.WorkflowExecutionContext.WorkflowBlueprint;
-            var activityId = _activityExecutionContext.ActivityBlueprint.Id;
-            return workflowBlueprint.GetActivityState(activityId, propertyExpression, _activityExecutionContext);
+            return workflowBlueprint.GetActivityState(propertyExpression, _activityExecutionContext);
         }
     }
 }

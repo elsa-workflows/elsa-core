@@ -1,4 +1,4 @@
-﻿namespace Elsa.Services.Models
+﻿namespace Elsa.Models
 {
     public enum WorkflowContextFidelity
     {

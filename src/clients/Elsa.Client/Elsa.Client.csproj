@@ -2,6 +2,26 @@
 
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <PackageVersion>1.0.0</PackageVersion>
+        <Authors>Elsa Contributors</Authors>
+        <Description>
+            Elsa is a set of workflow libraries and tools that enable lean and mean workflowing capabilities in any .NET Core application.
+            This package provides a client using Refit for Elsa's REST API endpoints. 
+        </Description>
+        <Copyright>2020</Copyright>
+        <PackageProjectUrl>https://github.com/elsa-workflows/elsa-core</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/elsa-workflows/elsa-core</RepositoryUrl>
+        <RepositoryType>GitHub</RepositoryType>
+        <PackageTags>elsa, workflows, rest, api, client</PackageTags>
+        <PackageIcon>icon.png</PackageIcon>
+        <Nullable>enable</Nullable>
     </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="NodaTime" Version="3.0.3" />
+      <PackageReference Include="Refit" Version="5.2.1" />
+      <PackageReference Include="Refit.HttpClientFactory" Version="5.2.1" />
+    </ItemGroup>
 
 </Project>

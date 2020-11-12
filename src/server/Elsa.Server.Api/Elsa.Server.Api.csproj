@@ -28,6 +28,7 @@
         <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="5.0.0" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc.Versioning" Version="4.2.0" />
         <PackageReference Include="NodaTime.Serialization.SystemTextJson" Version="1.0.0" />
+        <PackageReference Include="Swashbuckle.AspNetCore.Filters" Version="6.0.1" />
         <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="5.6.3" />
     </ItemGroup>
 

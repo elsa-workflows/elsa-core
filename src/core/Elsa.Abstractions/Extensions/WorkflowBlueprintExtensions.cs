@@ -42,19 +42,16 @@ namespace Elsa
         }
         
         public static T GetActivityState<TActivity, T>(
-            this IWorkflowBlueprint workflowBlueprint, 
-            string activityId, 
+            this IWorkflowBlueprint workflowBlueprint,
             Expression<Func<TActivity, T>> propertyExpression, 
             ActivityExecutionContext activityExecutionContext) where TActivity : IActivity
         {
             var expression = (MemberExpression)propertyExpression.Body;
             string propertyName = expression.Member.Name;
-            return GetActivityState<T>(workflowBlueprint, activityId, propertyName, activityExecutionContext);
+            return GetActivityState<T>(propertyName, activityExecutionContext);
         }
         
         public static T GetActivityState<T>(
-            this IWorkflowBlueprint workflowBlueprint, 
-            string activityId, 
             string propertyName, 
             ActivityExecutionContext activityExecutionContext)
         {

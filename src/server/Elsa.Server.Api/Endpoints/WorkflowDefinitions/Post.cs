@@ -2,18 +2,18 @@
 using System.Threading.Tasks;
 using Elsa.Services;
 using Microsoft.AspNetCore.Mvc;
-using YesSql;
 
 namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
 {
     [ApiController]
     [ApiVersion("1")]
     [Route("v{version:apiVersion}/workflow-definitions")]
+    [Produces("application/json")]
     public class Post : ControllerBase
     {
         private readonly IWorkflowPublisher _workflowPublisher;
 
-        public Post(IWorkflowDefinitionManager workflowDefinitionManager, IWorkflowPublisher workflowPublisher, ISession session)
+        public Post(IWorkflowPublisher workflowPublisher)
         {
             _workflowPublisher = workflowPublisher;
         }

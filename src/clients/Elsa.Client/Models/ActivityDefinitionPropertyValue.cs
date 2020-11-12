@@ -1,8 +1,6 @@
 ﻿using System;
-using Elsa.Converters;
-using Newtonsoft.Json;
 
-namespace Elsa.Models
+namespace Elsa.Client.Models
 {
     public class ActivityDefinitionPropertyValue
     {
@@ -21,7 +19,7 @@ namespace Elsa.Models
             Type = type;
         }
 
-        [JsonConverter(typeof(TypeConverter))] public Type Type { get; set; } = default!;
+        public Type Type { get; set; } = default!;
         public string Syntax { get; set; } = default!;
         public string Expression { get; set; } = default!;
     }

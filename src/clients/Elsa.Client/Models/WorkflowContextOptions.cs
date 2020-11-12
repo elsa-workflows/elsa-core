@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Elsa.Services.Models
+namespace Elsa.Client.Models
 {
     public class WorkflowContextOptions
     {

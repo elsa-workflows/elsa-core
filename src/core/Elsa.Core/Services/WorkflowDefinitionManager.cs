@@ -4,6 +4,7 @@ using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Data;
+using Elsa.Extensions;
 using Elsa.Models;
 using YesSql;
 using YesSql.Indexes;
@@ -19,19 +20,36 @@ namespace Elsa.Services
             _session = session;
         }
 
-        public ValueTask SaveAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken = default)
+        public Task SaveAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken = default)
         {
             _session.Save(workflowDefinition, CollectionNames.WorkflowDefinitions);
-            return new ValueTask();
+            return Task.CompletedTask;
         }
 
-        public ValueTask DeleteAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken = default)
+        public Task DeleteAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken = default)
         {
             _session.Delete(workflowDefinition, CollectionNames.WorkflowDefinitions);
-            return new ValueTask();
+            return Task.CompletedTask;
         }
 
-        public async ValueTask<IEnumerable<WorkflowDefinition>> ListAsync(CancellationToken cancellationToken = default) => await Query().ListAsync();
+        public async Task<int> CountAsync(VersionOptions? version = default, CancellationToken cancellationToken = default) =>
+            await Query()
+                .WithVersion(version ?? VersionOptions.Published)
+                .CountAsync();
+        
+        public async Task<IEnumerable<WorkflowDefinition>> ListAsync(int? skip = default, int? take = default, VersionOptions? version = default, CancellationToken cancellationToken = default)
+        {
+            var query = Query().WithVersion(version ?? VersionOptions.Published);
+
+            if (skip != null)
+                query = query.Skip(skip.Value);
+
+            if (take != null)
+                query = query.Take(take.Value);
+            
+            return await query.ListAsync();
+        }
+
         public IQuery<WorkflowDefinition> Query() => _session.Query<WorkflowDefinition>(CollectionNames.WorkflowDefinitions);
         public IQuery<WorkflowDefinition, TIndex> Query<TIndex>() where TIndex : class, IIndex => _session.Query<WorkflowDefinition, TIndex>(CollectionNames.WorkflowDefinitions);
         public IQuery<WorkflowDefinition, TIndex> Query<TIndex>(Expression<Func<TIndex, bool>> predicate) where TIndex : class, IIndex => _session.Query<WorkflowDefinition, TIndex>(predicate, CollectionNames.WorkflowDefinitions);

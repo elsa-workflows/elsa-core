@@ -11,9 +11,10 @@ namespace Elsa.Services
 {
     public interface IWorkflowDefinitionManager
     {
-        ValueTask SaveAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken = default);
-        ValueTask DeleteAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken = default);
-        ValueTask<IEnumerable<WorkflowDefinition>> ListAsync(CancellationToken cancellationToken = default);
+        Task SaveAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken = default);
+        Task DeleteAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken = default);
+        Task<int> CountAsync(VersionOptions? version = default, CancellationToken cancellationToken = default);
+        Task<IEnumerable<WorkflowDefinition>> ListAsync(int? skip = default, int? take = default, VersionOptions? version = default, CancellationToken cancellationToken = default);
         IQuery<WorkflowDefinition> Query();
         IQuery<WorkflowDefinition, TIndex> Query<TIndex>() where TIndex : class, IIndex;
 

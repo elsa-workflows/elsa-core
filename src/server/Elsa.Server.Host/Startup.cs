@@ -1,4 +1,5 @@
 using Elsa.Runtime;
+using Elsa.Server.Api.Swagger;
 using Elsa.StartupTasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -6,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
+using Swashbuckle.AspNetCore.Filters;
 using YesSql.Provider.Sqlite;
 
 namespace Elsa.Server.Host
@@ -31,8 +33,12 @@ namespace Elsa.Server.Host
                     elsa => elsa
                         .UsePersistence(config => config.UseSqLite(connectionString)));
 
+            services.AddSingleton<WorkflowDefinitionExample>();
             services
-                .AddSwaggerGen(c => { c.SwaggerDoc("v1", new OpenApiInfo {Title = "Elsa", Version = "v1"}); })
+                .AddSwaggerGen(c =>
+                {
+                    c.SwaggerDoc("v1", new OpenApiInfo {Title = "Elsa", Version = "v1"});
+                })
                 .AddElsaApiEndpoints()
                 .AddCors(
                     options => options.AddDefaultPolicy(
