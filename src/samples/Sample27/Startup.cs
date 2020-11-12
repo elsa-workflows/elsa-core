@@ -12,11 +12,11 @@ using NodaTime;
 using Quartz;
 using Quartz.Impl;
 using Quartz.Logging;
-using Sample21.Controllers;
-using Sample21.Services;
-using Sample21.Workflows;
+using Sample27.Controllers;
+using Sample27.Services;
+using Sample27.Workflows;
 
-namespace Sample21
+namespace Sample27
 {
     public class Startup
     {
@@ -33,9 +33,9 @@ namespace Sample21
                 .AddControllers();
 
             var scheduler = CreateScheduler();
-            var massTransitBuilder = new RabbitMqSchedulerMassTransitBuilder(scheduler)
+            var massTransitBuilder = new AzureServiceBusSchedulerMassTransitBuilder(scheduler)
             {
-                Options = o => o.Bind(Configuration.GetSection("MassTransit:RabbitMq"))
+                Options = o => o.Bind(Configuration.GetSection("MassTransit:AzureServiceBus"))
             };
 
             services
@@ -43,7 +43,7 @@ namespace Sample21
                 .AddHttpActivities()
                 .AddTimerActivities(options => options.Configure(x => x.SweepInterval = Duration.FromSeconds(10)))
                 .AddEmailActivities(options => options.Bind(Configuration.GetSection("Smtp")))
-                .AddMassTransitSchedulingActivities(massTransitBuilder, options => options.Bind(Configuration.GetSection("MassTransit:RabbitMq:MessageSchedule")))
+                .AddMassTransitSchedulingActivities(massTransitBuilder, options => options.Bind(Configuration.GetSection("MassTransit:AzureServiceBus:MessageSchedule")))
                 .AddWorkflow<CartTrackingWorkflow>()
                 .AddScoped<ICarts, Carts>()
                 .AddSingleton(scheduler)

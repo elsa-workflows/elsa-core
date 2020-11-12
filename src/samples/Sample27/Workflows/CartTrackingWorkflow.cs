@@ -1,4 +1,5 @@
 using System;
+using System.Resources;
 using Elsa.Activities;
 using Elsa.Activities.ControlFlow.Activities;
 using Elsa.Activities.MassTransit.Activities;
@@ -7,15 +8,15 @@ using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.Options;
 using NodaTime;
-using Sample21.Messages;
+using Sample27.Messages;
 
-namespace Sample21.Workflows
+namespace Sample27.Workflows
 {
     public class CartTrackingWorkflow : IWorkflow
     {
-        private readonly RabbitMqSchedulerOptions options;
+        private readonly AzureServiceBusSchedulerOptions options;
 
-        public CartTrackingWorkflow(IOptions<RabbitMqSchedulerOptions> options)
+        public CartTrackingWorkflow(IOptions<AzureServiceBusSchedulerOptions> options)
         {
             this.options = options.Value;
         }

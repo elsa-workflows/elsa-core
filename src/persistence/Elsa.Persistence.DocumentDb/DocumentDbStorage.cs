@@ -1,4 +1,4 @@
-﻿using Microsoft.Azure.Documents;
+using Microsoft.Azure.Documents;
 using Microsoft.Azure.Documents.Client;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -17,7 +17,7 @@ namespace Elsa.Persistence.DocumentDb
     {
         private readonly SemaphoreSlim clientInstanceLock;
         private readonly DocumentDbStorageOptions options;
-        private DocumentClient client;
+        private readonly DocumentClient client;
         private Dictionary<string, (string Name, Uri Uri)> collectionUris;
 
         public DocumentDbStorage(IOptions<DocumentDbStorageOptions> options)
@@ -68,8 +68,6 @@ namespace Elsa.Persistence.DocumentDb
                 {
                     Id = options.DatabaseName
                 });
-
-
 
                 var tasks = options.CollectionNames.Select(async collectionName =>
                 {
