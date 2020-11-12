@@ -1,0 +1,18 @@
+// Use VS Code Rest Client
+// https://marketplace.visualstudio.com/items?itemName=humao.rest-client
+
+// Click Send Requst below:
+POST http://localhost:59862/orders
+Content-Type: application/json
+
+{
+    "id": "order-1",
+    "customer": {
+        "name": "Jimmy Drop Tables",
+        "email": "drop-tables@where.com"
+    },
+    "product": "MassTransit",
+    "amount": 99.95
+}
+
+###

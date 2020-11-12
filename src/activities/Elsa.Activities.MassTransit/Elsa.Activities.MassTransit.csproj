@@ -29,6 +29,7 @@
 
     <ItemGroup>
       <PackageReference Include="MassTransit.AspNetCore" Version="6.0.1" />
+      <PackageReference Include="MassTransit.Azure.ServiceBus.Core" Version="6.0.1" />
       <PackageReference Include="MassTransit.Extensions.DependencyInjection" Version="6.0.1" />
       <PackageReference Include="MassTransit.Quartz" Version="6.0.1" />
       <PackageReference Include="MassTransit.RabbitMQ" Version="6.0.1" />

@@ -9,10 +9,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NodaTime;
-using Sample08.Messages;
-using Sample08.Workflows;
+using Sample26.Messages;
+using Sample26.Workflows;
 
-namespace Sample08
+namespace Sample26
 {
     public class Startup
     {
@@ -25,14 +25,14 @@ namespace Sample08
 
         public void ConfigureServices(IServiceCollection services)
         {
-            var massTransitBuilder = new DefaultRabbitMqMassTransitBuilder
+            var massTransitBuilder = new DefaultAzureServiceBusMassTransitBuilder
             {
                 MessageTypes = new[]
                 {
-                    typeof(CreateOrder),
-                    typeof(OrderShipped)
+                   typeof(CreateOrder),
+                   typeof(OrderShipped)
                 },
-                Options = o => o.Bind(Configuration.GetSection("MassTransit:RabbitMq"))
+                Options = o => o.Bind(Configuration.GetSection("MassTransit:AzureServiceBus"))
             };
 
             services
