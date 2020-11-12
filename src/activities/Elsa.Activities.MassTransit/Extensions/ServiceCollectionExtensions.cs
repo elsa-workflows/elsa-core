@@ -11,21 +11,8 @@ namespace Elsa.Activities.MassTransit.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddMassTransitActivities(this IServiceCollection services)
-        {
-            if (services == null)
-            {
-                throw new ArgumentNullException(nameof(services));
-            }
-
-            return services
-                .AddActivity<PublishMassTransitMessage>()
-                .AddActivity<ReceiveMassTransitMessage>()
-                .AddActivity<SendMassTransitMessage>();
-        }
-
         public static IServiceCollection AddMassTransitSchedulingActivities<TOptions>(this IServiceCollection services, 
-            IMassTransitBuilder<TOptions> massTransitConfigurator,
+            IMassTransitBuilder<TOptions> massTransitBuilder,
             Action<OptionsBuilder<MessageScheduleOptions>> options) where TOptions : class
         {
             var optionsBuilder = services.AddOptions<MessageScheduleOptions>();
@@ -35,15 +22,15 @@ namespace Elsa.Activities.MassTransit.Extensions
                 .AddActivity<CancelScheduledMassTransitMessage>()
                 .AddActivity<ScheduleSendMassTransitMessage>();
 
-            massTransitConfigurator.Build(services);
+            massTransitBuilder.Build(services);
             return services;
         }
 
         public static IServiceCollection AddMassTransitActivities<TOptions>(this IServiceCollection services, 
-            IMassTransitBuilder<TOptions> massTransitConfigurator) where TOptions : class
+            IMassTransitBuilder<TOptions> massTransitBuilder) where TOptions : class
         {
             services.AddMassTransitActivities();
-            massTransitConfigurator.Build(services);
+            massTransitBuilder.Build(services);
             return services;
         }
 
@@ -64,6 +51,19 @@ namespace Elsa.Activities.MassTransit.Extensions
             where TMessage : class
         {
             return configurator.AddConsumer(configure);
+        }
+
+        private static IServiceCollection AddMassTransitActivities(this IServiceCollection services)
+        {
+            if (services == null)
+            {
+                throw new ArgumentNullException(nameof(services));
+            }
+
+            return services
+                .AddActivity<PublishMassTransitMessage>()
+                .AddActivity<ReceiveMassTransitMessage>()
+                .AddActivity<SendMassTransitMessage>();
         }
     }
 }
