@@ -31,7 +31,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="MailKit" Version="2.8.0" />
       <PackageReference Include="MailKit" Version="2.9.0" />
     </ItemGroup>
 
