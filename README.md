@@ -1,4 +1,6 @@
-![Elsa Logo](./doc/elsa-logo.png)
+<p align="center">
+  <img src="./doc/elsa-logo.png" alt="Elsa Logo">
+</p>
 
 ## Elsa Workflows
 
