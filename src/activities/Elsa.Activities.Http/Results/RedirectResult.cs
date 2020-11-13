@@ -21,7 +21,10 @@ namespace Elsa.Activities.Http.Results
         
         protected override void Execute(ActivityExecutionContext activityExecutionContext)
         {
-            var response = _httpContextAccessor.HttpContext.Response;
+            var httpContext = _httpContextAccessor.HttpContext;
+            var response = httpContext.Response;
+            
+            httpContext.Items[WorkflowHttpResult.Instance] = WorkflowHttpResult.Instance;
             response.Redirect(Location.ToString(), Permanent);
         }
     }

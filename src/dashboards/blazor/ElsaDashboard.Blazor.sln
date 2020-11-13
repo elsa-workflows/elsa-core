@@ -5,13 +5,13 @@ VisualStudioVersion = 16.0.30615.102
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{963AE286-A579-4299-8A06-926346EABCCD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElsaDashboard.Blazor.Shared", "ElsaDashboard.Blazor\Shared\ElsaDashboard.Blazor.Shared.csproj", "{B39719A2-6C4C-48A0-89EC-EA573C22D246}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElsaDashboard.Blazor.WebAssembly", "ElsaDashboard.Blazor\Client\ElsaDashboard.Blazor.WebAssembly.csproj", "{72105B63-D94C-4216-A648-CB1F4AAD7426}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElsaDashboard.Blazor.Server", "ElsaDashboard.Blazor\Server\ElsaDashboard.Blazor.Server.csproj", "{522BA06A-56E3-41D7-9548-9653FF2BC9F2}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "modules", "modules", "{7F1D88F0-7AA2-47F3-AACB-387BCDCFE63B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElsaDashboard.Blazor.Application", "ElsaDashboard.Blazor\Application\ElsaDashboard.Blazor.Application.csproj", "{FD666570-D8F4-41B6-8FCD-C5988B6E16CD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -19,10 +19,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{B39719A2-6C4C-48A0-89EC-EA573C22D246}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B39719A2-6C4C-48A0-89EC-EA573C22D246}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B39719A2-6C4C-48A0-89EC-EA573C22D246}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B39719A2-6C4C-48A0-89EC-EA573C22D246}.Release|Any CPU.Build.0 = Release|Any CPU
 		{72105B63-D94C-4216-A648-CB1F4AAD7426}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{72105B63-D94C-4216-A648-CB1F4AAD7426}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{72105B63-D94C-4216-A648-CB1F4AAD7426}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -31,6 +27,10 @@ Global
 		{522BA06A-56E3-41D7-9548-9653FF2BC9F2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{522BA06A-56E3-41D7-9548-9653FF2BC9F2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{522BA06A-56E3-41D7-9548-9653FF2BC9F2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FD666570-D8F4-41B6-8FCD-C5988B6E16CD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FD666570-D8F4-41B6-8FCD-C5988B6E16CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FD666570-D8F4-41B6-8FCD-C5988B6E16CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FD666570-D8F4-41B6-8FCD-C5988B6E16CD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -40,8 +40,8 @@ Global
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{7F1D88F0-7AA2-47F3-AACB-387BCDCFE63B} = {963AE286-A579-4299-8A06-926346EABCCD}
-		{B39719A2-6C4C-48A0-89EC-EA573C22D246} = {963AE286-A579-4299-8A06-926346EABCCD}
 		{522BA06A-56E3-41D7-9548-9653FF2BC9F2} = {963AE286-A579-4299-8A06-926346EABCCD}
 		{72105B63-D94C-4216-A648-CB1F4AAD7426} = {963AE286-A579-4299-8A06-926346EABCCD}
+		{FD666570-D8F4-41B6-8FCD-C5988B6E16CD} = {963AE286-A579-4299-8A06-926346EABCCD}
 	EndGlobalSection
 EndGlobal

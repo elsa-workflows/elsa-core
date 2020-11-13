@@ -1,4 +1,4 @@
-﻿using ElsaDashboard.Blazor.Shared.Services;
+﻿using ElsaDashboard.Blazor.Application.Services;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection

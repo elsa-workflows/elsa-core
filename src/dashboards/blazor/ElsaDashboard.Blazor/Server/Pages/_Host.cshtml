@@ -1,5 +1,5 @@
 @page "/"
-@using ElsaDashboard.Blazor.Shared
+@using ElsaDashboard.Blazor.Application
 @namespace ElsaDashboard.Blazor.Server.Pages
 @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
 @{
@@ -22,16 +22,8 @@
     <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.x.x/dist/alpine.js"></script>
 </head>
 <body class="antialiased font-sans bg-gray-200">
-@if (Program.UseBlazorServer)
-{
-    <component type="typeof(App)" render-mode="@Program.RenderMode"/>
-}
-else
-{
-    <div id="app">
-        Loading...
-    </div>
-}
+
+<component type="typeof(App)" render-mode="@Program.RenderMode"/>
 
 <div id="blazor-error-ui">
     <environment include="Staging,Production">
@@ -52,6 +44,6 @@ else
 {
     <script src="_framework/blazor.webassembly.js"></script>
 }
-<script src="_content/ElsaDashboard.Blazor.Shared/store.js"></script>
+<script src="_content/ElsaDashboard.Blazor.Application/store.js"></script>
 </body>
 </html>

@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
-using ElsaDashboard.Blazor.Shared.Models;
+using ElsaDashboard.Blazor.Application.Models;
 
-namespace ElsaDashboard.Blazor.Shared.Shared
+namespace ElsaDashboard.Blazor.Application.Shared
 {
     partial class NavMenu
     {

@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Microsoft.JSInterop;
 
-namespace ElsaDashboard.Blazor.Shared.Services
+namespace ElsaDashboard.Blazor.Application.Services
 {
     public class FlyoutPanelService : IFlyoutPanelService, IAsyncDisposable
     {
@@ -34,7 +34,7 @@ namespace ElsaDashboard.Blazor.Shared.Services
         
         private async Task InitModuleAsync()
         {
-            _module = await _jsRuntime.InvokeAsync<IJSObjectReference>("import", "./_content/ElsaDashboard.Blazor.Shared/flyoutPanel.js");
+            _module = await _jsRuntime.InvokeAsync<IJSObjectReference>("import", "./_content/ElsaDashboard.Blazor.Application/flyoutPanel.js");
         }
     }
 }

@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace ElsaDashboard.Blazor.Shared.Services
+namespace ElsaDashboard.Blazor.Application.Services
 {
     public interface IFlyoutPanelService
     {

@@ -12,7 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Client\ElsaDashboard.Blazor.WebAssembly.csproj" />
-    <ProjectReference Include="..\Shared\ElsaDashboard.Blazor.Shared.csproj" />
+    <ProjectReference Include="..\Application\ElsaDashboard.Blazor.Application.csproj" />
   </ItemGroup>
 
   <ItemGroup>

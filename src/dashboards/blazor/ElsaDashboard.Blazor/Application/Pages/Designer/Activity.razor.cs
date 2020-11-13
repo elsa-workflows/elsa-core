@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 
-namespace ElsaDashboard.Blazor.Shared.Pages.Designer
+namespace ElsaDashboard.Blazor.Application.Pages.Designer
 {
     partial class Activity
     {

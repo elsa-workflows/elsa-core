@@ -1,11 +1,10 @@
-﻿using System;
-using System.Threading.Tasks;
-using ElsaDashboard.Blazor.Shared.Services;
+﻿using System.Threading.Tasks;
+using ElsaDashboard.Blazor.Application.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 
-namespace ElsaDashboard.Blazor.Shared.Pages.Designer
+namespace ElsaDashboard.Blazor.Application.Pages.Designer
 {
     partial class Designer
     {

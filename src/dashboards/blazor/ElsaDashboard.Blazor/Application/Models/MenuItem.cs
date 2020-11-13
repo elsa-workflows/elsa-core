@@ -1,4 +1,4 @@
-﻿namespace ElsaDashboard.Blazor.Shared.Models
+﻿namespace ElsaDashboard.Blazor.Application.Models
 {
     public class MenuItem
     {

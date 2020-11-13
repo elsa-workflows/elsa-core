@@ -11,7 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Shared\ElsaDashboard.Blazor.Shared.csproj" />
+    <ProjectReference Include="..\Application\ElsaDashboard.Blazor.Application.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,8 +1,6 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using ProtoBuf;
 
-namespace ElsaDashboard.Blazor.Shared.Rpc
+namespace ElsaDashboard.Blazor.Application.Rpc
 {
     [ProtoContract]
     public interface IWorkflowDefinitionService
