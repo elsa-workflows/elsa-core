@@ -1,3 +1,5 @@
+![Elsa Logo](./doc/elsa-logo.png)
+
 ## Elsa Workflows
 
 [![Nuget (with prereleases)](https://img.shields.io/nuget/vpre/Elsa)](https://www.nuget.org/packages/Elsa/2.0.0-preview5-0)
