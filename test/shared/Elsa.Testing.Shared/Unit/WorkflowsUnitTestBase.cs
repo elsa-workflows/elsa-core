@@ -11,11 +11,11 @@ using YesSql.Provider.Sqlite;
 
 namespace Elsa.Testing.Shared.Helpers
 {
-    public abstract class WorkflowsTestBase : IAsyncLifetime, IDisposable
+    public abstract class WorkflowsUnitTestBase : IAsyncLifetime, IDisposable
     {
         private readonly TemporaryFolder _tempFolder;
 
-        protected WorkflowsTestBase(ITestOutputHelper testOutputHelper, Action<IServiceCollection>? configureServices = default)
+        protected WorkflowsUnitTestBase(ITestOutputHelper testOutputHelper, Action<IServiceCollection>? configureServices = default)
         {
             _tempFolder = new TemporaryFolder();
             TestOutputHelper = testOutputHelper;

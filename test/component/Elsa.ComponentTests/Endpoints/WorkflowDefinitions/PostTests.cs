@@ -63,7 +63,7 @@ namespace Elsa.ComponentTests.Endpoints.WorkflowDefinitions
 
         public void Dispose()
         {
-            _hostApplicationFactory.Dispose();
+            _httpClient.Dispose();
             _tempFolder.Dispose();
         }
     }

@@ -7,7 +7,7 @@ using Xunit.Abstractions;
 
 namespace Elsa.Core.IntegrationTests.Workflows
 {
-    public class FinishWorkflowTests : WorkflowsTestBase
+    public class FinishWorkflowTests : WorkflowsUnitTestBase
     {
         private readonly Fixture _fixture;
 

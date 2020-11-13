@@ -19,11 +19,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="AutoFixture" Version="4.14.0" />
-      <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.0" />
-      <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="5.0.0" />
-      <PackageReference Include="NodaTime" Version="3.0.3" />
-      <PackageReference Include="xunit.extensibility.core" Version="2.4.1" />
+        <PackageReference Include="AutoFixture" Version="4.14.0" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.0" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="5.0.0" />
+        <PackageReference Include="NodaTime" Version="3.0.3" />
+        <PackageReference Include="xunit.extensibility.core" Version="2.4.1" />
     </ItemGroup>
 
     <ItemGroup>
@@ -34,7 +34,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\..\src\core\Elsa\Elsa.csproj" />
+        <ProjectReference Include="..\..\..\src\core\Elsa\Elsa.csproj" />
     </ItemGroup>
 
 </Project>

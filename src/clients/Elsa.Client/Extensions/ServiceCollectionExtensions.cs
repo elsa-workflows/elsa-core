@@ -17,7 +17,7 @@ namespace Elsa.Client.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddElsaClient(this IServiceCollection services, Action<ElsaClientOptions>? configure = default)
+        public static IServiceCollection AddElsaClient(this IServiceCollection services, Action<ElsaClientOptions>? configure = default, Func<HttpClient>? httpClientFactory = default)
         {
             if (configure != null)
                 services.Configure(configure);
@@ -33,31 +33,27 @@ namespace Elsa.Client.Extensions
             jsonSerializerSettings.Converters.Add(new JsonStringEnumConverter());
             jsonSerializerSettings.Converters.Add(new TypeConverter());
             jsonSerializerSettings.Converters.Add(new VersionOptionsConverter());
-            
+
             var refitSettings = new RefitSettings
             {
                 ContentSerializer = new SystemTextJsonContentSerializer(jsonSerializerSettings)
             };
-            
-            services.AddRefitClient<IWorkflowDefinitionsApi>(refitSettings).ConfigureHttpClient((sp, client) =>
+
+            if (httpClientFactory == null)
             {
-                var serverUrl = sp.GetRequiredService<IOptions<ElsaClientOptions>>().Value.ServerUrl;
-                client.BaseAddress = serverUrl;
-            }).AddHttpMessageHandler<Spy>().AddHttpMessageHandler();
+                services.AddRefitClient<IWorkflowDefinitionsApi>(refitSettings).ConfigureHttpClient((sp, client) =>
+                {
+                    var serverUrl = sp.GetRequiredService<IOptions<ElsaClientOptions>>().Value.ServerUrl;
+                    client.BaseAddress = serverUrl;
+                });
+            }
+            else
+            {
+                services.AddScoped(_ => RestService.For<IWorkflowDefinitionsApi>(httpClientFactory(), refitSettings));
+            }
 
-            services.AddTransient<Spy>();
-            
             return services
-                .AddTransient<IElsaClient, ElsaClient>();
+                    .AddTransient<IElsaClient, ElsaClient>();
+            }
         }
     }
-
-    public class Spy : DelegatingHandler
-    {
-        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-        {
-            var response = await base.SendAsync(request, cancellationToken);
-            return response;
-        }
-    }
-}

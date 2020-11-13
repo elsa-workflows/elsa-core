@@ -10,7 +10,7 @@ using Xunit.Abstractions;
 
 namespace Elsa.Core.IntegrationTests.StorageProvider
 {
-    public class StorageWorkflowProviderTests : WorkflowsTestBase
+    public class StorageWorkflowProviderTests : WorkflowsUnitTestBase
     {
         public StorageWorkflowProviderTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
         {

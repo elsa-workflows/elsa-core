@@ -6,7 +6,7 @@ using Xunit.Abstractions;
 
 namespace Elsa.Core.IntegrationTests.Workflows
 {
-    public class ForLoopWorkflowTests : WorkflowsTestBase
+    public class ForLoopWorkflowTests : WorkflowsUnitTestBase
     {
         public ForLoopWorkflowTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
         {
