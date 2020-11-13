@@ -40,13 +40,15 @@ namespace Elsa.Activities.Http.Activities
 
         protected override async Task<ActivityExecutionResult> OnExecuteAsync(WorkflowExecutionContext workflowContext, CancellationToken cancellationToken)
         {
-            var response = httpContextAccessor.HttpContext.Response;
+            var httpContext = httpContextAccessor.HttpContext;
+            var response = httpContext.Response;
 
             if (response.HasStarted)
                 return Fault("Response has already started");
 
             var location = await workflowContext.EvaluateAsync(Location, cancellationToken);
             response.Redirect(location, Permanent);
+            httpContext.Items[WorkflowHttpResult.Instance] = WorkflowHttpResult.Instance;
             
             return Done();
         }
