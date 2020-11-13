@@ -4,6 +4,7 @@ namespace Elsa.Client
 {
     public interface IElsaClient
     {
+        IActivitiesApi ActivitiesApi { get; }
         IWorkflowDefinitionsApi WorkflowDefinitions { get; }
     }
 }

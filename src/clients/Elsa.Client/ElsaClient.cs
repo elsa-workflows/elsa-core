@@ -4,11 +4,13 @@ namespace Elsa.Client
 {
     public class ElsaClient : IElsaClient
     {
-        public ElsaClient(IWorkflowDefinitionsApi workflowDefinitionsApi)
+        public ElsaClient(IActivitiesApi activitiesApi, IWorkflowDefinitionsApi workflowDefinitionsApi)
         {
+            ActivitiesApi = activitiesApi;
             WorkflowDefinitions = workflowDefinitionsApi;
         }
 
+        public IActivitiesApi ActivitiesApi { get; }
         public IWorkflowDefinitionsApi WorkflowDefinitions { get; }
     }
 }

@@ -6,8 +6,8 @@ namespace Elsa.Client.Models
     {
         public CompositeActivityDefinition()
         {
-            Activities = new List<ActivityDefinition>();
-            Connections = new List<ConnectionDefinition>();
+            Activities = new System.Collections.Generic.List<ActivityDefinition>();
+            Connections = new System.Collections.Generic.List<ConnectionDefinition>();
             Type = "CompositeActivity";
         }
         

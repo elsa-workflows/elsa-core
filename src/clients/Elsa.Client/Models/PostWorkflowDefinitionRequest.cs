@@ -14,7 +14,7 @@ namespace Elsa.Client.Models
         public bool DeleteCompletedInstances { get; set; }
         public bool Enabled { get; set; }
         public bool Publish { get; set; }
-        public ICollection<ActivityDefinition> Activities { get; set; } = new List<ActivityDefinition>();
-        public ICollection<ConnectionDefinition> Connections { get; set; } = new List<ConnectionDefinition>();
+        public ICollection<ActivityDefinition> Activities { get; set; } = new System.Collections.Generic.List<ActivityDefinition>();
+        public ICollection<ConnectionDefinition> Connections { get; set; } = new System.Collections.Generic.List<ConnectionDefinition>();
     }
 }

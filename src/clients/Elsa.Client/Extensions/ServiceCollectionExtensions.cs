@@ -1,16 +1,15 @@
 ﻿using System;
 using System.Net.Http;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Threading;
-using System.Threading.Tasks;
 using Elsa.Client.Converters;
 using Elsa.Client.Options;
 using Elsa.Client.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Serialization;
 using NodaTime;
-using NodaTime.Serialization.SystemTextJson;
+using NodaTime.Serialization.JsonNet;
 using Refit;
 
 namespace Elsa.Client.Extensions
@@ -24,24 +23,34 @@ namespace Elsa.Client.Extensions
             else
                 services.ConfigureOptions<ElsaClientOptions>();
 
-            var jsonSerializerSettings = new JsonSerializerOptions
+            var serializerSettings = new JsonSerializerSettings
             {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                ContractResolver = new CamelCasePropertyNamesContractResolver()
             };
 
-            jsonSerializerSettings.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
-            jsonSerializerSettings.Converters.Add(new JsonStringEnumConverter());
-            jsonSerializerSettings.Converters.Add(new TypeConverter());
-            jsonSerializerSettings.Converters.Add(new VersionOptionsConverter());
+            serializerSettings.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
+            serializerSettings.Converters.Add(new StringEnumConverter(new DefaultNamingStrategy()));
+            serializerSettings.Converters.Add(new TypeConverter());
+            serializerSettings.Converters.Add(new VersionOptionsConverter());
 
             var refitSettings = new RefitSettings
             {
-                ContentSerializer = new SystemTextJsonContentSerializer(jsonSerializerSettings)
+                ContentSerializer = new NewtonsoftJsonContentSerializer(serializerSettings)
             };
 
+            services
+                .AddApiClient<IActivitiesApi>(refitSettings, httpClientFactory)
+                .AddApiClient<IWorkflowDefinitionsApi>(refitSettings, httpClientFactory);
+            
+            return services
+                .AddTransient<IElsaClient, ElsaClient>();
+        }
+
+        private static IServiceCollection AddApiClient<T>(this IServiceCollection services, RefitSettings refitSettings, Func<HttpClient>? httpClientFactory) where T : class
+        {
             if (httpClientFactory == null)
             {
-                services.AddRefitClient<IWorkflowDefinitionsApi>(refitSettings).ConfigureHttpClient((sp, client) =>
+                services.AddRefitClient<T>(refitSettings).ConfigureHttpClient((sp, client) =>
                 {
                     var serverUrl = sp.GetRequiredService<IOptions<ElsaClientOptions>>().Value.ServerUrl;
                     client.BaseAddress = serverUrl;
@@ -49,11 +58,10 @@ namespace Elsa.Client.Extensions
             }
             else
             {
-                services.AddScoped(_ => RestService.For<IWorkflowDefinitionsApi>(httpClientFactory(), refitSettings));
+                services.AddScoped(_ => RestService.For<T>(httpClientFactory(), refitSettings));
             }
 
-            return services
-                    .AddTransient<IElsaClient, ElsaClient>();
-            }
+            return services;
         }
     }
+}

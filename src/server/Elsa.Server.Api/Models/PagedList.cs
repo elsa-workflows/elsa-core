@@ -3,17 +3,15 @@ using System.Linq;
 
 namespace Elsa.Server.Api.Models
 {
-    public class PagedList<T>
+    public class PagedList<T> : List<T>
     {
-        public PagedList(IEnumerable<T> items, int? page, int? pageSize, int totalCount)
+        public PagedList(IEnumerable<T> items, int? page, int? pageSize, int totalCount) : base(items)
         {
             Page = page;
             PageSize = pageSize;
             TotalCount = totalCount;
-            Items = items.ToList();
         }
         
-        public ICollection<T> Items { get; }
         public int? Page { get; }
         public int? PageSize { get; }
         public int TotalCount { get; }

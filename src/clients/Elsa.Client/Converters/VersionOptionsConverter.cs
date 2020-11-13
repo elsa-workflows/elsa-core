@@ -1,13 +1,22 @@
 using System;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Elsa.Client.Models;
+using Newtonsoft.Json;
+using JsonSerializer = Newtonsoft.Json.JsonSerializer;
 
 namespace Elsa.Client.Converters
 {
     public class VersionOptionsConverter : JsonConverter<VersionOptions>
     {
-        public override VersionOptions Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) => VersionOptions.FromString(reader.GetString());
-        public override void Write(Utf8JsonWriter writer, VersionOptions value, JsonSerializerOptions options) => writer.WriteStringValue(value.ToString());
+        public override void WriteJson(JsonWriter writer, VersionOptions value, JsonSerializer serializer)
+        {
+            serializer.Serialize(writer, value.ToString());
+        }
+
+        public override VersionOptions ReadJson(JsonReader reader, Type objectType, VersionOptions existingValue, bool hasExistingValue, JsonSerializer serializer)
+        {
+            var text = serializer.Deserialize<string>(reader)!;
+            return VersionOptions.FromString(text);
+        }
     }
 }

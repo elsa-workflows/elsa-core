@@ -1,20 +1,19 @@
 using System;
-using System.Text.Json;
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 
 namespace Elsa.Client.Converters
 {
     public class TypeConverter : JsonConverter<Type>
     {
-        public override Type Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        public override void WriteJson(JsonWriter writer, Type? value, JsonSerializer serializer)
         {
-            var typeName = reader.GetString();
-            return Type.GetType(typeName)!;
+            serializer.Serialize(writer, value!.AssemblyQualifiedName);
         }
 
-        public override void Write(Utf8JsonWriter writer, Type value, JsonSerializerOptions options)
+        public override Type ReadJson(JsonReader reader, Type objectType, Type? existingValue, bool hasExistingValue, JsonSerializer serializer)
         {
-            writer.WriteStringValue(value.AssemblyQualifiedName);
+            var typeName = serializer.Deserialize<string>(reader)!;
+            return Type.GetType(typeName)!;
         }
     }
 }
