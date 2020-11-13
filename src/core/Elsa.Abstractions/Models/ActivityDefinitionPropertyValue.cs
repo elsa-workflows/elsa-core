@@ -21,7 +21,7 @@ namespace Elsa.Models
             Type = type;
         }
 
-        [JsonConverter(typeof(TypeConverter))] public Type Type { get; set; } = default!;
+        [JsonConverter(typeof(TypeJsonConverter))] public Type Type { get; set; } = default!;
         public string Syntax { get; set; } = default!;
         public string Expression { get; set; } = default!;
     }

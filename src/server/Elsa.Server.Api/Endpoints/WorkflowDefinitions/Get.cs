@@ -1,5 +1,4 @@
-﻿using System.Net;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Extensions;
 using Elsa.Models;
@@ -8,14 +7,14 @@ using Elsa.Server.Api.Swagger;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json.Serialization;
+using Swashbuckle.AspNetCore.Annotations;
 using Swashbuckle.AspNetCore.Filters;
 
 namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
 {
     [ApiController]
     [ApiVersion("1")]
-    [Route("v{version:apiVersion}/workflow-definitions/{id:int}")]
+    [Route("v{apiVersion:apiVersion}/workflow-definitions/{workflowDefinitionId}")]
     [Produces("application/json")]
     public class Get : Controller
     {
@@ -30,11 +29,17 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
 
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(WorkflowDefinition))]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
         [SwaggerResponseExample(StatusCodes.Status200OK, typeof(WorkflowDefinitionExample))]
-        public async Task<IActionResult> Handle(string workflowDefinitionId, VersionOptions? version = default, CancellationToken cancellationToken = default)
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [SwaggerOperation(
+            Summary = "Returns a single workflow definition.",
+            Description = "Returns a single workflow definition using the specified workflow definition ID and optional version options. When no version options are specified, the latest version is returned.",
+            OperationId = "WorkflowDefinitions.Get",
+            Tags = new[] { "WorkflowDefinitions" })
+        ]
+        public async Task<IActionResult> Handle(string workflowDefinitionId, [FromQuery]VersionOptions? versionOptions = default, CancellationToken cancellationToken = default)
         {
-            var workflowDefinition = await _workflowDefinitionManager.GetAsync(workflowDefinitionId, version ?? VersionOptions.Latest, cancellationToken);
+            var workflowDefinition = await _workflowDefinitionManager.GetAsync(workflowDefinitionId, versionOptions ?? VersionOptions.Latest, cancellationToken);
             return workflowDefinition == null ? (IActionResult) NotFound() : Json(workflowDefinition, _serializer.GetSettings());
         }
     }

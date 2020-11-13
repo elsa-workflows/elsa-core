@@ -1,5 +1,9 @@
-﻿namespace Elsa.Models
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+
+namespace Elsa.Models
 {
+    [JsonConverter(typeof(StringEnumConverter))]
     public enum WorkflowPersistenceBehavior
     {
         /// <summary>

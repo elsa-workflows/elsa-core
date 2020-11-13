@@ -34,12 +34,12 @@ namespace Elsa.Services
 
         public async Task<int> CountAsync(VersionOptions? version = default, CancellationToken cancellationToken = default) =>
             await Query()
-                .WithVersion(version ?? VersionOptions.Published)
+                .WithVersion(version ?? VersionOptions.Latest)
                 .CountAsync();
         
         public async Task<IEnumerable<WorkflowDefinition>> ListAsync(int? skip = default, int? take = default, VersionOptions? version = default, CancellationToken cancellationToken = default)
         {
-            var query = Query().WithVersion(version ?? VersionOptions.Published);
+            var query = Query().WithVersion(version ?? VersionOptions.Latest);
 
             if (skip != null)
                 query = query.Skip(skip.Value);

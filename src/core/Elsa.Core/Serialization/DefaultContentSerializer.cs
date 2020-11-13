@@ -1,6 +1,7 @@
 using System;
 using Elsa.Converters;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 using NodaTime;
@@ -42,7 +43,9 @@ namespace Elsa.Serialization
                     OverrideSpecifiedNames = false
                 }
             };
-            settings.Converters.Add(new TypeConverter());
+            settings.Converters.Add(new StringEnumConverter());
+            settings.Converters.Add(new TypeJsonConverter());
+            settings.Converters.Add(new VersionOptionsJsonConverter());
         }
 
         public static JsonSerializerSettings CreateDefaultJsonSerializationSettings()

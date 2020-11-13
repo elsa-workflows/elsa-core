@@ -1,5 +1,9 @@
-﻿namespace Elsa.Client.Models
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+
+namespace Elsa.Client.Models
 {
+    [JsonConverter(typeof(StringEnumConverter))]
     public enum WorkflowContextFidelity
     {
         /// <summary>

@@ -1,6 +1,4 @@
-﻿using Elsa.Services.Models;
-
-namespace Elsa.Models
+﻿namespace Elsa.Models
 {
     public class WorkflowDefinition : CompositeActivityDefinition
     {

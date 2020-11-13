@@ -4,7 +4,7 @@ using Rebus.Extensions;
 
 namespace Elsa.Converters
 {
-    public class TypeConverter : JsonConverter<Type>
+    public class TypeJsonConverter : JsonConverter<Type>
     {
         public override bool CanRead => true;
         public override bool CanWrite => true;

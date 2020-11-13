@@ -7,8 +7,10 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
     {
         public string WorkflowDefinitionId { get; set; } = default!;
         public string? Name { get; set; }
+        public string? DisplayName { get; set; }
         public string? Description { get; set; }
         public Variables? Variables { get; set; }
+        public WorkflowContextOptions? ContextOptions { get; set; }
         public bool IsSingleton { get; set; }
         public WorkflowPersistenceBehavior PersistenceBehavior { get; set; }
         public bool DeleteCompletedInstances { get; set; }
