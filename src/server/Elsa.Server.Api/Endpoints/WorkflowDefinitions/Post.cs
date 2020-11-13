@@ -13,7 +13,8 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
 {
     [ApiController]
     [ApiVersion("1")]
-    [Route("v{version:apiVersion}/workflow-definitions")]
+    [Route("v{apiVersion:apiVersion}/workflow-definitions")]
+    [Route("v{apiVersion:apiVersion}/workflow-definitions/{workflowDefinitionId}")]
     [Produces("application/json")]
     public class Post : ControllerBase
     {
@@ -29,20 +30,22 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
         [SwaggerResponseExample(StatusCodes.Status200OK, typeof(WorkflowDefinitionExample))]
         [SwaggerOperation(
             Summary = "Creates a new workflow definition or updates an existing one.",
-            Description = "Creates a new workflow definition or updates an existing one. If the workflow already exists, a new draft is created and updated with the specified values. Use the Publish field to automatically publish the workflow.",
+            Description =
+                "Creates a new workflow definition or updates an existing one. If the workflow already exists, a new draft is created and updated with the specified values. Use the Publish field to automatically publish the workflow.",
             OperationId = "WorkflowDefinitions.Post",
             Tags = new[] {"WorkflowDefinitions"})
         ]
-        public async Task<ActionResult<WorkflowDefinition>> Handle(SaveWorkflowDefinitionRequest request, ApiVersion apiVersion, CancellationToken cancellationToken)
+        public async Task<ActionResult<WorkflowDefinition>> Handle(string? workflowDefinitionId, PostWorkflowDefinitionRequest request, ApiVersion apiVersion, CancellationToken cancellationToken)
         {
-            var workflowDefinition = await _workflowPublisher.GetDraftAsync(request.WorkflowDefinitionId, cancellationToken);
+            workflowDefinitionId = workflowDefinitionId?.Trim();
+            var workflowDefinition = !string.IsNullOrWhiteSpace(workflowDefinitionId) ? await _workflowPublisher.GetDraftAsync(workflowDefinitionId, cancellationToken) : default;
 
             if (workflowDefinition == null)
             {
                 workflowDefinition = _workflowPublisher.New();
 
-                if (!string.IsNullOrWhiteSpace(request.WorkflowDefinitionId))
-                    workflowDefinition.WorkflowDefinitionId = request.WorkflowDefinitionId.Trim();
+                if (!string.IsNullOrWhiteSpace(workflowDefinitionId))
+                    workflowDefinition.WorkflowDefinitionId = workflowDefinitionId;
             }
 
             workflowDefinition.Activities = request.Activities;
@@ -64,7 +67,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             else
                 await _workflowPublisher.SaveDraftAsync(workflowDefinition, cancellationToken);
 
-            return CreatedAtAction("Handle", "Get", new {id = workflowDefinition.WorkflowDefinitionId, version = apiVersion.ToString()}, workflowDefinition);
+            return CreatedAtAction("Handle", "Get", new {workflowDefinitionId = workflowDefinition.WorkflowDefinitionId, apiVersion = apiVersion.ToString()}, workflowDefinition);
         }
     }
 }

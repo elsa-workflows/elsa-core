@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
-using Elsa.Models;
 
-namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
+namespace Elsa.Client.Models
 {
     public class PostWorkflowDefinitionRequest
     {

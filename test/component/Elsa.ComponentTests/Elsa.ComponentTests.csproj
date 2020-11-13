@@ -22,6 +22,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\..\..\src\clients\Elsa.Client\Elsa.Client.csproj" />
       <ProjectReference Include="..\..\..\src\server\Elsa.Server.Host\Elsa.Server.Host.csproj" />
       <ProjectReference Include="..\..\shared\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj" />
     </ItemGroup>

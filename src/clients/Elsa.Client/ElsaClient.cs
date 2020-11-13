@@ -2,7 +2,7 @@
 
 namespace Elsa.Client
 {
-    internal class ElsaClient : IElsaClient
+    public class ElsaClient : IElsaClient
     {
         public ElsaClient(IWorkflowDefinitionsApi workflowDefinitionsApi)
         {

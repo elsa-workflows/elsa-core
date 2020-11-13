@@ -1,17 +1,18 @@
 using System;
 using System.Net;
-using System.Net.Http;
 using System.Threading.Tasks;
 using AutoFixture;
 using Elsa.Activities.Console;
+using Elsa.Client;
+using Elsa.Client.Extensions;
+using Elsa.Client.Models;
 using Elsa.ComponentTests.Helpers;
-using Elsa.Models;
-using Elsa.Server.Api.Endpoints.WorkflowDefinitions;
 using Elsa.Testing.Shared.AutoFixture;
 using Elsa.Testing.Shared.Helpers;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
-namespace Elsa.ComponentTests.Endpoints.WorkflowDefinitions
+namespace Elsa.ComponentTests.Clients.RestClient.WorkflowDefinitions
 {
     [Collection(ComponentTestsCollection.Name)]
     public class PostTests : IDisposable
@@ -19,7 +20,7 @@ namespace Elsa.ComponentTests.Endpoints.WorkflowDefinitions
         private readonly IFixture _fixture;
         private readonly TemporaryFolder _tempFolder;
         private readonly ElsaHostApplicationFactory _hostApplicationFactory;
-        private readonly HttpClient _httpClient;
+        private readonly IElsaClient _elsaClient;
 
         public PostTests(ElsaHostApplicationFactory hostApplicationFactory)
         {
@@ -27,16 +28,18 @@ namespace Elsa.ComponentTests.Endpoints.WorkflowDefinitions
             _tempFolder = new TemporaryFolder();
             _hostApplicationFactory = hostApplicationFactory;
             hostApplicationFactory.SetDbConnectionString($@"Data Source={_tempFolder.Folder}elsa.db;Cache=Shared");
-            _httpClient = hostApplicationFactory.CreateClient();
+            var httpClient = hostApplicationFactory.CreateClient();
+
+            var services = new ServiceCollection().AddElsaClient(options => options.ServerUrl = httpClient.BaseAddress!).BuildServiceProvider();
+            _elsaClient = services.GetRequiredService<IElsaClient>();
         }
 
         [Fact(DisplayName = "Posting a new workflow definition returns HTTP 201.")]
         public async Task Post01()
         {
             var request = CreateWorkflowDefinitionRequest();
-            var response = await _httpClient.PostJsonAsync("/v1/workflow-definitions", request);
-
-            Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+            var workflowDefinition = await _elsaClient.WorkflowDefinitions.PostAsync(request);
+            Assert.Equal(request.Name, workflowDefinition.Name);
         }
 
         private PostWorkflowDefinitionRequest CreateWorkflowDefinitionRequest()

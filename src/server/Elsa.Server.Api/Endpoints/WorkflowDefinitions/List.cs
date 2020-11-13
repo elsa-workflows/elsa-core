@@ -14,7 +14,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
 {
     [ApiController]
     [ApiVersion("1")]
-    [Route("v{version:apiVersion}/workflow-definitions")]
+    [Route("v{apiVersion:apiVersion}/workflow-definitions")]
     [Produces("application/json")]
     public class List : Controller
     {

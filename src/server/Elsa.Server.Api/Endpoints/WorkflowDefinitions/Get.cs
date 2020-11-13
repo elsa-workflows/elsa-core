@@ -21,7 +21,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
         private readonly IWorkflowDefinitionManager _workflowDefinitionManager;
         private readonly IContentSerializer _serializer;
 
-        protected Get(IWorkflowDefinitionManager workflowDefinitionManager, IContentSerializer serializer)
+        public Get(IWorkflowDefinitionManager workflowDefinitionManager, IContentSerializer serializer)
         {
             _workflowDefinitionManager = workflowDefinitionManager;
             _serializer = serializer;
