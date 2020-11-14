@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net5.0</TargetFramework>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\ElsaDashboard.Shared\ElsaDashboard.Shared.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Grpc.AspNetCore.Server" Version="2.29.0" />
+        <PackageReference Include="Grpc.AspNetCore.Web" Version="2.32.0" />
+        <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
+        <PackageReference Include="protobuf-net.Grpc.AspNetCore" Version="1.0.123" />
+    </ItemGroup>
+
+</Project>

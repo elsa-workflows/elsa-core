@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Elsa.Builders;
 using Elsa.Services;
+using Elsa.Testing.Shared.Helpers;
 using Elsa.Triggers;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -9,7 +10,7 @@ using Xunit.Abstractions;
 using YesSql;
 using YesSql.Provider.Sqlite;
 
-namespace Elsa.Testing.Shared.Helpers
+namespace Elsa.Testing.Shared.Unit
 {
     public abstract class WorkflowsUnitTestBase : IAsyncLifetime, IDisposable
     {

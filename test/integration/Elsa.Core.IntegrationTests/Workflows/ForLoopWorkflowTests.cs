@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Elsa.Testing.Shared.Helpers;
+using Elsa.Testing.Shared.Unit;
 using Xunit;
 using Xunit.Abstractions;
 

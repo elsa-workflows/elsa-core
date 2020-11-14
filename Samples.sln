@@ -124,11 +124,17 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dashboards", "dashboards", 
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "blazor", "blazor", "{5837821B-CA71-40B6-A9F1-C25D318B4691}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElsaDashboard.Blazor.WebAssembly", "src\dashboards\blazor\ElsaDashboard.Blazor\Client\ElsaDashboard.Blazor.WebAssembly.csproj", "{D7992973-A251-427A-8BF1-4D5F767A4A77}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElsaDashboard.Backend", "src\dashboards\blazor\ElsaDashboard.Backend\ElsaDashboard.Backend.csproj", "{25015984-7F81-454C-AC6E-E6DC810A59E2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElsaDashboard.Blazor.Server", "src\dashboards\blazor\ElsaDashboard.Blazor\Server\ElsaDashboard.Blazor.Server.csproj", "{5B147B88-965C-4286-926B-333B0F0FFB12}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElsaDashboard.Shared", "src\dashboards\blazor\ElsaDashboard.Shared\ElsaDashboard.Shared.csproj", "{DC9B6EEA-E692-4AF7-9A5A-870FAC4B5EB2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElsaDashboard.Blazor.Application", "src\dashboards\blazor\ElsaDashboard.Blazor\Application\ElsaDashboard.Blazor.Application.csproj", "{B14D02C7-9832-4B50-9031-66683601C156}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElsaDashboard.WebAssembly", "src\dashboards\blazor\ElsaDashboard.WebAssembly\ElsaDashboard.WebAssembly.csproj", "{04FD384F-1B78-4D4C-9815-F9FBDA1B9245}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElsaDashboard.Application", "src\dashboards\blazor\ElsaDashboard.Application\ElsaDashboard.Application.csproj", "{EDD20103-2089-48D7-A445-6FA8183CA376}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElsaDashboard.Application.Server", "src\dashboards\blazor\ElsaDashboard.Application.Server\ElsaDashboard.Application.Server.csproj", "{8DD4F1E8-8AC8-4AB4-AC08-9456AA6EAF10}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElsaDashboard.Application.WebAssembly", "src\dashboards\blazor\ElsaDashboard.Application.WebAssembly\ElsaDashboard.Application.WebAssembly.csproj", "{F7181887-E6B5-4DA9-9598-8E9E806B5A20}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -301,18 +307,30 @@ Global
 		{2DA042D6-1E3C-4B15-B48E-BF45426C74E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2DA042D6-1E3C-4B15-B48E-BF45426C74E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2DA042D6-1E3C-4B15-B48E-BF45426C74E1}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D7992973-A251-427A-8BF1-4D5F767A4A77}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D7992973-A251-427A-8BF1-4D5F767A4A77}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D7992973-A251-427A-8BF1-4D5F767A4A77}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D7992973-A251-427A-8BF1-4D5F767A4A77}.Release|Any CPU.Build.0 = Release|Any CPU
-		{5B147B88-965C-4286-926B-333B0F0FFB12}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5B147B88-965C-4286-926B-333B0F0FFB12}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5B147B88-965C-4286-926B-333B0F0FFB12}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5B147B88-965C-4286-926B-333B0F0FFB12}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B14D02C7-9832-4B50-9031-66683601C156}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B14D02C7-9832-4B50-9031-66683601C156}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B14D02C7-9832-4B50-9031-66683601C156}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B14D02C7-9832-4B50-9031-66683601C156}.Release|Any CPU.Build.0 = Release|Any CPU
+		{25015984-7F81-454C-AC6E-E6DC810A59E2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{25015984-7F81-454C-AC6E-E6DC810A59E2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{25015984-7F81-454C-AC6E-E6DC810A59E2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{25015984-7F81-454C-AC6E-E6DC810A59E2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DC9B6EEA-E692-4AF7-9A5A-870FAC4B5EB2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DC9B6EEA-E692-4AF7-9A5A-870FAC4B5EB2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DC9B6EEA-E692-4AF7-9A5A-870FAC4B5EB2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DC9B6EEA-E692-4AF7-9A5A-870FAC4B5EB2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{04FD384F-1B78-4D4C-9815-F9FBDA1B9245}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{04FD384F-1B78-4D4C-9815-F9FBDA1B9245}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{04FD384F-1B78-4D4C-9815-F9FBDA1B9245}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{04FD384F-1B78-4D4C-9815-F9FBDA1B9245}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EDD20103-2089-48D7-A445-6FA8183CA376}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EDD20103-2089-48D7-A445-6FA8183CA376}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EDD20103-2089-48D7-A445-6FA8183CA376}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EDD20103-2089-48D7-A445-6FA8183CA376}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8DD4F1E8-8AC8-4AB4-AC08-9456AA6EAF10}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8DD4F1E8-8AC8-4AB4-AC08-9456AA6EAF10}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8DD4F1E8-8AC8-4AB4-AC08-9456AA6EAF10}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8DD4F1E8-8AC8-4AB4-AC08-9456AA6EAF10}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F7181887-E6B5-4DA9-9598-8E9E806B5A20}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F7181887-E6B5-4DA9-9598-8E9E806B5A20}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F7181887-E6B5-4DA9-9598-8E9E806B5A20}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F7181887-E6B5-4DA9-9598-8E9E806B5A20}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -371,9 +389,12 @@ Global
 		{2DA042D6-1E3C-4B15-B48E-BF45426C74E1} = {E43FB9E7-7851-4880-B7EE-12B8CEE628D0}
 		{5583B236-794A-422C-B306-52BB7DFE7EBE} = {DA71CDAA-8DD3-4D5F-9FBD-8E4B37A2D925}
 		{5837821B-CA71-40B6-A9F1-C25D318B4691} = {5583B236-794A-422C-B306-52BB7DFE7EBE}
-		{D7992973-A251-427A-8BF1-4D5F767A4A77} = {5837821B-CA71-40B6-A9F1-C25D318B4691}
-		{5B147B88-965C-4286-926B-333B0F0FFB12} = {5837821B-CA71-40B6-A9F1-C25D318B4691}
-		{B14D02C7-9832-4B50-9031-66683601C156} = {5837821B-CA71-40B6-A9F1-C25D318B4691}
+		{25015984-7F81-454C-AC6E-E6DC810A59E2} = {5837821B-CA71-40B6-A9F1-C25D318B4691}
+		{DC9B6EEA-E692-4AF7-9A5A-870FAC4B5EB2} = {5837821B-CA71-40B6-A9F1-C25D318B4691}
+		{04FD384F-1B78-4D4C-9815-F9FBDA1B9245} = {5837821B-CA71-40B6-A9F1-C25D318B4691}
+		{EDD20103-2089-48D7-A445-6FA8183CA376} = {5837821B-CA71-40B6-A9F1-C25D318B4691}
+		{8DD4F1E8-8AC8-4AB4-AC08-9456AA6EAF10} = {5837821B-CA71-40B6-A9F1-C25D318B4691}
+		{F7181887-E6B5-4DA9-9598-8E9E806B5A20} = {5837821B-CA71-40B6-A9F1-C25D318B4691}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}

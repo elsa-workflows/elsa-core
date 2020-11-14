@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="5.0.0" />
+    <PackageReference Include="protobuf-net.Grpc.AspNetCore" Version="1.0.123" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ElsaDashboard.Application\ElsaDashboard.Application.csproj" />
+    <ProjectReference Include="..\ElsaDashboard.Backend\ElsaDashboard.Backend.csproj" />
+  </ItemGroup>
+
+</Project>

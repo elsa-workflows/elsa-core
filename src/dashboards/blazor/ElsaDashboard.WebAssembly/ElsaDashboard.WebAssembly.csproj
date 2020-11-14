@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net5.0</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Grpc.Net.Client.Web" Version="2.33.1" />
+    </ItemGroup>
+    
+    <ItemGroup>
+      <ProjectReference Include="..\ElsaDashboard.Shared\ElsaDashboard.Shared.csproj" />
+    </ItemGroup>
+
+</Project>
