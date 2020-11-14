@@ -11,7 +11,7 @@ using MimeKit.Text;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.Email
 {
-    [ActivityDefinition(Category = "Email", Description = "Send an email message.")]
+    [Action(Category = "Email", Description = "Send an email message.")]
     public class SendEmail : Activity
     {
         private readonly ISmtpService _smtpService;

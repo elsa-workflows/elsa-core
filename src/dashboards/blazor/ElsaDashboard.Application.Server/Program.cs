@@ -6,7 +6,7 @@ namespace ElsaDashboard.Application.Server
 {
     public class Program
     {
-        public static bool UseBlazorServer = false;
+        public static bool UseBlazorServer = true;
         public static bool UseBlazorWebAssembly => !UseBlazorServer;
         public static RenderMode RenderMode => UseBlazorServer ? RenderMode.ServerPrerendered: RenderMode.WebAssemblyPrerendered;
 

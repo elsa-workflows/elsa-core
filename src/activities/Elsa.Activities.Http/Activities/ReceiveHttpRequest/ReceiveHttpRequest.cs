@@ -15,11 +15,10 @@ using Microsoft.AspNetCore.Http;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.Http
 {
-    [ActivityDefinition(
+    [Trigger(
         Category = "HTTP",
         DisplayName = "Receive HTTP Request",
         Description = "Receive an incoming HTTP request.",
-        RuntimeDescription = "x => !!x.state.path ? `Handle <strong>${ x.state.method } ${ x.state.path }</strong>.` : x.definition.description",
         Outcomes = new[] { OutcomeNames.Done }
     )]
     public class ReceiveHttpRequest : Activity

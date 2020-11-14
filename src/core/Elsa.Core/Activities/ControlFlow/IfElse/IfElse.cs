@@ -6,11 +6,10 @@ using Elsa.Services.Models;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.ControlFlow
 {
-    [ActivityDefinition(
+    [Activity(
         DisplayName = "If/Else",
         Category = "Control Flow",
         Description = "Evaluate a Boolean expression and continue execution depending on the result.",
-        RuntimeDescription = "x => !!x.state.expression ? `Evaluate <strong>${ x.state.expression.expression }</strong> and continue execution depending on the result.` : x.definition.description",
         Outcomes = new[] { True, False, OutcomeNames.Done }
     )]
     public class IfElse : Activity

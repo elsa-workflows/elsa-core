@@ -13,7 +13,7 @@ using NodaTime;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.MassTransit
 {
-    [ActivityDefinition(
+    [Action(
         Category = "MassTransit",
         DisplayName = "Schedule MassTransit Message",
         Description = "Schedule a message via MassTransit."

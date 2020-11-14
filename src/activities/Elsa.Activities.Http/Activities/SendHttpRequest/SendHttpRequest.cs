@@ -19,15 +19,11 @@ using HttpRequestHeaders = Elsa.Activities.Http.Models.HttpRequestHeaders;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.Http
 {
-    [ActivityDefinition(
+    [Action(
         Category = "HTTP",
         DisplayName = "Send HTTP Request",
         Description = "Send an HTTP request.",
-        Outcomes = new[]
-        {
-            OutcomeNames.Done,
-            "x => !!x.state.supportedStatusCodes ? ['UnSupportedStatusCode', ...x.state.supportedStatusCodes] : ['UnSupportedStatusCode']"
-        }
+        Outcomes = new[] { OutcomeNames.Done }
     )]
     public class SendHttpRequest : Activity
     {

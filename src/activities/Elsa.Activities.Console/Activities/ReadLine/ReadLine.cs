@@ -12,10 +12,9 @@ namespace Elsa.Activities.Console
     /// <summary>
     /// Reads input from the console.
     /// </summary>
-    [ActivityDefinition(
+    [Action(
         Category = "Console",
         Description = "Read text from standard in.",
-        Icon = "fas fa-terminal",
         Outcomes = new[] { OutcomeNames.Done }
     )]
     public class ReadLine : Activity
@@ -44,7 +43,7 @@ namespace Elsa.Activities.Console
 
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
         {
-            var receivedInput = (string)context.Input!;
+            var receivedInput = (string) context.Input!;
             return Execute(receivedInput);
         }
 

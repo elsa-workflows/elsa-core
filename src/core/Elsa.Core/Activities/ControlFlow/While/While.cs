@@ -6,10 +6,9 @@ using Elsa.Services.Models;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.ControlFlow
 {
-    [ActivityDefinition(
+    [Activity(
         Category = "Control Flow",
         Description = "Execute while a given condition is true.",
-        Icon = "far fa-circle",
         Outcomes = new[] { OutcomeNames.Iterate, OutcomeNames.Done }
     )]
     public class While : Activity

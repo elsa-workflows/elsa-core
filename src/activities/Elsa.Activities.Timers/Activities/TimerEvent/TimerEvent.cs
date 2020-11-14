@@ -7,7 +7,7 @@ using NodaTime;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.Timers
 {
-    [ActivityDefinition(Category = "Timers", Description = "Triggers at a specified interval.")]
+    [Trigger(Category = "Timers", Description = "Triggers at a specified interval.")]
     public class TimerEvent : Activity
     {
         [ActivityProperty(Hint = "An expression that evaluates to a Duration value.")]

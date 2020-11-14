@@ -8,12 +8,9 @@ using Elsa.Services.Models;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.ControlFlow
 {
-    [ActivityDefinition(
+    [Activity(
         Category = "Control Flow",
-        Description = "Switch execution based on a given expression.",
-        Icon = "far fa-list-alt",
-        RuntimeDescription = "x => !!x.state.expression ? `Switch execution based on <strong>${ x.state.expression.expression }</strong>.` : x.definition.description",
-        Outcomes = new[] { "x => x.state.cases.map(c => c.toString())" }
+        Description = "Switch execution based on a given expression."
     )]
     public class Switch : Activity
     {

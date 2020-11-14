@@ -12,10 +12,10 @@ namespace Elsa.Activities.Signaling
     /// <summary>
     /// Triggers the specified signal.
     /// </summary>
-    [ActivityDefinition(
+    [Action(
         Category = "Workflows",
         Description = "Sends the specified signal.",
-        Icon = "fas fa-broadcast-tower"
+        Outcomes = new[] { OutcomeNames.Done }
     )]
     public class SendSignal : Activity
     {

@@ -13,7 +13,7 @@ using Microsoft.Extensions.Localization;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.Http
 {
-    [ActivityDefinition(
+    [Action(
         Category = "HTTP",
         DisplayName = "Write HTTP Response",
         Description = "Write an HTTP response.",

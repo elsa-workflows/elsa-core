@@ -11,10 +11,10 @@ namespace Elsa.Activities.Signaling
     /// <summary>
     /// Suspends workflow execution until the specified signal is received.
     /// </summary>
-    [ActivityDefinition(
+    [Trigger(
         Category = "Workflows",
-        Description = "Halt workflow execution until the specified signal is received.",
-        Icon = "fas fa-traffic-light"
+        Description = "Suspend workflow execution until the specified signal is received.",
+        Outcomes = new[] { OutcomeNames.Done }
     )]
     public class ReceiveSignal : Activity
     {
@@ -25,7 +25,7 @@ namespace Elsa.Activities.Signaling
         {
             if (context.Input is Signal triggeredSignal)
                 return string.Equals(triggeredSignal.SignalName, Signal, StringComparison.OrdinalIgnoreCase);
-            
+
             return false;
         }
 

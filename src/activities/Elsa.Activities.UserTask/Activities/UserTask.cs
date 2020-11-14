@@ -13,7 +13,7 @@ namespace Elsa.Activities.UserTask.Activities
     /// <summary>
     /// Stores a set of possible user actions and halts the workflow until one of the actions has been performed.
     /// </summary>
-    [ActivityDefinition(
+    [Trigger(
         Category = "User Tasks",
         Description = "Triggers when a user action is received.",
         Outcomes = new[] { OutcomeNames.Done, "x => x.state.actions" }

@@ -21,18 +21,17 @@ namespace Elsa.Metadata
         
         public ActivityDescriptor Describe(Type activityType)
         {
-            var activityDefinitionAttribute = activityType.GetCustomAttribute<ActivityDefinitionAttribute>();
-            var typeName = activityDefinitionAttribute?.Type ?? activityType.Name;
+            var activityAttribute = activityType.GetCustomAttribute<ActivityAttribute>();
+            var typeName = activityAttribute?.Type ?? activityType.Name;
             
             var displayName =
-                activityDefinitionAttribute?.DisplayName ??
+                activityAttribute?.DisplayName ??
                 activityType.Name.Humanize(LetterCasing.Title);
             
-            var description = activityDefinitionAttribute?.Description;
-            var runtimeDescription = activityDefinitionAttribute?.RuntimeDescription;
-            var category = activityDefinitionAttribute?.Category ?? "Miscellaneous";
-            var icon = activityDefinitionAttribute?.Icon;
-            var outcomes = activityDefinitionAttribute?.Outcomes ?? new[] { OutcomeNames.Done };
+            var description = activityAttribute?.Description;
+            var category = activityAttribute?.Category ?? "Miscellaneous";
+            var traits = activityAttribute?.Traits ?? ActivityTraits.Action;
+            var outcomes = activityAttribute?.Outcomes ?? new[] { OutcomeNames.Done };
             var properties = DescribeProperties(activityType);
 
             return new ActivityDescriptor
@@ -40,9 +39,8 @@ namespace Elsa.Metadata
                 Type = typeName.Pascalize(),
                 DisplayName = displayName,
                 Description = description,
-                RuntimeDescription = runtimeDescription,
                 Category = category,
-                Icon = icon,
+                Traits = traits,
                 Properties = properties.ToArray(),
                 Outcomes = outcomes
             };

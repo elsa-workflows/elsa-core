@@ -10,7 +10,7 @@ using Microsoft.Extensions.Options;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.MassTransit
 {
-    [ActivityDefinition(
+    [Action(
         Category = "MassTransit",
         DisplayName = "Cancel scheduled MassTransit Message",
         Description = "Cancel a scheduled message via MassTransit."

@@ -11,7 +11,7 @@ using Open.Linq.AsyncExtensions;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.Workflows
 {
-    [ActivityDefinition(
+    [Activity(
         Category = "Workflows",
         Description = "Runs a child workflow."
     )]

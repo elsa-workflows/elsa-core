@@ -9,10 +9,9 @@ using Elsa.Services.Models;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.ControlFlow
 {
-    [ActivityDefinition(
+    [Activity(
         Category = "Control Flow",
         Description = "Iterate over a collection in parallel.",
-        Icon = "far fa-circle",
         Outcomes = new[] { OutcomeNames.Iterate, OutcomeNames.Done }
     )]
     public class ParallelForEach : Activity

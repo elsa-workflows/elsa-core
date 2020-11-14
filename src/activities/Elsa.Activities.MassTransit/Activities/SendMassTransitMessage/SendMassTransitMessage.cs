@@ -9,7 +9,7 @@ using MassTransit;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.MassTransit
 {
-    [ActivityDefinition(
+    [Action(
         Category = "MassTransit",
         DisplayName = "Send MassTransit Message",
         Description = "Send a message via MassTransit."

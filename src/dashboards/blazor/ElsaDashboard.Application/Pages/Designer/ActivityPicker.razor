@@ -9,26 +9,20 @@
                 <line x1="21" y1="21" x2="15" y2="15"/>
             </svg>
         </div>
-        <input class="form-input block w-full pl-10 sm:text-sm sm:leading-5"placeholder="Search activities">
+        <input type="text" @bind="ActivitySearchText" @bind:event="oninput" class="form-input block w-full pl-10 sm:text-sm sm:leading-5" placeholder="Search activities">
     </div>
 </div>
 
 <div class="border-b border-gray-200">
     <div class="px-6">
         <nav class="-mb-px flex space-x-6" x-descriptions="Tab component">
-            <a href="#"
-               class="whitespace-no-wrap pb-4 px-1 border-b-2 border-blue-500 font-medium text-sm leading-5 text-blue-600 focus:outline-none focus:text-blue-800 focus:border-blue-700"
-               aria-current="page">
-                All
-            </a>
-            <a href="#"
-               class="whitespace-no-wrap pb-4 px-1 border-b-2 border-transparent font-medium text-sm leading-5 text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:outline-none focus:text-gray-700 focus:border-gray-300">
-                Actions
-            </a>
-            <a href="#"
-               class="whitespace-no-wrap pb-4 px-1 border-b-2 border-transparent font-medium text-sm leading-5 text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:outline-none focus:text-gray-700 focus:border-gray-300">
-                Triggers
-            </a>
+            @foreach (var activityTypeFilter in ActivityTraitFilters)
+            {
+                var activeClass = activityTypeFilter == SelectedActivityTraitFilter ? "border-blue-500 text-blue-600 focus:text-blue-800 focus:border-blue-700" : "border-transparent text-gray-500 focus:text-gray-700 focus:border-gray-300";
+                <a href="#" @onclick:preventDefault @onclick="@(() => OnActivityTypeFilterClick(activityTypeFilter))" class="whitespace-no-wrap pb-4 px-1 border-b-2 font-medium text-sm leading-5 focus:outline-none @activeClass" aria-current="page">
+                    @activityTypeFilter.ToString()
+                </a>
+            }
         </nav>
     </div>
 </div>

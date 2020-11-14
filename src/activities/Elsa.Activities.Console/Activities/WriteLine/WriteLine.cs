@@ -12,10 +12,9 @@ namespace Elsa.Activities.Console
     /// <summary>
     /// Writes a text string to the console.
     /// </summary>
-    [ActivityDefinition(
+    [Action(
         Category = "Console",
         Description = "Write text to standard out.",
-        Icon = "fas fa-terminal",
         Outcomes = new[] { OutcomeNames.Done }
     )]
     public class WriteLine : Activity

@@ -6,10 +6,9 @@ using Elsa.Services;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.ControlFlow
 {
-    [ActivityDefinition(
+    [Activity(
         Category = "Control Flow",
         Description = "Fork workflow execution into multiple branches.",
-        Icon = "fas fa-code-branch fa-rotate-180",
         Outcomes = new[] { "x => x.state.branches" })]
     public class Fork : Activity
     {

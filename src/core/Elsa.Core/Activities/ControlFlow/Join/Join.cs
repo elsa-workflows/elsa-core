@@ -13,11 +13,9 @@ using MediatR;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.ControlFlow
 {
-    [ActivityDefinition(
+    [Activity(
         Category = "Control Flow",
         Description = "Merge workflow execution back into a single branch.",
-        Icon = "fas fa-code-branch",
-        RuntimeDescription = "x => !!x.state.joinMode ? `Merge workflow execution back into a single branch using mode <strong>${ x.state.joinMode }</strong>` : x.definition.description",
         Outcomes = new[] { OutcomeNames.Done }
     )]
     public class Join : Activity, INotificationHandler<ActivityExecuted>

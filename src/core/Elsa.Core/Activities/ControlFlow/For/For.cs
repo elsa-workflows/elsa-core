@@ -7,10 +7,9 @@ using Elsa.Services.Models;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.ControlFlow
 {
-    [ActivityDefinition(
+    [Activity(
         Category = "Control Flow",
         Description = "Iterate between two numbers.",
-        Icon = "far fa-circle",
         Outcomes = new[] { OutcomeNames.Iterate, OutcomeNames.Done }
     )]
     public class For : Activity
