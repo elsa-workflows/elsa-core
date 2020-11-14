@@ -1,14 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Elsa.Metadata;
-using Elsa.Models;
-using Elsa.Server.Api.Models;
-using Elsa.Server.Api.Swagger;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
-using Swashbuckle.AspNetCore.Filters;
 
 namespace Elsa.Server.Api.Endpoints.Activities
 {

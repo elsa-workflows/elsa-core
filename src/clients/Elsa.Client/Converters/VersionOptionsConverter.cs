@@ -1,5 +1,4 @@
 using System;
-using System.Text.Json;
 using Elsa.Client.Models;
 using Newtonsoft.Json;
 using JsonSerializer = Newtonsoft.Json.JsonSerializer;

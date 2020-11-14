@@ -14,8 +14,8 @@ namespace ElsaDashboard.Application.Pages.Designer
 
         protected override async Task OnInitializedAsync()
         {
-            var activities = (await ActivityService.GetActivitiesAsync()).ToList();
-            ActivityGroupings = activities.GroupBy(x => x.Category).ToList();
+            var response = (await ActivityService.GetActivitiesAsync());
+            ActivityGroupings = response.Activities.GroupBy(x => x.Category).ToList();
         }
     }
 }

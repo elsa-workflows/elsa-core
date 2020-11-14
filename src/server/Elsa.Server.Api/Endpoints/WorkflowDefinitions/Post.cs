@@ -1,7 +1,6 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
-using Elsa.Server.Api.Models;
 using Elsa.Server.Api.Swagger;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;

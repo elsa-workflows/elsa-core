@@ -44,18 +44,17 @@ namespace ElsaDashboard.Application.Server
                 app.UseHsts();
             }
 
-            app.UseHttpsRedirection();
-            
             if(Program.UseBlazorWebAssembly)
                 app.UseBlazorFrameworkFiles();
             
             app.UseStaticFiles();
             app.UseRouting();
-            app.UserElsaGrpcServices();
+            app.UseElsaGrpcServices();
             app.UseEndpoints(endpoints =>
             {
                 if(Program.UseBlazorServer)
                     endpoints.MapBlazorHub();
+                
                 endpoints.MapFallbackToPage("/_Host");
             });
         }

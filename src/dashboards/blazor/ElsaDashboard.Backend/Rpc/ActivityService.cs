@@ -1,8 +1,5 @@
-﻿using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Elsa.Client;
-using Elsa.Client.Models;
 using ElsaDashboard.Shared.Rpc;
 using ProtoBuf.Grpc;
 
@@ -17,10 +14,10 @@ namespace ElsaDashboard.Backend.Rpc
             _elsaClient = elsaClient;
         }
         
-        public async Task<IEnumerable<ActivityDescriptor>> GetActivitiesAsync(CallContext callContext)
+        public async Task<GetActivitiesResponse> GetActivitiesAsync(CallContext callContext)
         {
             var result = await _elsaClient.Activities.ListAsync(callContext.CancellationToken);
-            return result.Items;
+            return new GetActivitiesResponse(result.Items);
         }
     }
 }

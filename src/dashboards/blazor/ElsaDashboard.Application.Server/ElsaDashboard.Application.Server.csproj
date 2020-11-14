@@ -11,6 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\ElsaDashboard.Application.WebAssembly\ElsaDashboard.Application.WebAssembly.csproj" />
     <ProjectReference Include="..\ElsaDashboard.Application\ElsaDashboard.Application.csproj" />
     <ProjectReference Include="..\ElsaDashboard.Backend\ElsaDashboard.Backend.csproj" />
   </ItemGroup>

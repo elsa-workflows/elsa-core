@@ -1,4 +1,4 @@
-﻿<div x-show="$store.flyoutPanel.show" x-data="{ open: false }" x-on:keydown.window.escape="$store.flyoutPanel.show = false" class="fixed inset-0 overflow-hidden">
+﻿<div x-show="$store.flyoutPanel.show" x-data="{}" x-on:keydown.window.escape="$store.flyoutPanel.show = false" class="fixed inset-0 overflow-hidden">
     <div class="absolute inset-0 overflow-hidden">
         <section x-on:click.away="$store.flyoutPanel.show = false" class="absolute inset-y-0 right-0 pl-10 max-w-md md:max-w-full flex sm:pl-16">
             <div class="w-screen max-w-2xl" x-description="Slide-over panel, show/hide based on slide-over state." x-show="$store.flyoutPanel.show == true" x-transition:enter="transform transition ease-in-out duration-500 sm:duration-700" x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0" x-transition:leave="transform transition ease-in-out duration-500 sm:duration-700" x-transition:leave-start="translate-x-0" x-transition:leave-end="translate-x-full">
@@ -15,15 +15,9 @@
                                     </h2>
                                 }
                                 <div class="h-7 flex items-center">
-                                    <button @click="open = false; setTimeout(() => open = true, 1000);"
-                                             aria-label="Close panel"
-                                             class="text-gray-400 hover:text-gray-500 transition ease-in-out duration-150">
-                                        <svg class="h-6 w-6" x-description="Heroicon name: x"
-                                             xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                             stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                  d="M6 18L18 6M6 6l12 12">
-                                            </path>
+                                    <button x-on:click="$store.flyoutPanel.show = false" aria-label="Close panel" class="text-gray-400 hover:text-gray-500 transition ease-in-out duration-150">
+                                        <svg class="h-6 w-6" x-description="Heroicon name: x" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                                         </svg>
                                     </button>
                                 </div>

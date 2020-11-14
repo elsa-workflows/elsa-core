@@ -5,7 +5,6 @@ using Elsa.Activities.Signaling;
 using Elsa.Activities.Signaling.Models;
 using Elsa.Models;
 using Elsa.Services.Models;
-using Elsa.Testing.Shared.Helpers;
 using Elsa.Testing.Shared.Unit;
 using Xunit;
 using Xunit.Abstractions;

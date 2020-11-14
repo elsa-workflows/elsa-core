@@ -5,9 +5,10 @@ namespace ElsaDashboard.Backend.Extensions
 {
     public static class ApplicationBuilderExtensions
     {
-        public static IApplicationBuilder UserElsaGrpcServices(this IApplicationBuilder app)
+        public static IApplicationBuilder UseElsaGrpcServices(this IApplicationBuilder app)
         {
             return app
+                .UseCors()
                 .UseGrpcWeb()
                 .UseEndpoints(endpoints => endpoints
                 .MapGrpcEndpoint<IActivityService>()

@@ -2,7 +2,6 @@
 using System.Threading.Tasks;
 using Elsa.Core.IntegrationTests.Helpers;
 using Elsa.Models;
-using Elsa.Testing.Shared.Helpers;
 using Elsa.Testing.Shared.Unit;
 using Microsoft.Extensions.DependencyInjection;
 using Storage.Net.Blobs;
