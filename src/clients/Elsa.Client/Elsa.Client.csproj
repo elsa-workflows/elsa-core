@@ -21,7 +21,6 @@
     <ItemGroup>
       <PackageReference Include="NodaTime" Version="3.0.3" />
       <PackageReference Include="NodaTime.Serialization.JsonNet" Version="3.0.0" />
-      <PackageReference Include="protobuf-net.Core" Version="3.0.52" />
       <PackageReference Include="Refit" Version="5.2.1" />
       <PackageReference Include="Refit.HttpClientFactory" Version="5.2.1" />
     </ItemGroup>

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Elsa.Client.Models;
 using Newtonsoft.Json.Linq;
 using ProtoBuf.Meta;
 
@@ -12,7 +13,7 @@ namespace ElsaDashboard.Shared.Surrogates
     {
         private static readonly IDictionary<Type, Type> SurrogateMapping = new Dictionary<Type, Type>
         {
-            [typeof(JToken)] = typeof(JTokenSurrogate)
+            [typeof(ActivityPropertyDescriptor)] = typeof(ActivityPropertyDescriptorSurrogate)
         };
 
         /// <summary>

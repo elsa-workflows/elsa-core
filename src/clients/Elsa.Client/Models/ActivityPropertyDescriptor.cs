@@ -1,15 +1,15 @@
+using System.Runtime.Serialization;
 using Newtonsoft.Json.Linq;
-using ProtoBuf;
 
 namespace Elsa.Client.Models
 {
-    [ProtoContract(IgnoreListHandling = true)]
+    [DataContract]
     public class ActivityPropertyDescriptor
     {
-        [ProtoMember(1)] public string Name { get; } = default!;
-        [ProtoMember(2)] public string Type { get; } = default!;
-        [ProtoMember(3)] public string? Label { get; set; }
-        [ProtoMember(4)] public string? Hint { get; set; }
-        [ProtoMember(5)] public JObject? Options { get; set; }
+        [DataMember(Order = 1)] public string Name { get; set; } = default!;
+        [DataMember(Order = 2)] public string Type { get; set; } = default!;
+        [DataMember(Order = 3)] public string? Label { get; set; }
+        [DataMember(Order = 4)] public string? Hint { get; set; }
+        [DataMember(Order = 5)] public JObject? Options { get; set; }
     }
 }
