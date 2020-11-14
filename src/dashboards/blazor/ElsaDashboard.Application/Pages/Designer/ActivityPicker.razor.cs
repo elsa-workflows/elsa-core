@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Elsa.Client.Models;
+using ElsaDashboard.Application.Extensions;
+using ElsaDashboard.Application.Services;
 using ElsaDashboard.Shared.Rpc;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
@@ -12,6 +14,7 @@ namespace ElsaDashboard.Application.Pages.Designer
     partial class ActivityPicker
     {
         [Inject] private IActivityService ActivityService { get; set; } = default!;
+        [Inject] private IFlyoutPanelService FlyoutPanelService { get; set; } = default!;
         private ActivityTraitFilter SelectedActivityTraitFilter { get; set; }
         private string? ActivitySearchText { get; set; }
         private ICollection<ActivityTraitFilter> ActivityTraitFilters => new[] { ActivityTraitFilter.All, ActivityTraitFilter.Actions, ActivityTraitFilter.Triggers };
@@ -56,6 +59,11 @@ namespace ElsaDashboard.Application.Pages.Designer
                     (activity.DisplayName ?? "").Contains(searchText, StringComparison.InvariantCultureIgnoreCase) ||
                     activity.Type.Contains(searchText, StringComparison.InvariantCultureIgnoreCase)
                 select activity;
+        }
+
+        private async Task OnActivityClick(ActivityDescriptor activity)
+        {
+            await FlyoutPanelService.ShowAsync<ActivityEditor>(activity.DisplayName);
         }
     }
 }

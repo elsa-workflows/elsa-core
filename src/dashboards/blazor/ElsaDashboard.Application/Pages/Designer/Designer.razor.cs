@@ -34,7 +34,7 @@ namespace ElsaDashboard.Application.Pages.Designer
 
         private async ValueTask OnActivityClick(MouseEventArgs e)
         {
-            await FlyoutPanelService.ShowAsync<ActivityPicker>("Timer Properties");
+            await FlyoutPanelService.ShowAsync<ActivityEditor>("Timer Properties");
         }
     }
 }
