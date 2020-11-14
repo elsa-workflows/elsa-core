@@ -16,7 +16,7 @@ namespace ElsaDashboard.Blazor.Application.Pages.Designer
         {
             if (firstRender)
             {
-                _designerModule = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/ElsaDashboard.Blazor.Shared/workflowDesigner.js");
+                _designerModule = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/ElsaDashboard.Blazor.Application/workflowDesigner.js");
             }
         }
 
@@ -24,6 +24,11 @@ namespace ElsaDashboard.Blazor.Application.Pages.Designer
         {
             if(_designerModule != null)
                 await _designerModule.DisposeAsync();
+        }
+
+        private async ValueTask OnStartClick(MouseEventArgs e)
+        {
+            await FlyoutPanelService.ShowAsync();
         }
 
         private async ValueTask OnActivityClick(MouseEventArgs e)

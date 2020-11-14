@@ -1,4 +1,6 @@
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jsPlumb/2.15.0/js/jsplumb.min.js" integrity="sha512-vVRd/8cnj1FEVrL2EPkHJ+om6q7hlTFgoq7Wixfby4hNneUomS+G5zkwE1IIc+Ru8HZ1hxDfH8lcIsXpydfVmw==" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsPlumb/2.15.0/js/jsplumb.min.js"
+        integrity="sha512-vVRd/8cnj1FEVrL2EPkHJ+om6q7hlTFgoq7Wixfby4hNneUomS+G5zkwE1IIc+Ru8HZ1hxDfH8lcIsXpydfVmw=="
+        crossorigin="anonymous"></script>
 
 <module href="./src/partials/layout.html">
     <div class="flex-0 border-b border-gray-200 px-4 py-4 sm:flex sm:items-center sm:justify-between sm:px-6 lg:px-8">
@@ -9,7 +11,8 @@
         </div>
         <div class="mt-4 flex sm:mt-0 sm:ml-4">
         <span class="order-0 sm:order-1 sm:ml-3 shadow-sm rounded-md">
-            <button type="button" class="inline-flex items-center px-4 py-2 border border-transparent text-sm leading-5 font-medium rounded-md text-white bg-blue-500 hover:bg-blue-400 focus:outline-none focus:shadow-outline-blue focus:border-blue-700 active:bg-blue-700 transition duration-150 ease-in-out">
+            <button type="button"
+                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm leading-5 font-medium rounded-md text-white bg-blue-500 hover:bg-blue-400 focus:outline-none focus:shadow-outline-blue focus:border-blue-700 active:bg-blue-700 transition duration-150 ease-in-out">
                 Publish
             </button>
         </span>
@@ -24,13 +27,27 @@
                         <div class="tree">
                             <ul>
                                 <li>
-                                    <module href="./src/partials/activity.html" locals='{ "id": "activity-1" }'></module>
+                                    <div class="inline-flex flex flex-col items-center">
+                                        <button id="start-button" type="button"
+                                                class="px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-green active:bg-green-700 transition ease-in-out duration-150">
+                                            Start
+                                        </button>
+                                        <div id="start-button-plus" class="mt-6">
+                                            <svg class="h-8 w-8 text-gray-400 hover:text-blue-500 cursor-pointer" fill="none" viewBox="0 0 24 24"
+                                                 stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                      d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            </svg>
+                                        </div>
+                                    </div>
                                     <ul>
                                         <li>
-                                            <module href="./src/partials/activity.html" locals='{ "id": "activity-2" }'></module>
+                                            <module href="./src/partials/activity.html"
+                                                    locals='{ "id": "activity-2" }'></module>
                                             <ul>
                                                 <li>
-                                                    <module href="./src/partials/activity.html" locals='{ "id": "activity-3" }'></module>
+                                                    <module href="./src/partials/activity.html"
+                                                            locals='{ "id": "activity-3" }'></module>
                                                     <ul>
                                                         <li>
                                                             <div class="blockcondition blockyes ">
@@ -38,36 +55,47 @@
                                                             </div>
                                                             <ul>
                                                                 <li>
-                                                                    <module href="./src/partials/activity.html" locals='{ "id": "activity-4a" }'></module>
+                                                                    <module href="./src/partials/activity.html"
+                                                                            locals='{ "id": "activity-4a" }'></module>
                                                                     <ul>
                                                                         <li>
-                                                                            <module href="./src/partials/activity.html" locals='{ "id": "activity-5" }'></module>
+                                                                            <module href="./src/partials/activity.html"
+                                                                                    locals='{ "id": "activity-5" }'></module>
                                                                             <ul>
                                                                                 <li>
-                                                                                    <div class="blockcondition blockno ">
-                                                                                        <span style="padding: 6px;">No</span>
+                                                                                    <div
+                                                                                        class="blockcondition blockno ">
+                                                                                        <span
+                                                                                            style="padding: 6px;">No</span>
                                                                                     </div>
                                                                                     <ul>
                                                                                         <li>
-                                                                                            <module href="./src/partials/activity.html"></module>
+                                                                                            <module
+                                                                                                href="./src/partials/activity.html"></module>
                                                                                         </li>
                                                                                     </ul>
                                                                                 </li>
                                                                                 <li>
-                                                                                    <div class="blockcondition blockyes ">
-                                                                                        <span style="padding: 6px;">Yes</span>
+                                                                                    <div
+                                                                                        class="blockcondition blockyes ">
+                                                                                        <span
+                                                                                            style="padding: 6px;">Yes</span>
                                                                                     </div>
                                                                                     <ul>
                                                                                         <li>
-                                                                                            <module href="./src/partials/activity.html"></module>
+                                                                                            <module
+                                                                                                href="./src/partials/activity.html"></module>
                                                                                             <ul>
                                                                                                 <li>
-                                                                                                    <div class="blockcondition blockyes ">
-                                                                                                        <span style="padding: 6px;">Yes</span>
+                                                                                                    <div
+                                                                                                        class="blockcondition blockyes ">
+                                                                                                        <span
+                                                                                                            style="padding: 6px;">Yes</span>
                                                                                                     </div>
                                                                                                     <ul>
                                                                                                         <li>
-                                                                                                            <module href="./src/partials/activity.html"></module>
+                                                                                                            <module
+                                                                                                                href="./src/partials/activity.html"></module>
                                                                                                         </li>
                                                                                                     </ul>
                                                                                                 </li>
@@ -87,29 +115,38 @@
                                                             </div>
                                                             <ul>
                                                                 <li>
-                                                                    <module href="./src/partials/activity.html" locals='{ "id": "activity-4b" }'></module>
+                                                                    <module href="./src/partials/activity.html"
+                                                                            locals='{ "id": "activity-4b" }'></module>
                                                                     <ul>
                                                                         <li>
-                                                                            <module href="./src/partials/activity.html"></module>
+                                                                            <module
+                                                                                href="./src/partials/activity.html"></module>
                                                                             <ul>
                                                                                 <li>
-                                                                                    <div class="blockcondition blockno ">
-                                                                                        <span style="padding: 6px;">No</span>
+                                                                                    <div
+                                                                                        class="blockcondition blockno ">
+                                                                                        <span
+                                                                                            style="padding: 6px;">No</span>
                                                                                     </div>
                                                                                     <ul>
                                                                                         <li>
-                                                                                            <module href="./src/partials/activity.html"></module>
+                                                                                            <module
+                                                                                                href="./src/partials/activity.html"></module>
                                                                                             <ul>
                                                                                                 <li>
-                                                                                                    <div class="blockcondition blockyes ">
-                                                                                                        <span style="padding: 6px;">Yes</span>
+                                                                                                    <div
+                                                                                                        class="blockcondition blockyes ">
+                                                                                                        <span
+                                                                                                            style="padding: 6px;">Yes</span>
                                                                                                     </div>
                                                                                                     <ul>
                                                                                                         <li>
-                                                                                                            <module href="./src/partials/activity.html"></module>
+                                                                                                            <module
+                                                                                                                href="./src/partials/activity.html"></module>
                                                                                                             <ul>
                                                                                                                 <li>
-                                                                                                                    <module href="./src/partials/activity.html"></module>
+                                                                                                                    <module
+                                                                                                                        href="./src/partials/activity.html"></module>
                                                                                                                 </li>
                                                                                                             </ul>
                                                                                                         </li>
@@ -120,34 +157,45 @@
                                                                                     </ul>
                                                                                 </li>
                                                                                 <li>
-                                                                                    <div class="blockcondition blockyes ">
-                                                                                        <span style="padding: 6px;">Yes</span>
+                                                                                    <div
+                                                                                        class="blockcondition blockyes ">
+                                                                                        <span
+                                                                                            style="padding: 6px;">Yes</span>
                                                                                     </div>
                                                                                     <ul>
                                                                                         <li>
-                                                                                            <module href="./src/partials/activity.html"></module>
+                                                                                            <module
+                                                                                                href="./src/partials/activity.html"></module>
                                                                                             <ul>
                                                                                                 <li>
-                                                                                                    <div class="blockcondition blockyes ">
-                                                                                                        <span style="padding: 6px;">Yes</span>
+                                                                                                    <div
+                                                                                                        class="blockcondition blockyes ">
+                                                                                                        <span
+                                                                                                            style="padding: 6px;">Yes</span>
                                                                                                     </div>
                                                                                                     <ul>
                                                                                                         <li>
-                                                                                                            <module href="./src/partials/activity.html"></module>
+                                                                                                            <module
+                                                                                                                href="./src/partials/activity.html"></module>
                                                                                                             <ul>
                                                                                                                 <li>
-                                                                                                                    <div class="blockcondition blockyes ">
-                                                                                                                        <span style="padding: 6px;">+</span>
+                                                                                                                    <div
+                                                                                                                        class="blockcondition blockyes ">
+                                                                                                                        <span
+                                                                                                                            style="padding: 6px;">+</span>
                                                                                                                     </div>
                                                                                                                     <ul>
                                                                                                                         <li>
-                                                                                                                            <module href="./src/partials/activity.html"></module>
+                                                                                                                            <module
+                                                                                                                                href="./src/partials/activity.html"></module>
                                                                                                                             <ul>
                                                                                                                                 <li>
-                                                                                                                                    <module href="./src/partials/activity.html"></module>
+                                                                                                                                    <module
+                                                                                                                                        href="./src/partials/activity.html"></module>
                                                                                                                                     <ul>
                                                                                                                                         <li>
-                                                                                                                                            <module href="./src/partials/activity.html"></module>
+                                                                                                                                            <module
+                                                                                                                                                href="./src/partials/activity.html"></module>
                                                                                                                                         </li>
                                                                                                                                     </ul>
                                                                                                                                 </li>
@@ -202,7 +250,12 @@
         jsPlumbInstance.batch(function () {
 
             jsPlumbInstance.connect({
-                source: "activity-1",
+                source: "start-button",
+                target: "start-button-plus"
+            });
+
+            jsPlumbInstance.connect({
+                source: "start-button-plus",
                 target: "activity-2"
             });
 

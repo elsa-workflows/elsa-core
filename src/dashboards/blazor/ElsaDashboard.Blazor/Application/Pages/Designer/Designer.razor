@@ -23,13 +23,26 @@
                     <div class="tree">
                         <ul>
                             <li>
-                                <Activity ActivityId="activity-1" OnClick="@(async e => await OnActivityClick(e))" />
+                                <div class="inline-flex flex flex-col items-center">
+                                    <button id="start-button" type="button"
+                                            class="px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-green active:bg-green-700 transition ease-in-out duration-150"
+                                            @onclick="@(async e => await OnStartClick(e))">
+                                        Start
+                                    </button>
+                                    <div id="start-button-plus" class="mt-6">
+                                        <svg class="h-8 w-8 text-gray-400 hover:text-blue-500 cursor-pointer" fill="none" viewBox="0 0 24 24"
+                                             stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                  d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                    </div>
+                                </div>
                                 <ul>
                                     <li>
-                                        <Activity ActivityId="activity-2" />
+                                        <Activity ActivityId="activity-2" OnClick="@(async e => await OnActivityClick(e))"/>
                                         <ul>
                                             <li>
-                                                <Activity ActivityId="activity-3" />
+                                                <Activity ActivityId="activity-3"/>
                                                 <ul>
                                                     <li>
                                                         <div class="blockcondition blockyes ">
@@ -37,10 +50,10 @@
                                                         </div>
                                                         <ul>
                                                             <li>
-                                                                <Activity ActivityId="activity-4a" />
+                                                                <Activity ActivityId="activity-4a"/>
                                                                 <ul>
                                                                     <li>
-                                                                        <Activity ActivityId="activity-5" />
+                                                                        <Activity ActivityId="activity-5"/>
                                                                         <ul>
                                                                             <li>
                                                                                 <div class="blockcondition blockno ">
@@ -48,7 +61,7 @@
                                                                                 </div>
                                                                                 <ul>
                                                                                     <li>
-                                                                                        <Activity ActivityId="activity-6" />
+                                                                                        <Activity ActivityId="activity-6"/>
                                                                                     </li>
                                                                                 </ul>
                                                                             </li>
@@ -58,7 +71,7 @@
                                                                                 </div>
                                                                                 <ul>
                                                                                     <li>
-                                                                                        <Activity ActivityId="activity-7" />
+                                                                                        <Activity ActivityId="activity-7"/>
                                                                                         <ul>
                                                                                             <li>
                                                                                                 <div class="blockcondition blockyes ">
@@ -66,7 +79,7 @@
                                                                                                 </div>
                                                                                                 <ul>
                                                                                                     <li>
-                                                                                                        <Activity ActivityId="activity-8" />
+                                                                                                        <Activity ActivityId="activity-8"/>
                                                                                                     </li>
                                                                                                 </ul>
                                                                                             </li>
@@ -86,7 +99,7 @@
                                                         </div>
                                                         <ul>
                                                             <li>
-                                                                <Activity ActivityId="activity-4b" />
+                                                                <Activity ActivityId="activity-4b"/>
                                                                 <ul>
                                                                     <li>
                                                                         <module href="./src/partials/activity.html"></module>
@@ -97,7 +110,7 @@
                                                                                 </div>
                                                                                 <ul>
                                                                                     <li>
-                                                                                        <Activity ActivityId="activity-9" />
+                                                                                        <Activity ActivityId="activity-9"/>
                                                                                         <ul>
                                                                                             <li>
                                                                                                 <div class="blockcondition blockyes ">
@@ -105,10 +118,10 @@
                                                                                                 </div>
                                                                                                 <ul>
                                                                                                     <li>
-                                                                                                        <Activity ActivityId="activity-10" />
+                                                                                                        <Activity ActivityId="activity-10"/>
                                                                                                         <ul>
                                                                                                             <li>
-                                                                                                                <Activity ActivityId="activity-11" />
+                                                                                                                <Activity ActivityId="activity-11"/>
                                                                                                             </li>
                                                                                                         </ul>
                                                                                                     </li>
@@ -124,7 +137,7 @@
                                                                                 </div>
                                                                                 <ul>
                                                                                     <li>
-                                                                                        <Activity ActivityId="activity-12" />
+                                                                                        <Activity ActivityId="activity-12"/>
                                                                                         <ul>
                                                                                             <li>
                                                                                                 <div class="blockcondition blockyes ">
@@ -132,7 +145,7 @@
                                                                                                 </div>
                                                                                                 <ul>
                                                                                                     <li>
-                                                                                                        <Activity ActivityId="activity-13" />
+                                                                                                        <Activity ActivityId="activity-13"/>
                                                                                                         <ul>
                                                                                                             <li>
                                                                                                                 <div class="blockcondition blockyes ">
@@ -140,13 +153,13 @@
                                                                                                                 </div>
                                                                                                                 <ul>
                                                                                                                     <li>
-                                                                                                                        <Activity ActivityId="activity-14" />
+                                                                                                                        <Activity ActivityId="activity-14"/>
                                                                                                                         <ul>
                                                                                                                             <li>
-                                                                                                                                <Activity ActivityId="activity-15" />
+                                                                                                                                <Activity ActivityId="activity-15"/>
                                                                                                                                 <ul>
                                                                                                                                     <li>
-                                                                                                                                        <Activity ActivityId="activity-16" />
+                                                                                                                                        <Activity ActivityId="activity-16"/>
                                                                                                                                     </li>
                                                                                                                                 </ul>
                                                                                                                             </li>
