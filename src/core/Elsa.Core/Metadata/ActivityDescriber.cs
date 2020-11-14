@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using Elsa.Attributes;
@@ -19,9 +20,16 @@ namespace Elsa.Metadata
             _optionsProviders = optionsProviders;
         }
         
-        public ActivityDescriptor Describe(Type activityType)
+        public ActivityDescriptor? Describe(Type activityType)
         {
+            var browsableAttribute = activityType.GetCustomAttribute<BrowsableAttribute>();
+            var isBrowsable = browsableAttribute == null || browsableAttribute.Browsable;
+
+            if (!isBrowsable)
+                return null;
+            
             var activityAttribute = activityType.GetCustomAttribute<ActivityAttribute>();
+            
             var typeName = activityAttribute?.Type ?? activityType.Name;
             
             var displayName =

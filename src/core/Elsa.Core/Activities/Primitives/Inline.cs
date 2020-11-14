@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.ActivityResults;
@@ -11,6 +12,7 @@ namespace Elsa.Activities.Primitives
     /// <summary>
     /// Run arbitrary .NET code from coded workflows.
     /// </summary>
+    [Browsable(false)]
     public class Inline : Activity
     {
         public Inline() => Function = context => new ValueTask<IActivityExecutionResult>(Done());

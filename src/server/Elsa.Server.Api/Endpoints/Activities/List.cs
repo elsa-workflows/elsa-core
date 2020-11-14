@@ -33,11 +33,11 @@ namespace Elsa.Server.Api.Endpoints.Activities
         ]
         public IActionResult Handle()
         {
-            var descriptors = _activities.Select(DescribeActivity).ToList();
+            var descriptors = _activities.Select(DescribeActivity).Where(x => x != null).Select(x => x!).ToList();
             var model = new Models.List<ActivityDescriptor>(descriptors);
             return Ok(model);
         }
 
-        private ActivityDescriptor DescribeActivity(IActivity activity) => _activityDescriber.Describe(activity.GetType());
+        private ActivityDescriptor? DescribeActivity(IActivity activity) => _activityDescriber.Describe(activity.GetType());
     }
 }

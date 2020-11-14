@@ -4,6 +4,6 @@ namespace Elsa.Metadata
 {
     public interface IActivityDescriber
     {
-        ActivityDescriptor Describe(Type activityType);
+        ActivityDescriptor? Describe(Type activityType);
     }
 }
