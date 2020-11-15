@@ -1,85 +1,25 @@
-﻿<div class="flex-1">
-    <div class="py-6 space-y-6 sm:py-0 sm:space-y-0 sm:divide-y sm:divide-gray-200">
-        <!-- Project name -->
+﻿@using Humanizer
+<div class="py-6 space-y-6 sm:py-0 sm:space-y-0 sm:divide-y sm:divide-gray-200">
+    
+    @foreach (var property in ActivityDescriptor.Properties)
+    {
+        var controlId = property.Name.ToLowerInvariant().Underscore();
+        
         <div class="space-y-1 px-4 sm:space-y-0 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 sm:py-5">
             <div>
-                <label for="project_name" class="block text-sm font-medium leading-5 text-gray-900 sm:mt-px sm:pt-2">
-                    Project name
+                <label for="@controlId" class="block text-sm font-medium leading-5 text-gray-900 sm:mt-px sm:pt-2">
+                    @property.Label
                 </label>
             </div>
             <div class="sm:col-span-2">
                 <div class="rounded-md shadow-sm">
-                    <input id="project_name" class="form-input block w-full sm:text-sm sm:leading-5" placeholder="">
+                    <input id="@controlId" class="form-input block w-full sm:text-sm sm:leading-5" placeholder="">
                 </div>
+                @if (!string.IsNullOrWhiteSpace(property.Hint))
+                {
+                    <p class="mt-2 text-sm text-gray-500">@property.Hint</p>
+                }
             </div>
-        </div>
-
-        <!-- Project description -->
-        <div class="space-y-1 px-4 sm:space-y-0 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 sm:py-5">
-            <div>
-                <label for="project_description" class="block text-sm font-medium leading-5 text-gray-900 sm:mt-px sm:pt-2">
-                    Description
-                </label>
-            </div>
-            <div class="sm:col-span-2">
-                <div class="flex rounded-md shadow-sm">
-                    <textarea id="project_description" rows="3" class="form-textarea block w-full transition duration-150 ease-in-out sm:text-sm sm:leading-5"></textarea>
-                </div>
-            </div>
-        </div>
-
-        <!-- Team members -->
-        <div class="space-y-2 px-4 sm:space-y-0 sm:grid sm:grid-cols-3 sm:gap-4 sm:items-center sm:px-6 sm:py-5">
-            <div>
-                <h3 class="text-sm font-medium leading-5 text-gray-900">
-                    Team Members
-                </h3>
-            </div>
-            <div class="sm:col-span-2">
-                <div class="flex space-x-2">
-
-                    <a href="#" class="flex-shrink-0 rounded-full hover:opacity-75 focus:outline-none focus:shadow-outline transition ease-in-out duration-150">
-                        <img class="inline-block h-8 w-8 rounded-full" src="https://images.unsplash.com/photo-1491528323818-fdd1faba62cc?ixlib=rb-1.2.1&amp;ixid=eyJhcHBfaWQiOjEyMDd9&amp;auto=format&amp;fit=facearea&amp;facepad=2&amp;w=256&amp;h=256&amp;q=80" alt="Tom Warner">
-                    </a>
-
-                    <a href="#" class="flex-shrink-0 rounded-full hover:opacity-75 focus:outline-none focus:shadow-outline transition ease-in-out duration-150">
-                        <img class="inline-block h-8 w-8 rounded-full" src="https://images.unsplash.com/photo-1550525811-e5869dd03032?ixlib=rb-1.2.1&amp;ixid=eyJhcHBfaWQiOjEyMDd9&amp;auto=format&amp;fit=facearea&amp;facepad=2&amp;w=256&amp;h=256&amp;q=80" alt="Tom Warner">
-                    </a>
-
-                    <a href="#" class="flex-shrink-0 rounded-full hover:opacity-75 focus:outline-none focus:shadow-outline transition ease-in-out duration-150">
-                        <img class="inline-block h-8 w-8 rounded-full" src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&amp;ixid=eyJhcHBfaWQiOjEyMDd9&amp;auto=format&amp;fit=facearea&amp;facepad=2&amp;w=256&amp;h=256&amp;q=80" alt="Tom Warner">
-                    </a>
-
-                    <a href="#" class="flex-shrink-0 rounded-full hover:opacity-75 focus:outline-none focus:shadow-outline transition ease-in-out duration-150">
-                        <img class="inline-block h-8 w-8 rounded-full" src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&amp;ixid=eyJhcHBfaWQiOjEyMDd9&amp;auto=format&amp;fit=facearea&amp;facepad=2&amp;w=256&amp;h=256&amp;q=80" alt="Tom Warner">
-                    </a>
-
-                    <a href="#" class="flex-shrink-0 rounded-full hover:opacity-75 focus:outline-none focus:shadow-outline transition ease-in-out duration-150">
-                        <img class="inline-block h-8 w-8 rounded-full" src="https://images.unsplash.com/photo-1586297098710-0382a496c814?ixlib=rb-1.2.1&amp;ixid=eyJhcHBfaWQiOjEyMDd9&amp;auto=format&amp;fit=facearea&amp;facepad=2&amp;w=256&amp;h=256&amp;q=80" alt="Tom Warner">
-                    </a>
-
-
-                    <button type="button" class="flex-shrink-0 inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-dashed border-gray-200 text-gray-400 hover:text-gray-500 hover:border-gray-300 focus:text-gray-500 focus:border-gray-300 focus:outline-none transition ease-in-out duration-150" aria-label="Add team member">
-                        <svg class="h-5 w-5" x-description="Heroicon name: plus" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd"></path>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="flex-shrink-0 px-4 border-t border-gray-200 py-5 sm:px-6">
-        <div class="space-x-3 flex justify-end">
-            <span class="inline-flex rounded-md shadow-sm">
-                <button type="button" class="py-2 px-4 border border-gray-300 rounded-md text-sm leading-5 font-medium text-gray-700 hover:text-gray-500 focus:outline-none focus:border-blue-300 focus:shadow-outline-blue active:bg-gray-50 active:text-gray-800 transition duration-150 ease-in-out">
-                    Cancel
-                </button>
-            </span>
-            <span class="inline-flex rounded-md shadow-sm">
-                <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent text-sm leading-5 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-500 focus:outline-none focus:border-indigo-700 focus:shadow-outline-indigo active:bg-indigo-700 transition duration-150 ease-in-out">
-                    Create
-                </button>
-            </span>
-        </div>
-    </div>
+        </div>    
+    }
 </div>

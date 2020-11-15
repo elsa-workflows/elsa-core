@@ -1,5 +1,8 @@
+using System.Runtime.Serialization;
+
 namespace Elsa.Client.Models
 {
+    [DataContract]
     public class ConnectionDefinition
     {
         public ConnectionDefinition()
@@ -12,9 +15,9 @@ namespace Elsa.Client.Models
             TargetActivityId = targetActivityId;
             Outcome = outcome;
         }
-        
-        public string? SourceActivityId { get; set; }
-        public string? TargetActivityId { get; set; }
-        public string? Outcome { get; set; }
+
+        [DataMember(Order = 1)] public string? SourceActivityId { get; set; }
+        [DataMember(Order = 2)] public string? TargetActivityId { get; set; }
+        [DataMember(Order = 3)] public string? Outcome { get; set; }
     }
 }

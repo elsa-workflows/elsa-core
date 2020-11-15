@@ -1,5 +1,8 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
+using Elsa.Client.Models;
 using ElsaDashboard.Application.Extensions;
+using ElsaDashboard.Application.Models;
 using ElsaDashboard.Application.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
@@ -23,13 +26,36 @@ namespace ElsaDashboard.Application.Pages.Designer
 
         public async ValueTask DisposeAsync()
         {
-            if(_designerModule != null!)
+            if (_designerModule != null!)
                 await _designerModule.DisposeAsync();
         }
 
-        private async ValueTask OnStartClick(MouseEventArgs e)
+        private async ValueTask ClosePanelAsync() => await FlyoutPanelService.HideAsync();
+
+        private async ValueTask ShowActivityPickerAsync()
         {
-            await FlyoutPanelService.ShowAsync<ActivityPicker>("Activities");
+            await FlyoutPanelService.ShowAsync<ActivityPicker>(
+                "Activities",
+                new { ActivitySelected = new EventCallback<ActivityDescriptorSelectedEventArgs>(this, (Func<ActivityDescriptorSelectedEventArgs, ValueTask>) OnActivityPickedAsync) },
+                new ButtonDescriptor("Cancel", new EventCallback<ButtonClickEventArgs>(this, (Func<ButtonClickEventArgs, ValueTask>) (_ => ClosePanelAsync()))));
+        }
+
+        private async ValueTask AddActivityAsync(ActivityDescriptor activityDescriptor)
+        {
+            await FlyoutPanelService.HideAsync();
+        }
+
+        private async ValueTask OnStartClick() => await ShowActivityPickerAsync();
+
+        private async ValueTask OnActivityPickedAsync(ActivityDescriptorSelectedEventArgs e)
+        {
+            var activityDescriptor = e.ActivityDescriptor;
+
+            await FlyoutPanelService.ShowAsync<ActivityEditor>(
+                activityDescriptor.DisplayName,
+                new { activityDescriptor },
+                new ButtonDescriptor("Cancel", new EventCallback<ButtonClickEventArgs>(this, (Func<ButtonClickEventArgs, ValueTask>) (_ => ShowActivityPickerAsync()))),
+                new ButtonDescriptor("OK", new EventCallback<ButtonClickEventArgs>(this, (Func<ButtonClickEventArgs, ValueTask>) (_ => AddActivityAsync(activityDescriptor))), true));
         }
 
         private async ValueTask OnActivityClick(MouseEventArgs e)

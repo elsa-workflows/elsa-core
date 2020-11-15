@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using ElsaDashboard.Application.Models;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 
@@ -17,22 +18,20 @@ namespace ElsaDashboard.Application.Services
 
         public event Action? OnShow;
         public event Action? OnHide;
+        public FlyoutPanelOptions Options { get; private set; } = new();
 
-        public Type? ContentComponentType { get; private set; }
-        public string? Title { get; private set; }
-
-        public async ValueTask ShowAsync(Type contentComponentType, string title)
+        public async ValueTask ShowAsync(FlyoutPanelOptions options)
         {
-            if (!typeof(ComponentBase).IsAssignableFrom(contentComponentType))
-                throw new ArgumentException($"{contentComponentType!.FullName} must be a Blazor Component");
+            Options = options;
+            
+            if (!typeof(ComponentBase).IsAssignableFrom(options.ContentComponentType))
+                throw new ArgumentException($"{options.ContentComponentType.FullName} must be a Blazor Component");
 
             await InitJSModuleAsync();
             await _module.InvokeVoidAsync("show");
-            ContentComponentType = contentComponentType;
-            Title = title;
             OnShow?.Invoke();
         }
-        
+
         public async ValueTask HideAsync()
         {
             await InitJSModuleAsync();
@@ -45,7 +44,7 @@ namespace ElsaDashboard.Application.Services
             if (_module != null!)
                 await _module.DisposeAsync();
         }
-        
+
         private async Task InitJSModuleAsync()
         {
             _module = await _jsRuntime.InvokeAsync<IJSObjectReference>("import", "./_content/ElsaDashboard.Application/flyoutPanel.js");

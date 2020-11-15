@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using Elsa.Client.Models;
-using Newtonsoft.Json.Linq;
 using ProtoBuf.Meta;
 
 namespace ElsaDashboard.Shared.Surrogates

@@ -1,5 +1,8 @@
-﻿namespace Elsa.Client.Models
+﻿using System.Runtime.Serialization;
+
+namespace Elsa.Client.Models
 {
+    [DataContract]
     public class WorkflowDefinition : CompositeActivityDefinition
     {
         public WorkflowDefinition()
@@ -8,17 +11,17 @@
             Type = "Workflow";
         }
 
-        public int Id { get; set; }
-        public string WorkflowDefinitionId { get; set; } = default!;
-        public string WorkflowDefinitionVersionId { get; set; } = default!;
-        public int Version { get; set; }
-        public Variables? Variables { get; set; }
-        public WorkflowContextOptions? ContextOptions { get; set; }
-        public bool IsSingleton { get; set; }
-        public WorkflowPersistenceBehavior PersistenceBehavior { get; set; }
-        public bool DeleteCompletedInstances { get; set; }
-        public bool IsEnabled { get; set; }
-        public bool IsPublished { get; set; }
-        public bool IsLatest { get; set; }
+        [DataMember(Order = 1)] public int Id { get; set; }
+        [DataMember(Order = 2)] public string WorkflowDefinitionId { get; set; } = default!;
+        [DataMember(Order = 3)] public string WorkflowDefinitionVersionId { get; set; } = default!;
+        [DataMember(Order = 4)] public int Version { get; set; }
+        [DataMember(Order = 5)] public Variables? Variables { get; set; }
+        [DataMember(Order = 6)] public WorkflowContextOptions? ContextOptions { get; set; }
+        [DataMember(Order = 7)] public bool IsSingleton { get; set; }
+        [DataMember(Order = 8)] public WorkflowPersistenceBehavior PersistenceBehavior { get; set; }
+        [DataMember(Order = 9)] public bool DeleteCompletedInstances { get; set; }
+        [DataMember(Order = 10)] public bool IsEnabled { get; set; }
+        [DataMember(Order = 11)] public bool IsPublished { get; set; }
+        [DataMember(Order = 12)] public bool IsLatest { get; set; }
     }
 }

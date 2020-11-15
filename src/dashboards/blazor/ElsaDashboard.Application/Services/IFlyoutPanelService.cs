@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using ElsaDashboard.Application.Models;
 
 namespace ElsaDashboard.Application.Services
 {
@@ -7,9 +8,8 @@ namespace ElsaDashboard.Application.Services
     {
         event Action? OnShow;
         event Action? OnHide;
-        Type? ContentComponentType { get; }
-        string? Title { get; }
-        ValueTask ShowAsync(Type contentComponentType, string title);
+        FlyoutPanelOptions Options { get; }
+        ValueTask ShowAsync(FlyoutPanelOptions options);
         ValueTask HideAsync();
     }
 }

@@ -1,7 +1,9 @@
 using System.Collections.Generic;
+using System.Runtime.Serialization;
 
 namespace Elsa.Client.Models
 {
+    [DataContract]
     public class Variables
     {
         public Variables()
@@ -18,7 +20,7 @@ namespace Elsa.Client.Models
             Data = data;
         }
 
-        public IDictionary<string, object?> Data { get; set; }
+        [DataMember(Order = 1)]public IDictionary<string, object?> Data { get; set; }
 
         public object? Get(string name) => Has(name) ? Data[name] : default;
 

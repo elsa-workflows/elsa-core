@@ -5,6 +5,6 @@ namespace ElsaDashboard.Application.Pages.Designer
 {
     partial class ActivityEditor
     {
-        //[Parameter] public ActivityDescriptor ActivityDescriptor { get; set; } = default!;
+        [Parameter] public ActivityDescriptor ActivityDescriptor { get; set; } = default!;
     }
 }
