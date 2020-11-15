@@ -1,0 +1,83 @@
+@using ElsaDashboard.Application.Extensions
+
+<div class="relative">
+    <div id="workflow-canvas" class="flex-1 flex">
+        <div class="flex-1 text-gray-200">
+            <div class="p-10">
+
+                <div class="canvas select-none">
+                    <div class="tree">
+                        <ul>
+                            <li>
+                                <div class="inline-flex flex flex-col items-center">
+                                    <button id="start-button"
+                                            type="button"
+                                            class="px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-green active:bg-green-700 transition ease-in-out duration-150"
+                                            @onclick="@(async e => await OnStartClick())">
+                                        Start
+                                    </button>
+                                </div>
+                                @RenderTree(GetRootActivities(), true)
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <FlyoutPanel/>
+</div>
+
+@code {
+
+    private RenderFragment RenderTree(IEnumerable<ActivityModel> activities, bool isRoot)
+    {
+        var list = activities.ToList();
+        var cssClass = isRoot ? "root" : default;
+
+        return
+            @<text>
+                @if (list.Any())
+                {
+                    <ul class="@cssClass">
+                        @foreach (var activity in list)
+                        {
+                            var activityId = activity.ActivityId;
+                            var plusId = $"{activityId}-button-plus";
+                            var children = Model.GetChildActivities(activity.ActivityId).ToList();
+
+                            <li @key=@activity.ActivityId>
+                                <div class="inline-flex flex flex-col items-center">
+                                    
+                                    @if (isRoot)
+                                    {
+                                        var beforePlusId = $"start-button-plus-{activity.ActivityId}";
+                                        <div id="@beforePlusId" class="my-6">
+                                            <svg class="h-8 w-8 text-gray-400 hover:text-blue-500 cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            </svg>
+                                        </div>
+                                    }
+                                    
+                                    <Activity ActivityId="@activity.ActivityId"/>
+                                    @if (children.Any())
+                                    {
+                                        <div id="@plusId" class="mt-6">
+                                            <svg class="h-8 w-8 text-gray-400 hover:text-blue-500 cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            </svg>
+                                        </div>
+                                    }
+                                </div>
+                                @if (children.Any())
+                                {
+                                    @RenderTree(children, false)
+                                }
+                            </li>
+                        }
+                    </ul>
+                }
+             </text>;
+    }
+
+}
