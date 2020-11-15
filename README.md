@@ -14,6 +14,10 @@
 Elsa Core is a workflows library that enables workflow execution in any .NET Core application.
 Workflows can be defined not only using code but also as JSON, YAML or XML.
 
+<p align="center">
+  <img src="./doc/elsa-2-dashboard-plus-designer.gif" alt="Elsa 2 Preview">
+</p>
+
 ## Get Started
 
 Follow the [Getting Started](https://elsa-workflows.github.io/elsa-core/docs/installing-elsa-core) instructions on the [Elsa Workflows documentation site](https://elsa-workflows.github.io/elsa-core).

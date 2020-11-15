@@ -16,7 +16,7 @@ namespace ElsaDashboard.Application.Shared
 {
     partial class WorkflowDesigner : IAsyncDisposable
     {
-        [Parameter] public WorkflowModel Model { private get; set; } = WorkflowModel.Demo();
+        [Parameter] public WorkflowModel Model { private get; set; } = WorkflowModel.Blank();
         [Inject] private IJSRuntime JS { get; set; } = default!;
         [Inject] private IFlyoutPanelService FlyoutPanelService { get; set; } = default!;
         private IJSObjectReference _designerModule = default!;
