@@ -14,21 +14,12 @@ namespace ElsaDashboard.Application.Shared
 {
     partial class WorkflowDesigner : IAsyncDisposable
     {
-        [Parameter] public WorkflowModel Model { private get; set; } = WorkflowModel.Demo();
+        [Parameter] public WorkflowModel Model { private get; set; } = WorkflowModel.Blank();
         [Inject] private IJSRuntime JS { get; set; } = default!;
         [Inject] private IFlyoutPanelService FlyoutPanelService { get; set; } = default!;
         private IJSObjectReference _designerModule = default!;
-
-        protected override async Task OnAfterRenderAsync(bool firstRender)
-        {
-            if (firstRender)
-            {
-                _designerModule = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/ElsaDashboard.Application/workflowDesigner.js");
-                
-            }
-            
-            await RepaintConnections();
-        }
+        private bool _connectionsChanged = true;
+        private EventCallbackFactory EventCallbackFactory { get; } = new();
 
         public async ValueTask DisposeAsync()
         {
@@ -36,11 +27,33 @@ namespace ElsaDashboard.Application.Shared
                 await _designerModule.DisposeAsync();
         }
 
+        protected override void OnInitialized()
+        {
+            //Model = WorkflowModel.Demo();
+            //ConnectionsHasChanged();
+        }
+
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            if (firstRender)
+            {
+                _designerModule = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/ElsaDashboard.Application/workflowDesigner.js");
+            }
+
+            await RepaintConnections();
+        }
+
         private IEnumerable<ActivityModel> GetRootActivities() => Model.GetChildActivities(null);
 
         private async ValueTask RepaintConnections()
         {
+            if (!_connectionsChanged)
+                return;
+
+            _connectionsChanged = false;
+
             var rootActivities = Model.GetChildActivities(null).ToList();
+            var leafActivities = Model.GetLeafActivities();
 
             var rootConnections = rootActivities.SelectMany(x =>
             {
@@ -57,8 +70,8 @@ namespace ElsaDashboard.Application.Shared
                         targetId = x.ActivityId
                     },
                 };
-            }).ToArray();
-            
+            });
+
             var connections = Model.Connections.SelectMany(x =>
             {
                 return new[]
@@ -74,41 +87,61 @@ namespace ElsaDashboard.Application.Shared
                         targetId = x.TargetId
                     },
                 };
-            }).ToArray();
+            });
 
-            var allConnections = rootConnections.Concat(connections);
+            var leafConnections = leafActivities.Select(x => new
+            {
+                sourceId = x.ActivityId,
+                targetId = $"{x.ActivityId}-button-plus"
+            });
+
+            var allConnections = rootConnections.Concat(connections).Concat(leafConnections);
             await _designerModule.InvokeVoidAsync("updateConnections", (object) allConnections);
         }
 
-        private async ValueTask ClosePanelAsync() => await FlyoutPanelService.HideAsync();
+        private async Task ClosePanelAsync() => await FlyoutPanelService.HideAsync();
 
-        private async ValueTask ShowActivityPickerAsync()
+        private async Task ShowActivityPickerAsync(string? parentActivityId)
         {
             await FlyoutPanelService.ShowAsync<ActivityPicker>(
                 "Activities",
-                new { ActivitySelected = new EventCallback<ActivityDescriptorSelectedEventArgs>(this, (Func<ActivityDescriptorSelectedEventArgs, ValueTask>) OnActivityPickedAsync) },
-                new ButtonDescriptor("Cancel", new EventCallback<ButtonClickEventArgs>(this, (Func<ButtonClickEventArgs, ValueTask>) (_ => ClosePanelAsync()))));
+                new { ActivitySelected = EventCallbackFactory.Create<ActivityDescriptorSelectedEventArgs>(this, e => OnActivityPickedAsync(e, parentActivityId)) },
+                ButtonDescriptor.Create("Cancel", _ => ClosePanelAsync()));
         }
 
-        private async ValueTask AddActivityAsync(ActivityDescriptor activityDescriptor)
+        private async Task AddActivityAsync(ActivityDescriptor activityDescriptor, string? parentActivityId)
         {
             var activity = new ActivityModel(Guid.NewGuid().ToString("N"), activityDescriptor.Type);
-            Model = Model.AddActivity(activity);
+            var model = Model.AddActivity(activity);
+
+            if (parentActivityId != null)
+            {
+                var connection = new ConnectionModel(parentActivityId, activity.ActivityId, "Done");
+                model = model.AddConnection(connection);
+            }
+
+            Model = model;
             await FlyoutPanelService.HideAsync();
-            await RepaintConnections();
+            ConnectionsHasChanged();
         }
 
-        private async ValueTask OnStartClick() => await ShowActivityPickerAsync();
+        private void ConnectionsHasChanged()
+        {
+            _connectionsChanged = true;
+            StateHasChanged();
+        }
 
-        private async ValueTask OnActivityPickedAsync(ActivityDescriptorSelectedEventArgs e)
+        private async Task OnAddActivityClick(string? parentActivityId) => await ShowActivityPickerAsync(parentActivityId);
+
+        private async Task OnActivityPickedAsync(ActivityDescriptorSelectedEventArgs e, string? parentActivityId)
         {
             var activityDescriptor = e.ActivityDescriptor;
 
             await FlyoutPanelService.ShowAsync<ActivityEditor>(
                 activityDescriptor.DisplayName,
-                new { activityDescriptor },
-                new ButtonDescriptor("Cancel", new EventCallback<ButtonClickEventArgs>(this, (Func<ButtonClickEventArgs, ValueTask>) (_ => ShowActivityPickerAsync()))),
-                new ButtonDescriptor("OK", new EventCallback<ButtonClickEventArgs>(this, (Func<ButtonClickEventArgs, ValueTask>) (_ => AddActivityAsync(activityDescriptor))), true));
+                new { ActivityDescriptor = activityDescriptor },
+                ButtonDescriptor.Create("Cancel", _ => ShowActivityPickerAsync(parentActivityId)),
+                ButtonDescriptor.Create("OK", _ => AddActivityAsync(activityDescriptor, parentActivityId), true));
         }
 
         private async ValueTask OnActivityClick(MouseEventArgs e)
