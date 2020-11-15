@@ -49,7 +49,6 @@ namespace ElsaDashboard.Application.Shared
             _connectionsChanged = false;
 
             var rootActivities = Model.GetChildActivities(null).ToList();
-            var leafActivities = Model.GetLeafActivities();
 
             var rootConnections = rootActivities.SelectMany(x =>
             {
@@ -68,34 +67,24 @@ namespace ElsaDashboard.Application.Shared
                 };
             });
 
-            var connections = Model.Connections.SelectMany(x =>
-            {
-                return new[]
-                {
-                    new
-                    {
-                        sourceId = x.SourceId,
-                        targetId = $"{x.SourceId}-{x.Outcome}"
-                    },
-                    new
-                    {
-                        sourceId = $"{x.SourceId}-{x.Outcome}",
-                        targetId = x.TargetId
-                    },
-                };
-            });
-
-            var leafConnections =
-                from activity in leafActivities
-                from outcome in activity.Outcomes
-                select new
+            // Connections from activity outcome to anchor:
+            var sourceConnections = Model.Activities.SelectMany(activity => activity.Outcomes.Select(x =>
+                new
                 {
                     sourceId = activity.ActivityId,
-                    targetId = $"{activity.ActivityId}-{outcome}"
-                }; 
+                    targetId = $"{activity.ActivityId}-{x}"
+                }));
 
+            var connections = Model.Connections.SelectMany(x => new[]
+            {
+                new
+                {
+                    sourceId = $"{x.SourceId}-{x.Outcome}",
+                    targetId = x.TargetId
+                },
+            });
 
-            var allConnections = rootConnections.Concat(connections).Concat(leafConnections);
+            var allConnections = rootConnections.Concat(connections).Concat(sourceConnections);
             await _designerModule.InvokeVoidAsync("updateConnections", (object) allConnections);
         }
 
@@ -127,20 +116,20 @@ namespace ElsaDashboard.Application.Shared
                 else
                 {
                     var connection = new ConnectionModel(activity.ActivityId, targetActivityId, outcome!);
-                    model = model.AddConnection(connection);    
+                    model = model.AddConnection(connection);
                 }
             }
-            
+
             if (sourceActivityId != null)
             {
                 var existingConnection = model.Connections.FirstOrDefault(x => x.SourceId == sourceActivityId && x.Outcome == outcome);
-                
+
                 if (existingConnection != null)
                 {
                     model = model with {Connections = model.Connections.Remove(existingConnection)};
                     var replacementConnection = existingConnection with { TargetId = activity.ActivityId};
                     model = model.AddConnection(replacementConnection);
-                    
+
                     var connection = new ConnectionModel(activity.ActivityId, existingConnection.TargetId, outcome);
                     model = model.AddConnection(connection);
                 }

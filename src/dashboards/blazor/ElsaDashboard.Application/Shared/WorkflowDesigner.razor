@@ -30,12 +30,18 @@
 
 @code {
 
-    private RenderFragment RenderAnchorButton(string id, Func<Task> callback) =>
-        @<a id="@id" class="my-6" href="#" @onclick:preventDefault @onclick="@callback">
-            <svg class="h-8 w-8 text-gray-400 hover:text-blue-500 cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-        </a>;
+    private RenderFragment RenderAnchorButton(string id, string outcome, Func<Task> callback) =>
+        @<div class="my-6 flex flex-col items-center">
+            @if (!string.IsNullOrEmpty(outcome))
+            {
+                <div class="mb-4 relative z-10 px-2.5 py-0.5 rounded-full text-xs font-medium leading-4 bg-cool-gray-100 text-cool-gray-800 capitalize">@outcome</div>
+            }
+            <a @key="@id" id="@id" href="#" @onclick:preventDefault @onclick="@callback">
+                <svg class="h-8 w-8 text-gray-400 hover:text-blue-500 cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </a>
+        </div>;
 
     private RenderFragment RenderOutcomeButtons(ActivityModel activity, Func<string, string, string, Task> onAddActivityClickHandler)
     {
@@ -45,7 +51,7 @@
             @<div class="flex flex-row space-x-6">
                 @foreach (var outcome in activity.Outcomes)
                 {
-                    @RenderAnchorButton($"{activityId}-{outcome}", () => onAddActivityClickHandler(activityId, null, outcome))
+                    @RenderAnchorButton($"{activityId}-{outcome}", outcome, () => onAddActivityClickHandler(activityId, null, outcome))
                 }
             </div>;
     }
@@ -70,7 +76,7 @@
 
                                     @if (isRoot)
                                     {
-                                        @RenderAnchorButton($"start-button-plus-{activityId}", () => onAddActivityClickHandler(null, activityId, null))
+                                        @RenderAnchorButton($"start-button-plus-{activityId}", "", () => onAddActivityClickHandler(null, activityId, null))
                                     }
 
                                     <Activity Model="@activity"/>
