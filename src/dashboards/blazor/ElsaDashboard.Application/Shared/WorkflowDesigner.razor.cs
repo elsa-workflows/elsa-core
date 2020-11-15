@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Formats.Asn1;
 using System.Linq;
 using System.Threading.Tasks;
 using Elsa.Client.Models;
@@ -14,7 +16,7 @@ namespace ElsaDashboard.Application.Shared
 {
     partial class WorkflowDesigner : IAsyncDisposable
     {
-        [Parameter] public WorkflowModel Model { private get; set; } = WorkflowModel.Blank();
+        [Parameter] public WorkflowModel Model { private get; set; } = WorkflowModel.Demo();
         [Inject] private IJSRuntime JS { get; set; } = default!;
         [Inject] private IFlyoutPanelService FlyoutPanelService { get; set; } = default!;
         private IJSObjectReference _designerModule = default!;
@@ -25,12 +27,6 @@ namespace ElsaDashboard.Application.Shared
         {
             if (_designerModule != null!)
                 await _designerModule.DisposeAsync();
-        }
-
-        protected override void OnInitialized()
-        {
-            //Model = WorkflowModel.Demo();
-            //ConnectionsHasChanged();
         }
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -79,21 +75,25 @@ namespace ElsaDashboard.Application.Shared
                     new
                     {
                         sourceId = x.SourceId,
-                        targetId = $"{x.SourceId}-button-plus"
+                        targetId = $"{x.SourceId}-{x.Outcome}"
                     },
                     new
                     {
-                        sourceId = $"{x.SourceId}-button-plus",
+                        sourceId = $"{x.SourceId}-{x.Outcome}",
                         targetId = x.TargetId
                     },
                 };
             });
 
-            var leafConnections = leafActivities.Select(x => new
-            {
-                sourceId = x.ActivityId,
-                targetId = $"{x.ActivityId}-button-plus"
-            });
+            var leafConnections =
+                from activity in leafActivities
+                from outcome in activity.Outcomes
+                select new
+                {
+                    sourceId = activity.ActivityId,
+                    targetId = $"{activity.ActivityId}-{outcome}"
+                }; 
+
 
             var allConnections = rootConnections.Concat(connections).Concat(leafConnections);
             await _designerModule.InvokeVoidAsync("updateConnections", (object) allConnections);
@@ -101,23 +101,54 @@ namespace ElsaDashboard.Application.Shared
 
         private async Task ClosePanelAsync() => await FlyoutPanelService.HideAsync();
 
-        private async Task ShowActivityPickerAsync(string? parentActivityId)
+        private async Task ShowActivityPickerAsync(string? parentActivityId, string? targetActivityId, string? outcome)
         {
             await FlyoutPanelService.ShowAsync<ActivityPicker>(
                 "Activities",
-                new { ActivitySelected = EventCallbackFactory.Create<ActivityDescriptorSelectedEventArgs>(this, e => OnActivityPickedAsync(e, parentActivityId)) },
+                new { ActivitySelected = EventCallbackFactory.Create<ActivityDescriptorSelectedEventArgs>(this, e => OnActivityPickedAsync(e, parentActivityId, targetActivityId, outcome)) },
                 ButtonDescriptor.Create("Cancel", _ => ClosePanelAsync()));
         }
 
-        private async Task AddActivityAsync(ActivityDescriptor activityDescriptor, string? parentActivityId)
+        private async Task AddActivityAsync(ActivityDescriptor activityDescriptor, string? sourceActivityId, string? targetActivityId, string? outcome)
         {
-            var activity = new ActivityModel(Guid.NewGuid().ToString("N"), activityDescriptor.Type);
+            var activity = new ActivityModel(Guid.NewGuid().ToString("N"), activityDescriptor.Type, activityDescriptor.Outcomes);
             var model = Model.AddActivity(activity);
 
-            if (parentActivityId != null)
+            if (targetActivityId != null)
             {
-                var connection = new ConnectionModel(parentActivityId, activity.ActivityId, "Done");
-                model = model.AddConnection(connection);
+                var existingConnection = model.Connections.FirstOrDefault(x => x.TargetId == targetActivityId && x.Outcome == outcome);
+
+                if (existingConnection != null)
+                {
+                    model = model with {Connections = model.Connections.Remove(existingConnection)};
+                    var replacementConnection = existingConnection with { SourceId = activity.ActivityId};
+                    model.AddConnection(replacementConnection);
+                }
+                else
+                {
+                    var connection = new ConnectionModel(activity.ActivityId, targetActivityId, outcome!);
+                    model = model.AddConnection(connection);    
+                }
+            }
+            
+            if (sourceActivityId != null)
+            {
+                var existingConnection = model.Connections.FirstOrDefault(x => x.SourceId == sourceActivityId && x.Outcome == outcome);
+                
+                if (existingConnection != null)
+                {
+                    model = model with {Connections = model.Connections.Remove(existingConnection)};
+                    var replacementConnection = existingConnection with { TargetId = activity.ActivityId};
+                    model = model.AddConnection(replacementConnection);
+                    
+                    var connection = new ConnectionModel(activity.ActivityId, existingConnection.TargetId, outcome);
+                    model = model.AddConnection(connection);
+                }
+                else
+                {
+                    var connection = new ConnectionModel(sourceActivityId, activity.ActivityId, outcome);
+                    model = model.AddConnection(connection);
+                }
             }
 
             Model = model;
@@ -131,17 +162,17 @@ namespace ElsaDashboard.Application.Shared
             StateHasChanged();
         }
 
-        private async Task OnAddActivityClick(string? parentActivityId) => await ShowActivityPickerAsync(parentActivityId);
+        private async Task OnAddActivityClick(string? sourceActivityId, string? targetActivityId, string? outcome) => await ShowActivityPickerAsync(sourceActivityId, targetActivityId, outcome);
 
-        private async Task OnActivityPickedAsync(ActivityDescriptorSelectedEventArgs e, string? parentActivityId)
+        private async Task OnActivityPickedAsync(ActivityDescriptorSelectedEventArgs e, string? sourceActivityId, string? targetActivityId, string? outcome)
         {
             var activityDescriptor = e.ActivityDescriptor;
 
             await FlyoutPanelService.ShowAsync<ActivityEditor>(
                 activityDescriptor.DisplayName,
                 new { ActivityDescriptor = activityDescriptor },
-                ButtonDescriptor.Create("Cancel", _ => ShowActivityPickerAsync(parentActivityId)),
-                ButtonDescriptor.Create("OK", _ => AddActivityAsync(activityDescriptor, parentActivityId), true));
+                ButtonDescriptor.Create("Cancel", _ => ShowActivityPickerAsync(sourceActivityId, targetActivityId, outcome)),
+                ButtonDescriptor.Create("OK", _ => AddActivityAsync(activityDescriptor, sourceActivityId, targetActivityId, outcome), true));
         }
 
         private async ValueTask OnActivityClick(MouseEventArgs e)

@@ -25,19 +25,17 @@ namespace ElsaDashboard.Application.Models
             {
                 Activities = new[]
                 {
-                    new ActivityModel("activity-1", "WriteLine"),
-                    new ActivityModel("activity-2", "WriteLine"),
-                    new ActivityModel("activity-3", "WriteLine"),
-                    new ActivityModel("activity-4", "WriteLine"),
-                    new ActivityModel("activity-5", "WriteLine"),
+                    new ActivityModel("activity-1", "ReadLine", new[] { "Done" }),
+                    new ActivityModel("activity-2", "IfElse", new[] { "True", "False" }),
+                    new ActivityModel("activity-3", "WriteLine", new[] { "Done" }),
+                    new ActivityModel("activity-4", "WriteLine", new[] { "Done" })
                 }.ToImmutableList(),
 
                 Connections = new[]
                 {
                     new ConnectionModel("activity-1", "activity-2", "Done"),
-                    new ConnectionModel("activity-2", "activity-3", "Done"),
-                    new ConnectionModel("activity-2", "activity-4", "Done"),
-                    new ConnectionModel("activity-4", "activity-5", "Done")
+                    new ConnectionModel("activity-2", "activity-3", "True"),
+                    new ConnectionModel("activity-2", "activity-4", "False")
                 }.ToImmutableList()
             };
 
