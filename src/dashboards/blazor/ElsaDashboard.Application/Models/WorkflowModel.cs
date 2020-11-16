@@ -42,5 +42,6 @@ namespace ElsaDashboard.Application.Models
         public WorkflowModel AddActivity(ActivityModel activity) => this with { Activities = Activities.Add(activity)};
         public WorkflowModel RemoveActivity(ActivityModel activity) => this with { Activities = Activities.Where(x => x != activity).ToImmutableList()};
         public WorkflowModel AddConnection(ConnectionModel connection) => this with { Connections = Connections.Add(connection)};
+        public WorkflowModel AddConnection(string sourceId, string targetId, string outcome) => AddConnection(new ConnectionModel(sourceId, targetId, outcome));
     }
 }

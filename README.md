@@ -45,16 +45,16 @@ Version 1.0
 
 Version 2.0
 
-- [x] Container Activities
+- [x] Composite Activities API
 - [x] Service Bus Messaging
-- [ ] Generic Command & Event Activities
 - [x] Workflow Host REST API
-- [ ] Workflow Host gRPC API
 - [x] Workflow Server
 - [x] Distributed Hosting Support (support for multi-node environments)
 - [ ] New Workflow Designer + Dashboard
+- [ ] Generic Command & Event Activities
 
 Version 3.0
+- [ ] Composite Activity Definitions (with designer support)
 - [ ] Localization Support
 - [ ] State Machines
 - [ ] Sagas

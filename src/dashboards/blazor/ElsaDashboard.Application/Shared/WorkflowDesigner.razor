@@ -1,5 +1,9 @@
 @using ElsaDashboard.Application.Extensions
 
+@{
+    var renderedActivities = new HashSet<string>();
+}
+
 <div class="flex flex-1 relative">
     <div id="workflow-canvas" class="flex-1 flex">
         <div class="flex-1 text-gray-200">
@@ -17,7 +21,7 @@
                                         Start
                                     </button>
                                 </div>
-                                @RenderTree(GetRootActivities(), true, OnAddActivityClick)
+                                @RenderTree(GetRootActivities(), true, OnAddActivityClick, renderedActivities)
                             </li>
                         </ul>
                     </div>
@@ -30,7 +34,7 @@
 
 @code {
 
-    private RenderFragment RenderAnchorButton(string id, string outcome, Func<Task> callback) =>
+    private RenderFragment RenderOutcomeButton(string id, string outcome, Func<Task> callback) =>
         @<div class="my-6 flex flex-col items-center">
             @if (!string.IsNullOrEmpty(outcome))
             {
@@ -51,15 +55,18 @@
             @<div class="flex flex-row space-x-6">
                 @foreach (var outcome in activity.Outcomes)
                 {
-                    @RenderAnchorButton($"{activityId}-{outcome}", outcome, () => onAddActivityClickHandler(activityId, null, outcome))
+                    @RenderOutcomeButton($"{activityId}-{outcome}", outcome, () => onAddActivityClickHandler(activityId, null, outcome))
                 }
             </div>;
     }
 
-    private RenderFragment RenderTree(IEnumerable<ActivityModel> activities, bool isRoot, Func<string, string, string, Task> onAddActivityClickHandler)
+    private RenderFragment RenderTree(IEnumerable<ActivityModel> activities, bool isRoot, Func<string, string, string, Task> onAddActivityClickHandler, HashSet<string> renderedActivities)
     {
-        var list = activities.ToList();
+        var list = activities.Where(x => !renderedActivities.Contains(x.ActivityId)).ToList();
         var cssClass = isRoot ? "root" : default!;
+
+        foreach (var activity in list)
+            renderedActivities.Add(activity.ActivityId);
 
         return
             @<text>
@@ -71,12 +78,12 @@
                             var activityId = activity.ActivityId;
                             var children = Model.GetChildActivities(activityId).ToList();
 
-                            <li @key=@activity.ActivityId>
+                            <li @key=@activityId>
                                 <div class="inline-flex flex flex-col items-center">
 
                                     @if (isRoot)
                                     {
-                                        @RenderAnchorButton($"start-button-plus-{activityId}", "", () => onAddActivityClickHandler(null, activityId, null))
+                                        @RenderOutcomeButton($"start-button-plus-{activityId}", "", () => onAddActivityClickHandler(null, activityId, null))
                                     }
 
                                     <Activity Model="@activity"/>
@@ -84,7 +91,7 @@
                                 </div>
                                 @if (children.Any())
                                 {
-                                    @RenderTree(children, false, onAddActivityClickHandler)
+                                    @RenderTree(children, false, onAddActivityClickHandler, renderedActivities)
                                 }
                             </li>
                         }

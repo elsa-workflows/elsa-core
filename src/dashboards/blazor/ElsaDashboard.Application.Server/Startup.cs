@@ -10,12 +10,14 @@ namespace ElsaDashboard.Application.Server
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
+        public Startup(IConfiguration configuration, IHostEnvironment environment)
         {
             Configuration = configuration;
+            Environment = environment;
         }
 
         public IConfiguration Configuration { get; }
+        public IHostEnvironment Environment { get; }
 
         public void ConfigureServices(IServiceCollection services)
         {
@@ -24,7 +26,11 @@ namespace ElsaDashboard.Application.Server
             services.AddElsaDashboardBackend(options => options.ServerUrl = new Uri("https://localhost:11000"));
 
             if (Program.UseBlazorServer) 
-                services.AddServerSideBlazor();
+                services.AddServerSideBlazor(options =>
+                {
+                    options.DetailedErrors = !Environment.IsProduction();
+                    options.JSInteropDefaultCallTimeout = TimeSpan.FromSeconds(30);
+                });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

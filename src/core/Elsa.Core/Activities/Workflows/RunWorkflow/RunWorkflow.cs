@@ -13,7 +13,8 @@ namespace Elsa.Activities.Workflows
 {
     [Activity(
         Category = "Workflows",
-        Description = "Runs a child workflow."
+        Description = "Runs a child workflow.",
+        Outcomes = new[] { OutcomeNames.Done }
     )]
     public class RunWorkflow : Activity
     {
@@ -51,11 +52,11 @@ namespace Elsa.Activities.Workflows
 
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
         {
-            var input = (FinishedWorkflowModel)context.WorkflowExecutionContext.Input!;
+            var input = (FinishedWorkflowModel) context.WorkflowExecutionContext.Input!;
             var childWorkflowIds = ChildWorkflowInstanceIds;
             childWorkflowIds.Remove(input.WorkflowInstanceId);
             ChildWorkflowInstanceIds = childWorkflowIds;
-            return childWorkflowIds.Any() ? (IActivityExecutionResult)Suspend() : Done();
+            return childWorkflowIds.Any() ? (IActivityExecutionResult) Suspend() : Done();
         }
 
         public enum RunWorkflowMode

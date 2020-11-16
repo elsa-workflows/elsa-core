@@ -16,12 +16,19 @@ namespace ElsaDashboard.Application.Shared
 {
     partial class WorkflowDesigner : IAsyncDisposable
     {
-        [Parameter] public WorkflowModel Model { private get; set; } = WorkflowModel.Blank();
+        private static Action<ConnectionModel> _connectionCreatedAction = default!;
+
+        [Parameter] public WorkflowModel Model { private get; set; } = WorkflowModel.Demo();
         [Inject] private IJSRuntime JS { get; set; } = default!;
         [Inject] private IFlyoutPanelService FlyoutPanelService { get; set; } = default!;
         private IJSObjectReference _designerModule = default!;
         private bool _connectionsChanged = true;
         private EventCallbackFactory EventCallbackFactory { get; } = new();
+
+        [JSInvokableAttribute("InvokeConnectionCreated")]
+        public static void InvokeConnectionCreated(ConnectionModel connection) => _connectionCreatedAction(connection);
+
+        protected override void OnInitialized() => _connectionCreatedAction = OnConnectionCreated;
 
         public async ValueTask DisposeAsync()
         {
@@ -48,6 +55,14 @@ namespace ElsaDashboard.Application.Shared
 
             _connectionsChanged = false;
 
+            var connections = GetJsPlumbConnections();
+            var sourceEndpoints = GetJsPlumbSourceEndpoints();
+            var targets = GetJsPlumbTargets();
+            await _designerModule.InvokeVoidAsync("updateConnections", (object) connections, (object) sourceEndpoints, (object) targets);
+        }
+
+        private IEnumerable<object> GetJsPlumbConnections()
+        {
             var rootActivities = Model.GetChildActivities(null).ToList();
 
             var rootConnections = rootActivities.SelectMany(x =>
@@ -57,22 +72,30 @@ namespace ElsaDashboard.Application.Shared
                     new
                     {
                         sourceId = "start-button",
-                        targetId = $"start-button-plus-{x.ActivityId}"
+                        sourceActivityId = default(string)!,
+                        targetId = $"start-button-plus-{x.ActivityId}",
+                        targetActivityId = x.ActivityId,
+                        outcome = default(string)!
                     },
                     new
                     {
                         sourceId = $"start-button-plus-{x.ActivityId}",
-                        targetId = x.ActivityId
+                        sourceActivityId = default(string)!,
+                        targetId = $"activity-{x.ActivityId}",
+                        targetActivityId = x.ActivityId,
+                        outcome = default(string)!
                     },
                 };
             });
 
-            // Connections from activity outcome to anchor:
             var sourceConnections = Model.Activities.SelectMany(activity => activity.Outcomes.Select(x =>
                 new
                 {
-                    sourceId = activity.ActivityId,
-                    targetId = $"{activity.ActivityId}-{x}"
+                    sourceId = $"activity-{activity.ActivityId}",
+                    sourceActivityId = activity.ActivityId,
+                    targetId = $"{activity.ActivityId}-{x}",
+                    targetActivityId = default(string)!,
+                    outcome = x
                 }));
 
             var connections = Model.Connections.SelectMany(x => new[]
@@ -80,13 +103,43 @@ namespace ElsaDashboard.Application.Shared
                 new
                 {
                     sourceId = $"{x.SourceId}-{x.Outcome}",
-                    targetId = x.TargetId
+                    sourceActivityId = x.SourceId,
+                    targetId = $"activity-{x.TargetId}",
+                    targetActivityId = x.TargetId!,
+                    outcome = x.Outcome
                 },
             });
 
-            var allConnections = rootConnections.Concat(connections).Concat(sourceConnections);
-            await _designerModule.InvokeVoidAsync("updateConnections", (object) allConnections);
+            return rootConnections.Concat(connections).Concat(sourceConnections);
         }
+
+        private IEnumerable<object> GetJsPlumbSourceEndpoints()
+        {
+            var rootActivities = Model.GetChildActivities(null).ToList();
+
+            var rootSourceEndpoints = rootActivities.Select(x => new
+            {
+                sourceId = $"start-button-plus-{x.ActivityId}",
+                sourceActivityId = x.ActivityId,
+                outcome = default(string)!
+            });
+
+            var otherSourceEndpoints = Model.Activities.SelectMany(activity => activity.Outcomes.Select(x => new
+            {
+                sourceId = $"{activity.ActivityId}-{x}",
+                sourceActivityId = activity.ActivityId,
+                outcome = x
+            }));
+
+            return rootSourceEndpoints.Concat(otherSourceEndpoints);
+        }
+
+        private IEnumerable<object> GetJsPlumbTargets() =>
+            Model.Activities.Select(x => new
+            {
+                targetId = $"activity-{x.ActivityId}",
+                targetActivityId = x.ActivityId
+            });
 
         private async Task ClosePanelAsync() => await FlyoutPanelService.HideAsync();
 
@@ -100,6 +153,8 @@ namespace ElsaDashboard.Application.Shared
 
         private async Task AddActivityAsync(ActivityDescriptor activityDescriptor, string? sourceActivityId, string? targetActivityId, string? outcome)
         {
+            outcome ??= "Done";
+
             var activity = new ActivityModel(Guid.NewGuid().ToString("N"), activityDescriptor.Type, activityDescriptor.Outcomes);
             var model = Model.AddActivity(activity);
 
@@ -115,8 +170,7 @@ namespace ElsaDashboard.Application.Shared
                 }
                 else
                 {
-                    var connection = new ConnectionModel(activity.ActivityId, targetActivityId, outcome!);
-                    model = model.AddConnection(connection);
+                    model = model.AddConnection(activity.ActivityId, targetActivityId, outcome);
                 }
             }
 
@@ -167,6 +221,12 @@ namespace ElsaDashboard.Application.Shared
         private async ValueTask OnActivityClick(MouseEventArgs e)
         {
             await FlyoutPanelService.ShowAsync<ActivityEditor>("Timer Properties");
+        }
+
+        private void OnConnectionCreated(ConnectionModel connection)
+        {
+            Model = Model.AddConnection(connection);
+            ConnectionsHasChanged();
         }
     }
 }
