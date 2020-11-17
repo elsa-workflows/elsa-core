@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Elsa.Activities.Signaling.Services;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Elsa.Samples.ForkJoinTimerAndSignalWorker.Controllers
+namespace Elsa.Samples.ForkJoinTimerAndSignalHttp.Controllers
 {
     [ApiController]
     [Route("signal/{signalName}/trigger")]

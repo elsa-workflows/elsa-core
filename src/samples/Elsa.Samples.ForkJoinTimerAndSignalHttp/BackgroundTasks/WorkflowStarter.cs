@@ -6,7 +6,7 @@ using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-namespace Elsa.Samples.ForkJoinTimerAndSignalWorker.BackgroundTasks
+namespace Elsa.Samples.ForkJoinTimerAndSignalHttp.BackgroundTasks
 {
     /// <summary>
     /// A simple worker that starts a workflow

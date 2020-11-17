@@ -1,10 +1,10 @@
-using Elsa.Samples.ForkJoinTimerAndSignalWorker.BackgroundTasks;
-using Elsa.Samples.ForkJoinTimerAndSignalWorker.Workflows;
+using Elsa.Samples.ForkJoinTimerAndSignalHttp.BackgroundTasks;
+using Elsa.Samples.ForkJoinTimerAndSignalHttp.Workflows;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using NodaTime;
 
-namespace Elsa.Samples.ForkJoinTimerAndSignalWorker
+namespace Elsa.Samples.ForkJoinTimerAndSignalHttp
 {
     public class Startup
     {

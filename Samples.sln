@@ -136,7 +136,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElsaDashboard.Application.S
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElsaDashboard.Application.WebAssembly", "src\dashboards\blazor\ElsaDashboard.Application.WebAssembly\ElsaDashboard.Application.WebAssembly.csproj", "{F7181887-E6B5-4DA9-9598-8E9E806B5A20}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.ForkJoinTimerAndSignalWorker", "src\samples\Elsa.Samples.ForkJoinTimerAndSignalWorker\Elsa.Samples.ForkJoinTimerAndSignalWorker.csproj", "{922F1EB6-5C8F-45DC-82A8-C651E4554542}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.ForkJoinTimerAndSignalHttp", "src\samples\Elsa.Samples.ForkJoinTimerAndSignalHttp\Elsa.Samples.ForkJoinTimerAndSignalHttp.csproj", "{922F1EB6-5C8F-45DC-82A8-C651E4554542}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 
-namespace Elsa.Samples.ForkJoinTimerAndSignalWorker
+namespace Elsa.Samples.ForkJoinTimerAndSignalHttp
 {
     public class Program
     {

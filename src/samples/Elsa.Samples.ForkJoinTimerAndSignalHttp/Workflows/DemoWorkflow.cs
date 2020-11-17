@@ -6,7 +6,7 @@ using Elsa.Services.Models;
 using Microsoft.AspNetCore.Mvc.Filters;
 using NodaTime;
 
-namespace Elsa.Samples.ForkJoinTimerAndSignalWorker.Workflows
+namespace Elsa.Samples.ForkJoinTimerAndSignalHttp.Workflows
 {
     /// <summary>
     /// Demonstrates the Fork, Join, Timer and Signal activities working together to model a long-running process where either the timer causes the workflow to resume, or a signal. 
