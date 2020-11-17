@@ -1,9 +1,12 @@
-﻿namespace Elsa.Client.Models
+﻿using System.Runtime.Serialization;
+
+namespace Elsa.Client.Models
 {
+    [DataContract]
     public class PagedList<T> : List<T>
     {
-        public int? Page { get; set; }
-        public int? PageSize { get; set; }
-        public int TotalCount { get; set; }
+        [DataMember(Order = 1)] public int? Page { get; set; }
+        [DataMember(Order = 2)] public int? PageSize { get; set; }
+        [DataMember(Order = 3)] public int TotalCount { get; set; }
     }
 }

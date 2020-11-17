@@ -1,4 +1,6 @@
 ﻿using System.Threading.Tasks;
+using AutoMapper;
+using Elsa.Extensions;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -13,8 +15,9 @@ namespace Elsa.Samples.HelloWorldConsole
                 .AddElsa()
                 .AddConsoleActivities()
                 .AddWorkflow<HelloWorld>()
+                .AddAutoMapperProfiles<Program>()
                 .BuildServiceProvider();
-            
+
             // Run startup actions (not needed when registering Elsa with a Host).
             var startupRunner = services.GetRequiredService<IStartupRunner>();
             await startupRunner.StartupAsync();

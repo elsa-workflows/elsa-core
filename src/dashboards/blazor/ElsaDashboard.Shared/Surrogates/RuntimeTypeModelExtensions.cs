@@ -12,7 +12,8 @@ namespace ElsaDashboard.Shared.Surrogates
     {
         private static readonly IDictionary<Type, Type> SurrogateMapping = new Dictionary<Type, Type>
         {
-            [typeof(ActivityPropertyDescriptor)] = typeof(ActivityPropertyDescriptorSurrogate)
+            [typeof(ActivityPropertyDescriptor)] = typeof(ActivityPropertyDescriptorSurrogate),
+            [typeof(VersionOptions)] = typeof(VersionOptionsSurrogate)
         };
 
         /// <summary>

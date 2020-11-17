@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Formats.Asn1;
 using System.Linq;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using Elsa.Client.Models;
 using ElsaDashboard.Application.Extensions;
 using ElsaDashboard.Application.Models;
 using ElsaDashboard.Application.Services;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 
@@ -18,17 +20,36 @@ namespace ElsaDashboard.Application.Shared
     {
         private static Action<ConnectionModel> _connectionCreatedAction = default!;
 
-        [Parameter] public WorkflowModel Model { private get; set; } = WorkflowModel.Demo();
+        [Parameter] public WorkflowModel Model { private get; set; } = WorkflowModel.Blank();
         [Inject] private IJSRuntime JS { get; set; } = default!;
         [Inject] private IFlyoutPanelService FlyoutPanelService { get; set; } = default!;
         private IJSObjectReference _designerModule = default!;
         private bool _connectionsChanged = true;
         private EventCallbackFactory EventCallbackFactory { get; } = new();
+        private BackgroundWorker BackgroundWorker { get; } = new();
 
         [JSInvokableAttribute("InvokeConnectionCreated")]
         public static void InvokeConnectionCreated(ConnectionModel connection) => _connectionCreatedAction(connection);
 
-        protected override void OnInitialized() => _connectionCreatedAction = OnConnectionCreated;
+        
+        int _currentCount = 0;
+        
+        void IncrementCount()
+        {
+            _currentCount++;
+        }
+
+        protected override async Task OnInitializedAsync()
+        {
+            _connectionCreatedAction = OnConnectionCreated;
+
+            InvokeAsync(() => BackgroundWorker.StartAsync());
+        }
+
+        protected override void OnParametersSet()
+        {
+            ConnectionsHasChanged();
+        }
 
         public async ValueTask DisposeAsync()
         {
@@ -38,12 +59,22 @@ namespace ElsaDashboard.Application.Shared
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            if (firstRender)
-            {
+            if (_designerModule == null!)
                 _designerModule = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/ElsaDashboard.Application/workflowDesigner.js");
-            }
 
             await RepaintConnections();
+        }
+
+        private async Task UpdateModelAsync(WorkflowModel model)
+        {
+            Model = model;
+            ConnectionsHasChanged();
+            await BackgroundWorker.ScheduleTask(SaveWorkflowAsync);
+        }
+
+        private async ValueTask SaveWorkflowAsync()
+        {
+            
         }
 
         private IEnumerable<ActivityModel> GetRootActivities() => Model.GetChildActivities(null);
@@ -197,6 +228,7 @@ namespace ElsaDashboard.Application.Shared
             Model = model;
             await FlyoutPanelService.HideAsync();
             ConnectionsHasChanged();
+            await BackgroundWorker.ScheduleTask(() => Console.WriteLine("TEST"));
         }
 
         private void ConnectionsHasChanged()

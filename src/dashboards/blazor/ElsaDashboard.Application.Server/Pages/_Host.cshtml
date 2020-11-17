@@ -36,7 +36,7 @@
     <a class="dismiss">🗙</a>
 </div>
 
-@if (Program.UseBlazorServer)
+@if (Program.RuntimeModel == BlazorRuntimeModel.Server)
 {
     <script src="_framework/blazor.server.js"></script>
 }

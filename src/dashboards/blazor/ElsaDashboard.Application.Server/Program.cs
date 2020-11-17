@@ -6,9 +6,8 @@ namespace ElsaDashboard.Application.Server
 {
     public class Program
     {
-        public static bool UseBlazorServer = true;
-        public static bool UseBlazorWebAssembly => !UseBlazorServer;
-        public static RenderMode RenderMode => UseBlazorServer ? RenderMode.ServerPrerendered: RenderMode.WebAssemblyPrerendered;
+        public static BlazorRuntimeModel RuntimeModel => BlazorRuntimeModel.Browser;
+        public static RenderMode RenderMode => RuntimeModel == BlazorRuntimeModel.Server ? RenderMode.ServerPrerendered : RenderMode.WebAssemblyPrerendered;
 
         public static void Main(string[] args)
         {
@@ -17,9 +16,6 @@ namespace ElsaDashboard.Application.Server
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    webBuilder.UseStartup<Startup>();
-                });
+                .ConfigureWebHostDefaults(webBuilder => { webBuilder.UseStartup<Startup>(); });
     }
 }

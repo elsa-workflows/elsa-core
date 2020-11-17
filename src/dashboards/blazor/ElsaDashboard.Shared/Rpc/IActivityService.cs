@@ -12,21 +12,6 @@ namespace ElsaDashboard.Shared.Rpc
     public interface IActivityService
     {
         [ProtoBehavior]
-        Task<GetActivitiesResponse> GetActivitiesAsync(CallContext context = default);
-    }
-
-    [ProtoContract]
-    public sealed class GetActivitiesResponse
-    {
-        public GetActivitiesResponse()
-        {
-        }
-
-        public GetActivitiesResponse(IEnumerable<ActivityDescriptor> activities)
-        {
-            Activities = activities;
-        }
-        
-        [ProtoMember(1)] public IEnumerable<ActivityDescriptor> Activities { get; set; } = new System.Collections.Generic.List<ActivityDescriptor>();
+        Task<IEnumerable<ActivityDescriptor>> GetActivitiesAsync(CallContext context = default);
     }
 }

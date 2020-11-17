@@ -20,6 +20,7 @@ namespace ElsaDashboard.Backend.Extensions
             services.AddElsaClient(configure);
             services.AddCodeFirstGrpc(options => options.ResponseCompressionLevel = CompressionLevel.Optimal);
             services.AddScoped<IActivityService, ActivityService>();
+            services.AddScoped<IWorkflowDefinitionService, WorkflowDefinitionService>();
 
             return services;
         }

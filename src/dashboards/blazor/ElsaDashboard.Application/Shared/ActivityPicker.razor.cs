@@ -28,7 +28,7 @@ namespace ElsaDashboard.Application.Shared
         protected override async Task OnInitializedAsync()
         {
             var response = (await ActivityService.GetActivitiesAsync());
-            Activities = response.Activities.ToList();
+            Activities = response.ToList();
         }
 
         private void OnActivityTypeFilterClick(ActivityTraitFilter activityTraitFilter)

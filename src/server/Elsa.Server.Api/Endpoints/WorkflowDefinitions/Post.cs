@@ -66,7 +66,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             else
                 await _workflowPublisher.SaveDraftAsync(workflowDefinition, cancellationToken);
 
-            return CreatedAtAction("Handle", "Get", new {workflowDefinitionId = workflowDefinition.WorkflowDefinitionId, apiVersion = apiVersion.ToString()}, workflowDefinition);
+            return CreatedAtAction("Handle", "GetByVersionId", new {workflowDefinitionVersionId = workflowDefinition.WorkflowDefinitionVersionId, apiVersion = apiVersion.ToString()}, workflowDefinition);
         }
     }
 }

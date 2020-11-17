@@ -25,7 +25,7 @@ namespace ElsaDashboard.Application.Server
             services.AddElsaDashboardUI();
             services.AddElsaDashboardBackend(options => options.ServerUrl = new Uri("https://localhost:11000"));
 
-            if (Program.UseBlazorServer) 
+            if (Program.RuntimeModel == BlazorRuntimeModel.Server) 
                 services.AddServerSideBlazor(options =>
                 {
                     options.DetailedErrors = !Environment.IsProduction();
@@ -40,7 +40,7 @@ namespace ElsaDashboard.Application.Server
             {
                 app.UseDeveloperExceptionPage();
                 
-                if(Program.UseBlazorWebAssembly)
+                if (Program.RuntimeModel == BlazorRuntimeModel.Browser)
                     app.UseWebAssemblyDebugging();
             }
             else
@@ -50,7 +50,7 @@ namespace ElsaDashboard.Application.Server
                 app.UseHsts();
             }
 
-            if(Program.UseBlazorWebAssembly)
+            if (Program.RuntimeModel == BlazorRuntimeModel.Browser)
                 app.UseBlazorFrameworkFiles();
             
             app.UseStaticFiles();
@@ -58,7 +58,7 @@ namespace ElsaDashboard.Application.Server
             app.UseElsaGrpcServices();
             app.UseEndpoints(endpoints =>
             {
-                if(Program.UseBlazorServer)
+                if (Program.RuntimeModel == BlazorRuntimeModel.Server)
                     endpoints.MapBlazorHub();
                 
                 endpoints.MapFallbackToPage("/_Host");

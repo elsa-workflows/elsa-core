@@ -29,13 +29,13 @@
 
 <div class="p-6 space-y-6 overflow-y-auto">
 
-    @foreach (var grouping in ActivityGroupings)
+    @foreach (var grouping in ActivityGroupings.OrderBy(x => x.Key))
     {
         <div>
             <h2>@grouping.Key</h2>
 
             <ul class="grid grid-cols-1 gap-4 mt-3" x-max="1">
-                @foreach (var activity in grouping)
+                @foreach (var activity in grouping.OrderBy(x => x.DisplayName))
                 {
                     <li @onclick="(() => OnActivityClick(activity))" class="relative col-span-1 flex shadow-sm rounded-md select-none cursor-pointer">
                         <div class="flex-shrink-0 flex items-center justify-center w-16 bg-blue-600 text-white text-sm leading-5 font-medium rounded-l-md">
