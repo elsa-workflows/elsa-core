@@ -41,7 +41,7 @@ namespace Elsa
             return (T)value!;
         }
         
-        public static T GetActivityState<TActivity, T>(
+        public static T? GetActivityState<TActivity, T>(
             this IWorkflowBlueprint workflowBlueprint,
             Expression<Func<TActivity, T>> propertyExpression, 
             ActivityExecutionContext activityExecutionContext) where TActivity : IActivity
@@ -51,13 +51,14 @@ namespace Elsa
             return GetActivityState<T>(propertyName, activityExecutionContext);
         }
         
-        public static T GetActivityState<T>(
+        public static T? GetActivityState<T>(
             string propertyName, 
             ActivityExecutionContext activityExecutionContext)
         {
             var activity = activityExecutionContext.ActivityInstance;
             var serializer = activityExecutionContext.GetService<JsonSerializer>();
-            return activity.Data[propertyName]!.ToObject<T>(serializer)!;
+            var value = activity.Data[propertyName];
+            return value != null ? value.ToObject<T>(serializer) : default;
         }
         
         public static IEnumerable<IWorkflowBlueprint> WithVersion(

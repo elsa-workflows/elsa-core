@@ -1,6 +1,4 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
-using Elsa.Triggers;
+﻿using Elsa.Triggers;
 using NodaTime;
 
 namespace Elsa.Activities.Timers.Triggers
@@ -12,18 +10,9 @@ namespace Elsa.Activities.Timers.Triggers
 
     public class TimerEventTriggerProvider : TriggerProvider<TimerEventTrigger, TimerEvent>
     {
-        private readonly IClock _clock;
-
-        public TimerEventTriggerProvider(IClock clock)
+        public override ITrigger GetTrigger(TriggerProviderContext<TimerEvent> context)
         {
-            _clock = clock;
-        }
-
-        public override async ValueTask<ITrigger> GetTriggerAsync(TriggerProviderContext<TimerEvent> context, CancellationToken cancellationToken)
-        {
-            var duration = await context.GetActivity<TimerEvent>().GetPropertyValueAsync(x => x.Timeout, cancellationToken);
-            var now = _clock.GetCurrentInstant();
-            var executeAt = now.Plus(duration);
+            var executeAt = context.GetActivity<TimerEvent>().GetState(x => x.ExecuteAt);
 
             return new TimerEventTrigger
             {
