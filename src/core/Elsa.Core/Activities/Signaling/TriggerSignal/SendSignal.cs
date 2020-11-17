@@ -37,7 +37,7 @@ namespace Elsa.Activities.Signaling
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            await _signaler.SendSignal(Signal, Input, CorrelationId, cancellationToken);
+            await _signaler.SendSignalAsync(Signal, Input, CorrelationId, cancellationToken);
             return Done();
         }
     }
