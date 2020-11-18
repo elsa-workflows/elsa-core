@@ -17,6 +17,10 @@ namespace ElsaDashboard.Shared.Surrogates
             SerializerSettings = new JsonSerializerSettings().ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
         }
 
+        public ActivityPropertyDescriptorSurrogate()
+        {
+        }
+
         public ActivityPropertyDescriptorSurrogate(ActivityPropertyDescriptor value)
         {
             Name = value.Name;

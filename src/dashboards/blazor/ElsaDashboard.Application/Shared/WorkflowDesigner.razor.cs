@@ -18,32 +18,22 @@ namespace ElsaDashboard.Application.Shared
 {
     partial class WorkflowDesigner : IAsyncDisposable
     {
-        private static Action<ConnectionModel> _connectionCreatedAction = default!;
+        private static Func<ConnectionModel, Task> _connectionCreatedAction = default!;
 
         [Parameter] public WorkflowModel Model { private get; set; } = WorkflowModel.Blank();
+        [Parameter] public EventCallback<WorkflowModelChangedEventArgs> WorkflowChanged { get; set; }
         [Inject] private IJSRuntime JS { get; set; } = default!;
         [Inject] private IFlyoutPanelService FlyoutPanelService { get; set; } = default!;
         private IJSObjectReference _designerModule = default!;
         private bool _connectionsChanged = true;
         private EventCallbackFactory EventCallbackFactory { get; } = new();
-        private BackgroundWorker BackgroundWorker { get; } = new();
 
         [JSInvokableAttribute("InvokeConnectionCreated")]
-        public static void InvokeConnectionCreated(ConnectionModel connection) => _connectionCreatedAction(connection);
+        public static Task InvokeConnectionCreated(ConnectionModel connection) => _connectionCreatedAction(connection);
 
-        
-        int _currentCount = 0;
-        
-        void IncrementCount()
+        protected override void OnInitialized()
         {
-            _currentCount++;
-        }
-
-        protected override async Task OnInitializedAsync()
-        {
-            _connectionCreatedAction = OnConnectionCreated;
-
-            InvokeAsync(() => BackgroundWorker.StartAsync());
+            _connectionCreatedAction = OnConnectionCreatedAsync;
         }
 
         protected override void OnParametersSet()
@@ -69,12 +59,8 @@ namespace ElsaDashboard.Application.Shared
         {
             Model = model;
             ConnectionsHasChanged();
-            await BackgroundWorker.ScheduleTask(SaveWorkflowAsync);
-        }
-
-        private async ValueTask SaveWorkflowAsync()
-        {
             
+            await WorkflowChanged.InvokeAsync(new WorkflowModelChangedEventArgs(Model));
         }
 
         private IEnumerable<ActivityModel> GetRootActivities() => Model.GetChildActivities(null);
@@ -224,11 +210,9 @@ namespace ElsaDashboard.Application.Shared
                     model = model.AddConnection(connection);
                 }
             }
-
-            Model = model;
+            
+            await UpdateModelAsync(model);
             await FlyoutPanelService.HideAsync();
-            ConnectionsHasChanged();
-            await BackgroundWorker.ScheduleTask(() => Console.WriteLine("TEST"));
         }
 
         private void ConnectionsHasChanged()
@@ -255,10 +239,9 @@ namespace ElsaDashboard.Application.Shared
             await FlyoutPanelService.ShowAsync<ActivityEditor>("Timer Properties");
         }
 
-        private void OnConnectionCreated(ConnectionModel connection)
+        private async Task OnConnectionCreatedAsync(ConnectionModel connection)
         {
-            Model = Model.AddConnection(connection);
-            ConnectionsHasChanged();
+            await UpdateModelAsync(Model.AddConnection(connection));
         }
     }
 }

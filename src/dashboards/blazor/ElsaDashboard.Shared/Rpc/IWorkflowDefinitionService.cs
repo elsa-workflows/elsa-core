@@ -16,6 +16,10 @@ namespace ElsaDashboard.Shared.Rpc
     [ProtoContract]
     public record ListWorkflowDefinitionsRequest
     {
+        public ListWorkflowDefinitionsRequest()
+        {
+        }
+        
         public ListWorkflowDefinitionsRequest(int? page = default, int? pageSize = default, VersionOptions? versionOptions = default)
         {
             Page = page;

@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Elsa.Client.Models;
 using ElsaDashboard.Application.Models;
+using ElsaDashboard.Application.Services;
+using ElsaDashboard.Application.Shared;
 using ElsaDashboard.Shared.Rpc;
 using Microsoft.AspNetCore.Components;
 
@@ -16,6 +18,7 @@ namespace ElsaDashboard.Application.Pages
         [Inject] private IActivityService ActivityService { get; set; } = default!;
         private IDictionary<string, ActivityDescriptor> ActivityDescriptors { get; set; } = default!;
         private WorkflowModel WorkflowModel { get; set; } = WorkflowModel.Blank();
+        private BackgroundWorker BackgroundWorker { get; } = new();
 
         protected override async Task OnInitializedAsync()
         {
@@ -30,6 +33,8 @@ namespace ElsaDashboard.Application.Pages
             {
                 WorkflowModel = WorkflowModel.Blank();
             }
+            
+            InvokeAsync(() => BackgroundWorker.StartAsync());
         }
 
         private WorkflowModel CreateWorkflowModel(WorkflowDefinition workflowDefinition)
@@ -51,6 +56,17 @@ namespace ElsaDashboard.Application.Pages
         {
             var descriptor = ActivityDescriptors[activityDefinition.Type];
             return new ActivityModel(activityDefinition.ActivityId, activityDefinition.Type, descriptor.Outcomes);
+        }
+        
+        private async ValueTask SaveWorkflowAsync()
+        {
+            
+        }
+
+        private async Task OnWorkflowChanged(WorkflowModelChangedEventArgs e)
+        {
+            WorkflowModel = e.WorkflowModel;
+            await BackgroundWorker.ScheduleTask(SaveWorkflowAsync);
         }
     }
 }
