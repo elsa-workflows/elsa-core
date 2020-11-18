@@ -26,15 +26,15 @@ namespace Elsa.Builders
         
         public static ISetupActivity<T> Set<T, TProperty>(
             this ISetupActivity<T> builder,
-            Expression<Func<T, TProperty>> propertyAccessor,
-            Func<ActivityExecutionContext, TProperty> valueFactory) where T : IActivity =>
-            builder.Set(propertyAccessor, context => new ValueTask<object?>(valueFactory(context)));
+            Expression<Func<T, TProperty?>> propertyAccessor,
+            Func<ActivityExecutionContext, TProperty?> valueFactory) where T : IActivity =>
+            builder.Set(propertyAccessor, context => new ValueTask<TProperty?>(valueFactory(context)));
         
         public static ISetupActivity<T> Set<T, TProperty>(
             this ISetupActivity<T> builder,
-            Expression<Func<T, TProperty>> propertyAccessor,
-            Func<TProperty> valueFactory) where T : IActivity =>
-            builder.Set(propertyAccessor, context => new ValueTask<object?>(valueFactory()));
+            Expression<Func<T, TProperty?>> propertyAccessor,
+            Func<TProperty?> valueFactory) where T : IActivity =>
+            builder.Set(propertyAccessor, context => new ValueTask<TProperty?>(valueFactory()));
         
         public static ISetupActivity<T> Set<T, TProperty>(
             this ISetupActivity<T> builder,
@@ -44,8 +44,8 @@ namespace Elsa.Builders
         
         public static ISetupActivity<T> Set<T, TProperty>(
             this ISetupActivity<T> builder,
-            Expression<Func<T, TProperty>> propertyAccessor,
-            TProperty value) where T : IActivity =>
-            builder.Set(propertyAccessor, context => new ValueTask<object?>(value));
+            Expression<Func<T, TProperty?>> propertyAccessor,
+            TProperty? value) where T : IActivity =>
+            builder.Set(propertyAccessor, context => new ValueTask<TProperty?>(value));
     }
 }
