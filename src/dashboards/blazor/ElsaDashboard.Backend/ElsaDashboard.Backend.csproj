@@ -10,10 +10,10 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Grpc.AspNetCore.Server" Version="2.29.0" />
-        <PackageReference Include="Grpc.AspNetCore.Web" Version="2.32.0" />
+        <PackageReference Include="Grpc.AspNetCore.Server" Version="2.33.1" />
+        <PackageReference Include="Grpc.AspNetCore.Web" Version="2.33.1" />
         <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
-        <PackageReference Include="protobuf-net.Grpc.AspNetCore" Version="1.0.123" />
+        <PackageReference Include="protobuf-net.Grpc.AspNetCore" Version="1.0.136" />
     </ItemGroup>
 
 </Project>

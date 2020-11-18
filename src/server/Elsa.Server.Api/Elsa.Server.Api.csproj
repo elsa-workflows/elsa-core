@@ -35,12 +35,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Compile Update="Endpoints\WorkflowDefinitions\Post.Request.cs">
-            <DependentUpon>Post.cs</DependentUpon>
-        </Compile>
-    </ItemGroup>
-
-    <ItemGroup>
         <ProjectReference Include="..\..\core\Elsa\Elsa.csproj" />
     </ItemGroup>
 

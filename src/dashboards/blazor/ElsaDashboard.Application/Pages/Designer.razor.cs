@@ -17,6 +17,7 @@ namespace ElsaDashboard.Application.Pages
         [Inject] private IWorkflowDefinitionService WorkflowDefinitionService { get; set; } = default!;
         [Inject] private IActivityService ActivityService { get; set; } = default!;
         private IDictionary<string, ActivityDescriptor> ActivityDescriptors { get; set; } = default!;
+        private WorkflowDefinition WorkflowDefinition { get; set; } = default!;
         private WorkflowModel WorkflowModel { get; set; } = WorkflowModel.Blank();
         private BackgroundWorker BackgroundWorker { get; } = new();
 
@@ -26,8 +27,8 @@ namespace ElsaDashboard.Application.Pages
             
             if (WorkflowDefinitionVersionId != null)
             {
-                var workflowDefinition = await WorkflowDefinitionService.GetByVersionIdAsync(WorkflowDefinitionVersionId);
-                WorkflowModel = CreateWorkflowModel(workflowDefinition);
+                WorkflowDefinition = await WorkflowDefinitionService.GetByVersionIdAsync(WorkflowDefinitionVersionId);
+                WorkflowModel = CreateWorkflowModel(WorkflowDefinition);
             }
             else
             {
@@ -60,7 +61,8 @@ namespace ElsaDashboard.Application.Pages
         
         private async ValueTask SaveWorkflowAsync()
         {
-            
+            WorkflowDefinition.Connections = WorkflowModel.Connections.Select(x => new ConnectionDefinition(x.SourceId, x.TargetId, x.Outcome)).ToList();
+            WorkflowDefinition = await WorkflowDefinitionService.SaveAsync(WorkflowDefinition);
         }
 
         private async Task OnWorkflowChanged(WorkflowModelChangedEventArgs e)

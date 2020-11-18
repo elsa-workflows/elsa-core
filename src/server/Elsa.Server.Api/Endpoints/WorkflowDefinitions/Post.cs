@@ -13,15 +13,14 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
     [ApiController]
     [ApiVersion("1")]
     [Route("v{apiVersion:apiVersion}/workflow-definitions")]
-    [Route("v{apiVersion:apiVersion}/workflow-definitions/{workflowDefinitionId}")]
     [Produces("application/json")]
     public class Post : ControllerBase
     {
-        private readonly IWorkflowPublisher _workflowPublisher;
+        private readonly IWorkflowDefinitionManager _workflowDefinitionManager;
 
-        public Post(IWorkflowPublisher workflowPublisher)
+        public Post(IWorkflowDefinitionManager workflowDefinitionManager)
         {
-            _workflowPublisher = workflowPublisher;
+            _workflowDefinitionManager = workflowDefinitionManager;
         }
 
         [HttpPost]
@@ -29,43 +28,13 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
         [SwaggerResponseExample(StatusCodes.Status200OK, typeof(WorkflowDefinitionExample))]
         [SwaggerOperation(
             Summary = "Creates a new workflow definition or updates an existing one.",
-            Description =
-                "Creates a new workflow definition or updates an existing one. If the workflow already exists, a new draft is created and updated with the specified values. Use the Publish field to automatically publish the workflow.",
+            Description = "Creates a new workflow definition or updates an existing one.",
             OperationId = "WorkflowDefinitions.Post",
             Tags = new[] {"WorkflowDefinitions"})
         ]
-        public async Task<ActionResult<WorkflowDefinition>> Handle(string? workflowDefinitionId, PostWorkflowDefinitionRequest request, ApiVersion apiVersion, CancellationToken cancellationToken)
+        public async Task<ActionResult<WorkflowDefinition>> Handle(WorkflowDefinition workflowDefinition, ApiVersion apiVersion, CancellationToken cancellationToken)
         {
-            workflowDefinitionId = workflowDefinitionId?.Trim();
-            var workflowDefinition = !string.IsNullOrWhiteSpace(workflowDefinitionId) ? await _workflowPublisher.GetDraftAsync(workflowDefinitionId, cancellationToken) : default;
-
-            if (workflowDefinition == null)
-            {
-                workflowDefinition = _workflowPublisher.New();
-
-                if (!string.IsNullOrWhiteSpace(workflowDefinitionId))
-                    workflowDefinition.WorkflowDefinitionId = workflowDefinitionId;
-            }
-
-            workflowDefinition.Activities = request.Activities;
-            workflowDefinition.Connections = request.Connections;
-            workflowDefinition.Description = request.Description?.Trim();
-            workflowDefinition.Name = request.Name?.Trim();
-            workflowDefinition.Variables = request.Variables;
-            workflowDefinition.IsEnabled = request.Enabled;
-            workflowDefinition.IsSingleton = request.IsSingleton;
-            workflowDefinition.PersistenceBehavior = request.PersistenceBehavior;
-            workflowDefinition.DeleteCompletedInstances = request.DeleteCompletedInstances;
-            workflowDefinition.ContextOptions = request.ContextOptions;
-            workflowDefinition.Type = "Workflow";
-            workflowDefinition.ActivityId = workflowDefinition.WorkflowDefinitionId;
-            workflowDefinition.DisplayName = request.DisplayName?.Trim();
-
-            if (request.Publish)
-                await _workflowPublisher.PublishAsync(workflowDefinition, cancellationToken);
-            else
-                await _workflowPublisher.SaveDraftAsync(workflowDefinition, cancellationToken);
-
+            await _workflowDefinitionManager.SaveAsync(workflowDefinition, cancellationToken);
             return CreatedAtAction("Handle", "GetByVersionId", new {workflowDefinitionVersionId = workflowDefinition.WorkflowDefinitionVersionId, apiVersion = apiVersion.ToString()}, workflowDefinition);
         }
     }

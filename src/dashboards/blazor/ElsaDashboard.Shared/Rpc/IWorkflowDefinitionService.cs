@@ -3,14 +3,16 @@ using System.Threading.Tasks;
 using Elsa.Client.Models;
 using ProtoBuf;
 using ProtoBuf.Grpc;
+using ProtoBuf.Grpc.Configuration;
 
 namespace ElsaDashboard.Shared.Rpc
 {
-    [ServiceContract]
+    [Service]
     public interface IWorkflowDefinitionService
     {
         Task<PagedList<WorkflowDefinition>> ListAsync(ListWorkflowDefinitionsRequest request, CallContext context = default);
         Task<WorkflowDefinition> GetByVersionIdAsync(string workflowDefinitionVersionId, CallContext context = default);
+        Task<WorkflowDefinition> SaveAsync(WorkflowDefinition workflowDefinition, CallContext context = default);
     }
 
     [ProtoContract]

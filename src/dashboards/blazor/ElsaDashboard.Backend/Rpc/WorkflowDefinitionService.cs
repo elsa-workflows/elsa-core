@@ -18,6 +18,7 @@ namespace ElsaDashboard.Backend.Rpc
         public async Task<PagedList<WorkflowDefinition>> ListAsync(ListWorkflowDefinitionsRequest request, CallContext context) =>
             await _elsaClient.WorkflowDefinitions.ListAsync(request.Page, request.PageSize, request.VersionOptions, context.CancellationToken);
 
-        public Task<WorkflowDefinition> GetByVersionIdAsync(string workflowDefinitionVersionId, CallContext context = default) => _elsaClient.WorkflowDefinitions.GetByVersionIdAsync(workflowDefinitionVersionId, context.CancellationToken);
+        public Task<WorkflowDefinition> GetByVersionIdAsync(string workflowDefinitionVersionId, CallContext context) => _elsaClient.WorkflowDefinitions.GetByVersionIdAsync(workflowDefinitionVersionId, context.CancellationToken);
+        public async Task<WorkflowDefinition> SaveAsync(WorkflowDefinition workflowDefinition, CallContext context) => await _elsaClient.WorkflowDefinitions.PostAsync(workflowDefinition, context.CancellationToken);
     }
 }

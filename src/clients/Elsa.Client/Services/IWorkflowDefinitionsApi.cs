@@ -17,9 +17,6 @@ namespace Elsa.Client.Services
         Task<PagedList<WorkflowDefinition>> ListAsync(int? page = default, int? pageSize = default, VersionOptions? versionOptions = default, CancellationToken cancellationToken = default);
 
         [Post("/v1/workflow-definitions")]
-        Task<WorkflowDefinition> PostAsync([Body(BodySerializationMethod.Serialized)] PostWorkflowDefinitionRequest request, CancellationToken cancellationToken = default);
-
-        [Post("/v1/workflow-definitions/{workflowDefinitionId}")]
-        Task<WorkflowDefinition> PostAsync(string workflowDefinitionId, [Body(BodySerializationMethod.Serialized)] PostWorkflowDefinitionRequest request, CancellationToken cancellationToken = default);
+        Task<WorkflowDefinition> PostAsync([Body(BodySerializationMethod.Serialized)] WorkflowDefinition workflowDefinition, CancellationToken cancellationToken = default);
     }
 }

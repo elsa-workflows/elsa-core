@@ -19,7 +19,6 @@ namespace Elsa.Server.Api.Swagger
                 IsPublished = true,
                 WorkflowDefinitionId = Guid.NewGuid().ToString("N"),
                 WorkflowDefinitionVersionId = Guid.NewGuid().ToString("N"),
-                Type = "Workflow",
                 ContextOptions = new WorkflowContextOptions
                 {
                     ContextFidelity = WorkflowContextFidelity.Burst,

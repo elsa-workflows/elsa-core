@@ -17,12 +17,12 @@ namespace Elsa.ComponentTests.Clients.RestClient.WorkflowDefinitions
         [Fact(DisplayName = "Posting a new workflow definition returns HTTP 201.")]
         public async Task Post01()
         {
-            var request = CreateWorkflowDefinitionRequest();
+            var request = CreateWorkflowDefinition();
             var workflowDefinition = await ElsaClient.WorkflowDefinitions.PostAsync(request);
             Assert.Equal(request.Name, workflowDefinition.Name);
         }
 
-        private PostWorkflowDefinitionRequest CreateWorkflowDefinitionRequest()
+        private WorkflowDefinition CreateWorkflowDefinition()
         {
             var writeLine = new ActivityDefinition
             {
@@ -38,7 +38,7 @@ namespace Elsa.ComponentTests.Clients.RestClient.WorkflowDefinitions
             var activities = new[] {writeLine, readLine};
             var connections = new[] {new ConnectionDefinition(writeLine.ActivityId, readLine.ActivityId, OutcomeNames.Done)};
 
-            return Fixture.Build<PostWorkflowDefinitionRequest>()
+            return Fixture.Build<WorkflowDefinition>()
                 .With(x => x.Activities, activities)
                 .With(x => x.Connections, connections)
                 .Create();

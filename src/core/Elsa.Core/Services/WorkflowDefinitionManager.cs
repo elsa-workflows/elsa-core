@@ -14,14 +14,17 @@ namespace Elsa.Services
     public class WorkflowDefinitionManager : IWorkflowDefinitionManager
     {
         private readonly ISession _session;
+        private readonly IIdGenerator _idGenerator;
 
-        public WorkflowDefinitionManager(ISession session)
+        public WorkflowDefinitionManager(ISession session, IIdGenerator idGenerator)
         {
             _session = session;
+            _idGenerator = idGenerator;
         }
 
         public Task SaveAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken = default)
         {
+            workflowDefinition = Initialize(workflowDefinition);
             _session.Save(workflowDefinition, CollectionNames.WorkflowDefinitions);
             return Task.CompletedTask;
         }
@@ -54,5 +57,19 @@ namespace Elsa.Services
         public IQuery<WorkflowDefinition, TIndex> Query<TIndex>() where TIndex : class, IIndex => _session.Query<WorkflowDefinition, TIndex>(CollectionNames.WorkflowDefinitions);
         public IQuery<WorkflowDefinition, TIndex> Query<TIndex>(Expression<Func<TIndex, bool>> predicate) where TIndex : class, IIndex => _session.Query<WorkflowDefinition, TIndex>(predicate, CollectionNames.WorkflowDefinitions);
         public IQuery<WorkflowDefinition> ExecuteQuery(ICompiledQuery<WorkflowDefinition> query) => _session.ExecuteQuery(query, CollectionNames.WorkflowDefinitions);
+
+        public WorkflowDefinition Initialize(WorkflowDefinition workflowDefinition)
+        {
+            if (string.IsNullOrWhiteSpace(workflowDefinition.WorkflowDefinitionId))
+                workflowDefinition.WorkflowDefinitionId = _idGenerator.Generate();
+
+            if (workflowDefinition.Version == 0)
+                workflowDefinition.Version = 1;
+
+            if (string.IsNullOrWhiteSpace(workflowDefinition.WorkflowDefinitionVersionId))
+                workflowDefinition.WorkflowDefinitionVersionId = _idGenerator.Generate();
+
+            return workflowDefinition;
+        }
     }
 }

@@ -38,10 +38,10 @@ namespace Elsa.Services
             );
         }
 
-        private static ActivityPropertyProviders CreatePropertyProviders(CompositeActivityDefinition workflowDefinition)
+        private static ActivityPropertyProviders CreatePropertyProviders(ICompositeActivityDefinition compositeActivityDefinition)
         {
             var propertyProviders = new ActivityPropertyProviders();
-            var activityDefinitions = workflowDefinition.Activities;
+            var activityDefinitions = compositeActivityDefinition.Activities;
 
             foreach (var activityDefinition in activityDefinitions)
             {

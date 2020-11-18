@@ -12,6 +12,6 @@ namespace Elsa.Models
         public bool PersistWorkflow { get; set; }
         public bool LoadWorkflowContext { get; set; }
         public bool SaveWorkflowContext { get; set; }
-        public ActivityDefinitionProperties Properties { get; set; } = new ActivityDefinitionProperties();
+        public ActivityDefinitionProperties Properties { get; set; } = new();
     }
 }

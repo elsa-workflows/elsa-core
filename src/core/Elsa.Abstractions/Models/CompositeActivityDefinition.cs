@@ -3,7 +3,7 @@ using Elsa.Services;
 
 namespace Elsa.Models
 {
-    public class CompositeActivityDefinition : ActivityDefinition
+    public class CompositeActivityDefinition : ActivityDefinition, ICompositeActivityDefinition
     {
         public CompositeActivityDefinition()
         {

@@ -6,11 +6,11 @@
     </PropertyGroup>
     
     <ItemGroup>
-        <PackageReference Include="Google.Api.CommonProtos" Version="2.1.0" />
+        <PackageReference Include="Google.Api.CommonProtos" Version="2.2.0" />
         <PackageReference Include="Grpc.Net.Client" Version="2.33.1" />
         <PackageReference Include="Grpc.Net.ClientFactory" Version="2.33.1" />
-        <PackageReference Include="protobuf-net" Version="3.0.52" />
-        <PackageReference Include="protobuf-net.Grpc" Version="1.0.123" />
+        <PackageReference Include="protobuf-net" Version="3.0.62" />
+        <PackageReference Include="protobuf-net.Grpc" Version="1.0.136" />
     </ItemGroup>
     
     <ItemGroup>

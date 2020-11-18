@@ -18,14 +18,12 @@ namespace Elsa.ComponentTests.Endpoints.WorkflowDefinitions
     {
         private readonly IFixture _fixture;
         private readonly TemporaryFolder _tempFolder;
-        private readonly ElsaHostApplicationFactory _hostApplicationFactory;
         private readonly HttpClient _httpClient;
 
         public PostTests(ElsaHostApplicationFactory hostApplicationFactory)
         {
             _fixture = new Fixture().Customize(new NodaTimeCustomization());
             _tempFolder = new TemporaryFolder();
-            _hostApplicationFactory = hostApplicationFactory;
             hostApplicationFactory.SetDbConnectionString($@"Data Source={_tempFolder.Folder}elsa.db;Cache=Shared");
             _httpClient = hostApplicationFactory.CreateClient();
         }
@@ -39,7 +37,7 @@ namespace Elsa.ComponentTests.Endpoints.WorkflowDefinitions
             Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         }
 
-        private PostWorkflowDefinitionRequest CreateWorkflowDefinitionRequest()
+        private WorkflowDefinition CreateWorkflowDefinitionRequest()
         {
             var writeLine = new ActivityDefinition
             {
@@ -55,7 +53,7 @@ namespace Elsa.ComponentTests.Endpoints.WorkflowDefinitions
             var activities = new[] { writeLine, readLine };
             var connections = new[] { new ConnectionDefinition(writeLine.ActivityId, readLine.ActivityId, OutcomeNames.Done) };
 
-            return _fixture.Build<PostWorkflowDefinitionRequest>()
+            return _fixture.Build<WorkflowDefinition>()
                 .With(x => x.Activities, activities)
                 .With(x => x.Connections, connections)
                 .Create();

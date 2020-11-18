@@ -22,5 +22,6 @@ namespace Elsa.Services
             where TIndex : class, IIndex;
 
         IQuery<WorkflowDefinition> ExecuteQuery(ICompiledQuery<WorkflowDefinition> query);
+        WorkflowDefinition Initialize(WorkflowDefinition workflowDefinition);
     }
 }

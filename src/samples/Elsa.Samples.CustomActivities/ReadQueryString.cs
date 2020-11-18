@@ -19,7 +19,7 @@ namespace Elsa.Samples.CustomActivities
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
-            var query = _httpContextAccessor.HttpContext.Request.Query;
+            var query = _httpContextAccessor.HttpContext!.Request.Query;
             
             return Done(query);
         }
