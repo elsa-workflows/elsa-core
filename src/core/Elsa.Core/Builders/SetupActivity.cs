@@ -14,10 +14,10 @@ namespace Elsa.Builders
             new Dictionary<string, Func<ActivityExecutionContext, ValueTask<object?>>>();
 
         public ISetupActivity<T> Set<TProperty>(Expression<Func<T, TProperty>> propertyAccessor,
-            Func<ActivityExecutionContext, ValueTask<object?>> valueFactory)
+            Func<ActivityExecutionContext, ValueTask<TProperty?>> valueFactory)
         {
             var propertyInfo = propertyAccessor.GetProperty()!;
-            ValueProviders[propertyInfo.Name] = valueFactory;
+            ValueProviders[propertyInfo.Name] = async context => await valueFactory(context);
             return this;
         }
     }
