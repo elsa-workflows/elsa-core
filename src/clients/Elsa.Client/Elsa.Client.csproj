@@ -25,4 +25,11 @@
       <PackageReference Include="Refit.HttpClientFactory" Version="5.2.1" />
     </ItemGroup>
 
+    <ItemGroup>
+        <None Include="icon.png">
+            <Pack>True</Pack>
+            <PackagePath />
+        </None>
+    </ItemGroup>
+
 </Project>
