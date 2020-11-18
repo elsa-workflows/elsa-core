@@ -41,7 +41,7 @@ namespace Elsa.Services.Models
         public object? GetVariable(string name) => WorkflowExecutionContext.GetVariable(name);
         public T GetVariable<T>(string name) => WorkflowExecutionContext.GetVariable<T>(name);
         public T GetVariable<T>() => GetVariable<T>(typeof(T).Name);
-        public T GetService<T>() => WorkflowExecutionContext.ServiceProvider.GetService<T>();
+        public T GetService<T>() where T : notnull => WorkflowExecutionContext.ServiceProvider.GetRequiredService<T>();
 
         public async ValueTask<IActivity> ActivateActivityAsync(CancellationToken cancellationToken = default)
         {
@@ -66,9 +66,9 @@ namespace Elsa.Services.Models
             return activity;
         }
 
-        public T GetInput<T>() => (T)Input!; 
+        public T GetInput<T>() => (T) Input!;
         public object? GetOutputFrom(string activityName) => WorkflowExecutionContext.GetOutputFrom(activityName);
-        public T GetOutputFrom<T>(string activityName) => (T)GetOutputFrom(activityName)!;
+        public T GetOutputFrom<T>(string activityName) => (T) GetOutputFrom(activityName)!;
         public void SetWorkflowContext(object? value) => WorkflowExecutionContext.SetWorkflowContext(value);
         public T GetWorkflowContext<T>() => WorkflowExecutionContext.GetWorkflowContext<T>();
     }

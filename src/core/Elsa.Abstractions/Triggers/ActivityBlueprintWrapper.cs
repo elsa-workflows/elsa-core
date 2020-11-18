@@ -23,7 +23,7 @@ namespace Elsa.Triggers
             return await workflowBlueprint.GetActivityPropertyValue(activityId, propertyExpression, _activityExecutionContext, cancellationToken);
         }
         
-        public T GetState<T>(Expression<Func<TActivity, T>> propertyExpression)
+        public T? GetState<T>(Expression<Func<TActivity, T>> propertyExpression)
         {
             var workflowBlueprint = _activityExecutionContext.WorkflowExecutionContext.WorkflowBlueprint;
             return workflowBlueprint.GetActivityState(propertyExpression, _activityExecutionContext);
