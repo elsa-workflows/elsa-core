@@ -15,11 +15,7 @@ namespace ElsaDashboard.Backend.Rpc
         {
             _elsaClient = elsaClient;
         }
-        
-        public async Task<IEnumerable<ActivityDescriptor>> GetActivitiesAsync(CallContext callContext)
-        {
-            var result = await _elsaClient.Activities.ListAsync(callContext.CancellationToken);
-            return result.Items;
-        }
+
+        public async Task<IEnumerable<ActivityDescriptor>> GetActivitiesAsync(CallContext callContext) => await _elsaClient.Activities.ListAsync(callContext.CancellationToken);
     }
 }

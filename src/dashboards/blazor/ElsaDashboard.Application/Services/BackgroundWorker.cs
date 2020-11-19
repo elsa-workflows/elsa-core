@@ -7,7 +7,7 @@ namespace ElsaDashboard.Application.Services
 {
     public class BackgroundWorker
     {
-        private Channel<Func<ValueTask>> _channel;
+        private readonly Channel<Func<ValueTask>> _channel;
 
         public BackgroundWorker()
         {

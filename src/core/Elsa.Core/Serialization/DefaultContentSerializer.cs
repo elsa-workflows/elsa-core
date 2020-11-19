@@ -43,7 +43,7 @@ namespace Elsa.Serialization
                     OverrideSpecifiedNames = false
                 }
             };
-            settings.Converters.Add(new StringEnumConverter());
+            settings.Converters.Add(new StringEnumConverter(new DefaultNamingStrategy()));
             settings.Converters.Add(new TypeJsonConverter());
             settings.Converters.Add(new VersionOptionsJsonConverter());
         }

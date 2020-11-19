@@ -16,7 +16,7 @@ namespace ElsaDashboard.Application.Shared
         private ActivityTraitFilter SelectedActivityTraitFilter { get; set; }
         private string? ActivitySearchText { get; set; }
         private ICollection<ActivityTraitFilter> ActivityTraitFilters => new[] { ActivityTraitFilter.All, ActivityTraitFilter.Actions, ActivityTraitFilter.Triggers };
-        private ICollection<ActivityDescriptor> Activities { get; set; } = new System.Collections.Generic.List<ActivityDescriptor>();
+        private ICollection<ActivityDescriptor> Activities { get; set; } = new List<ActivityDescriptor>();
 
         private ICollection<IGrouping<string, ActivityDescriptor>> ActivityGroupings =>
             FilterBySearchText(

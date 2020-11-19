@@ -11,8 +11,8 @@ namespace Elsa.Client.Models
         public WorkflowInstance()
         {
             Variables = new Variables();
-            Activities = new System.Collections.Generic.List<ActivityInstance>();
-            ExecutionLog = new System.Collections.Generic.List<ExecutionLogEntry>();
+            Activities = new List<ActivityInstance>();
+            ExecutionLog = new List<ExecutionLogEntry>();
             ScheduledActivities = new Stack<ScheduledActivity>();
             PostScheduledActivities = new Stack<ScheduledActivity>();
         }

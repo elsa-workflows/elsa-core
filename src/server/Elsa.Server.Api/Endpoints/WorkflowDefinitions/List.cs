@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Serialization;
@@ -41,7 +42,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             version ??= VersionOptions.Latest;
             var totalCount = await _workflowDefinitionManager.CountAsync(version, cancellationToken);
             var items = await _workflowDefinitionManager.ListAsync(page, pageSize, version, cancellationToken);
-            var pagedList = new PagedList<WorkflowDefinition>(items, page, pageSize, totalCount);
+            var pagedList = new PagedList<WorkflowDefinition>(items.ToList(), page, pageSize, totalCount);
 
             return Json(pagedList, _serializer.GetSettings());
         }

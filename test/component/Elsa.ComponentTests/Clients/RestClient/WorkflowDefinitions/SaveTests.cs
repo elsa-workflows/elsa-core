@@ -8,21 +8,21 @@ using Xunit;
 namespace Elsa.ComponentTests.Clients.RestClient.WorkflowDefinitions
 {
     [Collection(ComponentTestsCollection.Name)]
-    public class PostTests : ElsaClientTestBase
+    public class SaveTests : ElsaClientTestBase
     {
-        public PostTests(ElsaHostApplicationFactory hostApplicationFactory) : base(hostApplicationFactory)
+        public SaveTests(ElsaHostApplicationFactory hostApplicationFactory) : base(hostApplicationFactory)
         {
         }
 
-        [Fact(DisplayName = "Posting a new workflow definition returns HTTP 201.")]
+        [Fact(DisplayName = "Saving a new workflow definition returns HTTP 201.")]
         public async Task Post01()
         {
-            var request = CreateWorkflowDefinition();
-            var workflowDefinition = await ElsaClient.WorkflowDefinitions.PostAsync(request);
+            var request = CreateSaveWorkflowRequest();
+            var workflowDefinition = await ElsaClient.WorkflowDefinitions.SaveAsync(request);
             Assert.Equal(request.Name, workflowDefinition.Name);
         }
 
-        private WorkflowDefinition CreateWorkflowDefinition()
+        private SaveWorkflowDefinitionRequest CreateSaveWorkflowRequest()
         {
             var writeLine = new ActivityDefinition
             {
@@ -38,7 +38,7 @@ namespace Elsa.ComponentTests.Clients.RestClient.WorkflowDefinitions
             var activities = new[] {writeLine, readLine};
             var connections = new[] {new ConnectionDefinition(writeLine.ActivityId, readLine.ActivityId, OutcomeNames.Done)};
 
-            return Fixture.Build<WorkflowDefinition>()
+            return Fixture.Build<SaveWorkflowDefinitionRequest>()
                 .With(x => x.Activities, activities)
                 .With(x => x.Connections, connections)
                 .Create();

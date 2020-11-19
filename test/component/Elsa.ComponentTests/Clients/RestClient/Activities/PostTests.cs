@@ -15,7 +15,7 @@ namespace Elsa.ComponentTests.Clients.RestClient.Activities
         public async Task Post01()
         {
             var list = await ElsaClient.Activities.ListAsync();
-            Assert.NotEmpty(list.Items);
+            Assert.NotEmpty(list);
         }
     }
 }

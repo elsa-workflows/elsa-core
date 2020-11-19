@@ -25,7 +25,20 @@ namespace Elsa.Client.Extensions
 
             var serializerSettings = new JsonSerializerSettings
             {
-                ContractResolver = new CamelCasePropertyNamesContractResolver()
+                NullValueHandling = NullValueHandling.Ignore,
+                ReferenceLoopHandling = ReferenceLoopHandling.Serialize,
+                PreserveReferencesHandling = PreserveReferencesHandling.All,
+                TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Simple,
+                TypeNameHandling = TypeNameHandling.Auto,
+                ContractResolver = new CamelCasePropertyNamesContractResolver
+                {
+                    NamingStrategy = new CamelCaseNamingStrategy
+                    {
+                        ProcessDictionaryKeys = false,
+                        ProcessExtensionDataNames = true,
+                        OverrideSpecifiedNames = false
+                    }
+                }
             };
 
             serializerSettings.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
@@ -41,7 +54,7 @@ namespace Elsa.Client.Extensions
             services
                 .AddApiClient<IActivitiesApi>(refitSettings, httpClientFactory)
                 .AddApiClient<IWorkflowDefinitionsApi>(refitSettings, httpClientFactory);
-            
+
             return services
                 .AddTransient<IElsaClient, ElsaClient>();
         }

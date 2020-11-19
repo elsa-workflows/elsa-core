@@ -1,7 +1,11 @@
 ﻿using System;
+using System.Text.Json.Serialization;
+using Newtonsoft.Json.Converters;
 
 namespace Elsa.Client.Models
 {
+    [Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     [Flags]
     public enum ActivityTraits
     {
