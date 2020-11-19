@@ -1,8 +1,4 @@
 using Elsa.Client.Models;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using NodaTime;
-using NodaTime.Serialization.JsonNet;
 using ProtoBuf;
 
 namespace ElsaDashboard.Shared.Surrogates

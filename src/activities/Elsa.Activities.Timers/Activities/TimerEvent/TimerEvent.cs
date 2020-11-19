@@ -20,17 +20,14 @@ namespace Elsa.Activities.Timers
         [ActivityProperty(Hint = "An expression that evaluates to a Duration value.")]
         public Duration Timeout { get; set; } = default!;
 
-        public Instant ExecuteAt
+        public Instant? ExecuteAt
         {
-            get => GetState<Instant>();
+            get => GetState<Instant?>();
             set => SetState(value);
         }
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
-            if (context.WorkflowExecutionContext.IsFirstPass)
-                return Done();
-
             ExecuteAt = _clock.GetCurrentInstant().Plus(Timeout);
             return Suspend();
         }

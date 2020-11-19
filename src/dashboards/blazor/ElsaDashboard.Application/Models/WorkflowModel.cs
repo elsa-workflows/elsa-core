@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using Elsa.Client.Models;
 
 namespace ElsaDashboard.Application.Models
 {

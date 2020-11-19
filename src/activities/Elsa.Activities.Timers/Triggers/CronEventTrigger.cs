@@ -1,7 +1,6 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Triggers;
-using NCrontab;
 using NodaTime;
 
 namespace Elsa.Activities.Timers.Triggers

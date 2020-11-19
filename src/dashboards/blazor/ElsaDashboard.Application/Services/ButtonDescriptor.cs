@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using ElsaDashboard.Application.Extensions;
 using ElsaDashboard.Application.Models;
 using Microsoft.AspNetCore.Components;
 

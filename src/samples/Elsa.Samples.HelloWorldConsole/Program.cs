@@ -1,5 +1,4 @@
 ﻿using System.Threading.Tasks;
-using AutoMapper;
 using Elsa.Extensions;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;

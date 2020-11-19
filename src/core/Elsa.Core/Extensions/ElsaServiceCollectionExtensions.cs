@@ -47,7 +47,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton(options.SignalFactory)
                 .AddSingleton(options.StorageFactory)
                 .AddPersistence(options.ConfigurePersistence);
-            
+
             options.AddWorkflowsCore();
             options.AddMediatR();
             options.AddServiceBus();
@@ -70,7 +70,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddTransient<T>()
                 .AddTransient<IWorkflow>(sp => sp.GetRequiredService<T>());
         }
-        
+
         public static IServiceCollection AddWorkflow(this IServiceCollection services, IWorkflow workflow)
         {
             return services
@@ -78,7 +78,14 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddTransient(sp => workflow);
         }
 
-        public static IServiceCollection AddConsumer<TMessage, TConsumer>(this IServiceCollection services) where TConsumer : class, IHandleMessages<TMessage> => services.AddTransient<IHandleMessages<TMessage>, TConsumer>();
+        public static IServiceCollection AddConsumer<TMessage, TConsumer>(this IServiceCollection services) where TConsumer : class, IHandleMessages<TMessage>
+        {
+            return services
+                .AddTransient<TConsumer>()
+                .AddTransient<IHandleMessages>(sp => sp.GetRequiredService<TConsumer>())
+                .AddTransient<IHandleMessages<TMessage>, TConsumer>(sp => sp.GetRequiredService<TConsumer>());
+        }
+
         private static IServiceCollection AddMediatR(this ElsaOptions options) => options.Services.AddMediatR(mediatr => mediatr.AsScoped(), typeof(IActivity));
 
         private static ElsaOptions AddWorkflowsCore(this ElsaOptions configuration)

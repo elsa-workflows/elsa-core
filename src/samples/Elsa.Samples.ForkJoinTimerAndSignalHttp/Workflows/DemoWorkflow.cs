@@ -3,7 +3,6 @@ using Elsa.Activities.ControlFlow;
 using Elsa.Activities.Timers;
 using Elsa.Builders;
 using Elsa.Services.Models;
-using Microsoft.AspNetCore.Mvc.Filters;
 using NodaTime;
 
 namespace Elsa.Samples.ForkJoinTimerAndSignalHttp.Workflows

@@ -34,9 +34,6 @@ namespace Elsa.Activities.Timers
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
-            if (context.WorkflowExecutionContext.IsFirstPass)
-                return Done();
-
             ExecuteAt = GetNextOccurrence(CronExpression);
             return Suspend();
         }

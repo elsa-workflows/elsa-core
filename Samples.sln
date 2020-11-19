@@ -138,6 +138,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElsaDashboard.Application.W
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.ForkJoinTimerAndSignalHttp", "src\samples\Elsa.Samples.ForkJoinTimerAndSignalHttp\Elsa.Samples.ForkJoinTimerAndSignalHttp.csproj", "{922F1EB6-5C8F-45DC-82A8-C651E4554542}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Activities.Rebus", "src\activities\Elsa.Activities.Rebus\Elsa.Activities.Rebus.csproj", "{115DEB38-679F-467E-8F87-9E669DFD2EB8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.RebusWorker", "src\samples\Elsa.Samples.RebusWorker\Elsa.Samples.RebusWorker.csproj", "{A855C6B9-1548-4183-926C-75D80CEEF510}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -337,6 +341,14 @@ Global
 		{922F1EB6-5C8F-45DC-82A8-C651E4554542}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{922F1EB6-5C8F-45DC-82A8-C651E4554542}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{922F1EB6-5C8F-45DC-82A8-C651E4554542}.Release|Any CPU.Build.0 = Release|Any CPU
+		{115DEB38-679F-467E-8F87-9E669DFD2EB8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{115DEB38-679F-467E-8F87-9E669DFD2EB8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{115DEB38-679F-467E-8F87-9E669DFD2EB8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{115DEB38-679F-467E-8F87-9E669DFD2EB8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A855C6B9-1548-4183-926C-75D80CEEF510}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A855C6B9-1548-4183-926C-75D80CEEF510}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A855C6B9-1548-4183-926C-75D80CEEF510}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A855C6B9-1548-4183-926C-75D80CEEF510}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -402,6 +414,8 @@ Global
 		{8DD4F1E8-8AC8-4AB4-AC08-9456AA6EAF10} = {5837821B-CA71-40B6-A9F1-C25D318B4691}
 		{F7181887-E6B5-4DA9-9598-8E9E806B5A20} = {5837821B-CA71-40B6-A9F1-C25D318B4691}
 		{922F1EB6-5C8F-45DC-82A8-C651E4554542} = {5E5E1E84-DDBC-40D6-B891-0D563A15A44A}
+		{115DEB38-679F-467E-8F87-9E669DFD2EB8} = {B43B546E-23F3-46E8-ACB7-D04F05CDA180}
+		{A855C6B9-1548-4183-926C-75D80CEEF510} = {5E5E1E84-DDBC-40D6-B891-0D563A15A44A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}
