@@ -1,22 +1,25 @@
 ﻿using System;
 using Microsoft.Extensions.DependencyInjection;
 using Rebus.Bus;
+using Rebus.Config;
+using Rebus.ServiceProvider;
 
 namespace Elsa.ServiceBus
 {
     public class ServiceBusContainer : IServiceBusContainer, IDisposable
     {
-        public ServiceBusContainer(Action<IServiceCollection> configure)
+        public ServiceBusContainer(string name, IServiceProvider serviceProvider, Func<RebusConfigurer, IServiceProvider, RebusConfigurer> configure)
         {
-            var services = new ServiceCollection();
-            configure(services);
-            ServiceProvider = services.BuildServiceProvider();
-            Bus = ServiceProvider.GetRequiredService<IBus>();
+            Name = name;
+
+            var configurer = Configure.With(new DependencyInjectionHandlerActivator(serviceProvider));
+            configurer = configure(configurer, serviceProvider);
+            Bus = configurer.Start();
         }
         
-        public IServiceProvider ServiceProvider { get; }
+        public string Name { get; }
         public IBus Bus { get; }
 
-        public void Dispose() => ((IDisposable)ServiceProvider).Dispose();
+        public void Dispose() => Bus.Dispose();
     }
 }

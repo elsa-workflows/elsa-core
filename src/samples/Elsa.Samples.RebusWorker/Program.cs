@@ -24,7 +24,8 @@ namespace Elsa.Samples.RebusWorker
                             .UsePersistence(db => db.UseSqLite("Data Source=elsa.db;Cache=Shared")))
                         .AddConsoleActivities()
                         .AddTimerActivities(options => options.SweepInterval = Duration.FromSeconds(1))
-                        .AddRebusActivities<Greeting>()
+                        .AddRebusActivities()
+                        //.AddConsumer<Greeting, Gree>()
                         .AddWorkflow<ProducerWorkflow>()
                         .AddWorkflow<ConsumerWorkflow>();
                 });

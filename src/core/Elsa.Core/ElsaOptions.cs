@@ -3,6 +3,7 @@ using System.Data;
 using Elsa.Caching;
 using Elsa.DistributedLock;
 using Elsa.Extensions;
+using Elsa.Messages;
 using Elsa.Serialization;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
@@ -126,8 +127,8 @@ namespace Elsa
                 .Logging(logging => logging.ColoredConsole(LogLevel.Debug))
                 .Subscriptions(s => s.StoreInMemory(subscriberStore))
                 .DataBus(s => s.StoreInMemory(dataStore))
-                .Routing(r => r.TypeBased())
-                .Transport(t => t.UseInMemoryTransport(network, "elsa_publisher"));
+                //.Routing(r => r.TypeBased().Map<RunWorkflow>("runworkflow"))
+                .Transport(t => t.UseInMemoryTransport(network, "elsa:publisher"));
         }
     }
 }

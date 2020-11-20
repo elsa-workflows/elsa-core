@@ -10,6 +10,7 @@ using Elsa.Extensions;
 using Elsa.Indexes;
 using Elsa.Messages;
 using Elsa.Models;
+using Elsa.ServiceBus;
 using Elsa.Services.Models;
 using Elsa.Triggers;
 using MediatR;
@@ -26,6 +27,7 @@ namespace Elsa.Services
         private readonly IWorkflowSelector _workflowSelector;
         private readonly IWorkflowRegistry _workflowRegistry;
         private readonly IWorkflowSchedulerQueue _queue;
+        private readonly IServiceBusContainerFactory _serviceBusContainerFactory;
 
         public WorkflowScheduler(
             IBus serviceBus,
@@ -33,7 +35,8 @@ namespace Elsa.Services
             IWorkflowFactory workflowFactory,
             IWorkflowSelector workflowSelector,
             IWorkflowRegistry workflowRegistry,
-            IWorkflowSchedulerQueue queue)
+            IWorkflowSchedulerQueue queue,
+            IServiceBusContainerFactory serviceBusContainerFactory)
         {
             _serviceBus = serviceBus;
             _workflowInstanceManager = workflowInstanceManager;
@@ -41,14 +44,18 @@ namespace Elsa.Services
             _workflowSelector = workflowSelector;
             _workflowRegistry = workflowRegistry;
             _queue = queue;
+            _serviceBusContainerFactory = serviceBusContainerFactory;
         }
 
         public async Task ScheduleWorkflowInstanceAsync(
             string instanceId,
             string? activityId = default,
             object? input = default,
-            CancellationToken cancellationToken = default) =>
-            await _serviceBus.Send(new RunWorkflow(instanceId, activityId, input));
+            CancellationToken cancellationToken = default)
+        {
+            var bus = _serviceBusContainerFactory.GetBusContainer("run_workflow:client");
+            await bus.Bus.Send(new RunWorkflow(instanceId, activityId, input));
+        }
 
         public async Task<IEnumerable<WorkflowInstance>> ScheduleWorkflowDefinitionAsync(
             string definitionId,
