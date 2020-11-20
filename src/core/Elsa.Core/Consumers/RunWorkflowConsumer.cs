@@ -1,4 +1,3 @@
-using System;
 using System.Threading.Tasks;
 using Elsa.Exceptions;
 using Elsa.Extensions;
@@ -8,7 +7,7 @@ using Rebus.Handlers;
 
 namespace Elsa.Consumers
 {
-    public class RunWorkflowConsumer : IHandleMessages<RunWorkflow>, IDisposable
+    public class RunWorkflowConsumer : IHandleMessages<RunWorkflow>
     {
         private readonly IWorkflowRunner _workflowRunner;
         private readonly IWorkflowInstanceManager _workflowInstanceManager;
@@ -30,11 +29,6 @@ namespace Elsa.Consumers
                 workflowInstance,
                 message.ActivityId,
                 message.Input);
-        }
-
-        public void Dispose()
-        {
-            
         }
     }
 }

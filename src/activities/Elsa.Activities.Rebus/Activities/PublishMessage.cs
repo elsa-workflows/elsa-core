@@ -12,11 +12,11 @@ namespace Elsa.Activities.Rebus
     [Action(Category = "Rebus", Description = "Publishes a message.", Outcomes = new[] { OutcomeNames.Done })]
     public class PublishMessage : Activity
     {
-        private readonly IBus _bus;
+        private readonly IEventPublisher _eventPublisher;
 
-        public PublishMessage(IBus bus)
+        public PublishMessage(IEventPublisher eventPublisher)
         {
-            _bus = bus;
+            _eventPublisher = eventPublisher;
         }
 
         [ActivityProperty(Hint = "The message to publish.")]
@@ -27,7 +27,7 @@ namespace Elsa.Activities.Rebus
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            await _bus.Publish(Message, Headers);
+            await _eventPublisher.PublishAsync(Message, Headers);
             return Done();
         }
     }

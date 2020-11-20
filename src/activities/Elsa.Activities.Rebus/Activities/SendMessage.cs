@@ -12,9 +12,9 @@ namespace Elsa.Activities.Rebus
     [Action(Category = "Rebus", Description = "Publishes a message.", Outcomes = new[] { OutcomeNames.Done })]
     public class SendMessage : Activity
     {
-        private readonly IBus _bus;
+        private readonly ICommandSender _bus;
 
-        public SendMessage(IBus bus)
+        public SendMessage(ICommandSender bus)
         {
             _bus = bus;
         }
@@ -27,10 +27,7 @@ namespace Elsa.Activities.Rebus
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            await _bus.Advanced.Routing.Send("greeting", Message, Headers);
-
-            await _bus.Advanced.Topics.Subscribe("greeting");
-            //await _bus.Send(Message, Headers);
+            await _bus.SendAsync(Message, Headers);
             return Done();
         }
     }

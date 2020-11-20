@@ -10,13 +10,6 @@ namespace Elsa.Activities.Rebus
     [Trigger(Category = "Rebus", Description = "Triggered when a message is received.", Outcomes = new[] { OutcomeNames.Done })]
     public class MessageReceived : Activity
     {
-        private readonly IBus _bus;
-
-        public MessageReceived(IBus bus)
-        {
-            _bus = bus;
-        }
-
         [ActivityProperty(Hint = "The type of message to receive.")]
         public Type MessageType { get; set; } = default!;
         

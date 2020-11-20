@@ -21,11 +21,11 @@ namespace Elsa.Samples.RebusWorker
                 {
                     services
                         .AddElsa(option => option
-                            .UsePersistence(db => db.UseSqLite("Data Source=elsa.db;Cache=Shared")))
+                            .UsePersistence(db => db.UseSqLite("Data Source=elsa.db;Cache=Shared"))
+                            .AddEndpoint<Greeting>())
                         .AddConsoleActivities()
                         .AddTimerActivities(options => options.SweepInterval = Duration.FromSeconds(1))
-                        .AddRebusActivities()
-                        //.AddConsumer<Greeting, Gree>()
+                        .AddRebusActivities<Greeting>()
                         .AddWorkflow<ProducerWorkflow>()
                         .AddWorkflow<ConsumerWorkflow>();
                 });
