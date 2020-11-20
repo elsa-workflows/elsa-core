@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Elsa.Activities.Console;
 using Elsa.Activities.Rebus;
 using Elsa.Activities.Timers;
@@ -18,7 +19,7 @@ namespace Elsa.Samples.RebusWorker.Workflows
             _clock = clock;
             _random = new Random();
         }
-        
+
         public void Build(IWorkflowBuilder workflow)
         {
             workflow
@@ -31,30 +32,18 @@ namespace Elsa.Samples.RebusWorker.Workflows
 
         private Greeting GetRandomGreeting()
         {
-            var greetings = new[]
-            {
-                new Greeting
-                {
-                    From = "John",
-                    To = "Jill",
-                    Message = "Hello!"
-                },
-                new Greeting
-                {
-                    From = "Julia",
-                    To = "Miriam",
-                    Message = "Happy Monday!"
-                },
-                new Greeting
-                {
-                    From = "Jack",
-                    To = "Bob",
-                    Message = "How do you do?"
-                }
-            };
+            var names = new[] { "John", "Jill", "Julia", "Miriam", "Jack", "Bob" };
+            var messages = new[] { "Hello!", "How do you do?", "Happy Monday!" };
+            var from = _random.Next(0, names.Length);
+            var to = _random.Next(0, names.Length);
+            var message = _random.Next(0, messages.Length);
 
-            var index = _random.Next(0, greetings.Length);
-            return greetings[index];
+            return new Greeting
+            {
+                From = names[from],
+                To = names[to],
+                Message = messages[message]
+            };
         }
     }
 }

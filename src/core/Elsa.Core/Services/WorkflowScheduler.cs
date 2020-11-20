@@ -48,7 +48,7 @@ namespace Elsa.Services
             string? activityId = default,
             object? input = default,
             CancellationToken cancellationToken = default) =>
-            await _serviceBus.Publish(new RunWorkflow(instanceId, activityId, input));
+            await _serviceBus.Send(new RunWorkflow(instanceId, activityId, input));
 
         public async Task<IEnumerable<WorkflowInstance>> ScheduleWorkflowDefinitionAsync(
             string definitionId,

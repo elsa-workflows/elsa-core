@@ -26,7 +26,10 @@ using Elsa.WorkflowProviders;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using NodaTime;
+using Rebus.Bus;
+using Rebus.Config;
 using Rebus.Handlers;
+using Rebus.ServiceProvider;
 using RunWorkflow = Elsa.Messages.RunWorkflow;
 
 // ReSharper disable once CheckNamespace
@@ -78,12 +81,26 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddTransient(sp => workflow);
         }
 
-        public static IServiceCollection AddConsumer<TMessage, TConsumer>(this IServiceCollection services) where TConsumer : class, IHandleMessages<TMessage>
+        public static IServiceCollection AddConsumer<TMessage, TConsumer>(this IServiceCollection services, Func<RebusConfigurer, IServiceProvider, RebusConfigurer> configureBus, Action<IServiceCollection>? configureBusServices = default)
+            where TConsumer : class, IHandleMessages<TMessage>
         {
             return services
-                .AddTransient<TConsumer>()
-                .AddTransient<IHandleMessages>(sp => sp.GetRequiredService<TConsumer>())
-                .AddTransient<IHandleMessages<TMessage>, TConsumer>(sp => sp.GetRequiredService<TConsumer>());
+                .AddTransient(sp =>
+                {
+                    var factory = sp.GetRequiredService<IServiceBusContainerFactory>();
+                    var container = factory.CreateBusContainer(containerServices =>
+                    {
+                        containerServices
+                            .AddTransient<TConsumer>()
+                            .AddTransient<IHandleMessages>(bsp => bsp.GetRequiredService<TConsumer>())
+                            .AddTransient<IHandleMessages<TMessage>, TConsumer>(bsp => bsp.GetRequiredService<TConsumer>());
+
+                        configureBusServices?.Invoke(containerServices);
+                        containerServices.AddRebus(configureBus);
+                    });
+
+                    return container.ServiceProvider.GetRequiredService<TConsumer>();
+                });
         }
 
         private static IServiceCollection AddMediatR(this ElsaOptions options) => options.Services.AddMediatR(mediatr => mediatr.AsScoped(), typeof(IActivity));
@@ -163,11 +180,5 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddScoped<ISignaler, Signaler>()
                 .AddActivity<Elsa.Activities.Workflows.RunWorkflow>()
                 .AddTriggerProvider<RunWorkflowTriggerProvider>();
-
-        private static ElsaOptions AddServiceBus(this ElsaOptions options)
-        {
-            options.WithServiceBus(options.ServiceBusConfigurer);
-            return options;
-        }
     }
 }

@@ -11,6 +11,7 @@ using Rebus.DataBus.InMem;
 using Rebus.Logging;
 using Rebus.Persistence.InMem;
 using Rebus.Routing.TypeBased;
+using Rebus.ServiceProvider;
 using Rebus.Transport.InMem;
 using YesSql;
 using Storage.Net;
@@ -29,13 +30,20 @@ namespace Elsa
             StorageFactory = sp => Storage.Net.StorageFactory.Blobs.InMemory();
             DistributedLockProviderFactory = sp => new DefaultLockProvider();
             SignalFactory = sp => new Signal();
-            ServiceBusConfigurer = ConfigureInMemoryServiceBus;
             JsonSerializerConfigurer = (sp, serializer) => {};
             
             AddAutoMapper = () =>
             {
                 services.AddAutoMapper(ServiceLifetime.Singleton);
                 services.AddSingleton(sp => sp.CreateAutoMapperConfiguration());
+            };
+
+            AddServiceBus = () =>
+            {
+                services.AddSingleton<InMemNetwork>();
+                services.AddSingleton<InMemorySubscriberStore>();
+                services.AddSingleton<InMemDataStore>();
+                services.AddRebus(ConfigureInMemoryServiceBus);
             };
             
             CreateJsonSerializer = sp =>
@@ -51,10 +59,10 @@ namespace Elsa
         internal Func<IServiceProvider, IBlobStorage> StorageFactory { get; set; }
         internal Func<IServiceProvider, IDistributedLockProvider> DistributedLockProviderFactory { get; private set; }
         internal Func<IServiceProvider, ISignal> SignalFactory { get; private set; }
-        internal Func<RebusConfigurer, IServiceProvider, RebusConfigurer> ServiceBusConfigurer { get; private set; }
         internal Func<IServiceProvider, JsonSerializer> CreateJsonSerializer { get; private set; }
         internal Action<IServiceProvider, JsonSerializer> JsonSerializerConfigurer { get; private set; }
         internal Action AddAutoMapper { get; private set; }
+        internal Action AddServiceBus { get; private set; }
 
         public ElsaOptions UseDistributedLockProvider(Func<IServiceProvider, IDistributedLockProvider> factory)
         {
@@ -90,13 +98,11 @@ namespace Elsa
             return this;
         }
 
-        public ElsaOptions ConfigureServiceBus(Func<RebusConfigurer, IServiceProvider, RebusConfigurer> configure)
+        public ElsaOptions UseServiceBus(Action addServiceBus)
         {
-            ServiceBusConfigurer = configure;
+            AddServiceBus = addServiceBus;
             return this;
         }
-
-        public ElsaOptions ConfigureServiceBus(Func<RebusConfigurer, RebusConfigurer> configure) => ConfigureServiceBus((bus, _) => configure(bus));
 
         public ElsaOptions UseJsonSerializer(Func<IServiceProvider, JsonSerializer> factory)
         {
@@ -112,12 +118,16 @@ namespace Elsa
 
         private static RebusConfigurer ConfigureInMemoryServiceBus(RebusConfigurer rebus, IServiceProvider serviceProvider)
         {
+            var subscriberStore = serviceProvider.GetRequiredService<InMemorySubscriberStore>();
+            var dataStore = serviceProvider.GetRequiredService<InMemDataStore>();
+            var network = serviceProvider.GetRequiredService<InMemNetwork>();
+            
             return rebus
-                .Logging(logging => logging.ColoredConsole(LogLevel.Info))
-                .Subscriptions(s => s.StoreInMemory(new InMemorySubscriberStore()))
-                .DataBus(s => s.StoreInMemory(new InMemDataStore()))
+                .Logging(logging => logging.ColoredConsole(LogLevel.Debug))
+                .Subscriptions(s => s.StoreInMemory(subscriberStore))
+                .DataBus(s => s.StoreInMemory(dataStore))
                 .Routing(r => r.TypeBased())
-                .Transport(t => t.UseInMemoryTransport(new InMemNetwork(), "Messages"));
+                .Transport(t => t.UseInMemoryTransport(network, "elsa_publisher"));
         }
     }
 }
