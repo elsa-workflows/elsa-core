@@ -48,7 +48,7 @@ namespace Elsa.Activities.Timers.HostedServices
                         var now = _clock.GetCurrentInstant();
                         await workflowScheduler.TriggerWorkflowsAsync<TimerEventTrigger>(x => x.ExecuteAt <= now, cancellationToken: stoppingToken);
                         await workflowScheduler.TriggerWorkflowsAsync<CronEventTrigger>(x => x.ExecuteAt <= now, cancellationToken: stoppingToken);
-                        await workflowScheduler.TriggerWorkflowsAsync<InstantEventTrigger>(x => x.Instant <= now, cancellationToken: stoppingToken);
+                        await workflowScheduler.TriggerWorkflowsAsync<InstantEventTrigger>(x => x.ExecuteAt <= now, cancellationToken: stoppingToken);
                     }
                     catch (Exception ex)
                     {
