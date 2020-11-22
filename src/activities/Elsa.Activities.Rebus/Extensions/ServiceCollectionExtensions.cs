@@ -1,6 +1,8 @@
 using System;
 using Elsa.Activities.Rebus.Consumers;
+using Elsa.Activities.Rebus.StartupTasks;
 using Elsa.Activities.Rebus.Triggers;
+using Elsa.Runtime;
 using Microsoft.Extensions.DependencyInjection;
 using Rebus.Handlers;
 
@@ -19,19 +21,14 @@ namespace Elsa.Activities.Rebus.Extensions
             
             return services
                 .AddTriggerProvider<MessageReceivedTriggerProvider>()
+                .AddStartupTask(sp => ActivatorUtilities.CreateInstance<CreateSubscriptions>(sp, (object)messageTypes))
                 .AddActivity<PublishMessage>()
                 .AddActivity<SendMessage>()
                 .AddActivity<MessageReceived>();
         }
 
         public static IServiceCollection AddRebusActivities<T>(this IServiceCollection services) => services.AddRebusActivities(typeof(T));
-        // public static IServiceCollection AddRebusActivities<T1, T2>(this IServiceCollection services) => services.AddRebusActivities().AddMessageType<T1>().AddMessageType<T2>();
-        // public static IServiceCollection AddRebusActivities<T1, T2, T3>(this IServiceCollection services) => services.AddRebusActivities().AddMessageType<T1>().AddMessageType<T2>().AddMessageType<T3>();
-        // public static IServiceCollection AddRebusActivities<T1, T2, T3, T4>(this IServiceCollection services) => services.AddRebusActivities().AddMessageType<T1>().AddMessageType<T2>().AddMessageType<T3>().AddMessageType<T4>();
-        //
-        // public static IServiceCollection AddRebusActivities<T1, T2, T3, T4, T5>(this IServiceCollection services) =>
-        //     services.AddRebusActivities().AddMessageType<T1>().AddMessageType<T2>().AddMessageType<T3>().AddMessageType<T4>().AddMessageType<T5>();
-        
-        //public static IServiceCollection AddMessageType<T>(this IServiceCollection services) => services.AddTransient<IHandleMessages<T>, MessageConsumer<T>>();
+        public static IServiceCollection AddRebusActivities<T1, T2>(this IServiceCollection services) => services.AddRebusActivities(typeof(T1), typeof(T2));
+        public static IServiceCollection AddRebusActivities<T1, T2, T3>(this IServiceCollection services) => services.AddRebusActivities(typeof(T1), typeof(T2), typeof(T3));
     }
 }

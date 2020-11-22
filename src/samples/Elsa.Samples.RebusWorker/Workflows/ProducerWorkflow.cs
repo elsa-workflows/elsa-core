@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using Elsa.Activities.Console;
 using Elsa.Activities.Rebus;
 using Elsa.Activities.Timers;
@@ -25,9 +24,7 @@ namespace Elsa.Samples.RebusWorker.Workflows
             workflow
                 .TimerEvent(Duration.FromSeconds(5))
                 .WriteLine("Sending a random greeting to the \"greetings\" queue.")
-                //.Then<PublishMessage>(sendMessage => sendMessage.Set(x => x.Message, GetRandomGreeting))
-                .Then<SendMessage>(sendMessage => sendMessage.Set(x => x.Message, GetRandomGreeting))
-                .WriteLine(() => $"Message sent at {_clock.GetCurrentInstant()}");
+                .Then<SendMessage>(sendMessage => sendMessage.Set(x => x.Message, GetRandomGreeting));
         }
 
         private Greeting GetRandomGreeting()

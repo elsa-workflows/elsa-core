@@ -20,9 +20,7 @@ namespace Elsa.Samples.RebusWorker
                 .ConfigureServices((hostContext, services) =>
                 {
                     services
-                        .AddElsa(option => option
-                            .UsePersistence(db => db.UseSqLite("Data Source=elsa.db;Cache=Shared"))
-                            .AddEndpoint<Greeting>())
+                        .AddElsa(option => option.UsePersistence(db => db.UseSqLite("Data Source=elsa.db;Cache=Shared")))
                         .AddConsoleActivities()
                         .AddTimerActivities(options => options.SweepInterval = Duration.FromSeconds(1))
                         .AddRebusActivities<Greeting>()

@@ -14,7 +14,7 @@ namespace Elsa.Services
         
         public async Task SendAsync(object message, IDictionary<string, string>? headers = default)
         {
-            var bus = _serviceBusFactory.GetServiceBus(message.GetType().Name);
+            var bus = _serviceBusFactory.GetServiceBus(message.GetType());
             await bus.Send(message, headers);
         }
     }

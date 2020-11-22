@@ -1,21 +1,22 @@
 ﻿using System;
+using System.Collections.Generic;
 using Rebus.Config;
 
 namespace Elsa.Services
 {
     public class ServiceBusEndpointConfigurationContext
     {
-        public ServiceBusEndpointConfigurationContext(RebusConfigurer configurer, string queueName, Type messageType, IServiceProvider serviceProvider)
+        public ServiceBusEndpointConfigurationContext(RebusConfigurer configurer, string queueName, IDictionary<Type, string> messageTypeMap, IServiceProvider serviceProvider)
         {
             Configurer = configurer;
             QueueName = queueName;
-            MessageType = messageType;
+            MessageTypeMap = messageTypeMap;
             ServiceProvider = serviceProvider;
         }
 
         public RebusConfigurer Configurer { get; }
         public string QueueName { get; }
-        public Type MessageType { get; }
+        public IDictionary<Type, string> MessageTypeMap { get; }
         public IServiceProvider ServiceProvider { get; set; }
     }
 }

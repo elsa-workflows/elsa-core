@@ -8,7 +8,7 @@ using Rebus.Pipeline;
 
 namespace Elsa.Activities.Rebus.Consumers
 {
-    public class MessageConsumer<T> : IHandleMessages<T>
+    public class MessageConsumer<T> : IHandleMessages<T> where T:notnull
     {
         private readonly IWorkflowScheduler _workflowScheduler;
 

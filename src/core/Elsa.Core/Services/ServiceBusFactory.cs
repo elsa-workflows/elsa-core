@@ -8,25 +8,35 @@ namespace Elsa.Services
 {
     public class ServiceBusFactory : IServiceBusFactory
     {
+        private readonly ElsaOptions _elsaOptions;
         private readonly IServiceProvider _serviceProvider;
         private readonly IDictionary<string, IBus> _serviceBuses = new Dictionary<string, IBus>();
+        private readonly DependencyInjectionHandlerActivator _handlerActivator;
 
-        public ServiceBusFactory(IServiceProvider serviceProvider)
+        public ServiceBusFactory(ElsaOptions elsaOptions, IServiceProvider serviceProvider)
         {
+            _elsaOptions = elsaOptions;
             _serviceProvider = serviceProvider;
+            _handlerActivator = new DependencyInjectionHandlerActivator(serviceProvider);
         }
-        
-        public IBus CreateServiceBus(string name, Func<RebusConfigurer, IServiceProvider, RebusConfigurer> configure)
+
+        public IBus GetServiceBus(Type messageType)
         {
-            var configurer = Configure.With(new DependencyInjectionHandlerActivator(_serviceProvider));
-            configurer = configure(configurer, _serviceProvider);
+            var queueName = messageType.Name;
 
-            var bus = configurer.Start();
-            _serviceBuses.Add(name, bus);
-            
-            return bus;
+            if (_serviceBuses.TryGetValue(queueName, out var bus))
+                return bus;
+
+            var configurer = Configure.With(_handlerActivator);
+            var map = new Dictionary<Type, string> { [messageType] = queueName };
+            var configureContext = new ServiceBusEndpointConfigurationContext(configurer, queueName, map, _serviceProvider);
+
+            _elsaOptions.ConfigureServiceBusEndpoint(configureContext);
+
+            var newBus = configurer.Start();
+            _serviceBuses.Add(queueName, newBus);
+
+            return newBus;
         }
-
-        public IBus GetServiceBus(string name) => _serviceBuses[name];
     }
 }

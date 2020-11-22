@@ -19,14 +19,12 @@ using Elsa.Metadata.Handlers;
 using Elsa.Runtime;
 using Elsa.Serialization;
 using Elsa.Services;
-using Elsa.StartupTasks;
 using Elsa.Triggers;
 using Elsa.WorkflowProviders;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using NodaTime;
 using Rebus.ServiceProvider;
-using RunWorkflow = Elsa.Messages.RunWorkflow;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -50,7 +48,6 @@ namespace Microsoft.Extensions.DependencyInjection
             options.AddWorkflowsCore();
             options.AddMediatR();
             options.AddAutoMapper();
-            options.AddEndpoint<RunWorkflow>();
 
             return services;
         }
@@ -121,48 +118,15 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddAutoMapperProfile<CloningProfile>()
                 .AddSingleton<ICloner, AutoMapperCloner>()
                 .AddNotificationHandlers(typeof(ElsaServiceCollectionExtensions))
-                .AddStartupTask<StartServiceBusTask>()
                 .AddSingleton<ServiceBusFactory>()
                 .AddSingleton<IServiceBusFactory, ServiceBusFactory>()
-                .AddSingleton<ICommandSender, CommandSender>(CreateCommandSender)
-                .AddSingleton<IEventPublisher, EventPublisher>(CreateEventPublisher)
+                .AddSingleton<ICommandSender, CommandSender>()
+                .AddSingleton<IEventPublisher, EventPublisher>()
                 .AutoRegisterHandlersFromAssemblyOf<RunWorkflowConsumer>()
                 .AddMetadataHandlers()
                 .AddCoreActivities();
 
             return configuration;
-        }
-
-        private static CommandSender CreateCommandSender(IServiceProvider serviceProvider)
-        {
-            var options = serviceProvider.GetRequiredService<ElsaOptions>();
-            var messageTypes = options.MessageTypes;
-
-            foreach (var messageType in messageTypes)
-            {
-                options.CreateServiceBus(messageType.Name, (bus, sp) =>
-                {
-                    var context = new ServiceBusEndpointConfigurationContext(bus, messageType.Name, messageType, sp);
-                    options.ConfigureServiceBusEndpoint(context);
-                    return bus;
-                }, serviceProvider);
-            }
-
-            return ActivatorUtilities.CreateInstance<CommandSender>(serviceProvider);
-        }
-
-        private static EventPublisher CreateEventPublisher(IServiceProvider serviceProvider)
-        {
-            var options = serviceProvider.GetRequiredService<ElsaOptions>();
-
-            options.CreateServiceBus("elsa:publisher", (bus, sp) =>
-            {
-                var context = new ServiceBusPublishEndpointConfigurationContext(bus, "elsa:publisher", sp);
-                options.ConfigureServiceBusPublishEndpoint(context);
-                return bus;
-            }, serviceProvider);
-
-            return ActivatorUtilities.CreateInstance<EventPublisher>(serviceProvider);
         }
 
         private static IServiceCollection AddMetadataHandlers(this IServiceCollection services) =>

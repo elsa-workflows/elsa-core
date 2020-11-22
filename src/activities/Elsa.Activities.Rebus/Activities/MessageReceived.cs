@@ -3,7 +3,6 @@ using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Rebus.Bus;
 
 namespace Elsa.Activities.Rebus
 {
