@@ -1,16 +1,16 @@
-﻿using Elsa.Activities.Console;
-using Elsa.Activities.Rebus;
+﻿using Elsa.Activities.AzureServiceBus.Activities;
+using Elsa.Activities.Console;
 using Elsa.Builders;
-using Elsa.Samples.RebusWorker.Messages;
+using Elsa.Samples.AzureServiceBusWorker.Messages;
 
-namespace Elsa.Samples.RebusWorker.Workflows
+namespace Elsa.Samples.AzureServiceBusWorker.Workflows
 {
     public class ConsumerWorkflow : IWorkflow
     {
         public void Build(IWorkflowBuilder workflow)
         {
             workflow
-                .StartWith<RebusMessageReceived>(messageReceived => messageReceived.Set(x => x.MessageType, typeof(Greeting)))
+                .StartWith<AzureServiceBusMessageReceived>(messageReceived => messageReceived.Set(x => x.QueueName, "greetings"))
                 .WriteLine(context =>
                 {
                     var greeting = context.GetInput<Greeting>();

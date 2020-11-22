@@ -9,7 +9,7 @@ namespace Elsa.Triggers
     {
         public Type ForType() => typeof(T);
         public Type ForActivityType() => typeof(TActivity);
-        public virtual ValueTask<ITrigger> GetTriggerAsync(TriggerProviderContext<TActivity> context, CancellationToken cancellationToken) => new ValueTask<ITrigger>(GetTrigger(context));
+        public virtual ValueTask<ITrigger> GetTriggerAsync(TriggerProviderContext<TActivity> context, CancellationToken cancellationToken) => new(GetTrigger(context));
         public virtual ITrigger GetTrigger(TriggerProviderContext<TActivity> context) => NullTrigger.Instance;
 
         async ValueTask<ITrigger> ITriggerProvider.GetTriggerAsync(TriggerProviderContext context, CancellationToken cancellationToken)

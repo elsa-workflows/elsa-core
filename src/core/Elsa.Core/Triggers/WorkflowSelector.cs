@@ -19,6 +19,7 @@ namespace Elsa.Triggers
         private readonly IWorkflowFactory _workflowFactory;
         private readonly IWorkflowInstanceManager _workflowInstanceManager;
         private readonly IWorkflowContextManager _workflowContextManager;
+        private readonly IWorkflowBlueprintReflector _workflowBlueprintReflector;
         private readonly IEnumerable<ITriggerProvider> _triggerProviders;
         private readonly IMemoryCache _memoryCache;
         private readonly IServiceProvider _serviceProvider;
@@ -29,6 +30,7 @@ namespace Elsa.Triggers
             IWorkflowFactory workflowFactory,
             IWorkflowInstanceManager workflowInstanceManager,
             IWorkflowContextManager workflowContextManager,
+            IWorkflowBlueprintReflector workflowBlueprintReflector,
             IEnumerable<ITriggerProvider> triggerProviders,
             IMemoryCache memoryCache,
             IServiceProvider serviceProvider)
@@ -37,6 +39,7 @@ namespace Elsa.Triggers
             _workflowFactory = workflowFactory;
             _workflowInstanceManager = workflowInstanceManager;
             _workflowContextManager = workflowContextManager;
+            _workflowBlueprintReflector = workflowBlueprintReflector;
             _triggerProviders = triggerProviders;
             _memoryCache = memoryCache;
             _serviceProvider = serviceProvider;

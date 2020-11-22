@@ -9,16 +9,16 @@ using Elsa.Services.Models;
 namespace Elsa.Activities.Rebus
 {
     [Action(Category = "Rebus", Description = "Publishes a message.", Outcomes = new[] { OutcomeNames.Done })]
-    public class PublishMessage : Activity
+    public class SendRebusMessage : Activity
     {
-        private readonly IEventPublisher _eventPublisher;
+        private readonly ICommandSender _bus;
 
-        public PublishMessage(IEventPublisher eventPublisher)
+        public SendRebusMessage(ICommandSender bus)
         {
-            _eventPublisher = eventPublisher;
+            _bus = bus;
         }
 
-        [ActivityProperty(Hint = "The message to publish.")]
+        [ActivityProperty(Hint = "The message to send.")]
         public object Message { get; set; } = default!;
 
         [ActivityProperty(Hint = "Optional headers to send along with the message.")]
@@ -26,7 +26,7 @@ namespace Elsa.Activities.Rebus
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            await _eventPublisher.PublishAsync(Message, Headers);
+            await _bus.SendAsync(Message, Headers);
             return Done();
         }
     }

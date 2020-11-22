@@ -32,7 +32,7 @@ namespace Elsa.Services
             var configureContext = new ServiceBusEndpointConfigurationContext(configurer, queueName, map, _serviceProvider);
 
             _elsaOptions.ConfigureServiceBusEndpoint(configureContext);
-
+            
             var newBus = configurer.Start();
             _serviceBuses.Add(queueName, newBus);
 

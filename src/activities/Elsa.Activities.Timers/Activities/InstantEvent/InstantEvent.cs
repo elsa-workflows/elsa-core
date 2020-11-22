@@ -26,16 +26,17 @@ namespace Elsa.Activities.Timers
         [ActivityProperty(Hint = "An instant in the future at which this activity should execute.")]
         public Instant Instant { get; set; }
         
-        public Instant ExecuteAt
+        public Instant? ExecuteAt
         {
-            get => GetState<Instant>();
+            get => GetState<Instant?>();
             set => SetState(value);
         }
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
             ExecuteAt = Instant;
-            return Suspend();
+            var now = _clock.GetCurrentInstant();
+            return ExecuteAt <= now ? Done() : Suspend();
         }
 
         protected override IActivityExecutionResult OnResume() => Done();

@@ -10,9 +10,9 @@ namespace Elsa.Activities.Rebus.Triggers
         public string? CorrelationId { get; set; }
     }
 
-    public class MessageReceivedTriggerProvider : TriggerProvider<MessageReceivedTrigger, MessageReceived>
+    public class MessageReceivedTriggerProvider : TriggerProvider<MessageReceivedTrigger, RebusMessageReceived>
     {
-        public override async ValueTask<ITrigger> GetTriggerAsync(TriggerProviderContext<MessageReceived> context, CancellationToken cancellationToken) =>
+        public override async ValueTask<ITrigger> GetTriggerAsync(TriggerProviderContext<RebusMessageReceived> context, CancellationToken cancellationToken) =>
             new MessageReceivedTrigger
             {
                 MessageType = (await context.Activity.GetPropertyValueAsync(x => x.MessageType, cancellationToken)).Name,

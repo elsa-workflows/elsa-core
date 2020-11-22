@@ -100,6 +100,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IWorkflowFactory, WorkflowFactory>()
                 .AddSingleton<IActivityFactory, ActivityFactory>()
                 .AddSingleton<IWorkflowBlueprintMaterializer, WorkflowBlueprintMaterializer>()
+                .AddSingleton<IWorkflowBlueprintReflector, WorkflowBlueprintReflector>()
                 .AddScoped<IWorkflowSelector, WorkflowSelector>()
                 .AddScoped<IWorkflowDefinitionManager, WorkflowDefinitionManager>()
                 .AddScoped<IWorkflowInstanceManager, WorkflowInstanceManager>()

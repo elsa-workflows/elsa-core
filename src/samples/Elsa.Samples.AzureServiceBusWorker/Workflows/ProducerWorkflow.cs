@@ -1,12 +1,12 @@
 ﻿using System;
+using Elsa.Activities.AzureServiceBus.Activities;
 using Elsa.Activities.Console;
-using Elsa.Activities.Rebus;
 using Elsa.Activities.Timers;
 using Elsa.Builders;
-using Elsa.Samples.RebusWorker.Messages;
+using Elsa.Samples.AzureServiceBusWorker.Messages;
 using NodaTime;
 
-namespace Elsa.Samples.RebusWorker.Workflows
+namespace Elsa.Samples.AzureServiceBusWorker.Workflows
 {
     public class ProducerWorkflow : IWorkflow
     {
@@ -24,7 +24,9 @@ namespace Elsa.Samples.RebusWorker.Workflows
             workflow
                 .InstantEvent(_clock.GetCurrentInstant().Plus(Duration.FromSeconds(5)))
                 .WriteLine("Sending a random greeting to the \"greetings\" queue.")
-                .Then<SendRebusMessage>(sendMessage => sendMessage.Set(x => x.Message, GetRandomGreeting));
+                .Then<SendAzureServiceBusMessage>(sendMessage => sendMessage
+                    .Set(x => x.Message, GetRandomGreeting)
+                    .Set(x => x.QueueName, "greetings"));
         }
 
         private Greeting GetRandomGreeting()

@@ -1,7 +1,6 @@
 ﻿using System;
-using ElsaDashboard.Application.Models;
 
-namespace ElsaDashboard.Application.Shared
+namespace ElsaDashboard.Application.Models
 {
     public class WorkflowModelChangedEventArgs : EventArgs
     {

@@ -22,9 +22,9 @@ namespace Elsa.Activities.Rebus.Extensions
             return services
                 .AddTriggerProvider<MessageReceivedTriggerProvider>()
                 .AddStartupTask(sp => ActivatorUtilities.CreateInstance<CreateSubscriptions>(sp, (object)messageTypes))
-                .AddActivity<PublishMessage>()
-                .AddActivity<SendMessage>()
-                .AddActivity<MessageReceived>();
+                .AddActivity<PublishRebusMessage>()
+                .AddActivity<SendRebusMessage>()
+                .AddActivity<RebusMessageReceived>();
         }
 
         public static IServiceCollection AddRebusActivities<T>(this IServiceCollection services) => services.AddRebusActivities(typeof(T));
