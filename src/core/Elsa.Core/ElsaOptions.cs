@@ -107,7 +107,7 @@ namespace Elsa
             return this;
         }
 
-        public ElsaOptions SetupServiceBus(Action<ServiceBusEndpointConfigurationContext> setup)
+        public ElsaOptions UseServiceBus(Action<ServiceBusEndpointConfigurationContext> setup)
         {
             ConfigureServiceBusEndpoint = setup;
             return this;
