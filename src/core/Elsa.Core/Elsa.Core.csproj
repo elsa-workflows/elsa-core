@@ -45,7 +45,7 @@
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="3.1.9" />
         <PackageReference Include="NodaTime.Serialization.JsonNet" Version="3.0.0" />
         <PackageReference Include="Elsa.Scrutor" Version="3.0.2.27" />
-        <PackageReference Include="YamlDotNet" Version="8.1.2" />
+        <PackageReference Include="YamlDotNet" Version="9.1.0" />
     </ItemGroup>
 
     <ItemGroup>
