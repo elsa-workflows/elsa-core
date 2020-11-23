@@ -63,8 +63,8 @@ namespace Microsoft.Extensions.DependencyInjection
         public static IServiceCollection AddWorkflow<T>(this IServiceCollection services) where T : class, IWorkflow
         {
             return services
-                .AddTransient<T>()
-                .AddTransient<IWorkflow>(sp => sp.GetRequiredService<T>());
+                .AddSingleton<T>()
+                .AddSingleton<IWorkflow>(sp => sp.GetRequiredService<T>());
         }
 
         public static IServiceCollection AddWorkflow(this IServiceCollection services, IWorkflow workflow)
