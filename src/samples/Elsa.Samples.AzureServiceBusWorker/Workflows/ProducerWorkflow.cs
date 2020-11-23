@@ -1,5 +1,5 @@
 ﻿using System;
-using Elsa.Activities.AzureServiceBus.Activities;
+using Elsa.Activities.AzureServiceBus;
 using Elsa.Activities.Console;
 using Elsa.Activities.Timers;
 using Elsa.Builders;
@@ -10,23 +10,19 @@ namespace Elsa.Samples.AzureServiceBusWorker.Workflows
 {
     public class ProducerWorkflow : IWorkflow
     {
-        private readonly IClock _clock;
         private readonly Random _random;
 
-        public ProducerWorkflow(IClock clock)
+        public ProducerWorkflow()
         {
-            _clock = clock;
             _random = new Random();
         }
 
         public void Build(IWorkflowBuilder workflow)
         {
             workflow
-                .InstantEvent(_clock.GetCurrentInstant().Plus(Duration.FromSeconds(5)))
+                .TimerEvent(Duration.FromSeconds(5))
                 .WriteLine("Sending a random greeting to the \"greetings\" queue.")
-                .Then<SendAzureServiceBusMessage>(sendMessage => sendMessage
-                    .Set(x => x.Message, GetRandomGreeting)
-                    .Set(x => x.QueueName, "greetings"));
+                .SendMessage("greetings", GetRandomGreeting);
         }
 
         private Greeting GetRandomGreeting()

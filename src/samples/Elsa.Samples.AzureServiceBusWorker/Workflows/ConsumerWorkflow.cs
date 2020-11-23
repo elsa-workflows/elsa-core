@@ -1,4 +1,4 @@
-﻿using Elsa.Activities.AzureServiceBus.Activities;
+﻿using Elsa.Activities.AzureServiceBus;
 using Elsa.Activities.Console;
 using Elsa.Builders;
 using Elsa.Samples.AzureServiceBusWorker.Messages;
@@ -10,7 +10,7 @@ namespace Elsa.Samples.AzureServiceBusWorker.Workflows
         public void Build(IWorkflowBuilder workflow)
         {
             workflow
-                .StartWith<AzureServiceBusMessageReceived>(messageReceived => messageReceived.Set(x => x.QueueName, "greetings"))
+                .MessageReceived<Greeting>("greetings")
                 .WriteLine(context =>
                 {
                     var greeting = context.GetInput<Greeting>();

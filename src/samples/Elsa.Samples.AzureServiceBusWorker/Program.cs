@@ -1,5 +1,6 @@
 using Elsa.Activities.AzureServiceBus.Extensions;
 using Elsa.Samples.AzureServiceBusWorker.Workflows;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NodaTime;
@@ -22,7 +23,7 @@ namespace Elsa.Samples.AzureServiceBusWorker
                         .AddElsa()
                         .AddConsoleActivities()
                         .AddTimerActivities(options => options.SweepInterval = Duration.FromSeconds(1))
-                        .AddAzureServiceBusActivities(options => options.ConnectionString = "Endpoint=sb://elsa-workflows-2.servicebus.windows.net/;SharedAccessKeyName=Elsa;SharedAccessKey=hAIa+fFuUbHi94y1Z0uO/2UTccjN/y4W0xvpaUd/cr4=")
+                        .AddAzureServiceBusActivities(options => options.ConnectionString = hostContext.Configuration.GetConnectionString("AzureServiceBus"))
                         .AddWorkflow<ProducerWorkflow>()
                         .AddWorkflow<ConsumerWorkflow>();
                 });
