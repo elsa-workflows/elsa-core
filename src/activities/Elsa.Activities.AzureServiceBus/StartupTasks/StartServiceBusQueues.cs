@@ -4,39 +4,37 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Activities.AzureServiceBus.Activities;
 using Elsa.Activities.AzureServiceBus.Services;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
-using IServiceBusFactory = Elsa.Activities.AzureServiceBus.Services.IServiceBusFactory;
+using Microsoft.Extensions.Hosting;
 
 namespace Elsa.Activities.AzureServiceBus.StartupTasks
 {
-    public class StartServiceBusQueues : IStartupTask
+    public class StartServiceBusQueues : BackgroundService
     {
         private readonly IWorkflowRegistry _workflowRegistry;
         private readonly IWorkflowBlueprintReflector _workflowBlueprintReflector;
-        private readonly IServiceBusFactory _serviceBusFactory;
+        private readonly IMessageReceiverFactory _messageReceiverFactory;
         private readonly IServiceProvider _serviceProvider;
 
-        public StartServiceBusQueues(IWorkflowRegistry workflowRegistry, IWorkflowBlueprintReflector workflowBlueprintReflector, IServiceBusFactory serviceBusFactory, IServiceProvider serviceProvider)
+        public StartServiceBusQueues(IWorkflowRegistry workflowRegistry, IWorkflowBlueprintReflector workflowBlueprintReflector, IMessageReceiverFactory messageReceiverFactory, IServiceProvider serviceProvider)
         {
             _workflowRegistry = workflowRegistry;
             _workflowBlueprintReflector = workflowBlueprintReflector;
-            _serviceBusFactory = serviceBusFactory;
+            _messageReceiverFactory = messageReceiverFactory;
             _serviceProvider = serviceProvider;
         }
 
-        public async Task ExecuteAsync(CancellationToken cancellationToken = default)
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            var cancellationToken = stoppingToken;
             var queueNames = await GetQueueNamesAsync(cancellationToken).ToListAsync(cancellationToken);
 
             foreach (var queueName in queueNames)
             {
-                var receiver = await _serviceBusFactory.GetReceiverAsync(queueName, cancellationToken);
-                var worker = ActivatorUtilities.CreateInstance<QueueWorker>(_serviceProvider, receiver);
-                
-                await worker.StartAsync(cancellationToken);
+                var receiver = await _messageReceiverFactory.GetReceiverAsync(queueName, cancellationToken);
+                ActivatorUtilities.CreateInstance<QueueWorker>(_serviceProvider, receiver);
             }
         }
 

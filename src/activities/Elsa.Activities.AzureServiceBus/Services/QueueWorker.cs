@@ -1,40 +1,58 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.AzureServiceBus.Triggers;
 using Elsa.Services;
+using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Activities.AzureServiceBus.Services
 {
     public class QueueWorker
     {
         private readonly IMessageReceiver _messageReceiver;
-        private readonly IWorkflowScheduler _workflowScheduler;
+        private readonly IServiceProvider _serviceProvider;
+        private readonly ILogger _logger;
 
-        public QueueWorker(IMessageReceiver messageReceiver, IWorkflowScheduler workflowScheduler)
+        public QueueWorker(IMessageReceiver messageReceiver, IServiceProvider serviceProvider, ILogger<QueueWorker> logger)
         {
             _messageReceiver = messageReceiver;
-            _workflowScheduler = workflowScheduler;
-        }
-
-        public async Task StartAsync(CancellationToken cancellationToken)
-        {
-            var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            await Task.Factory.StartNew(() => ReadQueueAsync(cancellationTokenSource.Token), cancellationToken);
-        }
-
-        private async Task ReadQueueAsync(CancellationToken cancellationToken)
-        {
-            while (!cancellationToken.IsCancellationRequested)
+            _serviceProvider = serviceProvider;
+            _logger = logger;
+            
+            _messageReceiver.RegisterMessageHandler(OnMessageReceived, new MessageHandlerOptions(ExceptionReceivedHandler)
             {
-                var message = await _messageReceiver.ReceiveAsync();
+                AutoComplete = false,
+                MaxConcurrentCalls = 10
+            });
+        }
 
-                if(message == null)
-                    continue;
+        private async Task OnMessageReceived(Message message, CancellationToken cancellationToken)
+        {
+            using (var scope = _serviceProvider.CreateScope())
+            {
+                var workflowScheduler = scope.ServiceProvider.GetRequiredService<IWorkflowScheduler>();
 
-                await _workflowScheduler.TriggerWorkflowsAsync<MessageReceivedTrigger>(x => x.QueueName == _messageReceiver.Path && (string.IsNullOrWhiteSpace(x.CorrelationId) || x.CorrelationId == message.CorrelationId), message,
+                await workflowScheduler.TriggerWorkflowsAsync<MessageReceivedTrigger>(x => x.QueueName == _messageReceiver.Path && (string.IsNullOrWhiteSpace(x.CorrelationId) || x.CorrelationId == message.CorrelationId), message,
                     message.CorrelationId, cancellationToken: cancellationToken);
             }
+
+            await _messageReceiver.CompleteAsync(message.SystemProperties.LockToken);
+        }
+
+        private Task ExceptionReceivedHandler(ExceptionReceivedEventArgs e)
+        {
+            var context = e.ExceptionReceivedContext;
+
+            _logger.LogError("Message handler encountered an exception {Exception}.", e.Exception);
+            _logger.LogError("Exception context for troubleshooting:");
+            _logger.LogError("- Endpoint: {Endpoint}", context.Endpoint);
+            _logger.LogError("- Entity Path: {EntityPath}", context.EntityPath);
+            _logger.LogError("- Executing Action: {Action}", context.Action);
+
+            return Task.CompletedTask;
         }
     }
 }

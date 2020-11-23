@@ -1,6 +1,5 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Activities.AzureServiceBus.Activities;
 using Elsa.Triggers;
 
 namespace Elsa.Activities.AzureServiceBus.Triggers

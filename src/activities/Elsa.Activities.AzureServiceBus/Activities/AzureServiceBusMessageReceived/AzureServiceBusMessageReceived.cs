@@ -7,7 +7,7 @@ using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Azure.ServiceBus;
 
-namespace Elsa.Activities.AzureServiceBus.Activities
+namespace Elsa.Activities.AzureServiceBus
 {
     [Trigger(Category = "Azure Service Bus", DisplayName = "Service Bus Message Received", Description = "Triggered when a message is received on the specified queue", Outcomes = new[] { OutcomeNames.Done })]
     public class AzureServiceBusMessageReceived : Activity
@@ -22,9 +22,10 @@ namespace Elsa.Activities.AzureServiceBus.Activities
         [ActivityProperty] public string QueueName { get; set; } = default!;
         [ActivityProperty] public Type MessageType { get; set; } = default!;
 
-        protected override IActivityExecutionResult OnExecute() => Suspend();
+        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => context.WorkflowExecutionContext.IsFirstPass ? ExecuteInternal(context) : Suspend();
+        protected override IActivityExecutionResult OnResume(ActivityExecutionContext context) => ExecuteInternal(context);
 
-        protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
+        protected IActivityExecutionResult ExecuteInternal(ActivityExecutionContext context)
         {
             var message = (Message) context.Input!;
             var bytes = message.Body;

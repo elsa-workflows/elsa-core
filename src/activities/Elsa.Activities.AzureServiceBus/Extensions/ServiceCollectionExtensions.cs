@@ -1,9 +1,8 @@
 using System;
-using Elsa.Activities.AzureServiceBus.Activities;
 using Elsa.Activities.AzureServiceBus.Options;
 using Elsa.Activities.AzureServiceBus.Services;
 using Elsa.Activities.AzureServiceBus.StartupTasks;
-using Elsa.Runtime;
+using Elsa.Activities.AzureServiceBus.Triggers;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Management;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,8 +22,10 @@ namespace Elsa.Activities.AzureServiceBus.Extensions
             return services
                 .AddSingleton(CreateServiceBusConnection)
                 .AddSingleton(CreateServiceBusManagementClient)
-                .AddSingleton<IServiceBusFactory, ServiceBusFactory>()
-                .AddStartupTask<StartServiceBusQueues>()
+                .AddSingleton<IMessageSenderFactory, MessageSenderFactory>()
+                .AddSingleton<IMessageReceiverFactory, MessageReceiverFactory>()
+                .AddHostedService<StartServiceBusQueues>()
+                .AddTriggerProvider<MessageReceivedTriggerProvider>()
                 .AddActivity<AzureServiceBusMessageReceived>()
                 .AddActivity<SendAzureServiceBusMessage>();
         }
