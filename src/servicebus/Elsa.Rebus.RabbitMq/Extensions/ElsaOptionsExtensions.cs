@@ -4,7 +4,7 @@ using Rebus.Config;
 using Rebus.Logging;
 using Rebus.Routing.TypeBased;
 
-namespace Elsa.ServiceBus.RabbitMq.Extensions
+namespace Elsa.Rebus.RabbitMq.Extensions
 {
     public static class ElsaOptionsExtensions
     {

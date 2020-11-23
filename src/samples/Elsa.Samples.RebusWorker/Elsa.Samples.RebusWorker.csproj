@@ -13,7 +13,7 @@
     <ItemGroup>
       <ProjectReference Include="..\..\activities\Elsa.Activities.Rebus\Elsa.Activities.Rebus.csproj" />
       <ProjectReference Include="..\..\core\Elsa\Elsa.csproj" />
-      <ProjectReference Include="..\..\servicebus\Elsa.ServiceBus.AzureServiceBus\Elsa.ServiceBus.AzureServiceBus.csproj" />
-      <ProjectReference Include="..\..\servicebus\Elsa.ServiceBus.RabbitMq\Elsa.ServiceBus.RabbitMq.csproj" />
+      <ProjectReference Include="..\..\servicebus\Elsa.Rebus.AzureServiceBus\Elsa.Rebus.AzureServiceBus.csproj" />
+      <ProjectReference Include="..\..\servicebus\Elsa.Rebus.RabbitMq\Elsa.Rebus.RabbitMq.csproj" />
     </ItemGroup>
 </Project>

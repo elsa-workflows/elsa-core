@@ -7,7 +7,7 @@ using Rebus.Config;
 using Rebus.Logging;
 using Rebus.Routing.TypeBased;
 
-namespace Elsa.ServiceBus.AzureServiceBus
+namespace Elsa.Rebus.AzureServiceBus
 {
     public static class ElsaOptionsExtensions
     {

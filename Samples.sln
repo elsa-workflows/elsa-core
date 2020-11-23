@@ -144,9 +144,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.RebusWorker", 
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "servicebus", "servicebus", "{47EDFC14-BB99-44BF-A447-035D40D7347B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ServiceBus.AzureServiceBus", "src\servicebus\Elsa.ServiceBus.AzureServiceBus\Elsa.ServiceBus.AzureServiceBus.csproj", "{D3440E66-A871-4AB0-A1E0-8B3864ACA16A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Rebus.AzureServiceBus", "src\servicebus\Elsa.Rebus.AzureServiceBus\Elsa.Rebus.AzureServiceBus.csproj", "{D3440E66-A871-4AB0-A1E0-8B3864ACA16A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ServiceBus.RabbitMq", "src\servicebus\Elsa.ServiceBus.RabbitMq\Elsa.ServiceBus.RabbitMq.csproj", "{FC656D28-1AA3-462D-9B18-A10436E47C08}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Rebus.RabbitMq", "src\servicebus\Elsa.Rebus.RabbitMq\Elsa.Rebus.RabbitMq.csproj", "{FC656D28-1AA3-462D-9B18-A10436E47C08}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Activities.AzureServiceBus", "src\activities\Elsa.Activities.AzureServiceBus\Elsa.Activities.AzureServiceBus.csproj", "{DD607BC1-F9D9-4685-BC8F-A4056C2C31FA}"
 EndProject

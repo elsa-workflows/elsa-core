@@ -1,7 +1,7 @@
 using Elsa.Activities.Rebus.Extensions;
 using Elsa.Samples.RebusWorker.Messages;
 using Elsa.Samples.RebusWorker.Workflows;
-using Elsa.ServiceBus.AzureServiceBus;
+using Elsa.Rebus.AzureServiceBus;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NodaTime;
