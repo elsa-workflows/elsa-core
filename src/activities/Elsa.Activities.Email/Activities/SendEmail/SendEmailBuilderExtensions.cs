@@ -6,7 +6,6 @@ namespace Elsa.Activities.Email
 {
     public static class SendEmailBuilderExtensions
     {
-        public static IActivityBuilder SendEmail(this IBuilder builder,
-            Action<ISetupActivity<SendEmail>> setup) => builder.Then(setup);
+        public static IActivityBuilder SendEmail(this IBuilder builder, Action<ISetupActivity<SendEmail>> setup) => builder.Then(setup);
     }
 }
