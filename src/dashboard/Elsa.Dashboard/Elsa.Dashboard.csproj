@@ -31,10 +31,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="GravatarHelper.AspNetCore" Version="1.1.0" />
-    </ItemGroup>
-
-    <ItemGroup>
         <ProjectReference Include="..\..\core\Elsa.Abstractions\Elsa.Abstractions.csproj" />
         <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
         <ProjectReference Include="..\Elsa.WorkflowDesigner\Elsa.WorkflowDesigner.csproj" />
