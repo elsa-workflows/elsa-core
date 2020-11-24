@@ -1,7 +1,7 @@
 using System;
+using Elsa.Activities.AzureServiceBus.HostedServices;
 using Elsa.Activities.AzureServiceBus.Options;
 using Elsa.Activities.AzureServiceBus.Services;
-using Elsa.Activities.AzureServiceBus.StartupTasks;
 using Elsa.Activities.AzureServiceBus.Triggers;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Management;

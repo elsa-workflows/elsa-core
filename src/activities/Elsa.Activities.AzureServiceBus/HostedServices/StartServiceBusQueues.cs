@@ -9,18 +9,16 @@ using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-namespace Elsa.Activities.AzureServiceBus.StartupTasks
+namespace Elsa.Activities.AzureServiceBus.HostedServices
 {
     public class StartServiceBusQueues : BackgroundService
     {
-        private readonly IWorkflowRegistry _workflowRegistry;
         private readonly IWorkflowBlueprintReflector _workflowBlueprintReflector;
         private readonly IMessageReceiverFactory _messageReceiverFactory;
         private readonly IServiceProvider _serviceProvider;
 
-        public StartServiceBusQueues(IWorkflowRegistry workflowRegistry, IWorkflowBlueprintReflector workflowBlueprintReflector, IMessageReceiverFactory messageReceiverFactory, IServiceProvider serviceProvider)
+        public StartServiceBusQueues(IWorkflowBlueprintReflector workflowBlueprintReflector, IMessageReceiverFactory messageReceiverFactory, IServiceProvider serviceProvider)
         {
-            _workflowRegistry = workflowRegistry;
             _workflowBlueprintReflector = workflowBlueprintReflector;
             _messageReceiverFactory = messageReceiverFactory;
             _serviceProvider = serviceProvider;
@@ -40,7 +38,9 @@ namespace Elsa.Activities.AzureServiceBus.StartupTasks
 
         private async IAsyncEnumerable<string> GetQueueNamesAsync([EnumeratorCancellation] CancellationToken cancellationToken)
         {
-            var workflows = await _workflowRegistry.GetWorkflowsAsync(cancellationToken).ToListAsync(cancellationToken);
+            using var scope = _serviceProvider.CreateScope();
+            var workflowRegistry = scope.ServiceProvider.GetRequiredService<IWorkflowRegistry>();
+            var workflows = await workflowRegistry.GetWorkflowsAsync(cancellationToken).ToListAsync(cancellationToken);
 
             var query =
                 from workflow in workflows

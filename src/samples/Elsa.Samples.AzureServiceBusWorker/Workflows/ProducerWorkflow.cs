@@ -10,10 +10,12 @@ namespace Elsa.Samples.AzureServiceBusWorker.Workflows
 {
     public class ProducerWorkflow : IWorkflow
     {
+        private readonly IClock _clock;
         private readonly Random _random;
 
-        public ProducerWorkflow()
+        public ProducerWorkflow(IClock clock)
         {
+            _clock = clock;
             _random = new Random();
         }
 
@@ -27,8 +29,9 @@ namespace Elsa.Samples.AzureServiceBusWorker.Workflows
 
         private Greeting GetRandomGreeting()
         {
+            var today = _clock.GetCurrentInstant().InUtc().Date.DayOfWeek;
             var names = new[] { "John", "Jill", "Julia", "Miriam", "Jack", "Bob" };
-            var messages = new[] { "Hello!", "How do you do?", "Happy Monday!" };
+            var messages = new[] { "Hello!", "How do you do?", $"Happy {today}!" };
             var from = _random.Next(0, names.Length);
             var to = _random.Next(0, names.Length);
             var message = _random.Next(0, messages.Length);
