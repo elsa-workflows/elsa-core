@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Serialization.Converters;
 
 namespace Elsa.Persistence.DocumentDb
 {
@@ -35,6 +36,8 @@ namespace Elsa.Persistence.DocumentDb
                     NamingStrategy = new CamelCaseNamingStrategy(false, false)
                 }
             }.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
+
+            settings.Converters.Add(new ExceptionConverter());
 
             var connectionPolicy = ConnectionPolicy.Default;
             connectionPolicy.ConnectionMode = this.options.ConnectionMode;

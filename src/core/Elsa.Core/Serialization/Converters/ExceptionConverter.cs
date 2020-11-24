@@ -1,14 +1,11 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Elsa.Serialization.Converters
 {
     public class ExceptionConverter : JsonConverter<Exception>
     {
-
         public override void WriteJson(JsonWriter writer, Exception value, JsonSerializer serializer)
         {
             throw new NotImplementedException("Unnecessary because CanRead is false. The type will skip the converter.");
@@ -22,7 +19,6 @@ namespace Elsa.Serialization.Converters
             var jObject = JObject.Load(reader);
             var ex = System.Text.Json.JsonSerializer.Deserialize<Exception>(jObject.ToString());
             return ex;
-
         }
     }
 }
