@@ -149,11 +149,12 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddActivity<While>()
                 .AddActivity<Correlate>()
                 .AddActivity<SetVariable>()
+                .AddActivity<SetContextId>()
                 .AddActivity<ReceiveSignal>()
                 .AddTriggerProvider<ReceiveSignalTriggerProvider>()
                 .AddActivity<SendSignal>()
                 .AddScoped<ISignaler, Signaler>()
-                .AddActivity<Elsa.Activities.Workflows.RunWorkflow>()
+                .AddActivity<RunWorkflow>()
                 .AddTriggerProvider<RunWorkflowTriggerProvider>();
     }
 }
