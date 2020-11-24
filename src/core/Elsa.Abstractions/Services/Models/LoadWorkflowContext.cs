@@ -5,14 +5,14 @@ namespace Elsa.Services.Models
 {
     public class LoadWorkflowContext
     {
-        public LoadWorkflowContext(IWorkflowBlueprint workflowBlueprint, WorkflowInstance workflowInstance)
+        public LoadWorkflowContext(WorkflowExecutionContext workflowExecutionContext)
         {
-            WorkflowBlueprint = workflowBlueprint;
-            WorkflowInstance = workflowInstance;
+            WorkflowExecutionContext = workflowExecutionContext;
         }
 
-        public IWorkflowBlueprint WorkflowBlueprint { get; }
-        public WorkflowInstance WorkflowInstance { get; }
+        public WorkflowExecutionContext WorkflowExecutionContext { get; }
+        public IWorkflowBlueprint WorkflowBlueprint => WorkflowExecutionContext.WorkflowBlueprint;
+        public WorkflowInstance WorkflowInstance => WorkflowExecutionContext.WorkflowInstance;
         public Type ContextType => WorkflowBlueprint.ContextOptions!.ContextType;
         public string ContextId => WorkflowInstance.ContextId!;
 

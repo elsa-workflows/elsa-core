@@ -97,7 +97,8 @@ namespace Elsa.Triggers
             Func<ITrigger, bool> evaluate)
         {
             var descriptors = dictionary.SelectMany(x => x.Value);
-            return from descriptor in descriptors
+            return
+                from descriptor in descriptors
                 let workflow = descriptor.WorkflowBlueprint
                 where workflow.IsPublished && workflow.IsEnabled
                 let workflowInstanceId = descriptor.WorkflowInstanceId
@@ -119,7 +120,7 @@ namespace Elsa.Triggers
 
             return descriptors
                 .GroupBy(x => x.WorkflowBlueprint.Id)
-                .ToDictionary(x => x.Key, x => (ICollection<TriggerDescriptor>)x.ToList());
+                .ToDictionary(x => x.Key, x => (ICollection<TriggerDescriptor>) x.ToList());
         }
 
         private async Task<IEnumerable<TriggerDescriptor>> BuildDescriptorsForAsync(IWorkflowBlueprint workflowBlueprint, CancellationToken cancellationToken)
@@ -158,8 +159,8 @@ namespace Elsa.Triggers
         {
             var providers = _triggerProviders.ToList();
             var descriptors = new List<TriggerDescriptor>();
-            var workflowContext = workflowBlueprint.ContextOptions != null ? await _workflowContextManager.LoadContext(new LoadWorkflowContext(workflowBlueprint, workflowInstance), cancellationToken) : default;
-            var workflowExecutionContext = new WorkflowExecutionContext(_serviceProvider, workflowBlueprint, workflowInstance, default, workflowContext);
+            var workflowExecutionContext = new WorkflowExecutionContext(_serviceProvider, workflowBlueprint, workflowInstance, default);
+            workflowExecutionContext.WorkflowContext = workflowBlueprint.ContextOptions != null ? await _workflowContextManager.LoadContext(new LoadWorkflowContext(workflowExecutionContext), cancellationToken) : default;
 
             foreach (var blockingActivity in blockingActivities)
             {

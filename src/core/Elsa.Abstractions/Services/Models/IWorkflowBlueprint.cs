@@ -16,6 +16,7 @@ namespace Elsa.Services.Models
         /// An optional context type around which this workflow revolves. For example, a document, a leave request or a job application.
         /// </summary>
         public WorkflowContextOptions? ContextOptions { get; set; }
+        
         public WorkflowPersistenceBehavior PersistenceBehavior { get; }
         public bool DeleteCompletedInstances { get; }
     }
