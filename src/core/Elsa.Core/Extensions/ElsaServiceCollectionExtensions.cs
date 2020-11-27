@@ -94,7 +94,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .TryAddProvider<IExpressionHandler, VariableHandler>(ServiceLifetime.Singleton)
                 .AddScoped<IExpressionEvaluator, ExpressionEvaluator>()
                 .AddScoped<IWorkflowRegistry, WorkflowRegistry>()
-                .AddScoped<IWorkflowScheduler, WorkflowScheduler>()
+                //.AddScoped<IWorkflowScheduler, WorkflowScheduler>()
                 .AddSingleton<IWorkflowSchedulerQueue, WorkflowSchedulerQueue>()
                 .AddScoped<IWorkflowRunner, WorkflowRunner>()
                 .AddSingleton<IWorkflowFactory, WorkflowFactory>()

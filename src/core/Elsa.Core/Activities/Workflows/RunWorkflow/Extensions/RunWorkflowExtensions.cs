@@ -1,19 +1,18 @@
 using System;
 using System.Threading.Tasks;
-using Elsa.Activities.Workflows;
 using Elsa.Builders;
 using Elsa.Extensions;
 using Elsa.Services;
 using Elsa.Services.Models;
 
 // ReSharper disable once CheckNamespace
-namespace Elsa.Activities.ControlFlow
+namespace Elsa.Activities.Workflows
 {
     public static class RunWorkflowExtensions
     {
-        public static ISetupActivity<RunWorkflow> WithWorkflow(this ISetupActivity<RunWorkflow> activity, Func<ActivityExecutionContext, ValueTask<string>> value) => activity.Set(x => x.WorkflowDefinitionId, value);
+        public static ISetupActivity<RunWorkflow> WithWorkflow(this ISetupActivity<RunWorkflow> activity, Func<ActivityExecutionContext, ValueTask<string>> value) => activity.Set(x => x.WorkflowDefinitionId, value!);
         public static ISetupActivity<RunWorkflow> WithWorkflow(this ISetupActivity<RunWorkflow> activity, Func<ActivityExecutionContext, string> value) => activity.Set(x => x.WorkflowDefinitionId, value);
-        public static ISetupActivity<RunWorkflow> WithWorkflow(this ISetupActivity<RunWorkflow> activity, Func<ValueTask<string>> value) => activity.Set(x => x.WorkflowDefinitionId, value);
+        public static ISetupActivity<RunWorkflow> WithWorkflow(this ISetupActivity<RunWorkflow> activity, Func<ValueTask<string>> value) => activity.Set(x => x.WorkflowDefinitionId, value!);
         public static ISetupActivity<RunWorkflow> WithWorkflow(this ISetupActivity<RunWorkflow> activity, Func<string> value) => activity.Set(x => x.WorkflowDefinitionId, value);
         public static ISetupActivity<RunWorkflow> WithWorkflow(this ISetupActivity<RunWorkflow> activity, string value) => activity.Set(x => x.WorkflowDefinitionId, value);
 
@@ -49,5 +48,11 @@ namespace Elsa.Activities.ControlFlow
         public static ISetupActivity<RunWorkflow> WithMode(this ISetupActivity<RunWorkflow> activity, Func<ValueTask<RunWorkflow.RunWorkflowMode>> value) => activity.Set(x => x.Mode, value);
         public static ISetupActivity<RunWorkflow> WithMode(this ISetupActivity<RunWorkflow> activity, Func<RunWorkflow.RunWorkflowMode> value) => activity.Set(x => x.Mode, value);
         public static ISetupActivity<RunWorkflow> WithMode(this ISetupActivity<RunWorkflow> activity, RunWorkflow.RunWorkflowMode value) => activity.Set(x => x.Mode, value);
+        
+        public static ISetupActivity<RunWorkflow> WithTenantId(this ISetupActivity<RunWorkflow> activity, Func<ActivityExecutionContext, ValueTask<string?>> value) => activity.Set(x => x.TenantId, value);
+        public static ISetupActivity<RunWorkflow> WithTenantId(this ISetupActivity<RunWorkflow> activity, Func<ActivityExecutionContext, string?> value) => activity.Set(x => x.TenantId, value);
+        public static ISetupActivity<RunWorkflow> WithTenantId(this ISetupActivity<RunWorkflow> activity, Func<ValueTask<string?>> value) => activity.Set(x => x.TenantId, value);
+        public static ISetupActivity<RunWorkflow> WithTenantId(this ISetupActivity<RunWorkflow> activity, Func<string?> value) => activity.Set(x => x.TenantId, value);
+        public static ISetupActivity<RunWorkflow> WithTenantId(this ISetupActivity<RunWorkflow> activity, string? value) => activity.Set(x => x.TenantId, value);
     }
 }

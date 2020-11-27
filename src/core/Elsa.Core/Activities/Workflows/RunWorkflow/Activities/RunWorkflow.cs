@@ -4,6 +4,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Extensions;
+using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Open.Linq.AsyncExtensions;
@@ -18,29 +20,33 @@ namespace Elsa.Activities.Workflows
     )]
     public class RunWorkflow : Activity
     {
-        private readonly IWorkflowScheduler _workflowScheduler;
+        private readonly IWorkflowRunner _workflowScheduler;
+        private readonly IWorkflowRegistry _workflowRegistry;
 
-        public RunWorkflow(IWorkflowScheduler workflowScheduler)
+        public RunWorkflow(IWorkflowRunner workflowScheduler, IWorkflowRegistry workflowRegistry)
         {
             _workflowScheduler = workflowScheduler;
+            _workflowRegistry = workflowRegistry;
         }
 
         [ActivityProperty] public string WorkflowDefinitionId { get; set; } = default!;
+        [ActivityProperty] public string? TenantId { get; set; } = default!;
         [ActivityProperty] public object? Input { get; set; }
         [ActivityProperty] public string? CorrelationId { get; set; }
         [ActivityProperty] public string? ContextId { get; set; }
         [ActivityProperty] public RunWorkflowMode Mode { get; set; }
 
-        public ICollection<string> ChildWorkflowInstanceIds
+        public string ChildWorkflowInstanceId
         {
-            get => GetState<ICollection<string>>(() => new List<string>());
+            get => GetState<string>();
             set => SetState(value);
         }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var workflowInstances = await _workflowScheduler.ScheduleWorkflowDefinitionAsync(WorkflowDefinitionId, Input, CorrelationId, ContextId, cancellationToken).ToList();
-            ChildWorkflowInstanceIds = workflowInstances.Select(x => x.WorkflowInstanceId).ToList();
+            var workflowBlueprint = (await _workflowRegistry.GetWorkflowAsync(WorkflowDefinitionId, VersionOptions.Published, cancellationToken))!;
+            var workflowInstance = await _workflowScheduler.RunWorkflowAsync(workflowBlueprint, TenantId, Input, CorrelationId, ContextId, cancellationToken);
+            ChildWorkflowInstanceId = workflowInstance.WorkflowInstanceId;
 
             return Mode switch
             {
@@ -53,10 +59,7 @@ namespace Elsa.Activities.Workflows
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
         {
             var input = (FinishedWorkflowModel) context.WorkflowExecutionContext.Input!;
-            var childWorkflowIds = ChildWorkflowInstanceIds;
-            childWorkflowIds.Remove(input.WorkflowInstanceId);
-            ChildWorkflowInstanceIds = childWorkflowIds;
-            return childWorkflowIds.Any() ? (IActivityExecutionResult) Suspend() : Done();
+            return Done(input);
         }
 
         public enum RunWorkflowMode

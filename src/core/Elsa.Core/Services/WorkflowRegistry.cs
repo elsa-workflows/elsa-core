@@ -28,15 +28,18 @@ namespace Elsa.Services
 
         public async Task<IWorkflowBlueprint?> GetWorkflowAsync(
             string id,
+            string? tenantId,
             VersionOptions version,
             CancellationToken cancellationToken)
         {
             var workflows = await GetWorkflowsAsync(cancellationToken).ToListAsync(cancellationToken);
+            var query = workflows.Where(workflow => workflow.Id == id && workflow.WithVersion(version));
 
-            return workflows
-                .Where(x => x.Id == id)
+            if (tenantId != null)
+                query = query.Where(x => x.TenantId == tenantId);
+
+            return query
                 .OrderByDescending(x => x.Version)
-                .WithVersion(version)
                 .FirstOrDefault();
         }
     }

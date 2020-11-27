@@ -7,21 +7,21 @@ namespace Elsa.Activities.Workflows
 {
     public class RunWorkflowTrigger : Trigger
     {
-        public ICollection<string> ChildWorkflowInstanceIds { get; set; } = default!;
+        public string ChildWorkflowInstanceId { get; set; } = default!;
     }
     
     public class RunWorkflowTriggerProvider : TriggerProvider<RunWorkflowTrigger, RunWorkflow>
     {
         public override ITrigger GetTrigger(TriggerProviderContext<RunWorkflow> context)
         {
-            var childWorkflowIds = context.GetActivity<RunWorkflow>().GetState(x => x.ChildWorkflowInstanceIds);
+            var childWorkflowInstanceId = context.GetActivity<RunWorkflow>().GetState(x => x.ChildWorkflowInstanceId);
             
-            if(!childWorkflowIds.Any())
+            if(string.IsNullOrWhiteSpace(childWorkflowInstanceId))
                 return NullTrigger.Instance;
             
             return new RunWorkflowTrigger
             {
-                ChildWorkflowInstanceIds = childWorkflowIds
+                ChildWorkflowInstanceId = childWorkflowInstanceId!
             };
         }
     }

@@ -20,7 +20,7 @@ namespace Elsa.Samples.RunChildWorkflowWorker
                     (hostContext, services) =>
                     {
                         services
-                            .AddElsa(options => options.UsePersistence(db => db.UseSqLite("Data Source=elsa.db;Cache=Shared", IsolationLevel.ReadUncommitted)))
+                            .AddElsa()
                             .AddConsoleActivities()
                             .AddHostedService<RunParentWorkflow>()
                             .AddWorkflow<ParentWorkflow>()

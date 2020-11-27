@@ -17,7 +17,7 @@ namespace Elsa.Samples.Timers
                     (hostContext, services) =>
                     {
                         services
-                            .AddElsa(options => options.UsePersistence(db => db.UseSqLite("Data Source=elsa.db;Cache=Shared", IsolationLevel.ReadUncommitted)))
+                            .AddElsa()
                             .AddConsoleActivities()
                             .AddTimerActivities(timer => timer.SweepInterval = Duration.FromSeconds(1))
                             .AddWorkflow<RecurringTaskWorkflow>()

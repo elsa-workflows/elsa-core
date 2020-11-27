@@ -1,8 +1,10 @@
+using System.Threading;
+using System.Threading.Tasks;
+using Elsa.Activities.Timers.Services;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Services;
 using Elsa.Services.Models;
-using NCrontab;
 using NodaTime;
 
 // ReSharper disable once CheckNamespace
@@ -16,35 +18,49 @@ namespace Elsa.Activities.Timers
     public class CronEvent : Activity
     {
         private readonly IClock _clock;
+        private readonly IWorkflowInstanceManager _workflowInstanceManager;
+        private readonly IWorkflowScheduler _workflowScheduler;
 
-        public CronEvent(IClock clock)
+        public CronEvent(IClock clock, IWorkflowInstanceManager workflowInstanceManager, IWorkflowScheduler workflowScheduler)
         {
             _clock = clock;
+            _workflowInstanceManager = workflowInstanceManager;
+            _workflowScheduler = workflowScheduler;
         }
-        
-        
+
         [ActivityProperty(Hint = "Specify a CRON expression. See https://crontab.guru/ for help.")]
         public string CronExpression { get; set; } = "* * * * *";
-        
-        public Instant ExecuteAt
+
+        public Instant? ExecuteAt
         {
-            get => GetState<Instant>();
+            get => GetState<Instant?>();
             set => SetState(value);
         }
 
-        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
+        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            ExecuteAt = GetNextOccurrence(CronExpression);
+            if (context.WorkflowExecutionContext.IsFirstPass)
+                return Done();
+
+            var workflowBlueprint = context.WorkflowExecutionContext.WorkflowBlueprint;
+            var workflowInstance = context.WorkflowExecutionContext.WorkflowInstance;
+            var executeAt = GetNextOccurrence(CronExpression);
+
+            ExecuteAt = executeAt;
+
+            await _workflowInstanceManager.SaveAsync(context.WorkflowExecutionContext.WorkflowInstance, cancellationToken);
+            await _workflowScheduler.ScheduleWorkflowAsync(workflowBlueprint, workflowInstance.WorkflowInstanceId, Id, executeAt, cancellationToken);
+
             return Suspend();
         }
 
         protected override IActivityExecutionResult OnResume() => Done();
-        
+
         private Instant GetNextOccurrence(string cronExpression)
         {
-            var schedule = CrontabSchedule.Parse(cronExpression);
+            var schedule = new Quartz.CronExpression(cronExpression);
             var now = _clock.GetCurrentInstant();
-            return Instant.FromDateTimeUtc(schedule.GetNextOccurrence(now.ToDateTimeUtc()));
+            return Instant.FromDateTimeOffset(schedule.GetTimeAfter(now.ToDateTimeOffset())!.Value);
         }
     }
 }

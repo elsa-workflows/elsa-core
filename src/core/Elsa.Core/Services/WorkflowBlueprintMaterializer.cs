@@ -22,6 +22,7 @@ namespace Elsa.Services
             return new WorkflowBlueprint(
                 workflowDefinition.WorkflowDefinitionId,
                 workflowDefinition.Version,
+                workflowDefinition.TenantId,
                 workflowDefinition.IsSingleton,
                 workflowDefinition.IsEnabled,
                 workflowDefinition.Name,
@@ -29,6 +30,7 @@ namespace Elsa.Services
                 workflowDefinition.IsLatest,
                 workflowDefinition.IsPublished,
                 workflowDefinition.Variables,
+                workflowDefinition.CustomAttributes,
                 workflowDefinition.ContextOptions,
                 workflowDefinition.PersistenceBehavior,
                 workflowDefinition.DeleteCompletedInstances,

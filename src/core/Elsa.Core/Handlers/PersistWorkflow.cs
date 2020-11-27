@@ -18,9 +18,7 @@ namespace Elsa.Handlers
         private readonly IWorkflowInstanceManager _workflowInstanceManager;
         private readonly ILogger _logger;
 
-        public PersistWorkflow(
-            IWorkflowInstanceManager workflowInstanceManager,
-            ILogger<PersistWorkflow> logger)
+        public PersistWorkflow(IWorkflowInstanceManager workflowInstanceManager, ILogger<PersistWorkflow> logger)
         {
             _workflowInstanceManager = workflowInstanceManager;
             _logger = logger;
@@ -34,15 +32,13 @@ namespace Elsa.Handlers
 
         public async Task Handle(WorkflowExecuted notification, CancellationToken cancellationToken)
         {
-            if (notification.WorkflowExecutionContext.WorkflowBlueprint.PersistenceBehavior ==
-                WorkflowPersistenceBehavior.WorkflowPassCompleted)
+            if (notification.WorkflowExecutionContext.WorkflowBlueprint.PersistenceBehavior == WorkflowPersistenceBehavior.WorkflowPassCompleted)
                 await SaveWorkflowAsync(notification.WorkflowExecutionContext, cancellationToken);
         }
 
         public async Task Handle(ActivityExecuted notification, CancellationToken cancellationToken)
         {
-            if (notification.WorkflowExecutionContext.WorkflowBlueprint.PersistenceBehavior ==
-                WorkflowPersistenceBehavior.ActivityExecuted || notification.Activity.PersistWorkflow)
+            if (notification.WorkflowExecutionContext.WorkflowBlueprint.PersistenceBehavior == WorkflowPersistenceBehavior.ActivityExecuted || notification.Activity.PersistWorkflow)
                 await SaveWorkflowAsync(notification.WorkflowExecutionContext, cancellationToken);
         }
 
@@ -52,12 +48,8 @@ namespace Elsa.Handlers
 
             if (workflowExecutionContext.DeleteCompletedInstances)
             {
-                _logger.LogDebug(
-                    "Deleting completed workflow instance {WorkflowInstanceId}",
-                    workflowExecutionContext.WorkflowInstance.WorkflowInstanceId);
-                await _workflowInstanceManager.DeleteAsync(
-                    workflowExecutionContext.WorkflowInstance,
-                    cancellationToken);
+                _logger.LogDebug("Deleting completed workflow instance {WorkflowInstanceId}", workflowExecutionContext.WorkflowInstance.WorkflowInstanceId);
+                await _workflowInstanceManager.DeleteAsync(workflowExecutionContext.WorkflowInstance, cancellationToken);
             }
             else
             {
@@ -65,9 +57,7 @@ namespace Elsa.Handlers
             }
         }
 
-        private async ValueTask SaveWorkflowAsync(
-            WorkflowExecutionContext workflowExecutionContext,
-            CancellationToken cancellationToken)
+        private async ValueTask SaveWorkflowAsync(WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
         {
             var workflowInstance = workflowExecutionContext.WorkflowInstance;
             await _workflowInstanceManager.SaveAsync(workflowInstance, cancellationToken);

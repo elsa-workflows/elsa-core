@@ -18,21 +18,36 @@ namespace Elsa.Builders
             Version = 1;
             IsEnabled = true;
             Variables = new Variables();
+            CustomAttributes = new Variables();
 
             ActivityType = typeof(Workflow);
             WorkflowBuilder = this;
             PropertyValueProviders = new Dictionary<string, IActivityPropertyValueProvider>();
         }
-
+        
         public int Version { get; private set; }
+        public string? TenantId { get; private set; }
         public bool IsSingleton { get; private set; }
 
         public Variables Variables { get; }
+        public Variables CustomAttributes { get; }
         public WorkflowContextOptions? ContextOptions { get; private set; }
         public WorkflowPersistenceBehavior PersistenceBehavior { get; private set; }
         public bool DeleteCompletedInstances { get; private set; }
         public bool IsEnabled { get; private set; }
 
+        public IWorkflowBuilder WithWorkflowDefinitionId(string? value)
+        {
+            ActivityId = value!;
+            return this;
+        }
+        
+        public IWorkflowBuilder ForTenantId(string? value)
+        {
+            TenantId = value;
+            return this;
+        }
+        
         public IWorkflowBuilder WithDescription(string? value)
         {
             Description = value;
@@ -97,6 +112,18 @@ namespace Elsa.Builders
             return this;
         }
 
+        public IWorkflowBuilder WithCustomAttribute(string name, object value)
+        {
+            CustomAttributes.Set(name, value);
+            return this;
+        }
+
+        public IWorkflowBuilder WithTenantId(string value)
+        {
+            TenantId = value;
+            return this;
+        }
+
         public IWorkflowBlueprint Build(IWorkflow workflow, string activityIdPrefix)
         {
             WithId(workflow.GetType().Name);
@@ -119,6 +146,7 @@ namespace Elsa.Builders
             return new WorkflowBlueprint(
                 ActivityId,
                 Version,
+                TenantId,
                 IsSingleton,
                 IsEnabled,
                 Name,
@@ -126,6 +154,7 @@ namespace Elsa.Builders
                 true,
                 true,
                 Variables,
+                CustomAttributes,
                 ContextOptions,
                 PersistenceBehavior,
                 DeleteCompletedInstances,

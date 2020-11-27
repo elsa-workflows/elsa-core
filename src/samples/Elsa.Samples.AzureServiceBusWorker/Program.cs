@@ -4,7 +4,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NodaTime;
-using YesSql.Provider.Sqlite;
 
 namespace Elsa.Samples.AzureServiceBusWorker
 {

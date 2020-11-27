@@ -1,4 +1,3 @@
-using Elsa.Activities.Rebus.Extensions;
 using Elsa.Samples.RebusWorker.Messages;
 using Elsa.Samples.RebusWorker.Workflows;
 using Elsa.Rebus.AzureServiceBus;
@@ -6,7 +5,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NodaTime;
 using Rebus.Logging;
-using YesSql.Provider.Sqlite;
 
 namespace Elsa.Samples.RebusWorker
 {

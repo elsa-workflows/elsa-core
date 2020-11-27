@@ -14,12 +14,12 @@ namespace Elsa.StartupTasks
     public class ResumeRunningWorkflowsTask : IStartupTask
     {
         private readonly IWorkflowInstanceManager _workflowInstanceManager;
-        private readonly IWorkflowScheduler _workflowScheduler;
+        private readonly IWorkflowRunner _workflowScheduler;
         private readonly IDistributedLockProvider _distributedLockProvider;
 
         public ResumeRunningWorkflowsTask(
             IWorkflowInstanceManager workflowInstanceManager,
-            IWorkflowScheduler workflowScheduler,
+            IWorkflowRunner workflowScheduler,
             IDistributedLockProvider distributedLockProvider)
         {
             _workflowInstanceManager = workflowInstanceManager;
@@ -35,8 +35,8 @@ namespace Elsa.StartupTasks
             var instances = await _workflowInstanceManager.ListByStatusAsync(WorkflowStatus.Running, cancellationToken);
 
             foreach (var instance in instances)
-                await _workflowScheduler.ScheduleWorkflowInstanceAsync(
-                    instance.WorkflowInstanceId,
+                await _workflowScheduler.RunWorkflowAsync(
+                    instance,
                     cancellationToken: cancellationToken);
         }
     }

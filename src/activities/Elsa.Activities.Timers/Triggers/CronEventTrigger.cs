@@ -1,5 +1,4 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
+﻿using Elsa.Models;
 using Elsa.Triggers;
 using NodaTime;
 
@@ -9,16 +8,19 @@ namespace Elsa.Activities.Timers.Triggers
     {
         public Instant ExecuteAt { get; set; }
     }
-
+    
     public class CronEventTriggerProvider : TriggerProvider<CronEventTrigger, CronEvent>
     {
-        public override async ValueTask<ITrigger> GetTriggerAsync(TriggerProviderContext<CronEvent> context, CancellationToken cancellationToken)
+        public override ITrigger GetTrigger(TriggerProviderContext<CronEvent> context)
         {
-            var executeAt = context.GetActivity<CronEvent>().GetState(x => x.ExecuteAt);
+            var executeAt = context.Activity.GetState(x => x.ExecuteAt);
 
-            return new TimerEventTrigger
+            if (executeAt == null || context.ActivityExecutionContext.WorkflowExecutionContext.WorkflowInstance.Status != WorkflowStatus.Suspended)
+                return NullTrigger.Instance;
+
+            return new CronEventTrigger
             {
-                ExecuteAt = executeAt
+                ExecuteAt = executeAt.Value,
             };
         }
     }

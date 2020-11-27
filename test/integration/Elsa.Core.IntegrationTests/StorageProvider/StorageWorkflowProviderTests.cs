@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
 using Elsa.Core.IntegrationTests.Helpers;
+using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Testing.Shared.Unit;
 using Microsoft.Extensions.DependencyInjection;

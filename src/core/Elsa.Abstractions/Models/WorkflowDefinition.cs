@@ -8,6 +8,7 @@ namespace Elsa.Models
         public WorkflowDefinition()
         {
             Variables = new Variables();
+            CustomAttributes = new Variables();
             Activities = new List<ActivityDefinition>();
             Connections = new List<ConnectionDefinition>();
         }
@@ -17,11 +18,13 @@ namespace Elsa.Models
         public int Id { get; set; }
         public string WorkflowDefinitionId { get; set; } = default!;
         public string WorkflowDefinitionVersionId { get; set; } = default!;
+        public string? TenantId { get; set; }
         public string? Name { get; set; }
         public string? DisplayName { get; set; }
         public string? Description { get; set; }
         public int Version { get; set; }
         public Variables? Variables { get; set; }
+        public Variables? CustomAttributes { get; set; }
         public WorkflowContextOptions? ContextOptions { get; set; }
         public bool IsSingleton { get; set; }
         public WorkflowPersistenceBehavior PersistenceBehavior { get; set; }

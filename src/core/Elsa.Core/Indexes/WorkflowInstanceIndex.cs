@@ -8,6 +8,7 @@ namespace Elsa.Indexes
 {
     public class WorkflowInstanceIndex : MapIndex
     {
+        public string? TenantId { get; set; }
         public string WorkflowInstanceId { get; set; } = default!;
         public string WorkflowDefinitionId { get; set; } = default!;
         public string? CorrelationId { get; set; }
@@ -17,6 +18,7 @@ namespace Elsa.Indexes
 
     public class WorkflowInstanceBlockingActivitiesIndex : MapIndex
     {
+        public string? TenantId { get; set; } = default!;
         public string ActivityId { get; set; } = default!;
         public string ActivityType { get; set; } = default!;
         public string? CorrelationId { get; set; }
@@ -36,6 +38,7 @@ namespace Elsa.Indexes
                     {
                         WorkflowInstanceId = workflowInstance.WorkflowInstanceId,
                         WorkflowDefinitionId = workflowInstance.WorkflowDefinitionId,
+                        TenantId = workflowInstance.TenantId,
                         WorkflowStatus = workflowInstance.Status,
                         CorrelationId = workflowInstance.CorrelationId,
                         CreatedAt = workflowInstance.CreatedAt.ToDateTimeOffset()
@@ -50,6 +53,7 @@ namespace Elsa.Indexes
                                 ActivityId = activity.ActivityId,
                                 ActivityType = activity.ActivityType,
                                 CorrelationId = workflowInstance.CorrelationId,
+                                TenantId = workflowInstance.TenantId,
                                 WorkflowStatus = workflowInstance.Status,
                                 CreatedAt = workflowInstance.CreatedAt.ToDateTimeOffset()
                             }));

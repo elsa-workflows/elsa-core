@@ -1,12 +1,13 @@
 using System;
+using Elsa.Activities.Rebus;
 using Elsa.Activities.Rebus.Consumers;
 using Elsa.Activities.Rebus.StartupTasks;
 using Elsa.Activities.Rebus.Triggers;
 using Elsa.Runtime;
-using Microsoft.Extensions.DependencyInjection;
 using Rebus.Handlers;
 
-namespace Elsa.Activities.Rebus.Extensions
+// ReSharper disable once CheckNamespace
+namespace Microsoft.Extensions.DependencyInjection
 {
     public static class ServiceCollectionExtensions
     {

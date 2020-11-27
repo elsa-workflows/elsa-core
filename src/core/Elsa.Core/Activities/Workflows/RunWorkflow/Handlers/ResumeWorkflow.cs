@@ -9,9 +9,9 @@ namespace Elsa.Activities.Workflows
 {
     public class ResumeWorkflow : INotificationHandler<WorkflowCompleted>
     {
-        private readonly IWorkflowScheduler _workflowScheduler;
+        private readonly IWorkflowRunner _workflowScheduler;
 
-        public ResumeWorkflow(IWorkflowScheduler workflowScheduler)
+        public ResumeWorkflow(IWorkflowRunner workflowScheduler)
         {
             _workflowScheduler = workflowScheduler;
         }
@@ -28,7 +28,7 @@ namespace Elsa.Activities.Workflows
                 Output = output
             };
             
-            await _workflowScheduler.TriggerWorkflowsAsync<RunWorkflowTrigger>(x => x.ChildWorkflowInstanceIds.Contains(workflowInstanceId), input, cancellationToken: cancellationToken);
+            await _workflowScheduler.TriggerWorkflowsAsync<RunWorkflowTrigger>(x => x.ChildWorkflowInstanceId == workflowInstanceId, input, cancellationToken: cancellationToken);
         }
     }
 }

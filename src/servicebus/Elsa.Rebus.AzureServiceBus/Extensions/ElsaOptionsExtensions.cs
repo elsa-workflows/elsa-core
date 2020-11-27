@@ -1,8 +1,6 @@
-﻿using System.Threading.Tasks;
-using Elsa.Extensions;
+﻿using Elsa.Extensions;
 using Elsa.Services;
 using Microsoft.Azure.ServiceBus.Primitives;
-using Microsoft.Azure.Services.AppAuthentication;
 using Rebus.Config;
 using Rebus.Logging;
 using Rebus.Routing.TypeBased;

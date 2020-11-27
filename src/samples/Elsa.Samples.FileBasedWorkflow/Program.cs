@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.Threading.Tasks;
+using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;

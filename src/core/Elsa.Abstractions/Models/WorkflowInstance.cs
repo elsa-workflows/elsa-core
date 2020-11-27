@@ -6,7 +6,7 @@ namespace Elsa.Models
 {
     public class WorkflowInstance
     {
-        private HashSet<BlockingActivity> _blockingActivities = new HashSet<BlockingActivity>(BlockingActivityEqualityComparer.Instance);
+        private HashSet<BlockingActivity> _blockingActivities = new(BlockingActivityEqualityComparer.Instance);
         
         public WorkflowInstance()
         {
@@ -20,6 +20,7 @@ namespace Elsa.Models
         public int Id { get; set; }
         public string WorkflowInstanceId { get; set; } = default!;
         public string WorkflowDefinitionId { get; set; } = default!;
+        public string? TenantId { get; set; }
         public int Version { get; set; }
         public WorkflowStatus Status { get; set; }
         public string? CorrelationId { get; set; }

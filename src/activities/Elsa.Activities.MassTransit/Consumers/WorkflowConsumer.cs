@@ -18,11 +18,11 @@ namespace Elsa.Activities.MassTransit.Consumers
                 new PropertyCorrelationIdSelector<T>("CommandId")
             };
 
-        private readonly IWorkflowScheduler _workflowScheduler;
+        private readonly IWorkflowRunner _workflowRunner;
 
-        public WorkflowConsumer(IWorkflowScheduler workflowScheduler)
+        public WorkflowConsumer(IWorkflowRunner workflowRunner)
         {
-            _workflowScheduler = workflowScheduler;
+            _workflowRunner = workflowRunner;
         }
 
         public async Task Consume(ConsumeContext<T> context)

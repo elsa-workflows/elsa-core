@@ -10,17 +10,17 @@ namespace Elsa.Activities.Rebus.Consumers
 {
     public class MessageConsumer<T> : IHandleMessages<T> where T:notnull
     {
-        private readonly IWorkflowScheduler _workflowScheduler;
+        private readonly IWorkflowRunner _workflowRunner;
 
-        public MessageConsumer(IWorkflowScheduler workflowScheduler)
+        public MessageConsumer(IWorkflowRunner workflowRunner)
         {
-            _workflowScheduler = workflowScheduler;
+            _workflowRunner = workflowRunner;
         }
 
         public async Task Handle(T message)
         {
             var correlationId = MessageContext.Current.TransportMessage.Headers.GetValueOrNull(Headers.CorrelationId);
-            await _workflowScheduler.TriggerWorkflowsAsync<MessageReceivedTrigger>(
+            await _workflowRunner.TriggerWorkflowsAsync<MessageReceivedTrigger>(
                 x => x.MessageType == typeof(T).Name && (x.CorrelationId == null || x.CorrelationId == correlationId), 
                 message, 
                 correlationId);

@@ -9,6 +9,6 @@ namespace Elsa.Services
     public interface IWorkflowRegistry
     {
         IAsyncEnumerable<IWorkflowBlueprint> GetWorkflowsAsync(CancellationToken cancellationToken = default);
-        Task<IWorkflowBlueprint?> GetWorkflowAsync(string id, VersionOptions version, CancellationToken cancellationToken = default);
+        Task<IWorkflowBlueprint?> GetWorkflowAsync(string id, string? tenantId, VersionOptions version, CancellationToken cancellationToken = default);
     }
 }

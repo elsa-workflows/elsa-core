@@ -152,6 +152,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Activities.AzureServic
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.AzureServiceBusWorker", "src\samples\Elsa.Samples.AzureServiceBusWorker\Elsa.Samples.AzureServiceBusWorker.csproj", "{1D8B906A-5FCB-413C-8972-91D7A3EB8AE7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.MultiTenantChildWorker", "src\samples\Elsa.Samples.MultiTenantChildWorker\Elsa.Samples.MultiTenantChildWorker.csproj", "{0EE48A18-D1BE-4204-8DE3-D5E35F259725}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -375,6 +377,10 @@ Global
 		{1D8B906A-5FCB-413C-8972-91D7A3EB8AE7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1D8B906A-5FCB-413C-8972-91D7A3EB8AE7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1D8B906A-5FCB-413C-8972-91D7A3EB8AE7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0EE48A18-D1BE-4204-8DE3-D5E35F259725}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0EE48A18-D1BE-4204-8DE3-D5E35F259725}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0EE48A18-D1BE-4204-8DE3-D5E35F259725}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0EE48A18-D1BE-4204-8DE3-D5E35F259725}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -447,6 +453,7 @@ Global
 		{FC656D28-1AA3-462D-9B18-A10436E47C08} = {47EDFC14-BB99-44BF-A447-035D40D7347B}
 		{DD607BC1-F9D9-4685-BC8F-A4056C2C31FA} = {B43B546E-23F3-46E8-ACB7-D04F05CDA180}
 		{1D8B906A-5FCB-413C-8972-91D7A3EB8AE7} = {5E5E1E84-DDBC-40D6-B891-0D563A15A44A}
+		{0EE48A18-D1BE-4204-8DE3-D5E35F259725} = {5E5E1E84-DDBC-40D6-B891-0D563A15A44A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}
