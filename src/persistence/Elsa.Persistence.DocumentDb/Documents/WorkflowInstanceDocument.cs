@@ -51,6 +51,10 @@ namespace Elsa.Persistence.DocumentDb.Documents
         [JsonProperty(PropertyName = "executionLog")]
         public ICollection<LogEntry> ExecutionLog { get; set; }
 
-        [JsonProperty(PropertyName = "fault")] public WorkflowFault Fault { get; set; }
+        [JsonProperty(PropertyName = "fault")] 
+        public WorkflowFault Fault { get; set; }
+
+        [JsonProperty(PropertyName = "tenantId")]
+        public string TenantId { get; set; }
     }
 }

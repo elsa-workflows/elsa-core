@@ -27,12 +27,12 @@ namespace Elsa.Persistence.DocumentDb.Helpers
             bool disableAutomaticIdGeneration = false,
             CancellationToken cancellationToken = default)
         {
-            return await client.ExecuteWithRetries(async() => await client.CreateDocumentAsync(
+            return await ExecuteWithRetries(async() => await client.CreateDocumentAsync(
                     documentCollectionUri,
                     document,
                     options,
                     disableAutomaticIdGeneration,
-                    cancellationToken));
+                    cancellationToken), cancellationToken);
         }
 
         /// <summary>
@@ -50,10 +50,10 @@ namespace Elsa.Persistence.DocumentDb.Helpers
             RequestOptions options = null,
             CancellationToken cancellationToken = default)
         {
-            return await client.ExecuteWithRetries(async() => await client.ReadDocumentAsync<T>(
+            return await ExecuteWithRetries(async() => await client.ReadDocumentAsync<T>(
                 documentUri, 
                 options, 
-                cancellationToken));
+                cancellationToken), cancellationToken);
         }
 
         /// <summary>
@@ -73,12 +73,12 @@ namespace Elsa.Persistence.DocumentDb.Helpers
             bool disableAutomaticIdGeneration = false,
             CancellationToken cancellationToken = default)
         {
-            return await client.ExecuteWithRetries(async () => await client.UpsertDocumentAsync(
+            return await ExecuteWithRetries(async () => await client.UpsertDocumentAsync(
                     documentCollectionUri,
                     document,
                     options,
                     disableAutomaticIdGeneration,
-                    cancellationToken));
+                    cancellationToken), cancellationToken);
         }
 
         /// <summary>
@@ -94,10 +94,10 @@ namespace Elsa.Persistence.DocumentDb.Helpers
             RequestOptions options = null,
             CancellationToken cancellationToken = default)
         {
-            return await client.ExecuteWithRetries(async () => await client.DeleteDocumentAsync(
+            return await ExecuteWithRetries(async () => await client.DeleteDocumentAsync(
                 documentUri, 
                 options, 
-                cancellationToken));
+                cancellationToken), cancellationToken);
         }
 
         /// <summary>
@@ -116,11 +116,11 @@ namespace Elsa.Persistence.DocumentDb.Helpers
             RequestOptions options = null,
             CancellationToken cancellationToken = default)
         {
-            return await client.ExecuteWithRetries(async () => await client.ReplaceDocumentAsync(
+            return await ExecuteWithRetries(async () => await client.ReplaceDocumentAsync(
                 documentUri,
                 document,
                 options,
-                cancellationToken));
+                cancellationToken), cancellationToken);
         }
 
         /// <summary>
@@ -134,17 +134,19 @@ namespace Elsa.Persistence.DocumentDb.Helpers
         internal static async Task<StoredProcedureResponse<T>> ExecuteStoredProcedureWithRetriesAsync<T>(
             this DocumentClient client,
             Uri storedProcedureUri,
-            params object[] procedureParams)
+            object[] procedureParams,
+            CancellationToken cancellationToken = default)
         {
-            return await client.ExecuteWithRetries(async () => await client.ExecuteStoredProcedureAsync<T>(
+            return await ExecuteWithRetries(async () => await client.ExecuteStoredProcedureAsync<T>(
                 storedProcedureUri, 
-                procedureParams));
+                procedureParams), cancellationToken);
         }
 
         /// <summary>
         /// Execute the function with retries on throttle
         /// </summary>
-        internal static async Task<FeedResponse<T>> ExecuteNextWithRetriesAsync<T>(this IDocumentQuery<T> query)
+        internal static async Task<FeedResponse<T>> ExecuteNextWithRetriesAsync<T>(this IDocumentQuery<T> query,
+            CancellationToken cancellationToken = default)
         {
             while (true)
             {
@@ -152,7 +154,7 @@ namespace Elsa.Persistence.DocumentDb.Helpers
 
                 try
                 {
-                    return await query.ExecuteNextAsync<T>();
+                    return await query.ExecuteNextAsync<T>(cancellationToken);
                 }
                 catch (DocumentClientException ex) when (ex.StatusCode != null && (int) ex.StatusCode == 429)
                 {
@@ -164,16 +166,14 @@ namespace Elsa.Persistence.DocumentDb.Helpers
                     timeSpan = de.RetryAfter;
                 }
 
-                await Task.Delay(timeSpan);
+                await Task.Delay(timeSpan, cancellationToken);
             }
         }
 
         /// <summary>
         /// Execute the function with retries on throttle
         /// </summary>
-        internal static async Task<T> ExecuteWithRetries<T>(
-            this DocumentClient client,
-            Func<Task<T>> function)
+        private static async Task<T> ExecuteWithRetries<T>(Func<Task<T>> function, CancellationToken cancellationToken)
         {
             while (true)
             {
@@ -193,7 +193,7 @@ namespace Elsa.Persistence.DocumentDb.Helpers
                     timeSpan = de.RetryAfter;
                 }
 
-                await Task.Delay(timeSpan);
+                await Task.Delay(timeSpan, cancellationToken);
             }
         }
     }

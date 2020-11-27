@@ -4,6 +4,7 @@ using System.Collections.Generic;
 
 namespace Elsa.Persistence.DocumentDb
 {
+
     public class DocumentDbStorageOptions
     {
         /// <summary>
@@ -36,7 +37,7 @@ namespace Elsa.Persistence.DocumentDb
         /// <value>
         /// The collection names.
         /// </value>
-        public IDictionary<string, string> CollectionNames { get; set; }
+        public IDictionary<string, DocumentDbCollectionInfo> CollectionInfos { get; set; }
 
         /// <summary>
         /// Get or sets the request timeout for DocumentDB client. Default value set to 30 seconds

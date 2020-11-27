@@ -1,4 +1,4 @@
-﻿using Microsoft.Azure.Documents.Client;
+using Microsoft.Azure.Documents.Client;
 using System;
 using System.Threading.Tasks;
 
@@ -8,7 +8,7 @@ namespace Elsa.Persistence.DocumentDb
     {
         string ToString();
         Task<DocumentClient> GetDocumentClient();
-        Uri GetWorkflowDefinitionCollectionUri();
-        Uri GetWorkflowInstanceCollectionUri();
+        Task<(string Name, Uri Uri, string TenantId)> GetWorkflowDefinitionCollectionInfoAsync();
+        Task<(string Name, Uri Uri, string TenantId)> GetWorkflowInstanceCollectionInfoAsync();
     }
 }

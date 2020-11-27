@@ -39,5 +39,8 @@ namespace Elsa.Persistence.DocumentDb.Documents
 
         [JsonProperty(PropertyName = "isLatest")]
         public bool IsLatest { get; set; }
+
+        [JsonProperty(PropertyName = "tenantId")]
+        public string TenantId { get; set; }
     }
 }
