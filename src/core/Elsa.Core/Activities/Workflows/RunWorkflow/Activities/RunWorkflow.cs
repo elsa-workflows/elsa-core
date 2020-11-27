@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
@@ -8,7 +6,6 @@ using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Open.Linq.AsyncExtensions;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.Workflows

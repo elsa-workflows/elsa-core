@@ -2,7 +2,6 @@ using Elsa.Samples.WhileLoopWorker.Services;
 using Elsa.Samples.WhileLoopWorker.Workflows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using NodaTime;
 
 namespace Elsa.Samples.WhileLoopWorker
 {
@@ -21,7 +20,7 @@ namespace Elsa.Samples.WhileLoopWorker
                         services
                             .AddElsa()
                             .AddConsoleActivities()
-                            .AddTimerActivities(options => options.SweepInterval = Duration.FromSeconds(1))
+                            .AddTimerActivities()
                             .AddSingleton<PhoneCallService>()
                             .AddHostedService<PhoneCallWorker>()
                             .AddWorkflow<PhoneCallWorkflow>();

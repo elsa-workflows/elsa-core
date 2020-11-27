@@ -1,9 +1,7 @@
-using System.Data;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NodaTime;
-using YesSql.Provider.Sqlite;
 
 namespace Elsa.Samples.Timers
 {
@@ -19,7 +17,7 @@ namespace Elsa.Samples.Timers
                         services
                             .AddElsa()
                             .AddConsoleActivities()
-                            .AddTimerActivities(timer => timer.SweepInterval = Duration.FromSeconds(1))
+                            .AddTimerActivities()
                             .AddWorkflow<RecurringTaskWorkflow>()
                             .AddWorkflow<CronTaskWorkflow>()
                             .AddWorkflow(new OneOffWorkflow(SystemClock.Instance.GetCurrentInstant().Plus(Duration.FromSeconds(5))));

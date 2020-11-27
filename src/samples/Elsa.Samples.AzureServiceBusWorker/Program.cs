@@ -3,7 +3,6 @@ using Elsa.Samples.AzureServiceBusWorker.Workflows;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using NodaTime;
 
 namespace Elsa.Samples.AzureServiceBusWorker
 {
@@ -21,7 +20,7 @@ namespace Elsa.Samples.AzureServiceBusWorker
                     services
                         .AddElsa()
                         .AddConsoleActivities()
-                        .AddTimerActivities(options => options.SweepInterval = Duration.FromSeconds(1))
+                        .AddTimerActivities()
                         .AddAzureServiceBusActivities(options => options.ConnectionString = hostContext.Configuration.GetConnectionString("AzureServiceBus"))
                         .AddWorkflow<ProducerWorkflow>()
                         .AddWorkflow<ConsumerWorkflow>();

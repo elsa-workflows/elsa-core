@@ -2,7 +2,6 @@ using Elsa.Samples.MultiTenantChildWorker.Messages;
 using Elsa.Samples.MultiTenantChildWorker.Workflows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using NodaTime;
 
 namespace Elsa.Samples.MultiTenantChildWorker
 {
@@ -20,7 +19,7 @@ namespace Elsa.Samples.MultiTenantChildWorker
                     {
                         services
                             .AddElsa()
-                            .AddTimerActivities(options => options.SweepInterval = Duration.FromSeconds(1))
+                            .AddTimerActivities()
                             .AddConsoleActivities()
                             .AddRebusActivities<OrderReceived>()
                             .AddWorkflow<GenerateOrdersWorkflow>()

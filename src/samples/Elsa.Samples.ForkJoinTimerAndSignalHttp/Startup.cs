@@ -2,7 +2,6 @@ using Elsa.Samples.ForkJoinTimerAndSignalHttp.BackgroundTasks;
 using Elsa.Samples.ForkJoinTimerAndSignalHttp.Workflows;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
-using NodaTime;
 
 namespace Elsa.Samples.ForkJoinTimerAndSignalHttp
 {
@@ -16,7 +15,7 @@ namespace Elsa.Samples.ForkJoinTimerAndSignalHttp
             services
                 .AddElsa()
                 .AddConsoleActivities()
-                .AddTimerActivities(options => options.SweepInterval = Duration.FromSeconds(1))
+                .AddTimerActivities()
                 .AddHostedService<WorkflowStarter<DemoWorkflow>>()
                 .AddWorkflow<DemoWorkflow>();
         }

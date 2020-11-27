@@ -1,6 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using NodaTime;
 using System.Threading.Tasks;
 using YesSql.Provider.Sqlite;
 
@@ -24,7 +23,7 @@ namespace Elsa.Samples.DistributedLock
                                 .UsePersistence(db => db.UseSqLite("Data Source=elsa.db;Cache=Shared"))
                                 .UseRedisLockProvider("localhost:6379,abortConnect=false"))
                             .AddConsoleActivities()
-                            .AddTimerActivities(timer => timer.SweepInterval = Duration.FromSeconds(5))
+                            .AddTimerActivities()
                             .AddWorkflow<RecurringWorkflow>();
                     });
     }

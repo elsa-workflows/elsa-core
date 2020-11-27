@@ -2,7 +2,6 @@ using System;
 using Elsa.Activities.Timers;
 using Elsa.Activities.Timers.HostedServices;
 using Elsa.Activities.Timers.Jobs;
-using Elsa.Activities.Timers.Options;
 using Elsa.Activities.Timers.Services;
 using Elsa.Activities.Timers.Triggers;
 using Quartz;
@@ -12,15 +11,15 @@ namespace Microsoft.Extensions.DependencyInjection
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddTimerActivities(this IServiceCollection services, Action<TimersOptions>? configureOptions = null)
+        public static IServiceCollection AddTimerActivities(this IServiceCollection services, Action<QuartzOptions>? configureOptions = default, Action<IServiceCollectionQuartzConfigurator>? configureQuartz = default)
         {
             if (configureOptions != null)
-            {
                 services.Configure(configureOptions);
-            }
+            else
+                services.AddOptions<QuartzOptions>();
 
             return services
-                .AddQuartz(ConfigureQuartz)
+                .AddQuartz(configure => ConfigureQuartz(configure, configureQuartz))
                 .AddQuartzHostedService(ConfigureQuartzHostedService)
                 .AddSingleton<IWorkflowScheduler, WorkflowScheduler>()
                 .AddTransient<RunWorkflowJob>()
@@ -38,13 +37,20 @@ namespace Microsoft.Extensions.DependencyInjection
             options.WaitForJobsToComplete = true;
         }
 
-        private static void ConfigureQuartz(IServiceCollectionQuartzConfigurator quartz)
+        private static void ConfigureQuartz(IServiceCollectionQuartzConfigurator quartz, Action<IServiceCollectionQuartzConfigurator>? configureQuartz)
         {
-            quartz.SchedulerId = "TimerEvent";
             quartz.UseMicrosoftDependencyInjectionScopedJobFactory(options => options.AllowDefaultConstructor = true);
-            quartz.UseSimpleTypeLoader();
-            quartz.UseInMemoryStore();
             quartz.AddJob<RunWorkflowJob>(job => job.StoreDurably().WithIdentity(nameof(RunWorkflowJob)));
+
+            if (configureQuartz != null)
+            {
+                configureQuartz(quartz);
+            }
+            else
+            {
+                quartz.UseSimpleTypeLoader();
+                quartz.UseInMemoryStore();
+            }
         }
     }
 }

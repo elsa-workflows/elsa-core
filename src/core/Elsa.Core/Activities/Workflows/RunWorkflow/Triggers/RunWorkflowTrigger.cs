@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using Elsa.Triggers;
+﻿using Elsa.Triggers;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.Workflows
