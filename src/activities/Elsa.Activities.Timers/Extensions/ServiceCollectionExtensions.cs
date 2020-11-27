@@ -44,6 +44,7 @@ namespace Microsoft.Extensions.DependencyInjection
             quartz.UseMicrosoftDependencyInjectionScopedJobFactory(options => options.AllowDefaultConstructor = true);
             quartz.UseSimpleTypeLoader();
             quartz.UseInMemoryStore();
+            quartz.AddJob<RunWorkflowJob>(job => job.StoreDurably().WithIdentity(nameof(RunWorkflowJob)));
         }
     }
 }

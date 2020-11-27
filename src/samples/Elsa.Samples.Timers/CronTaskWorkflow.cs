@@ -10,7 +10,7 @@ namespace Elsa.Samples.Timers
         public void Build(IWorkflowBuilder workflow)
         {
             workflow
-                .CronEvent("* * * * *")
+                .CronEvent("0/3 * * ? * * *")
                 .WriteLine(() => $"CRON event at {DateTime.Now}");
         }
     }

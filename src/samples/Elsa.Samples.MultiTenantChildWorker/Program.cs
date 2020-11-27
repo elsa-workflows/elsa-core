@@ -22,14 +22,11 @@ namespace Elsa.Samples.MultiTenantChildWorker
                             .AddElsa()
                             .AddTimerActivities(options => options.SweepInterval = Duration.FromSeconds(1))
                             .AddConsoleActivities()
-                            //.AddRebusActivities<OrderReceived>()
-                            //.AddWorkflow<DebugTimerEventWorkflow>()
-                            //.AddWorkflow<DebugCronEventWorkflow>()
-                            .AddWorkflow<DebugStartAtWorkflow>()
-                            // .AddWorkflow<GenerateOrdersWorkflow>()
-                            // .AddWorkflow<OrderReceivedWorkflow>()
-                            // .AddWorkflow<Tenant1ChildWorkflow>()
-                            // .AddWorkflow<Tenant2ChildWorkflow>()
+                            .AddRebusActivities<OrderReceived>()
+                            .AddWorkflow<GenerateOrdersWorkflow>()
+                            .AddWorkflow<OrderReceivedWorkflow>()
+                            .AddWorkflow<Tenant1ChildWorkflow>()
+                            .AddWorkflow<Tenant2ChildWorkflow>()
                             ;
                     });
     }
