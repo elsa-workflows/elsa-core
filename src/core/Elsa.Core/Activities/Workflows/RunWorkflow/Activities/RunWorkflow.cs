@@ -41,7 +41,7 @@ namespace Elsa.Activities.Workflows
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var workflowBlueprint = (await _workflowRegistry.GetWorkflowAsync(WorkflowDefinitionId, VersionOptions.Published, cancellationToken))!;
+            var workflowBlueprint = (await _workflowRegistry.GetWorkflowAsync(WorkflowDefinitionId, TenantId, VersionOptions.Published, cancellationToken))!;
             var workflowInstance = await _workflowScheduler.RunWorkflowAsync(workflowBlueprint, TenantId, Input, CorrelationId, ContextId, cancellationToken);
             ChildWorkflowInstanceId = workflowInstance.WorkflowInstanceId;
 
