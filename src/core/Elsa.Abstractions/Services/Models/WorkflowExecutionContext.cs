@@ -70,7 +70,7 @@ namespace Elsa.Services.Models
             set => WorkflowInstance.CorrelationId = value;
         }
 
-        public bool DeleteCompletedInstances { get; set; }
+        public bool DeleteCompletedInstances => WorkflowBlueprint.DeleteCompletedInstances;
         public ICollection<ExecutionLogEntry> ExecutionLog => WorkflowInstance.ExecutionLog;
         public WorkflowStatus Status => WorkflowInstance.Status;
         public bool HasBlockingActivities => WorkflowInstance.BlockingActivities.Any();

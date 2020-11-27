@@ -4,20 +4,30 @@ namespace Elsa.Services.Models
 {
     public interface IWorkflowBlueprint : ICompositeActivityBlueprint
     {
-        public int Version { get; set; }
-        public bool IsSingleton { get; }
-        public bool IsEnabled { get; }
-        public string? Description { get; }
-        public bool IsPublished { get; }
-        public bool IsLatest { get; }
-        public Variables Variables { get; }
+        int Version { get; }
+        string? TenantId { get; }
+        bool IsSingleton { get; }
+        bool IsEnabled { get; }
+        string? Description { get; }
+        bool IsPublished { get; }
+        bool IsLatest { get; }
+        
+        /// <summary>
+        /// An initial set of variables available to workflow instances.
+        /// </summary>
+        Variables Variables { get; }
         
         /// <summary>
         /// An optional context type around which this workflow revolves. For example, a document, a leave request or a job application.
         /// </summary>
-        public WorkflowContextOptions? ContextOptions { get; set; }
+        WorkflowContextOptions? ContextOptions { get; set; }
         
-        public WorkflowPersistenceBehavior PersistenceBehavior { get; }
-        public bool DeleteCompletedInstances { get; }
+        WorkflowPersistenceBehavior PersistenceBehavior { get; }
+        bool DeleteCompletedInstances { get; }
+        
+        /// <summary>
+        /// A dictionary to store application-specific properties for a given workflow. 
+        /// </summary>
+        Variables CustomAttributes { get; }
     }
 }

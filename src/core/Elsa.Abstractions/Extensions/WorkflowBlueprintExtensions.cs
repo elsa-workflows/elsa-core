@@ -14,22 +14,22 @@ namespace Elsa
     public static class WorkflowBlueprintExtensions
     {
         public static ValueTask<T> GetActivityPropertyValue<TActivity, T>(
-            this IWorkflowBlueprint workflowBlueprint, 
-            string activityId, 
-            Expression<Func<TActivity, T>> propertyExpression, 
-            ActivityExecutionContext activityExecutionContext, 
+            this IWorkflowBlueprint workflowBlueprint,
+            string activityId,
+            Expression<Func<TActivity, T>> propertyExpression,
+            ActivityExecutionContext activityExecutionContext,
             CancellationToken cancellationToken) where TActivity : IActivity
         {
-            var expression = (MemberExpression)propertyExpression.Body;
+            var expression = (MemberExpression) propertyExpression.Body;
             string propertyName = expression.Member.Name;
             return GetActivityPropertyValue<T>(workflowBlueprint, activityId, propertyName, activityExecutionContext, cancellationToken);
         }
-        
+
         public static async ValueTask<T> GetActivityPropertyValue<T>(
-            this IWorkflowBlueprint workflowBlueprint, 
-            string activityId, 
-            string propertyName, 
-            ActivityExecutionContext activityExecutionContext, 
+            this IWorkflowBlueprint workflowBlueprint,
+            string activityId,
+            string propertyName,
+            ActivityExecutionContext activityExecutionContext,
             CancellationToken cancellationToken)
         {
             var provider = workflowBlueprint.ActivityPropertyProviders.GetProvider(activityId, propertyName);
@@ -38,21 +38,21 @@ namespace Elsa
                 return default!;
 
             var value = await provider.GetValueAsync(activityExecutionContext, cancellationToken);
-            return (T)value!;
+            return (T) value!;
         }
-        
+
         public static T? GetActivityState<TActivity, T>(
             this IWorkflowBlueprint workflowBlueprint,
-            Expression<Func<TActivity, T>> propertyExpression, 
+            Expression<Func<TActivity, T>> propertyExpression,
             ActivityExecutionContext activityExecutionContext) where TActivity : IActivity
         {
-            var expression = (MemberExpression)propertyExpression.Body;
+            var expression = (MemberExpression) propertyExpression.Body;
             string propertyName = expression.Member.Name;
             return GetActivityState<T>(propertyName, activityExecutionContext);
         }
-        
+
         public static T? GetActivityState<T>(
-            string propertyName, 
+            string propertyName,
             ActivityExecutionContext activityExecutionContext)
         {
             var activity = activityExecutionContext.ActivityInstance;
@@ -60,7 +60,7 @@ namespace Elsa
             var value = activity.Data[propertyName];
             return value != null ? value.ToObject<T>(serializer) : default;
         }
-        
+
         public static IEnumerable<IWorkflowBlueprint> WithVersion(
             this IEnumerable<IWorkflowBlueprint> query,
             VersionOptions version) =>
@@ -68,24 +68,24 @@ namespace Elsa
 
         public static IQueryable<IWorkflowBlueprint> WithVersion(
             this IQueryable<IWorkflowBlueprint> query,
-            VersionOptions version)
+            VersionOptions version) =>
+            query.Where(x => x.WithVersion(version)).OrderByDescending(x => x.Version);
+
+        public static bool WithVersion(this IWorkflowBlueprint workflowBlueprint, VersionOptions version)
         {
             if (version.IsDraft)
-                query = query.Where(x => !x.IsPublished);
-            else if (version.IsLatest)
-                query = query.Where(x => x.IsLatest);
-            else if (version.IsPublished)
-                query = query.Where(x => x.IsPublished);
-            else if (version.IsLatestOrPublished)
-                query = query.Where(x => x.IsPublished || x.IsLatest);
-            else if (version.AllVersions)
-            {
-                // Nothing to filter.
-            }
-            else if (version.Version > 0)
-                query = query.Where(x => x.Version == version.Version);
-
-            return query.OrderByDescending(x => x.Version);
+                return !workflowBlueprint.IsPublished;
+            if (version.IsLatest)
+                return workflowBlueprint.IsLatest;
+            if (version.IsPublished)
+                return workflowBlueprint.IsPublished;
+            if (version.IsLatestOrPublished)
+                return workflowBlueprint.IsPublished || workflowBlueprint.IsLatest;
+            if (version.AllVersions)
+                return true;
+            if (version.Version > 0)
+                return workflowBlueprint.Version == version.Version;
+            return true;
         }
     }
 }

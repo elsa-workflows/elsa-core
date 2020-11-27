@@ -11,6 +11,7 @@ namespace Elsa
         {
             SchemaBuilder.CreateMapIndexTable<WorkflowDefinitionIndex>(
                 table => table
+                    .Column<string?>("TenantId")
                     .Column<string>("WorkflowDefinitionId")
                     .Column<string>("WorkflowDefinitionVersionId")
                     .Column<int>("Version")
@@ -21,6 +22,7 @@ namespace Elsa
 
             SchemaBuilder.CreateMapIndexTable<WorkflowInstanceIndex>(
                 table => table
+                    .Column<string?>("TenantId")
                     .Column<string>("WorkflowInstanceId")
                     .Column<string>("WorkflowDefinitionId")
                     .Column<string?>("CorrelationId")
@@ -30,6 +32,7 @@ namespace Elsa
 
             SchemaBuilder.CreateMapIndexTable<WorkflowInstanceBlockingActivitiesIndex>(
                 table => table
+                    .Column<string?>("TenantId")
                     .Column<string>("ActivityId")
                     .Column<string>("ActivityType")
                     .Column<string?>("CorrelationId")

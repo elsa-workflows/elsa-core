@@ -22,7 +22,7 @@ namespace Elsa.Handlers
         public async Task Handle(WorkflowInstanceSaved notification, CancellationToken cancellationToken)
         {
             var workflowInstance = notification.WorkflowInstance;
-            var workflowBlueprint = await _workflowRegistry.GetWorkflowAsync(workflowInstance.WorkflowDefinitionId, VersionOptions.SpecificVersion(workflowInstance.Version), cancellationToken);
+            var workflowBlueprint = await _workflowRegistry.GetWorkflowAsync(workflowInstance.WorkflowDefinitionId, workflowInstance.TenantId, VersionOptions.SpecificVersion(workflowInstance.Version), cancellationToken);
             
             if (workflowBlueprint == null)
                 return;

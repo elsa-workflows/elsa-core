@@ -6,6 +6,7 @@ namespace Elsa.Indexes
 {
     public class WorkflowDefinitionIndex : MapIndex
     {
+        public string? TenantId { get; set; }
         public string WorkflowDefinitionId { get; set; } = default!;
         public string WorkflowDefinitionVersionId { get; set; } = default!;
         public int Version { get; set; }
@@ -24,6 +25,7 @@ namespace Elsa.Indexes
                 .Map(
                     workflowDefinition => new WorkflowDefinitionIndex
                     {
+                        TenantId = workflowDefinition.TenantId,
                         WorkflowDefinitionId = workflowDefinition.WorkflowDefinitionId,
                         WorkflowDefinitionVersionId = workflowDefinition.WorkflowDefinitionVersionId,
                         Version = workflowDefinition.Version,

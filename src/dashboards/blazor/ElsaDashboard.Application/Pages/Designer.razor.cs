@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Elsa.Client.Models;
 using ElsaDashboard.Application.Models;
 using ElsaDashboard.Application.Services;
-using ElsaDashboard.Application.Shared;
 using ElsaDashboard.Shared.Rpc;
 using Microsoft.AspNetCore.Components;
 

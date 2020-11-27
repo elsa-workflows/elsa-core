@@ -30,6 +30,7 @@ namespace Elsa.Services
             {
                 WorkflowInstanceId = _idGenerator.Generate(),
                 WorkflowDefinitionId = workflowBlueprint.Id,
+                TenantId = workflowBlueprint.TenantId,
                 Version = workflowBlueprint.Version,
                 Status = WorkflowStatus.Idle,
                 CorrelationId = correlationId,

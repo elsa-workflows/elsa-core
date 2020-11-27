@@ -10,11 +10,13 @@ namespace Elsa.Services.Models
         {
             ActivityPropertyProviders = new ActivityPropertyProviders();
             Variables = new Variables();
+            CustomAttributes = new Variables();
         }
     
         public WorkflowBlueprint(
             string id,
             int version,
+            string? tenantId,
             bool isSingleton,
             bool isEnabled,
             string? name,
@@ -22,6 +24,7 @@ namespace Elsa.Services.Models
             bool isLatest,
             bool isPublished,
             Variables? variables,
+            Variables? customAttributes,
             WorkflowContextOptions? contextOptions,
             WorkflowPersistenceBehavior persistenceBehavior,
             bool deleteCompletedInstances,
@@ -31,12 +34,14 @@ namespace Elsa.Services.Models
         {
             Id = id;
             Version = version;
+            TenantId = tenantId;
             IsSingleton = isSingleton;
             IsEnabled = isEnabled;
             IsLatest = isLatest;
             IsPublished = isPublished;
             ContextOptions = contextOptions;
             Variables = variables ?? new Variables();
+            CustomAttributes = customAttributes ?? new Variables();
             Name = name;
             Description = description;
             PersistenceBehavior = persistenceBehavior;
@@ -47,6 +52,7 @@ namespace Elsa.Services.Models
         }
         
         public int Version { get; set; }
+        public string? TenantId { get; set; }
         public bool IsSingleton { get; set; }
         public bool IsEnabled { get; set; }
         public string? Description { get; set; }
@@ -56,5 +62,6 @@ namespace Elsa.Services.Models
         public WorkflowContextOptions? ContextOptions { get; set; }
         public WorkflowPersistenceBehavior PersistenceBehavior { get; set; }
         public bool DeleteCompletedInstances { get; set; }
+        public Variables CustomAttributes { get; }
     }
 }

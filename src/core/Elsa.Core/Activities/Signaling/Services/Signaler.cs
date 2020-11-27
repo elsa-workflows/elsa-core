@@ -7,9 +7,9 @@ namespace Elsa.Activities.Signaling.Services
 {
     public class Signaler : ISignaler
     {
-        private readonly IWorkflowScheduler _workflowScheduler;
+        private readonly IWorkflowRunner _workflowScheduler;
 
-        public Signaler(IWorkflowScheduler workflowScheduler)
+        public Signaler(IWorkflowRunner workflowScheduler)
         {
             _workflowScheduler = workflowScheduler;
         }
