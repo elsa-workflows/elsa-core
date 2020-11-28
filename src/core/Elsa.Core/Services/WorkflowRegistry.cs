@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -42,5 +43,11 @@ namespace Elsa.Services
                 .OrderByDescending(x => x.Version)
                 .FirstOrDefault();
         }
+
+        public async Task<IEnumerable<IWorkflowBlueprint>> FindWorkflowsAsync(Func<IWorkflowBlueprint, bool> predicate, CancellationToken cancellationToken) =>
+            await GetWorkflowsAsync(cancellationToken).Where(predicate).OrderByDescending(x => x.Version).ToListAsync(cancellationToken);
+
+        public async Task<IWorkflowBlueprint?> FindWorkflowAsync(Func<IWorkflowBlueprint, bool> predicate, CancellationToken cancellationToken) => 
+            await GetWorkflowsAsync(cancellationToken).Where(predicate).OrderByDescending(x => x.Version).FirstOrDefaultAsync(cancellationToken);
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using Elsa.Builders;
+using Elsa.Models;
 using Elsa.Services.Models;
 
 // ReSharper disable once CheckNamespace
@@ -37,5 +38,14 @@ namespace Elsa.Activities.Workflows
 
         public static IActivityBuilder RunWorkflow(this IBuilder builder, string workflowDefinitionId, string tenantId, RunWorkflow.RunWorkflowMode mode, string correlationId) =>
             builder.RunWorkflow(activity => activity.WithWorkflow(workflowDefinitionId).WithMode(mode).WithCorrelationId(correlationId).WithTenantId(tenantId));
+        
+        public static IActivityBuilder RunWorkflow(this IBuilder builder, string workflowDefinitionId, Variables customAttributes, RunWorkflow.RunWorkflowMode mode, string correlationId) =>
+            builder.RunWorkflow(activity => activity.WithWorkflow(workflowDefinitionId).WithMode(mode).WithCorrelationId(correlationId).WithCustomAttributes(customAttributes));
+        
+        public static IActivityBuilder RunWorkflow(this IBuilder builder, Variables customAttributes, RunWorkflow.RunWorkflowMode mode, string correlationId) =>
+            builder.RunWorkflow(activity => activity.WithMode(mode).WithCorrelationId(correlationId).WithCustomAttributes(customAttributes));
+        
+        public static IActivityBuilder RunWorkflow(this IBuilder builder, Variables customAttributes, RunWorkflow.RunWorkflowMode mode) =>
+            builder.RunWorkflow(activity => activity.WithMode(mode).WithCustomAttributes(customAttributes));
     }
 }

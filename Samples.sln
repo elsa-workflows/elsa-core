@@ -160,6 +160,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.Timers", "src\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.WhileLoopWorker", "src\samples\worker\Elsa.Samples.WhileLoopWorker\Elsa.Samples.WhileLoopWorker.csproj", "{EA3832C4-8079-4E84-AF8C-12744E4EFD44}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.CustomAttributesChildWorker", "src\samples\worker\Elsa.Samples.CustomAttributesChildWorker\Elsa.Samples.CustomAttributesChildWorker.csproj", "{AEA00027-F280-43A4-AC60-E2AF3014CF34}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -387,6 +389,10 @@ Global
 		{EA3832C4-8079-4E84-AF8C-12744E4EFD44}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EA3832C4-8079-4E84-AF8C-12744E4EFD44}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EA3832C4-8079-4E84-AF8C-12744E4EFD44}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AEA00027-F280-43A4-AC60-E2AF3014CF34}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AEA00027-F280-43A4-AC60-E2AF3014CF34}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AEA00027-F280-43A4-AC60-E2AF3014CF34}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AEA00027-F280-43A4-AC60-E2AF3014CF34}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -463,6 +469,7 @@ Global
 		{A4DF29BD-95CC-4A86-96EC-FB6692270E68} = {E42743A0-FBDD-4150-9D53-6000496D9B87}
 		{FD2D1BD0-1229-4DCF-BE70-6BFD396DD489} = {E42743A0-FBDD-4150-9D53-6000496D9B87}
 		{EA3832C4-8079-4E84-AF8C-12744E4EFD44} = {E42743A0-FBDD-4150-9D53-6000496D9B87}
+		{AEA00027-F280-43A4-AC60-E2AF3014CF34} = {E42743A0-FBDD-4150-9D53-6000496D9B87}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}
