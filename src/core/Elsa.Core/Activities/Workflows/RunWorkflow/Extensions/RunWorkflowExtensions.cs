@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Elsa.Builders;
 using Elsa.Extensions;
+using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -54,5 +55,11 @@ namespace Elsa.Activities.Workflows
         public static ISetupActivity<RunWorkflow> WithTenantId(this ISetupActivity<RunWorkflow> activity, Func<ValueTask<string?>> value) => activity.Set(x => x.TenantId, value);
         public static ISetupActivity<RunWorkflow> WithTenantId(this ISetupActivity<RunWorkflow> activity, Func<string?> value) => activity.Set(x => x.TenantId, value);
         public static ISetupActivity<RunWorkflow> WithTenantId(this ISetupActivity<RunWorkflow> activity, string? value) => activity.Set(x => x.TenantId, value);
+        
+        public static ISetupActivity<RunWorkflow> WithCustomAttributes(this ISetupActivity<RunWorkflow> activity, Func<ActivityExecutionContext, ValueTask<Variables?>> value) => activity.Set(x => x.CustomAttributes, value);
+        public static ISetupActivity<RunWorkflow> WithCustomAttributes(this ISetupActivity<RunWorkflow> activity, Func<ActivityExecutionContext, Variables?> value) => activity.Set(x => x.CustomAttributes, value);
+        public static ISetupActivity<RunWorkflow> WithCustomAttributes(this ISetupActivity<RunWorkflow> activity, Func<ValueTask<Variables?>> value) => activity.Set(x => x.CustomAttributes, value);
+        public static ISetupActivity<RunWorkflow> WithCustomAttributes(this ISetupActivity<RunWorkflow> activity, Func<Variables?> value) => activity.Set(x => x.CustomAttributes, value);
+        public static ISetupActivity<RunWorkflow> WithCustomAttributes(this ISetupActivity<RunWorkflow> activity, Variables? value) => activity.Set(x => x.CustomAttributes, value);
     }
 }

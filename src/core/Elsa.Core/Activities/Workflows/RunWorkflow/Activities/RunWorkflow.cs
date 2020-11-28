@@ -1,8 +1,9 @@
-﻿using System.Threading;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
-using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -26,11 +27,12 @@ namespace Elsa.Activities.Workflows
             _workflowRegistry = workflowRegistry;
         }
 
-        [ActivityProperty] public string WorkflowDefinitionId { get; set; } = default!;
+        [ActivityProperty] public string? WorkflowDefinitionId { get; set; } = default!;
         [ActivityProperty] public string? TenantId { get; set; } = default!;
         [ActivityProperty] public object? Input { get; set; }
         [ActivityProperty] public string? CorrelationId { get; set; }
         [ActivityProperty] public string? ContextId { get; set; }
+        [ActivityProperty] public Variables? CustomAttributes { get; set; } = default!;
         [ActivityProperty] public RunWorkflowMode Mode { get; set; }
 
         public string ChildWorkflowInstanceId
@@ -41,8 +43,8 @@ namespace Elsa.Activities.Workflows
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
         {
-            var workflowBlueprint = (await _workflowRegistry.GetWorkflowAsync(WorkflowDefinitionId, TenantId, VersionOptions.Published, cancellationToken))!;
-            var workflowInstance = await _workflowScheduler.RunWorkflowAsync(workflowBlueprint, TenantId, Input, CorrelationId, ContextId, cancellationToken);
+            var workflowBlueprint = await FindWorkflowBlueprintAsync(cancellationToken);
+            var workflowInstance = await _workflowScheduler.RunWorkflowAsync(workflowBlueprint!, TenantId, Input, CorrelationId, ContextId, cancellationToken);
             ChildWorkflowInstanceId = workflowInstance.WorkflowInstanceId;
 
             return Mode switch
@@ -57,6 +59,25 @@ namespace Elsa.Activities.Workflows
         {
             var input = (FinishedWorkflowModel) context.WorkflowExecutionContext.Input!;
             return Done(input);
+        }
+
+        private async Task<IWorkflowBlueprint?> FindWorkflowBlueprintAsync(CancellationToken cancellationToken)
+        {
+            var query = (IEnumerable<IWorkflowBlueprint>)(await _workflowRegistry.GetWorkflowsAsync(cancellationToken).ToListAsync(cancellationToken));
+
+            query = query.Where(x => x.WithVersion(VersionOptions.Published));
+
+            if (WorkflowDefinitionId != null)
+                query = query.Where(x => x.Id == WorkflowDefinitionId);
+
+            if (TenantId != null)
+                query = query.Where(x => x.TenantId == TenantId);
+
+            if (CustomAttributes != null)
+                foreach (var customAttribute in CustomAttributes.Data)
+                    query = query.Where(x => Equals(x.CustomAttributes.Get(customAttribute.Key), customAttribute.Value));
+
+            return query.FirstOrDefault();
         }
 
         public enum RunWorkflowMode
