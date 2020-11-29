@@ -50,7 +50,7 @@ namespace Elsa.Activities.AzureServiceBus.HostedServices
 
             foreach (var workflow in query)
             {
-                var workflowBlueprintWrapper = await _workflowBlueprintReflector.ReflectAsync(workflow, cancellationToken);
+                var workflowBlueprintWrapper = await _workflowBlueprintReflector.ReflectAsync(scope, workflow, cancellationToken);
 
                 foreach (var activity in workflowBlueprintWrapper.Filter<AzureServiceBusMessageReceived>())
                 {

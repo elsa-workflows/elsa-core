@@ -1,15 +1,15 @@
 namespace Elsa.Metadata
 {
-    public class ActivityDescriptor
+    public class ActivityInfo
     {
-        public ActivityDescriptor()
+        public ActivityInfo()
         {
             Type = "Activity";
-            Properties = new ActivityPropertyDescriptor[0];
+            Properties = new ActivityPropertyInfo[0];
             Category = "Miscellaneous";
             Traits = ActivityTraits.Action;
             DisplayName = "Activity";
-            Properties = new ActivityPropertyDescriptor[0];
+            Properties = new ActivityPropertyInfo[0];
             Outcomes = new string[0];
         }
 
@@ -19,6 +19,7 @@ namespace Elsa.Metadata
         public string Category { get; set; }
         public ActivityTraits Traits { get; set; }
         public string[] Outcomes { get; set; }
-        public ActivityPropertyDescriptor[] Properties { get; set; }
+        public ActivityPropertyInfo[] Properties { get; set; }
+        public bool Browsable { get; set; }
     }
 }

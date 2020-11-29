@@ -16,9 +16,9 @@ namespace ElsaDashboard.Application.Shared
         private ActivityTraitFilter SelectedActivityTraitFilter { get; set; }
         private string? ActivitySearchText { get; set; }
         private ICollection<ActivityTraitFilter> ActivityTraitFilters => new[] { ActivityTraitFilter.All, ActivityTraitFilter.Actions, ActivityTraitFilter.Triggers };
-        private ICollection<ActivityDescriptor> Activities { get; set; } = new List<ActivityDescriptor>();
+        private ICollection<ActivityInfo> Activities { get; set; } = new List<ActivityInfo>();
 
-        private ICollection<IGrouping<string, ActivityDescriptor>> ActivityGroupings =>
+        private ICollection<IGrouping<string, ActivityInfo>> ActivityGroupings =>
             FilterBySearchText(
                     FilterByTrait(Activities, SelectedActivityTraitFilter),
                     ActivitySearchText)
@@ -36,7 +36,7 @@ namespace ElsaDashboard.Application.Shared
             SelectedActivityTraitFilter = activityTraitFilter;
         }
 
-        private static IEnumerable<ActivityDescriptor> FilterByTrait(IEnumerable<ActivityDescriptor> activities, ActivityTraitFilter filter) =>
+        private static IEnumerable<ActivityInfo> FilterByTrait(IEnumerable<ActivityInfo> activities, ActivityTraitFilter filter) =>
             filter switch
             {
                 ActivityTraitFilter.Actions => activities.Where(x => (x.Traits & ActivityTraits.Action) == ActivityTraits.Action),
@@ -45,7 +45,7 @@ namespace ElsaDashboard.Application.Shared
                 _ => activities
             };
 
-        private static IEnumerable<ActivityDescriptor> FilterBySearchText(IEnumerable<ActivityDescriptor> activities, string? searchText)
+        private static IEnumerable<ActivityInfo> FilterBySearchText(IEnumerable<ActivityInfo> activities, string? searchText)
         {
             if (string.IsNullOrWhiteSpace(searchText))
                 return activities;
@@ -60,6 +60,6 @@ namespace ElsaDashboard.Application.Shared
                 select activity;
         }
 
-        private Task OnActivityClick(ActivityDescriptor activityDescriptor) => ActivitySelected.InvokeAsync(new ActivityDescriptorSelectedEventArgs(activityDescriptor));
+        private Task OnActivityClick(ActivityInfo activityInfo) => ActivitySelected.InvokeAsync(new ActivityDescriptorSelectedEventArgs(activityInfo));
     }
 }

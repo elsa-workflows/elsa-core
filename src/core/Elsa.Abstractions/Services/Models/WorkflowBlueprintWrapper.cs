@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading;
 
 namespace Elsa.Services.Models
 {
@@ -23,7 +24,7 @@ namespace Elsa.Services.Models
 
             foreach (var activity in activities)
             {
-                var activityExecutionContext = new ActivityExecutionContext(_workflowExecutionContext, _workflowExecutionContext.ServiceProvider, activity);
+                var activityExecutionContext = new ActivityExecutionContext(_workflowExecutionContext.ServiceScope, _workflowExecutionContext, activity, null, CancellationToken.None);
                 yield return new ActivityBlueprintWrapper(activityExecutionContext);
             }
         }

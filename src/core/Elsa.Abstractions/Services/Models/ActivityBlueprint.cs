@@ -1,8 +1,4 @@
-﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
-
-namespace Elsa.Services.Models
+﻿namespace Elsa.Services.Models
 {
     public class ActivityBlueprint : IActivityBlueprint
     {
@@ -16,8 +12,7 @@ namespace Elsa.Services.Models
             string type,
             bool persistWorkflow,
             bool loadWorkflowContext,
-            bool saveWorkflowContext,
-            Func<ActivityExecutionContext, CancellationToken, ValueTask<IActivity>> createActivity)
+            bool saveWorkflowContext)
         {
             Id = id;
             Name = name;
@@ -25,7 +20,6 @@ namespace Elsa.Services.Models
             PersistWorkflow = persistWorkflow;
             LoadWorkflowContext = loadWorkflowContext;
             SaveWorkflowContext = saveWorkflowContext;
-            CreateActivityAsync = createActivity;
         }
 
         public string Id { get; set; } = default!;
@@ -34,7 +28,5 @@ namespace Elsa.Services.Models
         public bool PersistWorkflow { get; set; }
         public bool LoadWorkflowContext { get; set; }
         public bool SaveWorkflowContext { get; set; }
-
-        public Func<ActivityExecutionContext, CancellationToken, ValueTask<IActivity>> CreateActivityAsync { get; set; } = default!;
     }
 }

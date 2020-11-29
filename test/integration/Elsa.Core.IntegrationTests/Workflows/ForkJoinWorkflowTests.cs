@@ -74,7 +74,7 @@ namespace Elsa.Core.IntegrationTests.Workflows
 
         private async Task<WorkflowInstance> TriggerSignalAsync(IWorkflowBlueprint workflowBlueprint, WorkflowInstance workflowInstance, string signal)
         {
-            var workflowExecutionContext = new WorkflowExecutionContext(ServiceProvider, workflowBlueprint, workflowInstance);
+            var workflowExecutionContext = new WorkflowExecutionContext(ServiceScope, workflowBlueprint, workflowInstance);
             var activities = await workflowExecutionContext.ActivateActivitiesAsync();
             var blockingActivityIds = workflowInstance.BlockingActivities.Where(x => x.ActivityType == nameof(ReceiveSignal)).Select(x => x.ActivityId);
             var receiveSignalActivities = activities.Where(x => blockingActivityIds.Contains(x.Id)).Cast<ReceiveSignal>();

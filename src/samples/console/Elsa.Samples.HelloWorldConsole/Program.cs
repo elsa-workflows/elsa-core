@@ -7,7 +7,7 @@ namespace Elsa.Samples.HelloWorldConsole
 {
     class Program
     {
-        static async Task Main(string[] args)
+        private static async Task Main()
         {
             // Create a service container with Elsa services.
             var services = new ServiceCollection()
@@ -22,7 +22,7 @@ namespace Elsa.Samples.HelloWorldConsole
             await startupRunner.StartupAsync();
             
             // Get a workflow runner.
-            var workflowRunner = services.GetService<IWorkflowRunner>();
+            var workflowRunner = services.GetRequiredService<IWorkflowRunner>();
 
             // Run the workflow.
             await workflowRunner.RunWorkflowAsync<HelloWorld>();

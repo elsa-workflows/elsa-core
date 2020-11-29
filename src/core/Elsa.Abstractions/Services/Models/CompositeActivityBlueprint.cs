@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace Elsa.Services.Models
 {
@@ -20,13 +17,12 @@ namespace Elsa.Services.Models
             string type,
             bool persistWorkflow,
             bool loadWorkflowContext,
-            bool saveWorkflowContext,
-            Func<ActivityExecutionContext, CancellationToken, ValueTask<IActivity>> createActivity) : base(id, name, type, persistWorkflow, loadWorkflowContext, saveWorkflowContext, createActivity)
+            bool saveWorkflowContext) : base(id, name, type, persistWorkflow, loadWorkflowContext, saveWorkflowContext)
         {
         }
 
         public ICollection<IActivityBlueprint> Activities { get; set; } = default!;
-        public ICollection<IConnection> Connections { get; set; }= default!;
+        public ICollection<IConnection> Connections { get; set; } = default!;
         public IActivityPropertyProviders ActivityPropertyProviders { get; set; } = default!;
     }
 }

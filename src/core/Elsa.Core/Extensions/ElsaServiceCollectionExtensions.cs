@@ -6,6 +6,8 @@ using Elsa.Activities.Primitives;
 using Elsa.Activities.Signaling;
 using Elsa.Activities.Signaling.Services;
 using Elsa.Activities.Workflows;
+using Elsa.ActivityProviders;
+using Elsa.ActivityTypeProviders;
 using Elsa.Builders;
 using Elsa.Consumers;
 using Elsa.Converters;
@@ -85,7 +87,6 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddLogging()
                 .AddLocalization()
                 .AddMemoryCache()
-                .AddTransient<Func<IEnumerable<IActivity>>>(sp => sp.GetServices<IActivity>)
                 .AddSingleton<IIdGenerator, IdGenerator>()
                 .AddSingleton(sp => sp.GetRequiredService<ElsaOptions>().CreateJsonSerializer(sp))
                 .AddSingleton<IContentSerializer, DefaultContentSerializer>()
@@ -94,9 +95,9 @@ namespace Microsoft.Extensions.DependencyInjection
                 .TryAddProvider<IExpressionHandler, VariableHandler>(ServiceLifetime.Singleton)
                 .AddScoped<IExpressionEvaluator, ExpressionEvaluator>()
                 .AddScoped<IWorkflowRegistry, WorkflowRegistry>()
-                //.AddScoped<IWorkflowScheduler, WorkflowScheduler>()
                 .AddSingleton<IWorkflowSchedulerQueue, WorkflowSchedulerQueue>()
                 .AddScoped<IWorkflowRunner, WorkflowRunner>()
+                .AddSingleton<IActivityDescriber, ActivityDescriber>()
                 .AddSingleton<IWorkflowFactory, WorkflowFactory>()
                 .AddSingleton<IActivityFactory, ActivityFactory>()
                 .AddSingleton<IWorkflowBlueprintMaterializer, WorkflowBlueprintMaterializer>()
@@ -109,7 +110,9 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddIndexProvider<WorkflowDefinitionIndexProvider>()
                 .AddIndexProvider<WorkflowInstanceIndexProvider>()
                 .AddStartupRunner()
-                .AddScoped<IActivityActivator, ActivityActivator>()
+                //.AddSingleton<IActivityActivator, ActivityActivator>()
+                .AddSingleton<IActivityTypeService, ActivityTypeService>()
+                .AddSingleton<IActivityTypeProvider, TypeBasedActivityProvider>()
                 .AddWorkflowProvider<ProgrammaticWorkflowProvider>()
                 .AddWorkflowProvider<StorageWorkflowProvider>()
                 .AddTransient<IWorkflowBuilder, WorkflowBuilder>()

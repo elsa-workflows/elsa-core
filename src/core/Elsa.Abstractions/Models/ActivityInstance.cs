@@ -15,10 +15,10 @@ namespace Elsa.Models
             Data = data;
             Output = output;
         }
-        
-        public string? Id { get; set; }
-        public string? Type { get; set; }
-        public JObject Data { get; set; } = new JObject();
+
+        public string Id { get; set; } = default!;
+        public string Type { get; set; } = default!;
+        public JObject Data { get; set; } = new();
         public object? Output { get; set; }
     }
 }

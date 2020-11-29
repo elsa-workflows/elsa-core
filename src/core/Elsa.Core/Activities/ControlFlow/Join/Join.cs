@@ -72,10 +72,13 @@ namespace Elsa.Activities.ControlFlow
             return Done();
         }
 
-        private async Task RecordInboundTransitionsAsync(WorkflowExecutionContext workflowExecutionContext, IActivityBlueprint activity, CancellationToken cancellationToken)
+        private async Task RecordInboundTransitionsAsync(ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
         {
+            var workflowExecutionContext = activityExecutionContext.WorkflowExecutionContext;
+            var activityInstance = activityExecutionContext.ActivityInstance;
+            
             // Get outbound connections of the executing activity.
-            var outboundConnections = workflowExecutionContext.GetOutboundConnections(activity.Id);
+            var outboundConnections = workflowExecutionContext.GetOutboundConnections(activityInstance.Id);
             
             // Get any connection that is pointing to this activity.
             var inboundTransitionsQuery =
@@ -86,18 +89,24 @@ namespace Elsa.Activities.ControlFlow
             
             var inboundConnections = inboundTransitionsQuery.ToList();
             var joinBlueprint = inboundConnections.FirstOrDefault()?.Target.Activity;
-            var joinActivity = joinBlueprint != null ? (Join)await joinBlueprint.CreateActivityAsync(new ActivityExecutionContext(workflowExecutionContext, workflowExecutionContext.ServiceProvider, joinBlueprint), cancellationToken) : default;
+            var joinActivity = joinBlueprint != null ? workflowExecutionContext.WorkflowInstance.Activities.Single(x => x.Id == joinBlueprint.Id) : default;
+
+            if (joinActivity == null)
+                return;
+
+            var joinActivityData = joinActivity.Data;
+            var inboundTransitions = joinActivityData.GetState<IReadOnlyCollection<string>>(nameof(InboundTransitions));
             
             // For each inbound connection, record the transition.
             foreach (var inboundConnection in inboundConnections)
             {
-                var inboundTransitions = joinActivity!.InboundTransitions;
-                
-                joinActivity!.InboundTransitions = inboundTransitions
+                inboundTransitions = inboundTransitions
                     .Union(new[] { GetTransitionKey(inboundConnection) })
                     .Distinct()
                     .ToList();
             }
+            
+            joinActivityData.SetState(nameof(inboundTransitions), inboundTransitions);
         }
 
         private string GetTransitionKey(IConnection connection)
@@ -110,7 +119,7 @@ namespace Elsa.Activities.ControlFlow
 
         public async Task Handle(ActivityExecuted notification, CancellationToken cancellationToken)
         {
-            await RecordInboundTransitionsAsync(notification.WorkflowExecutionContext, notification.Activity, cancellationToken);
+            await RecordInboundTransitionsAsync(notification.ActivityExecutionContext, cancellationToken);
         }
     }
 }

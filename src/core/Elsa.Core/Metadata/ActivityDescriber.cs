@@ -20,29 +20,20 @@ namespace Elsa.Metadata
             _optionsProviders = optionsProviders;
         }
         
-        public ActivityDescriptor? Describe(Type activityType)
+        public ActivityInfo? Describe(Type activityType)
         {
             var browsableAttribute = activityType.GetCustomAttribute<BrowsableAttribute>();
             var isBrowsable = browsableAttribute == null || browsableAttribute.Browsable;
-
-            if (!isBrowsable)
-                return null;
-            
             var activityAttribute = activityType.GetCustomAttribute<ActivityAttribute>();
-            
             var typeName = activityAttribute?.Type ?? activityType.Name;
-            
-            var displayName =
-                activityAttribute?.DisplayName ??
-                activityType.Name.Humanize(LetterCasing.Title);
-            
+            var displayName = activityAttribute?.DisplayName ?? activityType.Name.Humanize(LetterCasing.Title);
             var description = activityAttribute?.Description;
             var category = activityAttribute?.Category ?? "Miscellaneous";
             var traits = activityAttribute?.Traits ?? ActivityTraits.Action;
             var outcomes = activityAttribute?.Outcomes ?? new[] { OutcomeNames.Done };
             var properties = DescribeProperties(activityType);
 
-            return new ActivityDescriptor
+            return new ActivityInfo
             {
                 Type = typeName.Pascalize(),
                 DisplayName = displayName,
@@ -50,11 +41,12 @@ namespace Elsa.Metadata
                 Category = category,
                 Traits = traits,
                 Properties = properties.ToArray(),
-                Outcomes = outcomes
+                Outcomes = outcomes,
+                Browsable = isBrowsable
             };
         }
 
-        private IEnumerable<ActivityPropertyDescriptor> DescribeProperties(Type activityType)
+        private IEnumerable<ActivityPropertyInfo> DescribeProperties(Type activityType)
         {
             var properties = activityType.GetProperties();
 
@@ -65,7 +57,7 @@ namespace Elsa.Metadata
                 if (activityProperty == null)
                     continue;
 
-                yield return new ActivityPropertyDescriptor
+                yield return new ActivityPropertyInfo
                 (
                     (activityProperty.Name ?? propertyInfo.Name).Camelize(),
                     (activityProperty.Type ?? DeterminePropertyType(propertyInfo)).Pascalize(),
