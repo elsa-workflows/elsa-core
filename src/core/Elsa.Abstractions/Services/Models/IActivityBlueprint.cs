@@ -1,8 +1,4 @@
-﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
-
-namespace Elsa.Services.Models
+﻿namespace Elsa.Services.Models
 {
     public interface IActivityBlueprint
     {
@@ -12,6 +8,5 @@ namespace Elsa.Services.Models
         public bool PersistWorkflow { get; }
         bool LoadWorkflowContext { get; set; }
         bool SaveWorkflowContext { get; set; }
-        Func<ActivityExecutionContext, CancellationToken, ValueTask<IActivity>> CreateActivityAsync { get; }
     }
 }

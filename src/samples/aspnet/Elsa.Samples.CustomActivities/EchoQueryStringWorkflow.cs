@@ -12,7 +12,7 @@ namespace Elsa.Samples.CustomActivities
         public void Build(IWorkflowBuilder workflow)
         {
             workflow
-                .ReceiveHttpRequest("/test")
+                .HttpRequestReceived("/test")
                 .Then<ReadQueryString>()
                 .WriteHttpResponse(_ => HttpStatusCode.OK, GenerateSomeHtml, _ => "text/html");
         }

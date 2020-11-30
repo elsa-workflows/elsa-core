@@ -8,6 +8,7 @@ using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.DependencyInjection;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Triggers
@@ -19,7 +20,6 @@ namespace Elsa.Triggers
         private readonly IWorkflowFactory _workflowFactory;
         private readonly IWorkflowInstanceManager _workflowInstanceManager;
         private readonly IWorkflowContextManager _workflowContextManager;
-        private readonly IWorkflowBlueprintReflector _workflowBlueprintReflector;
         private readonly IEnumerable<ITriggerProvider> _triggerProviders;
         private readonly IMemoryCache _memoryCache;
         private readonly IServiceProvider _serviceProvider;
@@ -30,7 +30,6 @@ namespace Elsa.Triggers
             IWorkflowFactory workflowFactory,
             IWorkflowInstanceManager workflowInstanceManager,
             IWorkflowContextManager workflowContextManager,
-            IWorkflowBlueprintReflector workflowBlueprintReflector,
             IEnumerable<ITriggerProvider> triggerProviders,
             IMemoryCache memoryCache,
             IServiceProvider serviceProvider)
@@ -39,7 +38,6 @@ namespace Elsa.Triggers
             _workflowFactory = workflowFactory;
             _workflowInstanceManager = workflowInstanceManager;
             _workflowContextManager = workflowContextManager;
-            _workflowBlueprintReflector = workflowBlueprintReflector;
             _triggerProviders = triggerProviders;
             _memoryCache = memoryCache;
             _serviceProvider = serviceProvider;
@@ -159,12 +157,13 @@ namespace Elsa.Triggers
         {
             var providers = _triggerProviders.ToList();
             var descriptors = new List<TriggerDescriptor>();
-            var workflowExecutionContext = new WorkflowExecutionContext(_serviceProvider, workflowBlueprint, workflowInstance, default);
+            var scope = _serviceProvider.CreateScope();
+            var workflowExecutionContext = new WorkflowExecutionContext(scope, workflowBlueprint, workflowInstance, default);
             workflowExecutionContext.WorkflowContext = workflowBlueprint.ContextOptions != null ? await _workflowContextManager.LoadContext(new LoadWorkflowContext(workflowExecutionContext), cancellationToken) : default;
 
             foreach (var blockingActivity in blockingActivities)
             {
-                var activityExecutionContext = new ActivityExecutionContext(workflowExecutionContext, _serviceProvider, blockingActivity);
+                var activityExecutionContext = new ActivityExecutionContext(scope, workflowExecutionContext, blockingActivity, null, cancellationToken);
                 var providerContext = new TriggerProviderContext(activityExecutionContext);
 
                 foreach (var provider in providers)

@@ -18,7 +18,6 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             services.AddControllers().AddJsonSerialization();
             services.AddRouting(options => options.LowercaseUrls = true);
-            services.AddSingleton<IActivityDescriber, ActivityDescriber>();
 
             services.AddVersionedApiExplorer(o =>
             {

@@ -21,7 +21,7 @@ namespace ElsaDashboard.Shared.Surrogates
         {
         }
 
-        public ActivityPropertyDescriptorSurrogate(ActivityPropertyDescriptor value)
+        public ActivityPropertyDescriptorSurrogate(ActivityPropertyInfo value)
         {
             Name = value.Name;
             Type = value.Type;
@@ -36,9 +36,9 @@ namespace ElsaDashboard.Shared.Surrogates
         [ProtoMember(4)] public string? Hint { get; }
         [ProtoMember(5)] public string? Options { get; }
 
-        public static implicit operator ActivityPropertyDescriptor?(ActivityPropertyDescriptorSurrogate? surrogate) =>
+        public static implicit operator ActivityPropertyInfo?(ActivityPropertyDescriptorSurrogate? surrogate) =>
             surrogate != null
-                ? new ActivityPropertyDescriptor
+                ? new ActivityPropertyInfo
                 {
                     Name = surrogate.Name!,
                     Type = surrogate.Type!,
@@ -48,6 +48,6 @@ namespace ElsaDashboard.Shared.Surrogates
                 }
                 : default;
 
-        public static implicit operator ActivityPropertyDescriptorSurrogate?(ActivityPropertyDescriptor? source) => source != null ? new ActivityPropertyDescriptorSurrogate(source) : default;
+        public static implicit operator ActivityPropertyDescriptorSurrogate?(ActivityPropertyInfo? source) => source != null ? new ActivityPropertyDescriptorSurrogate(source) : default;
     }
 }

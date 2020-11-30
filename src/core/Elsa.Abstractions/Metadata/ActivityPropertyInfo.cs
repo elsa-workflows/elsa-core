@@ -2,9 +2,9 @@ using Newtonsoft.Json.Linq;
 
 namespace Elsa.Metadata
 {
-    public class ActivityPropertyDescriptor
+    public class ActivityPropertyInfo
     {
-        public ActivityPropertyDescriptor(string name, string type, string label, string? hint = null, JObject? options = null)
+        public ActivityPropertyInfo(string name, string type, string label, string? hint = null, JObject? options = null)
         {
             Name = name;
             Type = type;

@@ -39,14 +39,14 @@ namespace Elsa.Activities.Timers.HostedServices
             var workflowSelector = scope.ServiceProvider.GetRequiredService<IWorkflowSelector>();
             var workflows = await workflowRegistry.GetWorkflowsAsync(cancellationToken).ToListAsync(cancellationToken);
 
-            await ScheduleTimerEventWorkflowsAsync(workflows, workflowSelector, cancellationToken);
-            await ScheduleCronEventWorkflowsAsync(workflows, workflowSelector, cancellationToken);
-            await ScheduleStartAtWorkflowsAsync(workflows, workflowSelector, cancellationToken);
+            await ScheduleTimerEventWorkflowsAsync(scope, workflows, workflowSelector, cancellationToken);
+            await ScheduleCronEventWorkflowsAsync(scope, workflows, workflowSelector, cancellationToken);
+            await ScheduleStartAtWorkflowsAsync(scope, workflows, workflowSelector, cancellationToken);
         }
 
         public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
         
-        private async Task ScheduleStartAtWorkflowsAsync(IEnumerable<IWorkflowBlueprint> workflows, IWorkflowSelector workflowSelector, CancellationToken cancellationToken)
+        private async Task ScheduleStartAtWorkflowsAsync(IServiceScope serviceScope, IEnumerable<IWorkflowBlueprint> workflows, IWorkflowSelector workflowSelector, CancellationToken cancellationToken)
         {
             // Schedule workflow blueprints that start with a run-at event.
             var runAtWorkflows =
@@ -58,7 +58,7 @@ namespace Elsa.Activities.Timers.HostedServices
             {
                 var workflow = runAtWorkflow.workflow;
                 var activity = runAtWorkflow.activity;
-                var workflowWrapper = await _workflowBlueprintReflector.ReflectAsync(workflow, cancellationToken);
+                var workflowWrapper = await _workflowBlueprintReflector.ReflectAsync(serviceScope, workflow, cancellationToken);
                 var timerEventWrapper = workflowWrapper.GetActivity<StartAt>(activity.Id);
                 var startAt = await timerEventWrapper.GetPropertyValueAsync(x => x.Instant, cancellationToken);
 
@@ -76,7 +76,7 @@ namespace Elsa.Activities.Timers.HostedServices
             }
         }
 
-        private async Task ScheduleTimerEventWorkflowsAsync(IEnumerable<IWorkflowBlueprint> workflows, IWorkflowSelector workflowSelector, CancellationToken cancellationToken)
+        private async Task ScheduleTimerEventWorkflowsAsync(IServiceScope serviceScope, IEnumerable<IWorkflowBlueprint> workflows, IWorkflowSelector workflowSelector, CancellationToken cancellationToken)
         {
             // Schedule workflow blueprints that start with a timer event.
             var timerWorkflows =
@@ -90,7 +90,7 @@ namespace Elsa.Activities.Timers.HostedServices
             {
                 var workflow = timerWorkflow.workflow;
                 var activity = timerWorkflow.activity;
-                var workflowWrapper = await _workflowBlueprintReflector.ReflectAsync(workflow, cancellationToken);
+                var workflowWrapper = await _workflowBlueprintReflector.ReflectAsync(serviceScope, workflow, cancellationToken);
                 var timerEventWrapper = workflowWrapper.GetActivity<TimerEvent>(activity.Id);
                 var timeOut = await timerEventWrapper.GetPropertyValueAsync(x => x.Timeout, cancellationToken);
                 var startAt = now.Plus(timeOut);
@@ -109,7 +109,7 @@ namespace Elsa.Activities.Timers.HostedServices
             }
         }
         
-        private async Task ScheduleCronEventWorkflowsAsync(IEnumerable<IWorkflowBlueprint> workflows, IWorkflowSelector workflowSelector, CancellationToken cancellationToken)
+        private async Task ScheduleCronEventWorkflowsAsync(IServiceScope serviceScope, IEnumerable<IWorkflowBlueprint> workflows, IWorkflowSelector workflowSelector, CancellationToken cancellationToken)
         {
             // Schedule workflow blueprints starting with a cron event.
             var cronWorkflows =
@@ -121,7 +121,7 @@ namespace Elsa.Activities.Timers.HostedServices
             {
                 var workflow = cronWorkflow.workflow;
                 var activity = cronWorkflow.activity;
-                var workflowWrapper = await _workflowBlueprintReflector.ReflectAsync(workflow, cancellationToken);
+                var workflowWrapper = await _workflowBlueprintReflector.ReflectAsync(serviceScope, workflow, cancellationToken);
                 var timerEventWrapper = workflowWrapper.GetActivity<CronEvent>(activity.Id);
                 var cronExpression = await timerEventWrapper.GetPropertyValueAsync(x => x.CronExpression, cancellationToken);
 

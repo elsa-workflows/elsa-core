@@ -86,14 +86,14 @@ namespace Elsa.Builders
             return this;
         }
 
-        public Func<ActivityExecutionContext, CancellationToken, ValueTask<IActivity>> BuildActivityAsync() =>
-            async (context, cancellationToken) =>
-            {
-                var activity = await context.ActivateActivityAsync(cancellationToken);
-                activity.Id = ActivityId;
-                activity.Name = Name;
-                activity.Description = Description;
-                return activity;
-            };
+        // public Func<ActivityExecutionContext, CancellationToken, ValueTask<IActivity>> BuildActivityAsync() =>
+        //     async (context, cancellationToken) =>
+        //     {
+        //         var activity = await context.ActivateActivityAsync(cancellationToken);
+        //         activity.Id = ActivityId;
+        //         activity.Name = Name;
+        //         activity.Description = Description;
+        //         return activity;
+        //     };
     }
 }

@@ -16,7 +16,7 @@ namespace ElsaDashboard.Application.Pages
         [Inject] private IWorkflowDefinitionService WorkflowDefinitionService { get; set; } = default!;
         [Inject] private IActivityService ActivityService { get; set; } = default!;
         [Inject] private NavigationManager NavigationManager { get; set; } = default!;
-        private IDictionary<string, ActivityDescriptor> ActivityDescriptors { get; set; } = default!;
+        private IDictionary<string, ActivityInfo> ActivityDescriptors { get; set; } = default!;
         private WorkflowDefinition WorkflowDefinition { get; set; } = default!;
         private WorkflowModel WorkflowModel { get; set; } = WorkflowModel.Blank();
         private BackgroundWorker BackgroundWorker { get; } = new();

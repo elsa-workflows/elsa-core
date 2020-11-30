@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.ActivityProviders;
 using Elsa.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
@@ -13,24 +14,22 @@ namespace Elsa.Services.Models
     public class WorkflowExecutionContext
     {
         public WorkflowExecutionContext(
-            IServiceProvider serviceProvider,
+            IServiceScope serviceScope,
             IWorkflowBlueprint workflowBlueprint,
             WorkflowInstance workflowInstance,
-            object? input = default,
-            object? workflowContext = default
+            object? input = default
         )
         {
-            ServiceProvider = serviceProvider;
+            ServiceScope = serviceScope;
             WorkflowBlueprint = workflowBlueprint;
             WorkflowInstance = workflowInstance;
             Input = input;
-            WorkflowContext = workflowContext;
             IsFirstPass = true;
-            Serializer = serviceProvider.GetRequiredService<JsonSerializer>();
+            Serializer = serviceScope.ServiceProvider.GetRequiredService<JsonSerializer>();
         }
 
         public IWorkflowBlueprint WorkflowBlueprint { get; }
-        public IServiceProvider ServiceProvider { get; }
+        public IServiceScope ServiceScope { get; }
         public WorkflowInstance WorkflowInstance { get; }
         public JsonSerializer Serializer { get; }
         public object? Input { get; }
@@ -116,9 +115,9 @@ namespace Elsa.Services.Models
         public void SetWorkflowContext(object? value) => WorkflowContext = value;
         public T GetWorkflowContext<T>() => (T)WorkflowContext!;
 
-        public async ValueTask<IEnumerable<IActivity>> ActivateActivitiesAsync(CancellationToken cancellationToken = default)
+        public async ValueTask<IEnumerable<RuntimeActivityInstance>> ActivateActivitiesAsync(CancellationToken cancellationToken = default)
         {
-            var activityExecutionContexts = WorkflowBlueprint.Activities.Select(x => new ActivityExecutionContext(this, ServiceProvider, x));
+            var activityExecutionContexts = WorkflowBlueprint.Activities.Select(x => new ActivityExecutionContext(ServiceScope, this, x, null, CancellationToken.None));
             return await Task.WhenAll(activityExecutionContexts.Select(async x => await x.ActivateActivityAsync(cancellationToken)));
         } 
     }

@@ -4,7 +4,7 @@ using Newtonsoft.Json.Linq;
 namespace Elsa.Client.Models
 {
     [DataContract]
-    public class ActivityPropertyDescriptor
+    public class ActivityPropertyInfo
     {
         [DataMember(Order = 1)] public string Name { get; set; } = default!;
         [DataMember(Order = 2)] public string Type { get; set; } = default!;

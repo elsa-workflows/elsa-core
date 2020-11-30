@@ -10,15 +10,10 @@ namespace Elsa.Builders
 {
     public class CompositeActivityBuilder : ActivityBuilder, ICompositeActivityBuilder
     {
-        private readonly IActivityActivator _activityActivator;
         private readonly Func<ICompositeActivityBuilder> _workflowBuilderFactory;
 
-        public CompositeActivityBuilder(
-            IIdGenerator idGenerator,
-            IActivityActivator activityActivator,
-            IServiceProvider serviceProvider)
+        public CompositeActivityBuilder(IIdGenerator idGenerator, IServiceProvider serviceProvider)
         {
-            _activityActivator = activityActivator;
             ServiceProvider = serviceProvider;
             ActivityId = idGenerator.Generate();
             ActivityBuilders = new List<IActivityBuilder>();
@@ -168,9 +163,10 @@ namespace Elsa.Builders
             ICollection<IConnection> connections,
             IDictionary<string, IDictionary<string, IActivityPropertyValueProvider>> activityPropertyProviders)
         {
+            using var scope = ServiceProvider.CreateScope();
             foreach (var activityBuilder in compositeActivityBuilders)
             {
-                var compositeActivity = (CompositeActivity)_activityActivator.ActivateActivity(activityBuilder.ActivityType.Name);
+                var compositeActivity = (CompositeActivity)ActivatorUtilities.CreateInstance(scope.ServiceProvider, activityBuilder.ActivityType);
                 var workflowBuilder = _workflowBuilderFactory();
 
                 compositeActivity.Build(workflowBuilder);
@@ -193,8 +189,8 @@ namespace Elsa.Builders
         {
             var isComposite = typeof(CompositeActivity).IsAssignableFrom(builder.ActivityType);
             return isComposite
-                ? new CompositeActivityBlueprint(builder.ActivityId, builder.Name, builder.ActivityType.Name, builder.PersistWorkflow, builder.LoadWorkflowContextEnabled, builder.SaveWorkflowContextEnabled, builder.BuildActivityAsync())
-                : new ActivityBlueprint(builder.ActivityId, builder.Name, builder.ActivityType.Name, builder.PersistWorkflow, builder.LoadWorkflowContextEnabled, builder.SaveWorkflowContextEnabled, builder.BuildActivityAsync());
+                ? new CompositeActivityBlueprint(builder.ActivityId, builder.Name, builder.ActivityType.Name, builder.PersistWorkflow, builder.LoadWorkflowContextEnabled, builder.SaveWorkflowContextEnabled)
+                : new ActivityBlueprint(builder.ActivityId, builder.Name, builder.ActivityType.Name, builder.PersistWorkflow, builder.LoadWorkflowContextEnabled, builder.SaveWorkflowContextEnabled);
         }
     }
 }

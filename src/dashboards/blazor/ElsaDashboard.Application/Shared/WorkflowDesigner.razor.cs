@@ -168,11 +168,11 @@ namespace ElsaDashboard.Application.Shared
                 ButtonDescriptor.Create("Cancel", _ => ClosePanelAsync()));
         }
 
-        private async Task AddActivityAsync(ActivityDescriptor activityDescriptor, string? sourceActivityId, string? targetActivityId, string? outcome)
+        private async Task AddActivityAsync(ActivityInfo activityInfo, string? sourceActivityId, string? targetActivityId, string? outcome)
         {
             outcome ??= "Done";
 
-            var activity = new ActivityModel(Guid.NewGuid().ToString("N"), activityDescriptor.Type, activityDescriptor.Outcomes);
+            var activity = new ActivityModel(Guid.NewGuid().ToString("N"), activityInfo.Type, activityInfo.Outcomes);
             var model = Model.AddActivity(activity);
 
             if (targetActivityId != null)
@@ -225,7 +225,7 @@ namespace ElsaDashboard.Application.Shared
 
         private async Task OnActivityPickedAsync(ActivityDescriptorSelectedEventArgs e, string? sourceActivityId, string? targetActivityId, string? outcome)
         {
-            var activityDescriptor = e.ActivityDescriptor;
+            var activityDescriptor = e.ActivityInfo;
 
             await FlyoutPanelService.ShowAsync<ActivityEditor>(
                 activityDescriptor.DisplayName,

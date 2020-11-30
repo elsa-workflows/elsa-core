@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.ActivityProviders;
 using Elsa.Models;
 using Elsa.Services.Models;
 
@@ -81,7 +82,6 @@ namespace Elsa.Services
                 {
                     Id = activityDefinition.ActivityId,
                     Type = activityDefinition.Type,
-                    CreateActivityAsync = (context, cancellationToken) => CreateActivityAsync(activityDefinition, context, cancellationToken),
                     Activities = activityBlueprints.Values,
                     Connections = compositeActivityDefinition.Connections.Select(x => ResolveConnection(x, activityBlueprints)).ToList(),
                     ActivityPropertyProviders = CreatePropertyProviders(compositeActivityDefinition)
@@ -92,24 +92,9 @@ namespace Elsa.Services
                 yield return new ActivityBlueprint
                 {
                     Id = activityDefinition.ActivityId,
-                    Type = activityDefinition.Type,
-                    CreateActivityAsync = (context, cancellationToken) => CreateActivityAsync(activityDefinition, context, cancellationToken)
+                    Type = activityDefinition.Type
                 };    
             }
-        }
-
-        private static async ValueTask<IActivity> CreateActivityAsync(ActivityDefinition activityDefinition, ActivityExecutionContext context, CancellationToken cancellationToken)
-        {
-            var activity = await context.ActivateActivityAsync(cancellationToken);
-            activity.Description = activityDefinition.Description;
-            activity.Id = activityDefinition.ActivityId;
-            activity.Name = activityDefinition.Name;
-            activity.DisplayName = activityDefinition.DisplayName;
-            activity.PersistWorkflow = activityDefinition.PersistWorkflow;
-            activity.LoadWorkflowContext = activityDefinition.LoadWorkflowContext;
-            activity.SaveWorkflowContext = activityDefinition.SaveWorkflowContext;
-
-            return activity;
         }
     }
 }

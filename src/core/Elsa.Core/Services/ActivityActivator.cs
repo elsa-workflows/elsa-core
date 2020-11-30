@@ -1,89 +1,71 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using Elsa.Models;
-using Elsa.Services.Models;
-using Microsoft.Extensions.DependencyInjection;
-
-namespace Elsa.Services
-{
-    public class ActivityActivator : IActivityActivator
-    {
-        private readonly IServiceProvider _serviceProvider;
-        private readonly Lazy<IDictionary<string, Type>> _lazyActivityTypeLookup;
-
-        public ActivityActivator(IServiceProvider serviceProvider, Func<IEnumerable<IActivity>> activitiesFunc)
-        {
-            _serviceProvider = serviceProvider;
-            _lazyActivityTypeLookup = new Lazy<IDictionary<string, Type>>(
-                () =>
-                {
-                    var activities = activitiesFunc();
-                    return activities.Select(x => x.GetType()).Distinct().ToDictionary(x => x.Name);
-                });
-        }
-
-        private IDictionary<string, Type> ActivityTypeLookup => _lazyActivityTypeLookup.Value;
-
-        public Type GetActivityTypeByName(string activityTypeName)
-        {
-            if (!ActivityTypeLookup.ContainsKey(activityTypeName))
-            {
-                var activityType = Type.GetType(activityTypeName);
-
-                if (activityType == null)
-                    throw new ArgumentException($"No such activity type: {activityTypeName}", nameof(activityTypeName));
-
-                ActivityTypeLookup[activityTypeName] = activityType;
-            }
-
-            return ActivityTypeLookup[activityTypeName];
-        }
-
-        public IActivity ActivateActivity(string activityTypeName, Action<IActivity>? setup = null)
-        {
-            var activityType = GetActivityTypeByName(activityTypeName);
-            var activity = (IActivity)ActivatorUtilities.GetServiceOrCreateInstance(_serviceProvider, activityType);
-
-            setup?.Invoke(activity);
-            return activity;
-        }
-        
-        public T ActivateActivity<T>(Action<T>? setup = null) where T : class, IActivity
-        {
-            var activity = ActivatorUtilities.GetServiceOrCreateInstance<T>(_serviceProvider);
-            setup?.Invoke(activity);
-            return activity;
-        }
-
-        public IActivity ActivateActivity(IActivityBlueprint activityBlueprint)
-        {
-            return ActivateActivity(
-                activityBlueprint.Type,
-                activity =>
-                {
-                    activity.Id = activityBlueprint.Id;
-                    activity.Name = activityBlueprint.Name;
-                    activity.PersistWorkflow = activityBlueprint.PersistWorkflow;
-                    activity.SaveWorkflowContext = activityBlueprint.SaveWorkflowContext;
-                    activity.LoadWorkflowContext = activityBlueprint.LoadWorkflowContext;
-                });
-        }
-
-        public IActivity ActivateActivity(ActivityDefinition activityDefinition)
-        {
-            var activity = ActivateActivity(activityDefinition.Type);
-            activity.Description = activityDefinition.Description;
-            activity.Id = activityDefinition.ActivityId;
-            activity.Name = activityDefinition.Name;
-            activity.DisplayName = activityDefinition.DisplayName;
-            activity.PersistWorkflow = activityDefinition.PersistWorkflow;
-            activity.LoadWorkflowContext = activityDefinition.LoadWorkflowContext;
-            activity.SaveWorkflowContext = activityDefinition.SaveWorkflowContext;
-            return activity;
-        }
-
-        public IEnumerable<Type> GetActivityTypes() => ActivityTypeLookup.Values.ToList();
-        public Type? GetActivityType(string activityTypeName) => ActivityTypeLookup.ContainsKey(activityTypeName) ? ActivityTypeLookup[activityTypeName] : default;
-    }
-}
+// using System;
+// using System.Collections.Generic;
+// using System.Linq;
+// using System.Threading;
+// using System.Threading.Tasks;
+// using Elsa.ActivityProviders;
+// using Elsa.Models;
+// using Elsa.Services.Models;
+// using Microsoft.Extensions.DependencyInjection;
+//
+// namespace Elsa.Services
+// {
+//     public class ActivityActivator : IActivityActivator
+//     {
+//         private readonly IActivityTypeService _activityTypeService;
+//
+//         public ActivityActivator(IActivityTypeService activityTypeService)
+//         {
+//             _activityTypeService = activityTypeService;
+//         }
+//
+//         public async Task<IActivity> ActivateActivity(IServiceScope serviceScope, string activityTypeName, Action<IActivity>? setup, CancellationToken cancellationToken)
+//         {
+//             var activityType = await _activityTypeService.GetActivityTypeAsync(activityTypeName, cancellationToken);
+//             var activity = activityType.
+//
+//             setup?.Invoke(activity);
+//             return activity;
+//         }
+//         
+//         public T ActivateActivity<T>(IServiceScope serviceScope, Action<T>? setup = null) where T : class, IActivity
+//         {
+//             var activity = ActivatorUtilities.GetServiceOrCreateInstance<T>(serviceScope.ServiceProvider);
+//             setup?.Invoke(activity);
+//             return activity;
+//         }
+//
+//         public IActivity ActivateActivity(IServiceScope serviceScope, Type type) => (IActivity)ActivatorUtilities.GetServiceOrCreateInstance(serviceScope.ServiceProvider, type);
+//
+//         public IActivity ActivateActivity(IServiceScope serviceScope, IActivityBlueprint activityBlueprint)
+//         {
+//             return ActivateActivity(
+//                 serviceScope,
+//                 activityBlueprint.Type,
+//                 activity =>
+//                 {
+//                     activity.Id = activityBlueprint.Id;
+//                     activity.Name = activityBlueprint.Name;
+//                     activity.PersistWorkflow = activityBlueprint.PersistWorkflow;
+//                     activity.SaveWorkflowContext = activityBlueprint.SaveWorkflowContext;
+//                     activity.LoadWorkflowContext = activityBlueprint.LoadWorkflowContext;
+//                 });
+//         }
+//
+//         public IActivity ActivateActivity(IServiceScope serviceScope, ActivityDefinition activityDefinition)
+//         {
+//             var activity = ActivateActivity(serviceScope, activityDefinition.Type);
+//             activity.Description = activityDefinition.Description;
+//             activity.Id = activityDefinition.ActivityId;
+//             activity.Name = activityDefinition.Name;
+//             activity.DisplayName = activityDefinition.DisplayName;
+//             activity.PersistWorkflow = activityDefinition.PersistWorkflow;
+//             activity.LoadWorkflowContext = activityDefinition.LoadWorkflowContext;
+//             activity.SaveWorkflowContext = activityDefinition.SaveWorkflowContext;
+//             return activity;
+//         }
+//
+//         public IEnumerable<Type> GetActivityTypes() => ActivityTypeLookup.Values.ToList();
+//         public Type? GetActivityType(string activityTypeName) => ActivityTypeLookup.ContainsKey(activityTypeName) ? ActivityTypeLookup[activityTypeName] : default;
+//     }
+// }

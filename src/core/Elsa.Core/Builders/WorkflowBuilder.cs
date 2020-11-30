@@ -10,10 +10,7 @@ namespace Elsa.Builders
 {
     public class WorkflowBuilder : CompositeActivityBuilder, IWorkflowBuilder
     {
-        public WorkflowBuilder(IIdGenerator idGenerator, IActivityActivator activityActivator, IServiceProvider serviceProvider) : base(
-            idGenerator,
-            activityActivator,
-            serviceProvider)
+        public WorkflowBuilder(IIdGenerator idGenerator, IServiceProvider serviceProvider) : base(idGenerator, serviceProvider)
         {
             Version = 1;
             IsEnabled = true;
