@@ -50,7 +50,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
         private static IServiceCollection AddHttpActivitiesInternal(this IServiceCollection services) =>
             services
-                .AddActivity<ReceiveHttpRequest>()
+                .AddActivity<HttpRequestReceived>()
                 .AddActivity<WriteHttpResponse>()
                 .AddActivity<SendHttpRequest>()
                 .AddActivity<Redirect>();

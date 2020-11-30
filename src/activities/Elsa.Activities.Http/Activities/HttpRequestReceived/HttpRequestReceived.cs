@@ -21,12 +21,12 @@ namespace Elsa.Activities.Http
         Description = "Receive an incoming HTTP request.",
         Outcomes = new[] { OutcomeNames.Done }
     )]
-    public class ReceiveHttpRequest : Activity
+    public class HttpRequestReceived : Activity
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IEnumerable<IHttpRequestBodyParser> _parsers;
 
-        public ReceiveHttpRequest(
+        public HttpRequestReceived(
             IHttpContextAccessor httpContextAccessor,
             IEnumerable<IHttpRequestBodyParser> parsers)
         {
