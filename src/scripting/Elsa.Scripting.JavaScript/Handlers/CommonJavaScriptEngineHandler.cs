@@ -20,14 +20,19 @@ namespace Elsa.Scripting.JavaScript.Handlers
 
             engine.SetValue("input", (Func<string, object>) (name => workflow.Input.GetVariable(name)));
             engine.SetValue("variable", (Func<string, object>) (name => executionContext.CurrentScope.GetVariable(name)));
+            engine.SetValue("transientState", (Func<string, object>) (name => executionContext.TransientState.GetVariable(name)));
             engine.SetValue("lastResult", (Func<string, object>) (name => executionContext.CurrentScope.LastResult?.Value));
             engine.SetValue("correlationId", (Func<object>) (() => executionContext.Workflow.CorrelationId));
             engine.SetValue("currentCulture", (Func<object>) (() => CultureInfo.InvariantCulture));
             engine.SetValue("newGuid", (Func<string>) (() => Guid.NewGuid().ToString()));
 
             var variables = executionContext.GetVariables();
+            var transientState = executionContext.TransientState;
 
             foreach (var variable in variables)
+                engine.SetValue(variable.Key, variable.Value.Value);
+            
+            foreach (var variable in transientState)
                 engine.SetValue(variable.Key, variable.Value.Value);
 
             foreach (var activity in executionContext.Workflow.Activities.Where(x => !string.IsNullOrWhiteSpace(x.Name) && x.Output != null))
