@@ -23,7 +23,7 @@ This list of sample implementations showcase a variety of workflows using ELSA.
 19. [ELSA Dashboard: Web App, SqlLite Persistence](Sample19) - Example of created a web application that hosts a ELSA Dashboard.
 20. [Reflection Activities](Sample20) - Demonstrates Reflection activities.
 21. [Shopping Cart: Mass Transit & Quartz Scheduling](Sample21) - Example of a workflow that tracks a shopping cart. Uses Mass Transit, RabbitMq and Quartz scheduling.
-22. [Hellow World: SQL Server](Sample22) - A simple demonstration of using Entity Framework Core persistence providers with SQL Server.
+22. [Hello World: SQL Server](Sample22) - A simple demonstration of using Entity Framework Core persistence providers with SQL Server.
 23. [Hello World Custom Schema: Sqllite](Sample23) - A simple demonstration of using Entity Framework Core persistence providers with SqlLite and Custom Schema.
 24. [Hello World: MySql with migration](Sample24) - A simple demonstration of using Entity Framework Core MySql persistence provider. A migration is also demonstrated.
 25. [Data processing](Sample25) - A simple demonstration of flowing data through a pipeline of processing activities (https://github.com/elsa-workflows/elsa-core/issues/405).

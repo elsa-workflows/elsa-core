@@ -16,7 +16,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
                 throw new InvalidOperationException("Set the EF_CONNECTIONSTRING environment variable to a valid MySQL connection string. E.g. SET EF_CONNECTIONSTRING=Server=localhost;Database=Elsa;User=sa;Password=Secret_password123!;");
             
             optionsBuilder.UseMySql(
-                connectionString,
+                new MySqlServerVersion(ServerVersion.AutoDetect(connectionString)),
                 x => x.MigrationsAssembly(migrationAssembly)
             );
 
