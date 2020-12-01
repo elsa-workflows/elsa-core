@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Elsa.ActivityResults;
 using Elsa.Services.Models;
@@ -22,6 +23,11 @@ namespace Elsa.ActivityProviders
         /// Description of this activity.
         /// </summary>
         public string? Description { get; set; }
+
+        /// <summary>
+        /// Anything you want to store with this activity type. 
+        /// </summary>
+        public IDictionary<string, object> Annotations { get; set; } = new Dictionary<string, object>();
 
         /// <summary>
         /// Returns a value of whether the specified activity can execute.

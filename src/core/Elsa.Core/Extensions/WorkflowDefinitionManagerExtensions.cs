@@ -36,5 +36,13 @@ namespace Elsa.Extensions
             manager
                 .Query<WorkflowInstanceIndex>(x => x.WorkflowStatus == workflowStatus)
                 .ListAsync();
+        
+        public static Task<IEnumerable<WorkflowInstance>> ListByBlockingActivityTypeAsync(
+            this IWorkflowInstanceManager manager,
+            string activityType,
+            CancellationToken cancellationToken = default) =>
+            manager
+                .Query<WorkflowInstanceBlockingActivitiesIndex>(x => x.ActivityType == activityType)
+                .ListAsync();
     }
 }

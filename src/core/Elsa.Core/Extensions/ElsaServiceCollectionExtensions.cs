@@ -14,6 +14,7 @@ using Elsa.Converters;
 using Elsa.Data.Extensions;
 using Elsa.Expressions;
 using Elsa.Extensions;
+using Elsa.HostedServices;
 using Elsa.Indexes;
 using Elsa.Mapping;
 using Elsa.Metadata;
@@ -25,6 +26,7 @@ using Elsa.Triggers;
 using Elsa.WorkflowProviders;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using NodaTime;
 using Rebus.ServiceProvider;
 
@@ -54,27 +56,27 @@ namespace Microsoft.Extensions.DependencyInjection
             return services;
         }
 
-        public static IServiceCollection AddActivity<T>(this IServiceCollection services)
-            where T : class, IActivity
-        {
-            return services
+        public static IServiceCollection AddActivity<T>(this IServiceCollection services) where T : class, IActivity =>
+            services
                 .AddTransient<T>()
                 .AddTransient<IActivity>(sp => sp.GetRequiredService<T>());
-        }
 
         public static IServiceCollection AddWorkflow<T>(this IServiceCollection services) where T : class, IWorkflow
         {
-            return services
-                .AddSingleton<T>()
-                .AddSingleton<IWorkflow>(sp => sp.GetRequiredService<T>());
+            services.TryAddSingleton<T>();
+            services.TryAddSingleton<IWorkflow>(sp => sp.GetRequiredService<T>());
+            return services;
         }
 
-        public static IServiceCollection AddWorkflow(this IServiceCollection services, IWorkflow workflow)
-        {
-            return services
+        public static IServiceCollection AddWorkflow(this IServiceCollection services, IWorkflow workflow) =>
+            services
                 .AddSingleton(workflow.GetType(), workflow)
                 .AddTransient(sp => workflow);
-        }
+
+        public static IServiceCollection StartWorkflow<T>(this IServiceCollection services) where T : class, IWorkflow =>
+            services
+                .AddWorkflow<T>()
+                .AddHostedService<StartWorkflow<T>>();
 
         private static IServiceCollection AddMediatR(this ElsaOptions options) => options.Services.AddMediatR(mediatr => mediatr.AsScoped(), typeof(IActivity));
 
@@ -96,7 +98,9 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddScoped<IExpressionEvaluator, ExpressionEvaluator>()
                 .AddScoped<IWorkflowRegistry, WorkflowRegistry>()
                 .AddSingleton<IWorkflowSchedulerQueue, WorkflowSchedulerQueue>()
+                .AddSingleton<IActivityActivator, ActivityActivator>()
                 .AddScoped<IWorkflowRunner, WorkflowRunner>()
+                .AddScoped<IWorkflowInterruptor, WorkflowInterruptor>()
                 .AddSingleton<IActivityDescriber, ActivityDescriber>()
                 .AddSingleton<IWorkflowFactory, WorkflowFactory>()
                 .AddSingleton<IActivityFactory, ActivityFactory>()
@@ -110,7 +114,6 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddIndexProvider<WorkflowDefinitionIndexProvider>()
                 .AddIndexProvider<WorkflowInstanceIndexProvider>()
                 .AddStartupRunner()
-                //.AddSingleton<IActivityActivator, ActivityActivator>()
                 .AddSingleton<IActivityTypeService, ActivityTypeService>()
                 .AddSingleton<IActivityTypeProvider, TypeBasedActivityProvider>()
                 .AddWorkflowProvider<ProgrammaticWorkflowProvider>()
