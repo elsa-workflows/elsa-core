@@ -24,7 +24,7 @@ namespace Elsa.Metadata
         {
             var browsableAttribute = activityType.GetCustomAttribute<BrowsableAttribute>();
             var isBrowsable = browsableAttribute == null || browsableAttribute.Browsable;
-            var activityAttribute = activityType.GetCustomAttribute<ActivityAttribute>();
+            var activityAttribute = activityType.GetCustomAttribute<ActivityAttribute>(false);
             var typeName = activityAttribute?.Type ?? activityType.Name;
             var displayName = activityAttribute?.DisplayName ?? activityType.Name.Humanize(LetterCasing.Title);
             var description = activityAttribute?.Description;
