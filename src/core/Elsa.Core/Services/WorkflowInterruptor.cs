@@ -1,7 +1,10 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Exceptions;
+using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Services.Models;
 
@@ -11,11 +14,13 @@ namespace Elsa.Services
     {
         private readonly IWorkflowRunner _workflowRunner;
         private readonly IWorkflowRegistry _workflowRegistry;
+        private readonly IWorkflowInstanceManager _workflowInstanceManager;
 
-        public WorkflowInterruptor(IWorkflowRunner workflowRunner, IWorkflowRegistry workflowRegistry)
+        public WorkflowInterruptor(IWorkflowRunner workflowRunner, IWorkflowRegistry workflowRegistry, IWorkflowInstanceManager workflowInstanceManager)
         {
             _workflowRunner = workflowRunner;
             _workflowRegistry = workflowRegistry;
+            _workflowInstanceManager = workflowInstanceManager;
         }
 
         public async Task<WorkflowInstance> InterruptActivityAsync(WorkflowInstance workflowInstance, string activityId, object? input, CancellationToken cancellationToken)
@@ -53,7 +58,18 @@ namespace Elsa.Services
             return await InterruptActivityTypeAsync(workflowBlueprint!, workflowInstance, activityType, input, cancellationToken);
         }
 
-        private async Task<IWorkflowBlueprint?> GetWorkflowBlueprintAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken) => 
+        public async Task<IEnumerable<WorkflowInstance>> InterruptActivityTypeAsync(string activityType, object? input, CancellationToken cancellationToken) =>
+            await InterruptActivityTypeInternalAsync(activityType, input, cancellationToken).ToListAsync(cancellationToken);
+
+        private async Task<IWorkflowBlueprint?> GetWorkflowBlueprintAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken) =>
             await _workflowRegistry.GetWorkflowAsync(workflowInstance.WorkflowDefinitionId, workflowInstance.TenantId, VersionOptions.SpecificVersion(workflowInstance.Version), cancellationToken);
+
+        private async IAsyncEnumerable<WorkflowInstance> InterruptActivityTypeInternalAsync(string activityType, object? input, [EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            var workflowInstances = await _workflowInstanceManager.ListByBlockingActivityTypeAsync(activityType, cancellationToken);
+
+            foreach (var workflowInstance in workflowInstances)
+                yield return await InterruptActivityTypeAsync(workflowInstance, activityType, input, cancellationToken);
+        }
     }
 }
