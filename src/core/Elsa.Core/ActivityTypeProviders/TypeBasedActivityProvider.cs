@@ -15,11 +15,13 @@ namespace Elsa.ActivityTypeProviders
     public class TypeBasedActivityProvider : IActivityTypeProvider
     {
         private readonly IActivityDescriber _activityDescriber;
+        private readonly IActivityActivator _activityActivator;
         private readonly Lazy<IDictionary<string, Type>> _lazyActivityTypeLookup;
 
-        public TypeBasedActivityProvider(IServiceProvider serviceProvider, IActivityDescriber activityDescriber)
+        public TypeBasedActivityProvider(IServiceProvider serviceProvider, IActivityDescriber activityDescriber, IActivityActivator activityActivator)
         {
             _activityDescriber = activityDescriber;
+            _activityActivator = activityActivator;
 
             _lazyActivityTypeLookup = new Lazy<IDictionary<string, Type>>(
                 () =>
@@ -63,13 +65,6 @@ namespace Elsa.ActivityTypeProviders
 
         private IEnumerable<Type> GetActivityTypes() => ActivityTypeLookup.Values.ToList();
 
-        private static async Task<IActivity> ActivateActivity(ActivityExecutionContext context, Type type)
-        {
-            var activity = (IActivity) ActivatorUtilities.GetServiceOrCreateInstance(context.ServiceScope.ServiceProvider, type);
-            activity.Data = context.ActivityInstance.Data;
-            activity.Id = context.ActivityInstance.Id;
-            await context.WorkflowExecutionContext.WorkflowBlueprint.ActivityPropertyProviders.SetActivityPropertiesAsync(activity, context, context.CancellationToken);
-            return activity;
-        }
+        private Task<IActivity> ActivateActivity(ActivityExecutionContext context, Type type) => _activityActivator.ActivateActivityAsync(context, type);
     }
 }

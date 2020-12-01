@@ -46,17 +46,23 @@ namespace Elsa.Indexes
 
             context.For<WorkflowInstanceBlockingActivitiesIndex>()
                 .Map(
-                    workflowInstance => workflowInstance.BlockingActivities
-                        .Select(
-                            activity => new WorkflowInstanceBlockingActivitiesIndex
-                            {
-                                ActivityId = activity.ActivityId,
-                                ActivityType = activity.ActivityType,
-                                CorrelationId = workflowInstance.CorrelationId,
-                                TenantId = workflowInstance.TenantId,
-                                WorkflowStatus = workflowInstance.Status,
-                                CreatedAt = workflowInstance.CreatedAt.ToDateTimeOffset()
-                            }));
+                    workflowInstance =>
+                    {
+                        if (workflowInstance.Status != WorkflowStatus.Suspended || !workflowInstance.BlockingActivities.Any())
+                            return default;
+                        
+                        return workflowInstance.BlockingActivities
+                            .Select(
+                                activity => new WorkflowInstanceBlockingActivitiesIndex
+                                {
+                                    ActivityId = activity.ActivityId,
+                                    ActivityType = activity.ActivityType,
+                                    CorrelationId = workflowInstance.CorrelationId,
+                                    TenantId = workflowInstance.TenantId,
+                                    WorkflowStatus = workflowInstance.Status,
+                                    CreatedAt = workflowInstance.CreatedAt.ToDateTimeOffset()
+                                });
+                    });
         }
     }
 }
