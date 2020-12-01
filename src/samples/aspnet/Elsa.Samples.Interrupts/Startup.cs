@@ -1,10 +1,10 @@
-using Elsa.Samples.CustomActivityTypeProviders.Activities;
-using Elsa.Samples.CustomActivityTypeProviders.Workflows;
+using Elsa.Samples.Interrupts.Activities;
+using Elsa.Samples.Interrupts.Workflows;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Samples.CustomActivityTypeProviders
+namespace Elsa.Samples.Interrupts
 {
     public class Startup
     {

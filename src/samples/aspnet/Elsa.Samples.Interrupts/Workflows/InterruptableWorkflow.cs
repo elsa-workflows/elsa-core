@@ -1,9 +1,9 @@
 ﻿using Elsa.Activities.Console;
 using Elsa.Builders;
-using Elsa.Samples.CustomActivityTypeProviders.Activities;
+using Elsa.Samples.Interrupts.Activities;
 using NodaTime;
 
-namespace Elsa.Samples.CustomActivityTypeProviders.Workflows
+namespace Elsa.Samples.Interrupts.Workflows
 {
     public class InterruptableWorkflow : IWorkflow
     {

@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 
-namespace Elsa.Samples.CustomActivityTypeProviders
+namespace Elsa.Samples.Interrupts
 {
     public class Program
     {

@@ -1,11 +1,11 @@
 ﻿using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Samples.CustomActivityTypeProviders.Activities;
+using Elsa.Samples.Interrupts.Activities;
 using Elsa.Services;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Elsa.Samples.CustomActivityTypeProviders.Endpoints
+namespace Elsa.Samples.Interrupts.Endpoints
 {
     [ApiController]
     [Route("wakeup")]

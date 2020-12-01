@@ -162,7 +162,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.WhileLoopWorke
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.CustomAttributesChildWorker", "src\samples\worker\Elsa.Samples.CustomAttributesChildWorker\Elsa.Samples.CustomAttributesChildWorker.csproj", "{AEA00027-F280-43A4-AC60-E2AF3014CF34}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.CustomActivityTypeProviders", "src\samples\aspnet\Elsa.Samples.CustomActivityTypeProviders\Elsa.Samples.CustomActivityTypeProviders.csproj", "{E0090EF3-C4A7-4262-9300-1D395BE25DD0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.Interrupts", "src\samples\aspnet\Elsa.Samples.Interrupts\Elsa.Samples.Interrupts.csproj", "{E0090EF3-C4A7-4262-9300-1D395BE25DD0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
