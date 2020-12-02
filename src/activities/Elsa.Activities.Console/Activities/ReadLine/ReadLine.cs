@@ -1,5 +1,4 @@
 using System.IO;
-using System.Threading;
 using System.Threading.Tasks;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
@@ -30,9 +29,7 @@ namespace Elsa.Activities.Console
             _input = input;
         }
 
-        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(
-            ActivityExecutionContext context,
-            CancellationToken cancellationToken)
+        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
             if (_input == null)
                 return Suspend();

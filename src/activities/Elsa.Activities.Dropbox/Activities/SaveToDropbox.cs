@@ -1,4 +1,3 @@
-using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Dropbox.Models;
 using Elsa.Activities.Dropbox.Services;
@@ -29,7 +28,7 @@ namespace Elsa.Activities.Dropbox.Activities
         [ActivityProperty(Hint = "An expression evaluating to the path to which the file should be saved.")]
         public string Path { get; set; } = default!;
 
-        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
             await _filesApi.UploadAsync(
                 new UploadRequest
@@ -41,7 +40,7 @@ namespace Elsa.Activities.Dropbox.Activities
                     Path = Path,
                 },
                 FileData,
-                cancellationToken
+                context.CancellationToken
             );
 
             return Done();

@@ -1,5 +1,4 @@
 ﻿using System;
-using Elsa.Metadata;
 using Elsa.Models;
 using Elsa.Server.Api.Extensions;
 using Elsa.Server.Api.Swagger;

@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
@@ -24,7 +23,7 @@ namespace Elsa.Activities.Rebus
         [ActivityProperty(Hint = "Optional headers to send along with the message.")]
         public IDictionary<string, string>? Headers { get; set; }
 
-        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
             await _bus.SendAsync(Message, Headers);
             return Done();

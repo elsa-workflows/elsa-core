@@ -1,4 +1,3 @@
-using System.Threading;
 using System.Threading.Tasks;
 using Elsa.ActivityResults;
 using Elsa.Services.Models;
@@ -56,16 +55,16 @@ namespace Elsa.Services
         /// <summary>
         /// Returns a value of whether the specified activity can execute.
         /// </summary>
-        ValueTask<bool> CanExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken = default);
+        ValueTask<bool> CanExecuteAsync(ActivityExecutionContext context);
 
         /// <summary>
         /// Executes the specified activity.
         /// </summary>
-        ValueTask<IActivityExecutionResult> ExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken = default);
+        ValueTask<IActivityExecutionResult> ExecuteAsync(ActivityExecutionContext context);
 
         /// <summary>
         /// Resumes the specified activity.
         /// </summary>
-        ValueTask<IActivityExecutionResult> ResumeAsync(ActivityExecutionContext context, CancellationToken cancellationToken = default);
+        ValueTask<IActivityExecutionResult> ResumeAsync(ActivityExecutionContext context);
     }
 }

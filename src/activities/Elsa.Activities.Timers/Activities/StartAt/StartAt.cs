@@ -1,4 +1,3 @@
-using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Timers.Services;
 using Elsa.ActivityResults;
@@ -37,11 +36,12 @@ namespace Elsa.Activities.Timers
             set => SetState(value);
         }
 
-        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
             if (context.WorkflowExecutionContext.IsFirstPass)
                 return Done();
 
+            var cancellationToken = context.CancellationToken;
             var workflowBlueprint = context.WorkflowExecutionContext.WorkflowBlueprint;
             var workflowInstance = context.WorkflowExecutionContext.WorkflowInstance;
             var executeAt = Instant;

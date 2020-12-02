@@ -1,4 +1,3 @@
-using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Email.Services;
 using Elsa.ActivityResults;
@@ -34,7 +33,7 @@ namespace Elsa.Activities.Email
         [WorkflowExpressionOptions(Multiline = true)]
         public string Body { get; set; }
 
-        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
             var message = new MimeMessage();
             
@@ -47,7 +46,7 @@ namespace Elsa.Activities.Email
             };
 
             message.To.Add(MailboxAddress.Parse(To));
-            await _smtpService.SendAsync(message, cancellationToken);
+            await _smtpService.SendAsync(message, context.CancellationToken);
 
             return Done();
         }

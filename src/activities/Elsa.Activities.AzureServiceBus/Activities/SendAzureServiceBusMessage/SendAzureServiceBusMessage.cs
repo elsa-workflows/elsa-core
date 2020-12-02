@@ -1,5 +1,4 @@
 ﻿using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.AzureServiceBus.Services;
 using Elsa.ActivityResults;
@@ -26,9 +25,9 @@ namespace Elsa.Activities.AzureServiceBus
         [ActivityProperty] public string QueueName { get; set; } = default!;
         [ActivityProperty] public object Message { get; set; } = default!;
 
-        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            var sender = await _messageSenderFactory.GetSenderAsync(QueueName, cancellationToken);
+            var sender = await _messageSenderFactory.GetSenderAsync(QueueName, context.CancellationToken);
             var json = _serializer.Serialize(Message);
             var bytes = Encoding.UTF8.GetBytes(json);
             var message = new Message(bytes);

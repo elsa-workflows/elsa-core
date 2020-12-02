@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using Elsa;
 using Elsa.Activities.ControlFlow;
 using Elsa.Activities.Primitives;
@@ -26,7 +25,6 @@ using Elsa.Triggers;
 using Elsa.WorkflowProviders;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Hosting;
 using NodaTime;
 using Rebus.ServiceProvider;
 

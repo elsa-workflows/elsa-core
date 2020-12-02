@@ -1,5 +1,4 @@
 using System.Net;
-using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Models;
 using Elsa.ActivityResults;
@@ -63,9 +62,7 @@ namespace Elsa.Activities.Http
         [ActivityProperty(Hint = "The headers to send along with the response.")]
         public HttpResponseHeaders? ResponseHeaders { get; set; }
 
-        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(
-            ActivityExecutionContext context,
-            CancellationToken cancellationToken)
+        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
             var response = _httpContextAccessor.HttpContext.Response;
 
@@ -86,7 +83,7 @@ namespace Elsa.Activities.Http
             var bodyText = Content;
 
             if (!string.IsNullOrWhiteSpace(bodyText))
-                await response.WriteAsync(bodyText, cancellationToken);
+                await response.WriteAsync(bodyText, context.CancellationToken);
 
             return Done();
         }

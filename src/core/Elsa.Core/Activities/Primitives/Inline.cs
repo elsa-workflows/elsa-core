@@ -1,6 +1,5 @@
 ﻿using System;
 using System.ComponentModel;
-using System.Threading;
 using System.Threading.Tasks;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
@@ -20,6 +19,6 @@ namespace Elsa.Activities.Primitives
         [ActivityProperty]
         public Func<ActivityExecutionContext, ValueTask<IActivityExecutionResult>> Function { get; set; }
         
-        protected override ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken) => Function(context);
+        protected override ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context) => Function(context);
     }
 }

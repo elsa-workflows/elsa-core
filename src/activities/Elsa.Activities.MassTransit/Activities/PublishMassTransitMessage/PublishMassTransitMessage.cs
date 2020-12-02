@@ -1,4 +1,3 @@
-using System.Threading;
 using System.Threading.Tasks;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
@@ -24,9 +23,9 @@ namespace Elsa.Activities.MassTransit
 
         protected override bool OnCanExecute(ActivityExecutionContext context) => Message != null;
 
-        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            await PublishEndpoint.Publish(Message!, cancellationToken);
+            await PublishEndpoint.Publish(Message!, context.CancellationToken);
 
             return Done();
         }

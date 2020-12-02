@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using System.Threading;
 using System.Threading.Tasks;
 using Elsa.ActivityResults;
 using Elsa.Models;
@@ -22,12 +21,12 @@ namespace Elsa.Services
         public bool LoadWorkflowContext { get; set; }
         public bool SaveWorkflowContext { get; set; }
         public JObject Data { get; set; } = new();
-        public ValueTask<bool> CanExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken) => OnCanExecuteAsync(context, cancellationToken);
-        public ValueTask<IActivityExecutionResult> ExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken) => OnExecuteAsync(context, cancellationToken);
-        public ValueTask<IActivityExecutionResult> ResumeAsync(ActivityExecutionContext context, CancellationToken cancellationToken) => OnResumeAsync(context, cancellationToken);
-        protected virtual ValueTask<bool> OnCanExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken) => new(OnCanExecute(context));
-        protected virtual ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken) => new(OnExecute(context));
-        protected virtual ValueTask<IActivityExecutionResult> OnResumeAsync(ActivityExecutionContext context, CancellationToken cancellationToken) => new(OnResume(context));
+        public ValueTask<bool> CanExecuteAsync(ActivityExecutionContext context) => OnCanExecuteAsync(context);
+        public ValueTask<IActivityExecutionResult> ExecuteAsync(ActivityExecutionContext context) => OnExecuteAsync(context);
+        public ValueTask<IActivityExecutionResult> ResumeAsync(ActivityExecutionContext context) => OnResumeAsync(context);
+        protected virtual ValueTask<bool> OnCanExecuteAsync(ActivityExecutionContext context) => new(OnCanExecute(context));
+        protected virtual ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context) => new(OnExecute(context));
+        protected virtual ValueTask<IActivityExecutionResult> OnResumeAsync(ActivityExecutionContext context) => new(OnResume(context));
         protected virtual bool OnCanExecute(ActivityExecutionContext context) => true;
         protected virtual IActivityExecutionResult OnExecute(ActivityExecutionContext context) => OnExecute();
         protected virtual IActivityExecutionResult OnExecute() => Done();

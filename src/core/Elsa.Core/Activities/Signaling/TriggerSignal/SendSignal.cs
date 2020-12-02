@@ -1,4 +1,3 @@
-using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Signaling.Services;
 using Elsa.ActivityResults;
@@ -35,9 +34,9 @@ namespace Elsa.Activities.Signaling
         [ActivityProperty(Hint = "An expression that evaluates to an input value when triggering the signal.")]
         public object? Input { get; set; }
 
-        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context, CancellationToken cancellationToken)
+        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            await _signaler.SendSignalAsync(Signal, Input, CorrelationId, cancellationToken);
+            await _signaler.SendSignalAsync(Signal, Input, CorrelationId, context.CancellationToken);
             return Done();
         }
     }

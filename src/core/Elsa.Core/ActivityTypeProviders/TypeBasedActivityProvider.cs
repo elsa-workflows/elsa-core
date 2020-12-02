@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.ActivityProviders;
@@ -48,17 +47,17 @@ namespace Elsa.ActivityTypeProviders
                 CanExecuteAsync = async context =>
                 {
                     var instance = await ActivateActivity(context, activityType);
-                    return await instance.CanExecuteAsync(context, context.CancellationToken);
+                    return await instance.CanExecuteAsync(context);
                 },
                 ExecuteAsync = async context =>
                 {
                     var instance = await ActivateActivity(context, activityType);
-                    return await instance.ExecuteAsync(context, context.CancellationToken);
+                    return await instance.ExecuteAsync(context);
                 },
                 ResumeAsync = async context =>
                 {
                     var instance = await ActivateActivity(context, activityType);
-                    return await instance.ResumeAsync(context, context.CancellationToken);
+                    return await instance.ResumeAsync(context);
                 }
             };
         }
