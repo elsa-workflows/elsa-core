@@ -72,7 +72,7 @@ namespace Elsa.Activities.ControlFlow
             return Done();
         }
 
-        private async Task RecordInboundTransitionsAsync(ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
+        private void RecordInboundTransitionsAsync(ActivityExecutionContext activityExecutionContext)
         {
             var workflowExecutionContext = activityExecutionContext.WorkflowExecutionContext;
             var activityInstance = activityExecutionContext.ActivityInstance;
@@ -117,9 +117,10 @@ namespace Elsa.Activities.ControlFlow
             return $"@{sourceActivityId}_{sourceOutcomeName}";
         }
 
-        public async Task Handle(ActivityExecuted notification, CancellationToken cancellationToken)
+        public Task Handle(ActivityExecuted notification, CancellationToken cancellationToken)
         {
-            await RecordInboundTransitionsAsync(notification.ActivityExecutionContext, cancellationToken);
+            RecordInboundTransitionsAsync(notification.ActivityExecutionContext);
+            return Task.CompletedTask;
         }
     }
 }

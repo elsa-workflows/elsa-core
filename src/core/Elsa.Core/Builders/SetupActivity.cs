@@ -13,7 +13,7 @@ namespace Elsa.Builders
         public IDictionary<string, Func<ActivityExecutionContext, ValueTask<object?>>> ValueProviders { get; } =
             new Dictionary<string, Func<ActivityExecutionContext, ValueTask<object?>>>();
 
-        public ISetupActivity<T> Set<TProperty>(Expression<Func<T, TProperty>> propertyAccessor,
+        public ISetupActivity<T> Set<TProperty>(Expression<Func<T, TProperty?>> propertyAccessor,
             Func<ActivityExecutionContext, ValueTask<TProperty?>> valueFactory)
         {
             var propertyInfo = propertyAccessor.GetProperty()!;

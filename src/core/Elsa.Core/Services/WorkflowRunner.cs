@@ -66,7 +66,7 @@ namespace Elsa.Services
                 if (result.WorkflowInstanceId != null)
                 {
                     var workflowInstance = await _workflowInstanceManager.GetByIdAsync(result.WorkflowInstanceId, cancellationToken);
-                    await RunWorkflowAsync(result.WorkflowBlueprint, workflowInstance, result.ActivityId, input, cancellationToken);
+                    await RunWorkflowAsync(result.WorkflowBlueprint, workflowInstance!, result.ActivityId, input, cancellationToken);
                 }
                 else
                     await RunWorkflowAsync(result.WorkflowBlueprint, result.ActivityId, input, correlationId, contextId, cancellationToken);
