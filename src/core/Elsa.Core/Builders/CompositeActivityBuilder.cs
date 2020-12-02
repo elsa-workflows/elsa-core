@@ -85,7 +85,7 @@ namespace Elsa.Builders
             where T : class, IActivity
         {
             var activityBuilder = new ActivityBuilder(typeof(T), this, propertyValueProviders);
-            return Add(activityBuilder);
+            return Add(activityBuilder, branch);
         }
 
         public IActivityBuilder Add(

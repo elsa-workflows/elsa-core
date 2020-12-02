@@ -23,7 +23,7 @@ namespace Elsa.Samples.ProgrammaticCompositeActivitiesConsole
             await startupRunner.StartupAsync();
             
             // Get a workflow host.
-            var workflowRunner = services.GetService<IWorkflowRunner>();
+            var workflowRunner = services.GetRequiredService<IWorkflowRunner>();
 
             // Execute the workflow.
             await workflowRunner.RunWorkflowAsync<CompositionWorkflow>();

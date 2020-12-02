@@ -16,18 +16,18 @@ namespace Elsa.ActivityResults
 
             Outcomes = outcomeList;
         }
-
-        public IReadOnlyCollection<string> Outcomes { get; }
+        
+        public IEnumerable<string> Outcomes { get; }
 
         protected override void Execute(ActivityExecutionContext activityExecutionContext)
         {
-            activityExecutionContext.Outcomes = Outcomes.ToList();
-
+            var outcomes = activityExecutionContext.Outcomes = Outcomes.ToList();
             var workflowExecutionContext = activityExecutionContext.WorkflowExecutionContext;
+            
             var nextActivities = GetNextActivities(
                 workflowExecutionContext,
                 activityExecutionContext.ActivityBlueprint.Id,
-                Outcomes).ToList();
+                outcomes).ToList();
 
             workflowExecutionContext.ScheduleActivities(nextActivities, activityExecutionContext.Output);
         }

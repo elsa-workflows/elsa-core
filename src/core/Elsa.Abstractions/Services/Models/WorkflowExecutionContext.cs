@@ -89,11 +89,7 @@ namespace Elsa.Services.Models
             WorkflowFault = new WorkflowFault(activityId, message);
         }
 
-        public void Complete(object? output = default)
-        {
-            WorkflowInstance.Status = WorkflowStatus.Finished;
-            WorkflowInstance.Output = output;
-        }
+        public void Complete() => WorkflowInstance.Status = WorkflowStatus.Finished;
 
         public IActivityBlueprint? GetActivityBlueprintById(string id) => WorkflowBlueprint.Activities.FirstOrDefault(x => x.Id == id);
         public IActivityBlueprint? GetActivityBlueprintByName(string name) => WorkflowBlueprint.Activities.FirstOrDefault(x => x.Name == name);

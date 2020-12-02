@@ -11,11 +11,24 @@ namespace Elsa.Services
         {
         }
 
+        private bool IsScheduled
+        {
+            get => GetState<bool>();
+            set => SetState(value);
+        }
+
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
+            if (IsScheduled)
+                return Complete(context);
+            
             var compositeActivityBlueprint = (ICompositeActivityBlueprint)context.ActivityBlueprint;
             var startActivities = compositeActivityBlueprint.GetStartActivities().Select(x => x.Id).ToList();
-            return Combine(Done(), Schedule(startActivities, null!));
+            context.WorkflowExecutionContext.PostScheduleActivity(Id);
+            IsScheduled = true;
+            return Schedule(startActivities, null!);
         }
+
+        protected virtual IActivityExecutionResult Complete(ActivityExecutionContext context) => Done();
     }
 }

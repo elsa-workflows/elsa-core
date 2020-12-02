@@ -280,6 +280,7 @@ namespace Elsa.Services
                 await _mediator.Publish(new ActivityExecuting(activityExecutionContext), cancellationToken);
                 await result.ExecuteAsync(activityExecutionContext, cancellationToken);
                 await _mediator.Publish(new ActivityExecuted(activityExecutionContext), cancellationToken);
+                workflowExecutionContext.WorkflowInstance.Output = activityExecutionContext.Output;
                 workflowExecutionContext.WorkflowInstance.ContextId = await SaveWorkflowContextAsync(workflowExecutionContext, WorkflowContextFidelity.Activity, activityBlueprint.SaveWorkflowContext, cancellationToken);
 
                 activityOperation = Execute;
