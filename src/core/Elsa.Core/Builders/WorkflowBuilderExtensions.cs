@@ -8,8 +8,7 @@ namespace Elsa.Builders
 {
     public static class WorkflowBuilderExtensions
     {
-        public static IActivityBuilder StartWith(this IWorkflowBuilder builder, Action action) =>
-            builder.StartWith<Inline>(inline => inline.Set(x => x.Function, RunInline(action)));
+        public static IActivityBuilder StartWith(this ICompositeActivityBuilder builder, Action action) => builder.StartWith<Inline>(inline => inline.Set(x => x.Function, RunInline(action)));
 
         public static IActivityBuilder
             StartWith(this IWorkflowBuilder builder, Action<ActivityExecutionContext> action) =>
@@ -25,7 +24,7 @@ namespace Elsa.Builders
             Func<ActivityExecutionContext, ValueTask<IActivityExecutionResult>> action) =>
             builder.StartWith<Inline>(inline => inline.Set(x => x.Function, RunInline(action)));
 
-        public static IActivityBuilder SetVariable(this IWorkflowBuilder builder, string variableName, object? value) =>
+        public static IActivityBuilder SetVariable(this ICompositeActivityBuilder builder, string variableName, object? value) =>
             builder.StartWith<SetVariable>(
                 activity =>
                 {
@@ -34,9 +33,10 @@ namespace Elsa.Builders
                 });
 
         public static IActivityBuilder SetVariable(
-            this IWorkflowBuilder builder,
+            this ICompositeActivityBuilder builder,
             string variableName,
-            Func<object?> value) => builder.SetVariable(variableName, value());
+            Func<object?> value) =>
+            builder.SetVariable(variableName, value());
 
         private static Func<ActivityExecutionContext, ValueTask<IActivityExecutionResult>> RunInline(Action action) =>
             context =>
