@@ -15,23 +15,18 @@ namespace Elsa.ActivityTypeProviders
     {
         private readonly IActivityDescriber _activityDescriber;
         private readonly IActivityActivator _activityActivator;
-        private readonly Lazy<IDictionary<string, Type>> _lazyActivityTypeLookup;
+        private readonly IDictionary<string, Type> _activityTypeLookup;
 
         public TypeBasedActivityProvider(IServiceProvider serviceProvider, IActivityDescriber activityDescriber, IActivityActivator activityActivator)
         {
             _activityDescriber = activityDescriber;
             _activityActivator = activityActivator;
 
-            _lazyActivityTypeLookup = new Lazy<IDictionary<string, Type>>(
-                () =>
-                {
-                    using var scope = serviceProvider.CreateScope();
-                    var activities = scope.ServiceProvider.GetServices<IActivity>();
-                    return activities.Select(x => x.GetType()).Distinct().ToDictionary(x => x.Name);
-                });
+            using var scope = serviceProvider.CreateScope();
+            var activities = scope.ServiceProvider.GetServices<IActivity>();
+            _activityTypeLookup = activities.Select(x => x.GetType()).Distinct().ToDictionary(x => x.Name);
         }
-
-        private IDictionary<string, Type> ActivityTypeLookup => _lazyActivityTypeLookup.Value;
+        
         public ValueTask<IEnumerable<ActivityType>> GetActivityTypesAsync(CancellationToken cancellationToken) => new(GetActivityTypesInternal());
         private IEnumerable<ActivityType> GetActivityTypesInternal() => GetActivityTypes().Select(CreateActivityType);
 
@@ -62,7 +57,7 @@ namespace Elsa.ActivityTypeProviders
             };
         }
 
-        private IEnumerable<Type> GetActivityTypes() => ActivityTypeLookup.Values.ToList();
+        private IEnumerable<Type> GetActivityTypes() => _activityTypeLookup.Values.ToList();
 
         private Task<IActivity> ActivateActivity(ActivityExecutionContext context, Type type) => _activityActivator.ActivateActivityAsync(context, type);
     }
