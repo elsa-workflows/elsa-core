@@ -25,11 +25,20 @@ namespace Elsa.Services.Models
         {
         }
 
-        public async ValueTask<T> GetPropertyValueAsync<T>(Expression<Func<TActivity, T>> propertyExpression, CancellationToken cancellationToken = default)
+        public async ValueTask<T?> GetPropertyValueAsync<T>(Expression<Func<TActivity, T>> propertyExpression, CancellationToken cancellationToken = default)
         {
             var workflowBlueprint = ActivityExecutionContext.WorkflowExecutionContext.WorkflowBlueprint;
             var activityId = ActivityExecutionContext.ActivityBlueprint.Id;
-            return await workflowBlueprint.GetActivityPropertyValue(activityId, propertyExpression, ActivityExecutionContext, cancellationToken);
+
+            // Computed property setters that depend on actual workflow state might fault, since we are using a fake activity execution context.
+            try
+            {
+                return await workflowBlueprint.GetActivityPropertyValue(activityId, propertyExpression, ActivityExecutionContext, cancellationToken);
+            }
+            catch (Exception e)
+            {
+                return default;
+            }
         }
 
         public T? GetState<T>(Expression<Func<TActivity, T>> propertyExpression)

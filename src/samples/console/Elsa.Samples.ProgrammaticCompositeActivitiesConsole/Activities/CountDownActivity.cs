@@ -17,11 +17,14 @@ namespace Elsa.Samples.ProgrammaticCompositeActivitiesConsole.Activities
         public override void Build(ICompositeActivityBuilder composite)
         {
             composite
-                .WriteLine("Turn left or right?")
+                .StartWith(GetInstructions)
+                .WriteLine(context => (string)context.Input)
                 .ReadLine()
                 .Finish(context => (string) context.Input);
         }
 
         protected override IActivityExecutionResult Complete(ActivityExecutionContext context) => Outcome(((string) context.WorkflowExecutionContext.WorkflowInstance.Output)!);
+        
+        private static void GetInstructions(ActivityExecutionContext context) => context.Output = "Turn left or right?";
     }
 }
