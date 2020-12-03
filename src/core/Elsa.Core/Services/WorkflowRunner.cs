@@ -271,8 +271,11 @@ namespace Elsa.Services
                 var currentActivityId = scheduledActivity.ActivityId;
                 var activityBlueprint = workflowBlueprint.GetActivity(currentActivityId)!;
 
-                if (workflowBlueprint.ContextOptions?.ContextFidelity == WorkflowContextFidelity.Activity || activityBlueprint.LoadWorkflowContext)
+                if (workflowBlueprint.ContextOptions?.ContextFidelity == WorkflowContextFidelity.Activity || activityBlueprint.LoadWorkflowContext || workflowExecutionContext.ContextHasChanged)
+                {
                     workflowExecutionContext.WorkflowContext = await LoadWorkflowContextAsync(workflowExecutionContext, WorkflowContextFidelity.Activity, activityBlueprint.LoadWorkflowContext, cancellationToken);
+                    workflowExecutionContext.ContextHasChanged = false;
+                }
 
                 var activityExecutionContext = new ActivityExecutionContext(scope, workflowExecutionContext, activityBlueprint, scheduledActivity.Input, cancellationToken);
                 var activity = await activityExecutionContext.ActivateActivityAsync(cancellationToken);

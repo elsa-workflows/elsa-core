@@ -19,7 +19,9 @@ namespace Elsa.Activities.Primitives
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
+            var originalContextId = context.WorkflowExecutionContext.WorkflowInstance.ContextId;
             context.WorkflowExecutionContext.WorkflowInstance.ContextId = ContextId;
+            context.WorkflowExecutionContext.ContextHasChanged = ContextId != originalContextId;
             return Done();
         }
     }

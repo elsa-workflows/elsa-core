@@ -36,6 +36,7 @@ namespace Elsa.Services.Models
         public bool HasPostScheduledActivities => WorkflowInstance.PostScheduledActivities.Any();
         public IWorkflowFault? WorkflowFault { get; private set; }
         public bool IsFirstPass { get; private set; }
+        public bool ContextHasChanged { get; set; }
 
         public void ScheduleActivities(IEnumerable<string> activityIds, object? input = default)
         {
