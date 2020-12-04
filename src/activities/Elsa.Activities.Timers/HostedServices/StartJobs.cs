@@ -48,7 +48,7 @@ namespace Elsa.Activities.Timers.HostedServices
         
         private async Task ScheduleStartAtWorkflowsAsync(IServiceScope serviceScope, IEnumerable<IWorkflowBlueprint> workflows, IWorkflowSelector workflowSelector, CancellationToken cancellationToken)
         {
-            // Schedule workflow blueprints that start with a run-at event.
+            // Schedule workflow blueprints that start with a run-at.
             var runAtWorkflows =
                 from workflow in workflows
                 from activity in workflow.GetStartActivities<StartAt>()
@@ -59,13 +59,13 @@ namespace Elsa.Activities.Timers.HostedServices
                 var workflow = runAtWorkflow.workflow;
                 var activity = runAtWorkflow.activity;
                 var workflowWrapper = await _workflowBlueprintReflector.ReflectAsync(serviceScope, workflow, cancellationToken);
-                var timerEventWrapper = workflowWrapper.GetActivity<StartAt>(activity.Id);
-                var startAt = await timerEventWrapper.GetPropertyValueAsync(x => x.Instant, cancellationToken);
+                var timerWrapper = workflowWrapper.GetActivity<StartAt>(activity.Id);
+                var startAt = await timerWrapper.GetPropertyValueAsync(x => x.Instant, cancellationToken);
 
                 await _workflowScheduler.ScheduleWorkflowAsync(workflow, activity.Id, startAt, cancellationToken);
             }
 
-            // Schedule workflow instances that are blocked on a start-at event.
+            // Schedule workflow instances that are blocked on a start-at.
             var startAtTriggers = await workflowSelector.SelectWorkflowsAsync<StartAtTrigger>(x => true, cancellationToken);
 
             foreach (var result in startAtTriggers)
@@ -78,7 +78,7 @@ namespace Elsa.Activities.Timers.HostedServices
 
         private async Task ScheduleTimerEventWorkflowsAsync(IServiceScope serviceScope, IEnumerable<IWorkflowBlueprint> workflows, IWorkflowSelector workflowSelector, CancellationToken cancellationToken)
         {
-            // Schedule workflow blueprints that start with a timer event.
+            // Schedule workflow blueprints that start with a timer.
             var timerWorkflows =
                 from workflow in workflows
                 from activity in workflow.GetStartActivities<Timer>()
@@ -98,7 +98,7 @@ namespace Elsa.Activities.Timers.HostedServices
                 await _workflowScheduler.ScheduleWorkflowAsync(workflow, activity.Id, startAt, timeOut, cancellationToken);
             }
 
-            // Schedule workflow instances that are blocked on a timer event.
+            // Schedule workflow instances that are blocked on a timer.
             var timerEventTriggers = await workflowSelector.SelectWorkflowsAsync<TimerTrigger>(x => true, cancellationToken);
 
             foreach (var result in timerEventTriggers)
@@ -111,7 +111,7 @@ namespace Elsa.Activities.Timers.HostedServices
         
         private async Task ScheduleCronEventWorkflowsAsync(IServiceScope serviceScope, IEnumerable<IWorkflowBlueprint> workflows, IWorkflowSelector workflowSelector, CancellationToken cancellationToken)
         {
-            // Schedule workflow blueprints starting with a cron event.
+            // Schedule workflow blueprints starting with a cron.
             var cronWorkflows =
                 from workflow in workflows
                 from activity in workflow.GetStartActivities<Cron>()
