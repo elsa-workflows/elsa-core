@@ -114,7 +114,7 @@ namespace Elsa.Activities.Timers.HostedServices
             // Schedule workflow blueprints starting with a cron event.
             var cronWorkflows =
                 from workflow in workflows
-                from activity in workflow.GetStartActivities<CronEvent>()
+                from activity in workflow.GetStartActivities<Cron>()
                 select (workflow, activity);
 
             foreach (var cronWorkflow in cronWorkflows)
@@ -122,7 +122,7 @@ namespace Elsa.Activities.Timers.HostedServices
                 var workflow = cronWorkflow.workflow;
                 var activity = cronWorkflow.activity;
                 var workflowWrapper = await _workflowBlueprintReflector.ReflectAsync(serviceScope, workflow, cancellationToken);
-                var timerEventWrapper = workflowWrapper.GetActivity<CronEvent>(activity.Id);
+                var timerEventWrapper = workflowWrapper.GetActivity<Cron>(activity.Id);
                 var cronExpression = await timerEventWrapper.GetPropertyValueAsync(x => x.CronExpression, cancellationToken);
 
                 await _workflowScheduler.ScheduleWorkflowAsync(workflow, activity.Id, cronExpression, cancellationToken);

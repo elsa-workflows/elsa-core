@@ -14,13 +14,13 @@ namespace Elsa.Activities.Timers
         Description = "Triggers periodically based on a specified CRON expression.",
         Outcomes = new[] { OutcomeNames.Done }
     )]
-    public class CronEvent : Activity
+    public class Cron : Activity
     {
         private readonly IClock _clock;
         private readonly IWorkflowInstanceManager _workflowInstanceManager;
         private readonly IWorkflowScheduler _workflowScheduler;
 
-        public CronEvent(IClock clock, IWorkflowInstanceManager workflowInstanceManager, IWorkflowScheduler workflowScheduler)
+        public Cron(IClock clock, IWorkflowInstanceManager workflowInstanceManager, IWorkflowScheduler workflowScheduler)
         {
             _clock = clock;
             _workflowInstanceManager = workflowInstanceManager;

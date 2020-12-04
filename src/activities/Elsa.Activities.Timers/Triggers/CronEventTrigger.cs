@@ -9,9 +9,9 @@ namespace Elsa.Activities.Timers.Triggers
         public Instant ExecuteAt { get; set; }
     }
     
-    public class CronEventTriggerProvider : TriggerProvider<CronEventTrigger, CronEvent>
+    public class CronEventTriggerProvider : TriggerProvider<CronEventTrigger, Cron>
     {
-        public override ITrigger GetTrigger(TriggerProviderContext<CronEvent> context)
+        public override ITrigger GetTrigger(TriggerProviderContext<Cron> context)
         {
             var executeAt = context.Activity.GetState(x => x.ExecuteAt);
 
