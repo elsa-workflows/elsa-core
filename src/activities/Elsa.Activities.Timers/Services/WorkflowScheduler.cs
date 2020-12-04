@@ -41,13 +41,20 @@ namespace Elsa.Activities.Timers.Services
 
         public async Task ScheduleWorkflowAsync(IWorkflowBlueprint workflowBlueprint, string workflowInstanceId, string activityId, Instant startAt, CancellationToken cancellationToken = default)
         {
-            var trigger = CreateTrigger(workflowBlueprint, activityId, workflowInstanceId).StartAt(startAt.ToDateTimeOffset()).Build();
+            var trigger = CreateTrigger(workflowBlueprint, activityId, workflowInstanceId)
+                .StartAt(startAt.ToDateTimeOffset()).Build();
+            
             await ScheduleJob(trigger, cancellationToken);
         }
 
         private async Task ScheduleJob(ITrigger trigger, CancellationToken cancellationToken)
         {
             var scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
+            var existingTrigger = await scheduler.GetTrigger(trigger.Key, cancellationToken);
+
+            if (existingTrigger != null) 
+                await scheduler.UnscheduleJob(existingTrigger.Key, cancellationToken);
+
             await scheduler.ScheduleJob(trigger, cancellationToken);
         }
 
