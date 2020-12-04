@@ -40,7 +40,7 @@
       <PackageReference Include="System.Linq.Async" Version="5.0.0" />
       <PackageReference Include="System.Text.Json" Version="5.0.0" />
       <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.4" />
-      <PackageReference Include="YesSql.Abstractions" Version="2.0.0-beta-1583" />
+      <PackageReference Include="YesSql.Abstractions" Version="2.0.0-beta-1620" />
     </ItemGroup>
 
 </Project>
