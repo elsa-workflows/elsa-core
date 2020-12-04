@@ -1,5 +1,4 @@
-using System.Threading.Tasks;
-using Elsa.Activities.Timers.Services;
+using Elsa.Activities.Timers.ActivityResults;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Services;
@@ -12,14 +11,10 @@ namespace Elsa.Activities.Timers
     [Trigger(Category = "Timers", Description = "Triggers at a specified interval.")]
     public class Timer : Activity
     {
-        private readonly IWorkflowInstanceManager _workflowInstanceManager;
-        private readonly IWorkflowScheduler _workflowScheduler;
         private readonly IClock _clock;
 
-        public Timer(IWorkflowInstanceManager workflowInstanceManager, IWorkflowScheduler workflowScheduler, IClock clock)
+        public Timer(IClock clock)
         {
-            _workflowInstanceManager = workflowInstanceManager;
-            _workflowScheduler = workflowScheduler;
             _clock = clock;
         }
 
@@ -32,22 +27,14 @@ namespace Elsa.Activities.Timers
             set => SetState(value);
         }
 
-        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
+        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
             if (context.WorkflowExecutionContext.IsFirstPass)
                 return Done();
             
-            var cancellationToken = context.CancellationToken;
-            var workflowBlueprint = context.WorkflowExecutionContext.WorkflowBlueprint;
-            var workflowInstance = context.WorkflowExecutionContext.WorkflowInstance;
-            var executeAt = _clock.GetCurrentInstant().Plus(Timeout);
-            
-            ExecuteAt = executeAt;
+            ExecuteAt = _clock.GetCurrentInstant().Plus(Timeout);
 
-            await _workflowInstanceManager.SaveAsync(context.WorkflowExecutionContext.WorkflowInstance, cancellationToken);
-            await _workflowScheduler.ScheduleWorkflowAsync(workflowBlueprint, workflowInstance.WorkflowInstanceId, Id, executeAt, cancellationToken);
-
-            return Suspend();
+            return Combine(Suspend(), new ScheduleWorkflowResult(ExecuteAt.Value));
         }
 
         protected override IActivityExecutionResult OnResume() => Done();
