@@ -26,7 +26,7 @@ namespace Elsa.Services
             var startActivities = compositeActivityBlueprint.GetStartActivities().Select(x => x.Id).ToList();
             context.WorkflowExecutionContext.PostScheduleActivity(Id);
             IsScheduled = true;
-            return Schedule(startActivities, null!);
+            return Schedule(startActivities, context.Input);
         }
 
         protected virtual IActivityExecutionResult Complete(ActivityExecutionContext context) => Done();
