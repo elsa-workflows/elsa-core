@@ -99,11 +99,11 @@ namespace Elsa.Activities.Timers.HostedServices
             }
 
             // Schedule workflow instances that are blocked on a timer event.
-            var timerEventTriggers = await workflowSelector.SelectWorkflowsAsync<TimerEventTrigger>(x => true, cancellationToken);
+            var timerEventTriggers = await workflowSelector.SelectWorkflowsAsync<TimerTrigger>(x => true, cancellationToken);
 
             foreach (var result in timerEventTriggers)
             {
-                var trigger = (TimerEventTrigger) result.Trigger;
+                var trigger = (TimerTrigger) result.Trigger;
                 var activity = result.WorkflowBlueprint.GetActivity(result.ActivityId)!;
                 await _workflowScheduler.ScheduleWorkflowAsync(result.WorkflowBlueprint, result.WorkflowInstanceId!, activity.Id, trigger.ExecuteAt, cancellationToken);
             }
@@ -129,11 +129,11 @@ namespace Elsa.Activities.Timers.HostedServices
             }
 
             // Schedule workflow instances blocked on a cron event.
-            var cronEventTriggers = await workflowSelector.SelectWorkflowsAsync<CronEventTrigger>(x => true, cancellationToken);
+            var cronEventTriggers = await workflowSelector.SelectWorkflowsAsync<CronTrigger>(x => true, cancellationToken);
 
             foreach (var result in cronEventTriggers)
             {
-                var trigger = (CronEventTrigger) result.Trigger;
+                var trigger = (CronTrigger) result.Trigger;
                 var activity = result.WorkflowBlueprint.GetActivity(result.ActivityId)!;
                 await _workflowScheduler.ScheduleWorkflowAsync(result.WorkflowBlueprint, result.WorkflowInstanceId!, activity.Id, trigger.ExecuteAt, cancellationToken);
             }

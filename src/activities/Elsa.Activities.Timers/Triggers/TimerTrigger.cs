@@ -4,21 +4,21 @@ using NodaTime;
 
 namespace Elsa.Activities.Timers.Triggers
 {
-    public class CronEventTrigger : Trigger
+    public class TimerTrigger : Trigger
     {
         public Instant ExecuteAt { get; set; }
     }
-    
-    public class CronEventTriggerProvider : TriggerProvider<CronEventTrigger, Cron>
+
+    public class TimerTriggerProvider : TriggerProvider<TimerTrigger, Timer>
     {
-        public override ITrigger GetTrigger(TriggerProviderContext<Cron> context)
+        public override ITrigger GetTrigger(TriggerProviderContext<Timer> context)
         {
             var executeAt = context.Activity.GetState(x => x.ExecuteAt);
 
             if (executeAt == null || context.ActivityExecutionContext.WorkflowExecutionContext.WorkflowInstance.Status != WorkflowStatus.Suspended)
                 return NullTrigger.Instance;
 
-            return new CronEventTrigger
+            return new TimerTrigger
             {
                 ExecuteAt = executeAt.Value,
             };
