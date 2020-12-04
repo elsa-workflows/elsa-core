@@ -30,7 +30,7 @@ namespace Elsa.Samples.WhileLoopWorker.Workflows
                         @while
                             .WriteLine("Ringgggg ringgg.")
                             .WriteLine(() => $"Call status: {_phoneCallService.CallStatus}")
-                            .TimerEvent(Duration.FromSeconds(5))
+                            .Timer(Duration.FromSeconds(5))
                             .Then(() => _phoneCallService.Progress());
 
                     })

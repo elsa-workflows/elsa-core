@@ -10,13 +10,13 @@ using NodaTime;
 namespace Elsa.Activities.Timers
 {
     [Trigger(Category = "Timers", Description = "Triggers at a specified interval.")]
-    public class TimerEvent : Activity
+    public class Timer : Activity
     {
         private readonly IWorkflowInstanceManager _workflowInstanceManager;
         private readonly IWorkflowScheduler _workflowScheduler;
         private readonly IClock _clock;
 
-        public TimerEvent(IWorkflowInstanceManager workflowInstanceManager, IWorkflowScheduler workflowScheduler, IClock clock)
+        public Timer(IWorkflowInstanceManager workflowInstanceManager, IWorkflowScheduler workflowScheduler, IClock clock)
         {
             _workflowInstanceManager = workflowInstanceManager;
             _workflowScheduler = workflowScheduler;

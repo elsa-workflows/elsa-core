@@ -32,7 +32,7 @@ namespace Elsa.Samples.ForkJoinTimerAndSignalHttp.Workflows
                     {
                         fork
                             .When("Timer")
-                            .TimerEvent(_timeOut)
+                            .Timer(_timeOut)
                             .SetVariable("CompletedVia", "Timer")
                             .Then("Join");
 

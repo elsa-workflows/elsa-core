@@ -22,7 +22,7 @@ namespace Elsa.Samples.RebusWorker.Workflows
         public void Build(IWorkflowBuilder workflow)
         {
             workflow
-                .TimerEvent(Duration.FromSeconds(5))
+                .Timer(Duration.FromSeconds(5))
                 .WriteLine("Sending a random greeting to the \"greetings\" queue.")
                 .Then<SendRebusMessage>(sendMessage => sendMessage.Set(x => x.Message, GetRandomGreeting));
         }

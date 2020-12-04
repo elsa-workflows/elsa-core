@@ -81,7 +81,7 @@ namespace Elsa.Activities.Timers.HostedServices
             // Schedule workflow blueprints that start with a timer event.
             var timerWorkflows =
                 from workflow in workflows
-                from activity in workflow.GetStartActivities<TimerEvent>()
+                from activity in workflow.GetStartActivities<Timer>()
                 select (workflow, activity);
 
             var now = _clock.GetCurrentInstant();
@@ -91,7 +91,7 @@ namespace Elsa.Activities.Timers.HostedServices
                 var workflow = timerWorkflow.workflow;
                 var activity = timerWorkflow.activity;
                 var workflowWrapper = await _workflowBlueprintReflector.ReflectAsync(serviceScope, workflow, cancellationToken);
-                var timerEventWrapper = workflowWrapper.GetActivity<TimerEvent>(activity.Id);
+                var timerEventWrapper = workflowWrapper.GetActivity<Timer>(activity.Id);
                 var timeOut = await timerEventWrapper.GetPropertyValueAsync(x => x.Timeout, cancellationToken);
                 var startAt = now.Plus(timeOut);
 

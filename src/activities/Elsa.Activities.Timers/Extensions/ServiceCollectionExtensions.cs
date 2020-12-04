@@ -25,7 +25,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddTransient<RunWorkflowJob>()
                 .AddHostedService<StartJobs>()
                 .AddActivity<CronEvent>()
-                .AddActivity<TimerEvent>()
+                .AddActivity<Timer>()
                 .AddActivity<StartAt>()
                 .AddTriggerProvider<TimerEventTriggerProvider>()
                 .AddTriggerProvider<CronEventTriggerProvider>()

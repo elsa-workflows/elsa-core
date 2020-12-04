@@ -9,9 +9,9 @@ namespace Elsa.Activities.Timers.Triggers
         public Instant ExecuteAt { get; set; }
     }
 
-    public class TimerEventTriggerProvider : TriggerProvider<TimerEventTrigger, TimerEvent>
+    public class TimerEventTriggerProvider : TriggerProvider<TimerEventTrigger, Timer>
     {
-        public override ITrigger GetTrigger(TriggerProviderContext<TimerEvent> context)
+        public override ITrigger GetTrigger(TriggerProviderContext<Timer> context)
         {
             var executeAt = context.Activity.GetState(x => x.ExecuteAt);
 

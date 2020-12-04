@@ -20,7 +20,7 @@ namespace Elsa.Samples.CustomAttributesChildWorker.Workflows
         public void Build(IWorkflowBuilder workflow)
         {
             workflow
-                .TimerEvent(Duration.FromSeconds(5))
+                .Timer(Duration.FromSeconds(5))
                 .SetVariable("CustomerId", SelectRandomCustomerId)
                 .WriteLine(context => $"Creating a new order for customer {context.GetVariable<string>("CustomerId")}.")
                 .Then<SendRebusMessage>(message => message.Set(x => x.Message, context => new OrderReceived { CustomerId = context.GetVariable<string>("CustomerId") }));

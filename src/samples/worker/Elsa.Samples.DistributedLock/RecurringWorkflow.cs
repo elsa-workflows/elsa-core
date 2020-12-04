@@ -13,7 +13,7 @@ namespace Elsa.Samples.DistributedLock
         {
             workflow
                 .WithPersistenceBehavior(WorkflowPersistenceBehavior.ActivityExecuted)
-                .TimerEvent(Duration.FromSeconds(1))
+                .Timer(Duration.FromSeconds(1))
                 .WriteLine("Hello World")
                 .WriteLine(() => $"Timer event at {DateTime.Now}");
         }
