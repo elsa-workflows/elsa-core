@@ -24,12 +24,7 @@ namespace Elsa.Extensions
             WorkflowStatus workflowStatus,
             CancellationToken cancellationToken = default)
         {
-            // See: https://github.com/sebastienros/yessql/issues/298
-            Expression<Func<WorkflowInstanceIndex, bool>> query = tenantId == null
-                ? x => x.WorkflowDefinitionId == workflowDefinitionId && x.TenantId == null && x.WorkflowStatus == workflowStatus
-                : x => x.WorkflowDefinitionId == workflowDefinitionId && x.TenantId == tenantId && x.WorkflowStatus == workflowStatus;
-                
-            return manager.Query(query).ListAsync();
+            return manager.Query<WorkflowInstanceIndex>(x => x.WorkflowDefinitionId == workflowDefinitionId && x.TenantId == tenantId && x.WorkflowStatus == workflowStatus).ListAsync();
         }
 
         public static Task<IEnumerable<WorkflowInstance>> ListByDefinitionAndStatusAsync(
@@ -45,12 +40,7 @@ namespace Elsa.Extensions
             string? tenantId,
             CancellationToken cancellationToken = default)
         {
-            // See: https://github.com/sebastienros/yessql/issues/298
-            Expression<Func<WorkflowInstanceIndex, bool>> query = tenantId == null 
-                ? x => x.WorkflowDefinitionId == workflowDefinitionId && x.TenantId == null 
-                : x => x.WorkflowDefinitionId == workflowDefinitionId && x.TenantId == tenantId;
-            
-            return manager.Query(query).ListAsync();
+            return manager.Query<WorkflowInstanceIndex>(x => x.WorkflowDefinitionId == workflowDefinitionId && x.TenantId == tenantId).ListAsync();
         }
 
         public static Task<IEnumerable<WorkflowInstance>> ListByDefinitionAsync(

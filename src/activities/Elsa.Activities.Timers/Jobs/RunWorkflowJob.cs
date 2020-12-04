@@ -59,17 +59,10 @@ namespace Elsa.Activities.Timers.Jobs
 
         private async Task<bool> GetWorkflowIsAlreadyExecutingAsync(string? tenantId, string workflowDefinitionId, CancellationToken cancellationToken)
         {
-            // See https://github.com/sebastienros/yessql/issues/298
-
-            Expression<Func<WorkflowInstanceIndex, bool>> query = tenantId == null
-                ? index =>
-                    index.WorkflowDefinitionId == workflowDefinitionId
-                    && index.TenantId == null
-                    && (index.WorkflowStatus == WorkflowStatus.Running || index.WorkflowStatus == WorkflowStatus.Suspended)
-                : index =>
-                    index.WorkflowDefinitionId == workflowDefinitionId
-                    && index.TenantId == tenantId
-                    && (index.WorkflowStatus == WorkflowStatus.Running || index.WorkflowStatus == WorkflowStatus.Suspended);
+            Expression<Func<WorkflowInstanceIndex, bool>> query = index =>
+                index.WorkflowDefinitionId == workflowDefinitionId
+                && index.TenantId == tenantId
+                && (index.WorkflowStatus == WorkflowStatus.Running || index.WorkflowStatus == WorkflowStatus.Suspended);
 
             var workflowInstance = await _workflowInstanceManager.Query(query).FirstOrDefaultAsync();
             return workflowInstance != null;
