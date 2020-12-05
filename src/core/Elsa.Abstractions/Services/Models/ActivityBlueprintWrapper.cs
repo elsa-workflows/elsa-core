@@ -30,12 +30,12 @@ namespace Elsa.Services.Models
             var workflowBlueprint = ActivityExecutionContext.WorkflowExecutionContext.WorkflowBlueprint;
             var activityId = ActivityExecutionContext.ActivityBlueprint.Id;
 
-            // Computed property setters that depend on actual workflow state might fault, since we are using a fake activity execution context.
+            // Computed property setters that depend on actual workflow state might fault, since we might be using a fake activity execution context.
             try
             {
                 return await workflowBlueprint.GetActivityPropertyValue(activityId, propertyExpression, ActivityExecutionContext, cancellationToken);
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 return default;
             }

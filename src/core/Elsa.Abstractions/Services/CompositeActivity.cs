@@ -20,10 +20,14 @@ namespace Elsa.Services
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
             if (IsScheduled)
+            {
+                context.WorkflowExecutionContext.WorkflowInstance.ParentActivities.Pop();
                 return Complete(context);
+            }
             
             var compositeActivityBlueprint = (ICompositeActivityBlueprint)context.ActivityBlueprint;
             var startActivities = compositeActivityBlueprint.GetStartActivities().Select(x => x.Id).ToList();
+            context.WorkflowExecutionContext.WorkflowInstance.ParentActivities.Push(Id);
             context.WorkflowExecutionContext.PostScheduleActivity(Id);
             IsScheduled = true;
             return Schedule(startActivities, context.Input);
