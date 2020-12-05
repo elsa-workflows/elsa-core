@@ -31,7 +31,14 @@ namespace Elsa.Persistence.DocumentDb.Services
             CancellationToken cancellationToken = default)
         {
             var client = await GetDocumentClient();
-            await client.DeleteDocumentAsync(id, cancellationToken: cancellationToken);
+            var query = client.CreateDocumentQuery<WorkflowInstanceDocument>(GetCollectionUri())
+                .Where(c => c.Id == id);
+            var document = query.AsEnumerable().FirstOrDefault();
+            if (document != null)
+            {
+                var documentUri = new Uri(document.SelfLink, UriKind.Relative);
+                await client.DeleteDocumentAsync(documentUri, cancellationToken: cancellationToken);
+            }
         }
 
         public async Task<WorkflowInstance> GetByCorrelationIdAsync(
