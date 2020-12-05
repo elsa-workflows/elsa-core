@@ -49,7 +49,11 @@ namespace Elsa.Activities.Timers.Jobs
 
                 if (workflowInstance == null)
                 {
-                    _logger.LogWarning("Could not run Workflow instance with ID {WorkflowInstanceId} because it appears not yet to be persisted in the database. Skipping this round.", workflowInstanceId);
+                    _logger.LogWarning("Could not run Workflow instance with ID {WorkflowInstanceId} because it appears not yet to be persisted in the database. Rescheduling.", workflowInstanceId);
+                    var trigger = context.Trigger;
+                    await context.Scheduler.UnscheduleJob(trigger.Key, cancellationToken);
+                    var newTrigger = trigger.GetTriggerBuilder().StartAt(trigger.StartTimeUtc.AddSeconds(10)).Build();
+                    await context.Scheduler.ScheduleJob(newTrigger, cancellationToken);
                     return;
                 }
                 
