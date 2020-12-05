@@ -6,7 +6,8 @@ namespace Elsa.Persistence.DocumentDb.Documents
 {
     public class WorkflowDefinitionVersionDocument : DocumentBase
     {
-        [JsonProperty(PropertyName = "type")] public string Type { get; } = nameof(WorkflowDefinitionVersionDocument);
+        [JsonProperty(PropertyName = "type")] 
+        public string Type { get; } = nameof(WorkflowDefinitionVersionDocument);
 
         [JsonProperty(PropertyName = "definitionId")]
         public string DefinitionId { get; set; }

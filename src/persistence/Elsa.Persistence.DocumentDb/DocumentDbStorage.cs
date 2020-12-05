@@ -82,7 +82,7 @@ namespace Elsa.Persistence.DocumentDb
                     {
                         Id = collectionInfo.Value.Name,
                         PartitionKey = partitionKeyDefinition
-                    }, new RequestOptions { OfferThroughput = collectionInfo.Value.OfferThroughtput });
+                    }, new RequestOptions { OfferThroughput = collectionInfo.Value.OfferThroughput });
                     var uri = UriFactory.CreateDocumentCollectionUri(options.DatabaseName, collection.Resource.Id);
 
                     return (collectionInfo.Key, collectionInfo.Value.Name, Uri: uri, collectionInfo.Value.TenantId);

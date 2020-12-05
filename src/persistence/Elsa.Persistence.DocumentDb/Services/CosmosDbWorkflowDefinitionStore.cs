@@ -33,7 +33,7 @@ namespace Elsa.Persistence.DocumentDb.Services
             var document = Map(definition);
             var client = await GetDocumentClient();
             var (_, uri, tenantId) = await GetCollectionInfoAsync();
-            var requestOptions = new RequestOptions()
+            var requestOptions = new RequestOptions
             {
                 PartitionKey = new PartitionKey(tenantId)
             };
@@ -52,7 +52,7 @@ namespace Elsa.Persistence.DocumentDb.Services
             {
                 PartitionKey = new PartitionKey(tenantId)
             };
-            var requestOptions = new RequestOptions()
+            var requestOptions = new RequestOptions
             {
                 PartitionKey = new PartitionKey(tenantId)
             };
@@ -113,7 +113,7 @@ namespace Elsa.Persistence.DocumentDb.Services
             var document = Map(definition);
             var client = await GetDocumentClient();
             var (_, uri, tenantId) = await GetCollectionInfoAsync();
-            var requestOptions = new RequestOptions()
+            var requestOptions = new RequestOptions
             {
                 PartitionKey = new PartitionKey(tenantId)
             };
