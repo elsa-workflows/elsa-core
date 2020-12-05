@@ -13,7 +13,7 @@
 
         public Elsa.Models.WorkflowFault ToInstance()
         {
-            return new Elsa.Models.WorkflowFault
+            return new()
             {
                 FaultedActivityId = FaultedActivity?.Id,
                 Message = Message
