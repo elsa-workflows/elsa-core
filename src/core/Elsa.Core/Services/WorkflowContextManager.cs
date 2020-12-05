@@ -28,7 +28,7 @@ namespace Elsa.Services
         public async ValueTask<string?> SaveContextAsync(SaveWorkflowContext context, CancellationToken cancellationToken = default)
         {
             var provider = GetPersister(context.ContextType);
-            return provider == null ? null : await provider.SaveAsync(context, cancellationToken);
+            return provider == null ? context.ContextId : await provider.SaveAsync(context, cancellationToken);
         }
         
         public ILoadWorkflowContext? GetRefresher(Type contextType) => GetProvider(contextType, _refreshers);
