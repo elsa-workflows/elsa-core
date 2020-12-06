@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq.Expressions;
+﻿using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Indexes;
@@ -16,6 +14,20 @@ namespace Elsa.Extensions
             string workflowInstanceId,
             CancellationToken cancellationToken = default) =>
             await manager.Query<WorkflowInstanceIndex>(x => x.WorkflowInstanceId == workflowInstanceId).FirstOrDefaultAsync();
+
+        public static async Task<WorkflowInstance?> GetByCorrelationIdAsync(
+            this IWorkflowInstanceManager manager,
+            string correlationId,
+            WorkflowStatus status,
+            CancellationToken cancellationToken = default) =>
+            await manager.Query<WorkflowInstanceIndex>(x => x.CorrelationId == correlationId && x.WorkflowStatus == status).FirstOrDefaultAsync();
+        
+        public static async Task<IEnumerable<WorkflowInstance>> ListByCorrelationIdAsync(
+            this IWorkflowInstanceManager manager,
+            string correlationId,
+            WorkflowStatus status,
+            CancellationToken cancellationToken = default) =>
+            await manager.Query<WorkflowInstanceIndex>(x => x.CorrelationId == correlationId && x.WorkflowStatus == status).ListAsync();
 
         public static Task<IEnumerable<WorkflowInstance>> ListByDefinitionAndStatusAsync(
             this IWorkflowInstanceManager manager,
