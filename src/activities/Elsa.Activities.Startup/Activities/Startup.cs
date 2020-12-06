@@ -1,17 +1,11 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
+using Elsa.ActivityResults;
 using Elsa.Attributes;
-using Elsa.Expressions;
-using Elsa.Extensions;
-using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
-using NodaTime;
 
 namespace Elsa.Activities.Startup.Activities
 {
-    [ActivityDefinition(
+    [Activity(
         Category = "Startup",
         Description = "Triggers at startup."
     )]
