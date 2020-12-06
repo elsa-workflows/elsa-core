@@ -24,11 +24,7 @@ namespace Elsa.Builders
 
         private static Func<ActivityExecutionContext, ValueTask<IActivityExecutionResult>> RunInline(
             Func<ActivityExecutionContext, ValueTask<IActivityExecutionResult>> activity) =>
-            async context =>
-            {
-                await activity(context);
-                return new OutcomeResult();
-            };
+            async context => await activity(context);
 
         private static Func<ActivityExecutionContext, ValueTask<IActivityExecutionResult>> RunInline(
             Func<ActivityExecutionContext, ValueTask> activity) =>
