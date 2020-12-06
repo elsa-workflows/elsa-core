@@ -6,7 +6,7 @@ using Elsa.Services.Models;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.ControlFlow
 {
-    public static class ReceiveSignalExtensions
+    public static class ReceiveSignalBuilderExtensions
     {
         public static IActivityBuilder ReceiveSignal(this IBuilder builder, Action<ISetupActivity<ReceiveSignal>> setup) => builder.Then(setup);
         public static IActivityBuilder ReceiveSignal(this IBuilder builder, Func<ActivityExecutionContext, string> signal) => builder.ReceiveSignal(activity => activity.Set(x => x.Signal, signal));

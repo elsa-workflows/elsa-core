@@ -9,7 +9,7 @@ using Elsa.Services.Models;
 namespace Elsa.Activities.Signaling
 {
     /// <summary>
-    /// Triggers the specified signal.
+    /// Sends the specified signal.
     /// </summary>
     [Action(
         Category = "Workflows",
