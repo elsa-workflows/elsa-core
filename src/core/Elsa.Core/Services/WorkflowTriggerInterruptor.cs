@@ -10,13 +10,13 @@ using Elsa.Services.Models;
 
 namespace Elsa.Services
 {
-    public class WorkflowInterruptor : IWorkflowInterruptor
+    public class WorkflowTriggerInterruptor : IWorkflowTriggerInterruptor
     {
         private readonly IWorkflowRunner _workflowRunner;
         private readonly IWorkflowRegistry _workflowRegistry;
         private readonly IWorkflowInstanceManager _workflowInstanceManager;
 
-        public WorkflowInterruptor(IWorkflowRunner workflowRunner, IWorkflowRegistry workflowRegistry, IWorkflowInstanceManager workflowInstanceManager)
+        public WorkflowTriggerInterruptor(IWorkflowRunner workflowRunner, IWorkflowRegistry workflowRegistry, IWorkflowInstanceManager workflowInstanceManager)
         {
             _workflowRunner = workflowRunner;
             _workflowRegistry = workflowRegistry;
