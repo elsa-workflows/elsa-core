@@ -225,13 +225,13 @@ namespace ElsaDashboard.Application.Shared
 
         private async Task OnActivityPickedAsync(ActivityDescriptorSelectedEventArgs e, string? sourceActivityId, string? targetActivityId, string? outcome)
         {
-            var activityDescriptor = e.ActivityInfo;
+            var activityInfo = e.ActivityInfo;
 
             await FlyoutPanelService.ShowAsync<ActivityEditor>(
-                activityDescriptor.DisplayName,
-                new { ActivityDescriptor = activityDescriptor },
+                activityInfo.DisplayName,
+                new { ActivityInfo = activityInfo },
                 ButtonDescriptor.Create("Cancel", _ => ShowActivityPickerAsync(sourceActivityId, targetActivityId, outcome)),
-                ButtonDescriptor.Create("OK", _ => AddActivityAsync(activityDescriptor, sourceActivityId, targetActivityId, outcome), true));
+                ButtonDescriptor.Create("OK", _ => AddActivityAsync(activityInfo, sourceActivityId, targetActivityId, outcome), true));
         }
 
         private async ValueTask OnActivityClick(MouseEventArgs e)
