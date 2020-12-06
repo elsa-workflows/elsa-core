@@ -12,34 +12,34 @@ namespace Elsa.Builders
 
     public interface ISetupActivity<T> : ISetupActivity where T : IActivity
     {
-        ISetupActivity<T> Set<TProperty>(Expression<Func<T, TProperty?>> propertyAccessor,
-            Func<ActivityExecutionContext, ValueTask<TProperty?>> valueFactory);
+        ISetupActivity<T> Set<TProperty>(Expression<Func<T, TProperty>> propertyAccessor,
+            Func<ActivityExecutionContext, ValueTask<TProperty>> valueFactory);
     }
 
     public static class SetupActivityExtensions
     {
         public static ISetupActivity<T> Set<T, TProperty>(
             this ISetupActivity<T> builder,
-            Expression<Func<T, TProperty?>> propertyAccessor,
-            Func<ActivityExecutionContext, ValueTask<TProperty?>> valueFactory) where T : IActivity =>
+            Expression<Func<T, TProperty>> propertyAccessor,
+            Func<ActivityExecutionContext, ValueTask<TProperty>> valueFactory) where T : IActivity =>
             builder.Set(propertyAccessor, async context => await valueFactory(context));
         
         public static ISetupActivity<T> Set<T, TProperty>(
             this ISetupActivity<T> builder,
-            Expression<Func<T, TProperty?>> propertyAccessor,
-            Func<ActivityExecutionContext, TProperty?> valueFactory) where T : IActivity =>
-            builder.Set(propertyAccessor, context => new ValueTask<TProperty?>(valueFactory(context)));
+            Expression<Func<T, TProperty>> propertyAccessor,
+            Func<ActivityExecutionContext, TProperty> valueFactory) where T : IActivity =>
+            builder.Set(propertyAccessor, context => new ValueTask<TProperty>(valueFactory(context)));
         
         public static ISetupActivity<T> Set<T, TProperty>(
             this ISetupActivity<T> builder,
-            Expression<Func<T, TProperty?>> propertyAccessor,
-            Func<TProperty?> valueFactory) where T : IActivity =>
-            builder.Set(propertyAccessor, context => new ValueTask<TProperty?>(valueFactory()));
+            Expression<Func<T, TProperty>> propertyAccessor,
+            Func<TProperty> valueFactory) where T : IActivity =>
+            builder.Set(propertyAccessor, context => new ValueTask<TProperty>(valueFactory()));
         
         public static ISetupActivity<T> Set<T, TProperty>(
             this ISetupActivity<T> builder,
-            Expression<Func<T, TProperty?>> propertyAccessor,
-            Func<ValueTask<TProperty?>> valueFactory) where T : IActivity =>
+            Expression<Func<T, TProperty>> propertyAccessor,
+            Func<ValueTask<TProperty>> valueFactory) where T : IActivity =>
             builder.Set(propertyAccessor, async _ => await valueFactory());
         
         public static ISetupActivity<T> Set<T, TProperty>(

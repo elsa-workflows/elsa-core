@@ -13,9 +13,22 @@ namespace Elsa.Activities.ControlFlow
             activity?.Invoke(activityBuilder);
             return activityBuilder;
         }
-        
+
         public static IActivityBuilder IfElse(this IBuilder builder, Func<ActivityExecutionContext, bool> condition, Action<IActivityBuilder>? activity = default) => builder.IfElse(x => x.WithCondition(condition), activity);
         public static IActivityBuilder IfElse(this IBuilder builder, Func<bool> condition, Action<IActivityBuilder>? activity = default) => builder.IfElse(x => x.WithCondition(condition), activity);
         public static IActivityBuilder IfElse(this IBuilder builder, bool condition, Action<IActivityBuilder>? activity = default) => builder.IfElse(x => x.WithCondition(condition), activity);
+
+        public static IActivityBuilder IfTrue(this IBuilder builder, Func<ActivityExecutionContext, bool> condition, Action<IOutcomeBuilder> whenTrue) =>
+            builder.IfElse(x => x.WithCondition(condition), ifElse => whenTrue(ifElse.When(OutcomeNames.True)));
+        
+        public static IActivityBuilder IfFalse(this IBuilder builder, Func<ActivityExecutionContext, bool> condition, Action<IOutcomeBuilder> whenFalse) =>
+            builder.IfElse(x => x.WithCondition(condition), ifElse => whenFalse(ifElse.When(OutcomeNames.False)));
+        
+        public static IActivityBuilder IfElse(this IBuilder builder, Func<ActivityExecutionContext, bool> condition, Action<IOutcomeBuilder> whenTrue, Action<IOutcomeBuilder> whenFalse) =>
+            builder.IfElse(x => x.WithCondition(condition), ifElse =>
+            {
+                whenTrue(ifElse.When(OutcomeNames.True));
+                whenFalse(ifElse.When(OutcomeNames.False));
+            });
     }
 }
