@@ -59,22 +59,17 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddTransient<T>()
                 .AddTransient<IActivity>(sp => sp.GetRequiredService<T>());
 
-        public static IServiceCollection AddWorkflow<T>(this IServiceCollection services) where T : class, IWorkflow
-        {
-            services.TryAddSingleton<T>();
-            services.TryAddSingleton<IWorkflow>(sp => sp.GetRequiredService<T>());
-            return services;
-        }
+        public static IServiceCollection AddWorkflow<T>(this IServiceCollection services) where T : class, IWorkflow =>
+            services
+                .AddSingleton<T>()
+                .AddSingleton<IWorkflow>(sp => sp.GetRequiredService<T>());
 
         public static IServiceCollection AddWorkflow(this IServiceCollection services, IWorkflow workflow) =>
             services
                 .AddSingleton(workflow.GetType(), workflow)
                 .AddTransient(sp => workflow);
 
-        public static IServiceCollection StartWorkflow<T>(this IServiceCollection services) where T : class, IWorkflow =>
-            services
-                .AddWorkflow<T>()
-                .AddHostedService<StartWorkflow<T>>();
+        public static IServiceCollection StartWorkflow<T>(this IServiceCollection services) where T : class, IWorkflow => services.AddHostedService<StartWorkflow<T>>();
 
         private static IServiceCollection AddMediatR(this ElsaOptions options) => options.Services.AddMediatR(mediatr => mediatr.AsScoped(), typeof(IActivity));
 
@@ -98,7 +93,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IWorkflowSchedulerQueue, WorkflowSchedulerQueue>()
                 .AddSingleton<IActivityActivator, ActivityActivator>()
                 .AddScoped<IWorkflowRunner, WorkflowRunner>()
-                .AddScoped<IWorkflowInterruptor, WorkflowInterruptor>()
+                .AddScoped<IWorkflowTriggerInterruptor, WorkflowTriggerInterruptor>()
                 .AddSingleton<IActivityDescriber, ActivityDescriber>()
                 .AddSingleton<IWorkflowFactory, WorkflowFactory>()
                 .AddSingleton<IActivityFactory, ActivityFactory>()
@@ -155,10 +150,11 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddActivity<SetVariable>()
                 .AddActivity<SetContextId>()
                 .AddActivity<ReceiveSignal>()
-                .AddTriggerProvider<ReceiveSignalTriggerProvider>()
                 .AddActivity<SendSignal>()
-                .AddScoped<ISignaler, Signaler>()
                 .AddActivity<RunWorkflow>()
+                .AddActivity<InterruptTrigger>()
+                .AddScoped<ISignaler, Signaler>()
+                .AddTriggerProvider<ReceiveSignalTriggerProvider>()
                 .AddTriggerProvider<RunWorkflowTriggerProvider>();
     }
 }
