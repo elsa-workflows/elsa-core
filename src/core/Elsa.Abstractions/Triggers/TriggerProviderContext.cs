@@ -14,7 +14,7 @@ namespace Elsa.Triggers
         public IActivityBlueprintWrapper<TActivity> GetActivity<TActivity>() where TActivity : IActivity => new ActivityBlueprintWrapper<TActivity>(ActivityExecutionContext);
     }
 
-    public class TriggerProviderContext<T> : TriggerProviderContext where T:IActivity
+    public class TriggerProviderContext<T> : TriggerProviderContext where T: IActivity
     {
         public TriggerProviderContext(ActivityExecutionContext activityExecutionContext) : base(activityExecutionContext)
         {
