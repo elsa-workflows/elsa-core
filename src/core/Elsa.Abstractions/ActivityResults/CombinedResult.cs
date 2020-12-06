@@ -13,13 +13,17 @@ namespace Elsa.ActivityResults
             Results = results.ToList();
         }
 
+        public CombinedResult(params IActivityExecutionResult[] results) : this(results.AsEnumerable())
+        {
+        }
+
         public IReadOnlyCollection<IActivityExecutionResult> Results { get; }
 
         public override async ValueTask ExecuteAsync(
             ActivityExecutionContext activityExecutionContext,
             CancellationToken cancellationToken)
         {
-            foreach (var result in Results) 
+            foreach (var result in Results)
                 await result.ExecuteAsync(activityExecutionContext, cancellationToken);
         }
     }
