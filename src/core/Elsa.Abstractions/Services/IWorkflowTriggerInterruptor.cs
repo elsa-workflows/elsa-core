@@ -9,7 +9,7 @@ namespace Elsa.Services
     /// <summary>
     /// Causes a suspended workflow's trigger to be interrupted 
     /// </summary>
-    public interface IWorkflowInterruptor
+    public interface IWorkflowTriggerInterruptor
     {
         Task<WorkflowInstance> InterruptActivityAsync(WorkflowInstance workflowInstance, string activityId, object? input = default, CancellationToken cancellationToken = default);
         Task<WorkflowInstance> InterruptActivityAsync(IWorkflowBlueprint workflowBlueprint, WorkflowInstance workflowInstance, string activityId, object? input = default, CancellationToken cancellationToken = default);
