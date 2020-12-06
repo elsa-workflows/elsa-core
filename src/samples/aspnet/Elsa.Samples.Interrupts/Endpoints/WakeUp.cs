@@ -11,9 +11,9 @@ namespace Elsa.Samples.Interrupts.Endpoints
     [Route("wakeup")]
     public class WakeUp : Controller
     {
-        private readonly IWorkflowInterruptor _workflowInterruptor;
+        private readonly IWorkflowTriggerInterruptor _workflowInterruptor;
 
-        public WakeUp(IWorkflowInterruptor workflowInterruptor)
+        public WakeUp(IWorkflowTriggerInterruptor workflowInterruptor)
         {
             _workflowInterruptor = workflowInterruptor;
         }

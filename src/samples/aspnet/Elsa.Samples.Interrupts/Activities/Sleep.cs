@@ -9,7 +9,7 @@ namespace Elsa.Samples.Interrupts.Activities
     [Activity]
     public class Sleep : Timer
     {
-        public Sleep(IWorkflowInstanceManager workflowInstanceManager, IWorkflowScheduler workflowScheduler, IClock clock) : base(workflowInstanceManager, workflowScheduler, clock)
+        public Sleep(IWorkflowInstanceManager workflowInstanceManager, IWorkflowScheduler workflowScheduler, IClock clock) : base(clock)
         {
         }
     }
