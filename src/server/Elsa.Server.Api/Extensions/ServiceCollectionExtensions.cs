@@ -1,6 +1,8 @@
 ﻿using System;
+using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Server.Api.Extensions;
+using Elsa.Server.Api.Mapping;
 using Elsa.Server.Api.Swagger;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Any;
@@ -32,6 +34,8 @@ namespace Microsoft.Extensions.DependencyInjection
                     options.AssumeDefaultVersionWhenUnspecified = true;
                 });
 
+            services.AddSingleton<ConnectionConverter>();
+            services.AddAutoMapperProfile<AutoMapperProfile>();
             return services;
         }
 

@@ -10,6 +10,7 @@ namespace Elsa.Builders
         public Type ActivityType { get; }
         string ActivityId { get; set; }
         public string? Name { get; set; }
+        public string? DisplayName { get; set; }
         public string? Description { get; set; }
         IDictionary<string, IActivityPropertyValueProvider>? PropertyValueProviders { get; }
         bool PersistWorkflow { get; set; }

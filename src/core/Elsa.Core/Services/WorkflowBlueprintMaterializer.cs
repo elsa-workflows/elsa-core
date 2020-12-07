@@ -24,6 +24,7 @@ namespace Elsa.Services
                 workflowDefinition.IsSingleton,
                 workflowDefinition.IsEnabled,
                 workflowDefinition.Name,
+                workflowDefinition.DisplayName,
                 workflowDefinition.Description,
                 workflowDefinition.IsLatest,
                 workflowDefinition.IsPublished,

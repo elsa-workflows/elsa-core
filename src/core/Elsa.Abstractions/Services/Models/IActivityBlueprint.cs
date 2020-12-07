@@ -2,10 +2,11 @@
 {
     public interface IActivityBlueprint
     {
-        public string Id { get; }
+        string Id { get; }
         string? Name { get; }
-        public string Type { get; }
-        public bool PersistWorkflow { get; }
+        string? DisplayName { get; }
+        string Type { get; }
+        bool PersistWorkflow { get; }
         bool LoadWorkflowContext { get; set; }
         bool SaveWorkflowContext { get; set; }
     }

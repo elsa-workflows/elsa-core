@@ -20,6 +20,7 @@ namespace Elsa.Services.Models
             bool isSingleton,
             bool isEnabled,
             string? name,
+            string? displayName,
             string? description,
             bool isLatest,
             bool isPublished,
@@ -30,7 +31,7 @@ namespace Elsa.Services.Models
             bool deleteCompletedInstances,
             IEnumerable<IActivityBlueprint> activities,
             IEnumerable<IConnection> connections,
-            IActivityPropertyProviders activityPropertyValueProviders) : base(id, name, id, true, false, false)
+            IActivityPropertyProviders activityPropertyValueProviders) : base(id, name, displayName, id, true, false, false)
         {
             Id = id;
             Version = version;

@@ -25,6 +25,7 @@ namespace Elsa.Builders
         public ICompositeActivityBuilder WorkflowBuilder { get; set; } = default!;
         public string ActivityId { get; set; } = default!;
         public string? Name { get; set; }
+        public string? DisplayName { get; set; }
         public string? Description { get; set; }
         public bool PersistWorkflow { get; set; }
         public bool LoadWorkflowContextEnabled { get; set; }
@@ -71,6 +72,12 @@ namespace Elsa.Builders
             return this;
         }
         
+        public IActivityBuilder WithDisplay(string? name)
+        {
+            Name = name;
+            return this;
+        }
+        
         public IActivityBuilder LoadWorkflowContext(bool value)
         {
             LoadWorkflowContextEnabled = value;
@@ -82,15 +89,5 @@ namespace Elsa.Builders
             SaveWorkflowContextEnabled = value;
             return this;
         }
-
-        // public Func<ActivityExecutionContext, CancellationToken, ValueTask<IActivity>> BuildActivityAsync() =>
-        //     async (context, cancellationToken) =>
-        //     {
-        //         var activity = await context.ActivateActivityAsync(cancellationToken);
-        //         activity.Id = ActivityId;
-        //         activity.Name = Name;
-        //         activity.Description = Description;
-        //         return activity;
-        //     };
     }
 }

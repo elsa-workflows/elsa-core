@@ -5,14 +5,14 @@ using Microsoft.AspNetCore.Components;
 
 namespace ElsaDashboard.Application.Pages
 {
-    partial class Workflows
+    partial class WorkflowDefinitions
     {
         [Inject] private IWorkflowDefinitionService WorkflowDefinitionService { get; set; } = default!;
-        private PagedList<WorkflowDefinition> WorkflowDefinitions { get; set; } = new();
+        private PagedList<WorkflowDefinition> Definitions { get; set; } = new();
 
         protected override async Task OnInitializedAsync()
         {
-            WorkflowDefinitions = await WorkflowDefinitionService.ListAsync();
+            Definitions = await WorkflowDefinitionService.ListAsync();
         }
     }
 }

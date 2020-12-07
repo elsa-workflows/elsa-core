@@ -1,12 +1,12 @@
 ﻿using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using AutoMapper;
 using Elsa.Models;
 using Elsa.Serialization;
 using Elsa.Server.Api.Models;
 using Elsa.Server.Api.Swagger;
 using Elsa.Services;
-using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
@@ -22,11 +22,13 @@ namespace Elsa.Server.Api.Endpoints.WorkflowRegistry
     {
         private readonly IWorkflowRegistry _workflowRegistry;
         private readonly IContentSerializer _serializer;
+        private readonly IMapper _mapper;
 
-        public List(IWorkflowRegistry workflowRegistry, IContentSerializer serializer)
+        public List(IWorkflowRegistry workflowRegistry, IContentSerializer serializer, IMapper mapper)
         {
             _workflowRegistry = workflowRegistry;
             _serializer = serializer;
+            _mapper = mapper;
         }
 
         [HttpGet]
@@ -38,7 +40,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowRegistry
             OperationId = "WorkflowBlueprints.List",
             Tags = new[] { "WorkflowBlueprints" })
         ]
-        public async Task<ActionResult<PagedList<WorkflowDefinition>>> Handle(int? page = default, int? pageSize = default, VersionOptions? version = default, CancellationToken cancellationToken = default)
+        public async Task<ActionResult<PagedList<WorkflowBlueprintModel>>> Handle(int? page = default, int? pageSize = default, VersionOptions? version = default, CancellationToken cancellationToken = default)
         {
             version ??= VersionOptions.Latest;
             var workflowBlueprints = await _workflowRegistry.GetWorkflowsAsync(cancellationToken).Where(x => x.WithVersion(version.Value)).ToListAsync(cancellationToken);
@@ -52,9 +54,10 @@ namespace Elsa.Server.Api.Endpoints.WorkflowRegistry
             if (pageSize != null)
                 items = items.Take(pageSize.Value);
 
-            var pagedList = new PagedList<IWorkflowBlueprint>(items.ToList(), page, pageSize, totalCount);
+            var mappedItems = items.Select(x => _mapper.Map<WorkflowBlueprintModel>(x)).ToList();
+            var pagedList = new PagedList<WorkflowBlueprintModel>(mappedItems, page, pageSize, totalCount);
 
-            return Json(pagedList, _serializer.GetSettings());
+            return pagedList;
         }
     }
 }

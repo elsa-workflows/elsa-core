@@ -147,6 +147,7 @@ namespace Elsa.Builders
                 IsSingleton,
                 IsEnabled,
                 Name,
+                DisplayName,
                 Description,
                 true,
                 true,
