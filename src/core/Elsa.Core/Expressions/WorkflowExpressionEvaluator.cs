@@ -37,7 +37,7 @@ namespace Elsa.Expressions
                 string message = $"Error while evaluating {expression.Syntax} expression \"{expression.Expression}\". Message: {e.Message}";
 
                 logger.LogError(e, message);
-                throw new WorkflowException(message);
+                throw new WorkflowException(message, e);
             }
         }
     }
