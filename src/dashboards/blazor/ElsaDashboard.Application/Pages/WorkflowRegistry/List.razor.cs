@@ -3,9 +3,9 @@ using Elsa.Client.Models;
 using ElsaDashboard.Shared.Rpc;
 using Microsoft.AspNetCore.Components;
 
-namespace ElsaDashboard.Application.Pages
+namespace ElsaDashboard.Application.Pages.WorkflowRegistry
 {
-    partial class WorkflowRegistry
+    partial class List
     {
         [Inject] private IWorkflowRegistryService WorkflowRegistryService { get; set; } = default!;
         private PagedList<WorkflowBlueprint> WorkflowBlueprints { get; set; } = new();

@@ -8,7 +8,7 @@ using ElsaDashboard.Application.Services;
 using ElsaDashboard.Shared.Rpc;
 using Microsoft.AspNetCore.Components;
 
-namespace ElsaDashboard.Application.Pages
+namespace ElsaDashboard.Application.Pages.WorkflowDefinitions
 {
     partial class Designer
     {

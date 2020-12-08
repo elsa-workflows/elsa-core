@@ -2,6 +2,7 @@
 using System.IO.Compression;
 using Elsa.Client.Extensions;
 using Elsa.Client.Options;
+using Elsa.Client.Services;
 using ElsaDashboard.Backend.Rpc;
 using ElsaDashboard.Shared.Rpc;
 using ElsaDashboard.Shared.Surrogates;
@@ -22,6 +23,7 @@ namespace ElsaDashboard.Backend.Extensions
             services.AddScoped<IActivityService, ActivityService>();
             services.AddScoped<IWorkflowDefinitionService, WorkflowDefinitionService>();
             services.AddScoped<IWorkflowRegistryService, WorkflowRegistryService>();
+            services.AddScoped<IWorkflowInstanceService, WorkflowInstanceService>();
 
             return services;
         }

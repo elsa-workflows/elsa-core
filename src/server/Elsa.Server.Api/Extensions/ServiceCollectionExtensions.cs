@@ -4,6 +4,7 @@ using Elsa.Models;
 using Elsa.Server.Api.Extensions;
 using Elsa.Server.Api.Mapping;
 using Elsa.Server.Api.Swagger;
+using Elsa.Server.Api.Swagger.Examples;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;

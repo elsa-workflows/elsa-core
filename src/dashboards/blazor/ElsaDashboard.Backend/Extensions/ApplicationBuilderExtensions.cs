@@ -11,8 +11,11 @@ namespace ElsaDashboard.Backend.Extensions
                 .UseCors()
                 .UseGrpcWeb()
                 .UseEndpoints(endpoints => endpoints
-                .MapGrpcEndpoint<IActivityService>()
-                .MapGrpcEndpoint<IWorkflowDefinitionService>());
+                    .MapGrpcEndpoint<IActivityService>()
+                    .MapGrpcEndpoint<IWorkflowDefinitionService>()
+                    .MapGrpcEndpoint<IWorkflowRegistryService>()
+                    .MapGrpcEndpoint<IWorkflowInstanceService>()
+                );
         }
     }
 }

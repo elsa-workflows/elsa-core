@@ -3,7 +3,7 @@ using Elsa.Models;
 using Elsa.Server.Api.Models;
 using Swashbuckle.AspNetCore.Filters;
 
-namespace Elsa.Server.Api.Swagger
+namespace Elsa.Server.Api.Swagger.Examples
 {
     public class WorkflowDefinitionPagedListExample : IExamplesProvider<PagedList<WorkflowDefinition>>
     {

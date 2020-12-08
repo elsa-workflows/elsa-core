@@ -3,13 +3,13 @@ using Elsa.Expressions;
 using Elsa.Models;
 using Swashbuckle.AspNetCore.Filters;
 
-namespace Elsa.Server.Api.Swagger
+namespace Elsa.Server.Api.Swagger.Examples
 {
     public class WorkflowDefinitionExample : IExamplesProvider<WorkflowDefinition>
     {
         public WorkflowDefinition GetExamples()
         {
-            return new WorkflowDefinition
+            return new()
             {
                 Id = 1,
                 Name = "ProcessOrderWorkflow",
@@ -51,7 +51,7 @@ namespace Elsa.Server.Api.Swagger
                         }
                     }
                 },
-                Connections = new[] {new ConnectionDefinition("activity-1", "activity-2", OutcomeNames.Done)}
+                Connections = new[] { new ConnectionDefinition("activity-1", "activity-2", OutcomeNames.Done) }
             };
         }
     }

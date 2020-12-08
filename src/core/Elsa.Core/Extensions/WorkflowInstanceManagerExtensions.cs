@@ -21,7 +21,16 @@ namespace Elsa.Extensions
             WorkflowStatus status,
             CancellationToken cancellationToken = default) =>
             await manager.Query<WorkflowInstanceIndex>(x => x.CorrelationId == correlationId && x.WorkflowStatus == status).FirstOrDefaultAsync();
-        
+
+        public static async Task<int> CountAsync(this IWorkflowInstanceManager manager, CancellationToken cancellationToken = default) => await manager.Query<WorkflowInstanceIndex>().CountAsync();
+
+        public static async Task<IEnumerable<WorkflowInstance>> ListAsync(
+            this IWorkflowInstanceManager manager,
+            int page,
+            int pageSize,
+            CancellationToken cancellationToken = default) =>
+            await manager.Query<WorkflowInstanceIndex>().Skip(page * pageSize).Take(pageSize).ListAsync();
+
         public static async Task<IEnumerable<WorkflowInstance>> ListByCorrelationIdAsync(
             this IWorkflowInstanceManager manager,
             string correlationId,

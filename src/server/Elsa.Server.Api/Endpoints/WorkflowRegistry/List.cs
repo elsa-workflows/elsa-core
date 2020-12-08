@@ -3,9 +3,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
 using Elsa.Models;
-using Elsa.Serialization;
 using Elsa.Server.Api.Models;
 using Elsa.Server.Api.Swagger;
+using Elsa.Server.Api.Swagger.Examples;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -21,19 +21,17 @@ namespace Elsa.Server.Api.Endpoints.WorkflowRegistry
     public class List : Controller
     {
         private readonly IWorkflowRegistry _workflowRegistry;
-        private readonly IContentSerializer _serializer;
         private readonly IMapper _mapper;
 
-        public List(IWorkflowRegistry workflowRegistry, IContentSerializer serializer, IMapper mapper)
+        public List(IWorkflowRegistry workflowRegistry, IMapper mapper)
         {
             _workflowRegistry = workflowRegistry;
-            _serializer = serializer;
             _mapper = mapper;
         }
 
         [HttpGet]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(PagedList<WorkflowDefinition>))]
-        [SwaggerResponseExample(StatusCodes.Status200OK, typeof(WorkflowDefinitionPagedListExample))]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(PagedList<WorkflowBlueprintModel>))]
+        [SwaggerResponseExample(StatusCodes.Status200OK, typeof(WorkflowBlueprintModelPagedListExample))]
         [SwaggerOperation(
             Summary = "Returns a list of workflow blueprints.",
             Description = "Returns paginated a list of workflow blueprints. When no version options are specified, the latest version is returned.",
