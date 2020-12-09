@@ -7,6 +7,6 @@ namespace Elsa.Client
         IActivitiesApi Activities { get; }
         IWorkflowDefinitionsApi WorkflowDefinitions { get; }
         IWorkflowRegistryApi WorkflowRegistry { get; }
-        IWorkflowInstanceApi WorkflowInstances { get; }
+        IWorkflowInstancesApi WorkflowInstanceses { get; }
     }
 }

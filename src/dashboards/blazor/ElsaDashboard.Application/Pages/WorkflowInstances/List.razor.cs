@@ -7,12 +7,12 @@ namespace ElsaDashboard.Application.Pages.WorkflowInstances
 {
     partial class List
     {
-        [Inject] private IWorkflowRegistryService WorkflowRegistryService { get; set; } = default!;
-        private PagedList<WorkflowBlueprint> WorkflowBlueprints { get; set; } = new();
+        [Inject] private IWorkflowInstanceService WorkflowInstanceService { get; set; } = default!;
+        private PagedList<WorkflowInstance> WorkflowInstances { get; set; } = new();
 
         protected override async Task OnInitializedAsync()
         {
-            WorkflowBlueprints = await WorkflowRegistryService.ListAsync();
+            WorkflowInstances = await WorkflowInstanceService.ListAsync();
         }
     }
 }

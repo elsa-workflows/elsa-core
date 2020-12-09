@@ -5,12 +5,12 @@ using Refit;
 
 namespace Elsa.Client.Services
 {
-    public interface IWorkflowInstanceApi
+    public interface IWorkflowInstancesApi
     {
-        [Get("/v1/workflow-instance/{id}")]
+        [Get("/v1/workflow-instances/{id}")]
         Task<WorkflowInstance?> GetByIdAsync(string id, CancellationToken cancellationToken = default);
         
-        [Get("/v1/workflow-instance")]
+        [Get("/v1/workflow-instances")]
         Task<PagedList<WorkflowInstance>> ListAsync(int? page = default, int? pageSize = default, CancellationToken cancellationToken = default);
     }
 }
