@@ -35,7 +35,7 @@ namespace Elsa.Persistence.MongoDb
 
         public async Task DeleteAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken = default)
         {
-            var filter = GetFilterWorkflowDefinitionId(workflowDefinition.WorkflowDefinitionId);
+            var filter = GetFilterWorkflowDefinitionId(workflowDefinition.Id);
             await _dbClient.WorkflowDefinitions.DeleteOneAsync(filter);
         }
 
@@ -82,11 +82,24 @@ namespace Elsa.Persistence.MongoDb
 
         public async Task SaveAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken = default)
         {
-            var filter = GetFilterWorkflowDefinitionId(workflowDefinition.WorkflowDefinitionId);
+            if (workflowDefinition.Id == 0)
+            {
+                // If there is no instance yet, max throws an error
+                if (await _dbClient.WorkflowInstances.AsQueryable().AnyAsync())
+                {
+                    workflowDefinition.Id = await _dbClient.WorkflowDefinitions.AsQueryable().MaxAsync(x => x.Id) + 1;
+                }
+                else
+                {
+                    workflowDefinition.Id = 1;
+                }
+            }
+
+            var filter = GetFilterWorkflowDefinitionId(workflowDefinition.Id);
 
             await _dbClient.WorkflowDefinitions.ReplaceOneAsync(filter, workflowDefinition, new ReplaceOptions { IsUpsert = true });
         }
 
-        private FilterDefinition<WorkflowDefinition> GetFilterWorkflowDefinitionId(string workflowDefinitionId) => Builders<WorkflowDefinition>.Filter.Where(x => x.WorkflowDefinitionId == workflowDefinitionId);
+        private FilterDefinition<WorkflowDefinition> GetFilterWorkflowDefinitionId(int id) => Builders<WorkflowDefinition>.Filter.Where(x => x.Id == id);
     }
 }

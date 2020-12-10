@@ -39,19 +39,20 @@ namespace Elsa.Persistence.MongoDb.Services
             {
                 return false;
             }
+
             try
             {
 
                 BsonClassMap.RegisterClassMap<WorkflowDefinition>(cm =>
                 {
                     cm.AutoMap();
-                    cm.MapIdMember(x => x.WorkflowDefinitionId);
+                    cm.MapIdMember(x => x.Id);
                 });
 
                 BsonClassMap.RegisterClassMap<WorkflowInstance>(cm =>
                 {
                     cm.AutoMap();
-                    cm.MapIdMember(x => x.WorkflowInstanceId);
+                    cm.MapIdMember(x => x.Id);
                 });
 
             }

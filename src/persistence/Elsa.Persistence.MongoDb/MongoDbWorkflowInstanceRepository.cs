@@ -107,21 +107,20 @@ namespace Elsa.Persistence.MongoDb
         }
 
         public async Task SaveAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken = default)
-        {
-            var filter = GetFilterWorkflowId(workflowInstance.Id);
-
+        {  
             if(workflowInstance.Id == 0)
             {
                 // If there is no instance yet, max throws an error
                 if (await _dbClient.WorkflowInstances.AsQueryable().AnyAsync())
                 {
-                    workflowInstance.Id = await _dbClient.WorkflowInstances.AsQueryable().MaxAsync(x => x.Id);
+                    workflowInstance.Id = await _dbClient.WorkflowInstances.AsQueryable().MaxAsync(x => x.Id) + 1;
                 } else
                 {
                     workflowInstance.Id = 1;
-                }
-                
+                }              
             }
+
+            var filter = GetFilterWorkflowId(workflowInstance.Id);
 
             await _dbClient.WorkflowInstances.ReplaceOneAsync(filter, workflowInstance, new ReplaceOptions { IsUpsert = true });
             await _mediator.Publish(new WorkflowInstanceSaved(workflowInstance), cancellationToken);
