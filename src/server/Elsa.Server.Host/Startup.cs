@@ -5,7 +5,9 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Elsa.Persistence.YesSql;
 using YesSql.Provider.Sqlite;
+using System.Data;
 
 namespace Elsa.Server.Host
 {
@@ -26,9 +28,8 @@ namespace Elsa.Server.Host
             var connectionString = Configuration.GetConnectionString("Sqlite");
 
             services
-                .AddElsa(
-                    elsa => elsa
-                        .UsePersistence(config => config.UseSqLite(connectionString)));
+                .AddElsa()
+                .AddElsaPersistenceYesSql((sp, config) => config.UseSqLite(connectionString, IsolationLevel.ReadUncommitted));
 
             services
                 .AddElsaApiEndpoints()

@@ -1,7 +1,8 @@
-﻿using System.IO;
+using System.IO;
 using System.Threading.Tasks;
 using Elsa.Extensions;
 using Elsa.Models;
+using Elsa.Persistence.InMemory;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Storage.Net;
@@ -21,6 +22,7 @@ namespace Elsa.Samples.FileBasedWorkflow
             // Create a service container with Elsa services.
             var services = new ServiceCollection()
                 .AddElsa(options => options.UseStorage(() => StorageFactory.Blobs.DirectoryFiles(currentDirectory)))
+                .AddElsaPersistenceInMemory()
                 .AddConsoleActivities()
                 .BuildServiceProvider();
             

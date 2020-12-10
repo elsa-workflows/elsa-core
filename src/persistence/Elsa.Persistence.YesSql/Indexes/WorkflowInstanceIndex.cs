@@ -1,10 +1,12 @@
 using System;
 using System.Linq;
+
 using Elsa.Data;
 using Elsa.Models;
+
 using YesSql.Indexes;
 
-namespace Elsa.Indexes
+namespace Elsa.Persistence.YesSql.Indexes
 {
     public class WorkflowInstanceIndex : MapIndex
     {
@@ -50,7 +52,7 @@ namespace Elsa.Indexes
                     {
                         if (workflowInstance.Status != WorkflowStatus.Suspended || !workflowInstance.BlockingActivities.Any())
                             return default;
-                        
+
                         return workflowInstance.BlockingActivities
                             .Select(
                                 activity => new WorkflowInstanceBlockingActivitiesIndex

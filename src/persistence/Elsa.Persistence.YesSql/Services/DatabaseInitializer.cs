@@ -1,9 +1,15 @@
-﻿using System.Threading;
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+
+using Elsa.Data;
 using Elsa.Services;
+
 using YesSql;
 
-namespace Elsa.Data.Services
+namespace Elsa.Persistence.YesSql.Services
 {
     public class DatabaseInitializer : IStartupTask
     {
@@ -13,7 +19,7 @@ namespace Elsa.Data.Services
         {
             _store = store;
         }
-        
+
         public async Task ExecuteAsync(CancellationToken cancellationToken = default)
         {
             await _store.InitializeCollectionAsync(CollectionNames.WorkflowDefinitions);

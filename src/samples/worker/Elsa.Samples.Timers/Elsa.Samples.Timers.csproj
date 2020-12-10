@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
@@ -11,6 +11,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\..\core\Elsa\Elsa.csproj"/>
+        <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.InMemory\Elsa.Persistence.InMemory.csproj" />
     </ItemGroup>
 
 </Project>

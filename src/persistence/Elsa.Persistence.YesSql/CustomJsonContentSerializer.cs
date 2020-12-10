@@ -1,11 +1,14 @@
-﻿using System;
+using System;
+
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+
 using NodaTime;
 using NodaTime.Serialization.JsonNet;
+
 using YesSql;
 
-namespace Elsa.Data.Services
+namespace Elsa.Persistence.YesSql
 {
     public class CustomJsonContentSerializer : IContentSerializer
     {

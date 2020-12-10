@@ -1,6 +1,6 @@
-﻿using YesSql.Sql;
+using YesSql.Sql;
 
-namespace Elsa.Data
+namespace Elsa.Persistence.YesSql.Data
 {
     /// <summary>
     /// Represents a database migration.

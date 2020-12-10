@@ -1,4 +1,6 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
+
+using Elsa.Persistence.InMemory;
 using Elsa.Samples.ProgrammaticCompositeActivitiesConsole.Activities;
 using Elsa.Samples.ProgrammaticCompositeActivitiesConsole.Workflows;
 using Elsa.Services;
@@ -13,6 +15,7 @@ namespace Elsa.Samples.ProgrammaticCompositeActivitiesConsole
             // Create a service container with Elsa services.
             var services = new ServiceCollection()
                 .AddElsa()
+                .AddElsaPersistenceInMemory()
                 .AddConsoleActivities()
                 .AddActivity<CountDownActivity>()
                 .AddWorkflow<CompositionWorkflow>()

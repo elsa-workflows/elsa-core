@@ -10,5 +10,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\..\core\Elsa\Elsa.csproj"/>
+        <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.InMemory\Elsa.Persistence.InMemory.csproj" />
     </ItemGroup>
 </Project>

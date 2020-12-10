@@ -3,7 +3,7 @@ using System.Net;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Extensions;
 using Elsa.Activities.Http.Triggers;
-using Elsa.Extensions;
+using Elsa.Repositories;
 using Elsa.Services;
 using Elsa.Triggers;
 using Microsoft.AspNetCore.Http;
@@ -20,7 +20,7 @@ namespace Elsa.Activities.Http.Middleware
             _next = next;
         }
 
-        public async Task InvokeAsync(HttpContext httpContext, IWorkflowSelector workflowSelector, IWorkflowRunner workflowRunner, IWorkflowInstanceManager workflowInstanceManager)
+        public async Task InvokeAsync(HttpContext httpContext, IWorkflowSelector workflowSelector, IWorkflowRunner workflowRunner, IWorkflowInstanceRepository workflowInstanceRepository)
         {
             var path = httpContext.Request.Path;
             var method = httpContext.Request.Method;
@@ -53,7 +53,7 @@ namespace Elsa.Activities.Http.Middleware
             }
             else
             {
-                var workflowInstance = await workflowInstanceManager.GetByIdAsync(result.WorkflowInstanceId, cancellationToken);
+                var workflowInstance = await workflowInstanceRepository.GetByIdAsync(result.WorkflowInstanceId, cancellationToken);
 
                 if (workflowInstance == null)
                 {

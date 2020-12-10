@@ -1,9 +1,11 @@
-﻿using System.Data;
+using System.Data;
 using Elsa.Data;
-using Elsa.Indexes;
+using Elsa.Persistence.YesSql.Data;
+using Elsa.Persistence.YesSql.Indexes;
+
 using YesSql.Sql;
 
-namespace Elsa
+namespace Elsa.Persistence.YesSql
 {
     public class Migrations : DataMigration
     {

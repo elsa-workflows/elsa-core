@@ -20,7 +20,7 @@
 //     public class WorkflowScheduler : IWorkflowScheduler, INotificationHandler<WorkflowCompleted>
 //     {
 //         private readonly ICommandSender _commandSender;
-//         private readonly IWorkflowInstanceManager _workflowInstanceManager;
+//         private readonly IWorkflowInstanceRepository _workflowInstanceManager;
 //         private readonly IWorkflowFactory _workflowFactory;
 //         private readonly IWorkflowSelector _workflowSelector;
 //         private readonly IWorkflowRegistry _workflowRegistry;
@@ -28,14 +28,14 @@
 //
 //         public WorkflowScheduler(
 //             ICommandSender commandSender,
-//             IWorkflowInstanceManager workflowInstanceManager,
+//             IWorkflowInstanceRepository workflowInstanceRepository,
 //             IWorkflowFactory workflowFactory,
 //             IWorkflowSelector workflowSelector,
 //             IWorkflowRegistry workflowRegistry,
 //             IWorkflowSchedulerQueue queue)
 //         {
 //             _commandSender = commandSender;
-//             _workflowInstanceManager = workflowInstanceManager;
+//             _workflowInstanceManager = workflowInstanceRepository;
 //             _workflowFactory = workflowFactory;
 //             _workflowSelector = workflowSelector;
 //             _workflowRegistry = workflowRegistry;

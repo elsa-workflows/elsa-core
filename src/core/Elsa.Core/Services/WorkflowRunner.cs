@@ -7,8 +7,8 @@ using Elsa.ActivityResults;
 using Elsa.Builders;
 using Elsa.Events;
 using Elsa.Exceptions;
-using Elsa.Extensions;
 using Elsa.Models;
+using Elsa.Repositories;
 using Elsa.Services.Models;
 using Elsa.Triggers;
 using MediatR;
@@ -28,7 +28,7 @@ namespace Elsa.Services
         private readonly IWorkflowRegistry _workflowRegistry;
         private readonly IWorkflowFactory _workflowFactory;
         private readonly IWorkflowSelector _workflowSelector;
-        private readonly IWorkflowInstanceManager _workflowInstanceManager;
+        private readonly IWorkflowInstanceRepository _workflowInstanceManager;
         private readonly Func<IWorkflowBuilder> _workflowBuilderFactory;
         private readonly IWorkflowContextManager _workflowContextManager;
         private readonly IMediator _mediator;
@@ -43,7 +43,7 @@ namespace Elsa.Services
             IWorkflowContextManager workflowContextManager,
             IMediator mediator,
             IServiceProvider serviceProvider,
-            ILogger<WorkflowRunner> logger, IWorkflowInstanceManager workflowInstanceManager)
+            ILogger<WorkflowRunner> logger, IWorkflowInstanceRepository workflowInstanceRepository)
         {
             _workflowRegistry = workflowRegistry;
             _workflowFactory = workflowFactory;
@@ -52,7 +52,7 @@ namespace Elsa.Services
             _mediator = mediator;
             _serviceProvider = serviceProvider;
             _logger = logger;
-            _workflowInstanceManager = workflowInstanceManager;
+            _workflowInstanceManager = workflowInstanceRepository;
             _workflowSelector = workflowSelector;
         }
 

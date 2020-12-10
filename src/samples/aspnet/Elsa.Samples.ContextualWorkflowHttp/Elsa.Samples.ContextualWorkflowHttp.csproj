@@ -6,7 +6,12 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <PackageReference Include="YesSql.Provider.Sqlite" Version="1.0.0-beta-1637" />
+    </ItemGroup>
+
+    <ItemGroup>
       <ProjectReference Include="..\..\..\core\Elsa\Elsa.csproj" />
+      <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.YesSql\Elsa.Persistence.YesSql.csproj" />
     </ItemGroup>
 
 </Project>

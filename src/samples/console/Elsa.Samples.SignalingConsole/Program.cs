@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Elsa.Activities.Signaling.Services;
+using Elsa.Persistence.InMemory;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -16,6 +17,7 @@ namespace Elsa.Samples.SignalingConsole
             // Create a service container with Elsa services.
             var services = new ServiceCollection()
                 .AddElsa()
+                .AddElsaPersistenceInMemory()
                 .AddConsoleActivities()
                 .AddWorkflow<TrafficLightWorkflow>()
                 .BuildServiceProvider();

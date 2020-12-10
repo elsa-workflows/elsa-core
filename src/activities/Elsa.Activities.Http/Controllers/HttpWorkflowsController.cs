@@ -2,7 +2,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Models;
 using Elsa.Activities.Http.Services;
-using Elsa.Extensions;
+using Elsa.Repositories;
 using Elsa.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,16 +14,16 @@ namespace Elsa.Activities.Http.Controllers
     {
         private readonly ITokenService _tokenService;
         private readonly IWorkflowRunner _workflowRunner;
-        private readonly IWorkflowInstanceManager _workflowInstanceManager;
+        private readonly IWorkflowInstanceRepository _workflowInstanceManager;
 
         public HttpWorkflowsController(
             ITokenService tokenService,
             IWorkflowRunner workflowRunner,
-            IWorkflowInstanceManager workflowInstanceManager)
+            IWorkflowInstanceRepository workflowInstanceRepository)
         {
             _tokenService = tokenService;
             _workflowRunner = workflowRunner;
-            _workflowInstanceManager = workflowInstanceManager;
+            _workflowInstanceManager = workflowInstanceRepository;
         }
 
         [Route("trigger/{token}")]

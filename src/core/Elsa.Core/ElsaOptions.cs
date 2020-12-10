@@ -12,10 +12,8 @@ using Rebus.Logging;
 using Rebus.Persistence.InMem;
 using Rebus.Routing.TypeBased;
 using Rebus.Transport.InMem;
-using YesSql;
 using Storage.Net;
 using Storage.Net.Blobs;
-using YesSql.Provider.Sqlite;
 
 namespace Elsa
 {
@@ -25,7 +23,6 @@ namespace Elsa
         {
             Services = services;
 
-            ConfigurePersistence = (sp, config) => config.UseSqLite("Data Source=elsa.db;Cache=Shared", IsolationLevel.ReadUncommitted);
             StorageFactory = sp => Storage.Net.StorageFactory.Blobs.InMemory();
             DistributedLockProviderFactory = sp => new DefaultLockProvider();
             SignalFactory = sp => new Signal();
@@ -52,7 +49,6 @@ namespace Elsa
         }
 
         public IServiceCollection Services { get; }
-        internal Action<IServiceProvider, IConfiguration> ConfigurePersistence { get; set; }
         internal Func<IServiceProvider, IBlobStorage> StorageFactory { get; set; }
         internal Func<IServiceProvider, IDistributedLockProvider> DistributedLockProviderFactory { get; private set; }
         internal Func<IServiceProvider, ISignal> SignalFactory { get; private set; }
@@ -70,14 +66,6 @@ namespace Elsa
         public ElsaOptions UseSignal(Func<IServiceProvider, ISignal> factory)
         {
             SignalFactory = factory;
-            return this;
-        }
-
-        public ElsaOptions UsePersistence(Action<IConfiguration> configure) => UsePersistence((sp, config) => configure(config));
-
-        public ElsaOptions UsePersistence(Action<IServiceProvider, IConfiguration> configure)
-        {
-            ConfigurePersistence = configure;
             return this;
         }
 

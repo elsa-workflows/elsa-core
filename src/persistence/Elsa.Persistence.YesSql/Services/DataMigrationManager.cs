@@ -3,13 +3,18 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+
+using Elsa.Data;
 using Elsa.Data.Documents;
 using Elsa.Extensions;
+using Elsa.Persistence.YesSql.Data;
+
 using Microsoft.Extensions.Logging;
+
 using YesSql;
 using YesSql.Sql;
 
-namespace Elsa.Data.Services
+namespace Elsa.Persistence.YesSql.Services
 {
     /// <summary>
     /// Represents a class that manages the database migrations.

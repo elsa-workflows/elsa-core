@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
-using Elsa.Extensions;
+using Elsa.Repositories;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -19,12 +19,12 @@ namespace Elsa.Activities.Signaling
     public class InterruptTrigger : Activity
     {
         private readonly IWorkflowTriggerInterruptor _workflowTriggerInterruptor;
-        private readonly IWorkflowInstanceManager _workflowInstanceManager;
+        private readonly IWorkflowInstanceRepository _workflowInstanceManager;
 
-        public InterruptTrigger(IWorkflowTriggerInterruptor workflowTriggerInterruptor, IWorkflowInstanceManager workflowInstanceManager)
+        public InterruptTrigger(IWorkflowTriggerInterruptor workflowTriggerInterruptor, IWorkflowInstanceRepository workflowInstanceRepository)
         {
             _workflowTriggerInterruptor = workflowTriggerInterruptor;
-            _workflowInstanceManager = workflowInstanceManager;
+            _workflowInstanceManager = workflowInstanceRepository;
         }
         
         [ActivityProperty(Hint = "The ID of the workflow instance to resume.")]

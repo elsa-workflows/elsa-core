@@ -1,4 +1,6 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
+
+using Elsa.Persistence.InMemory;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -14,6 +16,7 @@ namespace Elsa.Samples.WhileLoopConsole
             // Create a service container with Elsa services.
             var services = new ServiceCollection()
                 .AddElsa()
+                .AddElsaPersistenceInMemory()
                 .AddConsoleActivities()
                 .BuildServiceProvider();
             

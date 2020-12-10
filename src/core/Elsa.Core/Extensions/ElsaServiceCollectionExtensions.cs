@@ -10,11 +10,9 @@ using Elsa.ActivityTypeProviders;
 using Elsa.Builders;
 using Elsa.Consumers;
 using Elsa.Converters;
-using Elsa.Data.Extensions;
 using Elsa.Expressions;
 using Elsa.Extensions;
 using Elsa.HostedServices;
-using Elsa.Indexes;
 using Elsa.Mapping;
 using Elsa.Metadata;
 using Elsa.Metadata.Handlers;
@@ -44,8 +42,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton(options)
                 .AddSingleton(options.DistributedLockProviderFactory)
                 .AddSingleton(options.SignalFactory)
-                .AddSingleton(options.StorageFactory)
-                .AddPersistence(options.ConfigurePersistence);
+                .AddSingleton(options.StorageFactory);
 
             options.AddWorkflowsCore();
             options.AddMediatR();
@@ -100,12 +97,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IWorkflowBlueprintMaterializer, WorkflowBlueprintMaterializer>()
                 .AddSingleton<IWorkflowBlueprintReflector, WorkflowBlueprintReflector>()
                 .AddScoped<IWorkflowSelector, WorkflowSelector>()
-                .AddScoped<IWorkflowDefinitionManager, WorkflowDefinitionManager>()
-                .AddScoped<IWorkflowInstanceManager, WorkflowInstanceManager>()
                 .AddScoped<IWorkflowPublisher, WorkflowPublisher>()
-                .AddScoped<IWorkflowContextManager, WorkflowContextManager>()
-                .AddIndexProvider<WorkflowDefinitionIndexProvider>()
-                .AddIndexProvider<WorkflowInstanceIndexProvider>()
+                .AddScoped<IWorkflowContextManager, WorkflowContextManager>()              
                 .AddStartupRunner()
                 .AddSingleton<IActivityTypeService, ActivityTypeService>()
                 .AddSingleton<IActivityTypeProvider, TypeBasedActivityProvider>()

@@ -2,7 +2,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Events;
 using Elsa.Models;
-using Elsa.Services;
+using Elsa.Repositories;
 using Elsa.Services.Models;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -15,12 +15,12 @@ namespace Elsa.Handlers
         INotificationHandler<ActivityExecuted>,
         INotificationHandler<WorkflowCompleted>
     {
-        private readonly IWorkflowInstanceManager _workflowInstanceManager;
+        private readonly IWorkflowInstanceRepository _workflowInstanceManager;
         private readonly ILogger _logger;
 
-        public PersistWorkflow(IWorkflowInstanceManager workflowInstanceManager, ILogger<PersistWorkflow> logger)
+        public PersistWorkflow(IWorkflowInstanceRepository workflowInstanceRepository, ILogger<PersistWorkflow> logger)
         {
-            _workflowInstanceManager = workflowInstanceManager;
+            _workflowInstanceManager = workflowInstanceRepository;
             _logger = logger;
         }
 

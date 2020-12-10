@@ -1,8 +1,11 @@
 using Elsa.Samples.ContextualWorkflowHttp.Indexes;
 using Elsa.Samples.ContextualWorkflowHttp.WorkflowContextProviders;
 using Elsa.Samples.ContextualWorkflowHttp.Workflows;
+using Elsa.Persistence.YesSql;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
+using YesSql.Provider.Sqlite;
+using System.Data;
 
 namespace Elsa.Samples.ContextualWorkflowHttp
 {
@@ -12,6 +15,7 @@ namespace Elsa.Samples.ContextualWorkflowHttp
         {
             services
                 .AddElsa()
+                .AddElsaPersistenceYesSql((sp, config) => config.UseSqLite("Data Source=elsa.db;Cache=Shared", IsolationLevel.ReadUncommitted))
                 .AddHttpActivities()
                 .AddConsoleActivities()
                 .AddDataMigration<Migrations>()

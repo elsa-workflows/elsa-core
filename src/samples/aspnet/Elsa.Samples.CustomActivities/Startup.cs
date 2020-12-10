@@ -1,6 +1,7 @@
+using Elsa.Persistence.InMemory;
+
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
-using YesSql.Provider.Sqlite;
 
 namespace Elsa.Samples.CustomActivities
 {
@@ -9,7 +10,8 @@ namespace Elsa.Samples.CustomActivities
         public void ConfigureServices(IServiceCollection services)
         {
             services
-                .AddElsa(option => option.UsePersistence(db => db.UseSqLite("Data Source=elsa.db;Cache=Shared")))
+                .AddElsa()
+                .AddElsaPersistenceInMemory()
                 .AddHttpActivities()
                 .AddActivity<ReadQueryString>()
                 .AddWorkflow<EchoQueryStringWorkflow>();

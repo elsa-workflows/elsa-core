@@ -1,9 +1,8 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Extensions;
 using Elsa.Models;
+using Elsa.Repositories;
 using Elsa.Server.Api.Models;
-using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Open.Linq.AsyncExtensions;
@@ -17,11 +16,11 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
     [Produces("application/json")]
     public class List : Controller
     {
-        private readonly IWorkflowInstanceManager _workflowInstanceManager;
+        private readonly IWorkflowInstanceRepository _workflowInstanceManager;
 
-        public List(IWorkflowInstanceManager workflowInstanceManager)
+        public List(IWorkflowInstanceRepository workflowInstanceRepository)
         {
-            _workflowInstanceManager = workflowInstanceManager;
+            _workflowInstanceManager = workflowInstanceRepository;
         }
 
         [HttpGet]
