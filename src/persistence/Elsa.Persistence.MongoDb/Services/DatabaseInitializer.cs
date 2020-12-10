@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -20,37 +21,45 @@ namespace Elsa.Persistence.MongoDb.Services
 
         public async Task ExecuteAsync(CancellationToken cancellationToken = default)
         {
-            Map();
+            // In unit tests, the method is called several times, which throws an exception because the entity is already registered
+            // If an error is thrown, the remaining registrations are no longer processed
+            var firstPass = Map();
+            if(firstPass == false)
+            {
+                return;
+            }
+
             RegisterSerializers();
             await CreatedIdexiesAsync();
         }
 
-        private void Map()
+        private bool Map()
         {
-            // Bei Unit Tests, wird die Methode Mehrmals aufgerufen, wodurch eine Exception entstehet, weil die Entity bereits registriert ist
-            //try
-            //{
-                if (BsonClassMap.IsClassMapRegistered(typeof(WorkflowDefinition)) == false)
-                {
-                    BsonClassMap.RegisterClassMap<WorkflowDefinition>(cm =>
-                    {
-                        cm.AutoMap();
-                        cm.MapIdMember(x => x.WorkflowDefinitionId);
-                    });
-                }
+            if (BsonClassMap.IsClassMapRegistered(typeof(WorkflowDefinition)))
+            {
+                return false;
+            }
+            try
+            {
 
-                if (BsonClassMap.IsClassMapRegistered(typeof(WorkflowInstance)) == false)
+                BsonClassMap.RegisterClassMap<WorkflowDefinition>(cm =>
                 {
-                    BsonClassMap.RegisterClassMap<WorkflowInstance>(cm =>
-                    {
-                        cm.AutoMap();
-                        cm.MapIdMember(x => x.WorkflowInstanceId);
-                    });
-                }
-            //}
-            //catch (Exception)
-            //{
-            //}
+                    cm.AutoMap();
+                    cm.MapIdMember(x => x.WorkflowDefinitionId);
+                });
+
+                BsonClassMap.RegisterClassMap<WorkflowInstance>(cm =>
+                {
+                    cm.AutoMap();
+                    cm.MapIdMember(x => x.WorkflowInstanceId);
+                });
+
+            }
+            catch (Exception) {
+                return false;
+            }
+
+            return true;
         }
 
         private void RegisterSerializers()
