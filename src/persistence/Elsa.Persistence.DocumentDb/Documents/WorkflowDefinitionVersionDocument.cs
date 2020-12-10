@@ -6,7 +6,8 @@ namespace Elsa.Persistence.DocumentDb.Documents
 {
     public class WorkflowDefinitionVersionDocument : DocumentBase
     {
-        [JsonProperty(PropertyName = "type")] public string Type { get; } = nameof(WorkflowDefinitionVersionDocument);
+        [JsonProperty(PropertyName = "type")] 
+        public string Type { get; } = nameof(WorkflowDefinitionVersionDocument);
 
         [JsonProperty(PropertyName = "definitionId")]
         public string DefinitionId { get; set; }
@@ -39,5 +40,8 @@ namespace Elsa.Persistence.DocumentDb.Documents
 
         [JsonProperty(PropertyName = "isLatest")]
         public bool IsLatest { get; set; }
+
+        [JsonProperty(PropertyName = "tenantId")]
+        public string TenantId { get; set; }
     }
 }

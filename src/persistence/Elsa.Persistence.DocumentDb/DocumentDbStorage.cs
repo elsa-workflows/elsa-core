@@ -19,7 +19,7 @@ namespace Elsa.Persistence.DocumentDb
         private readonly SemaphoreSlim clientInstanceLock;
         private readonly DocumentDbStorageOptions options;
         private readonly DocumentClient client;
-        private Dictionary<string, (string Name, Uri Uri)> collectionUris;
+        private Dictionary<string, (string Name, Uri Uri, string TenantId)> collectionInfos;
 
         public DocumentDbStorage(IOptions<DocumentDbStorageOptions> options)
         {
@@ -60,7 +60,7 @@ namespace Elsa.Persistence.DocumentDb
 
             try
             {
-                if (collectionUris != null)
+                if (collectionInfos != null)
                 {
                     return client;
                 }
@@ -72,21 +72,25 @@ namespace Elsa.Persistence.DocumentDb
                     Id = options.DatabaseName
                 });
 
-                var tasks = options.CollectionNames.Select(async collectionName =>
+                var tasks = options.CollectionInfos.Select(async collectionInfo =>
                 {
+                    var partitionKeyDefinition = new PartitionKeyDefinition();
+                    partitionKeyDefinition.Paths.Add("/tenantId");
+
                     var databaseUri = UriFactory.CreateDatabaseUri(database.Resource.Id);
                     var collection = await client.CreateDocumentCollectionIfNotExistsAsync(databaseUri, new DocumentCollection
                     {
-                        Id = collectionName.Value
-                    });
+                        Id = collectionInfo.Value.Name,
+                        PartitionKey = partitionKeyDefinition
+                    }, new RequestOptions { OfferThroughput = collectionInfo.Value.OfferThroughput });
                     var uri = UriFactory.CreateDocumentCollectionUri(options.DatabaseName, collection.Resource.Id);
 
-                    return (collectionName.Key, Name: collectionName.Value, Uri: uri);
+                    return (collectionInfo.Key, collectionInfo.Value.Name, Uri: uri, collectionInfo.Value.TenantId);
                 });
 
                 var results = await Task.WhenAll(tasks);
 
-                collectionUris = results.ToDictionary(x => x.Key, x => (x.Name, x.Uri));
+                collectionInfos = results.ToDictionary(x => x.Key, x => (x.Name, x.Uri, x.TenantId));
 
                 return client;
             }
@@ -96,7 +100,20 @@ namespace Elsa.Persistence.DocumentDb
             }
         }
 
-        public Uri GetWorkflowDefinitionCollectionUri() => collectionUris["WorkflowDefinition"].Uri;
-        public Uri GetWorkflowInstanceCollectionUri() => collectionUris["WorkflowInstance"].Uri;
+        public async Task<(string Name, Uri Uri, string TenantId)> GetWorkflowDefinitionCollectionInfoAsync()
+        {
+            return await GetCollectionInfoAsync("WorkflowDefinition");
+        }
+
+        public async Task<(string Name, Uri Uri, string TenantId)> GetWorkflowInstanceCollectionInfoAsync()
+        {
+            return await GetCollectionInfoAsync("WorkflowInstance");
+        }
+
+        private async Task<(string Name, Uri Uri, string TenantId)> GetCollectionInfoAsync(string key)
+        {
+            await GetDocumentClient();
+            return collectionInfos[key];
+        }
     }
 }
