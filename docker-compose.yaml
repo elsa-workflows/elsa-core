@@ -16,9 +16,28 @@ services:
         image: mongo
         ports:
             - "27017:27017"
+                
+    postgresql:
+        image: postgres
+        environment:
+            - POSTGRES_HOST_AUTH_METHOD=trust
+        ports:
+            - 5432:5432
+                
+    pgadmin:
+        image: dpage/pgadmin4
+        environment:
+            - PGADMIN_DEFAULT_EMAIL=admin@local
+            - PGADMIN_DEFAULT_PASSWORD=Pass123!
+            - PGADMIN_LISTEN_PORT=5050
+        ports:
+            - 5050:5050
 
     smtp4dev:
         image: opvolger/rnwoodsmtp4dev
         ports:
             - "3000:80"
             - "2525:25"
+
+networks:
+    default:
