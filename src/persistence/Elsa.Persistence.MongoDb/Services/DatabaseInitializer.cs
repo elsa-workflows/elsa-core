@@ -7,6 +7,7 @@ using Elsa.Persistence.MongoDb.Serializers;
 using Elsa.Services;
 
 using MongoDB.Bson.Serialization;
+using MongoDB.Driver;
 
 namespace Elsa.Persistence.MongoDb.Services
 {
@@ -19,59 +20,29 @@ namespace Elsa.Persistence.MongoDb.Services
             _workflowEngineMongoDbClient = workflowEngineMongoDbClient;
         }
 
+        /// <summary>
+        /// Create Indexies
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task ExecuteAsync(CancellationToken cancellationToken = default)
         {
-            // In unit tests, the method is called several times, which throws an exception because the entity is already registered
-            // If an error is thrown, the remaining registrations are no longer processed
-            var firstPass = Map();
-            if(firstPass == false)
-            {
-                return;
-            }
-
-            RegisterSerializers();
-            await CreatedIdexiesAsync();
+            await CreateWorkflowInstancesIndexies(cancellationToken);
+            await CreateWorkflowDefinitionsIndexies(cancellationToken);
         }
+       
 
-        private bool Map()
+        private async Task CreateWorkflowInstancesIndexies(CancellationToken cancellationToken)
         {
-            if (BsonClassMap.IsClassMapRegistered(typeof(WorkflowDefinition)))
-            {
-                return false;
-            }
-
-            try
-            {
-
-                BsonClassMap.RegisterClassMap<WorkflowDefinition>(cm =>
-                {
-                    cm.AutoMap();
-                    cm.MapIdMember(x => x.Id);
-                });
-
-                BsonClassMap.RegisterClassMap<WorkflowInstance>(cm =>
-                {
-                    cm.AutoMap();
-                    cm.MapIdMember(x => x.Id);
-                });
-
-            }
-            catch (Exception) {
-                return false;
-            }
-
-            return true;
+            var indexKeysDefinition = Builders<WorkflowInstance>.IndexKeys.Ascending(x => x.WorkflowInstanceId);
+            await _workflowEngineMongoDbClient.WorkflowInstances.Indexes.CreateOneAsync(new CreateIndexModel<WorkflowInstance>(indexKeysDefinition),cancellationToken: cancellationToken);
         }
 
-        private void RegisterSerializers()
+        private async Task CreateWorkflowDefinitionsIndexies(CancellationToken cancellationToken)
         {
-            BsonSerializer.RegisterSerializer(JsonSerializer.Instance);
-            BsonSerializer.RegisterSerializer(NodaTimeSerializer.Instance);
+            var indexKeysDefinition = Builders<WorkflowDefinition>.IndexKeys.Ascending(x => x.WorkflowDefinitionId).Descending(x => x.Version);
+            await _workflowEngineMongoDbClient.WorkflowDefinitions.Indexes.CreateOneAsync(new CreateIndexModel<WorkflowDefinition>(indexKeysDefinition), cancellationToken: cancellationToken);
         }
 
-        private Task CreatedIdexiesAsync()
-        {
-            return Task.CompletedTask;
-        }
     }
 }

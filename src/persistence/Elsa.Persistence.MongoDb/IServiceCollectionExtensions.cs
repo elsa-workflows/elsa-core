@@ -38,6 +38,8 @@ namespace Elsa.Persistence.MongoDb
                 .AddWorkflowProvider<DatabaseWorkflowProvider>()
                 .AddStartupTask<DatabaseInitializer>();
 
+            DatabaseRegister.RegisterMapsAndSerializers();
+
         }
     }
 }
