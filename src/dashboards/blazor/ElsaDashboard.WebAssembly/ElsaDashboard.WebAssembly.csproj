@@ -6,6 +6,7 @@
 
     <ItemGroup>
         <PackageReference Include="Grpc.Net.Client.Web" Version="2.33.1" />
+        <PackageReference Include="protobuf-net.NodaTime" Version="3.0.73" />
     </ItemGroup>
     
     <ItemGroup>

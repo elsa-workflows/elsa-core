@@ -13,7 +13,8 @@ namespace ElsaDashboard.Shared.Surrogates
         private static readonly IDictionary<Type, Type> SurrogateMapping = new Dictionary<Type, Type>
         {
             [typeof(ActivityPropertyInfo)] = typeof(ActivityPropertyDescriptorSurrogate),
-            [typeof(VersionOptions)] = typeof(VersionOptionsSurrogate)
+            [typeof(VersionOptions)] = typeof(VersionOptionsSurrogate),
+            [typeof(WorkflowInstance)] = typeof(WorkflowInstanceSurrogate)
         };
 
         /// <summary>
@@ -21,9 +22,9 @@ namespace ElsaDashboard.Shared.Surrogates
         /// </summary>
         public static RuntimeTypeModel AddElsaGrpcSurrogates(this RuntimeTypeModel runtimeTypeModel)
         {
-            foreach (var map in SurrogateMapping) 
+            foreach (var map in SurrogateMapping)
                 runtimeTypeModel.Add(map.Key, false).SetSurrogate(map.Value);
-            
+
             return runtimeTypeModel;
         }
     }

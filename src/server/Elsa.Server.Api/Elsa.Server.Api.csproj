@@ -18,9 +18,9 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
-    <ItemGroup>
-        <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    </ItemGroup>
+<!--    <ItemGroup>-->
+<!--        <FrameworkReference Include="Microsoft.AspNetCore.App" />-->
+<!--    </ItemGroup>-->
 
     <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore" Version="2.2.0" />

@@ -1,16 +1,18 @@
 ﻿using System.Collections.Generic;
 using System.Runtime.Serialization;
-using Elsa.Client.Comparers;
+using Elsa.Comparers;
+using Elsa.Models;
+using Newtonsoft.Json.Linq;
 using NodaTime;
 
-namespace Elsa.Client.Models
+namespace Elsa.Server.Api.Models
 {
     [DataContract]
-    public class WorkflowInstance
+    public class WorkflowInstanceModel
     {
         private HashSet<BlockingActivity> _blockingActivities = new(BlockingActivityEqualityComparer.Instance);
 
-        public WorkflowInstance()
+        public WorkflowInstanceModel()
         {
             Variables = new Variables();
             Activities = new List<ActivityInstance>();
@@ -31,7 +33,7 @@ namespace Elsa.Client.Models
         [DataMember(Order = 10)] public Instant? LastBurstAt { get; set; }
         [DataMember(Order = 11)] public Instant? CompletedAt { get; set; }
         [DataMember(Order = 12)] public Variables Variables { get; set; }
-        [DataMember(Order = 13)] public object? Output { get; set; }
+        [DataMember(Order = 13)] public JObject? Output { get; set; }
         [DataMember(Order = 14)] public ICollection<ActivityInstance> Activities { get; set; }
 
         [DataMember(Order = 15)] public HashSet<BlockingActivity> BlockingActivities

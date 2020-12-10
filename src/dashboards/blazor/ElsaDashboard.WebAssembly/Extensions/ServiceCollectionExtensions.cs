@@ -10,6 +10,7 @@ namespace ElsaDashboard.WebAssembly.Extensions
         public static IServiceCollection AddElsaDashboardBackend(this IServiceCollection services)
         {
             RuntimeTypeModel.Default.AddElsaGrpcSurrogates();
+            RuntimeTypeModel.Default.AddNodaTime();
             return services
                 .AddGrpcClient<IActivityService>()
                 .AddGrpcClient<IWorkflowDefinitionService>();
