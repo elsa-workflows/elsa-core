@@ -3,28 +3,48 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Elsa.Client.Models;
+using ElsaDashboard.Application.Attributes;
+using ElsaDashboard.Application.Extensions;
 using ElsaDashboard.Application.Services;
 using ElsaDashboard.Shared.Rpc;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Routing;
 
 namespace ElsaDashboard.Application.Pages.WorkflowInstances
 {
-    partial class List
+    partial class List : IDisposable
     {
+        [QueryStringParameter] public int Page { get; set; } = 0;
+        [QueryStringParameter] public int PageSize { get; set; } = 10;
+        [Inject] private NavigationManager NavigationManager { get; set; } = default!;
         [Inject] private IWorkflowInstanceService WorkflowInstanceService { get; set; } = default!;
         [Inject] private IWorkflowRegistryService WorkflowRegistryService { get; set; } = default!;
         [Inject] private IConfirmDialogService ConfirmDialogService { get; set; } = default!;
         private PagedList<WorkflowInstance> WorkflowInstances { get; set; } = new();
         private IDictionary<(string, int), WorkflowBlueprint> WorkflowBlueprints { get; set; } = new Dictionary<(string, int), WorkflowBlueprint>();
 
+        public void Dispose()
+        {
+            NavigationManager.LocationChanged -= OnLocationChanged;
+        }
+        
+        public override Task SetParametersAsync(ParameterView parameters)
+        {
+            this.SetParametersFromQueryString(NavigationManager);
+            return base.SetParametersAsync(parameters);
+        }
+
         protected override async Task OnInitializedAsync()
         {
-            var workflowBlueprintsTask = WorkflowRegistryService.ListAsync();
-            var workflowInstancesTask = LoadWorkflowInstancesAsync();
+            NavigationManager.LocationChanged += OnLocationChanged;
+            
+            var workflowBlueprints = await WorkflowRegistryService.ListAsync();
+            WorkflowBlueprints = workflowBlueprints.Items.ToDictionary(x => (x.Id, x.Version));
+        }
 
-            await Task.WhenAll(workflowBlueprintsTask, workflowInstancesTask);
-
-            WorkflowBlueprints = workflowBlueprintsTask.Result.Items.ToDictionary(x => (x.Id, x.Version));
+        protected override async Task OnParametersSetAsync()
+        {
+            await LoadWorkflowInstancesAsync();
         }
 
         private async Task OnDeleteWorkflowInstanceClick(WorkflowInstance workflowInstance)
@@ -40,7 +60,13 @@ namespace ElsaDashboard.Application.Pages.WorkflowInstances
 
         private async Task LoadWorkflowInstancesAsync()
         {
-            WorkflowInstances = await WorkflowInstanceService.ListAsync();
+            WorkflowInstances = await WorkflowInstanceService.ListAsync(Page, PageSize);
+        }
+        
+        private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+        {
+            this.SetParametersFromQueryString(NavigationManager);
+            LoadWorkflowInstancesAsync().ContinueWith(_ => InvokeAsync(StateHasChanged));
         }
 
         private static string GetStatusColor(WorkflowStatus status) =>

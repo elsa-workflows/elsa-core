@@ -11,6 +11,6 @@ namespace ElsaDashboard.Application.Shared
 
         private int From => Page!.Value * PageSize!.Value + 1;
         private int To => Math.Min(From + PageSize!.Value, TotalCount);
-        private int PageCount => TotalCount / PageSize!.Value;
+        private int PageCount => (TotalCount / PageSize!.Value) + 1;
     }
 }
