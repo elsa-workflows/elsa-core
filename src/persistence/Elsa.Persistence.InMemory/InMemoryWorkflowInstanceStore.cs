@@ -1,11 +1,8 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Events;
 using Elsa.Models;
-using MediatR;
 
 #nullable disable
 
@@ -13,20 +10,14 @@ namespace Elsa.Persistence.InMemory
 {
     public class InMemoryWorkflowInstanceStore : IWorkflowInstanceStore
     {
-        private static readonly List<WorkflowInstance> Instances = new List<WorkflowInstance>();
-        private readonly IMediator _mediator;
-
-        public InMemoryWorkflowInstanceStore(IMediator mediator)
-        {
-            _mediator = mediator;
-        }
+        private static readonly List<WorkflowInstance> Instances = new();
 
         public Task<int> CountAsync(CancellationToken cancellationToken = default) => Task.FromResult(Instances.Count());
 
-        public async Task DeleteAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken = default)
+        public Task DeleteAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken = default)
         {
-            Instances.Remove(workflowInstance);
-            await _mediator.Publish(new WorkflowInstanceDeleted(workflowInstance), cancellationToken);
+             Instances.Remove(workflowInstance);
+             return Task.CompletedTask;
         }
 
         public Task<WorkflowInstance> GetByCorrelationIdAsync(string correlationId, WorkflowStatus status, CancellationToken cancellationToken = default) =>
@@ -61,7 +52,7 @@ namespace Elsa.Persistence.InMemory
 
         public Task<IEnumerable<WorkflowInstance>> ListByStatusAsync(WorkflowStatus workflowStatus, CancellationToken cancellationToken = default) => Task.FromResult(Instances.Where(instance => instance.Status == workflowStatus));
 
-        public async Task SaveAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken = default)
+        public Task SaveAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken = default)
         {
             if (workflowInstance.Id == 0)
             {
@@ -75,7 +66,7 @@ namespace Elsa.Persistence.InMemory
                         Instances[i] = workflowInstance;
             }
 
-            await _mediator.Publish(new WorkflowInstanceSaved(workflowInstance), cancellationToken);
+            return Task.CompletedTask;
         }
     }
 }

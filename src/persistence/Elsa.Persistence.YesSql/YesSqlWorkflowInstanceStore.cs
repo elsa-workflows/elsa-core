@@ -16,26 +16,22 @@ namespace Elsa.Persistence.YesSql
     public class YesSqlWorkflowInstanceStore : IWorkflowInstanceStore
     {
         private readonly ISession _session;
-        private readonly IMediator _mediator;
 
-        public YesSqlWorkflowInstanceStore(ISession session, IMediator mediator)
+        public YesSqlWorkflowInstanceStore(ISession session)
         {
             _session = session;
-            _mediator = mediator;
         }
 
         public async Task SaveAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken = default)
         {
             _session.Save(workflowInstance, CollectionNames.WorkflowInstances);
             await _session.CommitAsync();
-            await _mediator.Publish(new WorkflowInstanceSaved(workflowInstance), cancellationToken);
         }
 
         public async Task DeleteAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken = default)
         {
             _session.Delete(workflowInstance, CollectionNames.WorkflowInstances);
             await _session.CommitAsync();
-            await _mediator.Publish(new WorkflowInstanceDeleted(workflowInstance), cancellationToken);
         }
 
         public async Task<bool> GetWorkflowIsAlreadyExecutingAsync(string? tenantId, string workflowDefinitionId, CancellationToken cancellationToken = default)

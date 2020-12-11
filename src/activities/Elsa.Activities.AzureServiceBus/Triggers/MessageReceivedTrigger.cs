@@ -15,7 +15,7 @@ namespace Elsa.Activities.AzureServiceBus.Triggers
         public override async ValueTask<ITrigger> GetTriggerAsync(TriggerProviderContext<AzureServiceBusMessageReceived> context, CancellationToken cancellationToken) =>
             new MessageReceivedTrigger
             {
-                QueueName = (await context.Activity.GetPropertyValueAsync(x => x.QueueName, cancellationToken)),
+                QueueName = (await context.Activity.GetPropertyValueAsync(x => x.QueueName, cancellationToken))!,
                 CorrelationId = context.ActivityExecutionContext.WorkflowExecutionContext.CorrelationId
             };
     }

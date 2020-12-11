@@ -19,10 +19,10 @@ namespace Elsa.Activities.Timers
     )]
     public class StartAt : Activity
     {
-        private readonly IWorkflowInstanceStore _workflowInstanceManager;
+        private readonly IWorkflowInstanceManager _workflowInstanceManager;
         private readonly IWorkflowScheduler _workflowScheduler;
 
-        public StartAt(IWorkflowInstanceStore workflowInstanceStore, IWorkflowScheduler workflowScheduler)
+        public StartAt(IWorkflowInstanceManager workflowInstanceStore, IWorkflowScheduler workflowScheduler)
         {
             _workflowInstanceManager = workflowInstanceStore;
             _workflowScheduler = workflowScheduler;

@@ -14,11 +14,9 @@ namespace Elsa.Persistence.MongoDb
     public class MongoDbWorkflowInstanceStore : IWorkflowInstanceStore
     {
         private readonly IMongoCollection<WorkflowInstance> _workflowInstances;
-        private readonly IMediator _mediator;
 
-        public MongoDbWorkflowInstanceStore(IMediator mediator, IMongoCollection<WorkflowInstance> workflowInstances)
+        public MongoDbWorkflowInstanceStore(IMongoCollection<WorkflowInstance> workflowInstances)
         {
-            _mediator = mediator;
             _workflowInstances = workflowInstances;
         }
 
@@ -28,7 +26,6 @@ namespace Elsa.Persistence.MongoDb
         {
             var filter = GetFilterWorkflowId(workflowInstance.Id);
             await _workflowInstances.DeleteOneAsync(filter, cancellationToken);
-            await _mediator.Publish(new WorkflowInstanceDeleted(workflowInstance), cancellationToken);
         }
 
         public async Task<WorkflowInstance?> GetByCorrelationIdAsync(string correlationId, WorkflowStatus status, CancellationToken cancellationToken = default) =>
@@ -97,7 +94,6 @@ namespace Elsa.Persistence.MongoDb
             var filter = GetFilterWorkflowId(workflowInstance.Id);
 
             await _workflowInstances.ReplaceOneAsync(filter, workflowInstance, new ReplaceOptions { IsUpsert = true }, cancellationToken);
-            await _mediator.Publish(new WorkflowInstanceSaved(workflowInstance), cancellationToken);
         }
 
         private static FilterDefinition<WorkflowInstance> GetFilterWorkflowId(int id) => Builders<WorkflowInstance>.Filter.Where(x => x.Id == id);
