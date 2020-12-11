@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
+using ElsaDashboard.Application.Icons;
 using ElsaDashboard.Application.Models;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
 
 namespace ElsaDashboard.Application.Shared
@@ -10,14 +12,16 @@ namespace ElsaDashboard.Application.Shared
         {
             MenuItems = new[]
             {
-                new MenuItem("Home", "", "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6", NavLinkMatch.All),
-                new MenuItem("Workflow Registry", "workflow-registry", "M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z", NavLinkMatch.Prefix),
-                new MenuItem("Workflow Instances", "workflow-instances", "M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z", NavLinkMatch.Prefix),
-                new MenuItem("Workflow Sources", "workflow-definitions", "M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z", NavLinkMatch.Prefix),
-                new MenuItem("Composite Activities", "composite-activities", "M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z", NavLinkMatch.Prefix),
+                new MenuItem("Home", "", GetIcon<Home>(), NavLinkMatch.All),
+                new MenuItem("Workflow Registry", "workflow-registry", GetIcon<Squares>(), NavLinkMatch.Prefix),
+                new MenuItem("Workflow Instances", "workflow-instances", GetIcon<PlayCircle>(), NavLinkMatch.Prefix),
+                new MenuItem("Workflow Definitions", "workflow-definitions", GetIcon<Database>(), NavLinkMatch.Prefix),
+                new MenuItem("Composite Activities", "composite-activities", GetIcon<Icons.Activity>(), NavLinkMatch.Prefix),
             };
         }
 
         public IEnumerable<MenuItem> MenuItems { get; set; }
+
+        private RenderFragment GetIcon<T>() where T : Icon => Icon.Render<T>("mr-3 h-6 w-6 text-gray-500 group-hover:text-gray-500 group-focus:text-gray-600 transition ease-in-out duration-150");
     }
 }

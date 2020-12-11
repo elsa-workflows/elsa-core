@@ -21,9 +21,7 @@
                         {
                             const string activeClass = "text-gray-900 bg-gray-100 hover:text-gray-900 hover:bg-gray-100 focus:bg-gray-200";
                             <NavLink Match="@menuItem.Match" href="@menuItem.Url" class="group flex items-center px-2 py-2 text-base leading-5 font-medium rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none transition ease-in-out duration-150" ActiveClass="@activeClass">
-                                <svg class="mr-3 h-6 w-6 text-gray-500 group-hover:text-gray-500 group-focus:text-gray-600 transition ease-in-out duration-150" x-description="Heroicon name: home" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="@menuItem.Icon"></path>
-                                </svg>
+                                @menuItem.Icon
                                 @menuItem.Text
                             </NavLink>                        }
                     </div>
@@ -63,9 +61,7 @@
                     {
                         const string activeClass = "text-gray-900 bg-gray-200 focus:bg-gray-50";
                         <NavLink Match="@menuItem.Match" href="@menuItem.Url" class="group flex items-center px-2 py-2 text-sm leading-5 font-medium rounded-md text-gray-700 hover:text-gray-900 hover:bg-gray-50 focus:outline-none focus:bg-gray-50 transition ease-in-out duration-150" ActiveClass="@activeClass">
-                            <svg class="mr-3 h-6 w-6 text-gray-400 group-hover:text-gray-500 group-focus:text-gray-600 transition ease-in-out duration-150" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="@menuItem.Icon"></path>
-                            </svg>
+                            @menuItem.Icon
                             @menuItem.Text
                         </NavLink>
                     }
