@@ -52,6 +52,9 @@ namespace Elsa.Persistence.MongoDb
 
         public WorkflowDefinition Initialize(WorkflowDefinition workflowDefinition)
         {
+            if (string.IsNullOrWhiteSpace(workflowDefinition.WorkflowDefinitionId))
+                workflowDefinition.WorkflowDefinitionId = _idGenerator.Generate();
+
             if (workflowDefinition.Version == 0)
                 workflowDefinition.Version = 1;
 
