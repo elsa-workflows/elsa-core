@@ -14,7 +14,7 @@
         <PackageProjectUrl>https://github.com/elsa-workflows/elsa-core</PackageProjectUrl>
         <RepositoryUrl>https://github.com/elsa-workflows/elsa-core</RepositoryUrl>
         <RepositoryType>GitHub</RepositoryType>
-        <PackageTags>elsa, workflows, orchard</PackageTags>
+        <PackageTags>elsa, workflows, distributed lock, azure blob storage</PackageTags>
         <PackageIcon>icon.png</PackageIcon>
         <Nullable>enable</Nullable>
     </PropertyGroup>
