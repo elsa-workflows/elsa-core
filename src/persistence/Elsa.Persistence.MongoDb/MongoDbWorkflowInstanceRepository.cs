@@ -20,7 +20,7 @@ namespace Elsa.Persistence.MongoDb
         private readonly IMongoCollection<WorkflowInstance> _workflowInstances;
         private readonly IMediator _mediator;
 
-        public MongoDbWorkflowInstanceRepository(IMediator mediator, workflowInstances workflowInstances)
+        public MongoDbWorkflowInstanceRepository(IMediator mediator, IMongoCollection<WorkflowInstance> workflowInstances)
         {
             _mediator = mediator;
             _workflowInstances = workflowInstances;
