@@ -1,8 +1,9 @@
-﻿using Elsa.Data;
+using Elsa.Data;
 using Elsa.Models;
+
 using YesSql.Indexes;
 
-namespace Elsa.Indexes
+namespace Elsa.Persistence.YesSql.Indexes
 {
     public class WorkflowDefinitionIndex : MapIndex
     {
@@ -14,7 +15,7 @@ namespace Elsa.Indexes
         public bool IsPublished { get; set; }
         public bool IsEnabled { get; set; }
     }
-    
+
     public class WorkflowDefinitionIndexProvider : IndexProvider<WorkflowDefinition>
     {
         public WorkflowDefinitionIndexProvider() => CollectionName = CollectionNames.WorkflowDefinitions;

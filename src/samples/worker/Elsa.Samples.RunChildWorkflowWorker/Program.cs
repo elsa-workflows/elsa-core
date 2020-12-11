@@ -1,3 +1,4 @@
+using Elsa.Persistence.InMemory;
 using Elsa.Samples.RunChildWorkflowWorker.HostedServices;
 using Elsa.Samples.RunChildWorkflowWorker.Workflows;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,6 +20,7 @@ namespace Elsa.Samples.RunChildWorkflowWorker
                     {
                         services
                             .AddElsa()
+                            .AddElsaPersistenceInMemory()
                             .AddConsoleActivities()
                             .AddHostedService<RunParentWorkflow>()
                             .AddWorkflow<ParentWorkflow>()

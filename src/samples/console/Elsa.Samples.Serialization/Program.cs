@@ -1,7 +1,8 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Elsa.Activities.Console;
 using Elsa.Models;
+using Elsa.Persistence.InMemory;
 using Elsa.Scripting.Liquid.Services;
 using Elsa.Serialization;
 using Elsa.Services;
@@ -23,6 +24,7 @@ namespace Elsa.Samples.Serialization
             // Create a service container with Elsa services.
             var services = new ServiceCollection()
                 .AddElsa()
+                .AddElsaPersistenceInMemory()
                 .AddConsoleActivities()
                 .BuildServiceProvider();
             

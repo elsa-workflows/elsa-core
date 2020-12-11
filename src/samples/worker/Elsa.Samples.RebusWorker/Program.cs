@@ -1,3 +1,4 @@
+using Elsa.Persistence.InMemory;
 using Elsa.Samples.RebusWorker.Messages;
 using Elsa.Samples.RebusWorker.Workflows;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,6 +19,7 @@ namespace Elsa.Samples.RebusWorker
                 {
                     services
                         .AddElsa()
+                        .AddElsaPersistenceInMemory()
                         .AddConsoleActivities()
                         .AddTimerActivities()
                         .AddRebusActivities<Greeting>()

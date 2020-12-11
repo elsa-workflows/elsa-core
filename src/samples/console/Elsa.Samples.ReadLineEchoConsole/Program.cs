@@ -1,6 +1,7 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using Elsa.Activities.Console;
 using Elsa.Builders;
+using Elsa.Persistence.InMemory;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -13,6 +14,7 @@ namespace Elsa.Samples.ReadLineEchoConsole
             // Create a service container with Elsa services.
             var services = new ServiceCollection()
                 .AddElsa()
+                .AddElsaPersistenceInMemory()
                 .AddConsoleActivities()
                 .BuildServiceProvider();
             

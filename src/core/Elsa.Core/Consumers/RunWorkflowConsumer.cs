@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
 using Elsa.Exceptions;
-using Elsa.Extensions;
 using Elsa.Messages;
+using Elsa.Repositories;
 using Elsa.Services;
 using Rebus.Handlers;
 
@@ -10,12 +10,12 @@ namespace Elsa.Consumers
     public class RunWorkflowConsumer : IHandleMessages<RunWorkflow>
     {
         private readonly IWorkflowRunner _workflowRunner;
-        private readonly IWorkflowInstanceManager _workflowInstanceManager;
+        private readonly IWorkflowInstanceRepository _workflowInstanceManager;
 
-        public RunWorkflowConsumer(IWorkflowRunner workflowRunner, IWorkflowInstanceManager workflowInstanceManager)
+        public RunWorkflowConsumer(IWorkflowRunner workflowRunner, IWorkflowInstanceRepository workflowInstanceRepository)
         {
             _workflowRunner = workflowRunner;
-            _workflowInstanceManager = workflowInstanceManager;
+            _workflowInstanceManager = workflowInstanceRepository;
         }
 
         public async Task Handle(RunWorkflow message)

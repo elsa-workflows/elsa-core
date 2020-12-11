@@ -118,7 +118,13 @@ This models is then serialized to JSON and deserialized back into the model
 ```csharp
 // Create a service container with Elsa services.
 var services = new ServiceCollection()
-    .AddElsa(option => option.UsePersistence(db => db.UseSqLite("Data Source=elsa.db;Cache=Shared", IsolationLevel.ReadUncommitted)))
+    .AddElsa()
+
+    // For tests
+    .AddElsaPersistenceInMemory()
+    // For productive use
+    .AddElsaPersistenceYesSql((sp, config) => config.UseSqLite("Data Source=elsa.db;Cache=Shared", IsolationLevel.ReadUncommitted))
+
     .AddConsoleActivities()
     .BuildServiceProvider();
 

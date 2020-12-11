@@ -1,3 +1,4 @@
+using Elsa.Persistence.InMemory;
 using Elsa.Samples.CustomAttributesChildWorker.Messages;
 using Elsa.Samples.CustomAttributesChildWorker.Workflows;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,6 +20,7 @@ namespace Elsa.Samples.CustomAttributesChildWorker
                     {
                         services
                             .AddElsa()
+                            .AddElsaPersistenceInMemory()
                             .AddTimerActivities()
                             .AddConsoleActivities()
                             .AddRebusActivities<OrderReceived>()

@@ -2,6 +2,7 @@ using System.Threading.Tasks;
 using Elsa.Activities.Timers.Services;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Repositories;
 using Elsa.Services;
 using Elsa.Services.Models;
 using NodaTime;
@@ -18,12 +19,12 @@ namespace Elsa.Activities.Timers
     )]
     public class StartAt : Activity
     {
-        private readonly IWorkflowInstanceManager _workflowInstanceManager;
+        private readonly IWorkflowInstanceRepository _workflowInstanceManager;
         private readonly IWorkflowScheduler _workflowScheduler;
 
-        public StartAt(IWorkflowInstanceManager workflowInstanceManager, IWorkflowScheduler workflowScheduler)
+        public StartAt(IWorkflowInstanceRepository workflowInstanceRepository, IWorkflowScheduler workflowScheduler)
         {
-            _workflowInstanceManager = workflowInstanceManager;
+            _workflowInstanceManager = workflowInstanceRepository;
             _workflowScheduler = workflowScheduler;
         }
 

@@ -1,7 +1,7 @@
+using Elsa.Persistence.InMemory;
 using Elsa.Samples.ReadModelHttp.Workflows;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
-using YesSql.Provider.Sqlite;
 
 namespace Elsa.Samples.ReadModelHttp
 {
@@ -10,7 +10,8 @@ namespace Elsa.Samples.ReadModelHttp
         public void ConfigureServices(IServiceCollection services)
         {
             services
-                .AddElsa(option => option.UsePersistence(db => db.UseSqLite("Data Source=elsa.db;Cache=Shared")))
+                .AddElsa()
+                .AddElsaPersistenceInMemory()
                 .AddHttpActivities()
                 .AddConsoleActivities()
                 .AddWorkflow<SaveContactWorkflow>();

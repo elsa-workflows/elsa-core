@@ -1,16 +1,10 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
-using AutoMapper;
-using Elsa.Extensions;
 using Elsa.Models;
-using Elsa.Server.Api.Endpoints.WorkflowRegistry;
-using Elsa.Server.Api.Models;
-using Elsa.Server.Api.Swagger.Examples;
-using Elsa.Services;
+using Elsa.Repositories;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
-using Swashbuckle.AspNetCore.Filters;
 
 namespace Elsa.Server.Api.Endpoints.WorkflowInstances
 {
@@ -20,11 +14,11 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
     [Produces("application/json")]
     public class Get : Controller
     {
-        private readonly IWorkflowInstanceManager _workflowInstanceManager;
+        private readonly IWorkflowInstanceRepository _workflowInstanceManager;
 
-        public Get(IWorkflowInstanceManager workflowInstanceManager)
+        public Get(IWorkflowInstanceRepository workflowInstanceRepository)
         {
-            _workflowInstanceManager = workflowInstanceManager;
+            _workflowInstanceManager = workflowInstanceRepository;
         }
 
         [HttpGet]

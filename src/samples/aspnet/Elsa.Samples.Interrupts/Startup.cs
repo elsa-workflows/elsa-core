@@ -1,3 +1,4 @@
+using Elsa.Persistence.InMemory;
 using Elsa.Samples.Interrupts.Activities;
 using Elsa.Samples.Interrupts.Workflows;
 using Microsoft.AspNetCore.Builder;
@@ -14,6 +15,7 @@ namespace Elsa.Samples.Interrupts
             
             services
                 .AddElsa()
+                .AddElsaPersistenceInMemory()
                 .AddConsoleActivities()
                 .AddHttpActivities()
                 .AddTimerActivities()

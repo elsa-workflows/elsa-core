@@ -1,6 +1,6 @@
-﻿using YesSql.Indexes;
+using YesSql.Indexes;
 
-namespace Elsa.Data
+namespace Elsa.Persistence.YesSql.Data
 {
     /// <summary>
     /// Represents a contract that used to denote an <see cref="IIndexProvider"/> that needs to be resolved by the DI and registered

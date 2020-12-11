@@ -1,22 +1,25 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
+
 using Elsa.Data;
-using Elsa.Extensions;
 using Elsa.Models;
+using Elsa.Persistence.YesSql.Indexes;
+using Elsa.Repositories;
+
 using YesSql;
 using YesSql.Indexes;
 
-namespace Elsa.Services
+namespace Elsa.Persistence.YesSql
 {
-    public class WorkflowDefinitionManager : IWorkflowDefinitionManager
+    public class YesSqlWorkflowDefinitionRepository : IWorkflowDefinitionRepository
     {
         private readonly ISession _session;
-        private readonly IIdGenerator _idGenerator;
+        private readonly Elsa.Services.IIdGenerator _idGenerator;
 
-        public WorkflowDefinitionManager(ISession session, IIdGenerator idGenerator)
+        public YesSqlWorkflowDefinitionRepository(ISession session, Elsa.Services.IIdGenerator idGenerator)
         {
             _session = session;
             _idGenerator = idGenerator;
@@ -36,20 +39,19 @@ namespace Elsa.Services
         }
 
         public async Task<int> CountAsync(VersionOptions? version = default, CancellationToken cancellationToken = default) =>
-            await Query()
-                .WithVersion(version ?? VersionOptions.Latest)
+            await WithVersion(Query(), version ?? VersionOptions.Latest)
                 .CountAsync();
-        
+
         public async Task<IEnumerable<WorkflowDefinition>> ListAsync(int? skip = default, int? take = default, VersionOptions? version = default, CancellationToken cancellationToken = default)
         {
-            var query = Query().WithVersion(version ?? VersionOptions.Latest);
+            var query = WithVersion(Query(), version ?? VersionOptions.Latest);
 
             if (skip != null)
                 query = query.Skip(skip.Value);
 
             if (take != null)
                 query = query.Take(take.Value);
-            
+
             return await query.ListAsync();
         }
 
@@ -71,5 +73,42 @@ namespace Elsa.Services
 
             return workflowDefinition;
         }
+
+        public Task<WorkflowDefinition> GetAsync(string workflowDefinitionId, VersionOptions version, CancellationToken cancellationToken = default)
+        {
+            var query = Query<WorkflowDefinitionIndex>(x => x.WorkflowDefinitionId == workflowDefinitionId);
+
+            return WithVersion(query, version).FirstOrDefaultAsync();
+        }
+
+        public Task<WorkflowDefinition> GetByVersionIdAsync(string workflowDefinitionVersionId, CancellationToken cancellationToken = default)
+        {
+            return Query<WorkflowDefinitionIndex>(x => x.WorkflowDefinitionVersionId == workflowDefinitionVersionId).FirstOrDefaultAsync();
+        }
+
+        private IQuery<WorkflowDefinition> WithVersion(IQuery<WorkflowDefinition> query,
+            VersionOptions version)
+        {
+            var index = query.With<WorkflowDefinitionIndex>();
+
+            if (version.IsDraft)
+                query = index.Where(x => !x.IsPublished);
+            else if (version.IsLatest)
+                query = index.Where(x => x.IsLatest);
+            else if (version.IsPublished)
+                query = index.Where(x => x.IsPublished);
+            else if (version.IsLatestOrPublished)
+                query = index.Where(x => x.IsPublished || x.IsLatest);
+            else if (version.AllVersions)
+            {
+                // Nothing to filter.
+            }
+            else if (version.Version > 0)
+                query = index.Where(x => x.Version == version.Version);
+
+            return index.OrderByDescending(x => x.Version);
+        }
+
+       
     }
 }

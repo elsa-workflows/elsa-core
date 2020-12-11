@@ -1,3 +1,5 @@
+using Elsa.Persistence.InMemory;
+
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -9,6 +11,7 @@ namespace Elsa.Samples.HelloWorldHttp
         {
             services
                 .AddElsa()
+                .AddElsaPersistenceInMemory()
                 .AddHttpActivities()
                 .AddWorkflow<HelloHttpWorkflow>();
         }

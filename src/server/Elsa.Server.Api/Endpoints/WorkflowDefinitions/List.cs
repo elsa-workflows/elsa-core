@@ -1,12 +1,11 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
+using Elsa.Repositories;
 using Elsa.Serialization;
 using Elsa.Server.Api.Models;
-using Elsa.Server.Api.Swagger;
 using Elsa.Server.Api.Swagger.Examples;
-using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
@@ -20,12 +19,12 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
     [Produces("application/json")]
     public class List : Controller
     {
-        private readonly IWorkflowDefinitionManager _workflowDefinitionManager;
+        private readonly IWorkflowDefinitionRepository _workflowDefinitionRepository;
         private readonly IContentSerializer _serializer;
 
-        public List(IWorkflowDefinitionManager workflowDefinitionManager, IContentSerializer serializer)
+        public List(IWorkflowDefinitionRepository workflowDefinitionRepository, IContentSerializer serializer)
         {
-            _workflowDefinitionManager = workflowDefinitionManager;
+            _workflowDefinitionRepository = workflowDefinitionRepository;
             _serializer = serializer;
         }
 
@@ -41,9 +40,9 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
         public async Task<ActionResult<PagedList<WorkflowDefinition>>> Handle(int? page = default, int? pageSize = default, VersionOptions? version = default, CancellationToken cancellationToken = default)
         {
             version ??= VersionOptions.Latest;
-            var totalCount = await _workflowDefinitionManager.CountAsync(version, cancellationToken);
+            var totalCount = await _workflowDefinitionRepository.CountAsync(version, cancellationToken);
             var skip = page * pageSize;
-            var items = await _workflowDefinitionManager.ListAsync(skip, pageSize, version, cancellationToken);
+            var items = await _workflowDefinitionRepository.ListAsync(skip, pageSize, version, cancellationToken);
             var pagedList = new PagedList<WorkflowDefinition>(items.ToList(), page, pageSize, totalCount);
 
             return Json(pagedList, _serializer.GetSettings());

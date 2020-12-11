@@ -2,6 +2,7 @@ using Elsa.Samples.WhileLoopWorker.Services;
 using Elsa.Samples.WhileLoopWorker.Workflows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Elsa.Persistence.InMemory;
 
 namespace Elsa.Samples.WhileLoopWorker
 {
@@ -19,6 +20,7 @@ namespace Elsa.Samples.WhileLoopWorker
                     {
                         services
                             .AddElsa()
+                            .AddElsaPersistenceInMemory()
                             .AddConsoleActivities()
                             .AddTimerActivities()
                             .AddSingleton<PhoneCallService>()
