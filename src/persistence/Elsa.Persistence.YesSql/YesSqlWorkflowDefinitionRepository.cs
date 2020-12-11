@@ -68,9 +68,6 @@ namespace Elsa.Persistence.YesSql
             if (workflowDefinition.Version == 0)
                 workflowDefinition.Version = 1;
 
-            if (string.IsNullOrWhiteSpace(workflowDefinition.WorkflowDefinitionVersionId))
-                workflowDefinition.WorkflowDefinitionVersionId = _idGenerator.Generate();
-
             return workflowDefinition;
         }
 
