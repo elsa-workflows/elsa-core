@@ -1,4 +1,5 @@
 using Elsa.Runtime;
+using Elsa.Server.Host.Workflows;
 using Elsa.StartupTasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -38,7 +39,9 @@ namespace Elsa.Server.Host
                 .AddHttpActivities(elsaSection.GetSection("Http").Bind)
                 .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)
                 .AddTimerActivities(elsaSection.GetSection("BackgroundRunner").Bind)
-                .AddStartupTask<ResumeRunningWorkflowsTask>();
+                .AddStartupTask<ResumeRunningWorkflowsTask>()
+                .AddWorkflow<HelloWorld>()
+                ;
         }
 
         public void Configure(IApplicationBuilder app)

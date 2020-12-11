@@ -2,19 +2,39 @@
 
     <PropertyGroup>
         <TargetFramework>net5.0</TargetFramework>
+        <PackageVersion>1.0.0</PackageVersion>
+        <LangVersion>latest</LangVersion>
+        <Authors>Elsa Contributors</Authors>
+        <Description>
+            Elsa is a set of workflow libraries and tools that enable lean and mean workflowing capabilities in any .NET Core application.
+            This package provides gRPC endpoint abstractions shared by the Elsa.Dashboard.Backend and Elsa.Dashboard.WebAssembly packages.
+        </Description>
+        <Copyright>2020</Copyright>
+        <PackageProjectUrl>https://github.com/elsa-workflows/elsa-core</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/elsa-workflows/elsa-core</RepositoryUrl>
+        <RepositoryType>GitHub</RepositoryType>
+        <PackageTags>elsa, workflows, dashboard, asp.net core, grpc</PackageTags>
+        <PackageIcon>icon.png</PackageIcon>
         <Nullable>enable</Nullable>
     </PropertyGroup>
-    
+
     <ItemGroup>
         <PackageReference Include="Google.Api.CommonProtos" Version="2.2.0" />
-        <PackageReference Include="Grpc.Net.Client" Version="2.33.1" />
-        <PackageReference Include="Grpc.Net.ClientFactory" Version="2.33.1" />
-        <PackageReference Include="protobuf-net" Version="3.0.62" />
-        <PackageReference Include="protobuf-net.Grpc" Version="1.0.136" />
+        <PackageReference Include="Grpc.Net.Client" Version="2.34.0" />
+        <PackageReference Include="Grpc.Net.ClientFactory" Version="2.34.0" />
+        <PackageReference Include="protobuf-net" Version="3.0.73" />
+        <PackageReference Include="protobuf-net.Grpc" Version="1.0.140" />
     </ItemGroup>
-    
+
     <ItemGroup>
-      <ProjectReference Include="..\..\..\clients\Elsa.Client\Elsa.Client.csproj" />
+        <ProjectReference Include="..\..\..\clients\Elsa.Client\Elsa.Client.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Update="icon.png">
+            <Pack>True</Pack>
+            <PackagePath />
+        </None>
     </ItemGroup>
 
 </Project>

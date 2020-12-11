@@ -45,6 +45,12 @@ namespace Elsa.Builders
             return this;
         }
         
+        public IWorkflowBuilder WithDisplayName(string value)
+        {
+            DisplayName = value;
+            return this;
+        }
+        
         public IWorkflowBuilder WithDescription(string? value)
         {
             Description = value;
@@ -123,7 +129,12 @@ namespace Elsa.Builders
 
         public IWorkflowBlueprint Build(IWorkflow workflow, string activityIdPrefix)
         {
-            WithId(workflow.GetType().Name);
+            var workflowTypeName = workflow.GetType().Name;
+
+            Name ??= workflowTypeName;
+            DisplayName ??= workflowTypeName;
+            
+            WithId(workflowTypeName);
             workflow.Build(this);
             return BuildBlueprint(activityIdPrefix);
         }
@@ -139,7 +150,7 @@ namespace Elsa.Builders
         public IWorkflowBlueprint BuildBlueprint(string activityIdPrefix)
         {
             var compositeRoot = Build(activityIdPrefix);
-
+            
             return new WorkflowBlueprint(
                 ActivityId,
                 Version,

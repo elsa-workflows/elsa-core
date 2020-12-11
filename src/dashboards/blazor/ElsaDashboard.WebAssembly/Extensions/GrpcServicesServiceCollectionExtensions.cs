@@ -3,6 +3,7 @@ using System.Net.Http;
 using Grpc.Core;
 using Grpc.Net.Client;
 using Grpc.Net.Client.Web;
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using ProtoBuf.Grpc.Client;
 
@@ -15,8 +16,8 @@ namespace ElsaDashboard.WebAssembly.Extensions
 
         private static GrpcChannel CreateGrpcChannel(IServiceProvider sp)
         {
-            //var navigationManager = sp.GetRequiredService<NavigationManager>();
-            var backendUrl = "https://localhost:53451"; //navigationManager.BaseUri;
+            var navigationManager = sp.GetRequiredService<NavigationManager>();
+            var backendUrl = navigationManager.BaseUri;
             var httpClient = new HttpClient(new GrpcWebHandler(GrpcWebMode.GrpcWeb, new HttpClientHandler()));
             //var tokenManager = sp.GetRequiredService<ITokenManager>();
 

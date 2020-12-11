@@ -14,6 +14,7 @@ namespace ElsaDashboard.Application.WebAssembly
             var builder = WebAssemblyHostBuilder.CreateDefault(args);
             var services = builder.Services;
 
+            //builder.RootComponents.Add<App>("#app");
             services.AddScoped(sp => new HttpClient {BaseAddress = new Uri(builder.HostEnvironment.BaseAddress)});
             services.AddElsaDashboardUI();
             services.AddElsaDashboardBackend();

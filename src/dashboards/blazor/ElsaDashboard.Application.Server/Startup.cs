@@ -23,7 +23,7 @@ namespace ElsaDashboard.Application.Server
         {
             services.AddRazorPages();
             services.AddElsaDashboardUI();
-            services.AddElsaDashboardBackend(options => options.ServerUrl = new Uri("https://localhost:11000"));
+            services.AddElsaDashboardBackend(options => options.ServerUrl = Configuration.GetValue<Uri>("Elsa:HostUrl"));
 
             if (Program.RuntimeModel == BlazorRuntimeModel.Server) 
                 services.AddServerSideBlazor(options =>

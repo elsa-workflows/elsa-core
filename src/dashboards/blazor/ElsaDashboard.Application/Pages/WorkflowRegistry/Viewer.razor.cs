@@ -25,7 +25,7 @@ namespace ElsaDashboard.Application.Pages.WorkflowRegistry
 
         protected override async Task OnParametersSetAsync()
         {
-            WorkflowBlueprint = await WorkflowRegistryService.GetById(WorkflowDefinitionId, VersionOptions.Latest);
+            WorkflowBlueprint = (await WorkflowRegistryService.GetById(WorkflowDefinitionId, VersionOptions.Latest))!;
             WorkflowModel = CreateWorkflowModel(WorkflowBlueprint);
         }
 
