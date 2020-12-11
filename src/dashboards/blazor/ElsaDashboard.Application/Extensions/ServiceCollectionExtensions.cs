@@ -10,6 +10,7 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             return services
                 .AddBlazoredModal()
+                .AddScoped<IConfirmDialogService, ConfirmDialogService>()
                 .AddScoped<IFlyoutPanelService, FlyoutPanelService>();
         }
     }

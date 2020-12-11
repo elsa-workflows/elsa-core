@@ -12,5 +12,8 @@ namespace Elsa.Client.Services
         
         [Get("/v1/workflow-instances")]
         Task<PagedList<WorkflowInstance>> ListAsync(int? page = default, int? pageSize = default, CancellationToken cancellationToken = default);
+        
+        [Delete("/v1/workflow-instances/{id}")]
+        Task DeleteAsync(string id, CancellationToken cancellationToken = default);
     }
 }

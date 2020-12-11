@@ -2,10 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Blazored.Modal;
-using Blazored.Modal.Services;
 using Elsa.Client.Models;
-using ElsaDashboard.Application.Shared;
+using ElsaDashboard.Application.Services;
 using ElsaDashboard.Shared.Rpc;
 using Microsoft.AspNetCore.Components;
 
@@ -15,32 +13,34 @@ namespace ElsaDashboard.Application.Pages.WorkflowInstances
     {
         [Inject] private IWorkflowInstanceService WorkflowInstanceService { get; set; } = default!;
         [Inject] private IWorkflowRegistryService WorkflowRegistryService { get; set; } = default!;
-        [Inject] private IModalService ModalService { get; set; } = default!;
+        [Inject] private IConfirmDialogService ConfirmDialogService { get; set; } = default!;
         private PagedList<WorkflowInstance> WorkflowInstances { get; set; } = new();
         private IDictionary<(string, int), WorkflowBlueprint> WorkflowBlueprints { get; set; } = new Dictionary<(string, int), WorkflowBlueprint>();
 
         protected override async Task OnInitializedAsync()
         {
             var workflowBlueprintsTask = WorkflowRegistryService.ListAsync();
-            var workflowInstancesTask = WorkflowInstanceService.ListAsync();
+            var workflowInstancesTask = LoadWorkflowInstancesAsync();
 
             await Task.WhenAll(workflowBlueprintsTask, workflowInstancesTask);
 
             WorkflowBlueprints = workflowBlueprintsTask.Result.Items.ToDictionary(x => (x.Id, x.Version));
-            WorkflowInstances = workflowInstancesTask.Result;
         }
 
         private async Task OnDeleteWorkflowInstanceClick(WorkflowInstance workflowInstance)
         {
-            var options = new ModalOptions { UseCustomLayout = true };
-            var parameters = new ModalParameters();
-            parameters.Add("Title", "Are you sure?");
-            var result = await ModalService.Show<DeleteDialog>("Are you sure?").Result;
+            var result = await ConfirmDialogService.Show("Delete Workflow Instance", "Are you sure you want to delete this workflow instance?", "Delete");
 
             if (result.Cancelled)
                 return;
-            
-            // Delete.
+
+            await WorkflowInstanceService.DeleteAsync(workflowInstance.WorkflowInstanceId);
+            await LoadWorkflowInstancesAsync();
+        }
+
+        private async Task LoadWorkflowInstancesAsync()
+        {
+            WorkflowInstances = await WorkflowInstanceService.ListAsync();
         }
 
         private static string GetStatusColor(WorkflowStatus status) =>

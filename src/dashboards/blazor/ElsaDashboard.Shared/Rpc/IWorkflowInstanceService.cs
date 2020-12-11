@@ -9,6 +9,7 @@ namespace ElsaDashboard.Shared.Rpc
     public interface IWorkflowInstanceService
     {
         Task<PagedList<WorkflowInstance>> ListAsync(int page = 0, int pageSize = 50, CallContext context = default);
-        Task<WorkflowInstance?> GetById(string id, CallContext context = default);
+        Task<WorkflowInstance?> GetByIdAsync(string id, CallContext context = default);
+        Task DeleteAsync(string id, CallContext context = default);
     }
 }
