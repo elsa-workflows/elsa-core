@@ -1,11 +1,10 @@
 using System.Collections.Generic;
 using System.Linq;
-
 using Elsa.Models;
 
-namespace Elsa.Repositories
+namespace Elsa.Persistence
 {
-    public static class IWorkflowDefinitionRepositoryExtensions
+    public static class WorkflowDefinitionStoreExtensions
     {
         public static IEnumerable<WorkflowDefinition> WithVersion(this IEnumerable<WorkflowDefinition> query, VersionOptions? version = default)
         {
@@ -13,13 +12,13 @@ namespace Elsa.Repositories
 
             if (versionOption.IsDraft)
                 return query.Where(x => !x.IsPublished);
-            else if (versionOption.IsLatest)
+            if (versionOption.IsLatest)
                 return query.Where(x => x.IsLatest);
-            else if (versionOption.IsPublished)
+            if (versionOption.IsPublished)
                 return query.Where(x => x.IsPublished);
-            else if (versionOption.IsLatestOrPublished)
+            if (versionOption.IsLatestOrPublished)
                 return query.Where(x => x.IsPublished || x.IsLatest);
-            else if (versionOption.Version > 0)
+            if (versionOption.Version > 0)
                 return query.Where(x => x.Version == versionOption.Version);
 
             return query;
@@ -31,13 +30,13 @@ namespace Elsa.Repositories
 
             if (versionOption.IsDraft)
                 return query.Where(x => !x.IsPublished);
-            else if (versionOption.IsLatest)
+            if (versionOption.IsLatest)
                 return query.Where(x => x.IsLatest);
-            else if (versionOption.IsPublished)
+            if (versionOption.IsPublished)
                 return query.Where(x => x.IsPublished);
-            else if (versionOption.IsLatestOrPublished)
+            if (versionOption.IsLatestOrPublished)
                 return query.Where(x => x.IsPublished || x.IsLatest);
-            else if (versionOption.Version > 0)
+            if (versionOption.Version > 0)
                 return query.Where(x => x.Version == versionOption.Version);
 
             return query;

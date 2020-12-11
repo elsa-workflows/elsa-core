@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Elsa.Models;
-using Elsa.Repositories;
+using Elsa.Persistence;
 
 namespace Elsa.Extensions
 {

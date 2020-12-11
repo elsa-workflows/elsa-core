@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Elsa.DistributedLock;
 using Elsa.Extensions;
 using Elsa.Models;
-using Elsa.Repositories;
+using Elsa.Persistence;
 using Elsa.Services;
 
 namespace Elsa.StartupTasks

@@ -6,7 +6,6 @@ using Elsa.Data.Services;
 using Elsa.Persistence.YesSql.Data;
 using Elsa.Persistence.YesSql.Indexes;
 using Elsa.Persistence.YesSql.Services;
-using Elsa.Repositories;
 using Elsa.Runtime;
 using Elsa.WorkflowProviders;
 
@@ -22,7 +21,7 @@ namespace Elsa.Persistence.YesSql
         public static IServiceCollection AddElsaPersistenceYesSql(this IServiceCollection services, Action<IServiceProvider, IConfiguration> configure)
         {
             // Scoped, because IMediator is registered as Scoped and IIdGenerator could also be registered as Scoped
-            services.AddScoped<IWorkflowDefinitionRepository, YesSqlWorkflowDefinitionRepository>()
+            services.AddScoped<IWorkflowDefinitionStore, YesSqlWorkflowDefinitionStore>()
                 .AddScoped<IWorkflowInstanceStore, YesSqlWorkflowInstanceStore>()
                .AddWorkflowProvider<DatabaseWorkflowProvider>()
                .AddSingleton(sp => CreateStore(sp, configure))

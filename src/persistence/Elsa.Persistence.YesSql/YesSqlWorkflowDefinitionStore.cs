@@ -3,23 +3,20 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
-
 using Elsa.Data;
 using Elsa.Models;
 using Elsa.Persistence.YesSql.Indexes;
-using Elsa.Repositories;
-
 using YesSql;
 using YesSql.Indexes;
 
 namespace Elsa.Persistence.YesSql
 {
-    public class YesSqlWorkflowDefinitionRepository : IWorkflowDefinitionRepository
+    public class YesSqlWorkflowDefinitionStore : IWorkflowDefinitionStore
     {
         private readonly ISession _session;
         private readonly Elsa.Services.IIdGenerator _idGenerator;
 
-        public YesSqlWorkflowDefinitionRepository(ISession session, Elsa.Services.IIdGenerator idGenerator)
+        public YesSqlWorkflowDefinitionStore(ISession session, Elsa.Services.IIdGenerator idGenerator)
         {
             _session = session;
             _idGenerator = idGenerator;
@@ -56,9 +53,7 @@ namespace Elsa.Persistence.YesSql
         }
 
         public IQuery<WorkflowDefinition> Query() => _session.Query<WorkflowDefinition>(CollectionNames.WorkflowDefinitions);
-        public IQuery<WorkflowDefinition, TIndex> Query<TIndex>() where TIndex : class, IIndex => _session.Query<WorkflowDefinition, TIndex>(CollectionNames.WorkflowDefinitions);
         public IQuery<WorkflowDefinition, TIndex> Query<TIndex>(Expression<Func<TIndex, bool>> predicate) where TIndex : class, IIndex => _session.Query<WorkflowDefinition, TIndex>(predicate, CollectionNames.WorkflowDefinitions);
-        public IQuery<WorkflowDefinition> ExecuteQuery(ICompiledQuery<WorkflowDefinition> query) => _session.ExecuteQuery(query, CollectionNames.WorkflowDefinitions);
 
         public WorkflowDefinition Initialize(WorkflowDefinition workflowDefinition)
         {
@@ -92,23 +87,21 @@ namespace Elsa.Persistence.YesSql
             var index = query.With<WorkflowDefinitionIndex>();
 
             if (version.IsDraft)
-                query = index.Where(x => !x.IsPublished);
+                index = index.Where(x => !x.IsPublished);
             else if (version.IsLatest)
-                query = index.Where(x => x.IsLatest);
+                index = index.Where(x => x.IsLatest);
             else if (version.IsPublished)
-                query = index.Where(x => x.IsPublished);
+                index = index.Where(x => x.IsPublished);
             else if (version.IsLatestOrPublished)
-                query = index.Where(x => x.IsPublished || x.IsLatest);
+                index = index.Where(x => x.IsPublished || x.IsLatest);
             else if (version.AllVersions)
             {
                 // Nothing to filter.
             }
             else if (version.Version > 0)
-                query = index.Where(x => x.Version == version.Version);
+                index = index.Where(x => x.Version == version.Version);
 
             return index.OrderByDescending(x => x.Version);
         }
-
-       
     }
 }

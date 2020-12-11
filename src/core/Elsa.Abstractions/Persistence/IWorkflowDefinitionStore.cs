@@ -1,14 +1,12 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-
 using Elsa.Models;
 
-namespace Elsa.Repositories
+namespace Elsa.Persistence
 {
-    public interface IWorkflowDefinitionRepository
+    public interface IWorkflowDefinitionStore
     {
-
         Task SaveAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken = default);
         Task DeleteAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken = default);
         Task<int> CountAsync(VersionOptions? version = default, CancellationToken cancellationToken = default);

@@ -3,7 +3,7 @@ using System.Net;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Extensions;
 using Elsa.Activities.Http.Triggers;
-using Elsa.Repositories;
+using Elsa.Persistence;
 using Elsa.Services;
 using Elsa.Triggers;
 using Microsoft.AspNetCore.Http;

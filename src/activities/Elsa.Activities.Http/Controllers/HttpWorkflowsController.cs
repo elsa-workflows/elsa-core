@@ -2,7 +2,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Models;
 using Elsa.Activities.Http.Services;
-using Elsa.Repositories;
+using Elsa.Persistence;
 using Elsa.Services;
 using Microsoft.AspNetCore.Mvc;
 

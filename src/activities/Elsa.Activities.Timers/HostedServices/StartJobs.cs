@@ -125,7 +125,7 @@ namespace Elsa.Activities.Timers.HostedServices
                 var timerEventWrapper = workflowWrapper.GetActivity<Cron>(activity.Id);
                 var cronExpression = await timerEventWrapper.GetPropertyValueAsync(x => x.CronExpression, cancellationToken);
 
-                await _workflowScheduler.ScheduleWorkflowAsync(workflow, activity.Id, cronExpression, cancellationToken);
+                await _workflowScheduler.ScheduleWorkflowAsync(workflow, activity.Id, cronExpression!, cancellationToken);
             }
 
             // Schedule workflow instances blocked on a cron event.

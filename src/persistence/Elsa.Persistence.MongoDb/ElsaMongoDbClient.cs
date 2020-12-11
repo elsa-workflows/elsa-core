@@ -9,13 +9,12 @@ namespace Elsa.Persistence.MongoDb
 {
     public class ElsaMongoDbClient
     {
-        private readonly MongoClient _mongoClient;
         private readonly IMongoDatabase _mongoDatabase;
 
         public ElsaMongoDbClient(IOptions<ElsaMongoDbOptions> options)
         {
-            _mongoClient = new MongoClient(options.Value.ConnectionString);
-            _mongoDatabase = _mongoClient.GetDatabase(options.Value.Db);
+            var mongoClient = new MongoClient(options.Value.ConnectionString);
+            _mongoDatabase = mongoClient.GetDatabase(options.Value.Db);
         }
 
         public IMongoCollection<WorkflowDefinition> WorkflowDefinitions => _mongoDatabase.GetCollection<WorkflowDefinition>(CollectionNames.WorkflowDefinitions);

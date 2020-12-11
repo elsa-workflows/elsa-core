@@ -4,7 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Extensions;
 using Elsa.Models;
-using Elsa.Repositories;
+using Elsa.Persistence;
 using Elsa.Services;
 using Microsoft.Extensions.Logging;
 using Quartz;
@@ -38,7 +38,7 @@ namespace Elsa.Activities.Timers.Jobs
 
             if (workflowInstanceId == null)
             {
-                if (workflowBlueprint.IsSingleton && await _workflowInstanceManager.IsWorkflowIsAlreadyExecutingAsync(tenantId, workflowDefinitionId, cancellationToken))
+                if (workflowBlueprint.IsSingleton && await _workflowInstanceManager.GetWorkflowIsAlreadyExecutingAsync(tenantId, workflowDefinitionId, cancellationToken))
                     return;
 
                 await _workflowRunner.RunWorkflowAsync(workflowBlueprint, activityId, cancellationToken: cancellationToken);

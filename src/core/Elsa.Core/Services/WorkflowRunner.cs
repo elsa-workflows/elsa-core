@@ -8,7 +8,7 @@ using Elsa.Builders;
 using Elsa.Events;
 using Elsa.Exceptions;
 using Elsa.Models;
-using Elsa.Repositories;
+using Elsa.Persistence;
 using Elsa.Services.Models;
 using Elsa.Triggers;
 using MediatR;

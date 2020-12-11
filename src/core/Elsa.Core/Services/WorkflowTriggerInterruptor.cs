@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Elsa.Exceptions;
 
 using Elsa.Models;
-using Elsa.Repositories;
+using Elsa.Persistence;
 using Elsa.Services.Models;
 
 namespace Elsa.Services

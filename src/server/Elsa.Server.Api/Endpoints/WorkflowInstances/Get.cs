@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
-using Elsa.Repositories;
+using Elsa.Persistence;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;

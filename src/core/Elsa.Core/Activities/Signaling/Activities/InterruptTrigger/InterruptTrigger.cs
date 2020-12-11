@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
-using Elsa.Repositories;
+using Elsa.Persistence;
 using Elsa.Services;
 using Elsa.Services.Models;
 

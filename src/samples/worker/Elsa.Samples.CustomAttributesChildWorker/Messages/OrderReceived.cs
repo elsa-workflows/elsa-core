@@ -2,6 +2,6 @@
 {
     public class OrderReceived
     {
-        public string CustomerId { get; set; }
+        public string CustomerId { get; set; } = default!;
     }
 }

@@ -1,26 +1,18 @@
 using System;
-
 using Elsa.Persistence.MongoDb.Services;
-
-using Microsoft.Extensions.DependencyInjection;
-
-using Microsoft.Extensions.Configuration;
-
-using Elsa.Repositories;
 using Elsa.Runtime;
 using Elsa.WorkflowProviders;
-using Elsa.Models;
-using MongoDB.Driver;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Configuration;
 
 namespace Elsa.Persistence.MongoDb
 {
-    public static class IServiceCollectionExtensions
+    public static class ServiceCollectionExtensions
     {
-
         public static IServiceCollection AddElsaPersistenceMongoDb(this IServiceCollection services, Action<ElsaMongoDbOptions> configureOptions)
         {
             AddCore(services);
-            services.Configure<ElsaMongoDbOptions>(configureOptions);
+            services.Configure(configureOptions);
 
             return services;
         }
@@ -34,16 +26,15 @@ namespace Elsa.Persistence.MongoDb
 
         private static void AddCore(IServiceCollection services)
         {
-            services.AddScoped<IWorkflowDefinitionRepository, MongoDbWorkflowDefinitionRepository>()
+            services.AddScoped<IWorkflowDefinitionStore, MongoDbWorkflowDefinitionStore>()
                 .AddScoped<IWorkflowInstanceStore, MongoDbWorkflowInstanceStore>()            
                 .AddScoped<ElsaMongoDbClient>()
-                .AddScoped<IMongoCollection<WorkflowDefinition>>(services => services.GetRequiredService<ElsaMongoDbClient>().WorkflowDefinitions)
-                .AddScoped<IMongoCollection<WorkflowInstance>>(services => services.GetRequiredService<ElsaMongoDbClient>().WorkflowInstances)
+                .AddScoped(sp => sp.GetRequiredService<ElsaMongoDbClient>().WorkflowDefinitions)
+                .AddScoped(sp => sp.GetRequiredService<ElsaMongoDbClient>().WorkflowInstances)
                 .AddWorkflowProvider<DatabaseWorkflowProvider>()
                 .AddStartupTask<DatabaseInitializer>();
 
             DatabaseRegister.RegisterMapsAndSerializers();
-
         }
     }
 }
