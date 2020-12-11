@@ -13,9 +13,9 @@ namespace Elsa.Persistence.MongoDb.Services
 {
     public class DatabaseInitializer : IStartupTask
     {
-        private readonly WorkflowEngineMongoDbClient _workflowEngineMongoDbClient;
+        private readonly ElsaMongoDbClient _workflowEngineMongoDbClient;
 
-        public DatabaseInitializer(WorkflowEngineMongoDbClient workflowEngineMongoDbClient)
+        public DatabaseInitializer(ElsaMongoDbClient workflowEngineMongoDbClient)
         {
             _workflowEngineMongoDbClient = workflowEngineMongoDbClient;
         }

@@ -1,9 +1,5 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -18,30 +14,30 @@ namespace Elsa.Persistence.MongoDb
 {
     public class MongoDbWorkflowDefinitionRepository : IWorkflowDefinitionRepository
     {
-        private readonly WorkflowEngineMongoDbClient _dbClient;
+        private readonly IMongoCollection<WorkflowDefinition> _workflowDefinitions;
         private readonly IIdGenerator _idGenerator;
 
 
-        public MongoDbWorkflowDefinitionRepository(WorkflowEngineMongoDbClient dbClient, IIdGenerator idGenerator)
+        public MongoDbWorkflowDefinitionRepository(IMongoCollection<WorkflowDefinition> workflowDefinitions, IIdGenerator idGenerator)
         {
-            _dbClient = dbClient;
+            _workflowDefinitions = workflowDefinitions;
             _idGenerator = idGenerator;
         }
 
         public async Task<int> CountAsync(VersionOptions? version = null, CancellationToken cancellationToken = default)
         {
-            return await ((IMongoQueryable<WorkflowDefinition>)_dbClient.WorkflowDefinitions.AsQueryable().WithVersion(version)).CountAsync();
+            return await ((IMongoQueryable<WorkflowDefinition>)_workflowDefinitions.AsQueryable().WithVersion(version)).CountAsync();
         }
 
         public async Task DeleteAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken = default)
         {
             var filter = GetFilterWorkflowDefinitionId(workflowDefinition.Id);
-            await _dbClient.WorkflowDefinitions.DeleteOneAsync(filter);
+            await _workflowDefinitions.DeleteOneAsync(filter);
         }
 
         public async Task<WorkflowDefinition> GetAsync(string workflowDefinitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
         {
-            return await((IMongoQueryable<WorkflowDefinition>)_dbClient.WorkflowDefinitions
+            return await((IMongoQueryable<WorkflowDefinition>)_workflowDefinitions
                 .AsQueryable()
                 .Where(x => x.WorkflowDefinitionId == workflowDefinitionId)
                 .WithVersion(versionOptions)).FirstOrDefaultAsync();
@@ -49,7 +45,7 @@ namespace Elsa.Persistence.MongoDb
 
         public async Task<WorkflowDefinition> GetByVersionIdAsync(string workflowDefinitionVersionId, CancellationToken cancellationToken = default)
         {
-            return await((IMongoQueryable<WorkflowDefinition>)_dbClient.WorkflowDefinitions
+            return await((IMongoQueryable<WorkflowDefinition>)_workflowDefinitions
                  .AsQueryable()
                  .Where(x => x.WorkflowDefinitionVersionId == workflowDefinitionVersionId)).FirstOrDefaultAsync();
         }
@@ -67,7 +63,7 @@ namespace Elsa.Persistence.MongoDb
 
         public async Task<IEnumerable<WorkflowDefinition>> ListAsync(int? skip = null, int? take = null, VersionOptions? version = null, CancellationToken cancellationToken = default)
         {
-            var query = _dbClient.WorkflowDefinitions
+            var query = _workflowDefinitions
                .AsQueryable()
                .WithVersion(version);
 
@@ -85,9 +81,9 @@ namespace Elsa.Persistence.MongoDb
             if (workflowDefinition.Id == 0)
             {
                 // If there is no instance yet, max throws an error
-                if (await _dbClient.WorkflowInstances.AsQueryable().AnyAsync())
+                if (await _workflowDefinitions.AsQueryable().AnyAsync())
                 {
-                    workflowDefinition.Id = await _dbClient.WorkflowDefinitions.AsQueryable().MaxAsync(x => x.Id) + 1;
+                    workflowDefinition.Id = await _workflowDefinitions.AsQueryable().MaxAsync(x => x.Id) + 1;
                 }
                 else
                 {
@@ -97,7 +93,7 @@ namespace Elsa.Persistence.MongoDb
 
             var filter = GetFilterWorkflowDefinitionId(workflowDefinition.Id);
 
-            await _dbClient.WorkflowDefinitions.ReplaceOneAsync(filter, workflowDefinition, new ReplaceOptions { IsUpsert = true });
+            await _workflowDefinitions.ReplaceOneAsync(filter, workflowDefinition, new ReplaceOptions { IsUpsert = true });
         }
 
         private FilterDefinition<WorkflowDefinition> GetFilterWorkflowDefinitionId(int id) => Builders<WorkflowDefinition>.Filter.Where(x => x.Id == id);

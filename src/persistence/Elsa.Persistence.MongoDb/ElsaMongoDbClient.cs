@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
-
 using Elsa.Data;
 using Elsa.Models;
 
@@ -11,16 +7,15 @@ using MongoDB.Driver;
 
 namespace Elsa.Persistence.MongoDb
 {
-    public class WorkflowEngineMongoDbClient
+    public class ElsaMongoDbClient
     {
         private readonly MongoClient _mongoClient;
         private readonly IMongoDatabase _mongoDatabase;
 
-        public WorkflowEngineMongoDbClient(IOptions<ElsaMongoDbOptions> options)
+        public ElsaMongoDbClient(IOptions<ElsaMongoDbOptions> options)
         {
             _mongoClient = new MongoClient(options.Value.ConnectionString);
             _mongoDatabase = _mongoClient.GetDatabase(options.Value.Db);
-   
         }
 
         public IMongoCollection<WorkflowDefinition> WorkflowDefinitions => _mongoDatabase.GetCollection<WorkflowDefinition>(CollectionNames.WorkflowDefinitions);

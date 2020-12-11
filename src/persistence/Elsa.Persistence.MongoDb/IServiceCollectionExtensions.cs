@@ -9,6 +9,8 @@ using Microsoft.Extensions.Configuration;
 using Elsa.Repositories;
 using Elsa.Runtime;
 using Elsa.WorkflowProviders;
+using Elsa.Models;
+using MongoDB.Driver;
 
 namespace Elsa.Persistence.MongoDb
 {
@@ -33,8 +35,10 @@ namespace Elsa.Persistence.MongoDb
         private static void AddCore(IServiceCollection services)
         {
             services.AddScoped<IWorkflowDefinitionRepository, MongoDbWorkflowDefinitionRepository>()
-                .AddScoped<IWorkflowInstanceRepository, MongoDbWorkflowInstanceRepository>()
-                .AddScoped<WorkflowEngineMongoDbClient>()
+                .AddScoped<IWorkflowInstanceRepository, MongoDbWorkflowInstanceRepository>()            
+                .AddScoped<ElsaMongoDbClient>()
+                .AddScoped<IMongoCollection<WorkflowDefinition>>(services => services.GetRequiredService<ElsaMongoDbClient>().WorkflowDefinitions)
+                .AddScoped<IMongoCollection<WorkflowInstance>>(services => services.GetRequiredService<ElsaMongoDbClient>().WorkflowInstances)
                 .AddWorkflowProvider<DatabaseWorkflowProvider>()
                 .AddStartupTask<DatabaseInitializer>();
 
