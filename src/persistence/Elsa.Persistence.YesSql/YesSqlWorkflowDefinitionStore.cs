@@ -14,17 +14,14 @@ namespace Elsa.Persistence.YesSql
     public class YesSqlWorkflowDefinitionStore : IWorkflowDefinitionStore
     {
         private readonly ISession _session;
-        private readonly Elsa.Services.IIdGenerator _idGenerator;
 
-        public YesSqlWorkflowDefinitionStore(ISession session, Elsa.Services.IIdGenerator idGenerator)
+        public YesSqlWorkflowDefinitionStore(ISession session)
         {
             _session = session;
-            _idGenerator = idGenerator;
         }
 
         public Task SaveAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken = default)
         {
-            workflowDefinition = Initialize(workflowDefinition);
             _session.Save(workflowDefinition, CollectionNames.WorkflowDefinitions);
             return Task.CompletedTask;
         }
@@ -55,33 +52,16 @@ namespace Elsa.Persistence.YesSql
         public IQuery<WorkflowDefinition> Query() => _session.Query<WorkflowDefinition>(CollectionNames.WorkflowDefinitions);
         public IQuery<WorkflowDefinition, TIndex> Query<TIndex>(Expression<Func<TIndex, bool>> predicate) where TIndex : class, IIndex => _session.Query<WorkflowDefinition, TIndex>(predicate, CollectionNames.WorkflowDefinitions);
 
-        public WorkflowDefinition Initialize(WorkflowDefinition workflowDefinition)
-        {
-            if (string.IsNullOrWhiteSpace(workflowDefinition.WorkflowDefinitionId))
-                workflowDefinition.WorkflowDefinitionId = _idGenerator.Generate();
-
-            if (workflowDefinition.Version == 0)
-                workflowDefinition.Version = 1;
-
-            if (string.IsNullOrWhiteSpace(workflowDefinition.WorkflowDefinitionVersionId))
-                workflowDefinition.WorkflowDefinitionVersionId = _idGenerator.Generate();
-
-            return workflowDefinition;
-        }
-
         public Task<WorkflowDefinition> GetAsync(string workflowDefinitionId, VersionOptions version, CancellationToken cancellationToken = default)
         {
             var query = Query<WorkflowDefinitionIndex>(x => x.WorkflowDefinitionId == workflowDefinitionId);
-
             return WithVersion(query, version).FirstOrDefaultAsync();
         }
 
-        public Task<WorkflowDefinition> GetByVersionIdAsync(string workflowDefinitionVersionId, CancellationToken cancellationToken = default)
-        {
-            return Query<WorkflowDefinitionIndex>(x => x.WorkflowDefinitionVersionId == workflowDefinitionVersionId).FirstOrDefaultAsync();
-        }
+        public Task<WorkflowDefinition> GetByVersionIdAsync(string workflowDefinitionVersionId, CancellationToken cancellationToken = default) => Query<WorkflowDefinitionIndex>(x => x.WorkflowDefinitionVersionId == workflowDefinitionVersionId).FirstOrDefaultAsync();
 
-        private IQuery<WorkflowDefinition> WithVersion(IQuery<WorkflowDefinition> query,
+        private static IQuery<WorkflowDefinition> WithVersion(
+            IQuery<WorkflowDefinition> query,
             VersionOptions version)
         {
             var index = query.With<WorkflowDefinitionIndex>();

@@ -12,19 +12,14 @@ namespace Elsa.Persistence.MongoDb
     public class MongoDbWorkflowDefinitionStore : IWorkflowDefinitionStore
     {
         private readonly IMongoCollection<WorkflowDefinition> _workflowDefinitions;
-        private readonly IIdGenerator _idGenerator;
 
-
-        public MongoDbWorkflowDefinitionStore(IMongoCollection<WorkflowDefinition> workflowDefinitions, IIdGenerator idGenerator)
+        public MongoDbWorkflowDefinitionStore(IMongoCollection<WorkflowDefinition> workflowDefinitions)
         {
             _workflowDefinitions = workflowDefinitions;
-            _idGenerator = idGenerator;
         }
 
-        public async Task<int> CountAsync(VersionOptions? version = null, CancellationToken cancellationToken = default)
-        {
-            return await ((IMongoQueryable<WorkflowDefinition>) _workflowDefinitions.AsQueryable().WithVersion(version)).CountAsync(cancellationToken: cancellationToken);
-        }
+        public async Task<int> CountAsync(VersionOptions? version = null, CancellationToken cancellationToken = default) =>
+            await ((IMongoQueryable<WorkflowDefinition>) _workflowDefinitions.AsQueryable().WithVersion(version)).CountAsync(cancellationToken);
 
         public async Task DeleteAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken = default)
         {
@@ -32,35 +27,18 @@ namespace Elsa.Persistence.MongoDb
             await _workflowDefinitions.DeleteOneAsync(filter, cancellationToken);
         }
 
-        public async Task<WorkflowDefinition> GetAsync(string workflowDefinitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
-        {
-            return await ((IMongoQueryable<WorkflowDefinition>) _workflowDefinitions
+        public async Task<WorkflowDefinition> GetAsync(string workflowDefinitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default) =>
+            await ((IMongoQueryable<WorkflowDefinition>) _workflowDefinitions
                 .AsQueryable()
                 .Where(x => x.WorkflowDefinitionId == workflowDefinitionId)
-                .WithVersion(versionOptions)).FirstOrDefaultAsync(cancellationToken: cancellationToken);
-        }
+                .WithVersion(versionOptions)).FirstOrDefaultAsync(cancellationToken);
 
-        public async Task<WorkflowDefinition> GetByVersionIdAsync(string workflowDefinitionVersionId, CancellationToken cancellationToken = default)
-        {
-            return await _workflowDefinitions
+        public async Task<WorkflowDefinition> GetByVersionIdAsync(string workflowDefinitionVersionId, CancellationToken cancellationToken = default) =>
+            await _workflowDefinitions
                 .AsQueryable()
-                .Where(x => x.WorkflowDefinitionVersionId == workflowDefinitionVersionId).FirstOrDefaultAsync(cancellationToken: cancellationToken);
-        }
-
-        public WorkflowDefinition Initialize(WorkflowDefinition workflowDefinition)
-        {
-            if (string.IsNullOrWhiteSpace(workflowDefinition.WorkflowDefinitionId))
-                workflowDefinition.WorkflowDefinitionId = _idGenerator.Generate();
-
-            if (workflowDefinition.Version == 0)
-                workflowDefinition.Version = 1;
-
-            if (string.IsNullOrWhiteSpace(workflowDefinition.WorkflowDefinitionVersionId))
-                workflowDefinition.WorkflowDefinitionVersionId = _idGenerator.Generate();
-
-            return workflowDefinition;
-        }
-
+                .Where(x => x.WorkflowDefinitionVersionId == workflowDefinitionVersionId)
+                .FirstOrDefaultAsync(cancellationToken);
+        
         public async Task<IEnumerable<WorkflowDefinition>> ListAsync(int? skip = null, int? take = null, VersionOptions? version = null, CancellationToken cancellationToken = default)
         {
             var query = _workflowDefinitions

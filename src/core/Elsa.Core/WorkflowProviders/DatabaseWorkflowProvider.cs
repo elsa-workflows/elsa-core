@@ -13,18 +13,18 @@ namespace Elsa.WorkflowProviders
     /// </summary>
     public class DatabaseWorkflowProvider : WorkflowProvider
     {
-        private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
+        private readonly IWorkflowDefinitionManager _workflowDefinitionManager;
         private readonly IWorkflowBlueprintMaterializer _workflowBlueprintMaterializer;
 
-        public DatabaseWorkflowProvider(IWorkflowDefinitionStore workflowDefinitionStore, IWorkflowBlueprintMaterializer workflowBlueprintMaterializer)
+        public DatabaseWorkflowProvider(IWorkflowDefinitionManager workflowDefinitionManager, IWorkflowBlueprintMaterializer workflowBlueprintMaterializer)
         {
-            _workflowDefinitionStore = workflowDefinitionStore;
+            _workflowDefinitionManager = workflowDefinitionManager;
             _workflowBlueprintMaterializer = workflowBlueprintMaterializer;
         }
 
         protected override async ValueTask<IEnumerable<IWorkflowBlueprint>> OnGetWorkflowsAsync(CancellationToken cancellationToken)
         {
-            var workflowDefinitions = await _workflowDefinitionStore.ListAsync(cancellationToken: cancellationToken);
+            var workflowDefinitions = await _workflowDefinitionManager.ListAsync(cancellationToken: cancellationToken);
             return workflowDefinitions.Select(_workflowBlueprintMaterializer.CreateWorkflowBlueprint);
         }
     }

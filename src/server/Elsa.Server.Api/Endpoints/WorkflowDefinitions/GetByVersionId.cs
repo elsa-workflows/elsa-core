@@ -4,6 +4,7 @@ using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Serialization;
 using Elsa.Server.Api.Swagger.Examples;
+using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
@@ -17,12 +18,12 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
     [Produces("application/json")]
     public class GetByVersionId : Controller
     {
-        private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
+        private readonly IWorkflowDefinitionManager _workflowDefinitionManager;
         private readonly IContentSerializer _serializer;
 
-        public GetByVersionId(IWorkflowDefinitionStore workflowDefinitionStore, IContentSerializer serializer)
+        public GetByVersionId(IWorkflowDefinitionManager workflowDefinitionManager, IContentSerializer serializer)
         {
-            _workflowDefinitionStore = workflowDefinitionStore;
+            _workflowDefinitionManager = workflowDefinitionManager;
             _serializer = serializer;
         }
 
@@ -38,7 +39,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
         ]
         public async Task<IActionResult> Handle(string workflowDefinitionVersionId, CancellationToken cancellationToken = default)
         {
-            var workflowDefinition = await _workflowDefinitionStore.GetByVersionIdAsync(workflowDefinitionVersionId, cancellationToken);
+            var workflowDefinition = await _workflowDefinitionManager.GetByVersionIdAsync(workflowDefinitionVersionId, cancellationToken);
             return workflowDefinition == null ? (IActionResult) NotFound() : Json(workflowDefinition, _serializer.GetSettings());
         }
     }

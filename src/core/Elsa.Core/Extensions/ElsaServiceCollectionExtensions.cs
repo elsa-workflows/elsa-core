@@ -88,6 +88,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddScoped<IExpressionEvaluator, ExpressionEvaluator>()
                 .AddScoped<IWorkflowRegistry, WorkflowRegistry>()
                 .AddScoped<IWorkflowInstanceManager, WorkflowInstanceManager>()
+                .AddScoped<IWorkflowDefinitionManager, WorkflowDefinitionManager>()
                 .AddSingleton<IActivityActivator, ActivityActivator>()
                 .AddScoped<IWorkflowRunner, WorkflowRunner>()
                 .AddScoped<IWorkflowTriggerInterruptor, WorkflowTriggerInterruptor>()
