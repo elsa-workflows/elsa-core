@@ -22,7 +22,7 @@ namespace Elsa.Activities.Timers.ActivityResults
         public override async ValueTask ExecuteAsync(ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
         {
             var workflowInstance = activityExecutionContext.WorkflowExecutionContext.WorkflowInstance;
-            var workflowInstanceRepository = activityExecutionContext.GetService<IWorkflowInstanceRepository>();
+            var workflowInstanceRepository = activityExecutionContext.GetService<IWorkflowInstanceStore>();
             var scheduler = activityExecutionContext.GetService<IWorkflowScheduler>();
             await workflowInstanceRepository.SaveAsync(workflowInstance, cancellationToken);
             await scheduler.ScheduleWorkflowAsync(activityExecutionContext.WorkflowExecutionContext.WorkflowBlueprint, workflowInstance.WorkflowInstanceId, activityExecutionContext.ActivityInstance.Id, ExecuteAt, cancellationToken);

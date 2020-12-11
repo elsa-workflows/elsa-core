@@ -23,7 +23,7 @@ namespace Elsa.Persistence.YesSql
         {
             // Scoped, because IMediator is registered as Scoped and IIdGenerator could also be registered as Scoped
             services.AddScoped<IWorkflowDefinitionRepository, YesSqlWorkflowDefinitionRepository>()
-                .AddScoped<IWorkflowInstanceRepository, YesSqlWorkflowInstanceRepository>()
+                .AddScoped<IWorkflowInstanceStore, YesSqlWorkflowInstanceStore>()
                .AddWorkflowProvider<DatabaseWorkflowProvider>()
                .AddSingleton(sp => CreateStore(sp, configure))
                .AddScoped(CreateSession)

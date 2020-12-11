@@ -7,7 +7,7 @@ using Elsa.Models;
 
 namespace Elsa.Repositories
 {
-    public interface IWorkflowInstanceRepository
+    public interface IWorkflowInstanceStore
     {
         Task SaveAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken = default);
         Task DeleteAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken = default);

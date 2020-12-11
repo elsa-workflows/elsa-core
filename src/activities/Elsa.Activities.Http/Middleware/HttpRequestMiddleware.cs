@@ -20,7 +20,7 @@ namespace Elsa.Activities.Http.Middleware
             _next = next;
         }
 
-        public async Task InvokeAsync(HttpContext httpContext, IWorkflowSelector workflowSelector, IWorkflowRunner workflowRunner, IWorkflowInstanceRepository workflowInstanceRepository)
+        public async Task InvokeAsync(HttpContext httpContext, IWorkflowSelector workflowSelector, IWorkflowRunner workflowRunner, IWorkflowInstanceStore workflowInstanceStore)
         {
             var path = httpContext.Request.Path;
             var method = httpContext.Request.Method;
@@ -53,7 +53,7 @@ namespace Elsa.Activities.Http.Middleware
             }
             else
             {
-                var workflowInstance = await workflowInstanceRepository.GetByIdAsync(result.WorkflowInstanceId, cancellationToken);
+                var workflowInstance = await workflowInstanceStore.GetByIdAsync(result.WorkflowInstanceId, cancellationToken);
 
                 if (workflowInstance == null)
                 {

@@ -18,11 +18,11 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
     [Produces("application/json")]
     public class Delete : Controller
     {
-        private readonly IWorkflowInstanceRepository _workflowInstanceRepository;
+        private readonly IWorkflowInstanceStore _workflowInstanceStore;
 
-        public Delete(IWorkflowInstanceRepository workflowInstanceRepository)
+        public Delete(IWorkflowInstanceStore workflowInstanceStore)
         {
-            _workflowInstanceRepository = workflowInstanceRepository;
+            _workflowInstanceStore = workflowInstanceStore;
         }
 
         [HttpDelete]
@@ -36,12 +36,12 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
         ]
         public async Task<IActionResult> Handle(string id, CancellationToken cancellationToken = default)
         {
-            var workflowInstance = await _workflowInstanceRepository.GetByIdAsync(id, cancellationToken);
+            var workflowInstance = await _workflowInstanceStore.GetByIdAsync(id, cancellationToken);
 
             if (workflowInstance == null)
                 return NotFound();
             
-            await _workflowInstanceRepository.DeleteAsync(workflowInstance, cancellationToken);
+            await _workflowInstanceStore.DeleteAsync(workflowInstance, cancellationToken);
             return NoContent();
         }
     }

@@ -16,11 +16,11 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
     [Produces("application/json")]
     public class List : Controller
     {
-        private readonly IWorkflowInstanceRepository _workflowInstanceManager;
+        private readonly IWorkflowInstanceStore _workflowInstanceManager;
 
-        public List(IWorkflowInstanceRepository workflowInstanceRepository)
+        public List(IWorkflowInstanceStore workflowInstanceStore)
         {
-            _workflowInstanceManager = workflowInstanceRepository;
+            _workflowInstanceManager = workflowInstanceStore;
         }
 
         [HttpGet]

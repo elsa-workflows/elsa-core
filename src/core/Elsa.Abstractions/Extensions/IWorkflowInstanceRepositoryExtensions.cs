@@ -12,14 +12,14 @@ namespace Elsa.Extensions
     public static class IWorkflowInstanceRepositoryExtensions
     {
         public static Task<IEnumerable<WorkflowInstance>> ListByDefinitionAndStatusAsync(
-          this IWorkflowInstanceRepository manager,
+          this IWorkflowInstanceStore manager,
           string workflowDefinitionId,
           WorkflowStatus workflowStatus,
           CancellationToken cancellationToken = default) =>
           manager.ListByDefinitionAndStatusAsync(workflowDefinitionId, default, workflowStatus, cancellationToken);
 
         public static Task<IEnumerable<WorkflowInstance>> ListByDefinitionAsync(
-           this IWorkflowInstanceRepository manager,
+           this IWorkflowInstanceStore manager,
            string workflowDefinitionId,
            CancellationToken cancellationToken = default) =>
            manager.ListByDefinitionAsync(workflowDefinitionId, default, cancellationToken);

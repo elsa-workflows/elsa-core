@@ -14,11 +14,11 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
     [Produces("application/json")]
     public class Get : Controller
     {
-        private readonly IWorkflowInstanceRepository _workflowInstanceManager;
+        private readonly IWorkflowInstanceStore _workflowInstanceManager;
 
-        public Get(IWorkflowInstanceRepository workflowInstanceRepository)
+        public Get(IWorkflowInstanceStore workflowInstanceStore)
         {
-            _workflowInstanceManager = workflowInstanceRepository;
+            _workflowInstanceManager = workflowInstanceStore;
         }
 
         [HttpGet]

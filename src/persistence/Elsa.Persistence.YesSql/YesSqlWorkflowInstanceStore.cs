@@ -17,12 +17,12 @@ using YesSql.Indexes;
 
 namespace Elsa.Persistence.YesSql
 {
-    public class YesSqlWorkflowInstanceRepository : IWorkflowInstanceRepository
+    public class YesSqlWorkflowInstanceStore : IWorkflowInstanceStore
     {
         private readonly ISession _session;
         private readonly IMediator _mediator;
 
-        public YesSqlWorkflowInstanceRepository(ISession session, IMediator mediator)
+        public YesSqlWorkflowInstanceStore(ISession session, IMediator mediator)
         {
             _session = session;
             _mediator = mediator;

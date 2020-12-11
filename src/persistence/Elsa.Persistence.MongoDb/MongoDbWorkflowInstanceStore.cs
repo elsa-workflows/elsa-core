@@ -15,12 +15,12 @@ using MongoDB.Driver.Linq;
 
 namespace Elsa.Persistence.MongoDb
 {
-    public class MongoDbWorkflowInstanceRepository : IWorkflowInstanceRepository
+    public class MongoDbWorkflowInstanceStore : IWorkflowInstanceStore
     {
         private readonly IMongoCollection<WorkflowInstance> _workflowInstances;
         private readonly IMediator _mediator;
 
-        public MongoDbWorkflowInstanceRepository(IMediator mediator, IMongoCollection<WorkflowInstance> workflowInstances)
+        public MongoDbWorkflowInstanceStore(IMediator mediator, IMongoCollection<WorkflowInstance> workflowInstances)
         {
             _mediator = mediator;
             _workflowInstances = workflowInstances;

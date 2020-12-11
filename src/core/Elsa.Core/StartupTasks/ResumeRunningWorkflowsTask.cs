@@ -14,16 +14,16 @@ namespace Elsa.StartupTasks
     /// </summary>
     public class ResumeRunningWorkflowsTask : IStartupTask
     {
-        private readonly IWorkflowInstanceRepository _workflowInstanceManager;
+        private readonly IWorkflowInstanceStore _workflowInstanceManager;
         private readonly IWorkflowRunner _workflowScheduler;
         private readonly IDistributedLockProvider _distributedLockProvider;
 
         public ResumeRunningWorkflowsTask(
-            IWorkflowInstanceRepository workflowInstanceRepository,
+            IWorkflowInstanceStore workflowInstanceStore,
             IWorkflowRunner workflowScheduler,
             IDistributedLockProvider distributedLockProvider)
         {
-            _workflowInstanceManager = workflowInstanceRepository;
+            _workflowInstanceManager = workflowInstanceStore;
             _workflowScheduler = workflowScheduler;
             _distributedLockProvider = distributedLockProvider;
         }

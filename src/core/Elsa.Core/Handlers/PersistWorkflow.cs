@@ -15,12 +15,12 @@ namespace Elsa.Handlers
         INotificationHandler<ActivityExecuted>,
         INotificationHandler<WorkflowCompleted>
     {
-        private readonly IWorkflowInstanceRepository _workflowInstanceManager;
+        private readonly IWorkflowInstanceStore _workflowInstanceManager;
         private readonly ILogger _logger;
 
-        public PersistWorkflow(IWorkflowInstanceRepository workflowInstanceRepository, ILogger<PersistWorkflow> logger)
+        public PersistWorkflow(IWorkflowInstanceStore workflowInstanceStore, ILogger<PersistWorkflow> logger)
         {
-            _workflowInstanceManager = workflowInstanceRepository;
+            _workflowInstanceManager = workflowInstanceStore;
             _logger = logger;
         }
 

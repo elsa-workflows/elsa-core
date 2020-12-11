@@ -28,7 +28,7 @@ namespace Elsa.Services
         private readonly IWorkflowRegistry _workflowRegistry;
         private readonly IWorkflowFactory _workflowFactory;
         private readonly IWorkflowSelector _workflowSelector;
-        private readonly IWorkflowInstanceRepository _workflowInstanceManager;
+        private readonly IWorkflowInstanceStore _workflowInstanceManager;
         private readonly Func<IWorkflowBuilder> _workflowBuilderFactory;
         private readonly IWorkflowContextManager _workflowContextManager;
         private readonly IMediator _mediator;
@@ -43,7 +43,7 @@ namespace Elsa.Services
             IWorkflowContextManager workflowContextManager,
             IMediator mediator,
             IServiceProvider serviceProvider,
-            ILogger<WorkflowRunner> logger, IWorkflowInstanceRepository workflowInstanceRepository)
+            ILogger<WorkflowRunner> logger, IWorkflowInstanceStore workflowInstanceStore)
         {
             _workflowRegistry = workflowRegistry;
             _workflowFactory = workflowFactory;
@@ -52,7 +52,7 @@ namespace Elsa.Services
             _mediator = mediator;
             _serviceProvider = serviceProvider;
             _logger = logger;
-            _workflowInstanceManager = workflowInstanceRepository;
+            _workflowInstanceManager = workflowInstanceStore;
             _workflowSelector = workflowSelector;
         }
 

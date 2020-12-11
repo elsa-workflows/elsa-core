@@ -14,12 +14,12 @@ using MediatR;
 
 namespace Elsa.Persistence.InMemory
 {
-    public class InMemoryWorkflowInstanceRepository : IWorkflowInstanceRepository
+    public class InMemoryWorkflowInstanceStore : IWorkflowInstanceStore
     {
         private static readonly List<WorkflowInstance> _instances = new List<WorkflowInstance>();
         private readonly IMediator _mediator;
 
-        public InMemoryWorkflowInstanceRepository(IMediator mediator)
+        public InMemoryWorkflowInstanceStore(IMediator mediator)
         {
             _mediator = mediator;
         }

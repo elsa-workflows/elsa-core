@@ -14,19 +14,19 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
     public class SignalRequestHandler : IRequestHandler
     {
         private readonly HttpContext _httpContext;
-        private readonly IWorkflowInstanceRepository _workflowInstanceManager;
+        private readonly IWorkflowInstanceStore _workflowInstanceManager;
         private readonly ITokenService _tokenService;
         private readonly CancellationToken _cancellationToken;
         private readonly IWorkflowRunner _workflowRunner;
 
         public SignalRequestHandler(
-            IWorkflowInstanceRepository workflowInstanceRepository,
+            IWorkflowInstanceStore workflowInstanceStore,
             IHttpContextAccessor httpContextAccessor,
             ITokenService tokenService,
             IWorkflowRunner workflowRunner)
         {
             _httpContext = httpContextAccessor.HttpContext;
-            _workflowInstanceManager = workflowInstanceRepository;
+            _workflowInstanceManager = workflowInstanceStore;
             _tokenService = tokenService;
             _workflowRunner = workflowRunner;
             _cancellationToken = _httpContext.RequestAborted;

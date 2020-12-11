@@ -11,7 +11,7 @@ namespace Elsa.Persistence.InMemory
         {
             // Scoped, because IMediator is registered as Scoped and IIdGenerator could also be registered as Scoped
             services.AddScoped<IWorkflowDefinitionRepository, InMemoryWorkflowDefinitionRepository>()
-                .AddScoped<IWorkflowInstanceRepository, InMemoryWorkflowInstanceRepository>()
+                .AddScoped<IWorkflowInstanceStore, InMemoryWorkflowInstanceStore>()
                 .AddWorkflowProvider<DatabaseWorkflowProvider>();
 
             return services;

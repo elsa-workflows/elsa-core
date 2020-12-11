@@ -14,16 +14,16 @@ namespace Elsa.Activities.Http.Controllers
     {
         private readonly ITokenService _tokenService;
         private readonly IWorkflowRunner _workflowRunner;
-        private readonly IWorkflowInstanceRepository _workflowInstanceManager;
+        private readonly IWorkflowInstanceStore _workflowInstanceManager;
 
         public HttpWorkflowsController(
             ITokenService tokenService,
             IWorkflowRunner workflowRunner,
-            IWorkflowInstanceRepository workflowInstanceRepository)
+            IWorkflowInstanceStore workflowInstanceStore)
         {
             _tokenService = tokenService;
             _workflowRunner = workflowRunner;
-            _workflowInstanceManager = workflowInstanceRepository;
+            _workflowInstanceManager = workflowInstanceStore;
         }
 
         [Route("trigger/{token}")]

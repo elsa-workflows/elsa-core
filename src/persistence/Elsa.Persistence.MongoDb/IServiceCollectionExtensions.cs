@@ -35,7 +35,7 @@ namespace Elsa.Persistence.MongoDb
         private static void AddCore(IServiceCollection services)
         {
             services.AddScoped<IWorkflowDefinitionRepository, MongoDbWorkflowDefinitionRepository>()
-                .AddScoped<IWorkflowInstanceRepository, MongoDbWorkflowInstanceRepository>()            
+                .AddScoped<IWorkflowInstanceStore, MongoDbWorkflowInstanceStore>()            
                 .AddScoped<ElsaMongoDbClient>()
                 .AddScoped<IMongoCollection<WorkflowDefinition>>(services => services.GetRequiredService<ElsaMongoDbClient>().WorkflowDefinitions)
                 .AddScoped<IMongoCollection<WorkflowInstance>>(services => services.GetRequiredService<ElsaMongoDbClient>().WorkflowInstances)

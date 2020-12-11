@@ -19,12 +19,12 @@ namespace Elsa.Activities.Signaling
     public class InterruptTrigger : Activity
     {
         private readonly IWorkflowTriggerInterruptor _workflowTriggerInterruptor;
-        private readonly IWorkflowInstanceRepository _workflowInstanceManager;
+        private readonly IWorkflowInstanceStore _workflowInstanceManager;
 
-        public InterruptTrigger(IWorkflowTriggerInterruptor workflowTriggerInterruptor, IWorkflowInstanceRepository workflowInstanceRepository)
+        public InterruptTrigger(IWorkflowTriggerInterruptor workflowTriggerInterruptor, IWorkflowInstanceStore workflowInstanceStore)
         {
             _workflowTriggerInterruptor = workflowTriggerInterruptor;
-            _workflowInstanceManager = workflowInstanceRepository;
+            _workflowInstanceManager = workflowInstanceStore;
         }
         
         [ActivityProperty(Hint = "The ID of the workflow instance to resume.")]
