@@ -14,6 +14,6 @@ namespace ElsaDashboard.Shared.Rpc
             WorkflowDefinitionVersionId = workflowDefinitionVersionId;
         }
 
-        [ProtoMember(1)]  public string WorkflowDefinitionVersionId { get; set; }
+        [ProtoMember(1)] public string WorkflowDefinitionVersionId { get; set; } = default!;
     }
 }

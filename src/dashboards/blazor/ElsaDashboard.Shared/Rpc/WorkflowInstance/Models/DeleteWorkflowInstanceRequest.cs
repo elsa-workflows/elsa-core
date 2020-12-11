@@ -15,6 +15,6 @@ namespace ElsaDashboard.Shared.Rpc
             WorkflowInstanceId = workflowInstanceId;
         }
 
-        [ProtoMember(1)] public string WorkflowInstanceId { get; set; }
+        [ProtoMember(1)] public string WorkflowInstanceId { get; set; } = default!;
     }
 }
