@@ -15,13 +15,13 @@ namespace ElsaDashboard.Backend.Rpc
             _elsaClient = elsaClient;
         }
 
-        public async Task<PagedList<WorkflowDefinition>> ListAsync(int? page, int? pageSize, VersionOptions? versionOptions, CallContext context) =>
-            await _elsaClient.WorkflowDefinitions.ListAsync(page, pageSize, versionOptions, context.CancellationToken);
+        public async Task<PagedList<WorkflowDefinition>> ListAsync(ListWorkflowDefinitionsRequest request, CallContext context = default) =>
+            await _elsaClient.WorkflowDefinitions.ListAsync(request.Page, request.PageSize, request.VersionOptions, context.CancellationToken);
 
-        public async Task<WorkflowDefinition> GetById(string workflowDefinitionId, VersionOptions versionOptions, CallContext context = default) =>
-            await _elsaClient.WorkflowDefinitions.GetByIdAsync(workflowDefinitionId, versionOptions, context.CancellationToken);
+        public async Task<WorkflowDefinition> GetByIdAsync(GetWorkflowDefinitionByIdRequest request, CallContext context = default) =>
+            await _elsaClient.WorkflowDefinitions.GetByIdAsync(request.WorkflowDefinitionId, request.VersionOptions ?? VersionOptions.Published, context.CancellationToken);
 
-        public Task<WorkflowDefinition> GetByVersionIdAsync(string workflowDefinitionVersionId, CallContext context) => _elsaClient.WorkflowDefinitions.GetByVersionIdAsync(workflowDefinitionVersionId, context.CancellationToken);
+        public Task<WorkflowDefinition> GetByVersionIdAsync(GetWorkflowDefinitionByVersionIdRequest request, CallContext context) => _elsaClient.WorkflowDefinitions.GetByVersionIdAsync(request.WorkflowDefinitionVersionId, context.CancellationToken);
         public async Task<WorkflowDefinition> SaveAsync(SaveWorkflowDefinitionRequest request, CallContext context) => await _elsaClient.WorkflowDefinitions.SaveAsync(request, context.CancellationToken);
     }
 }

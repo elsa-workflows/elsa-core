@@ -13,7 +13,9 @@ namespace ElsaDashboard.WebAssembly.Extensions
             RuntimeTypeModel.Default.AddNodaTime();
             return services
                 .AddGrpcClient<IActivityService>()
-                .AddGrpcClient<IWorkflowDefinitionService>();
+                .AddGrpcClient<IWorkflowDefinitionService>()
+                .AddGrpcClient<IWorkflowInstanceService>()
+                .AddGrpcClient<IWorkflowRegistryService>();
         }
     }
 }

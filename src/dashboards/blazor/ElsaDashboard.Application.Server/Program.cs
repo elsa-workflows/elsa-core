@@ -6,7 +6,7 @@ namespace ElsaDashboard.Application.Server
 {
     public class Program
     {
-        public static BlazorRuntimeModel RuntimeModel => BlazorRuntimeModel.Server;
+        public static BlazorRuntimeModel RuntimeModel => BlazorRuntimeModel.Browser;
         public static RenderMode RenderMode => RuntimeModel == BlazorRuntimeModel.Server ? RenderMode.ServerPrerendered : RenderMode.WebAssemblyPrerendered;
 
         public static void Main(string[] args)

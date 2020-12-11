@@ -10,7 +10,7 @@ namespace ElsaDashboard.Shared.Surrogates
     public class WorkflowInstanceSurrogate
     {
         private static readonly JsonSerializerSettings SerializerSettings;
-        
+
         static WorkflowInstanceSurrogate()
         {
             SerializerSettings = new JsonSerializerSettings
@@ -25,7 +25,7 @@ namespace ElsaDashboard.Shared.Surrogates
         }
 
         [ProtoMember(1)] public string Value { get; }
-        
+
         public static implicit operator WorkflowInstance(WorkflowInstanceSurrogate surrogate) => Deserialize(surrogate.Value)!;
         public static implicit operator WorkflowInstanceSurrogate(WorkflowInstance source) => new(source);
 

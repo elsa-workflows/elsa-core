@@ -14,7 +14,9 @@ namespace ElsaDashboard.Shared.Surrogates
         {
             [typeof(ActivityPropertyInfo)] = typeof(ActivityPropertyDescriptorSurrogate),
             [typeof(VersionOptions)] = typeof(VersionOptionsSurrogate),
-            [typeof(WorkflowInstance)] = typeof(WorkflowInstanceSurrogate)
+            [typeof(WorkflowInstance)] = typeof(WorkflowInstanceSurrogate),
+            [typeof(WorkflowDefinition)] = typeof(WorkflowDefinitionSurrogate),
+            [typeof(WorkflowBlueprint)] = typeof(WorkflowBlueprintSurrogate)
         };
 
         /// <summary>

@@ -31,7 +31,7 @@ namespace ElsaDashboard.Application.Pages.WorkflowDefinitions
         {
             if (WorkflowDefinitionId != null)
             {
-                WorkflowDefinition = await WorkflowDefinitionService.GetById(WorkflowDefinitionId, VersionOptions.Latest);
+                WorkflowDefinition = await WorkflowDefinitionService.GetByIdAsync(WorkflowDefinitionId, VersionOptions.Latest);
                 WorkflowModel = CreateWorkflowModel(WorkflowDefinition);
             }
             else
