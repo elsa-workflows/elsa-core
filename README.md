@@ -41,15 +41,14 @@ Version 1.0
 
 Version 2.0
 
-- [ ] Service Bus Messaging
+- [x] Service Bus Messaging
 - [ ] Generic Command & Event Activities
-- [ ] Workflow Host REST API
+- [x] Workflow Host REST API
 - [ ] Workflow Host gRPC API
-- [ ] Workflow Server
-- [ ] Activity Harvesting
-- [ ] Distributed Hosting Support (support for multi-node environments)
+- [x] Workflow Server
+- [x] Activity Harvesting
+- [x] Distributed Hosting Support (support for multi-node environments)
 - [ ] Localization Support
-- [ ] More activities
 - [ ] Workflow Designer UI improvements
 - [ ] Activity Editor UI improvements
 
