@@ -17,4 +17,8 @@
     <ProjectReference Include="..\ElsaDashboard.Backend\ElsaDashboard.Backend.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwroot" />
+  </ItemGroup>
+
 </Project>
