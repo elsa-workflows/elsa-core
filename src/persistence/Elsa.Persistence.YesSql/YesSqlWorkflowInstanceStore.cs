@@ -4,10 +4,8 @@ using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Data;
-using Elsa.Events;
 using Elsa.Models;
 using Elsa.Persistence.YesSql.Indexes;
-using MediatR;
 using YesSql;
 using YesSql.Indexes;
 

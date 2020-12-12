@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using Elsa.Models;
 using Elsa.Server.Api.Endpoints.WorkflowRegistry;
 using Elsa.Services.Models;
 

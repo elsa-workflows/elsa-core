@@ -2,7 +2,6 @@ using Elsa.Activities.Timers;
 using Elsa.Activities.Timers.Services;
 using Elsa.Attributes;
 using Elsa.Persistence;
-using Elsa.Services;
 using NodaTime;
 
 namespace Elsa.Samples.Interrupts.Activities

@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Persistence;
 using Elsa.Services;
 using Elsa.Services.Models;
 

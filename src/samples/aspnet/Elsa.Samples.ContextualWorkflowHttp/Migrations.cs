@@ -1,4 +1,3 @@
-using Elsa.Data;
 using Elsa.Persistence.YesSql.Data;
 using Elsa.Samples.ContextualWorkflowHttp.Indexes;
 using YesSql.Sql;

@@ -1,12 +1,8 @@
-using System;
 using System.Threading;
 using System.Threading.Tasks;
 
 using Elsa.Models;
-using Elsa.Persistence.MongoDb.Serializers;
 using Elsa.Services;
-
-using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 
 namespace Elsa.Persistence.MongoDb.Services

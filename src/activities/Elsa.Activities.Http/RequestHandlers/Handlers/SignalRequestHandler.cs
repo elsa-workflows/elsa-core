@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Elsa.Activities.Http.Models;
 using Elsa.Activities.Http.RequestHandlers.Results;
 using Elsa.Activities.Http.Services;
-using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services;

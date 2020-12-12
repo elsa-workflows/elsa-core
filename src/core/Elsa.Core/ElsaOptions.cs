@@ -1,5 +1,4 @@
 using System;
-using System.Data;
 using Elsa.Caching;
 using Elsa.DistributedLock;
 using Elsa.Extensions;
