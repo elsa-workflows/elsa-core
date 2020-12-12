@@ -190,6 +190,7 @@ namespace Elsa.Services
             if (statusEvent != null)
                 await _mediator.Publish(statusEvent, cancellationToken);
 
+            await _mediator.Publish(new WorkflowExecutionFinished(workflowExecutionContext), cancellationToken);
             return workflowExecutionContext.WorkflowInstance;
         }
 
