@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+<Project Sdk="Microsoft.NET.Sdk.Web">
 
     <PropertyGroup>
         <TargetFramework>net5.0</TargetFramework>
@@ -13,6 +13,12 @@
     <ItemGroup>
         <ProjectReference Include="..\..\persistence\Elsa.Persistence.YesSql\Elsa.Persistence.YesSql.csproj" />
         <ProjectReference Include="..\Elsa.Server.Api\Elsa.Server.Api.csproj" />
+    </ItemGroup>
+    
+    <ItemGroup>
+        <Compile Update=".\Workflows\HelloWorld.*.cs">
+            <DependentUpon>.\Workflows\HelloWorld.cs</DependentUpon>
+        </Compile>
     </ItemGroup>
 
 </Project>

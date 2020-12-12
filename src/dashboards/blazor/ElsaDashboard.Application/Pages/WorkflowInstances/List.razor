@@ -8,6 +8,34 @@
     </div>
 </div>
 
+<div class="relative z-10 flex-shrink-0 flex h-16 bg-white border-b border-gray-200">
+    <!-- Search bar -->
+    <div class="flex-1 px-4 flex justify-between sm:px-6 lg:max-w-6xl lg:px-8">
+        <div class="flex-1 flex">
+            <form class="w-full flex md:ml-0" action="#" method="GET">
+                <label for="search_field" class="sr-only">Search</label>
+                <div class="relative w-full text-cool-gray-400 focus-within:text-cool-gray-600">
+                    <div class="absolute inset-y-0 left-0 flex items-center pointer-events-none">
+                        <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" clip-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"></path>
+                        </svg>
+                    </div>
+                    <input id="search_field" class="block w-full h-full pl-8 pr-3 py-2 rounded-md text-cool-gray-900 placeholder-cool-gray-500 focus:outline-none focus:placeholder-cool-gray-400 sm:text-sm" placeholder="Search" type="search">
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="p-8 flex content-end justify-right bg-white space-x-4">
+    <div class="flex-1">
+        <h3>Filters</h3>
+    </div>
+    <ButtonDropdown Text="@SelectedWorkflowText" Items="@WorkflowFilterItems"/>
+    <ButtonDropdown Text="Status" Items="@(new[] { new ButtonDropdownItem("Suspended"), new ButtonDropdownItem("Faulted"), new ButtonDropdownItem("Completed"), new ButtonDropdownItem("Uncompleted"), new ButtonDropdownItem("All") })"/>
+    <ButtonDropdown Text="Sort" Items="@(new[] { new ButtonDropdownItem("Started"), new ButtonDropdownItem("Finished") })"/>
+</div>
+
 <!-- Workflow instances (only on smallest breakpoint) -->
 <div class="mt-10 sm:hidden">
     <div class="px-4 sm:px-6">

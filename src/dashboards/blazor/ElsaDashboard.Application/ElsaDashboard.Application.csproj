@@ -42,6 +42,7 @@
         <Pack>True</Pack>
           <PackagePath />
       </None>
+      <None Include="wwwroot\tailwind.css" />
     </ItemGroup>
 
 </Project>

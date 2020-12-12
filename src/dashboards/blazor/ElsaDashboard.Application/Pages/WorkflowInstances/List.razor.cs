@@ -6,6 +6,7 @@ using Elsa.Client.Models;
 using ElsaDashboard.Application.Attributes;
 using ElsaDashboard.Application.Extensions;
 using ElsaDashboard.Application.Services;
+using ElsaDashboard.Application.Shared;
 using ElsaDashboard.Shared.Rpc;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
@@ -16,6 +17,7 @@ namespace ElsaDashboard.Application.Pages.WorkflowInstances
     {
         [QueryStringParameter] public int Page { get; set; } = 0;
         [QueryStringParameter] public int PageSize { get; set; } = 10;
+        [QueryStringParameter("workflow")] public string? SelectedWorkflowId { get; set; }
         [Inject] private NavigationManager NavigationManager { get; set; } = default!;
         [Inject] private IWorkflowInstanceService WorkflowInstanceService { get; set; } = default!;
         [Inject] private IWorkflowRegistryService WorkflowRegistryService { get; set; } = default!;
@@ -23,11 +25,28 @@ namespace ElsaDashboard.Application.Pages.WorkflowInstances
         private PagedList<WorkflowInstance> WorkflowInstances { get; set; } = new();
         private IDictionary<(string, int), WorkflowBlueprint> WorkflowBlueprints { get; set; } = new Dictionary<(string, int), WorkflowBlueprint>();
 
+        private IEnumerable<ButtonDropdownItem> WorkflowFilterItems => WorkflowBlueprints.Values
+            .OrderByDescending(x => x.Version)
+            .GroupBy(x => x.Id)
+            .Select(x => x.First())
+            .Select(x => (x.Id, x.DisplayName))
+            .Select(x => new ButtonDropdownItem(x.DisplayName!, x.Id, $"workflow-instances?workflow={x.Id}", x.Id == SelectedWorkflowId));
+
+        private string SelectedWorkflowText =>
+            SelectedWorkflowId == null
+                ? "Workflow"
+                : WorkflowBlueprints
+                    .GroupBy(x => x.Value.Id, x => x.Value)
+                    .FirstOrDefault(x => x.Key == SelectedWorkflowId)
+                    ?.OrderByDescending(x => x.Version)
+                    ?.FirstOrDefault()
+                    ?.DisplayName ?? "Workflow";
+
         public void Dispose()
         {
             NavigationManager.LocationChanged -= OnLocationChanged;
         }
-        
+
         public override Task SetParametersAsync(ParameterView parameters)
         {
             this.SetParametersFromQueryString(NavigationManager);
@@ -37,7 +56,7 @@ namespace ElsaDashboard.Application.Pages.WorkflowInstances
         protected override async Task OnInitializedAsync()
         {
             NavigationManager.LocationChanged += OnLocationChanged;
-            
+
             var workflowBlueprints = await WorkflowRegistryService.ListAsync();
             WorkflowBlueprints = workflowBlueprints.Items.ToDictionary(x => (x.Id, x.Version));
         }
@@ -62,7 +81,7 @@ namespace ElsaDashboard.Application.Pages.WorkflowInstances
         {
             WorkflowInstances = await WorkflowInstanceService.ListAsync(Page, PageSize);
         }
-        
+
         private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
         {
             this.SetParametersFromQueryString(NavigationManager);

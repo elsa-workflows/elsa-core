@@ -39,6 +39,8 @@ namespace Elsa.Server.Host
                 .AddTimerActivities(elsaSection.GetSection("BackgroundRunner").Bind)
                 .AddStartupTask<ResumeRunningWorkflowsTask>()
                 .AddWorkflow<HelloWorld>()
+                .AddWorkflow<HelloWorldV2>()
+                .AddWorkflow<GoodbyeWorld>()
                 ;
         }
 
