@@ -14,8 +14,7 @@ namespace Elsa.Samples.ContextualWorkflowHttp
         public void ConfigureServices(IServiceCollection services)
         {
             services
-                .AddElsa()
-                .AddElsaPersistenceYesSql((sp, config) => config.UseSqLite("Data Source=elsa.db;Cache=Shared", IsolationLevel.ReadUncommitted))
+                .AddElsa(options => options.UseYesSqlPersistence())
                 .AddHttpActivities()
                 .AddConsoleActivities()
                 .AddDataMigration<Migrations>()

@@ -35,7 +35,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\..\src\core\Elsa\Elsa.csproj" />
-        <ProjectReference Include="..\..\..\src\persistence\Elsa.Persistence.InMemory\Elsa.Persistence.InMemory.csproj" />
     </ItemGroup>
 
 </Project>

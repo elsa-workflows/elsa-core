@@ -1,7 +1,4 @@
 using System.Threading.Tasks;
-
-using Elsa.Persistence.InMemory;
-
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NodaTime;
@@ -12,14 +9,13 @@ namespace Elsa.Samples.Timers
     {
         private static async Task Main() => await CreateHostBuilder().UseConsoleLifetime().Build().RunAsync();
 
-        public static IHostBuilder CreateHostBuilder() =>
+        private static IHostBuilder CreateHostBuilder() =>
             Host.CreateDefaultBuilder()
                 .ConfigureServices(
-                    (hostContext, services) =>
+                    (_, services) =>
                     {
                         services
                             .AddElsa()
-                            .AddElsaPersistenceInMemory()
                             .AddConsoleActivities()
                             .AddTimerActivities()
                             .AddWorkflow<RecurringTaskWorkflow>()

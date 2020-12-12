@@ -1,4 +1,3 @@
-using Elsa.Persistence.InMemory;
 using Elsa.Samples.CorrelationHttp.Workflows;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,7 +10,6 @@ namespace Elsa.Samples.CorrelationHttp
         {
             services
                 .AddElsa()
-                .AddElsaPersistenceInMemory()
                 .AddHttpActivities()
                 .AddConsoleActivities()
                 .AddWorkflow<RegistrationWorkflow>();

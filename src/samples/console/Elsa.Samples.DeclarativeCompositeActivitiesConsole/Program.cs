@@ -18,7 +18,6 @@ namespace Elsa.Samples.DeclarativeCompositeActivitiesConsole
             // Create a service container with Elsa services.
             var services = new ServiceCollection()
                 .AddElsa()
-                .AddElsaPersistenceInMemory()
                 .AddConsoleActivities()
                 .BuildServiceProvider();
 

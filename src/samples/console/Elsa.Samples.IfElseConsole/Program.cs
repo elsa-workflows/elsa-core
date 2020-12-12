@@ -16,7 +16,6 @@ namespace Elsa.Samples.IfElseConsole
             // Create a service container with Elsa services.
             var services = new ServiceCollection()
                 .AddElsa()
-                .AddElsaPersistenceInMemory()
                 .AddConsoleActivities()
                 .AddWorkflow<HappinessWorkflow>()
                 .BuildServiceProvider();

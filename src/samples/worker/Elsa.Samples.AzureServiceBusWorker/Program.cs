@@ -20,7 +20,6 @@ namespace Elsa.Samples.AzureServiceBusWorker
                 {
                     services
                         .AddElsa()
-                        .AddElsaPersistenceInMemory()
                         .AddConsoleActivities()
                         .AddTimerActivities()
                         .AddAzureServiceBusActivities(options => options.ConnectionString = hostContext.Configuration.GetConnectionString("AzureServiceBus"))

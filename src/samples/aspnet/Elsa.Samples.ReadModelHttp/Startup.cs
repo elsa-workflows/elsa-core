@@ -1,4 +1,3 @@
-using Elsa.Persistence.InMemory;
 using Elsa.Samples.ReadModelHttp.Workflows;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,7 +10,6 @@ namespace Elsa.Samples.ReadModelHttp
         {
             services
                 .AddElsa()
-                .AddElsaPersistenceInMemory()
                 .AddHttpActivities()
                 .AddConsoleActivities()
                 .AddWorkflow<SaveContactWorkflow>();

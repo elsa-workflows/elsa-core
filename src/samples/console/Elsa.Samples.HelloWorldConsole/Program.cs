@@ -13,7 +13,6 @@ namespace Elsa.Samples.HelloWorldConsole
             // Create a service container with Elsa services.
             var services = new ServiceCollection()
                 .AddElsa()
-                .AddElsaPersistenceInMemory()
                 .AddConsoleActivities()
                 .AddWorkflow<HelloWorld>()
                 .AddAutoMapperProfiles<Program>()

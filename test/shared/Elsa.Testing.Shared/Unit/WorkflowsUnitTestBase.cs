@@ -22,7 +22,6 @@ namespace Elsa.Testing.Shared.Unit
 
             var services = new ServiceCollection()
                 .AddElsa()
-                .AddElsaPersistenceInMemory()
                 .AddConsoleActivities(Console.In, new XunitConsoleForwarder(testOutputHelper));
             
             configureServices?.Invoke(services);

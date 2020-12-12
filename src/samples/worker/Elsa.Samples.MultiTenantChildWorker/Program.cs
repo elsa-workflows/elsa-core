@@ -1,4 +1,3 @@
-using Elsa.Persistence.InMemory;
 using Elsa.Samples.MultiTenantChildWorker.Messages;
 using Elsa.Samples.MultiTenantChildWorker.Workflows;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,14 +12,13 @@ namespace Elsa.Samples.MultiTenantChildWorker
             CreateHostBuilder(args).Build().Run();
         }
 
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
+        private static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
                 .ConfigureServices(
-                    (hostContext, services) =>
+                    (_, services) =>
                     {
                         services
                             .AddElsa()
-                            .AddElsaPersistenceInMemory()
                             .AddTimerActivities()
                             .AddConsoleActivities()
                             .AddRebusActivities<OrderReceived>()

@@ -2,6 +2,8 @@ using System;
 using Elsa.Caching;
 using Elsa.DistributedLock;
 using Elsa.Extensions;
+using Elsa.Persistence;
+using Elsa.Persistence.InMemory;
 using Elsa.Serialization;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,6 +24,8 @@ namespace Elsa
         {
             Services = services;
 
+            WorkflowDefinitionStoreFactory = _ => new InMemoryWorkflowDefinitionStore();
+            WorkflowInstanceStoreFactory = _ => new InMemoryWorkflowInstanceStore();
             StorageFactory = sp => Storage.Net.StorageFactory.Blobs.InMemory();
             DistributedLockProviderFactory = sp => new DefaultLockProvider();
             SignalFactory = sp => new Signal();
@@ -49,6 +53,8 @@ namespace Elsa
 
         public IServiceCollection Services { get; }
         internal Func<IServiceProvider, IBlobStorage> StorageFactory { get; set; }
+        internal Func<IServiceProvider, IWorkflowDefinitionStore> WorkflowDefinitionStoreFactory { get; set; }
+        internal Func<IServiceProvider, IWorkflowInstanceStore> WorkflowInstanceStoreFactory { get; set; }
         internal Func<IServiceProvider, IDistributedLockProvider> DistributedLockProviderFactory { get; private set; }
         internal Func<IServiceProvider, ISignal> SignalFactory { get; private set; }
         internal Func<IServiceProvider, JsonSerializer> CreateJsonSerializer { get; private set; }
@@ -73,6 +79,18 @@ namespace Elsa
         public ElsaOptions UseStorage(Func<IServiceProvider, IBlobStorage> factory)
         {
             StorageFactory = factory;
+            return this;
+        }
+        
+        public ElsaOptions UseWorkflowDefinitionStore(Func<IServiceProvider, IWorkflowDefinitionStore> factory)
+        {
+            WorkflowDefinitionStoreFactory = factory;
+            return this;
+        }
+        
+        public ElsaOptions UseWorkflowInstanceStore(Func<IServiceProvider, IWorkflowInstanceStore> factory)
+        {
+            WorkflowInstanceStoreFactory = factory;
             return this;
         }
 

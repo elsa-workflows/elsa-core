@@ -1,4 +1,3 @@
-using Elsa.Persistence.InMemory;
 using Elsa.Samples.ForkJoinTimerAndSignalHttp.BackgroundTasks;
 using Elsa.Samples.ForkJoinTimerAndSignalHttp.Workflows;
 using Microsoft.AspNetCore.Builder;
@@ -15,7 +14,6 @@ namespace Elsa.Samples.ForkJoinTimerAndSignalHttp
             
             services
                 .AddElsa()
-                .AddElsaPersistenceInMemory()
                 .AddConsoleActivities()
                 .AddTimerActivities()
                 .AddHostedService<WorkflowStarter<DemoWorkflow>>()

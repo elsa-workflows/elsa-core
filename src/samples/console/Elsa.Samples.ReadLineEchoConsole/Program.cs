@@ -14,7 +14,6 @@ namespace Elsa.Samples.ReadLineEchoConsole
             // Create a service container with Elsa services.
             var services = new ServiceCollection()
                 .AddElsa()
-                .AddElsaPersistenceInMemory()
                 .AddConsoleActivities()
                 .BuildServiceProvider();
             
@@ -23,14 +22,14 @@ namespace Elsa.Samples.ReadLineEchoConsole
             await startupRunner.StartupAsync();
             
             // Build a new workflow.
-            var workflow = services.GetService<IWorkflowBuilder>()
+            var workflow = services.GetRequiredService<IWorkflowBuilder>()
                 .WriteLine("What's your name?")
                 .ReadLine()
                 .WriteLine(context => $"Greetings, {context.Input}!")
                 .Build();
             
             // Get a workflow runner.
-            var workflowRunner = services.GetService<IWorkflowRunner>();
+            var workflowRunner = services.GetRequiredService<IWorkflowRunner>();
 
             // Execute the workflow.
             await workflowRunner.RunWorkflowAsync(workflow);

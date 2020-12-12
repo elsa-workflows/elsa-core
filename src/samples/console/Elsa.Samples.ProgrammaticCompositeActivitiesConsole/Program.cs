@@ -15,7 +15,6 @@ namespace Elsa.Samples.ProgrammaticCompositeActivitiesConsole
             // Create a service container with Elsa services.
             var services = new ServiceCollection()
                 .AddElsa()
-                .AddElsaPersistenceInMemory()
                 .AddConsoleActivities()
                 .AddActivity<CountDownActivity>()
                 .AddWorkflow<CompositionWorkflow>()

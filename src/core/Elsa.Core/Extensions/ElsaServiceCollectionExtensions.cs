@@ -40,6 +40,8 @@ namespace Microsoft.Extensions.DependencyInjection
 
             services
                 .AddSingleton(options)
+                .AddScoped(options.WorkflowDefinitionStoreFactory)
+                .AddScoped(options.WorkflowInstanceStoreFactory)
                 .AddSingleton(options.DistributedLockProviderFactory)
                 .AddSingleton(options.SignalFactory)
                 .AddSingleton(options.StorageFactory);
@@ -105,6 +107,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IActivityTypeProvider, TypeBasedActivityProvider>()
                 .AddWorkflowProvider<ProgrammaticWorkflowProvider>()
                 .AddWorkflowProvider<StorageWorkflowProvider>()
+                .AddWorkflowProvider<DatabaseWorkflowProvider>()
                 .AddTransient<IWorkflowBuilder, WorkflowBuilder>()
                 .AddTransient<ICompositeActivityBuilder, CompositeActivityBuilder>()
                 .AddTransient<Func<IWorkflowBuilder>>(sp => sp.GetRequiredService<IWorkflowBuilder>)

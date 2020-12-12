@@ -22,7 +22,6 @@ namespace Elsa.Samples.FileBasedWorkflow
             // Create a service container with Elsa services.
             var services = new ServiceCollection()
                 .AddElsa(options => options.UseStorage(() => StorageFactory.Blobs.DirectoryFiles(currentDirectory)))
-                .AddElsaPersistenceInMemory()
                 .AddConsoleActivities()
                 .BuildServiceProvider();
             

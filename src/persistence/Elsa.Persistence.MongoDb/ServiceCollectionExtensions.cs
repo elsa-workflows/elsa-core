@@ -1,4 +1,5 @@
 using System;
+using Elsa.Extensions;
 using Elsa.Persistence.MongoDb.Services;
 using Elsa.Runtime;
 using Elsa.WorkflowProviders;
@@ -9,31 +10,35 @@ namespace Elsa.Persistence.MongoDb
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddElsaPersistenceMongoDb(this IServiceCollection services, Action<ElsaMongoDbOptions> configureOptions)
+        public static ElsaOptions UseMongoDbPersistence(this ElsaOptions elsa, Action<ElsaMongoDbOptions> configureOptions)
         {
-            AddCore(services);
-            services.Configure(configureOptions);
+            AddCore(elsa);
+            elsa.Services.Configure(configureOptions);
 
-            return services;
+            return elsa;
         }
 
-        public static IServiceCollection AddElsaPersistenceMongoDb(this IServiceCollection services, IConfiguration options)
+        public static ElsaOptions UseMongoDbPersistence(this ElsaOptions elsa, IConfiguration options)
         {
-            AddCore(services);
-            services.Configure<ElsaMongoDbOptions>(options);
-            return services;
+            AddCore(elsa);
+            elsa.Services.Configure<ElsaMongoDbOptions>(options);
+            return elsa;
         }
 
-        private static void AddCore(IServiceCollection services)
+        private static void AddCore(ElsaOptions elsa)
         {
-            services.AddScoped<IWorkflowDefinitionStore, MongoDbWorkflowDefinitionStore>()
-                .AddScoped<IWorkflowInstanceStore, MongoDbWorkflowInstanceStore>()            
+            elsa.Services
+                .AddScoped<MongoDbWorkflowDefinitionStore>()
+                .AddScoped<MongoDbWorkflowInstanceStore>()            
                 .AddScoped<ElsaMongoDbClient>()
                 .AddScoped(sp => sp.GetRequiredService<ElsaMongoDbClient>().WorkflowDefinitions)
                 .AddScoped(sp => sp.GetRequiredService<ElsaMongoDbClient>().WorkflowInstances)
-                .AddWorkflowProvider<DatabaseWorkflowProvider>()
                 .AddStartupTask<DatabaseInitializer>();
 
+            elsa
+                .UseWorkflowDefinitionStore(sp => sp.GetRequiredService<MongoDbWorkflowDefinitionStore>())
+                .UseWorkflowInstanceStore(sp => sp.GetRequiredService<MongoDbWorkflowInstanceStore>());
+            
             DatabaseRegister.RegisterMapsAndSerializers();
         }
     }

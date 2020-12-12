@@ -10,14 +10,13 @@ namespace Elsa.Samples.SignalingConsole
     /// <summary>
     /// Demonstrates a workflow with a While looping construct.
     /// </summary>
-    static class Program
+    internal static class Program
     {
         private static async Task Main()
         {
             // Create a service container with Elsa services.
             var services = new ServiceCollection()
                 .AddElsa()
-                .AddElsaPersistenceInMemory()
                 .AddConsoleActivities()
                 .AddWorkflow<TrafficLightWorkflow>()
                 .BuildServiceProvider();

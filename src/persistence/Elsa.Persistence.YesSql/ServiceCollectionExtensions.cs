@@ -1,39 +1,41 @@
 using System;
+using System.Data;
 using System.Linq;
-
 using Elsa.Data;
 using Elsa.Data.Services;
 using Elsa.Persistence.YesSql.Data;
 using Elsa.Persistence.YesSql.Indexes;
 using Elsa.Persistence.YesSql.Services;
 using Elsa.Runtime;
-using Elsa.WorkflowProviders;
-
 using Microsoft.Extensions.DependencyInjection;
-
 using YesSql;
 using YesSql.Indexes;
+using YesSql.Provider.Sqlite;
 
 namespace Elsa.Persistence.YesSql
 {
-    public static class IServiceCollectionExtensions
+    public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddElsaPersistenceYesSql(this IServiceCollection services, Action<IServiceProvider, IConfiguration> configure)
+        public static ElsaOptions UseYesSqlPersistence(this ElsaOptions elsa) => elsa.UseYesSqlPersistence((_, config) => config.UseSqLite("Data Source=elsa.db;Cache=Shared", IsolationLevel.ReadUncommitted));
+
+        public static ElsaOptions UseYesSqlPersistence(this ElsaOptions elsa, Action<IServiceProvider, IConfiguration> configure)
         {
             // Scoped, because IMediator is registered as Scoped and IIdGenerator could also be registered as Scoped
-            services.AddScoped<IWorkflowDefinitionStore, YesSqlWorkflowDefinitionStore>()
-                .AddScoped<IWorkflowInstanceStore, YesSqlWorkflowInstanceStore>()
-               .AddWorkflowProvider<DatabaseWorkflowProvider>()
-               .AddSingleton(sp => CreateStore(sp, configure))
-               .AddScoped(CreateSession)
-               .AddScoped<IDataMigrationManager, DataMigrationManager>()
-               .AddStartupTask<DatabaseInitializer>()
-               .AddStartupTask<DataMigrationsRunner>()
-               .AddDataMigration<Migrations>()
-               .AddIndexProvider<WorkflowDefinitionIndexProvider>()
-               .AddIndexProvider<WorkflowInstanceIndexProvider>();
+            elsa.Services
+                .AddScoped<YesSqlWorkflowDefinitionStore>()
+                .AddScoped<YesSqlWorkflowInstanceStore>()
+                .AddSingleton(sp => CreateStore(sp, configure))
+                .AddScoped(CreateSession)
+                .AddScoped<IDataMigrationManager, DataMigrationManager>()
+                .AddStartupTask<DatabaseInitializer>()
+                .AddStartupTask<DataMigrationsRunner>()
+                .AddDataMigration<Migrations>()
+                .AddIndexProvider<WorkflowDefinitionIndexProvider>()
+                .AddIndexProvider<WorkflowInstanceIndexProvider>();
 
-            return services;
+            return elsa
+                .UseWorkflowDefinitionStore(sp => sp.GetRequiredService<YesSqlWorkflowDefinitionStore>())
+                .UseWorkflowInstanceStore(sp => sp.GetRequiredService<YesSqlWorkflowInstanceStore>());
         }
 
         public static IServiceCollection AddIndexProvider<T>(this IServiceCollection services) where T : class, IIndexProvider => services.AddSingleton<IIndexProvider, T>();
@@ -68,4 +70,6 @@ namespace Elsa.Persistence.YesSql
             return session;
         }
     }
+    
+    
 }
