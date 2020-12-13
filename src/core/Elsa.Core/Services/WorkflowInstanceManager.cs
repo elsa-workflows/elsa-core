@@ -34,9 +34,6 @@ namespace Elsa.Services
 
         public Task<WorkflowInstance?> GetByIdAsync(string id, CancellationToken cancellationToken) => Store.GetByIdAsync(id, cancellationToken);
 
-        public Task<bool> GetWorkflowIsAlreadyExecutingAsync(string? tenantId, string workflowDefinitionId, CancellationToken cancellationToken = default) =>
-            Store.GetWorkflowIsAlreadyExecutingAsync(tenantId, workflowDefinitionId, cancellationToken);
-
         public Task<IEnumerable<WorkflowInstance>> ListAsync(int page, int pageSize, CancellationToken cancellationToken = default) => Store.ListAsync(page, pageSize, cancellationToken);
 
         public Task<IEnumerable<WorkflowInstance>> ListByBlockingActivityTypeAsync(string activityType, CancellationToken cancellationToken = default) => Store.ListByBlockingActivityTypeAsync(activityType, cancellationToken);

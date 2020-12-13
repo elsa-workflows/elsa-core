@@ -32,7 +32,7 @@ namespace Elsa.Services
                 WorkflowDefinitionId = workflowBlueprint.Id,
                 TenantId = workflowBlueprint.TenantId,
                 Version = workflowBlueprint.Version,
-                Status = WorkflowStatus.Idle,
+                WorkflowStatus = WorkflowStatus.Idle,
                 CorrelationId = correlationId,
                 ContextId = contextId,
                 CreatedAt = _clock.GetCurrentInstant(),

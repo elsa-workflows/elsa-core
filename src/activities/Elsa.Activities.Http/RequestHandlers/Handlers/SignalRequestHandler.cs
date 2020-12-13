@@ -45,7 +45,7 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
 
             if (!CheckIfExecuting(workflowInstance))
                 return new BadRequestResult(
-                    $"Cannot signal a workflow with status other than {WorkflowStatus.Running}. Actual workflow status: {workflowInstance.Status}.");
+                    $"Cannot signal a workflow with status other than {WorkflowStatus.Running}. Actual workflow status: {workflowInstance.WorkflowStatus}.");
 
             await ResumeWorkflowAsync(workflowInstance, signal);
 
@@ -63,7 +63,7 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
             await _workflowInstanceManager.GetByIdAsync(signal.WorkflowInstanceId, _cancellationToken);
 
         private bool CheckIfExecuting(WorkflowInstance workflowInstance) =>
-            workflowInstance.Status == WorkflowStatus.Running;
+            workflowInstance.WorkflowStatus == WorkflowStatus.Running;
 
         private async Task ResumeWorkflowAsync(WorkflowInstance workflowInstance, Signal signal)
         {

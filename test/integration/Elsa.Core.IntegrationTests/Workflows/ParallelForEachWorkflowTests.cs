@@ -21,7 +21,7 @@ namespace Elsa.Core.IntegrationTests.Workflows
             var workflowInstance = await WorkflowRunner.RunWorkflowAsync(workflow);
             var iterationLogs = workflowInstance.ExecutionLog.Where(x => x.ActivityId == "WriteLine").ToList();
 
-            Assert.Equal(WorkflowStatus.Suspended, workflowInstance.Status);
+            Assert.Equal(WorkflowStatus.Suspended, workflowInstance.WorkflowStatus);
             Assert.Equal(items.Count, iterationLogs.Count);
         }
     }

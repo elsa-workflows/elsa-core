@@ -8,11 +8,9 @@ namespace Elsa.Services
 {
     public interface IWorkflowInstanceManager
     {
-        IWorkflowInstanceStore Store { get; }
         Task SaveAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken = default);
         Task DeleteAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken = default);
         Task<WorkflowInstance?> GetByIdAsync(string id, CancellationToken cancellationToken = default);
-        Task<bool> GetWorkflowIsAlreadyExecutingAsync(string? tenantId, string workflowDefinitionId, CancellationToken cancellationToken = default);
         Task<IEnumerable<WorkflowInstance>> ListAsync(int page, int pageSize, CancellationToken cancellationToken = default);
         Task<IEnumerable<WorkflowInstance>> ListByBlockingActivityTypeAsync(string activityType, CancellationToken cancellationToken = default);
         Task<IEnumerable<WorkflowInstance>> ListByDefinitionAndStatusAsync(string workflowDefinitionId, string? tenantId, WorkflowStatus workflowStatus, CancellationToken cancellationToken = default);

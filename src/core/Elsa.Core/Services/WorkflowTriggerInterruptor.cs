@@ -32,7 +32,7 @@ namespace Elsa.Services
 
         public async Task<WorkflowInstance> InterruptActivityAsync(IWorkflowBlueprint workflowBlueprint, WorkflowInstance workflowInstance, string activityId, object? input, CancellationToken cancellationToken)
         {
-            if (workflowInstance.Status != WorkflowStatus.Suspended)
+            if (workflowInstance.WorkflowStatus != WorkflowStatus.Suspended)
                 throw new WorkflowException("Cannot interrupt workflows that are not in the Suspended state.");
 
             var blockingActivity = workflowInstance.BlockingActivities.SingleOrDefault(x => x.ActivityId == activityId);

@@ -3,9 +3,11 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
+using Elsa.Specifications;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
+using SortDirection = Elsa.Specifications.SortDirection;
 
 namespace Elsa.Persistence.MongoDb
 {
@@ -26,9 +28,22 @@ namespace Elsa.Persistence.MongoDb
             await _workflowInstances.DeleteOneAsync(filter, cancellationToken);
         }
 
+        public async Task<IEnumerable<WorkflowInstance>> ListAsync(
+            ISpecification<WorkflowInstance> specification,
+            IGroupingSpecification<WorkflowInstance>? grouping,
+            IPagingSpecification? paging,
+            CancellationToken cancellationToken = default) =>
+            await _workflowInstances.AsQueryable().Apply(specification).Apply(grouping).Apply(paging).ToListAsync(cancellationToken);
+
+        public async Task<int> CountAsync(ISpecification<WorkflowInstance> specification, IGroupingSpecification<WorkflowInstance>? grouping = default, CancellationToken cancellationToken = default) =>
+            await _workflowInstances.AsQueryable().Apply(specification).Apply(grouping).CountAsync(cancellationToken);
+
+        public async Task<WorkflowInstance?> FindAsync(ISpecification<WorkflowInstance> specification, CancellationToken cancellationToken = default) =>
+            await _workflowInstances.AsQueryable().Where(specification.ToExpression()).FirstOrDefaultAsync(cancellationToken);
+
         public async Task<WorkflowInstance?> GetByCorrelationIdAsync(string correlationId, WorkflowStatus status, CancellationToken cancellationToken = default) =>
             await _workflowInstances.AsQueryable()
-                .FirstOrDefaultAsync(instance => instance.CorrelationId == correlationId && instance.Status == status, cancellationToken);
+                .FirstOrDefaultAsync(instance => instance.CorrelationId == correlationId && instance.WorkflowStatus == status, cancellationToken);
 
         public async Task<WorkflowInstance?> GetByIdAsync(string workflowInstanceId, CancellationToken cancellationToken = default) =>
             await _workflowInstances
@@ -41,7 +56,7 @@ namespace Elsa.Persistence.MongoDb
                 .AsQueryable()
                 .AnyAsync(instance =>
                     instance.WorkflowDefinitionId == workflowDefinitionId
-                    && (instance.Status == WorkflowStatus.Running || instance.Status == WorkflowStatus.Suspended)
+                    && (instance.WorkflowStatus == WorkflowStatus.Running || instance.WorkflowStatus == WorkflowStatus.Suspended)
                     && instance.TenantId == tenantId, cancellationToken);
         }
 
@@ -58,13 +73,13 @@ namespace Elsa.Persistence.MongoDb
         public async Task<IEnumerable<WorkflowInstance>> ListByCorrelationIdAsync(string correlationId, WorkflowStatus status, CancellationToken cancellationToken = default) =>
             await _workflowInstances
                 .AsQueryable()
-                .Where(instance => instance.CorrelationId == correlationId && instance.Status == status)
+                .Where(instance => instance.CorrelationId == correlationId && instance.WorkflowStatus == status)
                 .ToListAsync(cancellationToken);
 
         public async Task<IEnumerable<WorkflowInstance>> ListByDefinitionAndStatusAsync(string workflowDefinitionId, string? tenantId, WorkflowStatus workflowStatus, CancellationToken cancellationToken = default) =>
             await _workflowInstances
                 .AsQueryable()
-                .Where(instance => instance.WorkflowDefinitionId == workflowDefinitionId && instance.Status == workflowStatus && instance.TenantId == tenantId)
+                .Where(instance => instance.WorkflowDefinitionId == workflowDefinitionId && instance.WorkflowStatus == workflowStatus && instance.TenantId == tenantId)
                 .ToListAsync(cancellationToken);
 
         public async Task<IEnumerable<WorkflowInstance>> ListByDefinitionAsync(string workflowDefinitionId, string? tenantId, CancellationToken cancellationToken = default) =>
@@ -75,7 +90,7 @@ namespace Elsa.Persistence.MongoDb
         public async Task<IEnumerable<WorkflowInstance>> ListByStatusAsync(WorkflowStatus workflowStatus, CancellationToken cancellationToken = default) =>
             await _workflowInstances
                 .AsQueryable()
-                .Where(instance => instance.Status == workflowStatus)
+                .Where(instance => instance.WorkflowStatus == workflowStatus)
                 .ToListAsync(cancellationToken);
 
         public async Task SaveAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken = default)

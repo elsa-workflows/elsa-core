@@ -1,9 +1,7 @@
 using System;
 using System.Linq;
-
 using Elsa.Data;
 using Elsa.Models;
-
 using YesSql.Indexes;
 
 namespace Elsa.Persistence.YesSql.Indexes
@@ -20,7 +18,7 @@ namespace Elsa.Persistence.YesSql.Indexes
 
     public class WorkflowInstanceBlockingActivitiesIndex : MapIndex
     {
-        public string? TenantId { get; set; } = default!;
+        public string? TenantId { get; set; }
         public string ActivityId { get; set; } = default!;
         public string ActivityType { get; set; } = default!;
         public string? CorrelationId { get; set; }
@@ -41,7 +39,7 @@ namespace Elsa.Persistence.YesSql.Indexes
                         WorkflowInstanceId = workflowInstance.WorkflowInstanceId,
                         WorkflowDefinitionId = workflowInstance.WorkflowDefinitionId,
                         TenantId = workflowInstance.TenantId,
-                        WorkflowStatus = workflowInstance.Status,
+                        WorkflowStatus = workflowInstance.WorkflowStatus,
                         CorrelationId = workflowInstance.CorrelationId,
                         CreatedAt = workflowInstance.CreatedAt.ToDateTimeOffset()
                     });
@@ -50,7 +48,7 @@ namespace Elsa.Persistence.YesSql.Indexes
                 .Map(
                     workflowInstance =>
                     {
-                        if (workflowInstance.Status != WorkflowStatus.Suspended || !workflowInstance.BlockingActivities.Any())
+                        if (workflowInstance.WorkflowStatus != WorkflowStatus.Suspended || !workflowInstance.BlockingActivities.Any())
                             return default;
 
                         return workflowInstance.BlockingActivities
@@ -61,7 +59,7 @@ namespace Elsa.Persistence.YesSql.Indexes
                                     ActivityType = activity.ActivityType,
                                     CorrelationId = workflowInstance.CorrelationId,
                                     TenantId = workflowInstance.TenantId,
-                                    WorkflowStatus = workflowInstance.Status,
+                                    WorkflowStatus = workflowInstance.WorkflowStatus,
                                     CreatedAt = workflowInstance.CreatedAt.ToDateTimeOffset()
                                 });
                     });

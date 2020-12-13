@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using Elsa.Data;
 using Elsa.Models;
 using Elsa.Persistence.YesSql.Indexes;
+using Elsa.Specifications;
+using NetBox.Extensions;
 using YesSql;
 using YesSql.Indexes;
 
@@ -30,6 +32,20 @@ namespace Elsa.Persistence.YesSql
         {
             _session.Delete(workflowInstance, CollectionNames.WorkflowInstances);
             await _session.CommitAsync();
+        }
+
+        public async Task<IEnumerable<WorkflowInstance>> ListAsync(ISpecification<WorkflowInstance> specification, IGroupingSpecification<WorkflowInstance>? grouping, IPagingSpecification? paging, CancellationToken cancellationToken)
+        {
+            return await Query<WorkflowInstanceIndex>().Apply(specification).Apply(grouping).Apply(paging).ListAsync();
+        }
+
+        public async Task<int> CountAsync(ISpecification<WorkflowInstance> specification, IGroupingSpecification<WorkflowInstance>? grouping = default, CancellationToken cancellationToken = default) => 
+            await Query<WorkflowInstanceIndex>().Apply(specification).Apply(grouping).CountAsync();
+
+        public async Task<WorkflowInstance?> FindAsync(ISpecification<WorkflowInstance> specification, CancellationToken cancellationToken = default)
+        {
+            var query = Query<WorkflowInstanceIndex>().Where(specification.ToExpression().ConvertType<WorkflowInstance, WorkflowInstanceIndex>());
+            return await query.FirstOrDefaultAsync();
         }
 
         public async Task<bool> GetWorkflowIsAlreadyExecutingAsync(string? tenantId, string workflowDefinitionId, CancellationToken cancellationToken = default)

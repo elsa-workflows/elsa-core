@@ -57,8 +57,4 @@
         <ProjectReference Include="..\Elsa.Abstractions\Elsa.Abstractions.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-        <Folder Include="Data" />
-    </ItemGroup>
-
 </Project>

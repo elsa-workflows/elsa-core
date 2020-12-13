@@ -1,11 +1,10 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-
 using Elsa.Models;
 using Elsa.Persistence;
 
-namespace Elsa.Extensions
+namespace Elsa
 {
     public static class IWorkflowInstanceRepositoryExtensions
     {

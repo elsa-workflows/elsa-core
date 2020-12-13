@@ -15,7 +15,7 @@ namespace Elsa.Activities.Timers.Triggers
         {
             var executeAt = context.Activity.GetState(x => x.ExecuteAt);
 
-            if (executeAt == null || context.ActivityExecutionContext.WorkflowExecutionContext.WorkflowInstance.Status != WorkflowStatus.Suspended)
+            if (executeAt == null || context.ActivityExecutionContext.WorkflowExecutionContext.WorkflowInstance.WorkflowStatus != WorkflowStatus.Suspended)
                 return NullTrigger.Instance;
 
             return new CronTrigger
