@@ -50,6 +50,7 @@ Version 2.0
 - [x] Workflow Host REST API
 - [x] Workflow Server
 - [x] Distributed Hosting Support (support for multi-node environments)
+- [ ] Lucene Indexing
 - [ ] New Workflow Designer + Dashboard
 - [ ] Generic Command & Event Activities
 
