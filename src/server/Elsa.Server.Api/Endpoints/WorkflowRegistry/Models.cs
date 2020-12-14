@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using Elsa.Models;
-using Elsa.Services.Models;
 
 namespace Elsa.Server.Api.Endpoints.WorkflowRegistry
 {

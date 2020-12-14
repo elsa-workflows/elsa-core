@@ -1,5 +1,6 @@
 using System;
 using Elsa.Activities.Http;
+using Elsa.Activities.Http.Handlers;
 using Elsa.Activities.Http.Options;
 using Elsa.Activities.Http.Parsers;
 using Elsa.Activities.Http.RequestHandlers.Handlers;
@@ -41,7 +42,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IAbsoluteUrlProvider, DefaultAbsoluteUrlProvider>()
                 .AddTriggerProvider<ReceiveHttpRequestTriggerProvider>()
                 .AddHttpContextAccessor()
-                .AddNotificationHandlers(typeof(ServiceCollectionExtensions))
+                .AddNotificationHandlers(typeof(HttpJavaScriptHandler))
                 .AddDataProtection();
             
             return services

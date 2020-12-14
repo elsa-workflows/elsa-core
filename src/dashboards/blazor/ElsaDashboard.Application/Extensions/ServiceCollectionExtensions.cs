@@ -1,4 +1,5 @@
-﻿using ElsaDashboard.Application.Services;
+﻿using Blazored.Modal;
+using ElsaDashboard.Application.Services;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -7,7 +8,10 @@ namespace Microsoft.Extensions.DependencyInjection
     {
         public static IServiceCollection AddElsaDashboardUI(this IServiceCollection services)
         {
-            return services.AddScoped<IFlyoutPanelService, FlyoutPanelService>();
+            return services
+                .AddBlazoredModal()
+                .AddScoped<IConfirmDialogService, ConfirmDialogService>()
+                .AddScoped<IFlyoutPanelService, FlyoutPanelService>();
         }
     }
 }

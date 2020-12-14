@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Elsa.Activities.Signaling.Services;
+using Elsa.Persistence.InMemory;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -9,7 +10,7 @@ namespace Elsa.Samples.SignalingConsole
     /// <summary>
     /// Demonstrates a workflow with a While looping construct.
     /// </summary>
-    static class Program
+    internal static class Program
     {
         private static async Task Main()
         {

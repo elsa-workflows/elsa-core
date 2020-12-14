@@ -1,10 +1,10 @@
 {
     "scripts": {
         "serve": "cross-env NODE_ENV=development concurrently \"postcss src/tailwind.css -o public/tailwind.css --watch\" \"live-server ./public\"",
-        "blazor-server": "cross-env NODE_ENV=production postcss src/tailwind.css -o ../../ElsaDashboard.Application.Server/wwwroot/tailwind.css",
-        "blazor-server-dev": "cross-env NODE_ENV=development postcss src/tailwind.css -o ../../ElsaDashboard.Application.Server/wwwroot/tailwind.css",
-        "blazor-wasm": "cross-env NODE_ENV=production postcss src/tailwind.css -o ../../ElsaDashboard.Application.WebAssembly/wwwroot/tailwind.css",
+        "build:css:blazor": "cross-env NODE_ENV=production postcss src/tailwind.css -o ../../ElsaDashboard.Application/wwwroot/tailwind.css",
+        "build:css:blazor:dev": "cross-env NODE_ENV=development postcss src/tailwind.css -o ../../ElsaDashboard.Application/wwwroot/tailwind.css",
         "build:css": "cross-env NODE_ENV=production postcss src/tailwind.css -o public/tailwind.css",
+        "build:css:dev": "cross-env NODE_ENV=development postcss src/tailwind.css -o public/tailwind.css",
         "build:html": "posthtml -c posthtml.json",
         "watch:html": "onchange \"src\\**\\*.html\" -- npm run build:html",
         "start": "npm run serve"

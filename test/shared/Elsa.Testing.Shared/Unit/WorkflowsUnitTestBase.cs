@@ -1,14 +1,13 @@
 using System;
 using System.Threading.Tasks;
 using Elsa.Builders;
+using Elsa.Persistence.InMemory;
 using Elsa.Services;
 using Elsa.Testing.Shared.Helpers;
 using Elsa.Triggers;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 using Xunit.Abstractions;
-using YesSql;
-using YesSql.Provider.Sqlite;
 
 namespace Elsa.Testing.Shared.Unit
 {
@@ -22,7 +21,7 @@ namespace Elsa.Testing.Shared.Unit
             TestOutputHelper = testOutputHelper;
 
             var services = new ServiceCollection()
-                .AddElsa(options => options.UsePersistence(config => ConfigurePersistence(config, _tempFolder.Folder)))
+                .AddElsa()
                 .AddConsoleActivities(Console.In, new XunitConsoleForwarder(testOutputHelper));
             
             configureServices?.Invoke(services);
@@ -55,12 +54,6 @@ namespace Elsa.Testing.Shared.Unit
         {
             await ServiceProvider.DisposeAsync();
             Dispose();
-        }
-
-        private void ConfigurePersistence(IConfiguration configuration, string folder)
-        {
-            var connectionString = $@"Data Source={folder}elsa.db;Cache=Shared";
-            configuration.UseSqLite(connectionString).UseDefaultIdGenerator();
         }
     }
 }

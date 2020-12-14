@@ -9,10 +9,10 @@ namespace Elsa.Samples.Timers
     {
         private static async Task Main() => await CreateHostBuilder().UseConsoleLifetime().Build().RunAsync();
 
-        public static IHostBuilder CreateHostBuilder() =>
+        private static IHostBuilder CreateHostBuilder() =>
             Host.CreateDefaultBuilder()
                 .ConfigureServices(
-                    (hostContext, services) =>
+                    (_, services) =>
                     {
                         services
                             .AddElsa()

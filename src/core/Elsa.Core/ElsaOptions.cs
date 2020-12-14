@@ -1,8 +1,9 @@
 using System;
-using System.Data;
 using Elsa.Caching;
 using Elsa.DistributedLock;
 using Elsa.Extensions;
+using Elsa.Persistence;
+using Elsa.Persistence.InMemory;
 using Elsa.Serialization;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,10 +13,8 @@ using Rebus.Logging;
 using Rebus.Persistence.InMem;
 using Rebus.Routing.TypeBased;
 using Rebus.Transport.InMem;
-using YesSql;
 using Storage.Net;
 using Storage.Net.Blobs;
-using YesSql.Provider.Sqlite;
 
 namespace Elsa
 {
@@ -25,7 +24,8 @@ namespace Elsa
         {
             Services = services;
 
-            ConfigurePersistence = (sp, config) => config.UseSqLite("Data Source=elsa.db;Cache=Shared", IsolationLevel.ReadUncommitted);
+            WorkflowDefinitionStoreFactory = _ => new InMemoryWorkflowDefinitionStore();
+            WorkflowInstanceStoreFactory = _ => new InMemoryWorkflowInstanceStore();
             StorageFactory = sp => Storage.Net.StorageFactory.Blobs.InMemory();
             DistributedLockProviderFactory = sp => new DefaultLockProvider();
             SignalFactory = sp => new Signal();
@@ -52,8 +52,9 @@ namespace Elsa
         }
 
         public IServiceCollection Services { get; }
-        internal Action<IServiceProvider, IConfiguration> ConfigurePersistence { get; set; }
         internal Func<IServiceProvider, IBlobStorage> StorageFactory { get; set; }
+        internal Func<IServiceProvider, IWorkflowDefinitionStore> WorkflowDefinitionStoreFactory { get; set; }
+        internal Func<IServiceProvider, IWorkflowInstanceStore> WorkflowInstanceStoreFactory { get; set; }
         internal Func<IServiceProvider, IDistributedLockProvider> DistributedLockProviderFactory { get; private set; }
         internal Func<IServiceProvider, ISignal> SignalFactory { get; private set; }
         internal Func<IServiceProvider, JsonSerializer> CreateJsonSerializer { get; private set; }
@@ -73,19 +74,23 @@ namespace Elsa
             return this;
         }
 
-        public ElsaOptions UsePersistence(Action<IConfiguration> configure) => UsePersistence((sp, config) => configure(config));
-
-        public ElsaOptions UsePersistence(Action<IServiceProvider, IConfiguration> configure)
-        {
-            ConfigurePersistence = configure;
-            return this;
-        }
-
         public ElsaOptions UseStorage(Func<IBlobStorage> factory) => UseStorage(_ => factory());
 
         public ElsaOptions UseStorage(Func<IServiceProvider, IBlobStorage> factory)
         {
             StorageFactory = factory;
+            return this;
+        }
+        
+        public ElsaOptions UseWorkflowDefinitionStore(Func<IServiceProvider, IWorkflowDefinitionStore> factory)
+        {
+            WorkflowDefinitionStoreFactory = factory;
+            return this;
+        }
+        
+        public ElsaOptions UseWorkflowInstanceStore(Func<IServiceProvider, IWorkflowInstanceStore> factory)
+        {
+            WorkflowInstanceStoreFactory = factory;
             return this;
         }
 

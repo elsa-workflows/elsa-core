@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Extensions;
 using Elsa.Models;
+using Elsa.Persistence;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.Caching.Memory;
@@ -18,7 +18,7 @@ namespace Elsa.Triggers
         private const string CacheKey = "WorkflowSelector:Triggers";
         private readonly IWorkflowRegistry _workflowRegistry;
         private readonly IWorkflowFactory _workflowFactory;
-        private readonly IWorkflowInstanceManager _workflowInstanceManager;
+        private readonly IWorkflowInstanceStore _workflowInstanceManager;
         private readonly IWorkflowContextManager _workflowContextManager;
         private readonly IEnumerable<ITriggerProvider> _triggerProviders;
         private readonly IMemoryCache _memoryCache;
@@ -28,7 +28,7 @@ namespace Elsa.Triggers
         public WorkflowSelector(
             IWorkflowRegistry workflowRegistry,
             IWorkflowFactory workflowFactory,
-            IWorkflowInstanceManager workflowInstanceManager,
+            IWorkflowInstanceStore workflowInstanceStore,
             IWorkflowContextManager workflowContextManager,
             IEnumerable<ITriggerProvider> triggerProviders,
             IMemoryCache memoryCache,
@@ -36,7 +36,7 @@ namespace Elsa.Triggers
         {
             _workflowRegistry = workflowRegistry;
             _workflowFactory = workflowFactory;
-            _workflowInstanceManager = workflowInstanceManager;
+            _workflowInstanceManager = workflowInstanceStore;
             _workflowContextManager = workflowContextManager;
             _triggerProviders = triggerProviders;
             _memoryCache = memoryCache;

@@ -1,7 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Threading.Tasks;
-using YesSql.Provider.Sqlite;
 
 namespace Elsa.Samples.DistributedLock
 {
@@ -13,15 +12,13 @@ namespace Elsa.Samples.DistributedLock
     {
         private static async Task Main() => await CreateHostBuilder().UseConsoleLifetime().Build().RunAsync();
 
-        public static IHostBuilder CreateHostBuilder() =>
+        private static IHostBuilder CreateHostBuilder() =>
             Host.CreateDefaultBuilder()
                 .ConfigureServices(
-                    (hostContext, services) =>
+                    (_, services) =>
                     {
                         services
-                            .AddElsa(options => options
-                                .UsePersistence(db => db.UseSqLite("Data Source=elsa.db;Cache=Shared"))
-                                .UseRedisLockProvider("localhost:6379,abortConnect=false"))
+                            .AddElsa(options => options.UseRedisLockProvider("localhost:6379,abortConnect=false"))
                             .AddConsoleActivities()
                             .AddTimerActivities()
                             .AddWorkflow<RecurringWorkflow>();

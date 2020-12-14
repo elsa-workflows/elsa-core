@@ -1,7 +1,8 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Elsa.Activities.Console;
 using Elsa.Models;
+using Elsa.Persistence.InMemory;
 using Elsa.Scripting.Liquid.Services;
 using Elsa.Serialization;
 using Elsa.Services;
@@ -16,9 +17,9 @@ namespace Elsa.Samples.Serialization
     /// 3. Materialize a workflow definition model into a workflow blueprint.
     /// 4. Run a workflow blueprint.
     /// </summary>
-    class Program
+    internal class Program
     {
-        static async Task Main(string[] args)
+        private static async Task Main()
         {
             // Create a service container with Elsa services.
             var services = new ServiceCollection()
@@ -48,7 +49,7 @@ namespace Elsa.Samples.Serialization
                         Type = nameof(WriteLine),
                         Properties = new ActivityDefinitionProperties
                         {
-                            [nameof(WriteLine.Text)] = new ActivityDefinitionPropertyValue
+                            [nameof(WriteLine.Text)] = new()
                             {
                                 Syntax = LiquidExpressionHandler.SyntaxName,
                                 Expression = "Hello World!",

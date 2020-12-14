@@ -1,4 +1,5 @@
 using Elsa.Activities.AzureServiceBus.Extensions;
+using Elsa.Persistence.InMemory;
 using Elsa.Samples.AzureServiceBusWorker.Workflows;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

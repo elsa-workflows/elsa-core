@@ -1,4 +1,6 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
+
+using Elsa.Persistence.InMemory;
 using Elsa.Samples.GoBackConsole.Activities;
 using Elsa.Samples.GoBackConsole.Workflows;
 using Elsa.Services;
@@ -26,7 +28,7 @@ namespace Elsa.Samples.GoBackConsole
             await startupRunner.StartupAsync();
             
             // Get a workflow runner.
-            var workflowRunner = services.GetService<IWorkflowRunner>();
+            var workflowRunner = services.GetRequiredService<IWorkflowRunner>();
 
             // Execute the workflow.
             await workflowRunner.RunWorkflowAsync<WalkAroundWorkflow>();

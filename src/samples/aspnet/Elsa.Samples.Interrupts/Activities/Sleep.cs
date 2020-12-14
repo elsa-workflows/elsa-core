@@ -1,7 +1,7 @@
-﻿using Elsa.Activities.Timers;
+using Elsa.Activities.Timers;
 using Elsa.Activities.Timers.Services;
 using Elsa.Attributes;
-using Elsa.Services;
+using Elsa.Persistence;
 using NodaTime;
 
 namespace Elsa.Samples.Interrupts.Activities
@@ -9,7 +9,7 @@ namespace Elsa.Samples.Interrupts.Activities
     [Activity]
     public class Sleep : Timer
     {
-        public Sleep(IWorkflowInstanceManager workflowInstanceManager, IWorkflowScheduler workflowScheduler, IClock clock) : base(clock)
+        public Sleep(IWorkflowInstanceStore workflowInstanceStore, IWorkflowScheduler workflowScheduler, IClock clock) : base(clock)
         {
         }
     }

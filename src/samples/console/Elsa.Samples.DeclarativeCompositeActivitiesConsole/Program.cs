@@ -1,5 +1,6 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using Elsa.Models;
+using Elsa.Persistence.InMemory;
 using Elsa.Scripting.Liquid.Services;
 using Elsa.Serialization;
 using Elsa.Services;

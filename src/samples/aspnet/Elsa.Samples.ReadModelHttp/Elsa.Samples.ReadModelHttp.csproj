@@ -2,10 +2,11 @@
 
     <PropertyGroup>
         <TargetFramework>net5.0</TargetFramework>
+        <IsPackable>false</IsPackable>
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\..\core\Elsa\Elsa.csproj"/>
+        <ProjectReference Include="..\..\..\core\Elsa\Elsa.csproj" />
     </ItemGroup>
 
 </Project>

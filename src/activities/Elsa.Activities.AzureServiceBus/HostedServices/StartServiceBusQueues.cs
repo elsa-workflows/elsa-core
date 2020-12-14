@@ -55,7 +55,7 @@ namespace Elsa.Activities.AzureServiceBus.HostedServices
                 foreach (var activity in workflowBlueprintWrapper.Filter<AzureServiceBusMessageReceived>())
                 {
                     var queueName = await activity.GetPropertyValueAsync(x => x.QueueName, cancellationToken);
-                    yield return queueName;
+                    yield return queueName!;
                 }
             }
         }

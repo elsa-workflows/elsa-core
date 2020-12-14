@@ -27,6 +27,10 @@ namespace Elsa.Models
         public string? CorrelationId { get; set; }
         public string? ContextId { get; set; }
         public Instant CreatedAt { get; set; }
+        public Instant? LastExecutedAt { get; set; }
+        public Instant? CompletedAt { get; set; }
+        public Instant? CancelledAt { get; set; }
+        public Instant? FaultedAt { get; set; }
         public Variables Variables { get; set; }
         public object? Output { get; set; }
         public ICollection<ActivityInstance> Activities { get; set; }

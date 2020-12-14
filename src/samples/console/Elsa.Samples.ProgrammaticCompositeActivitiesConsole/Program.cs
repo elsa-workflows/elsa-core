@@ -1,4 +1,6 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
+
+using Elsa.Persistence.InMemory;
 using Elsa.Samples.ProgrammaticCompositeActivitiesConsole.Activities;
 using Elsa.Samples.ProgrammaticCompositeActivitiesConsole.Workflows;
 using Elsa.Services;

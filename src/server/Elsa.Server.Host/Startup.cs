@@ -1,11 +1,14 @@
 using Elsa.Runtime;
+using Elsa.Server.Host.Workflows;
 using Elsa.StartupTasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Elsa.Persistence.YesSql;
 using YesSql.Provider.Sqlite;
+using System.Data;
 
 namespace Elsa.Server.Host
 {
@@ -23,12 +26,9 @@ namespace Elsa.Server.Host
         public void ConfigureServices(IServiceCollection services)
         {
             var elsaSection = Configuration.GetSection("Elsa");
-            var connectionString = Configuration.GetConnectionString("Sqlite");
 
             services
-                .AddElsa(
-                    elsa => elsa
-                        .UsePersistence(config => config.UseSqLite(connectionString)));
+                .AddElsa(options => options.UseYesSqlPersistence());
 
             services
                 .AddElsaApiEndpoints()
@@ -37,7 +37,11 @@ namespace Elsa.Server.Host
                 .AddHttpActivities(elsaSection.GetSection("Http").Bind)
                 .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)
                 .AddTimerActivities(elsaSection.GetSection("BackgroundRunner").Bind)
-                .AddStartupTask<ResumeRunningWorkflowsTask>();
+                .AddStartupTask<ResumeRunningWorkflowsTask>()
+                .AddWorkflow<HelloWorld>()
+                .AddWorkflow<HelloWorldV2>()
+                .AddWorkflow<GoodbyeWorld>()
+                ;
         }
 
         public void Configure(IApplicationBuilder app)

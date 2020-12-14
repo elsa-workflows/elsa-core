@@ -1,44 +1,59 @@
-﻿using System;
-using System.Linq.Expressions;
+﻿using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Data;
 using Elsa.Events;
 using Elsa.Models;
+using Elsa.Persistence;
 using MediatR;
-using YesSql;
-using YesSql.Indexes;
 
 namespace Elsa.Services
 {
     public class WorkflowInstanceManager : IWorkflowInstanceManager
     {
-        private readonly ISession _session;
         private readonly IMediator _mediator;
 
-        public WorkflowInstanceManager(ISession session, IMediator mediator)
+        public WorkflowInstanceManager(IWorkflowInstanceStore store, IMediator mediator)
         {
-            _session = session;
             _mediator = mediator;
+            Store = store;
         }
 
-        public async ValueTask SaveAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken = default)
+        public IWorkflowInstanceStore Store { get; }
+
+        public async Task SaveAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken)
         {
-            _session.Save(workflowInstance, CollectionNames.WorkflowInstances);
-            await _session.CommitAsync();
+            await Store.SaveAsync(workflowInstance, cancellationToken);
             await _mediator.Publish(new WorkflowInstanceSaved(workflowInstance), cancellationToken);
         }
 
-        public async ValueTask DeleteAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken = default)
+        public async Task DeleteAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken)
         {
-            _session.Delete(workflowInstance, CollectionNames.WorkflowInstances);
-            await _session.CommitAsync();
+            await Store.DeleteAsync(workflowInstance, cancellationToken);
             await _mediator.Publish(new WorkflowInstanceDeleted(workflowInstance), cancellationToken);
         }
 
-        public IQuery<WorkflowInstance> Query() => _session.Query<WorkflowInstance>(CollectionNames.WorkflowInstances);
-        public IQuery<WorkflowInstance, TIndex> Query<TIndex>() where TIndex : class, IIndex => _session.Query<WorkflowInstance, TIndex>(CollectionNames.WorkflowInstances);
-        public IQuery<WorkflowInstance, TIndex> Query<TIndex>(Expression<Func<TIndex, bool>> predicate) where TIndex : class, IIndex => _session.Query<WorkflowInstance, TIndex>(predicate, CollectionNames.WorkflowInstances);
-        public IQuery<WorkflowInstance> ExecuteQuery(ICompiledQuery<WorkflowInstance> query) => _session.ExecuteQuery(query, CollectionNames.WorkflowInstances);
+        public Task<WorkflowInstance?> GetByIdAsync(string id, CancellationToken cancellationToken) => Store.GetByIdAsync(id, cancellationToken);
+
+        public Task<bool> GetWorkflowIsAlreadyExecutingAsync(string? tenantId, string workflowDefinitionId, CancellationToken cancellationToken = default) =>
+            Store.GetWorkflowIsAlreadyExecutingAsync(tenantId, workflowDefinitionId, cancellationToken);
+
+        public Task<IEnumerable<WorkflowInstance>> ListAsync(int page, int pageSize, CancellationToken cancellationToken = default) => Store.ListAsync(page, pageSize, cancellationToken);
+
+        public Task<IEnumerable<WorkflowInstance>> ListByBlockingActivityTypeAsync(string activityType, CancellationToken cancellationToken = default) => Store.ListByBlockingActivityTypeAsync(activityType, cancellationToken);
+
+        public Task<IEnumerable<WorkflowInstance>> ListByDefinitionAndStatusAsync(string workflowDefinitionId, string? tenantId, WorkflowStatus workflowStatus, CancellationToken cancellationToken = default) =>
+            Store.ListByDefinitionAndStatusAsync(workflowDefinitionId, tenantId, workflowStatus, cancellationToken);
+
+        public Task<IEnumerable<WorkflowInstance>> ListByStatusAsync(WorkflowStatus workflowStatus, CancellationToken cancellationToken = default) => Store.ListByStatusAsync(workflowStatus, cancellationToken);
+
+        public Task<IEnumerable<WorkflowInstance>> ListByDefinitionAsync(string workflowDefinitionId, string? tenantId, CancellationToken cancellationToken = default) =>
+            Store.ListByDefinitionAsync(workflowDefinitionId, tenantId, cancellationToken);
+
+        public Task<WorkflowInstance?> GetByCorrelationIdAsync(string correlationId, WorkflowStatus status, CancellationToken cancellationToken = default) => Store.GetByCorrelationIdAsync(correlationId, status, cancellationToken);
+
+        public Task<IEnumerable<WorkflowInstance>> ListByCorrelationIdAsync(string correlationId, WorkflowStatus status, CancellationToken cancellationToken = default) =>
+            Store.ListByCorrelationIdAsync(correlationId, status, cancellationToken);
+
+        public Task<int> CountAsync(CancellationToken cancellationToken = default) => Store.CountAsync(cancellationToken);
     }
 }

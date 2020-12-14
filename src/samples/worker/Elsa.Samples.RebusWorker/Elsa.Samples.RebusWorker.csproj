@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <TargetFramework>net5.0</TargetFramework>
-        <UserSecretsId>dotnet-Elsa.Samples.Rebus.AzureServiceBusWorker-34DD18B8-38B1-4F6F-ABE0-BCE3BEEB5FA6</UserSecretsId>
+        <IsPackable>false</IsPackable>
     </PropertyGroup>
 
     <ItemGroup>

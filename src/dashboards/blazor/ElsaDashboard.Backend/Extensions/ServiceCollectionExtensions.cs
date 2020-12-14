@@ -2,7 +2,6 @@
 using System.IO.Compression;
 using Elsa.Client.Extensions;
 using Elsa.Client.Options;
-using Elsa.Client.Services;
 using ElsaDashboard.Backend.Rpc;
 using ElsaDashboard.Shared.Rpc;
 using ElsaDashboard.Shared.Surrogates;
@@ -17,9 +16,10 @@ namespace ElsaDashboard.Backend.Extensions
         public static IServiceCollection AddElsaDashboardBackend(this IServiceCollection services, Action<ElsaClientOptions>? configure = default)
         {
             RuntimeTypeModel.Default.AddElsaGrpcSurrogates();
+            RuntimeTypeModel.Default.AddNodaTime();
             services.AddCors();
             services.AddElsaClient(configure);
-            services.AddCodeFirstGrpc(options => options.ResponseCompressionLevel = CompressionLevel.Optimal);
+            services.AddCodeFirstGrpc(options => options.ResponseCompressionLevel = CompressionLevel.Fastest);
             services.AddScoped<IActivityService, ActivityService>();
             services.AddScoped<IWorkflowDefinitionService, WorkflowDefinitionService>();
             services.AddScoped<IWorkflowRegistryService, WorkflowRegistryService>();

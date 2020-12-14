@@ -1,5 +1,6 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using Elsa.Extensions;
+using Elsa.Persistence.InMemory;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 

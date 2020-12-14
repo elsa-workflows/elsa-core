@@ -20,10 +20,10 @@ namespace Elsa.Activities.Timers
         private readonly IWorkflowInstanceManager _workflowInstanceManager;
         private readonly IWorkflowScheduler _workflowScheduler;
 
-        public Cron(IClock clock, IWorkflowInstanceManager workflowInstanceManager, IWorkflowScheduler workflowScheduler)
+        public Cron(IWorkflowInstanceManager workflowInstanceStore, IWorkflowScheduler workflowScheduler, IClock clock)
         {
             _clock = clock;
-            _workflowInstanceManager = workflowInstanceManager;
+            _workflowInstanceManager = workflowInstanceStore;
             _workflowScheduler = workflowScheduler;
         }
 

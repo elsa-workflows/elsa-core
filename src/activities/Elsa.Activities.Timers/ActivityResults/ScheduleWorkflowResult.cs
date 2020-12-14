@@ -1,8 +1,7 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Timers.Services;
 using Elsa.ActivityResults;
-using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
 using NodaTime;

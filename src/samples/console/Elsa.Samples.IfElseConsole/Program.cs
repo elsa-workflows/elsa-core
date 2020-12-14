@@ -1,4 +1,6 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
+
+using Elsa.Persistence.InMemory;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -23,7 +25,7 @@ namespace Elsa.Samples.IfElseConsole
             await startupRunner.StartupAsync();
             
             // Get a workflow runner.
-            var workflowRunner = services.GetService<IWorkflowRunner>();
+            var workflowRunner = services.GetRequiredService<IWorkflowRunner>();
 
             // Execute the workflow.
             await workflowRunner.RunWorkflowAsync<HappinessWorkflow>();

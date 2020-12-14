@@ -1,8 +1,8 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.DistributedLock;
-using Elsa.Extensions;
 using Elsa.Models;
+using Elsa.Persistence;
 using Elsa.Services;
 
 namespace Elsa.StartupTasks
@@ -13,16 +13,16 @@ namespace Elsa.StartupTasks
     /// </summary>
     public class ResumeRunningWorkflowsTask : IStartupTask
     {
-        private readonly IWorkflowInstanceManager _workflowInstanceManager;
+        private readonly IWorkflowInstanceStore _workflowInstanceManager;
         private readonly IWorkflowRunner _workflowScheduler;
         private readonly IDistributedLockProvider _distributedLockProvider;
 
         public ResumeRunningWorkflowsTask(
-            IWorkflowInstanceManager workflowInstanceManager,
+            IWorkflowInstanceStore workflowInstanceStore,
             IWorkflowRunner workflowScheduler,
             IDistributedLockProvider distributedLockProvider)
         {
-            _workflowInstanceManager = workflowInstanceManager;
+            _workflowInstanceManager = workflowInstanceStore;
             _workflowScheduler = workflowScheduler;
             _distributedLockProvider = distributedLockProvider;
         }

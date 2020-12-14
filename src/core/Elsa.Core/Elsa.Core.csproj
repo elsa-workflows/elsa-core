@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
@@ -51,7 +51,6 @@
         <PackageReference Include="System.Linq.Async" Version="5.0.0" />
         <PackageReference Include="YamlDotNet" Version="8.1.2" />
         <PackageReference Include="Rebus.ServiceProvider" Version="5.0.6" />
-        <PackageReference Include="YesSql.Provider.Sqlite" Version="1.0.0-beta-1620" />
     </ItemGroup>
 
     <ItemGroup>

@@ -1,6 +1,5 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Extensions;
 using Elsa.Models;
 
 namespace Elsa.Services

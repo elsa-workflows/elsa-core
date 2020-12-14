@@ -50,6 +50,7 @@ Version 2.0
 - [x] Workflow Host REST API
 - [x] Workflow Server
 - [x] Distributed Hosting Support (support for multi-node environments)
+- [ ] Lucene Indexing
 - [ ] New Workflow Designer + Dashboard
 - [ ] Generic Command & Event Activities
 
@@ -118,7 +119,13 @@ This models is then serialized to JSON and deserialized back into the model
 ```csharp
 // Create a service container with Elsa services.
 var services = new ServiceCollection()
-    .AddElsa(option => option.UsePersistence(db => db.UseSqLite("Data Source=elsa.db;Cache=Shared", IsolationLevel.ReadUncommitted)))
+    .AddElsa()
+
+    // For tests
+    .AddElsaPersistenceInMemory()
+    // For productive use
+    .AddElsaPersistenceYesSql((sp, config) => config.UseSqLite("Data Source=elsa.db;Cache=Shared", IsolationLevel.ReadUncommitted))
+
     .AddConsoleActivities()
     .BuildServiceProvider();
 

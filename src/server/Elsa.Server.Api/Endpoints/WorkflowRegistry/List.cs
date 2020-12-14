@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Elsa.Models;
 using Elsa.Server.Api.Models;
-using Elsa.Server.Api.Swagger;
 using Elsa.Server.Api.Swagger.Examples;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;

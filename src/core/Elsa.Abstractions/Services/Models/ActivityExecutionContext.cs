@@ -43,7 +43,7 @@ namespace Elsa.Services.Models
         }
 
         public ActivityBlueprintWrapper<T> Parent<T>() where T : IActivity => new(new ActivityExecutionContext(ServiceScope, WorkflowExecutionContext,
-            WorkflowExecutionContext.GetActivityBlueprintById(WorkflowExecutionContext.WorkflowInstance.ParentActivities.Peek()),
+            WorkflowExecutionContext.GetActivityBlueprintById(WorkflowExecutionContext.WorkflowInstance.ParentActivities.Peek())!,
             null, CancellationToken));
 
         public void SetVariable(string name, object? value) => WorkflowExecutionContext.SetVariable(name, value);

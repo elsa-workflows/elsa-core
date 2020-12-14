@@ -1,11 +1,12 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Exceptions;
-using Elsa.Extensions;
+
 using Elsa.Models;
+using Elsa.Persistence;
 using Elsa.Services.Models;
 
 namespace Elsa.Services
@@ -14,13 +15,13 @@ namespace Elsa.Services
     {
         private readonly IWorkflowRunner _workflowRunner;
         private readonly IWorkflowRegistry _workflowRegistry;
-        private readonly IWorkflowInstanceManager _workflowInstanceManager;
+        private readonly IWorkflowInstanceStore _workflowInstanceManager;
 
-        public WorkflowTriggerInterruptor(IWorkflowRunner workflowRunner, IWorkflowRegistry workflowRegistry, IWorkflowInstanceManager workflowInstanceManager)
+        public WorkflowTriggerInterruptor(IWorkflowRunner workflowRunner, IWorkflowRegistry workflowRegistry, IWorkflowInstanceStore workflowInstanceStore)
         {
             _workflowRunner = workflowRunner;
             _workflowRegistry = workflowRegistry;
-            _workflowInstanceManager = workflowInstanceManager;
+            _workflowInstanceManager = workflowInstanceStore;
         }
 
         public async Task<WorkflowInstance> InterruptActivityAsync(WorkflowInstance workflowInstance, string activityId, object? input, CancellationToken cancellationToken)

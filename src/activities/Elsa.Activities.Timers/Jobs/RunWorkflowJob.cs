@@ -1,10 +1,6 @@
-﻿using System;
-using System.Linq.Expressions;
-using System.Threading;
-using System.Threading.Tasks;
-using Elsa.Extensions;
-using Elsa.Indexes;
+﻿using System.Threading.Tasks;
 using Elsa.Models;
+using Elsa.Persistence;
 using Elsa.Services;
 using Microsoft.Extensions.Logging;
 using Quartz;
@@ -15,14 +11,14 @@ namespace Elsa.Activities.Timers.Jobs
     {
         private readonly IWorkflowRunner _workflowRunner;
         private readonly IWorkflowRegistry _workflowRegistry;
-        private readonly IWorkflowInstanceManager _workflowInstanceManager;
+        private readonly IWorkflowInstanceStore _workflowInstanceManager;
         private readonly ILogger _logger;
 
-        public RunWorkflowJob(IWorkflowRunner workflowRunner, IWorkflowRegistry workflowRegistry, IWorkflowInstanceManager workflowInstanceManager, ILogger<RunWorkflowJob> logger)
+        public RunWorkflowJob(IWorkflowRunner workflowRunner, IWorkflowRegistry workflowRegistry, IWorkflowInstanceStore workflowInstanceStore, ILogger<RunWorkflowJob> logger)
         {
             _workflowRunner = workflowRunner;
             _workflowRegistry = workflowRegistry;
-            _workflowInstanceManager = workflowInstanceManager;
+            _workflowInstanceManager = workflowInstanceStore;
             _logger = logger;
         }
 
@@ -38,7 +34,7 @@ namespace Elsa.Activities.Timers.Jobs
 
             if (workflowInstanceId == null)
             {
-                if (workflowBlueprint.IsSingleton && await GetWorkflowIsAlreadyExecutingAsync(tenantId, workflowDefinitionId, cancellationToken))
+                if (workflowBlueprint.IsSingleton && await _workflowInstanceManager.GetWorkflowIsAlreadyExecutingAsync(tenantId, workflowDefinitionId, cancellationToken))
                     return;
 
                 await _workflowRunner.RunWorkflowAsync(workflowBlueprint, activityId, cancellationToken: cancellationToken);
@@ -59,17 +55,6 @@ namespace Elsa.Activities.Timers.Jobs
                 
                 await _workflowRunner.RunWorkflowAsync(workflowBlueprint, workflowInstance!, activityId, cancellationToken: cancellationToken);
             }
-        }
-
-        private async Task<bool> GetWorkflowIsAlreadyExecutingAsync(string? tenantId, string workflowDefinitionId, CancellationToken cancellationToken)
-        {
-            Expression<Func<WorkflowInstanceIndex, bool>> query = index =>
-                index.WorkflowDefinitionId == workflowDefinitionId
-                && index.TenantId == tenantId
-                && (index.WorkflowStatus == WorkflowStatus.Running || index.WorkflowStatus == WorkflowStatus.Suspended);
-
-            var workflowInstance = await _workflowInstanceManager.Query(query).FirstOrDefaultAsync();
-            return workflowInstance != null;
         }
     }
 }
