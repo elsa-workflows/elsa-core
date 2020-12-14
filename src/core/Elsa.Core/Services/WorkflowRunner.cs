@@ -54,7 +54,13 @@ namespace Elsa.Services
             _workflowSelector = workflowSelector;
         }
 
-        public async Task TriggerWorkflowsAsync<TTrigger>(Func<TTrigger, bool> predicate, object? input = default, string? correlationId = default, string? contextId = default, CancellationToken cancellationToken = default)
+        public async Task TriggerWorkflowsAsync<TTrigger>(
+            Func<TTrigger, bool> predicate, 
+            object? input = default, 
+            string? correlationId = default, 
+            string? contextId = default,
+            object? workflowContext = default,
+            CancellationToken cancellationToken = default)
             where TTrigger : ITrigger
         {
             var results = await _workflowSelector.SelectWorkflowsAsync(predicate, cancellationToken).ToList();
@@ -64,10 +70,10 @@ namespace Elsa.Services
                 if (result.WorkflowInstanceId != null)
                 {
                     var workflowInstance = await _workflowInstanceManager.FindByIdAsync(result.WorkflowInstanceId, cancellationToken);
-                    await RunWorkflowAsync(result.WorkflowBlueprint, workflowInstance!, result.ActivityId, input, cancellationToken);
+                    await RunWorkflowAsync(result.WorkflowBlueprint, workflowInstance!, result.ActivityId, input, workflowContext, cancellationToken);
                 }
                 else
-                    await RunWorkflowAsync(result.WorkflowBlueprint, result.ActivityId, input, correlationId, contextId, cancellationToken);
+                    await RunWorkflowAsync(result.WorkflowBlueprint, result.ActivityId, input, correlationId, contextId, workflowContext, cancellationToken);
 
                 if (result.Trigger.IsOneOff)
                     await _workflowSelector.RemoveTriggerAsync(result.Trigger, cancellationToken);
@@ -80,6 +86,7 @@ namespace Elsa.Services
             object? input = default,
             string? correlationId = default,
             string? contextId = default,
+            object? workflowContext = default,
             CancellationToken cancellationToken = default)
         {
             var workflowInstance = await _workflowFactory.InstantiateAsync(
@@ -88,7 +95,7 @@ namespace Elsa.Services
                 contextId,
                 cancellationToken);
 
-            return await RunWorkflowAsync(workflowBlueprint, workflowInstance, activityId, input, cancellationToken);
+            return await RunWorkflowAsync(workflowBlueprint, workflowInstance, activityId, input, workflowContext, cancellationToken);
         }
 
         public async ValueTask<WorkflowInstance> RunWorkflowAsync<T>(
@@ -96,17 +103,19 @@ namespace Elsa.Services
             object? input = default,
             string? correlationId = default,
             string? contextId = default,
+            object? workflowContext = default,
             CancellationToken cancellationToken = default)
             where T : IWorkflow =>
-            await RunWorkflowAsync(_workflowBuilderFactory().Build<T>(), activityId, input, correlationId, contextId, cancellationToken);
+            await RunWorkflowAsync(_workflowBuilderFactory().Build<T>(), activityId, input, correlationId, contextId, workflowContext, cancellationToken);
 
         public async ValueTask<WorkflowInstance> RunWorkflowAsync<T>(
             WorkflowInstance workflowInstance,
             string? activityId = default,
             object? input = default,
+            object? workflowContext = default,
             CancellationToken cancellationToken = default)
             where T : IWorkflow =>
-            await RunWorkflowAsync(_workflowBuilderFactory().Build<T>(), workflowInstance, activityId, input, cancellationToken);
+            await RunWorkflowAsync(_workflowBuilderFactory().Build<T>(), workflowInstance, activityId, input, workflowContext, cancellationToken);
 
         public async ValueTask<WorkflowInstance> RunWorkflowAsync(
             IWorkflow workflow,
@@ -114,10 +123,11 @@ namespace Elsa.Services
             object? input = default,
             string? correlationId = default,
             string? contextId = default,
+            object? workflowContext = default,
             CancellationToken cancellationToken = default)
         {
             var workflowBlueprint = _workflowBuilderFactory().Build(workflow);
-            return await RunWorkflowAsync(workflowBlueprint, activityId, input, correlationId, contextId, cancellationToken);
+            return await RunWorkflowAsync(workflowBlueprint, activityId, input, correlationId, contextId, workflowContext, cancellationToken);
         }
 
         public async ValueTask<WorkflowInstance> RunWorkflowAsync(
@@ -125,16 +135,18 @@ namespace Elsa.Services
             WorkflowInstance workflowInstance,
             string? activityId = default,
             object? input = default,
+            object? workflowContext = default,
             CancellationToken cancellationToken = default)
         {
             var workflowBlueprint = _workflowBuilderFactory().Build(workflow);
-            return await RunWorkflowAsync(workflowBlueprint, workflowInstance, activityId, input, cancellationToken);
+            return await RunWorkflowAsync(workflowBlueprint, workflowInstance, activityId, input, workflowContext, cancellationToken);
         }
 
         public async ValueTask<WorkflowInstance> RunWorkflowAsync(
             WorkflowInstance workflowInstance,
             string? activityId = default,
             object? input = default,
+            object? workflowContext = default,
             CancellationToken cancellationToken = default)
         {
             var workflowBlueprint = await _workflowRegistry.GetWorkflowAsync(
@@ -146,7 +158,7 @@ namespace Elsa.Services
             if (workflowBlueprint == null)
                 throw new WorkflowException($"Workflow instance {workflowInstance.EntityId} references workflow definition {workflowInstance.DefinitionId} version {workflowInstance.Version}, but no such workflow definition was found.");
 
-            return await RunWorkflowAsync(workflowBlueprint, workflowInstance, activityId, input, cancellationToken);
+            return await RunWorkflowAsync(workflowBlueprint, workflowInstance, activityId, input, workflowContext, cancellationToken);
         }
 
         public async ValueTask<WorkflowInstance> RunWorkflowAsync(
@@ -154,10 +166,14 @@ namespace Elsa.Services
             WorkflowInstance workflowInstance,
             string? activityId = default,
             object? input = default,
+            object? workflowContext = default,
             CancellationToken cancellationToken = default)
         {
             var workflowExecutionScope = _serviceProvider.CreateScope();
-            var workflowExecutionContext = new WorkflowExecutionContext(workflowExecutionScope, workflowBlueprint, workflowInstance, input);
+            var workflowExecutionContext = new WorkflowExecutionContext(workflowExecutionScope, workflowBlueprint, workflowInstance, input)
+            {
+                WorkflowContext = workflowContext
+            };
             await _mediator.Publish(new WorkflowExecuting(workflowExecutionContext), cancellationToken);
 
             var activity = activityId != null ? workflowBlueprint.GetActivity(activityId) : default;

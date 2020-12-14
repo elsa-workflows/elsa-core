@@ -1,11 +1,6 @@
 using System.Threading.Tasks;
-using Elsa.Activities.Entity;
-using Elsa.Activities.Entity.Triggers;
-using Elsa.Activities.Entity.Extensions;
 using Elsa.Services;
-using Elsa.Triggers;
 using Microsoft.Extensions.DependencyInjection;
-using System.Linq;
 
 namespace Elsa.Samples.EntityChanged
 {
@@ -21,6 +16,7 @@ namespace Elsa.Samples.EntityChanged
                 .AddElsa()
                 .AddConsoleActivities()
                 .AddEntityActivities()
+                .AddSingleton<SomeRepository>()
                 .AddWorkflow<EntityChangedWorkflow>()
                 .BuildServiceProvider();
 
@@ -28,14 +24,19 @@ namespace Elsa.Samples.EntityChanged
             var startupRunner = services.GetRequiredService<IStartupRunner>();
             await startupRunner.StartupAsync();
 
-            var workflowSelector = services.GetRequiredService<IWorkflowSelector>();
-
-            var workflowSelectionResult = (await workflowSelector.SelectWorkflowsAsync<EntityChangedTrigger>(trigger =>
-                (trigger.Action.HasValue == false || trigger.Action == EntityChangedAction.Added)
-                && (trigger.EntityName == null || trigger.EntityName == typeof(Entity).GetEntityName()))).First();
-
-            var workflowRunner = services.GetRequiredService<IWorkflowRunner>();
-            await workflowRunner.RunWorkflowAsync(workflowSelectionResult.WorkflowBlueprint, workflowSelectionResult.ActivityId);
+            // Resolve a repository.
+            var repository = services.GetRequiredService<SomeRepository>();
+            var entity1 = new Entity { Id = "entity-1", Title = "Some Title" };
+            var entity2 = new Entity { Id = "entity-2", Title = "Some Title" };
+            
+            // Add the first entity to the repository to trigger the workflow.
+            await repository.AddAsync(entity1);
+            
+            // Delete the second entity from the repository. Notice that it will not trigger any workflows, because the entity-1 workflow is correlated to entity-1.
+            await repository.DeleteAsync(entity2);
+            
+            // Delete the first  entity from the repository. Notice that it will resume the first workflow, since it's blocking on the Deleted change action for entity-1.
+            await repository.DeleteAsync(entity1);
         }
     }
 }
