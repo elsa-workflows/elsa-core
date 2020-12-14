@@ -1,5 +1,5 @@
 using Elsa.Activities.AzureServiceBus.Extensions;
-using Elsa.Persistence.InMemory;
+using Elsa.Activities.Timers;
 using Elsa.Samples.AzureServiceBusWorker.Workflows;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,7 +21,7 @@ namespace Elsa.Samples.AzureServiceBusWorker
                     services
                         .AddElsa()
                         .AddConsoleActivities()
-                        .AddTimerActivities()
+                        .AddTimerActivities(options => options.UseQuartzProvider())
                         .AddAzureServiceBusActivities(options => options.ConnectionString = hostContext.Configuration.GetConnectionString("AzureServiceBus"))
                         .AddWorkflow<ProducerWorkflow>()
                         .AddWorkflow<ConsumerWorkflow>();

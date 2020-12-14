@@ -1,11 +1,14 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
+
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services;
+
 using Microsoft.Extensions.Logging;
+
 using Quartz;
 
-namespace Elsa.Activities.Timers.Jobs
+namespace Elsa.Activities.Timers.Quartz.Jobs
 {
     public class RunWorkflowJob : IJob
     {
@@ -52,7 +55,7 @@ namespace Elsa.Activities.Timers.Jobs
                     await context.Scheduler.ScheduleJob(newTrigger, cancellationToken);
                     return;
                 }
-                
+
                 await _workflowRunner.RunWorkflowAsync(workflowBlueprint, workflowInstance!, activityId, cancellationToken: cancellationToken);
             }
         }

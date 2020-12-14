@@ -1,11 +1,15 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Activities.Timers.Jobs;
+
+using Elsa.Activities.Timers.Quartz.Jobs;
+using Elsa.Activities.Timers.Services;
 using Elsa.Services.Models;
+
 using NodaTime;
+
 using Quartz;
 
-namespace Elsa.Activities.Timers.Services
+namespace Elsa.Activities.Timers.Quartz.Services
 {
     public class WorkflowScheduler : IWorkflowScheduler
     {
@@ -43,7 +47,7 @@ namespace Elsa.Activities.Timers.Services
         {
             var trigger = CreateTrigger(workflowBlueprint, activityId, workflowInstanceId)
                 .StartAt(startAt.ToDateTimeOffset()).Build();
-            
+
             await ScheduleJob(trigger, cancellationToken);
         }
 
@@ -52,7 +56,7 @@ namespace Elsa.Activities.Timers.Services
             var scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
             var existingTrigger = await scheduler.GetTrigger(trigger.Key, cancellationToken);
 
-            if (existingTrigger != null) 
+            if (existingTrigger != null)
                 await scheduler.UnscheduleJob(existingTrigger.Key, cancellationToken);
 
             await scheduler.ScheduleJob(trigger, cancellationToken);

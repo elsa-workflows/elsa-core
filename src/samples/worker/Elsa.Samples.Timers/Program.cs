@@ -2,6 +2,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NodaTime;
+using Elsa.Activities.Timers;
 
 namespace Elsa.Samples.Timers
 {
@@ -17,7 +18,7 @@ namespace Elsa.Samples.Timers
                         services
                             .AddElsa()
                             .AddConsoleActivities()
-                            .AddTimerActivities()
+                            .AddTimerActivities(options => options.UseQuartzProvider())
                             .AddWorkflow<RecurringTaskWorkflow>()
                             .AddWorkflow<CronTaskWorkflow>()
                             .AddWorkflow(new OneOffWorkflow(SystemClock.Instance.GetCurrentInstant().Plus(Duration.FromSeconds(5))));

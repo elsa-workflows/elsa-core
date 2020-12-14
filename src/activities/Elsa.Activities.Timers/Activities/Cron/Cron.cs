@@ -4,6 +4,7 @@ using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Services;
 using Elsa.Services.Models;
+
 using NodaTime;
 
 // ReSharper disable once CheckNamespace
@@ -16,15 +17,15 @@ namespace Elsa.Activities.Timers
     )]
     public class Cron : Activity
     {
-        private readonly IClock _clock;
         private readonly IWorkflowInstanceManager _workflowInstanceManager;
         private readonly IWorkflowScheduler _workflowScheduler;
+        private readonly ICrontabParser _crontabParser;
 
-        public Cron(IWorkflowInstanceManager workflowInstanceStore, IWorkflowScheduler workflowScheduler, IClock clock)
+        public Cron(IWorkflowInstanceManager workflowInstanceStore, IWorkflowScheduler workflowScheduler, ICrontabParser crontabParser)
         {
-            _clock = clock;
             _workflowInstanceManager = workflowInstanceStore;
             _workflowScheduler = workflowScheduler;
+            _crontabParser = crontabParser;
         }
 
         [ActivityProperty(Hint = "Specify a CRON expression. See https://crontab.guru/ for help.")]
@@ -44,7 +45,7 @@ namespace Elsa.Activities.Timers
             var cancellationToken = context.CancellationToken;
             var workflowBlueprint = context.WorkflowExecutionContext.WorkflowBlueprint;
             var workflowInstance = context.WorkflowExecutionContext.WorkflowInstance;
-            var executeAt = GetNextOccurrence(CronExpression);
+            var executeAt = _crontabParser.GetNextOccurrence(CronExpression);
 
             ExecuteAt = executeAt;
 
@@ -55,12 +56,5 @@ namespace Elsa.Activities.Timers
         }
 
         protected override IActivityExecutionResult OnResume() => Done();
-
-        private Instant GetNextOccurrence(string cronExpression)
-        {
-            var schedule = new Quartz.CronExpression(cronExpression);
-            var now = _clock.GetCurrentInstant();
-            return Instant.FromDateTimeOffset(schedule.GetTimeAfter(now.ToDateTimeOffset())!.Value);
-        }
     }
 }

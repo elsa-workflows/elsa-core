@@ -2,6 +2,7 @@ using Elsa.Samples.CustomAttributesChildWorker.Messages;
 using Elsa.Samples.CustomAttributesChildWorker.Workflows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Elsa.Activities.Timers;
 
 namespace Elsa.Samples.CustomAttributesChildWorker
 {
@@ -19,7 +20,7 @@ namespace Elsa.Samples.CustomAttributesChildWorker
                     {
                         services
                             .AddElsa()
-                            .AddTimerActivities()
+                            .AddTimerActivities(options => options.UseQuartzProvider())
                             .AddConsoleActivities()
                             .AddRebusActivities<OrderReceived>()
                             .AddWorkflow<GenerateOrdersWorkflow>()
