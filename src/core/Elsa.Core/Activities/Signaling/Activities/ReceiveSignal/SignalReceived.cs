@@ -29,7 +29,7 @@ namespace Elsa.Activities.Signaling
             return false;
         }
 
-        protected override IActivityExecutionResult OnExecute() => Suspend();
+        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => context.WorkflowExecutionContext.IsFirstPass ? OnResume(context) : Suspend();
 
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
         {
