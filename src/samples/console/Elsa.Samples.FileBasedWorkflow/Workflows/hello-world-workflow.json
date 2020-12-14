@@ -15,7 +15,7 @@
       "$values": [
         {
           "$id": "4",
-          "id": "activity-1",
+          "activityId": "activity-1",
           "type": "WriteLine",
           "properties": {
             "$id": "5",
