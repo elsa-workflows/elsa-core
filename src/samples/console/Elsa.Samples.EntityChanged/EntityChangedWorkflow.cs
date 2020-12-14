@@ -11,7 +11,7 @@ namespace Elsa.Samples.EntityChanged
         {
             workflow
                 .EntityChanged<Entity>(EntityChangedAction.Added)
-                .WriteLine(context => $"Entity '{((EntityChangedDto)context.Input).EntityName}' was '{((EntityChangedDto)context.Input).Action}'");
+                .WriteLine(context => $"Entity '{((EntityChangedModel)context.Input)!.EntityName}' was '{((EntityChangedModel)context.Input).Action}'");
         }
     }
 }

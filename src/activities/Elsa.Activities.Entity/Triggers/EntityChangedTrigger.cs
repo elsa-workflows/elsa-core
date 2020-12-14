@@ -17,7 +17,6 @@ namespace Elsa.Activities.Entity.Triggers
 
         public EntityChangedTrigger()
         {
-
         }
 
         public EntityChangedTrigger(string? entityName, EntityChangedAction? action, string? contextId, string? correlationId)
@@ -27,7 +26,6 @@ namespace Elsa.Activities.Entity.Triggers
             ContextId = contextId;
             CorrelationId = correlationId;
         }
-
     }
 
     public class EntityChangedTriggerProvider : TriggerProvider<EntityChangedTrigger, EntityChanged>

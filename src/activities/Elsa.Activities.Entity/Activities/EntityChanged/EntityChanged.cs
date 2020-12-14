@@ -22,7 +22,7 @@ namespace Elsa.Activities.Entity
         [SelectOptions("Added", "Updated", "Deleted")]
         public EntityChangedAction? Action { get; set; }
 
-        protected override IActivityExecutionResult OnExecute() => Done(new EntityChangedDto(EntityName, Action));
+        protected override IActivityExecutionResult OnExecute() => Done(new EntityChangedModel(EntityName, Action));
 
     }
 }

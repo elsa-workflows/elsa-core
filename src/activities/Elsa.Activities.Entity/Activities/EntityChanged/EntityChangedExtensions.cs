@@ -1,9 +1,9 @@
-// ReSharper disable once CheckNamespace
 using System;
 
 using Elsa.Activities.Entity.Extensions;
 using Elsa.Builders;
 
+// ReSharper disable once CheckNamespace
 namespace Elsa.Activities.Entity
 {
     public static class EntityChangedExtensions
