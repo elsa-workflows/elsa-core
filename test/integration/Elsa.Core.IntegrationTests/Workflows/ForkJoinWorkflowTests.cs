@@ -27,25 +27,25 @@ namespace Elsa.Core.IntegrationTests.Workflows
             bool GetActivityHasExecuted(string name) => (from entry in workflowInstance.ExecutionLog let activity = workflowBlueprint.Activities.First(x => x.Id == entry.ActivityId) where activity.Name == name select activity).Any();
             bool GetIsFinished() => GetActivityHasExecuted("Finished");
 
-            Assert.Equal(WorkflowStatus.Suspended, workflowInstance.Status);
+            Assert.Equal(WorkflowStatus.Suspended, workflowInstance.WorkflowStatus);
             Assert.False(GetIsFinished());
 
             // Trigger signal 1.
             workflowInstance = await TriggerSignalAsync(workflowBlueprint, workflowInstance, "Signal1");
 
-            Assert.Equal(WorkflowStatus.Suspended, workflowInstance.Status);
+            Assert.Equal(WorkflowStatus.Suspended, workflowInstance.WorkflowStatus);
             Assert.False(GetIsFinished());
 
             // Trigger signal 2.
             workflowInstance = await TriggerSignalAsync(workflowBlueprint, workflowInstance, "Signal2");
 
-            Assert.Equal(WorkflowStatus.Suspended, workflowInstance.Status);
+            Assert.Equal(WorkflowStatus.Suspended, workflowInstance.WorkflowStatus);
             Assert.False(GetIsFinished());
 
             // Trigger signal 3.
             workflowInstance = await TriggerSignalAsync(workflowBlueprint, workflowInstance, "Signal3");
 
-            Assert.Equal(WorkflowStatus.Finished, workflowInstance.Status);
+            Assert.Equal(WorkflowStatus.Finished, workflowInstance.WorkflowStatus);
             Assert.True(GetIsFinished());
         }
 
@@ -62,13 +62,13 @@ namespace Elsa.Core.IntegrationTests.Workflows
             bool GetActivityHasExecuted(string name) => (from entry in workflowInstance.ExecutionLog let activity = workflowBlueprint.Activities.First(x => x.Id == entry.ActivityId) where activity.Name == name select activity).Any();
             bool GetIsFinished() => GetActivityHasExecuted("Finished");
 
-            Assert.Equal(WorkflowStatus.Suspended, workflowInstance.Status);
+            Assert.Equal(WorkflowStatus.Suspended, workflowInstance.WorkflowStatus);
             Assert.False(GetIsFinished());
 
             // Trigger signal.
             workflowInstance = await TriggerSignalAsync(workflowBlueprint, workflowInstance, signal);
             
-            Assert.Equal(WorkflowStatus.Finished, workflowInstance.Status);
+            Assert.Equal(WorkflowStatus.Finished, workflowInstance.WorkflowStatus);
             Assert.True(GetIsFinished());
         }
 
@@ -76,8 +76,8 @@ namespace Elsa.Core.IntegrationTests.Workflows
         {
             var workflowExecutionContext = new WorkflowExecutionContext(ServiceScope, workflowBlueprint, workflowInstance);
             var activities = await workflowExecutionContext.ActivateActivitiesAsync();
-            var blockingActivityIds = workflowInstance.BlockingActivities.Where(x => x.ActivityType == nameof(ReceiveSignal)).Select(x => x.ActivityId);
-            var receiveSignalActivities = activities.Where(x => blockingActivityIds.Contains(x.Id)).Cast<ReceiveSignal>();
+            var blockingActivityIds = workflowInstance.BlockingActivities.Where(x => x.ActivityType == nameof(SignalReceived)).Select(x => x.ActivityId);
+            var receiveSignalActivities = activities.Where(x => blockingActivityIds.Contains(x.Id)).Cast<SignalReceived>();
             var receiveSignal = receiveSignalActivities.Single(x => x.Signal == signal);
             
             var triggeredSignal = new Signal(signal);

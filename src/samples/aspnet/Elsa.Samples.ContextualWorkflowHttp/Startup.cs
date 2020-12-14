@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using YesSql.Provider.Sqlite;
 using System.Data;
+using Elsa.Persistence.YesSql.Extensions;
 
 namespace Elsa.Samples.ContextualWorkflowHttp
 {

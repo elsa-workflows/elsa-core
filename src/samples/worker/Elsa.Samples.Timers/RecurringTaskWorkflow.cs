@@ -18,10 +18,10 @@ namespace Elsa.Samples.Timers
         {
             workflow
                 .AsSingleton()
-                .Timer(Duration.FromSeconds(2))
-                .WriteLine(context => $"{context.WorkflowExecutionContext.WorkflowInstance.WorkflowInstanceId} triggered by timer at {_clock.GetCurrentInstant()}.")
-                .Timer(Duration.FromSeconds(2))
-                .WriteLine(context => $"{context.WorkflowExecutionContext.WorkflowInstance.WorkflowInstanceId} resumed by timer at {_clock.GetCurrentInstant()}.");
+                .Timer(Duration.FromSeconds(5))
+                .WriteLine(context => $"{context.WorkflowExecutionContext.WorkflowInstance.EntityId} triggered by timer at {_clock.GetCurrentInstant()}.")
+                .StartIn(Duration.FromSeconds(5))
+                .WriteLine(context => $"{context.WorkflowExecutionContext.WorkflowInstance.EntityId} resumed by timer at {_clock.GetCurrentInstant()}.");
         }
     }
 }

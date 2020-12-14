@@ -7,6 +7,7 @@ using Elsa.ActivityResults;
 using Elsa.Builders;
 using Elsa.Events;
 using Elsa.Exceptions;
+using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services.Models;
@@ -62,7 +63,7 @@ namespace Elsa.Services
             {
                 if (result.WorkflowInstanceId != null)
                 {
-                    var workflowInstance = await _workflowInstanceManager.GetByIdAsync(result.WorkflowInstanceId, cancellationToken);
+                    var workflowInstance = await _workflowInstanceManager.FindByIdAsync(result.WorkflowInstanceId, cancellationToken);
                     await RunWorkflowAsync(result.WorkflowBlueprint, workflowInstance!, result.ActivityId, input, cancellationToken);
                 }
                 else
@@ -137,13 +138,13 @@ namespace Elsa.Services
             CancellationToken cancellationToken = default)
         {
             var workflowBlueprint = await _workflowRegistry.GetWorkflowAsync(
-                workflowInstance.WorkflowDefinitionId,
+                workflowInstance.DefinitionId,
                 workflowInstance.TenantId,
                 VersionOptions.SpecificVersion(workflowInstance.Version),
                 cancellationToken);
 
             if (workflowBlueprint == null)
-                throw new WorkflowException($"Workflow instance {workflowInstance.Id} references workflow definition {workflowInstance.WorkflowDefinitionId} version {workflowInstance.Version}, but no such workflow definition was found.");
+                throw new WorkflowException($"Workflow instance {workflowInstance.EntityId} references workflow definition {workflowInstance.DefinitionId} version {workflowInstance.Version}, but no such workflow definition was found.");
 
             return await RunWorkflowAsync(workflowBlueprint, workflowInstance, activityId, input, cancellationToken);
         }

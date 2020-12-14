@@ -24,8 +24,9 @@ namespace Elsa
         {
             Services = services;
 
-            WorkflowDefinitionStoreFactory = _ => new InMemoryWorkflowDefinitionStore();
-            WorkflowInstanceStoreFactory = _ => new InMemoryWorkflowInstanceStore();
+            WorkflowDefinitionStoreFactory = sp => ActivatorUtilities.CreateInstance<InMemoryWorkflowDefinitionStore>(sp);
+            WorkflowInstanceStoreFactory = sp => ActivatorUtilities.CreateInstance<InMemoryWorkflowInstanceStore>(sp);
+            SuspendedWorkflowStoreFactory = sp => ActivatorUtilities.CreateInstance<InMemorySuspendedWorkflowStore>(sp);
             StorageFactory = sp => Storage.Net.StorageFactory.Blobs.InMemory();
             DistributedLockProviderFactory = sp => new DefaultLockProvider();
             SignalFactory = sp => new Signal();
@@ -55,6 +56,7 @@ namespace Elsa
         internal Func<IServiceProvider, IBlobStorage> StorageFactory { get; set; }
         internal Func<IServiceProvider, IWorkflowDefinitionStore> WorkflowDefinitionStoreFactory { get; set; }
         internal Func<IServiceProvider, IWorkflowInstanceStore> WorkflowInstanceStoreFactory { get; set; }
+        internal Func<IServiceProvider, ISuspendedWorkflowStore> SuspendedWorkflowStoreFactory { get; set; }
         internal Func<IServiceProvider, IDistributedLockProvider> DistributedLockProviderFactory { get; private set; }
         internal Func<IServiceProvider, ISignal> SignalFactory { get; private set; }
         internal Func<IServiceProvider, JsonSerializer> CreateJsonSerializer { get; private set; }
@@ -91,6 +93,12 @@ namespace Elsa
         public ElsaOptions UseWorkflowInstanceStore(Func<IServiceProvider, IWorkflowInstanceStore> factory)
         {
             WorkflowInstanceStoreFactory = factory;
+            return this;
+        }
+        
+        public ElsaOptions UseSuspendedWorkflowStore(Func<IServiceProvider, ISuspendedWorkflowStore> factory)
+        {
+            SuspendedWorkflowStoreFactory = factory;
             return this;
         }
 

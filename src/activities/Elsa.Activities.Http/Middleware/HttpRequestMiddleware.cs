@@ -3,6 +3,7 @@ using System.Net;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Extensions;
 using Elsa.Activities.Http.Triggers;
+using Elsa.Extensions;
 using Elsa.Persistence;
 using Elsa.Services;
 using Elsa.Triggers;
@@ -53,7 +54,7 @@ namespace Elsa.Activities.Http.Middleware
             }
             else
             {
-                var workflowInstance = await workflowInstanceStore.GetByIdAsync(result.WorkflowInstanceId, cancellationToken);
+                var workflowInstance = await workflowInstanceStore.FindByIdAsync(result.WorkflowInstanceId, cancellationToken);
 
                 if (workflowInstance == null)
                 {

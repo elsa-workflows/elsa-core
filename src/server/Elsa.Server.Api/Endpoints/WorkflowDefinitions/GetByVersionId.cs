@@ -1,6 +1,8 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
+using Elsa.Persistence;
+using Elsa.Persistence.Specifications;
 using Elsa.Serialization;
 using Elsa.Server.Api.Swagger.Examples;
 using Elsa.Services;
@@ -13,16 +15,16 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
 {
     [ApiController]
     [ApiVersion("1")]
-    [Route("v{apiVersion:apiVersion}/workflow-definitions/{workflowDefinitionVersionId}")]
+    [Route("v{apiVersion:apiVersion}/workflow-definitions/{versionId}")]
     [Produces("application/json")]
     public class GetByVersionId : Controller
     {
-        private readonly IWorkflowDefinitionManager _workflowDefinitionManager;
+        private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
         private readonly IContentSerializer _serializer;
 
-        public GetByVersionId(IWorkflowDefinitionManager workflowDefinitionManager, IContentSerializer serializer)
+        public GetByVersionId(IWorkflowDefinitionStore workflowDefinitionStore, IContentSerializer serializer)
         {
-            _workflowDefinitionManager = workflowDefinitionManager;
+            _workflowDefinitionStore = workflowDefinitionStore;
             _serializer = serializer;
         }
 
@@ -33,12 +35,12 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
         [SwaggerOperation(
             Summary = "Returns a single workflow definition.",
             Description = "Returns a single workflow definition using the specified workflow definition version ID.",
-            OperationId = "WorkflowDefinitions.Get",
+            OperationId = "WorkflowDefinitions.GetByVersionId",
             Tags = new[] { "WorkflowDefinitions" })
         ]
-        public async Task<IActionResult> Handle(string workflowDefinitionVersionId, CancellationToken cancellationToken = default)
+        public async Task<IActionResult> Handle(string versionId, CancellationToken cancellationToken = default)
         {
-            var workflowDefinition = await _workflowDefinitionManager.GetByVersionIdAsync(workflowDefinitionVersionId, cancellationToken);
+            var workflowDefinition = await _workflowDefinitionStore.FindAsync(new WorkflowDefinitionVersionIdSpecification(versionId), cancellationToken);
             return workflowDefinition == null ? (IActionResult) NotFound() : Json(workflowDefinition, _serializer.GetSettings());
         }
     }

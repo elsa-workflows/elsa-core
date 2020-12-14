@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Persistence;
+using Elsa.Persistence.Specifications;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.Caching.Memory;
@@ -18,7 +19,7 @@ namespace Elsa.Triggers
         private const string CacheKey = "WorkflowSelector:Triggers";
         private readonly IWorkflowRegistry _workflowRegistry;
         private readonly IWorkflowFactory _workflowFactory;
-        private readonly IWorkflowInstanceStore _workflowInstanceManager;
+        private readonly IWorkflowInstanceStore _workflowInstanceStore;
         private readonly IWorkflowContextManager _workflowContextManager;
         private readonly IEnumerable<ITriggerProvider> _triggerProviders;
         private readonly IMemoryCache _memoryCache;
@@ -36,7 +37,7 @@ namespace Elsa.Triggers
         {
             _workflowRegistry = workflowRegistry;
             _workflowFactory = workflowFactory;
-            _workflowInstanceManager = workflowInstanceStore;
+            _workflowInstanceStore = workflowInstanceStore;
             _workflowContextManager = workflowContextManager;
             _triggerProviders = triggerProviders;
             _memoryCache = memoryCache;
@@ -129,8 +130,14 @@ namespace Elsa.Triggers
             var startTriggers = await BuildDescriptorsAsync(workflowBlueprint, cancellationToken).ToList();
             descriptors.AddRange(startTriggers);
 
-            // Build triggers for workflow instances. 
-            var workflowInstances = await _workflowInstanceManager.ListByDefinitionAndStatusAsync(workflowBlueprint.Id, workflowBlueprint.TenantId, WorkflowStatus.Suspended, cancellationToken).ToList();
+            // Build triggers for workflow instances.
+            var specification = new WorkflowInstanceDefinitionIdSpecification(workflowBlueprint.Id)
+                .WithTenant(workflowBlueprint.TenantId)
+                .WithStatus(WorkflowStatus.Suspended);
+            
+            var workflowInstances = await _workflowInstanceStore
+                .FindManyAsync(specification, cancellationToken: cancellationToken)
+                .ToList();
 
             foreach (var workflowInstance in workflowInstances)
             {
@@ -178,7 +185,7 @@ namespace Elsa.Triggers
                         ActivityId = blockingActivity.Id,
                         ActivityType = blockingActivity.Type,
                         WorkflowBlueprint = workflowBlueprint,
-                        WorkflowInstanceId = workflowInstance.Id == 0 ? default : workflowInstance.WorkflowInstanceId,
+                        WorkflowInstanceId = workflowInstance.EntityId,
                         Trigger = trigger,
                     };
 

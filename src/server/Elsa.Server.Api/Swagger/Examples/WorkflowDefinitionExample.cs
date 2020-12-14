@@ -11,14 +11,13 @@ namespace Elsa.Server.Api.Swagger.Examples
         {
             return new()
             {
-                Id = 1,
+                EntityId = Guid.NewGuid().ToString("N"),
+                DefinitionVersionId = Guid.NewGuid().ToString("N"),
                 Name = "ProcessOrderWorkflow",
                 DisplayName = "Process Order Workflow",
                 Description = "Process new orders",
                 Version = 1,
                 IsPublished = true,
-                WorkflowDefinitionId = Guid.NewGuid().ToString("N"),
-                WorkflowDefinitionVersionId = Guid.NewGuid().ToString("N"),
                 ContextOptions = new WorkflowContextOptions
                 {
                     ContextFidelity = WorkflowContextFidelity.Burst,
