@@ -11,12 +11,12 @@ using Quartz;
 
 namespace Elsa.Activities.Timers.Quartz.Services
 {
-    public class WorkflowScheduler : IWorkflowScheduler
+    public class QuartzWorkflowScheduler : IWorkflowScheduler
     {
         private static readonly string RunWorkflowJobKey = nameof(RunWorkflowJob);
         private readonly ISchedulerFactory _schedulerFactory;
 
-        public WorkflowScheduler(ISchedulerFactory schedulerFactory)
+        public QuartzWorkflowScheduler(ISchedulerFactory schedulerFactory)
         {
             _schedulerFactory = schedulerFactory;
         }

@@ -174,6 +174,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "timers", "timers", "{37D2E6
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Activities.Timers.Quartz", "src\activities\Elsa.Activities.Timers.Quartz\Elsa.Activities.Timers.Quartz.csproj", "{08D9CB18-2BFB-4CF2-9763-5EE913F56D3E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Activities.Timers.Hangfire", "src\activities\Elsa.Activities.Timers.Hangfire\Elsa.Activities.Timers.Hangfire.csproj", "{34FB968B-A147-4811-823D-D206FD0027AD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -416,6 +418,10 @@ Global
 		{08D9CB18-2BFB-4CF2-9763-5EE913F56D3E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{08D9CB18-2BFB-4CF2-9763-5EE913F56D3E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{08D9CB18-2BFB-4CF2-9763-5EE913F56D3E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{34FB968B-A147-4811-823D-D206FD0027AD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{34FB968B-A147-4811-823D-D206FD0027AD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{34FB968B-A147-4811-823D-D206FD0027AD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{34FB968B-A147-4811-823D-D206FD0027AD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -498,6 +504,7 @@ Global
 		{0AA2A003-C79E-4B43-803E-E1150254D2B0} = {E02BD53A-5B08-47A0-920E-DD537A6AFAAA}
 		{37D2E628-5CC1-4C8E-8C02-3B0A29E2ACAA} = {B43B546E-23F3-46E8-ACB7-D04F05CDA180}
 		{08D9CB18-2BFB-4CF2-9763-5EE913F56D3E} = {37D2E628-5CC1-4C8E-8C02-3B0A29E2ACAA}
+		{34FB968B-A147-4811-823D-D206FD0027AD} = {37D2E628-5CC1-4C8E-8C02-3B0A29E2ACAA}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}
