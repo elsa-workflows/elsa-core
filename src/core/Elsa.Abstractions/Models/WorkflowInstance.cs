@@ -4,7 +4,7 @@ using NodaTime;
 
 namespace Elsa.Models
 {
-    public class WorkflowInstance : Entity, ITenantScope
+    public class WorkflowInstance : Entity, ITenantScope, ICorrelationScope
     {
         private HashSet<BlockingActivity> _blockingActivities = new(BlockingActivityEqualityComparer.Instance);
 

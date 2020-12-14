@@ -153,6 +153,9 @@ namespace Elsa.Triggers
         {
             var startActivities = workflowBlueprint.GetStartActivities();
             var workflowInstance = await _workflowFactory.InstantiateAsync(workflowBlueprint, cancellationToken: cancellationToken);
+            
+            // This is a transient workflow instance; setting EntityId to null ensures trigger providers don't try and load the workflow instance. 
+            workflowInstance.EntityId = null!;
             return await BuildDescriptorsAsync(workflowBlueprint, startActivities, workflowInstance, cancellationToken);
         }
 

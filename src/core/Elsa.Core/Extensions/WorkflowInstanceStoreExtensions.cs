@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
@@ -13,5 +14,18 @@ namespace Elsa.Extensions
            string id,
            CancellationToken cancellationToken = default) =>
            store.FindAsync(new WorkflowInstanceIdSpecification(id), cancellationToken);
+        
+        public static Task<WorkflowInstance?> FindByCorrelationIdAsync(
+            this IWorkflowInstanceStore store,
+            string correlationId,
+            CancellationToken cancellationToken = default) =>
+            store.FindAsync(new CorrelationIdSpecification<WorkflowInstance>(correlationId), cancellationToken);
+        
+        public static Task<WorkflowInstance?> FindByCorrelationIdAsync(
+            this IWorkflowInstanceStore store,
+            string correlationId,
+            Func<ISpecification<WorkflowInstance>, ISpecification<WorkflowInstance>> specificationBuilder,
+            CancellationToken cancellationToken = default) =>
+            store.FindAsync( specificationBuilder(new CorrelationIdSpecification<WorkflowInstance>(correlationId)), cancellationToken);
     }
 }
