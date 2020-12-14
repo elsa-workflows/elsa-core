@@ -1,8 +1,9 @@
 ﻿using System.Threading.Tasks;
+using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Persistence;
+using Elsa.Persistence.Specifications;
 using Elsa.Services;
-using Elsa.Specifications;
 using Microsoft.Extensions.Logging;
 using Quartz;
 
@@ -47,7 +48,7 @@ namespace Elsa.Activities.Timers.Jobs
             }
             else
             {
-                var workflowInstance = await _workflowInstanceManager.GetByIdAsync(workflowInstanceId, cancellationToken);
+                var workflowInstance = await _workflowInstanceManager.FindByIdAsync(workflowInstanceId, cancellationToken);
 
                 if (workflowInstance == null)
                 {

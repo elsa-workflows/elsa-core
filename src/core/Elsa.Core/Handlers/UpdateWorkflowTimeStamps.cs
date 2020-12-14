@@ -23,7 +23,7 @@ namespace Elsa.Handlers
 
         public Task Handle(WorkflowCompleted notification, CancellationToken cancellationToken)
         {
-            notification.WorkflowExecutionContext.WorkflowInstance.CompletedAt = _clock.GetCurrentInstant();
+            notification.WorkflowExecutionContext.WorkflowInstance.FinishedAt = _clock.GetCurrentInstant();
             return Task.CompletedTask;
         }
 

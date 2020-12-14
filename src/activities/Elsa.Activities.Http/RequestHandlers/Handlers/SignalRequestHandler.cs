@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Elsa.Activities.Http.Models;
 using Elsa.Activities.Http.RequestHandlers.Results;
 using Elsa.Activities.Http.Services;
+using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services;
@@ -13,7 +14,7 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
     public class SignalRequestHandler : IRequestHandler
     {
         private readonly HttpContext _httpContext;
-        private readonly IWorkflowInstanceStore _workflowInstanceManager;
+        private readonly IWorkflowInstanceStore _workflowInstanceStore;
         private readonly ITokenService _tokenService;
         private readonly CancellationToken _cancellationToken;
         private readonly IWorkflowRunner _workflowRunner;
@@ -25,7 +26,7 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
             IWorkflowRunner workflowRunner)
         {
             _httpContext = httpContextAccessor.HttpContext;
-            _workflowInstanceManager = workflowInstanceStore;
+            _workflowInstanceStore = workflowInstanceStore;
             _tokenService = tokenService;
             _workflowRunner = workflowRunner;
             _cancellationToken = _httpContext.RequestAborted;
@@ -60,7 +61,7 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
         }
 
         private async Task<WorkflowInstance?> GetWorkflowInstanceAsync(Signal signal) =>
-            await _workflowInstanceManager.GetByIdAsync(signal.WorkflowInstanceId, _cancellationToken);
+            await _workflowInstanceStore.FindByIdAsync(signal.WorkflowInstanceId, _cancellationToken);
 
         private bool CheckIfExecuting(WorkflowInstance workflowInstance) =>
             workflowInstance.WorkflowStatus == WorkflowStatus.Running;

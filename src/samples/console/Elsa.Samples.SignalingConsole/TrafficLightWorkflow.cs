@@ -11,7 +11,7 @@ namespace Elsa.Samples.SignalingConsole
         {
             workflow
                 .WriteLine(context => $"{GetCarName(context)} is approaching red traffic light...")
-                .ReceiveSignal("Green")
+                .SignalReceived("Green")
                 .WriteLine(context => $"Light turned green for {GetCarName(context)}. Hit that power pedal!");
         }
 

@@ -2,6 +2,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Events;
 using Elsa.Models;
+using Elsa.Persistence;
 using Elsa.Services;
 using Elsa.Services.Models;
 using MediatR;
@@ -15,12 +16,12 @@ namespace Elsa.Handlers
         INotificationHandler<ActivityExecuted>,
         INotificationHandler<WorkflowExecutionFinished>
     {
-        private readonly IWorkflowInstanceManager _workflowInstanceManager;
+        private readonly IWorkflowInstanceStore _workflowInstanceStore;
         private readonly ILogger _logger;
 
-        public PersistWorkflow(IWorkflowInstanceManager workflowInstanceStore, ILogger<PersistWorkflow> logger)
+        public PersistWorkflow(IWorkflowInstanceStore workflowInstanceStore, ILogger<PersistWorkflow> logger)
         {
-            _workflowInstanceManager = workflowInstanceStore;
+            _workflowInstanceStore = workflowInstanceStore;
             _logger = logger;
         }
 
@@ -48,8 +49,8 @@ namespace Elsa.Handlers
 
             if (workflowExecutionContext.DeleteCompletedInstances)
             {
-                _logger.LogDebug("Deleting completed workflow instance {WorkflowInstanceId}", workflowExecutionContext.WorkflowInstance.WorkflowInstanceId);
-                await _workflowInstanceManager.DeleteAsync(workflowExecutionContext.WorkflowInstance, cancellationToken);
+                _logger.LogDebug("Deleting completed workflow instance {WorkflowInstanceId}", workflowExecutionContext.WorkflowInstance.EntityId);
+                await _workflowInstanceStore.DeleteAsync(workflowExecutionContext.WorkflowInstance, cancellationToken);
             }
             else
             {
@@ -60,7 +61,7 @@ namespace Elsa.Handlers
         private async ValueTask SaveWorkflowAsync(WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
         {
             var workflowInstance = workflowExecutionContext.WorkflowInstance;
-            await _workflowInstanceManager.SaveAsync(workflowInstance, cancellationToken);
+            await _workflowInstanceStore.SaveAsync(workflowInstance, cancellationToken);
         }
     }
 }

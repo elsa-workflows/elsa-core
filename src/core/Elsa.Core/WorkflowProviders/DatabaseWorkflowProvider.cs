@@ -2,6 +2,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Models;
+using Elsa.Persistence;
+using Elsa.Persistence.Specifications;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -12,18 +15,18 @@ namespace Elsa.WorkflowProviders
     /// </summary>
     public class DatabaseWorkflowProvider : WorkflowProvider
     {
-        private readonly IWorkflowDefinitionManager _workflowDefinitionManager;
+        private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
         private readonly IWorkflowBlueprintMaterializer _workflowBlueprintMaterializer;
 
-        public DatabaseWorkflowProvider(IWorkflowDefinitionManager workflowDefinitionManager, IWorkflowBlueprintMaterializer workflowBlueprintMaterializer)
+        public DatabaseWorkflowProvider(IWorkflowDefinitionStore workflowDefinitionStore, IWorkflowBlueprintMaterializer workflowBlueprintMaterializer)
         {
-            _workflowDefinitionManager = workflowDefinitionManager;
+            _workflowDefinitionStore = workflowDefinitionStore;
             _workflowBlueprintMaterializer = workflowBlueprintMaterializer;
         }
 
         protected override async ValueTask<IEnumerable<IWorkflowBlueprint>> OnGetWorkflowsAsync(CancellationToken cancellationToken)
         {
-            var workflowDefinitions = await _workflowDefinitionManager.ListAsync(cancellationToken: cancellationToken);
+            var workflowDefinitions = await _workflowDefinitionStore.FindManyAsync(Specification<WorkflowDefinition>.All, cancellationToken: cancellationToken);
             return workflowDefinitions.Select(_workflowBlueprintMaterializer.CreateWorkflowBlueprint);
         }
     }

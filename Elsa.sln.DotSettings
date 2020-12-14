@@ -5,4 +5,5 @@
 	<s:Boolean x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=src_005Cweb_005Cmodules_005CFlowsharp_002EWeb_002EViewComponents_005CClientApp_005Cnode_005Fmodules/@EntryIndexRemoved">True</s:Boolean>
 	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=src_005Cweb_005Cmodules_005CFlowsharp_002EWeb_002EViewComponents_005CAssets_005Cnode_005Fmodules/@EntryIndexedValue">ExplicitlyExcluded</s:String>
 	<s:Boolean x:Key="/Default/UserDictionary/Words/=Configurer/@EntryIndexedValue">True</s:Boolean>
+	<s:Boolean x:Key="/Default/UserDictionary/Words/=Interruptor/@EntryIndexedValue">True</s:Boolean>
 	<s:Boolean x:Key="/Default/UserDictionary/Words/=Materializer/@EntryIndexedValue">True</s:Boolean></wpf:ResourceDictionary>
