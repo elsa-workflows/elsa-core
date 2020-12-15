@@ -13,7 +13,7 @@ namespace Elsa.Activities.Timers.Hangfire.Services
         public Instant GetNextOccurrence(string cronExpression)
         {
             var schedule = CrontabSchedule.Parse(cronExpression, new CrontabSchedule.ParseOptions { IncludingSeconds = true });
-
+           
             return Instant.FromDateTimeUtc(schedule.GetNextOccurrence(DateTime.Now).ToUniversalTime());
         }
     }

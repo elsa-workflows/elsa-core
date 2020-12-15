@@ -28,7 +28,7 @@ namespace Elsa.Activities.Timers
                 .AddQuartzHostedService(ConfigureQuartzHostedService)
                 .AddSingleton<IWorkflowScheduler, QuartzWorkflowScheduler>()
                 .AddSingleton<ICrontabParser, QuartzCrontabParser>()
-                .AddTransient<RunWorkflowJob>();
+                .AddTransient<RunQuartzWorkflowJob>();
         }
 
         private static void ConfigureQuartzHostedService(QuartzHostedServiceOptions options)
@@ -39,7 +39,7 @@ namespace Elsa.Activities.Timers
         private static void ConfigureQuartz(IServiceCollectionQuartzConfigurator quartz, Action<IServiceCollectionQuartzConfigurator>? configureQuartz)
         {
             quartz.UseMicrosoftDependencyInjectionScopedJobFactory(options => options.AllowDefaultConstructor = true);
-            quartz.AddJob<RunWorkflowJob>(job => job.StoreDurably().WithIdentity(nameof(RunWorkflowJob)));
+            quartz.AddJob<RunQuartzWorkflowJob>(job => job.StoreDurably().WithIdentity(nameof(RunQuartzWorkflowJob)));
 
             if (configureQuartz != null)
             {

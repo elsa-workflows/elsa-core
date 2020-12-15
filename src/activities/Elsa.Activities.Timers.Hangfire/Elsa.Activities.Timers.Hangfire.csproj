@@ -31,10 +31,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Jobs\" />
-    </ItemGroup>
-
-    <ItemGroup>
       <PackageReference Include="Hangfire.AspNetCore" Version="1.7.18" />
       <PackageReference Include="ncrontab" Version="3.3.1" />
     </ItemGroup>

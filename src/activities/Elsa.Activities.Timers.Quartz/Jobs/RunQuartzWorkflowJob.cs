@@ -10,14 +10,14 @@ using Quartz;
 
 namespace Elsa.Activities.Timers.Quartz.Jobs
 {
-    public class RunWorkflowJob : IJob
+    public class RunQuartzWorkflowJob : IJob
     {
         private readonly IWorkflowRunner _workflowRunner;
         private readonly IWorkflowRegistry _workflowRegistry;
         private readonly IWorkflowInstanceStore _workflowInstanceManager;
         private readonly ILogger _logger;
 
-        public RunWorkflowJob(IWorkflowRunner workflowRunner, IWorkflowRegistry workflowRegistry, IWorkflowInstanceStore workflowInstanceStore, ILogger<RunWorkflowJob> logger)
+        public RunQuartzWorkflowJob(IWorkflowRunner workflowRunner, IWorkflowRegistry workflowRegistry, IWorkflowInstanceStore workflowInstanceStore, ILogger<RunQuartzWorkflowJob> logger)
         {
             _workflowRunner = workflowRunner;
             _workflowRegistry = workflowRegistry;

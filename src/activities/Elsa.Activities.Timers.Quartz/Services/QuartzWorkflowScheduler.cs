@@ -13,7 +13,7 @@ namespace Elsa.Activities.Timers.Quartz.Services
 {
     public class QuartzWorkflowScheduler : IWorkflowScheduler
     {
-        private static readonly string RunWorkflowJobKey = nameof(RunWorkflowJob);
+        private static readonly string RunWorkflowJobKey = nameof(RunQuartzWorkflowJob);
         private readonly ISchedulerFactory _schedulerFactory;
 
         public QuartzWorkflowScheduler(ISchedulerFactory schedulerFactory)
