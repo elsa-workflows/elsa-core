@@ -16,7 +16,7 @@ namespace Elsa.Activities.Timers.Hangfire.Services
     public class HangfireWorkflowScheduler : IWorkflowScheduler
     {
         private readonly IBackgroundJobClient _backgroundJobClient;
-
+        
         public HangfireWorkflowScheduler(IBackgroundJobClient backgroundJobClient)
         {
             _backgroundJobClient = backgroundJobClient;
@@ -26,9 +26,7 @@ namespace Elsa.Activities.Timers.Hangfire.Services
         {
             var data = CreateData(workflowBlueprint, activityId);
        
-            _backgroundJobClient.Schedule(
-                () =>  RecurringJob.AddOrUpdate<RunHangfireWorkflowJob>(data.GetIdentity(), job => job.ExecuteAsync(data), interval.ToTimeSpan().ToCronExpression(),null,"default")
-                ,startAt.ToDateTimeOffset());
+            _backgroundJobClient.Schedule<AddOrUpdateRecurringJobJob>(job => job.Execute(data, interval.ToTimeSpan().ToCronExpression()), startAt.ToDateTimeOffset());
 
             return Task.CompletedTask;
         }

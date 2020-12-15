@@ -144,7 +144,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.RebusWorker", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.RunChildWorkflowWorker", "src\samples\worker\Elsa.Samples.RunChildWorkflowWorker\Elsa.Samples.RunChildWorkflowWorker.csproj", "{A4DF29BD-95CC-4A86-96EC-FB6692270E68}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.Timers", "src\samples\worker\Elsa.Samples.Timers\Elsa.Samples.Timers.csproj", "{FD2D1BD0-1229-4DCF-BE70-6BFD396DD489}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.Timers.Quartz", "src\samples\worker\Elsa.Samples.Timers\Elsa.Samples.Timers.Quartz.csproj", "{FD2D1BD0-1229-4DCF-BE70-6BFD396DD489}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.WhileLoopWorker", "src\samples\worker\Elsa.Samples.WhileLoopWorker\Elsa.Samples.WhileLoopWorker.csproj", "{EA3832C4-8079-4E84-AF8C-12744E4EFD44}"
 EndProject
@@ -172,9 +172,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ElsaDashboard.WebAssembly",
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "timers", "timers", "{37D2E628-5CC1-4C8E-8C02-3B0A29E2ACAA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Activities.Timers.Quartz", "src\activities\Elsa.Activities.Timers.Quartz\Elsa.Activities.Timers.Quartz.csproj", "{08D9CB18-2BFB-4CF2-9763-5EE913F56D3E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.Timers.Quartz", "src\activities\Elsa.Activities.Timers.Quartz\Elsa.Activities.Timers.Quartz.csproj", "{08D9CB18-2BFB-4CF2-9763-5EE913F56D3E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Activities.Timers.Hangfire", "src\activities\Elsa.Activities.Timers.Hangfire\Elsa.Activities.Timers.Hangfire.csproj", "{34FB968B-A147-4811-823D-D206FD0027AD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.Timers.Hangfire", "src\activities\Elsa.Activities.Timers.Hangfire\Elsa.Activities.Timers.Hangfire.csproj", "{34FB968B-A147-4811-823D-D206FD0027AD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.Timers.Hangfire", "src\samples\worker\Elsa.Samples.Timers.Hangfire\Elsa.Samples.Timers.Hangfire.csproj", "{7BDF193D-CD69-4D47-B7BF-A8A1D93EBCB9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -422,6 +424,10 @@ Global
 		{34FB968B-A147-4811-823D-D206FD0027AD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{34FB968B-A147-4811-823D-D206FD0027AD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{34FB968B-A147-4811-823D-D206FD0027AD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7BDF193D-CD69-4D47-B7BF-A8A1D93EBCB9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7BDF193D-CD69-4D47-B7BF-A8A1D93EBCB9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7BDF193D-CD69-4D47-B7BF-A8A1D93EBCB9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7BDF193D-CD69-4D47-B7BF-A8A1D93EBCB9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -505,6 +511,7 @@ Global
 		{37D2E628-5CC1-4C8E-8C02-3B0A29E2ACAA} = {B43B546E-23F3-46E8-ACB7-D04F05CDA180}
 		{08D9CB18-2BFB-4CF2-9763-5EE913F56D3E} = {37D2E628-5CC1-4C8E-8C02-3B0A29E2ACAA}
 		{34FB968B-A147-4811-823D-D206FD0027AD} = {37D2E628-5CC1-4C8E-8C02-3B0A29E2ACAA}
+		{7BDF193D-CD69-4D47-B7BF-A8A1D93EBCB9} = {E42743A0-FBDD-4150-9D53-6000496D9B87}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}

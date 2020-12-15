@@ -20,6 +20,6 @@ namespace Elsa.Activities.Timers.Hangfire.Models
         public DateTimeOffset? DateTimeOffset { get; set; }
         public bool RecurringJob => DateTimeOffset.HasValue == false;
 
-        public string GetIdentity() => $"RunHangfireWorkflowJob->recurringJob:{RecurringJob}tenant:{TenantId ?? "default"}-workflow-instance:{WorkflowInstanceId ?? WorkflowDefinitionId}-activity:{ActivityId}";
+        public string GetIdentity() => $"Elsa-tenant:{TenantId ?? "default"}-workflow-instance:{WorkflowInstanceId ?? WorkflowDefinitionId}-activity:{ActivityId}";
     }
 }

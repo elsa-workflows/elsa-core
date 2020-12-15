@@ -6,7 +6,7 @@ namespace System
         {
             string CreateCronComponent(int number)
             {
-                return '*' + (timeSpan.Seconds > 0 ? $"*/{number}" : string.Empty);
+                return (number > 0 ? $"*/{number}" : "* ");
             }
 
             var cron = CreateCronComponent(timeSpan.Seconds);
