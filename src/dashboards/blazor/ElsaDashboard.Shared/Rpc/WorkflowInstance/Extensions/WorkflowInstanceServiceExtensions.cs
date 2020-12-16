@@ -6,7 +6,15 @@ namespace ElsaDashboard.Shared.Rpc
 {
     public static class WorkflowInstanceServiceExtensions
     {
-        public static Task<PagedList<WorkflowInstance>> ListAsync(this IWorkflowInstanceService service, int page = 0, int pageSize = 50) => service.ListAsync(new ListWorkflowInstancesRequest(page, pageSize));
+        public static Task<PagedList<WorkflowInstance>> ListAsync(
+            this IWorkflowInstanceService service,
+            int page = 0,
+            int pageSize = 50,
+            string? workflowDefinitionId = default,
+            WorkflowStatus? workflowStatus = default,
+            OrderBy? orderBy = default) =>
+            service.ListAsync(new ListWorkflowInstancesRequest(page, pageSize, workflowDefinitionId, workflowStatus, orderBy));
+
         public static Task<WorkflowInstance?> GetByIdAsync(this IWorkflowInstanceService service, string workflowInstanceId) => service.GetByIdAsync(new GetWorkflowInstanceByIdRequest(workflowInstanceId));
         public static Task DeleteAsync(this IWorkflowInstanceService service, string workflowInstanceId) => service.DeleteAsync(new DeleteWorkflowInstanceRequest(workflowInstanceId));
     }

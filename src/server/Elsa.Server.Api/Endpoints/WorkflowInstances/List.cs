@@ -32,9 +32,19 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
             OperationId = "WorkflowInstances.List",
             Tags = new[] { "WorkflowInstances" })
         ]
-        public async Task<ActionResult<PagedList<WorkflowInstance>>> Handle(int page = 0, int pageSize = 50, CancellationToken cancellationToken = default)
+        public async Task<ActionResult<PagedList<WorkflowInstance>>> Handle(
+            [FromQuery(Name = "workflow")] string? workflowDefinitionId = default,
+            [FromQuery(Name = "status")] WorkflowStatus? workflowStatus = default,
+            [FromQuery] OrderBy? orderBy = default,
+            int page = 0,
+            int pageSize = 50,
+            CancellationToken cancellationToken = default)
         {
             var specification = Specification<WorkflowInstance>.All;
+
+            if (!string.IsNullOrWhiteSpace(workflowDefinitionId))
+                specification = specification.WithWorkflowDefinition(workflowDefinitionId);
+            
             var totalCount = await _workflowInstanceStore.CountAsync(specification, cancellationToken: cancellationToken);
             var paging = Paging.Page(page, pageSize);
             var workflowInstances = await _workflowInstanceStore.FindManyAsync(specification, paging: paging, cancellationToken: cancellationToken).ToList();

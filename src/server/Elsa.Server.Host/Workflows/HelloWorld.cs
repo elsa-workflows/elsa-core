@@ -9,6 +9,7 @@ namespace Elsa.Server.Host.Workflows
         public void Build(IWorkflowBuilder workflow)
         {
             workflow
+                .WithWorkflowDefinitionId("HelloWorld")
                 .WithVersion(1)
                 .WithDisplayName("Hello World!")
                 .HttpRequestReceived("/hello-world")

@@ -88,18 +88,18 @@
             <tbody class="bg-white divide-y divide-gray-100">
             @foreach (var workflowInstance in WorkflowInstances.Items)
             {
-                var workflowBlueprint = WorkflowBlueprints[(workflowInstance.WorkflowDefinitionId, workflowInstance.Version)];
+                var workflowBlueprint = WorkflowBlueprints[(workflowInstance.DefinitionId, workflowInstance.Version)];
                 var displayName = workflowBlueprint.DisplayName;
-                var statusColor = GetStatusColor(workflowInstance.Status);
-                var viewUrl = $"workflow-instances/{workflowInstance.WorkflowInstanceId}/viewer";
+                var statusColor = GetStatusColor(workflowInstance.WorkflowStatus);
+                var viewUrl = $"workflow-instances/{workflowInstance.EntityId}/viewer";
                 <tr>
                     <td class="px-6 py-3 whitespace-no-wrap text-sm leading-5 font-medium text-gray-900">
-                        <a href="@($"workflow-instances/{workflowInstance.WorkflowInstanceId}/viewer")" class="truncate hover:text-gray-600">
-                            @workflowInstance.WorkflowInstanceId
+                        <a href="@($"workflow-instances/{workflowInstance.EntityId}/viewer")" class="truncate hover:text-gray-600">
+                            @workflowInstance.EntityId
                         </a>
                     </td>
                     <td class="px-6 py-3 whitespace-no-wrap text-sm leading-5 font-medium text-gray-900 text-left">
-                        <a href="@($"workflow-registry/{workflowInstance.WorkflowDefinitionId}/viewer")" class="truncate hover:text-gray-600">
+                        <a href="@($"workflow-registry/{workflowInstance.DefinitionId}/viewer")" class="truncate hover:text-gray-600">
                             @displayName
                         </a>
                     </td>
@@ -109,7 +109,7 @@
                     <td class="hidden md:table-cell px-6 py-3 whitespace-no-wrap text-sm leading-5 text-gray-500 text-right">
                         <div class="flex items-center space-x-3 lg:pl-2">
                             <div class="flex-shrink-0 w-2.5 h-2.5 rounded-full bg-@statusColor-600"></div>
-                            <span>@workflowInstance.Status</span>
+                            <span>@workflowInstance.WorkflowStatus</span>
                         </div>
                     </td>
                     <td class="hidden md:table-cell px-6 py-3 whitespace-no-wrap text-sm leading-5 text-gray-500 text-left">

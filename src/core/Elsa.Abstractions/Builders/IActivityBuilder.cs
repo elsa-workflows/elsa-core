@@ -24,6 +24,5 @@ namespace Elsa.Builders
         IActivityBuilder WithName(string? name);
         IActivityBuilder LoadWorkflowContext(bool value = true);
         IActivityBuilder SaveWorkflowContext(bool value = true);
-        //Func<ActivityExecutionContext, CancellationToken, ValueTask<IActivity>> BuildActivityAsync();
     }
 }

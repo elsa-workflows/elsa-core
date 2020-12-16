@@ -24,23 +24,9 @@ namespace ElsaDashboard.Application.Pages.WorkflowInstances
         [Inject] private IConfirmDialogService ConfirmDialogService { get; set; } = default!;
         private PagedList<WorkflowInstance> WorkflowInstances { get; set; } = new();
         private IDictionary<(string, int), WorkflowBlueprint> WorkflowBlueprints { get; set; } = new Dictionary<(string, int), WorkflowBlueprint>();
-
-        private IEnumerable<ButtonDropdownItem> WorkflowFilterItems => WorkflowBlueprints.Values
-            .OrderByDescending(x => x.Version)
-            .GroupBy(x => x.Id)
-            .Select(x => x.First())
-            .Select(x => (x.Id, x.DisplayName))
-            .Select(x => new ButtonDropdownItem(x.DisplayName!, x.Id, $"workflow-instances?workflow={x.Id}", x.Id == SelectedWorkflowId));
-
-        private string SelectedWorkflowText =>
-            SelectedWorkflowId == null
-                ? "Workflow"
-                : WorkflowBlueprints
-                    .GroupBy(x => x.Value.Id, x => x.Value)
-                    .FirstOrDefault(x => x.Key == SelectedWorkflowId)
-                    ?.OrderByDescending(x => x.Version)
-                    ?.FirstOrDefault()
-                    ?.DisplayName ?? "Workflow";
+        private IEnumerable<WorkflowBlueprint> LatestWorkflowBlueprints => GetLatestVersions(WorkflowBlueprints.Values);
+        private IEnumerable<ButtonDropdownItem> WorkflowFilterItems => LatestWorkflowBlueprints.Select(x => new ButtonDropdownItem(x.DisplayName!, x.Id, $"workflow-instances?workflow={x.Id}", x.Id == SelectedWorkflowId));
+        private string SelectedWorkflowText => SelectedWorkflowId == null ? "Workflow" : LatestWorkflowBlueprints.FirstOrDefault(x => x.Id == SelectedWorkflowId)?.DisplayName ?? "Workflow";
 
         public void Dispose()
         {
@@ -66,6 +52,11 @@ namespace ElsaDashboard.Application.Pages.WorkflowInstances
             await LoadWorkflowInstancesAsync();
         }
 
+        private async Task LoadWorkflowInstancesAsync()
+        {
+            WorkflowInstances = await WorkflowInstanceService.ListAsync(Page, PageSize, SelectedWorkflowId);
+        }
+
         private async Task OnDeleteWorkflowInstanceClick(WorkflowInstance workflowInstance)
         {
             var result = await ConfirmDialogService.Show("Delete Workflow Instance", "Are you sure you want to delete this workflow instance?", "Delete");
@@ -73,13 +64,8 @@ namespace ElsaDashboard.Application.Pages.WorkflowInstances
             if (result.Cancelled)
                 return;
 
-            await WorkflowInstanceService.DeleteAsync(workflowInstance.WorkflowInstanceId);
+            await WorkflowInstanceService.DeleteAsync(workflowInstance.EntityId);
             await LoadWorkflowInstancesAsync();
-        }
-
-        private async Task LoadWorkflowInstancesAsync()
-        {
-            WorkflowInstances = await WorkflowInstanceService.ListAsync(Page, PageSize);
         }
 
         private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
@@ -99,5 +85,7 @@ namespace ElsaDashboard.Application.Pages.WorkflowInstances
                 WorkflowStatus.Cancelled => "yellow",
                 _ => throw new ArgumentOutOfRangeException(nameof(status), status, null)
             };
+
+        private static IEnumerable<WorkflowBlueprint> GetLatestVersions(IEnumerable<WorkflowBlueprint> workflowBlueprints) => workflowBlueprints.GroupBy(x => x.Id).Select(x => x.OrderByDescending(y => y.Version).First());
     }
 }
