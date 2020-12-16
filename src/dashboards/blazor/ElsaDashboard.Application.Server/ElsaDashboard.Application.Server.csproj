@@ -1,24 +1,27 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
-  <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
-      <IsPackable>false</IsPackable>
-  </PropertyGroup>
+    <Import Project="..\..\..\..\common.props" />
 
-  <ItemGroup>
-    
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="5.0.0" />
-    <PackageReference Include="protobuf-net.Grpc.AspNetCore" Version="1.0.136" />
-  </ItemGroup>
+    <PropertyGroup>
+        <TargetFramework>net5.0</TargetFramework>
+        <IsPackable>false</IsPackable>
+        <Nullable>disable</Nullable>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\ElsaDashboard.Application.WebAssembly\ElsaDashboard.Application.WebAssembly.csproj" />
-    <ProjectReference Include="..\ElsaDashboard.Application\ElsaDashboard.Application.csproj" />
-    <ProjectReference Include="..\ElsaDashboard.Backend\ElsaDashboard.Backend.csproj" />
-  </ItemGroup>
+    <ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="wwwroot" />
-  </ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="5.0.0" />
+        <PackageReference Include="protobuf-net.Grpc.AspNetCore" Version="1.0.136" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\ElsaDashboard.Application.WebAssembly\ElsaDashboard.Application.WebAssembly.csproj" />
+        <ProjectReference Include="..\ElsaDashboard.Application\ElsaDashboard.Application.csproj" />
+        <ProjectReference Include="..\ElsaDashboard.Backend\ElsaDashboard.Backend.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Folder Include="wwwroot" />
+    </ItemGroup>
 
 </Project>
