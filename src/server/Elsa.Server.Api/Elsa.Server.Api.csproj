@@ -1,21 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+    <Import Project="..\..\..\common.props" />
+    <Import Project="..\..\..\configureawait.props" />
+    
     <PropertyGroup>
         <TargetFramework>net5.0</TargetFramework>
-        <PackageVersion>1.0.0</PackageVersion>
-        <LangVersion>latest</LangVersion>
-        <Authors>Elsa Contributors</Authors>
         <Description>
             Elsa is a set of workflow libraries and tools that enable lean and mean workflowing capabilities in any .NET Core application.
             This package provides API endpoints to interact with the workflow host.
-        </Description>
-        <Copyright>2020</Copyright>
-        <PackageProjectUrl>https://github.com/elsa-workflows/elsa-core</PackageProjectUrl>
-        <RepositoryUrl>https://github.com/elsa-workflows/elsa-core</RepositoryUrl>
-        <RepositoryType>GitHub</RepositoryType>
+        </Description>       
         <PackageTags>elsa, workflows, asp.net core</PackageTags>
-        <PackageIcon>icon.png</PackageIcon>
-        <Nullable>enable</Nullable>
     </PropertyGroup>
 
     <ItemGroup>
@@ -38,12 +32,5 @@
         <Compile Update="Endpoints\WorkflowDefinitions\Save.Request.cs">
             <DependentUpon>Endpoints\WorkflowDefinitions\Save.cs</DependentUpon>
         </Compile>
-    </ItemGroup>
-
-    <ItemGroup>
-        <None Include="icon.png">
-            <Pack>True</Pack>
-            <PackagePath />
-        </None>
     </ItemGroup>
 </Project>
