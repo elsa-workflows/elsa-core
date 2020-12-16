@@ -11,8 +11,7 @@
 
             * SendEmail
         </Description>   
-        <PackageTags>elsa, workflows, email, smtp</PackageTags>
-        <Nullable>disable</Nullable>
+        <PackageTags>elsa, workflows, email, smtp</PackageTags>       
     </PropertyGroup>
 
     <ItemGroup>
