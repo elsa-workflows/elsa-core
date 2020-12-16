@@ -13,7 +13,6 @@
             * SendMassTransitMessage
         </Description>      
         <PackageTags>elsa, workflows</PackageTags>
-        <PackageIcon>icon.png</PackageIcon>
     </PropertyGroup>
 
     <ItemGroup>
