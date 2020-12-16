@@ -10,6 +10,13 @@ namespace Microsoft.Extensions.DependencyInjection
     {    
         public static IServiceCollection AddWorkflowProvider<T>(this IServiceCollection services) where T : class, IWorkflowProvider => services.AddTransient<IWorkflowProvider, T>();
         public static IServiceCollection AddTriggerProvider<T>(this IServiceCollection services) where T : class, ITriggerProvider => services.AddTransient<ITriggerProvider, T>();
+
+        /// <summary>
+        /// Add all TriggerProviders (<see cref="ITriggerProvider"/>) that are in the assembly
+        /// </summary>
+        /// <param name="services"></param>
+        /// <param name="assembly"></param>
+        /// <returns></returns>
         public static IServiceCollection AddTriggerProvider(this IServiceCollection services, Assembly assembly)
         {
             var ITriggerProviderType = typeof(ITriggerProvider);
@@ -25,6 +32,12 @@ namespace Microsoft.Extensions.DependencyInjection
 
         public static IServiceCollection AddWorkflowContextProvider<T>(this IServiceCollection services) where T : class, IWorkflowContextProvider => services.AddTransient<IWorkflowContextProvider, T>();
 
+        /// <summary>
+        /// Add all WorkflowContextProviders (<see cref="IWorkflowContextProvider"/>) that are in the assembly
+        /// </summary>
+        /// <param name="services"></param>
+        /// <param name="assembly"></param>
+        /// <returns></returns>
         public static IServiceCollection AddWorkflowContextProvider(this IServiceCollection services, Assembly assembly)
         {
             var iWorkflowContextProviderType = typeof(IWorkflowContextProvider);
