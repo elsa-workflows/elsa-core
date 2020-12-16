@@ -13,6 +13,12 @@ namespace Elsa.Activities.Email
         public static ISetupActivity<SendEmail> WithRecipient(this ISetupActivity<SendEmail> activity, Func<ActivityExecutionContext, string> value) => activity.Set(x => x.To, value);
         public static ISetupActivity<SendEmail> WithRecipient(this ISetupActivity<SendEmail> activity, Func<string> value) => activity.Set(x => x.To, value);
         public static ISetupActivity<SendEmail> WithRecipient(this ISetupActivity<SendEmail> activity, string value) => activity.Set(x => x.To, value);
+        public static ISetupActivity<SendEmail> WithCcRecipient(this ISetupActivity<SendEmail> activity, Func<ActivityExecutionContext, string> value) => activity.Set(x => x.Cc, value);
+        public static ISetupActivity<SendEmail> WithCcRecipient(this ISetupActivity<SendEmail> activity, Func<string> value) => activity.Set(x => x.Cc, value);
+        public static ISetupActivity<SendEmail> WithCcRecipient(this ISetupActivity<SendEmail> activity, string value) => activity.Set(x => x.Cc, value);
+        public static ISetupActivity<SendEmail> WithBccRecipient(this ISetupActivity<SendEmail> activity, Func<ActivityExecutionContext, string> value) => activity.Set(x => x.Bcc, value);
+        public static ISetupActivity<SendEmail> WithBccRecipient(this ISetupActivity<SendEmail> activity, Func<string> value) => activity.Set(x => x.Bcc, value);
+        public static ISetupActivity<SendEmail> WithBccRecipient(this ISetupActivity<SendEmail> activity, string value) => activity.Set(x => x.Bcc, value);
         public static ISetupActivity<SendEmail> WithSubject(this ISetupActivity<SendEmail> activity, Func<ActivityExecutionContext, string> value) => activity.Set(x => x.Subject, value);
         public static ISetupActivity<SendEmail> WithSubject(this ISetupActivity<SendEmail> activity, Func<string> value) => activity.Set(x => x.Subject, value);
         public static ISetupActivity<SendEmail> WithSubject(this ISetupActivity<SendEmail> activity, string value) => activity.Set(x => x.Subject, value);

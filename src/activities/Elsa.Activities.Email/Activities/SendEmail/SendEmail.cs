@@ -26,6 +26,12 @@ namespace Elsa.Activities.Email
         [ActivityProperty(Hint = "The recipient's email address.")]
         public string To { get; set; }
 
+        [ActivityProperty(Hint = "The cc recipient's email address. (Optional)")]
+        public string Cc { get; set; }
+
+        [ActivityProperty(Hint = "The Bcc recipient's email address. (Optional)")]
+        public string Bcc { get; set; }
+
         [ActivityProperty(Hint = "The subject of the email message.")]
         public string Subject { get; set; }
 
@@ -46,6 +52,17 @@ namespace Elsa.Activities.Email
             };
 
             message.To.Add(MailboxAddress.Parse(To));
+
+            if(string.IsNullOrEmpty(Cc) == false)
+            {
+                message.Cc.Add(MailboxAddress.Parse(Cc));
+            }
+
+            if (string.IsNullOrEmpty(Bcc) == false)
+            {
+                message.Bcc.Add(MailboxAddress.Parse(Bcc));
+            }
+
             await _smtpService.SendAsync(message, context.CancellationToken);
 
             return Done();
