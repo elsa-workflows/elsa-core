@@ -8,7 +8,7 @@
     <RepositoryUrl>https://github.com/elsa-workflows/elsa-core</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <Nullable>enable</Nullable>
-    <PackageLicenseExpression>BSD 3-Clause</PackageLicenseExpression>
+    <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
    
     <!--<GenerateDocumentationFile>true</GenerateDocumentationFile> -->
 
