@@ -9,7 +9,8 @@
     <RepositoryType>git</RepositoryType>
     <Nullable>enable</Nullable>
     <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
-   
+    <PackageIconUrl>https://elsa-workflows.github.io/elsa-core/img/android-icon-192x192.png</PackageIconUrl>
+      
     <!--<GenerateDocumentationFile>true</GenerateDocumentationFile> -->
 
     <!-- https://github.com/dotnet/sourcelink -->

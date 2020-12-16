@@ -10,7 +10,6 @@
             This package provides gRPC client implementations for use within the Blazor WebAssembly imlementation of the Elsa Dashboard.
         </Description>       
         <PackageTags>elsa, workflows, dashboard, asp.net core, blazo, webassemblyr</PackageTags>
-        <PackageIcon>icon.png</PackageIcon>
     </PropertyGroup>
 
     <ItemGroup>
@@ -21,13 +20,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\ElsaDashboard.Shared\ElsaDashboard.Shared.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <None Update="icon.png">
-            <Pack>True</Pack>
-            <PackagePath />
-        </None>
     </ItemGroup>
 
 </Project>

@@ -10,7 +10,6 @@
             This package provides API endpoints to interact with the workflow host.
         </Description>       
         <PackageTags>elsa, workflows, asp.net core</PackageTags>
-        <PackageIcon>icon.png</PackageIcon>
     </PropertyGroup>
 
     <ItemGroup>
@@ -33,12 +32,5 @@
         <Compile Update="Endpoints\WorkflowDefinitions\Save.Request.cs">
             <DependentUpon>Endpoints\WorkflowDefinitions\Save.cs</DependentUpon>
         </Compile>
-    </ItemGroup>
-
-    <ItemGroup>
-        <None Include="icon.png">
-            <Pack>True</Pack>
-            <PackagePath />
-        </None>
     </ItemGroup>
 </Project>

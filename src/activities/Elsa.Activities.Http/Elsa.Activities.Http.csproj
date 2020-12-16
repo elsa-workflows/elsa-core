@@ -14,15 +14,7 @@
             * WriteHttpResponse
         </Description>
         <PackageTags>elsa, workflows, http</PackageTags>
-        <PackageIcon>icon.png</PackageIcon>
     </PropertyGroup>
-
-    <ItemGroup>
-        <None Include="icon.png">
-            <Pack>True</Pack>
-            <PackagePath />
-        </None>
-    </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />

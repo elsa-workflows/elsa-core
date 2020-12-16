@@ -12,15 +12,7 @@
             * EntityChanged
         </Description>
         <PackageTags>elsa, workflows, entity</PackageTags>
-        <PackageIcon>icon.png</PackageIcon>
     </PropertyGroup>
-
-    <ItemGroup>
-        <None Include="icon.png">
-            <Pack>True</Pack>
-            <PackagePath />
-        </None>
-    </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />

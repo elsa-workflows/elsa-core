@@ -10,7 +10,6 @@
             This package provides gRPC endpoint abstractions shared by the Elsa.Dashboard.Backend and Elsa.Dashboard.WebAssembly packages.
         </Description>
         <PackageTags>elsa, workflows, dashboard, asp.net core, grpc</PackageTags>
-        <PackageIcon>icon.png</PackageIcon>
     </PropertyGroup>
 
     <ItemGroup>
@@ -23,13 +22,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\..\clients\Elsa.Client\Elsa.Client.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <None Update="icon.png">
-            <Pack>True</Pack>
-            <PackagePath />
-        </None>
     </ItemGroup>
 
 </Project>

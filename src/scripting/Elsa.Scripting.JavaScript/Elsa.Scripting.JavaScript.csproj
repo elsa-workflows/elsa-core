@@ -11,16 +11,7 @@
             This package provides a JavaScript expression evaluator based on Jint.
         </Description>      
         <PackageTags>elsa, workflows, javascript, jint</PackageTags>
-        <PackageIcon>icon.png</PackageIcon>
-        <Nullable>disable</Nullable>
     </PropertyGroup>
-
-    <ItemGroup>
-        <None Include="icon.png">
-            <Pack>True</Pack>
-            <PackagePath />
-        </None>
-    </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="Jint" Version="3.0.0-beta-1914" />

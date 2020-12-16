@@ -10,7 +10,6 @@
             This package provides a dashboard application using Blazor.
         </Description>       
         <PackageTags>elsa, workflows, dashboard, asp.net core, blazor</PackageTags>
-        <PackageIcon>icon.png</PackageIcon>
     </PropertyGroup>
 
     <ItemGroup>
@@ -33,10 +32,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Update="icon.png">
-        <Pack>True</Pack>
-          <PackagePath />
-      </None>
       <None Include="wwwroot\tailwind.css" />
     </ItemGroup>
 

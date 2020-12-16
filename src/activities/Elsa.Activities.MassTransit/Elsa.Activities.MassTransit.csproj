@@ -17,13 +17,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <None Include="icon.png">
-            <Pack>True</Pack>
-            <PackagePath />
-        </None>
-    </ItemGroup>
-
-    <ItemGroup>
       <PackageReference Include="MassTransit.AspNetCore" Version="7.0.6" />
       <PackageReference Include="MassTransit.Extensions.DependencyInjection" Version="7.0.6" />
       <PackageReference Include="MassTransit.Quartz" Version="7.0.6" />

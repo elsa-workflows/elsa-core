@@ -10,22 +10,14 @@
             This package provides a RabbitMQ provider for the Rebus service bus API used by Elsa.
         </Description>       
         <PackageTags>elsa, workflows, rebus, service bus, rabbitmq</PackageTags>
-        <PackageIcon>icon.png</PackageIcon>
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj"/>
+        <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Rebus.RabbitMq" Version="7.3.0"/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <None Include="icon.png">
-            <Pack>True</Pack>
-            <PackagePath/>
-        </None>
+        <PackageReference Include="Rebus.RabbitMq" Version="7.3.0" />
     </ItemGroup>
 
 </Project>

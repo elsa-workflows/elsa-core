@@ -10,15 +10,7 @@
             This package provides a YesSql persistence provider.
         </Description>     
         <PackageTags>elsa, workflows, orchard</PackageTags>
-        <PackageIcon>icon.png</PackageIcon>
     </PropertyGroup>
-
-    <ItemGroup>
-        <None Include="icon.png">
-            <Pack>True</Pack>
-            <PackagePath />
-        </None>
-    </ItemGroup>
 
     <ItemGroup>
       <PackageReference Include="YesSql.Core" Version="2.0.0-beta-1637" />

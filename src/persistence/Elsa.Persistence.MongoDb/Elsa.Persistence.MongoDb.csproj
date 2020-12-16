@@ -11,15 +11,7 @@
         </Description>
         <Copyright>2020</Copyright>
         <PackageTags>elsa, workflows, orchard</PackageTags>
-        <PackageIcon>icon.png</PackageIcon>
     </PropertyGroup>
-
-    <ItemGroup>
-        <None Include="icon.png">
-            <Pack>True</Pack>
-            <PackagePath />
-        </None>
-    </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="MongoDb.Bson.NodaTime" Version="2.1.0" />

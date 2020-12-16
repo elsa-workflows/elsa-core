@@ -11,16 +11,7 @@
             This package provides abstractions and models that are used by Elsa.Core and other related packages. You don't need to reference this package separately if you reference any other Elsa package.
         </Description>        
         <PackageTags>elsa, workflows</PackageTags>
-        <PackageIcon>icon.png</PackageIcon>
-        <Nullable>enable</Nullable>
     </PropertyGroup>
-
-    <ItemGroup>
-        <None Include="icon.png">
-            <Pack>True</Pack>
-            <PackagePath />
-        </None>
-    </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="LinqKit.Core" Version="1.1.21" />

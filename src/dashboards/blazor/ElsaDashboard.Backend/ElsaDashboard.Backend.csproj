@@ -10,27 +10,19 @@
             This package provides dashboard backend services exposed as gRPC endpoints.
         </Description>
         <PackageTags>elsa, workflows, dashboard, asp.net core, grpc</PackageTags>
-        <PackageIcon>icon.png</PackageIcon>
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\ElsaDashboard.Shared\ElsaDashboard.Shared.csproj"/>
+        <ProjectReference Include="..\ElsaDashboard.Shared\ElsaDashboard.Shared.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Grpc.AspNetCore.Server" Version="2.33.1"/>
-        <PackageReference Include="Grpc.AspNetCore.Web" Version="2.33.1"/>
-        <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0"/>
-        <PackageReference Include="NodaTime.Serialization.Protobuf" Version="2.0.0"/>
-        <PackageReference Include="protobuf-net.Grpc.AspNetCore" Version="1.0.136"/>
-        <PackageReference Include="protobuf-net.NodaTime" Version="3.0.73"/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <None Update="icon.png">
-            <Pack>True</Pack>
-            <PackagePath/>
-        </None>
+        <PackageReference Include="Grpc.AspNetCore.Server" Version="2.33.1" />
+        <PackageReference Include="Grpc.AspNetCore.Web" Version="2.33.1" />
+        <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
+        <PackageReference Include="NodaTime.Serialization.Protobuf" Version="2.0.0" />
+        <PackageReference Include="protobuf-net.Grpc.AspNetCore" Version="1.0.136" />
+        <PackageReference Include="protobuf-net.NodaTime" Version="3.0.73" />
     </ItemGroup>
 
 </Project>

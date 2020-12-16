@@ -12,6 +12,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "solution", "solution", "{71
 		.dockerignore = .dockerignore
 		.editorconfig = .editorconfig
 		.gitignore = .gitignore
+		common.props = common.props
+		configureawait.props = configureawait.props
 		docker-compose.yaml = docker-compose.yaml
 		Dockerfile = Dockerfile
 		Nuget.Config = Nuget.Config
@@ -170,9 +172,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ElsaDashboard.Backend", "sr
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ElsaDashboard.WebAssembly", "src\dashboards\blazor\ElsaDashboard.WebAssembly\ElsaDashboard.WebAssembly.csproj", "{0AA2A003-C79E-4B43-803E-E1150254D2B0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Activities.Entity", "src\activities\Elsa.Activities.Entity\Elsa.Activities.Entity.csproj", "{A0A8431F-3A2F-433A-BB0D-EB9627DFA739}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.Entity", "src\activities\Elsa.Activities.Entity\Elsa.Activities.Entity.csproj", "{A0A8431F-3A2F-433A-BB0D-EB9627DFA739}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.EntityChanged", "src\samples\console\Elsa.Samples.EntityChanged\Elsa.Samples.EntityChanged.csproj", "{A3149FE4-FD39-4DC2-AA9F-208C7216BC03}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.EntityChanged", "src\samples\console\Elsa.Samples.EntityChanged\Elsa.Samples.EntityChanged.csproj", "{A3149FE4-FD39-4DC2-AA9F-208C7216BC03}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

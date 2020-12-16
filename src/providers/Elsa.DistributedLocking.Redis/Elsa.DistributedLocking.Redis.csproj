@@ -11,7 +11,6 @@
             This package provides a distributed locking provider using Redis.
         </Description>      
         <PackageTags>elsa, workflows, distributed lock, redis</PackageTags>
-        <PackageIcon>icon.png</PackageIcon>
     </PropertyGroup>
 
   <ItemGroup>
@@ -22,12 +21,5 @@
     <ProjectReference Include="..\..\core\Elsa.Abstractions\Elsa.Abstractions.csproj" />
     <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
   </ItemGroup>
-
-    <ItemGroup>
-        <None Include="icon.png">
-            <Pack>True</Pack>
-            <PackagePath />
-        </None>
-    </ItemGroup>
 
 </Project>

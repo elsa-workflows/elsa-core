@@ -11,7 +11,6 @@
             This package provides a distributed locking provider using SQL Server.
         </Description>     
         <PackageTags>elsa, workflows, distributed lock, sqlserver</PackageTags>
-        <PackageIcon>icon.png</PackageIcon>
     </PropertyGroup>
 
     <ItemGroup>
@@ -21,13 +20,6 @@
 
     <ItemGroup>
       <PackageReference Include="System.Data.SqlClient" Version="4.8.2" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <None Include="icon.png">
-            <Pack>True</Pack>
-            <PackagePath />
-        </None>
     </ItemGroup>
 
 </Project>

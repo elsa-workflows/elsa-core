@@ -12,15 +12,7 @@
             Tip: reference the `Elsa` package instead of this one.
         </Description>     
         <PackageTags>elsa, workflows, orchard</PackageTags>
-        <PackageIcon>icon.png</PackageIcon>
     </PropertyGroup>
-
-    <ItemGroup>
-        <None Include="icon.png">
-            <Pack>True</Pack>
-            <PackagePath />
-        </None>
-    </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="AutoMapper" Version="10.1.1" />

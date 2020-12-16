@@ -10,7 +10,6 @@
             This package provides a client using Refit for Elsa's REST API endpoints. 
         </Description>      
         <PackageTags>elsa, workflows, rest, api, client</PackageTags>
-        <PackageIcon>icon.png</PackageIcon>
     </PropertyGroup>
 
     <ItemGroup>
@@ -18,13 +17,6 @@
       <PackageReference Include="NodaTime.Serialization.JsonNet" Version="3.0.0" />
       <PackageReference Include="Refit" Version="5.2.1" />
       <PackageReference Include="Refit.HttpClientFactory" Version="5.2.1" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <None Include="icon.png">
-            <Pack>True</Pack>
-            <PackagePath />
-        </None>
     </ItemGroup>
 
 </Project>
