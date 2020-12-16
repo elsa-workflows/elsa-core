@@ -31,13 +31,13 @@ namespace Elsa.Persistence.MongoDb.Services
                 BsonClassMap.RegisterClassMap<WorkflowDefinition>(cm =>
                 {
                     cm.AutoMap();
-                    cm.MapIdMember(x => x.Id);
+                    cm.MapIdMember(x => x.EntityId);
                 });
 
                 BsonClassMap.RegisterClassMap<WorkflowInstance>(cm =>
                 {
                     cm.AutoMap();
-                    cm.MapIdMember(x => x.Id);
+                    cm.MapIdMember(x => x.EntityId);
                 });
 
             }

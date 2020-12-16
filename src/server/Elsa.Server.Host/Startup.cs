@@ -9,6 +9,7 @@ using Microsoft.Extensions.Hosting;
 using Elsa.Persistence.YesSql;
 using YesSql.Provider.Sqlite;
 using System.Data;
+using Elsa.Persistence.YesSql.Extensions;
 
 namespace Elsa.Server.Host
 {

@@ -1,5 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Persistence;
 using Microsoft.AspNetCore.Http;
@@ -14,11 +15,11 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
     [Produces("application/json")]
     public class Get : Controller
     {
-        private readonly IWorkflowInstanceStore _workflowInstanceManager;
+        private readonly IWorkflowInstanceStore _workflowInstanceStore;
 
         public Get(IWorkflowInstanceStore workflowInstanceStore)
         {
-            _workflowInstanceManager = workflowInstanceStore;
+            _workflowInstanceStore = workflowInstanceStore;
         }
 
         [HttpGet]
@@ -31,7 +32,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
         ]
         public async Task<ActionResult<WorkflowInstance>> Handle(string id, CancellationToken cancellationToken = default)
         {
-            var workflowInstance = await _workflowInstanceManager.GetByIdAsync(id, cancellationToken);
+            var workflowInstance = await _workflowInstanceStore.FindByIdAsync(id, cancellationToken);
             return workflowInstance ?? (ActionResult<WorkflowInstance>) NotFound();
         }
     }

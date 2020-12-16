@@ -18,7 +18,7 @@ namespace Elsa.Services
             propertyProviders.AddRange(CreatePropertyProviders(workflowDefinition));
 
             return new WorkflowBlueprint(
-                workflowDefinition.WorkflowDefinitionId,
+                workflowDefinition.EntityId,
                 workflowDefinition.Version,
                 workflowDefinition.TenantId,
                 workflowDefinition.IsSingleton,

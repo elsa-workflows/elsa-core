@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace Elsa.Models
 {
-    public class WorkflowDefinition : ICompositeActivityDefinition
+    public class WorkflowDefinition : Entity, ITenantScope, ICompositeActivityDefinition
     {
         public WorkflowDefinition()
         {
@@ -13,11 +13,7 @@ namespace Elsa.Models
             Connections = new List<ConnectionDefinition>();
         }
         
-        [Newtonsoft.Json.JsonIgnore]
-        [JsonIgnore]
-        public int Id { get; set; }
-        public string WorkflowDefinitionId { get; set; } = default!;
-        public string WorkflowDefinitionVersionId { get; set; } = default!;
+        public string DefinitionVersionId { get; set; } = default!;
         public string? TenantId { get; set; }
         public string? Name { get; set; }
         public string? DisplayName { get; set; }

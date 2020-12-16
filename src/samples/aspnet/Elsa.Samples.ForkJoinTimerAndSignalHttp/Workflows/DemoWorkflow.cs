@@ -38,7 +38,7 @@ namespace Elsa.Samples.ForkJoinTimerAndSignalHttp.Workflows
 
                         fork
                             .When("Signal")
-                            .ReceiveSignal("hurry")
+                            .SignalReceived("hurry")
                             .SetVariable("CompletedVia", "Signal")
                             .Then("Join");
                     })

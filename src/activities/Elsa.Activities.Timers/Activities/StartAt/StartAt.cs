@@ -2,6 +2,7 @@ using System.Threading.Tasks;
 using Elsa.Activities.Timers.Services;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Persistence;
 using Elsa.Services;
 using Elsa.Services.Models;
 using NodaTime;
@@ -18,12 +19,12 @@ namespace Elsa.Activities.Timers
     )]
     public class StartAt : Activity
     {
-        private readonly IWorkflowInstanceManager _workflowInstanceManager;
+        private readonly IWorkflowInstanceStore _workflowInstanceStore;
         private readonly IWorkflowScheduler _workflowScheduler;
 
-        public StartAt(IWorkflowInstanceManager workflowInstanceStore, IWorkflowScheduler workflowScheduler)
+        public StartAt(IWorkflowInstanceStore workflowInstanceStore, IWorkflowScheduler workflowScheduler)
         {
-            _workflowInstanceManager = workflowInstanceStore;
+            _workflowInstanceStore = workflowInstanceStore;
             _workflowScheduler = workflowScheduler;
         }
 
@@ -48,8 +49,8 @@ namespace Elsa.Activities.Timers
 
             ExecuteAt = executeAt;
 
-            await _workflowInstanceManager.SaveAsync(context.WorkflowExecutionContext.WorkflowInstance, cancellationToken);
-            await _workflowScheduler.ScheduleWorkflowAsync(workflowBlueprint, workflowInstance.WorkflowInstanceId, Id, executeAt, cancellationToken);
+            await _workflowInstanceStore.SaveAsync(context.WorkflowExecutionContext.WorkflowInstance, cancellationToken);
+            await _workflowScheduler.ScheduleWorkflowAsync(workflowBlueprint, workflowInstance.EntityId, Id, executeAt, cancellationToken);
 
             return Suspend();
         }

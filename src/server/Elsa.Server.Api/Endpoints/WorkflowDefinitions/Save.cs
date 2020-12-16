@@ -43,7 +43,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
                 workflowDefinition = _workflowPublisher.New();
 
                 if (!string.IsNullOrWhiteSpace(workflowDefinitionId))
-                    workflowDefinition.WorkflowDefinitionId = workflowDefinitionId;
+                    workflowDefinition.EntityId = workflowDefinitionId;
             }
 
             workflowDefinition.Activities = request.Activities;
@@ -63,7 +63,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             else
                 workflowDefinition = await _workflowPublisher.SaveDraftAsync(workflowDefinition, cancellationToken);
 
-            return CreatedAtAction("Handle", "GetByVersionId", new {workflowDefinitionVersionId = workflowDefinition.WorkflowDefinitionVersionId, apiVersion = apiVersion.ToString()}, workflowDefinition);
+            return CreatedAtAction("Handle", "GetByVersionId", new {workflowDefinitionVersionId = workflowDefinition.DefinitionVersionId, apiVersion = apiVersion.ToString()}, workflowDefinition);
         }
     }
 }

@@ -35,7 +35,7 @@ namespace Elsa.Activities.Http.Liquid
 
         private string GenerateUrl(string signal, WorkflowExecutionContext workflowExecutionContext)
         {
-            var workflowInstanceId = workflowExecutionContext.WorkflowInstance.WorkflowInstanceId;
+            var workflowInstanceId = workflowExecutionContext.WorkflowInstance.EntityId;
             var payload = new Signal(signal, workflowInstanceId);
             var token = _tokenService.CreateToken(payload);
             var url = $"/workflows/signal?token={token}";

@@ -2,6 +2,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Persistence;
+using Elsa.Persistence.Specifications;
 using Elsa.Server.Api.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -16,11 +17,11 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
     [Produces("application/json")]
     public class List : Controller
     {
-        private readonly IWorkflowInstanceStore _workflowInstanceManager;
+        private readonly IWorkflowInstanceStore _workflowInstanceStore;
 
         public List(IWorkflowInstanceStore workflowInstanceStore)
         {
-            _workflowInstanceManager = workflowInstanceStore;
+            _workflowInstanceStore = workflowInstanceStore;
         }
 
         [HttpGet]
@@ -33,8 +34,10 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
         ]
         public async Task<ActionResult<PagedList<WorkflowInstance>>> Handle(int page = 0, int pageSize = 50, CancellationToken cancellationToken = default)
         {
-            var totalCount = await _workflowInstanceManager.CountAsync(cancellationToken);
-            var workflowInstances = await _workflowInstanceManager.ListAsync(page, pageSize, cancellationToken).ToList();
+            var specification = Specification<WorkflowInstance>.All;
+            var totalCount = await _workflowInstanceStore.CountAsync(specification, cancellationToken: cancellationToken);
+            var paging = Paging.Page(page, pageSize);
+            var workflowInstances = await _workflowInstanceStore.FindManyAsync(specification, paging: paging, cancellationToken: cancellationToken).ToList();
             return new PagedList<WorkflowInstance>(workflowInstances, page, pageSize, totalCount);
         }
     }

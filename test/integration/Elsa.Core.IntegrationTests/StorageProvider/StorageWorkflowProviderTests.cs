@@ -29,7 +29,7 @@ namespace Elsa.Core.IntegrationTests.StorageProvider
             var workflowInstance = await WorkflowRunner.RunWorkflowAsync(workflowBlueprint!);
             var executedActivityIds = workflowInstance.ExecutionLog.Select(x => x.ActivityId).ToList();
 
-            Assert.Equal(WorkflowStatus.Finished, workflowInstance.Status);
+            Assert.Equal(WorkflowStatus.Finished, workflowInstance.WorkflowStatus);
             Assert.Contains("activity-1", executedActivityIds);
         }
     }

@@ -34,8 +34,8 @@ namespace Elsa.Samples.Serialization
             // Define a workflow.
             var workflowDefinition = new WorkflowDefinition
             {
-                WorkflowDefinitionId = "SampleWorkflow",
-                WorkflowDefinitionVersionId = "1", 
+                EntityId = "SampleWorkflow",
+                DefinitionVersionId = "1", 
                 Version = 1,
                 IsPublished = true,
                 IsLatest = true,
