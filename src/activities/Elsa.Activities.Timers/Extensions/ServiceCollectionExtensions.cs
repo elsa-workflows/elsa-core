@@ -24,12 +24,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IWorkflowScheduler, WorkflowScheduler>()
                 .AddTransient<RunWorkflowJob>()
                 .AddHostedService<StartJobs>()
-                .AddActivity<Cron>()
-                .AddActivity<Timer>()
-                .AddActivity<StartAt>()
-                .AddTriggerProvider<TimerTriggerProvider>()
-                .AddTriggerProvider<CronTriggerProvider>()
-                .AddTriggerProvider<StartAtTriggerProvider>();
+                .AddActivity(typeof(Cron).Assembly)
+                .AddTriggerProvider(typeof(TimerTriggerProvider).Assembly);
         }
 
         private static void ConfigureQuartzHostedService(QuartzHostedServiceOptions options)

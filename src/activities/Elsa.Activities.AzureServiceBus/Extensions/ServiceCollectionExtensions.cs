@@ -26,8 +26,7 @@ namespace Elsa.Activities.AzureServiceBus.Extensions
                 .AddSingleton<IMessageReceiverFactory, MessageReceiverFactory>()
                 .AddHostedService<StartServiceBusQueues>()
                 .AddTriggerProvider<MessageReceivedTriggerProvider>()
-                .AddActivity<AzureServiceBusMessageReceived>()
-                .AddActivity<SendAzureServiceBusMessage>();
+                .AddActivity(typeof(AzureServiceBusMessageReceived).Assembly);
         }
 
         private static ServiceBusConnection CreateServiceBusConnection(IServiceProvider serviceProvider)

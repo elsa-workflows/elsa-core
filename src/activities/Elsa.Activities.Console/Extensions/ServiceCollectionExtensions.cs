@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+
 using Elsa.Activities.Console;
 
 // ReSharper disable once CheckNamespace
@@ -11,7 +12,6 @@ namespace Microsoft.Extensions.DependencyInjection
             services
                 .AddSingleton(standardIn ?? Console.In)
                 .AddSingleton(standardOut ?? Console.Out)
-                .AddActivity<ReadLine>()
-                .AddActivity<WriteLine>();
+                .AddActivity(typeof(ReadLine).Assembly);
     }
 }

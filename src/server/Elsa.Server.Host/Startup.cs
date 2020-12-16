@@ -39,10 +39,7 @@ namespace Elsa.Server.Host
                 .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)
                 .AddTimerActivities(elsaSection.GetSection("BackgroundRunner").Bind)
                 .AddStartupTask<ResumeRunningWorkflowsTask>()
-                .AddWorkflow<HelloWorld>()
-                .AddWorkflow<HelloWorldV2>()
-                .AddWorkflow<GoodbyeWorld>()
-                ;
+                .AddWorkflow(typeof(Startup).Assembly);
         }
 
         public void Configure(IApplicationBuilder app)

@@ -51,10 +51,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
         private static IServiceCollection AddHttpActivitiesInternal(this IServiceCollection services) =>
             services
-                .AddActivity<HttpRequestReceived>()
-                .AddActivity<WriteHttpResponse>()
-                .AddActivity<SendHttpRequest>()
-                .AddActivity<Redirect>();
+                .AddActivity(typeof(HttpRequestReceived).Assembly);
 
         public static IServiceCollection AddRequestHandler<THandler>(this IServiceCollection services) where THandler : class, IRequestHandler => services.AddScoped<THandler>();
     }

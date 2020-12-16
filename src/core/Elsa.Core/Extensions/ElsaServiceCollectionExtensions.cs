@@ -1,4 +1,7 @@
 using System;
+using System.Linq;
+using System.Reflection;
+
 using Elsa;
 using Elsa.Activities.ControlFlow;
 using Elsa.Activities.Primitives;
@@ -62,8 +65,28 @@ namespace Microsoft.Extensions.DependencyInjection
 
         public static IServiceCollection AddActivity<T>(this IServiceCollection services) where T : class, IActivity =>
             services
-                .AddTransient<T>()
-                .AddTransient<IActivity>(sp => sp.GetRequiredService<T>());
+                 .AddTransient<T>()
+                 .AddTransient<IActivity>(sp => sp.GetRequiredService<T>());
+
+        /// <summary>
+        /// Add all activities (<see cref="IActivity"/>) that are in the assembly
+        /// </summary>
+        /// <param name="services"></param>
+        /// <param name="assembly"></param>
+        /// <returns></returns>
+        public static IServiceCollection AddActivity(this IServiceCollection services, Assembly assembly)
+        {
+            var types = assembly.GetAllWithInterface<IActivity>();
+
+            foreach(var type in types)
+            {
+                services
+                  .AddTransient(type)
+                  .AddTransient(sp => (IActivity)sp.GetRequiredService(type));
+            }
+
+            return services;
+        }
 
         public static IServiceCollection AddWorkflow<T>(this IServiceCollection services) where T : class, IWorkflow =>
             services
@@ -74,6 +97,26 @@ namespace Microsoft.Extensions.DependencyInjection
             services
                 .AddSingleton(workflow.GetType(), workflow)
                 .AddTransient(sp => workflow);
+
+        /// <summary>
+        /// Add all workflows (<see cref="IWorkflow"/>) that are in the assembly and have no constructor with parameters
+        /// </summary>
+        /// <param name="services"></param>
+        /// <param name="assembly"></param>
+        /// <returns></returns>
+        public static IServiceCollection AddWorkflow(this IServiceCollection services, Assembly assembly)
+        {
+            var types = assembly.GetAllWithInterface<IWorkflow>().Where(x => x.GetConstructors().Any(ctor => ctor.GetParameters().Length > 0) == false);
+
+            foreach (var type in types)
+            {
+                services
+                   .AddSingleton(type)
+                   .AddSingleton(sp => (IWorkflow)sp.GetRequiredService(type));
+            }
+
+            return services;
+        }
 
         public static IServiceCollection StartWorkflow<T>(this IServiceCollection services) where T : class, IWorkflow => services.AddHostedService<StartWorkflow<T>>();
 
@@ -137,26 +180,9 @@ namespace Microsoft.Extensions.DependencyInjection
 
         private static IServiceCollection AddCoreActivities(this IServiceCollection services) =>
             services
-                .AddActivity<CompositeActivity>()
-                .AddActivity<Inline>()
-                .AddActivity<Finish>()
-                .AddActivity<For>()
-                .AddActivity<ForEach>()
-                .AddActivity<ParallelForEach>()
-                .AddActivity<Fork>()
-                .AddActivity<IfElse>()
-                .AddActivity<Join>()
-                .AddActivity<Switch>()
-                .AddActivity<While>()
-                .AddActivity<Correlate>()
-                .AddActivity<SetVariable>()
-                .AddActivity<SetContextId>()
-                .AddActivity<SignalReceived>()
-                .AddActivity<SendSignal>()
-                .AddActivity<RunWorkflow>()
-                .AddActivity<InterruptTrigger>()
+                .AddActivity(typeof(ElsaServiceCollectionExtensions).Assembly)
+                .AddActivity(typeof(CompositeActivity).Assembly)
                 .AddScoped<ISignaler, Signaler>()
-                .AddTriggerProvider<SignalReceivedTriggerProvider>()
-                .AddTriggerProvider<RunWorkflowTriggerProvider>();
+                .AddTriggerProvider(typeof(ElsaServiceCollectionExtensions).Assembly);
     }
 }

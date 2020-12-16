@@ -22,11 +22,7 @@ namespace Elsa.Samples.MultiTenantChildWorker
                             .AddTimerActivities()
                             .AddConsoleActivities()
                             .AddRebusActivities<OrderReceived>()
-                            .AddWorkflow<GenerateOrdersWorkflow>()
-                            .AddWorkflow<OrderReceivedWorkflow>()
-                            .AddWorkflow<Tenant1ChildWorkflow>()
-                            .AddWorkflow<Tenant2ChildWorkflow>()
-                            ;
+                            .AddWorkflow(typeof(GenerateOrdersWorkflow).Assembly);
                     });
     }
 }

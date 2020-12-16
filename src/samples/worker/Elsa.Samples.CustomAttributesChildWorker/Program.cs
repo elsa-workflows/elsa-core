@@ -22,10 +22,7 @@ namespace Elsa.Samples.CustomAttributesChildWorker
                             .AddTimerActivities()
                             .AddConsoleActivities()
                             .AddRebusActivities<OrderReceived>()
-                            .AddWorkflow<GenerateOrdersWorkflow>()
-                            .AddWorkflow<OrderReceivedWorkflow>()
-                            .AddWorkflow<Customer1Workflow>()
-                            .AddWorkflow<Customer2Workflow>()
+                            .AddWorkflow(typeof(GenerateOrdersWorkflow).Assembly)
                             ;
                     });
     }
