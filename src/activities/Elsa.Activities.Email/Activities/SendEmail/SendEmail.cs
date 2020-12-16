@@ -1,9 +1,11 @@
 using System.Threading.Tasks;
+
 using Elsa.Activities.Email.Services;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Services;
 using Elsa.Services.Models;
+
 using MimeKit;
 using MimeKit.Text;
 
@@ -23,14 +25,14 @@ namespace Elsa.Activities.Email
         [ActivityProperty(Hint = "The sender's email address.")]
         public string From { get; set; }
 
-        [ActivityProperty(Hint = "The recipient's email address.")]
-        public string To { get; set; }
+        [ActivityProperty(Hint = "The recipients email addresses.")]
+        public string[] To { get; set; } = default!;
 
-        [ActivityProperty(Hint = "The cc recipient's email address. (Optional)")]
-        public string Cc { get; set; }
+        [ActivityProperty(Hint = "The cc recipients email addresses. (Optional)")]
+        public string[]? Cc { get; set; }
 
-        [ActivityProperty(Hint = "The Bcc recipient's email address. (Optional)")]
-        public string Bcc { get; set; }
+        [ActivityProperty(Hint = "The Bcc recipients email addresses. (Optional)")]
+        public string[]? Bcc { get; set; }
 
         [ActivityProperty(Hint = "The subject of the email message.")]
         public string Subject { get; set; }
@@ -42,30 +44,35 @@ namespace Elsa.Activities.Email
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
             var message = new MimeMessage();
-            
+
             message.From.Add(MailboxAddress.Parse(From));
             message.Subject = Subject;
-            
+
             message.Body = new TextPart(TextFormat.Html)
             {
                 Text = Body
             };
 
-            message.To.Add(MailboxAddress.Parse(To));
-
-            if(string.IsNullOrEmpty(Cc) == false)
-            {
-                message.Cc.Add(MailboxAddress.Parse(Cc));
-            }
-
-            if (string.IsNullOrEmpty(Bcc) == false)
-            {
-                message.Bcc.Add(MailboxAddress.Parse(Bcc));
-            }
-
+            SetRecipiensEmailAddresses(message.To, To);
+            SetRecipiensEmailAddresses(message.Cc, Cc);
+            SetRecipiensEmailAddresses(message.Bcc, Bcc);
+           
             await _smtpService.SendAsync(message, context.CancellationToken);
 
             return Done();
+        }
+
+        private void SetRecipiensEmailAddresses(InternetAddressList list, string[]? addresses)
+        {
+            if (addresses == null)
+            {
+                return;
+            }
+
+            for (var i = 0; i < addresses.Length; i++)
+            {
+                list.Add(MailboxAddress.Parse(addresses[i]));
+            }
         }
     }
 }
