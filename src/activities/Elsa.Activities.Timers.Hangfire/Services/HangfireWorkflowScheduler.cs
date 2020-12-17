@@ -60,6 +60,17 @@ namespace Elsa.Activities.Timers.Hangfire.Services
             return Task.CompletedTask;
         }
 
+        public Task UnscheduleWorkflowAsync(WorkflowExecutionContext workflowExecutionContext, string activityId, CancellationToken cancellationToken = default)
+        {
+          _backgroundJobClient.UnscheduleJobWhenAlreadyExists(
+                CreateData(workflowExecutionContext.WorkflowBlueprint,
+                    activityId: activityId,
+                    workflowInstanceId: workflowExecutionContext.WorkflowInstance.WorkflowInstanceId)
+               );
+
+            return Task.CompletedTask;
+        }
+
         private RunHangfireWorkflowJobModel CreateData(IWorkflowBlueprint workflowBlueprint, string activityId, string? workflowInstanceId = null, string? cronExpression = null) => CreateData(workflowBlueprint.Id,activityId, workflowInstanceId, workflowBlueprint.TenantId, cronExpression);
         private RunHangfireWorkflowJobModel CreateData(string workflowDefinitionId, string activityId, string? workflowInstanceId = null, string? tenantId = null, string? cronExpression = null)
         {

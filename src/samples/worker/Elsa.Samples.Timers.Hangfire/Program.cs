@@ -19,11 +19,12 @@ namespace Elsa.Samples.Timers
                         services
                             .AddElsa()
                             .AddConsoleActivities()
-                            .AddTimerActivities(options => 
-                                options.UseHangfireProvider(configure => 
+                            .AddTimerActivities(options =>
+                                options.UseHangfireProvider(configure =>
                                     configure.UseSqlServerStorage("Server=(localdb)\\MSSQLLocalDB;Database=ElsaHangfire;Trusted_Connection=True;MultipleActiveResultSets=true")))
                             .AddWorkflow<RecurringTaskWorkflow>()
                             .AddWorkflow<CronTaskWorkflow>()
+                            .AddWorkflow<CancelTimerWorkflow>()
                             .AddWorkflow(new OneOffWorkflow(SystemClock.Instance.GetCurrentInstant().Plus(Duration.FromSeconds(5))));
                     });
     }
