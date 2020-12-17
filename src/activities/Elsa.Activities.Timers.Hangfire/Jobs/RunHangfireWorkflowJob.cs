@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 
 using Elsa.Activities.Timers.Hangfire.Models;
+using Elsa.Activities.Timers.Services;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services;
@@ -29,36 +30,53 @@ namespace Elsa.Activities.Timers.Hangfire.Jobs
         }
 
         public async Task ExecuteAsync(RunHangfireWorkflowJobModel data)
-        {          
+        {
             var workflowBlueprint = (await _workflowRegistry.GetWorkflowAsync(data.WorkflowDefinitionId, data.TenantId, VersionOptions.Published))!;
+            
+            if(workflowBlueprint == null)
+            {
+                return;
+            }
+
+            WorkflowInstance? workflowInstance = null;
 
             if (data.WorkflowInstanceId == null)
             {
-                if (workflowBlueprint.IsSingleton && await _workflowInstanceManager.GetWorkflowIsAlreadyExecutingAsync(data.TenantId, data.WorkflowDefinitionId))
-                    return;
-
-                await _workflowRunner.RunWorkflowAsync(workflowBlueprint, data.ActivityId);
+                if (workflowBlueprint.IsSingleton == false || await _workflowInstanceManager.GetWorkflowIsAlreadyExecutingAsync(data.TenantId, data.WorkflowDefinitionId) == false)
+                {
+                    await _workflowRunner.RunWorkflowAsync(workflowBlueprint, data.ActivityId);
+                }
             }
             else
             {
-                var workflowInstance = await _workflowInstanceManager.GetByIdAsync(data.WorkflowInstanceId);
+                for (var i = 0; i < 3 && workflowInstance == null; i++)
+                {
+                    workflowInstance = await _workflowInstanceManager.GetByIdAsync(data.WorkflowInstanceId);
+
+                    if(workflowInstance == null)
+                    {
+                        System.Threading.Thread.Sleep(10000);
+                    }
+                }
 
                 if (workflowInstance == null)
                 {
                     var logger = _serviceProvider.GetRequiredService<ILogger<RunHangfireWorkflowJob>>();
-                    logger.LogWarning("Could not run Workflow instance with ID {WorkflowInstanceId} because it appears not yet to be persisted in the database. Rescheduling.", data.WorkflowInstanceId);
-                   
-                    if(data.RecurringJob)
-                    {
-                        return;
-                    }
+                    logger.LogError("Could not run Workflow instance with ID {WorkflowInstanceId} because it is not in the database", data.WorkflowInstanceId);
 
-                    var _backgroundJobClient = _serviceProvider.GetRequiredService<IBackgroundJobClient>();
-                    _backgroundJobClient.ScheduleWorkflow(data);
                     return;
                 }
 
                 await _workflowRunner.RunWorkflowAsync(workflowBlueprint, workflowInstance!, data.ActivityId);
+            }
+
+            // If it is a RecurringJob and the instance is null, the timer activity is a start trigger.
+            if (data.IsRecurringJob && (workflowInstance == null || workflowInstance.Status is not (WorkflowStatus.Finished or WorkflowStatus.Cancelled)))
+            {
+                var backgroundJobClient = _serviceProvider.GetRequiredService<IBackgroundJobClient>();
+                var crontabParer = _serviceProvider.GetRequiredService<ICrontabParser>();
+
+                backgroundJobClient.ScheduleWorkflow(data, crontabParer.GetNextOccurrence(data.CronExpression!).ToDateTimeOffset());
             }
         }
     }

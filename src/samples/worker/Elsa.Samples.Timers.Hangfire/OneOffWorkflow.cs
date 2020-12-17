@@ -21,8 +21,8 @@ namespace Elsa.Samples.Timers
         {
             workflow
                 .StartAt(_executeAt)
-                .WriteLine(context => $"Started at {context.GetService<IClock>().GetCurrentInstant()}. Next event happens 60 seconds from now.")
-                .StartIn(Duration.FromSeconds(60))
+                .WriteLine(context => $"Started at {context.GetService<IClock>().GetCurrentInstant()}. Next event happens 30 seconds from now.")
+                .StartIn(Duration.FromSeconds(30))
                 .WriteLine(context => $"Follow-up occurred at {context.GetService<IClock>().GetCurrentInstant()}.");
         }
     }

@@ -10,21 +10,16 @@ namespace Elsa.Activities.Timers
 {
     public static class IBackgroundJobClientExtensions
     {
-        public static void ScheduleWorkflow(this IBackgroundJobClient backgroundJobClient, RunHangfireWorkflowJobModel data)
+        public static void ScheduleWorkflow(this IBackgroundJobClient backgroundJobClient, RunHangfireWorkflowJobModel data, DateTimeOffset dateTimeOffset)
         {
-            if (data.DateTimeOffset.HasValue == false)
-            {
-                throw new ArgumentNullException(nameof(data.DateTimeOffset));
-            }
-
             UnscheduleJobWhenAlreadyExists(data);
-            backgroundJobClient.Schedule<RunHangfireWorkflowJob>(job => job.ExecuteAsync(data), data.DateTimeOffset.Value);
+            backgroundJobClient.Schedule<RunHangfireWorkflowJob>(job => job.ExecuteAsync(data), dateTimeOffset);
         }
 
         public static void UnscheduleJobWhenAlreadyExists(RunHangfireWorkflowJobModel data)
         {
             var identity = data.GetIdentity();
-            if (data.RecurringJob)
+            if (data.IsRecurringJob)
             {
                 var monitor = JobStorage.Current.GetMonitoringApi();
                 var workflowJobType = typeof(RunHangfireWorkflowJob);
