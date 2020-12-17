@@ -44,10 +44,25 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
 
             if (!string.IsNullOrWhiteSpace(workflowDefinitionId))
                 specification = specification.WithWorkflowDefinition(workflowDefinitionId);
+
+            if (workflowStatus != null)
+                specification = specification.WithStatus(workflowStatus.Value);
+
+            var orderBySpecification = default(OrderBy<WorkflowInstance>);
+            
+            if (orderBy != null)
+            {
+                orderBySpecification = orderBy switch
+                {
+                    OrderBy.Started => OrderBySpecification.OrderByDescending<WorkflowInstance>(x => x.CreatedAt),
+                    OrderBy.Finished => OrderBySpecification.OrderByDescending<WorkflowInstance>(x => x.FinishedAt!),
+                    _ => OrderBySpecification.OrderByDescending<WorkflowInstance>(x => x.FinishedAt!)
+                };
+            }
             
             var totalCount = await _workflowInstanceStore.CountAsync(specification, cancellationToken: cancellationToken);
             var paging = Paging.Page(page, pageSize);
-            var workflowInstances = await _workflowInstanceStore.FindManyAsync(specification, paging: paging, cancellationToken: cancellationToken).ToList();
+            var workflowInstances = await _workflowInstanceStore.FindManyAsync(specification, orderBySpecification, paging, cancellationToken).ToList();
             return new PagedList<WorkflowInstance>(workflowInstances, page, pageSize, totalCount);
         }
     }

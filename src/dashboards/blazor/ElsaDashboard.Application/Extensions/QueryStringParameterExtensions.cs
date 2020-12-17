@@ -36,6 +36,10 @@ namespace ElsaDashboard.Application.Extensions
                     var convertedValue = ConvertValue(value, property.PropertyType);
                     property.SetValue(component, convertedValue);
                 }
+                else
+                {
+                    property.SetValue(component, default);
+                }
             }
         }
 
@@ -76,7 +80,7 @@ namespace ElsaDashboard.Application.Extensions
             navigationManager.NavigateTo(newUri);
         }
 
-        private static object ConvertValue(StringValues value, Type type) => Convert.ChangeType(value[0], type, CultureInfo.InvariantCulture);
+        private static object ConvertValue(StringValues value, Type type) => ChangeType(value[0], GetUnderlyingType(type));
         private static string? ConvertToString(object value) => Convert.ToString(value, CultureInfo.InvariantCulture);
         private static IEnumerable<PropertyInfo> GetProperties<T>() => typeof(T).GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
 
@@ -85,5 +89,14 @@ namespace ElsaDashboard.Application.Extensions
             var attribute = property.GetCustomAttribute<QueryStringParameterAttribute>();
             return attribute == null ? null : attribute.Name ?? property.Name;
         }
+
+        private static Type GetUnderlyingType(Type type)
+        {
+            var underlyingType = Nullable.GetUnderlyingType(type);
+            return underlyingType ?? type;
+        }
+
+        private static object ChangeType(object value, Type targetType) =>
+            targetType.IsEnum ? Enum.Parse(targetType, (value as string ?? value.ToString()) ?? string.Empty, true) : Convert.ChangeType(value, targetType, CultureInfo.InvariantCulture);
     }
 }

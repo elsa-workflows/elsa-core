@@ -36,12 +36,12 @@ namespace Elsa.Samples.HelloWorldConsole
             
             var results = await store.FindManyAsync(
                 new WorkflowInstanceDefinitionIdSpecification(nameof(HelloWorld)).WithTenant("1"), 
-                GroupingSpecification.OrderByDescending<WorkflowInstance>(x => x.CreatedAt),
+                OrderBySpecification.OrderByDescending<WorkflowInstance>(x => x.CreatedAt),
                 Paging.Page(1, 2));
             
             var count = await store.CountAsync(
                 new WorkflowInstanceDefinitionIdSpecification(nameof(HelloWorld)).WithTenant("1"), 
-                GroupingSpecification.OrderByDescending<WorkflowInstance>(x => x.CreatedAt));
+                OrderBySpecification.OrderByDescending<WorkflowInstance>(x => x.CreatedAt));
 
             Console.WriteLine(count);
             

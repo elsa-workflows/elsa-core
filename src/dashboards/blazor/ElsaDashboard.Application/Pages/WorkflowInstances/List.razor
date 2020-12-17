@@ -31,9 +31,9 @@
     <div class="flex-1">
         <h3>Filters</h3>
     </div>
-    <ButtonDropdown Text="@SelectedWorkflowText" Items="@WorkflowFilterItems"/>
-    <ButtonDropdown Text="Status" Items="@(new[] { new ButtonDropdownItem("Suspended"), new ButtonDropdownItem("Faulted"), new ButtonDropdownItem("Completed"), new ButtonDropdownItem("Uncompleted"), new ButtonDropdownItem("All") })"/>
-    <ButtonDropdown Text="Sort" Items="@(new[] { new ButtonDropdownItem("Started"), new ButtonDropdownItem("Finished") })"/>
+    <ButtonDropdown Text="@SelectedWorkflowText" Items="@WorkflowFilterItems" IconType="@typeof(Icons.Squares)"/>
+    <ButtonDropdown Text="@SelectedWorkflowStatusText" Items="@WorkflowStatusFilterItems" IconType="@typeof(Icons.PlayCircle)"/>
+    <ButtonDropdown Text="@SelectedOrderByText" Items="@OrderByItems" IconType="@typeof(Icons.SortDescending)" />
 </div>
 
 <!-- Workflow instances (only on smallest breakpoint) -->
@@ -54,8 +54,6 @@
                 </svg>
             </a>
         </li>
-
-        <!-- More project rows... -->
     </ul>
 </div>
 <!-- Workflow instances table (small breakpoint and up) -->
@@ -80,7 +78,7 @@
                     Created
                 </th>
                 <th class="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
-                    Completed
+                    Finished
                 </th>
                 <th class="pr-6 py-3 border-b border-gray-200 bg-gray-50 text-right text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider"></th>
             </tr>
@@ -116,7 +114,7 @@
                         @workflowInstance.CreatedAt
                     </td>
                     <td class="hidden md:table-cell px-6 py-3 whitespace-no-wrap text-sm leading-5 text-gray-500 text-left">
-                        @(workflowInstance.CompletedAt != null ? workflowInstance.CompletedAt.ToString() : "-")
+                        @(workflowInstance.FinishedAt != null ? workflowInstance.FinishedAt.ToString() : "-")
                     </td>
                     <td class="pr-6">
                         <ContextMenu>

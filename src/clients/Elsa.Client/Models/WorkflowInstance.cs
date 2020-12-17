@@ -28,7 +28,7 @@ namespace Elsa.Client.Models
         [DataMember(Order = 7)] public Instant CreatedAt { get; set; }
         [DataMember(Order = 8)] public Instant? LastExecutedAt { get; set; }
         [DataMember(Order = 9)] public Instant? LastBurstAt { get; set; }
-        [DataMember(Order = 10)] public Instant? CompletedAt { get; set; }
+        [DataMember(Order = 10)] public Instant? FinishedAt { get; set; }
         [DataMember(Order = 11)] public Variables Variables { get; set; }
         [DataMember(Order = 12)] public object? Output { get; set; }
         [DataMember(Order = 13)] public ICollection<ActivityInstance> Activities { get; set; }
