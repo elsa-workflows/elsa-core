@@ -1,4 +1,5 @@
 @page "/workflow-instances"
+@using Elsa.Client.Models
 <!-- Page title & actions -->
 <div class="border-b border-gray-200 px-4 py-4 sm:flex sm:items-center sm:justify-between sm:px-6 lg:px-8">
     <div class="flex-1 min-w-0">
@@ -33,7 +34,7 @@
     </div>
     <ButtonDropdown Text="@SelectedWorkflowText" Items="@WorkflowFilterItems" IconType="@typeof(Icons.Squares)"/>
     <ButtonDropdown Text="@SelectedWorkflowStatusText" Items="@WorkflowStatusFilterItems" IconType="@typeof(Icons.PlayCircle)"/>
-    <ButtonDropdown Text="@SelectedOrderByText" Items="@OrderByItems" IconType="@typeof(Icons.SortDescending)" />
+    <ButtonDropdown Text="@SelectedOrderByText" Items="@OrderByItems" IconType="@typeof(Icons.SortDescending)"/>
 </div>
 
 <!-- Workflow instances (only on smallest breakpoint) -->
@@ -86,8 +87,9 @@
             <tbody class="bg-white divide-y divide-gray-100">
             @foreach (var workflowInstance in WorkflowInstances.Items)
             {
-                var workflowBlueprint = WorkflowBlueprints[(workflowInstance.DefinitionId, workflowInstance.Version)];
-                var displayName = workflowBlueprint.DisplayName;
+                var workflowKey = (workflowInstance.DefinitionId, workflowInstance.Version);
+                var workflowBlueprint = WorkflowBlueprints.ContainsKey(workflowKey) ? WorkflowBlueprints[workflowKey] : new WorkflowBlueprint { DisplayName = "(Blueprint Not Found)" };
+                var displayName = workflowBlueprint.DisplayName!;
                 var statusColor = GetStatusColor(workflowInstance.WorkflowStatus);
                 var viewUrl = $"workflow-instances/{workflowInstance.EntityId}/viewer";
                 <tr>

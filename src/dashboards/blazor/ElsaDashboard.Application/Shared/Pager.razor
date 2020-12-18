@@ -59,8 +59,11 @@
 
 @code {
 
-    private RenderFragment RenderPageButtons(int start, int end)
+    private RenderFragment? RenderPageButtons(int start, int end)
     {
+        if (start - end <= 1)
+            return null;
+        
         return
             @<text>
                 @for (var i = start; i < end; i++)
