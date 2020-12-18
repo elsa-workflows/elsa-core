@@ -22,11 +22,12 @@
   cache:
   - src\dashboards\blazor\ElsaDashboard.Application\ClientApp\node_modules
   - '%APPDATA%\npm-cache'
+  install:
+    - ps: Install-Product node $env:nodejs_version
+    - npm install
   build_script:
   - ps: >-
       cd .\src\dashboards\blazor\ElsaDashboard.Application\ClientApp
-
-      npm install npm@latest -g
 
       npm install posthtml-cli -g
 
