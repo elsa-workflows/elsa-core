@@ -1,11 +1,12 @@
 # Elsa 2 - Build (MyGet)
--    
+- 
+  branches:
+    only:
+    - feature/elsa-2.0   
   version: 2.0.0-preview6.{build}
   pull_requests:
     do_not_increment_build_number: true
-  branches:
-    only:
-    - feature/elsa-2.0
+  
   image: Visual Studio 2019
   environment:
     matrix:
@@ -24,18 +25,17 @@
   - '%APPDATA%\npm-cache'
   install:
     - ps: Install-Product node $env:nodejs_version
-    - cd .\src\dashboards\blazor\ElsaDashboard.Application\ClientApp
-    - npm install
-    - npm install posthtml-cli -g
-    - cd ..\..\..\..\..\
+      - cd .\src\dashboards\blazor\ElsaDashboard.Application\ClientApp
+      - npm install
+      - npm install posthtml-cli -g
+      - cd ..\..\..\..\..\
   build_script:
-  - ps: >-
-      npm run build:html
-
-      npm run build:css:blazor
-
-      dotnet pack Elsa.sln --include-symbols /p:Version=$env:APPVEYOR_BUILD_VERSION
-      
+  - ps:
+    - cd .\src\dashboards\blazor\ElsaDashboard.Application\ClientApp
+    - npm run build:html
+    - npm run build:css:blazor
+    - cd ..\..\..\..\..\
+    - dotnet pack Elsa.sln --include-symbols /p:Version=$env:APPVEYOR_BUILD_VERSION
   test: off
   artifacts:
   - path: '**/*.nupkg'
@@ -49,12 +49,13 @@
     on:
       branch: feature/elsa-2.0
 
-# Elsa 2 - PReview (NuGet)
+# Elsa 2 - Preview (NuGet)
 -
-  version: 2.0.0-preview6.{build}
   branches:
     only:
     - feature/elsa-2.0
+  version: 2.0.0-preview6.{build}
+  
   skip_non_tags: true
   skip_branch_with_pr: true
   image: Visual Studio 2019
@@ -96,16 +97,19 @@
       secure: WC5CCcM5ksWOJbv925FNjv91KsfqHfwEe0A61FMNB27IxvttwJsvBC9XYwK+wQnp
     skip_symbols: true
     on:
+      APPVEYOR_REPO_TAG: true
       branch: feature/elsa-2.0
 
 # Elsa 1.5.x
 -
-  version: 1.5.0.{build}
-  pull_requests:
-    do_not_increment_build_number: true
   branches:
     only:
     - master
+
+  version: 1.5.0.{build}
+  pull_requests:
+    do_not_increment_build_number: true
+  
   skip_non_tags: true
   skip_branch_with_pr: true
   image: Visual Studio 2019 Preview
@@ -143,16 +147,18 @@
       secure: WC5CCcM5ksWOJbv925FNjv91KsfqHfwEe0A61FMNB27IxvttwJsvBC9XYwK+wQnp
     skip_symbols: true
     on:
+      APPVEYOR_REPO_TAG: true
       branch: master
 
 # Elsa 1.4.x
 -
-  version: 1.4.7.{build}
-  pull_requests:
-    do_not_increment_build_number: true
   branches:
     only:
     - 1.4.x
+
+  version: 1.4.7.{build}
+  pull_requests:
+    do_not_increment_build_number: true
   skip_non_tags: true
   skip_branch_with_pr: true
   image: Visual Studio 2019
@@ -190,6 +196,7 @@
       secure: WC5CCcM5ksWOJbv925FNjv91KsfqHfwEe0A61FMNB27IxvttwJsvBC9XYwK+wQnp
     skip_symbols: true
     on:
+      APPVEYOR_REPO_TAG: true
       branch: 1.4.x
 
 # "fall back" configuration for all other branches
