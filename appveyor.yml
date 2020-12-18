@@ -1,51 +1,59 @@
-version: 2.0.0-preview6.{build}
-pull_requests:
-  do_not_increment_build_number: true
-branches:
-  only:
-  - feature/elsa-2.0
-image: Previous Visual Studio 2019
-environment:
-  matrix:
-  - nodejs_version: "10"
-dotnet_csproj:
-  patch: true
-  file: '**\*.csproj'
-  version: '{version}'
-  version_prefix: '{version}'
-  package_version: '{version}'
-  assembly_version: '{version}'
-  file_version: '{version}'
-  informational_version: '{version}'
-cache:
-- src\dashboards\blazor\ElsaDashboard.Application\ClientApp\node_modules
-- '%APPDATA%\npm-cache'
-build_script:
-- ps: >-
-    cd .\src\dashboards\blazor\ElsaDashboard.Application\ClientApp
+# Elsa 2 Build
+-    
+  version: 2.0.0-preview6.{build}
+  pull_requests:
+    do_not_increment_build_number: true
+  branches:
+    only:
+    - feature/elsa-2.0
+  image: Previous Visual Studio 2019
+  environment:
+    matrix:
+    - nodejs_version: "10"
+  dotnet_csproj:
+    patch: true
+    file: '**\*.csproj'
+    version: '{version}'
+    version_prefix: '{version}'
+    package_version: '{version}'
+    assembly_version: '{version}'
+    file_version: '{version}'
+    informational_version: '{version}'
+  cache:
+  - src\dashboards\blazor\ElsaDashboard.Application\ClientApp\node_modules
+  - '%APPDATA%\npm-cache'
+  build_script:
+  - ps: >-
+      cd .\src\dashboards\blazor\ElsaDashboard.Application\ClientApp
 
-    npm install npm@latest -g
+      npm install npm@latest -g
 
-    npm install posthtml-cli -g
+      npm install posthtml-cli -g
 
-    npm install
+      npm install
 
-    npm run build:html
+      npm run build:html
 
-    npm run build:css:blazor
+      npm run build:css:blazor
 
-    cd ..\..\..\..\..\
+      cd ..\..\..\..\..\
 
-    dotnet pack Elsa.sln --include-symbols /p:Version=$env:APPVEYOR_BUILD_VERSION
-test: off
-artifacts:
-- path: '**/*.nupkg'
-  name: MyGet
-deploy:
-- provider: NuGet
-  server: https://www.myget.org/F/elsa-2/api/v2/package
-  api_key:
-    secure: JfESkwmLdWU7dzvoqKPUfMemb00wX8AEYxeHCsYWTX1LfTeECdmKdZxz7IVUpebb
-  skip_symbols: true
-  on:
-    branch: feature/elsa-2.0
+      dotnet pack Elsa.sln --include-symbols /p:Version=$env:APPVEYOR_BUILD_VERSION
+  test: off
+  artifacts:
+  - path: '**/*.nupkg'
+    name: MyGet
+  deploy:
+  - provider: NuGet
+    server: https://www.myget.org/F/elsa-2/api/v2/package
+    api_key:
+      secure: JfESkwmLdWU7dzvoqKPUfMemb00wX8AEYxeHCsYWTX1LfTeECdmKdZxz7IVUpebb
+    skip_symbols: true
+    on:
+      branch: feature/elsa-2.0
+
+# "fall back" configuration for all other branches
+# no "branches" section defined
+# do not deploy at all
+-
+  configuration: Debug
