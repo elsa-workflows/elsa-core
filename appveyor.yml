@@ -24,7 +24,8 @@
   - src\dashboards\blazor\ElsaDashboard.Application\ClientApp\node_modules
   - '%APPDATA%\npm-cache'
   install:
-    - ps: Install-Product node $env:nodejs_version
+    - ps: 
+      - Install-Product node $env:nodejs_version
       - cd .\src\dashboards\blazor\ElsaDashboard.Application\ClientApp
       - npm install
       - npm install posthtml-cli -g
