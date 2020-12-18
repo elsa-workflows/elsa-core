@@ -6,7 +6,7 @@ using AutoMapper;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-namespace Elsa.Extensions
+namespace Elsa
 {
     public static class AutoMapperServiceCollectionExtensions
     {

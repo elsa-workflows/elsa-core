@@ -2,7 +2,6 @@ using System;
 using System.Data;
 using System.Linq;
 using Elsa.Data;
-using Elsa.Extensions;
 using Elsa.Persistence.YesSql.Data;
 using Elsa.Persistence.YesSql.Documents;
 using Elsa.Persistence.YesSql.Indexes;

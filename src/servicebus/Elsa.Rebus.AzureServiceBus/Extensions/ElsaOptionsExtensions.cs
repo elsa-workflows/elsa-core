@@ -1,5 +1,4 @@
-﻿using Elsa.Extensions;
-using Elsa.Services;
+﻿using Elsa.Services;
 using Microsoft.Azure.ServiceBus.Primitives;
 using Rebus.Config;
 using Rebus.Logging;

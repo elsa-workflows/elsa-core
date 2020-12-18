@@ -1,7 +1,6 @@
 using System;
 using System.Threading.Tasks;
 using Elsa.Builders;
-using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;

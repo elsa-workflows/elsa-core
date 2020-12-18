@@ -1,5 +1,5 @@
 ﻿using System;
-using Elsa.Extensions;
+using Elsa;
 using Elsa.Models;
 using Elsa.Server.Api.Extensions;
 using Elsa.Server.Api.Mapping;

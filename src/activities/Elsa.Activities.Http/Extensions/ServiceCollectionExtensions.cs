@@ -1,4 +1,5 @@
 using System;
+using Elsa;
 using Elsa.Activities.Http;
 using Elsa.Activities.Http.Handlers;
 using Elsa.Activities.Http.Options;
@@ -6,7 +7,6 @@ using Elsa.Activities.Http.Parsers;
 using Elsa.Activities.Http.RequestHandlers.Handlers;
 using Elsa.Activities.Http.Services;
 using Elsa.Activities.Http.Triggers;
-using Elsa.Extensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.Extensions.DependencyInjection.Extensions;

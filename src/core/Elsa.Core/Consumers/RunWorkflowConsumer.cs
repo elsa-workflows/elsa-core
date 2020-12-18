@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using Elsa.Exceptions;
-using Elsa.Extensions;
 using Elsa.Messages;
 using Elsa.Persistence;
 using Elsa.Services;

@@ -7,7 +7,6 @@ using Elsa.ActivityResults;
 using Elsa.Builders;
 using Elsa.Events;
 using Elsa.Exceptions;
-using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services.Models;

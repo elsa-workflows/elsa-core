@@ -4,7 +4,7 @@ using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications;
 
-namespace Elsa.Extensions
+namespace Elsa
 {
     public static class WorkflowDefinitionStoreExtensions
     {

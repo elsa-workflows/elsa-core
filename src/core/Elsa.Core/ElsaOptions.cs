@@ -1,7 +1,6 @@
 using System;
 using Elsa.Caching;
 using Elsa.DistributedLock;
-using Elsa.Extensions;
 using Elsa.Persistence;
 using Elsa.Persistence.InMemory;
 using Elsa.Serialization;

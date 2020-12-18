@@ -1,6 +1,5 @@
 using System;
 using System.Linq.Expressions;
-using Elsa.Extensions;
 using Elsa.Services;
 using Elsa.Services.Models;
 

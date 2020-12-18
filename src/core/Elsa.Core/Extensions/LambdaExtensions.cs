@@ -2,7 +2,7 @@ using System;
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace Elsa.Extensions
+namespace Elsa
 {
     public static class LambdaExtensions
     {

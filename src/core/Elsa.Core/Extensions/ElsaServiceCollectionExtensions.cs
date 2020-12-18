@@ -11,7 +11,6 @@ using Elsa.Builders;
 using Elsa.Consumers;
 using Elsa.Converters;
 using Elsa.Expressions;
-using Elsa.Extensions;
 using Elsa.HostedServices;
 using Elsa.Mapping;
 using Elsa.Metadata;
