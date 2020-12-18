@@ -24,18 +24,27 @@
   - src\dashboards\blazor\ElsaDashboard.Application\ClientApp\node_modules
   - '%APPDATA%\npm-cache'
   install:
-    - ps: Install-Product node $env:nodejs_version
-    - cd .\src\dashboards\blazor\ElsaDashboard.Application\ClientApp
-    - npm install
-    - npm install posthtml-cli -g
-    - cd ..\..\..\..\..\
+    - ps: >-
+        Install-Product node $env:nodejs_version
+
+        cd .\src\dashboards\blazor\ElsaDashboard.Application\ClientApp
+
+        npm install
+
+        npm install posthtml-cli -g
+
+        cd ..\..\..\..\..\
   build_script:
-  - ps:
-    - cd .\src\dashboards\blazor\ElsaDashboard.Application\ClientApp
-    - npm run build:html
-    - npm run build:css:blazor
-    - cd ..\..\..\..\..\
-    - dotnet pack Elsa.sln --include-symbols /p:Version=$env:APPVEYOR_BUILD_VERSION
+  - ps: >-
+      cd .\src\dashboards\blazor\ElsaDashboard.Application\ClientApp
+
+      npm run build:html
+    
+      npm run build:css:blazor
+    
+      cd ..\..\..\..\..\
+      
+      dotnet pack Elsa.sln --include-symbols /p:Version=$env:APPVEYOR_BUILD_VERSION
   test: off
   artifacts:
   - path: '**/*.nupkg'
