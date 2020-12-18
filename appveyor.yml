@@ -31,8 +31,11 @@
   build_script:
   - ps: >-
       npm run build:html
+
       npm run build:css:blazor
+
       dotnet pack Elsa.sln --include-symbols /p:Version=$env:APPVEYOR_BUILD_VERSION
+      
   test: off
   artifacts:
   - path: '**/*.nupkg'
