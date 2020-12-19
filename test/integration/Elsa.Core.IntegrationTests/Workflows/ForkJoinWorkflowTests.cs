@@ -6,6 +6,7 @@ using Elsa.Activities.Signaling.Models;
 using Elsa.Models;
 using Elsa.Services.Models;
 using Elsa.Testing.Shared.Unit;
+using Open.Linq.AsyncExtensions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -75,10 +76,11 @@ namespace Elsa.Core.IntegrationTests.Workflows
         private async Task<WorkflowInstance> TriggerSignalAsync(IWorkflowBlueprint workflowBlueprint, WorkflowInstance workflowInstance, string signal)
         {
             var workflowExecutionContext = new WorkflowExecutionContext(ServiceScope, workflowBlueprint, workflowInstance);
+            var workflowBlueprintWrapper = new WorkflowBlueprintWrapper(workflowBlueprint, workflowExecutionContext);
             var activities = await workflowExecutionContext.ActivateActivitiesAsync();
-            var blockingActivityIds = workflowInstance.BlockingActivities.Where(x => x.ActivityType == nameof(SignalReceived)).Select(x => x.ActivityId);
-            var receiveSignalActivities = activities.Where(x => blockingActivityIds.Contains(x.Id)).Cast<SignalReceived>();
-            var receiveSignal = receiveSignalActivities.Single(x => x.Signal == signal);
+            var blockingActivityIds = workflowInstance.BlockingActivities.Where(x => x.ActivityType == nameof(SignalReceived)).Select(x => x.ActivityId).ToList();
+            var receiveSignalActivities = activities.Where(x => blockingActivityIds.Contains(x.Id)).ToList();
+            var receiveSignal = receiveSignalActivities.Single(activity => workflowBlueprintWrapper.GetActivity<SignalReceived>(activity.Id).GetPropertyValueAsync(x => x.Signal).GetAwaiter().GetResult() == signal);
             
             var triggeredSignal = new Signal(signal);
             return await WorkflowRunner.RunWorkflowAsync(workflowBlueprint, workflowInstance, receiveSignal.Id, triggeredSignal);

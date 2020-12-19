@@ -15,8 +15,8 @@
     <ItemGroup>
       <PackageReference Include="NodaTime" Version="3.0.3" />
       <PackageReference Include="NodaTime.Serialization.JsonNet" Version="3.0.0" />
-      <PackageReference Include="Refit" Version="5.2.1" />
-      <PackageReference Include="Refit.HttpClientFactory" Version="5.2.1" />
+      <PackageReference Include="Refit" Version="5.2.4" />
+      <PackageReference Include="Refit.HttpClientFactory" Version="5.2.4" />
     </ItemGroup>
 
 </Project>
