@@ -60,7 +60,7 @@
             </div>;
     }
 
-    private RenderFragment RenderTree(IEnumerable<ActivityModel> activities, bool isRoot, Func<string, string, string, Task> onAddActivityClickHandler, HashSet<string> renderedActivities)
+    private RenderFragment? RenderTree(IEnumerable<ActivityModel> activities, bool isRoot, Func<string, string, string, Task> onAddActivityClickHandler, HashSet<string> renderedActivities)
     {
         var list = activities.Where(x => !renderedActivities.Contains(x.ActivityId)).ToList();
         var cssClass = isRoot ? "root" : default!;
@@ -68,36 +68,34 @@
         foreach (var activity in list)
             renderedActivities.Add(activity.ActivityId);
 
+        if (!list.Any())
+            return null;
+
         return
-            @<text>
-                @if (list.Any())
+            @<ul class="@cssClass">
+                @foreach (var activity in list)
                 {
-                    <ul class="@cssClass">
-                        @foreach (var activity in list)
+                    var activityId = activity.ActivityId;
+                    var children = Model.GetChildActivities(activityId).ToList();
+
+                    <li @key=@activityId>
+                        <div class="inline-flex flex flex-col items-center">
+
+                            @if (isRoot)
+                            {
+                                @RenderOutcomeButton($"start-button-plus-{activityId}", "", () => onAddActivityClickHandler(null, activityId, null))
+                            }
+
+                            <Activity Model="@activity"/>
+                            @RenderOutcomeButtons(activity, onAddActivityClickHandler)
+                        </div>
+                        @if (children.Any())
                         {
-                            var activityId = activity.ActivityId;
-                            var children = Model.GetChildActivities(activityId).ToList();
-
-                            <li @key=@activityId>
-                                <div class="inline-flex flex flex-col items-center">
-
-                                    @if (isRoot)
-                                    {
-                                        @RenderOutcomeButton($"start-button-plus-{activityId}", "", () => onAddActivityClickHandler(null, activityId, null))
-                                    }
-
-                                    <Activity Model="@activity"/>
-                                    @RenderOutcomeButtons(activity, onAddActivityClickHandler)
-                                </div>
-                                @if (children.Any())
-                                {
-                                    @RenderTree(children, false, onAddActivityClickHandler, renderedActivities)
-                                }
-                            </li>
+                            @RenderTree(children, false, onAddActivityClickHandler, renderedActivities)
                         }
-                    </ul>
+                    </li>
                 }
-             </text>;
+            </ul>;
     }
 
 }
