@@ -10,9 +10,6 @@ namespace Elsa.Samples.HelloWorldConsole
     public class HelloWorld : IWorkflow
     {
         public void Build(IWorkflowBuilder workflow) => workflow
-            .WithTenantId("1")
-            .WriteLine("Hello World!")
-            .SignalReceived("Test")
-            .WriteLine("Signal received");
+            .WriteLine("Hello World!");
     }
 }
