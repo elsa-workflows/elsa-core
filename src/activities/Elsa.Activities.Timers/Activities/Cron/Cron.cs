@@ -49,6 +49,9 @@ namespace Elsa.Activities.Timers
 
             ExecuteAt = executeAt;
 
+            if (executeAt < _clock.GetCurrentInstant())
+                return Done();
+
             await _workflowInstanceStore.SaveAsync(context.WorkflowExecutionContext.WorkflowInstance, cancellationToken);
             await _workflowScheduler.ScheduleWorkflowAsync(workflowBlueprint, workflowInstance.Id, Id, executeAt, cancellationToken);
 

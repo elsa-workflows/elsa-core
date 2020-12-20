@@ -21,11 +21,13 @@ namespace Elsa.Activities.Timers
     {
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
         private readonly IWorkflowScheduler _workflowScheduler;
+        private readonly IClock _clock;
 
-        public StartAt(IWorkflowInstanceStore workflowInstanceStore, IWorkflowScheduler workflowScheduler)
+        public StartAt(IWorkflowInstanceStore workflowInstanceStore, IWorkflowScheduler workflowScheduler, IClock clock)
         {
             _workflowInstanceStore = workflowInstanceStore;
             _workflowScheduler = workflowScheduler;
+            _clock = clock;
         }
 
         [ActivityProperty(Hint = "An instant in the future at which this activity should execute.")]
@@ -48,6 +50,9 @@ namespace Elsa.Activities.Timers
             var executeAt = Instant;
 
             ExecuteAt = executeAt;
+
+            if (executeAt <= _clock.GetCurrentInstant())
+                return Done();
 
             await _workflowInstanceStore.SaveAsync(context.WorkflowExecutionContext.WorkflowInstance, cancellationToken);
             await _workflowScheduler.ScheduleWorkflowAsync(workflowBlueprint, workflowInstance.Id, Id, executeAt, cancellationToken);

@@ -32,7 +32,7 @@ namespace Elsa.Activities.Timers
             if (context.WorkflowExecutionContext.IsFirstPass)
                 return Done();
 
-            if (Timeout == Duration.Zero)
+            if (Timeout <= Duration.Zero)
                 return Done();
             
             ExecuteAt = _clock.GetCurrentInstant().Plus(Timeout);
