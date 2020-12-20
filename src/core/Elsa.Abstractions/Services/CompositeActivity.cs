@@ -22,6 +22,7 @@ namespace Elsa.Services
             if (IsScheduled)
             {
                 context.WorkflowExecutionContext.WorkflowInstance.ParentActivities.Pop();
+                IsScheduled = false;
                 return Complete(context);
             }
             

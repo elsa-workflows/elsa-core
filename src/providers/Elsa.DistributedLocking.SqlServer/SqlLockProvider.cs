@@ -17,7 +17,7 @@ namespace Elsa
         private const string Prefix = "elsa";
         private readonly string _connectionString;
         private readonly IDictionary<string, SqlConnection> _locks = new Dictionary<string, SqlConnection>();
-        private readonly AutoResetEvent _mutex = new AutoResetEvent(true);
+        private readonly AutoResetEvent _mutex = new(true);
 
         public SqlLockProvider(string connectionString, ILogger<SqlLockProvider> logger)
         {

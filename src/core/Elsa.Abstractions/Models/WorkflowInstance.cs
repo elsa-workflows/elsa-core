@@ -12,7 +12,7 @@ namespace Elsa.Models
         {
             Variables = new Variables();
             Activities = new List<ActivityInstance>();
-            ExecutionLog = new List<ExecutionLogEntry>();
+            //ExecutionLog = new List<ExecutionLogEntry>();
             ScheduledActivities = new Stack<ScheduledActivity>();
             PostScheduledActivities = new Stack<ScheduledActivity>();
             ParentActivities = new Stack<string>();
@@ -39,7 +39,7 @@ namespace Elsa.Models
             set => _blockingActivities = new HashSet<BlockingActivity>(value, BlockingActivityEqualityComparer.Instance);
         }
 
-        public ICollection<ExecutionLogEntry> ExecutionLog { get; set; }
+        //public ICollection<ExecutionLogEntry> ExecutionLog { get; set; }
         public WorkflowFault? Fault { get; set; }
         public Stack<ScheduledActivity> ScheduledActivities { get; set; }
         public Stack<ScheduledActivity> PostScheduledActivities { get; set; }
