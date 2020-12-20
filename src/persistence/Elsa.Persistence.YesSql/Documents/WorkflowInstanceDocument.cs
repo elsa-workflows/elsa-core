@@ -10,7 +10,7 @@ namespace Elsa.Persistence.YesSql.Documents
     {
         private HashSet<BlockingActivity> _blockingActivities = new(BlockingActivityEqualityComparer.Instance);
 
-        public string EntityId { get; set; } = default!;
+        public string InstanceId { get; set; } = default!;
         public string DefinitionId { get; set; } = default!;
         public string? TenantId { get; set; }
         public int Version { get; set; }

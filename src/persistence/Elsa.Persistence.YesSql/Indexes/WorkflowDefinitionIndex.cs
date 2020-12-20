@@ -26,7 +26,7 @@ namespace Elsa.Persistence.YesSql.Indexes
                 .Map(
                     workflowDefinition => new WorkflowDefinitionIndex
                     {
-                        EntityId = workflowDefinition.EntityId,
+                        EntityId = workflowDefinition.DefinitionId,
                         TenantId = workflowDefinition.TenantId,
                         DefinitionVersionId = workflowDefinition.DefinitionVersionId,
                         Version = workflowDefinition.Version,

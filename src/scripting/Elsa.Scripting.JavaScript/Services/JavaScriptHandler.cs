@@ -38,7 +38,7 @@ namespace Elsa.Scripting.JavaScript.Services
 
         public string Syntax => SyntaxName;
 
-        public async Task<object> EvaluateAsync(string expression, Type returnType, ActivityExecutionContext context, CancellationToken cancellationToken)
+        public async Task<object?> EvaluateAsync(string expression, Type returnType, ActivityExecutionContext context, CancellationToken cancellationToken)
         {
             var engine = new Engine(ConfigureJintEngine);
 
@@ -59,10 +59,10 @@ namespace Elsa.Scripting.JavaScript.Services
             await _mediator.Publish(new EvaluatingJavaScriptExpression(engine, activityExecutionContext), cancellationToken);
         }
 
-        private object ConvertValue(JsValue value, Type targetType)
+        private object? ConvertValue(JsValue value, Type targetType)
         {
             if (value.IsUndefined())
-                return null;
+                return default;
 
             if (value.IsNull())
                 return default;

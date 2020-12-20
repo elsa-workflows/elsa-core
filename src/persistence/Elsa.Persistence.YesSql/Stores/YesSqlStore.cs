@@ -14,7 +14,7 @@ using IIdGenerator = Elsa.Services.IIdGenerator;
 
 namespace Elsa.Persistence.YesSql.Stores
 {
-    public abstract class YesSqlStore<T, TDocument, TIndex> : IStore<T> where T : class, IEntity where TIndex: class, IIndex where TDocument : class
+    public abstract class YesSqlStore<T, TDocument> : IStore<T> where T : class, IEntity where TDocument : class
     {
         public YesSqlStore(ISession session, IIdGenerator idGenerator, IMapper mapper, string collectionName)
         {
@@ -46,38 +46,64 @@ namespace Elsa.Persistence.YesSql.Stores
 
         public async Task<int> DeleteManyAsync(ISpecification<T> specification, CancellationToken cancellationToken = default)
         {
-            var documents = await Query().Apply(specification).ListAsync().ToList();
+            var documents = await Query(specification).ListAsync().ToList();
 
-            foreach (var document in documents) 
+            foreach (var document in documents)
                 Session.Delete(document, CollectionName);
 
             await Session.CommitAsync();
             return documents.Count;
         }
 
-        public async Task<IEnumerable<T>> FindManyAsync(ISpecification<T> specification, IOrderBy<T>? orderBy = default, IPaging? paging = default, CancellationToken cancellationToken = default)
-        {
-            var documents = await Query().Apply(specification).Apply(orderBy).Apply(paging).ListAsync()!;
-            return Map(documents);
-        }
-
-        public async Task<int> CountAsync(ISpecification<T> specification, IOrderBy<T>? orderBy = default, CancellationToken cancellationToken = default) => await Query().Apply(specification).Apply(orderBy).CountAsync();
+        public async Task<int> CountAsync(ISpecification<T> specification, IOrderBy<T>? orderBy = default, CancellationToken cancellationToken = default) => await Query(specification, orderBy).CountAsync();
 
         public async Task<T?> FindAsync(ISpecification<T> specification, CancellationToken cancellationToken = default)
         {
-            var document = await Query().Apply(specification).FirstOrDefaultAsync()!;
+            var document = await Query(specification).FirstOrDefaultAsync()!;
             return Map(document);
         }
 
-        protected abstract Task<TDocument?> FindDocumentAsync(T entity, CancellationToken cancellationToken);
+        public virtual async Task<IEnumerable<T>> FindManyAsync(ISpecification<T> specification, IOrderBy<T>? orderBy = default, IPaging? paging = default, CancellationToken cancellationToken = default)
+        {
+            var documents = await Query(specification, orderBy, paging, cancellationToken).ListAsync();
+            return Map(documents);
+        }
         
+        protected virtual IQuery<TDocument> Query(ISpecification<T> specification, IOrderBy<T>? orderBy = default, IPaging? paging = default, CancellationToken cancellationToken = default)
+        {
+            var query = ToQuery(specification);
+
+            if (orderBy != null) 
+                query = OrderBy(query, orderBy, specification);
+            
+            if (paging != null)
+                query = query.Skip(paging.Skip).Take(paging.Take);
+
+            return query;
+        }
+
+        protected abstract Task<TDocument?> FindDocumentAsync(T entity, CancellationToken cancellationToken);
+
+        protected virtual IQuery<TDocument> OrderBy(IQuery<TDocument> query, IOrderBy<T> orderBy, ISpecification<T> specification) => query;
+
+        protected virtual IQuery<TDocument> ToQuery(ISpecification<T> specification)
+        {
+            return MapSpecification(specification);
+        }
+
+        protected abstract IQuery<TDocument> MapSpecification(ISpecification<T> specification);
+
+        protected IQuery<TDocument> AutoMapSpecification<TIndex>(ISpecification<T> specification) where TIndex : class, IIndex
+        {
+            var expression = specification.ToExpression().ConvertType<T, TIndex>();
+            return Query<TIndex>(expression);
+        }
+
         protected TDocument Map(T source) => Mapper.Map<TDocument>(source);
         protected T Map(TDocument source) => Mapper.Map<T>(source);
         protected IEnumerable<T> Map(IEnumerable<TDocument> source) => Mapper.Map<IEnumerable<T>>(source);
 
-        protected IQuery<TDocument, TIndex> Query() => Session.Query<TDocument, TIndex>(CollectionName);
-        protected IQuery<TDocument, TIndex> Query(Expression<Func<TIndex, bool>> predicate) => Session.Query<TDocument, TIndex>(predicate, CollectionName);
-        
-        
+        protected IQuery<TDocument> Query() => Session.Query<TDocument>(CollectionName);
+        protected IQuery<TDocument, TIndex> Query<TIndex>(Expression<Func<TIndex, bool>> predicate) where TIndex : class, IIndex => Session.Query<TDocument, TIndex>(predicate, CollectionName);
     }
 }

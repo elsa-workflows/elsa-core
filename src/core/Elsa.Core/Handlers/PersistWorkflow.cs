@@ -49,7 +49,7 @@ namespace Elsa.Handlers
 
             if (workflowExecutionContext.DeleteCompletedInstances)
             {
-                _logger.LogDebug("Deleting completed workflow instance {WorkflowInstanceId}", workflowExecutionContext.WorkflowInstance.EntityId);
+                _logger.LogDebug("Deleting completed workflow instance {WorkflowInstanceId}", workflowExecutionContext.WorkflowInstance.Id);
                 await _workflowInstanceStore.DeleteAsync(workflowExecutionContext.WorkflowInstance, cancellationToken);
             }
             else

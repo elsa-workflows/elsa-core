@@ -24,7 +24,7 @@ namespace Elsa.Activities.UserTask.Activities
 
         [ActivityProperty(
             Type = ActivityPropertyTypes.List,
-            Hint = "Enter a comma-separated list of available actions"
+            Hint = "Provide a list of available actions"
         )]
         public ICollection<string> Actions { get; set; } = new List<string>();
 
@@ -48,6 +48,6 @@ namespace Elsa.Activities.UserTask.Activities
             return Done(userAction);
         }
 
-        private string GetUserAction(ActivityExecutionContext context) => (string)context.Input;
+        private string GetUserAction(ActivityExecutionContext context) => (string)context.Input!;
     }
 }

@@ -8,12 +8,12 @@ namespace Microsoft.Extensions.DependencyInjection
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddEmailActivities(this IServiceCollection services, Action<SmtpOptions> configureOptions = null) =>
+        public static IServiceCollection AddEmailActivities(this IServiceCollection services, Action<SmtpOptions>? configureOptions = null) =>
             services
                 .AddEmailServices(configureOptions)
                 .AddEmailActivitiesInternal();
         
-        public static IServiceCollection AddEmailServices(this IServiceCollection services, Action<SmtpOptions> configureOptions = null)
+        public static IServiceCollection AddEmailServices(this IServiceCollection services, Action<SmtpOptions>? configureOptions = null)
         {
             if (configureOptions != null)
             {

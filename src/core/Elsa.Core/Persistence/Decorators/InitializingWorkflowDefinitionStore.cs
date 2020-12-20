@@ -41,8 +41,8 @@ namespace Elsa.Persistence.Decorators
 
         private WorkflowDefinition Initialize(WorkflowDefinition workflowDefinition)
         {
-            if (string.IsNullOrWhiteSpace(workflowDefinition.EntityId))
-                workflowDefinition.EntityId = _idGenerator.Generate();
+            if (string.IsNullOrWhiteSpace(workflowDefinition.Id))
+                workflowDefinition.Id = _idGenerator.Generate();
 
             if (workflowDefinition.Version == 0)
                 workflowDefinition.Version = 1;

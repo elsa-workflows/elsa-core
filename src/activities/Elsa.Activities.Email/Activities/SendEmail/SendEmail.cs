@@ -23,7 +23,7 @@ namespace Elsa.Activities.Email
         }
 
         [ActivityProperty(Hint = "The sender's email address.")]
-        public string From { get; set; }
+        public string? From { get; set; }
 
         [ActivityProperty(Hint = "The recipients email addresses.")]
         public string[] To { get; set; } = default!;
@@ -35,11 +35,11 @@ namespace Elsa.Activities.Email
         public string[]? Bcc { get; set; }
 
         [ActivityProperty(Hint = "The subject of the email message.")]
-        public string Subject { get; set; }
+        public string? Subject { get; set; }
 
         [ActivityProperty(Hint = "The body of the email message.")]
         [WorkflowExpressionOptions(Multiline = true)]
-        public string Body { get; set; }
+        public string? Body { get; set; }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
