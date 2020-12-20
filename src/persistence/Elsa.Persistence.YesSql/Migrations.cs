@@ -37,6 +37,16 @@ namespace Elsa.Persistence.YesSql
                     .Column(nameof(WorkflowInstanceIndex.FaultedAt), DbType.DateTimeOffset)
                 ,
                 CollectionNames.WorkflowInstances);
+            
+            SchemaBuilder.CreateMapIndexTable<WorkflowInstanceBlockingActivitiesIndex>(
+                table => table
+                    .Column<string?>("TenantId")
+                    .Column<string>("ActivityId")
+                    .Column<string>("ActivityType")
+                    .Column<string?>("CorrelationId")
+                    .Column("WorkflowStatus", DbType.String)
+                    .Column("CreatedAt", DbType.DateTimeOffset),
+                CollectionNames.WorkflowInstances);
 
             return 1;
         }
