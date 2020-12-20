@@ -168,8 +168,15 @@ namespace Elsa.Triggers
             var providers = _triggerProviders.ToList();
             var descriptors = new List<TriggerDescriptor>();
             var scope = _serviceProvider.CreateScope();
-            var workflowExecutionContext = new WorkflowExecutionContext(scope, workflowBlueprint, workflowInstance, default);
-            workflowExecutionContext.WorkflowContext = workflowBlueprint.ContextOptions != null ? await _workflowContextManager.LoadContext(new LoadWorkflowContext(workflowExecutionContext), cancellationToken) : default;
+            var workflowExecutionContext = new WorkflowExecutionContext(scope, workflowBlueprint, workflowInstance);
+            var isTransientWorkflowInstance = workflowInstance.Id == null!;
+            
+            workflowExecutionContext.WorkflowContext = 
+                workflowBlueprint.ContextOptions != null && 
+                !isTransientWorkflowInstance && 
+                !string.IsNullOrWhiteSpace(workflowInstance.ContextId) 
+                    ? await _workflowContextManager.LoadContext(new LoadWorkflowContext(workflowExecutionContext), cancellationToken) 
+                    : default;
 
             foreach (var blockingActivity in blockingActivities)
             {
