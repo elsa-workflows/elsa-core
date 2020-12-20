@@ -2,6 +2,6 @@
 {
     public abstract class YesSqlDocument
     {
-        public int DocumentId { get; set; }
+        public int Id { get; set; }
     }
 }

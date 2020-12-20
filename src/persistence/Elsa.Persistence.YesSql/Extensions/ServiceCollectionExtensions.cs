@@ -52,8 +52,7 @@ namespace Elsa.Persistence.YesSql.Extensions
         {
             var configuration = new Configuration
             {
-                ContentSerializer = new CustomJsonContentSerializer(),
-                IdentifierAccessorFactory = new PropertyAccessorFactory(nameof(YesSqlDocument.DocumentId))
+                ContentSerializer = new CustomJsonContentSerializer()
             };
             
             configure(serviceProvider, configuration);
