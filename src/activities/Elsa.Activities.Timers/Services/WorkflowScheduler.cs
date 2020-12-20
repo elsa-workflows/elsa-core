@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Timers.Jobs;
 using Elsa.Services.Models;
@@ -11,6 +12,7 @@ namespace Elsa.Activities.Timers.Services
     {
         private static readonly string RunWorkflowJobKey = nameof(RunWorkflowJob);
         private readonly ISchedulerFactory _schedulerFactory;
+        private readonly SemaphoreSlim _semaphore = new(1);
 
         public WorkflowScheduler(ISchedulerFactory schedulerFactory)
         {
@@ -49,13 +51,22 @@ namespace Elsa.Activities.Timers.Services
 
         private async Task ScheduleJob(ITrigger trigger, CancellationToken cancellationToken)
         {
-            var scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
-            var existingTrigger = await scheduler.GetTrigger(trigger.Key, cancellationToken);
+            await _semaphore.WaitAsync(cancellationToken);
 
-            if (existingTrigger != null) 
-                await scheduler.UnscheduleJob(existingTrigger.Key, cancellationToken);
+            try
+            {
+                var scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
+                var existingTrigger = await scheduler.GetTrigger(trigger.Key, cancellationToken);
 
-            await scheduler.ScheduleJob(trigger, cancellationToken);
+                if (existingTrigger != null)
+                    await scheduler.UnscheduleJob(existingTrigger.Key, cancellationToken);
+
+                await scheduler.ScheduleJob(trigger, cancellationToken);
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
         }
 
         private TriggerBuilder CreateTrigger(IWorkflowBlueprint workflowBlueprint, string activityId) => CreateTrigger(workflowBlueprint.TenantId, workflowBlueprint.Id, null, activityId);
