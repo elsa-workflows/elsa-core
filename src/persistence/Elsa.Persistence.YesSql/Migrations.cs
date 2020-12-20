@@ -24,7 +24,7 @@ namespace Elsa.Persistence.YesSql
             SchemaBuilder.CreateMapIndexTable<WorkflowInstanceIndex>(
                 table => table
                     .Column<string?>(nameof(WorkflowInstanceIndex.TenantId))
-                    .Column<string>(nameof(WorkflowInstanceIndex.EntityId))
+                    .Column<string>(nameof(WorkflowInstanceIndex.InstanceId))
                     .Column<string>(nameof(WorkflowInstanceIndex.DefinitionId))
                     .Column<int>(nameof(WorkflowInstanceIndex.Version))
                     .Column<string?>(nameof(WorkflowInstanceIndex.CorrelationId))
@@ -37,20 +37,6 @@ namespace Elsa.Persistence.YesSql
                     .Column(nameof(WorkflowInstanceIndex.FaultedAt), DbType.DateTimeOffset)
                 ,
                 CollectionNames.WorkflowInstances);
-
-            SchemaBuilder.CreateMapIndexTable<SuspendedWorkflowIndex>(
-                table => table
-                    .Column<string>(nameof(SuspendedWorkflowIndex.EntityId))
-                    .Column<string?>(nameof(SuspendedWorkflowIndex.TenantId))
-                    .Column<string>(nameof(SuspendedWorkflowIndex.InstanceId))
-                    .Column<string>(nameof(SuspendedWorkflowIndex.DefinitionId))
-                    .Column<int>(nameof(SuspendedWorkflowIndex.Version))
-                    .Column<string?>(nameof(SuspendedWorkflowIndex.CorrelationId))
-                    .Column<string?>(nameof(SuspendedWorkflowIndex.ContextId))
-                    .Column<string>(nameof(SuspendedWorkflowIndex.ActivityId))
-                    .Column<string>(nameof(SuspendedWorkflowIndex.ActivityType))
-                ,
-                CollectionNames.SuspendedWorkflows);
 
             return 1;
         }

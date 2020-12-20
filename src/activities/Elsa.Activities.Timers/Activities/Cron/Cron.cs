@@ -50,7 +50,7 @@ namespace Elsa.Activities.Timers
             ExecuteAt = executeAt;
 
             await _workflowInstanceStore.SaveAsync(context.WorkflowExecutionContext.WorkflowInstance, cancellationToken);
-            await _workflowScheduler.ScheduleWorkflowAsync(workflowBlueprint, workflowInstance.EntityId, Id, executeAt, cancellationToken);
+            await _workflowScheduler.ScheduleWorkflowAsync(workflowBlueprint, workflowInstance.Id, Id, executeAt, cancellationToken);
 
             return Suspend();
         }

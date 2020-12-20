@@ -11,7 +11,7 @@ namespace Microsoft.Extensions.DependencyInjection
     {
         public static IServiceCollection AddElsa(
             this IServiceCollection services,
-            Action<ElsaOptions> configure = null)
+            Action<ElsaOptions>? configure = default)
         {
             return services
                 .AddElsaCore(configure)

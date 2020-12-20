@@ -22,7 +22,7 @@ namespace Elsa.Services
         {
             var definition = new WorkflowDefinition
             {
-                EntityId = _idGenerator.Generate(),
+                Id = _idGenerator.Generate(),
                 DefinitionVersionId = _idGenerator.Generate(),
                 Name = "New Workflow",
                 Version = 1,
@@ -53,7 +53,7 @@ namespace Elsa.Services
         public async Task<WorkflowDefinition> PublishAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken)
          {
             var publishedDefinition = await _workflowDefinitionStore.FindByIdAsync(
-                workflowDefinition.EntityId,
+                workflowDefinition.Id,
                 VersionOptions.Published,
                 cancellationToken);
 
@@ -108,7 +108,7 @@ namespace Elsa.Services
             var draft = workflowDefinition;
 
             var latestVersion = await _workflowDefinitionStore.FindByIdAsync(
-                workflowDefinition.EntityId,
+                workflowDefinition.Id,
                 VersionOptions.Latest,
                 cancellationToken);
 
@@ -130,8 +130,8 @@ namespace Elsa.Services
 
         private WorkflowDefinition Initialize(WorkflowDefinition workflowDefinition)
         {
-            if (workflowDefinition.EntityId == null!)
-                workflowDefinition.EntityId = _idGenerator.Generate();
+            if (workflowDefinition.Id == null!)
+                workflowDefinition.Id = _idGenerator.Generate();
 
             if (workflowDefinition.Version == 0)
                 workflowDefinition.Version = 1;

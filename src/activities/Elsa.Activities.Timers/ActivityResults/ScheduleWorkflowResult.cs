@@ -24,7 +24,7 @@ namespace Elsa.Activities.Timers.ActivityResults
             var workflowInstanceStore = activityExecutionContext.GetService<IWorkflowInstanceStore>();
             var scheduler = activityExecutionContext.GetService<IWorkflowScheduler>();
             await workflowInstanceStore.SaveAsync(workflowInstance, cancellationToken);
-            await scheduler.ScheduleWorkflowAsync(activityExecutionContext.WorkflowExecutionContext.WorkflowBlueprint, workflowInstance.EntityId, activityExecutionContext.ActivityInstance.Id, ExecuteAt, cancellationToken);
+            await scheduler.ScheduleWorkflowAsync(activityExecutionContext.WorkflowExecutionContext.WorkflowBlueprint, workflowInstance.Id, activityExecutionContext.ActivityInstance.Id, ExecuteAt, cancellationToken);
         }
     }
 }

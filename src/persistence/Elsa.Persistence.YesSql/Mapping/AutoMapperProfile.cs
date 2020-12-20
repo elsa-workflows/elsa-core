@@ -10,7 +10,6 @@ namespace Elsa.Persistence.YesSql.Mapping
         {
             CreateMap<WorkflowInstance, WorkflowInstanceDocument>().ReverseMap();
             CreateMap<WorkflowDefinition, WorkflowDefinitionDocument>().ReverseMap();
-            CreateMap<SuspendedWorkflowBlockingActivity, SuspendedWorkflowBlockingActivityDocument>().ReverseMap();
         }
     }
 }

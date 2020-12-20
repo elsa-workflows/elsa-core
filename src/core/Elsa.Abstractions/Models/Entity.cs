@@ -2,6 +2,6 @@
 {
     public class Entity : IEntity
     {
-        public string EntityId { get; set; } = default!;
+        public string Id { get; set; } = default!;
     }
 }

@@ -155,7 +155,7 @@ namespace Elsa.Services
                 cancellationToken);
 
             if (workflowBlueprint == null)
-                throw new WorkflowException($"Workflow instance {workflowInstance.EntityId} references workflow definition {workflowInstance.DefinitionId} version {workflowInstance.Version}, but no such workflow definition was found.");
+                throw new WorkflowException($"Workflow instance {workflowInstance.Id} references workflow definition {workflowInstance.DefinitionId} version {workflowInstance.Version}, but no such workflow definition was found.");
 
             return await RunWorkflowAsync(workflowBlueprint, workflowInstance, activityId, input, workflowContext, cancellationToken);
         }

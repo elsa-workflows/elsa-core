@@ -43,7 +43,6 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton(options)
                 .AddScoped(options.WorkflowDefinitionStoreFactory)
                 .AddScoped(options.WorkflowInstanceStoreFactory)
-                .AddScoped(options.SuspendedWorkflowStoreFactory)
                 .AddSingleton(options.DistributedLockProviderFactory)
                 .AddSingleton(options.SignalFactory)
                 .AddSingleton(options.StorageFactory);
@@ -53,7 +52,6 @@ namespace Microsoft.Extensions.DependencyInjection
             options.AddAutoMapper();
 
             services.Decorate<IWorkflowDefinitionStore, InitializingWorkflowDefinitionStore>();
-            services.Decorate<IWorkflowInstanceStore, SuspendingWorkflowInstanceStore>();
             services.Decorate<IWorkflowInstanceStore, EventPublishingWorkflowInstanceStore>();
 
             return services;

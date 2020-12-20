@@ -22,17 +22,17 @@ namespace Elsa.Persistence.InMemory
         
         public Task SaveAsync(T entity, CancellationToken cancellationToken = default)
         {
-            if (entity.EntityId == null!) 
-                entity.EntityId = IdGenerator.Generate();
+            if (entity.Id == null!) 
+                entity.Id = IdGenerator.Generate();
 
-            Entities[entity.EntityId] = entity;
+            Entities[entity.Id] = entity;
             return Task.CompletedTask;
         }
 
         public Task DeleteAsync(T entity, CancellationToken cancellationToken = default)
         {
-            if(Entities.ContainsKey(entity.EntityId))
-                Entities.Remove(entity.EntityId);
+            if(Entities.ContainsKey(entity.Id))
+                Entities.Remove(entity.Id);
             
             return Task.CompletedTask;
         }
@@ -42,7 +42,7 @@ namespace Elsa.Persistence.InMemory
             var entities = await FindManyAsync(specification, cancellationToken: cancellationToken).ToList();
 
             foreach (var entity in entities) 
-                Entities.Remove(entity.EntityId);
+                Entities.Remove(entity.Id);
 
             return entities.Count;
         }

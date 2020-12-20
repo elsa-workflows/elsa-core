@@ -10,6 +10,6 @@ namespace Elsa.Persistence.Specifications
     {
         public IEnumerable<string> Ids { get; set; }
         public ManyWorkflowInstanceIdsSpecification(IEnumerable<string> ids) => Ids = ids;
-        public override Expression<Func<WorkflowInstance, bool>> ToExpression() => x => Ids.Contains(x.EntityId);
+        public override Expression<Func<WorkflowInstance, bool>> ToExpression() => x => Ids.Contains(x.Id);
     }
 }
