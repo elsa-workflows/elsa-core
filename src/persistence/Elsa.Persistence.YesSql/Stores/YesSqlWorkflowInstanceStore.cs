@@ -22,8 +22,9 @@ namespace Elsa.Persistence.YesSql.Stores
         protected override IQuery<WorkflowInstanceDocument> MapSpecification(ISpecification<WorkflowInstance> specification) =>
             specification switch
             {
-                EntityIdSpecification<WorkflowInstance> entityIdSpecification => Query<WorkflowInstanceIndex>(x => x.InstanceId == entityIdSpecification.Id),
-                BlockingActivityTypeSpecification blockingActivityTypeSpecification => Query<WorkflowInstanceBlockingActivitiesIndex>(x => x.ActivityType == blockingActivityTypeSpecification.ActivityType),
+                EntityIdSpecification<WorkflowInstance> spec => Query<WorkflowInstanceIndex>(x => x.InstanceId == spec.Id),
+                WorkflowInstanceIdSpecification spec => Query<WorkflowInstanceIndex>(x => x.InstanceId == spec.Id),
+                BlockingActivityTypeSpecification spec => Query<WorkflowInstanceBlockingActivitiesIndex>(x => x.ActivityType == spec.ActivityType),
                 _ => AutoMapSpecification<WorkflowInstanceIndex>(specification)
             };
 
@@ -34,13 +35,13 @@ namespace Elsa.Persistence.YesSql.Stores
                 case BlockingActivityTypeSpecification:
                 {
                     var indexedQuery = query.With<WorkflowInstanceBlockingActivitiesIndex>();
-                    var expression = orderBy.OrderByExpression.ConvertType<WorkflowInstance, WorkflowInstanceBlockingActivitiesIndex>();
+                    var expression = orderBy.OrderByExpression.ConvertType<WorkflowInstance, WorkflowInstanceDocument>().ConvertType<WorkflowInstanceDocument, WorkflowInstanceBlockingActivitiesIndex>();
                     return orderBy.SortDirection == SortDirection.Ascending ? indexedQuery.OrderBy(expression) : indexedQuery.OrderByDescending(expression);
                 }
                 default:
                 {
                     var indexedQuery = query.With<WorkflowInstanceIndex>();
-                    var expression = orderBy.OrderByExpression.ConvertType<WorkflowInstance, WorkflowInstanceIndex>();
+                    var expression = orderBy.OrderByExpression.ConvertType<WorkflowInstance, WorkflowInstanceDocument>().ConvertType<WorkflowInstanceDocument, WorkflowInstanceIndex>();
                     return orderBy.SortDirection == SortDirection.Ascending ? indexedQuery.OrderBy(expression) : indexedQuery.OrderByDescending(expression);
                 }
             }
