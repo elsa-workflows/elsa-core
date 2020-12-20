@@ -29,7 +29,7 @@ namespace Elsa.Persistence.YesSql.Stores
 
         protected override IQuery<WorkflowDefinitionDocument> OrderBy(IQuery<WorkflowDefinitionDocument> query, IOrderBy<WorkflowDefinition> orderBy, ISpecification<WorkflowDefinition> specification)
         {
-            var expression = orderBy.OrderByExpression.ConvertType<WorkflowDefinition, WorkflowDefinitionIndex>();
+            var expression = orderBy.OrderByExpression.ConvertType<WorkflowDefinition, WorkflowDefinitionDocument>().ConvertType<WorkflowDefinitionDocument, WorkflowDefinitionIndex>();
             var indexedQuery = query.With<WorkflowDefinitionIndex>();
             return orderBy.SortDirection == SortDirection.Ascending ? indexedQuery.OrderBy(expression) : indexedQuery.OrderByDescending(expression);
         }

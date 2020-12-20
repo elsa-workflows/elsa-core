@@ -95,7 +95,7 @@ namespace Elsa.Persistence.YesSql.Stores
 
         protected IQuery<TDocument> AutoMapSpecification<TIndex>(ISpecification<T> specification) where TIndex : class, IIndex
         {
-            var expression = specification.ToExpression().ConvertType<T, TIndex>();
+            var expression = specification.ToExpression().ConvertType<T, TDocument>().ConvertType<TDocument, TIndex>();
             return Query<TIndex>(expression);
         }
 
