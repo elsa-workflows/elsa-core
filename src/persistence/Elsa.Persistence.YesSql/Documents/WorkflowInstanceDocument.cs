@@ -32,7 +32,7 @@ namespace Elsa.Persistence.YesSql.Documents
             set => _blockingActivities = new HashSet<BlockingActivity>(value, BlockingActivityEqualityComparer.Instance);
         }
 
-        public ICollection<ExecutionLogEntry> ExecutionLog { get; set; } = new List<ExecutionLogEntry>();
+        public ICollection<WorkflowExecutionLogRecord> ExecutionLog { get; set; } = new List<WorkflowExecutionLogRecord>();
         public WorkflowFault? Fault { get; set; }
         public Stack<ScheduledActivity> ScheduledActivities { get; set; } = new();
         public Stack<ScheduledActivity> PostScheduledActivities { get; set; } = new();

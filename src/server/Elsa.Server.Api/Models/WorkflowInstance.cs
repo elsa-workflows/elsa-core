@@ -16,7 +16,7 @@ namespace Elsa.Server.Api.Models
         {
             Variables = new Variables();
             Activities = new List<ActivityInstance>();
-            ExecutionLog = new List<ExecutionLogEntry>();
+            ExecutionLog = new List<WorkflowExecutionLogRecord>();
             ScheduledActivities = new Stack<ScheduledActivity>();
             PostScheduledActivities = new Stack<ScheduledActivity>();
         }
@@ -42,7 +42,7 @@ namespace Elsa.Server.Api.Models
             set => _blockingActivities = new HashSet<BlockingActivity>(value, BlockingActivityEqualityComparer.Instance);
         }
 
-        [DataMember(Order = 16)] public ICollection<ExecutionLogEntry> ExecutionLog { get; set; }
+        [DataMember(Order = 16)] public ICollection<WorkflowExecutionLogRecord> ExecutionLog { get; set; }
         [DataMember(Order = 17)] public WorkflowFault? Fault { get; set; }
         [DataMember(Order = 18)] public Stack<ScheduledActivity> ScheduledActivities { get; set; }
         [DataMember(Order = 19)] public Stack<ScheduledActivity> PostScheduledActivities { get; set; }
