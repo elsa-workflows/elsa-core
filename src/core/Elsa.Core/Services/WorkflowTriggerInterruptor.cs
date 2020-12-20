@@ -16,14 +16,12 @@ namespace Elsa.Services
     {
         private readonly IWorkflowRunner _workflowRunner;
         private readonly IWorkflowRegistry _workflowRegistry;
-        private readonly ISuspendedWorkflowStore _suspendedWorkflowStore;
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
 
-        public WorkflowTriggerInterruptor(IWorkflowRunner workflowRunner, IWorkflowRegistry workflowRegistry, ISuspendedWorkflowStore suspendedWorkflowInstanceStore, IWorkflowInstanceStore workflowInstanceStore)
+        public WorkflowTriggerInterruptor(IWorkflowRunner workflowRunner, IWorkflowRegistry workflowRegistry, IWorkflowInstanceStore workflowInstanceStore)
         {
             _workflowRunner = workflowRunner;
             _workflowRegistry = workflowRegistry;
-            _suspendedWorkflowStore = suspendedWorkflowInstanceStore;
             _workflowInstanceStore = workflowInstanceStore;
         }
 
@@ -70,13 +68,13 @@ namespace Elsa.Services
 
         private async IAsyncEnumerable<WorkflowInstance> InterruptActivityTypeInternalAsync(string activityType, object? input, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
-            var suspendedWorkflows = await _suspendedWorkflowStore.FindManyAsync(new BlockingActivityTypeSpecification(activityType), cancellationToken: cancellationToken).ToList();
-            var workflowInstanceIds = suspendedWorkflows.Select(x => x.InstanceId).Distinct().ToList();
-            var workflowInstances = await _workflowInstanceStore.FindManyAsync(new ManyWorkflowInstanceIdsSpecification(workflowInstanceIds), cancellationToken: cancellationToken).ToDictionary(x => x.EntityId);
+            var suspendedWorkflows = await _workflowInstanceStore.FindManyAsync(new BlockingActivityTypeSpecification(activityType), cancellationToken: cancellationToken).ToList();
+            var workflowInstanceIds = suspendedWorkflows.Select(x => x.Id).Distinct().ToList();
+            var workflowInstances = await _workflowInstanceStore.FindManyAsync(new ManyWorkflowInstanceIdsSpecification(workflowInstanceIds), cancellationToken: cancellationToken).ToDictionary(x => x.Id);
 
             foreach (var suspendedWorkflow in suspendedWorkflows)
             {
-                var workflowInstance = workflowInstances[suspendedWorkflow.InstanceId];
+                var workflowInstance = workflowInstances[suspendedWorkflow.Id];
                 yield return await InterruptActivityTypeAsync(workflowInstance, activityType, input, cancellationToken);
             }
         }

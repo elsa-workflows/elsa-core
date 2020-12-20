@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Elsa.Data;
 using Elsa.Models;
+using Elsa.Persistence.Specifications;
 using Elsa.Persistence.YesSql.Documents;
 using Elsa.Persistence.YesSql.Indexes;
 using YesSql;
@@ -10,13 +11,39 @@ using IIdGenerator = Elsa.Services.IIdGenerator;
 
 namespace Elsa.Persistence.YesSql.Stores
 {
-    public class YesSqlWorkflowInstanceStore : YesSqlStore<WorkflowInstance, WorkflowInstanceDocument, WorkflowInstanceIndex>, IWorkflowInstanceStore
+    public class YesSqlWorkflowInstanceStore : YesSqlStore<WorkflowInstance, WorkflowInstanceDocument>, IWorkflowInstanceStore
     {
         public YesSqlWorkflowInstanceStore(ISession session, IIdGenerator idGenerator, IMapper mapper) : base(session, idGenerator, mapper, CollectionNames.WorkflowInstances)
         {
         }
 
-        protected override async Task<WorkflowInstanceDocument?> FindDocumentAsync(WorkflowInstance entity, CancellationToken cancellationToken) => 
-            await Query(x => x.EntityId == entity.EntityId).FirstOrDefaultAsync();
+        protected override async Task<WorkflowInstanceDocument?> FindDocumentAsync(WorkflowInstance entity, CancellationToken cancellationToken) => await Query<WorkflowInstanceIndex>(x => x.InstanceId == entity.Id).FirstOrDefaultAsync();
+
+        protected override IQuery<WorkflowInstanceDocument> MapSpecification(ISpecification<WorkflowInstance> specification) =>
+            specification switch
+            {
+                EntityIdSpecification<WorkflowInstance> entityIdSpecification => Query<WorkflowInstanceIndex>(x => x.InstanceId == entityIdSpecification.Id),
+                BlockingActivityTypeSpecification blockingActivityTypeSpecification => Query<WorkflowInstanceBlockingActivitiesIndex>(x => x.ActivityType == blockingActivityTypeSpecification.ActivityType),
+                _ => AutoMapSpecification<WorkflowInstanceIndex>(specification)
+            };
+
+        protected override IQuery<WorkflowInstanceDocument> OrderBy(IQuery<WorkflowInstanceDocument> query, IOrderBy<WorkflowInstance> orderBy, ISpecification<WorkflowInstance> specification)
+        {
+            switch (specification)
+            {
+                case BlockingActivityTypeSpecification:
+                {
+                    var indexedQuery = query.With<WorkflowInstanceBlockingActivitiesIndex>();
+                    var expression = orderBy.OrderByExpression.ConvertType<WorkflowInstance, WorkflowInstanceBlockingActivitiesIndex>();
+                    return orderBy.SortDirection == SortDirection.Ascending ? indexedQuery.OrderBy(expression) : indexedQuery.OrderByDescending(expression);
+                }
+                default:
+                {
+                    var indexedQuery = query.With<WorkflowInstanceIndex>();
+                    var expression = orderBy.OrderByExpression.ConvertType<WorkflowInstance, WorkflowInstanceIndex>();
+                    return orderBy.SortDirection == SortDirection.Ascending ? indexedQuery.OrderBy(expression) : indexedQuery.OrderByDescending(expression);
+                }
+            }
+        }
     }
 }

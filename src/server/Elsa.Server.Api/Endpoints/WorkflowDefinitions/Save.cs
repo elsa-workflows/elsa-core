@@ -43,7 +43,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
                 workflowDefinition = _workflowPublisher.New();
 
                 if (!string.IsNullOrWhiteSpace(workflowDefinitionId))
-                    workflowDefinition.EntityId = workflowDefinitionId;
+                    workflowDefinition.Id = workflowDefinitionId;
             }
 
             workflowDefinition.Activities = request.Activities;

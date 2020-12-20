@@ -11,7 +11,7 @@ namespace Elsa.Server.Api.Swagger.Examples
         {
             return new()
             {
-                EntityId = Guid.NewGuid().ToString("N"),
+                Id = Guid.NewGuid().ToString("N"),
                 DefinitionVersionId = Guid.NewGuid().ToString("N"),
                 Name = "ProcessOrderWorkflow",
                 DisplayName = "Process Order Workflow",

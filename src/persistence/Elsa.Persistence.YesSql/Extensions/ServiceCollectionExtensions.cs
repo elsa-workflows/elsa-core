@@ -24,27 +24,22 @@ namespace Elsa.Persistence.YesSql.Extensions
 
         public static ElsaOptions UseYesSqlPersistence(this ElsaOptions elsa, Action<IServiceProvider, IConfiguration> configure)
         {
-            // Scoped, because IMediator is registered as Scoped and IIdGenerator could also be registered as Scoped
             elsa.Services
                 .AddScoped<YesSqlWorkflowDefinitionStore>()
                 .AddScoped<YesSqlWorkflowInstanceStore>()
-                .AddScoped<YesSqlSuspendedWorkflowStore>()
                 .AddSingleton(sp => CreateStore(sp, configure))
                 .AddScoped(CreateSession)
                 .AddScoped<IDataMigrationManager, DataMigrationManager>()
                 .AddStartupTask<DatabaseInitializer>()
                 .AddStartupTask<DataMigrationsRunner>()
-                .AddStartupTask<ReseedTables>()
                 .AddDataMigration<Migrations>()
                 .AddAutoMapperProfile<AutoMapperProfile>()
                 .AddIndexProvider<WorkflowDefinitionIndexProvider>()
-                .AddIndexProvider<WorkflowInstanceIndexProvider>()
-                .AddIndexProvider<SuspendedWorkflowIndexProvider>();
+                .AddIndexProvider<WorkflowInstanceIndexProvider>();
 
             return elsa
                 .UseWorkflowDefinitionStore(sp => sp.GetRequiredService<YesSqlWorkflowDefinitionStore>())
-                .UseWorkflowInstanceStore(sp => sp.GetRequiredService<YesSqlWorkflowInstanceStore>())
-                .UseSuspendedWorkflowStore(sp => sp.GetRequiredService<YesSqlSuspendedWorkflowStore>());
+                .UseWorkflowInstanceStore(sp => sp.GetRequiredService<YesSqlWorkflowInstanceStore>());
         }
 
         public static IServiceCollection AddIndexProvider<T>(this IServiceCollection services) where T : class, IIndexProvider => services.AddSingleton<IIndexProvider, T>();

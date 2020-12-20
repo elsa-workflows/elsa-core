@@ -23,16 +23,16 @@ namespace Elsa.Persistence.MongoDb.Stores
 
         public async Task SaveAsync(T entity, CancellationToken cancellationToken = default)
         {
-            if (entity.EntityId == null!)
-                entity.EntityId = IdGenerator.Generate();
+            if (entity.Id == null!)
+                entity.Id = IdGenerator.Generate();
 
-            var filter = GetFilter(entity.EntityId);
+            var filter = GetFilter(entity.Id);
             await Collection.ReplaceOneAsync(filter, entity, new ReplaceOptions { IsUpsert = true }, cancellationToken);
         }
 
         public async Task DeleteAsync(T entity, CancellationToken cancellationToken = default)
         {
-            var filter = GetFilter(entity.EntityId);
+            var filter = GetFilter(entity.Id);
             await Collection.DeleteOneAsync(filter, cancellationToken);
         }
 
@@ -51,6 +51,6 @@ namespace Elsa.Persistence.MongoDb.Stores
 
         public async Task<T?> FindAsync(ISpecification<T> specification, CancellationToken cancellationToken = default) => await Collection.AsQueryable().Where(specification.ToExpression()).FirstOrDefaultAsync(cancellationToken);
 
-        protected FilterDefinition<T> GetFilter(string id) => Builders<T>.Filter.Where(x => x.EntityId == id);
+        protected FilterDefinition<T> GetFilter(string id) => Builders<T>.Filter.Where(x => x.Id == id);
     }
 }

@@ -32,11 +32,9 @@ namespace Elsa.Persistence.MongoDb.Extensions
             elsa.Services
                 .AddSingleton<MongoDbWorkflowDefinitionStore>()
                 .AddSingleton<MongoDbWorkflowInstanceStore>()
-                .AddSingleton<MongoDbSuspendedWorkflowStore>()
                 .AddSingleton<ElsaMongoDbClient>()
                 .AddSingleton(sp => sp.GetRequiredService<ElsaMongoDbClient>().WorkflowDefinitions)
                 .AddSingleton(sp => sp.GetRequiredService<ElsaMongoDbClient>().WorkflowInstances)
-                .AddSingleton(sp => sp.GetRequiredService<ElsaMongoDbClient>().SuspendedWorkflows)
                 .AddStartupTask<DatabaseInitializer>();
 
             elsa

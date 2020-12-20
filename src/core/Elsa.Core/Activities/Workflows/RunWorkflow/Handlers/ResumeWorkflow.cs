@@ -19,7 +19,7 @@ namespace Elsa.Activities.Workflows
         public async Task Handle(WorkflowCompleted notification, CancellationToken cancellationToken)
         {
             var workflowExecutionContext = notification.WorkflowExecutionContext;
-            var workflowInstanceId = workflowExecutionContext.WorkflowInstance.EntityId;
+            var workflowInstanceId = workflowExecutionContext.WorkflowInstance.Id;
             var output = workflowExecutionContext.WorkflowInstance.Output;
             
             var input = new FinishedWorkflowModel

@@ -7,7 +7,7 @@
   pull_requests:
     do_not_increment_build_number: true
 
-  image: Visual Studio 2019
+  image: Previous Visual Studio 2019
   environment:
     matrix:
       - nodejs_version: "10"

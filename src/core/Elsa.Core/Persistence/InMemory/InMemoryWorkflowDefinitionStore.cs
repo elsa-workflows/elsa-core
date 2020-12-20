@@ -16,7 +16,7 @@ namespace Elsa.Persistence.InMemory
         public Task<int> CountAsync(VersionOptions? version = null, CancellationToken cancellationToken = default) => Task.FromResult(Entities.Values.WithVersion(version).Count());
 
         public Task<WorkflowDefinition> GetAsync(string workflowDefinitionId, VersionOptions version, CancellationToken cancellationToken = default) =>
-            Task.FromResult(Entities.Values.WithVersion(version).FirstOrDefault(x => x.EntityId == workflowDefinitionId));
+            Task.FromResult(Entities.Values.WithVersion(version).FirstOrDefault(x => x.Id == workflowDefinitionId));
 
         public Task<WorkflowDefinition> GetByVersionIdAsync(string workflowDefinitionVersionId, CancellationToken cancellationToken = default) =>
             Task.FromResult(Entities.Values.FirstOrDefault(x => x.DefinitionVersionId == workflowDefinitionVersionId));

@@ -18,7 +18,7 @@ namespace Elsa.Persistence.InMemory
 
         public Task<WorkflowInstance?> GetByIdAsync(string workflowInstanceId, CancellationToken cancellationToken = default) =>
             Task.FromResult(Entities.Values
-                .FirstOrDefault(instance => instance.EntityId == workflowInstanceId))!;
+                .FirstOrDefault(instance => instance.Id == workflowInstanceId))!;
 
         public Task<IEnumerable<WorkflowInstance>> ListAsync(int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult(Entities.Values.Skip(page * pageSize).Take(pageSize));
 
