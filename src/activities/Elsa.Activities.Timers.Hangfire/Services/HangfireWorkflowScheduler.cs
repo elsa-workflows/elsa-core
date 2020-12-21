@@ -25,7 +25,7 @@ namespace Elsa.Activities.Timers.Hangfire.Services
 
         public Task ScheduleWorkflowAsync(IWorkflowBlueprint workflowBlueprint, string activityId, Instant startAt, Duration interval, CancellationToken cancellationToken = default)
         {
-            var data = CreateData(workflowBlueprint, activityId: activityId, cronExpression: interval.ToTimeSpan().ToCronExpression());
+            var data = CreateData(workflowBlueprint, activityId: activityId, cronExpression: interval.ToCronExpression());
 
             _backgroundJobClient.ScheduleWorkflow(data, startAt.ToDateTimeOffset());
 
