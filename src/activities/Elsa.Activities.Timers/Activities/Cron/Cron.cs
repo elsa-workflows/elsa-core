@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Elsa.Activities.Timers.Services;
 using Elsa.ActivityResults;
@@ -20,12 +21,14 @@ namespace Elsa.Activities.Timers
         private readonly IWorkflowInstanceManager _workflowInstanceManager;
         private readonly IWorkflowScheduler _workflowScheduler;
         private readonly ICrontabParser _crontabParser;
+        private readonly IClock _clock;
 
-        public Cron(IWorkflowInstanceManager workflowInstanceStore, IWorkflowScheduler workflowScheduler, ICrontabParser crontabParser)
+        public Cron(IWorkflowInstanceManager workflowInstanceStore, IWorkflowScheduler workflowScheduler, ICrontabParser crontabParser, IClock clock)
         {
             _workflowInstanceManager = workflowInstanceStore;
             _workflowScheduler = workflowScheduler;
             _crontabParser = crontabParser;
+            _clock = clock;
         }
 
         [ActivityProperty(Hint = "Specify a CRON expression. See https://crontab.guru/ for help.")]
@@ -48,6 +51,9 @@ namespace Elsa.Activities.Timers
             var executeAt = _crontabParser.GetNextOccurrence(CronExpression);
 
             ExecuteAt = executeAt;
+
+            if (executeAt < _clock.GetCurrentInstant())
+                return Done();
 
             await _workflowInstanceManager.SaveAsync(context.WorkflowExecutionContext.WorkflowInstance, cancellationToken);
             await _workflowScheduler.ScheduleWorkflowAsync(workflowBlueprint, workflowInstance.WorkflowInstanceId, Id, executeAt, cancellationToken);
