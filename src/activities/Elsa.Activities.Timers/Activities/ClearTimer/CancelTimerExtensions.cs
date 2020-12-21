@@ -6,10 +6,10 @@ using Elsa.Services.Models;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.Timers
 {
-    public static class CancelTimerExtensions
+    public static class ClearTimerExtensions
     {
         public static IActivityBuilder CancelTimer(this IBuilder builder,
-           Action<ISetupActivity<CancelTimer>>? setup = default) => builder.Then(setup);
+           Action<ISetupActivity<ClearTimer>>? setup = default) => builder.Then(setup);
 
         public static IActivityBuilder CancelTimer(this IBuilder builder,
              Func<ActivityExecutionContext, string> activityId) =>

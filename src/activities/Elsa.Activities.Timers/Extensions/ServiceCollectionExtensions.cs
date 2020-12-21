@@ -21,7 +21,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddActivity<Cron>()
                 .AddActivity<Timer>()
                 .AddActivity<StartAt>()
-                 .AddActivity<CancelTimer>()
+                 .AddActivity<ClearTimer>()
                 .AddTriggerProvider<TimerTriggerProvider>()
                 .AddTriggerProvider<CronTriggerProvider>()
                 .AddTriggerProvider<StartAtTriggerProvider>();
