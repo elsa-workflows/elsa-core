@@ -13,10 +13,10 @@ namespace Elsa.Activities.Timers.Hangfire.Extensions
     public static class TimersOptionsExtensions
     {
         /// <summary>
-        /// Add Hangfire for background processing
+        /// Add Elsa Hangfire Services for background processing
         /// </summary>
         /// <param name="timersOptions"></param>
-        public static void UseHangfireProviderCore(this TimersOptions timersOptions)
+        public static void UseHangfire(this TimersOptions timersOptions)
         {
             timersOptions.Services
                 .AddSingleton<IWorkflowScheduler, HangfireWorkflowScheduler>()
@@ -24,16 +24,16 @@ namespace Elsa.Activities.Timers.Hangfire.Extensions
         }
 
         /// <summary>
-        /// Add Hangfire for background processing
+        /// Add Elsa Hangfire Services for background processing and Hangfire Services
         /// </summary>
         /// <remarks>
         /// Only if Hangfire is not already registered in DI
         /// </remarks>
         /// <param name="timersOptions"></param>
         /// <param name="timersOptions">Hangfire settings</param>
-        public static void UseHangfireProvider(this TimersOptions timersOptions, Action<IGlobalConfiguration> configure)
+        public static void UseHangfire(this TimersOptions timersOptions, Action<IGlobalConfiguration> configure)
         {
-            timersOptions.UseHangfireProviderCore();
+            timersOptions.UseHangfire();
 
             // Add Hangfire services.
             timersOptions.Services.AddHangfire(configure);

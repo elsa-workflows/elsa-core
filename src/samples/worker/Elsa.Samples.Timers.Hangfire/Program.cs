@@ -20,7 +20,7 @@ namespace Elsa.Samples.Timers
                             .AddElsa()
                             .AddConsoleActivities()
                             .AddTimerActivities(options =>
-                                options.UseHangfireProvider(configure =>
+                                options.UseHangfire(configure =>
                                     configure.UseSqlServerStorage("Server=(localdb)\\MSSQLLocalDB;Database=ElsaHangfire;Trusted_Connection=True;MultipleActiveResultSets=true")))
                             .AddWorkflow<RecurringTaskWorkflow>()
                             .AddWorkflow<CronTaskWorkflow>()
