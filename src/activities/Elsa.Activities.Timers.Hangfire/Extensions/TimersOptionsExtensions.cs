@@ -30,7 +30,7 @@ namespace Elsa.Activities.Timers.Hangfire.Extensions
         /// Only if Hangfire is not already registered in DI
         /// </remarks>
         /// <param name="timersOptions"></param>
-        /// <param name="timersOptions">Hangfire settings</param>
+        /// <param name="configure">Hangfire settings</param>
         public static void UseHangfire(this TimersOptions timersOptions, Action<IGlobalConfiguration> configure)
         {
             timersOptions.UseHangfire();
