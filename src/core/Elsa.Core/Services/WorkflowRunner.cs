@@ -259,6 +259,7 @@ namespace Elsa.Services
             }
             catch (Exception e)
             {
+                _logger.LogError(e, e.Message);
                 workflowExecutionContext.Fault(null, new LocalizedString(e.Message, e.Message));
             }
         }

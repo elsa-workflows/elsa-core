@@ -1,5 +1,4 @@
 using Elsa.Data;
-using Elsa.Models;
 using Elsa.Persistence.YesSql.Documents;
 using YesSql.Indexes;
 
@@ -8,7 +7,7 @@ namespace Elsa.Persistence.YesSql.Indexes
     public class WorkflowDefinitionIndex : MapIndex
     {
         public string? TenantId { get; set; }
-        public string EntityId { get; set; } = default!;
+        public string DefinitionId { get; set; } = default!;
         public string DefinitionVersionId { get; set; } = default!;
         public int Version { get; set; }
         public bool IsLatest { get; set; }
@@ -26,7 +25,7 @@ namespace Elsa.Persistence.YesSql.Indexes
                 .Map(
                     workflowDefinition => new WorkflowDefinitionIndex
                     {
-                        EntityId = workflowDefinition.DefinitionId,
+                        DefinitionId = workflowDefinition.DefinitionId,
                         TenantId = workflowDefinition.TenantId,
                         DefinitionVersionId = workflowDefinition.DefinitionVersionId,
                         Version = workflowDefinition.Version,

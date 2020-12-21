@@ -13,7 +13,7 @@ namespace Elsa.Persistence.YesSql
             SchemaBuilder.CreateMapIndexTable<WorkflowDefinitionIndex>(
                 table => table
                     .Column<string?>(nameof(WorkflowDefinitionIndex.TenantId))
-                    .Column<string>(nameof(WorkflowDefinitionIndex.EntityId))
+                    .Column<string>(nameof(WorkflowDefinitionIndex.DefinitionId))
                     .Column<string>(nameof(WorkflowDefinitionIndex.DefinitionVersionId))
                     .Column<int>(nameof(WorkflowDefinitionIndex.Version))
                     .Column<bool>(nameof(WorkflowDefinitionIndex.IsLatest))
@@ -40,13 +40,21 @@ namespace Elsa.Persistence.YesSql
             
             SchemaBuilder.CreateMapIndexTable<WorkflowInstanceBlockingActivitiesIndex>(
                 table => table
-                    .Column<string?>("TenantId")
-                    .Column<string>("ActivityId")
-                    .Column<string>("ActivityType")
-                    .Column<string?>("CorrelationId")
-                    .Column("WorkflowStatus", DbType.String)
-                    .Column("CreatedAt", DbType.DateTimeOffset),
+                    .Column<string?>(nameof(WorkflowInstanceBlockingActivitiesIndex.TenantId))
+                    .Column<string>(nameof(WorkflowInstanceBlockingActivitiesIndex.ActivityId))
+                    .Column<string>(nameof(WorkflowInstanceBlockingActivitiesIndex.ActivityType))
+                    .Column<string?>(nameof(WorkflowInstanceBlockingActivitiesIndex.CorrelationId))
+                    .Column(nameof(WorkflowInstanceBlockingActivitiesIndex.WorkflowStatus), DbType.String)
+                    .Column(nameof(WorkflowInstanceBlockingActivitiesIndex.CreatedAt), DbType.DateTimeOffset),
                 CollectionNames.WorkflowInstances);
+            
+            SchemaBuilder.CreateMapIndexTable<WorkflowExecutionLogRecordIndex>(
+                table => table
+                    .Column<string?>(nameof(WorkflowExecutionLogRecordIndex.RecordId))
+                    .Column<string?>(nameof(WorkflowExecutionLogRecordIndex.TenantId))
+                    .Column<string>(nameof(WorkflowExecutionLogRecordIndex.WorkflowInstanceId))
+                    .Column(nameof(WorkflowExecutionLogRecordIndex.Timestamp), DbType.DateTimeOffset),
+                CollectionNames.WorkflowExecutionLog);
 
             return 1;
         }
