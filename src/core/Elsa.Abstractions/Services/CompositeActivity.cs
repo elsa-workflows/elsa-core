@@ -21,12 +21,15 @@ namespace Elsa.Services
         {
             if (IsScheduled)
             {
+                if (HasPendingChildren(context))
+                    return PostSchedule(Id);
+
                 context.WorkflowExecutionContext.WorkflowInstance.ParentActivities.Pop();
                 IsScheduled = false;
                 return Complete(context);
             }
-            
-            var compositeActivityBlueprint = (ICompositeActivityBlueprint)context.ActivityBlueprint;
+
+            var compositeActivityBlueprint = (ICompositeActivityBlueprint) context.ActivityBlueprint;
             var startActivities = compositeActivityBlueprint.GetStartActivities().Select(x => x.Id).ToList();
             context.WorkflowExecutionContext.WorkflowInstance.ParentActivities.Push(Id);
             context.WorkflowExecutionContext.PostScheduleActivity(Id);
@@ -35,5 +38,14 @@ namespace Elsa.Services
         }
 
         protected virtual IActivityExecutionResult Complete(ActivityExecutionContext context) => Done();
+
+        private static bool HasPendingChildren(ActivityExecutionContext context)
+        {
+            var children = ((CompositeActivityBlueprint) context.ActivityBlueprint).Activities.Select(x => x.Id).ToList();
+            var workflowInstance = context.WorkflowExecutionContext.WorkflowInstance;
+            var hasPendingPostScheduledChildren = workflowInstance.PostScheduledActivities.Any(x => children.Contains(x.ActivityId));
+            var hasPendingScheduledChildren = workflowInstance.ScheduledActivities.Any(x => children.Contains(x.ActivityId));
+            return hasPendingPostScheduledChildren || hasPendingScheduledChildren;
+        }
     }
 }
