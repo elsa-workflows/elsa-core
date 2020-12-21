@@ -46,17 +46,19 @@ namespace Elsa.Activities.AzureServiceBus.Services
         {
             var context = e.ExceptionReceivedContext;
 
-            if (e.Exception is MessageLockLostException)
+            switch (e.Exception)
             {
-                _logger.LogDebug("Message lock lost.");
-            }
-            else
-            {
-                _logger.LogError("Message handler encountered an exception {Exception}.", e.Exception);
-                _logger.LogError("Exception context for troubleshooting:");
-                _logger.LogError("- Endpoint: {Endpoint}", context.Endpoint);
-                _logger.LogError("- Entity Path: {EntityPath}", context.EntityPath);
-                _logger.LogError("- Executing Action: {Action}", context.Action);    
+                case MessageLockLostException:
+                case ServiceBusCommunicationException:
+                    _logger.LogDebug(e.Exception.Message);
+                    break;
+                default:
+                    _logger.LogError("Message handler encountered an exception {Exception}.", e.Exception);
+                    _logger.LogError("Exception context for troubleshooting:");
+                    _logger.LogError("- Endpoint: {Endpoint}", context.Endpoint);
+                    _logger.LogError("- Entity Path: {EntityPath}", context.EntityPath);
+                    _logger.LogError("- Executing Action: {Action}", context.Action);
+                    break;
             }
             
             return Task.CompletedTask;
