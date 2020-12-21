@@ -1,6 +1,7 @@
 using System;
-
+using Elsa.Converters;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 
 using NodaTime;
@@ -19,7 +20,13 @@ namespace Elsa.Persistence.YesSql
             JsonSettings = new JsonSerializerSettings
             {
                 TypeNameHandling = TypeNameHandling.Auto
-            }.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
+            };
+            
+            JsonSettings.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
+            JsonSettings.Converters.Add(new StackJsonConverter());
+            JsonSettings.Converters.Add(new VersionOptionsJsonConverter());
+            JsonSettings.Converters.Add(new TypeJsonConverter());
+            JsonSettings.Converters.Add(new StringEnumConverter(new DefaultNamingStrategy()));
 
             JsonSettings.ContractResolver = new DefaultContractResolver
             {

@@ -23,11 +23,11 @@ namespace Elsa.Activities.AzureServiceBus.Services
 
         public async Task<IMessageSender> GetSenderAsync(string queueName, CancellationToken cancellationToken)
         {
+            await _semaphore.WaitAsync(cancellationToken);
+            
             if (_senders.TryGetValue(queueName, out var messageSender))
                 return messageSender;
             
-            await _semaphore.WaitAsync(cancellationToken);
-
             try
             {
                 await _managementClient.EnsureQueueExistsAsync(queueName, cancellationToken);

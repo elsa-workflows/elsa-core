@@ -13,6 +13,7 @@ using Elsa.Services.Models;
 using Elsa.Triggers;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using Open.Linq.AsyncExtensions;
 
@@ -251,6 +252,18 @@ namespace Elsa.Services
         }
 
         private async ValueTask RunAsync(WorkflowExecutionContext workflowExecutionContext, ActivityOperation activityOperation, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                await RunCoreAsync(workflowExecutionContext, activityOperation, cancellationToken);
+            }
+            catch (Exception e)
+            {
+                workflowExecutionContext.Fault(null, new LocalizedString(e.Message, e.Message));
+            }
+        }
+        
+        private async ValueTask RunCoreAsync(WorkflowExecutionContext workflowExecutionContext, ActivityOperation activityOperation, CancellationToken cancellationToken = default)
         {
             using var scope = workflowExecutionContext.ServiceScope;
             var workflowBlueprint = workflowExecutionContext.WorkflowBlueprint;

@@ -96,8 +96,12 @@ namespace Elsa.Services.Models
 
         public void SchedulePostActivities()
         {
-            while (HasPostScheduledActivities)
-                ScheduleActivity(WorkflowInstance.PostScheduledActivities.Pop());
+            var activities = WorkflowInstance.PostScheduledActivities.Reverse();
+
+            foreach (var activity in activities) 
+                ScheduleActivity(activity);
+
+            WorkflowInstance.PostScheduledActivities.Clear();
         }
 
         public object? GetOutputFrom(string activityName)
