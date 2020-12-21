@@ -11,10 +11,11 @@ using Quartz;
 
 namespace Elsa.Activities.Timers.Quartz.Services
 {
-    public class QuartzWorkflowScheduler : IWorkflowScheduler
+    public class QuartzWorkflowScheduler: IWorkflowScheduler
     {
         private static readonly string RunWorkflowJobKey = nameof(RunQuartzWorkflowJob);
         private readonly ISchedulerFactory _schedulerFactory;
+        private readonly SemaphoreSlim _semaphore = new(1);
 
         public QuartzWorkflowScheduler(ISchedulerFactory schedulerFactory)
         {
@@ -67,13 +68,22 @@ namespace Elsa.Activities.Timers.Quartz.Services
 
         private async Task ScheduleJob(ITrigger trigger, CancellationToken cancellationToken)
         {
-            var scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
-            var existingTrigger = await scheduler.GetTrigger(trigger.Key, cancellationToken);
+            await _semaphore.WaitAsync(cancellationToken);
 
-            if (existingTrigger != null)
-                await scheduler.UnscheduleJob(existingTrigger.Key, cancellationToken);
+            try
+            {
+                var scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
+                var existingTrigger = await scheduler.GetTrigger(trigger.Key, cancellationToken);
 
-            await scheduler.ScheduleJob(trigger, cancellationToken);
+                if (existingTrigger != null)
+                    await scheduler.UnscheduleJob(existingTrigger.Key, cancellationToken);
+
+                await scheduler.ScheduleJob(trigger, cancellationToken);
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
         }
 
         private TriggerBuilder CreateTrigger(IWorkflowBlueprint workflowBlueprint, string activityId) => CreateTrigger(workflowBlueprint.TenantId, workflowBlueprint.Id, null, activityId);
