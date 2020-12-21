@@ -70,8 +70,7 @@ namespace Elsa.Services.Models
         }
 
         public bool DeleteCompletedInstances => WorkflowBlueprint.DeleteCompletedInstances;
-        //public ICollection<ExecutionLogEntry> ExecutionLog => WorkflowInstance.ExecutionLog;
-        public ICollection<ExecutionLogEntry> ExecutionLog => new List<ExecutionLogEntry>();
+        public ICollection<string> ExecutionLog => new List<string>();
         public WorkflowStatus Status => WorkflowInstance.WorkflowStatus;
         public bool HasBlockingActivities => WorkflowInstance.BlockingActivities.Any();
         public object? WorkflowContext { get; set; }

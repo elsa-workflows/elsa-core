@@ -16,6 +16,8 @@ namespace Elsa.Persistence.YesSql.Stores
 {
     public abstract class YesSqlStore<T, TDocument> : IStore<T> where T : class, IEntity where TDocument : class
     {
+        private readonly SemaphoreSlim _semaphore = new(1);
+
         public YesSqlStore(ISession session, IIdGenerator idGenerator, IMapper mapper, string collectionName)
         {
             IdGenerator = idGenerator;
@@ -31,10 +33,19 @@ namespace Elsa.Persistence.YesSql.Stores
 
         public async Task SaveAsync(T entity, CancellationToken cancellationToken = default)
         {
-            var existingDocument = await FindDocumentAsync(entity, cancellationToken);
-            var document = Mapper.Map(entity, existingDocument);
-            Session.Save(document, CollectionName);
-            await Session.CommitAsync();
+            await _semaphore.WaitAsync(cancellationToken);
+
+            try
+            {
+                var existingDocument = await FindDocumentAsync(entity, cancellationToken);
+                var document = Mapper.Map(entity, existingDocument);
+                Session.Save(document, CollectionName);
+                await Session.CommitAsync();
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
         }
 
         public async Task DeleteAsync(T entity, CancellationToken cancellationToken = default)
@@ -68,14 +79,14 @@ namespace Elsa.Persistence.YesSql.Stores
             var documents = await Query(specification, orderBy, paging, cancellationToken).ListAsync();
             return Map(documents);
         }
-        
+
         protected virtual IQuery<TDocument> Query(ISpecification<T> specification, IOrderBy<T>? orderBy = default, IPaging? paging = default, CancellationToken cancellationToken = default)
         {
             var query = ToQuery(specification);
 
-            if (orderBy != null) 
+            if (orderBy != null)
                 query = OrderBy(query, orderBy, specification);
-            
+
             if (paging != null)
                 query = query.Skip(paging.Skip).Take(paging.Take);
 

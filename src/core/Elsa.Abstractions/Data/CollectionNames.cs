@@ -4,5 +4,6 @@
     {
         public static string WorkflowDefinitions = "WorkflowDefinitions";
         public static string WorkflowInstances = "WorkflowInstances";
+        public static string WorkflowExecutionLog = "WorkflowExecutionLog";
     }
 }

@@ -259,6 +259,7 @@ namespace Elsa.Services
             }
             catch (Exception e)
             {
+                _logger.LogError(e, e.Message);
                 workflowExecutionContext.Fault(null, new LocalizedString(e.Message, e.Message));
             }
         }
@@ -279,6 +280,7 @@ namespace Elsa.Services
                 await _mediator.Publish(new ActivityExecuting(activityExecutionContext), cancellationToken);
                 await result.ExecuteAsync(activityExecutionContext, cancellationToken);
                 workflowExecutionContext.WorkflowInstance.Output = activityExecutionContext.Output;
+                workflowExecutionContext.ExecutionLog.Add(activity.Id);
                 await _mediator.Publish(new ActivityExecuted(activityExecutionContext), cancellationToken);
 
                 activityOperation = Execute;

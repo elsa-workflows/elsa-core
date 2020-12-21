@@ -43,6 +43,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton(options)
                 .AddScoped(options.WorkflowDefinitionStoreFactory)
                 .AddScoped(options.WorkflowInstanceStoreFactory)
+                .AddScoped(options.WorkflowExecutionLogStoreFactory)
                 .AddSingleton(options.DistributedLockProviderFactory)
                 .AddSingleton(options.SignalFactory)
                 .AddSingleton(options.StorageFactory);

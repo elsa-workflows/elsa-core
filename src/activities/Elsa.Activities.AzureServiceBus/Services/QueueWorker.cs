@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Elsa.Activities.AzureServiceBus.Services
 {
-    public class QueueWorker
+    public class QueueWorker : IAsyncDisposable
     {
         private readonly IMessageReceiver _messageReceiver;
         private readonly IServiceProvider _serviceProvider;
@@ -62,6 +62,11 @@ namespace Elsa.Activities.AzureServiceBus.Services
             }
             
             return Task.CompletedTask;
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            await _messageReceiver.CloseAsync();
         }
     }
 }

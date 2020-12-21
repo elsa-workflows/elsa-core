@@ -12,10 +12,10 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\..\core\Elsa\Elsa.csproj"/>
-        <ProjectReference Include="..\..\..\providers\Elsa.DistributedLocking.AzureBlob\Elsa.DistributedLocking.AzureBlob.csproj"/>
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.Timers\Elsa.Activities.Timers.csproj"/>
-        <ProjectReference Include="..\..\..\providers\Elsa.DistributedLocking.Redis\Elsa.DistributedLocking.Redis.csproj"/>
-        <ProjectReference Include="..\..\..\providers\Elsa.DistributedLocking.SqlServer\Elsa.DistributedLocking.SqlServer.csproj"/>
+        <ProjectReference Include="..\..\..\locking\Elsa.DistributedLocking.AzureBlob\Elsa.DistributedLocking.AzureBlob.csproj"/>
+        <ProjectReference Include="..\..\..\locking\Elsa.DistributedLocking.Redis\Elsa.DistributedLocking.Redis.csproj"/>
+        <ProjectReference Include="..\..\..\locking\Elsa.DistributedLocking.SqlServer\Elsa.DistributedLocking.SqlServer.csproj"/>
     </ItemGroup>
 
 </Project>

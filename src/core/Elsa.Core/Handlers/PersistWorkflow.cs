@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Elsa.Events;
 using Elsa.Models;
 using Elsa.Persistence;
-using Elsa.Services;
 using Elsa.Services.Models;
 using MediatR;
 using Microsoft.Extensions.Logging;
