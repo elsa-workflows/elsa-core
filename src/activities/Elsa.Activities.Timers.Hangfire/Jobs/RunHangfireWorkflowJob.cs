@@ -8,7 +8,7 @@ using Elsa.Persistence;
 using Elsa.Services;
 
 using Hangfire;
-
+using Hangfire.States;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -16,6 +16,8 @@ namespace Elsa.Activities.Timers.Hangfire.Jobs
 {
     public class RunHangfireWorkflowJob
     {
+        private const int MaxRetrayGetWorkflow = 3;
+
         private readonly IWorkflowRunner _workflowRunner;
         private readonly IWorkflowRegistry _workflowRegistry;
         private readonly IWorkflowInstanceStore _workflowInstanceManager;
@@ -49,15 +51,7 @@ namespace Elsa.Activities.Timers.Hangfire.Jobs
             }
             else
             {
-                for (var i = 0; i < 3 && workflowInstance == null; i++)
-                {
-                    workflowInstance = await _workflowInstanceManager.GetByIdAsync(data.WorkflowInstanceId);
-
-                    if(workflowInstance == null)
-                    {
-                        System.Threading.Thread.Sleep(10000);
-                    }
-                }
+                workflowInstance = await GetWorkflowInstanceAsync(data.WorkflowInstanceId);
 
                 if (workflowInstance == null)
                 {
@@ -78,6 +72,23 @@ namespace Elsa.Activities.Timers.Hangfire.Jobs
 
                 backgroundJobClient.ScheduleWorkflow(data, crontabParer.GetNextOccurrence(data.CronExpression!).ToDateTimeOffset());
             }
+        }
+
+        private async Task<WorkflowInstance?> GetWorkflowInstanceAsync(string workflowInstanceId)
+        {
+            WorkflowInstance? workflowInstance = null;
+
+            for (var i = 0; i < MaxRetrayGetWorkflow && workflowInstance == null; i++)
+            {
+                workflowInstance = await _workflowInstanceManager.GetByIdAsync(workflowInstanceId);
+
+                if (workflowInstance == null)
+                {
+                    System.Threading.Thread.Sleep(10000);
+                }
+            }
+
+            return workflowInstance;
         }
     }
 }
