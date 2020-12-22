@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Threading.Tasks;
 
 using Elsa.Models;
@@ -44,20 +45,33 @@ namespace Elsa.Activities.Timers.Quartz.Jobs
             }
             else
             {
-                var workflowInstance = await _workflowInstanceManager.GetByIdAsync(workflowInstanceId, cancellationToken);
+                var workflowInstance = await GetWorkflowInstanceAsync(workflowInstanceId, cancellationToken);
 
                 if (workflowInstance == null)
                 {
-                    _logger.LogWarning("Could not run Workflow instance with ID {WorkflowInstanceId} because it appears not yet to be persisted in the database. Rescheduling.", workflowInstanceId);
-                    var trigger = context.Trigger;
-                    await context.Scheduler.UnscheduleJob(trigger.Key, cancellationToken);
-                    var newTrigger = trigger.GetTriggerBuilder().StartAt(trigger.StartTimeUtc.AddSeconds(10)).Build();
-                    await context.Scheduler.ScheduleJob(newTrigger, cancellationToken);
+                    _logger.LogError("Could not run Workflow instance with ID {WorkflowInstanceId} because it is not in the database", data.WorkflowInstanceId);
                     return;
                 }
 
                 await _workflowRunner.RunWorkflowAsync(workflowBlueprint, workflowInstance!, activityId, cancellationToken: cancellationToken);
             }
+        }
+
+        private async Task<WorkflowInstance?> GetWorkflowInstanceAsync(string workflowInstanceId, CancellationToken cancellationToken)
+        {
+            WorkflowInstance? workflowInstance = null;
+
+            for (var i = 0; i < TimerConsts.MaxRetrayGetWorkflow && workflowInstance == null; i++)
+            {
+                workflowInstance = await _workflowInstanceManager.GetByIdAsync(workflowInstanceId, cancellationToken);
+
+                if (workflowInstance == null)
+                {
+                    System.Threading.Thread.Sleep(10000);
+                }
+            }
+
+            return workflowInstance;
         }
     }
 }

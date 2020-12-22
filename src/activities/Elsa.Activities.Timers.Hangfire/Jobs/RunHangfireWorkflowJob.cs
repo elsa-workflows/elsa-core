@@ -16,8 +16,6 @@ namespace Elsa.Activities.Timers.Hangfire.Jobs
 {
     public class RunHangfireWorkflowJob
     {
-        private const int MaxRetrayGetWorkflow = 3;
-
         private readonly IWorkflowRunner _workflowRunner;
         private readonly IWorkflowRegistry _workflowRegistry;
         private readonly IWorkflowInstanceStore _workflowInstanceManager;
@@ -78,7 +76,7 @@ namespace Elsa.Activities.Timers.Hangfire.Jobs
         {
             WorkflowInstance? workflowInstance = null;
 
-            for (var i = 0; i < MaxRetrayGetWorkflow && workflowInstance == null; i++)
+            for (var i = 0; i < TimerConsts.MaxRetrayGetWorkflow && workflowInstance == null; i++)
             {
                 workflowInstance = await _workflowInstanceManager.GetByIdAsync(workflowInstanceId);
 
