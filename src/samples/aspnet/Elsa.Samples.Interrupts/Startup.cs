@@ -3,6 +3,7 @@ using Elsa.Samples.Interrupts.Workflows;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
+using Elsa.Activities.Timers;
 
 namespace Elsa.Samples.Interrupts
 {
@@ -16,7 +17,7 @@ namespace Elsa.Samples.Interrupts
                 .AddElsa()
                 .AddConsoleActivities()
                 .AddHttpActivities()
-                .AddTimerActivities()
+                .AddTimerActivities(options => options.UseQuartzProvider())
                 .AddActivity<Sleep>()
                 .StartWorkflow<InterruptableWorkflow>();
         }

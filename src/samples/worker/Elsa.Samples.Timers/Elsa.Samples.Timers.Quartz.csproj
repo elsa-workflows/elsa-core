@@ -4,6 +4,7 @@
         <OutputType>Exe</OutputType>
         <TargetFramework>net5.0</TargetFramework>
         <IsPackable>false</IsPackable>
+        <RootNamespace>Elsa.Samples.Timers</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
@@ -11,6 +12,8 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\..\..\activities\Elsa.Activities.Timers.Quartz\Elsa.Activities.Timers.Quartz.csproj" />
+        <ProjectReference Include="..\..\..\core\Elsa\Elsa.csproj" />
         <ProjectReference Include="..\..\..\core\Elsa\Elsa.csproj" />
         <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.YesSql\Elsa.Persistence.YesSql.csproj" />
     </ItemGroup>

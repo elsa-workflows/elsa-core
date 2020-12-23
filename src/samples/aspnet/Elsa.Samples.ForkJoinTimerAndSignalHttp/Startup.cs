@@ -2,6 +2,7 @@ using Elsa.Samples.ForkJoinTimerAndSignalHttp.BackgroundTasks;
 using Elsa.Samples.ForkJoinTimerAndSignalHttp.Workflows;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
+using Elsa.Activities.Timers;
 
 namespace Elsa.Samples.ForkJoinTimerAndSignalHttp
 {
@@ -15,7 +16,7 @@ namespace Elsa.Samples.ForkJoinTimerAndSignalHttp
             services
                 .AddElsa()
                 .AddConsoleActivities()
-                .AddTimerActivities()
+                .AddTimerActivities(options => options.UseQuartzProvider())
                 .AddHostedService<WorkflowStarter<DemoWorkflow>>()
                 .AddWorkflow<DemoWorkflow>();
         }

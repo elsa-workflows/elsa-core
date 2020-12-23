@@ -1,4 +1,6 @@
-﻿using System.Threading.Tasks;
+﻿using System.Threading;
+using System.Threading.Tasks;
+
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications;
@@ -6,16 +8,16 @@ using Elsa.Services;
 using Microsoft.Extensions.Logging;
 using Quartz;
 
-namespace Elsa.Activities.Timers.Jobs
+namespace Elsa.Activities.Timers.Quartz.Jobs
 {
-    public class RunWorkflowJob : IJob
+    public class RunQuartzWorkflowJob : IJob
     {
         private readonly IWorkflowRunner _workflowRunner;
         private readonly IWorkflowRegistry _workflowRegistry;
         private readonly IWorkflowInstanceStore _workflowInstanceManager;
         private readonly ILogger _logger;
 
-        public RunWorkflowJob(IWorkflowRunner workflowRunner, IWorkflowRegistry workflowRegistry, IWorkflowInstanceStore workflowInstanceStore, ILogger<RunWorkflowJob> logger)
+        public RunQuartzWorkflowJob(IWorkflowRunner workflowRunner, IWorkflowRegistry workflowRegistry, IWorkflowInstanceStore workflowInstanceStore, ILogger<RunQuartzWorkflowJob> logger)
         {
             _workflowRunner = workflowRunner;
             _workflowRegistry = workflowRegistry;
@@ -51,16 +53,29 @@ namespace Elsa.Activities.Timers.Jobs
 
                 if (workflowInstance == null)
                 {
-                    _logger.LogWarning("Could not run Workflow instance with ID {WorkflowInstanceId} because it appears not yet to be persisted in the database. Rescheduling.", workflowInstanceId);
-                    var trigger = context.Trigger;
-                    await context.Scheduler.UnscheduleJob(trigger.Key, cancellationToken);
-                    var newTrigger = trigger.GetTriggerBuilder().StartAt(trigger.StartTimeUtc.AddSeconds(10)).Build();
-                    await context.Scheduler.ScheduleJob(newTrigger, cancellationToken);
+                    _logger.LogError("Could not run Workflow instance with ID {WorkflowInstanceId} because it is not in the database", data.WorkflowInstanceId);
                     return;
                 }
 
                 await _workflowRunner.RunWorkflowAsync(workflowBlueprint, workflowInstance!, activityId, cancellationToken: cancellationToken);
             }
+        }
+
+        private async Task<WorkflowInstance?> GetWorkflowInstanceAsync(string workflowInstanceId, CancellationToken cancellationToken)
+        {
+            WorkflowInstance? workflowInstance = null;
+
+            for (var i = 0; i < TimerConsts.MaxRetrayGetWorkflow && workflowInstance == null; i++)
+            {
+                workflowInstance = await _workflowInstanceManager.GetByIdAsync(workflowInstanceId, cancellationToken);
+
+                if (workflowInstance == null)
+                {
+                    System.Threading.Thread.Sleep(10000);
+                }
+            }
+
+            return workflowInstance;
         }
     }
 }

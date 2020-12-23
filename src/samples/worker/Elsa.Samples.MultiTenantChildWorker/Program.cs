@@ -2,6 +2,7 @@ using Elsa.Samples.MultiTenantChildWorker.Messages;
 using Elsa.Samples.MultiTenantChildWorker.Workflows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Elsa.Activities.Timers;
 
 namespace Elsa.Samples.MultiTenantChildWorker
 {
@@ -19,7 +20,7 @@ namespace Elsa.Samples.MultiTenantChildWorker
                     {
                         services
                             .AddElsa()
-                            .AddTimerActivities()
+                            .AddTimerActivities(options => options.UseQuartzProvider())
                             .AddConsoleActivities()
                             .AddRebusActivities<OrderReceived>()
                             .AddWorkflow<GenerateOrdersWorkflow>()

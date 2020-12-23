@@ -2,6 +2,7 @@ using Elsa.Samples.RebusWorker.Messages;
 using Elsa.Samples.RebusWorker.Workflows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Elsa.Activities.Timers;
 
 namespace Elsa.Samples.RebusWorker
 {
@@ -16,7 +17,7 @@ namespace Elsa.Samples.RebusWorker
                     services
                         .AddElsa()
                         .AddConsoleActivities()
-                        .AddTimerActivities()
+                        .AddTimerActivities(options => options.UseQuartzProvider())
                         .AddRebusActivities<Greeting>()
                         .AddWorkflow<ProducerWorkflow>()
                     .AddWorkflow<ConsumerWorkflow>();

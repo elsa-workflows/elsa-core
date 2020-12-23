@@ -1,20 +1,24 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Activities.Timers.Jobs;
+
+using Elsa.Activities.Timers.Quartz.Jobs;
+using Elsa.Activities.Timers.Services;
 using Elsa.Services.Models;
+
 using NodaTime;
+
 using Quartz;
 
-namespace Elsa.Activities.Timers.Services
+namespace Elsa.Activities.Timers.Quartz.Services
 {
-    public class WorkflowScheduler : IWorkflowScheduler
+    public class QuartzWorkflowScheduler: IWorkflowScheduler
     {
-        private static readonly string RunWorkflowJobKey = nameof(RunWorkflowJob);
+        private static readonly string RunWorkflowJobKey = nameof(RunQuartzWorkflowJob);
         private readonly ISchedulerFactory _schedulerFactory;
         private readonly SemaphoreSlim _semaphore = new(1);
 
-        public WorkflowScheduler(ISchedulerFactory schedulerFactory)
+        public QuartzWorkflowScheduler(ISchedulerFactory schedulerFactory)
         {
             _schedulerFactory = schedulerFactory;
         }
@@ -45,8 +49,22 @@ namespace Elsa.Activities.Timers.Services
         {
             var trigger = CreateTrigger(workflowBlueprint, activityId, workflowInstanceId)
                 .StartAt(startAt.ToDateTimeOffset()).Build();
-            
+
             await ScheduleJob(trigger, cancellationToken);
+        }
+
+        public async Task UnscheduleWorkflowAsync(WorkflowExecutionContext workflowExecutionContext, string activityId, CancellationToken cancellationToken = default)
+        {
+            var scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
+            var trigger = CreateTriggerKey(tenantId: workflowExecutionContext.WorkflowBlueprint.TenantId,
+                workflowDefinitionId: workflowExecutionContext.WorkflowBlueprint.Id,
+                workflowInstanceId: workflowExecutionContext.WorkflowInstance.WorkflowInstanceId,
+                activityId: activityId);
+
+            var existingTrigger = await scheduler.GetTrigger(trigger, cancellationToken);
+
+            if (existingTrigger != null)
+                await scheduler.UnscheduleJob(existingTrigger.Key, cancellationToken);
         }
 
         private async Task ScheduleJob(ITrigger trigger, CancellationToken cancellationToken)
@@ -74,15 +92,19 @@ namespace Elsa.Activities.Timers.Services
 
         private TriggerBuilder CreateTrigger(string? tenantId, string workflowDefinitionId, string? workflowInstanceId, string activityId)
         {
-            var groupName = $"tenant:{tenantId ?? "default"}-workflow-instance:{workflowInstanceId ?? workflowDefinitionId}";
-
             return TriggerBuilder.Create()
                 .ForJob(RunWorkflowJobKey)
-                .WithIdentity($"activity:{activityId}", groupName)
+                .WithIdentity(CreateTriggerKey(tenantId, workflowDefinitionId, workflowInstanceId, activityId))
                 .UsingJobData("TenantId", tenantId!)
                 .UsingJobData("WorkflowDefinitionId", workflowDefinitionId)
                 .UsingJobData("WorkflowInstanceId", workflowInstanceId!)
                 .UsingJobData("ActivityId", activityId);
+        }
+
+        private TriggerKey CreateTriggerKey(string? tenantId, string workflowDefinitionId, string? workflowInstanceId, string activityId)
+        {
+            var groupName = $"tenant:{tenantId ?? "default"}-workflow-instance:{workflowInstanceId ?? workflowDefinitionId}";
+            return new TriggerKey($"activity:{activityId}", groupName);
         }
     }
 }

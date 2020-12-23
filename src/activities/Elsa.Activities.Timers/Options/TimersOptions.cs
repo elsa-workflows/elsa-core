@@ -1,14 +1,17 @@
+using Microsoft.Extensions.DependencyInjection;
+
 using NodaTime;
 
 namespace Elsa.Activities.Timers.Options
 {
     public class TimersOptions
     {
-        public TimersOptions()
+        public TimersOptions(IServiceCollection services)
         {
-            SweepInterval = Duration.FromMinutes(1);
+            Services = services;
         }
-        
-        public Duration SweepInterval { get; set; }
+
+        public IServiceCollection Services { get; }
+
     }
 }
