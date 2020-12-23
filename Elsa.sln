@@ -33,8 +33,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "activities", "activities", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.Email", "src\activities\Elsa.Activities.Email\Elsa.Activities.Email.csproj", "{D20FCB88-9DCA-49EA-9CC2-5B94DD935D30}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.Timers", "src\activities\Elsa.Activities.Timers\Elsa.Activities.Timers.csproj", "{E4B71DC4-3E73-49C3-9B4E-CA13909F222D}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.MassTransit", "src\activities\Elsa.Activities.MassTransit\Elsa.Activities.MassTransit.csproj", "{C4939482-9447-47D1-B6AF-E9F8C6323841}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{5E5E1E84-DDBC-40D6-B891-0D563A15A44A}"
@@ -174,6 +172,7 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.Timers.Hangfire", "src\activities\Elsa.Activities.Timers.Hangfire\Elsa.Activities.Timers.Hangfire.csproj", "{34FB968B-A147-4811-823D-D206FD0027AD}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.Timers.Hangfire", "src\samples\worker\Elsa.Samples.Timers.Hangfire\Elsa.Samples.Timers.Hangfire.csproj", "{7BDF193D-CD69-4D47-B7BF-A8A1D93EBCB9}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.Entity", "src\activities\Elsa.Activities.Entity\Elsa.Activities.Entity.csproj", "{A0A8431F-3A2F-433A-BB0D-EB9627DFA739}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.EntityChanged", "src\samples\console\Elsa.Samples.EntityChanged\Elsa.Samples.EntityChanged.csproj", "{A3149FE4-FD39-4DC2-AA9F-208C7216BC03}"
@@ -183,6 +182,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.DistributedLocking.Redis", "src\locking\Elsa.DistributedLocking.Redis\Elsa.DistributedLocking.Redis.csproj", "{C90CD39C-8CDD-4BCB-AB6A-CF981D468DD2}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.DistributedLocking.SqlServer", "src\locking\Elsa.DistributedLocking.SqlServer\Elsa.DistributedLocking.SqlServer.csproj", "{78F2A9DC-3092-4371-ABFE-87C5DA4DE351}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Activities.Timers", "src\activities\Elsa.Activities.Timers\Elsa.Activities.Timers.csproj", "{74E83393-50AF-41E3-A1C8-97202673CD85}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -210,10 +211,6 @@ Global
 		{D20FCB88-9DCA-49EA-9CC2-5B94DD935D30}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D20FCB88-9DCA-49EA-9CC2-5B94DD935D30}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D20FCB88-9DCA-49EA-9CC2-5B94DD935D30}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E4B71DC4-3E73-49C3-9B4E-CA13909F222D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E4B71DC4-3E73-49C3-9B4E-CA13909F222D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E4B71DC4-3E73-49C3-9B4E-CA13909F222D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E4B71DC4-3E73-49C3-9B4E-CA13909F222D}.Release|Any CPU.Build.0 = Release|Any CPU
 		{C4939482-9447-47D1-B6AF-E9F8C6323841}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C4939482-9447-47D1-B6AF-E9F8C6323841}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C4939482-9447-47D1-B6AF-E9F8C6323841}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -442,6 +439,10 @@ Global
 		{78F2A9DC-3092-4371-ABFE-87C5DA4DE351}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{78F2A9DC-3092-4371-ABFE-87C5DA4DE351}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{78F2A9DC-3092-4371-ABFE-87C5DA4DE351}.Release|Any CPU.Build.0 = Release|Any CPU
+		{74E83393-50AF-41E3-A1C8-97202673CD85}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{74E83393-50AF-41E3-A1C8-97202673CD85}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{74E83393-50AF-41E3-A1C8-97202673CD85}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{74E83393-50AF-41E3-A1C8-97202673CD85}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -454,7 +455,6 @@ Global
 		{1D63E1B4-2386-4BEC-9090-C3F3CBF25703} = {B43B546E-23F3-46E8-ACB7-D04F05CDA180}
 		{B43B546E-23F3-46E8-ACB7-D04F05CDA180} = {DA71CDAA-8DD3-4D5F-9FBD-8E4B37A2D925}
 		{D20FCB88-9DCA-49EA-9CC2-5B94DD935D30} = {B43B546E-23F3-46E8-ACB7-D04F05CDA180}
-		{E4B71DC4-3E73-49C3-9B4E-CA13909F222D} = {37D2E628-5CC1-4C8E-8C02-3B0A29E2ACAA}
 		{C4939482-9447-47D1-B6AF-E9F8C6323841} = {B43B546E-23F3-46E8-ACB7-D04F05CDA180}
 		{5E5E1E84-DDBC-40D6-B891-0D563A15A44A} = {DA71CDAA-8DD3-4D5F-9FBD-8E4B37A2D925}
 		{823F80B6-E241-43F7-83BD-29FBB58A77F9} = {B43B546E-23F3-46E8-ACB7-D04F05CDA180}
@@ -528,6 +528,7 @@ Global
 		{C3842132-35BC-4F6D-85CC-7098887F4307} = {7CD5C8D5-EC78-4A99-A514-F01CA7197AC8}
 		{C90CD39C-8CDD-4BCB-AB6A-CF981D468DD2} = {7CD5C8D5-EC78-4A99-A514-F01CA7197AC8}
 		{78F2A9DC-3092-4371-ABFE-87C5DA4DE351} = {7CD5C8D5-EC78-4A99-A514-F01CA7197AC8}
+		{74E83393-50AF-41E3-A1C8-97202673CD85} = {37D2E628-5CC1-4C8E-8C02-3B0A29E2ACAA}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}

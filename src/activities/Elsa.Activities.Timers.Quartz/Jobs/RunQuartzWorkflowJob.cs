@@ -14,14 +14,14 @@ namespace Elsa.Activities.Timers.Quartz.Jobs
     {
         private readonly IWorkflowRunner _workflowRunner;
         private readonly IWorkflowRegistry _workflowRegistry;
-        private readonly IWorkflowInstanceStore _workflowInstanceManager;
+        private readonly IWorkflowInstanceStore _workflowInstanceStore;
         private readonly ILogger _logger;
 
         public RunQuartzWorkflowJob(IWorkflowRunner workflowRunner, IWorkflowRegistry workflowRegistry, IWorkflowInstanceStore workflowInstanceStore, ILogger<RunQuartzWorkflowJob> logger)
         {
             _workflowRunner = workflowRunner;
             _workflowRegistry = workflowRegistry;
-            _workflowInstanceManager = workflowInstanceStore;
+            _workflowInstanceStore = workflowInstanceStore;
             _logger = logger;
         }
 
@@ -39,7 +39,7 @@ namespace Elsa.Activities.Timers.Quartz.Jobs
             {
                 if (workflowBlueprint.IsSingleton)
                 {
-                    var hasExecutingWorkflow = (await _workflowInstanceManager.FindAsync(new WorkflowIsAlreadyExecutingSpecification().WithTenant(tenantId).WithWorkflowDefinition(workflowDefinitionId), cancellationToken)) != null;
+                    var hasExecutingWorkflow = (await _workflowInstanceStore.FindAsync(new WorkflowIsAlreadyExecutingSpecification().WithTenant(tenantId).WithWorkflowDefinition(workflowDefinitionId), cancellationToken)) != null;
 
                     if (hasExecutingWorkflow)
                         return;
@@ -49,11 +49,11 @@ namespace Elsa.Activities.Timers.Quartz.Jobs
             }
             else
             {
-                var workflowInstance = await _workflowInstanceManager.FindByIdAsync(workflowInstanceId, cancellationToken);
+                var workflowInstance = await _workflowInstanceStore.FindByIdAsync(workflowInstanceId, cancellationToken);
 
                 if (workflowInstance == null)
                 {
-                    _logger.LogError("Could not run Workflow instance with ID {WorkflowInstanceId} because it is not in the database", data.WorkflowInstanceId);
+                    _logger.LogError("Could not run Workflow instance with ID {WorkflowInstanceId} because it is not in the database", workflowInstanceId);
                     return;
                 }
 
@@ -67,7 +67,7 @@ namespace Elsa.Activities.Timers.Quartz.Jobs
 
             for (var i = 0; i < TimerConsts.MaxRetrayGetWorkflow && workflowInstance == null; i++)
             {
-                workflowInstance = await _workflowInstanceManager.GetByIdAsync(workflowInstanceId, cancellationToken);
+                workflowInstance = await _workflowInstanceStore.FindByIdAsync(workflowInstanceId, cancellationToken);
 
                 if (workflowInstance == null)
                 {

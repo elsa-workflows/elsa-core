@@ -46,8 +46,8 @@ namespace Elsa.Persistence.MongoDb.Stores
         public async Task<IEnumerable<T>> FindManyAsync(ISpecification<T> specification, IOrderBy<T>? orderBy = default, IPaging? paging = default, CancellationToken cancellationToken = default) =>
             await Collection.AsQueryable().Apply(specification).Apply(orderBy).Apply(paging).ToListAsync(cancellationToken);
 
-        public async Task<int> CountAsync(ISpecification<T> specification, IOrderBy<T>? orderBy = default, CancellationToken cancellationToken = default) =>
-            await Collection.AsQueryable().Apply(specification).Apply(orderBy).CountAsync(cancellationToken);
+        public async Task<int> CountAsync(ISpecification<T> specification, CancellationToken cancellationToken = default) =>
+            await Collection.AsQueryable().Apply(specification).CountAsync(cancellationToken);
 
         public async Task<T?> FindAsync(ISpecification<T> specification, CancellationToken cancellationToken = default) => await Collection.AsQueryable().Where(specification.ToExpression()).FirstOrDefaultAsync(cancellationToken);
 

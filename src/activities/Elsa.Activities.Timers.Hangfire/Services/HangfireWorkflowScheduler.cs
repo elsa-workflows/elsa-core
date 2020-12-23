@@ -65,7 +65,7 @@ namespace Elsa.Activities.Timers.Hangfire.Services
           _backgroundJobClient.UnscheduleJobWhenAlreadyExists(
                 CreateData(workflowExecutionContext.WorkflowBlueprint,
                     activityId: activityId,
-                    workflowInstanceId: workflowExecutionContext.WorkflowInstance.WorkflowInstanceId)
+                    workflowInstanceId: workflowExecutionContext.WorkflowInstance.Id)
                );
 
             return Task.CompletedTask;

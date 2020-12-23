@@ -34,8 +34,7 @@ namespace Elsa.Persistence.Decorators
             CancellationToken cancellationToken) =>
             _store.FindManyAsync(specification, orderBy, paging, cancellationToken);
 
-        public Task<int> CountAsync(ISpecification<WorkflowDefinition> specification, IOrderBy<WorkflowDefinition>? orderBy, CancellationToken cancellationToken) =>
-            _store.CountAsync(specification, orderBy, cancellationToken);
+        public Task<int> CountAsync(ISpecification<WorkflowDefinition> specification, CancellationToken cancellationToken) => _store.CountAsync(specification, cancellationToken);
 
         public Task<WorkflowDefinition?> FindAsync(ISpecification<WorkflowDefinition> specification, CancellationToken cancellationToken) => _store.FindAsync(specification, cancellationToken);
 

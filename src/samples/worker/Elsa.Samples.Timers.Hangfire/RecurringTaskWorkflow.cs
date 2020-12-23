@@ -19,9 +19,9 @@ namespace Elsa.Samples.Timers
             workflow
                 .AsSingleton()
                 .Timer(Duration.FromSeconds(30))
-                .WriteLine(context => $"{context.WorkflowExecutionContext.WorkflowInstance.WorkflowInstanceId} triggered by timer at {_clock.GetCurrentInstant()}.")
+                .WriteLine(context => $"{context.WorkflowExecutionContext.WorkflowInstance.Id} triggered by timer at {_clock.GetCurrentInstant()}.")
                 .Timer(Duration.FromSeconds(30))
-                .WriteLine(context => $"{context.WorkflowExecutionContext.WorkflowInstance.WorkflowInstanceId} resumed by timer at {_clock.GetCurrentInstant()}.");
+                .WriteLine(context => $"{context.WorkflowExecutionContext.WorkflowInstance.Id} resumed by timer at {_clock.GetCurrentInstant()}.");
         }
     }
 }

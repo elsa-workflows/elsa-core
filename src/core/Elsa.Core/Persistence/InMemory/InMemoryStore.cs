@@ -53,9 +53,9 @@ namespace Elsa.Persistence.InMemory
             return Task.FromResult<IEnumerable<T>>(query.ToList());
         }
 
-        public Task<int> CountAsync(ISpecification<T> specification, IOrderBy<T>? orderBy = default, CancellationToken cancellationToken = default)
+        public Task<int> CountAsync(ISpecification<T> specification, CancellationToken cancellationToken = default)
         {
-            var query = Entities.Values.AsQueryable().Apply(specification).Apply(orderBy);
+            var query = Entities.Values.AsQueryable().Apply(specification);
             return Task.FromResult(query.Count());
         }
 

@@ -7,11 +7,6 @@
         <TargetFramework>netstandard2.0</TargetFramework>       
         <Description>
             Elsa is a set of workflow libraries and tools that enable lean and mean workflowing capabilities in any .NET Core application.
-        </Description>
-        <Copyright>2020</Copyright>
-        <PackageProjectUrl>https://github.com/elsa-workflows/elsa-core</PackageProjectUrl>
-        <RepositoryUrl>https://github.com/elsa-workflows/elsa-core</RepositoryUrl>
-        <RepositoryType>GitHub</RepositoryType>
             This package provides the following Timer activities:
 
             * CronEvent

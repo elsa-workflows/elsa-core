@@ -24,7 +24,7 @@ namespace Elsa.Activities.Timers
         private readonly IWorkflowScheduler _workflowScheduler;
 		private readonly ICrontabParser _crontabParser;
 
-        public Cron(IWorkflowInstanceStore workflowInstanceStore, IWorkflowScheduler workflowScheduler, IClock clock)
+        public Cron(IWorkflowInstanceStore workflowInstanceStore, IWorkflowScheduler workflowScheduler, ICrontabParser crontabParser, IClock clock)
         {
             _clock = clock;
             _workflowInstanceStore = workflowInstanceStore;

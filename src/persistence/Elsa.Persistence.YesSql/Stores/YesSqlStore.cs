@@ -66,7 +66,7 @@ namespace Elsa.Persistence.YesSql.Stores
             return documents.Count;
         }
 
-        public async Task<int> CountAsync(ISpecification<T> specification, IOrderBy<T>? orderBy = default, CancellationToken cancellationToken = default) => await Query(specification, orderBy).CountAsync();
+        public async Task<int> CountAsync(ISpecification<T> specification, CancellationToken cancellationToken = default) => await Query(specification).CountAsync();
 
         public async Task<T?> FindAsync(ISpecification<T> specification, CancellationToken cancellationToken = default)
         {

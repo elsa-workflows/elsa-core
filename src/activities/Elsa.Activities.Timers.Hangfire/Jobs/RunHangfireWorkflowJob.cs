@@ -5,6 +5,7 @@ using Elsa.Activities.Timers.Hangfire.Models;
 using Elsa.Activities.Timers.Services;
 using Elsa.Models;
 using Elsa.Persistence;
+using Elsa.Persistence.Specifications;
 using Elsa.Services;
 
 using Hangfire;
@@ -42,7 +43,7 @@ namespace Elsa.Activities.Timers.Hangfire.Jobs
 
             if (data.WorkflowInstanceId == null)
             {
-                if (workflowBlueprint.IsSingleton == false || await _workflowInstanceManager.GetWorkflowIsAlreadyExecutingAsync(data.TenantId, data.WorkflowDefinitionId) == false)
+                if (workflowBlueprint.IsSingleton == false || await GetWorkflowIsAlreadyExecutingAsync(data.TenantId, data.WorkflowDefinitionId) == false)
                 {
                     await _workflowRunner.RunWorkflowAsync(workflowBlueprint, data.ActivityId);
                 }
@@ -63,13 +64,20 @@ namespace Elsa.Activities.Timers.Hangfire.Jobs
             }
 
             // If it is a RecurringJob and the instance is null, the timer activity is a start trigger.
-            if (data.IsRecurringJob && (workflowInstance == null || workflowInstance.Status is not (WorkflowStatus.Finished or WorkflowStatus.Cancelled)))
+            if (data.IsRecurringJob && (workflowInstance == null || workflowInstance.WorkflowStatus is not (WorkflowStatus.Finished or WorkflowStatus.Cancelled)))
             {
                 var backgroundJobClient = _serviceProvider.GetRequiredService<IBackgroundJobClient>();
                 var crontabParer = _serviceProvider.GetRequiredService<ICrontabParser>();
 
                 backgroundJobClient.ScheduleWorkflow(data, crontabParer.GetNextOccurrence(data.CronExpression!).ToDateTimeOffset());
             }
+        }
+        
+        private async Task<bool> GetWorkflowIsAlreadyExecutingAsync(string? tenantId, string workflowDefinitionId)
+        {
+            var specification = new TenantSpecification<WorkflowInstance>(tenantId).WithWorkflowDefinition(workflowDefinitionId).And(new WorkflowIsAlreadyExecutingSpecification());
+            var count = await _workflowInstanceManager.CountAsync(specification);
+            return count > 0;
         }
 
         private async Task<WorkflowInstance?> GetWorkflowInstanceAsync(string workflowInstanceId)
@@ -78,7 +86,7 @@ namespace Elsa.Activities.Timers.Hangfire.Jobs
 
             for (var i = 0; i < TimerConsts.MaxRetrayGetWorkflow && workflowInstance == null; i++)
             {
-                workflowInstance = await _workflowInstanceManager.GetByIdAsync(workflowInstanceId);
+                workflowInstance = await _workflowInstanceManager.FindByIdAsync(workflowInstanceId);
 
                 if (workflowInstance == null)
                 {

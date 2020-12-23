@@ -58,7 +58,7 @@ namespace Elsa.Activities.Timers.Quartz.Services
             var scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
             var trigger = CreateTriggerKey(tenantId: workflowExecutionContext.WorkflowBlueprint.TenantId,
                 workflowDefinitionId: workflowExecutionContext.WorkflowBlueprint.Id,
-                workflowInstanceId: workflowExecutionContext.WorkflowInstance.WorkflowInstanceId,
+                workflowInstanceId: workflowExecutionContext.WorkflowInstance.Id,
                 activityId: activityId);
 
             var existingTrigger = await scheduler.GetTrigger(trigger, cancellationToken);
