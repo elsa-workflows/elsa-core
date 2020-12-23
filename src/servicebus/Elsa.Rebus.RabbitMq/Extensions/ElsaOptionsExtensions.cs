@@ -7,7 +7,7 @@ namespace Elsa.Rebus.RabbitMq.Extensions
 {
     public static class ElsaOptionsExtensions
     {
-        public static ElsaOptions UseRabbitMq(this ElsaOptions elsaOptions, string connectionString, LogLevel logLevel = LogLevel.Info)
+        public static ElsaConfigurationsOptions UseRabbitMq(this ElsaConfigurationsOptions elsaOptions, string connectionString, LogLevel logLevel = LogLevel.Info)
         {
             return elsaOptions.UseServiceBus(context => ConfigureAzureServiceBusEndpoint(context, connectionString, logLevel));
         } 

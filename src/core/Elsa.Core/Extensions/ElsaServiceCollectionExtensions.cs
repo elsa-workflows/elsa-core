@@ -37,9 +37,9 @@ namespace Microsoft.Extensions.DependencyInjection
     {
         public static IServiceCollection AddElsaCore(
             this IServiceCollection services,
-            Action<ElsaOptions>? configure = default)
+            Action<ElsaConfigurationsOptions>? configure = default)
         {
-            var options = new ElsaOptions(services);
+            var options = new ElsaConfigurationsOptions(services);
             configure?.Invoke(options);
 
             services
@@ -62,9 +62,10 @@ namespace Microsoft.Extensions.DependencyInjection
         }
 
         public static IServiceCollection AddActivity<T>(this IServiceCollection services) where T : class, IActivity =>
-            services
-                .AddTransient<T>()
-                .AddTransient<IActivity>(sp => sp.GetRequiredService<T>());
+            services.AddActivity(typeof(T));
+
+        public static IServiceCollection AddActivity(this IServiceCollection services, Type activityType) =>
+           services.Configure<ElsaOptions>(options => options.RegisterActivity(activityType));
 
         /// <summary>
         /// Add all activities (<see cref="IActivity"/>) that are in the assembly
@@ -78,9 +79,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
             foreach (var type in types)
             {
-                services
-                  .AddTransient(type)
-                  .AddTransient(sp => (IActivity)sp.GetRequiredService(type));
+                services.AddActivity(type);
             }
 
             return services;
@@ -118,9 +117,9 @@ namespace Microsoft.Extensions.DependencyInjection
             return services;
         }
 
-        private static IServiceCollection AddMediatR(this ElsaOptions options) => options.Services.AddMediatR(mediatr => mediatr.AsScoped(), typeof(IActivity));
+        private static IServiceCollection AddMediatR(this ElsaConfigurationsOptions options) => options.Services.AddMediatR(mediatr => mediatr.AsScoped(), typeof(IActivity));
 
-        private static ElsaOptions AddWorkflowsCore(this ElsaOptions configuration)
+        private static ElsaConfigurationsOptions AddWorkflowsCore(this ElsaConfigurationsOptions configuration)
         {
             var services = configuration.Services;
             services.TryAddSingleton<IClock>(SystemClock.Instance);
@@ -130,7 +129,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddLocalization()
                 .AddMemoryCache()
                 .AddSingleton<IIdGenerator, IdGenerator>()
-                .AddSingleton(sp => sp.GetRequiredService<ElsaOptions>().CreateJsonSerializer(sp))
+                .AddSingleton(sp => sp.GetRequiredService<ElsaConfigurationsOptions>().CreateJsonSerializer(sp))
                 .AddSingleton<IContentSerializer, DefaultContentSerializer>()
                 .AddSingleton<TypeJsonConverter>()
                 .TryAddProvider<IExpressionHandler, LiteralHandler>(ServiceLifetime.Singleton)

@@ -8,12 +8,12 @@ namespace Elsa.Services
 {
     public class ServiceBusFactory : IServiceBusFactory
     {
-        private readonly ElsaOptions _elsaOptions;
+        private readonly ElsaConfigurationsOptions _elsaOptions;
         private readonly IServiceProvider _serviceProvider;
         private readonly IDictionary<string, IBus> _serviceBuses = new Dictionary<string, IBus>();
         private readonly DependencyInjectionHandlerActivator _handlerActivator;
 
-        public ServiceBusFactory(ElsaOptions elsaOptions, IServiceProvider serviceProvider)
+        public ServiceBusFactory(ElsaConfigurationsOptions elsaOptions, IServiceProvider serviceProvider)
         {
             _elsaOptions = elsaOptions;
             _serviceProvider = serviceProvider;

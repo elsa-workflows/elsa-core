@@ -11,6 +11,7 @@ namespace Microsoft.Extensions.DependencyInjection
         public static IServiceCollection AddWorkflowProvider<T>(this IServiceCollection services) where T : class, IWorkflowProvider => services.AddTransient<IWorkflowProvider, T>();
 
         public static IServiceCollection AddWorkflowContextProvider<T>(this IServiceCollection services) where T : class, IWorkflowContextProvider => services.AddTransient<IWorkflowContextProvider, T>();
+       
         public static IServiceCollection AddWorkflowContextProvider(this IServiceCollection services, Assembly assembly)
         {
             var workflowContextProviderType = typeof(IWorkflowContextProvider);
