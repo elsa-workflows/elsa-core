@@ -21,8 +21,7 @@ namespace Elsa.Samples.IfElseConsole
                 .WriteLine("Throw some Rupees in and your wishes will surely come true.")
                 .WriteLine("Do you want to throw Rupees?")
                 .ReadLine()
-                .IfElse(
-                    activity => activity.WithCondition(context => IsYes(context.Input)),
+                .IfElse(context => IsYes(context.Input),
                     ifElse =>
                     {
                         ifElse
@@ -39,7 +38,7 @@ namespace Elsa.Samples.IfElseConsole
 
         private static bool IsYes(object? value)
         {
-            var text = ((string)value!).ToLowerInvariant();
+            var text = ((string) value!).ToLowerInvariant();
             return text switch
             {
                 "yes" => true,

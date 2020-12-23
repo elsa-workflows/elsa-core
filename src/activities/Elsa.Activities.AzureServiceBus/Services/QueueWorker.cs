@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Elsa.Activities.AzureServiceBus.Services
 {
-    public class QueueWorker
+    public class QueueWorker : IAsyncDisposable
     {
         private readonly IMessageReceiver _messageReceiver;
         private readonly IServiceProvider _serviceProvider;
@@ -46,13 +46,27 @@ namespace Elsa.Activities.AzureServiceBus.Services
         {
             var context = e.ExceptionReceivedContext;
 
-            _logger.LogError("Message handler encountered an exception {Exception}.", e.Exception);
-            _logger.LogError("Exception context for troubleshooting:");
-            _logger.LogError("- Endpoint: {Endpoint}", context.Endpoint);
-            _logger.LogError("- Entity Path: {EntityPath}", context.EntityPath);
-            _logger.LogError("- Executing Action: {Action}", context.Action);
-
+            switch (e.Exception)
+            {
+                case MessageLockLostException:
+                case ServiceBusCommunicationException:
+                    _logger.LogDebug(e.Exception.Message);
+                    break;
+                default:
+                    _logger.LogError("Message handler encountered an exception {Exception}.", e.Exception);
+                    _logger.LogError("Exception context for troubleshooting:");
+                    _logger.LogError("- Endpoint: {Endpoint}", context.Endpoint);
+                    _logger.LogError("- Entity Path: {EntityPath}", context.EntityPath);
+                    _logger.LogError("- Executing Action: {Action}", context.Action);
+                    break;
+            }
+            
             return Task.CompletedTask;
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            await _messageReceiver.CloseAsync();
         }
     }
 }

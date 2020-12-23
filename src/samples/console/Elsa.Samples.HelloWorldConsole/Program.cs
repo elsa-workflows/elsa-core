@@ -1,6 +1,9 @@
+using System;
 using System.Threading.Tasks;
-using Elsa.Extensions;
-using Elsa.Persistence.InMemory;
+using Elsa.Models;
+using Elsa.Persistence;
+using Elsa.Persistence.Specifications;
+using Elsa.Persistence.YesSql.Extensions;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -12,7 +15,7 @@ namespace Elsa.Samples.HelloWorldConsole
         {
             // Create a service container with Elsa services.
             var services = new ServiceCollection()
-                .AddElsa()
+                .AddElsa(options => options.UseYesSqlPersistence())
                 .AddConsoleActivities()
                 .AddWorkflow<HelloWorld>()
                 .AddAutoMapperProfiles<Program>()
@@ -27,6 +30,24 @@ namespace Elsa.Samples.HelloWorldConsole
 
             // Run the workflow.
             await workflowRunner.RunWorkflowAsync<HelloWorld>();
+
+            var store = services.GetRequiredService<IWorkflowInstanceStore>();
+            
+            var results = await store.FindManyAsync(
+                new WorkflowInstanceDefinitionIdSpecification(nameof(HelloWorld)), 
+                OrderBySpecification.OrderByDescending<WorkflowInstance>(x => x.CreatedAt),
+                Paging.Page(1, 2));
+            
+            var count = await store.CountAsync(
+                new WorkflowInstanceDefinitionIdSpecification(nameof(HelloWorld)), 
+                OrderBySpecification.OrderByDescending<WorkflowInstance>(x => x.CreatedAt));
+
+            Console.WriteLine(count);
+            
+            foreach (var result in results)
+            {
+                Console.WriteLine(result.CreatedAt);
+            }
         }
     }
 }

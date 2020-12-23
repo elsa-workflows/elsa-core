@@ -1,31 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+    <Import Project="..\..\..\common.props" />
+    <Import Project="..\..\..\configureawait.props" />
+    
     <PropertyGroup>
-        <TargetFramework>netstandard2.0</TargetFramework>
-        <LangVersion>latest</LangVersion>
-        <RootNamespace>Elsa</RootNamespace>
-        <PackageVersion>1.0.0</PackageVersion>
-        <Authors>Elsa Contributors</Authors>
+        <TargetFramework>netstandard2.0</TargetFramework>      
+        <RootNamespace>Elsa</RootNamespace>       
         <Description>
             Elsa is a set of workflow libraries and tools that enable lean and mean workflowing capabilities in any .NET Core application.
             This package contains the core of Elsa.
             Tip: reference the `Elsa` package instead of this one.
-        </Description>
-        <Copyright>2020</Copyright>
-        <PackageProjectUrl>https://github.com/elsa-workflows/elsa-core</PackageProjectUrl>
-        <RepositoryUrl>https://github.com/elsa-workflows/elsa-core</RepositoryUrl>
-        <RepositoryType>GitHub</RepositoryType>
+        </Description>     
         <PackageTags>elsa, workflows, orchard</PackageTags>
-        <PackageIcon>icon.png</PackageIcon>
-        <Nullable>enable</Nullable>
     </PropertyGroup>
-
-    <ItemGroup>
-        <None Include="icon.png">
-            <Pack>True</Pack>
-            <PackagePath />
-        </None>
-    </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="AutoMapper" Version="10.1.1" />
@@ -37,9 +24,9 @@
         <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
         <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="5.0.0" />
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="5.0.0" />
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.0" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.1" />
         <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="5.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Localization" Version="5.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Localization" Version="5.0.1" />
         <PackageReference Include="Microsoft.Extensions.Logging" Version="5.0.0" />
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.0" />
         <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="5.0.0" />
@@ -49,16 +36,12 @@
         <PackageReference Include="Scrutor" Version="3.3.0" />
         <PackageReference Include="Storage.Net" Version="9.2.7" />
         <PackageReference Include="System.Linq.Async" Version="5.0.0" />
-        <PackageReference Include="YamlDotNet" Version="8.1.2" />
-        <PackageReference Include="Rebus.ServiceProvider" Version="5.0.6" />
+        <PackageReference Include="YamlDotNet" Version="9.1.0" />
+        <PackageReference Include="Rebus.ServiceProvider" Version="6.0.0" />
     </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\Elsa.Abstractions\Elsa.Abstractions.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <Folder Include="Data" />
     </ItemGroup>
 
 </Project>

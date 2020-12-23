@@ -1,7 +1,7 @@
 using System;
 using System.ComponentModel;
 
-namespace Elsa.Extensions
+namespace Elsa
 {
     public static class StringExtensions
     {

@@ -35,7 +35,7 @@ namespace Elsa.Activities.Email.Services
                     await SendOnlineMessage(message, cancellationToken);
                     break;
                 case SmtpDeliveryMethod.SpecifiedPickupDirectory:
-                    await SendOfflineMessage(message, _options.PickupDirectoryLocation);
+                    await SendOfflineMessage(message, _options.PickupDirectoryLocation!);
                     break;
                 default:
                     throw new NotSupportedException($"The '{_options.DeliveryMethod}' delivery method is not supported.");

@@ -19,10 +19,8 @@ namespace Elsa.Core.IntegrationTests.Workflows
             var items = Enumerable.Range(1, 10).Select(x => $"Item {x}").ToList();
             var workflow = new ForEachWorkflow(items);
             var workflowInstance = await WorkflowRunner.RunWorkflowAsync(workflow);
-            var iterationLogs = workflowInstance.ExecutionLog.Where(x => x.ActivityId == "WriteLine").ToList();
 
-            Assert.Equal(WorkflowStatus.Suspended, workflowInstance.Status);
-            Assert.Single(iterationLogs);
+            Assert.Equal(WorkflowStatus.Suspended, workflowInstance.WorkflowStatus);
         }
     }
 }

@@ -4,10 +4,11 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Exceptions;
-
 using Elsa.Models;
 using Elsa.Persistence;
+using Elsa.Persistence.Specifications;
 using Elsa.Services.Models;
+using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Services
 {
@@ -15,13 +16,13 @@ namespace Elsa.Services
     {
         private readonly IWorkflowRunner _workflowRunner;
         private readonly IWorkflowRegistry _workflowRegistry;
-        private readonly IWorkflowInstanceStore _workflowInstanceManager;
+        private readonly IWorkflowInstanceStore _workflowInstanceStore;
 
         public WorkflowTriggerInterruptor(IWorkflowRunner workflowRunner, IWorkflowRegistry workflowRegistry, IWorkflowInstanceStore workflowInstanceStore)
         {
             _workflowRunner = workflowRunner;
             _workflowRegistry = workflowRegistry;
-            _workflowInstanceManager = workflowInstanceStore;
+            _workflowInstanceStore = workflowInstanceStore;
         }
 
         public async Task<WorkflowInstance> InterruptActivityAsync(WorkflowInstance workflowInstance, string activityId, object? input, CancellationToken cancellationToken)
@@ -32,7 +33,7 @@ namespace Elsa.Services
 
         public async Task<WorkflowInstance> InterruptActivityAsync(IWorkflowBlueprint workflowBlueprint, WorkflowInstance workflowInstance, string activityId, object? input, CancellationToken cancellationToken)
         {
-            if (workflowInstance.Status != WorkflowStatus.Suspended)
+            if (workflowInstance.WorkflowStatus != WorkflowStatus.Suspended)
                 throw new WorkflowException("Cannot interrupt workflows that are not in the Suspended state.");
 
             var blockingActivity = workflowInstance.BlockingActivities.SingleOrDefault(x => x.ActivityId == activityId);
@@ -63,14 +64,19 @@ namespace Elsa.Services
             await InterruptActivityTypeInternalAsync(activityType, input, cancellationToken).ToListAsync(cancellationToken);
 
         private async Task<IWorkflowBlueprint?> GetWorkflowBlueprintAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken) =>
-            await _workflowRegistry.GetWorkflowAsync(workflowInstance.WorkflowDefinitionId, workflowInstance.TenantId, VersionOptions.SpecificVersion(workflowInstance.Version), cancellationToken);
+            await _workflowRegistry.GetWorkflowAsync(workflowInstance.DefinitionId, workflowInstance.TenantId, VersionOptions.SpecificVersion(workflowInstance.Version), cancellationToken);
 
         private async IAsyncEnumerable<WorkflowInstance> InterruptActivityTypeInternalAsync(string activityType, object? input, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
-            var workflowInstances = await _workflowInstanceManager.ListByBlockingActivityTypeAsync(activityType, cancellationToken);
+            var suspendedWorkflows = await _workflowInstanceStore.FindManyAsync(new BlockingActivityTypeSpecification(activityType), cancellationToken: cancellationToken).ToList();
+            var workflowInstanceIds = suspendedWorkflows.Select(x => x.Id).Distinct().ToList();
+            var workflowInstances = await _workflowInstanceStore.FindManyAsync(new ManyWorkflowInstanceIdsSpecification(workflowInstanceIds), cancellationToken: cancellationToken).ToDictionary(x => x.Id);
 
-            foreach (var workflowInstance in workflowInstances)
+            foreach (var suspendedWorkflow in suspendedWorkflows)
+            {
+                var workflowInstance = workflowInstances[suspendedWorkflow.Id];
                 yield return await InterruptActivityTypeAsync(workflowInstance, activityType, input, cancellationToken);
+            }
         }
     }
 }

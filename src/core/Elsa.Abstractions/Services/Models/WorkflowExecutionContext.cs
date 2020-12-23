@@ -70,8 +70,8 @@ namespace Elsa.Services.Models
         }
 
         public bool DeleteCompletedInstances => WorkflowBlueprint.DeleteCompletedInstances;
-        public ICollection<ExecutionLogEntry> ExecutionLog => WorkflowInstance.ExecutionLog;
-        public WorkflowStatus Status => WorkflowInstance.Status;
+        public ICollection<string> ExecutionLog => new List<string>();
+        public WorkflowStatus Status => WorkflowInstance.WorkflowStatus;
         public bool HasBlockingActivities => WorkflowInstance.BlockingActivities.Any();
         public object? WorkflowContext { get; set; }
 
@@ -79,25 +79,29 @@ namespace Elsa.Services.Models
         public T GetVariable<T>(string name) => WorkflowInstance.Variables.Get<T>(name);
         public object? GetVariable(string name) => WorkflowInstance.Variables.Get(name);
         public void CompletePass() => IsFirstPass = false;
-        public void Begin() => WorkflowInstance.Status = WorkflowStatus.Running;
-        public void Resume() => WorkflowInstance.Status = WorkflowStatus.Running;
-        public void Suspend() => WorkflowInstance.Status = WorkflowStatus.Suspended;
+        public void Begin() => WorkflowInstance.WorkflowStatus = WorkflowStatus.Running;
+        public void Resume() => WorkflowInstance.WorkflowStatus = WorkflowStatus.Running;
+        public void Suspend() => WorkflowInstance.WorkflowStatus = WorkflowStatus.Suspended;
 
         public void Fault(string? activityId, LocalizedString? message)
         {
-            WorkflowInstance.Status = WorkflowStatus.Faulted;
+            WorkflowInstance.WorkflowStatus = WorkflowStatus.Faulted;
             WorkflowFault = new WorkflowFault(activityId, message);
         }
 
-        public void Complete() => WorkflowInstance.Status = WorkflowStatus.Finished;
+        public void Complete() => WorkflowInstance.WorkflowStatus = WorkflowStatus.Finished;
 
         public IActivityBlueprint? GetActivityBlueprintById(string id) => WorkflowBlueprint.Activities.FirstOrDefault(x => x.Id == id);
         public IActivityBlueprint? GetActivityBlueprintByName(string name) => WorkflowBlueprint.Activities.FirstOrDefault(x => x.Name == name);
 
         public void SchedulePostActivities()
         {
-            while (HasPostScheduledActivities)
-                ScheduleActivity(WorkflowInstance.PostScheduledActivities.Pop());
+            var activities = WorkflowInstance.PostScheduledActivities.Reverse();
+
+            foreach (var activity in activities) 
+                ScheduleActivity(activity);
+
+            WorkflowInstance.PostScheduledActivities.Clear();
         }
 
         public object? GetOutputFrom(string activityName)

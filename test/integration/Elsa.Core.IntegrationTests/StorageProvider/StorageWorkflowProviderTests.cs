@@ -1,7 +1,6 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
 using Elsa.Core.IntegrationTests.Helpers;
-using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Testing.Shared.Unit;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,10 +26,8 @@ namespace Elsa.Core.IntegrationTests.StorageProvider
             await storage.WriteTextAsync(workflowFileName, json);
             var workflowBlueprint = await WorkflowRegistry.GetWorkflowAsync(workflowName, VersionOptions.Published);
             var workflowInstance = await WorkflowRunner.RunWorkflowAsync(workflowBlueprint!);
-            var executedActivityIds = workflowInstance.ExecutionLog.Select(x => x.ActivityId).ToList();
 
-            Assert.Equal(WorkflowStatus.Finished, workflowInstance.Status);
-            Assert.Contains("activity-1", executedActivityIds);
+            Assert.Equal(WorkflowStatus.Finished, workflowInstance.WorkflowStatus);
         }
     }
 }

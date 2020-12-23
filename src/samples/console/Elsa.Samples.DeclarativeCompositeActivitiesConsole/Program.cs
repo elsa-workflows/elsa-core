@@ -28,8 +28,8 @@ namespace Elsa.Samples.DeclarativeCompositeActivitiesConsole
             // Define a workflow.
             var workflowDefinition = new WorkflowDefinition
             {
-                WorkflowDefinitionId = "SampleWorkflow",
-                WorkflowDefinitionVersionId = "1",
+                Id = "SampleWorkflow",
+                DefinitionVersionId = "1",
                 Version = 1,
                 IsPublished = true,
                 IsLatest = true,

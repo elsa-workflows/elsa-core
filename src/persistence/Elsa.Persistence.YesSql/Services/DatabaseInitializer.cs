@@ -1,9 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
-
 using Elsa.Data;
 using Elsa.Services;
-
 using YesSql;
 
 namespace Elsa.Persistence.YesSql.Services
@@ -21,6 +19,7 @@ namespace Elsa.Persistence.YesSql.Services
         {
             await _store.InitializeCollectionAsync(CollectionNames.WorkflowDefinitions);
             await _store.InitializeCollectionAsync(CollectionNames.WorkflowInstances);
+            await _store.InitializeCollectionAsync(CollectionNames.WorkflowExecutionLog);
         }
     }
 }

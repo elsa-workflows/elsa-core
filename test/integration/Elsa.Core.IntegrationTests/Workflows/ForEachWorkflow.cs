@@ -23,7 +23,7 @@ namespace Elsa.Core.IntegrationTests.Workflows
                     _items,
                     iterate => iterate
                         .Then<WriteLine>(activity => activity.Set(x => x.Text, context => $"{context.Input}")).WithId("WriteLine")
-                        .Then<ReceiveSignal>() /* Block workflow.*/
+                        .Then<SignalReceived>() /* Block workflow.*/
                         .WriteLine("Resumed"))
                 .WriteLine("One iterations executing, rest is blocked");
         }

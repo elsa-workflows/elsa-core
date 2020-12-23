@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using Elsa.Persistence.YesSql.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NodaTime;
@@ -16,13 +17,14 @@ namespace Elsa.Samples.Timers
                     (_, services) =>
                     {
                         services
-                            .AddElsa()
+                            .AddElsa(options => options.UseYesSqlPersistence())
                             .AddConsoleActivities()
                             .AddTimerActivities(options => options.UseQuartzProvider())
                             .AddWorkflow<RecurringTaskWorkflow>()
-                            .AddWorkflow<CronTaskWorkflow>()
-                            .AddWorkflow<CancelTimerWorkflow>()
-                            .AddWorkflow(new OneOffWorkflow(SystemClock.Instance.GetCurrentInstant().Plus(Duration.FromSeconds(5))));
+							.AddWorkflow<CancelTimerWorkflow>()
+                            //.AddWorkflow<CronTaskWorkflow>()
+                            //.AddWorkflow(new OneOffWorkflow(SystemClock.Instance.GetCurrentInstant().Plus(Duration.FromSeconds(5))))
+                            ;
                     });
     }
 }

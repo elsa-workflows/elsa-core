@@ -1,4 +1,5 @@
 {
+    "private": true,
     "scripts": {
         "serve": "cross-env NODE_ENV=development concurrently \"postcss src/tailwind.css -o public/tailwind.css --watch\" \"live-server ./public\"",
         "build:css:blazor": "cross-env NODE_ENV=production postcss src/tailwind.css -o ../../ElsaDashboard.Application/wwwroot/tailwind.css",

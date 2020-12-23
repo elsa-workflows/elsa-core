@@ -1,7 +1,7 @@
 {
     "$id": "1",
-    "workflowDefinitionId": "SampleWorkflow",
-    "workflowDefinitionVersionId": "1",
+    "EntityId": "SampleWorkflow",
+    "DefinitionVersionId": "1",
     "version": 1,
     "variables": {
       "$id": "2",

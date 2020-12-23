@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Rebus.Routing.TypeBased;
 
-namespace Elsa.Extensions
+namespace Elsa
 {
     public static class TypeBaseRouterConfigurationBuilderExtensions
     {

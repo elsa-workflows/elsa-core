@@ -53,7 +53,7 @@ namespace Elsa.Activities.Http.Middleware
             }
             else
             {
-                var workflowInstance = await workflowInstanceStore.GetByIdAsync(result.WorkflowInstanceId, cancellationToken);
+                var workflowInstance = await workflowInstanceStore.FindByIdAsync(result.WorkflowInstanceId, cancellationToken);
 
                 if (workflowInstance == null)
                 {

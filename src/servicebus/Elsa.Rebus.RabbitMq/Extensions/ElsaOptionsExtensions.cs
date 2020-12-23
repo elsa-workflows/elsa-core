@@ -1,5 +1,4 @@
-﻿using Elsa.Extensions;
-using Elsa.Services;
+﻿using Elsa.Services;
 using Rebus.Config;
 using Rebus.Logging;
 using Rebus.Routing.TypeBased;

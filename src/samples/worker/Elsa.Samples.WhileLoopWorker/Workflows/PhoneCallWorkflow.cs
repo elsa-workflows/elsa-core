@@ -1,9 +1,7 @@
 ﻿using Elsa.Activities.Console;
-using Elsa.Activities.ControlFlow;
-using Elsa.Activities.Timers;
 using Elsa.Builders;
+using Elsa.Samples.WhileLoopWorker.Activities;
 using Elsa.Samples.WhileLoopWorker.Services;
-using NodaTime;
 
 namespace Elsa.Samples.WhileLoopWorker.Workflows
 {
@@ -23,18 +21,8 @@ namespace Elsa.Samples.WhileLoopWorker.Workflows
         public void Build(IWorkflowBuilder workflow)
         {
             workflow
-                .WriteLine("Simulating a phone call... ringgg ringgg.")
-                .While(() => _phoneCallService.CallStatus != PhoneCallStatus.Finished,
-                    @while =>
-                    {
-                        @while
-                            .WriteLine("Ringgggg ringgg.")
-                            .WriteLine(() => $"Call status: {_phoneCallService.CallStatus}")
-                            .Timer(Duration.FromSeconds(5))
-                            .Then(() => _phoneCallService.Progress());
-
-                    })
-                .WriteLine(() => $"Call status: {_phoneCallService.CallStatus}")
+                .WriteLine("Simulating a phone call...")
+                .Then<MakePhoneCall>()
                 .WriteLine("Workflow finished.");
         }
     }

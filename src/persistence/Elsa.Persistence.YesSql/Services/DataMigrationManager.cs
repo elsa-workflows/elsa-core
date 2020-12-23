@@ -5,10 +5,8 @@ using System.Reflection;
 using System.Threading.Tasks;
 
 using Elsa.Data;
-using Elsa.Data.Documents;
-using Elsa.Extensions;
 using Elsa.Persistence.YesSql.Data;
-
+using Elsa.Persistence.YesSql.Documents;
 using Microsoft.Extensions.Logging;
 
 using YesSql;

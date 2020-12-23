@@ -2,7 +2,7 @@
 using System.Linq;
 using Elsa.Models;
 
-namespace Elsa.Extensions
+namespace Elsa
 {
     public static class WorkflowInstanceCollectionExtensions
     {

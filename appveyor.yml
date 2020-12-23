@@ -1,0 +1,211 @@
+# Elsa 2 - Build (MyGet)
+- branches:
+    only:
+      - feature/elsa-2.0
+
+  version: 2.0.0-preview6.{build}
+  pull_requests:
+    do_not_increment_build_number: true
+
+  image: Previous Visual Studio 2019
+  environment:
+    matrix:
+      - nodejs_version: "10"
+  dotnet_csproj:
+    patch: true
+    file: '**\*.csproj'
+    version: '{version}'
+    version_prefix: '{version}'
+    package_version: '{version}'
+    assembly_version: '{version}'
+    file_version: '{version}'
+    informational_version: '{version}'
+  cache:
+    - src\dashboards\blazor\ElsaDashboard.Application\ClientApp\node_modules
+    - '%APPDATA%\npm-cache'
+  install:
+    - ps: >-
+        Install-Product node $env:nodejs_version
+
+        cd .\src\dashboards\blazor\ElsaDashboard.Application\ClientApp
+
+        npm install
+
+        npm install posthtml-cli -g
+
+        cd ..\..\..\..\..\
+  build_script:
+    - ps: >-
+        cd .\src\dashboards\blazor\ElsaDashboard.Application\ClientApp
+
+        npm run build:html
+
+        npm run build:css:blazor
+
+        cd ..\..\..\..\..\
+
+        dotnet pack Elsa.sln --include-symbols /p:Version=$env:APPVEYOR_BUILD_VERSION
+  test: off
+  artifacts:
+    - path: '**/*.nupkg'
+      name: MyGet
+  deploy:
+    - provider: NuGet
+      server: https://www.myget.org/F/elsa-2/api/v2/package
+      api_key:
+        secure: JfESkwmLdWU7dzvoqKPUfMemb00wX8AEYxeHCsYWTX1LfTeECdmKdZxz7IVUpebb
+      skip_symbols: true
+      on:
+        branch: feature/elsa-2.0
+
+# Elsa 2 - Preview (NuGet)
+- branches:
+    only:
+      - feature/elsa-2.0
+  version: 2.0.0-preview6.{build}
+
+  skip_non_tags: true
+  skip_branch_with_pr: true
+  image: Visual Studio 2019
+  dotnet_csproj:
+    patch: true
+    file: '**\*.csproj'
+    version: '{version}'
+    version_prefix: '{version}'
+    package_version: '{version}'
+    assembly_version: '{version}'
+    file_version: '{version}'
+    informational_version: '{version}'
+  cache:
+    - '%APPDATA%\npm-cache'
+    - src\dashboards\blazor\ElsaDashboard.Application\ClientApp\node_modules
+  build_script:
+    - ps: >-
+        cd .\src\dashboards\blazor\ElsaDashboard.Application\ClientApp
+
+        npm install npm@latest -g
+
+        npm install posthtml-cli -g
+
+        npm install
+
+        npm run build:html
+
+        npm run build:css:blazor
+
+        cd ..\..\..\..\..\
+
+        dotnet pack Elsa.sln --include-symbols /p:Version=$env:APPVEYOR_BUILD_VERSION
+  artifacts:
+    - path: '**/*.nupkg'
+      name: NuGet
+  deploy:
+    - provider: NuGet
+      api_key:
+        secure: WC5CCcM5ksWOJbv925FNjv91KsfqHfwEe0A61FMNB27IxvttwJsvBC9XYwK+wQnp
+      skip_symbols: true
+      on:
+        APPVEYOR_REPO_TAG: true
+        branch: feature/elsa-2.0
+
+# Elsa 1.5.x
+- branches:
+    only:
+      - master
+
+  version: 1.5.0.{build}
+  pull_requests:
+    do_not_increment_build_number: true
+
+  skip_non_tags: true
+  skip_branch_with_pr: true
+  image: Visual Studio 2019 Preview
+  dotnet_csproj:
+    patch: true
+    file: '**\*.csproj'
+    version: '{version}'
+    version_prefix: '{version}'
+    package_version: '{version}'
+    assembly_version: '{version}'
+    file_version: '{version}'
+    informational_version: '{version}'
+  cache:
+    - src\dashboard\Elsa.Dashboard\Theme\argon-dashboard\node_modules
+    - '%APPDATA%\npm-cache'
+  build_script:
+    - ps: >-
+        cd .\src\dashboard\Elsa.Dashboard\Theme\argon-dashboard
+
+        npm install
+
+        npm install --global gulp-cli
+
+        gulp build
+
+        cd ..\..\..\..\..\
+
+        dotnet pack Elsa.sln --include-symbols
+  artifacts:
+    - path: '**/*.nupkg'
+      name: NuGet
+  deploy:
+    - provider: NuGet
+      api_key:
+        secure: WC5CCcM5ksWOJbv925FNjv91KsfqHfwEe0A61FMNB27IxvttwJsvBC9XYwK+wQnp
+      skip_symbols: true
+      on:
+        APPVEYOR_REPO_TAG: true
+        branch: master
+
+# Elsa 1.4.x
+- branches:
+    only:
+      - 1.4.x
+
+  version: 1.4.7.{build}
+  pull_requests:
+    do_not_increment_build_number: true
+  skip_non_tags: true
+  skip_branch_with_pr: true
+  image: Visual Studio 2019
+  dotnet_csproj:
+    patch: true
+    file: '**\*.csproj'
+    version: '{version}'
+    version_prefix: '{version}'
+    package_version: '{version}'
+    assembly_version: '{version}'
+    file_version: '{version}'
+    informational_version: '{version}'
+  cache:
+    - '%APPDATA%\npm-cache'
+    - src\dashboard\Elsa.Dashboard\Theme\argon-dashboard\node_modules
+  build_script:
+    - ps: >-
+        cd .\src\dashboard\Elsa.Dashboard\Theme\argon-dashboard
+
+        npm install
+
+        npm install --global gulp-cli
+
+        gulp build
+
+        cd ..\..\..\..\..\
+
+        dotnet pack Elsa.sln --include-symbols
+  artifacts:
+    - path: '**/*.nupkg'
+      name: NuGet
+  deploy:
+    - provider: NuGet
+      api_key:
+        secure: WC5CCcM5ksWOJbv925FNjv91KsfqHfwEe0A61FMNB27IxvttwJsvBC9XYwK+wQnp
+      skip_symbols: true
+      on:
+        APPVEYOR_REPO_TAG: true
+        branch: 1.4.x
+
+# "fall back" configuration for all other branches
+# no "branches" section defined
+# do not deploy at all
+- configuration: Debug

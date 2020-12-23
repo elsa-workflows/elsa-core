@@ -46,6 +46,7 @@ namespace Elsa.Serialization
             settings.Converters.Add(new StringEnumConverter(new DefaultNamingStrategy()));
             settings.Converters.Add(new TypeJsonConverter());
             settings.Converters.Add(new VersionOptionsJsonConverter());
+            settings.Converters.Add(new StackJsonConverter());
         }
 
         public static JsonSerializerSettings CreateDefaultJsonSerializationSettings()

@@ -1,0 +1,26 @@
+<Project>
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Authors>Elsa Contributors</Authors>
+    <Copyright>2020</Copyright> 
+    <PackageProjectUrl>https://github.com/elsa-workflows/elsa-core</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/elsa-workflows/elsa-core</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <Nullable>enable</Nullable>
+    <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
+    <PackageIconUrl>https://elsa-workflows.github.io/elsa-core/img/android-icon-192x192.png</PackageIconUrl>
+      
+    <!--<GenerateDocumentationFile>true</GenerateDocumentationFile> -->
+
+    <!-- https://github.com/dotnet/sourcelink -->
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.0-beta-20204-02">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+</Project>

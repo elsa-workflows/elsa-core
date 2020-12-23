@@ -1,4 +1,5 @@
 @page "/workflow-instances"
+@using Elsa.Client.Models
 <!-- Page title & actions -->
 <div class="border-b border-gray-200 px-4 py-4 sm:flex sm:items-center sm:justify-between sm:px-6 lg:px-8">
     <div class="flex-1 min-w-0">
@@ -31,9 +32,9 @@
     <div class="flex-1">
         <h3>Filters</h3>
     </div>
-    <ButtonDropdown Text="@SelectedWorkflowText" Items="@WorkflowFilterItems"/>
-    <ButtonDropdown Text="Status" Items="@(new[] { new ButtonDropdownItem("Suspended"), new ButtonDropdownItem("Faulted"), new ButtonDropdownItem("Completed"), new ButtonDropdownItem("Uncompleted"), new ButtonDropdownItem("All") })"/>
-    <ButtonDropdown Text="Sort" Items="@(new[] { new ButtonDropdownItem("Started"), new ButtonDropdownItem("Finished") })"/>
+    <ButtonDropdown Text="@SelectedWorkflowText" Items="@WorkflowFilterItems" IconType="@typeof(Icons.Squares)"/>
+    <ButtonDropdown Text="@SelectedWorkflowStatusText" Items="@WorkflowStatusFilterItems" IconType="@typeof(Icons.PlayCircle)"/>
+    <ButtonDropdown Text="@SelectedOrderByText" Items="@OrderByItems" IconType="@typeof(Icons.SortDescending)"/>
 </div>
 
 <!-- Workflow instances (only on smallest breakpoint) -->
@@ -54,8 +55,6 @@
                 </svg>
             </a>
         </li>
-
-        <!-- More project rows... -->
     </ul>
 </div>
 <!-- Workflow instances table (small breakpoint and up) -->
@@ -80,7 +79,7 @@
                     Created
                 </th>
                 <th class="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
-                    Completed
+                    Finished
                 </th>
                 <th class="pr-6 py-3 border-b border-gray-200 bg-gray-50 text-right text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider"></th>
             </tr>
@@ -88,18 +87,19 @@
             <tbody class="bg-white divide-y divide-gray-100">
             @foreach (var workflowInstance in WorkflowInstances.Items)
             {
-                var workflowBlueprint = WorkflowBlueprints[(workflowInstance.WorkflowDefinitionId, workflowInstance.Version)];
-                var displayName = workflowBlueprint.DisplayName;
-                var statusColor = GetStatusColor(workflowInstance.Status);
-                var viewUrl = $"workflow-instances/{workflowInstance.WorkflowInstanceId}/viewer";
+                var workflowKey = (workflowInstance.DefinitionId, workflowInstance.Version);
+                var workflowBlueprint = WorkflowBlueprints.ContainsKey(workflowKey) ? WorkflowBlueprints[workflowKey] : new WorkflowBlueprint { DisplayName = "(Blueprint Not Found)" };
+                var displayName = workflowBlueprint.DisplayName!;
+                var statusColor = GetStatusColor(workflowInstance.WorkflowStatus);
+                var viewUrl = $"workflow-instances/{workflowInstance.EntityId}/viewer";
                 <tr>
                     <td class="px-6 py-3 whitespace-no-wrap text-sm leading-5 font-medium text-gray-900">
-                        <a href="@($"workflow-instances/{workflowInstance.WorkflowInstanceId}/viewer")" class="truncate hover:text-gray-600">
-                            @workflowInstance.WorkflowInstanceId
+                        <a href="@($"workflow-instances/{workflowInstance.EntityId}/viewer")" class="truncate hover:text-gray-600">
+                            @workflowInstance.EntityId
                         </a>
                     </td>
                     <td class="px-6 py-3 whitespace-no-wrap text-sm leading-5 font-medium text-gray-900 text-left">
-                        <a href="@($"workflow-registry/{workflowInstance.WorkflowDefinitionId}/viewer")" class="truncate hover:text-gray-600">
+                        <a href="@($"workflow-registry/{workflowInstance.DefinitionId}/viewer")" class="truncate hover:text-gray-600">
                             @displayName
                         </a>
                     </td>
@@ -109,14 +109,14 @@
                     <td class="hidden md:table-cell px-6 py-3 whitespace-no-wrap text-sm leading-5 text-gray-500 text-right">
                         <div class="flex items-center space-x-3 lg:pl-2">
                             <div class="flex-shrink-0 w-2.5 h-2.5 rounded-full bg-@statusColor-600"></div>
-                            <span>@workflowInstance.Status</span>
+                            <span>@workflowInstance.WorkflowStatus</span>
                         </div>
                     </td>
                     <td class="hidden md:table-cell px-6 py-3 whitespace-no-wrap text-sm leading-5 text-gray-500 text-left">
                         @workflowInstance.CreatedAt
                     </td>
                     <td class="hidden md:table-cell px-6 py-3 whitespace-no-wrap text-sm leading-5 text-gray-500 text-left">
-                        @(workflowInstance.CompletedAt != null ? workflowInstance.CompletedAt.ToString() : "-")
+                        @(workflowInstance.FinishedAt != null ? workflowInstance.FinishedAt.ToString() : "-")
                     </td>
                     <td class="pr-6">
                         <ContextMenu>

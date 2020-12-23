@@ -11,11 +11,12 @@ using Elsa.Builders;
 using Elsa.Consumers;
 using Elsa.Converters;
 using Elsa.Expressions;
-using Elsa.Extensions;
 using Elsa.HostedServices;
 using Elsa.Mapping;
 using Elsa.Metadata;
 using Elsa.Metadata.Handlers;
+using Elsa.Persistence;
+using Elsa.Persistence.Decorators;
 using Elsa.Runtime;
 using Elsa.Serialization;
 using Elsa.Services;
@@ -42,6 +43,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton(options)
                 .AddScoped(options.WorkflowDefinitionStoreFactory)
                 .AddScoped(options.WorkflowInstanceStoreFactory)
+                .AddScoped(options.WorkflowExecutionLogStoreFactory)
                 .AddSingleton(options.DistributedLockProviderFactory)
                 .AddSingleton(options.SignalFactory)
                 .AddSingleton(options.StorageFactory);
@@ -49,6 +51,9 @@ namespace Microsoft.Extensions.DependencyInjection
             options.AddWorkflowsCore();
             options.AddMediatR();
             options.AddAutoMapper();
+
+            services.Decorate<IWorkflowDefinitionStore, InitializingWorkflowDefinitionStore>();
+            services.Decorate<IWorkflowInstanceStore, EventPublishingWorkflowInstanceStore>();
 
             return services;
         }
@@ -89,8 +94,6 @@ namespace Microsoft.Extensions.DependencyInjection
                 .TryAddProvider<IExpressionHandler, VariableHandler>(ServiceLifetime.Singleton)
                 .AddScoped<IExpressionEvaluator, ExpressionEvaluator>()
                 .AddScoped<IWorkflowRegistry, WorkflowRegistry>()
-                .AddScoped<IWorkflowInstanceManager, WorkflowInstanceManager>()
-                .AddScoped<IWorkflowDefinitionManager, WorkflowDefinitionManager>()
                 .AddSingleton<IActivityActivator, ActivityActivator>()
                 .AddScoped<IWorkflowRunner, WorkflowRunner>()
                 .AddScoped<IWorkflowTriggerInterruptor, WorkflowTriggerInterruptor>()
@@ -146,12 +149,12 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddActivity<Correlate>()
                 .AddActivity<SetVariable>()
                 .AddActivity<SetContextId>()
-                .AddActivity<ReceiveSignal>()
+                .AddActivity<SignalReceived>()
                 .AddActivity<SendSignal>()
                 .AddActivity<RunWorkflow>()
                 .AddActivity<InterruptTrigger>()
                 .AddScoped<ISignaler, Signaler>()
-                .AddTriggerProvider<ReceiveSignalTriggerProvider>()
+                .AddTriggerProvider<SignalReceivedTriggerProvider>()
                 .AddTriggerProvider<RunWorkflowTriggerProvider>();
     }
 }

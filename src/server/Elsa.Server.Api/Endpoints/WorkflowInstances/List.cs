@@ -2,6 +2,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Persistence;
+using Elsa.Persistence.Specifications;
 using Elsa.Server.Api.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -16,11 +17,11 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
     [Produces("application/json")]
     public class List : Controller
     {
-        private readonly IWorkflowInstanceStore _workflowInstanceManager;
+        private readonly IWorkflowInstanceStore _workflowInstanceStore;
 
         public List(IWorkflowInstanceStore workflowInstanceStore)
         {
-            _workflowInstanceManager = workflowInstanceStore;
+            _workflowInstanceStore = workflowInstanceStore;
         }
 
         [HttpGet]
@@ -31,10 +32,37 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
             OperationId = "WorkflowInstances.List",
             Tags = new[] { "WorkflowInstances" })
         ]
-        public async Task<ActionResult<PagedList<WorkflowInstance>>> Handle(int page = 0, int pageSize = 50, CancellationToken cancellationToken = default)
+        public async Task<ActionResult<PagedList<WorkflowInstance>>> Handle(
+            [FromQuery(Name = "workflow")] string? workflowDefinitionId = default,
+            [FromQuery(Name = "status")] WorkflowStatus? workflowStatus = default,
+            [FromQuery] OrderBy? orderBy = default,
+            int page = 0,
+            int pageSize = 50,
+            CancellationToken cancellationToken = default)
         {
-            var totalCount = await _workflowInstanceManager.CountAsync(cancellationToken);
-            var workflowInstances = await _workflowInstanceManager.ListAsync(page, pageSize, cancellationToken).ToList();
+            var specification = Specification<WorkflowInstance>.All;
+
+            if (!string.IsNullOrWhiteSpace(workflowDefinitionId))
+                specification = specification.WithWorkflowDefinition(workflowDefinitionId);
+
+            if (workflowStatus != null)
+                specification = specification.WithStatus(workflowStatus.Value);
+
+            var orderBySpecification = default(OrderBy<WorkflowInstance>);
+            
+            if (orderBy != null)
+            {
+                orderBySpecification = orderBy switch
+                {
+                    OrderBy.Started => OrderBySpecification.OrderByDescending<WorkflowInstance>(x => x.CreatedAt),
+                    OrderBy.Finished => OrderBySpecification.OrderByDescending<WorkflowInstance>(x => x.FinishedAt!),
+                    _ => OrderBySpecification.OrderByDescending<WorkflowInstance>(x => x.FinishedAt!)
+                };
+            }
+            
+            var totalCount = await _workflowInstanceStore.CountAsync(specification, cancellationToken: cancellationToken);
+            var paging = Paging.Page(page, pageSize);
+            var workflowInstances = await _workflowInstanceStore.FindManyAsync(specification, orderBySpecification, paging, cancellationToken).ToList();
             return new PagedList<WorkflowInstance>(workflowInstances, page, pageSize, totalCount);
         }
     }

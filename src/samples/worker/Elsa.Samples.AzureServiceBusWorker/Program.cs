@@ -1,5 +1,6 @@
 using Elsa.Activities.AzureServiceBus.Extensions;
 using Elsa.Activities.Timers;
+using Elsa.Persistence.YesSql.Extensions;
 using Elsa.Samples.AzureServiceBusWorker.Workflows;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,7 +20,7 @@ namespace Elsa.Samples.AzureServiceBusWorker
                 .ConfigureServices((hostContext, services) =>
                 {
                     services
-                        .AddElsa()
+                        .AddElsa(options => options.UseYesSqlPersistence())
                         .AddConsoleActivities()
                         .AddTimerActivities(options => options.UseQuartzProvider())
                         .AddAzureServiceBusActivities(options => options.ConnectionString = hostContext.Configuration.GetConnectionString("AzureServiceBus"))

@@ -13,7 +13,7 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
     public class SignalRequestHandler : IRequestHandler
     {
         private readonly HttpContext _httpContext;
-        private readonly IWorkflowInstanceStore _workflowInstanceManager;
+        private readonly IWorkflowInstanceStore _workflowInstanceStore;
         private readonly ITokenService _tokenService;
         private readonly CancellationToken _cancellationToken;
         private readonly IWorkflowRunner _workflowRunner;
@@ -25,7 +25,7 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
             IWorkflowRunner workflowRunner)
         {
             _httpContext = httpContextAccessor.HttpContext;
-            _workflowInstanceManager = workflowInstanceStore;
+            _workflowInstanceStore = workflowInstanceStore;
             _tokenService = tokenService;
             _workflowRunner = workflowRunner;
             _cancellationToken = _httpContext.RequestAborted;
@@ -45,7 +45,7 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
 
             if (!CheckIfExecuting(workflowInstance))
                 return new BadRequestResult(
-                    $"Cannot signal a workflow with status other than {WorkflowStatus.Running}. Actual workflow status: {workflowInstance.Status}.");
+                    $"Cannot signal a workflow with status other than {WorkflowStatus.Running}. Actual workflow status: {workflowInstance.WorkflowStatus}.");
 
             await ResumeWorkflowAsync(workflowInstance, signal);
 
@@ -60,10 +60,10 @@ namespace Elsa.Activities.Http.RequestHandlers.Handlers
         }
 
         private async Task<WorkflowInstance?> GetWorkflowInstanceAsync(Signal signal) =>
-            await _workflowInstanceManager.GetByIdAsync(signal.WorkflowInstanceId, _cancellationToken);
+            await _workflowInstanceStore.FindByIdAsync(signal.WorkflowInstanceId, _cancellationToken);
 
         private bool CheckIfExecuting(WorkflowInstance workflowInstance) =>
-            workflowInstance.Status == WorkflowStatus.Running;
+            workflowInstance.WorkflowStatus == WorkflowStatus.Running;
 
         private async Task ResumeWorkflowAsync(WorkflowInstance workflowInstance, Signal signal)
         {

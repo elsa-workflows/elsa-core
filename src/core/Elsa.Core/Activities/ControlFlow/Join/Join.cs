@@ -95,7 +95,7 @@ namespace Elsa.Activities.ControlFlow
                 return;
 
             var joinActivityData = joinActivity.Data;
-            var inboundTransitions = joinActivityData.GetState<IReadOnlyCollection<string>>(nameof(InboundTransitions));
+            var inboundTransitions = joinActivityData.GetState<IReadOnlyCollection<string>?>(nameof(InboundTransitions)) ?? new List<string>();
             
             // For each inbound connection, record the transition.
             foreach (var inboundConnection in inboundConnections)

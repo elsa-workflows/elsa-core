@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Elsa.Activities.Timers.Services;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Persistence;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -18,17 +19,17 @@ namespace Elsa.Activities.Timers
     )]
     public class Cron : Activity
     {
-        private readonly IWorkflowInstanceManager _workflowInstanceManager;
-        private readonly IWorkflowScheduler _workflowScheduler;
-        private readonly ICrontabParser _crontabParser;
         private readonly IClock _clock;
+        private readonly IWorkflowInstanceStore _workflowInstanceStore;
+        private readonly IWorkflowScheduler _workflowScheduler;
+		private readonly ICrontabParser _crontabParser;
 
-        public Cron(IWorkflowInstanceManager workflowInstanceStore, IWorkflowScheduler workflowScheduler, ICrontabParser crontabParser, IClock clock)
+        public Cron(IWorkflowInstanceStore workflowInstanceStore, IWorkflowScheduler workflowScheduler, IClock clock)
         {
-            _workflowInstanceManager = workflowInstanceStore;
-            _workflowScheduler = workflowScheduler;
-            _crontabParser = crontabParser;
             _clock = clock;
+            _workflowInstanceStore = workflowInstanceStore;
+            _workflowScheduler = workflowScheduler;
+			_crontabParser = crontabParser;
         }
 
         [ActivityProperty(Hint = "Specify a CRON expression. See https://crontab.guru/ for help.")]
@@ -55,8 +56,8 @@ namespace Elsa.Activities.Timers
             if (executeAt < _clock.GetCurrentInstant())
                 return Done();
 
-            await _workflowInstanceManager.SaveAsync(context.WorkflowExecutionContext.WorkflowInstance, cancellationToken);
-            await _workflowScheduler.ScheduleWorkflowAsync(workflowBlueprint, workflowInstance.WorkflowInstanceId, Id, executeAt, cancellationToken);
+            await _workflowInstanceStore.SaveAsync(context.WorkflowExecutionContext.WorkflowInstance, cancellationToken);
+            await _workflowScheduler.ScheduleWorkflowAsync(workflowBlueprint, workflowInstance.Id, Id, executeAt, cancellationToken);
 
             return Suspend();
         }

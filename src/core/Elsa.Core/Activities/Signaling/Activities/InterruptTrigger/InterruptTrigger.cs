@@ -38,7 +38,7 @@ namespace Elsa.Activities.Signaling
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            var workflowInstance = await _workflowInstanceManager.GetByIdAsync(WorkflowInstanceId, context.CancellationToken);
+            var workflowInstance = await _workflowInstanceManager.FindByIdAsync(WorkflowInstanceId, context.CancellationToken);
             await _workflowTriggerInterruptor.InterruptActivityAsync(workflowInstance!, BlockingActivityId, Input, context.CancellationToken);
             return Done();
         }

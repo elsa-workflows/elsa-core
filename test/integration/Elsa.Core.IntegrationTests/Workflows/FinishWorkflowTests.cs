@@ -23,7 +23,7 @@ namespace Elsa.Core.IntegrationTests.Workflows
             var workflow = new FinishWorkflow(output);
             var workflowInstance = await WorkflowRunner.RunWorkflowAsync(workflow);
 
-            Assert.Equal(WorkflowStatus.Finished, workflowInstance.Status);
+            Assert.Equal(WorkflowStatus.Finished, workflowInstance.WorkflowStatus);
             Assert.Equal(output, workflowInstance.Output);
         }
     }

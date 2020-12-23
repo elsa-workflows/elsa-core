@@ -28,11 +28,11 @@ namespace Elsa.Services
         {
             var workflowInstance = new WorkflowInstance
             {
-                WorkflowInstanceId = _idGenerator.Generate(),
-                WorkflowDefinitionId = workflowBlueprint.Id,
+                Id = _idGenerator.Generate(),
+                DefinitionId = workflowBlueprint.Id,
                 TenantId = workflowBlueprint.TenantId,
                 Version = workflowBlueprint.Version,
-                Status = WorkflowStatus.Idle,
+                WorkflowStatus = WorkflowStatus.Idle,
                 CorrelationId = correlationId,
                 ContextId = contextId,
                 CreatedAt = _clock.GetCurrentInstant(),

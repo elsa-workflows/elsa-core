@@ -1,32 +1,19 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <Import Project="..\..\..\common.props" />
+    <Import Project="..\..\..\configureawait.props" />
 
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
-        <LangVersion>latest</LangVersion>
-        <PackageVersion>1.0.0</PackageVersion>
-        <Authors>Elsa Contributors</Authors>
         <Description>
             Elsa is a set of workflow libraries and tools that enable lean and mean workflowing capabilities in any .NET Core application.
             This package provides a Liquid expression evaluator based on Fluid.
         </Description>
-        <Copyright>2020</Copyright>
-        <PackageProjectUrl>https://github.com/elsa-workflows/elsa-core</PackageProjectUrl>
-        <RepositoryUrl>https://github.com/elsa-workflows/elsa-core</RepositoryUrl>
-        <RepositoryType>GitHub</RepositoryType>
-        <PackageTags>elsa, workflows, liquid, fluid</PackageTags>
-        <PackageIcon>icon.png</PackageIcon>
-        <Nullable>enable</Nullable>
+        <PackageTags>elsa, workflows, liquid</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>
-        <None Include="icon.png">
-            <Pack>True</Pack>
-            <PackagePath />
-        </None>
-    </ItemGroup>
-
-    <ItemGroup>
-        <PackageReference Include="Fluid.Core" Version="1.0.0-beta-9693" />
+        <PackageReference Include="Fluid.Core" Version="1.0.0-beta-9722" />
     </ItemGroup>
 
     <ItemGroup>

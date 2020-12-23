@@ -1,12 +1,11 @@
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 
 using Elsa.Models;
 using Elsa.Persistence;
+using Elsa.Persistence.Specifications;
 using Elsa.Services;
-
 using Microsoft.Extensions.Logging;
-
 using Quartz;
 
 namespace Elsa.Activities.Timers.Quartz.Jobs
@@ -38,14 +37,19 @@ namespace Elsa.Activities.Timers.Quartz.Jobs
 
             if (workflowInstanceId == null)
             {
-                if (workflowBlueprint.IsSingleton && await _workflowInstanceManager.GetWorkflowIsAlreadyExecutingAsync(tenantId, workflowDefinitionId, cancellationToken))
-                    return;
+                if (workflowBlueprint.IsSingleton)
+                {
+                    var hasExecutingWorkflow = (await _workflowInstanceManager.FindAsync(new WorkflowIsAlreadyExecutingSpecification().WithTenant(tenantId).WithWorkflowDefinition(workflowDefinitionId), cancellationToken)) != null;
+
+                    if (hasExecutingWorkflow)
+                        return;
+                }
 
                 await _workflowRunner.RunWorkflowAsync(workflowBlueprint, activityId, cancellationToken: cancellationToken);
             }
             else
             {
-                var workflowInstance = await GetWorkflowInstanceAsync(workflowInstanceId, cancellationToken);
+                var workflowInstance = await _workflowInstanceManager.FindByIdAsync(workflowInstanceId, cancellationToken);
 
                 if (workflowInstance == null)
                 {

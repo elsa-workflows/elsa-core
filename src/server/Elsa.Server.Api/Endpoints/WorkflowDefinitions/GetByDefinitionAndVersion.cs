@@ -1,6 +1,8 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
+using Elsa.Persistence;
+using Elsa.Persistence.Specifications;
 using Elsa.Serialization;
 using Elsa.Server.Api.Swagger.Examples;
 using Elsa.Services;
@@ -17,12 +19,12 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
     [Produces("application/json")]
     public class GetByDefinitionAndVersion : Controller
     {
-        private readonly IWorkflowDefinitionManager _workflowDefinitionManager;
+        private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
         private readonly IContentSerializer _serializer;
 
-        public GetByDefinitionAndVersion(IWorkflowDefinitionManager workflowDefinitionManager, IContentSerializer serializer)
+        public GetByDefinitionAndVersion(IWorkflowDefinitionStore workflowDefinitionStore, IContentSerializer serializer)
         {
-            _workflowDefinitionManager = workflowDefinitionManager;
+            _workflowDefinitionStore = workflowDefinitionStore;
             _serializer = serializer;
         }
 
@@ -33,12 +35,12 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
         [SwaggerOperation(
             Summary = "Returns a single workflow definition.",
             Description = "Returns a single workflow definition using the specified workflow definition ID and version options.",
-            OperationId = "WorkflowDefinitions.Get",
+            OperationId = "WorkflowDefinitions.GetByDefinitionAndVersion",
             Tags = new[] { "WorkflowDefinitions" })
         ]
         public async Task<IActionResult> Handle(string workflowDefinitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
         {
-            var workflowDefinition = await _workflowDefinitionManager.GetAsync(workflowDefinitionId, versionOptions, cancellationToken);
+            var workflowDefinition = await _workflowDefinitionStore.FindAsync(new WorkflowDefinitionIdSpecification(workflowDefinitionId).WithVersionOptions(versionOptions), cancellationToken);
             return workflowDefinition == null ? (IActionResult) NotFound() : Json(workflowDefinition, _serializer.GetSettings());
         }
     }
