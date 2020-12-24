@@ -94,14 +94,10 @@ namespace Elsa.Services.Models
         public IActivityBlueprint? GetActivityBlueprintById(string id) => WorkflowBlueprint.Activities.FirstOrDefault(x => x.Id == id);
         public IActivityBlueprint? GetActivityBlueprintByName(string name) => WorkflowBlueprint.Activities.FirstOrDefault(x => x.Name == name);
 
-        public void SchedulePostActivities()
+        public void SchedulePostActivity()
         {
-            var activities = WorkflowInstance.PostScheduledActivities.Reverse();
-
-            foreach (var activity in activities) 
-                ScheduleActivity(activity);
-
-            WorkflowInstance.PostScheduledActivities.Clear();
+            var activity = WorkflowInstance.PostScheduledActivities.Pop();
+            ScheduleActivity(activity);
         }
 
         public object? GetOutputFrom(string activityName)
