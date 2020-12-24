@@ -89,7 +89,7 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             var type = workflow.GetType();
             return services
-              .AddSingleton(type)
+              .AddSingleton(type, workflow)
               .AddWorkflow(type);
         }
 
