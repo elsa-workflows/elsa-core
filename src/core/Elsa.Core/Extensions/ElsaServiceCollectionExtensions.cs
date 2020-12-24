@@ -70,9 +70,6 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <summary>
         /// Add all activities (<see cref="IActivity"/>) that are in the assembly
         /// </summary>
-        /// <param name="services"></param>
-        /// <param name="assembly"></param>
-        /// <returns></returns>
         public static IServiceCollection AddActivity(this IServiceCollection services, Assembly assembly)
         {
             var types = assembly.GetAllWithInterface<IActivity>();
@@ -100,9 +97,6 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <summary>
         /// Add all workflows (<see cref="IWorkflow"/>) that are in the assembly and have no constructor with parameters
         /// </summary>
-        /// <param name="services"></param>
-        /// <param name="assembly"></param>
-        /// <returns></returns>
         public static IServiceCollection AddWorkflow(this IServiceCollection services, Assembly assembly)
         {
             var types = assembly.GetAllWithInterface<IWorkflow>().Where(x => x.GetConstructors().Any(ctor => ctor.GetParameters().Length > 0) == false);
