@@ -44,6 +44,7 @@ namespace Elsa.Server.Host
                 .AddWorkflow<HelloWorldV2>()
                 .AddWorkflow<GoodbyeWorld>()
                 .AddWorkflow<NamingWorkflow>()
+                .AddWorkflow<ConditionWorkflow>()
                 ;
         }
 

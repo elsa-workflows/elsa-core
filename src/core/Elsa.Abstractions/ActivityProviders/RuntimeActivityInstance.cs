@@ -31,5 +31,7 @@
         /// A value indicating whether the workflow context (if any) will be persisted automatically after executing this activity. 
         /// </summary>
         public bool SaveWorkflowContext { get; set; }
+        
+        public override string ToString() => $"{ActivityType.Type} - {Id}";
     }
 }

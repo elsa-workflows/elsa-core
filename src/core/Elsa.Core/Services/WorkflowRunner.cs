@@ -286,15 +286,13 @@ namespace Elsa.Services
                 activityOperation = Execute;
                 workflowExecutionContext.CompletePass();
 
+                // Exit execution loop if workflow has any other status than Running (i.e. Suspended). Otherwise continue the loop.
+                if (workflowExecutionContext.Status != WorkflowStatus.Running)
+                    break;
+                
                 // If there are no more scheduled activities, schedule any post-scheduled activities.
                 if (!workflowExecutionContext.HasScheduledActivities && workflowExecutionContext.HasPostScheduledActivities)
-                {
-                    workflowExecutionContext.SchedulePostActivities();
-
-                    // Exit execution loop if workflow has any other status than Running (i.e. Suspended). Otherwise continue the loop.
-                    if (workflowExecutionContext.Status != WorkflowStatus.Running)
-                        break;
-                }
+                    workflowExecutionContext.SchedulePostActivity();
             }
 
             if (workflowExecutionContext.HasBlockingActivities)
