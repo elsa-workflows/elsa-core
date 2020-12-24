@@ -2,6 +2,7 @@
 using Elsa.Activities.ControlFlow;
 using Elsa.Activities.Http;
 using Elsa.Activities.Http.Models;
+using Elsa.Activities.Primitives;
 using Elsa.Builders;
 using Elsa.Samples.CorrelationHttp.Models;
 using Microsoft.AspNetCore.Http;

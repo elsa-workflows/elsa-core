@@ -1,5 +1,6 @@
 ﻿using Elsa.Activities.Console;
 using Elsa.Activities.ControlFlow;
+using Elsa.Activities.Primitives;
 using Elsa.Builders;
 
 namespace Elsa.Samples.RunChildWorkflowWorker.Workflows

@@ -1,5 +1,6 @@
 ﻿using Elsa.Activities.Console;
 using Elsa.Activities.ControlFlow;
+using Elsa.Activities.Primitives;
 using Elsa.Activities.Rebus;
 using Elsa.Activities.Workflows;
 using Elsa.Builders;
