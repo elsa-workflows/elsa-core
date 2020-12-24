@@ -10,6 +10,7 @@ using ElsaDashboard.Application.Services;
 using ElsaDashboard.Application.Shared;
 using ElsaDashboard.Shared.Rpc;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.AspNetCore.WebUtilities;
 
@@ -29,6 +30,8 @@ namespace ElsaDashboard.Application.Pages.WorkflowInstances
         private PagedList<WorkflowInstance> WorkflowInstances { get; set; } = new();
         private IDictionary<(string, int), WorkflowBlueprint> WorkflowBlueprints { get; set; } = new Dictionary<(string, int), WorkflowBlueprint>();
         private IEnumerable<WorkflowBlueprint> LatestWorkflowBlueprints => GetLatestVersions(WorkflowBlueprints.Values);
+        private SearchModel SearchModel { get; set; } = new();
+        private EditContext EditContext { get; set; } = default!;
 
         private IEnumerable<ButtonDropdownItem> WorkflowFilterItems =>
             LatestWorkflowBlueprints.Select(x => new ButtonDropdownItem(x.DisplayName!, x.Id, BuildFilterUrl(x.Id, SelectedWorkflowStatus, SelectedOrderBy), x.Id == SelectedWorkflowId))
@@ -65,7 +68,8 @@ namespace ElsaDashboard.Application.Pages.WorkflowInstances
         protected override async Task OnInitializedAsync()
         {
             NavigationManager.LocationChanged += OnLocationChanged;
-
+            EditContext = new EditContext(SearchModel);
+            
             var workflowBlueprints = await WorkflowRegistryService.ListAsync();
             WorkflowBlueprints = workflowBlueprints.Items.ToDictionary(x => (x.Id, x.Version));
         }
@@ -78,7 +82,7 @@ namespace ElsaDashboard.Application.Pages.WorkflowInstances
         private async Task LoadWorkflowInstancesAsync()
         {
             SetDefaults();
-            WorkflowInstances = await WorkflowInstanceService.ListAsync(Page, PageSize, SelectedWorkflowId, SelectedWorkflowStatus, SelectedOrderBy);
+            WorkflowInstances = await WorkflowInstanceService.ListAsync(Page, PageSize, SelectedWorkflowId, SelectedWorkflowStatus, SelectedOrderBy, SearchModel.SearchTerm);
         }
 
         private static string BuildFilterUrl(string? workflowId, WorkflowStatus? workflowStatus, OrderBy? orderBy)
@@ -114,6 +118,8 @@ namespace ElsaDashboard.Application.Pages.WorkflowInstances
             this.SetParametersFromQueryString(NavigationManager);
             LoadWorkflowInstancesAsync().ContinueWith(_ => InvokeAsync(StateHasChanged));
         }
+
+        private async Task OnSearchSubmit() => await LoadWorkflowInstancesAsync();
 
         private void SetDefaults()
         {

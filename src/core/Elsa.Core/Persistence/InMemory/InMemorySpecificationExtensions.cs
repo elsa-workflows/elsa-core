@@ -5,7 +5,7 @@ namespace Elsa.Persistence.InMemory
 {
     public static class InMemorySpecificationExtensions
     {
-        public static IQueryable<T> Apply<T>(this IQueryable<T> queryable, ISpecification<T> specification) => queryable.Where(specification.ToExpression());
+        public static IQueryable<T> Apply<T>(this IQueryable<T> queryable, ISpecification<T> specification) => queryable.Where(x => specification.IsSatisfiedBy(x));
 
         public static IQueryable<T> Apply<T>(this IQueryable<T> queryable, IOrderBy<T>? specification)
         {
