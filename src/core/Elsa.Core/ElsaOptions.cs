@@ -1,4 +1,7 @@
 using System;
+using System.Linq;
+using System.Reflection;
+using AutoMapper;
 using Elsa.Caching;
 using Elsa.DistributedLock;
 using Elsa.Persistence;
@@ -33,8 +36,8 @@ namespace Elsa
 
             AddAutoMapper = () =>
             {
-                services.AddAutoMapper(ServiceLifetime.Singleton);
-                services.AddSingleton(sp => sp.CreateAutoMapperConfiguration());
+                // The profiles are added to AddWorkflowsCore so that they are not forgotten in case the AddAutoMapper function(option) is overridden.
+                services.AddAutoMapper(Enumerable.Empty<Assembly>(), serviceLifetime: ServiceLifetime.Singleton);
             };
 
             services.AddSingleton<InMemNetwork>();
