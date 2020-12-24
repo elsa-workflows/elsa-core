@@ -82,8 +82,23 @@ namespace Microsoft.Extensions.DependencyInjection
             return services;
         }
 
-        public static IServiceCollection AddWorkflow<T>(this IServiceCollection services) where T : IWorkflow, new() =>
+        public static IServiceCollection AddWorkflow<T>(this IServiceCollection services) where T : class, IWorkflow =>
             services.AddWorkflow(typeof(T));
+
+        public static IServiceCollection AddWorkflow(this IServiceCollection services, IWorkflow workflow)
+        {
+            var type = workflow.GetType();
+            return services
+              .AddSingleton(type)
+              .AddWorkflow(type);
+        }
+
+        public static IServiceCollection AddWorkflow<T>(this IServiceCollection services, Func<IServiceProvider, object> factory, ServiceLifetime serviceLifetime = ServiceLifetime.Transient) where T : class, IWorkflow
+        {
+            services.Add(new ServiceDescriptor(typeof(T), factory, serviceLifetime));
+
+            return services.AddWorkflow(typeof(T));
+        }
 
         public static IServiceCollection AddWorkflow(this IServiceCollection services, Type workflow) =>
             services.Configure<ElsaOptions>(options => options.RegisterWorkflow(workflow));
@@ -91,11 +106,12 @@ namespace Microsoft.Extensions.DependencyInjection
         public static IServiceCollection StartWorkflow<T>(this IServiceCollection services) where T : class, IWorkflow => services.AddHostedService<StartWorkflow<T>>();
 
         /// <summary>
-        /// Add all workflows (<see cref="IWorkflow"/>) that are in the assembly and have no constructor with parameters
+        /// Add all workflows (<see cref="IWorkflow"/>) that are in the assembly
         /// </summary>
+        /// <remarks>Instantiated or workflows with a specific implementation must be added before this call.</remarks>
         public static IServiceCollection AddWorkflow(this IServiceCollection services, Assembly assembly)
         {
-            var types = assembly.GetAllWithInterface<IWorkflow>().Where(x => x.GetConstructors().Any(ctor => ctor.GetParameters().Length > 0) == false);
+            var types = assembly.GetAllWithInterface<IWorkflow>();
 
             foreach (var type in types)
             {
