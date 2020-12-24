@@ -9,6 +9,7 @@ using Microsoft.Extensions.Hosting;
 using Elsa.Persistence.YesSql;
 using YesSql.Provider.Sqlite;
 using System.Data;
+using Elsa.Activities.Timers;
 using Elsa.Persistence.YesSql.Extensions;
 
 namespace Elsa.Server.Host
@@ -37,11 +38,12 @@ namespace Elsa.Server.Host
                 .AddConsoleActivities()
                 .AddHttpActivities(elsaSection.GetSection("Http").Bind)
                 .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)
-                .AddTimerActivities(elsaSection.GetSection("BackgroundRunner").Bind)
+                .AddTimerActivities(options => options.UseQuartzProvider())
                 .AddStartupTask<ResumeRunningWorkflowsTask>()
                 .AddWorkflow<HelloWorld>()
                 .AddWorkflow<HelloWorldV2>()
                 .AddWorkflow<GoodbyeWorld>()
+                .AddWorkflow<NamingWorkflow>()
                 ;
         }
 

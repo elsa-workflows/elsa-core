@@ -17,6 +17,7 @@ namespace Elsa.Persistence.YesSql.Documents
         public WorkflowStatus WorkflowStatus { get; set; }
         public string? CorrelationId { get; set; }
         public string? ContextId { get; set; }
+        public string? Name { get; set; }
         public Instant CreatedAt { get; set; }
         public Instant? LastExecutedAt { get; set; }
         public Instant? FinishedAt { get; set; }
@@ -31,8 +32,7 @@ namespace Elsa.Persistence.YesSql.Documents
             get => _blockingActivities;
             set => _blockingActivities = new HashSet<BlockingActivity>(value, BlockingActivityEqualityComparer.Instance);
         }
-
-        public ICollection<WorkflowExecutionLogRecord> ExecutionLog { get; set; } = new List<WorkflowExecutionLogRecord>();
+        
         public WorkflowFault? Fault { get; set; }
         public Stack<ScheduledActivity> ScheduledActivities { get; set; } = new();
         public Stack<ScheduledActivity> PostScheduledActivities { get; set; } = new();

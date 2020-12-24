@@ -137,6 +137,7 @@ namespace Microsoft.Extensions.DependencyInjection
             services
                 .AddActivity<CompositeActivity>()
                 .AddActivity<Inline>()
+                .AddActivity<SetName>()
                 .AddActivity<Finish>()
                 .AddActivity<For>()
                 .AddActivity<ForEach>()

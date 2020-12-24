@@ -13,10 +13,6 @@ namespace Elsa.Activities.Timers
 {
     public static class TimersOptionsExtensions
     {
-        /// <summary>
-        /// Add Quartz for background processing
-        /// </summary>
-        /// <param name="timersOptions"></param>
         public static void UseQuartzProvider(this TimersOptions timersOptions, Action<QuartzOptions>? configureOptions = default, Action<IServiceCollectionQuartzConfigurator>? configureQuartz = default)
         {
             if (configureOptions != null)

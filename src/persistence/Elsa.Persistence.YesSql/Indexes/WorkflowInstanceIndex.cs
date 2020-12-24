@@ -15,6 +15,7 @@ namespace Elsa.Persistence.YesSql.Indexes
         public int Version { get; set; }
         public string? CorrelationId { get; set; }
         public string? ContextId { get; set; }
+        public string? Name { get; set; }
         public WorkflowStatus WorkflowStatus { get; set; }
         public DateTimeOffset CreatedAt { get; set; }
         public DateTimeOffset? LastExecutedAt { get; set; }
@@ -50,6 +51,7 @@ namespace Elsa.Persistence.YesSql.Indexes
                         WorkflowStatus = workflowInstance.WorkflowStatus,
                         CorrelationId = workflowInstance.CorrelationId,
                         ContextId = workflowInstance.ContextId,
+                        Name = workflowInstance.Name,
                         CreatedAt = workflowInstance.CreatedAt.ToDateTimeOffset(),
                         CancelledAt = workflowInstance.CancelledAt?.ToDateTimeOffset(),
                         FinishedAt = workflowInstance.FinishedAt?.ToDateTimeOffset(),
