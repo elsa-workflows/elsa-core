@@ -9,8 +9,8 @@ namespace Elsa.Server.Api.Mapping
         public ConnectionModel Convert(IConnection source, ConnectionModel destination, ResolutionContext context) =>
             new()
             {
-                SourceId = source.Source.Activity.Id,
-                TargetId = source.Target.Activity.Id,
+                SourceActivityId = source.Source.Activity.Id,
+                TargetActivityId = source.Target.Activity.Id,
                 Outcome = source.Source.Outcome
             };
     }

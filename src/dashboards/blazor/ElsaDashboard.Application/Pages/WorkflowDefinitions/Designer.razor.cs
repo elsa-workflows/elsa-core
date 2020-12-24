@@ -78,7 +78,7 @@ namespace ElsaDashboard.Application.Pages.WorkflowDefinitions
 
         private WorkflowModel CreateWorkflowModel(WorkflowDefinition workflowDefinition)
         {
-            return new WorkflowModel
+            return new()
             {
                 Name = workflowDefinition.Name,
                 Activities = workflowDefinition.Activities.Select(CreateActivityModel).ToImmutableList(),

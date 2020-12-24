@@ -28,8 +28,8 @@ namespace Elsa.Server.Api.Endpoints.WorkflowRegistry
 
     public class ConnectionModel
     {
-        public string SourceId { get; set; } = default!;
-        public string TargetId { get; set; } = default!;
+        public string SourceActivityId { get; set; } = default!;
+        public string TargetActivityId { get; set; } = default!;
         public string Outcome { get; set; } = default!;
     }
 

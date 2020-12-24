@@ -36,7 +36,7 @@ namespace Elsa.Server.Api.Swagger.Examples
                         Name = "Activity2",
                     }
                 },
-                Connections = new[] { new ConnectionModel { SourceId = "activity-1", TargetId = "activity-2", Outcome = OutcomeNames.Done } }
+                Connections = new[] { new ConnectionModel { SourceActivityId = "activity-1", TargetActivityId = "activity-2", Outcome = OutcomeNames.Done } }
             };
         }
     }
