@@ -12,6 +12,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\..\activities\Elsa.Activities.Timers.Quartz\Elsa.Activities.Timers.Quartz.csproj" />
         <ProjectReference Include="..\..\persistence\Elsa.Persistence.YesSql\Elsa.Persistence.YesSql.csproj" />
         <ProjectReference Include="..\Elsa.Server.Api\Elsa.Server.Api.csproj" />
     </ItemGroup>

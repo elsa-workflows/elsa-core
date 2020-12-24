@@ -105,7 +105,7 @@ namespace ElsaDashboard.Application.Pages.WorkflowInstances
             if (result.Cancelled)
                 return;
 
-            await WorkflowInstanceService.DeleteAsync(workflowInstance.EntityId);
+            await WorkflowInstanceService.DeleteAsync(workflowInstance.Id);
             await LoadWorkflowInstancesAsync();
         }
 

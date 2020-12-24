@@ -73,6 +73,9 @@
                     Version
                 </th>
                 <th class="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                    Instance Name
+                </th>
+                <th class="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
                     Status
                 </th>
                 <th class="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
@@ -88,14 +91,15 @@
             @foreach (var workflowInstance in WorkflowInstances.Items)
             {
                 var workflowKey = (workflowInstance.DefinitionId, workflowInstance.Version);
-                var workflowBlueprint = WorkflowBlueprints.ContainsKey(workflowKey) ? WorkflowBlueprints[workflowKey] : new WorkflowBlueprint { DisplayName = "(Blueprint Not Found)" };
+                var workflowBlueprint = WorkflowBlueprints.ContainsKey(workflowKey) ? WorkflowBlueprints[workflowKey] : new WorkflowBlueprint {DisplayName = "(Blueprint Not Found)"};
+                var instanceName = string.IsNullOrWhiteSpace(workflowInstance.Name) ? "" : workflowInstance.Name;
                 var displayName = workflowBlueprint.DisplayName!;
                 var statusColor = GetStatusColor(workflowInstance.WorkflowStatus);
-                var viewUrl = $"workflow-instances/{workflowInstance.EntityId}/viewer";
+                var viewUrl = $"workflow-instances/{workflowInstance.Id}/viewer";
                 <tr>
                     <td class="px-6 py-3 whitespace-no-wrap text-sm leading-5 font-medium text-gray-900">
-                        <a href="@($"workflow-instances/{workflowInstance.EntityId}/viewer")" class="truncate hover:text-gray-600">
-                            @workflowInstance.EntityId
+                        <a href="@($"workflow-instances/{workflowInstance.Id}/viewer")" class="truncate hover:text-gray-600">
+                            @workflowInstance.Id
                         </a>
                     </td>
                     <td class="px-6 py-3 whitespace-no-wrap text-sm leading-5 font-medium text-gray-900 text-left">
@@ -105,6 +109,11 @@
                     </td>
                     <td class="hidden md:table-cell px-6 py-3 whitespace-no-wrap text-sm leading-5 text-gray-500 text-right">
                         @workflowInstance.Version
+                    </td>
+                    <td class="px-6 py-3 whitespace-no-wrap text-sm leading-5 font-medium text-gray-900 text-left">
+                        <a href="@($"workflow-registry/{workflowInstance.DefinitionId}/viewer")" class="truncate hover:text-gray-600">
+                            @instanceName
+                        </a>
                     </td>
                     <td class="hidden md:table-cell px-6 py-3 whitespace-no-wrap text-sm leading-5 text-gray-500 text-right">
                         <div class="flex items-center space-x-3 lg:pl-2">
