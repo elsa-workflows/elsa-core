@@ -8,7 +8,7 @@ namespace Elsa.Rebus.AzureServiceBus
 {
     public static class ElsaOptionsExtensions
     {
-        public static ElsaConfigurationsOptions UseAzureServiceBus(this ElsaConfigurationsOptions elsaOptions, string connectionString, LogLevel logLevel = LogLevel.Info, ITokenProvider? tokenProvider = default)
+        public static ElsaConfiguration UseAzureServiceBus(this ElsaConfiguration elsaOptions, string connectionString, LogLevel logLevel = LogLevel.Info, ITokenProvider? tokenProvider = default)
         {
             return elsaOptions.UseServiceBus(context => ConfigureAzureServiceBusEndpoint(context, connectionString, logLevel, tokenProvider));
         } 

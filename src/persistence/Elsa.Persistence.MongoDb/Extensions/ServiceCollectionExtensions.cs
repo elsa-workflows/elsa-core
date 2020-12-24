@@ -12,7 +12,7 @@ namespace Elsa.Persistence.MongoDb.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        public static ElsaConfigurationsOptions UseMongoDbPersistence(this ElsaConfigurationsOptions elsa, Action<ElsaMongoDbOptions> configureOptions)
+        public static ElsaConfiguration UseMongoDbPersistence(this ElsaConfiguration elsa, Action<ElsaMongoDbOptions> configureOptions)
         {
             AddCore(elsa);
             elsa.Services.Configure(configureOptions);
@@ -20,14 +20,14 @@ namespace Elsa.Persistence.MongoDb.Extensions
             return elsa;
         }
 
-        public static ElsaConfigurationsOptions UseMongoDbPersistence(this ElsaConfigurationsOptions elsa, IConfiguration options)
+        public static ElsaConfiguration UseMongoDbPersistence(this ElsaConfiguration elsa, IConfiguration options)
         {
             AddCore(elsa);
             elsa.Services.Configure<ElsaMongoDbOptions>(options);
             return elsa;
         }
 
-        private static void AddCore(ElsaConfigurationsOptions elsa)
+        private static void AddCore(ElsaConfiguration elsa)
         {
             elsa.Services
                 .AddSingleton<MongoDbWorkflowDefinitionStore>()

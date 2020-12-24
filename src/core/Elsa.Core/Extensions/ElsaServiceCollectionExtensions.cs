@@ -37,9 +37,9 @@ namespace Microsoft.Extensions.DependencyInjection
     {
         public static IServiceCollection AddElsaCore(
             this IServiceCollection services,
-            Action<ElsaConfigurationsOptions>? configure = default)
+            Action<ElsaConfiguration>? configure = default)
         {
-            var options = new ElsaConfigurationsOptions(services);
+            var options = new ElsaConfiguration(services);
             configure?.Invoke(options);
 
             services
@@ -111,9 +111,9 @@ namespace Microsoft.Extensions.DependencyInjection
             return services;
         }
 
-        private static IServiceCollection AddMediatR(this ElsaConfigurationsOptions options) => options.Services.AddMediatR(mediatr => mediatr.AsScoped(), typeof(IActivity));
+        private static IServiceCollection AddMediatR(this ElsaConfiguration options) => options.Services.AddMediatR(mediatr => mediatr.AsScoped(), typeof(IActivity));
 
-        private static ElsaConfigurationsOptions AddWorkflowsCore(this ElsaConfigurationsOptions configuration)
+        private static ElsaConfiguration AddWorkflowsCore(this ElsaConfiguration configuration)
         {
             var services = configuration.Services;
             services.TryAddSingleton<IClock>(SystemClock.Instance);
@@ -123,7 +123,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddLocalization()
                 .AddMemoryCache()
                 .AddSingleton<IIdGenerator, IdGenerator>()
-                .AddSingleton(sp => sp.GetRequiredService<ElsaConfigurationsOptions>().CreateJsonSerializer(sp))
+                .AddSingleton(sp => sp.GetRequiredService<ElsaConfiguration>().CreateJsonSerializer(sp))
                 .AddSingleton<IContentSerializer, DefaultContentSerializer>()
                 .AddSingleton<TypeJsonConverter>()
                 .TryAddProvider<IExpressionHandler, LiteralHandler>(ServiceLifetime.Singleton)

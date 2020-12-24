@@ -17,9 +17,9 @@ using Storage.Net.Blobs;
 
 namespace Elsa
 {
-    public class ElsaConfigurationsOptions
+    public class ElsaConfiguration
     {
-        public ElsaConfigurationsOptions(IServiceCollection services)
+        public ElsaConfiguration(IServiceCollection services)
         {
             Services = services;
 
@@ -63,63 +63,63 @@ namespace Elsa
         internal Action AddAutoMapper { get; private set; }
         internal Action<ServiceBusEndpointConfigurationContext> ConfigureServiceBusEndpoint { get; private set; }
 
-        public ElsaConfigurationsOptions UseDistributedLockProvider(Func<IServiceProvider, IDistributedLockProvider> factory)
+        public ElsaConfiguration UseDistributedLockProvider(Func<IServiceProvider, IDistributedLockProvider> factory)
         {
             DistributedLockProviderFactory = factory;
             return this;
         }
 
-        public ElsaConfigurationsOptions UseSignal(Func<IServiceProvider, ISignal> factory)
+        public ElsaConfiguration UseSignal(Func<IServiceProvider, ISignal> factory)
         {
             SignalFactory = factory;
             return this;
         }
 
-        public ElsaConfigurationsOptions UseStorage(Func<IBlobStorage> factory) => UseStorage(_ => factory());
+        public ElsaConfiguration UseStorage(Func<IBlobStorage> factory) => UseStorage(_ => factory());
 
-        public ElsaConfigurationsOptions UseStorage(Func<IServiceProvider, IBlobStorage> factory)
+        public ElsaConfiguration UseStorage(Func<IServiceProvider, IBlobStorage> factory)
         {
             StorageFactory = factory;
             return this;
         }
         
-        public ElsaConfigurationsOptions UseWorkflowDefinitionStore(Func<IServiceProvider, IWorkflowDefinitionStore> factory)
+        public ElsaConfiguration UseWorkflowDefinitionStore(Func<IServiceProvider, IWorkflowDefinitionStore> factory)
         {
             WorkflowDefinitionStoreFactory = factory;
             return this;
         }
         
-        public ElsaConfigurationsOptions UseWorkflowInstanceStore(Func<IServiceProvider, IWorkflowInstanceStore> factory)
+        public ElsaConfiguration UseWorkflowInstanceStore(Func<IServiceProvider, IWorkflowInstanceStore> factory)
         {
             WorkflowInstanceStoreFactory = factory;
             return this;
         }
         
-        public ElsaConfigurationsOptions UseWorkflowExecutionLogStore(Func<IServiceProvider, IWorkflowExecutionLogStore> factory)
+        public ElsaConfiguration UseWorkflowExecutionLogStore(Func<IServiceProvider, IWorkflowExecutionLogStore> factory)
         {
             WorkflowExecutionLogStoreFactory = factory;
             return this;
         }
 
-        public ElsaConfigurationsOptions UseAutoMapper(Action addAutoMapper)
+        public ElsaConfiguration UseAutoMapper(Action addAutoMapper)
         {
             AddAutoMapper = addAutoMapper;
             return this;
         }
 
-        public ElsaConfigurationsOptions UseJsonSerializer(Func<IServiceProvider, JsonSerializer> factory)
+        public ElsaConfiguration UseJsonSerializer(Func<IServiceProvider, JsonSerializer> factory)
         {
             CreateJsonSerializer = factory;
             return this;
         }
 
-        public ElsaConfigurationsOptions ConfigureJsonSerializer(Action<IServiceProvider, JsonSerializer> configure)
+        public ElsaConfiguration ConfigureJsonSerializer(Action<IServiceProvider, JsonSerializer> configure)
         {
             JsonSerializerConfigurer = configure;
             return this;
         }
 
-        public ElsaConfigurationsOptions UseServiceBus(Action<ServiceBusEndpointConfigurationContext> setup)
+        public ElsaConfiguration UseServiceBus(Action<ServiceBusEndpointConfigurationContext> setup)
         {
             ConfigureServiceBusEndpoint = setup;
             return this;

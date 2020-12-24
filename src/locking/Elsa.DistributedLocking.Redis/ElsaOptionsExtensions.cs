@@ -11,7 +11,7 @@ namespace Elsa
 {
     public static class ElsaOptionsExtensions
     {
-        public static ElsaConfigurationsOptions UseRedisLockProvider(this ElsaConfigurationsOptions options, string connectionString, TimeSpan? lockTimeout = null)
+        public static ElsaConfiguration UseRedisLockProvider(this ElsaConfiguration options, string connectionString, TimeSpan? lockTimeout = null)
         {
             options.UseStackExchangeConnectionMultiplexer(connectionString)
                 .UseRedLockFactory()
@@ -24,7 +24,7 @@ namespace Elsa
             return options;
         }
 
-        private static ElsaConfigurationsOptions UseStackExchangeConnectionMultiplexer(this ElsaConfigurationsOptions options, string connectionString)
+        private static ElsaConfiguration UseStackExchangeConnectionMultiplexer(this ElsaConfiguration options, string connectionString)
         {
             if (string.IsNullOrWhiteSpace(connectionString))
             {
@@ -36,7 +36,7 @@ namespace Elsa
             return options;
         }
 
-        private static ElsaConfigurationsOptions UseRedLockFactory(this ElsaConfigurationsOptions options)
+        private static ElsaConfiguration UseRedLockFactory(this ElsaConfiguration options)
         {
             options.Services.AddSingleton<IDistributedLockFactory, RedLockFactory>(
                 sp => RedLockFactory.Create(
