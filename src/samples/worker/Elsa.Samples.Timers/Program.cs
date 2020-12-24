@@ -22,8 +22,8 @@ namespace Elsa.Samples.Timers
                             .AddTimerActivities(options => options.UseQuartzProvider())
                             .AddWorkflow<RecurringTaskWorkflow>()
 							.AddWorkflow<CancelTimerWorkflow>()
-                            //.AddWorkflow<CronTaskWorkflow>()
-                            //.AddWorkflow(new OneOffWorkflow(SystemClock.Instance.GetCurrentInstant().Plus(Duration.FromSeconds(5))))
+                            .AddWorkflow<CronTaskWorkflow>()
+                            .AddWorkflow(new OneOffWorkflow(SystemClock.Instance.GetCurrentInstant().Plus(Duration.FromSeconds(5))))
                             ;
                     });
     }
