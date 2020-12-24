@@ -1,3 +1,4 @@
+using Elsa.Builders;
 using Elsa.Models;
 using Elsa.Services;
 using System;
@@ -13,12 +14,22 @@ namespace Elsa
         /// </summary>
         private readonly TypeList _activities = new TypeList();
 
+        /// <summary>
+        /// The available programmed workflows
+        /// </summary>
+        private readonly TypeList _workflows = new TypeList();
+
         public IEnumerable<Type> Activities => _activities.ToList().AsReadOnly();
+
+        public IEnumerable<Type> Workflows => _workflows.ToList().AsReadOnly();
+
+        public int NumberOfRegisteredActivities => _activities.Count;
+
+        public int NumberOfRegisteredWorkflows => _workflows.Count;
 
         public ElsaOptions RegisterActivity<T>() where T : IActivity, new()
         {
             return RegisterActivity(typeof(T));
-
         }
 
         public ElsaOptions RegisterActivity(Type activityType)
@@ -49,6 +60,41 @@ namespace Elsa
         public bool IsActivityRegistered(Type activityType)
         {
             return _activities.Contains(activityType);
+        }
+
+        public ElsaOptions RegisterWorkflow<T>() where T : IWorkflow, new()
+        {
+            return RegisterWorkflow(typeof(T));
+        }
+
+        public ElsaOptions RegisterWorkflow(Type workflowType)
+        {
+            if (IsWorkflowRegistered(workflowType) == false)
+            {
+                _workflows.Add(workflowType);
+            }
+
+            return this;
+        }
+
+        public ElsaOptions UnregisterWorkflowType<T>() where T : IWorkflow, new()
+        {
+            return UnregisterWorkflowType(typeof(T));
+        }
+
+        public ElsaOptions UnregisterWorkflowType(Type workflowType)
+        {
+            if (IsWorkflowRegistered(workflowType) == false)
+            {
+                _workflows.RemoveWhere(type => type.FullName == workflowType.FullName);
+            }
+
+            return this;
+        }
+
+        public bool IsWorkflowRegistered(Type workflowType)
+        {
+            return _workflows.Contains(workflowType);
         }
     }
 }

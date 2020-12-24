@@ -82,15 +82,11 @@ namespace Microsoft.Extensions.DependencyInjection
             return services;
         }
 
-        public static IServiceCollection AddWorkflow<T>(this IServiceCollection services) where T : class, IWorkflow =>
-            services
-                .AddSingleton<T>()
-                .AddSingleton<IWorkflow>(sp => sp.GetRequiredService<T>());
+        public static IServiceCollection AddWorkflow<T>(this IServiceCollection services) where T : IWorkflow, new() =>
+            services.AddWorkflow(typeof(T));
 
-        public static IServiceCollection AddWorkflow(this IServiceCollection services, IWorkflow workflow) =>
-            services
-                .AddSingleton(workflow.GetType(), workflow)
-                .AddTransient(sp => workflow);
+        public static IServiceCollection AddWorkflow(this IServiceCollection services, Type workflow) =>
+            services.Configure<ElsaOptions>(options => options.RegisterWorkflow(workflow));
 
         public static IServiceCollection StartWorkflow<T>(this IServiceCollection services) where T : class, IWorkflow => services.AddHostedService<StartWorkflow<T>>();
 
@@ -103,9 +99,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
             foreach (var type in types)
             {
-                services
-                   .AddSingleton(type)
-                   .AddSingleton(sp => (IWorkflow)sp.GetRequiredService(type));
+                services.AddWorkflow(type);
             }
 
             return services;
