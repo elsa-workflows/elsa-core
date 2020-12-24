@@ -11,7 +11,7 @@ namespace Elsa
         /// <summary>
         /// The set of activities available to workflows.
         /// </summary>
-        private TypeList _activities { get; } = new TypeList();
+        private readonly TypeList _activities = new TypeList();
 
         public IEnumerable<Type> Activities => _activities.ToList().AsReadOnly();
 
@@ -20,6 +20,7 @@ namespace Elsa
             return RegisterActivity(typeof(T));
 
         }
+
         public ElsaOptions RegisterActivity(Type activityType)
         {
             if(IsActivityRegistered(activityType) == false)
