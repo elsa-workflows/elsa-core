@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Text.Json.Serialization;
 
 namespace Elsa.Models
 {
@@ -28,7 +27,6 @@ namespace Elsa.Models
         public bool IsEnabled { get; set; }
         public bool IsPublished { get; set; }
         public bool IsLatest { get; set; }
-        public string? ContextType { get; set; }
         public ICollection<ActivityDefinition> Activities { get; set; }
         public ICollection<ConnectionDefinition> Connections { get; set; }
     }
