@@ -20,7 +20,7 @@ namespace Elsa.Models
             Data = data;
         }
         
-        public string? TenantId { get; }
+        public string? TenantId { get; private set; }
         public string WorkflowInstanceId { get; set; } = default!;
         public string ActivityId { get; set; } = default!;
         public Instant Timestamp { get; set; }= default!;

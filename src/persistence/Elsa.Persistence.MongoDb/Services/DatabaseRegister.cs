@@ -1,4 +1,5 @@
 using System;
+using System.Security.Cryptography.X509Certificates;
 using Elsa.Models;
 using Elsa.Persistence.MongoDb.Serializers;
 using MongoDb.Bson.NodaTime;
@@ -22,22 +23,25 @@ namespace Elsa.Persistence.MongoDb.Services
 
         private static bool Map()
         {
-            if (BsonClassMap.IsClassMapRegistered(typeof(WorkflowDefinition)))
+            if (BsonClassMap.IsClassMapRegistered(typeof(Entity)))
                 return false;
 
             try
             {
+                BsonClassMap.RegisterClassMap<Entity>(cm =>
+                {
+                    cm.SetIsRootClass(true);
+                    cm.MapIdProperty(x => x.Id);
+                });
 
                 BsonClassMap.RegisterClassMap<WorkflowDefinition>(cm =>
                 {
-                    cm.AutoMap();
-                    cm.MapIdMember(x => x.Id);
+                    cm.AutoMap();                  
                 });
 
                 BsonClassMap.RegisterClassMap<WorkflowInstance>(cm =>
                 {
-                    cm.AutoMap();
-                    cm.MapIdMember(x => x.Id);
+                    cm.AutoMap();                   
                 });
 
             }
