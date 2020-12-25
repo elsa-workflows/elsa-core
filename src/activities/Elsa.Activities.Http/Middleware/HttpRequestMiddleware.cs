@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -28,7 +29,7 @@ namespace Elsa.Activities.Http.Middleware
             httpContext.Request.TryGetCorrelationId(out var correlationId);
 
             var results = await workflowSelector.SelectWorkflowsAsync<ReceiveHttpRequestTrigger>(
-                    x => (x.Path == path) && (x.Method == null || x.Method == method) && (x.CorrelationId == null || x.CorrelationId == correlationId),
+                    x => AreSame(x.Path, path) && (x.Method == null || AreSame(x.Method, method)) && (x.CorrelationId == null && correlationId == null || x.CorrelationId == correlationId),
                     cancellationToken)
                 .ToList();
 
@@ -64,5 +65,7 @@ namespace Elsa.Activities.Http.Middleware
                 await workflowRunner.RunWorkflowAsync(result.WorkflowBlueprint, workflowInstance, result.ActivityId, cancellationToken: cancellationToken);
             }
         }
+
+        private static bool AreSame(string a, string b) => string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
     }
 }

@@ -15,7 +15,7 @@ namespace Elsa.Persistence.Specifications
         public static readonly ISpecification<T> None = All.Not();
         private Func<T, bool>? _predicate;
 
-        public bool IsSatisfiedBy(T entity)
+        public virtual bool IsSatisfiedBy(T entity)
         {
             _predicate ??= ToExpression().Compile();
             return _predicate(entity);

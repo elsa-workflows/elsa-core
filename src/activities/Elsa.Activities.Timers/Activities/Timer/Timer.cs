@@ -32,11 +32,12 @@ namespace Elsa.Activities.Timers
             if (context.WorkflowExecutionContext.IsFirstPass)
                 return Done();
 
-            if (Timeout <= Duration.Zero)
+            var now = _clock.GetCurrentInstant();
+            ExecuteAt = now.Plus(Timeout);
+            
+            if (ExecuteAt <= now)
                 return Done();
             
-            ExecuteAt = _clock.GetCurrentInstant().Plus(Timeout);
-
             return Combine(Suspend(), new ScheduleWorkflowResult(ExecuteAt.Value));
         }
 

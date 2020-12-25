@@ -17,6 +17,7 @@ namespace Elsa.Client.Services
             [AliasAs("workflow")] string? workflowDefinitionId = default,
             [AliasAs("status")] WorkflowStatus? workflowStatus = default,
             OrderBy? orderBy = default,
+            string? searchTerm = default,
             CancellationToken cancellationToken = default);
 
         [Delete("/v1/workflow-instances/{id}")]

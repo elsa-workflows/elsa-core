@@ -36,8 +36,9 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
             [FromQuery(Name = "workflow")] string? workflowDefinitionId = default,
             [FromQuery(Name = "status")] WorkflowStatus? workflowStatus = default,
             [FromQuery] OrderBy? orderBy = default,
+            [FromQuery] string? searchTerm = default,
             int page = 0,
-            int pageSize = 50,
+            int pageSize = 25,
             CancellationToken cancellationToken = default)
         {
             var specification = Specification<WorkflowInstance>.All;
@@ -47,6 +48,9 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
 
             if (workflowStatus != null)
                 specification = specification.WithStatus(workflowStatus.Value);
+            
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+                specification = specification.WithWorkflowName(searchTerm);
 
             var orderBySpecification = default(OrderBy<WorkflowInstance>);
             

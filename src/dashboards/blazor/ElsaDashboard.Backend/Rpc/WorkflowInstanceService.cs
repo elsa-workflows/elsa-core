@@ -10,10 +10,7 @@ namespace ElsaDashboard.Backend.Rpc
     {
         private readonly IElsaClient _elsaClient;
         public WorkflowInstanceService(IElsaClient elsaClient) => _elsaClient = elsaClient;
-
-        public Task<PagedList<WorkflowInstance>> ListAsync(ListWorkflowInstancesRequest request, CallContext context = default) =>
-            _elsaClient.WorkflowInstances.ListAsync(request.Page, request.PageSize, request.WorkflowDefinitionId, request.WorkflowStatus, request.OrderBy, context.CancellationToken);
-
+        public Task<PagedList<WorkflowInstance>> ListAsync(ListWorkflowInstancesRequest request, CallContext context = default) => _elsaClient.WorkflowInstances.ListAsync(request.Page, request.PageSize, request.WorkflowDefinitionId, request.WorkflowStatus, request.OrderBy, request.SearchTerm, context.CancellationToken);
         public Task<WorkflowInstance?> GetByIdAsync(GetWorkflowInstanceByIdRequest request, CallContext context = default) => _elsaClient.WorkflowInstances.GetByIdAsync(request.WorkflowInstanceId, context.CancellationToken);
         public Task DeleteAsync(DeleteWorkflowInstanceRequest request, CallContext context = default) => _elsaClient.WorkflowInstances.DeleteAsync(request.WorkflowInstanceId, context.CancellationToken);
     }

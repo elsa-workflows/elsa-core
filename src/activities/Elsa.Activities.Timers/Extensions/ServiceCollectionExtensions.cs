@@ -1,5 +1,4 @@
 using System;
-
 using Elsa.Activities.Timers;
 using Elsa.Activities.Timers.HostedServices;
 using Elsa.Activities.Timers.Options;
@@ -10,18 +9,17 @@ namespace Microsoft.Extensions.DependencyInjection
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddTimerActivities(this IServiceCollection services,
-            Action<TimersOptions>? configure = default)
+        public static IServiceCollection AddTimerActivities(this IServiceCollection services, Action<TimersOptions>? configure = default)
         {
             var options = new TimersOptions(services);
             configure?.Invoke(options);
 
-            return services                
+            return services
                 .AddHostedService<StartJobs>()
                 .AddActivity<Cron>()
                 .AddActivity<Timer>()
                 .AddActivity<StartAt>()
-                 .AddActivity<ClearTimer>()
+                .AddActivity<ClearTimer>()
                 .AddTriggerProvider<TimerTriggerProvider>()
                 .AddTriggerProvider<CronTriggerProvider>()
                 .AddTriggerProvider<StartAtTriggerProvider>();

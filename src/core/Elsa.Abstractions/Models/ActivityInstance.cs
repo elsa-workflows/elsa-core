@@ -20,5 +20,7 @@ namespace Elsa.Models
         public string Type { get; set; } = default!;
         public JObject Data { get; set; } = new();
         public object? Output { get; set; }
+
+        public override string ToString() => $"{Type} - {Id}";
     }
 }

@@ -49,7 +49,7 @@ namespace Elsa.Activities.Timers.Quartz.Jobs
             }
             else
             {
-                var workflowInstance = await _workflowInstanceStore.FindByIdAsync(workflowInstanceId, cancellationToken);
+                var workflowInstance = await GetWorkflowInstanceAsync(workflowInstanceId, cancellationToken);
 
                 if (workflowInstance == null)
                 {
@@ -69,10 +69,8 @@ namespace Elsa.Activities.Timers.Quartz.Jobs
             {
                 workflowInstance = await _workflowInstanceStore.FindByIdAsync(workflowInstanceId, cancellationToken);
 
-                if (workflowInstance == null)
-                {
-                    System.Threading.Thread.Sleep(10000);
-                }
+                if (workflowInstance == null) 
+                    Thread.Sleep(10000);
             }
 
             return workflowInstance;

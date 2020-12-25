@@ -1,11 +1,10 @@
 using System;
 using System.Threading.Tasks;
-using Elsa.Activities.Primitives;
 using Elsa.Builders;
 using Elsa.Services.Models;
 
 // ReSharper disable once CheckNamespace
-namespace Elsa.Activities.ControlFlow
+namespace Elsa.Activities.Primitives
 {
     public static class SetVariableBuilderExtensions
     {

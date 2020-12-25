@@ -12,8 +12,9 @@ namespace ElsaDashboard.Shared.Rpc
             int pageSize = 50,
             string? workflowDefinitionId = default,
             WorkflowStatus? workflowStatus = default,
-            OrderBy? orderBy = default) =>
-            service.ListAsync(new ListWorkflowInstancesRequest(page, pageSize, workflowDefinitionId, workflowStatus, orderBy));
+            OrderBy? orderBy = default,
+            string? searchTerm = default) =>
+            service.ListAsync(new ListWorkflowInstancesRequest(page, pageSize, workflowDefinitionId, workflowStatus, orderBy, searchTerm));
 
         public static Task<WorkflowInstance?> GetByIdAsync(this IWorkflowInstanceService service, string workflowInstanceId) => service.GetByIdAsync(new GetWorkflowInstanceByIdRequest(workflowInstanceId));
         public static Task DeleteAsync(this IWorkflowInstanceService service, string workflowInstanceId) => service.DeleteAsync(new DeleteWorkflowInstanceRequest(workflowInstanceId));
