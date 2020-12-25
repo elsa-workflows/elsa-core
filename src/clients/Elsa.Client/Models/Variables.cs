@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Runtime.Serialization;
 
 namespace Elsa.Client.Models
@@ -20,11 +22,11 @@ namespace Elsa.Client.Models
             Data = data;
         }
 
-        [DataMember(Order = 1)]public IDictionary<string, object?> Data { get; set; }
+        [DataMember(Order = 1)] public IDictionary<string, object?> Data { get; set; }
 
         public object? Get(string name) => Has(name) ? Data[name] : default;
 
-        public T Get<T>(string name)
+        public T? Get<T>(string name)
         {
             if (!Has(name))
                 return default!;
@@ -34,7 +36,14 @@ namespace Elsa.Client.Models
             if (value == null)
                 return default!;
 
-            return (T)value!;
+            if (value is T convertedValue)
+                return convertedValue;
+
+            if (value == default!)
+                return default!;
+
+            var converter = TypeDescriptor.GetConverter(typeof(T));
+            return converter.CanConvertFrom(value.GetType()) ? (T?) converter.ConvertFrom(value) : default;
         }
 
         public Variables Set(string name, object? value)

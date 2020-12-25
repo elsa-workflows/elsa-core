@@ -1,4 +1,7 @@
-﻿using System.Linq;
+﻿using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
@@ -6,8 +9,10 @@ using Elsa.Models;
 using Elsa.Server.Api.Models;
 using Elsa.Server.Api.Swagger.Examples;
 using Elsa.Services;
+using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using Swashbuckle.AspNetCore.Annotations;
 using Swashbuckle.AspNetCore.Filters;
 
@@ -21,23 +26,24 @@ namespace Elsa.Server.Api.Endpoints.WorkflowRegistry
     {
         private readonly IWorkflowRegistry _workflowRegistry;
         private readonly IMapper _mapper;
+        private readonly IServiceProvider _serviceProvider;
 
-        public List(IWorkflowRegistry workflowRegistry, IMapper mapper)
+        public List(IWorkflowRegistry workflowRegistry, IWorkflowBlueprintReflector workflowBlueprintReflector, IMapper mapper, IServiceProvider serviceProvider)
         {
             _workflowRegistry = workflowRegistry;
             _mapper = mapper;
+            _serviceProvider = serviceProvider;
         }
 
         [HttpGet]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(PagedList<WorkflowBlueprintModel>))]
-        [SwaggerResponseExample(StatusCodes.Status200OK, typeof(WorkflowBlueprintModelPagedListExample))]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(PagedList<WorkflowBlueprintSummaryModel>))]
         [SwaggerOperation(
             Summary = "Returns a list of workflow blueprints.",
             Description = "Returns paginated a list of workflow blueprints. When no version options are specified, the latest version is returned.",
             OperationId = "WorkflowBlueprints.List",
-            Tags = new[] { "WorkflowBlueprints" })
+            Tags = new[] {"WorkflowBlueprints"})
         ]
-        public async Task<ActionResult<PagedList<WorkflowBlueprintModel>>> Handle(int? page = default, int? pageSize = default, VersionOptions? version = default, CancellationToken cancellationToken = default)
+        public async Task<ActionResult<PagedList<WorkflowBlueprintSummaryModel>>> Handle(int? page = default, int? pageSize = default, VersionOptions? version = default, CancellationToken cancellationToken = default)
         {
             version ??= VersionOptions.Latest;
             var workflowBlueprints = await _workflowRegistry.GetWorkflowsAsync(cancellationToken).Where(x => x.WithVersion(version.Value)).ToListAsync(cancellationToken);
@@ -45,16 +51,16 @@ namespace Elsa.Server.Api.Endpoints.WorkflowRegistry
             var skip = page * pageSize;
             var items = workflowBlueprints.AsEnumerable();
 
-            if (skip != null) 
+            if (skip != null)
                 items = items.Skip(skip.Value);
 
             if (pageSize != null)
                 items = items.Take(pageSize.Value);
 
-            var mappedItems = items.Select(x => _mapper.Map<WorkflowBlueprintModel>(x)).ToList();
-            var pagedList = new PagedList<WorkflowBlueprintModel>(mappedItems, page, pageSize, totalCount);
-
-            return pagedList;
+            using var scope = _serviceProvider.CreateScope();
+            var mappedItems = _mapper.Map<IEnumerable<WorkflowBlueprintSummaryModel>>(items).ToList();
+                
+            return new PagedList<WorkflowBlueprintSummaryModel>(mappedItems, page, pageSize, totalCount);
         }
     }
 }

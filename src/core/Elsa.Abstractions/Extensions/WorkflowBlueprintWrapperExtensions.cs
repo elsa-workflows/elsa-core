@@ -19,12 +19,8 @@ namespace Elsa
             return query;
         }
 
-        public static IActivityBlueprintWrapper<TActivity>? FindActivity<TActivity>(this IWorkflowBlueprintWrapper workflowBlueprintWrapper, Func<IActivityBlueprintWrapper<TActivity>, bool>? predicate = default)
-            where TActivity : IActivity =>
-            workflowBlueprintWrapper.Filter(predicate).FirstOrDefault();
-
-        public static IActivityBlueprintWrapper<TActivity> GetActivity<TActivity>(this IWorkflowBlueprintWrapper workflowBlueprintWrapper, string id)
-            where TActivity : IActivity =>
-            workflowBlueprintWrapper.FindActivity<TActivity>(x => x.ActivityBlueprint.Id == id)!;
+        public static IActivityBlueprintWrapper<TActivity>? FindActivity<TActivity>(this IWorkflowBlueprintWrapper workflowBlueprintWrapper, Func<IActivityBlueprintWrapper<TActivity>, bool>? predicate = default) where TActivity : IActivity => workflowBlueprintWrapper.Filter(predicate).FirstOrDefault();
+        public static IActivityBlueprintWrapper<TActivity>? GetActivity<TActivity>(this IWorkflowBlueprintWrapper workflowBlueprintWrapper, string id) where TActivity : IActivity => workflowBlueprintWrapper.FindActivity<TActivity>(x => x.ActivityBlueprint.Id == id)!;
+        public static IActivityBlueprintWrapper? GetActivity(this IWorkflowBlueprintWrapper workflowBlueprintWrapper, string id) => workflowBlueprintWrapper.Activities.FirstOrDefault(x => x.ActivityBlueprint.Id == id);
     }
 }

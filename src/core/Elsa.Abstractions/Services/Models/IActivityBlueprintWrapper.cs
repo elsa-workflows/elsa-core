@@ -9,6 +9,7 @@ namespace Elsa.Services.Models
     {
         IActivityBlueprint ActivityBlueprint { get; }
         IActivityBlueprintWrapper<TActivity> As<TActivity>() where TActivity : IActivity;
+        ValueTask<object?> GetPropertyValueAsync(string propertyName, CancellationToken cancellationToken = default);
     }
 
     public interface IActivityBlueprintWrapper<TActivity> : IActivityBlueprintWrapper where TActivity:IActivity

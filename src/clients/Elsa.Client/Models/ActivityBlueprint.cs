@@ -11,5 +11,6 @@ namespace Elsa.Client.Models
         [DataMember(Order = 4)] public bool PersistWorkflow { get; set; }
         [DataMember(Order = 5)] public bool LoadWorkflowContext { get; set; }
         [DataMember(Order = 6)] public bool SaveWorkflowContext { get; set; }
+        [DataMember(Order = 7)] public Variables Properties { get; set; } = new();
     }
 }

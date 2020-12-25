@@ -28,8 +28,8 @@ namespace Elsa.Server.Api.Endpoints.WorkflowRegistry
 
     public class ConnectionModel
     {
-        public string SourceId { get; set; } = default!;
-        public string TargetId { get; set; } = default!;
+        public string SourceActivityId { get; set; } = default!;
+        public string TargetActivityId { get; set; } = default!;
         public string Outcome { get; set; } = default!;
     }
 
@@ -41,5 +41,19 @@ namespace Elsa.Server.Api.Endpoints.WorkflowRegistry
         public bool PersistWorkflow { get; set; }
         public bool LoadWorkflowContext { get; set; }
         public bool SaveWorkflowContext { get; set; }
+        public Variables Properties { get; set; } = new();
+    }
+    
+    public class WorkflowBlueprintSummaryModel
+    {
+        public string Id { get; set; } = default!;
+        public int Version { get; set; }
+        public string? TenantId { get; set; }
+        public bool IsSingleton { get; set; }
+        public bool IsEnabled { get; set; }
+        public string? Description { get; set; }
+        public bool IsPublished { get; set; }
+        public bool IsLatest { get; set; }
+        public string? DisplayName { get; set; }
     }
 }

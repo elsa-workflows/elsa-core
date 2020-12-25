@@ -69,7 +69,7 @@ namespace ElsaDashboard.Application.Pages.WorkflowDefinitions
 
         private ActivityDefinition CreateActivityDefinition(ActivityModel activityModel)
         {
-            return new ActivityDefinition
+            return new()
             {
                 ActivityId = activityModel.ActivityId,
                 Type = activityModel.Type
@@ -78,7 +78,7 @@ namespace ElsaDashboard.Application.Pages.WorkflowDefinitions
 
         private WorkflowModel CreateWorkflowModel(WorkflowDefinition workflowDefinition)
         {
-            return new WorkflowModel
+            return new()
             {
                 Name = workflowDefinition.Name,
                 Activities = workflowDefinition.Activities.Select(CreateActivityModel).ToImmutableList(),
@@ -94,7 +94,14 @@ namespace ElsaDashboard.Application.Pages.WorkflowDefinitions
         private ActivityModel CreateActivityModel(ActivityDefinition activityDefinition)
         {
             var descriptor = ActivityDescriptors[activityDefinition.Type];
-            return new ActivityModel(activityDefinition.ActivityId, activityDefinition.Type, descriptor.Outcomes);
+            return new ActivityModel
+            {
+                Name = activityDefinition.Name,
+                ActivityId = activityDefinition.ActivityId,
+                Type = activityDefinition.Type,
+                DisplayName = descriptor.DisplayName,
+                Outcomes = descriptor.Outcomes
+            };
         }
 
         private void StartBackgroundWorker()

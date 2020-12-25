@@ -17,6 +17,22 @@ namespace Elsa.Services.Models
         public IActivityBlueprint ActivityBlueprint => ActivityExecutionContext.ActivityBlueprint;
 
         public IActivityBlueprintWrapper<TActivity> As<TActivity>() where TActivity : IActivity => new ActivityBlueprintWrapper<TActivity>(ActivityExecutionContext);
+        
+        public async ValueTask<object?> GetPropertyValueAsync(string propertyName, CancellationToken cancellationToken = default)
+        {
+            var workflowBlueprint = ActivityExecutionContext.WorkflowExecutionContext.WorkflowBlueprint;
+            var activityId = ActivityExecutionContext.ActivityBlueprint.Id;
+
+            // Computed property setters that depend on actual workflow state might fault, since we might be using a fake activity execution context.
+            try
+            {
+                return await workflowBlueprint.GetActivityPropertyValue(activityId, propertyName, ActivityExecutionContext, cancellationToken);
+            }
+            catch (Exception)
+            {
+                return default;
+            }
+        }
     }
 
     public class ActivityBlueprintWrapper<TActivity> : ActivityBlueprintWrapper, IActivityBlueprintWrapper<TActivity> where TActivity : IActivity

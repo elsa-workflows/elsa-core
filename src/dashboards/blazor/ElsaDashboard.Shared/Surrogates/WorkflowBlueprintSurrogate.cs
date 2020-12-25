@@ -1,5 +1,7 @@
 ﻿using Elsa.Client.Models;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Serialization;
 using NodaTime;
 using NodaTime.Serialization.JsonNet;
 using ProtoBuf;
@@ -16,7 +18,15 @@ namespace ElsaDashboard.Shared.Surrogates
             SerializerSettings = new JsonSerializerSettings
             {
                 TypeNameHandling = TypeNameHandling.Auto
-            }.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
+            };
+            
+            SerializerSettings.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
+            SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
+            SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Serialize;
+            SerializerSettings.PreserveReferencesHandling = PreserveReferencesHandling.All;
+            SerializerSettings.TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Simple;
+            SerializerSettings.TypeNameHandling = TypeNameHandling.Auto;
+            SerializerSettings.Converters.Add(new StringEnumConverter(new DefaultNamingStrategy()));
         }
 
         public WorkflowBlueprintSurrogate(WorkflowBlueprint value)

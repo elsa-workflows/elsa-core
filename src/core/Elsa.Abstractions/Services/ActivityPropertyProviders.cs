@@ -34,8 +34,7 @@ namespace Elsa.Services
             properties[propertyName] = provider;
         }
 
-        public IDictionary<string, IActivityPropertyValueProvider>? GetProviders(string activityId) =>
-            _providers.TryGetValue(activityId, out var properties) ? properties : null;
+        public IDictionary<string, IActivityPropertyValueProvider>? GetProviders(string activityId) => _providers.TryGetValue(activityId, out var properties) ? properties : null;
 
         public IActivityPropertyValueProvider? GetProvider(string activityId, string propertyName) =>
             _providers.TryGetValue(activityId, out var properties) 

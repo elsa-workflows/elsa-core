@@ -3,6 +3,7 @@ using Elsa;
 using Elsa.Models;
 using Elsa.Server.Api.Extensions;
 using Elsa.Server.Api.Mapping;
+using Elsa.Server.Api.Services;
 using Elsa.Server.Api.Swagger.Examples;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Any;
@@ -35,6 +36,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 });
 
             services.AddSingleton<ConnectionConverter>();
+            services.AddSingleton<ActivityBlueprintConverter>();
+            services.AddSingleton<IWorkflowBlueprintMapper, WorkflowBlueprintMapper>();
             services.AddAutoMapperProfile<AutoMapperProfile>();
             return services;
         }

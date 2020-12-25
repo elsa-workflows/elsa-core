@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Elsa.Models;
 using Elsa.Server.Api.Models;
+using Elsa.Server.Api.Services;
 using Elsa.Server.Api.Swagger.Examples;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;
@@ -19,12 +20,12 @@ namespace Elsa.Server.Api.Endpoints.WorkflowRegistry
     public class Get : Controller
     {
         private readonly IWorkflowRegistry _workflowRegistry;
-        private readonly IMapper _mapper;
+        private readonly IWorkflowBlueprintMapper _workflowBlueprintMapper;
 
-        public Get(IWorkflowRegistry workflowRegistry, IMapper mapper)
+        public Get(IWorkflowRegistry workflowRegistry, IWorkflowBlueprintMapper workflowBlueprintMapper)
         {
             _workflowRegistry = workflowRegistry;
-            _mapper = mapper;
+            _workflowBlueprintMapper = workflowBlueprintMapper;
         }
 
         [HttpGet]
@@ -44,7 +45,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowRegistry
             if (workflowBlueprint == null)
                 return NotFound();
 
-            return _mapper.Map<WorkflowBlueprintModel>(workflowBlueprint);
+            return await _workflowBlueprintMapper.MapAsync(workflowBlueprint, cancellationToken);
         }
     }
 }

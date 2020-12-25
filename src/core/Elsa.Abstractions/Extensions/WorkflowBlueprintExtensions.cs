@@ -31,6 +31,14 @@ namespace Elsa
             string propertyName,
             ActivityExecutionContext activityExecutionContext,
             CancellationToken cancellationToken)
+            => (T) await workflowBlueprint.GetActivityPropertyValue(activityId, propertyName, activityExecutionContext, cancellationToken);
+
+        public static async ValueTask<object> GetActivityPropertyValue(
+            this IWorkflowBlueprint workflowBlueprint,
+            string activityId,
+            string propertyName,
+            ActivityExecutionContext activityExecutionContext,
+            CancellationToken cancellationToken)
         {
             var provider = workflowBlueprint.ActivityPropertyProviders.GetProvider(activityId, propertyName);
 
@@ -38,7 +46,7 @@ namespace Elsa
                 return default!;
 
             var value = await provider.GetValueAsync(activityExecutionContext, cancellationToken);
-            return (T) value!;
+            return value!;
         }
 
         public static T? GetActivityState<TActivity, T>(
