@@ -6,7 +6,7 @@ namespace Elsa
 {
     public static class ElsaOptionsExtensions
     {
-        public static ElsaOptions UseAzureBlobLockProvider(this ElsaOptions options, string connectionString, TimeSpan? leaseTime = null, TimeSpan? renewInterval = null)
+        public static ElsaConfiguration UseAzureBlobLockProvider(this ElsaConfiguration options, string connectionString, TimeSpan? leaseTime = null, TimeSpan? renewInterval = null)
         {
             options
                 .UseDistributedLockProvider(sp =>

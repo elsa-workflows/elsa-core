@@ -15,7 +15,7 @@ namespace Elsa.Activities.Rebus.Triggers
         public override async ValueTask<ITrigger> GetTriggerAsync(TriggerProviderContext<RebusMessageReceived> context, CancellationToken cancellationToken) =>
             new MessageReceivedTrigger
             {
-                MessageType = (await context.Activity.GetPropertyValueAsync(x => x.MessageType, cancellationToken)).Name,
+                MessageType = (await context.Activity.GetPropertyValueAsync(x => x.MessageType, cancellationToken))!.Name,
                 CorrelationId = context.ActivityExecutionContext.WorkflowExecutionContext.CorrelationId
             };
     }

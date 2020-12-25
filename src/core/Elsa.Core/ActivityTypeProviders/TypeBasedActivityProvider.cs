@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -7,7 +7,7 @@ using Elsa.ActivityProviders;
 using Elsa.Metadata;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.ActivityTypeProviders
 {
@@ -15,21 +15,22 @@ namespace Elsa.ActivityTypeProviders
     {
         private readonly IActivityDescriber _activityDescriber;
         private readonly IActivityActivator _activityActivator;
-        private readonly IDictionary<string, Type> _activityTypeLookup;
+        private readonly ElsaOptions _elsaOptions;
 
-        public TypeBasedActivityProvider(IServiceProvider serviceProvider, IActivityDescriber activityDescriber, IActivityActivator activityActivator)
+        public TypeBasedActivityProvider(IOptions<ElsaOptions> options,
+            IActivityDescriber activityDescriber, 
+            IActivityActivator activityActivator)
         {
             _activityDescriber = activityDescriber;
             _activityActivator = activityActivator;
 
-            using var scope = serviceProvider.CreateScope();
-            var activities = scope.ServiceProvider.GetServices<IActivity>();
-            _activityTypeLookup = activities.Select(x => x.GetType()).Distinct().ToDictionary(x => x.Name);
+            _elsaOptions = options.Value;
         }
         
         public ValueTask<IEnumerable<ActivityType>> GetActivityTypesAsync(CancellationToken cancellationToken) => new(GetActivityTypesInternal());
+       
         private IEnumerable<ActivityType> GetActivityTypesInternal() => GetActivityTypes().Select(CreateActivityType);
-
+       
         private ActivityType CreateActivityType(Type activityType)
         {
             var info = _activityDescriber.Describe(activityType)!;
@@ -57,7 +58,7 @@ namespace Elsa.ActivityTypeProviders
             };
         }
 
-        private IEnumerable<Type> GetActivityTypes() => _activityTypeLookup.Values.ToList();
+        private IEnumerable<Type> GetActivityTypes() => _elsaOptions.Activities;
 
         private Task<IActivity> ActivateActivity(ActivityExecutionContext context, Type type) => _activityActivator.ActivateActivityAsync(context, type);
     }
