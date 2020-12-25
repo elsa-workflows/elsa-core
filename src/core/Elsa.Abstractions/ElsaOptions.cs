@@ -12,12 +12,12 @@ namespace Elsa
         /// <summary>
         /// The set of activities available to workflows.
         /// </summary>
-        private readonly TypeList _activities = new TypeList();
+        private readonly TypeList _activities = new();
 
         /// <summary>
         /// The available programmed workflows
         /// </summary>
-        private readonly TypeList _workflows = new TypeList();
+        private readonly TypeList _workflows = new();
 
         public IEnumerable<Type> Activities => _activities.ToList().AsReadOnly();
 
