@@ -1,5 +1,9 @@
-﻿using System.Collections.Generic;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Text.Json.Serialization;
 using Elsa.Comparers;
+using Elsa.Converters;
 using NodaTime;
 
 namespace Elsa.Models
@@ -22,6 +26,7 @@ namespace Elsa.Models
         public int Version { get; set; }
         public WorkflowStatus WorkflowStatus { get; set; }
         public string? CorrelationId { get; set; }
+        public string? ContextType { get; set; }
         public string? ContextId { get; set; }
         public string? Name { get; set; }
         public Instant CreatedAt { get; set; }

@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using AutoMapper.Configuration.Conventions;
 using Elsa.Comparers;
 using Elsa.Models;
@@ -16,6 +16,7 @@ namespace Elsa.Persistence.YesSql.Documents
         public int Version { get; set; }
         public WorkflowStatus WorkflowStatus { get; set; }
         public string? CorrelationId { get; set; }
+        public string? ContextType { get; set; }
         public string? ContextId { get; set; }
         public string? Name { get; set; }
         public Instant CreatedAt { get; set; }

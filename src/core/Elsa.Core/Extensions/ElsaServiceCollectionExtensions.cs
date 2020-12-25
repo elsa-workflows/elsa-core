@@ -1,4 +1,6 @@
 using System;
+using System.Linq;
+using System.Reflection;
 using Elsa;
 using Elsa.Activities.ControlFlow;
 using Elsa.Activities.Primitives;
@@ -11,6 +13,7 @@ using Elsa.Builders;
 using Elsa.Consumers;
 using Elsa.Converters;
 using Elsa.Expressions;
+using Elsa.Extensions;
 using Elsa.HostedServices;
 using Elsa.Mapping;
 using Elsa.Metadata;
@@ -34,9 +37,9 @@ namespace Microsoft.Extensions.DependencyInjection
     {
         public static IServiceCollection AddElsaCore(
             this IServiceCollection services,
-            Action<ElsaOptions>? configure = default)
+            Action<ElsaConfiguration>? configure = default)
         {
-            var options = new ElsaOptions(services);
+            var options = new ElsaConfiguration(services);
             configure?.Invoke(options);
 
             services
@@ -59,25 +62,68 @@ namespace Microsoft.Extensions.DependencyInjection
         }
 
         public static IServiceCollection AddActivity<T>(this IServiceCollection services) where T : class, IActivity =>
-            services
-                .AddTransient<T>()
-                .AddTransient<IActivity>(sp => sp.GetRequiredService<T>());
+            services.AddActivity(typeof(T));
+
+        public static IServiceCollection AddActivity(this IServiceCollection services, Type activityType) =>
+           services.Configure<ElsaOptions>(options => options.RegisterActivity(activityType));
+
+        /// <summary>
+        /// Add all activities (<see cref="IActivity"/>) that are in the assembly
+        /// </summary>
+        public static IServiceCollection AddActivity(this IServiceCollection services, Assembly assembly)
+        {
+            var types = assembly.GetAllWithInterface<IActivity>();
+
+            foreach (var type in types)
+            {
+                services.AddActivity(type);
+            }
+
+            return services;
+        }
 
         public static IServiceCollection AddWorkflow<T>(this IServiceCollection services) where T : class, IWorkflow =>
-            services
-                .AddSingleton<T>()
-                .AddSingleton<IWorkflow>(sp => sp.GetRequiredService<T>());
+            services.AddWorkflow(typeof(T));
 
-        public static IServiceCollection AddWorkflow(this IServiceCollection services, IWorkflow workflow) =>
-            services
-                .AddSingleton(workflow.GetType(), workflow)
-                .AddTransient(sp => workflow);
+        public static IServiceCollection AddWorkflow(this IServiceCollection services, IWorkflow workflow)
+        {
+            var type = workflow.GetType();
+            return services
+              .AddSingleton(type, workflow)
+              .AddWorkflow(type);
+        }
+
+        public static IServiceCollection AddWorkflow<T>(this IServiceCollection services, Func<IServiceProvider, object> factory, ServiceLifetime serviceLifetime = ServiceLifetime.Transient) where T : class, IWorkflow
+        {
+            services.Add(new ServiceDescriptor(typeof(T), factory, serviceLifetime));
+
+            return services.AddWorkflow(typeof(T));
+        }
+
+        public static IServiceCollection AddWorkflow(this IServiceCollection services, Type workflow) =>
+            services.Configure<ElsaOptions>(options => options.RegisterWorkflow(workflow));
 
         public static IServiceCollection StartWorkflow<T>(this IServiceCollection services) where T : class, IWorkflow => services.AddHostedService<StartWorkflow<T>>();
 
-        private static IServiceCollection AddMediatR(this ElsaOptions options) => options.Services.AddMediatR(mediatr => mediatr.AsScoped(), typeof(IActivity));
+        /// <summary>
+        /// Add all workflows (<see cref="IWorkflow"/>) that are in the assembly
+        /// </summary>
+        /// <remarks>Instantiated or workflows with a specific implementation must be added before this call.</remarks>
+        public static IServiceCollection AddWorkflow(this IServiceCollection services, Assembly assembly)
+        {
+            var types = assembly.GetAllWithInterface<IWorkflow>();
 
-        private static ElsaOptions AddWorkflowsCore(this ElsaOptions configuration)
+            foreach (var type in types)
+            {
+                services.AddWorkflow(type);
+            }
+
+            return services;
+        }
+
+        private static IServiceCollection AddMediatR(this ElsaConfiguration options) => options.Services.AddMediatR(mediatr => mediatr.AsScoped(), typeof(IActivity));
+
+        private static ElsaConfiguration AddWorkflowsCore(this ElsaConfiguration configuration)
         {
             var services = configuration.Services;
             services.TryAddSingleton<IClock>(SystemClock.Instance);
@@ -87,7 +133,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddLocalization()
                 .AddMemoryCache()
                 .AddSingleton<IIdGenerator, IdGenerator>()
-                .AddSingleton(sp => sp.GetRequiredService<ElsaOptions>().CreateJsonSerializer(sp))
+                .AddSingleton(sp => sp.GetRequiredService<ElsaConfiguration>().CreateJsonSerializer(sp))
                 .AddSingleton<IContentSerializer, DefaultContentSerializer>()
                 .AddSingleton<TypeJsonConverter>()
                 .TryAddProvider<IExpressionHandler, LiteralHandler>(ServiceLifetime.Singleton)
