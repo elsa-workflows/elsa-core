@@ -61,6 +61,7 @@ namespace ElsaDashboard.Application.Pages.WorkflowRegistry
                 Outcomes = descriptor.Outcomes,
                 ActivityId = activityBlueprint.Id,
                 Description = descriptor.Description,
+                Properties = activityBlueprint.Properties,
                 DisplayDescriptor = displayDescriptor
             };
         }

@@ -9,6 +9,7 @@ using Elsa.Client.Models;
 using ElsaDashboard.Application.Extensions;
 using ElsaDashboard.Application.Models;
 using ElsaDashboard.Application.Services;
+using ElsaDashboard.Models;
 using ElsaDashboard.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
@@ -230,6 +231,31 @@ namespace ElsaDashboard.Application.Shared
 
             await UpdateModelAsync(model);
             await FlyoutPanelService.HideAsync();
+        }
+        
+        private RenderFragment RenderActivity(ActivityModel activityModel)
+        {
+            return builder =>
+            {
+                var index = 0;
+                builder.OpenComponent<Activity>(index++);
+                builder.AddAttribute(index++, "Model", activityModel);
+
+                var displayDescriptor = activityModel.DisplayDescriptor;
+
+                if (displayDescriptor != null)
+                {
+                    var context = new ActivityDisplayContext(activityModel.Type, activityModel.Properties);
+                
+                    if(displayDescriptor.RenderBody != null)
+                        builder.AddAttribute(index++, "Body", displayDescriptor.RenderBody(context));
+                
+                    if(displayDescriptor.RenderIcon != null)
+                        builder.AddAttribute(index, "Icon", displayDescriptor.RenderIcon(context));
+                }
+            
+                builder.CloseComponent();
+            };
         }
 
         private void ConnectionsHasChanged()

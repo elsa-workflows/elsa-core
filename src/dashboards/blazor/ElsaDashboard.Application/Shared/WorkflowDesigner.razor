@@ -61,31 +61,6 @@
             </div>;
     }
 
-    private RenderFragment RenderActivity(ActivityModel activityModel)
-    {
-        return builder =>
-        {
-            var index = 0;
-            builder.OpenComponent<Activity>(index++);
-            builder.AddAttribute(index++, "Model", activityModel);
-
-            var displayDescriptor = activityModel.DisplayDescriptor;
-
-            if (displayDescriptor != null)
-            {
-                var context = new ActivityDisplayContext(activityModel.Type);
-                
-                if(displayDescriptor.RenderBody != null)
-                    builder.AddAttribute(index++, "Body", displayDescriptor.RenderBody(context));
-                
-                if(displayDescriptor.RenderIcon != null)
-                    builder.AddAttribute(index, "Icon", displayDescriptor.RenderIcon(context));
-            }
-            
-            builder.CloseComponent();
-        };
-    }
-
     private RenderFragment? RenderTree(IEnumerable<ActivityModel> activities, bool isRoot, Func<string, string, string, Task> onAddActivityClickHandler, HashSet<string> renderedActivities)
     {
         var list = activities.Where(x => !renderedActivities.Contains(x.ActivityId)).ToList();
@@ -103,7 +78,6 @@
                 {
                     var activityId = activity.ActivityId;
                     var children = Model.GetChildActivities(activityId).ToList();
-                    var displayDescriptor = activity.DisplayDescriptor;
 
                     <li @key=@activityId>
                         <div class="inline-flex flex flex-col items-center">

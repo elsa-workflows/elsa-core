@@ -9,6 +9,7 @@ namespace Elsa.Services
     {
         void AddProvider(string activityId, string propertyName, IActivityPropertyValueProvider provider);
         IActivityPropertyValueProvider? GetProvider(string activityId, string propertyName);
+        IDictionary<string, IActivityPropertyValueProvider>? GetProviders(string activityId);
 
         ValueTask SetActivityPropertiesAsync(
             IActivity activity,
