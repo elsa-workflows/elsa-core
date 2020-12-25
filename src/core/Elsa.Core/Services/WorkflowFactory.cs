@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Services.Models;
 using NodaTime;
@@ -37,7 +38,8 @@ namespace Elsa.Services
                 ContextId = contextId,
                 CreatedAt = _clock.GetCurrentInstant(),
                 Activities = workflowBlueprint.Activities.Select(CreateInstance).ToList(),
-                Variables = new Variables(workflowBlueprint.Variables)
+                Variables = new Variables(workflowBlueprint.Variables),
+                ContextType = workflowBlueprint.ContextOptions?.ContextType ?.GetContextTypeName()
             };
 
             return Task.FromResult(workflowInstance);
