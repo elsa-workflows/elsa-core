@@ -36,15 +36,14 @@ namespace Elsa.Server.Api.Endpoints.WorkflowRegistry
         }
 
         [HttpGet]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(PagedList<WorkflowBlueprintModel>))]
-        [SwaggerResponseExample(StatusCodes.Status200OK, typeof(WorkflowBlueprintModelPagedListExample))]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(PagedList<WorkflowBlueprintSummaryModel>))]
         [SwaggerOperation(
             Summary = "Returns a list of workflow blueprints.",
             Description = "Returns paginated a list of workflow blueprints. When no version options are specified, the latest version is returned.",
             OperationId = "WorkflowBlueprints.List",
             Tags = new[] {"WorkflowBlueprints"})
         ]
-        public async Task<ActionResult<PagedList<WorkflowBlueprintModel>>> Handle(int? page = default, int? pageSize = default, VersionOptions? version = default, CancellationToken cancellationToken = default)
+        public async Task<ActionResult<PagedList<WorkflowBlueprintSummaryModel>>> Handle(int? page = default, int? pageSize = default, VersionOptions? version = default, CancellationToken cancellationToken = default)
         {
             version ??= VersionOptions.Latest;
             var workflowBlueprints = await _workflowRegistry.GetWorkflowsAsync(cancellationToken).Where(x => x.WithVersion(version.Value)).ToListAsync(cancellationToken);
@@ -59,9 +58,9 @@ namespace Elsa.Server.Api.Endpoints.WorkflowRegistry
                 items = items.Take(pageSize.Value);
 
             using var scope = _serviceProvider.CreateScope();
-            var mappedItems = _mapper.Map<IEnumerable<WorkflowBlueprintModel>>(items).ToList();
+            var mappedItems = _mapper.Map<IEnumerable<WorkflowBlueprintSummaryModel>>(items).ToList();
                 
-            return new PagedList<WorkflowBlueprintModel>(mappedItems, page, pageSize, totalCount);
+            return new PagedList<WorkflowBlueprintSummaryModel>(mappedItems, page, pageSize, totalCount);
         }
     }
 }

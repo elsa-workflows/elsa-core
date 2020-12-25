@@ -9,6 +9,7 @@ namespace Elsa.Server.Api.Mapping
         public AutoMapperProfile()
         {
             CreateMap<IWorkflowBlueprint, WorkflowBlueprintModel>();
+            CreateMap<IWorkflowBlueprint, WorkflowBlueprintSummaryModel>();
             CreateMap<IActivityBlueprint, ActivityBlueprintModel>().ConvertUsing<ActivityBlueprintConverter>();
             CreateMap<ICompositeActivityBlueprint, CompositeActivityBlueprintModel>();
             CreateMap<IConnection, ConnectionModel>().ConvertUsing<ConnectionConverter>();

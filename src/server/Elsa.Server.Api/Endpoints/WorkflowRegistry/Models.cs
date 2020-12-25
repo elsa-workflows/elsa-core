@@ -43,4 +43,17 @@ namespace Elsa.Server.Api.Endpoints.WorkflowRegistry
         public bool SaveWorkflowContext { get; set; }
         public Variables Properties { get; set; } = new();
     }
+    
+    public class WorkflowBlueprintSummaryModel
+    {
+        public string Id { get; set; } = default!;
+        public int Version { get; set; }
+        public string? TenantId { get; set; }
+        public bool IsSingleton { get; set; }
+        public bool IsEnabled { get; set; }
+        public string? Description { get; set; }
+        public bool IsPublished { get; set; }
+        public bool IsLatest { get; set; }
+        public string? DisplayName { get; set; }
+    }
 }
