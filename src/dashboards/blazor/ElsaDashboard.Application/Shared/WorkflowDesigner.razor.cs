@@ -9,6 +9,7 @@ using Elsa.Client.Models;
 using ElsaDashboard.Application.Extensions;
 using ElsaDashboard.Application.Models;
 using ElsaDashboard.Application.Services;
+using ElsaDashboard.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.AspNetCore.Components.Web;
@@ -19,7 +20,7 @@ namespace ElsaDashboard.Application.Shared
     partial class WorkflowDesigner : IAsyncDisposable
     {
         private static Func<ConnectionModel, Task> _connectionCreatedAction = default!;
-
+        
         [Parameter] public WorkflowModel Model { private get; set; } = WorkflowModel.Blank();
         [Parameter] public EventCallback<WorkflowModelChangedEventArgs> WorkflowChanged { get; set; }
         [Inject] private IJSRuntime JS { get; set; } = default!;
@@ -27,6 +28,15 @@ namespace ElsaDashboard.Application.Shared
         private IJSObjectReference _designerModule = default!;
         private bool _connectionsChanged = true;
         private EventCallbackFactory EventCallbackFactory { get; } = new();
+
+        private readonly ActivityInfo _unknownActivityDescriptor =
+            new()
+            {
+                Type = "Unknown",
+                Category = "Unknown",
+                Description = "Activity type not found",
+                DisplayName = "Unknown"
+            };
 
         [JSInvokableAttribute("InvokeConnectionCreated")]
         public static Task InvokeConnectionCreated(ConnectionModel connection) => _connectionCreatedAction(connection);
@@ -59,7 +69,7 @@ namespace ElsaDashboard.Application.Shared
         {
             Model = model;
             ConnectionsHasChanged();
-            
+
             await WorkflowChanged.InvokeAsync(new WorkflowModelChangedEventArgs(Model));
         }
 
@@ -164,7 +174,7 @@ namespace ElsaDashboard.Application.Shared
         {
             await FlyoutPanelService.ShowAsync<ActivityPicker>(
                 "Activities",
-                new { ActivitySelected = EventCallbackFactory.Create<ActivityDescriptorSelectedEventArgs>(this, e => OnActivityPickedAsync(e, parentActivityId, targetActivityId, outcome)) },
+                new {ActivitySelected = EventCallbackFactory.Create<ActivityDescriptorSelectedEventArgs>(this, e => OnActivityPickedAsync(e, parentActivityId, targetActivityId, outcome))},
                 ButtonDescriptor.Create("Cancel", _ => ClosePanelAsync()));
         }
 
@@ -172,7 +182,14 @@ namespace ElsaDashboard.Application.Shared
         {
             outcome ??= "Done";
 
-            var activity = new ActivityModel(Guid.NewGuid().ToString("N"), activityInfo.Type, activityInfo.Outcomes);
+            var activity = new ActivityModel
+            {
+                ActivityId = Guid.NewGuid().ToString("N"),
+                Type = activityInfo.Type,
+                Outcomes = activityInfo.Outcomes,
+                DisplayName = activityInfo.DisplayName
+            };
+
             var model = Model.AddActivity(activity);
 
             if (targetActivityId != null)
@@ -210,7 +227,7 @@ namespace ElsaDashboard.Application.Shared
                     model = model.AddConnection(connection);
                 }
             }
-            
+
             await UpdateModelAsync(model);
             await FlyoutPanelService.HideAsync();
         }
@@ -229,7 +246,7 @@ namespace ElsaDashboard.Application.Shared
 
             await FlyoutPanelService.ShowAsync<ActivityEditor>(
                 activityInfo.DisplayName,
-                new { ActivityInfo = activityInfo },
+                new {ActivityInfo = activityInfo},
                 ButtonDescriptor.Create("Cancel", _ => ShowActivityPickerAsync(sourceActivityId, targetActivityId, outcome)),
                 ButtonDescriptor.Create("OK", _ => AddActivityAsync(activityInfo, sourceActivityId, targetActivityId, outcome), true));
         }

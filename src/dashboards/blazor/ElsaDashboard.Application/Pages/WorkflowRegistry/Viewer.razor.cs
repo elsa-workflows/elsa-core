@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Elsa.Client.Models;
 using ElsaDashboard.Application.Models;
+using ElsaDashboard.Services;
 using ElsaDashboard.Shared.Rpc;
 using Microsoft.AspNetCore.Components;
 
@@ -14,6 +15,7 @@ namespace ElsaDashboard.Application.Pages.WorkflowRegistry
         [Parameter] public string WorkflowDefinitionId { get; set; } = default!;
         [Inject] private IWorkflowRegistryService WorkflowRegistryService { get; set; } = default!;
         [Inject] private IActivityService ActivityService { get; set; } = default!;
+        [Inject] private IActivityDisplayService ActivityDisplayService { get; set; } = default!;
         private IDictionary<string, ActivityInfo> ActivityDescriptors { get; set; } = default!;
         private WorkflowBlueprint WorkflowBlueprint { get; set; } = default!;
         private WorkflowModel WorkflowModel { get; set; } = WorkflowModel.Blank();
@@ -26,15 +28,17 @@ namespace ElsaDashboard.Application.Pages.WorkflowRegistry
         protected override async Task OnParametersSetAsync()
         {
             WorkflowBlueprint = (await WorkflowRegistryService.GetById(WorkflowDefinitionId, VersionOptions.Latest))!;
-            WorkflowModel = CreateWorkflowModel(WorkflowBlueprint);
+            WorkflowModel = await CreateWorkflowModelAsync(WorkflowBlueprint);
         }
 
-        private WorkflowModel CreateWorkflowModel(WorkflowBlueprint workflowBlueprint)
+        private async ValueTask<WorkflowModel> CreateWorkflowModelAsync(WorkflowBlueprint workflowBlueprint)
         {
+            var activities = await Task.WhenAll(workflowBlueprint.Activities.Select(async x => await CreateActivityModelAsync(x)));
+            
             return new()
             {
                 Name = workflowBlueprint.Name,
-                Activities = workflowBlueprint.Activities.Select(CreateActivityModel).ToImmutableList(),
+                Activities = activities.ToImmutableList(),
                 Connections = workflowBlueprint.Connections.Select(CreateConnectionModel).ToImmutableList()
             };
         }
@@ -44,10 +48,21 @@ namespace ElsaDashboard.Application.Pages.WorkflowRegistry
             return new(connectionDefinition.SourceActivityId, connectionDefinition.TargetActivityId, connectionDefinition.Outcome);
         }
 
-        private ActivityModel CreateActivityModel(ActivityBlueprint activityBlueprint)
+        private async ValueTask<ActivityModel> CreateActivityModelAsync(ActivityBlueprint activityBlueprint)
         {
             var descriptor = ActivityDescriptors[activityBlueprint.Type];
-            return new ActivityModel(activityBlueprint.Id, activityBlueprint.Type, descriptor.Outcomes);
+            var displayDescriptor = await ActivityDisplayService.GetDisplayDescriptorAsync(activityBlueprint.Type);
+            
+            return new ActivityModel
+            {
+                Name = activityBlueprint.Name,
+                Type = activityBlueprint.Type,
+                DisplayName = descriptor.DisplayName,
+                Outcomes = descriptor.Outcomes,
+                ActivityId = activityBlueprint.Id,
+                Description = descriptor.Description,
+                DisplayDescriptor = displayDescriptor
+            };
         }
     }
 }

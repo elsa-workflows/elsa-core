@@ -12,11 +12,11 @@ namespace ElsaDashboard.Application.Shared
         {
             MenuItems = new[]
             {
-                new MenuItem("Home", "", GetIcon<Home>(), NavLinkMatch.All),
-                new MenuItem("Workflow Registry", "workflow-registry", GetIcon<Squares>(), NavLinkMatch.Prefix),
-                new MenuItem("Workflow Instances", "workflow-instances", GetIcon<PlayCircle>(), NavLinkMatch.Prefix),
-                new MenuItem("Workflow Definitions", "workflow-definitions", GetIcon<Database>(), NavLinkMatch.Prefix),
-                new MenuItem("Composite Activities", "composite-activities", GetIcon<Icons.Activity>(), NavLinkMatch.Prefix),
+                new MenuItem("Home", "", GetIcon<HomeIcon>(), NavLinkMatch.All),
+                new MenuItem("Workflow Registry", "workflow-registry", GetIcon<SquaresIcon>(), NavLinkMatch.Prefix),
+                new MenuItem("Workflow Instances", "workflow-instances", GetIcon<PlayCircleIcon>(), NavLinkMatch.Prefix),
+                new MenuItem("Workflow Definitions", "workflow-definitions", GetIcon<DatabaseIcon>(), NavLinkMatch.Prefix),
+                new MenuItem("Composite Activities", "composite-activities", GetIcon<ActivityIcon>(), NavLinkMatch.Prefix),
             };
         }
 

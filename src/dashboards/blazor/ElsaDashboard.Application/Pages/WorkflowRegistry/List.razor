@@ -101,14 +101,18 @@
             </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-100">
-            @foreach (var workflowBlueprint in WorkflowBlueprints.Items)
+            @foreach (var grouping in VersionedWorkflowBlueprints)
             {
-                var displayName = workflowBlueprint.DisplayName ?? workflowBlueprint.Name ?? "Unnamed";
+                var workflowBlueprintId = grouping.Key;
+                var workflowBlueprints = grouping.OrderByDescending(x => x.Version).ToList();
+                var latestVersion = workflowBlueprints.First();
+                var publishedVersion = workflowBlueprints.FirstOrDefault(x => x.IsPublished);
+                var displayName = latestVersion.DisplayName ?? latestVersion.Name ?? "Unnamed";
                 <tr>
                     <td class="px-6 py-3 whitespace-no-wrap text-sm leading-5 font-medium text-gray-900">
                         <div class="flex items-center space-x-3 lg:pl-2">
                             <div class="flex-shrink-0 w-2.5 h-2.5 rounded-full bg-pink-600"></div>
-                            <a href="@($"workflow-registry/{workflowBlueprint.Id}/viewer")" class="truncate hover:text-gray-600">
+                            <a href="@($"workflow-registry/{workflowBlueprintId}/viewer")" class="truncate hover:text-gray-600">
                                 <span>@displayName</span>
                             </a>
                         </div>
@@ -125,10 +129,10 @@
                         </div>
                     </td>
                     <td class="hidden md:table-cell px-6 py-3 whitespace-no-wrap text-sm leading-5 text-gray-500 text-right">
-                        1
+                        @latestVersion.Version
                     </td>
                     <td class="hidden md:table-cell px-6 py-3 whitespace-no-wrap text-sm leading-5 text-gray-500 text-right">
-                        1
+                        @(publishedVersion?.Version.ToString() ?? "-")
                     </td>
                     <td class="pr-6">
                         <div x-data="{ open: false }" x-on:keydown.escape="open = false" x-on:click.away="open = false" class="relative flex justify-end items-center">
@@ -147,7 +151,7 @@
                                  class="z-10 mx-3 origin-top-right absolute right-7 top-0 w-48 mt-1 rounded-md shadow-lg">
                                 <div class="rounded-md bg-white shadow-xs" role="menu" aria-orientation="vertical" aria-labelledby="project-options-menu-0">
                                     <div class="py-1">
-                                        <a href="@($"workflow-registry/{workflowBlueprint.Id}/viewer")" class="group flex items-center px-4 py-2 text-sm leading-5 text-gray-700 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:bg-gray-100 focus:text-gray-900" role="menuitem">
+                                        <a href="@($"workflow-registry/{workflowBlueprintId}/viewer")" class="group flex items-center px-4 py-2 text-sm leading-5 text-gray-700 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:bg-gray-100 focus:text-gray-900" role="menuitem">
                                             <!-- Heroicon name: pencil-alt -->
                                             <svg class="mr-3 h-5 w-5 text-gray-400 group-hover:text-gray-500 group-focus:text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                                 <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z"/>

@@ -7,14 +7,10 @@
     <div class="p-5 border-b border-b-solid">
         <div class="flex justify-between space-x-8">
             <div class="flex-shrink-0">
-                <svg class="h-10 w-10 text-blue-500" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                    <path stroke="none" d="M0 0h24v24H0z"/>
-                    <circle cx="12" cy="12" r="9"/>
-                    <polyline points="12 7 12 12 15 15"/>
-                </svg>
+                @Icon
             </div>
             <div class="flex-1 font-medium leading-8">
-                <p>@Model.Type</p>
+                <p>@DisplayName</p>
             </div>
             <div class="flex-shrink-0">
                 <button x-on:click="open = !open" aria-haspopup="true" class="w-8 h-8 inline-flex items-center justify-center text-gray-400 rounded-full bg-transparent hover:text-gray-500 focus:outline-none focus:text-gray-500 focus:bg-gray-100 transition ease-in-out duration-150">
@@ -39,10 +35,7 @@
                         </div>
                         <div class="border-t border-gray-100"></div>
                         <div class="py-1">
-                            <a href="#" class="block px-4 py-2 text-sm leading-5 text-gray-700 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:bg-gray-100 focus:text-gray-900" role="menuitem">
-                                Removed
-                                from pinned
-                            </a>
+                            <a href="#" class="block px-4 py-2 text-sm leading-5 text-gray-700 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:bg-gray-100 focus:text-gray-900" role="menuitem">Delete</a>
                         </div>
                     </div>
                 </div>
@@ -51,6 +44,7 @@
 
     </div>
     <div class="p-6 text-gray-400 text-sm">
-        Every <a href="#" class="font-medium border-b border-solid border-gray-200 text-black">5 minutes</a>
+        @Body
+        @* <p>Every <a href="#" class="font-medium border-b border-solid border-gray-200 text-black">5 minutes</a></p> *@
     </div>
 </div>

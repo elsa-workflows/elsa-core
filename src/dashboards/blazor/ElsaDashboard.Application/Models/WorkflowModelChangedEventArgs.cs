@@ -1,4 +1,5 @@
 ﻿using System;
+using Elsa.Client.Models;
 
 namespace ElsaDashboard.Application.Models
 {
