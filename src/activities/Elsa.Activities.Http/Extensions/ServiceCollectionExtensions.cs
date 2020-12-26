@@ -16,11 +16,13 @@ namespace Microsoft.Extensions.DependencyInjection
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddHttpActivities(this IServiceCollection services, Action<HttpActivityOptions>? configureOptions = null) =>
-            services
-                .AddHttpServices(configureOptions)
-                .AddHttpActivitiesInternal();
-        
+        public static ElsaOptions AddHttpActivities(this ElsaOptions options, Action<HttpActivityOptions>? configureOptions = null)
+        {
+            options.Services.AddHttpServices(configureOptions);
+            options.AddHttpActivitiesInternal();
+            return options;
+        }
+
         public static IServiceCollection AddHttpServices(this IServiceCollection services, Action<HttpActivityOptions>? configureOptions = null)
         {
             if (configureOptions != null)
@@ -49,8 +51,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddRequestHandler<SignalRequestHandler>();
         }
 
-        private static IServiceCollection AddHttpActivitiesInternal(this IServiceCollection services) =>
-            services
+        private static ElsaOptions AddHttpActivitiesInternal(this ElsaOptions options) =>
+            options
                 .AddActivity<HttpRequestReceived>()
                 .AddActivity<WriteHttpResponse>()
                 .AddActivity<SendHttpRequest>()

@@ -14,11 +14,11 @@ namespace Elsa.Samples.Interrupts
             services.AddControllers();
             
             services
-                .AddElsa()
+                .AddElsa(options => options
                 .AddConsoleActivities()
                 .AddHttpActivities()
-                .AddTimerActivities(options => options.UseQuartzProvider())
-                .AddActivity<Sleep>()
+                .AddQuartzTimerActivities()
+                .AddActivity<Sleep>())
                 .StartWorkflow<InterruptableWorkflow>();
         }
         

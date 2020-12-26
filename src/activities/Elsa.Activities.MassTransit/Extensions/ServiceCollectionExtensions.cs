@@ -10,51 +10,41 @@ namespace Elsa.Activities.MassTransit.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddMassTransitActivities(this IServiceCollection services)
+        public static ElsaOptions AddMassTransitActivities(this ElsaOptions options)
         {
-            if (services == null)
+            if (options == null)
             {
-                throw new ArgumentNullException(nameof(services));
+                throw new ArgumentNullException(nameof(options));
             }
 
-            return services
+            return options
                 .AddActivity<PublishMassTransitMessage>()
                 .AddActivity<ReceiveMassTransitMessage>()
                 .AddActivity<SendMassTransitMessage>();
         }
 
-        public static IServiceCollection AddMassTransitSchedulingActivities(this IServiceCollection services, Action<MessageScheduleOptions> configureOptions)
+        public static ElsaOptions AddMassTransitSchedulingActivities(this ElsaOptions options, Action<MessageScheduleOptions>? configureOptions)
         {
-            if (services == null)
-            {
-                throw new ArgumentNullException(nameof(services));
-            }
-
-            if (configureOptions == null)
-            {
-                throw new ArgumentNullException(nameof(configureOptions));
-            }
-
-            services.AddMassTransitActivities()
+            options.AddMassTransitActivities()
                 .AddActivity<CancelScheduledMassTransitMessage>()
                 .AddActivity<ScheduleSendMassTransitMessage>();
 
-            services.Configure(configureOptions);
-            return services;
+            if(configureOptions != null)
+                options.Services.Configure(configureOptions);
+            
+            return options;
         }
 
-        public static IServiceCollection AddRabbitMqActivities(this IServiceCollection services, Action<RabbitMqOptions>? configureOptions = null, params Type[] messageTypes)
+        public static ElsaOptions AddRabbitMqActivities(this ElsaOptions options, Action<RabbitMqOptions>? configureOptions = null, params Type[] messageTypes)
         {
-            if (configureOptions != null)
-            {
-                services.Configure(configureOptions);
-            }
+            if (configureOptions != null) 
+                options.Services.Configure(configureOptions);
 
-            services
+            options
                 .AddMassTransitActivities();
                 //.AddMassTransit(CreateBus, ConfigureMassTransit);
 
-            return services;
+            return options;
 
             // // Local function to configure consumers.
             // void ConfigureMassTransit(IServiceCollectionConfigurator configurator)

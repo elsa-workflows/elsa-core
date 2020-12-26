@@ -15,16 +15,17 @@ namespace Elsa.Samples.HelloWorldConsole
         {
             // Create a service container with Elsa services.
             var services = new ServiceCollection()
-                .AddElsa(options => options.UseYesSqlPersistence())
-                .AddConsoleActivities()
-                .AddWorkflow<HelloWorld>()
+                .AddElsa(options => options
+                    .UseYesSqlPersistence()
+                    .AddConsoleActivities()
+                    .AddWorkflow<HelloWorld>())
                 .AddAutoMapperProfiles<Program>()
                 .BuildServiceProvider();
 
             // Run startup actions (not needed when registering Elsa with a Host).
             var startupRunner = services.GetRequiredService<IStartupRunner>();
             await startupRunner.StartupAsync();
-            
+
             // Get a workflow runner.
             var workflowRunner = services.GetRequiredService<IWorkflowRunner>();
 
@@ -32,16 +33,16 @@ namespace Elsa.Samples.HelloWorldConsole
             await workflowRunner.RunWorkflowAsync<HelloWorld>();
 
             var store = services.GetRequiredService<IWorkflowInstanceStore>();
-            
+
             var results = await store.FindManyAsync(
-                new WorkflowInstanceDefinitionIdSpecification(nameof(HelloWorld)), 
+                new WorkflowInstanceDefinitionIdSpecification(nameof(HelloWorld)),
                 OrderBySpecification.OrderByDescending<WorkflowInstance>(x => x.CreatedAt),
                 Paging.Page(1, 2));
-            
+
             var count = await store.CountAsync(new WorkflowInstanceDefinitionIdSpecification(nameof(HelloWorld)));
 
             Console.WriteLine(count);
-            
+
             foreach (var result in results)
             {
                 Console.WriteLine(result.CreatedAt);

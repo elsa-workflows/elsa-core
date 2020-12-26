@@ -1,5 +1,4 @@
 using System.Threading.Tasks;
-
 using Elsa.Persistence.InMemory;
 using Elsa.Samples.GoBackConsole.Activities;
 using Elsa.Samples.GoBackConsole.Workflows;
@@ -17,16 +16,16 @@ namespace Elsa.Samples.GoBackConsole
         {
             // Create a service container with Elsa services.
             var services = new ServiceCollection()
-                .AddElsa()
-                .AddConsoleActivities()
-                .AddActivity<BrickWallActivity>()
-                .AddWorkflow<WalkAroundWorkflow>()
+                .AddElsa(options => options
+                    .AddConsoleActivities()
+                    .AddActivity<BrickWallActivity>()
+                    .AddWorkflow<WalkAroundWorkflow>())
                 .BuildServiceProvider();
-            
+
             // Run startup actions (not needed when registering Elsa with a Host).
             var startupRunner = services.GetRequiredService<IStartupRunner>();
             await startupRunner.StartupAsync();
-            
+
             // Get a workflow runner.
             var workflowRunner = services.GetRequiredService<IWorkflowRunner>();
 

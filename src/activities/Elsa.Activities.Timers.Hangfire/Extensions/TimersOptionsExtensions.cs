@@ -8,7 +8,8 @@ using Hangfire;
 
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Activities.Timers.Hangfire.Extensions
+// ReSharper disable once CheckNamespace
+namespace Elsa
 {
     public static class TimersOptionsExtensions
     {

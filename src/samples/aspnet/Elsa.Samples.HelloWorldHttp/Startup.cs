@@ -8,9 +8,9 @@ namespace Elsa.Samples.HelloWorldHttp
         public void ConfigureServices(IServiceCollection services)
         {
             services
-                .AddElsa()
-                .AddHttpActivities()
-                .AddWorkflow<HelloHttpWorkflow>();
+                .AddElsa(options => options
+                    .AddHttpActivities()
+                    .AddWorkflow<HelloHttpWorkflow>());
         }
 
         public void Configure(IApplicationBuilder app)

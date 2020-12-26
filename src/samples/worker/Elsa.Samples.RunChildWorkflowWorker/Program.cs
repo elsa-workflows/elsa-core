@@ -15,11 +15,11 @@ namespace Elsa.Samples.RunChildWorkflowWorker
                     (_, services) =>
                     {
                         services
-                            .AddElsa()
-                            .AddConsoleActivities()
-                            .AddHostedService<RunParentWorkflow>()
-                            .AddWorkflow<ParentWorkflow>()
-                            .AddWorkflow<ChildWorkflow>();
+                            .AddElsa(options => options
+                                .AddConsoleActivities()
+                                .AddWorkflow<ParentWorkflow>()
+                                .AddWorkflow<ChildWorkflow>())
+                            .AddHostedService<RunParentWorkflow>();
                     });
     }
 }

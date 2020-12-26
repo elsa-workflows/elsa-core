@@ -2,7 +2,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NodaTime;
-using Elsa.Activities.Timers.Hangfire.Extensions;
 using Hangfire;
 
 namespace Elsa.Samples.Timers
@@ -17,15 +16,13 @@ namespace Elsa.Samples.Timers
                     (context, services) =>
                     {
                         services
-                            .AddElsa()
-                            .AddConsoleActivities()
-                            .AddTimerActivities(options =>
-                                options.UseHangfire(configure =>
-                                    configure.UseSqlServerStorage("Server=(localdb)\\MSSQLLocalDB;Database=ElsaHangfire;Trusted_Connection=True;MultipleActiveResultSets=true")))
-                            .AddWorkflow<RecurringTaskWorkflow>()
-                            .AddWorkflow<CronTaskWorkflow>()
-                            .AddWorkflow<CancelTimerWorkflow>()
-                            .AddWorkflow(new OneOffWorkflow(SystemClock.Instance.GetCurrentInstant().Plus(Duration.FromSeconds(5))));
+                            .AddElsa(options => options
+                                .AddConsoleActivities()
+                                .AddHangfireTimerActivities(hangfire => hangfire.UseSqlServerStorage("Server=(localdb)\\MSSQLLocalDB;Database=ElsaHangfire;Trusted_Connection=True;MultipleActiveResultSets=true"))
+                                .AddWorkflow<RecurringTaskWorkflow>()
+                                .AddWorkflow<CronTaskWorkflow>()
+                                .AddWorkflow<CancelTimerWorkflow>()
+                                .AddWorkflow(new OneOffWorkflow(SystemClock.Instance.GetCurrentInstant().Plus(Duration.FromSeconds(5)))));
                     });
     }
 }

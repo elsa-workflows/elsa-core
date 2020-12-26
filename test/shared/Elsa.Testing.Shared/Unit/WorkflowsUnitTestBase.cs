@@ -21,9 +21,9 @@ namespace Elsa.Testing.Shared.Unit
             TestOutputHelper = testOutputHelper;
 
             var services = new ServiceCollection()
-                .AddElsa()
-                .AddConsoleActivities(Console.In, new XunitConsoleForwarder(testOutputHelper));
-            
+                .AddElsa(options => options
+                    .AddConsoleActivities(Console.In, new XunitConsoleForwarder(testOutputHelper)));
+
             configureServices?.Invoke(services);
             ServiceProvider = services.BuildServiceProvider();
             ServiceScope = ServiceProvider.CreateScope();

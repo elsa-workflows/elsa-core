@@ -1,5 +1,4 @@
 using System.Threading.Tasks;
-
 using Elsa.Persistence.InMemory;
 using Elsa.Samples.ProgrammaticCompositeActivitiesConsole.Activities;
 using Elsa.Samples.ProgrammaticCompositeActivitiesConsole.Workflows;
@@ -14,16 +13,16 @@ namespace Elsa.Samples.ProgrammaticCompositeActivitiesConsole
         {
             // Create a service container with Elsa services.
             var services = new ServiceCollection()
-                .AddElsa()
-                .AddConsoleActivities()
-                .AddActivity<CountDownActivity>()
-                .AddWorkflow<CompositionWorkflow>()
+                .AddElsa(options => options
+                    .AddConsoleActivities()
+                    .AddActivity<CountDownActivity>()
+                    .AddWorkflow<CompositionWorkflow>())
                 .BuildServiceProvider();
-            
+
             // Run startup actions (not needed when registering Elsa with a Host).
             var startupRunner = services.GetRequiredService<IStartupRunner>();
             await startupRunner.StartupAsync();
-            
+
             // Get a workflow host.
             var workflowRunner = services.GetRequiredService<IWorkflowRunner>();
 

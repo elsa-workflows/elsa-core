@@ -1,15 +1,13 @@
 using System;
-
 using Elsa.Activities.Timers.Options;
 using Elsa.Activities.Timers.Quartz.Jobs;
 using Elsa.Activities.Timers.Quartz.Services;
 using Elsa.Activities.Timers.Services;
-
 using Microsoft.Extensions.DependencyInjection;
-
 using Quartz;
 
-namespace Elsa.Activities.Timers
+// ReSharper disable once CheckNamespace
+namespace Elsa
 {
     public static class TimersOptionsExtensions
     {

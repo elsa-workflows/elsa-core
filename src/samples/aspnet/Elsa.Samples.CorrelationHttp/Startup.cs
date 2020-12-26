@@ -9,10 +9,10 @@ namespace Elsa.Samples.CorrelationHttp
         public void ConfigureServices(IServiceCollection services)
         {
             services
-                .AddElsa()
-                .AddHttpActivities()
-                .AddConsoleActivities()
-                .AddWorkflow<RegistrationWorkflow>();
+                .AddElsa(options => options
+                    .AddHttpActivities()
+                    .AddConsoleActivities()
+                    .AddWorkflow<RegistrationWorkflow>());
         }
 
         public void Configure(IApplicationBuilder app)

@@ -8,15 +8,12 @@ namespace Elsa.Samples.CustomActivities
         public void ConfigureServices(IServiceCollection services)
         {
             services
-                .AddElsa()
-                .AddHttpActivities()
-                .AddActivity<ReadQueryString>()
-                .AddWorkflow<EchoQueryStringWorkflow>();
+                .AddElsa(options => options
+                    .AddHttpActivities()
+                    .AddActivity<ReadQueryString>()
+                    .AddWorkflow<EchoQueryStringWorkflow>());
         }
 
-        public void Configure(IApplicationBuilder app)
-        {
-            app.UseHttpActivities();
-        }
+        public void Configure(IApplicationBuilder app) => app.UseHttpActivities();
     }
 }
