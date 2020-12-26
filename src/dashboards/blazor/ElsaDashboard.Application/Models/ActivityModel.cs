@@ -6,8 +6,8 @@ namespace ElsaDashboard.Application.Models
 {
     public record ActivityModel
     {
-        public string ActivityId { get; init; }
-        public string Type { get; init; }
+        public string ActivityId { get; init; } = default!;
+        public string Type { get; init; } = default!;
         public string? Name { get; init; }
         public string? DisplayName { get; init; }
         public string? Description { get; set; }

@@ -48,7 +48,7 @@
             </a>
         </div>;
 
-    private RenderFragment RenderOutcomeButtons(ActivityModel activity, Func<string, string, string, Task> onAddActivityClickHandler)
+    private RenderFragment RenderOutcomeButtons(ActivityModel activity, Func<string?, string?, string?, Task> onAddActivityClickHandler)
     {
         var activityId = activity.ActivityId;
 
@@ -61,7 +61,7 @@
             </div>;
     }
 
-    private RenderFragment? RenderTree(IEnumerable<ActivityModel> activities, bool isRoot, Func<string, string, string, Task> onAddActivityClickHandler, HashSet<string> renderedActivities)
+    private RenderFragment? RenderTree(IEnumerable<ActivityModel> activities, bool isRoot, Func<string?, string?, string?, Task> onAddActivityClickHandler, HashSet<string> renderedActivities)
     {
         var list = activities.Where(x => !renderedActivities.Contains(x.ActivityId)).ToList();
         var cssClass = isRoot ? "root" : default!;

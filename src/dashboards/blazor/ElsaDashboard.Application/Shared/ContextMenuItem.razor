@@ -15,7 +15,7 @@
 @code
 {
     [Inject]
-    private NavigationManager NavigationManager { get; set; }
+    private NavigationManager NavigationManager { get; set; } = default!;
 
     [Parameter]
     public string Text { get; set; } = default!;

@@ -185,9 +185,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.DistributedLocking.Sql
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Activities.Timers", "src\activities\Elsa.Activities.Timers\Elsa.Activities.Timers.csproj", "{74E83393-50AF-41E3-A1C8-97202673CD85}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElsaDashboard.Abstractions", "src\dashboards\blazor\ElsaDashboard.Abstractions\ElsaDashboard.Abstractions.csproj", "{8FC11EB7-38FE-445C-BE58-4D96BB14AAB4}"
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Activities.Rebus", "src\activities\Elsa.Activities.Rebus\Elsa.Activities.Rebus.csproj", "{A9843C3F-74F7-4282-A7B7-841F6B8EB12D}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
