@@ -20,7 +20,7 @@ namespace Elsa.Samples.MultiTenantChildWorker
                     {
                         services
                             .AddElsa(options => options
-                                .AddTimerActivities(o => o.UseQuartzProvider())
+                                .AddQuartzTimerActivities()
                                 .AddConsoleActivities()
                                 .AddRebusActivities<OrderReceived>()
                                 .AddWorkflow<GenerateOrdersWorkflow>()

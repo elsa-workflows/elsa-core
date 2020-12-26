@@ -19,7 +19,7 @@ namespace Elsa.Samples.Timers
                         services
                             .AddElsa(options => options.UseYesSqlPersistence()
                                 .AddConsoleActivities()
-                                .AddTimerActivities(o => o.UseQuartzProvider())
+                                .AddQuartzTimerActivities()
                                 .AddWorkflow<RecurringTaskWorkflow>()
                                 .AddWorkflow<CancelTimerWorkflow>()
                                 .AddWorkflow<CronTaskWorkflow>()

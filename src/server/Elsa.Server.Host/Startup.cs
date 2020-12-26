@@ -35,7 +35,7 @@ namespace Elsa.Server.Host
                     .AddConsoleActivities()
                     .AddHttpActivities(elsaSection.GetSection("Http").Bind)
                     .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)
-                    .AddTimerActivities(o => o.UseQuartzProvider())
+                    .AddQuartzTimerActivities()
                     .AddWorkflow<HelloWorld>()
                     .AddWorkflow<HelloWorldV2>()
                     .AddWorkflow<GoodbyeWorld>()

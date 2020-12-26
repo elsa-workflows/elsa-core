@@ -20,7 +20,7 @@ namespace Elsa.Samples.WhileLoopWorker
                         services
                             .AddElsa(options => options.UseYesSqlPersistence()
                                 .AddConsoleActivities()
-                                .AddTimerActivities(o => o.UseQuartzProvider())
+                                .AddQuartzTimerActivities()
                                 .AddActivity<MakePhoneCall>()
                                 .AddWorkflow<PhoneCallWorkflow>())
                             .AddSingleton<PhoneCallService>()

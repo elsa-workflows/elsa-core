@@ -1,5 +1,4 @@
-using NodaTime;
-
+// ReSharper disable once CheckNamespace
 namespace NodaTime
 {
     public static class DurationExtensions

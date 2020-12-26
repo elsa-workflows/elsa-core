@@ -17,7 +17,7 @@ namespace Elsa.Samples.Interrupts
                 .AddElsa(options => options
                 .AddConsoleActivities()
                 .AddHttpActivities()
-                .AddTimerActivities(o => o.UseQuartzProvider())
+                .AddQuartzTimerActivities()
                 .AddActivity<Sleep>())
                 .StartWorkflow<InterruptableWorkflow>();
         }
