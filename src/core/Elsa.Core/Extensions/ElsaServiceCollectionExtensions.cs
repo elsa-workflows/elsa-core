@@ -36,6 +36,8 @@ namespace Microsoft.Extensions.DependencyInjection
             this IServiceCollection services,
             Action<ElsaOptions>? configure = default)
         {
+            services.AddStartupRunner();
+            
             var options = new ElsaOptions(services);
             configure?.Invoke(options);
 
@@ -96,7 +98,6 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddScoped<IWorkflowSelector, WorkflowSelector>()
                 .AddScoped<IWorkflowPublisher, WorkflowPublisher>()
                 .AddScoped<IWorkflowContextManager, WorkflowContextManager>()
-                .AddStartupRunner()
                 .AddSingleton<IActivityTypeService, ActivityTypeService>()
                 .AddSingleton<IActivityTypeProvider, TypeBasedActivityProvider>()
                 .AddWorkflowProvider<ProgrammaticWorkflowProvider>()
