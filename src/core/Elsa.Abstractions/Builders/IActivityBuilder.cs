@@ -20,8 +20,10 @@ namespace Elsa.Builders
         IOutcomeBuilder When(string outcome);
         IActivityBuilder Then(IActivityBuilder targetActivity);
         IConnectionBuilder Then(string activityName);
-        IActivityBuilder WithId(string? id);
-        IActivityBuilder WithName(string? name);
+        IActivityBuilder WithId(string? value);
+        IActivityBuilder WithName(string? value);
+        IActivityBuilder WithDisplayName(string? value);
+        IActivityBuilder WithDescription(string? value);
         IActivityBuilder LoadWorkflowContext(bool value = true);
         IActivityBuilder SaveWorkflowContext(bool value = true);
     }

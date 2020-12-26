@@ -5,6 +5,7 @@
         string Id { get; }
         string? Name { get; }
         string? DisplayName { get; }
+        string? Description { get; }
         string Type { get; }
         bool PersistWorkflow { get; }
         bool LoadWorkflowContext { get; set; }

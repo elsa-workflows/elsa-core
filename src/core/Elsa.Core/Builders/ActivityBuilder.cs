@@ -60,21 +60,27 @@ namespace Elsa.Builders
                 () => this,
                 () => WorkflowBuilder.Activities.First(x => x.Name == activityName));
 
-        public IActivityBuilder WithId(string? id)
+        public IActivityBuilder WithId(string? value)
         {
-            ActivityId = id!;
+            ActivityId = value!;
             return this;
         }
 
-        public IActivityBuilder WithName(string? name)
+        public IActivityBuilder WithName(string? value)
         {
-            Name = name;
+            Name = value;
             return this;
         }
         
-        public IActivityBuilder WithDisplay(string? name)
+        public IActivityBuilder WithDisplayName(string? value)
         {
-            Name = name;
+            DisplayName = value;
+            return this;
+        }
+        
+        public IActivityBuilder WithDescription(string? value)
+        {
+            Description = value;
             return this;
         }
         

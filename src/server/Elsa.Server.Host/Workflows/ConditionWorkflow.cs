@@ -14,15 +14,14 @@ namespace Elsa.Server.Host.Workflows
         {
             workflow
                 .WithDisplayName("Conditions")
-                .Then(() => Console.WriteLine("What is your age?"))
+                .Then(() => Console.WriteLine("What is your age?")).WithDisplayName("Write").WithDescription("What is your age?")
                 .ReadLine()
                 .Timer(Duration.FromMinutes(5))
                 .SetVariable("Age", context => int.Parse(context.GetInput<string>()))
-                .IfElse(context => context.GetVariable<int>("Age") < 18, ifElse =>
-                {
-                    ifElse.When(OutcomeNames.True).WriteLine("You are not allowed to drink beer.");
-                    ifElse.When(OutcomeNames.False).WriteLine("Enjoy your beer!");
-                });
+                .IfElse(
+                    context => context.GetVariable<int>("Age") < 18, 
+                    whenTrue => whenTrue.WriteLine("You are not allowed to drink beer."),
+                    whenFalse => whenFalse.WriteLine("Enjoy your beer!"));
         }
     }
 }

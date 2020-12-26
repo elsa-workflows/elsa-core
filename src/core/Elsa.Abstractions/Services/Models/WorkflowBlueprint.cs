@@ -31,7 +31,7 @@ namespace Elsa.Services.Models
             bool deleteCompletedInstances,
             IEnumerable<IActivityBlueprint> activities,
             IEnumerable<IConnection> connections,
-            IActivityPropertyProviders activityPropertyValueProviders) : base(id, name, displayName, id, true, false, false)
+            IActivityPropertyProviders activityPropertyValueProviders) : base(id, name, displayName, description, id, true, false, false)
         {
             Id = id;
             Version = version;
@@ -44,7 +44,6 @@ namespace Elsa.Services.Models
             Variables = variables ?? new Variables();
             CustomAttributes = customAttributes ?? new Variables();
             Name = name;
-            Description = description;
             PersistenceBehavior = persistenceBehavior;
             DeleteCompletedInstances = deleteCompletedInstances;
             Activities = activities.ToList();
@@ -56,7 +55,6 @@ namespace Elsa.Services.Models
         public string? TenantId { get; set; }
         public bool IsSingleton { get; set; }
         public bool IsEnabled { get; set; }
-        public string? Description { get; set; }
         public bool IsPublished { get; set; }
         public bool IsLatest { get; set; }
         public Variables Variables { get; set; }

@@ -14,6 +14,10 @@ namespace ElsaDashboard.Backend.Rpc
         public Task<PagedList<WorkflowBlueprint>> ListAsync(ListWorkflowBlueprintsRequest request, CallContext context = default) =>
             _elsaClient.WorkflowRegistry.ListAsync(request.Page, request.PageSize, request.VersionOptions, context.CancellationToken);
 
-        public Task<WorkflowBlueprint?> GetById(GetWorkflowBlueprintByIdRequest request, CallContext context = default) => _elsaClient.WorkflowRegistry.GetByIdAsync(request.Id, request.VersionOptions, context.CancellationToken);
+        public async Task<WorkflowBlueprint?> GetById(GetWorkflowBlueprintByIdRequest request, CallContext context = default)
+        {
+            var result = await _elsaClient.WorkflowRegistry.GetByIdAsync(request.Id, request.VersionOptions, context.CancellationToken);
+            return result;
+        }
     }
 }

@@ -15,10 +15,11 @@ namespace Elsa.Services.Models
             string id,
             string? name,
             string? displayName,
+            string? description,
             string type,
             bool persistWorkflow,
             bool loadWorkflowContext,
-            bool saveWorkflowContext) : base(id, name, displayName, type, persistWorkflow, loadWorkflowContext, saveWorkflowContext)
+            bool saveWorkflowContext) : base(id, name, displayName, description, type, persistWorkflow, loadWorkflowContext, saveWorkflowContext)
         {
         }
 

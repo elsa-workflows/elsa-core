@@ -10,6 +10,7 @@
             string id,
             string? name,
             string? displayName,
+            string? description,
             string type,
             bool persistWorkflow,
             bool loadWorkflowContext,
@@ -18,6 +19,7 @@
             Id = id;
             Name = name;
             DisplayName = displayName;
+            Description = description;
             Type = type;
             PersistWorkflow = persistWorkflow;
             LoadWorkflowContext = loadWorkflowContext;
@@ -27,6 +29,7 @@
         public string Id { get; set; } = default!;
         public string? Name { get; set; }
         public string? DisplayName { get; }
+        public string? Description { get; }
         public string Type { get; set; } = default!;
         public bool PersistWorkflow { get; set; }
         public bool LoadWorkflowContext { get; set; }

@@ -118,6 +118,8 @@ namespace Elsa
             WorkflowFactory.Add(workflow.GetType(), workflow);
             return this;
         }
+
+        public ElsaOptions AddWorkflowsFrom<T>() => AddWorkflowsFrom(typeof(T).Assembly);
         
         public ElsaOptions AddWorkflowsFrom(Assembly assembly)
         {

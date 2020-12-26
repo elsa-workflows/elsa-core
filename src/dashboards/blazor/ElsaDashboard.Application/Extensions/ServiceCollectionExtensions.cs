@@ -1,4 +1,6 @@
 ﻿using Blazored.Modal;
+using ElsaDashboard.Application.Activities;
+using ElsaDashboard.Application.Activities.Console;
 using ElsaDashboard.Application.Display;
 using ElsaDashboard.Application.Services;
 using ElsaDashboard.Extensions;
@@ -16,7 +18,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddScoped<IConfirmDialogService, ConfirmDialogService>()
                 .AddScoped<IFlyoutPanelService, FlyoutPanelService>()
                 .AddSingleton<IActivityDisplayService, ActivityDisplayService>()
-                .AddActivityDisplayProvider<TimerDisplayProvider>();
+                .AddActivityDisplayProvider<TimersDisplayProvider>()
+                .AddActivityDisplayProvider<ConsoleDisplayProvider>();
         }
     }
 }

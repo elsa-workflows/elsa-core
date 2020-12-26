@@ -16,6 +16,8 @@ namespace Elsa.Server.Api.Mapping
             {
                 Id = source.Id,
                 Name = source.Name,
+                DisplayName = source.DisplayName,
+                Description = source.Description,
                 Type = source.Type,
                 PersistWorkflow = source.PersistWorkflow,
                 LoadWorkflowContext = source.LoadWorkflowContext,

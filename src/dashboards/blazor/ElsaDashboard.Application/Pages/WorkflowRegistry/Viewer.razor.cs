@@ -57,10 +57,10 @@ namespace ElsaDashboard.Application.Pages.WorkflowRegistry
             {
                 Name = activityBlueprint.Name,
                 Type = activityBlueprint.Type,
-                DisplayName = descriptor.DisplayName,
+                DisplayName = activityBlueprint.DisplayName ?? descriptor.DisplayName,
                 Outcomes = descriptor.Outcomes,
                 ActivityId = activityBlueprint.Id,
-                Description = descriptor.Description,
+                Description = activityBlueprint.Description ?? descriptor.Description,
                 Properties = activityBlueprint.Properties,
                 DisplayDescriptor = displayDescriptor
             };
