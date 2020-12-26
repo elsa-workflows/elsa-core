@@ -1,20 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
 using Elsa.Models;
 using Elsa.Server.Api.Models;
-using Elsa.Server.Api.Swagger.Examples;
 using Elsa.Services;
-using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Swashbuckle.AspNetCore.Annotations;
-using Swashbuckle.AspNetCore.Filters;
 
 namespace Elsa.Server.Api.Endpoints.WorkflowRegistry
 {

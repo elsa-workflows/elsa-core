@@ -1,6 +1,5 @@
 using System;
 using Elsa.Activities.Console;
-using Elsa.Activities.ControlFlow;
 using Elsa.Activities.Timers;
 using Elsa.Builders;
 

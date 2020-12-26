@@ -1,5 +1,4 @@
 using System;
-using System.Security.Cryptography.X509Certificates;
 using Elsa.Models;
 using Elsa.Persistence.MongoDb.Serializers;
 using MongoDb.Bson.NodaTime;

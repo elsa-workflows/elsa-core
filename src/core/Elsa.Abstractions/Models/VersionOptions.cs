@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using Elsa.Converters;
+using Elsa.Serialization.Converters;
 using Newtonsoft.Json;
 
 namespace Elsa.Models

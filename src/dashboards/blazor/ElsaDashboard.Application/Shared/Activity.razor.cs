@@ -1,5 +1,4 @@
-﻿using Elsa.Client.Models;
-using ElsaDashboard.Application.Icons;
+﻿using ElsaDashboard.Application.Icons;
 using ElsaDashboard.Application.Models;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;

@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Elsa.Core.IntegrationTests.Helpers;
 using Elsa.Models;
 using Elsa.Testing.Shared.Unit;

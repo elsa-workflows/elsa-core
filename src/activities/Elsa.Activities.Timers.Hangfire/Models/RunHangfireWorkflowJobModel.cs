@@ -1,7 +1,3 @@
-using System;
-
-using NodaTime;
-
 namespace Elsa.Activities.Timers.Hangfire.Models
 {
     public class RunHangfireWorkflowJobModel

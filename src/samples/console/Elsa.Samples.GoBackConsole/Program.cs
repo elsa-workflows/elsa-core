@@ -1,5 +1,4 @@
 using System.Threading.Tasks;
-using Elsa.Persistence.InMemory;
 using Elsa.Samples.GoBackConsole.Activities;
 using Elsa.Samples.GoBackConsole.Workflows;
 using Elsa.Services;

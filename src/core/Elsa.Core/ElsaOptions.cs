@@ -84,7 +84,7 @@ namespace Elsa
             return this;
         }
         
-        public ElsaOptions AddActivity(Assembly assembly)
+        public ElsaOptions AddActivitiesFrom(Assembly assembly)
         {
             var types = assembly.GetAllWithInterface<IActivity>();
 
@@ -119,7 +119,7 @@ namespace Elsa
             return this;
         }
         
-        public ElsaOptions AddWorkflow(Assembly assembly)
+        public ElsaOptions AddWorkflowsFrom(Assembly assembly)
         {
             var types = assembly.GetAllWithInterface<IWorkflow>();
 

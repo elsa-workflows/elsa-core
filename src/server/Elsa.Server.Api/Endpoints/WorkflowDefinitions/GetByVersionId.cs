@@ -5,7 +5,6 @@ using Elsa.Persistence;
 using Elsa.Persistence.Specifications;
 using Elsa.Serialization;
 using Elsa.Server.Api.Swagger.Examples;
-using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;

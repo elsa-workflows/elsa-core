@@ -1,4 +1,3 @@
-using Elsa.Activities.Timers;
 using Elsa.Samples.WhileLoopWorker.Services;
 using Elsa.Samples.WhileLoopWorker.Workflows;
 using Microsoft.Extensions.DependencyInjection;

@@ -1,6 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using ElsaDashboard.Application.Activities;
 using ElsaDashboard.Extensions;
 using ElsaDashboard.Models;

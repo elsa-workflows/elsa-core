@@ -1,7 +1,6 @@
 using System;
 using System.Threading.Tasks;
 using Elsa.Builders;
-using Elsa.Persistence.InMemory;
 using Elsa.Services;
 using Elsa.Testing.Shared.Helpers;
 using Elsa.Triggers;

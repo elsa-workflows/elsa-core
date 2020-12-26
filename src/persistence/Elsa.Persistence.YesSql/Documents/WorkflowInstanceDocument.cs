@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using AutoMapper.Configuration.Conventions;
 using Elsa.Comparers;
 using Elsa.Models;
 using NodaTime;

@@ -6,8 +6,6 @@ using System.Threading.Tasks;
 using Elsa.Builders;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 
 namespace Elsa.WorkflowProviders
 {

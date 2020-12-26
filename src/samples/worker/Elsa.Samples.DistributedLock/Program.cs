@@ -1,7 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Threading.Tasks;
-using Elsa.Activities.Timers;
 
 namespace Elsa.Samples.DistributedLock
 {

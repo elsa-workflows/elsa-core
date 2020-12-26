@@ -2,7 +2,6 @@ using Elsa.Samples.ForkJoinTimerAndSignalHttp.BackgroundTasks;
 using Elsa.Samples.ForkJoinTimerAndSignalHttp.Workflows;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
-using Elsa.Activities.Timers;
 
 namespace Elsa.Samples.ForkJoinTimerAndSignalHttp
 {

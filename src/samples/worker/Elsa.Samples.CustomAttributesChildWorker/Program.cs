@@ -2,7 +2,6 @@ using Elsa.Samples.CustomAttributesChildWorker.Messages;
 using Elsa.Samples.CustomAttributesChildWorker.Workflows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Elsa.Activities.Timers;
 
 namespace Elsa.Samples.CustomAttributesChildWorker
 {

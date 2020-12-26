@@ -11,6 +11,7 @@ using Newtonsoft.Json.Serialization;
 using NodaTime;
 using NodaTime.Serialization.JsonNet;
 using Refit;
+using TypeConverter = Elsa.Client.Converters.TypeConverter;
 
 namespace Elsa.Client.Extensions
 {
@@ -27,7 +28,7 @@ namespace Elsa.Client.Extensions
             {
                 NullValueHandling = NullValueHandling.Ignore,
                 ReferenceLoopHandling = ReferenceLoopHandling.Serialize,
-                PreserveReferencesHandling = PreserveReferencesHandling.All,
+                PreserveReferencesHandling = PreserveReferencesHandling.Objects,
                 TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Simple,
                 TypeNameHandling = TypeNameHandling.Auto,
                 ContractResolver = new CamelCasePropertyNamesContractResolver

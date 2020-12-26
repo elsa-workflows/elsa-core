@@ -9,7 +9,6 @@ using Elsa.Persistence.Specifications;
 using Elsa.Services;
 
 using Hangfire;
-using Hangfire.States;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 

@@ -23,7 +23,7 @@ namespace ElsaDashboard.Shared.Surrogates
             SerializerSettings.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
             SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
             SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Serialize;
-            SerializerSettings.PreserveReferencesHandling = PreserveReferencesHandling.All;
+            SerializerSettings.PreserveReferencesHandling = PreserveReferencesHandling.Objects;
             SerializerSettings.TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Simple;
             SerializerSettings.TypeNameHandling = TypeNameHandling.Auto;
             SerializerSettings.Converters.Add(new StringEnumConverter(new DefaultNamingStrategy()));

@@ -1,5 +1,4 @@
 using Elsa.Activities.AzureServiceBus.Extensions;
-using Elsa.Activities.Timers;
 using Elsa.Persistence.YesSql.Extensions;
 using Elsa.Samples.AzureServiceBusWorker.Workflows;
 using Microsoft.Extensions.Configuration;

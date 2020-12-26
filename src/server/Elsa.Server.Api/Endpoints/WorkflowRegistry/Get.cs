@@ -1,7 +1,7 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using AutoMapper;
 using Elsa.Models;
+using Elsa.Serialization;
 using Elsa.Server.Api.Models;
 using Elsa.Server.Api.Services;
 using Elsa.Server.Api.Swagger.Examples;
@@ -21,11 +21,13 @@ namespace Elsa.Server.Api.Endpoints.WorkflowRegistry
     {
         private readonly IWorkflowRegistry _workflowRegistry;
         private readonly IWorkflowBlueprintMapper _workflowBlueprintMapper;
+        private readonly IContentSerializer _contentSerializer;
 
-        public Get(IWorkflowRegistry workflowRegistry, IWorkflowBlueprintMapper workflowBlueprintMapper)
+        public Get(IWorkflowRegistry workflowRegistry, IWorkflowBlueprintMapper workflowBlueprintMapper, IContentSerializer contentSerializer)
         {
             _workflowRegistry = workflowRegistry;
             _workflowBlueprintMapper = workflowBlueprintMapper;
+            _contentSerializer = contentSerializer;
         }
 
         [HttpGet]
@@ -45,7 +47,8 @@ namespace Elsa.Server.Api.Endpoints.WorkflowRegistry
             if (workflowBlueprint == null)
                 return NotFound();
 
-            return await _workflowBlueprintMapper.MapAsync(workflowBlueprint, cancellationToken);
+            var model = await _workflowBlueprintMapper.MapAsync(workflowBlueprint, cancellationToken);
+            return Json(model, _contentSerializer.GetSettings());
         }
     }
 }

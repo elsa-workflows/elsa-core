@@ -1,5 +1,4 @@
 ﻿using System;
-using Elsa.Activities.Timers;
 using Microsoft.Extensions.DependencyInjection;
 using Quartz;
 

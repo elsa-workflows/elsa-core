@@ -1,5 +1,5 @@
 using System;
-using Elsa.Converters;
+using Elsa.Serialization.Converters;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;

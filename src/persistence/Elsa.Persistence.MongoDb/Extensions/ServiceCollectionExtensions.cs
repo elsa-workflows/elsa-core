@@ -5,8 +5,6 @@ using Elsa.Persistence.MongoDb.Stores;
 using Elsa.Runtime;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
-using MongoDB.Driver;
 
 namespace Elsa.Persistence.MongoDb.Extensions
 {

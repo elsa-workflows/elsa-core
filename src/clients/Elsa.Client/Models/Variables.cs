@@ -1,7 +1,8 @@
-using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.Serialization;
+using NodaTime;
+using NodaTime.Text;
 
 namespace Elsa.Client.Models
 {
@@ -42,6 +43,9 @@ namespace Elsa.Client.Models
             if (value == default!)
                 return default!;
 
+            if (typeof(T) == typeof(Duration))
+                return (T?)((object?)DurationPattern.JsonRoundtrip.Parse(value!.ToString()).Value)!;
+            
             var converter = TypeDescriptor.GetConverter(typeof(T));
             return converter.CanConvertFrom(value.GetType()) ? (T?) converter.ConvertFrom(value) : default;
         }

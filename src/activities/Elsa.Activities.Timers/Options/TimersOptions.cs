@@ -1,7 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
 
-using NodaTime;
-
 namespace Elsa.Activities.Timers.Options
 {
     public class TimersOptions

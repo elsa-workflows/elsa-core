@@ -3,7 +3,6 @@ using Elsa.Persistence.YesSql.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NodaTime;
-using Elsa.Activities.Timers;
 
 namespace Elsa.Samples.Timers
 {

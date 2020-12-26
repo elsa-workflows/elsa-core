@@ -2,7 +2,7 @@ using System;
 using Newtonsoft.Json;
 using Rebus.Extensions;
 
-namespace Elsa.Converters
+namespace Elsa.Serialization.Converters
 {
     public class TypeJsonConverter : JsonConverter<Type>
     {

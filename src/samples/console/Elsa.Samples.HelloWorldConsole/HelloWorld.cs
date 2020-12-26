@@ -1,5 +1,4 @@
 ﻿using Elsa.Activities.Console;
-using Elsa.Activities.ControlFlow;
 using Elsa.Builders;
 
 namespace Elsa.Samples.HelloWorldConsole

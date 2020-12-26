@@ -7,7 +7,6 @@ using Elsa.ActivityProviders;
 using Elsa.Metadata;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Microsoft.Extensions.Options;
 
 namespace Elsa.ActivityTypeProviders
 {

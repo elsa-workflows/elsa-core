@@ -1,4 +1,3 @@
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Elsa.Activities.Timers.Services;
 using Elsa.ActivityResults;

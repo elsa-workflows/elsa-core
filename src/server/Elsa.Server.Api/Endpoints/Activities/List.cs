@@ -1,7 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Elsa.Metadata;
-using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
@@ -14,12 +14,12 @@ namespace Elsa.Server.Api.Endpoints.Activities
     [Produces("application/json")]
     public class List : Controller
     {
-        private readonly IEnumerable<IActivity> _activities;
+        private readonly ICollection<Type> _activityTypes;
         private readonly IActivityDescriber _activityDescriber;
 
-        public List(IEnumerable<IActivity> activities, IActivityDescriber activityDescriber)
+        public List(ElsaOptions elsaOptions, IActivityDescriber activityDescriber)
         {
-            _activities = activities;
+            _activityTypes = elsaOptions.ActivityTypes.ToList();
             _activityDescriber = activityDescriber;
         }
 
@@ -33,11 +33,11 @@ namespace Elsa.Server.Api.Endpoints.Activities
         ]
         public IActionResult Handle()
         {
-            var descriptors = _activities.Select(DescribeActivity).Where(x => x != null).Select(x => x!).ToList();
+            var descriptors = _activityTypes.Select(DescribeActivity).Where(x => x != null).Select(x => x!).ToList();
             var model = new List<ActivityInfo>(descriptors);
             return Ok(model);
         }
 
-        private ActivityInfo? DescribeActivity(IActivity activity) => _activityDescriber.Describe(activity.GetType());
+        private ActivityInfo? DescribeActivity(Type activityType) => _activityDescriber.Describe(activityType);
     }
 }

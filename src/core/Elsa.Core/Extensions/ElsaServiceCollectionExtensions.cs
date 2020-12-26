@@ -1,6 +1,4 @@
 using System;
-using System.Linq;
-using System.Reflection;
 using Elsa;
 using Elsa.Activities.ControlFlow;
 using Elsa.Activities.Primitives;
@@ -11,9 +9,7 @@ using Elsa.ActivityProviders;
 using Elsa.ActivityTypeProviders;
 using Elsa.Builders;
 using Elsa.Consumers;
-using Elsa.Converters;
 using Elsa.Expressions;
-using Elsa.Extensions;
 using Elsa.HostedServices;
 using Elsa.Mapping;
 using Elsa.Metadata;
@@ -22,6 +18,7 @@ using Elsa.Persistence;
 using Elsa.Persistence.Decorators;
 using Elsa.Runtime;
 using Elsa.Serialization;
+using Elsa.Serialization.Converters;
 using Elsa.Services;
 using Elsa.Triggers;
 using Elsa.WorkflowProviders;
@@ -51,7 +48,10 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton(options.SignalFactory)
                 .AddSingleton(options.StorageFactory);
 
-            options.AddWorkflowsCore();
+            options
+                .AddWorkflowsCore()
+                .AddCoreActivities();
+            
             options.AddMediatR();
             options.AddAutoMapper();
 

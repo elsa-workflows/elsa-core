@@ -1,4 +1,5 @@
-﻿using Elsa.Activities.Console;
+﻿using System;
+using Elsa.Activities.Console;
 using Elsa.Activities.ControlFlow;
 using Elsa.Activities.Primitives;
 using Elsa.Activities.Timers;
@@ -13,7 +14,7 @@ namespace Elsa.Server.Host.Workflows
         {
             workflow
                 .WithDisplayName("Conditions")
-                .WriteLine("What is your age?")
+                .Then(() => Console.WriteLine("What is your age?"))
                 .ReadLine()
                 .Timer(Duration.FromMinutes(5))
                 .SetVariable("Age", context => int.Parse(context.GetInput<string>()))

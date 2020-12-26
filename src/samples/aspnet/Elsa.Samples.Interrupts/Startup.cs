@@ -3,7 +3,6 @@ using Elsa.Samples.Interrupts.Workflows;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
-using Elsa.Activities.Timers;
 
 namespace Elsa.Samples.Interrupts
 {

@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using Elsa.Models;
-using Elsa.Persistence.YesSql.Indexes;
 
 namespace Elsa.Persistence.YesSql
 {

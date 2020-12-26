@@ -1,5 +1,5 @@
 using System;
-using Elsa.Converters;
+using Elsa.Serialization.Converters;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
@@ -31,7 +31,7 @@ namespace Elsa.Serialization
             settings.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
             settings.NullValueHandling = NullValueHandling.Ignore;
             settings.ReferenceLoopHandling = ReferenceLoopHandling.Serialize;
-            settings.PreserveReferencesHandling = PreserveReferencesHandling.All;
+            settings.PreserveReferencesHandling = PreserveReferencesHandling.Objects;
             settings.TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Simple;
             settings.TypeNameHandling = TypeNameHandling.Auto;
             settings.ContractResolver = new CamelCasePropertyNamesContractResolver
@@ -47,6 +47,7 @@ namespace Elsa.Serialization
             settings.Converters.Add(new TypeJsonConverter());
             settings.Converters.Add(new VersionOptionsJsonConverter());
             settings.Converters.Add(new StackJsonConverter());
+            settings.Converters.Add(new InlineFunctionJsonConverter());
         }
 
         public static JsonSerializerSettings CreateDefaultJsonSerializationSettings()

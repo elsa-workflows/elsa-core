@@ -2,7 +2,7 @@ using System;
 using Elsa.Models;
 using Newtonsoft.Json;
 
-namespace Elsa.Converters
+namespace Elsa.Serialization.Converters
 {
     public class VersionOptionsJsonConverter : JsonConverter<VersionOptions>
     {

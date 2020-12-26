@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Elsa.Models;
 using Elsa.Persistence.Specifications;
-using Elsa.Persistence.YesSql.Extensions;
 using Open.Linq.AsyncExtensions;
 using YesSql;
 using YesSql.Indexes;

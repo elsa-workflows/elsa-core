@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
 
-namespace Elsa.Converters
+namespace Elsa.Serialization.Converters
 {
     /// <summary>
     /// Correctly deserializes a <see cref="Stack{T}"/> maintaining the order of the items.
