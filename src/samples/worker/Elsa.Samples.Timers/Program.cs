@@ -17,13 +17,13 @@ namespace Elsa.Samples.Timers
                     (_, services) =>
                     {
                         services
-                            .AddElsa(options => options.UseYesSqlPersistence())
-                            .AddConsoleActivities()
-                            .AddTimerActivities(options => options.UseQuartzProvider())
-                            .AddWorkflow<RecurringTaskWorkflow>()
-							.AddWorkflow<CancelTimerWorkflow>()
-                            .AddWorkflow<CronTaskWorkflow>()
-                            .AddWorkflow(new OneOffWorkflow(SystemClock.Instance.GetCurrentInstant().Plus(Duration.FromSeconds(5))))
+                            .AddElsa(options => options.UseYesSqlPersistence()
+                                .AddConsoleActivities()
+                                .AddTimerActivities(o => o.UseQuartzProvider())
+                                .AddWorkflow<RecurringTaskWorkflow>()
+                                .AddWorkflow<CancelTimerWorkflow>()
+                                .AddWorkflow<CronTaskWorkflow>()
+                                .AddWorkflow(new OneOffWorkflow(SystemClock.Instance.GetCurrentInstant().Plus(Duration.FromSeconds(5)))))
                             ;
                     });
     }

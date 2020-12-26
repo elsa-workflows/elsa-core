@@ -19,14 +19,14 @@ namespace Elsa.Samples.CustomAttributesChildWorker
                     (_, services) =>
                     {
                         services
-                            .AddElsa()
-                            .AddTimerActivities(options => options.UseQuartzProvider())
-                            .AddConsoleActivities()
-                            .AddRebusActivities<OrderReceived>()
-                            .AddWorkflow<GenerateOrdersWorkflow>()
-                            .AddWorkflow<OrderReceivedWorkflow>()
-                            .AddWorkflow<Customer1Workflow>()
-                            .AddWorkflow<Customer2Workflow>()
+                            .AddElsa(options => options
+                                .AddTimerActivities(o => o.UseQuartzProvider())
+                                .AddConsoleActivities()
+                                .AddRebusActivities<OrderReceived>()
+                                .AddWorkflow<GenerateOrdersWorkflow>()
+                                .AddWorkflow<OrderReceivedWorkflow>()
+                                .AddWorkflow<Customer1Workflow>()
+                                .AddWorkflow<Customer2Workflow>())
                             ;
                     });
     }

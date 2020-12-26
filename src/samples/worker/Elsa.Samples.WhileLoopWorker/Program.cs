@@ -18,13 +18,13 @@ namespace Elsa.Samples.WhileLoopWorker
                     (_, services) =>
                     {
                         services
-                            .AddElsa(options => options.UseYesSqlPersistence())
-                            .AddConsoleActivities()
-                            .AddTimerActivities(options => options.UseQuartzProvider())
+                            .AddElsa(options => options.UseYesSqlPersistence()
+                                .AddConsoleActivities()
+                                .AddTimerActivities(o => o.UseQuartzProvider())
+                                .AddActivity<MakePhoneCall>()
+                                .AddWorkflow<PhoneCallWorkflow>())
                             .AddSingleton<PhoneCallService>()
-                            .AddHostedService<PhoneCallWorker>()
-                            .AddActivity<MakePhoneCall>()
-                            .AddWorkflow<PhoneCallWorkflow>();
+                            .AddHostedService<PhoneCallWorker>();
                     });
     }
 }

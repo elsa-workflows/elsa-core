@@ -15,13 +15,14 @@ namespace Elsa.Samples.ContextualWorkflowHttp
         public void ConfigureServices(IServiceCollection services)
         {
             services
-                .AddElsa(options => options.UseYesSqlPersistence())
-                .AddHttpActivities()
-                .AddConsoleActivities()
+                .AddElsa(options => options
+                    .UseYesSqlPersistence()
+                    .AddHttpActivities()
+                    .AddConsoleActivities()
+                    .AddWorkflow<DocumentApprovalWorkflow>())
                 .AddDataMigration<Migrations>()
                 .AddIndexProvider<DocumentIndexProvider>()
-                .AddWorkflowContextProvider<DocumentWorkflowContextProvider>()
-                .AddWorkflow<DocumentApprovalWorkflow>();
+                .AddWorkflowContextProvider<DocumentWorkflowContextProvider>();
         }
 
         public void Configure(IApplicationBuilder app)

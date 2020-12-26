@@ -1,3 +1,4 @@
+using Elsa;
 using Elsa.Activities.Entity;
 using Elsa.Activities.Entity.Triggers;
 
@@ -6,9 +7,11 @@ namespace Microsoft.Extensions.DependencyInjection
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddEntityActivities(this IServiceCollection services) =>
-            services
-                .AddActivity<EntityChanged>()
-                .AddTriggerProvider<EntityChangedTriggerProvider>();
+        public static ElsaOptions AddEntityActivities(this ElsaOptions options)
+        {
+            options.AddActivity<EntityChanged>();
+            options.Services.AddTriggerProvider<EntityChangedTriggerProvider>();
+            return options;
+        }
     }
 }

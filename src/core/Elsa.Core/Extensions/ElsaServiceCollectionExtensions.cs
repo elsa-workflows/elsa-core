@@ -37,9 +37,9 @@ namespace Microsoft.Extensions.DependencyInjection
     {
         public static IServiceCollection AddElsaCore(
             this IServiceCollection services,
-            Action<ElsaConfiguration>? configure = default)
+            Action<ElsaOptions>? configure = default)
         {
-            var options = new ElsaConfiguration(services);
+            var options = new ElsaOptions(services);
             configure?.Invoke(options);
 
             services
@@ -60,72 +60,17 @@ namespace Microsoft.Extensions.DependencyInjection
 
             return services;
         }
-
-        public static IServiceCollection AddActivity<T>(this IServiceCollection services) where T : class, IActivity =>
-            services.AddActivity(typeof(T));
-
-        public static IServiceCollection AddActivity(this IServiceCollection services, Type activityType) =>
-           services.Configure<ElsaOptions>(options => options.RegisterActivity(activityType));
-
+        
         /// <summary>
-        /// Add all activities (<see cref="IActivity"/>) that are in the assembly
+        /// Starts the specified workflow upon application startup.
         /// </summary>
-        public static IServiceCollection AddActivity(this IServiceCollection services, Assembly assembly)
-        {
-            var types = assembly.GetAllWithInterface<IActivity>();
-
-            foreach (var type in types)
-            {
-                services.AddActivity(type);
-            }
-
-            return services;
-        }
-
-        public static IServiceCollection AddWorkflow<T>(this IServiceCollection services) where T : class, IWorkflow =>
-            services.AddWorkflow(typeof(T));
-
-        public static IServiceCollection AddWorkflow(this IServiceCollection services, IWorkflow workflow)
-        {
-            var type = workflow.GetType();
-            return services
-              .AddSingleton(type, workflow)
-              .AddWorkflow(type);
-        }
-
-        public static IServiceCollection AddWorkflow<T>(this IServiceCollection services, Func<IServiceProvider, object> factory, ServiceLifetime serviceLifetime = ServiceLifetime.Transient) where T : class, IWorkflow
-        {
-            services.Add(new ServiceDescriptor(typeof(T), factory, serviceLifetime));
-
-            return services.AddWorkflow(typeof(T));
-        }
-
-        public static IServiceCollection AddWorkflow(this IServiceCollection services, Type workflow) =>
-            services.Configure<ElsaOptions>(options => options.RegisterWorkflow(workflow));
-
         public static IServiceCollection StartWorkflow<T>(this IServiceCollection services) where T : class, IWorkflow => services.AddHostedService<StartWorkflow<T>>();
 
-        /// <summary>
-        /// Add all workflows (<see cref="IWorkflow"/>) that are in the assembly
-        /// </summary>
-        /// <remarks>Instantiated or workflows with a specific implementation must be added before this call.</remarks>
-        public static IServiceCollection AddWorkflow(this IServiceCollection services, Assembly assembly)
+        private static IServiceCollection AddMediatR(this ElsaOptions options) => options.Services.AddMediatR(mediatr => mediatr.AsScoped(), typeof(IActivity));
+
+        private static ElsaOptions AddWorkflowsCore(this ElsaOptions options)
         {
-            var types = assembly.GetAllWithInterface<IWorkflow>();
-
-            foreach (var type in types)
-            {
-                services.AddWorkflow(type);
-            }
-
-            return services;
-        }
-
-        private static IServiceCollection AddMediatR(this ElsaConfiguration options) => options.Services.AddMediatR(mediatr => mediatr.AsScoped(), typeof(IActivity));
-
-        private static ElsaConfiguration AddWorkflowsCore(this ElsaConfiguration configuration)
-        {
-            var services = configuration.Services;
+            var services = options.Services;
             services.TryAddSingleton<IClock>(SystemClock.Instance);
 
             services
@@ -133,7 +78,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddLocalization()
                 .AddMemoryCache()
                 .AddSingleton<IIdGenerator, IdGenerator>()
-                .AddSingleton(sp => sp.GetRequiredService<ElsaConfiguration>().CreateJsonSerializer(sp))
+                .AddSingleton(sp => sp.GetRequiredService<ElsaOptions>().CreateJsonSerializer(sp))
                 .AddSingleton<IContentSerializer, DefaultContentSerializer>()
                 .AddSingleton<TypeJsonConverter>()
                 .TryAddProvider<IExpressionHandler, LiteralHandler>(ServiceLifetime.Singleton)
@@ -150,7 +95,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IWorkflowBlueprintReflector, WorkflowBlueprintReflector>()
                 .AddScoped<IWorkflowSelector, WorkflowSelector>()
                 .AddScoped<IWorkflowPublisher, WorkflowPublisher>()
-                .AddScoped<IWorkflowContextManager, WorkflowContextManager>()              
+                .AddScoped<IWorkflowContextManager, WorkflowContextManager>()
                 .AddStartupRunner()
                 .AddSingleton<IActivityTypeService, ActivityTypeService>()
                 .AddSingleton<IActivityTypeProvider, TypeBasedActivityProvider>()
@@ -169,17 +114,19 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<ICommandSender, CommandSender>()
                 .AddSingleton<IEventPublisher, EventPublisher>()
                 .AutoRegisterHandlersFromAssemblyOf<RunWorkflowConsumer>()
-                .AddMetadataHandlers()
-                .AddCoreActivities();
+                .AddScoped<ISignaler, Signaler>()
+                .AddTriggerProvider<SignalReceivedTriggerProvider>()
+                .AddTriggerProvider<RunWorkflowTriggerProvider>()
+                .AddMetadataHandlers();
 
-            return configuration;
+            return options;
         }
 
         private static IServiceCollection AddMetadataHandlers(this IServiceCollection services) =>
             services
                 .AddSingleton<IActivityPropertyOptionsProvider, SelectOptionsProvider>();
 
-        private static IServiceCollection AddCoreActivities(this IServiceCollection services) =>
+        private static ElsaOptions AddCoreActivities(this ElsaOptions services) =>
             services
                 .AddActivity<CompositeActivity>()
                 .AddActivity<Inline>()
@@ -199,9 +146,6 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddActivity<SignalReceived>()
                 .AddActivity<SendSignal>()
                 .AddActivity<RunWorkflow>()
-                .AddActivity<InterruptTrigger>()
-                .AddScoped<ISignaler, Signaler>()
-                .AddTriggerProvider<SignalReceivedTriggerProvider>()
-                .AddTriggerProvider<RunWorkflowTriggerProvider>();
+                .AddActivity<InterruptTrigger>();
     }
 }

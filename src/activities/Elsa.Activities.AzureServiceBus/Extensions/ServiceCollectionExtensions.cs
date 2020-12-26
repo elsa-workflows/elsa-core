@@ -12,22 +12,26 @@ namespace Elsa.Activities.AzureServiceBus.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddAzureServiceBusActivities(this IServiceCollection services, Action<AzureServiceBusOptions>? configure)
+        public static ElsaOptions AddAzureServiceBusActivities(this ElsaOptions options, Action<AzureServiceBusOptions>? configure)
         {
             if (configure != null)
-                services.Configure(configure);
+                options.Services.Configure(configure);
             else
-                services.AddOptions<AzureServiceBusOptions>();
+                options.Services.AddOptions<AzureServiceBusOptions>();
 
-            return services
+            options.Services
                 .AddSingleton(CreateServiceBusConnection)
                 .AddSingleton(CreateServiceBusManagementClient)
                 .AddSingleton<IMessageSenderFactory, MessageSenderFactory>()
                 .AddSingleton<IMessageReceiverFactory, MessageReceiverFactory>()
                 .AddHostedService<StartServiceBusQueues>()
-                .AddTriggerProvider<MessageReceivedTriggerProvider>()
+                .AddTriggerProvider<MessageReceivedTriggerProvider>();
+
+            options
                 .AddActivity<AzureServiceBusMessageReceived>()
                 .AddActivity<SendAzureServiceBusMessage>();
+            
+            return options;
         }
 
         private static ServiceBusConnection CreateServiceBusConnection(IServiceProvider serviceProvider)

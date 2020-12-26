@@ -19,14 +19,14 @@ namespace Elsa.Samples.MultiTenantChildWorker
                     (_, services) =>
                     {
                         services
-                            .AddElsa()
-                            .AddTimerActivities(options => options.UseQuartzProvider())
-                            .AddConsoleActivities()
-                            .AddRebusActivities<OrderReceived>()
-                            .AddWorkflow<GenerateOrdersWorkflow>()
-                            .AddWorkflow<OrderReceivedWorkflow>()
-                            .AddWorkflow<Tenant1ChildWorkflow>()
-                            .AddWorkflow<Tenant2ChildWorkflow>()
+                            .AddElsa(options => options
+                                .AddTimerActivities(o => o.UseQuartzProvider())
+                                .AddConsoleActivities()
+                                .AddRebusActivities<OrderReceived>()
+                                .AddWorkflow<GenerateOrdersWorkflow>()
+                                .AddWorkflow<OrderReceivedWorkflow>()
+                                .AddWorkflow<Tenant1ChildWorkflow>()
+                                .AddWorkflow<Tenant2ChildWorkflow>())
                             ;
                     });
     }

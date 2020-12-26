@@ -15,12 +15,12 @@ namespace Elsa.Samples.RebusWorker
                 .ConfigureServices((_, services) =>
                 {
                     services
-                        .AddElsa()
-                        .AddConsoleActivities()
-                        .AddTimerActivities(options => options.UseQuartzProvider())
-                        .AddRebusActivities<Greeting>()
-                        .AddWorkflow<ProducerWorkflow>()
-                    .AddWorkflow<ConsumerWorkflow>();
+                        .AddElsa(options => options
+                            .AddConsoleActivities()
+                            .AddTimerActivities(o => o.UseQuartzProvider())
+                            .AddRebusActivities<Greeting>()
+                            .AddWorkflow<ProducerWorkflow>()
+                            .AddWorkflow<ConsumerWorkflow>());
                 });
     }
 }

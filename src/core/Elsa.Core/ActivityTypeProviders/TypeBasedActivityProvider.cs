@@ -17,14 +17,13 @@ namespace Elsa.ActivityTypeProviders
         private readonly IActivityActivator _activityActivator;
         private readonly ElsaOptions _elsaOptions;
 
-        public TypeBasedActivityProvider(IOptions<ElsaOptions> options,
+        public TypeBasedActivityProvider(ElsaOptions options,
             IActivityDescriber activityDescriber, 
             IActivityActivator activityActivator)
         {
             _activityDescriber = activityDescriber;
             _activityActivator = activityActivator;
-
-            _elsaOptions = options.Value;
+            _elsaOptions = options;
         }
         
         public ValueTask<IEnumerable<ActivityType>> GetActivityTypesAsync(CancellationToken cancellationToken) => new(GetActivityTypesInternal());
@@ -58,8 +57,7 @@ namespace Elsa.ActivityTypeProviders
             };
         }
 
-        private IEnumerable<Type> GetActivityTypes() => _elsaOptions.Activities;
-
+        private IEnumerable<Type> GetActivityTypes() => _elsaOptions.ActivityTypes;
         private Task<IActivity> ActivateActivity(ActivityExecutionContext context, Type type) => _activityActivator.ActivateActivityAsync(context, type);
     }
 }

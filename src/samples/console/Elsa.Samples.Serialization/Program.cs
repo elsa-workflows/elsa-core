@@ -23,19 +23,19 @@ namespace Elsa.Samples.Serialization
         {
             // Create a service container with Elsa services.
             var services = new ServiceCollection()
-                .AddElsa()
-                .AddConsoleActivities()
+                .AddElsa(options => options
+                    .AddConsoleActivities())
                 .BuildServiceProvider();
-            
+
             // Run startup actions (not needed when registering Elsa with a Host).
             var startupRunner = services.GetRequiredService<IStartupRunner>();
             await startupRunner.StartupAsync();
-            
+
             // Define a workflow.
             var workflowDefinition = new WorkflowDefinition
             {
                 Id = "SampleWorkflow",
-                DefinitionVersionId = "1", 
+                DefinitionVersionId = "1",
                 Version = 1,
                 IsPublished = true,
                 IsLatest = true,
@@ -56,23 +56,23 @@ namespace Elsa.Samples.Serialization
                                 Type = typeof(string)
                             }
                         }
-                    }, 
+                    },
                 }
             };
-            
+
             // Serialize workflow definition to JSON.
             var serializer = services.GetRequiredService<IContentSerializer>();
             var json = serializer.Serialize(workflowDefinition);
-            
+
             Console.WriteLine(json);
-            
+
             // Deserialize workflow definition from JSON.
             var deserializedWorkflowDefinition = serializer.Deserialize<WorkflowDefinition>(json);
-            
+
             // Materialize workflow.
             var materializer = services.GetRequiredService<IWorkflowBlueprintMaterializer>();
             var workflowBlueprint = materializer.CreateWorkflowBlueprint(deserializedWorkflowDefinition);
-            
+
             // Execute workflow.
             var workflowRunner = services.GetRequiredService<IWorkflowRunner>();
             await workflowRunner.RunWorkflowAsync(workflowBlueprint);

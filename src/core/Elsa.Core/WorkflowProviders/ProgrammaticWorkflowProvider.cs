@@ -19,22 +19,13 @@ namespace Elsa.WorkflowProviders
         private readonly IEnumerable<IWorkflow> _workflows;
         private readonly Func<IWorkflowBuilder> _workflowBuilder;
 
-        public ProgrammaticWorkflowProvider(IOptions<ElsaOptions> elsaOptions, 
-            IServiceProvider serviceProvider,
-            Func<IWorkflowBuilder> workflowBuilder)
-        {         
-            var workflows = new List<IWorkflow>(elsaOptions.Value.NumberOfRegisteredWorkflows);
-
-            foreach(var workflow in elsaOptions.Value.Workflows)
-            {
-                workflows.Add((IWorkflow)ActivatorUtilities.CreateInstance(serviceProvider, workflow));
-            }
-
-            _workflows = workflows;
+        public ProgrammaticWorkflowProvider(ElsaOptions elsaOptions, IServiceProvider serviceProvider, Func<IWorkflowBuilder> workflowBuilder)
+        {
+            _workflows = elsaOptions.WorkflowFactory.CreateServices(serviceProvider);
             _workflowBuilder = workflowBuilder;
         }
 
-        protected override ValueTask<IEnumerable<IWorkflowBlueprint>> OnGetWorkflowsAsync(CancellationToken cancellationToken) => new ValueTask<IEnumerable<IWorkflowBlueprint>>(GetWorkflows());
+        protected override ValueTask<IEnumerable<IWorkflowBlueprint>> OnGetWorkflowsAsync(CancellationToken cancellationToken) => new(GetWorkflows());
         private IEnumerable<IWorkflowBlueprint> GetWorkflows() => from workflow in _workflows let builder = _workflowBuilder() select builder.Build(workflow);
     }
 }

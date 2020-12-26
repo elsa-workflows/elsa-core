@@ -20,12 +20,13 @@ namespace Elsa.Samples.AzureServiceBusWorker
                 .ConfigureServices((hostContext, services) =>
                 {
                     services
-                        .AddElsa(options => options.UseYesSqlPersistence())
-                        .AddConsoleActivities()
-                        .AddTimerActivities(options => options.UseQuartzProvider())
-                        .AddAzureServiceBusActivities(options => options.ConnectionString = hostContext.Configuration.GetConnectionString("AzureServiceBus"))
-                        .AddWorkflow<ProducerWorkflow>()
-                        .AddWorkflow<ConsumerWorkflow>();
+                        .AddElsa(options => options
+                            .UseYesSqlPersistence()
+                            .AddConsoleActivities()
+                            .AddTimerActivities(o => o.UseQuartzProvider())
+                            .AddAzureServiceBusActivities(o => o.ConnectionString = hostContext.Configuration.GetConnectionString("AzureServiceBus"))
+                            .AddWorkflow<ProducerWorkflow>()
+                            .AddWorkflow<ConsumerWorkflow>());
                 });
     }
 }

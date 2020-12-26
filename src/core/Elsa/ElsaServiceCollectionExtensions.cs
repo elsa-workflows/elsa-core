@@ -11,14 +11,11 @@ namespace Microsoft.Extensions.DependencyInjection
     {
         public static IServiceCollection AddElsa(
             this IServiceCollection services,
-            Action<ElsaConfiguration>? configure = default)
-        {
-            return services
+            Action<ElsaOptions>? configure = default) =>
+            services
                 .AddElsaCore(configure)
                 .AddStartupRunner()
                 .AddJavaScriptExpressionEvaluator()
-                .AddLiquidExpressionEvaluator()
-                .AddUserTaskActivities();
-        }
+                .AddLiquidExpressionEvaluator();
     }
 }

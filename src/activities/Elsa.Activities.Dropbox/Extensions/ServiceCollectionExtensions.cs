@@ -1,6 +1,7 @@
 using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using Elsa;
 using Elsa.Activities.Dropbox.Activities;
 using Elsa.Activities.Dropbox.Options;
 using Elsa.Activities.Dropbox.Services;
@@ -11,26 +12,24 @@ namespace Microsoft.Extensions.DependencyInjection
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddDropbox(this IServiceCollection services, Action<DropboxOptions>? configureOptions = null) =>
+        public static ElsaOptions AddDropbox(this ElsaOptions services, Action<DropboxOptions>? configureOptions = null) =>
             services
                 .AddDropboxServices(configureOptions)
                 .AddDropboxActivities();
 
-        public static IServiceCollection AddDropboxServices(this IServiceCollection services, Action<DropboxOptions>? configureOptions = null)
+        public static ElsaOptions AddDropboxServices(this ElsaOptions options, Action<DropboxOptions>? configureOptions = null)
         {
-            if (configureOptions != null)
-            {
-                services.Configure(configureOptions);
-            }
+            if (configureOptions != null) 
+                options.Services.Configure(configureOptions);
 
-            services
+            options.Services
                 .AddHttpClient<IFilesApi, FilesApi>()
                 .ConfigureHttpClient(ConfigureHttpClient);
 
-            return services;
+            return options;
         }
         
-        public static IServiceCollection AddDropboxActivities(this IServiceCollection services) => services.AddActivity<SaveToDropbox>();
+        public static ElsaOptions AddDropboxActivities(this ElsaOptions services) => services.AddActivity<SaveToDropbox>();
 
         private static void ConfigureHttpClient(IServiceProvider services, HttpClient httpClient)
         {

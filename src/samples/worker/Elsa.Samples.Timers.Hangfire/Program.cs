@@ -17,15 +17,15 @@ namespace Elsa.Samples.Timers
                     (context, services) =>
                     {
                         services
-                            .AddElsa()
-                            .AddConsoleActivities()
-                            .AddTimerActivities(options =>
-                                options.UseHangfire(configure =>
-                                    configure.UseSqlServerStorage("Server=(localdb)\\MSSQLLocalDB;Database=ElsaHangfire;Trusted_Connection=True;MultipleActiveResultSets=true")))
-                            .AddWorkflow<RecurringTaskWorkflow>()
-                            .AddWorkflow<CronTaskWorkflow>()
-                            .AddWorkflow<CancelTimerWorkflow>()
-                            .AddWorkflow(new OneOffWorkflow(SystemClock.Instance.GetCurrentInstant().Plus(Duration.FromSeconds(5))));
+                            .AddElsa(options => options
+                                .AddConsoleActivities()
+                                .AddTimerActivities(o =>
+                                    o.UseHangfire(hangfire =>
+                                        hangfire.UseSqlServerStorage("Server=(localdb)\\MSSQLLocalDB;Database=ElsaHangfire;Trusted_Connection=True;MultipleActiveResultSets=true")))
+                                .AddWorkflow<RecurringTaskWorkflow>()
+                                .AddWorkflow<CronTaskWorkflow>()
+                                .AddWorkflow<CancelTimerWorkflow>()
+                                .AddWorkflow(new OneOffWorkflow(SystemClock.Instance.GetCurrentInstant().Plus(Duration.FromSeconds(5)))));
                     });
     }
 }

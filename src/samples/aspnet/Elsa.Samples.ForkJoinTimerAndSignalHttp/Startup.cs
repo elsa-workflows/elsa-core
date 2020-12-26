@@ -14,11 +14,12 @@ namespace Elsa.Samples.ForkJoinTimerAndSignalHttp
                 .AddControllers();
             
             services
-                .AddElsa()
-                .AddConsoleActivities()
-                .AddTimerActivities(options => options.UseQuartzProvider())
-                .AddHostedService<WorkflowStarter<DemoWorkflow>>()
-                .AddWorkflow<DemoWorkflow>();
+                .AddElsa(options => options
+                    .AddConsoleActivities()
+                    .AddTimerActivities(o => o.UseQuartzProvider())
+                    .AddWorkflow<DemoWorkflow>()         
+                )
+                .AddHostedService<WorkflowStarter<DemoWorkflow>>();
         }
 
         public void Configure(IApplicationBuilder app)

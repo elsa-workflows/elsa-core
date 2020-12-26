@@ -30,22 +30,23 @@ namespace Elsa.Server.Host
             var elsaSection = Configuration.GetSection("Elsa");
 
             services
-                .AddElsa(options => options.UseYesSqlPersistence());
+                .AddElsa(options => options
+                    .UseYesSqlPersistence()
+                    .AddConsoleActivities()
+                    .AddHttpActivities(elsaSection.GetSection("Http").Bind)
+                    .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)
+                    .AddTimerActivities(o => o.UseQuartzProvider())
+                    .AddWorkflow<HelloWorld>()
+                    .AddWorkflow<HelloWorldV2>()
+                    .AddWorkflow<GoodbyeWorld>()
+                    .AddWorkflow<NamingWorkflow>()
+                    .AddWorkflow<ConditionWorkflow>()
+                );
 
             services
                 .AddElsaApiEndpoints()
                 .AddElsaSwagger()
-                .AddConsoleActivities()
-                .AddHttpActivities(elsaSection.GetSection("Http").Bind)
-                .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)
-                .AddTimerActivities(options => options.UseQuartzProvider())
-                .AddStartupTask<ResumeRunningWorkflowsTask>()
-                .AddWorkflow<HelloWorld>()
-                .AddWorkflow<HelloWorldV2>()
-                .AddWorkflow<GoodbyeWorld>()
-                .AddWorkflow<NamingWorkflow>()
-                .AddWorkflow<ConditionWorkflow>()
-                ;
+                .AddStartupTask<ResumeRunningWorkflowsTask>();
         }
 
         public void Configure(IApplicationBuilder app)

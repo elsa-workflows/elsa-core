@@ -13,11 +13,9 @@ namespace Elsa.Samples.EntityChanged
         {
             // Create a service container with Elsa services.
             var services = new ServiceCollection()
-                .AddElsa()
-                .AddConsoleActivities()
-                .AddEntityActivities()
+                .AddElsa(options => options.AddConsoleActivities().AddEntityActivities().AddWorkflow<EntityChangedWorkflow>())
                 .AddSingleton<SomeRepository>()
-                .AddWorkflow<EntityChangedWorkflow>()
+                
                 .BuildServiceProvider();
 
             // Run startup actions (not needed when registering Elsa with a Host).
