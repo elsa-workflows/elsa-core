@@ -55,9 +55,9 @@ namespace Elsa.Services
         }
 
         public async Task TriggerWorkflowsAsync<TTrigger>(
-            Func<TTrigger, bool> predicate, 
-            object? input = default, 
-            string? correlationId = default, 
+            Func<TTrigger, bool> predicate,
+            object? input = default,
+            string? correlationId = default,
             string? contextId = default,
             object? workflowContext = default,
             CancellationToken cancellationToken = default)
@@ -155,7 +155,7 @@ namespace Elsa.Services
                 VersionOptions.SpecificVersion(workflowInstance.Version),
                 cancellationToken);
 
-            if (workflowBlueprint == null)
+            if (workflowBlueprint == null) 
                 throw new WorkflowException($"Workflow instance {workflowInstance.Id} references workflow definition {workflowInstance.DefinitionId} version {workflowInstance.Version}, but no such workflow definition was found.");
 
             return await RunWorkflowAsync(workflowBlueprint, workflowInstance, activityId, input, workflowContext, cancellationToken);
@@ -170,10 +170,12 @@ namespace Elsa.Services
             CancellationToken cancellationToken = default)
         {
             var workflowExecutionScope = _serviceProvider.CreateScope();
+            
             var workflowExecutionContext = new WorkflowExecutionContext(workflowExecutionScope, workflowBlueprint, workflowInstance, input)
             {
                 WorkflowContext = workflowContext
             };
+
             await _mediator.Publish(new WorkflowExecuting(workflowExecutionContext), cancellationToken);
 
             var activity = activityId != null ? workflowBlueprint.GetActivity(activityId) : default;
@@ -213,7 +215,7 @@ namespace Elsa.Services
 
         private async Task BeginWorkflow(WorkflowExecutionContext workflowExecutionContext, IActivityBlueprint? activity, object? input, CancellationToken cancellationToken)
         {
-            if (activity == null)
+            if (activity == null) 
                 activity = workflowExecutionContext.WorkflowBlueprint.GetStartActivities().FirstOrDefault() ?? workflowExecutionContext.WorkflowBlueprint.Activities.First();
 
             if (!await CanExecuteAsync(workflowExecutionContext, activity, input, cancellationToken))
@@ -240,6 +242,7 @@ namespace Elsa.Services
         private async ValueTask<bool> CanExecuteAsync(WorkflowExecutionContext workflowExecutionContext, IActivityBlueprint activityBlueprint, object? input, CancellationToken cancellationToken)
         {
             using var scope = _serviceProvider.CreateScope();
+            
             var activityExecutionContext = new ActivityExecutionContext(
                 scope,
                 workflowExecutionContext,
@@ -263,7 +266,7 @@ namespace Elsa.Services
                 workflowExecutionContext.Fault(null, new LocalizedString(e.Message, e.Message));
             }
         }
-        
+
         private async ValueTask RunCoreAsync(WorkflowExecutionContext workflowExecutionContext, ActivityOperation activityOperation, CancellationToken cancellationToken = default)
         {
             using var scope = workflowExecutionContext.ServiceScope;
@@ -286,13 +289,12 @@ namespace Elsa.Services
                 activityOperation = Execute;
                 workflowExecutionContext.CompletePass();
 
-                // Exit execution loop if workflow has any other status than Running (i.e. Suspended). Otherwise continue the loop.
-                if (workflowExecutionContext.Status != WorkflowStatus.Running)
-                    break;
-                
-                // If there are no more scheduled activities, schedule any post-scheduled activities.
-                if (!workflowExecutionContext.HasScheduledActivities && workflowExecutionContext.HasPostScheduledActivities)
-                    workflowExecutionContext.SchedulePostActivity();
+                // If there are no more scheduled activities and no suspension has been instructed, schedule any post-scheduled activities.
+                if (!workflowExecutionContext.HasScheduledActivities && workflowExecutionContext.Status == WorkflowStatus.Running)
+                {
+                    if (workflowExecutionContext.HasPostScheduledActivities)
+                        workflowExecutionContext.SchedulePostActivity();
+                }
             }
 
             if (workflowExecutionContext.HasBlockingActivities)
