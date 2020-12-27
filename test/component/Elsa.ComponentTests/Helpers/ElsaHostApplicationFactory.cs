@@ -1,4 +1,4 @@
-using Elsa.Server.Host;
+using Elsa.Samples.Server.Host;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
