@@ -115,5 +115,6 @@ namespace Elsa.Persistence.YesSql.Stores
 
         protected IQuery<TDocument> Query() => Session.Query<TDocument>(CollectionName);
         protected IQuery<TDocument, TIndex> Query<TIndex>(Expression<Func<TIndex, bool>> predicate) where TIndex : class, IIndex => Session.Query<TDocument, TIndex>(predicate, CollectionName);
+        protected IQuery<TDocument, TIndex> Query<TIndex>() where TIndex : class, IIndex => Session.Query<TDocument, TIndex>(CollectionName);
     }
 }

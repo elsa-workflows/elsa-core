@@ -21,7 +21,7 @@ namespace ElsaDashboard.Application.Shared
     partial class WorkflowDesigner : IAsyncDisposable
     {
         private static Func<ConnectionModel, Task> _connectionCreatedAction = default!;
-        
+
         [Parameter] public WorkflowModel Model { private get; set; } = WorkflowModel.Blank();
         [Parameter] public EventCallback<WorkflowModelChangedEventArgs> WorkflowChanged { get; set; }
         [Inject] private IJSRuntime JS { get; set; } = default!;
@@ -200,7 +200,7 @@ namespace ElsaDashboard.Application.Shared
                 if (existingConnection != null)
                 {
                     model = model with {Connections = model.Connections.Remove(existingConnection)};
-                    var replacementConnection = existingConnection with { SourceId = activity.ActivityId};
+                    var replacementConnection = existingConnection with {SourceId = activity.ActivityId};
                     model.AddConnection(replacementConnection);
                 }
                 else
@@ -216,7 +216,7 @@ namespace ElsaDashboard.Application.Shared
                 if (existingConnection != null)
                 {
                     model = model with {Connections = model.Connections.Remove(existingConnection)};
-                    var replacementConnection = existingConnection with { TargetId = activity.ActivityId};
+                    var replacementConnection = existingConnection with {TargetId = activity.ActivityId};
                     model = model.AddConnection(replacementConnection);
 
                     var connection = new ConnectionModel(activity.ActivityId, existingConnection.TargetId, outcome);
@@ -232,7 +232,7 @@ namespace ElsaDashboard.Application.Shared
             await UpdateModelAsync(model);
             await FlyoutPanelService.HideAsync();
         }
-        
+
         private RenderFragment RenderActivity(ActivityModel activityModel)
         {
             return builder =>
@@ -240,20 +240,21 @@ namespace ElsaDashboard.Application.Shared
                 var index = 0;
                 builder.OpenComponent<Activity>(index++);
                 builder.AddAttribute(index++, "Model", activityModel);
+                builder.AddAttribute(index++, "OnDeleteClick", EventCallbackFactory.Create(this, () => OnActivityDelete(activityModel)));
 
                 var displayDescriptor = activityModel.DisplayDescriptor;
 
                 if (displayDescriptor != null)
                 {
                     var context = new ActivityDisplayContext(activityModel.Type, activityModel.Properties);
-                
-                    if(displayDescriptor.RenderBody != null)
+
+                    if (displayDescriptor.RenderBody != null)
                         builder.AddAttribute(index++, "Body", displayDescriptor.RenderBody(context));
-                
-                    if(displayDescriptor.RenderIcon != null)
+
+                    if (displayDescriptor.RenderIcon != null)
                         builder.AddAttribute(index, "Icon", displayDescriptor.RenderIcon(context));
                 }
-            
+
                 builder.CloseComponent();
             };
         }
@@ -276,15 +277,9 @@ namespace ElsaDashboard.Application.Shared
                 ButtonDescriptor.Create("Cancel", _ => ShowActivityPickerAsync(sourceActivityId, targetActivityId, outcome)),
                 ButtonDescriptor.Create("OK", _ => AddActivityAsync(activityInfo, sourceActivityId, targetActivityId, outcome), true));
         }
-
-        private async ValueTask OnActivityClick(MouseEventArgs e)
-        {
-            await FlyoutPanelService.ShowAsync<ActivityEditor>("Timer Properties");
-        }
-
-        private async Task OnConnectionCreatedAsync(ConnectionModel connection)
-        {
-            await UpdateModelAsync(Model.AddConnection(connection));
-        }
+        
+        private async Task OnActivityDelete(ActivityModel activityModel) => await UpdateModelAsync(Model.RemoveActivity(activityModel));
+        private async ValueTask OnActivityClick(MouseEventArgs e) => await FlyoutPanelService.ShowAsync<ActivityEditor>("Timer Properties");
+        private async Task OnConnectionCreatedAsync(ConnectionModel connection) => await UpdateModelAsync(Model.AddConnection(connection));
     }
 }

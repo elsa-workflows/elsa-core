@@ -13,6 +13,6 @@ namespace Elsa
             string id,
             VersionOptions versionOptions,
             CancellationToken cancellationToken = default) =>
-            store.FindAsync(new WorkflowDefinitionIdSpecification(id).And(new VersionOptionsSpecification(versionOptions)), cancellationToken);
+            store.FindAsync(new WorkflowDefinitionIdSpecification(id, versionOptions), cancellationToken);
     }
 }

@@ -12,14 +12,24 @@ namespace ElsaDashboard.Application.Pages.WorkflowDefinitions
 {
     partial class Designer
     {
-        [Parameter] public string? WorkflowDefinitionId { get; set; }
+        [Parameter] public string? WorkflowDefinitionVersionId { get; set; }
         [Inject] private IWorkflowDefinitionService WorkflowDefinitionService { get; set; } = default!;
         [Inject] private IActivityService ActivityService { get; set; } = default!;
         [Inject] private NavigationManager NavigationManager { get; set; } = default!;
         private IDictionary<string, ActivityInfo> ActivityDescriptors { get; set; } = default!;
-        private WorkflowDefinition WorkflowDefinition { get; set; } = default!;
+
+        private WorkflowDefinition WorkflowDefinition { get; set; } = new()
+        {
+            Name = "Untitled",
+            DisplayName = "Untitled",
+            Version = 1
+        };
+
         private WorkflowModel WorkflowModel { get; set; } = WorkflowModel.Blank();
         private BackgroundWorker BackgroundWorker { get; } = new();
+        private string DisplayName => !string.IsNullOrWhiteSpace(WorkflowDefinition.DisplayName) ? WorkflowDefinition.DisplayName : !string.IsNullOrWhiteSpace(WorkflowDefinition.Name) ? WorkflowDefinition.Name : "Untitled";
+        private static TabItem[] Tabs => new[] {new TabItem("Designer"), new TabItem("DSL", "Dsl"), new TabItem("Settings")};
+        private TabItem CurrentTab { get; set; } = Tabs.First();
 
         protected override async Task OnInitializedAsync()
         {
@@ -29,9 +39,9 @@ namespace ElsaDashboard.Application.Pages.WorkflowDefinitions
 
         protected override async Task OnParametersSetAsync()
         {
-            if (WorkflowDefinitionId != null)
+            if (WorkflowDefinitionVersionId != null)
             {
-                WorkflowDefinition = await WorkflowDefinitionService.GetByIdAsync(WorkflowDefinitionId, VersionOptions.Latest);
+                WorkflowDefinition = await WorkflowDefinitionService.GetByVersionIdAsync(WorkflowDefinitionVersionId);
                 WorkflowModel = CreateWorkflowModel(WorkflowDefinition);
             }
             else
@@ -45,7 +55,7 @@ namespace ElsaDashboard.Application.Pages.WorkflowDefinitions
         {
             var request = new SaveWorkflowDefinitionRequest
             {
-                WorkflowDefinitionId = WorkflowDefinition.WorkflowDefinitionId,
+                WorkflowDefinitionId = WorkflowDefinition.Id,
                 Activities = WorkflowModel.Activities.Select(CreateActivityDefinition).ToList(),
                 Connections = WorkflowModel.Connections.Select(x => new ConnectionDefinition(x.SourceId, x.TargetId, x.Outcome)).ToList(),
                 Name = WorkflowDefinition.Name,
@@ -60,11 +70,11 @@ namespace ElsaDashboard.Application.Pages.WorkflowDefinitions
                 DeleteCompletedInstances = WorkflowDefinition.DeleteCompletedInstances
             };
 
-            var isNew = WorkflowDefinition.WorkflowDefinitionId == null!;
-            WorkflowDefinition = await WorkflowDefinitionService.SaveAsync(request);
+            var isNew = WorkflowDefinition.Id == null!;
+            var savedWorkflowDefinition = await WorkflowDefinitionService.SaveAsync(request);
 
-            if (isNew) 
-                NavigationManager.NavigateTo($"workflows/{WorkflowDefinition.WorkflowDefinitionId}/designer");
+            if (isNew)
+                NavigationManager.NavigateTo($"workflow-definitions/{savedWorkflowDefinition.DefinitionVersionId}/designer");
         }
 
         private ActivityDefinition CreateActivityDefinition(ActivityModel activityModel)
@@ -86,10 +96,7 @@ namespace ElsaDashboard.Application.Pages.WorkflowDefinitions
             };
         }
 
-        private ConnectionModel CreateConnectionModel(ConnectionDefinition connectionDefinition)
-        {
-            return new(connectionDefinition.SourceActivityId, connectionDefinition.TargetActivityId, connectionDefinition.Outcome);
-        }
+        private ConnectionModel CreateConnectionModel(ConnectionDefinition connectionDefinition) => new(connectionDefinition.SourceActivityId, connectionDefinition.TargetActivityId, connectionDefinition.Outcome);
 
         private ActivityModel CreateActivityModel(ActivityDefinition activityDefinition)
         {
@@ -104,6 +111,11 @@ namespace ElsaDashboard.Application.Pages.WorkflowDefinitions
             };
         }
 
+        private void SelectTab(TabItem tab)
+        {
+            CurrentTab = tab;
+        }
+
         private void StartBackgroundWorker()
         {
 #pragma warning disable 4014
@@ -115,6 +127,11 @@ namespace ElsaDashboard.Application.Pages.WorkflowDefinitions
         {
             WorkflowModel = e.WorkflowModel;
             await BackgroundWorker.ScheduleTask(SaveWorkflowAsync);
+        }
+
+        private async Task OnSettingsChanged()
+        {
+            await BackgroundWorker.ScheduleTask(SaveWorkflowAsync); 
         }
     }
 }

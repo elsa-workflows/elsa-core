@@ -5,6 +5,7 @@ using Elsa.Data;
 using Elsa.Models;
 using Elsa.Persistence.Specifications;
 using Elsa.Persistence.YesSql.Documents;
+using Elsa.Persistence.YesSql.Extensions;
 using Elsa.Persistence.YesSql.Indexes;
 using YesSql;
 using IIdGenerator = Elsa.Services.IIdGenerator;
@@ -21,10 +22,13 @@ namespace Elsa.Persistence.YesSql.Stores
 
         protected override IQuery<WorkflowDefinitionDocument> MapSpecification(ISpecification<WorkflowDefinition> specification)
         {
-            if (specification is EntityIdSpecification<WorkflowDefinition> entityIdSpecification)
-                return Query<WorkflowDefinitionIndex>(x => x.DefinitionId == entityIdSpecification.Id);
-
-            return AutoMapSpecification<WorkflowDefinitionIndex>(specification);
+            return specification switch
+            {
+                EntityIdSpecification<WorkflowDefinition> entityIdSpecification => Query<WorkflowDefinitionIndex>(x => x.DefinitionId == entityIdSpecification.Id),
+                VersionOptionsSpecification versionOptionsSpecification => Query<WorkflowDefinitionIndex>().WithVersion(versionOptionsSpecification.VersionOptions),
+                WorkflowDefinitionIdSpecification definitionIdSpecification => definitionIdSpecification.VersionOptions == null ? Query<WorkflowDefinitionIndex>(x => x.DefinitionId == definitionIdSpecification.Id) : Query<WorkflowDefinitionIndex>(x => x.DefinitionId == definitionIdSpecification.Id).WithVersion(definitionIdSpecification.VersionOptions),
+                _ => AutoMapSpecification<WorkflowDefinitionIndex>(specification)
+            };
         }
 
         protected override IQuery<WorkflowDefinitionDocument> OrderBy(IQuery<WorkflowDefinitionDocument> query, IOrderBy<WorkflowDefinition> orderBy, ISpecification<WorkflowDefinition> specification)

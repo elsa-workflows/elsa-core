@@ -11,22 +11,23 @@
         "start": "npm run serve"
     },
     "dependencies": {
-        "@tailwindcss/ui": "^0.6.2",
-        "autoprefixer": "10.0.1",
+        "@tailwindcss/ui": "^0.7.2",
+        "@tailwindcss/forms": "^0.2.1",
+        "autoprefixer": "10.1.0",
         "onchange": "^7.1.0",
-        "tailwindcss": "1.8.10"
+        "tailwindcss": "2.0.2"
     },
     "devDependencies": {
         "concurrently": "^5.3.0",
-        "cross-env": "^7.0.2",
+        "cross-env": "^7.0.3",
         "cssnano": "^4.1.10",
-        "htmlnano": "^0.2.7",
+        "htmlnano": "^0.2.8",
         "live-server": "^1.2.1",
-        "postcss": "8.1.0",
-        "postcss-cli": "8.0.0",
-        "posthtml": "^0.13.4",
-        "posthtml-cli": "^0.8.0",
+        "postcss": "8.2.1",
+        "postcss-cli": "8.3.1",
+        "posthtml": "^0.15.1",
+        "posthtml-cli": "^0.9.1",
         "posthtml-include": "^1.6.0",
-        "posthtml-modules": "^0.6.2"
+        "posthtml-modules": "^0.6.4"
     }
 }

@@ -1,4 +1,6 @@
-﻿using Elsa.Models;
+﻿using System;
+using System.Linq.Expressions;
+using Elsa.Models;
 using Elsa.Persistence.YesSql.Documents;
 using Elsa.Persistence.YesSql.Indexes;
 using YesSql;

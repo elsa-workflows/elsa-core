@@ -10,6 +10,8 @@ namespace ElsaDashboard.Application.Shared
         public const string DefaultIconClass = "h-10 w-10 text-blue-500";
         [Parameter] public ActivityModel Model { get; set; } = new();
         [Parameter] public EventCallback<MouseEventArgs> OnClick { get; set; }
+        [Parameter] public EventCallback OnEditClick { get; set; }
+        [Parameter] public EventCallback OnDeleteClick { get; set; }
         [Parameter] public RenderFragment Body { get; set; } = default!;
         [Parameter] public RenderFragment Icon { get; set; } = default!;
 

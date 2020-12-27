@@ -13,12 +13,12 @@ namespace Elsa.Client.Models
             Connections = new List<ConnectionDefinition>();
         }
 
-        [DataMember(Order = 1)] public int Id { get; set; }
-        [DataMember(Order = 2)] public string? Name { get; set; }
-        [DataMember(Order = 3)] public string? DisplayName { get; set; }
-        [DataMember(Order = 4)] public string? Description { get; set; }
-        [DataMember(Order = 5)] public string WorkflowDefinitionId { get; set; } = default!;
-        [DataMember(Order = 6)] public string WorkflowDefinitionVersionId { get; set; } = default!;
+        [DataMember(Order = 1)] public string Id { get; set; } = default!;
+        [DataMember(Order = 2)] public string DefinitionVersionId { get; set; } = default!;
+        [DataMember(Order = 3)] public string TenantId { get; set; } = default!;
+        [DataMember(Order = 4)] public string? Name { get; set; }
+        [DataMember(Order = 5)] public string? DisplayName { get; set; }
+        [DataMember(Order = 6)] public string? Description { get; set; }
         [DataMember(Order = 7)] public int Version { get; set; }
         [DataMember(Order = 8)] public Variables? Variables { get; set; }
         [DataMember(Order = 9)] public WorkflowContextOptions? ContextOptions { get; set; }
