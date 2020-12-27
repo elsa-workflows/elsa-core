@@ -233,6 +233,27 @@ namespace ElsaDashboard.Application.Shared
             await FlyoutPanelService.HideAsync();
         }
 
+        private async Task RemoveActivityAsync(ActivityModel activityModel)
+        {
+            var incomingConnections = Model.GetInboundConnections(activityModel.ActivityId).ToList();
+            var outgoingConnections = Model.GetOutboundConnections(activityModel.ActivityId).ToList();
+            
+            // Remove activity (will also remove its connections).
+            var model = Model.RemoveActivity(activityModel);
+
+            // For each incoming activity, try to connect it to a outgoing activity based on outcome.
+            foreach (var incomingConnection in incomingConnections)
+            {
+                var incomingActivity = model.FindActivity(incomingConnection.SourceId);
+                var outgoingConnection = outgoingConnections.FirstOrDefault(x => x.Outcome == incomingConnection.Outcome);
+
+                if (outgoingConnection != null) 
+                    model = model.AddConnection(incomingActivity.ActivityId, outgoingConnection.TargetId, incomingConnection.Outcome);
+            }
+            
+            await UpdateModelAsync(model);
+        }
+
         private RenderFragment RenderActivity(ActivityModel activityModel)
         {
             return builder =>
@@ -278,7 +299,7 @@ namespace ElsaDashboard.Application.Shared
                 ButtonDescriptor.Create("OK", _ => AddActivityAsync(activityInfo, sourceActivityId, targetActivityId, outcome), true));
         }
         
-        private async Task OnActivityDelete(ActivityModel activityModel) => await UpdateModelAsync(Model.RemoveActivity(activityModel));
+        private async Task OnActivityDelete(ActivityModel activityModel) => await RemoveActivityAsync(activityModel);
         private async ValueTask OnActivityClick(MouseEventArgs e) => await FlyoutPanelService.ShowAsync<ActivityEditor>("Timer Properties");
         private async Task OnConnectionCreatedAsync(ConnectionModel connection) => await UpdateModelAsync(Model.AddConnection(connection));
     }

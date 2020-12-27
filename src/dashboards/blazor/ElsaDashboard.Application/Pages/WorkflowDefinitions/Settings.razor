@@ -1,4 +1,4 @@
-﻿<div class="p-10 bg-gray-100">
+﻿<div class="flex flex-1 bg-gray-100 px-4 pt-4">
     <div class="space-y-6 sm:px-6 lg:px-0 lg:col-span-9">
         <section aria-labelledby="payment_details_heading">
             <EditForm EditContext="@EditContext">
@@ -20,7 +20,7 @@
 
                             <div class="col-span-4 sm:col-span-2">
                                 <label for="workflowDisplayName" class="block text-sm font-medium text-gray-700">Display Name</label>
-                                <InputText @bind-Value="@WorkflowDefinition.DisplayName" type="text" id="workflowDisplayName" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none sm:text-sm"/>
+                                <InputText @bind-Value="WorkflowDefinition.DisplayName" type="text" id="workflowDisplayName" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none sm:text-sm"/>
                                 <p class="mt-2 text-sm text-gray-500">
                                     Enter a human-friendly name.
                                 </p>
