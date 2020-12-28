@@ -1,10 +1,12 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Events;
 using Elsa.Models;
 using Elsa.Persistence.Specifications;
 using MediatR;
+using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Persistence.Decorators
 {
@@ -18,7 +20,7 @@ namespace Elsa.Persistence.Decorators
             _store = store;
             _mediator = mediator;
         }
-        
+
         public async Task SaveAsync(WorkflowInstance entity, CancellationToken cancellationToken = default)
         {
             await _store.SaveAsync(entity, cancellationToken);
@@ -33,11 +35,16 @@ namespace Elsa.Persistence.Decorators
 
         public async Task<int> DeleteManyAsync(ISpecification<WorkflowInstance> specification, CancellationToken cancellationToken = default)
         {
-            var instances = await FindManyAsync(specification, cancellationToken: cancellationToken);
+            var instances = await FindManyAsync(specification, cancellationToken: cancellationToken).ToList();
             var count = await _store.DeleteManyAsync(specification, cancellationToken);
 
-            foreach (var instance in instances) 
-                await _mediator.Publish(new WorkflowInstanceDeleted(instance), cancellationToken);
+            if (instances.Any())
+            {
+                foreach (var instance in instances)
+                    await _mediator.Publish(new WorkflowInstanceDeleted(instance), cancellationToken);
+
+                await _mediator.Publish(new ManyWorkflowInstancesDeleted(instances), cancellationToken);
+            }
 
             return count;
         }

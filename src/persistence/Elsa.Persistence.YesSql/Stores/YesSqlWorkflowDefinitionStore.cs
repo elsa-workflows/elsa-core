@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
@@ -8,6 +9,7 @@ using Elsa.Persistence.YesSql.Documents;
 using Elsa.Persistence.YesSql.Extensions;
 using Elsa.Persistence.YesSql.Indexes;
 using YesSql;
+using YesSql.Services;
 using IIdGenerator = Elsa.Services.IIdGenerator;
 
 namespace Elsa.Persistence.YesSql.Stores
@@ -24,9 +26,10 @@ namespace Elsa.Persistence.YesSql.Stores
         {
             return specification switch
             {
-                EntityIdSpecification<WorkflowDefinition> entityIdSpecification => Query<WorkflowDefinitionIndex>(x => x.DefinitionId == entityIdSpecification.Id),
-                VersionOptionsSpecification versionOptionsSpecification => Query<WorkflowDefinitionIndex>().WithVersion(versionOptionsSpecification.VersionOptions),
-                WorkflowDefinitionIdSpecification definitionIdSpecification => definitionIdSpecification.VersionOptions == null ? Query<WorkflowDefinitionIndex>(x => x.DefinitionId == definitionIdSpecification.Id) : Query<WorkflowDefinitionIndex>(x => x.DefinitionId == definitionIdSpecification.Id).WithVersion(definitionIdSpecification.VersionOptions),
+                EntityIdSpecification<WorkflowDefinition> s => Query<WorkflowDefinitionIndex>(x => x.DefinitionId == s.Id),
+                VersionOptionsSpecification s => Query<WorkflowDefinitionIndex>().WithVersion(s.VersionOptions),
+                WorkflowDefinitionIdSpecification s => s.VersionOptions == null ? Query<WorkflowDefinitionIndex>(x => x.DefinitionId == s.Id) : Query<WorkflowDefinitionIndex>(x => x.DefinitionId == s.Id).WithVersion(s.VersionOptions),
+                ManyWorkflowDefinitionVersionIdsSpecification s => Query<WorkflowDefinitionIndex>(x => x.DefinitionVersionId.IsIn(s.Ids)),
                 _ => AutoMapSpecification<WorkflowDefinitionIndex>(specification)
             };
         }

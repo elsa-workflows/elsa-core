@@ -26,12 +26,12 @@ namespace ElsaDashboard.Application.Pages.WorkflowDefinitions
         
         private async Task OnDeleteWorkflowDefinitionClick(WorkflowDefinition workflowDefinition)
         {
-            var result = await ConfirmDialogService.Show("Delete Workflow Instance", "Are you sure you want to delete this workflow instance?", "Delete");
+            var result = await ConfirmDialogService.Show("Delete Workflow Definition", "Are you sure you want to delete this workflow definition? This will also delete any and all of its workflow instances.", "Delete");
 
             if (result.Cancelled)
                 return;
 
-            //await WorkflowDefinitionService.DeleteAsync(workflowInstance.Id);
+            await WorkflowDefinitionService.DeleteAsync(workflowDefinition.Id);
             await LoadWorkflowDefinitionsAsync();
         }
     }

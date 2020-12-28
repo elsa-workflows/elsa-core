@@ -18,5 +18,8 @@ namespace Elsa.Client.Services
 
         [Post("/v1/workflow-definitions")]
         Task<WorkflowDefinition> SaveAsync([Body] SaveWorkflowDefinitionRequest request, CancellationToken cancellationToken = default);
+
+        [Delete("/v1/workflow-definitions/{workflowDefinitionId}")]
+        Task DeleteAsync(string workflowDefinitionId, CancellationToken cancellationToken = default);
     }
 }

@@ -13,7 +13,7 @@ namespace Elsa
 {
     public static class WorkflowBlueprintExtensions
     {
-        public static ValueTask<T> GetActivityPropertyValue<TActivity, T>(
+        public static ValueTask<T?> GetActivityPropertyValue<TActivity, T>(
             this IWorkflowBlueprint workflowBlueprint,
             string activityId,
             Expression<Func<TActivity, T>> propertyExpression,
@@ -25,15 +25,18 @@ namespace Elsa
             return GetActivityPropertyValue<T>(workflowBlueprint, activityId, propertyName, activityExecutionContext, cancellationToken);
         }
 
-        public static async ValueTask<T> GetActivityPropertyValue<T>(
+        public static async ValueTask<T?> GetActivityPropertyValue<T>(
             this IWorkflowBlueprint workflowBlueprint,
             string activityId,
             string propertyName,
             ActivityExecutionContext activityExecutionContext,
             CancellationToken cancellationToken)
-            => (T) await workflowBlueprint.GetActivityPropertyValue(activityId, propertyName, activityExecutionContext, cancellationToken);
+        {
+            var value = await workflowBlueprint.GetActivityPropertyValue(activityId, propertyName, activityExecutionContext, cancellationToken);
+            return value == null ? default : (T) value;
+        }
 
-        public static async ValueTask<object> GetActivityPropertyValue(
+        public static async ValueTask<object?> GetActivityPropertyValue(
             this IWorkflowBlueprint workflowBlueprint,
             string activityId,
             string propertyName,

@@ -19,5 +19,8 @@ namespace ElsaDashboard.Shared.Rpc
 
         [Operation]
         Task<WorkflowDefinition> SaveAsync(SaveWorkflowDefinitionRequest request, CallContext context = default);
+
+        [Operation]
+        Task DeleteAsync(DeleteWorkflowDefinitionRequest request, CallContext context = default);
     }
 }

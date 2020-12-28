@@ -23,5 +23,6 @@ namespace ElsaDashboard.Backend.Rpc
 
         public Task<WorkflowDefinition> GetByVersionIdAsync(GetWorkflowDefinitionByVersionIdRequest request, CallContext context) => _elsaClient.WorkflowDefinitions.GetByVersionIdAsync(request.WorkflowDefinitionVersionId, context.CancellationToken);
         public async Task<WorkflowDefinition> SaveAsync(SaveWorkflowDefinitionRequest request, CallContext context) => await _elsaClient.WorkflowDefinitions.SaveAsync(request, context.CancellationToken);
+        public async Task DeleteAsync(DeleteWorkflowDefinitionRequest request, CallContext context = default) => await _elsaClient.WorkflowDefinitions.DeleteAsync(request.WorkflowDefinitionId, context.CancellationToken);
     }
 }

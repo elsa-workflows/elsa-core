@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Events;
@@ -8,7 +9,7 @@ using MediatR;
 
 namespace Elsa.Handlers
 {
-    public class UpdateTriggers : INotificationHandler<WorkflowInstanceSaved>
+    public class UpdateTriggers : INotificationHandler<WorkflowInstanceSaved>, INotificationHandler<ManyWorkflowInstancesDeleted>
     {
         private readonly IWorkflowSelector _workflowSelector;
         private readonly IWorkflowRegistry _workflowRegistry;
@@ -22,11 +23,22 @@ namespace Elsa.Handlers
         public async Task Handle(WorkflowInstanceSaved notification, CancellationToken cancellationToken)
         {
             var workflowInstance = notification.WorkflowInstance;
-            var workflowBlueprint = await _workflowRegistry.GetWorkflowAsync(workflowInstance.DefinitionId, workflowInstance.TenantId, VersionOptions.SpecificVersion(workflowInstance.Version), cancellationToken);
-            
+            await UpdateTriggersAsync(workflowInstance.DefinitionId, workflowInstance.TenantId, VersionOptions.SpecificVersion(workflowInstance.Version), cancellationToken);
+        }
+
+        public async Task Handle(ManyWorkflowInstancesDeleted notification, CancellationToken cancellationToken)
+        {
+            var workflowInstance = notification.WorkflowInstances.First();
+            await UpdateTriggersAsync(workflowInstance.DefinitionId, workflowInstance.TenantId, VersionOptions.Latest, cancellationToken);
+        }
+
+        private async Task UpdateTriggersAsync(string workflowDefinitionId, string? tenantId, VersionOptions versionOptions, CancellationToken cancellationToken)
+        {
+            var workflowBlueprint = await _workflowRegistry.GetWorkflowAsync(workflowDefinitionId, tenantId, versionOptions, cancellationToken);
+
             if (workflowBlueprint == null)
                 return;
-            
+
             await _workflowSelector.UpdateTriggersAsync(workflowBlueprint, cancellationToken);
         }
     }
