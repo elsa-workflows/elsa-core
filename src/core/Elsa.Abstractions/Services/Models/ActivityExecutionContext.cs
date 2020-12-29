@@ -58,7 +58,7 @@ namespace Elsa.Services.Models
             return await activityTypeService.ActivateActivityAsync(ActivityBlueprint, cancellationToken);
         }
 
-        public T GetInput<T>() => (T) Input!;
+        public T? GetInput<T>() => Input.ConvertTo<T>();
         public object? GetOutputFrom(string activityName) => WorkflowExecutionContext.GetOutputFrom(activityName);
         public T GetOutputFrom<T>(string activityName) => (T) GetOutputFrom(activityName)!;
         public void SetWorkflowContext(object? value) => WorkflowExecutionContext.SetWorkflowContext(value);

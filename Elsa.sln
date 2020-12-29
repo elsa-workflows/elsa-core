@@ -193,6 +193,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "server", "server", "{BBCFC6
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.Server.Host", "src\samples\server\Elsa.Samples.Server.Host\Elsa.Samples.Server.Host.csproj", "{63E52936-6C1D-4F45-8B56-86C23E9A853F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.SwitchConsole", "src\samples\console\Elsa.Samples.SwitchConsole\Elsa.Samples.SwitchConsole.csproj", "{D6DD6E38-BB34-4B2F-9A42-4C17AF30C9CD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -459,6 +461,10 @@ Global
 		{63E52936-6C1D-4F45-8B56-86C23E9A853F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{63E52936-6C1D-4F45-8B56-86C23E9A853F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{63E52936-6C1D-4F45-8B56-86C23E9A853F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D6DD6E38-BB34-4B2F-9A42-4C17AF30C9CD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D6DD6E38-BB34-4B2F-9A42-4C17AF30C9CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D6DD6E38-BB34-4B2F-9A42-4C17AF30C9CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D6DD6E38-BB34-4B2F-9A42-4C17AF30C9CD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -549,6 +555,7 @@ Global
 		{3CF1D3EA-7D93-44B0-80A2-77983A5357BA} = {4673732F-2853-47BD-91B8-C95C229D2C89}
 		{BBCFC623-2113-464D-8A1F-3CCDABF1241C} = {5E5E1E84-DDBC-40D6-B891-0D563A15A44A}
 		{63E52936-6C1D-4F45-8B56-86C23E9A853F} = {BBCFC623-2113-464D-8A1F-3CCDABF1241C}
+		{D6DD6E38-BB34-4B2F-9A42-4C17AF30C9CD} = {FC9F520F-BA51-4AD2-BFEE-EF787798E734}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}

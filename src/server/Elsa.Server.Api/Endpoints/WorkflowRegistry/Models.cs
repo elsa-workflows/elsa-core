@@ -9,7 +9,6 @@ namespace Elsa.Server.Api.Endpoints.WorkflowRegistry
         public string? TenantId { get; set; }
         public bool IsSingleton { get; set; }
         public bool IsEnabled { get; set; }
-        public string? Description { get; set; }
         public bool IsPublished { get; set; }
         public bool IsLatest { get; set; }
         public Variables Variables { get; set; } = new();
@@ -17,7 +16,6 @@ namespace Elsa.Server.Api.Endpoints.WorkflowRegistry
         public WorkflowPersistenceBehavior PersistenceBehavior { get; set; }
         public bool DeleteCompletedInstances { get; set; }
         public Variables CustomAttributes { get; set; } = new();
-        public string? DisplayName { get; set; }
     }
 
     public class CompositeActivityBlueprintModel : ActivityBlueprintModel

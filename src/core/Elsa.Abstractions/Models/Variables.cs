@@ -21,19 +21,7 @@ namespace Elsa.Models
         public IDictionary<string, object?> Data { get; set; }
 
         public object? Get(string name) => Has(name) ? Data[name] : default;
-
-        public T Get<T>(string name)
-        {
-            if (!Has(name))
-                return default!;
-
-            var value = Get(name);
-
-            if (value == null)
-                return default!;
-
-            return (T)value!;
-        }
+        public T? Get<T>(string name) => !Has(name) ? default : Get(name).ConvertTo<T>();
 
         public Variables Set(string name, object? value)
         {
