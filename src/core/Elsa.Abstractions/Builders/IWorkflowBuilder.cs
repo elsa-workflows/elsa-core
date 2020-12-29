@@ -14,8 +14,6 @@ namespace Elsa.Builders
         bool DeleteCompletedInstances { get; }
         bool IsEnabled { get; }
         IWorkflowBuilder WithWorkflowDefinitionId(string value);
-        IWorkflowBuilder WithDisplayName(string value);
-        IWorkflowBuilder WithDescription(string value);
         IWorkflowBuilder WithVersion(int value);
         IWorkflowBuilder AsSingleton();
         IWorkflowBuilder AsTransient();

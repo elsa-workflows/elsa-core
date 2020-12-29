@@ -138,6 +138,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddActivity<ParallelForEach>()
                 .AddActivity<Fork>()
                 .AddActivity<IfElse>()
+                .AddActivity<IfThen>()
                 .AddActivity<Join>()
                 .AddActivity<Switch>()
                 .AddActivity<While>()
