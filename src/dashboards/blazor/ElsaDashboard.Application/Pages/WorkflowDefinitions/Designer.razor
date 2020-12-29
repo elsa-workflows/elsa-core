@@ -1,5 +1,7 @@
 @page "/workflow-definitions/designer"
 @page "/workflow-definitions/{WorkflowDefinitionVersionId}/designer"
+
+
 <div class="flex-0 border-b border-gray-200 px-4 pt-4 sm:flex sm:items-start sm:justify-between sm:px-6 lg:px-8">
     <div class="flex-1 min-w-0">
         <h1 class="text-lg font-medium leading-6 text-gray-900 sm:truncate">
@@ -29,17 +31,21 @@
         </span>
     </div>
 </div>
-@if (CurrentTab.Name == "Designer")
-{
-    <WorkflowDesigner Model="WorkflowModel" WorkflowChanged="@OnWorkflowChanged"/>
-}
-else if (CurrentTab.Name == "Dsl")
-{
-    <div class="p-10">
 
-    </div>
-}
-else if (CurrentTab.Name == "Settings")
-{
-    <Settings WorkflowDefinition="@WorkflowDefinition" OnChanged="@OnSettingsChanged" />
-}
+<div class="flex flex-1 relative">
+    @if (CurrentTab.Name == "Designer")
+    {
+        <WorkflowDesigner Model="WorkflowModel" WorkflowChanged="@OnWorkflowChanged" EditActivityInvoked="@OnEditActivityInvoked" DeleteActivityInvoked="@OnDeleteActivityInvoked" AddActivityInvoked="@OnAddActivityInvoked" ActivitySelected="@OnActivitySelected"/>
+    }
+    else if (CurrentTab.Name == "Dsl")
+    {
+        <div class="p-10">
+
+        </div>
+    }
+    else if (CurrentTab.Name == "Settings")
+    {
+        <Settings WorkflowDefinition="@WorkflowDefinition" OnChanged="@OnSettingsChanged"/>
+    }
+    <FlyoutPanel/>
+</div>

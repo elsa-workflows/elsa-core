@@ -24,8 +24,11 @@ namespace ElsaDashboard.Application.Shared
 
         [Parameter] public WorkflowModel Model { private get; set; } = WorkflowModel.Blank();
         [Parameter] public EventCallback<WorkflowModelChangedEventArgs> WorkflowChanged { get; set; }
+        [Parameter] public EventCallback<DeleteActivityInvokedEventArgs> DeleteActivityInvoked { get; set; }
+        [Parameter] public EventCallback<EditActivityInvokedEventArgs> EditActivityInvoked { get; set; }
+        [Parameter] public EventCallback<AddActivityInvokedEventArgs> AddActivityInvoked { get; set; }
+        [Parameter] public EventCallback<ActivitySelectedEventArgs> ActivitySelected { get; set; }
         [Inject] private IJSRuntime JS { get; set; } = default!;
-        [Inject] private IFlyoutPanelService FlyoutPanelService { get; set; } = default!;
         private IJSObjectReference _designerModule = default!;
         private bool _connectionsChanged = true;
         private EventCallbackFactory EventCallbackFactory { get; } = new();
@@ -169,99 +172,15 @@ namespace ElsaDashboard.Application.Shared
                 targetActivityId = x.ActivityId
             });
 
-        private async Task ClosePanelAsync() => await FlyoutPanelService.HideAsync();
-
-        private async Task ShowActivityPickerAsync(string? parentActivityId, string? targetActivityId, string? outcome)
-        {
-            await FlyoutPanelService.ShowAsync<ActivityPicker>(
-                "Activities",
-                new {ActivitySelected = EventCallbackFactory.Create<ActivityDescriptorSelectedEventArgs>(this, e => OnActivityPickedAsync(e, parentActivityId, targetActivityId, outcome))},
-                ButtonDescriptor.Create("Cancel", _ => ClosePanelAsync()));
-        }
-
-        private async Task AddActivityAsync(ActivityInfo activityInfo, string? sourceActivityId, string? targetActivityId, string? outcome)
-        {
-            outcome ??= "Done";
-
-            var activity = new ActivityModel
-            {
-                ActivityId = Guid.NewGuid().ToString("N"),
-                Type = activityInfo.Type,
-                Outcomes = activityInfo.Outcomes,
-                DisplayName = activityInfo.DisplayName
-            };
-
-            var model = Model.AddActivity(activity);
-
-            if (targetActivityId != null)
-            {
-                var existingConnection = model.Connections.FirstOrDefault(x => x.TargetId == targetActivityId && x.Outcome == outcome);
-
-                if (existingConnection != null)
-                {
-                    model = model with {Connections = model.Connections.Remove(existingConnection)};
-                    var replacementConnection = existingConnection with {SourceId = activity.ActivityId};
-                    model.AddConnection(replacementConnection);
-                }
-                else
-                {
-                    model = model.AddConnection(activity.ActivityId, targetActivityId, outcome);
-                }
-            }
-
-            if (sourceActivityId != null)
-            {
-                var existingConnection = model.Connections.FirstOrDefault(x => x.SourceId == sourceActivityId && x.Outcome == outcome);
-
-                if (existingConnection != null)
-                {
-                    model = model with {Connections = model.Connections.Remove(existingConnection)};
-                    var replacementConnection = existingConnection with {TargetId = activity.ActivityId};
-                    model = model.AddConnection(replacementConnection);
-
-                    var connection = new ConnectionModel(activity.ActivityId, existingConnection.TargetId, outcome);
-                    model = model.AddConnection(connection);
-                }
-                else
-                {
-                    var connection = new ConnectionModel(sourceActivityId, activity.ActivityId, outcome);
-                    model = model.AddConnection(connection);
-                }
-            }
-
-            await UpdateModelAsync(model);
-            await FlyoutPanelService.HideAsync();
-        }
-
-        private async Task RemoveActivityAsync(ActivityModel activityModel)
-        {
-            var incomingConnections = Model.GetInboundConnections(activityModel.ActivityId).ToList();
-            var outgoingConnections = Model.GetOutboundConnections(activityModel.ActivityId).ToList();
-            
-            // Remove activity (will also remove its connections).
-            var model = Model.RemoveActivity(activityModel);
-
-            // For each incoming activity, try to connect it to a outgoing activity based on outcome.
-            foreach (var incomingConnection in incomingConnections)
-            {
-                var incomingActivity = model.FindActivity(incomingConnection.SourceId);
-                var outgoingConnection = outgoingConnections.FirstOrDefault(x => x.Outcome == incomingConnection.Outcome);
-
-                if (outgoingConnection != null) 
-                    model = model.AddConnection(incomingActivity.ActivityId, outgoingConnection.TargetId, incomingConnection.Outcome);
-            }
-            
-            await UpdateModelAsync(model);
-        }
-
         private RenderFragment RenderActivity(ActivityModel activityModel)
         {
             return builder =>
             {
                 var index = 0;
                 builder.OpenComponent<Activity>(index++);
-                builder.AddAttribute(index++, "Model", activityModel);
-                builder.AddAttribute(index++, "OnDeleteClick", EventCallbackFactory.Create(this, () => OnActivityDelete(activityModel)));
+                builder.AddAttribute(index++, nameof(Activity.Model), activityModel);
+                //builder.AddAttribute(index++, nameof(Activity.OnEditClick), EventCallbackFactory.Create(this, () => OnActivityEdit(activityModel)));
+                builder.AddAttribute(index++, nameof(Activity.OnDeleteClick), EventCallbackFactory.Create(this, () => OnActivityDelete(activityModel)));
 
                 var displayDescriptor = activityModel.DisplayDescriptor;
 
@@ -270,10 +189,10 @@ namespace ElsaDashboard.Application.Shared
                     var context = new ActivityDisplayContext(activityModel.Type, activityModel.Properties);
 
                     if (displayDescriptor.RenderBody != null)
-                        builder.AddAttribute(index++, "Body", displayDescriptor.RenderBody(context));
+                        builder.AddAttribute(index++, nameof(Activity.Body), displayDescriptor.RenderBody(context));
 
                     if (displayDescriptor.RenderIcon != null)
-                        builder.AddAttribute(index, "Icon", displayDescriptor.RenderIcon(context));
+                        builder.AddAttribute(index, nameof(Activity.Icon), displayDescriptor.RenderIcon(context));
                 }
 
                 builder.CloseComponent();
@@ -286,21 +205,10 @@ namespace ElsaDashboard.Application.Shared
             StateHasChanged();
         }
 
-        private async Task OnAddActivityClick(string? sourceActivityId, string? targetActivityId, string? outcome) => await ShowActivityPickerAsync(sourceActivityId, targetActivityId, outcome);
+        private async Task OnAddActivityClick(string? sourceActivityId, string? targetActivityId, string? outcome) => await AddActivityInvoked.InvokeAsync(new AddActivityInvokedEventArgs(sourceActivityId, targetActivityId, outcome));
+        private async Task OnActivityDelete(ActivityModel activityModel) => await DeleteActivityInvoked.InvokeAsync(new DeleteActivityInvokedEventArgs(activityModel));
 
-        private async Task OnActivityPickedAsync(ActivityDescriptorSelectedEventArgs e, string? sourceActivityId, string? targetActivityId, string? outcome)
-        {
-            var activityInfo = e.ActivityInfo;
-
-            await FlyoutPanelService.ShowAsync<ActivityEditor>(
-                activityInfo.DisplayName,
-                new {ActivityInfo = activityInfo},
-                ButtonDescriptor.Create("Cancel", _ => ShowActivityPickerAsync(sourceActivityId, targetActivityId, outcome)),
-                ButtonDescriptor.Create("OK", _ => AddActivityAsync(activityInfo, sourceActivityId, targetActivityId, outcome), true));
-        }
-        
-        private async Task OnActivityDelete(ActivityModel activityModel) => await RemoveActivityAsync(activityModel);
-        private async ValueTask OnActivityClick(MouseEventArgs e) => await FlyoutPanelService.ShowAsync<ActivityEditor>("Timer Properties");
+        //private async ValueTask OnActivityClick(MouseEventArgs e) => await FlyoutPanelService.ShowAsync<ActivityEditor>("Timer Properties");
         private async Task OnConnectionCreatedAsync(ConnectionModel connection) => await UpdateModelAsync(Model.AddConnection(connection));
     }
 }

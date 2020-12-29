@@ -12,11 +12,11 @@ namespace ElsaDashboard.Application.Shared
     partial class ActivityPicker
     {
         [Parameter] public EventCallback<ActivityDescriptorSelectedEventArgs> ActivitySelected { get; set; }
+        [Parameter] public ICollection<ActivityInfo> Activities { get; set; } = new List<ActivityInfo>();
         [Inject] private IActivityService ActivityService { get; set; } = default!;
         private ActivityTraitFilter SelectedActivityTraitFilter { get; set; }
         private string? ActivitySearchText { get; set; }
         private ICollection<ActivityTraitFilter> ActivityTraitFilters => new[] { ActivityTraitFilter.All, ActivityTraitFilter.Actions, ActivityTraitFilter.Triggers };
-        private ICollection<ActivityInfo> Activities { get; set; } = new List<ActivityInfo>();
 
         private ICollection<IGrouping<string, ActivityInfo>> ActivityGroupings =>
             FilterBySearchText(
@@ -24,12 +24,6 @@ namespace ElsaDashboard.Application.Shared
                     ActivitySearchText)
                 .GroupBy(x => x.Category)
                 .ToList();
-
-        protected override async Task OnInitializedAsync()
-        {
-            var response = (await ActivityService.GetActivitiesAsync());
-            Activities = response.ToList();
-        }
 
         private void OnActivityTypeFilterClick(ActivityTraitFilter activityTraitFilter)
         {

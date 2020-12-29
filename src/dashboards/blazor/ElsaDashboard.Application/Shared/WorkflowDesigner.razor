@@ -5,31 +5,28 @@
     var renderedActivities = new HashSet<string>();
 }
 
-<div class="flex flex-1 relative">
-    <div id="workflow-canvas" class="flex-1 flex">
-        <div class="flex-1 text-gray-200">
-            <div class="p-10">
-                <div class="canvas select-none">
-                    <div class="tree">
-                        <ul>
-                            <li>
-                                <div class="inline-flex flex flex-col items-center">
-                                    <button id="start-button"
-                                            type="button"
-                                            class="px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-green active:bg-green-700 transition ease-in-out duration-150"
-                                            @onclick="@(async e => await OnAddActivityClick(null, null, null))">
-                                        Start
-                                    </button>
-                                </div>
-                                @RenderTree(GetRootActivities(), true, OnAddActivityClick, renderedActivities)
-                            </li>
-                        </ul>
-                    </div>
+<div id="workflow-canvas" class="flex-1 flex">
+    <div class="flex-1 text-gray-200">
+        <div class="p-10">
+            <div class="canvas select-none">
+                <div class="tree">
+                    <ul>
+                        <li>
+                            <div class="inline-flex flex flex-col items-center">
+                                <button id="start-button"
+                                        type="button"
+                                        class="px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-green active:bg-green-700 transition ease-in-out duration-150"
+                                        @onclick="@(async e => await OnAddActivityClick(null, null, null))">
+                                    Start
+                                </button>
+                            </div>
+                            @RenderTree(GetRootActivities(), true, OnAddActivityClick, renderedActivities)
+                        </li>
+                    </ul>
                 </div>
             </div>
         </div>
     </div>
-    <FlyoutPanel/>
 </div>
 
 @code {
