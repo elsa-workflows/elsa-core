@@ -1,6 +1,6 @@
 ﻿namespace Elsa.Activities.ControlFlow
 {
-    public enum IfThenMatchMode
+    public enum SwitchMode
     {
         /// <summary>
         /// Yields the outcome of the first condition evaluating to true.

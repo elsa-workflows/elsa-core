@@ -3,7 +3,7 @@ using Elsa.Activities.Console;
 using Elsa.Activities.ControlFlow;
 using Elsa.Builders;
 
-namespace Elsa.Samples.IfThenConsole
+namespace Elsa.Samples.SwitchConsole
 {
     public class GrayscaleWorkflow : IWorkflow
     {
@@ -20,10 +20,10 @@ namespace Elsa.Samples.IfThenConsole
                 .WriteLine("--Grayscale Calculator--", "Start")
                 .WriteLine("Enter a number between 0 and 100.")
                 .ReadLine()
-                .IfThen(conditions =>
+                .Switch(cases =>
                     {
-                        var input = conditions.Context.GetInput<int>();
-                        conditions
+                        var input = cases.Context.GetInput<int>();
+                        cases
                             .Add("Black", input >= 0 && input < 20)
                             .Add("Dark Gray", input >= 20 && input < 50)
                             .Add("Light Gray", input >= 50 && input < 70)
@@ -31,7 +31,7 @@ namespace Elsa.Samples.IfThenConsole
                             .Add("White", input >= 70 && input <= 100)
                             .Add("Invalid", input < 0 || input > 100);
                     },
-                    IfThenMatchMode.MatchFirst,
+                    SwitchMode.MatchFirst,
                     ifThen =>
                     {
                         ifThen.When("Black").WriteLine("That number is black");

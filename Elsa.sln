@@ -193,7 +193,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "server", "server", "{BBCFC6
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.Server.Host", "src\samples\server\Elsa.Samples.Server.Host\Elsa.Samples.Server.Host.csproj", "{63E52936-6C1D-4F45-8B56-86C23E9A853F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.IfThenConsole", "src\samples\console\Elsa.Samples.IfThenConsole\Elsa.Samples.IfThenConsole.csproj", "{D6DD6E38-BB34-4B2F-9A42-4C17AF30C9CD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.SwitchConsole", "src\samples\console\Elsa.Samples.SwitchConsole\Elsa.Samples.SwitchConsole.csproj", "{D6DD6E38-BB34-4B2F-9A42-4C17AF30C9CD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

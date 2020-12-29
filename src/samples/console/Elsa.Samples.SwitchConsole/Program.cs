@@ -2,7 +2,7 @@ using System.Threading.Tasks;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Samples.IfThenConsole
+namespace Elsa.Samples.SwitchConsole
 {
     /// <summary>
     /// Demonstrates a workflow with a While looping construct.
