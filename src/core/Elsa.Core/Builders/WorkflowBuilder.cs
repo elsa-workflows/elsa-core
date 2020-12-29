@@ -45,13 +45,13 @@ namespace Elsa.Builders
             return this;
         }
         
-        public IWorkflowBuilder WithDisplayName(string value)
+        public new IWorkflowBuilder WithDisplayName(string value)
         {
             DisplayName = value;
             return this;
         }
         
-        public IWorkflowBuilder WithDescription(string? value)
+        public new IWorkflowBuilder WithDescription(string? value)
         {
             Description = value;
             return this;

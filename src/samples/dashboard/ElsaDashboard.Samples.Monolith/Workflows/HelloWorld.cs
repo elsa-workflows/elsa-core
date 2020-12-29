@@ -2,7 +2,7 @@
 using Elsa.Activities.Http;
 using Elsa.Builders;
 
-namespace Elsa.Samples.Server.Host.Workflows
+namespace ElsaDashboard.Samples.Monolith.Workflows
 {
     public class HelloWorld : IWorkflow
     {

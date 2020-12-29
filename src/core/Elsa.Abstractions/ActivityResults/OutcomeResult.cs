@@ -16,14 +16,14 @@ namespace Elsa.ActivityResults
 
             Outcomes = outcomeList;
         }
-        
+
         public IEnumerable<string> Outcomes { get; }
 
         protected override void Execute(ActivityExecutionContext activityExecutionContext)
         {
             var outcomes = activityExecutionContext.Outcomes = Outcomes.ToList();
             var workflowExecutionContext = activityExecutionContext.WorkflowExecutionContext;
-            
+
             var nextActivities = GetNextActivities(
                 workflowExecutionContext,
                 activityExecutionContext.ActivityBlueprint.Id,
@@ -37,14 +37,17 @@ namespace Elsa.ActivityResults
             string sourceId,
             IEnumerable<string> outcomes)
         {
+            var orderedOutcomes = outcomes.Select((outcome, order) => (outcome, order));
+
             var query =
                 from connection in workflowContext.WorkflowBlueprint.Connections
-                from outcome in outcomes
+                from outcome in orderedOutcomes
                 let connectionOutcome = connection.Source.Outcome ?? OutcomeNames.Done
-                let isConnectionOutcome = connectionOutcome.Equals(outcome, StringComparison.OrdinalIgnoreCase)
+                let isConnectionOutcome = connectionOutcome.Equals(outcome.outcome, StringComparison.OrdinalIgnoreCase)
                 where connection.Source.Activity.Id == sourceId && isConnectionOutcome
                 from activityBlueprint in workflowContext.WorkflowBlueprint.Activities
                 where activityBlueprint.Id == connection.Target.Activity.Id
+                orderby outcome.order 
                 select activityBlueprint.Id;
 
             return query.Distinct();

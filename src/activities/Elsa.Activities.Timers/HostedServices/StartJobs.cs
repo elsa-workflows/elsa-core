@@ -59,7 +59,7 @@ namespace Elsa.Activities.Timers.HostedServices
                 var workflow = runAtWorkflow.workflow;
                 var activity = runAtWorkflow.activity;
                 var workflowWrapper = await _workflowBlueprintReflector.ReflectAsync(serviceScope, workflow, cancellationToken);
-                var timerWrapper = workflowWrapper.GetActivity<StartAt>(activity.Id);
+                var timerWrapper = workflowWrapper.GetActivity<StartAt>(activity.Id)!;
                 var startAt = await timerWrapper.GetPropertyValueAsync(x => x.Instant, cancellationToken);
 
                 await _workflowScheduler.ScheduleWorkflowAsync(workflow, activity.Id, startAt, cancellationToken);
@@ -91,7 +91,7 @@ namespace Elsa.Activities.Timers.HostedServices
                 var workflow = timerWorkflow.workflow;
                 var activity = timerWorkflow.activity;
                 var workflowWrapper = await _workflowBlueprintReflector.ReflectAsync(serviceScope, workflow, cancellationToken);
-                var timerEventWrapper = workflowWrapper.GetActivity<Timer>(activity.Id);
+                var timerEventWrapper = workflowWrapper.GetActivity<Timer>(activity.Id)!;
                 var timeOut = await timerEventWrapper.GetPropertyValueAsync(x => x.Timeout, cancellationToken);
                 var startAt = now.Plus(timeOut);
 
@@ -122,7 +122,7 @@ namespace Elsa.Activities.Timers.HostedServices
                 var workflow = cronWorkflow.workflow;
                 var activity = cronWorkflow.activity;
                 var workflowWrapper = await _workflowBlueprintReflector.ReflectAsync(serviceScope, workflow, cancellationToken);
-                var timerEventWrapper = workflowWrapper.GetActivity<Cron>(activity.Id);
+                var timerEventWrapper = workflowWrapper.GetActivity<Cron>(activity.Id)!;
                 var cronExpression = await timerEventWrapper.GetPropertyValueAsync(x => x.CronExpression, cancellationToken);
 
                 await _workflowScheduler.ScheduleWorkflowAsync(workflow, activity.Id, cronExpression!, cancellationToken);

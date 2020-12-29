@@ -32,7 +32,5 @@ namespace Elsa.Client.Models
         /// </summary>
         [DataMember(Order = 11)]
         public Variables CustomAttributes { get; set;} = new();
-
-        [DataMember(Order = 12)] public string? DisplayName { get; set; }
     }
 }
