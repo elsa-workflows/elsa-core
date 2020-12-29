@@ -1,10 +1,10 @@
-﻿{
+{
     "profiles": {
         "Elsa.Server.Host": {
             "commandName": "Project",
             "launchBrowser": false,
-            "applicationUrl": "https://localhost:11000",
-            "launchUrl": "https://localhost:11000/swagger",
+            "applicationUrl": "http://localhost:11000",
+            "launchUrl": "http://localhost:11000/swagger",
             "environmentVariables": {
                 "ASPNETCORE_ENVIRONMENT": "Development"
             }
