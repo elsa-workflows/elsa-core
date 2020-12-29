@@ -15,29 +15,37 @@ namespace Elsa.Activities.ControlFlow
             activity?.Invoke(activityBuilder);
             return activityBuilder;
         }
-        
+
+        public static IActivityBuilder IfThen(this IBuilder builder, Func<ActivityExecutionContext, ValueTask<ICollection<IfThenCondition>>> conditions, IfThenMatchMode mode, Action<IActivityBuilder>? activity = default) => builder.IfThen(x => x.WithConditions(conditions).WithMode(mode), activity);
         public static IActivityBuilder IfThen(this IBuilder builder, Func<ActivityExecutionContext, ValueTask<ICollection<IfThenCondition>>> conditions, Action<IActivityBuilder>? activity = default) => builder.IfThen(x => x.WithConditions(conditions), activity);
+        public static IActivityBuilder IfThen(this IBuilder builder, Func<ActivityExecutionContext, ICollection<IfThenCondition>> conditions, IfThenMatchMode mode, Action<IActivityBuilder>? activity = default) => builder.IfThen(x => x.WithConditions(conditions).WithMode(mode), activity);
         public static IActivityBuilder IfThen(this IBuilder builder, Func<ActivityExecutionContext, ICollection<IfThenCondition>> conditions, Action<IActivityBuilder>? activity = default) => builder.IfThen(x => x.WithConditions(conditions), activity);
+        public static IActivityBuilder IfThen(this IBuilder builder, Func<ICollection<IfThenCondition>> conditions, IfThenMatchMode mode, Action<IActivityBuilder>? activity = default) => builder.IfThen(x => x.WithConditions(conditions).WithMode(mode), activity);
         public static IActivityBuilder IfThen(this IBuilder builder, Func<ICollection<IfThenCondition>> conditions, Action<IActivityBuilder>? activity = default) => builder.IfThen(x => x.WithConditions(conditions), activity);
+        public static IActivityBuilder IfThen(this IBuilder builder, ICollection<IfThenCondition> conditions, IfThenMatchMode mode, Action<IActivityBuilder>? activity = default) => builder.IfThen(x => x.WithConditions(conditions).WithMode(mode), activity);
         public static IActivityBuilder IfThen(this IBuilder builder, ICollection<IfThenCondition> conditions, Action<IActivityBuilder>? activity = default) => builder.IfThen(x => x.WithConditions(conditions), activity);
 
-        public static IActivityBuilder IfThen(this IBuilder builder, Action<IfThenConditionBuilder> conditions, Action<IActivityBuilder>? activity = default)
+        public static IActivityBuilder IfThen(this IBuilder builder, Action<IfThenConditionBuilder> conditions, Action<IActivityBuilder>? activity = default) => builder.IfThen(conditions, IfThenMatchMode.MatchFirst, activity);
+
+        public static IActivityBuilder IfThen(this IBuilder builder, Action<IfThenConditionBuilder> conditions, IfThenMatchMode mode, Action<IActivityBuilder>? activity = default)
         {
             return builder.IfThen(x =>
             {
                 conditions(x);
                 return new ValueTask();
-            }, activity);
+            }, mode, activity);
         }
-        
-        public static IActivityBuilder IfThen(this IBuilder builder, Func<IfThenConditionBuilder, ValueTask> conditions, Action<IActivityBuilder>? activity = default)
+
+        public static IActivityBuilder IfThen(this IBuilder builder, Func<IfThenConditionBuilder, ValueTask> conditions, Action<IActivityBuilder>? activity = default) => builder.IfThen(conditions, IfThenMatchMode.MatchFirst, activity);
+
+        public static IActivityBuilder IfThen(this IBuilder builder, Func<IfThenConditionBuilder, ValueTask> conditions, IfThenMatchMode mode, Action<IActivityBuilder>? activity = default)
         {
             return builder.IfThen(async context =>
             {
                 var conditionBuilder = new IfThenConditionBuilder(context);
                 await conditions(conditionBuilder);
                 return conditionBuilder.Conditions;
-            }, activity);
+            }, mode, activity);
         }
     }
 }

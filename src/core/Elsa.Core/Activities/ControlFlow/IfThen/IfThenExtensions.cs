@@ -13,5 +13,6 @@ namespace Elsa.Activities.ControlFlow
         public static ISetupActivity<IfThen> WithConditions(this ISetupActivity<IfThen> activity, Func<ActivityExecutionContext, ICollection<IfThenCondition>> value) => activity.Set(x => x.Conditions, value!);
         public static ISetupActivity<IfThen> WithConditions(this ISetupActivity<IfThen> activity, Func<ICollection<IfThenCondition>> value) => activity.Set(x => x.Conditions, value!);
         public static ISetupActivity<IfThen> WithConditions(this ISetupActivity<IfThen> activity, ICollection<IfThenCondition> value) => activity.Set(x => x.Conditions, value!);
+        public static ISetupActivity<IfThen> WithMode(this ISetupActivity<IfThen> activity, IfThenMatchMode value) => activity.Set(x => x.Mode, value);
     }
 }
