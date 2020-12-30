@@ -48,8 +48,12 @@ namespace Elsa.Services.Models
 
         public void SetVariable(string name, object? value) => WorkflowExecutionContext.SetVariable(name, value);
         public object? GetVariable(string name) => WorkflowExecutionContext.GetVariable(name);
-        public T GetVariable<T>(string name) => WorkflowExecutionContext.GetVariable<T>(name);
-        public T GetVariable<T>() => GetVariable<T>(typeof(T).Name);
+        public T? GetVariable<T>(string name) => WorkflowExecutionContext.GetVariable<T>(name);
+        public T? GetVariable<T>() => GetVariable<T>(typeof(T).Name);
+        public void SetTransientVariable(string name, object? value) => WorkflowExecutionContext.SetTransientVariable(name, value);
+        public object? GetTransientVariable(string name) => WorkflowExecutionContext.GetTransientVariable(name);
+        public T? GetTransientVariable<T>(string name) => WorkflowExecutionContext.GetTransientVariable<T>(name);
+        public T? GetTransientVariable<T>() => GetTransientVariable<T>(typeof(T).Name);
         public T GetService<T>() where T : notnull => ServiceScope.ServiceProvider.GetRequiredService<T>();
 
         public async ValueTask<RuntimeActivityInstance> ActivateActivityAsync(CancellationToken cancellationToken = default)

@@ -38,6 +38,11 @@ namespace Elsa.Services.Models
         public bool IsFirstPass { get; private set; }
         public bool ContextHasChanged { get; set; }
 
+        /// <summary>
+        /// Values stored here will exist only for the lifetime of the workflow execution context.
+        /// </summary>
+        public Variables TransientState { get; set; } = new();
+
         public void ScheduleActivities(IEnumerable<string> activityIds, object? input = default)
         {
             foreach (var activityId in activityIds)
@@ -76,8 +81,11 @@ namespace Elsa.Services.Models
         public object? WorkflowContext { get; set; }
 
         public void SetVariable(string name, object? value) => WorkflowInstance.Variables.Set(name, value);
-        public T GetVariable<T>(string name) => WorkflowInstance.Variables.Get<T>(name);
+        public T? GetVariable<T>(string name) => WorkflowInstance.Variables.Get<T>(name);
         public object? GetVariable(string name) => WorkflowInstance.Variables.Get(name);
+        public void SetTransientVariable(string name, object? value) => TransientState.Set(name, value);
+        public T? GetTransientVariable<T>(string name) => TransientState.Get<T>(name);
+        public object? GetTransientVariable(string name) => TransientState.Get(name);
         public void CompletePass() => IsFirstPass = false;
         public void Begin() => WorkflowInstance.WorkflowStatus = WorkflowStatus.Running;
         public void Resume() => WorkflowInstance.WorkflowStatus = WorkflowStatus.Running;

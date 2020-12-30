@@ -146,6 +146,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddActivity<While>()
                 .AddActivity<Correlate>()
                 .AddActivity<SetVariable>()
+                .AddActivity<SetTransientVariable>()
                 .AddActivity<SetContextId>()
                 .AddActivity<SignalReceived>()
                 .AddActivity<SendSignal>()

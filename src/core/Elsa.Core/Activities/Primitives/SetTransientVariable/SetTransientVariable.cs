@@ -7,22 +7,22 @@ using Elsa.Services.Models;
 namespace Elsa.Activities.Primitives
 {
     [Activity(
-        DisplayName = "Set Variable",
-        Description = "Set variable on the workflow.",
+        DisplayName = "Set Transient Variable",
+        Description = "Set a transient variable on the current workflow execution context.",
         Category = "Primitives",
         Outcomes = new[] { OutcomeNames.Done }
     )]
-    public class SetVariable : Activity
+    public class SetTransientVariable : Activity
     {
-        [ActivityProperty(Hint = "The name of the variable to store the value into.")]
+        [ActivityProperty(Hint = "The name of the transient variable to store the value into.")]
         public string VariableName { get; set; } = default!;
 
-        [ActivityProperty(Hint = "The value to store in the variable.")]
+        [ActivityProperty(Hint = "The value to store in the transient variable.")]
         public object? Value { get; set; }
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
-            context.SetVariable(VariableName, Value);
+            context.SetTransientVariable(VariableName, Value);
             return Done();
         }
     }
