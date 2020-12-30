@@ -37,6 +37,7 @@
         <PackageReference Include="Scrutor" Version="3.3.0" />
         <PackageReference Include="Storage.Net" Version="9.2.7" />
         <PackageReference Include="System.Linq.Async" Version="5.0.0" />
+        <PackageReference Include="System.Threading.Channels" Version="4.7.1" />
         <PackageReference Include="YamlDotNet" Version="9.1.0" />
         <PackageReference Include="Rebus.ServiceProvider" Version="6.0.0" />
     </ItemGroup>
