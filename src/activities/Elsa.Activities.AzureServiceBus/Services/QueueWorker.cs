@@ -14,14 +14,16 @@ namespace Elsa.Activities.AzureServiceBus.Services
     {
         private readonly IMessageReceiver _messageReceiver;
         private readonly IServiceProvider _serviceProvider;
+        private readonly IBackgroundWorker _backgroundWorker;
         private readonly ILogger _logger;
 
-        public QueueWorker(IMessageReceiver messageReceiver, IServiceProvider serviceProvider, ILogger<QueueWorker> logger)
+        public QueueWorker(IMessageReceiver messageReceiver, IServiceProvider serviceProvider, IBackgroundWorker backgroundWorker, ILogger<QueueWorker> logger)
         {
             _messageReceiver = messageReceiver;
             _serviceProvider = serviceProvider;
+            _backgroundWorker = backgroundWorker;
             _logger = logger;
-            
+
             _messageReceiver.RegisterMessageHandler(OnMessageReceived, new MessageHandlerOptions(ExceptionReceivedHandler)
             {
                 AutoComplete = false,
@@ -31,15 +33,19 @@ namespace Elsa.Activities.AzureServiceBus.Services
 
         private async Task OnMessageReceived(Message message, CancellationToken cancellationToken)
         {
-            using (var scope = _serviceProvider.CreateScope())
-            {
-                var workflowRunner = scope.ServiceProvider.GetRequiredService<IWorkflowRunner>();
-
-                await workflowRunner.TriggerWorkflowsAsync<MessageReceivedTrigger>(x => x.QueueName == _messageReceiver.Path && (string.IsNullOrWhiteSpace(x.CorrelationId) || x.CorrelationId == message.CorrelationId), message,
-                    message.CorrelationId, cancellationToken: cancellationToken);
-            }
-
+            await _backgroundWorker.ScheduleTask(async () => await TriggerWorkflowsAsync(message, cancellationToken), cancellationToken);
             await _messageReceiver.CompleteAsync(message.SystemProperties.LockToken);
+        }
+
+        private async Task TriggerWorkflowsAsync(Message message, CancellationToken cancellationToken)
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var workflowRunner = scope.ServiceProvider.GetRequiredService<IWorkflowRunner>();
+
+            await workflowRunner.TriggerWorkflowsAsync<MessageReceivedTrigger>(
+                x => x.QueueName == _messageReceiver.Path && (string.IsNullOrWhiteSpace(x.CorrelationId) || x.CorrelationId == message.CorrelationId), 
+                message, message.CorrelationId, 
+                cancellationToken: cancellationToken);
         }
 
         private Task ExceptionReceivedHandler(ExceptionReceivedEventArgs e)
@@ -60,13 +66,10 @@ namespace Elsa.Activities.AzureServiceBus.Services
                     _logger.LogError("- Executing Action: {Action}", context.Action);
                     break;
             }
-            
+
             return Task.CompletedTask;
         }
 
-        public async ValueTask DisposeAsync()
-        {
-            await _messageReceiver.CloseAsync();
-        }
+        public async ValueTask DisposeAsync() => await _messageReceiver.CloseAsync();
     }
 }
