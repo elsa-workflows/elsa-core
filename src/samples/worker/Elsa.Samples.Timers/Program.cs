@@ -20,10 +20,13 @@ namespace Elsa.Samples.Timers
                                 .AddConsoleActivities()
                                 .AddQuartzTimerActivities()
                                 .AddWorkflow<RecurringTaskWorkflow>()
-                                .AddWorkflow<CancelTimerWorkflow>()
-                                .AddWorkflow<CronTaskWorkflow>()
-                                .AddWorkflow(new OneOffWorkflow(SystemClock.Instance.GetCurrentInstant().Plus(Duration.FromSeconds(5)))))
-                            ;
+                                .AddActivity<MyContainer1>()
+                                .AddActivity<MyContainer2>()
+                                //.AddWorkflow<CancelTimerWorkflow>()
+                                //.AddWorkflow<CronTaskWorkflow>()
+                                //.AddWorkflow(new OneOffWorkflow(SystemClock.Instance.GetCurrentInstant().Plus(Duration.FromSeconds(5))))
+                            )
+                            .StartWorkflow<RecurringTaskWorkflow>();
                     });
     }
 }

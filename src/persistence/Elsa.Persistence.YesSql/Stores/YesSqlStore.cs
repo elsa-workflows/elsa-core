@@ -30,7 +30,7 @@ namespace Elsa.Persistence.YesSql.Stores
         protected IMapper Mapper { get; }
         protected string CollectionName { get; }
 
-        public async Task SaveAsync(T entity, CancellationToken cancellationToken = default)
+        public virtual async Task SaveAsync(T entity, CancellationToken cancellationToken = default)
         {
             await _semaphore.WaitAsync(cancellationToken);
 

@@ -56,12 +56,29 @@ namespace Elsa.Activities.ControlFlow
 
             if (done)
             {
-                // Remove any inbound blocking activities.
+                // Remove any blocking activities within the first fork.
                 var ancestorActivityIds = workflowExecutionContext.GetInboundActivityPath(Id).ToList();
-                var blockingActivities = workflowExecutionContext.WorkflowInstance.BlockingActivities.Where(x => ancestorActivityIds.Contains(x.ActivityId)).ToList();
-            
-                foreach (var blockingActivity in blockingActivities) 
-                    workflowExecutionContext.WorkflowInstance.BlockingActivities.Remove(blockingActivity);
+                var ancestors = workflowExecutionContext.WorkflowBlueprint.Activities.Where(x => ancestorActivityIds.Contains(x.Id)).ToList();
+                var fork = ancestors.FirstOrDefault(x => x.Type == nameof(Fork));
+                var blockingActivities = workflowExecutionContext.WorkflowInstance.BlockingActivities.ToList();
+                
+                foreach (var blockingActivity in blockingActivities)
+                {
+                    var blockingActivityBlueprint = workflowExecutionContext.WorkflowBlueprint.GetActivity(blockingActivity.ActivityId)!;
+                    var blockingActivityAncestors = workflowExecutionContext.GetInboundActivityPath(blockingActivity.ActivityId).ToList();
+
+                    // Include composite activities in the equation.
+                    if (blockingActivityBlueprint.Parent != null)
+                    {
+                        var compositeBlockingActivityAncestors = workflowExecutionContext.GetInboundActivityPath(blockingActivityBlueprint.Parent.Id).ToList();
+                        blockingActivityAncestors = blockingActivityAncestors.Concat(compositeBlockingActivityAncestors).ToList();
+                    }
+                    
+                    if (fork == null || blockingActivityAncestors.Contains(fork.Id))
+                    {
+                        workflowExecutionContext.WorkflowInstance.BlockingActivities.Remove(blockingActivity);    
+                    }
+                }
             }
             
             if (!done)

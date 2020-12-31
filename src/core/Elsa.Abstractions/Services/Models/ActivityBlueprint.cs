@@ -8,6 +8,7 @@
 
         public ActivityBlueprint(
             string id,
+            ICompositeActivityBlueprint? parent,
             string? name,
             string? displayName,
             string? description,
@@ -17,6 +18,7 @@
             bool saveWorkflowContext)
         {
             Id = id;
+            Parent = parent;
             Name = name;
             DisplayName = displayName;
             Description = description;
@@ -27,6 +29,7 @@
         }
 
         public string Id { get; set; } = default!;
+        public ICompositeActivityBlueprint? Parent { get; set; }
         public string? Name { get; set; }
         public string? DisplayName { get; }
         public string? Description { get; }

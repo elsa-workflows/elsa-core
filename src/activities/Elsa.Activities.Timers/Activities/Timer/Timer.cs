@@ -9,7 +9,7 @@ using NodaTime;
 namespace Elsa.Activities.Timers
 {
     [Trigger(Category = "Timers", Description = "Triggers at a specified interval.")]
-    public class Timer : Activity
+    public class Timer : Activity, IReschedule
     {
         private readonly IClock _clock;
 
@@ -42,5 +42,9 @@ namespace Elsa.Activities.Timers
         }
 
         protected override IActivityExecutionResult OnResume() => Done();
+    }
+
+    public interface IReschedule
+    {
     }
 }

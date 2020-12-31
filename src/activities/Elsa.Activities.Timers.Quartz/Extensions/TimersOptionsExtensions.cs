@@ -22,6 +22,7 @@ namespace Elsa
                 .AddQuartzHostedService(ConfigureQuartzHostedService)
                 .AddSingleton<IWorkflowScheduler, QuartzWorkflowScheduler>()
                 .AddSingleton<ICrontabParser, QuartzCrontabParser>()
+                .AddSingleton<WorkflowRunnerQueue>()
                 .AddTransient<RunQuartzWorkflowJob>();
         }
 

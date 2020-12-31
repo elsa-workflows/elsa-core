@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Timers.Services;
@@ -22,7 +23,10 @@ namespace Elsa.Activities.Timers.ActivityResults
             var workflowInstance = activityExecutionContext.WorkflowExecutionContext.WorkflowInstance;
             var workflowInstanceStore = activityExecutionContext.GetService<IWorkflowInstanceStore>();
             var scheduler = activityExecutionContext.GetService<IWorkflowScheduler>();
-            await workflowInstanceStore.SaveAsync(workflowInstance, cancellationToken);
+            
+            if(workflowInstance.LastSavedAt == null)
+                await workflowInstanceStore.SaveAsync(workflowInstance, cancellationToken);
+            
             await scheduler.ScheduleWorkflowAsync(activityExecutionContext.WorkflowExecutionContext.WorkflowBlueprint, workflowInstance.Id, activityExecutionContext.ActivityInstance.Id, ExecuteAt, cancellationToken);
         }
     }

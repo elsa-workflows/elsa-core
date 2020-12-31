@@ -23,7 +23,7 @@ namespace Elsa.Activities.ControlFlow
             var loop = Condition;
 
             if (loop)
-                return Combine(PostSchedule(Id), Outcome(IterateOutcome));
+                return Outcome(IterateOutcome, Id);
 
             return Done();
         }

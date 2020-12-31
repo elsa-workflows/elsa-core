@@ -83,7 +83,7 @@ namespace Elsa.Activities.Timers.Hangfire.Jobs
         {
             WorkflowInstance? workflowInstance = null;
 
-            for (var i = 0; i < TimerConsts.MaxRetrayGetWorkflow && workflowInstance == null; i++)
+            for (var i = 0; i < TimerConsts.MaxRetryGetWorkflow && workflowInstance == null; i++)
             {
                 workflowInstance = await _workflowInstanceManager.FindByIdAsync(workflowInstanceId);
 

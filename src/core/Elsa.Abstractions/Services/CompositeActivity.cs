@@ -7,7 +7,7 @@ namespace Elsa.Services
 {
     public class CompositeActivity : Activity
     {
-        public virtual void Build(ICompositeActivityBuilder composite)
+        public virtual void Build(ICompositeActivityBuilder activity)
         {
         }
 
@@ -43,9 +43,10 @@ namespace Elsa.Services
         {
             var children = ((CompositeActivityBlueprint) context.ActivityBlueprint).Activities.Select(x => x.Id).ToList();
             var workflowInstance = context.WorkflowExecutionContext.WorkflowInstance;
-            var hasPendingPostScheduledChildren = workflowInstance.PostScheduledActivities.Any(x => children.Contains(x.ActivityId));
+            //var hasPendingPostScheduledChildren = workflowInstance.PostScheduledActivities.Any(x => children.Contains(x.ActivityId));
             var hasPendingScheduledChildren = workflowInstance.ScheduledActivities.Any(x => children.Contains(x.ActivityId));
-            return hasPendingPostScheduledChildren || hasPendingScheduledChildren;
+            //return hasPendingPostScheduledChildren || hasPendingScheduledChildren;
+            return hasPendingScheduledChildren;
         }
     }
 }

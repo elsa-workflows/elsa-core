@@ -14,9 +14,9 @@ namespace Elsa.Samples.ProgrammaticCompositeActivitiesConsole.Activities
     [Action(Outcomes = new[] { "Left", "Right" })]
     public class CountDownActivity : CompositeActivity
     {
-        public override void Build(ICompositeActivityBuilder composite)
+        public override void Build(ICompositeActivityBuilder activity)
         {
-            composite
+            activity
                 .StartWith(GetInstructions)
                 .WriteLine(context => (string)context.Input)
                 .ReadLine()

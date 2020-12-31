@@ -17,9 +17,9 @@ namespace Elsa.Samples.WhileLoopWorker.Activities
             _phoneCallService = phoneCallService;
         }
 
-        public override void Build(ICompositeActivityBuilder composite)
+        public override void Build(ICompositeActivityBuilder activity)
         {
-            composite
+            activity
                 .While(() => _phoneCallService.CallStatus != PhoneCallStatus.Finished,
                     @while =>
                     {

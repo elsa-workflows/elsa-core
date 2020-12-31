@@ -10,13 +10,13 @@ namespace Elsa.Builders
 {
     public class WorkflowBuilder : CompositeActivityBuilder, IWorkflowBuilder
     {
-        public WorkflowBuilder(IIdGenerator idGenerator, IServiceProvider serviceProvider) : base(idGenerator, serviceProvider)
+        public WorkflowBuilder(IIdGenerator idGenerator, IServiceProvider serviceProvider) : base(serviceProvider)
         {
             Version = 1;
             IsEnabled = true;
             Variables = new Variables();
             CustomAttributes = new Variables();
-
+            ActivityId = idGenerator.Generate();
             ActivityType = typeof(Workflow);
             WorkflowBuilder = this;
             PropertyValueProviders = new Dictionary<string, IActivityPropertyValueProvider>();

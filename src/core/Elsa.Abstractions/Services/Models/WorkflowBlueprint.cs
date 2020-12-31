@@ -31,9 +31,10 @@ namespace Elsa.Services.Models
             bool deleteCompletedInstances,
             IEnumerable<IActivityBlueprint> activities,
             IEnumerable<IConnection> connections,
-            IActivityPropertyProviders activityPropertyValueProviders) : base(id, name, displayName, description, id, true, false, false)
+            IActivityPropertyProviders activityPropertyValueProviders) : base(id, default, name, displayName, description, id, true, false, false)
         {
             Id = id;
+            Parent = this;
             Version = version;
             TenantId = tenantId;
             IsSingleton = isSingleton;

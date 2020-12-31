@@ -6,6 +6,7 @@ using Elsa.Models;
 using Elsa.Persistence.Specifications;
 using Elsa.Persistence.YesSql.Documents;
 using Elsa.Persistence.YesSql.Indexes;
+using NodaTime;
 using YesSql;
 using IIdGenerator = Elsa.Services.IIdGenerator;
 
@@ -13,8 +14,17 @@ namespace Elsa.Persistence.YesSql.Stores
 {
     public class YesSqlWorkflowInstanceStore : YesSqlStore<WorkflowInstance, WorkflowInstanceDocument>, IWorkflowInstanceStore
     {
-        public YesSqlWorkflowInstanceStore(ISession session, IIdGenerator idGenerator, IMapper mapper) : base(session, idGenerator, mapper, CollectionNames.WorkflowInstances)
+        private readonly IClock _clock;
+
+        public YesSqlWorkflowInstanceStore(ISession session, IIdGenerator idGenerator, IMapper mapper, IClock clock) : base(session, idGenerator, mapper, CollectionNames.WorkflowInstances)
         {
+            _clock = clock;
+        }
+
+        public override async Task SaveAsync(WorkflowInstance entity, CancellationToken cancellationToken = default)
+        {
+            entity.LastSavedAt = _clock.GetCurrentInstant();
+            await base.SaveAsync(entity, cancellationToken);
         }
 
         protected override async Task<WorkflowInstanceDocument?> FindDocumentAsync(WorkflowInstance entity, CancellationToken cancellationToken) => await Query<WorkflowInstanceIndex>(x => x.InstanceId == entity.Id).FirstOrDefaultAsync();
