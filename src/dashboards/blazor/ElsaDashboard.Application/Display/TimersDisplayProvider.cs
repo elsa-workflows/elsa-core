@@ -1,7 +1,5 @@
 ﻿using System.Collections.Generic;
-using ElsaDashboard.Application.Activities;
 using ElsaDashboard.Application.Activities.Timers;
-using ElsaDashboard.Extensions;
 using ElsaDashboard.Models;
 using ElsaDashboard.Services;
 

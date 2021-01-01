@@ -45,7 +45,6 @@ namespace Elsa.Services
         protected ScheduleActivitiesResult Schedule(IEnumerable<string> activityIds, object? input) => new(activityIds, input);
         protected ScheduleActivitiesResult Schedule(string activityId, object? input) => Schedule(new[] { activityId }, input);
         protected ScheduleActivitiesResult Schedule(IEnumerable<ScheduledActivity> activities) => new(activities);
-        protected PostScheduleActivitiesResult PostSchedule(params string[] activityIds) => new(activityIds);
         protected CombinedResult Combine(IEnumerable<IActivityExecutionResult> results) => new(results);
         protected CombinedResult Combine(params IActivityExecutionResult[] results) => new(results);
         protected FaultResult Fault(LocalizedString message) => new(message);

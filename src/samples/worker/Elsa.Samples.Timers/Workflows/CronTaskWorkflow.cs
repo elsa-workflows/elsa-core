@@ -3,7 +3,7 @@ using Elsa.Activities.Console;
 using Elsa.Activities.Timers;
 using Elsa.Builders;
 
-namespace Elsa.Samples.Timers
+namespace Elsa.Samples.Timers.Workflows
 {
     public class CronTaskWorkflow : IWorkflow
     {

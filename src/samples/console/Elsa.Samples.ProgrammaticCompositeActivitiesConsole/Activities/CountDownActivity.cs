@@ -1,6 +1,6 @@
-﻿using Elsa.Activities.Console;
+﻿using System;
+using Elsa.Activities.Console;
 using Elsa.Activities.ControlFlow;
-using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Builders;
 using Elsa.Services;
@@ -20,11 +20,13 @@ namespace Elsa.Samples.ProgrammaticCompositeActivitiesConsole.Activities
                 .StartWith(GetInstructions)
                 .WriteLine(context => (string)context.Input)
                 .ReadLine()
-                .Finish(context => (string) context.Input);
+                .IfElse(context => string.Equals(context.GetInput<string>(), "left", StringComparison.CurrentCultureIgnoreCase), ifElse =>
+                {
+                    ifElse.When(IfElse.True).WriteLine("We're going left");
+                    ifElse.When(IfElse.False).WriteLine("We're going right");
+                });
         }
 
-        protected override IActivityExecutionResult Complete(ActivityExecutionContext context) => Outcome(((string) context.WorkflowExecutionContext.WorkflowInstance.Output)!);
-        
         private static void GetInstructions(ActivityExecutionContext context) => context.Output = "Turn left or right?";
     }
 }

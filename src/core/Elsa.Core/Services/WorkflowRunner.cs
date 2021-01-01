@@ -1,9 +1,7 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Activities.ControlFlow;
 using Elsa.ActivityProviders;
 using Elsa.ActivityResults;
 using Elsa.Builders;
@@ -301,59 +299,21 @@ namespace Elsa.Services
                     {
                         var parentActivityBlueprint = inboundConnection.Source.Activity;
 
-                        if (parentActivityBlueprint.Type == nameof(While) && inboundConnection.Source.Outcome == "Iterate")
+                        if (inboundConnection.Source.Outcome == "Iterate") // This covers While/For/ForEach/ParallelForEach based on the convention of having an unclosed "Iterate" branch. This should be refactored by allowing activities to explicitly opt-in to being rescheduled once there are no more scheduled activities.
                         {
                             workflowExecutionContext.ScheduleActivity(parentActivityBlueprint.Id);
                             break;
                         }
-
-                        // if (parentActivityBlueprint is CompositeActivityBlueprint)
-                        // {
-                        //     workflowExecutionContext.ScheduleActivity(parentActivityBlueprint.Id);
-                        //     break;
-                        // }
                     }
-                    
-                    // Schedule the parent activity, if any
+                }
+                
+                if (!workflowExecutionContext.HasScheduledActivities && workflowExecutionContext.Status == WorkflowStatus.Running)
+                {
+                    // Re-schedule the parent activity, if any
                     if (activityBlueprint.Parent != null && workflowBlueprint.GetActivity(activityBlueprint.Parent.Id) != null)
                     {
                         workflowExecutionContext.ScheduleActivity(activityBlueprint.Parent.Id);
                     }
-                    
-                    // Find first parent that requires rescheduling for reevaluation.
-                    // var parents = workflowBlueprint.GetInboundActivityPath(currentActivityId).ToList();
-                    //
-                    // foreach (var parentId in parents)
-                    // {
-                    //     var parentActivityBlueprint = workflowBlueprint.GetActivity(parentId)!;
-                    //
-                    //     if (parentActivityBlueprint.Type == nameof(While) || parentActivityBlueprint is ICompositeActivityBlueprint)
-                    //     {
-                    //         workflowExecutionContext.ScheduleActivity(parentId);
-                    //         break;
-                    //     }
-                    // }
-                    
-                    // if (scheduledActivity.ParentId != null)
-                    // {
-                    //     workflowExecutionContext.ScheduleActivity(scheduledActivity.ParentId, null, null);
-                    // }
-                    //
-                    // if (workflowExecutionContext.HasPostScheduledActivities)
-                    // {
-                    //     workflowExecutionContext.SchedulePostActivity();
-                    //     
-                    //     // // Get children of current activity's parent.
-                    //     // var parentActivity = activityBlueprint.Parent;
-                    //     // var childActivities = workflowBlueprint.Activities.Where(x => x.Parent == parentActivity).ToList();
-                    //     // var childActivityIds = childActivities.Select(x => x.Id).ToList();
-                    //     // var scheduledPostActivities = workflowExecutionContext.WorkflowInstance.PostScheduledActivities.Where(x => childActivityIds.Contains(x.ActivityId)).ToList();
-                    //     //
-                    //     // foreach (var scheduledPostActivity in scheduledPostActivities) 
-                    //     //     workflowExecutionContext.ScheduleActivity(scheduledPostActivity);
-                    //     //
-                    //     // workflowExecutionContext.WorkflowInstance.PostScheduledActivities = new Stack<ScheduledActivity>(workflowExecutionContext.WorkflowInstance.PostScheduledActivities.Where(x => !childActivityIds.Contains(x.ActivityId)).Reverse().ToList());
-                    // }
                 }
             }
 

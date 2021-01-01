@@ -33,7 +33,6 @@ namespace Elsa.Services.Models
         public JsonSerializer Serializer { get; }
         public object? Input { get; }
         public bool HasScheduledActivities => WorkflowInstance.ScheduledActivities.Any();
-        public bool HasPostScheduledActivities => WorkflowInstance.PostScheduledActivities.Any();
         public IWorkflowFault? WorkflowFault { get; private set; }
         public bool IsFirstPass { get; private set; }
         public bool ContextHasChanged { get; set; }
@@ -55,16 +54,8 @@ namespace Elsa.Services.Models
                 ScheduleActivity(activity);
         }
 
-        public void PostScheduleActivities(IEnumerable<ScheduledActivity> activities)
-        {
-            foreach (var activity in activities)
-                PostScheduleActivity(activity);
-        }
-
         public void ScheduleActivity(string activityId, object? input = default) => ScheduleActivity(new ScheduledActivity(activityId, input));
         public void ScheduleActivity(ScheduledActivity activity) => WorkflowInstance.ScheduledActivities.Push(activity);
-        public void PostScheduleActivity(string activityId, object? input = default) => PostScheduleActivity(new ScheduledActivity(activityId, input));
-        public void PostScheduleActivity(ScheduledActivity activity) => WorkflowInstance.PostScheduledActivities.Push(activity);
         public ScheduledActivity PopScheduledActivity() => WorkflowInstance.ScheduledActivities.Pop();
         public ScheduledActivity PeekScheduledActivity() => WorkflowInstance.ScheduledActivities.Peek();
 
@@ -101,12 +92,6 @@ namespace Elsa.Services.Models
 
         public IActivityBlueprint? GetActivityBlueprintById(string id) => WorkflowBlueprint.Activities.FirstOrDefault(x => x.Id == id);
         public IActivityBlueprint? GetActivityBlueprintByName(string name) => WorkflowBlueprint.Activities.FirstOrDefault(x => x.Name == name);
-
-        public void SchedulePostActivity()
-        {
-            var activity = WorkflowInstance.PostScheduledActivities.Pop();
-            ScheduleActivity(activity);
-        }
 
         public object? GetOutputFrom(string activityName)
         {

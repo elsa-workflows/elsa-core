@@ -118,6 +118,15 @@ namespace Elsa
             WorkflowFactory.Add(workflow.GetType(), workflow);
             return this;
         }
+        
+        public ElsaOptions AddWorkflow<T>(Func<IServiceProvider, T> workflow) where T: class, IWorkflow
+        {
+            Services.AddSingleton<T>(workflow);
+            Services.AddSingleton<IWorkflow>(sp => sp.GetRequiredService<T>());
+            WorkflowFactory.Add(typeof(T), sp => sp.GetRequiredService<T>());
+            
+            return this;
+        }
 
         public ElsaOptions AddWorkflowsFrom<T>() => AddWorkflowsFrom(typeof(T).Assembly);
         

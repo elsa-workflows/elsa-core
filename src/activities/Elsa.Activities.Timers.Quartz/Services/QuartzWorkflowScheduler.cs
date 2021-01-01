@@ -63,8 +63,8 @@ namespace Elsa.Activities.Timers.Quartz.Services
 
             var existingTrigger = await scheduler.GetTrigger(trigger, cancellationToken);
 
-            // if (existingTrigger != null)
-            //     await scheduler.UnscheduleJob(existingTrigger.Key, cancellationToken);
+            if (existingTrigger != null)
+                await scheduler.UnscheduleJob(existingTrigger.Key, cancellationToken);
         }
 
         private async Task ScheduleJob(ITrigger trigger, CancellationToken cancellationToken)
@@ -76,8 +76,8 @@ namespace Elsa.Activities.Timers.Quartz.Services
                 var scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
                 var existingTrigger = await scheduler.GetTrigger(trigger.Key, cancellationToken);
 
-                // if (existingTrigger != null)
-                //     await scheduler.UnscheduleJob(existingTrigger.Key, cancellationToken);
+                if (existingTrigger != null)
+                    await scheduler.UnscheduleJob(existingTrigger.Key, cancellationToken);
 
                 await scheduler.ScheduleJob(trigger, cancellationToken);
             }
@@ -104,7 +104,7 @@ namespace Elsa.Activities.Timers.Quartz.Services
         private TriggerKey CreateTriggerKey(string? tenantId, string workflowDefinitionId, string? workflowInstanceId, string activityId)
         {
             var groupName = $"tenant:{tenantId ?? "default"}-workflow-instance:{workflowInstanceId ?? workflowDefinitionId}";
-            return new TriggerKey($"activity:{activityId}:{Guid.NewGuid()}", groupName);
+            return new TriggerKey($"activity:{activityId}", groupName);
         }
     }
 }

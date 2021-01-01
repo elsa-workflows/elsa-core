@@ -5,7 +5,7 @@ using Elsa.Builders;
 using Elsa.Services;
 using NodaTime;
 
-namespace Elsa.Samples.Timers
+namespace Elsa.Samples.Timers.Activities
 {
     public class MyContainer1 : CompositeActivity
     {
