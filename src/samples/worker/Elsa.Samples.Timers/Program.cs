@@ -21,14 +21,14 @@ namespace Elsa.Samples.Timers
                             .AddElsa(options => options.UseYesSqlPersistence()
                                 .AddConsoleActivities()
                                 .AddQuartzTimerActivities()
-                                //.AddWorkflow<RecurringTaskWorkflow>()
+                                .AddWorkflow<RecurringTaskWorkflow>()
                                 .AddActivity<MyContainer1>()
                                 .AddActivity<MyContainer2>()
                                 .AddWorkflow<CancelTimerWorkflow>()
-                                //.AddWorkflow<CronTaskWorkflow>()
-                                //.AddWorkflow(sp => ActivatorUtilities.CreateInstance<OneOffWorkflow>(sp, sp.GetRequiredService<IClock>().GetCurrentInstant().Plus(Duration.FromSeconds(5)), sp.GetRequiredService<IClock>()))
+                                .AddWorkflow<CronTaskWorkflow>()
+                                .AddWorkflow(sp => ActivatorUtilities.CreateInstance<OneOffWorkflow>(sp, sp.GetRequiredService<IClock>().GetCurrentInstant().Plus(Duration.FromSeconds(5))))
                             )
-                            //.StartWorkflow<RecurringTaskWorkflow>()
+                            .StartWorkflow<RecurringTaskWorkflow>()
                             ;
                     });
     }

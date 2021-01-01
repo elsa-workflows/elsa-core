@@ -41,6 +41,5 @@ namespace Elsa.Client.Models
         
         [DataMember(Order = 16)] public WorkflowFault? Fault { get; set; }
         [DataMember(Order = 17)] public Stack<ScheduledActivity> ScheduledActivities { get; set; }
-        [DataMember(Order = 18)]public Stack<string> ParentActivities { get; set; }
     }
 }

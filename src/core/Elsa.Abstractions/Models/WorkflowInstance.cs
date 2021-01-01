@@ -13,7 +13,6 @@ namespace Elsa.Models
             Variables = new Variables();
             Activities = new List<ActivityInstance>();
             ScheduledActivities = new Stack<ScheduledActivity>();
-            ParentActivities = new Stack<string>();
         }
         
         public string DefinitionId { get; set; } = default!;
@@ -42,6 +41,5 @@ namespace Elsa.Models
         
         public WorkflowFault? Fault { get; set; }
         public Stack<ScheduledActivity> ScheduledActivities { get; set; }
-        public Stack<string> ParentActivities { get; set; }
     }
 }
