@@ -1,3 +1,4 @@
+using System.Linq;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Services;
@@ -8,7 +9,7 @@ namespace Elsa.Activities.ControlFlow
 {
     [Activity(
         Category = "Workflows",
-        Description = "Removes any blocking activities and sets the status of the workflow to Completed."
+        Description = "Removes any blocking activities from the current container (workflow or composite activity)."
     )]
     public class Finish : Activity
     {
@@ -17,8 +18,13 @@ namespace Elsa.Activities.ControlFlow
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
-            context.WorkflowExecutionContext.WorkflowInstance.BlockingActivities.Clear();
+            var parentBlueprint = context.ActivityBlueprint.Parent;
+            var blockingActivities = context.WorkflowExecutionContext.WorkflowInstance.BlockingActivities;
+            var blockingActivityIds = blockingActivities.Select(x => x.ActivityId).ToList();
+            var containedBlockingActivityIds = parentBlueprint == null ? blockingActivityIds : parentBlueprint.Activities.Where(x => blockingActivityIds.Contains(x.Id)).Select(x => x.Id).ToList();
 
+            blockingActivities.RemoveWhere(x => containedBlockingActivityIds.Contains(x.ActivityId));
+            
             return Done(OutputValue);
         }
     }

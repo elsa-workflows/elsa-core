@@ -34,7 +34,9 @@ namespace Elsa.Samples.Timers.Activities
                         .WriteLine("Timer C went off")
                         .Then("Join1");
                 })
-                .Add<Join>(join => join.WithMode(Join.JoinMode.WaitAny)).WithName("Join1").WriteLine("Container 1 Joined!");
+                .Add<Join>(join => join.WithMode(Join.JoinMode.WaitAny)).WithName("Join1")
+                .WriteLine("Container 1 Joined!")
+                .Finish();
         }
     }
 }

@@ -20,22 +20,23 @@ namespace Elsa.Samples.Timers.Activities
                     fork.When("C")
                         .Then<MyContainer1>()
                         .Then("Join2");
-                    
+
                     fork
                         .When("D")
                         .While(true, @while => @while
                             .Timer(Duration.FromSeconds(1))
                             .WriteLine("Timer D went off"))
                         .Then("Join2");
-                
+
                     fork
                         .When("E")
                         .Timer(Duration.FromSeconds(15))
                         .WriteLine("Timer E went off. Exiting fork.")
                         .Then("Join2");
                 })
-                .Add<Join>(join => join.WithMode(Join.JoinMode.WaitAny)).WithName("Join2").WriteLine("Container 2 Joined!")
-                ;
+                .Add<Join>(join => join.WithMode(Join.JoinMode.WaitAny)).WithName("Join2")
+                .WriteLine("Container 2 Joined!")
+                .Finish();
         }
     }
 }
