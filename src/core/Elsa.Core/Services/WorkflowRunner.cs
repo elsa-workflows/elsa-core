@@ -31,6 +31,7 @@ namespace Elsa.Services
         private readonly IWorkflowSelector _workflowSelector;
         private readonly IWorkflowInstanceStore _workflowInstanceManager;
         private readonly Func<IWorkflowBuilder> _workflowBuilderFactory;
+        private readonly IActivityTypeService _activityTypeService;
         private readonly IMediator _mediator;
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger _logger;
@@ -40,6 +41,7 @@ namespace Elsa.Services
             IWorkflowFactory workflowFactory,
             IWorkflowSelector workflowSelector,
             Func<IWorkflowBuilder> workflowBuilderFactory,
+            IActivityTypeService activityTypeService,
             IMediator mediator,
             IServiceProvider serviceProvider,
             ILogger<WorkflowRunner> logger, IWorkflowInstanceStore workflowInstanceStore)
@@ -47,6 +49,7 @@ namespace Elsa.Services
             _workflowRegistry = workflowRegistry;
             _workflowFactory = workflowFactory;
             _workflowBuilderFactory = workflowBuilderFactory;
+            _activityTypeService = activityTypeService;
             _mediator = mediator;
             _serviceProvider = serviceProvider;
             _logger = logger;
@@ -288,33 +291,10 @@ namespace Elsa.Services
 
                 activityOperation = Execute;
                 workflowExecutionContext.CompletePass();
+                await _mediator.Publish(new WorkflowExecutionPassCompleted(workflowExecutionContext, activityExecutionContext), cancellationToken);
 
-                // If there are no more scheduled activities and no suspension has been instructed, re-schedule any post-scheduled activities.
-                if (!workflowExecutionContext.HasScheduledActivities && workflowExecutionContext.Status == WorkflowStatus.Running)
-                {
-                    // Find any While/ForEach/ParallelForEach/For parent along the "Iterate" branch.
-                    var inboundConnections = workflowBlueprint.GetInboundConnectionPath(currentActivityId).ToList();
-
-                    foreach (var inboundConnection in inboundConnections)
-                    {
-                        var parentActivityBlueprint = inboundConnection.Source.Activity;
-
-                        if (inboundConnection.Source.Outcome == "Iterate") // This covers While/For/ForEach/ParallelForEach based on the convention of having an unclosed "Iterate" branch. This should be refactored by allowing activities to explicitly opt-in to being rescheduled once there are no more scheduled activities.
-                        {
-                            workflowExecutionContext.ScheduleActivity(parentActivityBlueprint.Id);
-                            break;
-                        }
-                    }
-                }
-                
-                if (!workflowExecutionContext.HasScheduledActivities && workflowExecutionContext.Status == WorkflowStatus.Running)
-                {
-                    // Re-schedule the parent activity, if any
-                    if (activityBlueprint.Parent != null && workflowBlueprint.GetActivity(activityBlueprint.Parent.Id) != null)
-                    {
-                        workflowExecutionContext.ScheduleActivity(activityBlueprint.Parent.Id);
-                    }
-                }
+                if (!workflowExecutionContext.HasScheduledActivities) 
+                    await _mediator.Publish(new WorkflowExecutionBurstCompleted(workflowExecutionContext, activityExecutionContext), cancellationToken);
             }
 
             if (workflowExecutionContext.HasBlockingActivities)

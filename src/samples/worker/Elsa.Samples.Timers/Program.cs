@@ -8,7 +8,7 @@ using NodaTime;
 
 namespace Elsa.Samples.Timers
 {
-    internal class Program
+    internal static class Program
     {
         private static async Task Main() => await CreateHostBuilder().UseConsoleLifetime().Build().RunAsync();
 
