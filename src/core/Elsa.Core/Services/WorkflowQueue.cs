@@ -3,32 +3,29 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Persistence;
-using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using NodaTime;
 
-namespace Elsa.Activities.Timers.Quartz.Services
+namespace Elsa.Services
 {
-    // TODO: Consider turning this into a global service to allow background, sequential execution of a given workflow instance (but allow for parallel execution of workflow instances with different definitions). Executing the same workflow instances sequentially prevents loss of data during update concurrency conflicts.
-    public class WorkflowRunnerQueue
+    public class WorkflowQueue : IWorkflowQueue
     {
         private readonly IBackgroundWorker _backgroundWorker;
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger _logger;
 
-        public WorkflowRunnerQueue(IBackgroundWorker backgroundWorker, IServiceProvider serviceProvider, ILogger<WorkflowRunnerQueue> logger)
+        public WorkflowQueue(IBackgroundWorker backgroundWorker, IServiceProvider serviceProvider, ILogger<WorkflowQueue> logger)
         {
             _backgroundWorker = backgroundWorker;
             _serviceProvider = serviceProvider;
             _logger = logger;
         }
 
-        public async Task Enqueue(string workflowInstanceId, string activityId, CancellationToken cancellationToken = default)
-        {
-            await _backgroundWorker.ScheduleTask(async () => await RunWorkflowAsync(workflowInstanceId, activityId, cancellationToken), cancellationToken);
-        }
+        public async Task Enqueue(string workflowInstanceId, string activityId, CancellationToken cancellationToken = default) => 
+            await _backgroundWorker.ScheduleTask(workflowInstanceId, async () => await RunWorkflowAsync(workflowInstanceId, activityId, cancellationToken), cancellationToken, Duration.FromMinutes(1));
 
-        private async Task RunWorkflowAsync(string workflowInstanceId, string activityId, CancellationToken cancellationToken = default)
+        private async ValueTask RunWorkflowAsync(string workflowInstanceId, string activityId, CancellationToken cancellationToken = default)
         {
             using var scope = _serviceProvider.CreateScope();
             var store = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();

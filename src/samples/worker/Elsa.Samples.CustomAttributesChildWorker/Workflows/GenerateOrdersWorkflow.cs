@@ -23,7 +23,7 @@ namespace Elsa.Samples.CustomAttributesChildWorker.Workflows
                 .Timer(Duration.FromSeconds(5))
                 .SetVariable("CustomerId", SelectRandomCustomerId)
                 .WriteLine(context => $"Creating a new order for customer {context.GetVariable<string>("CustomerId")}.")
-                .Then<SendRebusMessage>(message => message.Set(x => x.Message, context => new OrderReceived { CustomerId = context.GetVariable<string>("CustomerId") }));
+                .Then<SendRebusMessage>(message => message.Set(x => x.Message, context => new OrderReceived { CustomerId = context.GetVariable<string>("CustomerId")! }));
         }
 
         private string SelectRandomCustomerId()

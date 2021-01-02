@@ -13,14 +13,14 @@ namespace Elsa.Activities.Timers.Quartz.Jobs
         private readonly IWorkflowRunner _workflowRunner;
         private readonly IWorkflowRegistry _workflowRegistry;
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
-        private readonly WorkflowRunnerQueue _workflowRunnerQueue;
+        private readonly IWorkflowQueue _workflowQueue;
 
-        public RunQuartzWorkflowJob(IWorkflowRunner workflowRunner, IWorkflowRegistry workflowRegistry, IWorkflowInstanceStore workflowInstanceStore, WorkflowRunnerQueue workflowRunnerQueue)
+        public RunQuartzWorkflowJob(IWorkflowRunner workflowRunner, IWorkflowRegistry workflowRegistry, IWorkflowInstanceStore workflowInstanceStore, IWorkflowQueue workflowQueue)
         {
             _workflowRunner = workflowRunner;
             _workflowRegistry = workflowRegistry;
             _workflowInstanceStore = workflowInstanceStore;
-            _workflowRunnerQueue = workflowRunnerQueue;
+            _workflowQueue = workflowQueue;
         }
 
         public async Task Execute(IJobExecutionContext context)
@@ -47,7 +47,7 @@ namespace Elsa.Activities.Timers.Quartz.Jobs
             }
             else
             {
-                await _workflowRunnerQueue.Enqueue(workflowInstanceId, activityId, cancellationToken);
+                await _workflowQueue.Enqueue(workflowInstanceId, activityId, cancellationToken);
             }
         }
     }

@@ -33,7 +33,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
 
         private async Task OnMessageReceived(Message message, CancellationToken cancellationToken)
         {
-            await _backgroundWorker.ScheduleTask(async () => await TriggerWorkflowsAsync(message, cancellationToken), cancellationToken);
+            await _backgroundWorker.ScheduleTask(GetType().FullName, async () => await TriggerWorkflowsAsync(message, cancellationToken), cancellationToken);
             await _messageReceiver.CompleteAsync(message.SystemProperties.LockToken);
         }
 

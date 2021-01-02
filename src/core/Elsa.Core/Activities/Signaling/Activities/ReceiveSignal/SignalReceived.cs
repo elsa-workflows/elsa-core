@@ -33,7 +33,7 @@ namespace Elsa.Activities.Signaling
 
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
         {
-            var triggeredSignal = context.GetInput<Signal>();
+            var triggeredSignal = context.GetInput<Signal>()!;
             return Done(triggeredSignal.Input);
         }
     }
