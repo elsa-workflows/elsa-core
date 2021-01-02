@@ -1,8 +1,10 @@
 ﻿using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.ControlFlow;
 using Elsa.Events;
 using Elsa.Models;
+using Elsa.Services.Models;
 using MediatR;
 
 namespace Elsa.Handlers
@@ -58,8 +60,11 @@ namespace Elsa.Handlers
             // Re-schedule the parent activity, if any.
             if (activityBlueprint.Parent != null && workflowBlueprint.GetActivity(activityBlueprint.Parent.Id) != null)
             {
-                workflowExecutionContext.ScheduleActivity(activityBlueprint.Parent.Id);
+                var output = GetFinishOutput(workflowExecutionContext); 
+                workflowExecutionContext.ScheduleActivity(activityBlueprint.Parent.Id, output);
             }
         }
+
+        private static FinishOutput? GetFinishOutput(WorkflowExecutionContext workflowExecutionContext) => workflowExecutionContext.WorkflowInstance.Output as FinishOutput;
     }
 }

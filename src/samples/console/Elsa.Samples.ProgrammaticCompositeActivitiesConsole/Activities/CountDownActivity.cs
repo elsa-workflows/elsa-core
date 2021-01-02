@@ -1,10 +1,10 @@
-﻿using System;
-using Elsa.Activities.Console;
+﻿using Elsa.Activities.Console;
 using Elsa.Activities.ControlFlow;
 using Elsa.Attributes;
 using Elsa.Builders;
 using Elsa.Services;
 using Elsa.Services.Models;
+using NetBox.Extensions;
 
 namespace Elsa.Samples.ProgrammaticCompositeActivitiesConsole.Activities
 {
@@ -20,11 +20,7 @@ namespace Elsa.Samples.ProgrammaticCompositeActivitiesConsole.Activities
                 .StartWith(GetInstructions)
                 .WriteLine(context => (string)context.Input)
                 .ReadLine()
-                .IfElse(context => string.Equals(context.GetInput<string>(), "left", StringComparison.CurrentCultureIgnoreCase), ifElse =>
-                {
-                    ifElse.When(IfElse.True).WriteLine("We're going left");
-                    ifElse.When(IfElse.False).WriteLine("We're going right");
-                });
+                .Finish(context => context.GetInput<string>().Capitalize());
         }
 
         private static void GetInstructions(ActivityExecutionContext context) => context.Output = "Turn left or right?";

@@ -13,7 +13,11 @@ namespace Elsa.Samples.ProgrammaticCompositeActivitiesConsole.Workflows
             .WriteLine("Welcome to the Composite Activities demo workflow!")
             
             // A custom, composite activity
-            .Then<CountDownActivity>()
+            .Then<CountDownActivity>(countDown =>
+            {
+                countDown.When("Left").WriteLine("Where going left!");
+                countDown.When("Right").WriteLine("Where going right!");
+            })
             .WriteLine("Done")
         ;
     }
