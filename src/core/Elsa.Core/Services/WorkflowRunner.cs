@@ -236,7 +236,14 @@ namespace Elsa.Services
             if (!await CanExecuteAsync(workflowExecutionContext, activityBlueprint, input, cancellationToken))
                 return;
 
-            workflowExecutionContext.WorkflowInstance.BlockingActivities.RemoveWhere(x => x.ActivityId == activityBlueprint.Id);
+            var blockingActivities = workflowExecutionContext.WorkflowInstance.BlockingActivities.Where(x => x.ActivityId == activityBlueprint.Id).ToList();
+
+            foreach (var blockingActivity in blockingActivities)
+            {
+                workflowExecutionContext.WorkflowInstance.BlockingActivities.Remove(blockingActivity);
+                await _mediator.Publish(new BlockingActivityRemoved(workflowExecutionContext, blockingActivity), cancellationToken);
+            }
+            
             workflowExecutionContext.Resume();
             workflowExecutionContext.ScheduleActivity(activityBlueprint.Id, input);
             await RunAsync(workflowExecutionContext, Resume, cancellationToken);

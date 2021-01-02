@@ -108,6 +108,6 @@ namespace Elsa.Services.Models
         {
             var activityExecutionContexts = WorkflowBlueprint.Activities.Select(x => new ActivityExecutionContext(ServiceScope, this, x, null, CancellationToken.None));
             return await Task.WhenAll(activityExecutionContexts.Select(async x => await x.ActivateActivityAsync(cancellationToken)));
-        } 
+        }
     }
 }

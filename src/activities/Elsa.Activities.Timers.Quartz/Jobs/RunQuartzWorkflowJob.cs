@@ -35,20 +35,19 @@ namespace Elsa.Activities.Timers.Quartz.Jobs
 
             if (workflowInstanceId == null)
             {
-                if (workflowBlueprint.IsSingleton)
-                {
-                    var hasExecutingWorkflow = (await _workflowInstanceStore.FindAsync(new WorkflowIsAlreadyExecutingSpecification().WithTenant(tenantId).WithWorkflowDefinition(workflowDefinitionId), cancellationToken)) != null;
-
-                    if (hasExecutingWorkflow)
-                        return;
-                }
-
-                await _workflowRunner.RunWorkflowAsync(workflowBlueprint, activityId, cancellationToken: cancellationToken);
+                if (workflowBlueprint.IsSingleton || await GetWorkflowIsAlreadyExecutingAsync(tenantId, workflowDefinitionId) == false)
+                    await _workflowRunner.RunWorkflowAsync(workflowBlueprint, activityId, cancellationToken: cancellationToken);
             }
             else
             {
                 await _workflowQueue.Enqueue(workflowInstanceId, activityId, cancellationToken);
             }
+        }
+
+        private async Task<bool> GetWorkflowIsAlreadyExecutingAsync(string? tenantId, string workflowDefinitionId)
+        {
+            var specification = new TenantSpecification<WorkflowInstance>(tenantId).WithWorkflowDefinition(workflowDefinitionId).And(new WorkflowIsAlreadyExecutingSpecification());
+            return await _workflowInstanceStore.FindAsync(specification) != null;
         }
     }
 }
