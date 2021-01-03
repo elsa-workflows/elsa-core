@@ -172,7 +172,7 @@ namespace Elsa.Services
             object? workflowContext = default,
             CancellationToken cancellationToken = default)
         {
-            var workflowExecutionScope = _serviceProvider.CreateScope();
+            using var workflowExecutionScope = _serviceProvider.CreateScope();
             
             var workflowExecutionContext = new WorkflowExecutionContext(workflowExecutionScope, workflowBlueprint, workflowInstance, input)
             {
@@ -279,7 +279,7 @@ namespace Elsa.Services
 
         private async ValueTask RunCoreAsync(WorkflowExecutionContext workflowExecutionContext, ActivityOperation activityOperation, CancellationToken cancellationToken = default)
         {
-            using var scope = workflowExecutionContext.ServiceScope;
+            var scope = workflowExecutionContext.ServiceScope;
             var workflowBlueprint = workflowExecutionContext.WorkflowBlueprint;
 
             while (workflowExecutionContext.HasScheduledActivities)
@@ -289,6 +289,7 @@ namespace Elsa.Services
                 var activityBlueprint = workflowBlueprint.GetActivity(currentActivityId)!;
                 var activityExecutionContext = new ActivityExecutionContext(scope, workflowExecutionContext, activityBlueprint, scheduledActivity.Input, cancellationToken);
                 var activity = await activityExecutionContext.ActivateActivityAsync(cancellationToken);
+                _logger.LogDebug("Executing activity {ActivityType}: {ActivityId}", activityBlueprint.Type, currentActivityId);
                 var result = await activityOperation(activityExecutionContext, activity);
                 await _mediator.Publish(new ActivityExecuting(activityExecutionContext), cancellationToken);
                 await result.ExecuteAsync(activityExecutionContext, cancellationToken);
