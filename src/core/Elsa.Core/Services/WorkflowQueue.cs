@@ -23,7 +23,7 @@ namespace Elsa.Services
         }
 
         public async Task Enqueue(string workflowInstanceId, string activityId, CancellationToken cancellationToken = default) => 
-            await _backgroundWorker.ScheduleTask(workflowInstanceId, async () => await RunWorkflowAsync(workflowInstanceId, activityId, cancellationToken), cancellationToken, Duration.FromMinutes(1));
+            await _backgroundWorker.ScheduleTask(workflowInstanceId, async () => await RunWorkflowAsync(workflowInstanceId, activityId, cancellationToken), cancellationToken, Duration.FromMinutes(5));
 
         private async ValueTask RunWorkflowAsync(string workflowInstanceId, string activityId, CancellationToken cancellationToken = default)
         {
@@ -34,7 +34,7 @@ namespace Elsa.Services
             if (!ValidatePreconditions(workflowInstanceId, workflowInstance))
                 return;
 
-            _logger.LogDebug("Running {WorkflowInstanceId} with status {WorkflowStatus}.", workflowInstance!.WorkflowStatus);
+            _logger.LogDebug("Running {WorkflowInstanceId} with status {WorkflowStatus}.", workflowInstanceId, workflowInstance!.WorkflowStatus);
             
             var workflowDefinitionId = workflowInstance!.DefinitionId;
             var tenantId = workflowInstance.TenantId;
