@@ -10,6 +10,7 @@ namespace Elsa.Services
     public class BackgroundWorker : IBackgroundWorker
     {
         private readonly IDictionary<string, Channel<Func<ValueTask>>> _channels = new Dictionary<string, Channel<Func<ValueTask>>>();
+        private readonly SemaphoreSlim _semaphore = new(1);
 
         public async Task ScheduleTask(string channelName, Func<ValueTask> task, CancellationToken cancellationToken, Duration? channelTtl)
         {
@@ -28,17 +29,26 @@ namespace Elsa.Services
 
         private Channel<Func<ValueTask>> GetOrCreateChannel(string channelName, Duration? channelTtl, CancellationToken cancellationToken)
         {
-            var channel = _channels.ContainsKey(channelName) ? _channels[channelName] : default;
+            _semaphore.Wait(cancellationToken);
 
-            if (channel != null)
+            try
+            {
+                var channel = _channels.ContainsKey(channelName) ? _channels[channelName] : default;
+
+                if (channel != null)
+                    return channel;
+
+                channel = Channel.CreateBounded<Func<ValueTask>>(10);
+                _channels[channelName] = channel;
+                var reader = new BackgroundChannelReader(channel, () => CompleteChannel(channelName));
+                reader.Start(channelTtl, cancellationToken);
+
                 return channel;
-
-            channel = Channel.CreateBounded<Func<ValueTask>>(10);
-            _channels[channelName] = channel;
-            var reader = new BackgroundChannelReader(channel, () => CompleteChannel(channelName));
-            reader.Start(channelTtl, cancellationToken);
-
-            return channel;
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
         }
 
         private void CompleteChannel(string name)
