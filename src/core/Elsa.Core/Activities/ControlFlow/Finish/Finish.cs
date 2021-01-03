@@ -18,7 +18,7 @@ namespace Elsa.Activities.ControlFlow
         public object? OutputValue { get; set; }
         
         [ActivityProperty(Hint = "The outcome to set on the container activity")]
-        public string? Outcome { get; set; }
+        public string? OutcomeName { get; set; }
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
@@ -28,7 +28,7 @@ namespace Elsa.Activities.ControlFlow
             var containedBlockingActivityIds = parentBlueprint == null ? blockingActivityIds : parentBlueprint.Activities.Where(x => blockingActivityIds.Contains(x.Id)).Select(x => x.Id).ToList();
 
             blockingActivities.RemoveWhere(x => containedBlockingActivityIds.Contains(x.ActivityId));
-            var output = new FinishOutput(OutputValue, Outcome);
+            var output = new FinishOutput(OutputValue, OutcomeName);
             context.WorkflowExecutionContext.WorkflowInstance.Output = output;
             return Done(output);
         }
