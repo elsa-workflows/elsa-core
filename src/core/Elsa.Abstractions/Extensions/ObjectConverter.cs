@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+﻿using System;
+using System.ComponentModel;
 using NodaTime;
 using NodaTime.Text;
 
@@ -21,7 +22,10 @@ namespace Elsa
                 return (T?)((object?)DurationPattern.JsonRoundtrip.Parse(value!.ToString()).Value)!;
             
             var converter = TypeDescriptor.GetConverter(typeof(T));
-            return converter.CanConvertFrom(value.GetType()) ? (T?) converter.ConvertFrom(value) : default;
+            if (converter.CanConvertFrom(value.GetType()))
+                return (T?)converter.ConvertFrom(value);
+
+            return (T?)Convert.ChangeType(value, typeof(T));
         }
     }
 }

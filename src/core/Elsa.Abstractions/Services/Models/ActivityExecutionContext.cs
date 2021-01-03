@@ -31,10 +31,18 @@ namespace Elsa.Services.Models
         public IServiceScope ServiceScope { get; }
         public IActivityBlueprint ActivityBlueprint { get; }
         public ActivityInstance ActivityInstance { get; }
+        public ActivityInstance? ParentActivityInstance => WorkflowExecutionContext.WorkflowInstance.Activities.FirstOrDefault(x => x.Id == ActivityBlueprint.Parent?.Id);
         public IReadOnlyCollection<string> Outcomes { get; set; }
         public object? Input { get; }
         public CancellationToken CancellationToken { get; }
         public JObject Data => ActivityInstance.Data;
+        public JObject? ParentData => ParentActivityInstance?.Data;
+        
+        public T? GetParentState<T>(string key)
+        {
+            var parentData = ParentData;
+            return parentData == null ? default : parentData.GetState<T>(key);
+        }
 
         public object? Output
         {

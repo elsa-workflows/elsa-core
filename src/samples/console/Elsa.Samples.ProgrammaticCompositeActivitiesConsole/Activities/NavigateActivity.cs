@@ -12,7 +12,7 @@ namespace Elsa.Samples.ProgrammaticCompositeActivitiesConsole.Activities
     /// Custom activities that inherit from <seealso cref="CompositeActivity"/> declare their own mini-workflow.
     /// </summary>
     [Action(Outcomes = new[] { "Left", "Right" })]
-    public class CountDownActivity : CompositeActivity
+    public class NavigateActivity : CompositeActivity
     {
         public override void Build(ICompositeActivityBuilder activity)
         {

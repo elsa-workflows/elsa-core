@@ -3,6 +3,7 @@ using Elsa.Samples.ProgrammaticCompositeActivitiesConsole.Activities;
 using Elsa.Samples.ProgrammaticCompositeActivitiesConsole.Workflows;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Samples.ProgrammaticCompositeActivitiesConsole
 {
@@ -12,9 +13,11 @@ namespace Elsa.Samples.ProgrammaticCompositeActivitiesConsole
         {
             // Create a service container with Elsa services.
             var services = new ServiceCollection()
+                .AddLogging(logging => logging.AddConsole())
                 .AddElsa(options => options
                     .AddConsoleActivities()
-                    .AddActivity<CountDownActivity>()
+                    .AddActivity<NavigateActivity>()
+                    .AddActivity<CountdownActivity>()
                     .AddWorkflow<CompositionWorkflow>())
                 .BuildServiceProvider();
 

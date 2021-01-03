@@ -12,6 +12,7 @@ namespace Elsa.Activities.ControlFlow
         public static IActivityBuilder Finish(this IBuilder builder, Func<ActivityExecutionContext, ValueTask<object?>> output) => builder.Finish(activity => activity.WithOutput(output));
         public static IActivityBuilder Finish(this IBuilder builder, Func<ActivityExecutionContext, object?> output) => builder.Finish(activity => activity.WithOutput(output));
         public static IActivityBuilder Finish(this IBuilder builder, Func<object?> output) => builder.Finish(activity => activity.WithOutput(output));
+        public static IActivityBuilder Finish(this IBuilder builder, object? output) => builder.Finish(activity => activity.WithOutput(output));
 
         public static IActivityBuilder Finish(this IBuilder builder, Func<ActivityExecutionContext, ValueTask<string?>> outcome) => builder.Finish(activity => activity.WithOutcome(outcome));
         public static IActivityBuilder Finish(this IBuilder builder, Func<ActivityExecutionContext, string?> outcome) => builder.Finish(activity => activity.WithOutcome(outcome));

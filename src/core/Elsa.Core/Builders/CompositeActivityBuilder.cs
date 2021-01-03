@@ -141,6 +141,11 @@ namespace Elsa.Builders
             var activityBlueprintDictionary = activityBlueprints.ToDictionary(x => x.Id);
             connections.AddRange(ConnectionBuilders.Select(x => new Connection(activityBlueprintDictionary[x.Source().ActivityId], activityBlueprintDictionary[x.Target().ActivityId], x.Outcome)));
             
+            
+            compositeActivityBlueprint.Connections = connections;
+            compositeActivityBlueprint.Activities = activityBlueprints;
+            compositeActivityBlueprint.ActivityPropertyProviders = new ActivityPropertyProviders(activityPropertyProviders);
+            
             // Build composite activities.
             var compositeActivityBuilders = activityBuilders.Where(x => typeof(CompositeActivity).IsAssignableFrom(x.ActivityType));
             BuildCompositeActivities(compositeActivityBuilders, activityBlueprints, connections, activityPropertyProviders);
@@ -149,10 +154,6 @@ namespace Elsa.Builders
                 activityBuilders
                     .Select(x => (x.ActivityId, x.PropertyValueProviders))
                     .ToDictionary(x => x.ActivityId!, x => x.PropertyValueProviders!));
-
-            compositeActivityBlueprint.Connections = connections;
-            compositeActivityBlueprint.Activities = activityBlueprints;
-            compositeActivityBlueprint.ActivityPropertyProviders = new ActivityPropertyProviders(activityPropertyProviders);
 
             return compositeActivityBlueprint;
         }

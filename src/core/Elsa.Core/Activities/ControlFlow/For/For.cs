@@ -48,7 +48,7 @@ namespace Elsa.Activities.ControlFlow
             if (loop)
             {
                 CurrentValue = currentValue + Step;
-                return Combine(Schedule(Id), Output(currentValue), Outcome(OutcomeNames.Iterate));
+                return Outcome(OutcomeNames.Iterate, currentValue);
             }
 
             CurrentValue = null;
