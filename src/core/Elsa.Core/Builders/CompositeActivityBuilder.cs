@@ -134,13 +134,15 @@ namespace Elsa.Builders
             // Assign automatic ids to activity builders
             var index = 0;
 
-            foreach (var activityBuilder in activityBuilders.Where(x => string.IsNullOrWhiteSpace(x.ActivityId)))
-                activityBuilder.ActivityId = $"{activityIdPrefix}-{++index}";
+            foreach (var activityBuilder in activityBuilders)
+            {
+                var activityId = activityBuilder.ActivityId;
+                activityBuilder.ActivityId = string.IsNullOrWhiteSpace(activityId) ? $"{activityIdPrefix}-{++index}" : $"{activityIdPrefix}-{activityId}";
+            }
 
             activityBlueprints.AddRange(activityBuilders.Select(x => BuildActivityBlueprint(x, compositeActivityBlueprint)));
             var activityBlueprintDictionary = activityBlueprints.ToDictionary(x => x.Id);
             connections.AddRange(ConnectionBuilders.Select(x => new Connection(activityBlueprintDictionary[x.Source().ActivityId], activityBlueprintDictionary[x.Target().ActivityId], x.Outcome)));
-            
             
             compositeActivityBlueprint.Connections = connections;
             compositeActivityBlueprint.Activities = activityBlueprints;
