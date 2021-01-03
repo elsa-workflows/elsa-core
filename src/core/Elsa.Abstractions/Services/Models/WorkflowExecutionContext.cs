@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -71,6 +72,36 @@ namespace Elsa.Services.Models
         public bool HasBlockingActivities => WorkflowInstance.BlockingActivities.Any();
         public object? WorkflowContext { get; set; }
 
+        /// <summary>
+        /// A collection of tasks to execute post-workflow burst execution.
+        /// </summary>
+        public IDictionary<string, ICollection<Func<WorkflowExecutionContext, CancellationToken, ValueTask>>> Tasks { get; set; } = new Dictionary<string, ICollection<Func<WorkflowExecutionContext, CancellationToken, ValueTask>>>();
+
+        public void RegisterTask(string groupName, Func<WorkflowExecutionContext, CancellationToken, ValueTask> task)
+        {
+            if (!Tasks.ContainsKey(groupName))
+            {
+                var list = new List<Func<WorkflowExecutionContext, CancellationToken, ValueTask>> { task };
+                Tasks[groupName] = list;
+            }
+            else
+            {
+                Tasks[groupName].Add(task);
+            }
+        }
+
+        public IEnumerable<Func<WorkflowExecutionContext, CancellationToken, ValueTask>> GetRegisteredTasks(string groupName) => Tasks.ContainsKey(groupName) ? Tasks[groupName] : Enumerable.Empty<Func<WorkflowExecutionContext, CancellationToken, ValueTask>>();
+
+        public async ValueTask ExecuteRegisteredTasksAsync(string groupName, CancellationToken cancellationToken = default)
+        {
+            var tasks = GetRegisteredTasks(groupName);
+            
+            foreach (var task in tasks) 
+                await task(this, cancellationToken);
+            
+            Tasks.Remove(groupName);
+        }
+
         public void SetVariable(string name, object? value) => WorkflowInstance.Variables.Set(name, value);
         public T? GetVariable<T>(string name) => WorkflowInstance.Variables.Get<T>(name);
         public object? GetVariable(string name) => WorkflowInstance.Variables.Get(name);
@@ -100,9 +131,9 @@ namespace Elsa.Services.Models
             return activityInstance.Output;
         }
 
-        public T GetOutputFrom<T>(string activityName) => (T)GetOutputFrom(activityName)!;
+        public T GetOutputFrom<T>(string activityName) => (T) GetOutputFrom(activityName)!;
         public void SetWorkflowContext(object? value) => WorkflowContext = value;
-        public T GetWorkflowContext<T>() => (T)WorkflowContext!;
+        public T GetWorkflowContext<T>() => (T) WorkflowContext!;
 
         public async ValueTask<IEnumerable<RuntimeActivityInstance>> ActivateActivitiesAsync(CancellationToken cancellationToken = default)
         {
