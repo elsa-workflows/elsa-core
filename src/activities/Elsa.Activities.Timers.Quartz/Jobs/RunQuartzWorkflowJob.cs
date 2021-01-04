@@ -1,11 +1,9 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
-
+﻿using System.Threading.Tasks;
+using Elsa.Activities.Timers.Quartz.Services;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications;
 using Elsa.Services;
-using Microsoft.Extensions.Logging;
 using Quartz;
 
 namespace Elsa.Activities.Timers.Quartz.Jobs
@@ -15,14 +13,14 @@ namespace Elsa.Activities.Timers.Quartz.Jobs
         private readonly IWorkflowRunner _workflowRunner;
         private readonly IWorkflowRegistry _workflowRegistry;
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
-        private readonly ILogger _logger;
+        private readonly IWorkflowQueue _workflowQueue;
 
-        public RunQuartzWorkflowJob(IWorkflowRunner workflowRunner, IWorkflowRegistry workflowRegistry, IWorkflowInstanceStore workflowInstanceStore, ILogger<RunQuartzWorkflowJob> logger)
+        public RunQuartzWorkflowJob(IWorkflowRunner workflowRunner, IWorkflowRegistry workflowRegistry, IWorkflowInstanceStore workflowInstanceStore, IWorkflowQueue workflowQueue)
         {
             _workflowRunner = workflowRunner;
             _workflowRegistry = workflowRegistry;
             _workflowInstanceStore = workflowInstanceStore;
-            _logger = logger;
+            _workflowQueue = workflowQueue;
         }
 
         public async Task Execute(IJobExecutionContext context)
@@ -37,43 +35,19 @@ namespace Elsa.Activities.Timers.Quartz.Jobs
 
             if (workflowInstanceId == null)
             {
-                if (workflowBlueprint.IsSingleton)
-                {
-                    var hasExecutingWorkflow = (await _workflowInstanceStore.FindAsync(new WorkflowIsAlreadyExecutingSpecification().WithTenant(tenantId).WithWorkflowDefinition(workflowDefinitionId), cancellationToken)) != null;
-
-                    if (hasExecutingWorkflow)
-                        return;
-                }
-
-                await _workflowRunner.RunWorkflowAsync(workflowBlueprint, activityId, cancellationToken: cancellationToken);
+                if (workflowBlueprint.IsSingleton || await GetWorkflowIsAlreadyExecutingAsync(tenantId, workflowDefinitionId) == false)
+                    await _workflowRunner.RunWorkflowAsync(workflowBlueprint, activityId, cancellationToken: cancellationToken);
             }
             else
             {
-                var workflowInstance = await GetWorkflowInstanceAsync(workflowInstanceId, cancellationToken);
-
-                if (workflowInstance == null)
-                {
-                    _logger.LogError("Could not run Workflow instance with ID {WorkflowInstanceId} because it is not in the database", workflowInstanceId);
-                    return;
-                }
-
-                await _workflowRunner.RunWorkflowAsync(workflowBlueprint, workflowInstance!, activityId, cancellationToken: cancellationToken);
+                await _workflowQueue.Enqueue(workflowInstanceId, activityId, cancellationToken);
             }
         }
 
-        private async Task<WorkflowInstance?> GetWorkflowInstanceAsync(string workflowInstanceId, CancellationToken cancellationToken)
+        private async Task<bool> GetWorkflowIsAlreadyExecutingAsync(string? tenantId, string workflowDefinitionId)
         {
-            WorkflowInstance? workflowInstance = null;
-
-            for (var i = 0; i < TimerConsts.MaxRetrayGetWorkflow && workflowInstance == null; i++)
-            {
-                workflowInstance = await _workflowInstanceStore.FindByIdAsync(workflowInstanceId, cancellationToken);
-
-                if (workflowInstance == null) 
-                    Thread.Sleep(10000);
-            }
-
-            return workflowInstance;
+            var specification = new TenantSpecification<WorkflowInstance>(tenantId).WithWorkflowDefinition(workflowDefinitionId).And(new WorkflowIsAlreadyExecutingSpecification());
+            return await _workflowInstanceStore.FindAsync(specification) != null;
         }
     }
 }

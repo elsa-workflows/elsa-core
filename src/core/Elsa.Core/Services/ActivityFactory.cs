@@ -6,7 +6,7 @@ namespace Elsa.Services
 {
     public class ActivityFactory : IActivityFactory
     {
-        public ActivityInstance Instantiate(IActivityBlueprint activityBlueprint) => new ActivityInstance(
+        public ActivityInstance Instantiate(IActivityBlueprint activityBlueprint) => new(
             activityBlueprint.Id,
             activityBlueprint.Type,
             null,

@@ -15,7 +15,6 @@ namespace Elsa.Client.Models
             Variables = new Variables();
             Activities = new List<ActivityInstance>();
             ScheduledActivities = new Stack<ScheduledActivity>();
-            PostScheduledActivities = new Stack<ScheduledActivity>();
         }
 
         [DataMember(Order = 1)] public string Id { get; set; } = default!;
@@ -42,6 +41,5 @@ namespace Elsa.Client.Models
         
         [DataMember(Order = 16)] public WorkflowFault? Fault { get; set; }
         [DataMember(Order = 17)] public Stack<ScheduledActivity> ScheduledActivities { get; set; }
-        [DataMember(Order = 18)] public Stack<ScheduledActivity> PostScheduledActivities { get; set; }
     }
 }

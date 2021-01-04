@@ -1,6 +1,7 @@
 using System;
 using Elsa;
 using Elsa.Activities.Timers;
+using Elsa.Activities.Timers.Handlers;
 using Elsa.Activities.Timers.HostedServices;
 using Elsa.Activities.Timers.Options;
 using Elsa.Activities.Timers.Triggers;
@@ -16,6 +17,7 @@ namespace Microsoft.Extensions.DependencyInjection
             configure?.Invoke(timersOptions);
 
             options.Services
+                .AddNotificationHandlers(typeof(RemoveScheduledTriggers))
                 .AddHostedService<StartJobs>()
                 .AddTriggerProvider<TimerTriggerProvider>()
                 .AddTriggerProvider<CronTriggerProvider>()

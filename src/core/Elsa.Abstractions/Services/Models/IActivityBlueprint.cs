@@ -3,6 +3,7 @@
     public interface IActivityBlueprint
     {
         string Id { get; }
+        ICompositeActivityBlueprint? Parent { get; }
         string? Name { get; }
         string? DisplayName { get; }
         string? Description { get; }

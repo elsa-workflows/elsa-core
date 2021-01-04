@@ -31,10 +31,18 @@ namespace Elsa.Services.Models
         public IServiceScope ServiceScope { get; }
         public IActivityBlueprint ActivityBlueprint { get; }
         public ActivityInstance ActivityInstance { get; }
+        public ActivityInstance? ParentActivityInstance => WorkflowExecutionContext.WorkflowInstance.Activities.FirstOrDefault(x => x.Id == ActivityBlueprint.Parent?.Id);
         public IReadOnlyCollection<string> Outcomes { get; set; }
         public object? Input { get; }
         public CancellationToken CancellationToken { get; }
         public JObject Data => ActivityInstance.Data;
+        public JObject? ParentData => ParentActivityInstance?.Data;
+        
+        public T? GetParentState<T>(string key)
+        {
+            var parentData = ParentData;
+            return parentData == null ? default : parentData.GetState<T>(key);
+        }
 
         public object? Output
         {
@@ -42,14 +50,14 @@ namespace Elsa.Services.Models
             set => ActivityInstance.Output = value;
         }
 
-        public ActivityBlueprintWrapper<T> Parent<T>() where T : IActivity => new(new ActivityExecutionContext(ServiceScope, WorkflowExecutionContext,
-            WorkflowExecutionContext.GetActivityBlueprintById(WorkflowExecutionContext.WorkflowInstance.ParentActivities.Peek())!,
-            null, CancellationToken));
-
         public void SetVariable(string name, object? value) => WorkflowExecutionContext.SetVariable(name, value);
         public object? GetVariable(string name) => WorkflowExecutionContext.GetVariable(name);
-        public T GetVariable<T>(string name) => WorkflowExecutionContext.GetVariable<T>(name);
-        public T GetVariable<T>() => GetVariable<T>(typeof(T).Name);
+        public T? GetVariable<T>(string name) => WorkflowExecutionContext.GetVariable<T>(name);
+        public T? GetVariable<T>() => GetVariable<T>(typeof(T).Name);
+        public void SetTransientVariable(string name, object? value) => WorkflowExecutionContext.SetTransientVariable(name, value);
+        public object? GetTransientVariable(string name) => WorkflowExecutionContext.GetTransientVariable(name);
+        public T? GetTransientVariable<T>(string name) => WorkflowExecutionContext.GetTransientVariable<T>(name);
+        public T? GetTransientVariable<T>() => GetTransientVariable<T>(typeof(T).Name);
         public T GetService<T>() where T : notnull => ServiceScope.ServiceProvider.GetRequiredService<T>();
 
         public async ValueTask<RuntimeActivityInstance> ActivateActivityAsync(CancellationToken cancellationToken = default)

@@ -19,7 +19,7 @@ namespace Elsa.Samples.ContextualWorkflowHttp.Workflows
             // Demonstrating that we can create activities and connect to them later on by using the activity builder reference.
             var join = workflow.Add<Join>(x => x.WithMode(Join.JoinMode.WaitAny));
             join.Finish();
-            
+
             workflow
                 // The workflow context type of this workflow.
                 .WithContextType<Document>()
@@ -28,7 +28,7 @@ namespace Elsa.Samples.ContextualWorkflowHttp.Workflows
                 .ReceiveHttpPostRequest<Document>("/documents")
 
                 // Store the document as the workflow context. It will be saved automatically when the workflow gets suspended.
-                .Then(context => context.SetWorkflowContext(context.GetInput<HttpRequestModel>().GetBody<Document>())).LoadWorkflowContext()
+                .Then(context => context.SetWorkflowContext(context.GetInput<HttpRequestModel>()!.GetBody<Document>())).LoadWorkflowContext()
 
                 // Write an HTTP response. 
                 .WriteHttpResponse(
@@ -62,8 +62,8 @@ namespace Elsa.Samples.ContextualWorkflowHttp.Workflows
 
         private static void StoreComment(ActivityExecutionContext context)
         {
-            var document = (Document)context.WorkflowExecutionContext.WorkflowContext!;
-            var comment = (Comment)((HttpRequestModel)context.Input!).Body!;
+            var document = (Document) context.WorkflowExecutionContext.WorkflowContext!;
+            var comment = (Comment) ((HttpRequestModel) context.Input!).Body!;
             document.Comments.Add(comment);
         }
 

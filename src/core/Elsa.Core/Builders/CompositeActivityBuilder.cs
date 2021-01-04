@@ -10,16 +10,15 @@ namespace Elsa.Builders
 {
     public class CompositeActivityBuilder : ActivityBuilder, ICompositeActivityBuilder
     {
-        private readonly Func<ICompositeActivityBuilder> _workflowBuilderFactory;
+        private readonly Func<ICompositeActivityBuilder> _compositeActivityBuilderFactory;
 
-        public CompositeActivityBuilder(IIdGenerator idGenerator, IServiceProvider serviceProvider)
+        public CompositeActivityBuilder(IServiceProvider serviceProvider)
         {
             ServiceProvider = serviceProvider;
-            ActivityId = idGenerator.Generate();
             ActivityBuilders = new List<IActivityBuilder>();
             ConnectionBuilders = new List<IConnectionBuilder>();
 
-            _workflowBuilderFactory = () =>
+            _compositeActivityBuilderFactory = () =>
             {
                 var builder = serviceProvider.GetRequiredService<ICompositeActivityBuilder>();
                 builder.WorkflowBuilder = WorkflowBuilder;
@@ -54,7 +53,7 @@ namespace Elsa.Builders
 
             var valueProviders = propertyValuesBuilder.ValueProviders.ToDictionary(
                 x => x.Key,
-                x => (IActivityPropertyValueProvider)new DelegateActivityPropertyValueProvider(x.Value));
+                x => (IActivityPropertyValueProvider) new DelegateActivityPropertyValueProvider(x.Value));
 
             return New<T>(branch, valueProviders);
         }
@@ -122,6 +121,11 @@ namespace Elsa.Builders
 
         public ICompositeActivityBlueprint Build(string activityIdPrefix = "activity")
         {
+            var compositeActivityBlueprint = new CompositeActivityBlueprint
+            {
+                Id = ActivityId
+            };
+
             var activityBuilders = ActivityBuilders.ToList();
             var activityBlueprints = new List<IActivityBlueprint>();
             var connections = new List<IConnection>();
@@ -130,31 +134,30 @@ namespace Elsa.Builders
             // Assign automatic ids to activity builders
             var index = 0;
 
-            foreach (var activityBuilder in activityBuilders.Where(x => string.IsNullOrWhiteSpace(x.ActivityId)))
-                activityBuilder.ActivityId = $"{activityIdPrefix}-{++index}";
+            foreach (var activityBuilder in activityBuilders)
+            {
+                var activityId = activityBuilder.ActivityId;
+                activityBuilder.ActivityId = string.IsNullOrWhiteSpace(activityId) ? $"{activityIdPrefix}-{++index}" : $"{activityIdPrefix}-{activityId}";
+            }
 
-            activityBlueprints.AddRange(activityBuilders.Select(BuildActivityBlueprint));
-
+            activityBlueprints.AddRange(activityBuilders.Select(x => BuildActivityBlueprint(x, compositeActivityBlueprint)));
+            var activityBlueprintDictionary = activityBlueprints.ToDictionary(x => x.Id);
+            connections.AddRange(ConnectionBuilders.Select(x => new Connection(activityBlueprintDictionary[x.Source().ActivityId], activityBlueprintDictionary[x.Target().ActivityId], x.Outcome)));
+            
+            compositeActivityBlueprint.Connections = connections;
+            compositeActivityBlueprint.Activities = activityBlueprints;
+            compositeActivityBlueprint.ActivityPropertyProviders = new ActivityPropertyProviders(activityPropertyProviders);
+            
             // Build composite activities.
             var compositeActivityBuilders = activityBuilders.Where(x => typeof(CompositeActivity).IsAssignableFrom(x.ActivityType));
             BuildCompositeActivities(compositeActivityBuilders, activityBlueprints, connections, activityPropertyProviders);
-
-            var activityBlueprintDictionary = activityBlueprints.ToDictionary(x => x.Id);
-
-            connections.AddRange(ConnectionBuilders.Select(x => new Connection(activityBlueprintDictionary[x.Source().ActivityId], activityBlueprintDictionary[x.Target().ActivityId], x.Outcome)));
-
+            
             activityPropertyProviders.AddRange(
                 activityBuilders
                     .Select(x => (x.ActivityId, x.PropertyValueProviders))
                     .ToDictionary(x => x.ActivityId!, x => x.PropertyValueProviders!));
 
-            return new CompositeActivityBlueprint
-            {
-                Id = ActivityId,
-                Connections = connections,
-                Activities = activityBlueprints,
-                ActivityPropertyProviders = new ActivityPropertyProviders(activityPropertyProviders)
-            };
+            return compositeActivityBlueprint;
         }
 
         private void BuildCompositeActivities(
@@ -166,31 +169,34 @@ namespace Elsa.Builders
             using var scope = ServiceProvider.CreateScope();
             foreach (var activityBuilder in compositeActivityBuilders)
             {
-                var compositeActivity = (CompositeActivity)ActivatorUtilities.CreateInstance(scope.ServiceProvider, activityBuilder.ActivityType);
-                var workflowBuilder = _workflowBuilderFactory();
+                var compositeActivity = (CompositeActivity) ActivatorUtilities.CreateInstance(scope.ServiceProvider, activityBuilder.ActivityType);
+                var compositeActivityBuilder = _compositeActivityBuilderFactory();
+                compositeActivityBuilder.ActivityId = activityBuilder.ActivityId;
+                compositeActivity.Build(compositeActivityBuilder);
 
-                compositeActivity.Build(workflowBuilder);
+                var compositeActivityBlueprint = compositeActivityBuilder.Build($"{activityBuilder.ActivityId}:activity");
+                var activityDictionary = compositeActivityBlueprint.Activities.ToDictionary(x => x.Id);
 
-                var workflow = workflowBuilder.Build($"{activityBuilder.ActivityId}:activity");
-                var activityDictionary = workflow.Activities.ToDictionary(x => x.Id);
-
-                activityBlueprints.AddRange(workflow.Activities);
-                connections.AddRange(workflow.Connections.Select(x => new Connection(activityDictionary[x.Source.Activity.Id], activityDictionary[x.Target.Activity.Id], x.Source.Outcome)));
-                activityPropertyProviders.AddRange(workflow.ActivityPropertyProviders);
-
-                var compositeActivityBlueprint = (ICompositeActivityBlueprint)activityBlueprints.Single(x => x.Id == activityBuilder.ActivityId);
-                compositeActivityBlueprint.Activities = workflow.Activities;
-                compositeActivityBlueprint.Connections = workflow.Connections;
-                compositeActivityBlueprint.ActivityPropertyProviders = workflow.ActivityPropertyProviders;
+                activityBlueprints.AddRange(compositeActivityBlueprint.Activities);
+                connections.AddRange(compositeActivityBlueprint.Connections.Select(x => new Connection(activityDictionary[x.Source.Activity.Id], activityDictionary[x.Target.Activity.Id], x.Source.Outcome)));
+                activityPropertyProviders.AddRange(compositeActivityBlueprint.ActivityPropertyProviders);
+                
+                compositeActivityBlueprint.Activities = compositeActivityBlueprint.Activities;
+                compositeActivityBlueprint.Connections = compositeActivityBlueprint.Connections;
+                compositeActivityBlueprint.ActivityPropertyProviders = compositeActivityBlueprint.ActivityPropertyProviders;
+                
+                // Connect the composite activity to its starting activities.
+                var startActivities = compositeActivityBlueprint.GetStartActivities().ToList();
+                connections.AddRange(startActivities.Select(x => new Connection(compositeActivityBlueprint, x, CompositeActivity.Enter)));
             }
         }
 
-        private IActivityBlueprint BuildActivityBlueprint(IActivityBuilder builder, int index)
+        private IActivityBlueprint BuildActivityBlueprint(IActivityBuilder builder, ICompositeActivityBlueprint parent)
         {
             var isComposite = typeof(CompositeActivity).IsAssignableFrom(builder.ActivityType);
             return isComposite
-                ? new CompositeActivityBlueprint(builder.ActivityId, builder.Name, builder.DisplayName, builder.Description, builder.ActivityType.Name, builder.PersistWorkflow, builder.LoadWorkflowContextEnabled, builder.SaveWorkflowContextEnabled)
-                : new ActivityBlueprint(builder.ActivityId, builder.Name, builder.DisplayName, builder.Description, builder.ActivityType.Name, builder.PersistWorkflow, builder.LoadWorkflowContextEnabled, builder.SaveWorkflowContextEnabled);
+                ? new CompositeActivityBlueprint(builder.ActivityId, parent, builder.Name, builder.DisplayName, builder.Description, builder.ActivityType.Name, builder.PersistWorkflow, builder.LoadWorkflowContextEnabled, builder.SaveWorkflowContextEnabled)
+                : new ActivityBlueprint(builder.ActivityId, parent, builder.Name, builder.DisplayName, builder.Description, builder.ActivityType.Name, builder.PersistWorkflow, builder.LoadWorkflowContextEnabled, builder.SaveWorkflowContextEnabled);
         }
     }
 }

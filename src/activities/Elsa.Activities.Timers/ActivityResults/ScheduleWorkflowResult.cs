@@ -2,8 +2,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Timers.Services;
 using Elsa.ActivityResults;
-using Elsa.Persistence;
 using Elsa.Services.Models;
+using Microsoft.Extensions.DependencyInjection;
 using NodaTime;
 
 namespace Elsa.Activities.Timers.ActivityResults
@@ -17,13 +17,20 @@ namespace Elsa.Activities.Timers.ActivityResults
 
         public Instant ExecuteAt { get; }
 
-        public override async ValueTask ExecuteAsync(ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
+        protected override void Execute(ActivityExecutionContext activityExecutionContext)
         {
-            var workflowInstance = activityExecutionContext.WorkflowExecutionContext.WorkflowInstance;
-            var workflowInstanceStore = activityExecutionContext.GetService<IWorkflowInstanceStore>();
-            var scheduler = activityExecutionContext.GetService<IWorkflowScheduler>();
-            await workflowInstanceStore.SaveAsync(workflowInstance, cancellationToken);
-            await scheduler.ScheduleWorkflowAsync(activityExecutionContext.WorkflowExecutionContext.WorkflowBlueprint, workflowInstance.Id, activityExecutionContext.ActivityInstance.Id, ExecuteAt, cancellationToken);
+            var workflowInstanceId = activityExecutionContext.WorkflowExecutionContext.WorkflowInstance.Id;
+            var activityId = activityExecutionContext.ActivityBlueprint.Id;
+            var workflowBlueprint = activityExecutionContext.WorkflowExecutionContext.WorkflowBlueprint;
+            var executeAt = ExecuteAt;
+            
+            async ValueTask ScheduleWorkflowAsync(WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
+            {
+                var scheduler = workflowExecutionContext.ServiceScope.ServiceProvider.GetRequiredService<IWorkflowScheduler>(); 
+                await scheduler.ScheduleWorkflowAsync(workflowBlueprint, workflowInstanceId, activityId, executeAt, cancellationToken);
+            }
+
+            activityExecutionContext.WorkflowExecutionContext.RegisterTask(nameof(ScheduleWorkflowResult), ScheduleWorkflowAsync);
         }
     }
 }

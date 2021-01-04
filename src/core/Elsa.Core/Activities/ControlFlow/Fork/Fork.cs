@@ -13,7 +13,7 @@ namespace Elsa.Activities.ControlFlow
     public class Fork : Activity
     {
         [ActivityProperty(Hint = "Enter one or more names representing branches, separated with a comma. Example: Branch 1, Branch 2")]
-        public HashSet<string> Branches { get; set; } = new HashSet<string>();
+        public HashSet<string> Branches { get; set; } = new();
 
         protected override IActivityExecutionResult OnExecute() => Combine(Done(), Outcomes(Branches));
     }

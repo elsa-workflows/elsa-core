@@ -18,8 +18,8 @@ namespace Elsa.Samples.CustomAttributesChildWorker.Workflows
             workflow
                 .StartWith<RebusMessageReceived>(activity => activity.Set(x => x.MessageType, typeof(OrderReceived)))
                 .SetVariable(context => context.GetInput<OrderReceived>())
-                .WriteLine(context => $"Received a new order for {context.GetVariable<OrderReceived>().CustomerId}.")
-                .RunWorkflow(activity => activity.WithCustomAttributes(context => new Variables().Set("Customer", context.GetVariable<OrderReceived>().CustomerId)))
+                .WriteLine(context => $"Received a new order for {context.GetVariable<OrderReceived>()!.CustomerId}.")
+                .RunWorkflow(activity => activity.WithCustomAttributes(context => new Variables().Set("Customer", context.GetVariable<OrderReceived>()!.CustomerId)))
                 .WriteLine("Returned back from child workflow.");
         }
     }

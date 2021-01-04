@@ -1,12 +1,11 @@
 using System.Collections.Generic;
-
 using Elsa.Activities.Console;
 using Elsa.Activities.ControlFlow;
 using Elsa.Activities.Timers;
 using Elsa.Builders;
 using NodaTime;
 
-namespace Elsa.Samples.Timers
+namespace Elsa.Samples.Timers.Workflows
 {
     public class CancelTimerWorkflow : IWorkflow
     {
@@ -14,7 +13,7 @@ namespace Elsa.Samples.Timers
         {
             workflow
                 .StartAt(SystemClock.Instance.GetCurrentInstant().Plus(Duration.FromSeconds(5)))
-                .WriteLine("CancelTimerWorkflow is executed")
+                .WriteLine("CancelTimerWorkflow is executing")
                 .Then<Fork>(
                     activity => activity.Set(x => x.Branches, new HashSet<string>(new[] { "Branch 1", "Branch 2" })),
                     fork =>

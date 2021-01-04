@@ -36,7 +36,6 @@ namespace Microsoft.Extensions.DependencyInjection
             this IServiceCollection services,
             Action<ElsaOptions>? configure = default)
         {
-            services.AddHostedService<StartBackgroundWorker>();
             services.AddStartupRunner();
             
             var options = new ElsaOptions(services);
@@ -97,6 +96,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IWorkflowBlueprintMaterializer, WorkflowBlueprintMaterializer>()
                 .AddSingleton<IWorkflowBlueprintReflector, WorkflowBlueprintReflector>()
                 .AddSingleton<IBackgroundWorker, BackgroundWorker>()
+                .AddSingleton<IWorkflowQueue, WorkflowQueue>()
                 .AddScoped<IWorkflowSelector, WorkflowSelector>()
                 .AddScoped<IWorkflowPublisher, WorkflowPublisher>()
                 .AddScoped<IWorkflowContextManager, WorkflowContextManager>()
@@ -146,6 +146,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddActivity<While>()
                 .AddActivity<Correlate>()
                 .AddActivity<SetVariable>()
+                .AddActivity<SetTransientVariable>()
                 .AddActivity<SetContextId>()
                 .AddActivity<SignalReceived>()
                 .AddActivity<SendSignal>()

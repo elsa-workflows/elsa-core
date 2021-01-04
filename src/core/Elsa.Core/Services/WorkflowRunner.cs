@@ -31,6 +31,7 @@ namespace Elsa.Services
         private readonly IWorkflowSelector _workflowSelector;
         private readonly IWorkflowInstanceStore _workflowInstanceManager;
         private readonly Func<IWorkflowBuilder> _workflowBuilderFactory;
+        private readonly IActivityTypeService _activityTypeService;
         private readonly IMediator _mediator;
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger _logger;
@@ -40,6 +41,7 @@ namespace Elsa.Services
             IWorkflowFactory workflowFactory,
             IWorkflowSelector workflowSelector,
             Func<IWorkflowBuilder> workflowBuilderFactory,
+            IActivityTypeService activityTypeService,
             IMediator mediator,
             IServiceProvider serviceProvider,
             ILogger<WorkflowRunner> logger, IWorkflowInstanceStore workflowInstanceStore)
@@ -47,6 +49,7 @@ namespace Elsa.Services
             _workflowRegistry = workflowRegistry;
             _workflowFactory = workflowFactory;
             _workflowBuilderFactory = workflowBuilderFactory;
+            _activityTypeService = activityTypeService;
             _mediator = mediator;
             _serviceProvider = serviceProvider;
             _logger = logger;
@@ -169,7 +172,7 @@ namespace Elsa.Services
             object? workflowContext = default,
             CancellationToken cancellationToken = default)
         {
-            var workflowExecutionScope = _serviceProvider.CreateScope();
+            using var workflowExecutionScope = _serviceProvider.CreateScope();
             
             var workflowExecutionContext = new WorkflowExecutionContext(workflowExecutionScope, workflowBlueprint, workflowInstance, input)
             {
@@ -233,7 +236,14 @@ namespace Elsa.Services
             if (!await CanExecuteAsync(workflowExecutionContext, activityBlueprint, input, cancellationToken))
                 return;
 
-            workflowExecutionContext.WorkflowInstance.BlockingActivities.RemoveWhere(x => x.ActivityId == activityBlueprint.Id);
+            var blockingActivities = workflowExecutionContext.WorkflowInstance.BlockingActivities.Where(x => x.ActivityId == activityBlueprint.Id).ToList();
+
+            foreach (var blockingActivity in blockingActivities)
+            {
+                workflowExecutionContext.WorkflowInstance.BlockingActivities.Remove(blockingActivity);
+                await _mediator.Publish(new BlockingActivityRemoved(workflowExecutionContext, blockingActivity), cancellationToken);
+            }
+            
             workflowExecutionContext.Resume();
             workflowExecutionContext.ScheduleActivity(activityBlueprint.Id, input);
             await RunAsync(workflowExecutionContext, Resume, cancellationToken);
@@ -269,7 +279,7 @@ namespace Elsa.Services
 
         private async ValueTask RunCoreAsync(WorkflowExecutionContext workflowExecutionContext, ActivityOperation activityOperation, CancellationToken cancellationToken = default)
         {
-            using var scope = workflowExecutionContext.ServiceScope;
+            var scope = workflowExecutionContext.ServiceScope;
             var workflowBlueprint = workflowExecutionContext.WorkflowBlueprint;
 
             while (workflowExecutionContext.HasScheduledActivities)
@@ -279,6 +289,7 @@ namespace Elsa.Services
                 var activityBlueprint = workflowBlueprint.GetActivity(currentActivityId)!;
                 var activityExecutionContext = new ActivityExecutionContext(scope, workflowExecutionContext, activityBlueprint, scheduledActivity.Input, cancellationToken);
                 var activity = await activityExecutionContext.ActivateActivityAsync(cancellationToken);
+                _logger.LogDebug("Executing activity {ActivityType}: {ActivityId}", activityBlueprint.Type, currentActivityId);
                 var result = await activityOperation(activityExecutionContext, activity);
                 await _mediator.Publish(new ActivityExecuting(activityExecutionContext), cancellationToken);
                 await result.ExecuteAsync(activityExecutionContext, cancellationToken);
@@ -288,13 +299,10 @@ namespace Elsa.Services
 
                 activityOperation = Execute;
                 workflowExecutionContext.CompletePass();
+                await _mediator.Publish(new WorkflowExecutionPassCompleted(workflowExecutionContext, activityExecutionContext), cancellationToken);
 
-                // If there are no more scheduled activities and no suspension has been instructed, schedule any post-scheduled activities.
-                if (!workflowExecutionContext.HasScheduledActivities && workflowExecutionContext.Status == WorkflowStatus.Running)
-                {
-                    if (workflowExecutionContext.HasPostScheduledActivities)
-                        workflowExecutionContext.SchedulePostActivity();
-                }
+                if (!workflowExecutionContext.HasScheduledActivities) 
+                    await _mediator.Publish(new WorkflowExecutionBurstCompleted(workflowExecutionContext, activityExecutionContext), cancellationToken);
             }
 
             if (workflowExecutionContext.HasBlockingActivities)

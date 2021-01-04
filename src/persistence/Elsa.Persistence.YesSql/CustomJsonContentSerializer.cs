@@ -27,6 +27,7 @@ namespace Elsa.Persistence.YesSql
             JsonSettings.Converters.Add(new VersionOptionsJsonConverter());
             JsonSettings.Converters.Add(new TypeJsonConverter());
             JsonSettings.Converters.Add(new StringEnumConverter(new DefaultNamingStrategy()));
+            JsonSettings.NullValueHandling = NullValueHandling.Ignore;
 
             JsonSettings.ContractResolver = new DefaultContractResolver
             {

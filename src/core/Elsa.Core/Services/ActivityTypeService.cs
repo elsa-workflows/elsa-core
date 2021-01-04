@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.ActivityProviders;
+using Elsa.Exceptions;
 using Elsa.Services.Models;
 
 namespace Elsa.Services
@@ -19,8 +20,16 @@ namespace Elsa.Services
         }
 
         public async ValueTask<IEnumerable<ActivityType>> GetActivityTypesAsync(CancellationToken cancellationToken) => (await GetDictionaryAsync(cancellationToken)).Values;
-        public async ValueTask<ActivityType> GetActivityTypeAsync(string type, CancellationToken cancellationToken) => (await GetDictionaryAsync(cancellationToken))[type];
-        
+        public async ValueTask<ActivityType> GetActivityTypeAsync(string type, CancellationToken cancellationToken)
+        {
+            var dictionary = await GetDictionaryAsync(cancellationToken);
+
+            if (!dictionary.ContainsKey(type))
+                throw new WorkflowException($"The activity type '{type}' has not been registered. Did you forget to register it with ElsaOptions?");
+            
+            return dictionary[type];
+        }
+
         public async ValueTask<RuntimeActivityInstance> ActivateActivityAsync(IActivityBlueprint activityBlueprint, CancellationToken cancellationToken = default)
         {
             var type = await GetActivityTypeAsync(activityBlueprint.Type, cancellationToken);

@@ -1,6 +1,4 @@
 ﻿using Blazored.Modal;
-using ElsaDashboard.Application.Activities;
-using ElsaDashboard.Application.Activities.Console;
 using ElsaDashboard.Application.Display;
 using ElsaDashboard.Application.Services;
 using ElsaDashboard.Extensions;

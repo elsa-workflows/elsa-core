@@ -1,16 +1,9 @@
-using System;
 using System.Threading.Tasks;
-
 using Elsa.Activities.Timers.Hangfire.Models;
-using Elsa.Activities.Timers.Services;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications;
 using Elsa.Services;
-
-using Hangfire;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 namespace Elsa.Activities.Timers.Hangfire.Jobs
 {
@@ -18,82 +11,39 @@ namespace Elsa.Activities.Timers.Hangfire.Jobs
     {
         private readonly IWorkflowRunner _workflowRunner;
         private readonly IWorkflowRegistry _workflowRegistry;
-        private readonly IWorkflowInstanceStore _workflowInstanceManager;
-        private readonly IServiceProvider _serviceProvider;
+        private readonly IWorkflowInstanceStore _workflowInstanceStore;
+        private readonly IWorkflowQueue _workflowQueue;
 
-        public RunHangfireWorkflowJob(IWorkflowRunner workflowRunner, IWorkflowRegistry workflowRegistry, IWorkflowInstanceStore workflowInstanceStore, IServiceProvider serviceProvider)
+        public RunHangfireWorkflowJob(IWorkflowRunner workflowRunner, IWorkflowRegistry workflowRegistry, IWorkflowInstanceStore workflowInstanceStore, IWorkflowQueue workflowQueue)
         {
             _workflowRunner = workflowRunner;
             _workflowRegistry = workflowRegistry;
-            _workflowInstanceManager = workflowInstanceStore;
-            _serviceProvider = serviceProvider;
+            _workflowInstanceStore = workflowInstanceStore;
+            _workflowQueue = workflowQueue;
         }
 
         public async Task ExecuteAsync(RunHangfireWorkflowJobModel data)
         {
-            var workflowBlueprint = (await _workflowRegistry.GetWorkflowAsync(data.WorkflowDefinitionId, data.TenantId, VersionOptions.Published))!;
+            var workflowBlueprint = (await _workflowRegistry.GetWorkflowAsync(data.WorkflowDefinitionId, data.TenantId, VersionOptions.Published));
             
             if(workflowBlueprint == null)
-            {
                 return;
-            }
-
-            WorkflowInstance? workflowInstance = null;
 
             if (data.WorkflowInstanceId == null)
             {
-                if (workflowBlueprint.IsSingleton == false || await GetWorkflowIsAlreadyExecutingAsync(data.TenantId, data.WorkflowDefinitionId) == false)
-                {
+                if (workflowBlueprint.IsSingleton == false || await GetWorkflowIsAlreadyExecutingAsync(data.TenantId, data.WorkflowDefinitionId) == false) 
                     await _workflowRunner.RunWorkflowAsync(workflowBlueprint, data.ActivityId);
-                }
             }
             else
             {
-                workflowInstance = await GetWorkflowInstanceAsync(data.WorkflowInstanceId);
-
-                if (workflowInstance == null)
-                {
-                    var logger = _serviceProvider.GetRequiredService<ILogger<RunHangfireWorkflowJob>>();
-                    logger.LogError("Could not run Workflow instance with ID {WorkflowInstanceId} because it is not in the database", data.WorkflowInstanceId);
-
-                    return;
-                }
-
-                await _workflowRunner.RunWorkflowAsync(workflowBlueprint, workflowInstance!, data.ActivityId);
-            }
-
-            // If it is a RecurringJob and the instance is null, the timer activity is a start trigger.
-            if (data.IsRecurringJob && (workflowInstance == null || workflowInstance.WorkflowStatus is not (WorkflowStatus.Finished or WorkflowStatus.Cancelled)))
-            {
-                var backgroundJobClient = _serviceProvider.GetRequiredService<IBackgroundJobClient>();
-                var crontabParer = _serviceProvider.GetRequiredService<ICrontabParser>();
-
-                backgroundJobClient.ScheduleWorkflow(data, crontabParer.GetNextOccurrence(data.CronExpression!).ToDateTimeOffset());
+                await _workflowQueue.Enqueue(data.WorkflowInstanceId, data.ActivityId);
             }
         }
         
         private async Task<bool> GetWorkflowIsAlreadyExecutingAsync(string? tenantId, string workflowDefinitionId)
         {
             var specification = new TenantSpecification<WorkflowInstance>(tenantId).WithWorkflowDefinition(workflowDefinitionId).And(new WorkflowIsAlreadyExecutingSpecification());
-            var count = await _workflowInstanceManager.CountAsync(specification);
-            return count > 0;
-        }
-
-        private async Task<WorkflowInstance?> GetWorkflowInstanceAsync(string workflowInstanceId)
-        {
-            WorkflowInstance? workflowInstance = null;
-
-            for (var i = 0; i < TimerConsts.MaxRetrayGetWorkflow && workflowInstance == null; i++)
-            {
-                workflowInstance = await _workflowInstanceManager.FindByIdAsync(workflowInstanceId);
-
-                if (workflowInstance == null)
-                {
-                    System.Threading.Thread.Sleep(10000);
-                }
-            }
-
-            return workflowInstance;
+            return await _workflowInstanceStore.FindAsync(specification) != null;
         }
     }
 }

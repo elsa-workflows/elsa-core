@@ -17,7 +17,7 @@ namespace Elsa.Activities.Primitives
         [ActivityProperty(Hint = "The name of the variable to store the value into.")]
         public string VariableName { get; set; } = default!;
 
-        [ActivityProperty(Hint = "An expression that evaluates to the value to store in the variable.")]
+        [ActivityProperty(Hint = "The value to store in the variable.")]
         public object? Value { get; set; }
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)

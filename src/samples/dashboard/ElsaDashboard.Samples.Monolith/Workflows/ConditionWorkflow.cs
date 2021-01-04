@@ -17,7 +17,7 @@ namespace ElsaDashboard.Samples.Monolith.Workflows
                 .Then(() => Console.WriteLine("What is your age?")).WithDisplayName("Write").WithDescription("What is your age?")
                 .ReadLine()
                 .Timer(Duration.FromMinutes(5))
-                .SetVariable("Age", context => int.Parse(context.GetInput<string>()))
+                .SetVariable("Age", context => int.Parse(context.GetInput<string>()!))
                 .IfElse(
                     context => context.GetVariable<int>("Age") < 18, 
                     whenTrue => whenTrue.WriteLine("You are not allowed to drink beer."),

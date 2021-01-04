@@ -44,7 +44,7 @@ namespace Elsa.Activities.ControlFlow
             {
                 var output = collection[currentIndex];
                 CurrentIndex = currentIndex + 1;
-                return Combine(PostSchedule(Id), Outcome(OutcomeNames.Iterate, output));
+                return Combine(Outcome(OutcomeNames.Iterate, output));
             }
 
             CurrentIndex = null;

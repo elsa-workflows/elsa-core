@@ -3,19 +3,22 @@ using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Services;
 using Elsa.Services.Models;
+using Microsoft.Extensions.Logging;
 using NodaTime;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.Timers
 {
     [Trigger(Category = "Timers", Description = "Triggers at a specified interval.")]
-    public class Timer : Activity
+    public class Timer : Activity, IReschedule
     {
         private readonly IClock _clock;
+        private readonly ILogger _logger;
 
-        public Timer(IClock clock)
+        public Timer(IClock clock, ILogger<Timer> logger)
         {
             _clock = clock;
+            _logger = logger;
         }
 
         [ActivityProperty(Hint = "The time interval at which this activity should tick.")]
@@ -34,13 +37,20 @@ namespace Elsa.Activities.Timers
 
             var now = _clock.GetCurrentInstant();
             ExecuteAt = now.Plus(Timeout);
-            
+
             if (ExecuteAt <= now)
+            {
+                _logger.LogDebug("Scheduled trigger time lies in the past ('{Delta}'). Skipping scheduling.", now - ExecuteAt);
                 return Done();
+            }
             
             return Combine(Suspend(), new ScheduleWorkflowResult(ExecuteAt.Value));
         }
 
         protected override IActivityExecutionResult OnResume() => Done();
+    }
+
+    public interface IReschedule
+    {
     }
 }

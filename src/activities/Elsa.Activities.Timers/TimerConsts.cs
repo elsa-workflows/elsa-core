@@ -2,6 +2,6 @@ namespace Elsa.Activities.Timers
 {
     public static class TimerConsts
     {
-        public const int MaxRetrayGetWorkflow = 3;
+        public const int MaxRetryGetWorkflow = 3;
     }
 }

@@ -1,13 +1,17 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using Elsa.ActivityResults;
 using Elsa.Builders;
+using Elsa.Models;
 using Elsa.Services.Models;
 
 namespace Elsa.Services
 {
     public class CompositeActivity : Activity
     {
-        public virtual void Build(ICompositeActivityBuilder composite)
+        internal const string Enter = "Enter";
+        
+        public virtual void Build(ICompositeActivityBuilder activity)
         {
         }
 
@@ -17,35 +21,51 @@ namespace Elsa.Services
             set => SetState(value);
         }
 
-        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
+        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            if (IsScheduled)
+            if (!IsScheduled)
             {
-                if (HasPendingChildren(context))
-                    return PostSchedule(Id);
-
-                context.WorkflowExecutionContext.WorkflowInstance.ParentActivities.Pop();
-                IsScheduled = false;
-                return Complete(context);
+                IsScheduled = true;
+                await OnEnterAsync(context);
+                return Outcome(Enter);
             }
 
-            var compositeActivityBlueprint = (ICompositeActivityBlueprint) context.ActivityBlueprint;
-            var startActivities = compositeActivityBlueprint.GetStartActivities().Select(x => x.Id).ToList();
-            context.WorkflowExecutionContext.WorkflowInstance.ParentActivities.Push(Id);
-            context.WorkflowExecutionContext.PostScheduleActivity(Id);
-            IsScheduled = true;
-            return Schedule(startActivities, context.Input);
+            IsScheduled = false;
+            await OnExitAsync(context);
+
+            var finishOutput = context.GetInput<FinishOutput>();
+            var outcomes = new List<string> { OutcomeNames.Done };
+            var output = default(object?);
+
+            if (finishOutput != null)
+            {
+                if(!string.IsNullOrWhiteSpace(finishOutput.Outcome))
+                    outcomes.Add(finishOutput.Outcome!);
+
+                output = finishOutput.Output;
+            }
+            
+            return Combine(Outcomes(outcomes), Output(output));
         }
 
-        protected virtual IActivityExecutionResult Complete(ActivityExecutionContext context) => Done();
-
-        private static bool HasPendingChildren(ActivityExecutionContext context)
+        protected virtual ValueTask OnEnterAsync(ActivityExecutionContext context)
         {
-            var children = ((CompositeActivityBlueprint) context.ActivityBlueprint).Activities.Select(x => x.Id).ToList();
-            var workflowInstance = context.WorkflowExecutionContext.WorkflowInstance;
-            var hasPendingPostScheduledChildren = workflowInstance.PostScheduledActivities.Any(x => children.Contains(x.ActivityId));
-            var hasPendingScheduledChildren = workflowInstance.ScheduledActivities.Any(x => children.Contains(x.ActivityId));
-            return hasPendingPostScheduledChildren || hasPendingScheduledChildren;
+            OnEnter(context);
+            return new();
+        }
+
+        protected virtual ValueTask OnExitAsync(ActivityExecutionContext context)
+        {
+            OnExit(context);
+            return new();
+        }
+
+        protected virtual void OnEnter(ActivityExecutionContext context)
+        {
+        }
+        
+        protected virtual void OnExit(ActivityExecutionContext context)
+        {
         }
     }
 }

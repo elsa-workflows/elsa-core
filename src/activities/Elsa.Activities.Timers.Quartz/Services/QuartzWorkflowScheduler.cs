@@ -1,12 +1,9 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-
 using Elsa.Activities.Timers.Quartz.Jobs;
 using Elsa.Activities.Timers.Services;
 using Elsa.Services.Models;
-
 using NodaTime;
-
 using Quartz;
 
 namespace Elsa.Activities.Timers.Quartz.Services

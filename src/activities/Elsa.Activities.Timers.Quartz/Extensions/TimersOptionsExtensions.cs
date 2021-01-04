@@ -3,6 +3,7 @@ using Elsa.Activities.Timers.Options;
 using Elsa.Activities.Timers.Quartz.Jobs;
 using Elsa.Activities.Timers.Quartz.Services;
 using Elsa.Activities.Timers.Services;
+using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Quartz;
 

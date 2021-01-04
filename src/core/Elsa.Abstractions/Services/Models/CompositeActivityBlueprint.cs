@@ -13,13 +13,14 @@ namespace Elsa.Services.Models
 
         public CompositeActivityBlueprint(
             string id,
+            ICompositeActivityBlueprint? parent,
             string? name,
             string? displayName,
             string? description,
             string type,
             bool persistWorkflow,
             bool loadWorkflowContext,
-            bool saveWorkflowContext) : base(id, name, displayName, description, type, persistWorkflow, loadWorkflowContext, saveWorkflowContext)
+            bool saveWorkflowContext) : base(id, parent, name, displayName, description, type, persistWorkflow, loadWorkflowContext, saveWorkflowContext)
         {
         }
 

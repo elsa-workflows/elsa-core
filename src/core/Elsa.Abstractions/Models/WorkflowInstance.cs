@@ -13,8 +13,6 @@ namespace Elsa.Models
             Variables = new Variables();
             Activities = new List<ActivityInstance>();
             ScheduledActivities = new Stack<ScheduledActivity>();
-            PostScheduledActivities = new Stack<ScheduledActivity>();
-            ParentActivities = new Stack<string>();
         }
         
         public string DefinitionId { get; set; } = default!;
@@ -30,6 +28,7 @@ namespace Elsa.Models
         public Instant? FinishedAt { get; set; }
         public Instant? CancelledAt { get; set; }
         public Instant? FaultedAt { get; set; }
+        public Instant? LastSavedAt { get; set; }
         public Variables Variables { get; set; }
         public object? Output { get; set; }
         public ICollection<ActivityInstance> Activities { get; set; }
@@ -42,7 +41,5 @@ namespace Elsa.Models
         
         public WorkflowFault? Fault { get; set; }
         public Stack<ScheduledActivity> ScheduledActivities { get; set; }
-        public Stack<ScheduledActivity> PostScheduledActivities { get; set; }
-        public Stack<string> ParentActivities { get; set; }
     }
 }

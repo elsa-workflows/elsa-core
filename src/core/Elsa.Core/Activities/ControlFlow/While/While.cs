@@ -13,8 +13,6 @@ namespace Elsa.Activities.ControlFlow
     )]
     public class While : Activity
     {
-        public const string IterateOutcome = "Iterate";
-        
         [ActivityProperty(Hint = "The condition to evaluate.")]
         public bool Condition { get; set; }
 
@@ -23,7 +21,7 @@ namespace Elsa.Activities.ControlFlow
             var loop = Condition;
 
             if (loop)
-                return Combine(PostSchedule(Id), Outcome(IterateOutcome));
+                return Outcome(OutcomeNames.Iterate);
 
             return Done();
         }
