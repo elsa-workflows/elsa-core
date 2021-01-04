@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
 using Elsa.Models;
 using Elsa.Persistence.Specifications;
+using Microsoft.Extensions.Logging;
 using Open.Linq.AsyncExtensions;
 using YesSql;
 using YesSql.Indexes;
@@ -15,10 +17,13 @@ namespace Elsa.Persistence.YesSql.Stores
 {
     public abstract class YesSqlStore<T, TDocument> : IStore<T> where T : class, IEntity where TDocument : class
     {
+        private readonly ILogger _logger;
         private readonly SemaphoreSlim _semaphore = new(1);
+        private readonly Stopwatch _stopwatch = new();
 
-        public YesSqlStore(ISession session, IIdGenerator idGenerator, IMapper mapper, string collectionName)
+        public YesSqlStore(ISession session, IIdGenerator idGenerator, IMapper mapper, ILogger<YesSqlStore<T, TDocument>> logger, string collectionName)
         {
+            _logger = logger;
             IdGenerator = idGenerator;
             Mapper = mapper;
             CollectionName = collectionName;
@@ -65,7 +70,14 @@ namespace Elsa.Persistence.YesSql.Stores
             return documents.Count;
         }
 
-        public async Task<int> CountAsync(ISpecification<T> specification, CancellationToken cancellationToken = default) => await Query(specification).CountAsync();
+        public async Task<int> CountAsync(ISpecification<T> specification, CancellationToken cancellationToken = default)
+        {
+            _stopwatch.Restart();
+            var count = await Query(specification).CountAsync();
+            _stopwatch.Stop();
+            _logger.LogDebug("CountAsync took {TimeElapsed}", _stopwatch.Elapsed);
+            return count;
+        }
 
         public async Task<T?> FindAsync(ISpecification<T> specification, CancellationToken cancellationToken = default)
         {
@@ -75,8 +87,12 @@ namespace Elsa.Persistence.YesSql.Stores
 
         public virtual async Task<IEnumerable<T>> FindManyAsync(ISpecification<T> specification, IOrderBy<T>? orderBy = default, IPaging? paging = default, CancellationToken cancellationToken = default)
         {
+            _stopwatch.Restart();
             var documents = await Query(specification, orderBy, paging, cancellationToken).ListAsync();
-            return Map(documents);
+            var mappedDocuments = Map(documents);
+            _stopwatch.Stop();
+            _logger.LogDebug("FindManyAsync took {TimeElapsed}", _stopwatch.Elapsed);
+            return mappedDocuments;
         }
 
         protected virtual IQuery<TDocument> Query(ISpecification<T> specification, IOrderBy<T>? orderBy = default, IPaging? paging = default, CancellationToken cancellationToken = default)

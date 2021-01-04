@@ -6,6 +6,7 @@ using Elsa.Models;
 using Elsa.Persistence.Specifications;
 using Elsa.Persistence.YesSql.Documents;
 using Elsa.Persistence.YesSql.Indexes;
+using Microsoft.Extensions.Logging;
 using YesSql;
 using IIdGenerator = Elsa.Services.IIdGenerator;
 
@@ -13,7 +14,7 @@ namespace Elsa.Persistence.YesSql.Stores
 {
     public class YesSqlWorkflowExecutionLogStore : YesSqlStore<WorkflowExecutionLogRecord, WorkflowExecutionLogRecordDocument>, IWorkflowExecutionLogStore
     {
-        public YesSqlWorkflowExecutionLogStore(ISession session, IIdGenerator idGenerator, IMapper mapper) : base(session, idGenerator, mapper, CollectionNames.WorkflowExecutionLog)
+        public YesSqlWorkflowExecutionLogStore(ISession session, IIdGenerator idGenerator, IMapper mapper, ILogger<YesSqlWorkflowExecutionLogStore> logger) : base(session, idGenerator, mapper, logger, CollectionNames.WorkflowExecutionLog)
         {
         }
 

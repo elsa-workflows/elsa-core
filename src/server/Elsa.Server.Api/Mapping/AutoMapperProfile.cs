@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using Elsa.Models;
+using Elsa.Server.Api.Endpoints.WorkflowInstances;
 using Elsa.Server.Api.Endpoints.WorkflowRegistry;
 using Elsa.Services.Models;
 
@@ -13,6 +15,7 @@ namespace Elsa.Server.Api.Mapping
             CreateMap<IActivityBlueprint, ActivityBlueprintModel>().ConvertUsing<ActivityBlueprintConverter>();
             CreateMap<ICompositeActivityBlueprint, CompositeActivityBlueprintModel>();
             CreateMap<IConnection, ConnectionModel>().ConvertUsing<ConnectionConverter>();
+            CreateMap<WorkflowInstance, WorkflowInstanceSummaryModel>();
         }
     }
 }

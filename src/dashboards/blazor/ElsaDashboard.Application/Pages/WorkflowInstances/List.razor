@@ -91,7 +91,7 @@
             @foreach (var workflowInstance in WorkflowInstances.Items)
             {
                 var workflowKey = (workflowInstance.DefinitionId, workflowInstance.Version);
-                var workflowBlueprint = WorkflowBlueprints.ContainsKey(workflowKey) ? WorkflowBlueprints[workflowKey] : new WorkflowBlueprint {DisplayName = "(Blueprint Not Found)"};
+                var workflowBlueprint = WorkflowBlueprints.ContainsKey(workflowKey) ? WorkflowBlueprints[workflowKey] : new WorkflowBlueprintSummary {DisplayName = "(Blueprint Not Found)"};
                 var instanceName = string.IsNullOrWhiteSpace(workflowInstance.Name) ? "" : workflowInstance.Name;
                 var displayName = workflowBlueprint.DisplayName!;
                 var statusColor = GetStatusColor(workflowInstance.WorkflowStatus);
@@ -152,5 +152,8 @@
             </tbody>
         </table>
         <Pager Page="@WorkflowInstances.Page" PageSize="@WorkflowInstances.PageSize" TotalCount="@WorkflowInstances.TotalCount"/>
+        <div class="px-4 py-3">
+            <p class="text-sm leading-5 text-gray-700">Load time: @Stopwatch.Elapsed</p>
+        </div>
     </div>
 </div>

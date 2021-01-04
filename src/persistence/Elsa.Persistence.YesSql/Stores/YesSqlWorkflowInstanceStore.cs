@@ -6,6 +6,7 @@ using Elsa.Models;
 using Elsa.Persistence.Specifications;
 using Elsa.Persistence.YesSql.Documents;
 using Elsa.Persistence.YesSql.Indexes;
+using Microsoft.Extensions.Logging;
 using NodaTime;
 using YesSql;
 using IIdGenerator = Elsa.Services.IIdGenerator;
@@ -16,7 +17,7 @@ namespace Elsa.Persistence.YesSql.Stores
     {
         private readonly IClock _clock;
 
-        public YesSqlWorkflowInstanceStore(ISession session, IIdGenerator idGenerator, IMapper mapper, IClock clock) : base(session, idGenerator, mapper, CollectionNames.WorkflowInstances)
+        public YesSqlWorkflowInstanceStore(ISession session, IIdGenerator idGenerator, IMapper mapper, IClock clock, ILogger<YesSqlWorkflowInstanceStore> logger) : base(session, idGenerator, mapper, logger, CollectionNames.WorkflowInstances)
         {
             _clock = clock;
         }
