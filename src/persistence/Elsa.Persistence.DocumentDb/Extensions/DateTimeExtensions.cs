@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Globalization;
 
-namespace Elsa.Persistence.DocumentDb.Helpers
+namespace Elsa.Persistence.DocumentDb.Extensions
 {
-    internal static class TimeHelper
+    internal static class DateTimeExtensions
     {
         private static readonly DateTime EpochDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
 
@@ -18,9 +18,8 @@ namespace Elsa.Persistence.DocumentDb.Helpers
 
         internal static string TryParseToEpoch(this string s)
         {
-            return DateTime.TryParse(s, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var date)
-                ? date.ToEpoch().ToString(CultureInfo.InvariantCulture)
-                : s;
+            return DateTime.TryParse(s, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var date) ? 
+                date.ToEpoch().ToString(CultureInfo.InvariantCulture) : s;
         }
     }
 }

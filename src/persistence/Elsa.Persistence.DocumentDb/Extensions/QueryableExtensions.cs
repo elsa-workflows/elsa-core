@@ -1,12 +1,12 @@
-using Microsoft.Azure.Documents.Linq;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Azure.Documents.Linq;
 
-namespace Elsa.Persistence.DocumentDb.Helpers
+namespace Elsa.Persistence.DocumentDb.Extensions
 {
-    internal static class QueryHelper
+    internal static class QueryableExtensions
     {
         internal static async Task<IList<T>> ToQueryResultAsync<T>(this IQueryable<T> source, CancellationToken cancellationToken = default)
         {
