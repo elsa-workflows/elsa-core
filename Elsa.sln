@@ -12,13 +12,14 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "solution", "solution", "{71
 		.dockerignore = .dockerignore
 		.editorconfig = .editorconfig
 		.gitignore = .gitignore
+		appveyor.yml = appveyor.yml
 		common.props = common.props
 		configureawait.props = configureawait.props
+		CONTRIBUTING.md = CONTRIBUTING.md
 		docker-compose.yaml = docker-compose.yaml
 		Dockerfile = Dockerfile
 		Nuget.Config = Nuget.Config
 		README.md = README.md
-		appveyor.yml = appveyor.yml
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Abstractions", "src\core\Elsa.Abstractions\Elsa.Abstractions.csproj", "{3130C574-557C-4DA2-933E-AED7A9EBE48A}"
@@ -165,35 +166,35 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.Timers.Quar
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.Timers.Hangfire", "src\activities\Elsa.Activities.Timers.Hangfire\Elsa.Activities.Timers.Hangfire.csproj", "{34FB968B-A147-4811-823D-D206FD0027AD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.Timers.Hangfire", "src\samples\worker\Elsa.Samples.Timers.Hangfire\Elsa.Samples.Timers.Hangfire.csproj", "{7BDF193D-CD69-4D47-B7BF-A8A1D93EBCB9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.Timers.Hangfire", "src\samples\worker\Elsa.Samples.Timers.Hangfire\Elsa.Samples.Timers.Hangfire.csproj", "{7BDF193D-CD69-4D47-B7BF-A8A1D93EBCB9}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.Entity", "src\activities\Elsa.Activities.Entity\Elsa.Activities.Entity.csproj", "{A0A8431F-3A2F-433A-BB0D-EB9627DFA739}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.EntityChanged", "src\samples\console\Elsa.Samples.EntityChanged\Elsa.Samples.EntityChanged.csproj", "{A3149FE4-FD39-4DC2-AA9F-208C7216BC03}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.DistributedLocking.AzureBlob", "src\locking\Elsa.DistributedLocking.AzureBlob\Elsa.DistributedLocking.AzureBlob.csproj", "{C3842132-35BC-4F6D-85CC-7098887F4307}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.DistributedLocking.AzureBlob", "src\locking\Elsa.DistributedLocking.AzureBlob\Elsa.DistributedLocking.AzureBlob.csproj", "{C3842132-35BC-4F6D-85CC-7098887F4307}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.DistributedLocking.Redis", "src\locking\Elsa.DistributedLocking.Redis\Elsa.DistributedLocking.Redis.csproj", "{C90CD39C-8CDD-4BCB-AB6A-CF981D468DD2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.DistributedLocking.Redis", "src\locking\Elsa.DistributedLocking.Redis\Elsa.DistributedLocking.Redis.csproj", "{C90CD39C-8CDD-4BCB-AB6A-CF981D468DD2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.DistributedLocking.SqlServer", "src\locking\Elsa.DistributedLocking.SqlServer\Elsa.DistributedLocking.SqlServer.csproj", "{78F2A9DC-3092-4371-ABFE-87C5DA4DE351}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.DistributedLocking.SqlServer", "src\locking\Elsa.DistributedLocking.SqlServer\Elsa.DistributedLocking.SqlServer.csproj", "{78F2A9DC-3092-4371-ABFE-87C5DA4DE351}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Activities.Timers", "src\activities\Elsa.Activities.Timers\Elsa.Activities.Timers.csproj", "{74E83393-50AF-41E3-A1C8-97202673CD85}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.Timers", "src\activities\Elsa.Activities.Timers\Elsa.Activities.Timers.csproj", "{74E83393-50AF-41E3-A1C8-97202673CD85}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElsaDashboard.Abstractions", "src\dashboards\blazor\ElsaDashboard.Abstractions\ElsaDashboard.Abstractions.csproj", "{599CEC92-0EC9-4378-A1B6-E7741B1E4E57}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ElsaDashboard.Abstractions", "src\dashboards\blazor\ElsaDashboard.Abstractions\ElsaDashboard.Abstractions.csproj", "{599CEC92-0EC9-4378-A1B6-E7741B1E4E57}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dashboard", "dashboard", "{4673732F-2853-47BD-91B8-C95C229D2C89}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElsaDashboard.Samples.Server", "src\samples\dashboard\ElsaDashboard.Samples.Server\ElsaDashboard.Samples.Server.csproj", "{FA759225-A0D0-4FE0-9A6D-429062A15A00}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ElsaDashboard.Samples.Server", "src\samples\dashboard\ElsaDashboard.Samples.Server\ElsaDashboard.Samples.Server.csproj", "{FA759225-A0D0-4FE0-9A6D-429062A15A00}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElsaDashboard.Samples.Monolith", "src\samples\dashboard\ElsaDashboard.Samples.Monolith\ElsaDashboard.Samples.Monolith.csproj", "{27EC837B-B4EB-4201-AFFF-6B0303A694C1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ElsaDashboard.Samples.Monolith", "src\samples\dashboard\ElsaDashboard.Samples.Monolith\ElsaDashboard.Samples.Monolith.csproj", "{27EC837B-B4EB-4201-AFFF-6B0303A694C1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElsaDashboard.Samples.WebAssembly", "src\samples\dashboard\ElsaDashboard.Samples.WebAssembly\ElsaDashboard.Samples.WebAssembly.csproj", "{3CF1D3EA-7D93-44B0-80A2-77983A5357BA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ElsaDashboard.Samples.WebAssembly", "src\samples\dashboard\ElsaDashboard.Samples.WebAssembly\ElsaDashboard.Samples.WebAssembly.csproj", "{3CF1D3EA-7D93-44B0-80A2-77983A5357BA}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "server", "server", "{BBCFC623-2113-464D-8A1F-3CCDABF1241C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.Server.Host", "src\samples\server\Elsa.Samples.Server.Host\Elsa.Samples.Server.Host.csproj", "{63E52936-6C1D-4F45-8B56-86C23E9A853F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.Server.Host", "src\samples\server\Elsa.Samples.Server.Host\Elsa.Samples.Server.Host.csproj", "{63E52936-6C1D-4F45-8B56-86C23E9A853F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.SwitchConsole", "src\samples\console\Elsa.Samples.SwitchConsole\Elsa.Samples.SwitchConsole.csproj", "{D6DD6E38-BB34-4B2F-9A42-4C17AF30C9CD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.SwitchConsole", "src\samples\console\Elsa.Samples.SwitchConsole\Elsa.Samples.SwitchConsole.csproj", "{D6DD6E38-BB34-4B2F-9A42-4C17AF30C9CD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
