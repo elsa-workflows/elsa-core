@@ -33,7 +33,7 @@ namespace Elsa.Services
             IsScheduled = false;
             await OnExitAsync(context);
 
-            var finishOutput = context.GetInput<FinishOutput>();
+            var finishOutput = context.Input as FinishOutput;
             var outcomes = new List<string> { OutcomeNames.Done };
             var output = default(object?);
 
