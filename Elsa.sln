@@ -195,9 +195,17 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.Server.Host", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.SwitchConsole", "src\samples\console\Elsa.Samples.SwitchConsole\Elsa.Samples.SwitchConsole.csproj", "{D6DD6E38-BB34-4B2F-9A42-4C17AF30C9CD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.EntityFrameworkCore.SqlServer", "src\persistence\Elsa.Persistence.EntityFrameworkCore.SqlServer\Elsa.Persistence.EntityFrameworkCore.SqlServer.csproj", "{3968C3A4-C521-4CE4-B971-EDAD2BEF36FA}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "persistence", "persistence", "{EEBEA8AF-C8A8-4C71-A96C-D5836DE24359}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.EntityFrameworkCore.Core", "src\persistence\Elsa.Persistence.EntityFrameworkCore.Core\Elsa.Persistence.EntityFrameworkCore.Core.csproj", "{FEDD3B00-5494-443B-8E85-553B9F69DBC2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.Persistence.EntityFramework", "src\samples\persistence\Elsa.Samples.Persistence.EntityFramework\Elsa.Samples.Persistence.EntityFramework.csproj", "{08FD0D47-CC01-4274-99D0-81B3F780A695}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "efcore", "efcore", "{C865B0FD-E505-48F0-BFAF-0D4D7C1B5CA1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.EntityFramework.Core", "src\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.Core\Elsa.Persistence.EntityFramework.Core.csproj", "{7240B7EE-53D7-4C94-9A5C-80D2D6C4BF0E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.EntityFramework.Sqlite", "src\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.Sqlite\Elsa.Persistence.EntityFramework.Sqlite.csproj", "{8A7C2A43-BABF-4961-81D8-D16A702A2EE8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.EntityFramework.SqlServer", "src\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.SqlServer\Elsa.Persistence.EntityFramework.SqlServer.csproj", "{F97339EF-424F-46F1-AD8D-B36B8C2F716E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -469,14 +477,22 @@ Global
 		{D6DD6E38-BB34-4B2F-9A42-4C17AF30C9CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D6DD6E38-BB34-4B2F-9A42-4C17AF30C9CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D6DD6E38-BB34-4B2F-9A42-4C17AF30C9CD}.Release|Any CPU.Build.0 = Release|Any CPU
-		{3968C3A4-C521-4CE4-B971-EDAD2BEF36FA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3968C3A4-C521-4CE4-B971-EDAD2BEF36FA}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3968C3A4-C521-4CE4-B971-EDAD2BEF36FA}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3968C3A4-C521-4CE4-B971-EDAD2BEF36FA}.Release|Any CPU.Build.0 = Release|Any CPU
-		{FEDD3B00-5494-443B-8E85-553B9F69DBC2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{FEDD3B00-5494-443B-8E85-553B9F69DBC2}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{FEDD3B00-5494-443B-8E85-553B9F69DBC2}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{FEDD3B00-5494-443B-8E85-553B9F69DBC2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{08FD0D47-CC01-4274-99D0-81B3F780A695}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{08FD0D47-CC01-4274-99D0-81B3F780A695}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{08FD0D47-CC01-4274-99D0-81B3F780A695}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{08FD0D47-CC01-4274-99D0-81B3F780A695}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7240B7EE-53D7-4C94-9A5C-80D2D6C4BF0E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7240B7EE-53D7-4C94-9A5C-80D2D6C4BF0E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7240B7EE-53D7-4C94-9A5C-80D2D6C4BF0E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7240B7EE-53D7-4C94-9A5C-80D2D6C4BF0E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8A7C2A43-BABF-4961-81D8-D16A702A2EE8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8A7C2A43-BABF-4961-81D8-D16A702A2EE8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8A7C2A43-BABF-4961-81D8-D16A702A2EE8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8A7C2A43-BABF-4961-81D8-D16A702A2EE8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F97339EF-424F-46F1-AD8D-B36B8C2F716E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F97339EF-424F-46F1-AD8D-B36B8C2F716E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F97339EF-424F-46F1-AD8D-B36B8C2F716E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F97339EF-424F-46F1-AD8D-B36B8C2F716E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -568,8 +584,12 @@ Global
 		{BBCFC623-2113-464D-8A1F-3CCDABF1241C} = {5E5E1E84-DDBC-40D6-B891-0D563A15A44A}
 		{63E52936-6C1D-4F45-8B56-86C23E9A853F} = {BBCFC623-2113-464D-8A1F-3CCDABF1241C}
 		{D6DD6E38-BB34-4B2F-9A42-4C17AF30C9CD} = {FC9F520F-BA51-4AD2-BFEE-EF787798E734}
-		{3968C3A4-C521-4CE4-B971-EDAD2BEF36FA} = {38429825-88AF-4F0D-9E7C-A58EC5C86DA0}
-		{FEDD3B00-5494-443B-8E85-553B9F69DBC2} = {38429825-88AF-4F0D-9E7C-A58EC5C86DA0}
+		{EEBEA8AF-C8A8-4C71-A96C-D5836DE24359} = {5E5E1E84-DDBC-40D6-B891-0D563A15A44A}
+		{08FD0D47-CC01-4274-99D0-81B3F780A695} = {EEBEA8AF-C8A8-4C71-A96C-D5836DE24359}
+		{C865B0FD-E505-48F0-BFAF-0D4D7C1B5CA1} = {38429825-88AF-4F0D-9E7C-A58EC5C86DA0}
+		{7240B7EE-53D7-4C94-9A5C-80D2D6C4BF0E} = {C865B0FD-E505-48F0-BFAF-0D4D7C1B5CA1}
+		{8A7C2A43-BABF-4961-81D8-D16A702A2EE8} = {C865B0FD-E505-48F0-BFAF-0D4D7C1B5CA1}
+		{F97339EF-424F-46F1-AD8D-B36B8C2F716E} = {C865B0FD-E505-48F0-BFAF-0D4D7C1B5CA1}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}

@@ -1,6 +1,6 @@
-﻿namespace Elsa.Persistence.EntityFrameworkCore.Core.Models
+﻿namespace Elsa.Persistence.EntityFramework.Core.Models
 {
-    public class BlockingActivityEntity
+    public class WorkflowExecutionLogRecordEntity
     {
         public string Id { get; set; } = default!;
         public string WorkflowInstanceId { get; set; } = default!;

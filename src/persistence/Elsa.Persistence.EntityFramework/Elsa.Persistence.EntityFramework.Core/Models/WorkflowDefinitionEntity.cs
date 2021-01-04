@@ -1,4 +1,4 @@
-﻿namespace Elsa.Persistence.EntityFrameworkCore.Core.Models
+﻿namespace Elsa.Persistence.EntityFramework.Core.Models
 {
     public class WorkflowDefinitionEntity
     {

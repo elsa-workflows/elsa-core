@@ -10,6 +10,8 @@
             This package provides Entity Framework Core entities used by the various Elsa persistence EF Core providers.
         </Description>
         <PackageTags>elsa, workflows, efcore</PackageTags>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
     </PropertyGroup>
 
     <ItemGroup>
@@ -17,7 +19,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\core\Elsa.Abstractions\Elsa.Abstractions.csproj" />
+        <ProjectReference Include="..\..\..\core\Elsa.Core\Elsa.Core.csproj" />
     </ItemGroup>
 
 </Project>
