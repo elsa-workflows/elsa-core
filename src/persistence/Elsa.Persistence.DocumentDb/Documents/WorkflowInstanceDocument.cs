@@ -7,6 +7,8 @@ namespace Elsa.Persistence.DocumentDb.Documents
 {
     public class WorkflowInstanceDocument : DocumentBase
     {
+        internal const string COLLECTION_NAME = "WorkflowInstance";
+
         [JsonProperty(PropertyName = "definitionId")]
         public string DefinitionId { get; set; }
 
@@ -55,8 +57,5 @@ namespace Elsa.Persistence.DocumentDb.Documents
 
         [JsonProperty(PropertyName = "fault")] 
         public WorkflowFault Fault { get; set; }
-
-        [JsonProperty(PropertyName = "tenantId")]
-        public string TenantId { get; set; }
     }
 }
