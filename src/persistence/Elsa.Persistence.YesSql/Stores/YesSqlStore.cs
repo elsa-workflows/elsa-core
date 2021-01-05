@@ -61,12 +61,24 @@ namespace Elsa.Persistence.YesSql.Stores
 
         public async Task<int> DeleteManyAsync(ISpecification<T> specification, CancellationToken cancellationToken = default)
         {
+            _stopwatch.Restart();
             var documents = await Query(specification).ListAsync().ToList();
+            _stopwatch.Stop();
+            _logger.LogDebug("Loading documents to delete took {TimeElapsed}", _stopwatch.Elapsed);
 
             foreach (var document in documents)
+            {
+                _stopwatch.Restart();
                 Session.Delete(document, CollectionName);
+                _stopwatch.Stop();
+                _logger.LogDebug("Deleting document took {TimeElapsed}", _stopwatch.Elapsed);
+            }
 
+            _stopwatch.Restart();
             await Session.CommitAsync();
+            _stopwatch.Stop();
+            _logger.LogDebug("Committing deleted documents took {TimeElapsed}", _stopwatch.Elapsed);
+            
             return documents.Count;
         }
 
