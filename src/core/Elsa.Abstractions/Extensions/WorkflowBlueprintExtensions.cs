@@ -52,26 +52,6 @@ namespace Elsa
             return value!;
         }
 
-        public static T? GetActivityState<TActivity, T>(
-            this IWorkflowBlueprint workflowBlueprint,
-            Expression<Func<TActivity, T>> propertyExpression,
-            ActivityExecutionContext activityExecutionContext) where TActivity : IActivity
-        {
-            var expression = (MemberExpression) propertyExpression.Body;
-            string propertyName = expression.Member.Name;
-            return GetActivityState<T>(propertyName, activityExecutionContext);
-        }
-
-        public static T? GetActivityState<T>(
-            string propertyName,
-            ActivityExecutionContext activityExecutionContext)
-        {
-            var activity = activityExecutionContext.ActivityInstance;
-            var serializer = activityExecutionContext.GetService<JsonSerializer>();
-            var value = activity.Data[propertyName];
-            return value != null ? value.ToObject<T>(serializer) : default;
-        }
-
         public static IEnumerable<IWorkflowBlueprint> WithVersion(
             this IEnumerable<IWorkflowBlueprint> query,
             VersionOptions version) =>
