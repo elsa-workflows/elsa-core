@@ -18,7 +18,7 @@ namespace Elsa.Indexing.Services
             this.indexName = indexName;
         }
 
-        protected ElasticClient Client => context.Client;
+        protected IElasticClient Client => context.Client;
 
         public Task<CreateIndexResponse> CreateIndexAsync() 
         {

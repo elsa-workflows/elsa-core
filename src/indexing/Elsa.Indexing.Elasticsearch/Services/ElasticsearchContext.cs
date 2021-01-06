@@ -22,7 +22,7 @@ namespace Elsa.Indexing.Services
             Client = new ElasticClient(settings);
         }
 
-        public ElasticClient Client { get; }
+        public IElasticClient Client { get; }
 
     }
 }
