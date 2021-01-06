@@ -11,9 +11,11 @@ namespace Elsa.Indexing.Profiles
         {
             CreateMap<WorkflowInstance, ElasticWorkflowInstance>();
             CreateMap<WorkflowDefinition, ElasticWorkflowInstance>();
+            CreateMap<ActivityDefinition, ElasticActivityDefinition>();
 
             CreateMap<ElasticWorkflowInstance, WorkflowInstanceIndexModel>();
-            CreateMap<ElasticWorkflowInstance, WorkflowDefinitionIndexModel>();
+            CreateMap<ElasticWorkflowDefinition, WorkflowDefinitionIndexModel>();
+            CreateMap<ElasticActivityDefinition, ActivityDefinitionIndexModel>();
         }
     }
 }

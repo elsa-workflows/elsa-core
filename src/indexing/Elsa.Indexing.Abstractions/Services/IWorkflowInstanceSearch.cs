@@ -11,8 +11,8 @@ namespace Elsa.Indexing.Services
     {
 
         Task<List<WorkflowInstanceIndexModel>> SearchAsync(string search,
-            string? contextType,
-            string? contextId,
+            string? contextType = null,
+            string? contextId = null,
             string? definitionId = null,
             string? tenantId = null,
             WorkflowStatus? workflowStatus = null,

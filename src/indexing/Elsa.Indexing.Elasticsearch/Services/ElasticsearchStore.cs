@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -20,7 +21,12 @@ namespace Elsa.Indexing.Services
 
         protected IElasticClient Client => context.Client;
 
-        public Task<CreateIndexResponse> CreateIndexAsync() 
+        public Task<CreateIndexResponse> CreateIndexAsync(Func<CreateIndexDescriptor, ICreateIndexRequest> selector) 
+        {
+            return Client.Indices.CreateAsync(indexName, selector);
+        }
+
+        public Task<CreateIndexResponse> CreateIndexAsync()
         {
             return Client.Indices.CreateAsync(indexName, c => c
                 .Map<TEntity>(m => m

@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 using Elsa.Models;
 
 using NodaTime;
@@ -34,5 +36,7 @@ namespace Elsa.Indexing.Models
         public Instant? FaultedAt { get; set; }
 
         public Instant? LastSavedAt { get; set; }
+
+        public List<ActivityDefinitionIndexModel> Activities { get; set; } = new List<ActivityDefinitionIndexModel>();
     }
 }

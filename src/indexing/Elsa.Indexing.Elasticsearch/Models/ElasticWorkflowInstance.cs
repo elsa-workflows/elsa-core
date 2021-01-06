@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using Elsa.Models;
 
@@ -11,7 +12,7 @@ namespace Elsa.Indexing.Models
         [Keyword]
         public string Id { get; set; } = default!;
 
-        [Keyword]
+        [Keyword(Normalizer = ElsaElasticsearchConsts.Normalizer)]
         public string DefinitionId { get; set; } = default!;
 
         [Keyword]
@@ -31,7 +32,7 @@ namespace Elsa.Indexing.Models
         [Keyword]
         public string? ContextId { get; set; }
 
-        [Text]
+        [Text(Analyzer = ElsaElasticsearchConsts.Analyzer, SearchAnalyzer = ElsaElasticsearchConsts.SearchAnalyzer)]
         public string? Name { get; set; }
 
         [Date]
@@ -51,7 +52,7 @@ namespace Elsa.Indexing.Models
 
         [Date]
         public DateTime? LastSavedAt { get; set; }
-        
+
         public string GetId()
         {
             return Id;

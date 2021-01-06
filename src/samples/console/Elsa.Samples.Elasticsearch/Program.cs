@@ -5,6 +5,7 @@ using Elsa.Indexing.Extensions;
 
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using Elsa.Indexing.Services;
 
 namespace Elsa.Samples.Elasticsearch
 {
@@ -22,7 +23,7 @@ namespace Elsa.Samples.Elasticsearch
                     .AddWorkflow<HelloWorld>()
                     .UseElasticsearch(configure =>
                     {
-                        configure.Uri = new Uri[] { new Uri("localhost:9200") };
+                        configure.Uri = new Uri[] { new Uri("http://localhost:9200/") };
                     })
                 )
                 .BuildServiceProvider();
@@ -36,7 +37,12 @@ namespace Elsa.Samples.Elasticsearch
 
             // Run the workflow.
             await workflowRunner.RunWorkflowAsync<HelloWorld>();
-         
+
+            var instanceSearcher = services.GetRequiredService<IWorkflowInstanceSearch>();
+
+            var instances = await instanceSearcher.SearchAsync("HelloWorld");
+
+            Console.WriteLine($"{instances.Count} instances were found");
         }
     }
 }

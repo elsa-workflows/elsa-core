@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace Elsa.Indexing.Models
 {
     public class WorkflowDefinitionIndexModel
@@ -21,5 +23,7 @@ namespace Elsa.Indexing.Models
         public bool IsPublished { get; set; }
 
         public bool IsLatest { get; set; }
+
+        public List<ActivityDefinitionIndexModel> Activities { get; set; } = new List<ActivityDefinitionIndexModel>();
     }
 }

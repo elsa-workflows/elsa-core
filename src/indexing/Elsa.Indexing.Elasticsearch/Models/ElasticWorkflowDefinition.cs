@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 using Nest;
 
 namespace Elsa.Indexing.Models
@@ -14,13 +16,13 @@ namespace Elsa.Indexing.Models
         [Keyword]
         public string? TenantId { get; set; }
 
-        [Text]
+        [Text(Analyzer = ElsaElasticsearchConsts.Analyzer, SearchAnalyzer = ElsaElasticsearchConsts.SearchAnalyzer)]
         public string? Name { get; set; }
 
-        [Text]
+        [Text(Analyzer = ElsaElasticsearchConsts.Analyzer, SearchAnalyzer = ElsaElasticsearchConsts.SearchAnalyzer)]
         public string? DisplayName { get; set; }
 
-        [Text]
+        [Text(Analyzer = ElsaElasticsearchConsts.Analyzer, SearchAnalyzer = ElsaElasticsearchConsts.SearchAnalyzer)]
         public string? Description { get; set; }
 
         [Number]
@@ -37,6 +39,9 @@ namespace Elsa.Indexing.Models
 
         [Boolean]
         public bool IsLatest { get; set; }
+
+        [Nested]
+        public List<ElasticActivityDefinition> Activities { get; set; } = new List<ElasticActivityDefinition>();
 
         public string GetId()
         {

@@ -27,8 +27,8 @@ namespace Elsa.Indexing.Services
         }
 
         public Task<List<WorkflowInstanceIndexModel>> SearchAsync(string search, 
-            string? contextType, 
-            string? contextId, 
+            string? contextType = null, 
+            string? contextId = null, 
             string? definitionId = null, 
             string? tenantId = null, 
             WorkflowStatus? workflowStatus = null, 
@@ -56,6 +56,11 @@ namespace Elsa.Indexing.Services
                     .Field(fi => fi.Name)
                     .Query(search)
                     .Fuzziness(Fuzziness.Auto)));
+
+            shouldFilters.Add(f => f.Match(fu => fu
+                  .Field(fi => fi.DefinitionId)
+                  .Query(search)
+                  .Fuzziness(Fuzziness.Auto)));
 
             return SearchAsync<WorkflowInstanceIndexModel>(_indexName, filters, shouldFilters, from, take, 1, cancellationToken);
         }

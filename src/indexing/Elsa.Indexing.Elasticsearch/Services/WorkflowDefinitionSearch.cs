@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -22,8 +23,8 @@ namespace Elsa.Indexing.Services
             _indexName = options.Value.WorkflowDefinitionIndexName;
         }
 
-        public Task<List<WorkflowDefinitionIndexModel>> SearchAsync(string search, 
-            string? tenantId = null, 
+        public Task<List<WorkflowDefinitionIndexModel>> SearchAsync(string search,
+            string? tenantId = null,
             bool? isEnabled = null,
             int from = 0,
             int take = 20,
@@ -49,6 +50,29 @@ namespace Elsa.Indexing.Services
                    .Field(fi => fi.DisplayName)
                    .Query(search)
                    .Fuzziness(Fuzziness.Auto)));
+
+            shouldFilters.Add(f => f.Nested(n => n
+                  .Path(p => p.Activities)
+                  .Query(q => q
+                        .Bool(b => b
+                            .MinimumShouldMatch(1)
+                            .Should(s => s
+                                    .Match(fu => fu                            
+                                       .Field(fi => fi.Activities.First().DisplayName)
+                                       .Query(search)
+                                       .Fuzziness(Fuzziness.Auto)),
+                                   s => s
+                                    .Match(fu => fu
+                                            .Field(fi => fi.Activities.First().Description)
+                                            .Query(search)
+                                            .Fuzziness(Fuzziness.Auto)),
+                                    s => s
+                                    .Match(fu => fu
+                                            .Field(fi => fi.Activities.First().ActivityId)
+                                            .Query(search)
+                                            .Fuzziness(Fuzziness.Auto)))
+                            ))
+                        ));
 
             return SearchAsync<WorkflowDefinitionIndexModel>(_indexName, filters, shouldFilters, from, take, 1, cancellationToken);
         }
