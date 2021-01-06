@@ -58,6 +58,7 @@ namespace Microsoft.Extensions.DependencyInjection
             options.AddAutoMapper();
 
             services.Decorate<IWorkflowDefinitionStore, InitializingWorkflowDefinitionStore>();
+            services.Decorate<IWorkflowDefinitionStore, EventPublishingWorkflowDefinitionStore>();
             services.Decorate<IWorkflowInstanceStore, EventPublishingWorkflowInstanceStore>();
 
             return services;

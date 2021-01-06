@@ -3,17 +3,20 @@ using Elsa.Indexing.Services;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 
-namespace Elsa.Indexing
+namespace Elsa.Indexing.Extensions
 {
     public static class ElsaIndexingOptionsExtensions
     {
-        public static ElsaOptions UseElasticsearch(this ElsaOptions options, Action<ElsaElasticsearchOptions> configure)
+        public static ElsaIndexingOptions UseElasticsearch(this ElsaIndexingOptions options, Action<ElsaElasticsearchOptions> configure)
         {
             options.Services.Configure(configure);
 
-            options.Services.AddScoped<IWorkflowDefinitionSearch, WorkflowDefinitionSearch>();
-            options.Services.AddScoped<IWorkflowInstanceSearch, WorkflowInstanceSearch>();
-            options.Services.AddScoped<ElasticsearchStore>();
+            options.Services
+                .AddScoped<IWorkflowDefinitionSearch, WorkflowDefinitionSearch>()
+                .AddScoped<IWorkflowInstanceSearch, WorkflowInstanceSearch>()
+                .AddScoped<IWorkflowDefinitionIndexer, WorkflowDefinitionIndexer>()
+                .AddScoped<IWorkflowInstanceIndexer, WorkflowInstanceIndexer>()
+                .AddScoped<ElasticsearchStore>();
 
             options.Services.AddAutoMapperProfile<ElasticsearchProfile>();
 
