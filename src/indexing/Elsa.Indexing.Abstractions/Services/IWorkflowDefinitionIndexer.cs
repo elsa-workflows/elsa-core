@@ -7,7 +7,7 @@ namespace Elsa.Indexing.Services
 {
     public interface IWorkflowDefinitionIndexer
     {
-        Task IndexAsync(WorkflowDefinition instance, CancellationToken cancellationToken);
-        Task DeleteAsync(WorkflowDefinition instance, CancellationToken cancellationToken);
+        Task IndexAsync(WorkflowDefinition definition, CancellationToken cancellationToken);
+        Task DeleteAsync(WorkflowDefinition definition, CancellationToken cancellationToken);
     }
 }

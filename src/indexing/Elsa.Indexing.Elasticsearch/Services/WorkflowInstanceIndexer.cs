@@ -1,20 +1,22 @@
 using System.Threading;
 using System.Threading.Tasks;
 
+using AutoMapper;
+
+using Elsa.Indexing.Models;
 using Elsa.Models;
 
 namespace Elsa.Indexing.Services
 {
-    public class WorkflowInstanceIndexer : IWorkflowInstanceIndexer
+    public class WorkflowInstanceIndexer : Indexer<WorkflowInstance, ElasticWorkflowInstance>, IWorkflowInstanceIndexer
     {
-        public Task DeleteAsync(WorkflowInstance instance, CancellationToken cancellationToken)
+        public WorkflowInstanceIndexer(ElasticsearchStore<ElasticWorkflowInstance> elasticsearchStore, IMapper mapper) : base(elasticsearchStore, mapper)
         {
-            return Task.CompletedTask;
         }
 
-        public Task IndexAsync(WorkflowInstance instance, CancellationToken cancellationToken)
+        public Task DeleteAsync(WorkflowInstance instance, CancellationToken cancellationToken)
         {
-            return Task.CompletedTask;
-        }
+            return DeleteAsync(instance.Id, cancellationToken);
+        }     
     }
 }

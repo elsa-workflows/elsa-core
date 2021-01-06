@@ -1,6 +1,6 @@
 namespace Elsa.Indexing.Models
 {
-   public class WorkflowDefinitionIndexModel
+    public class WorkflowDefinitionIndexModel
     {
     }
 }
