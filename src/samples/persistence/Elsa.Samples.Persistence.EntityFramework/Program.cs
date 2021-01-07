@@ -1,14 +1,11 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Elsa.Persistence;
-using Elsa.Persistence.EntityFramework.Core;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Sqlite;
 using Elsa.Persistence.Specifications;
 using Elsa.Services;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Samples.Persistence.EntityFramework
@@ -24,18 +21,11 @@ namespace Elsa.Samples.Persistence.EntityFramework
                     .UseEntityFrameworkPersistence(ef =>
                     {
                         ef.UseSqlite("Data Source=elsa.db;Cache=Shared", db => db.MigrationsAssembly(typeof(SqliteElsaContextFactory).Assembly.GetName().Name));
-                    })
+                    }, true)
                     .AddConsoleActivities()
                     .AddWorkflow<HelloWorld>())
                 .AddAutoMapperProfiles<Program>()
                 .BuildServiceProvider();
-
-            // Create/update database
-            using (var scope = services.CreateScope())
-            {
-                var dbContext = scope.ServiceProvider.GetRequiredService<ElsaContext>();
-                await dbContext.Database.MigrateAsync();
-            }
             
             // Run startup actions (not needed when registering Elsa with a Host).
             var startupRunner = services.GetRequiredService<IStartupRunner>();
