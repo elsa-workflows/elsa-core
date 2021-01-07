@@ -24,7 +24,6 @@ namespace Elsa.Persistence.YesSql.Documents
         public Instant? FinishedAt { get; set; }
         public Instant? CancelledAt { get; set; }
         public Instant? FaultedAt { get; set; }
-        public Instant? LastSavedAt { get; set; }
         public Variables Variables { get; set; } = new();
         public object? Output { get; set; }
         public IDictionary<string, JObject> ActivityData { get; set; } = new Dictionary<string, JObject>();

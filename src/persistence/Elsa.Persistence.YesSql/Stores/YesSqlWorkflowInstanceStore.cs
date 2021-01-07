@@ -22,12 +22,6 @@ namespace Elsa.Persistence.YesSql.Stores
             _clock = clock;
         }
 
-        public override async Task SaveAsync(WorkflowInstance entity, CancellationToken cancellationToken = default)
-        {
-            entity.LastSavedAt = _clock.GetCurrentInstant();
-            await base.SaveAsync(entity, cancellationToken);
-        }
-
         protected override async Task<WorkflowInstanceDocument?> FindDocumentAsync(WorkflowInstance entity, CancellationToken cancellationToken) => await Query<WorkflowInstanceIndex>(x => x.InstanceId == entity.Id).FirstOrDefaultAsync();
 
         protected override IQuery<WorkflowInstanceDocument> MapSpecification(ISpecification<WorkflowInstance> specification) =>

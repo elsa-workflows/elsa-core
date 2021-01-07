@@ -20,6 +20,5 @@ namespace Elsa.Client.Models
         [DataMember(Order = 11)] public Instant? FinishedAt { get; set; }
         [DataMember(Order = 12)] public Instant? CancelledAt { get; set; }
         [DataMember(Order = 13)] public Instant? FaultedAt { get; set; }
-        [DataMember(Order = 14)] public Instant? LastSavedAt { get; set; }
     }
 }

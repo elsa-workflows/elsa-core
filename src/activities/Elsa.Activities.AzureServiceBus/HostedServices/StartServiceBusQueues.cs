@@ -27,7 +27,7 @@ namespace Elsa.Activities.AzureServiceBus.HostedServices
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             var cancellationToken = stoppingToken;
-            var queueNames = await GetQueueNamesAsync(cancellationToken).ToListAsync(cancellationToken);
+            var queueNames = (await GetQueueNamesAsync(cancellationToken).ToListAsync(cancellationToken)).Distinct();
 
             foreach (var queueName in queueNames)
             {
