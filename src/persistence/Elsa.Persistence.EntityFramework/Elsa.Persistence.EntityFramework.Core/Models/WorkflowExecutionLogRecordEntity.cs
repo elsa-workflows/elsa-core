@@ -1,12 +1,17 @@
-﻿namespace Elsa.Persistence.EntityFramework.Core.Models
+﻿using Elsa.Models;
+using Newtonsoft.Json.Linq;
+using NodaTime;
+
+namespace Elsa.Persistence.EntityFramework.Core.Models
 {
-    public class WorkflowExecutionLogRecordEntity
+    public class WorkflowExecutionLogRecordEntity : IEntity
     {
         public string Id { get; set; } = default!;
-        public string WorkflowInstanceId { get; set; } = default!;
         public string? TenantId { get; set; }
+        public string WorkflowInstanceId { get; set; } = default!;
         public string ActivityId { get; set; } = default!;
-        public string ActivityType { get; set; }= default!;
-        public string? Tag { get; set; }
+        public Instant Timestamp { get; set; }= default!;
+        public string? Message { get; set; }
+        public JObject? Data { get; set; }
     }
 }

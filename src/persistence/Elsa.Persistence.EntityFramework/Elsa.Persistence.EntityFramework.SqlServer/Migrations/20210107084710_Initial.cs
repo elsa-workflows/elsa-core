@@ -42,6 +42,22 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "WorkflowExecutionLogRecords",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    WorkflowInstanceId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    TenantId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ActivityId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ActivityType = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Tag = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_WorkflowExecutionLogRecords", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "WorkflowInstances",
                 columns: table => new
                 {
@@ -74,6 +90,9 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
 
             migrationBuilder.DropTable(
                 name: "WorkflowDefinitions");
+
+            migrationBuilder.DropTable(
+                name: "WorkflowExecutionLogRecords");
 
             migrationBuilder.DropTable(
                 name: "WorkflowInstances");

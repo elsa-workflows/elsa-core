@@ -16,6 +16,7 @@ namespace Elsa.Persistence.EntityFramework.Core
         public DbSet<WorkflowDefinitionEntity> WorkflowDefinitions { get; set; } = default!;
         public DbSet<WorkflowInstanceEntity> WorkflowInstances { get; set; } = default!;
         public DbSet<BlockingActivityEntity> BlockingActivities { get; set; } = default!;
+        public DbSet<WorkflowExecutionLogRecordEntity> WorkflowExecutionLogRecords { get; set; } = default!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

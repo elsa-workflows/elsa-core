@@ -3,7 +3,7 @@ using NodaTime;
 
 namespace Elsa.Persistence.EntityFramework.Core.Models
 {
-    public class WorkflowInstanceEntity
+    public class WorkflowInstanceEntity : IEntity
     {
         public string Id { get; set; } = default!;
         public string DefinitionId { get; set; } = default!;

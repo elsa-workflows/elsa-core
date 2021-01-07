@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 
-namespace Elsa.Persistence.YesSql
+namespace Elsa
 {
     // Taken & adapted from https://stackoverflow.com/a/30546883/690374
     public static class ExpressionHelper

@@ -1,6 +1,8 @@
-﻿namespace Elsa.Persistence.EntityFramework.Core.Models
+﻿using Elsa.Models;
+
+namespace Elsa.Persistence.EntityFramework.Core.Models
 {
-    public class WorkflowDefinitionEntity
+    public class WorkflowDefinitionEntity : IEntity
     {
         public string Id { get; set; } = default!;
         public string DefinitionVersionId { get; set; } = default!;

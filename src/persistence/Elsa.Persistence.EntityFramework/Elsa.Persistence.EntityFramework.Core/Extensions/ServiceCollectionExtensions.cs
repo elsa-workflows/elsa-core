@@ -18,7 +18,11 @@ namespace Elsa.Persistence.EntityFramework.Core.Extensions
         {
             elsa.Services
                 .AddAutoMapperProfile<AutoMapperProfile>()
-                .AddDbContext<ElsaContext>(configure);
+                .AddDbContext<ElsaContext>(configure)
+                .AddScoped<EntityFrameworkWorkflowDefinitionStore>()
+                .AddScoped<EntityFrameworkWorkflowInstanceStore>()
+                .AddScoped<EntityFrameworkWorkflowExecutionLogRecordStore>()
+                ;
 
             return elsa
                 .UseWorkflowDefinitionStore(sp => sp.GetRequiredService<EntityFrameworkWorkflowDefinitionStore>())
