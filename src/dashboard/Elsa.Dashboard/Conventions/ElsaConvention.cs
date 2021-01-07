@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices.ComTypes;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
 
 namespace Elsa.Dashboard.Conventions
@@ -8,7 +9,7 @@ namespace Elsa.Dashboard.Conventions
 
         public void Apply(ControllerModel controller)
         {
-            if (controller.RouteValues["area"] == AreaName)
+            if (controller.RouteValues.TryGetValue("area", out var areaName) && areaName == AreaName)
             {
                 ApplyConvention(controller);
             }
