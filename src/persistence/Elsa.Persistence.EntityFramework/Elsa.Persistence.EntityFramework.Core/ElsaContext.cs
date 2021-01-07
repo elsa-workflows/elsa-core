@@ -8,14 +8,9 @@ namespace Elsa.Persistence.EntityFramework.Core
         public ElsaContext(DbContextOptions<ElsaContext> options) : base(options)
         {
         }
-        
-        protected ElsaContext(DbContextOptions options) : base(options)
-        {
-        }
 
         public DbSet<WorkflowDefinition> WorkflowDefinitions { get; set; } = default!;
         public DbSet<WorkflowInstance> WorkflowInstances { get; set; } = default!;
-        //public DbSet<BlockingActivity> BlockingActivities { get; set; } = default!;
         public DbSet<WorkflowExecutionLogRecord> WorkflowExecutionLogRecords { get; set; } = default!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
