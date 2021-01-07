@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Elsa.Comparers;
 using Elsa.Models;
+using Newtonsoft.Json.Linq;
 using NodaTime;
 
 namespace Elsa.Persistence.YesSql.Documents
@@ -26,7 +27,8 @@ namespace Elsa.Persistence.YesSql.Documents
         public Instant? LastSavedAt { get; set; }
         public Variables Variables { get; set; } = new();
         public object? Output { get; set; }
-        public ICollection<ActivityInstance> Activities { get; set; } = new List<ActivityInstance>();
+        public IDictionary<string, JObject> ActivityData { get; set; } = new Dictionary<string, JObject>();
+        public IDictionary<string, object> ActivityOutput { get; set; } = new Dictionary<string, object>();
 
         public HashSet<BlockingActivity> BlockingActivities
         {

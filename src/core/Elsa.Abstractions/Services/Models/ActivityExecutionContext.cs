@@ -1,5 +1,6 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.ActivityProviders;
@@ -21,33 +22,51 @@ namespace Elsa.Services.Models
             WorkflowExecutionContext = workflowExecutionContext;
             ServiceScope = serviceProvider;
             ActivityBlueprint = activityBlueprint;
-            ActivityInstance = WorkflowExecutionContext.WorkflowInstance.Activities.First(x => x.Id == ActivityBlueprint.Id);
             Input = input;
             CancellationToken = cancellationToken;
             Outcomes = new List<string>(0);
         }
 
         public WorkflowExecutionContext WorkflowExecutionContext { get; }
+        public WorkflowInstance WorkflowInstance => WorkflowExecutionContext.WorkflowInstance;
         public IServiceScope ServiceScope { get; }
         public IActivityBlueprint ActivityBlueprint { get; }
-        public ActivityInstance ActivityInstance { get; }
-        public ActivityInstance? ParentActivityInstance => WorkflowExecutionContext.WorkflowInstance.Activities.FirstOrDefault(x => x.Id == ActivityBlueprint.Parent?.Id);
+
+        public string ActivityId => ActivityBlueprint.Id;
         public IReadOnlyCollection<string> Outcomes { get; set; }
         public object? Input { get; }
         public CancellationToken CancellationToken { get; }
-        public JObject Data => ActivityInstance.Data;
-        public JObject? ParentData => ParentActivityInstance?.Data;
+
+        public JObject GetData() => WorkflowInstance.ActivityData.GetItem(ActivityBlueprint.Id, () => new JObject());
+
+        public T? GetState<T>(string propertyName)
+        {
+            var data = GetData();
+            return data.GetState<T>(propertyName);
+        }
+        
+        public T? GetState<TActivity, T>(Expression<Func<TActivity, T>> propertyExpression) where TActivity : IActivity
+        {
+            var expression = (MemberExpression) propertyExpression.Body;
+            string propertyName = expression.Member.Name;
+            return GetState<T>(propertyName);
+        }
         
         public T? GetParentState<T>(string key)
         {
-            var parentData = ParentData;
-            return parentData == null ? default : parentData.GetState<T>(key);
+            var parentActivityId = ActivityBlueprint.Parent?.Id;
+
+            if (parentActivityId == null)
+                return default;
+            
+            var parentData = WorkflowExecutionContext.WorkflowInstance.ActivityData.GetItem(parentActivityId);
+            return parentData.GetState<T>(key);
         }
 
         public object? Output
         {
-            get => ActivityInstance.Output;
-            set => ActivityInstance.Output = value;
+            get => WorkflowExecutionContext.WorkflowInstance.ActivityOutput.GetItem(ActivityBlueprint.Id, () => null!);
+            set => WorkflowExecutionContext.WorkflowInstance.ActivityOutput.SetItem(ActivityBlueprint.Id, value);
         }
 
         public void SetVariable(string name, object? value) => WorkflowExecutionContext.SetVariable(name, value);

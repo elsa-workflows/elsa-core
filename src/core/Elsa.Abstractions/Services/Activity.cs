@@ -49,8 +49,8 @@ namespace Elsa.Services
         protected CombinedResult Combine(params IActivityExecutionResult[] results) => new(results);
         protected FaultResult Fault(LocalizedString message) => new(message);
         
-        protected T GetState<T>(Func<T>? defaultValue = null, [CallerMemberName] string name = null!) => Data.GetState(name, defaultValue);
-        protected T GetState<T>(Type type, Func<T>? defaultValue = null, [CallerMemberName] string name = null!) => Data.GetState(type, name, defaultValue);
+        protected T? GetState<T>(Func<T>? defaultValue = null, [CallerMemberName] string name = null!) => Data.GetState(name, defaultValue);
+        protected T? GetState<T>(Type type, Func<T>? defaultValue = null, [CallerMemberName] string name = null!) => Data.GetState(type, name, defaultValue);
         protected void SetState(object? value, [CallerMemberName] string name = null!) => Data.SetState(name, value);
     }
 }

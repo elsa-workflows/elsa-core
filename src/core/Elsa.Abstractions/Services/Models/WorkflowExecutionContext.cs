@@ -127,8 +127,7 @@ namespace Elsa.Services.Models
         public object? GetOutputFrom(string activityName)
         {
             var activityBlueprint = GetActivityBlueprintByName(activityName)!;
-            var activityInstance = WorkflowInstance.Activities.Single(x => x.Id == activityBlueprint.Id);
-            return activityInstance.Output;
+            return WorkflowInstance.ActivityOutput.GetItem(activityBlueprint.Id);
         }
 
         public T GetOutputFrom<T>(string activityName) => (T) GetOutputFrom(activityName)!;

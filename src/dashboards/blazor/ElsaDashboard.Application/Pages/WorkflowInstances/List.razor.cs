@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Elsa.Client.Models;
@@ -26,11 +27,12 @@ namespace ElsaDashboard.Application.Pages.WorkflowInstances
         [Inject] private IWorkflowInstanceService WorkflowInstanceService { get; set; } = default!;
         [Inject] private IWorkflowRegistryService WorkflowRegistryService { get; set; } = default!;
         [Inject] private IConfirmDialogService ConfirmDialogService { get; set; } = default!;
-        private PagedList<WorkflowInstance> WorkflowInstances { get; set; } = new();
-        private IDictionary<(string, int), WorkflowBlueprint> WorkflowBlueprints { get; set; } = new Dictionary<(string, int), WorkflowBlueprint>();
-        private IEnumerable<WorkflowBlueprint> LatestWorkflowBlueprints => GetLatestVersions(WorkflowBlueprints.Values);
+        private PagedList<WorkflowInstanceSummary> WorkflowInstances { get; set; } = new();
+        private IDictionary<(string, int), WorkflowBlueprintSummary> WorkflowBlueprints { get; set; } = new Dictionary<(string, int), WorkflowBlueprintSummary>();
+        private IEnumerable<WorkflowBlueprintSummary> LatestWorkflowBlueprints => GetLatestVersions(WorkflowBlueprints.Values);
         private SearchModel SearchModel { get; set; } = new();
         private EditContext EditContext { get; set; } = default!;
+        private Stopwatch Stopwatch { get; set; } = new();
 
         private IEnumerable<ButtonDropdownItem> WorkflowFilterItems =>
             LatestWorkflowBlueprints.Select(x => new ButtonDropdownItem(x.DisplayName!, x.Id, BuildFilterUrl(x.Id, SelectedWorkflowStatus, SelectedOrderBy), x.Id == SelectedWorkflowId))
@@ -80,8 +82,11 @@ namespace ElsaDashboard.Application.Pages.WorkflowInstances
 
         private async Task LoadWorkflowInstancesAsync()
         {
+            Stopwatch.Restart();
             SetDefaults();
             WorkflowInstances = await WorkflowInstanceService.ListAsync(Page, PageSize, SelectedWorkflowId, SelectedWorkflowStatus, SelectedOrderBy, SearchModel.SearchTerm);
+            Stopwatch.Stop();
+            Console.WriteLine(Stopwatch.Elapsed.ToString());
         }
 
         private static string BuildFilterUrl(string? workflowId, WorkflowStatus? workflowStatus, OrderBy? orderBy)
@@ -101,7 +106,7 @@ namespace ElsaDashboard.Application.Pages.WorkflowInstances
             return QueryHelpers.AddQueryString("workflow-instances", query);
         }
 
-        private async Task OnDeleteWorkflowInstanceClick(WorkflowInstance workflowInstance)
+        private async Task OnDeleteWorkflowInstanceClick(WorkflowInstanceSummary workflowInstance)
         {
             var result = await ConfirmDialogService.Show("Delete Workflow Instance", "Are you sure you want to delete this workflow instance?", "Delete");
 
@@ -138,6 +143,6 @@ namespace ElsaDashboard.Application.Pages.WorkflowInstances
                 _ => throw new ArgumentOutOfRangeException(nameof(status), status, null)
             };
 
-        private static IEnumerable<WorkflowBlueprint> GetLatestVersions(IEnumerable<WorkflowBlueprint> workflowBlueprints) => workflowBlueprints.GroupBy(x => x.Id).Select(x => x.OrderByDescending(y => y.Version).First());
+        private static IEnumerable<WorkflowBlueprintSummary> GetLatestVersions(IEnumerable<WorkflowBlueprintSummary> workflowBlueprints) => workflowBlueprints.GroupBy(x => x.Id).Select(x => x.OrderByDescending(y => y.Version).First());
     }
 }

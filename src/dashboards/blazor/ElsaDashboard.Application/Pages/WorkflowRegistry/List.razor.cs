@@ -10,8 +10,8 @@ namespace ElsaDashboard.Application.Pages.WorkflowRegistry
     partial class List
     {
         [Inject] private IWorkflowRegistryService WorkflowRegistryService { get; set; } = default!;
-        private PagedList<WorkflowBlueprint> WorkflowBlueprints { get; set; } = new();
-        private IEnumerable<IGrouping<string, WorkflowBlueprint>> VersionedWorkflowBlueprints => WorkflowBlueprints.Items.GroupBy(x => x.Id);
+        private PagedList<WorkflowBlueprintSummary> WorkflowBlueprints { get; set; } = new();
+        private IEnumerable<IGrouping<string, WorkflowBlueprintSummary>> VersionedWorkflowBlueprints => WorkflowBlueprints.Items.GroupBy(x => x.Id);
 
         protected override async Task OnInitializedAsync()
         {

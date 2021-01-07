@@ -95,11 +95,11 @@ namespace Elsa.Activities.ControlFlow
 
         private void RecordInboundTransitionsAsync(ActivityExecutionContext activityExecutionContext)
         {
+            var activityId = activityExecutionContext.ActivityBlueprint.Id;
             var workflowExecutionContext = activityExecutionContext.WorkflowExecutionContext;
-            var activityInstance = activityExecutionContext.ActivityInstance;
 
             // Get outbound connections of the executing activity.
-            var outboundConnections = workflowExecutionContext.GetOutboundConnections(activityInstance.Id);
+            var outboundConnections = workflowExecutionContext.GetOutboundConnections(activityId);
 
             // Get any connection that is pointing to this activity.
             var inboundTransitionsQuery =
@@ -110,12 +110,11 @@ namespace Elsa.Activities.ControlFlow
 
             var inboundConnections = inboundTransitionsQuery.ToList();
             var joinBlueprint = inboundConnections.FirstOrDefault()?.Target.Activity;
-            var joinActivity = joinBlueprint != null ? workflowExecutionContext.WorkflowInstance.Activities.Single(x => x.Id == joinBlueprint.Id) : default;
+            var joinActivityData = joinBlueprint != null ? workflowExecutionContext.WorkflowInstance.ActivityData.GetItem(joinBlueprint.Id) : default;
 
-            if (joinActivity == null)
+            if (joinActivityData == null)
                 return;
-
-            var joinActivityData = joinActivity.Data;
+            
             var inboundTransitions = joinActivityData.GetState<IReadOnlyCollection<string>?>(nameof(InboundTransitions)) ?? new List<string>();
 
             // For each inbound connection, record the transition.

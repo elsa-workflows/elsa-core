@@ -11,7 +11,7 @@ namespace Elsa.Client.Services
         Task<WorkflowInstance?> GetByIdAsync(string id, CancellationToken cancellationToken = default);
 
         [Get("/v1/workflow-instances")]
-        Task<PagedList<WorkflowInstance>> ListAsync(
+        Task<PagedList<WorkflowInstanceSummary>> ListAsync(
             int? page = default,
             int? pageSize = default,
             [AliasAs("workflow")] string? workflowDefinitionId = default,

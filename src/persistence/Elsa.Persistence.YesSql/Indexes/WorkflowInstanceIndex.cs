@@ -18,11 +18,11 @@ namespace Elsa.Persistence.YesSql.Indexes
         public string? ContextId { get; set; }
         public string? Name { get; set; }
         public WorkflowStatus WorkflowStatus { get; set; }
-        public DateTimeOffset CreatedAt { get; set; }
-        public DateTimeOffset? LastExecutedAt { get; set; }
-        public DateTimeOffset? FinishedAt { get; set; }
-        public DateTimeOffset? CancelledAt { get; set; }
-        public DateTimeOffset? FaultedAt { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime? LastExecutedAt { get; set; }
+        public DateTime? FinishedAt { get; set; }
+        public DateTime? CancelledAt { get; set; }
+        public DateTime? FaultedAt { get; set; }
     }
     
     public class WorkflowInstanceBlockingActivitiesIndex : MapIndex
@@ -32,7 +32,7 @@ namespace Elsa.Persistence.YesSql.Indexes
         public string ActivityType { get; set; } = default!;
         public string? CorrelationId { get; set; }
         public WorkflowStatus WorkflowStatus { get; set; }
-        public DateTimeOffset CreatedAt { get; set; }
+        public DateTime CreatedAt { get; set; }
     }
 
     public class WorkflowInstanceIndexProvider : IndexProvider<WorkflowInstanceDocument>
@@ -54,11 +54,11 @@ namespace Elsa.Persistence.YesSql.Indexes
                         ContextType = workflowInstance.ContextType,
                         ContextId = workflowInstance.ContextId,
                         Name = workflowInstance.Name,
-                        CreatedAt = workflowInstance.CreatedAt.ToDateTimeOffset(),
-                        CancelledAt = workflowInstance.CancelledAt?.ToDateTimeOffset(),
-                        FinishedAt = workflowInstance.FinishedAt?.ToDateTimeOffset(),
-                        LastExecutedAt = workflowInstance.LastExecutedAt?.ToDateTimeOffset(),
-                        FaultedAt = workflowInstance.FaultedAt?.ToDateTimeOffset()
+                        CreatedAt = workflowInstance.CreatedAt.ToDateTimeUtc(),
+                        CancelledAt = workflowInstance.CancelledAt?.ToDateTimeUtc(),
+                        FinishedAt = workflowInstance.FinishedAt?.ToDateTimeUtc(),
+                        LastExecutedAt = workflowInstance.LastExecutedAt?.ToDateTimeUtc(),
+                        FaultedAt = workflowInstance.FaultedAt?.ToDateTimeUtc()
                     });
             
             context.For<WorkflowInstanceBlockingActivitiesIndex>()
@@ -77,7 +77,7 @@ namespace Elsa.Persistence.YesSql.Indexes
                                     CorrelationId = workflowInstance.CorrelationId,
                                     TenantId = workflowInstance.TenantId,
                                     WorkflowStatus = workflowInstance.WorkflowStatus,
-                                    CreatedAt = workflowInstance.CreatedAt.ToDateTimeOffset()
+                                    CreatedAt = workflowInstance.CreatedAt.ToDateTimeUtc()
                                 });
                     });
         }

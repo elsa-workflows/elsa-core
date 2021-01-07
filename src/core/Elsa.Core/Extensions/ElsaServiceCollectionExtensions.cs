@@ -92,7 +92,6 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddScoped<IWorkflowTriggerInterruptor, WorkflowTriggerInterruptor>()
                 .AddSingleton<IActivityDescriber, ActivityDescriber>()
                 .AddSingleton<IWorkflowFactory, WorkflowFactory>()
-                .AddSingleton<IActivityFactory, ActivityFactory>()
                 .AddSingleton<IWorkflowBlueprintMaterializer, WorkflowBlueprintMaterializer>()
                 .AddSingleton<IWorkflowBlueprintReflector, WorkflowBlueprintReflector>()
                 .AddSingleton<IBackgroundWorker, BackgroundWorker>()

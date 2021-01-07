@@ -57,10 +57,6 @@ namespace Elsa.Services.Models
             }
         }
 
-        public T? GetState<T>(Expression<Func<TActivity, T>> propertyExpression)
-        {
-            var workflowBlueprint = ActivityExecutionContext.WorkflowExecutionContext.WorkflowBlueprint;
-            return workflowBlueprint.GetActivityState(propertyExpression, ActivityExecutionContext);
-        }
+        public T? GetState<T>(Expression<Func<TActivity, T>> propertyExpression) => ActivityExecutionContext.GetState(propertyExpression);
     }
 }

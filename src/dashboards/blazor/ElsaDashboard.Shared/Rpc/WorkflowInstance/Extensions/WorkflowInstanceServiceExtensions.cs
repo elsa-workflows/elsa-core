@@ -6,7 +6,7 @@ namespace ElsaDashboard.Shared.Rpc
 {
     public static class WorkflowInstanceServiceExtensions
     {
-        public static Task<PagedList<WorkflowInstance>> ListAsync(
+        public static Task<PagedList<WorkflowInstanceSummary>> ListAsync(
             this IWorkflowInstanceService service,
             int page = 0,
             int pageSize = 50,

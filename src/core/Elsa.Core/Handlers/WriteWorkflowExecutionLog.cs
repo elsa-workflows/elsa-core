@@ -5,8 +5,6 @@ using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services;
 using MediatR;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using NodaTime;
 
 namespace Elsa.Handlers
@@ -16,14 +14,12 @@ namespace Elsa.Handlers
         private readonly IWorkflowExecutionLogStore _store;
         private readonly IIdGenerator _idGenerator;
         private readonly IClock _clock;
-        private readonly JsonSerializer _jsonSerializer;
 
-        public WriteWorkflowExecutionLog(IWorkflowExecutionLogStore store, IIdGenerator idGenerator, IClock clock, JsonSerializer jsonSerializer)
+        public WriteWorkflowExecutionLog(IWorkflowExecutionLogStore store, IIdGenerator idGenerator, IClock clock)
         {
             _store = store;
             _idGenerator = idGenerator;
             _clock = clock;
-            _jsonSerializer = jsonSerializer;
         }
 
         public async Task Handle(ActivityExecuted notification, CancellationToken cancellationToken)
@@ -36,14 +32,7 @@ namespace Elsa.Handlers
             var timeStamp = _clock.GetCurrentInstant();
             const string message = "Activity Executed";
             
-            var state = new
-            {
-                notification.ActivityExecutionContext.Output,
-                notification.ActivityExecutionContext.Data
-            };
-
-            var logData = JObject.FromObject(state, _jsonSerializer);
-            var record = new WorkflowExecutionLogRecord(id, tenantId, workflowInstanceId, activityId, timeStamp, message, logData);
+            var record = new WorkflowExecutionLogRecord(id, tenantId, workflowInstanceId, activityId, timeStamp, message);
 
             await _store.SaveAsync(record, cancellationToken);
         }

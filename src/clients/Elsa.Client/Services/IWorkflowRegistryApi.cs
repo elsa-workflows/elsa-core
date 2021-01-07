@@ -11,6 +11,6 @@ namespace Elsa.Client.Services
         Task<WorkflowBlueprint?> GetByIdAsync(string id, VersionOptions versionOptions, CancellationToken cancellationToken = default);
         
         [Get("/v1/workflow-registry")]
-        Task<PagedList<WorkflowBlueprint>> ListAsync(int? page = default, int? pageSize = default, VersionOptions? versionOptions = default, CancellationToken cancellationToken = default);
+        Task<PagedList<WorkflowBlueprintSummary>> ListAsync(int? page = default, int? pageSize = default, VersionOptions? versionOptions = default, CancellationToken cancellationToken = default);
     }
 }
