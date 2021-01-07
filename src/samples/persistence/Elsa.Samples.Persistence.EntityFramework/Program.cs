@@ -45,7 +45,7 @@ namespace Elsa.Samples.Persistence.EntityFramework
             var workflowRunner = services.GetRequiredService<IWorkflowRunner>();
 
             // Run the workflow.
-            await workflowRunner.RunWorkflowAsync<HelloWorld>();
+            var workflowInstance = await workflowRunner.RunWorkflowAsync<HelloWorld>();
 
             // Get a reference to the workflow instance store.
             var store = services.GetRequiredService<IWorkflowInstanceStore>();
@@ -54,6 +54,9 @@ namespace Elsa.Samples.Persistence.EntityFramework
             var count = await store.CountAsync(new WorkflowInstanceDefinitionIdSpecification(nameof(HelloWorld)));
 
             Console.WriteLine(count);
+            
+            var loadedWorkflowInstance = await store.FindByIdAsync(workflowInstance.Id);
+            Console.WriteLine(loadedWorkflowInstance);
         }
     }
 }

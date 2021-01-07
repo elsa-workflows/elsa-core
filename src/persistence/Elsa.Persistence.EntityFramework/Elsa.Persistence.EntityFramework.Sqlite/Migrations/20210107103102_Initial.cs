@@ -8,22 +8,6 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "BlockingActivities",
-                columns: table => new
-                {
-                    Id = table.Column<string>(type: "TEXT", nullable: false),
-                    WorkflowInstanceId = table.Column<string>(type: "TEXT", nullable: false),
-                    TenantId = table.Column<string>(type: "TEXT", nullable: true),
-                    ActivityId = table.Column<string>(type: "TEXT", nullable: false),
-                    ActivityType = table.Column<string>(type: "TEXT", nullable: false),
-                    Tag = table.Column<string>(type: "TEXT", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_BlockingActivities", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "WorkflowDefinitions",
                 columns: table => new
                 {
@@ -31,6 +15,12 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
                     DefinitionVersionId = table.Column<string>(type: "TEXT", nullable: false),
                     TenantId = table.Column<string>(type: "TEXT", nullable: true),
                     Name = table.Column<string>(type: "TEXT", nullable: true),
+                    DisplayName = table.Column<string>(type: "TEXT", nullable: true),
+                    Description = table.Column<string>(type: "TEXT", nullable: true),
+                    Version = table.Column<int>(type: "INTEGER", nullable: false),
+                    IsSingleton = table.Column<bool>(type: "INTEGER", nullable: false),
+                    PersistenceBehavior = table.Column<int>(type: "INTEGER", nullable: false),
+                    DeleteCompletedInstances = table.Column<bool>(type: "INTEGER", nullable: false),
                     IsEnabled = table.Column<bool>(type: "INTEGER", nullable: false),
                     IsPublished = table.Column<bool>(type: "INTEGER", nullable: false),
                     IsLatest = table.Column<bool>(type: "INTEGER", nullable: false),
@@ -46,11 +36,12 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "TEXT", nullable: false),
-                    WorkflowInstanceId = table.Column<string>(type: "TEXT", nullable: false),
                     TenantId = table.Column<string>(type: "TEXT", nullable: true),
+                    WorkflowInstanceId = table.Column<string>(type: "TEXT", nullable: false),
                     ActivityId = table.Column<string>(type: "TEXT", nullable: false),
-                    ActivityType = table.Column<string>(type: "TEXT", nullable: false),
-                    Tag = table.Column<string>(type: "TEXT", nullable: true)
+                    Timestamp = table.Column<DateTimeOffset>(type: "TEXT", nullable: false),
+                    Message = table.Column<string>(type: "TEXT", nullable: true),
+                    Data = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -85,9 +76,6 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "BlockingActivities");
-
             migrationBuilder.DropTable(
                 name: "WorkflowDefinitions");
 

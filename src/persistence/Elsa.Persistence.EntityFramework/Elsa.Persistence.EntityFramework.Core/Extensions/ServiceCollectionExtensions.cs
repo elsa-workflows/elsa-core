@@ -1,10 +1,5 @@
 using System;
-using System.Data;
-using System.Linq;
-using Elsa.Data;
-using Elsa.Persistence.EntityFramework.Core.Mapping;
 using Elsa.Persistence.EntityFramework.Core.Stores;
-using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -17,7 +12,6 @@ namespace Elsa.Persistence.EntityFramework.Core.Extensions
         public static ElsaOptions UseEntityFrameworkPersistence(this ElsaOptions elsa, Action<IServiceProvider, DbContextOptionsBuilder> configure)
         {
             elsa.Services
-                .AddAutoMapperProfile<AutoMapperProfile>()
                 .AddDbContext<ElsaContext>(configure)
                 .AddScoped<EntityFrameworkWorkflowDefinitionStore>()
                 .AddScoped<EntityFrameworkWorkflowInstanceStore>()

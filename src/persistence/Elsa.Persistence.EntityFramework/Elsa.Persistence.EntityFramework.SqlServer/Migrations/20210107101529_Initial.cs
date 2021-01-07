@@ -8,22 +8,6 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "BlockingActivities",
-                columns: table => new
-                {
-                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    WorkflowInstanceId = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    TenantId = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    ActivityId = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ActivityType = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Tag = table.Column<string>(type: "nvarchar(max)", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_BlockingActivities", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "WorkflowDefinitions",
                 columns: table => new
                 {
@@ -31,6 +15,12 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
                     DefinitionVersionId = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     TenantId = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    DisplayName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Version = table.Column<int>(type: "int", nullable: false),
+                    IsSingleton = table.Column<bool>(type: "bit", nullable: false),
+                    PersistenceBehavior = table.Column<int>(type: "int", nullable: false),
+                    DeleteCompletedInstances = table.Column<bool>(type: "bit", nullable: false),
                     IsEnabled = table.Column<bool>(type: "bit", nullable: false),
                     IsPublished = table.Column<bool>(type: "bit", nullable: false),
                     IsLatest = table.Column<bool>(type: "bit", nullable: false),
@@ -46,11 +36,12 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    WorkflowInstanceId = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     TenantId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    WorkflowInstanceId = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ActivityId = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ActivityType = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Tag = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    Timestamp = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    Message = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Data = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -85,9 +76,6 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "BlockingActivities");
-
             migrationBuilder.DropTable(
                 name: "WorkflowDefinitions");
 

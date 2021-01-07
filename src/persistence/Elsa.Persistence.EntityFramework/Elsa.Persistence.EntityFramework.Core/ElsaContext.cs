@@ -1,4 +1,4 @@
-﻿using Elsa.Persistence.EntityFramework.Core.Models;
+﻿using Elsa.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Persistence.EntityFramework.Core
@@ -13,10 +13,10 @@ namespace Elsa.Persistence.EntityFramework.Core
         {
         }
 
-        public DbSet<WorkflowDefinitionEntity> WorkflowDefinitions { get; set; } = default!;
-        public DbSet<WorkflowInstanceEntity> WorkflowInstances { get; set; } = default!;
-        public DbSet<BlockingActivityEntity> BlockingActivities { get; set; } = default!;
-        public DbSet<WorkflowExecutionLogRecordEntity> WorkflowExecutionLogRecords { get; set; } = default!;
+        public DbSet<WorkflowDefinition> WorkflowDefinitions { get; set; } = default!;
+        public DbSet<WorkflowInstance> WorkflowInstances { get; set; } = default!;
+        //public DbSet<BlockingActivity> BlockingActivities { get; set; } = default!;
+        public DbSet<WorkflowExecutionLogRecord> WorkflowExecutionLogRecords { get; set; } = default!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

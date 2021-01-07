@@ -11,19 +11,17 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Persistence.EntityFramework.Core.Stores
 {
-    public abstract class EntityFrameworkStore<T, TEntity> : IStore<T> where T : IEntity where TEntity : class, IEntity
+    public abstract class EntityFrameworkStore<T> : IStore<T> where T : class, IEntity
     {
         private readonly SemaphoreSlim _semaphore = new(1);
 
-        protected EntityFrameworkStore(ElsaContext dbContext, IMapper mapper)
+        protected EntityFrameworkStore(ElsaContext dbContext)
         {
             DbContext = dbContext;
-            Mapper = mapper;
         }
 
         protected ElsaContext DbContext { get; }
-        protected IMapper Mapper { get; }
-        protected abstract DbSet<TEntity> DbSet { get; }
+        protected abstract DbSet<T> DbSet { get; }
 
         public async Task SaveAsync(T entity, CancellationToken cancellationToken = default)
         {
@@ -32,11 +30,11 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
             try
             {
                 var existingEntity = await DbSet.FindAsync(new object[] { entity.Id }, cancellationToken);
-                var mappedEntity = Mapper.Map(entity, existingEntity);
 
                 if (existingEntity == null!)
-                    await DbSet.AddAsync(mappedEntity, cancellationToken);
+                    await DbSet.AddAsync(entity, cancellationToken);
 
+                OnSaving(entity);
                 await DbContext.SaveChangesAsync(cancellationToken);
             }
             finally
@@ -63,15 +61,20 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
 
             if (orderBy != null)
             {
-                var orderByExpression = orderBy.OrderByExpression.ConvertType<T, TEntity>();
+                var orderByExpression = orderBy.OrderByExpression;
                 queryable = orderBy.SortDirection == SortDirection.Ascending ? queryable.OrderBy(orderByExpression) : queryable.OrderByDescending(orderByExpression);
             }
 
             if (paging != null)
                 queryable = queryable.Skip(paging.Skip).Take(paging.Take);
 
-            var entities = await queryable.ToListAsync(cancellationToken);
-            return Mapper.Map<IEnumerable<T>>(entities);
+            return (await queryable.ToListAsync(cancellationToken)).Select(ReadShadowProperties).ToList();
+        }
+
+        private T ReadShadowProperties(T entity)
+        {
+            OnLoading(entity);
+            return entity;
         }
 
         public Task<int> CountAsync(ISpecification<T> specification, CancellationToken cancellationToken = default)
@@ -84,11 +87,19 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
         {
             var filter = MapSpecification(specification);
             var entity = await DbSet.FirstOrDefaultAsync(filter, cancellationToken);
-            return Mapper.Map<T>(entity);
+            return entity != null ? ReadShadowProperties(entity) : default;
+        }
+        
+        protected virtual void OnSaving(T entity)
+        {
+        }
+        
+        protected virtual void OnLoading(T entity)
+        {
         }
 
-        protected abstract Expression<Func<TEntity, bool>> MapSpecification(ISpecification<T> specification);
+        protected abstract Expression<Func<T, bool>> MapSpecification(ISpecification<T> specification);
 
-        protected Expression<Func<TEntity, bool>> AutoMapSpecification(ISpecification<T> specification) => specification.ToExpression().ConvertType<T, TEntity>();
+        protected Expression<Func<T, bool>> AutoMapSpecification(ISpecification<T> specification) => specification.ToExpression();
     }
 }

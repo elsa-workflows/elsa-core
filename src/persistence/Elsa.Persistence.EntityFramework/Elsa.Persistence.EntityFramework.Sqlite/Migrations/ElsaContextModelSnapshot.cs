@@ -16,35 +16,7 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
             modelBuilder
                 .HasAnnotation("ProductVersion", "5.0.1");
 
-            modelBuilder.Entity("Elsa.Persistence.EntityFramework.Core.Models.BlockingActivityEntity", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ActivityId")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ActivityType")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Tag")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("TenantId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("WorkflowInstanceId")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("BlockingActivities");
-                });
-
-            modelBuilder.Entity("Elsa.Persistence.EntityFramework.Core.Models.WorkflowDefinitionEntity", b =>
+            modelBuilder.Entity("Elsa.Models.WorkflowDefinition", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("TEXT");
@@ -56,6 +28,15 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("DeleteCompletedInstances")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DisplayName")
+                        .HasColumnType("TEXT");
+
                     b.Property<bool>("IsEnabled")
                         .HasColumnType("INTEGER");
 
@@ -65,18 +46,27 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
                     b.Property<bool>("IsPublished")
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("IsSingleton")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Name")
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("PersistenceBehavior")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("TenantId")
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
                     b.ToTable("WorkflowDefinitions");
                 });
 
-            modelBuilder.Entity("Elsa.Persistence.EntityFramework.Core.Models.WorkflowExecutionLogRecordEntity", b =>
+            modelBuilder.Entity("Elsa.Models.WorkflowExecutionLogRecord", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("TEXT");
@@ -85,14 +75,16 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("ActivityType")
-                        .IsRequired()
+                    b.Property<string>("Data")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Tag")
+                    b.Property<string>("Message")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("TenantId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("Timestamp")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("WorkflowInstanceId")
@@ -104,7 +96,7 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
                     b.ToTable("WorkflowExecutionLogRecords");
                 });
 
-            modelBuilder.Entity("Elsa.Persistence.EntityFramework.Core.Models.WorkflowInstanceEntity", b =>
+            modelBuilder.Entity("Elsa.Models.WorkflowInstance", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("TEXT");

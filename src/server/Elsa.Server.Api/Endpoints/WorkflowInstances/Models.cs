@@ -19,6 +19,5 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
         public Instant? FinishedAt { get; set; }
         public Instant? CancelledAt { get; set; }
         public Instant? FaultedAt { get; set; }
-        public Instant? LastSavedAt { get; set; }
     }
 }
