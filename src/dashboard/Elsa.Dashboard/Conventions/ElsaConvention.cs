@@ -1,4 +1,3 @@
-using System.Runtime.InteropServices.ComTypes;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
 
 namespace Elsa.Dashboard.Conventions
