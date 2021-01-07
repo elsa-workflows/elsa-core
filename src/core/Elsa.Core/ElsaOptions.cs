@@ -26,6 +26,8 @@ namespace Elsa
 {
     public class ElsaOptions
     {
+        private readonly IList<Type> _messageTypes = new List<Type>();
+        
         public ElsaOptions(IServiceCollection services)
         {
             Services = services;
@@ -62,6 +64,7 @@ namespace Elsa
         public ServiceFactory<IWorkflow> WorkflowFactory { get; } = new();
         public IEnumerable<Type> ActivityTypes => ActivityFactory.Types;
         public IEnumerable<Type> WorkflowTypes => WorkflowFactory.Types;
+        public IEnumerable<Type> MessageTypes => _messageTypes.ToList();
         
         internal Func<IServiceProvider, IBlobStorage> StorageFactory { get; set; }
         internal Func<IServiceProvider, IWorkflowDefinitionStore> WorkflowDefinitionStoreFactory { get; set; }
@@ -147,6 +150,14 @@ namespace Elsa
             WorkflowFactory.Remove(workflowType);
             return this;
         }
+
+        public ElsaOptions AddMessageType(Type messageType)
+        {
+            _messageTypes.Add(messageType);
+            return this;
+        }
+
+        public ElsaOptions AddMessageType<T>() => AddMessageType(typeof(T));
 
         public ElsaOptions UseDistributedLockProvider(Func<IServiceProvider, IDistributedLockProvider> factory)
         {
