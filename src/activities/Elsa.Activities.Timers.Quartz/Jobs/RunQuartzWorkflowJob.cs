@@ -36,11 +36,11 @@ namespace Elsa.Activities.Timers.Quartz.Jobs
             if (workflowInstanceId == null)
             {
                 if (workflowBlueprint.IsSingleton || await GetWorkflowIsAlreadyExecutingAsync(tenantId, workflowDefinitionId) == false)
-                    await _workflowRunner.RunWorkflowAsync(workflowBlueprint, activityId, cancellationToken: cancellationToken);
+                    await _workflowQueue.EnqueueWorkflowDefinition(workflowDefinitionId, tenantId, activityId, null, null, null, cancellationToken);
             }
             else
             {
-                await _workflowQueue.Enqueue(workflowInstanceId, activityId, cancellationToken);
+                await _workflowQueue.EnqueueWorkflowInstance(workflowInstanceId, activityId, null, cancellationToken);
             }
         }
 
