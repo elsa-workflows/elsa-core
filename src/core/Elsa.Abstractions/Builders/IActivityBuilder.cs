@@ -16,6 +16,7 @@ namespace Elsa.Builders
         bool PersistWorkflow { get; set; }
         bool LoadWorkflowContextEnabled { get; set; }
         bool SaveWorkflowContextEnabled { get; set; }
+        bool PersistOutputEnabled { get; set; }
         IActivityBuilder Add<T>(Action<ISetupActivity<T>>? setup = default) where T : class, IActivity;
         IOutcomeBuilder When(string outcome);
         IActivityBuilder Then(IActivityBuilder targetActivity);

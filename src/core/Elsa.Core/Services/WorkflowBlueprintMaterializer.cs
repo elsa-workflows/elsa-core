@@ -82,6 +82,11 @@ namespace Elsa.Services
                     Type = activityDefinition.Type,
                     Activities = activityBlueprints.Values,
                     Connections = compositeActivityDefinition.Connections.Select(x => ResolveConnection(x, activityBlueprints)).ToList(),
+                    Name = activityDefinition.Name,
+                    PersistOutput = activityDefinition.PersistOutput,
+                    PersistWorkflow = activityDefinition.PersistWorkflow,
+                    LoadWorkflowContext = activityDefinition.LoadWorkflowContext,
+                    SaveWorkflowContext = activityDefinition.SaveWorkflowContext,
                     ActivityPropertyProviders = CreatePropertyProviders(compositeActivityDefinition)
                 };
             }
@@ -90,7 +95,12 @@ namespace Elsa.Services
                 yield return new ActivityBlueprint
                 {
                     Id = activityDefinition.ActivityId,
-                    Type = activityDefinition.Type
+                    Type = activityDefinition.Type,
+                    Name = activityDefinition.Name,
+                    PersistOutput = activityDefinition.PersistOutput,
+                    PersistWorkflow = activityDefinition.PersistWorkflow,
+                    LoadWorkflowContext = activityDefinition.LoadWorkflowContext,
+                    SaveWorkflowContext = activityDefinition.SaveWorkflowContext,
                 };    
             }
         }

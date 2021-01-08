@@ -15,7 +15,8 @@
             string type,
             bool persistWorkflow,
             bool loadWorkflowContext,
-            bool saveWorkflowContext)
+            bool saveWorkflowContext,
+            bool persistOutput)
         {
             Id = id;
             Parent = parent;
@@ -37,6 +38,7 @@
         public bool PersistWorkflow { get; set; }
         public bool LoadWorkflowContext { get; set; }
         public bool SaveWorkflowContext { get; set; }
+        public bool PersistOutput { get; set; }
 
         public override string ToString() => Type;
     }

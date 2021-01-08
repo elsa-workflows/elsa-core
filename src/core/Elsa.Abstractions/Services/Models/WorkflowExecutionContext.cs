@@ -103,6 +103,7 @@ namespace Elsa.Services.Models
         }
 
         public void SetVariable(string name, object? value) => WorkflowInstance.Variables.Set(name, value);
+        public T? GetVariable<T>() => GetVariable<T>(typeof(T).Name);
         public T? GetVariable<T>(string name) => WorkflowInstance.Variables.Get<T>(name);
         public object? GetVariable(string name) => WorkflowInstance.Variables.Get(name);
         public void SetTransientVariable(string name, object? value) => TransientState.Set(name, value);
@@ -138,6 +139,21 @@ namespace Elsa.Services.Models
         {
             var activityExecutionContexts = WorkflowBlueprint.Activities.Select(x => new ActivityExecutionContext(ServiceScope, this, x, null, CancellationToken.None));
             return await Task.WhenAll(activityExecutionContexts.Select(async x => await x.ActivateActivityAsync(cancellationToken)));
+        }
+        
+        /// <summary>
+        /// Remove empty activity data to save on document size.
+        /// </summary>
+        internal void PruneActivityData()
+        {
+            WorkflowInstance.ActivityData.Prune(x => x.Value.Count == 0);
+            WorkflowInstance.ActivityOutput.Prune(x => x.Value == null || !ShouldPersistActivityOutput(x.Key));
+        }
+
+        private bool ShouldPersistActivityOutput(string activityId)
+        {
+            var activityBlueprint = WorkflowBlueprint.GetActivity(activityId);
+            return activityBlueprint != null && activityBlueprint.PersistOutput;
         }
     }
 }

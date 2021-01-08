@@ -11,5 +11,6 @@
         bool PersistWorkflow { get; }
         bool LoadWorkflowContext { get; set; }
         bool SaveWorkflowContext { get; set; }
+        bool PersistOutput { get; set; }
     }
 }

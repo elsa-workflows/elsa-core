@@ -41,14 +41,5 @@ namespace Elsa.Models
         
         public WorkflowFault? Fault { get; set; }
         public Stack<ScheduledActivity> ScheduledActivities { get; set; }
-
-        /// <summary>
-        /// Remove empty activity data to save on document size.
-        /// </summary>
-        internal void PruneActivityData()
-        {
-            ActivityData.Prune(x => x.Value.Count == 0);
-            ActivityOutput.Prune(x => x.Value == null);
-        }
     }
 }
