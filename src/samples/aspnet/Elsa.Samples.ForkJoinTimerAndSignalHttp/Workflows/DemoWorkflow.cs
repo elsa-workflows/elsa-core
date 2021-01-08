@@ -19,7 +19,7 @@ namespace Elsa.Samples.ForkJoinTimerAndSignalHttp.Workflows
         public DemoWorkflow(IClock clock)
         {
             _clock = clock;
-            _timeOut = Duration.FromMinutes(1);
+            _timeOut = Duration.FromSeconds(10);
         }
 
         public void Build(IWorkflowBuilder workflow)

@@ -13,19 +13,23 @@ using Elsa.Persistence.InMemory;
 using Elsa.Serialization;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using Rebus.Config;
 using Rebus.DataBus.InMem;
-using Rebus.Logging;
 using Rebus.Persistence.InMem;
 using Rebus.Routing.TypeBased;
 using Rebus.Transport.InMem;
 using Storage.Net;
 using Storage.Net.Blobs;
+using LogLevel = Rebus.Logging.LogLevel;
 
 namespace Elsa
 {
     public class ElsaOptions
     {
+        private readonly IList<Type> _messageTypes = new List<Type>();
+
         public ElsaOptions(IServiceCollection services)
         {
             Services = services;
@@ -46,6 +50,7 @@ namespace Elsa
             services.AddSingleton<InMemNetwork>();
             services.AddSingleton<InMemorySubscriberStore>();
             services.AddSingleton<InMemDataStore>();
+            services.AddMemoryCache();
             
             ConfigureServiceBusEndpoint = ConfigureInMemoryServiceBusEndpoint;
 
@@ -62,7 +67,9 @@ namespace Elsa
         public ServiceFactory<IWorkflow> WorkflowFactory { get; } = new();
         public IEnumerable<Type> ActivityTypes => ActivityFactory.Types;
         public IEnumerable<Type> WorkflowTypes => WorkflowFactory.Types;
-        
+        public IEnumerable<Type> MessageTypes => _messageTypes.ToList();
+        public ServiceBusOptions ServiceBusOptions { get; } = new();
+
         internal Func<IServiceProvider, IBlobStorage> StorageFactory { get; set; }
         internal Func<IServiceProvider, IWorkflowDefinitionStore> WorkflowDefinitionStoreFactory { get; set; }
         internal Func<IServiceProvider, IWorkflowInstanceStore> WorkflowInstanceStoreFactory { get; set; }
@@ -148,6 +155,14 @@ namespace Elsa
             return this;
         }
 
+        public ElsaOptions AddMessageType(Type messageType)
+        {
+            _messageTypes.Add(messageType);
+            return this;
+        }
+
+        public ElsaOptions AddMessageType<T>() => AddMessageType(typeof(T));
+
         public ElsaOptions UseDistributedLockProvider(Func<IServiceProvider, IDistributedLockProvider> factory)
         {
             DistributedLockProviderFactory = factory;
@@ -210,18 +225,27 @@ namespace Elsa
             return this;
         }
 
-        private static void ConfigureInMemoryServiceBusEndpoint(ServiceBusEndpointConfigurationContext context)
+        private void ConfigureInMemoryServiceBusEndpoint(ServiceBusEndpointConfigurationContext context)
         {
             var serviceProvider = context.ServiceProvider;
+            var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
             var transport = serviceProvider.GetService<InMemNetwork>();
             var store = serviceProvider.GetRequiredService<InMemorySubscriberStore>();
             var queueName = context.QueueName;
 
             context.Configurer
-                .Logging(l => l.ColoredConsole(LogLevel.Info))
+                .Logging(l => l.MicrosoftExtensionsLogging(loggerFactory))
                 .Subscriptions(s => s.StoreInMemory(store))
                 .Transport(t => t.UseInMemoryTransport(transport, queueName))
-                .Routing(r => r.TypeBased().Map(context.MessageTypeMap));
+                .Routing(r => r.TypeBased().Map(context.MessageTypeMap))
+                .Options(options =>
+                {
+                    if(ServiceBusOptions.NumberOfWorkers != null)
+                        options.SetNumberOfWorkers(ServiceBusOptions.NumberOfWorkers.Value);
+                    
+                    if(ServiceBusOptions.MaxParallelism != null)
+                        options.SetMaxParallelism(ServiceBusOptions.MaxParallelism.Value);
+                });
         }
     }
 }

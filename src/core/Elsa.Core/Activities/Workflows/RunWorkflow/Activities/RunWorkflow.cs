@@ -37,7 +37,7 @@ namespace Elsa.Activities.Workflows
 
         public string ChildWorkflowInstanceId
         {
-            get => GetState<string>();
+            get => GetState<string>()!;
             set => SetState(value);
         }
 
