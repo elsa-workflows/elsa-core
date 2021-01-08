@@ -29,7 +29,7 @@ namespace Elsa
     public class ElsaOptions
     {
         private readonly IList<Type> _messageTypes = new List<Type>();
-        
+
         public ElsaOptions(IServiceCollection services)
         {
             Services = services;
@@ -67,7 +67,8 @@ namespace Elsa
         public IEnumerable<Type> ActivityTypes => ActivityFactory.Types;
         public IEnumerable<Type> WorkflowTypes => WorkflowFactory.Types;
         public IEnumerable<Type> MessageTypes => _messageTypes.ToList();
-        
+        public ServiceBusOptions ServiceBusOptions { get; } = new();
+
         internal Func<IServiceProvider, IBlobStorage> StorageFactory { get; set; }
         internal Func<IServiceProvider, IWorkflowDefinitionStore> WorkflowDefinitionStoreFactory { get; set; }
         internal Func<IServiceProvider, IWorkflowInstanceStore> WorkflowInstanceStoreFactory { get; set; }
@@ -223,7 +224,7 @@ namespace Elsa
             return this;
         }
 
-        private static void ConfigureInMemoryServiceBusEndpoint(ServiceBusEndpointConfigurationContext context)
+        private void ConfigureInMemoryServiceBusEndpoint(ServiceBusEndpointConfigurationContext context)
         {
             var serviceProvider = context.ServiceProvider;
             var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
@@ -235,7 +236,15 @@ namespace Elsa
                 .Logging(l => l.MicrosoftExtensionsLogging(loggerFactory))
                 .Subscriptions(s => s.StoreInMemory(store))
                 .Transport(t => t.UseInMemoryTransport(transport, queueName))
-                .Routing(r => r.TypeBased().Map(context.MessageTypeMap));
+                .Routing(r => r.TypeBased().Map(context.MessageTypeMap))
+                .Options(options =>
+                {
+                    if(ServiceBusOptions.NumberOfWorkers != null)
+                        options.SetNumberOfWorkers(ServiceBusOptions.NumberOfWorkers.Value);
+                    
+                    if(ServiceBusOptions.MaxParallelism != null)
+                        options.SetMaxParallelism(ServiceBusOptions.MaxParallelism.Value);
+                });
         }
     }
 }
