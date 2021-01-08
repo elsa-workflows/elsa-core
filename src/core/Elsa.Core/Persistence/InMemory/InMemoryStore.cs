@@ -5,64 +5,78 @@ using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Persistence.Specifications;
 using Elsa.Services;
+using Microsoft.Extensions.Caching.Memory;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Persistence.InMemory
 {
     public class InMemoryStore<T> : IStore<T> where T : IEntity
     {
-        protected readonly Dictionary<string, T> Entities = new();
+        protected readonly IMemoryCache _memoryCache;
 
-        public InMemoryStore(IIdGenerator idGenerator)
+        public InMemoryStore(IMemoryCache memoryCache, IIdGenerator idGenerator)
         {
+            _memoryCache = memoryCache;
             IdGenerator = idGenerator;
         }
 
         private IIdGenerator IdGenerator { get; }
-        
-        public Task SaveAsync(T entity, CancellationToken cancellationToken = default)
+        private string CacheKey => GetType().Name;
+
+        public async Task SaveAsync(T entity, CancellationToken cancellationToken = default)
         {
             if (entity.Id == null!) 
                 entity.Id = IdGenerator.Generate();
 
-            Entities[entity.Id] = entity;
-            return Task.CompletedTask;
+            var dictionary = await GetDictionaryAsync();
+            dictionary[entity.Id] = entity;
+            SetDictionary(dictionary);
         }
 
-        public Task DeleteAsync(T entity, CancellationToken cancellationToken = default)
+        public async Task DeleteAsync(T entity, CancellationToken cancellationToken = default)
         {
-            if(Entities.ContainsKey(entity.Id))
-                Entities.Remove(entity.Id);
-            
-            return Task.CompletedTask;
+            var dictionary = await GetDictionaryAsync();
+
+            if (dictionary.ContainsKey(entity.Id))
+            {
+                dictionary.Remove(entity.Id);
+                SetDictionary(dictionary);
+            }
         }
 
         public async Task<int> DeleteManyAsync(ISpecification<T> specification, CancellationToken cancellationToken = default)
         {
             var entities = await FindManyAsync(specification, cancellationToken: cancellationToken).ToList();
+            var dictionary = await GetDictionaryAsync();
 
             foreach (var entity in entities) 
-                Entities.Remove(entity.Id);
+                dictionary.Remove(entity.Id);
 
+            SetDictionary(dictionary);
             return entities.Count;
         }
 
-        public Task<IEnumerable<T>> FindManyAsync(ISpecification<T> specification, IOrderBy<T>? orderBy = default, IPaging? paging = default, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<T>> FindManyAsync(ISpecification<T> specification, IOrderBy<T>? orderBy = default, IPaging? paging = default, CancellationToken cancellationToken = default)
         {
-            var query = Entities.Values.AsQueryable().Apply(specification).Apply(orderBy).Apply(paging);
-            return Task.FromResult<IEnumerable<T>>(query.ToList());
+            var dictionary = await GetDictionaryAsync();
+            var query = dictionary.Values.AsQueryable().Apply(specification).Apply(orderBy).Apply(paging);
+            return query.ToList();
         }
 
-        public Task<int> CountAsync(ISpecification<T> specification, CancellationToken cancellationToken = default)
+        public async Task<int> CountAsync(ISpecification<T> specification, CancellationToken cancellationToken = default)
         {
-            var query = Entities.Values.AsQueryable().Apply(specification);
-            return Task.FromResult(query.Count());
+            var dictionary = await GetDictionaryAsync();
+            var query = dictionary.Values.AsQueryable().Apply(specification);
+            return query.Count();
         }
 
-        public Task<T?> FindAsync(ISpecification<T> specification, CancellationToken cancellationToken = default)
+        public async Task<T?> FindAsync(ISpecification<T> specification, CancellationToken cancellationToken = default)
         {
-            var result = Entities.Values.AsQueryable().FirstOrDefault(specification.ToExpression());
-            return Task.FromResult(result)!;
+            var dictionary = await GetDictionaryAsync();
+            return dictionary.Values.AsQueryable().FirstOrDefault(specification.ToExpression());
         }
+        
+        private async Task<IDictionary<string, T>> GetDictionaryAsync() => await _memoryCache.GetOrCreateAsync(CacheKey, _ => Task.FromResult(new Dictionary<string, T>()));
+        private void SetDictionary(IDictionary<string, T> dictionary) => _memoryCache.Set(CacheKey, dictionary);
     }
 }

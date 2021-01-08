@@ -50,6 +50,7 @@ namespace Elsa
             services.AddSingleton<InMemNetwork>();
             services.AddSingleton<InMemorySubscriberStore>();
             services.AddSingleton<InMemDataStore>();
+            services.AddMemoryCache();
             
             ConfigureServiceBusEndpoint = ConfigureInMemoryServiceBusEndpoint;
 
