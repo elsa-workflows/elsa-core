@@ -14,10 +14,11 @@ namespace Elsa.Samples.EntityChanged
         public void Build(IWorkflowBuilder workflow)
         {
             workflow
+                .WithContextType<Entity>()
                 .EntityChanged<Entity>(EntityChangedAction.Added)
-                .WriteLine(context => $"Entity '{context.GetInput<EntityChangedContext>().EntityId}' was '{context.GetInput<EntityChangedContext>().Action}'")
+                .WriteLine(context => $"Entity '{context.GetInput<EntityChangedContext>()!.EntityId}' was '{context.GetInput<EntityChangedContext>()!.Action}'")
                 .EntityChanged<Entity>(EntityChangedAction.Deleted)
-                .WriteLine(context => $"Entity '{context.GetInput<EntityChangedContext>().EntityId}' was '{context.GetInput<EntityChangedContext>().Action}'");
+                .WriteLine(context => $"Entity '{context.GetInput<EntityChangedContext>()!.EntityId}' was '{context.GetInput<EntityChangedContext>()!.Action}'");
         }
     }
 }
