@@ -9,6 +9,7 @@ using Elsa.Events;
 using Elsa.Services;
 using Elsa.Services.Models;
 using MediatR;
+using Newtonsoft.Json.Linq;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.ControlFlow
@@ -110,7 +111,7 @@ namespace Elsa.Activities.ControlFlow
 
             var inboundConnections = inboundTransitionsQuery.ToList();
             var joinBlueprint = inboundConnections.FirstOrDefault()?.Target.Activity;
-            var joinActivityData = joinBlueprint != null ? workflowExecutionContext.WorkflowInstance.ActivityData.GetItem(joinBlueprint.Id) : default;
+            var joinActivityData = joinBlueprint != null ? workflowExecutionContext.WorkflowInstance.ActivityData.GetItem(joinBlueprint.Id, () => new JObject()) : default;
 
             if (joinActivityData == null)
                 return;
