@@ -36,7 +36,7 @@ namespace Elsa.Activities.Timers.Hangfire.Jobs
             }
             else
             {
-                await _workflowQueue.Enqueue(data.WorkflowInstanceId, data.ActivityId);
+                await _workflowQueue.EnqueueWorkflowInstance(data.WorkflowInstanceId, data.ActivityId, default);
             }
         }
         

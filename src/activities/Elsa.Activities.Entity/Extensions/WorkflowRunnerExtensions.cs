@@ -15,7 +15,6 @@ namespace Elsa.Activities.Entity.Extensions
             EntityChangedAction changedAction,
             string? correlationId = default,
             string? contextId = default,
-            object? workflowContext = default,
             CancellationToken cancellationToken = default)
         {
             var input = new EntityChangedContext(entityId, entityName, changedAction);
@@ -30,7 +29,6 @@ namespace Elsa.Activities.Entity.Extensions
                 input,
                 correlationId,
                 contextId,
-                workflowContext,
                 cancellationToken);
         }
     }
