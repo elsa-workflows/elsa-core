@@ -8,11 +8,11 @@ using MediatR;
 
 namespace Elsa.Indexing.Handlers
 {
-    public class WorkflowInstanceUpdateHandler : INotificationHandler<WorkflowInstanceSaved>, INotificationHandler<WorkflowInstanceDeleted>
+    public class UpdateWorkflowInstanceIndexHandler : INotificationHandler<WorkflowInstanceSaved>, INotificationHandler<WorkflowInstanceDeleted>
     {
         private readonly IWorkflowInstanceIndexer _instanceIndexer;
 
-        public WorkflowInstanceUpdateHandler(IWorkflowInstanceIndexer instanceIndexer)
+        public UpdateWorkflowInstanceIndexHandler(IWorkflowInstanceIndexer instanceIndexer)
         {
             _instanceIndexer = instanceIndexer;
         }

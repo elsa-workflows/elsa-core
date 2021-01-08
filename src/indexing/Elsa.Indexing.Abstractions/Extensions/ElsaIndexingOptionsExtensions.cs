@@ -13,7 +13,7 @@ namespace Elsa.Indexing.Extensions
             var indexingOptions = new ElsaIndexingOptions(options.Services);
             configure.Invoke(indexingOptions);
 
-            ServiceRegistrar.AddMediatRClasses(options.Services,new Assembly[] { Assembly.GetExecutingAssembly() });
+            ServiceRegistrar.AddMediatRClasses(options.Services,new[] { Assembly.GetExecutingAssembly() });
 
             return options;
         }
