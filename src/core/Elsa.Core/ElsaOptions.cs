@@ -13,14 +13,16 @@ using Elsa.Persistence.InMemory;
 using Elsa.Serialization;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using Rebus.Config;
 using Rebus.DataBus.InMem;
-using Rebus.Logging;
 using Rebus.Persistence.InMem;
 using Rebus.Routing.TypeBased;
 using Rebus.Transport.InMem;
 using Storage.Net;
 using Storage.Net.Blobs;
+using LogLevel = Rebus.Logging.LogLevel;
 
 namespace Elsa
 {
@@ -224,12 +226,13 @@ namespace Elsa
         private static void ConfigureInMemoryServiceBusEndpoint(ServiceBusEndpointConfigurationContext context)
         {
             var serviceProvider = context.ServiceProvider;
+            var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
             var transport = serviceProvider.GetService<InMemNetwork>();
             var store = serviceProvider.GetRequiredService<InMemorySubscriberStore>();
             var queueName = context.QueueName;
 
             context.Configurer
-                .Logging(l => l.ColoredConsole(LogLevel.Info))
+                .Logging(l => l.MicrosoftExtensionsLogging(loggerFactory))
                 .Subscriptions(s => s.StoreInMemory(store))
                 .Transport(t => t.UseInMemoryTransport(transport, queueName))
                 .Routing(r => r.TypeBased().Map(context.MessageTypeMap));
