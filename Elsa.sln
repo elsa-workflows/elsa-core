@@ -203,6 +203,7 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Indexing.Elasticsearch", "src\indexing\Elsa.Indexing.Elasticsearch\Elsa.Indexing.Elasticsearch.csproj", "{3C7AB475-2D30-4836-AE8E-FF210FFB32BA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.Elasticsearch", "src\samples\console\Elsa.Samples.Elasticsearch\Elsa.Samples.Elasticsearch.csproj", "{30148BE5-4F51-41AA-B589-E6A804E1B29E}"
+EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "persistence", "persistence", "{EEBEA8AF-C8A8-4C71-A96C-D5836DE24359}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.Persistence.EntityFramework", "src\samples\persistence\Elsa.Samples.Persistence.EntityFramework\Elsa.Samples.Persistence.EntityFramework.csproj", "{08FD0D47-CC01-4274-99D0-81B3F780A695}"
