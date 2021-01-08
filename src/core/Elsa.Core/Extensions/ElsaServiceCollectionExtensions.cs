@@ -12,6 +12,7 @@ using Elsa.Consumers;
 using Elsa.Expressions;
 using Elsa.HostedServices;
 using Elsa.Mapping;
+using Elsa.Messages;
 using Elsa.Metadata;
 using Elsa.Metadata.Handlers;
 using Elsa.Persistence;
@@ -20,11 +21,13 @@ using Elsa.Runtime;
 using Elsa.Serialization;
 using Elsa.Serialization.Converters;
 using Elsa.Services;
+using Elsa.StartupTasks;
 using Elsa.Triggers;
 using Elsa.WorkflowProviders;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using NodaTime;
+using Rebus.Handlers;
 using Rebus.ServiceProvider;
 
 // ReSharper disable once CheckNamespace
@@ -48,7 +51,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddScoped(options.WorkflowExecutionLogStoreFactory)
                 .AddSingleton(options.DistributedLockProviderFactory)
                 .AddSingleton(options.SignalFactory)
-                .AddSingleton(options.StorageFactory);
+                .AddSingleton(options.StorageFactory)
+                .AddStartupTask<CreateSubscriptions>();
 
             options
                 .AddWorkflowsCore()
@@ -56,6 +60,8 @@ namespace Microsoft.Extensions.DependencyInjection
             
             options.AddMediatR();
             options.AddAutoMapper();
+            options.AddConsumer<RunWorkflowDefinitionConsumer, RunWorkflowDefinition>();
+            options.AddConsumer<RunWorkflowInstanceConsumer, RunWorkflowInstance>();
 
             services.Decorate<IWorkflowDefinitionStore, InitializingWorkflowDefinitionStore>();
             services.Decorate<IWorkflowInstanceStore, EventPublishingWorkflowInstanceStore>();
@@ -67,8 +73,19 @@ namespace Microsoft.Extensions.DependencyInjection
         /// Starts the specified workflow upon application startup.
         /// </summary>
         public static IServiceCollection StartWorkflow<T>(this IServiceCollection services) where T : class, IWorkflow => services.AddHostedService<StartWorkflow<T>>();
+        
+        public static ElsaOptions AddConsumer<TConsumer, TMessage>(this ElsaOptions elsaOptions) where TConsumer : class, IHandleMessages<TMessage>
+        {
+            elsaOptions.Services.AddTransient<IHandleMessages<TMessage>, TConsumer>();
+            elsaOptions.AddMessageType<TMessage>();
+            return elsaOptions;
+        }
 
-        private static IServiceCollection AddMediatR(this ElsaOptions options) => options.Services.AddMediatR(mediatr => mediatr.AsScoped(), typeof(IActivity));
+        private static ElsaOptions AddMediatR(this ElsaOptions options)
+        {
+            options.Services.AddMediatR(mediatr => mediatr.AsScoped(), typeof(IActivity));
+            return options;
+        }
 
         private static ElsaOptions AddWorkflowsCore(this ElsaOptions options)
         {
@@ -95,7 +112,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IWorkflowBlueprintMaterializer, WorkflowBlueprintMaterializer>()
                 .AddSingleton<IWorkflowBlueprintReflector, WorkflowBlueprintReflector>()
                 .AddSingleton<IBackgroundWorker, BackgroundWorker>()
-                .AddSingleton<IWorkflowQueue, WorkflowQueue>()
+                .AddScoped<IWorkflowQueue, WorkflowQueue>()
                 .AddScoped<IWorkflowSelector, WorkflowSelector>()
                 .AddScoped<IWorkflowPublisher, WorkflowPublisher>()
                 .AddScoped<IWorkflowContextManager, WorkflowContextManager>()
@@ -115,7 +132,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IServiceBusFactory, ServiceBusFactory>()
                 .AddSingleton<ICommandSender, CommandSender>()
                 .AddSingleton<IEventPublisher, EventPublisher>()
-                .AutoRegisterHandlersFromAssemblyOf<RunWorkflowConsumer>()
+                .AutoRegisterHandlersFromAssemblyOf<RunWorkflowInstanceConsumer>()
                 .AddScoped<ISignaler, Signaler>()
                 .AddTriggerProvider<SignalReceivedTriggerProvider>()
                 .AddTriggerProvider<RunWorkflowTriggerProvider>()

@@ -14,35 +14,34 @@ namespace Elsa.Activities.AzureServiceBus.Services
     {
         private readonly IMessageReceiver _messageReceiver;
         private readonly IServiceProvider _serviceProvider;
-        private readonly IBackgroundWorker _backgroundWorker;
         private readonly ILogger _logger;
 
-        public QueueWorker(IMessageReceiver messageReceiver, IServiceProvider serviceProvider, IBackgroundWorker backgroundWorker, ILogger<QueueWorker> logger)
+        public QueueWorker(IMessageReceiver messageReceiver, IServiceProvider serviceProvider, ILogger<QueueWorker> logger)
         {
             _messageReceiver = messageReceiver;
             _serviceProvider = serviceProvider;
-            _backgroundWorker = backgroundWorker;
             _logger = logger;
 
             _messageReceiver.RegisterMessageHandler(OnMessageReceived, new MessageHandlerOptions(ExceptionReceivedHandler)
             {
                 AutoComplete = false,
-                MaxConcurrentCalls = 10
+                MaxConcurrentCalls = 100
             });
         }
 
         private async Task OnMessageReceived(Message message, CancellationToken cancellationToken)
         {
-            await _backgroundWorker.ScheduleTask(GetType().FullName, async () => await TriggerWorkflowsAsync(message, cancellationToken), cancellationToken);
+            _logger.LogDebug("Message received with ID {MessageId}", message.MessageId);
+            await TriggerWorkflowsAsync(message, cancellationToken);
             await _messageReceiver.CompleteAsync(message.SystemProperties.LockToken);
         }
 
         private async Task TriggerWorkflowsAsync(Message message, CancellationToken cancellationToken)
         {
+            _logger.LogDebug("Triggering workflow {MessageId}", message.MessageId);
             using var scope = _serviceProvider.CreateScope();
-            var workflowRunner = scope.ServiceProvider.GetRequiredService<IWorkflowRunner>();
-
-            await workflowRunner.TriggerWorkflowsAsync<MessageReceivedTrigger>(
+            var workflowQueue = scope.ServiceProvider.GetRequiredService<IWorkflowQueue>();
+            await workflowQueue.EnqueueWorkflowsAsync<MessageReceivedTrigger>(
                 x => x.QueueName == _messageReceiver.Path && (string.IsNullOrWhiteSpace(x.CorrelationId) || x.CorrelationId == message.CorrelationId), 
                 message, message.CorrelationId, 
                 cancellationToken: cancellationToken);

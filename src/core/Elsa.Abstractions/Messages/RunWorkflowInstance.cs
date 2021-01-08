@@ -1,8 +1,8 @@
 namespace Elsa.Messages
 {
-    public class RunWorkflow
+    public class RunWorkflowInstance
     {
-        public RunWorkflow(string workflowInstanceId, string? activityId = default, object? input = default)
+        public RunWorkflowInstance(string workflowInstanceId, string? activityId = default, object? input = default)
         {
             WorkflowInstanceId = workflowInstanceId;
             ActivityId = activityId;

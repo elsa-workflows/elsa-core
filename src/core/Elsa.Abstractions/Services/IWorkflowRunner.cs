@@ -15,7 +15,6 @@ namespace Elsa.Services
             object? input = default, 
             string? correlationId = default, 
             string? contextId = default,
-            object? workflowContext = default,
             CancellationToken cancellationToken = default)
             where TTrigger : ITrigger;
 
@@ -23,7 +22,6 @@ namespace Elsa.Services
             WorkflowInstance workflowInstance,
             string? activityId = default,
             object? input = default,
-            object? workflowContext = default,
             CancellationToken cancellationToken = default);
 
         ValueTask<WorkflowInstance> RunWorkflowAsync(
@@ -31,7 +29,6 @@ namespace Elsa.Services
             WorkflowInstance workflowInstance,
             string? activityId = default,
             object? input = default,
-            object? workflowContext = default,
             CancellationToken cancellationToken = default);
 
         ValueTask<WorkflowInstance> RunWorkflowAsync(
@@ -40,7 +37,6 @@ namespace Elsa.Services
             object? input = default,
             string? correlationId = default,
             string? contextId = default,
-            object? workflowContext = default,
             CancellationToken cancellationToken = default);
 
         ValueTask<WorkflowInstance> RunWorkflowAsync<T>(
@@ -48,14 +44,12 @@ namespace Elsa.Services
             object? input = default,
             string? correlationId = default,
             string? contextId = default,
-            object? workflowContext = default,
             CancellationToken cancellationToken = default) where T : IWorkflow;
 
         ValueTask<WorkflowInstance> RunWorkflowAsync<T>(
             WorkflowInstance workflowInstance,
             string? activityId = default,
             object? input = default,
-            object? workflowContext = default,
             CancellationToken cancellationToken = default) where T : IWorkflow;
 
         ValueTask<WorkflowInstance> RunWorkflowAsync(
@@ -64,7 +58,6 @@ namespace Elsa.Services
             object? input = default,
             string? correlationId = default,
             string? contextId = default,
-            object? workflowContext = default,
             CancellationToken cancellationToken = default);
 
         ValueTask<WorkflowInstance> RunWorkflowAsync(
@@ -72,7 +65,6 @@ namespace Elsa.Services
             WorkflowInstance workflowInstance,
             string? activityId = default,
             object? input = default,
-            object? workflowContext = default,
             CancellationToken cancellationToken = default);
     }
 }

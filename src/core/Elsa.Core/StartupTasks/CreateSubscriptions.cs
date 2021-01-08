@@ -4,17 +4,17 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Services;
 
-namespace Elsa.Activities.Rebus.StartupTasks
+namespace Elsa.StartupTasks
 {
     public class CreateSubscriptions : IStartupTask
     {
         private readonly IServiceBusFactory _serviceBusFactory;
         private readonly IEnumerable<Type> _messageTypes;
 
-        public CreateSubscriptions(IServiceBusFactory serviceBusFactory, IEnumerable<Type> messageTypes)
+        public CreateSubscriptions(IServiceBusFactory serviceBusFactory, ElsaOptions elsaOptions)
         {
             _serviceBusFactory = serviceBusFactory;
-            _messageTypes = messageTypes;
+            _messageTypes = elsaOptions.MessageTypes;
         }
         
         public async Task ExecuteAsync(CancellationToken cancellationToken = default)

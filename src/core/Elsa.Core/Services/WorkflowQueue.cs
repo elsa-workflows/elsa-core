@@ -1,64 +1,55 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Models;
-using Elsa.Persistence;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using NodaTime;
+using Elsa.Messages;
+using Elsa.Triggers;
+using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Services
 {
     public class WorkflowQueue : IWorkflowQueue
     {
-        private readonly IBackgroundWorker _backgroundWorker;
-        private readonly IServiceProvider _serviceProvider;
-        private readonly ILogger _logger;
+        private readonly IWorkflowSelector _workflowSelector;
+        private readonly IEventPublisher _bus;
 
-        public WorkflowQueue(IBackgroundWorker backgroundWorker, IServiceProvider serviceProvider, ILogger<WorkflowQueue> logger)
+        public WorkflowQueue(IWorkflowSelector workflowSelector, IEventPublisher bus)
         {
-            _backgroundWorker = backgroundWorker;
-            _serviceProvider = serviceProvider;
-            _logger = logger;
+            _workflowSelector = workflowSelector;
+            _bus = bus;
+        }
+        
+        public async Task EnqueueWorkflowsAsync<TTrigger>(
+            Func<TTrigger, bool> predicate,
+            object? input = default,
+            string? correlationId = default,
+            string? contextId = default,
+            CancellationToken cancellationToken = default)
+            where TTrigger : ITrigger
+        {
+            var results = await _workflowSelector.SelectWorkflowsAsync(predicate, cancellationToken).ToList();
+
+            foreach (var result in results)
+            {
+                if (result.WorkflowInstanceId != null)
+                {
+                    await EnqueueWorkflowInstance(result.WorkflowInstanceId, result.ActivityId, input, cancellationToken);
+                }
+                else
+                    await EnqueueWorkflowDefinition(result.WorkflowBlueprint.Id, result.WorkflowBlueprint.TenantId, result.ActivityId, input, correlationId, contextId, cancellationToken);
+
+                if (result.Trigger.IsOneOff)
+                    await _workflowSelector.RemoveTriggerAsync(result.Trigger, cancellationToken);
+            }
         }
 
-        public async Task Enqueue(string workflowInstanceId, string activityId, CancellationToken cancellationToken = default) => 
-            await _backgroundWorker.ScheduleTask(workflowInstanceId, async () => await RunWorkflowAsync(workflowInstanceId, activityId, cancellationToken), cancellationToken, Duration.FromMinutes(5));
-
-        private async ValueTask RunWorkflowAsync(string workflowInstanceId, string activityId, CancellationToken cancellationToken = default)
+        public async Task EnqueueWorkflowInstance(string workflowInstanceId, string activityId, object? input, CancellationToken cancellationToken = default)
         {
-            using var scope = _serviceProvider.CreateScope();
-            var store = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
-            var workflowInstance = await store.FindByIdAsync(workflowInstanceId, cancellationToken);
-
-            if (!ValidatePreconditions(workflowInstanceId, workflowInstance))
-                return;
-
-            _logger.LogDebug("Running {WorkflowInstanceId} with status {WorkflowStatus}.", workflowInstanceId, workflowInstance!.WorkflowStatus);
-            
-            var workflowDefinitionId = workflowInstance!.DefinitionId;
-            var tenantId = workflowInstance.TenantId;
-            var workflowRegistry = scope.ServiceProvider.GetRequiredService<IWorkflowRegistry>();
-            var workflowBlueprint = (await workflowRegistry.GetWorkflowAsync(workflowDefinitionId, tenantId, VersionOptions.SpecificVersion(workflowInstance.Version), cancellationToken))!;
-            var workflowRunner = scope.ServiceProvider.GetRequiredService<IWorkflowRunner>();
-            await workflowRunner.RunWorkflowAsync(workflowBlueprint, workflowInstance!, activityId, cancellationToken: cancellationToken);
+            await _bus.PublishAsync(new RunWorkflowInstance(workflowInstanceId, activityId, input));
         }
 
-        private bool ValidatePreconditions(string? workflowInstanceId, WorkflowInstance? workflowInstance)
+        public async Task EnqueueWorkflowDefinition(string workflowDefinitionId, string? tenantId, string activityId, object? input, string? correlationId, string? contextId, CancellationToken cancellationToken = default)
         {
-            if (workflowInstance == null)
-            {
-                _logger.LogError("Could not run workflow instance with ID {WorkflowInstanceId} because it does not exist.", workflowInstanceId);
-                return false;
-            }
-
-            if (workflowInstance.WorkflowStatus != WorkflowStatus.Suspended)
-            {
-                _logger.LogWarning("Could not run workflow instance with ID {WorkflowInstanceId} because it has a status other than Suspended. Its actual status is {WorkflowStatus}", workflowInstanceId, workflowInstance.WorkflowStatus);
-                return false;
-            }
-
-            return true;
+            await _bus.PublishAsync(new RunWorkflowDefinition(workflowDefinitionId, tenantId, activityId, input, correlationId, contextId));
         }
     }
 }
