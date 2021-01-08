@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq.Expressions;
-using AutoMapper;
 using Elsa.Models;
 using Elsa.Persistence.Specifications;
 using Microsoft.EntityFrameworkCore;

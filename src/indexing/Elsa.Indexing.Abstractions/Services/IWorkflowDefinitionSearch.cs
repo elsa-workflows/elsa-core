@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-
 using Elsa.Indexing.Models;
 
 namespace Elsa.Indexing.Services
@@ -14,6 +13,6 @@ namespace Elsa.Indexing.Services
             int from = 0,
             int take = 20,
             CancellationToken cancellationToken = default
-         );
+        );
     }
 }

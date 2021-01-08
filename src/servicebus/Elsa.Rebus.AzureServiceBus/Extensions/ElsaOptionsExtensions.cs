@@ -4,7 +4,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Rebus.Config;
 using Rebus.Routing.TypeBased;
-using LogLevel = Rebus.Logging.LogLevel;
 
 namespace Elsa.Rebus.AzureServiceBus
 {

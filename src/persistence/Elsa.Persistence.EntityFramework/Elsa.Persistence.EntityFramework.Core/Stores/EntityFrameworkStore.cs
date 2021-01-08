@@ -4,7 +4,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
-using AutoMapper;
 using Elsa.Models;
 using Elsa.Persistence.Specifications;
 using Microsoft.EntityFrameworkCore;

@@ -1,5 +1,4 @@
 ﻿using System.Threading.Tasks;
-using Elsa.Activities.Timers.Quartz.Services;
 using Elsa.DistributedLock;
 using Elsa.Models;
 using Elsa.Persistence;

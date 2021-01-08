@@ -22,7 +22,6 @@ using Rebus.Routing.TypeBased;
 using Rebus.Transport.InMem;
 using Storage.Net;
 using Storage.Net.Blobs;
-using LogLevel = Rebus.Logging.LogLevel;
 
 namespace Elsa
 {

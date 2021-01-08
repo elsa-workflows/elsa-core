@@ -1,11 +1,8 @@
 ﻿using Elsa.Activities.Console;
 using Elsa.Activities.ControlFlow;
-using Elsa.Activities.Timers;
 using Elsa.Attributes;
 using Elsa.Builders;
 using Elsa.Services;
-using Elsa.Services.Models;
-using NodaTime;
 
 namespace Elsa.Samples.ProgrammaticCompositeActivitiesConsole.Activities
 {

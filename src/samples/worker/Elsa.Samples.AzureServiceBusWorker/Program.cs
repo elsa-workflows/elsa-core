@@ -1,14 +1,11 @@
-using System.Data;
 using Elsa.Activities.AzureServiceBus.Extensions;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Sqlite;
-using Elsa.Persistence.YesSql.Extensions;
 using Elsa.Samples.AzureServiceBusWorker.Workflows;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using YesSql.Provider.Sqlite;
 
 namespace Elsa.Samples.AzureServiceBusWorker
 {
