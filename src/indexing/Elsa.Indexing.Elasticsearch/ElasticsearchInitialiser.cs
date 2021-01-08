@@ -10,12 +10,12 @@ using Nest;
 
 namespace Elsa.Indexing
 {
-    public class ElasticsearchInitialiser : IStartupTask
+    public class ElasticsearchInitializer : IStartupTask
     {
         ElasticsearchStore<ElasticWorkflowDefinition> _elasticsearchDefinitionStore;
         ElasticsearchStore<ElasticWorkflowInstance> _elasticsearchInstanceStore;
 
-        public ElasticsearchInitialiser(ElasticsearchStore<ElasticWorkflowDefinition> elasticsearchDefinitionStore, ElasticsearchStore<ElasticWorkflowInstance> elasticsearchInstanceStore)
+        public ElasticsearchInitializer(ElasticsearchStore<ElasticWorkflowDefinition> elasticsearchDefinitionStore, ElasticsearchStore<ElasticWorkflowInstance> elasticsearchInstanceStore)
         {
             _elasticsearchDefinitionStore = elasticsearchDefinitionStore;
             _elasticsearchInstanceStore = elasticsearchInstanceStore;

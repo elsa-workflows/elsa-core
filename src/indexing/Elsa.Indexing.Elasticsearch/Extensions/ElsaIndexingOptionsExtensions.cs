@@ -37,7 +37,7 @@ namespace Elsa.Indexing.Extensions
                      return new ElasticsearchStore<ElasticWorkflowDefinition>(context, indexName);
                 })
                 .AddAutoMapperProfile<ElasticsearchProfile>()
-                .AddStartupTask<ElasticsearchInitialiser>();
+                .AddStartupTask<ElasticsearchInitializer>();
 
             return options;
         }

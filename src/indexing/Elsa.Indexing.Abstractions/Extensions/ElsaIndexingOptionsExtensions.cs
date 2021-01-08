@@ -2,6 +2,7 @@ using System;
 using System.Reflection;
 
 using MediatR;
+using MediatR.Registration;
 
 namespace Elsa.Indexing.Extensions
 {
@@ -12,7 +13,7 @@ namespace Elsa.Indexing.Extensions
             var indexingOptions = new ElsaIndexingOptions(options.Services);
             configure.Invoke(indexingOptions);
 
-            options.Services.AddMediatR(Assembly.GetExecutingAssembly());
+            ServiceRegistrar.AddMediatRClasses(options.Services,new Assembly[] { Assembly.GetExecutingAssembly() });
 
             return options;
         }
