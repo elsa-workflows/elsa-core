@@ -64,6 +64,7 @@ namespace Microsoft.Extensions.DependencyInjection
             options.AddConsumer<RunWorkflowInstanceConsumer, RunWorkflowInstance>();
 
             services.Decorate<IWorkflowDefinitionStore, InitializingWorkflowDefinitionStore>();
+            services.Decorate<IWorkflowDefinitionStore, EventPublishingWorkflowDefinitionStore>();
             services.Decorate<IWorkflowInstanceStore, EventPublishingWorkflowInstanceStore>();
 
             return services;
