@@ -42,6 +42,7 @@ namespace ElsaDashboard.Application.Pages.WorkflowInstances
             new[]
             {
                 default(WorkflowStatus?),
+                WorkflowStatus.Running,
                 WorkflowStatus.Suspended,
                 WorkflowStatus.Finished,
                 WorkflowStatus.Faulted,
