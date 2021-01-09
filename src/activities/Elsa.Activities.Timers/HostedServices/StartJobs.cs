@@ -17,7 +17,7 @@ namespace Elsa.Activities.Timers.HostedServices
     /// <summary>
     /// Starts Quartz jobs based on workflow blueprints starting with a TimerEvent, CronEvent or StartAtEvent.
     /// </summary>
-    public class StartJobs : IHostedService
+    public class StartJobs : BackgroundService
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly IWorkflowBlueprintReflector _workflowBlueprintReflector;
@@ -32,20 +32,18 @@ namespace Elsa.Activities.Timers.HostedServices
             _clock = clock;
         }
 
-        public async Task StartAsync(CancellationToken cancellationToken)
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             using var scope = _serviceProvider.CreateScope();
             var workflowRegistry = scope.ServiceProvider.GetRequiredService<IWorkflowRegistry>();
             var workflowSelector = scope.ServiceProvider.GetRequiredService<IWorkflowSelector>();
-            var workflows = await workflowRegistry.GetWorkflowsAsync(cancellationToken).ToListAsync(cancellationToken);
+            var workflows = await workflowRegistry.GetWorkflowsAsync(stoppingToken).ToListAsync(stoppingToken);
 
-            await ScheduleTimerEventWorkflowsAsync(scope, workflows, workflowSelector, cancellationToken);
-            await ScheduleCronEventWorkflowsAsync(scope, workflows, workflowSelector, cancellationToken);
-            await ScheduleStartAtWorkflowsAsync(scope, workflows, workflowSelector, cancellationToken);
+            await ScheduleTimerEventWorkflowsAsync(scope, workflows, workflowSelector, stoppingToken);
+            await ScheduleCronEventWorkflowsAsync(scope, workflows, workflowSelector, stoppingToken);
+            await ScheduleStartAtWorkflowsAsync(scope, workflows, workflowSelector, stoppingToken);
         }
 
-        public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
-        
         private async Task ScheduleStartAtWorkflowsAsync(IServiceScope serviceScope, IEnumerable<IWorkflowBlueprint> workflows, IWorkflowSelector workflowSelector, CancellationToken cancellationToken)
         {
             // Schedule workflow blueprints that start with a run-at.
