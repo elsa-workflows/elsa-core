@@ -38,6 +38,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
             };
 
             var json = _contentSerializer.Serialize(data);
+            
             DbContext.Entry(entity).Property("Data").CurrentValue = json;
         }
 
@@ -55,8 +56,10 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
             };
             
             var json = (string)DbContext.Entry(entity).Property("Data").CurrentValue;
-            data = JsonConvert.DeserializeAnonymousType(json, data, DefaultContentSerializer.CreateDefaultJsonSerializationSettings());
-
+            
+            if(!string.IsNullOrWhiteSpace(json))
+                data = JsonConvert.DeserializeAnonymousType(json, data, DefaultContentSerializer.CreateDefaultJsonSerializationSettings());
+            
             entity.Output = data.Output;
             entity.Variables = data.Variables;
             entity.ActivityData = data.ActivityData;
