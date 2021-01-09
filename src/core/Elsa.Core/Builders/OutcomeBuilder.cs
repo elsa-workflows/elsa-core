@@ -7,7 +7,7 @@ namespace Elsa.Builders
 {
     public class OutcomeBuilder : IOutcomeBuilder
     {
-        public OutcomeBuilder(ICompositeActivityBuilder workflowBuilder, IActivityBuilder source, string outcome = "Done")
+        public OutcomeBuilder(ICompositeActivityBuilder workflowBuilder, IActivityBuilder source, string outcome = OutcomeNames.Done)
         {
             WorkflowBuilder = workflowBuilder;
             Source = source;

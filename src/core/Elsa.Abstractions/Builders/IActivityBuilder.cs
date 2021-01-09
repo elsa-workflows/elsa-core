@@ -13,7 +13,7 @@ namespace Elsa.Builders
         public string? DisplayName { get; set; }
         public string? Description { get; set; }
         IDictionary<string, IActivityPropertyValueProvider>? PropertyValueProviders { get; }
-        bool PersistWorkflow { get; set; }
+        bool PersistWorkflowEnabled { get; set; }
         bool LoadWorkflowContextEnabled { get; set; }
         bool SaveWorkflowContextEnabled { get; set; }
         bool PersistOutputEnabled { get; set; }
@@ -27,5 +27,6 @@ namespace Elsa.Builders
         IActivityBuilder WithDescription(string? value);
         IActivityBuilder LoadWorkflowContext(bool value = true);
         IActivityBuilder SaveWorkflowContext(bool value = true);
+        IActivityBuilder PersistWorkflow(bool value = true);
     }
 }

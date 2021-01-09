@@ -27,7 +27,7 @@ namespace Elsa.Builders
         public string? Name { get; set; }
         public string? DisplayName { get; set; }
         public string? Description { get; set; }
-        public bool PersistWorkflow { get; set; }
+        public bool PersistWorkflowEnabled { get; set; }
         public bool LoadWorkflowContextEnabled { get; set; }
         public bool SaveWorkflowContextEnabled { get; set; }
         public bool PersistOutputEnabled { get; set; }
@@ -100,6 +100,12 @@ namespace Elsa.Builders
         public IActivityBuilder PersistOutput(bool value)
         {
             PersistOutputEnabled = value;
+            return this;
+        }
+        
+        public IActivityBuilder PersistWorkflow(bool value)
+        {
+            PersistWorkflowEnabled = value;
             return this;
         }
     }
