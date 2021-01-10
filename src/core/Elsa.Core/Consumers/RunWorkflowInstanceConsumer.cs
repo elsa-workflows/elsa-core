@@ -16,21 +16,21 @@ namespace Elsa.Consumers
         private readonly IWorkflowRunner _workflowRunner;
         private readonly IWorkflowInstanceStore _workflowInstanceManager;
         private readonly IDistributedLockProvider _distributedLockProvider;
-        private readonly IEventPublisher _eventPublisher;
+        private readonly ICommandSender _commandSender;
         private readonly ILogger _logger;
         private readonly Stopwatch _stopwatch = new();
 
         public RunWorkflowInstanceConsumer(
             IWorkflowRunner workflowRunner, 
             IWorkflowInstanceStore workflowInstanceStore, 
-            IDistributedLockProvider distributedLockProvider, 
-            IEventPublisher eventPublisher,
+            IDistributedLockProvider distributedLockProvider,
+            ICommandSender commandSender,
             ILogger<RunWorkflowInstanceConsumer> logger)
         {
             _workflowRunner = workflowRunner;
             _workflowInstanceManager = workflowInstanceStore;
             _distributedLockProvider = distributedLockProvider;
-            _eventPublisher = eventPublisher;
+            _commandSender = commandSender;
             _logger = logger;
         }
 
@@ -47,7 +47,7 @@ namespace Elsa.Consumers
                 // Reschedule message.
                 _logger.LogDebug("Failed to acquire lock on workflow instance {WorkflowInstanceId}. Rescheduling message.", workflowInstanceId);
                 await Task.Delay(TimeSpan.FromSeconds(1));
-                await _eventPublisher.PublishAsync(message);
+                await _commandSender.SendAsync(message);
                 return;
             }
             
