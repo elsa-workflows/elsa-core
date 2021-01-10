@@ -143,17 +143,28 @@ namespace Elsa.Triggers
         private async Task<IEnumerable<TriggerDescriptor>> BuildDescriptorsForAsync(IWorkflowBlueprint workflowBlueprint, string? workflowInstanceId, CancellationToken cancellationToken)
         {
             var descriptors = new List<TriggerDescriptor>();
-
+            
+            if (workflowInstanceId != null)
+            {    
+                descriptors = _descriptors![workflowBlueprint.Id].ToList();
+                descriptors.RemoveAll(x => x.WorkflowInstanceId == workflowInstanceId);
+                
+                var workflowInstance = await _workflowInstanceStore.FindByIdAsync(workflowInstanceId, cancellationToken);
+                var blockingActivities = workflowBlueprint.GetBlockingActivities(workflowInstance!);
+                var resumeTriggers = await BuildDescriptorsAsync(workflowBlueprint, blockingActivities, workflowInstance, cancellationToken);
+                descriptors.AddRange(resumeTriggers);
+                    
+                return descriptors;
+            }
+            
             // Build triggers for workflow blue prints.
             var startTriggers = await BuildDescriptorsAsync(workflowBlueprint, cancellationToken).ToList();
             descriptors.AddRange(startTriggers);
 
             // Build triggers for workflow instances.
-            var specification = workflowInstanceId == null
-                ? new WorkflowInstanceDefinitionIdSpecification(workflowBlueprint.Id)
+            var specification = new WorkflowInstanceDefinitionIdSpecification(workflowBlueprint.Id)
                     .WithTenant(workflowBlueprint.TenantId)
-                    .WithStatus(WorkflowStatus.Suspended)
-                : new WorkflowInstanceIdSpecification(workflowInstanceId);
+                    .WithStatus(WorkflowStatus.Suspended);
 
             var workflowInstances = await _workflowInstanceStore
                 .FindManyAsync(specification, cancellationToken: cancellationToken)
