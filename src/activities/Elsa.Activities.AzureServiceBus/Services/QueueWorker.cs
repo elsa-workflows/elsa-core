@@ -38,10 +38,10 @@ namespace Elsa.Activities.AzureServiceBus.Services
 
         private async Task TriggerWorkflowsAsync(Message message, CancellationToken cancellationToken)
         {
-            _logger.LogDebug("Triggering workflow {MessageId}", message.MessageId);
             using var scope = _serviceProvider.CreateScope();
-            var workflowQueue = scope.ServiceProvider.GetRequiredService<IWorkflowQueue>();
-            await workflowQueue.EnqueueWorkflowsAsync<MessageReceivedTrigger>(
+            var workflowRunner = scope.ServiceProvider.GetRequiredService<IWorkflowRunner>();
+            
+            await workflowRunner.TriggerWorkflowsAsync<MessageReceivedTrigger>(
                 x => x.QueueName == _messageReceiver.Path && (string.Equals(x.CorrelationId, message.CorrelationId)), 
                 message, message.CorrelationId, 
                 cancellationToken: cancellationToken);
