@@ -11,10 +11,10 @@ namespace Elsa.Rebus.AzureServiceBus
     {
         public static ElsaOptions UseAzureServiceBus(this ElsaOptions elsaOptions, string connectionString, ITokenProvider? tokenProvider = default)
         {
-            return elsaOptions.UseServiceBus(context => ConfigureAzureServiceBusEndpoint(context, connectionString, tokenProvider));
+            return elsaOptions.UseServiceBus(context => ConfigureAzureServiceBusEndpoint(elsaOptions, context, connectionString, tokenProvider));
         } 
         
-        private static void ConfigureAzureServiceBusEndpoint(ServiceBusEndpointConfigurationContext context, string connectionString, ITokenProvider? tokenProvider)
+        private static void ConfigureAzureServiceBusEndpoint(ElsaOptions elsaOptions, ServiceBusEndpointConfigurationContext context, string connectionString, ITokenProvider? tokenProvider)
         {
             var queueName = context.QueueName;
             var loggerFactory = context.ServiceProvider.GetRequiredService<ILoggerFactory>();
@@ -22,7 +22,8 @@ namespace Elsa.Rebus.AzureServiceBus
             context.Configurer
                 .Logging(l => l.MicrosoftExtensionsLogging(loggerFactory))
                 .Transport(t => t.UseAzureServiceBus(connectionString, queueName, tokenProvider))
-                .Routing(r => r.TypeBased().Map(context.MessageTypeMap));
+                .Routing(r => r.TypeBased().Map(context.MessageTypeMap))
+                .Options(o => o.Apply(elsaOptions.ServiceBusOptions));
         }
     }
 }

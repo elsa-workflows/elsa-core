@@ -285,15 +285,13 @@ namespace Elsa.Services
                 var activityBlueprint = workflowBlueprint.GetActivity(currentActivityId)!;
                 var activityExecutionContext = new ActivityExecutionContext(scope, workflowExecutionContext, activityBlueprint, scheduledActivity.Input, cancellationToken);
                 var activity = await activityExecutionContext.ActivateActivityAsync(cancellationToken);
-                _logger.LogDebug("Executing activity {ActivityType}: {ActivityId}", activityBlueprint.Type, currentActivityId);
-                var result = await activityOperation(activityExecutionContext, activity);
                 await _mediator.Publish(new ActivityExecuting(activityExecutionContext), cancellationToken);
+                var result = await activityOperation(activityExecutionContext, activity);
+                await _mediator.Publish(new ActivityExecuted(activityExecutionContext), cancellationToken);
                 await result.ExecuteAsync(activityExecutionContext, cancellationToken);
                 workflowExecutionContext.WorkflowInstance.Output = activityExecutionContext.Output;
                 workflowExecutionContext.ExecutionLog.Add(activity.Id);
                 workflowExecutionContext.PruneActivityData();
-                await _mediator.Publish(new ActivityExecuted(activityExecutionContext), cancellationToken);
-
                 activityOperation = Execute;
                 workflowExecutionContext.CompletePass();
                 await _mediator.Publish(new WorkflowExecutionPassCompleted(workflowExecutionContext, activityExecutionContext), cancellationToken);

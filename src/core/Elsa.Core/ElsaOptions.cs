@@ -237,14 +237,7 @@ namespace Elsa
                 .Subscriptions(s => s.StoreInMemory(store))
                 .Transport(t => t.UseInMemoryTransport(transport, queueName))
                 .Routing(r => r.TypeBased().Map(context.MessageTypeMap))
-                .Options(options =>
-                {
-                    if(ServiceBusOptions.NumberOfWorkers != null)
-                        options.SetNumberOfWorkers(ServiceBusOptions.NumberOfWorkers.Value);
-                    
-                    if(ServiceBusOptions.MaxParallelism != null)
-                        options.SetMaxParallelism(ServiceBusOptions.MaxParallelism.Value);
-                });
+                .Options(options => options.Apply(ServiceBusOptions));
         }
     }
 }

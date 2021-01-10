@@ -1,5 +1,4 @@
-﻿using System;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Threading.Tasks;
 using Elsa.DistributedLock;
 using Elsa.Models;
@@ -18,12 +17,12 @@ namespace Elsa.Activities.Timers.Quartz.Jobs
         private readonly IWorkflowQueue _workflowQueue;
         private readonly IDistributedLockProvider _distributedLockProvider;
         private readonly ILogger _logger;
-        private Stopwatch _stopwatch = new();
+        private readonly Stopwatch _stopwatch = new();
 
         public RunQuartzWorkflowJob(
             IWorkflowRegistry workflowRegistry, 
             IWorkflowInstanceStore workflowInstanceStore, 
-            IWorkflowQueue workflowQueue, 
+            IWorkflowQueue workflowQueue,
             IDistributedLockProvider distributedLockProvider,
             ILogger<RunQuartzWorkflowJob> logger)
         {

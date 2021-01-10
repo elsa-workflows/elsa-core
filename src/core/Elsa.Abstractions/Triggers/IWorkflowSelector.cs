@@ -15,7 +15,7 @@ namespace Elsa.Triggers
             Func<ITrigger, bool> evaluate,
             CancellationToken cancellationToken = default);
 
-        Task UpdateTriggersAsync(IWorkflowBlueprint workflowBlueprint, CancellationToken cancellationToken = default);
+        Task UpdateTriggersAsync(IWorkflowBlueprint workflowBlueprint, string? workflowInstanceId, CancellationToken cancellationToken = default);
         Task RemoveTriggerAsync(ITrigger trigger, CancellationToken cancellationToken = default);
     }
 }

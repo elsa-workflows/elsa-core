@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Elsa.DistributedLock;
 using Elsa.Messages;
@@ -17,6 +18,7 @@ namespace Elsa.Consumers
         private readonly IDistributedLockProvider _distributedLockProvider;
         private readonly IEventPublisher _eventPublisher;
         private readonly ILogger _logger;
+        private readonly Stopwatch _stopwatch = new();
 
         public RunWorkflowInstanceConsumer(
             IWorkflowRunner workflowRunner, 
@@ -35,10 +37,12 @@ namespace Elsa.Consumers
         public async Task Handle(RunWorkflowInstance message)
         {
             var workflowInstanceId = message.WorkflowInstanceId;
+            var lockKey = workflowInstanceId;
             
             _logger.LogDebug("Acquiring lock on workflow instance {WorkflowInstanceId}.", workflowInstanceId);
+            _stopwatch.Restart();
 
-            if (!await _distributedLockProvider.AcquireLockAsync(workflowInstanceId))
+            if (!await _distributedLockProvider.AcquireLockAsync(lockKey))
             {
                 // Reschedule message.
                 _logger.LogDebug("Failed to acquire lock on workflow instance {WorkflowInstanceId}. Rescheduling message.", workflowInstanceId);
@@ -61,7 +65,9 @@ namespace Elsa.Consumers
             }
             finally
             {
-                await _distributedLockProvider.ReleaseLockAsync(workflowInstanceId);
+                await _distributedLockProvider.ReleaseLockAsync(lockKey);
+                _stopwatch.Stop();
+                _logger.LogDebug("Held lock on workflow instance {WorkflowInstanceId} for {ElapsedTime}.", workflowInstanceId, _stopwatch.Elapsed);
             }
         }
 

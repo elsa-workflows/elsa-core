@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.DistributedLock;
@@ -30,15 +31,24 @@ namespace Elsa.StartupTasks
 
         public async Task ExecuteAsync(CancellationToken cancellationToken = default)
         {
-            if (!await _distributedLockProvider.AcquireLockAsync(GetType().Name, cancellationToken))
+            var lockKey = GetType().Name;
+            
+            if (!await _distributedLockProvider.AcquireLockAsync(lockKey, cancellationToken))
                 return;
 
-            var instances = await _workflowInstanceStore.FindManyAsync(new WorkflowStatusSpecification(WorkflowStatus.Running), cancellationToken: cancellationToken);
-
-            foreach (var instance in instances)
-                await _workflowScheduler.RunWorkflowAsync(
-                    instance,
-                    cancellationToken: cancellationToken);
+            try
+            {
+                var instances = await _workflowInstanceStore.FindManyAsync(new WorkflowStatusSpecification(WorkflowStatus.Running), cancellationToken: cancellationToken);
+                
+                foreach (var instance in instances)
+                    await _workflowScheduler.RunWorkflowAsync(
+                        instance,
+                        cancellationToken: cancellationToken);
+            }
+            finally
+            {
+                await _distributedLockProvider.ReleaseLockAsync(lockKey, cancellationToken);
+            }
         }
     }
 }

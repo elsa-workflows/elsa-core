@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,6 +11,7 @@ using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Triggers
@@ -24,7 +26,9 @@ namespace Elsa.Triggers
         private readonly IEnumerable<ITriggerProvider> _triggerProviders;
         private readonly IMemoryCache _memoryCache;
         private readonly IServiceProvider _serviceProvider;
+        private readonly ILogger<WorkflowSelector> _logger;
         private IDictionary<string, ICollection<TriggerDescriptor>>? _descriptors;
+        private readonly Stopwatch _stopwatch = new();
 
         public WorkflowSelector(
             IWorkflowRegistry workflowRegistry,
@@ -33,7 +37,8 @@ namespace Elsa.Triggers
             IWorkflowContextManager workflowContextManager,
             IEnumerable<ITriggerProvider> triggerProviders,
             IMemoryCache memoryCache,
-            IServiceProvider serviceProvider)
+            IServiceProvider serviceProvider,
+            ILogger<WorkflowSelector> logger)
         {
             _workflowRegistry = workflowRegistry;
             _workflowFactory = workflowFactory;
@@ -42,6 +47,7 @@ namespace Elsa.Triggers
             _triggerProviders = triggerProviders;
             _memoryCache = memoryCache;
             _serviceProvider = serviceProvider;
+            _logger = logger;
         }
 
         public async Task<IEnumerable<WorkflowSelectorResult>> SelectWorkflowsAsync(
@@ -62,11 +68,23 @@ namespace Elsa.Triggers
             return SelectWorkflowsAsync(_descriptors, triggerType, evaluate).Select(result => result.WorkflowBlueprint.Activities.First(x => x.Id == result.ActivityId));
         }
 
-        public async Task UpdateTriggersAsync(IWorkflowBlueprint workflowBlueprint, CancellationToken cancellationToken = default)
+        public async Task UpdateTriggersAsync(IWorkflowBlueprint workflowBlueprint, string? workflowInstanceId, CancellationToken cancellationToken = default)
         {
+            if (workflowInstanceId == null)
+                _logger.LogDebug("Updating triggers for workflows of {WorkflowDefinitionId}", workflowBlueprint.Id);
+            else
+                _logger.LogDebug("Updating triggers for workflow {WorkflowInstanceId}", workflowInstanceId);
+
+            _stopwatch.Restart();
             _descriptors ??= await GetDescriptorsAsync(cancellationToken);
-            _descriptors[workflowBlueprint.Id] = await BuildDescriptorsForAsync(workflowBlueprint, cancellationToken).ToList();
+            _descriptors[workflowBlueprint.Id] = await BuildDescriptorsForAsync(workflowBlueprint, workflowInstanceId, cancellationToken).ToList();
             _memoryCache.Set(CacheKey, _descriptors);
+            _stopwatch.Stop();
+            
+            if (workflowInstanceId == null)
+                _logger.LogDebug("Updated triggers for workflows of {WorkflowDefinitionId} in {ElapsedTime}", workflowBlueprint.Id, _stopwatch.Elapsed);
+            else
+                _logger.LogDebug("Updated triggers for workflow {WorkflowInstanceId} in {ElapsedTime}", workflowInstanceId, _stopwatch.Elapsed);
         }
 
         public async Task RemoveTriggerAsync(ITrigger trigger, CancellationToken cancellationToken = default)
@@ -113,7 +131,7 @@ namespace Elsa.Triggers
 
             foreach (var workflowBlueprint in workflowBlueprints)
             {
-                var blueprintDescriptors = await BuildDescriptorsForAsync(workflowBlueprint, cancellationToken);
+                var blueprintDescriptors = await BuildDescriptorsForAsync(workflowBlueprint, null, cancellationToken);
                 descriptors.AddRange(blueprintDescriptors);
             }
 
@@ -122,7 +140,7 @@ namespace Elsa.Triggers
                 .ToDictionary(x => x.Key, x => (ICollection<TriggerDescriptor>) x.ToList());
         }
 
-        private async Task<IEnumerable<TriggerDescriptor>> BuildDescriptorsForAsync(IWorkflowBlueprint workflowBlueprint, CancellationToken cancellationToken)
+        private async Task<IEnumerable<TriggerDescriptor>> BuildDescriptorsForAsync(IWorkflowBlueprint workflowBlueprint, string? workflowInstanceId, CancellationToken cancellationToken)
         {
             var descriptors = new List<TriggerDescriptor>();
 
@@ -131,10 +149,12 @@ namespace Elsa.Triggers
             descriptors.AddRange(startTriggers);
 
             // Build triggers for workflow instances.
-            var specification = new WorkflowInstanceDefinitionIdSpecification(workflowBlueprint.Id)
-                .WithTenant(workflowBlueprint.TenantId)
-                .WithStatus(WorkflowStatus.Suspended);
-            
+            var specification = workflowInstanceId == null
+                ? new WorkflowInstanceDefinitionIdSpecification(workflowBlueprint.Id)
+                    .WithTenant(workflowBlueprint.TenantId)
+                    .WithStatus(WorkflowStatus.Suspended)
+                : new WorkflowInstanceIdSpecification(workflowInstanceId);
+
             var workflowInstances = await _workflowInstanceStore
                 .FindManyAsync(specification, cancellationToken: cancellationToken)
                 .ToList();
@@ -153,7 +173,7 @@ namespace Elsa.Triggers
         {
             var startActivities = workflowBlueprint.GetStartActivities();
             var workflowInstance = await _workflowFactory.InstantiateAsync(workflowBlueprint, cancellationToken: cancellationToken);
-            
+
             // This is a transient workflow instance; setting EntityId to null ensures trigger providers don't try and load the workflow instance. 
             workflowInstance.Id = null!;
             return await BuildDescriptorsAsync(workflowBlueprint, startActivities, workflowInstance, cancellationToken);
@@ -170,12 +190,12 @@ namespace Elsa.Triggers
             var scope = _serviceProvider.CreateScope();
             var workflowExecutionContext = new WorkflowExecutionContext(scope, workflowBlueprint, workflowInstance);
             var isTransientWorkflowInstance = workflowInstance.Id == null!;
-            
-            workflowExecutionContext.WorkflowContext = 
-                workflowBlueprint.ContextOptions != null && 
-                !isTransientWorkflowInstance && 
-                !string.IsNullOrWhiteSpace(workflowInstance.ContextId) 
-                    ? await _workflowContextManager.LoadContext(new LoadWorkflowContext(workflowExecutionContext), cancellationToken) 
+
+            workflowExecutionContext.WorkflowContext =
+                workflowBlueprint.ContextOptions != null &&
+                !isTransientWorkflowInstance &&
+                !string.IsNullOrWhiteSpace(workflowInstance.ContextId)
+                    ? await _workflowContextManager.LoadContext(new LoadWorkflowContext(workflowExecutionContext), cancellationToken)
                     : default;
 
             foreach (var blockingActivity in blockingActivities)
