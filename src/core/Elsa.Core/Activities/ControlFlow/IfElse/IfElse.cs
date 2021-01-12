@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Services;
@@ -19,7 +21,7 @@ namespace Elsa.Activities.ControlFlow
 
         [ActivityProperty(Hint = "The condition to evaluate.")]
         public bool Condition { get; set; }
-        
+
         private bool EnteredScope
         {
             get => GetState<bool>();
@@ -28,17 +30,20 @@ namespace Elsa.Activities.ControlFlow
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
-            if (!EnteredScope)
+            if (!context.WorkflowInstance.Scopes.Contains(Id))
             {
-                context.WorkflowInstance.Scopes.Push(Id);
-                EnteredScope = true;
+                if (!EnteredScope)
+                {
+                    context.WorkflowInstance.Scopes.Push(Id);
+                    EnteredScope = true;
+                }
+                else
+                {
+                    EnteredScope = false;
+                    return Done();
+                }
             }
-            else
-            {
-                EnteredScope = false;
-                return Done();
-            }
-            
+
             var outcome = Condition ? True : False;
             return Outcome(outcome);
         }

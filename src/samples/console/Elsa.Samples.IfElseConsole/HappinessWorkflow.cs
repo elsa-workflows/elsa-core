@@ -19,21 +19,13 @@ namespace Elsa.Samples.IfElseConsole
             workflow
                 .WriteLine("--POND OF HAPPINESS--")
                 .WriteLine("Throw some Rupees in and your wishes will surely come true.")
-                .WriteLine("Do you want to throw Rupees?").WithName("Start")
+                .WriteLine("Do you want to throw Rupees?")
                 .ReadLine()
-                .IfElse(context => IsYes(context.Input),
-                    ifElse =>
-                    {
-                        ifElse
-                            .When(OutcomeNames.True)
-                            .WriteLine(GetCurse)
-                            .WriteLine("...")
-                            .Then("Start");
-
-                        ifElse
-                            .When(OutcomeNames.False)
-                            .WriteLine("Keep your rupees.");
-                    })
+                .While(context => IsYes(context.Input), iteration => iteration
+                    .WriteLine(GetCurse)
+                    .WriteLine("...")
+                    .WriteLine("Do you want to throw Rupees?")
+                    .ReadLine())
                 .WriteLine("--END--");
         }
 
