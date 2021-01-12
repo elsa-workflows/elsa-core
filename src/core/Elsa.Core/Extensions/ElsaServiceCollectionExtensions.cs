@@ -21,6 +21,7 @@ using Elsa.Runtime;
 using Elsa.Serialization;
 using Elsa.Serialization.Converters;
 using Elsa.Services;
+using Elsa.Services.Models;
 using Elsa.StartupTasks;
 using Elsa.Triggers;
 using Elsa.WorkflowProviders;
@@ -53,6 +54,11 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton(options.SignalFactory)
                 .AddSingleton(options.StorageFactory)
                 .AddStartupTask<CreateSubscriptions>();
+
+            services
+                .AddTransient<IBranchingActivity, IfElse>()
+                .AddTransient<IBranchingActivity, For>()
+                .AddTransient<IBranchingActivity, While>();
 
             options
                 .AddWorkflowsCore()

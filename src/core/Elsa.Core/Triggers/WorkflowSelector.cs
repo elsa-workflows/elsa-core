@@ -146,7 +146,7 @@ namespace Elsa.Triggers
             
             if (workflowInstanceId != null)
             {    
-                descriptors = _descriptors![workflowBlueprint.Id].ToList();
+                descriptors = _descriptors!.ContainsKey(workflowBlueprint.Id) ? _descriptors[workflowBlueprint.Id].ToList() : new List<TriggerDescriptor>();
                 descriptors.RemoveAll(x => x.WorkflowInstanceId == workflowInstanceId);
                 
                 var workflowInstance = await _workflowInstanceStore.FindByIdAsync(workflowInstanceId, cancellationToken);

@@ -25,16 +25,40 @@ namespace Elsa.ActivityResults
         {
             var outcomes = activityExecutionContext.Outcomes = Outcomes.ToList();
             var workflowExecutionContext = activityExecutionContext.WorkflowExecutionContext;
+            var nextConnections = GetNextConnections(workflowExecutionContext, activityExecutionContext.ActivityBlueprint.Id, outcomes).ToList();
 
-            var nextActivities = GetNextActivities(
-                workflowExecutionContext,
-                activityExecutionContext.ActivityBlueprint.Id,
-                outcomes).ToList();
+            var nextActivities =
+                (
+                    from connection in nextConnections
+                    from activityBlueprint in workflowExecutionContext.WorkflowBlueprint.Activities
+                    where activityBlueprint.Id == connection.Target.Activity.Id
+                    select activityBlueprint.Id
+                )
+                .Distinct();
 
-            workflowExecutionContext.ScheduleActivities(nextActivities,  activityExecutionContext.Output);
+            foreach (var nextConnection in nextConnections) 
+                workflowExecutionContext.ExecutionLog.Add(nextConnection);
+            
+            workflowExecutionContext.ScheduleActivities(nextActivities, activityExecutionContext.Output);
         }
 
-        private IEnumerable<string> GetNextActivities(
+        public static IEnumerable<string> GetNextActivities(
+            WorkflowExecutionContext workflowContext,
+            string sourceId,
+            IEnumerable<string> outcomes)
+        {
+            var nextConnections = GetNextConnections(workflowContext, sourceId, outcomes);
+
+            var query =
+                from connection in nextConnections
+                from activityBlueprint in workflowContext.WorkflowBlueprint.Activities
+                where activityBlueprint.Id == connection.Target.Activity.Id
+                select activityBlueprint.Id;
+
+            return query.Distinct();
+        }
+
+        public static IEnumerable<IConnection> GetNextConnections(
             WorkflowExecutionContext workflowContext,
             string sourceId,
             IEnumerable<string> outcomes)
@@ -47,12 +71,10 @@ namespace Elsa.ActivityResults
                 let connectionOutcome = connection.Source.Outcome ?? OutcomeNames.Done
                 let isConnectionOutcome = connectionOutcome.Equals(outcome.outcome, StringComparison.OrdinalIgnoreCase)
                 where connection.Source.Activity.Id == sourceId && isConnectionOutcome
-                from activityBlueprint in workflowContext.WorkflowBlueprint.Activities
-                where activityBlueprint.Id == connection.Target.Activity.Id
-                orderby outcome.order 
-                select activityBlueprint.Id;
+                orderby outcome.order
+                select connection;
 
-            return query.Distinct();
+            return query;
         }
     }
 }

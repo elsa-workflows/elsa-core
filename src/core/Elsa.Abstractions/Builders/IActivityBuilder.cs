@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Elsa.Services;
+using Elsa.Services.Models;
 
 namespace Elsa.Builders
 {
@@ -28,5 +29,6 @@ namespace Elsa.Builders
         IActivityBuilder LoadWorkflowContext(bool value = true);
         IActivityBuilder SaveWorkflowContext(bool value = true);
         IActivityBuilder PersistWorkflow(bool value = true);
+        IWorkflowBlueprint Build();
     }
 }

@@ -25,7 +25,7 @@ namespace Elsa.Core.IntegrationTests.Workflows
                     {
                         @while
                             .When(OutcomeNames.Iterate)
-                            .WriteLine(context => $"Inside while loop. Counter = {context.GetVariable<int>(CounterVariableName)}", id: "WriteLoopCount")
+                            .WriteLine(context => $"Inside while loop. Counter = {context.GetVariable<int>(CounterVariableName)}").WithId("WriteLoopCount")
                             .SetVariable(CounterVariableName, context => GetCounter(context) + 1);
 
                     })

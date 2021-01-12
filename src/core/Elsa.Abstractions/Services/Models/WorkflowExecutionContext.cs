@@ -67,7 +67,7 @@ namespace Elsa.Services.Models
         }
 
         public bool DeleteCompletedInstances => WorkflowBlueprint.DeleteCompletedInstances;
-        public ICollection<string> ExecutionLog => new List<string>();
+        public IList<IConnection> ExecutionLog { get; } = new List<IConnection>();
         public WorkflowStatus Status => WorkflowInstance.WorkflowStatus;
         public bool HasBlockingActivities => WorkflowInstance.BlockingActivities.Any();
         public object? WorkflowContext { get; set; }
@@ -135,12 +135,6 @@ namespace Elsa.Services.Models
         public void SetWorkflowContext(object? value) => WorkflowContext = value;
         public T GetWorkflowContext<T>() => (T) WorkflowContext!;
 
-        public async ValueTask<IEnumerable<RuntimeActivityInstance>> ActivateActivitiesAsync(CancellationToken cancellationToken = default)
-        {
-            var activityExecutionContexts = WorkflowBlueprint.Activities.Select(x => new ActivityExecutionContext(ServiceScope, this, x, null, CancellationToken.None));
-            return await Task.WhenAll(activityExecutionContexts.Select(async x => await x.ActivateActivityAsync(cancellationToken)));
-        }
-        
         /// <summary>
         /// Remove empty activity data to save on document size.
         /// </summary>
@@ -156,4 +150,6 @@ namespace Elsa.Services.Models
             return activityBlueprint != null && activityBlueprint.PersistOutput;
         }
     }
+
+    public record ExecutionLogEntry(string ActivityId, string Outcome);
 }

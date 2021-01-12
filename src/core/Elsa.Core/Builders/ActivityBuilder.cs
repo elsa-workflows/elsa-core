@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Elsa.Services;
+using Elsa.Services.Models;
 
 namespace Elsa.Builders
 {
@@ -108,5 +109,7 @@ namespace Elsa.Builders
             PersistWorkflowEnabled = value;
             return this;
         }
+
+        public IWorkflowBlueprint Build() => ((IWorkflowBuilder)WorkflowBuilder).BuildBlueprint();
     }
 }

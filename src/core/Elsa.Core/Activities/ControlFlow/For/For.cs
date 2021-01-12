@@ -1,7 +1,6 @@
 using System;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
-using Elsa.Services;
 using Elsa.Services.Models;
 
 // ReSharper disable once CheckNamespace
@@ -12,7 +11,7 @@ namespace Elsa.Activities.ControlFlow
         Description = "Iterate between two numbers.",
         Outcomes = new[] { OutcomeNames.Iterate, OutcomeNames.Done }
     )]
-    public class For : Activity
+    public class For : IteratingActivity
     {
         [ActivityProperty(Hint = "An expression that evaluates to the starting number.")]
         public long Start { get; set; }

@@ -11,7 +11,7 @@ namespace Elsa.Activities.ControlFlow
         Description = "Execute while a given condition is true.",
         Outcomes = new[] { OutcomeNames.Iterate, OutcomeNames.Done }
     )]
-    public class While : Activity
+    public class While : IteratingActivity
     {
         [ActivityProperty(Hint = "The condition to evaluate.")]
         public bool Condition { get; set; }

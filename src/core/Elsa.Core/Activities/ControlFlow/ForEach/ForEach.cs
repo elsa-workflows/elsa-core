@@ -14,7 +14,7 @@ namespace Elsa.Activities.ControlFlow
         Description = "Iterate over a collection.",
         Outcomes = new[] { OutcomeNames.Iterate, OutcomeNames.Done }
     )]
-    public class ForEach : Activity
+    public class ForEach : IteratingActivity
     {
         [ActivityProperty(Hint = "Enter an expression that evaluates to a collection of items to iterate over.")]
         public ICollection<object> Items { get; set; } = new Collection<object>();
@@ -30,7 +30,7 @@ namespace Elsa.Activities.ControlFlow
             get => GetState<int?>();
             set => SetState(value);
         }
-
+        
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
             var collection = ItemsCopy;

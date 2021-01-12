@@ -21,12 +21,26 @@ namespace Elsa.Activities.ControlFlow
 
         [ActivityProperty(Hint = "The conditions to evaluate.")]
         public SwitchMode Mode { get; set; } = SwitchMode.MatchFirst;
+        
+        private bool Evaluated
+        {
+            get => GetState<bool>();
+            set => SetState(value);
+        }
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
+            if (Evaluated)
+            {
+                Evaluated = false;
+                return Done();
+            }
+            
             var matches = Cases.Where(x => x.Condition).Select(x => x.Name).ToList();
             var results = Mode == SwitchMode.MatchFirst ? matches.Any() ? new[] { matches.First() } : new string[0] : matches.ToArray();
             var outcomes = new[] { OutcomeNames.Done }.Concat(results);
+            
+            Evaluated = true;
             return Outcomes(outcomes);
         }
     }

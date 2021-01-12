@@ -25,7 +25,7 @@ namespace Elsa.ActivityResults
             if (previousEntry == null)
                 return;
 
-            var activityId = previousEntry;
+            var activityId = previousEntry.Source.Activity.Id;
             workflowExecutionContext.ScheduleActivity(activityId, _input);
         }
     }

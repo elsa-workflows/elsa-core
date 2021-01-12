@@ -17,23 +17,24 @@ namespace Elsa.Samples.IfElseConsole
         public void Build(IWorkflowBuilder workflow)
         {
             workflow
-                .WriteLine("--POND OF HAPPINESS--", "Start")
+                .WriteLine("--POND OF HAPPINESS--")
                 .WriteLine("Throw some Rupees in and your wishes will surely come true.")
-                .WriteLine("Do you want to throw Rupees?")
+                .WriteLine("Do you want to throw Rupees?").WithName("Start")
                 .ReadLine()
                 .IfElse(context => IsYes(context.Input),
                     ifElse =>
                     {
                         ifElse
-                            .When(IfElse.True)
+                            .When(OutcomeNames.True)
                             .WriteLine(GetCurse)
                             .WriteLine("...")
                             .Then("Start");
 
                         ifElse
-                            .When(IfElse.False)
-                            .WriteLine("Bye.");
-                    });
+                            .When(OutcomeNames.False)
+                            .WriteLine("Keep your rupees.");
+                    })
+                .WriteLine("--END--");
         }
 
         private static bool IsYes(object? value)

@@ -1,4 +1,4 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Events;
@@ -12,37 +12,30 @@ namespace Elsa.Handlers
     /// Walks up the tee of inbound connections along the "Iterate" outcome of the looping construct (While/For/ForEach) and re-schedules the looping activity.
     /// Also handles composite activity re-scheduling.
     /// </summary>
-    public class RescheduleLoopsAndContainers : INotificationHandler<WorkflowExecutionBurstCompleted>
+    public class RescheduleBranchingActivitiesAndContainers : INotificationHandler<WorkflowExecutionBurstCompleted>
     {
+        private readonly IEnumerable<IBranchingActivity> _branchingActivities;
+
+        public RescheduleBranchingActivitiesAndContainers(IEnumerable<IBranchingActivity> branchingActivities)
+        {
+            _branchingActivities = branchingActivities;
+        }
+        
         public Task Handle(WorkflowExecutionBurstCompleted notification, CancellationToken cancellationToken)
         {
-            ScheduleLoops(notification);
+            var workflowExecutionContext = notification.WorkflowExecutionContext;
+            var activityExecutionContext = notification.ActivityExecutionContext;
+            
+            foreach (var branchingActivity in _branchingActivities)
+            {
+                if (workflowExecutionContext.HasScheduledActivities || workflowExecutionContext.Status != WorkflowStatus.Running)
+                    break;
+                
+                branchingActivity.Unwind(activityExecutionContext);
+            }
+            
             ScheduleContainers(notification);
             return Task.CompletedTask;
-        }
-
-        private static void ScheduleLoops(WorkflowExecutionBurstCompleted notification)
-        {
-            var workflowExecutionContext = notification.WorkflowExecutionContext;
-
-            // If no suspension has been instructed, re-schedule any post-scheduled activities.
-            if (workflowExecutionContext.HasScheduledActivities || workflowExecutionContext.Status != WorkflowStatus.Running)
-                return;
-
-            var workflowBlueprint = workflowExecutionContext.WorkflowBlueprint;
-            var currentActivityId = notification.ActivityExecutionContext.ActivityBlueprint.Id;
-            var inboundConnections = workflowBlueprint.GetInboundConnectionPath(currentActivityId).ToList();
-
-            var query = 
-                from inboundConnection in inboundConnections 
-                let parentActivityBlueprint = inboundConnection.Source.Activity 
-                where inboundConnection.Source.Outcome == OutcomeNames.Iterate 
-                select parentActivityBlueprint;
-
-            var firstLoop = query.FirstOrDefault();
-            
-            if(firstLoop != null)
-                workflowExecutionContext.ScheduleActivity(firstLoop.Id);
         }
 
         private static void ScheduleContainers(WorkflowExecutionBurstCompleted notification)

@@ -18,6 +18,7 @@ namespace Elsa.Services
             var activity = _elsaOptions.ActivityFactory.CreateService(type, context.ServiceScope.ServiceProvider);
             activity.Data = context.GetData();
             activity.Id = context.ActivityId;
+            
             await context.WorkflowExecutionContext.WorkflowBlueprint.ActivityPropertyProviders.SetActivityPropertiesAsync(activity, context, context.CancellationToken);
             return activity;
         }
