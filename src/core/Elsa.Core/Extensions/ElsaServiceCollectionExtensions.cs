@@ -55,11 +55,6 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton(options.StorageFactory)
                 .AddStartupTask<CreateSubscriptions>();
 
-            services
-                .AddTransient<IBranchingActivity, IfElse>()
-                .AddTransient<IBranchingActivity, For>()
-                .AddTransient<IBranchingActivity, While>();
-
             options
                 .AddWorkflowsCore()
                 .AddCoreActivities();
@@ -163,7 +158,6 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddActivity<ParallelForEach>()
                 .AddActivity<Fork>()
                 .AddActivity<IfElse>()
-                .AddActivity<Switch>()
                 .AddActivity<Join>()
                 .AddActivity<Switch>()
                 .AddActivity<While>()

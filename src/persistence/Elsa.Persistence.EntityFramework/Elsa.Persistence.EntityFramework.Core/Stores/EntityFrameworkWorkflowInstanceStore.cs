@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq.Expressions;
 using Elsa.Models;
 using Elsa.Persistence.Specifications;
@@ -34,6 +35,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
                 entity.ActivityOutput,
                 entity.BlockingActivities,
                 entity.ScheduledActivities,
+                entity.Scopes,
                 entity.Fault
             };
 
@@ -52,6 +54,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
                 entity.ActivityOutput,
                 entity.BlockingActivities,
                 entity.ScheduledActivities,
+                entity.Scopes,
                 entity.Fault
             };
             
@@ -66,6 +69,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
             entity.ActivityOutput = data.ActivityOutput;
             entity.BlockingActivities = data.BlockingActivities;
             entity.ScheduledActivities = data.ScheduledActivities;
+            entity.Scopes = data.Scopes ?? new Stack<string>();
             entity.Fault = data.Fault;
         }
     }

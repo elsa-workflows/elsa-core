@@ -14,7 +14,7 @@ namespace Elsa.Activities.ControlFlow
         Description = "Iterate over a collection.",
         Outcomes = new[] { OutcomeNames.Iterate, OutcomeNames.Done }
     )]
-    public class ForEach : IteratingActivity
+    public class ForEach : Activity
     {
         [ActivityProperty(Hint = "Enter an expression that evaluates to a collection of items to iterate over.")]
         public ICollection<object> Items { get; set; } = new Collection<object>();
@@ -44,6 +44,7 @@ namespace Elsa.Activities.ControlFlow
             {
                 var output = collection[currentIndex];
                 CurrentIndex = currentIndex + 1;
+                context.WorkflowInstance.Scopes.Push(Id);
                 return Combine(Outcome(OutcomeNames.Iterate, output));
             }
 

@@ -13,6 +13,7 @@ namespace Elsa.Models
         {
             Variables = new Variables();
             ScheduledActivities = new Stack<ScheduledActivity>();
+            Scopes = new Stack<string>();
         }
         
         public string DefinitionId { get; set; } = default!;
@@ -38,8 +39,9 @@ namespace Elsa.Models
             get => _blockingActivities;
             set => _blockingActivities = new HashSet<BlockingActivity>(value, BlockingActivityEqualityComparer.Instance);
         }
-        
+
         public WorkflowFault? Fault { get; set; }
         public Stack<ScheduledActivity> ScheduledActivities { get; set; }
+        public Stack<string> Scopes { get; set; }
     }
 }
