@@ -22,7 +22,7 @@ namespace Elsa.Activities.ControlFlow
         [ActivityProperty(Hint = "The condition to evaluate.")]
         public bool Condition { get; set; }
 
-        private bool EnteredScope
+        public bool EnteredScope
         {
             get => GetState<bool>();
             set => SetState(value);
