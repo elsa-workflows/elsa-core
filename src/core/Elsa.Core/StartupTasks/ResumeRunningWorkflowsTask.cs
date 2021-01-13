@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.DistributedLock;
@@ -6,6 +7,8 @@ using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications;
 using Elsa.Services;
+using Microsoft.Extensions.Logging;
+using Open.Linq.AsyncExtensions;
 
 namespace Elsa.StartupTasks
 {
@@ -18,15 +21,18 @@ namespace Elsa.StartupTasks
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
         private readonly IWorkflowRunner _workflowScheduler;
         private readonly IDistributedLockProvider _distributedLockProvider;
+        private readonly ILogger<ResumeRunningWorkflowsTask> _logger;
 
         public ResumeRunningWorkflowsTask(
             IWorkflowInstanceStore workflowInstanceStore,
             IWorkflowRunner workflowScheduler,
-            IDistributedLockProvider distributedLockProvider)
+            IDistributedLockProvider distributedLockProvider,
+            ILogger<ResumeRunningWorkflowsTask> logger)
         {
             _workflowInstanceStore = workflowInstanceStore;
             _workflowScheduler = workflowScheduler;
             _distributedLockProvider = distributedLockProvider;
+            _logger = logger;
         }
 
         public async Task ExecuteAsync(CancellationToken cancellationToken = default)
@@ -38,12 +44,17 @@ namespace Elsa.StartupTasks
 
             try
             {
-                var instances = await _workflowInstanceStore.FindManyAsync(new WorkflowStatusSpecification(WorkflowStatus.Running), cancellationToken: cancellationToken);
+                var instances = await _workflowInstanceStore.FindManyAsync(new WorkflowStatusSpecification(WorkflowStatus.Running), cancellationToken: cancellationToken).ToList();
+                
+                _logger.LogInformation("Found {WorkflowInstanceCount} workflows with status 'Running'. Resuming each one of them.", instances.Count);
                 
                 foreach (var instance in instances)
+                {
+                    _logger.LogInformation("Resuming {WorkflowInstanceId}", instance.Id);
                     await _workflowScheduler.RunWorkflowAsync(
                         instance,
                         cancellationToken: cancellationToken);
+                }
             }
             finally
             {

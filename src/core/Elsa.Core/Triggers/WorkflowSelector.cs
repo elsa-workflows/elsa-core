@@ -129,7 +129,7 @@ namespace Elsa.Triggers
             var workflowBlueprints = await _workflowRegistry.GetWorkflowsAsync(cancellationToken).ToListAsync(cancellationToken);
             var descriptors = new List<TriggerDescriptor>();
 
-            foreach (var workflowBlueprint in workflowBlueprints)
+            foreach (var workflowBlueprint in workflowBlueprints.Where(x => x.IsEnabled))
             {
                 var blueprintDescriptors = await BuildDescriptorsForAsync(workflowBlueprint, null, cancellationToken);
                 descriptors.AddRange(blueprintDescriptors);

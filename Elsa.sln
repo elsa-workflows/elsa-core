@@ -216,6 +216,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.EntityFram
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.EntityFramework.SqlServer", "src\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.SqlServer\Elsa.Persistence.EntityFramework.SqlServer.csproj", "{F97339EF-424F-46F1-AD8D-B36B8C2F716E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.Faulting", "src\samples\worker\Elsa.Samples.Faulting\Elsa.Samples.Faulting.csproj", "{76BF833E-3CAE-4402-99F1-B3BFD90622E4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -514,6 +516,10 @@ Global
 		{F97339EF-424F-46F1-AD8D-B36B8C2F716E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F97339EF-424F-46F1-AD8D-B36B8C2F716E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F97339EF-424F-46F1-AD8D-B36B8C2F716E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{76BF833E-3CAE-4402-99F1-B3BFD90622E4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{76BF833E-3CAE-4402-99F1-B3BFD90622E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{76BF833E-3CAE-4402-99F1-B3BFD90622E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{76BF833E-3CAE-4402-99F1-B3BFD90622E4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -615,6 +621,7 @@ Global
 		{7240B7EE-53D7-4C94-9A5C-80D2D6C4BF0E} = {C865B0FD-E505-48F0-BFAF-0D4D7C1B5CA1}
 		{8A7C2A43-BABF-4961-81D8-D16A702A2EE8} = {C865B0FD-E505-48F0-BFAF-0D4D7C1B5CA1}
 		{F97339EF-424F-46F1-AD8D-B36B8C2F716E} = {C865B0FD-E505-48F0-BFAF-0D4D7C1B5CA1}
+		{76BF833E-3CAE-4402-99F1-B3BFD90622E4} = {E42743A0-FBDD-4150-9D53-6000496D9B87}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}
