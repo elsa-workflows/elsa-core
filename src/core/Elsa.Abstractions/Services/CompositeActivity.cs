@@ -15,7 +15,7 @@ namespace Elsa.Services
         {
         }
 
-        private bool IsScheduled
+        public bool IsScheduled
         {
             get => GetState<bool>();
             set => SetState(value);
