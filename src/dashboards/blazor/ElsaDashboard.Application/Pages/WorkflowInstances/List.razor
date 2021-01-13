@@ -13,7 +13,7 @@
     <!-- Search bar -->
     <div class="flex-1 px-4 flex justify-between sm:px-6 lg:max-w-6xl lg:px-8">
         <div class="flex-1 flex">
-            <EditForm EditContext="EditContext" OnValidSubmit="OnSearchSubmit" class="w-full flex md:ml-0" >
+            <EditForm EditContext="EditContext" OnValidSubmit="OnSearchSubmit" class="w-full flex md:ml-0">
                 <label for="search_field" class="sr-only">Search</label>
                 <div class="relative w-full text-cool-gray-400 focus-within:text-cool-gray-600">
                     <div class="absolute inset-y-0 left-0 flex items-center pointer-events-none">
@@ -84,6 +84,12 @@
                 <th class="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
                     Finished
                 </th>
+                <th class="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                    Last Executed
+                </th>
+                <th class="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                    Faulted
+                </th>
                 <th class="pr-6 py-3 border-b border-gray-200 bg-gray-50 text-right text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider"></th>
             </tr>
             </thead>
@@ -91,7 +97,7 @@
             @foreach (var workflowInstance in WorkflowInstances.Items)
             {
                 var workflowKey = (workflowInstance.DefinitionId, workflowInstance.Version);
-                var workflowBlueprint = WorkflowBlueprints.ContainsKey(workflowKey) ? WorkflowBlueprints[workflowKey] : new WorkflowBlueprintSummary {DisplayName = "(Blueprint Not Found)"};
+                var workflowBlueprint = WorkflowBlueprints.ContainsKey(workflowKey) ? WorkflowBlueprints[workflowKey] : new WorkflowBlueprintSummary { DisplayName = "(Blueprint Not Found)" };
                 var instanceName = string.IsNullOrWhiteSpace(workflowInstance.Name) ? "" : workflowInstance.Name;
                 var displayName = workflowBlueprint.DisplayName!;
                 var statusColor = GetStatusColor(workflowInstance.WorkflowStatus);
@@ -126,6 +132,12 @@
                     </td>
                     <td class="hidden md:table-cell px-6 py-3 whitespace-no-wrap text-sm leading-5 text-gray-500 text-left">
                         @(workflowInstance.FinishedAt != null ? workflowInstance.FinishedAt.ToString() : "-")
+                    </td>
+                    <td class="hidden md:table-cell px-6 py-3 whitespace-no-wrap text-sm leading-5 text-gray-500 text-left">
+                        @(workflowInstance.LastExecutedAt != null ? workflowInstance.LastExecutedAt.ToString() : "-")
+                    </td>
+                    <td class="hidden md:table-cell px-6 py-3 whitespace-no-wrap text-sm leading-5 text-gray-500 text-left">
+                        @(workflowInstance.FaultedAt != null ? workflowInstance.FaultedAt.ToString() : "-")
                     </td>
                     <td class="pr-6">
                         <ContextMenu>

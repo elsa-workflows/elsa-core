@@ -36,6 +36,7 @@ namespace Elsa.Services
 
             return true;
         }
+        
         private bool IsReturningComposite(IActivity activity) => activity is CompositeActivity && activity.Data.GetState<bool>(nameof(CompositeActivity.IsScheduled));
         private bool IsReturningIfElse(IActivity activity) => activity is IfElse && activity.Data.GetState<bool>(nameof(IfElse.EnteredScope));
     }
