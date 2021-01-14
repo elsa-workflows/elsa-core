@@ -18,6 +18,7 @@ namespace Elsa.Models
             ActivityType = activityType;
             Timestamp = timestamp;
             Message = message;
+            Source = source;
             Data = data;
         }
 
