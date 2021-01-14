@@ -40,10 +40,11 @@ namespace Elsa.Activities.AzureServiceBus.Services
         {
             using var scope = _serviceProvider.CreateScope();
             var workflowRunner = scope.ServiceProvider.GetRequiredService<IWorkflowRunner>();
-            
+
             await workflowRunner.TriggerWorkflowsAsync<MessageReceivedTrigger>(
-                x => x.QueueName == _messageReceiver.Path && (string.Equals(x.CorrelationId, message.CorrelationId)), 
-                message, message.CorrelationId, 
+                x => x.QueueName == _messageReceiver.Path && (string.Equals(x.CorrelationId, message.CorrelationId)),
+                message,
+                message.CorrelationId,
                 cancellationToken: cancellationToken);
         }
 

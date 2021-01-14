@@ -1,13 +1,12 @@
 using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Elsa.Services;
 using Elsa.Services.Models;
 
+// ReSharper disable ExplicitCallerInfoArgument
 namespace Elsa.Builders
 {
-    [SuppressMessage("ReSharper", "ExplicitCallerInfoArgument")]
     public class OutcomeBuilder : IOutcomeBuilder
     {
         public OutcomeBuilder(ICompositeActivityBuilder workflowBuilder, IActivityBuilder source, string outcome = OutcomeNames.Done)
@@ -27,7 +26,7 @@ namespace Elsa.Builders
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default) where T : class, IActivity
         {
-            var activityBuilder = WorkflowBuilder.Add(setup, lineNumber, sourceFile);
+            var activityBuilder = WorkflowBuilder.Add(setup, branch, lineNumber, sourceFile);
             Then(activityBuilder, branch);
             return activityBuilder;
         }
