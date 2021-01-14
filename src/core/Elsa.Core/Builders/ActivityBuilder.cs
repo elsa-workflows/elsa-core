@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Elsa.Services;
@@ -42,7 +43,7 @@ namespace Elsa.Builders
         public IDictionary<string, IActivityPropertyValueProvider>? PropertyValueProviders { get; protected set; }
         public int LineNumber { get; }
         public string? SourceFile { get; }
-        public string? Source => SourceFile != null && LineNumber != default ? $"{SourceFile}:{LineNumber}" : default;
+        public string? Source => SourceFile != null && LineNumber != default ? $"{Path.GetFileName(SourceFile)}:{LineNumber}" : default;
 
         public IActivityBuilder Add<T>(
             Action<ISetupActivity<T>>? setup = default, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default)
