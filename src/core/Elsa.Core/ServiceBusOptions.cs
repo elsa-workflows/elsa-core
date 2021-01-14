@@ -6,6 +6,7 @@ namespace Elsa
     {
         public int? NumberOfWorkers { get; set; }
         public int? MaxParallelism { get; set; }
+        public string? QueuePrefix { get; set; }
 
         public void Apply(OptionsConfigurer configurer)
         {
