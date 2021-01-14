@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -9,37 +10,46 @@ namespace Elsa.Builders
     {
         IServiceProvider ServiceProvider { get; }
         IReadOnlyCollection<IActivityBuilder> Activities { get; }
-        
+
         IActivityBuilder New<T>(
             Action<IActivityBuilder>? branch = default,
-            IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders = default)
+            IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders = default,
+            [CallerLineNumber] int lineNumber = default,
+            [CallerFilePath] string? sourceFile = default)
             where T : class, IActivity;
 
         IActivityBuilder New<T>(
             Action<ISetupActivity<T>>? setup,
-            Action<IActivityBuilder>? branch = default) where T : class, IActivity;
+            Action<IActivityBuilder>? branch = default,
+            [CallerLineNumber] int lineNumber = default,
+            [CallerFilePath] string? sourceFile = default) where T : class, IActivity;
 
         IActivityBuilder StartWith<T>(
             Action<ISetupActivity<T>>? setup,
-            Action<IActivityBuilder>? branch = default) where T : class, IActivity;
+            Action<IActivityBuilder>? branch = default,
+            [CallerLineNumber] int lineNumber = default,
+            [CallerFilePath] string? sourceFile = default) where T : class, IActivity;
 
-        IActivityBuilder StartWith<T>(Action<IActivityBuilder>? branch = default)
-            where T : class, IActivity;
+        IActivityBuilder StartWith<T>(Action<IActivityBuilder>? branch = default, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) where T : class, IActivity;
 
         IActivityBuilder Add<T>(
             Action<ISetupActivity<T>>? setup,
-            Action<IActivityBuilder>? branch = default) where T : class, IActivity;
+            Action<IActivityBuilder>? branch = default,
+            [CallerLineNumber] int lineNumber = default,
+            [CallerFilePath] string? sourceFile = default) where T : class, IActivity;
 
         IActivityBuilder Add<T>(
             Action<IActivityBuilder>? branch = default,
-            IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders = default)
+            IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders = default,
+            [CallerLineNumber] int lineNumber = default,
+            [CallerFilePath] string? sourceFile = default)
             where T : class, IActivity;
 
         IConnectionBuilder Connect(
             IActivityBuilder source,
             IActivityBuilder target,
             string outcome = OutcomeNames.Done);
-        
+
         IConnectionBuilder Connect(
             Func<IActivityBuilder> source,
             Func<IActivityBuilder> target,

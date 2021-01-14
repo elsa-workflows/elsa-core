@@ -29,11 +29,12 @@ namespace Elsa.Handlers
             var tenantId = workflowInstance.TenantId;
             var workflowInstanceId = workflowInstance.Id;
             var activityId = notification.Activity.Id;
+            var activityBlueprint = notification.Activity;
+            var activityType = activityBlueprint.Type;
+            var source = activityBlueprint.Source;
             var timeStamp = _clock.GetCurrentInstant();
             const string message = "Activity Executed";
-            
-            var record = new WorkflowExecutionLogRecord(id, tenantId, workflowInstanceId, activityId, timeStamp, message);
-
+            var record = new WorkflowExecutionLogRecord(id, tenantId, workflowInstanceId, activityId, activityType, timeStamp, message, source);
             await _store.SaveAsync(record, cancellationToken);
         }
     }

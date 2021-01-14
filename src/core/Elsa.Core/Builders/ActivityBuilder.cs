@@ -1,23 +1,30 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Elsa.Services;
 using Elsa.Services.Models;
 
 namespace Elsa.Builders
 {
+    [SuppressMessage("ReSharper", "ExplicitCallerInfoArgument")]
     public class ActivityBuilder : IActivityBuilder
     {
         public ActivityBuilder(
             Type activityType,
             ICompositeActivityBuilder workflowBuilder,
-            IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders)
+            IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders,
+            int lineNumber,
+            string? sourceFile)
         {
             ActivityType = activityType;
             WorkflowBuilder = workflowBuilder;
             PropertyValueProviders = propertyValueProviders;
+            LineNumber = lineNumber;
+            SourceFile = sourceFile;
         }
-        
+
         protected ActivityBuilder()
         {
         }
@@ -33,23 +40,28 @@ namespace Elsa.Builders
         public bool SaveWorkflowContextEnabled { get; set; }
         public bool PersistOutputEnabled { get; set; }
         public IDictionary<string, IActivityPropertyValueProvider>? PropertyValueProviders { get; protected set; }
+        public int LineNumber { get; }
+        public string? SourceFile { get; }
+        public string? Source => SourceFile != null && LineNumber != default ? $"{SourceFile}:{LineNumber}" : default;
 
         public IActivityBuilder Add<T>(
-            Action<ISetupActivity<T>>? setup = default)
+            Action<ISetupActivity<T>>? setup = default, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default)
             where T : class, IActivity =>
-            WorkflowBuilder.Add(setup);
+            WorkflowBuilder.Add(setup, null, lineNumber, sourceFile);
 
         public IOutcomeBuilder When(string outcome) => new OutcomeBuilder(WorkflowBuilder, this, outcome);
 
         public virtual IActivityBuilder Then<T>(
             Action<ISetupActivity<T>>? setup = null,
-            Action<IActivityBuilder>? branch = null)
+            Action<IActivityBuilder>? branch = null,
+            [CallerLineNumber] int lineNumber = default, 
+            [CallerFilePath] string? sourceFile = default)
             where T : class, IActivity =>
-            When(OutcomeNames.Done).Then(setup, branch);
+            When(OutcomeNames.Done).Then(setup, branch, lineNumber, sourceFile);
 
-        public virtual IActivityBuilder Then<T>(Action<IActivityBuilder>? branch = null)
+        public virtual IActivityBuilder Then<T>(Action<IActivityBuilder>? branch = null, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default)
             where T : class, IActivity =>
-            When(OutcomeNames.Done).Then<T>(branch);
+            When(OutcomeNames.Done).Then<T>(branch, lineNumber, sourceFile);
 
         public virtual IActivityBuilder Then(IActivityBuilder targetActivity)
         {
@@ -73,43 +85,43 @@ namespace Elsa.Builders
             Name = value;
             return this;
         }
-        
+
         public IActivityBuilder WithDisplayName(string? value)
         {
             DisplayName = value;
             return this;
         }
-        
+
         public IActivityBuilder WithDescription(string? value)
         {
             Description = value;
             return this;
         }
-        
+
         public IActivityBuilder LoadWorkflowContext(bool value)
         {
             LoadWorkflowContextEnabled = value;
             return this;
         }
-        
+
         public IActivityBuilder SaveWorkflowContext(bool value)
         {
             SaveWorkflowContextEnabled = value;
             return this;
         }
-        
+
         public IActivityBuilder PersistOutput(bool value)
         {
             PersistOutputEnabled = value;
             return this;
         }
-        
+
         public IActivityBuilder PersistWorkflow(bool value)
         {
             PersistWorkflowEnabled = value;
             return this;
         }
 
-        public IWorkflowBlueprint Build() => ((IWorkflowBuilder)WorkflowBuilder).BuildBlueprint();
+        public IWorkflowBlueprint Build() => ((IWorkflowBuilder) WorkflowBuilder).BuildBlueprint();
     }
 }
