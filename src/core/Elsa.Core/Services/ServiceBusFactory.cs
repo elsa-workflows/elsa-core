@@ -25,7 +25,7 @@ namespace Elsa.Services
 
         public async Task<IBus> GetServiceBusAsync(Type messageType, CancellationToken cancellationToken)
         {
-            var queueName = messageType.Name;
+            var queueName = FormatQueueName(messageType.Name);
             await _semaphore.WaitAsync(cancellationToken);
             
             try
@@ -49,5 +49,7 @@ namespace Elsa.Services
                 _semaphore.Release();
             }
         }
+
+        private string FormatQueueName(string name) => $"{_elsaOptions.ServiceBusOptions.QueuePrefix}{name}";
     }
 }
