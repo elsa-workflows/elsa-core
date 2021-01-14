@@ -8,6 +8,7 @@ using Elsa.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Newtonsoft.Json;
+using NodaTime;
 
 namespace Elsa.Services.Models
 {
@@ -34,7 +35,6 @@ namespace Elsa.Services.Models
         public JsonSerializer Serializer { get; }
         public object? Input { get; }
         public bool HasScheduledActivities => WorkflowInstance.ScheduledActivities.Any();
-        public IWorkflowFault? WorkflowFault { get; private set; }
         public bool IsFirstPass { get; private set; }
         public bool ContextHasChanged { get; set; }
 
@@ -114,10 +114,12 @@ namespace Elsa.Services.Models
         public void Resume() => WorkflowInstance.WorkflowStatus = WorkflowStatus.Running;
         public void Suspend() => WorkflowInstance.WorkflowStatus = WorkflowStatus.Suspended;
 
-        public void Fault(string? activityId, LocalizedString? message)
+        public void Fault(string? activityId, string? message, string? stackTrace)
         {
+            var clock = ServiceScope.ServiceProvider.GetRequiredService<IClock>();
             WorkflowInstance.WorkflowStatus = WorkflowStatus.Faulted;
-            WorkflowFault = new WorkflowFault(activityId, message);
+            WorkflowInstance.FaultedAt = clock.GetCurrentInstant();
+            WorkflowInstance.Fault = new WorkflowFault(activityId, message, stackTrace);
         }
 
         public void Complete() => WorkflowInstance.WorkflowStatus = WorkflowStatus.Finished;

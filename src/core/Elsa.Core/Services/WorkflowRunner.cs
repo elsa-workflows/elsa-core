@@ -269,7 +269,7 @@ namespace Elsa.Services
             catch (Exception e)
             {
                 _logger.LogError(e, e.Message);
-                workflowExecutionContext.Fault(null, new LocalizedString(e.Message, e.Message));
+                workflowExecutionContext.Fault(null, e.Message, e.StackTrace);
             }
         }
 
@@ -286,7 +286,12 @@ namespace Elsa.Services
                 var activityExecutionContext = new ActivityExecutionContext(scope, workflowExecutionContext, activityBlueprint, scheduledActivity.Input, cancellationToken);
                 var activity = await activityExecutionContext.ActivateActivityAsync(cancellationToken);
                 await _mediator.Publish(new ActivityExecuting(activityExecutionContext), cancellationToken);
-                var result = await activityOperation(activityExecutionContext, activity);
+
+                var result = await TryExecuteActivityAsync(activityOperation, activityExecutionContext, activity);
+                
+                if(result == null)
+                    return;
+
                 await _mediator.Publish(new ActivityExecuted(activityExecutionContext), cancellationToken);
                 await result.ExecuteAsync(activityExecutionContext, cancellationToken);
                 workflowExecutionContext.WorkflowInstance.Output = activityExecutionContext.Output;
@@ -304,6 +309,21 @@ namespace Elsa.Services
 
             if (workflowExecutionContext.Status == WorkflowStatus.Running)
                 workflowExecutionContext.Complete();
+        }
+
+        private async ValueTask<IActivityExecutionResult?> TryExecuteActivityAsync(ActivityOperation activityOperation, ActivityExecutionContext activityExecutionContext, RuntimeActivityInstance activity)
+        {
+            try
+            {
+                return await activityOperation(activityExecutionContext, activity);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, e.Message);
+                activityExecutionContext.WorkflowExecutionContext.Fault(activity.Id, e.Message, e.StackTrace);
+            }
+            
+            return null;
         }
     }
 }
