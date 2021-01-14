@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -18,7 +19,8 @@ namespace Elsa.Builders
         bool LoadWorkflowContextEnabled { get; set; }
         bool SaveWorkflowContextEnabled { get; set; }
         bool PersistOutputEnabled { get; set; }
-        IActivityBuilder Add<T>(Action<ISetupActivity<T>>? setup = default) where T : class, IActivity;
+        string? Source { get; }
+        IActivityBuilder Add<T>(Action<ISetupActivity<T>>? setup = default, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) where T : class, IActivity;
         IOutcomeBuilder When(string outcome);
         IActivityBuilder Then(IActivityBuilder targetActivity);
         IConnectionBuilder Then(string activityName);

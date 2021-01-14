@@ -39,8 +39,10 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
                     TenantId = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     WorkflowInstanceId = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ActivityId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ActivityType = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Timestamp = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     Message = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Source = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Data = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>

@@ -3,6 +3,7 @@ using System;
 using Elsa.Persistence.EntityFramework.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
 {
@@ -74,10 +75,17 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("ActivityType")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Data")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Message")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Source")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("TenantId")

@@ -39,8 +39,10 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
                     TenantId = table.Column<string>(type: "TEXT", nullable: true),
                     WorkflowInstanceId = table.Column<string>(type: "TEXT", nullable: false),
                     ActivityId = table.Column<string>(type: "TEXT", nullable: false),
+                    ActivityType = table.Column<string>(type: "TEXT", nullable: false),
                     Timestamp = table.Column<DateTimeOffset>(type: "TEXT", nullable: false),
                     Message = table.Column<string>(type: "TEXT", nullable: true),
+                    Source = table.Column<string>(type: "TEXT", nullable: true),
                     Data = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
