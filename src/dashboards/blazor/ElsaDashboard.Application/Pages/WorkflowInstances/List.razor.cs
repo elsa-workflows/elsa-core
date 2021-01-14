@@ -50,7 +50,7 @@ namespace ElsaDashboard.Application.Pages.WorkflowInstances
             }.Select(x => new ButtonDropdownItem(x?.ToString() ?? "All", x.ToString(), BuildFilterUrl(SelectedWorkflowId, x, SelectedOrderBy), x == SelectedWorkflowStatus));
 
         private IEnumerable<ButtonDropdownItem> OrderByItems =>
-            new[] { OrderBy.Finished, OrderBy.Started }.Select(x => new ButtonDropdownItem(x.ToString(), x.ToString(), BuildFilterUrl(SelectedWorkflowId, SelectedWorkflowStatus, x), x == SelectedOrderBy));
+            new[] { OrderBy.Finished, OrderBy.LastExecuted, OrderBy.Started }.Select(x => new ButtonDropdownItem(x.ToString(), x.ToString(), BuildFilterUrl(SelectedWorkflowId, SelectedWorkflowStatus, x), x == SelectedOrderBy));
 
         private string SelectedWorkflowText => SelectedWorkflowId == null ? "Workflow" : LatestWorkflowBlueprints.FirstOrDefault(x => x.Id == SelectedWorkflowId)?.DisplayName ?? "Workflow";
         private string SelectedWorkflowStatusText => SelectedWorkflowStatus?.ToString() ?? "Status";

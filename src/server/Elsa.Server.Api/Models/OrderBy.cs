@@ -3,6 +3,7 @@
     public enum OrderBy
     {
         Started,
+        LastExecuted,
         Finished
     }
 }

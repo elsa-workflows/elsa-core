@@ -70,6 +70,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
                 orderBySpecification = orderBy switch
                 {
                     OrderBy.Started => OrderBySpecification.OrderByDescending<WorkflowInstance>(x => x.CreatedAt),
+                    OrderBy.LastExecuted => OrderBySpecification.OrderByDescending<WorkflowInstance>(x => x.LastExecutedAt!),
                     OrderBy.Finished => OrderBySpecification.OrderByDescending<WorkflowInstance>(x => x.FinishedAt!),
                     _ => OrderBySpecification.OrderByDescending<WorkflowInstance>(x => x.FinishedAt!)
                 };
