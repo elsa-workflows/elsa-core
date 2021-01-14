@@ -11,7 +11,7 @@ namespace Elsa.Samples.Faulting.Workflows
         public void Build(IWorkflowBuilder workflow)
         {
             workflow
-                .Timer(Duration.FromSeconds(1))
+                .StartIn(Duration.FromSeconds(1))
                 .WriteLine("Catch this!")
                 .Then(() => throw new ArithmeticException("Does not compute"));
         }

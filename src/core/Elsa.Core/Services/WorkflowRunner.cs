@@ -269,7 +269,7 @@ namespace Elsa.Services
             catch (Exception e)
             {
                 _logger.LogError(e, e.Message);
-                workflowExecutionContext.Fault(null, new LocalizedString(e.Message, e.Message));
+                workflowExecutionContext.Fault(null, e.Message, e.StackTrace);
             }
         }
 
@@ -320,7 +320,7 @@ namespace Elsa.Services
             catch (Exception e)
             {
                 _logger.LogError(e, e.Message);
-                activityExecutionContext.WorkflowExecutionContext.Fault(activity.Id, new LocalizedString(e.Message, e.Message));
+                activityExecutionContext.WorkflowExecutionContext.Fault(activity.Id, e.Message, e.StackTrace);
             }
             
             return null;
