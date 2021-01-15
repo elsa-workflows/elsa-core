@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -165,8 +166,8 @@ namespace Elsa.Services
             object? input = default,
             CancellationToken cancellationToken = default)
         {
+            using var loggingScope = _logger.BeginScope(new Dictionary<string, object> { ["WorkflowInstanceId"] = workflowInstance.Id });
             using var workflowExecutionScope = _serviceProvider.CreateScope();
-            
             var workflowExecutionContext = new WorkflowExecutionContext(workflowExecutionScope, workflowBlueprint, workflowInstance, input);
 
             if (!string.IsNullOrWhiteSpace(workflowInstance.ContextId))

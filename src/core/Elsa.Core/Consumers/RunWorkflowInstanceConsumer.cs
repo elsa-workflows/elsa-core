@@ -75,7 +75,7 @@ namespace Elsa.Consumers
         {
             if (workflowInstance == null)
             {
-                _logger.LogError("Could not run workflow instance with ID {WorkflowInstanceId} because it does not exist.", workflowInstanceId);
+                _logger.LogWarning("Could not run workflow instance with ID {WorkflowInstanceId} because it does not exist.", workflowInstanceId);
                 return false;
             }
 
