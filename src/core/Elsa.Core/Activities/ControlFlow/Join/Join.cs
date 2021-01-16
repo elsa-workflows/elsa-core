@@ -66,6 +66,7 @@ namespace Elsa.Activities.ControlFlow
                 var fork = ancestors.FirstOrDefault(x => x.Type == nameof(Fork));
                 var blockingActivities = workflowExecutionContext.WorkflowInstance.BlockingActivities.ToList();
 
+                // Remove all blocking activities between the fork and this join activity. 
                 foreach (var blockingActivity in blockingActivities)
                 {
                     var blockingActivityBlueprint = workflowExecutionContext.WorkflowBlueprint.GetActivity(blockingActivity.ActivityId)!;
@@ -84,6 +85,47 @@ namespace Elsa.Activities.ControlFlow
                         await _mediator.Publish(new BlockingActivityRemoved(workflowExecutionContext, blockingActivity));
                     }
                 }
+
+                // Remove all scope activities between the fork and this join activity.
+                var scopes = workflowExecutionContext.WorkflowInstance.Scopes.Reverse().ToList();
+
+                for (var i = 0; i < scopes.Count; i++)
+                {
+                    var scopeActivityId = scopes.ElementAt(i);
+                    var scopeActivityBlueprint = workflowExecutionContext.WorkflowBlueprint.GetActivity(scopeActivityId)!;
+                    var scopeActivityAncestors = workflowExecutionContext.GetInboundActivityPath(scopeActivityId);
+                    
+                    // Include composite activities in the equation.
+                    if (scopeActivityBlueprint.Parent != null)
+                    {
+                        var compositeScopeActivityAncestors = workflowExecutionContext.GetInboundActivityPath(scopeActivityBlueprint.Parent.Id).ToList();
+                        scopeActivityAncestors = scopeActivityAncestors.Concat(compositeScopeActivityAncestors).ToList();
+                    }
+
+                    if (ancestors.Any(x => x.Id == scopeActivityId))
+                    {
+                        if (fork == null || scopeActivityAncestors.Contains(fork.Id))
+                        {
+                            var evictedScopes = scopes.Skip(i).ToList();
+                            
+                            // Reset evicted scopes
+                            foreach (var evictedScopeActivityId in evictedScopes)
+                            {
+                                var evictedScopeActivity = workflowExecutionContext.WorkflowBlueprint.GetActivity(evictedScopeActivityId)!;
+                                if (evictedScopeActivity.Type == nameof(IfElse))
+                                {
+                                    var ifElseData = workflowExecutionContext.WorkflowInstance.ActivityData.GetItem(evictedScopeActivityId, () => new JObject());
+                                    ifElseData.SetState(nameof(IfElse.EnteredScope), false);
+                                }
+                            }
+                            
+                            scopes = scopes.Take(i).ToList();
+                            break;
+                        }
+                    }
+                }
+
+                workflowExecutionContext.WorkflowInstance.Scopes = new Stack<string>(scopes);
             }
 
             if (!done)
@@ -115,7 +157,7 @@ namespace Elsa.Activities.ControlFlow
 
             if (joinActivityData == null)
                 return;
-            
+
             var inboundTransitions = joinActivityData.GetState<IReadOnlyCollection<string>?>(nameof(InboundTransitions)) ?? new List<string>();
 
             // For each inbound connection, record the transition.
@@ -127,7 +169,7 @@ namespace Elsa.Activities.ControlFlow
                     .ToList();
             }
 
-            joinActivityData.SetState(nameof(inboundTransitions), inboundTransitions);
+            joinActivityData.SetState(nameof(InboundTransitions), inboundTransitions);
         }
 
         private string GetTransitionKey(IConnection connection)
