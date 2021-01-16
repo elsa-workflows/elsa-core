@@ -1,9 +1,6 @@
-using System.Threading.Tasks;
 using Elsa.Activities.Timers.ActivityResults;
-using Elsa.Activities.Timers.Services;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
-using Elsa.Persistence;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.Logging;
@@ -39,7 +36,7 @@ namespace Elsa.Activities.Timers
             set => SetState(value);
         }
 
-        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
+        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
             if (context.WorkflowExecutionContext.IsFirstPass)
                 return Done();
@@ -51,7 +48,7 @@ namespace Elsa.Activities.Timers
 
             if (executeAt <= now)
             {
-                _logger.LogDebug("Scheduled trigger time lies in the past ('{Delta}'). Skipping scheduling.", now - ExecuteAt);
+                _logger.LogDebug("Scheduled trigger time lies in the past ('{Delta}'). Skipping scheduling", now - ExecuteAt);
                 return Done();
             }
 
