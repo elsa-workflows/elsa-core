@@ -40,41 +40,30 @@ namespace Elsa.Activities.AzureServiceBus.Services
         {
             using var scope = _serviceProvider.CreateScope();
             var workflowRunner = scope.ServiceProvider.GetRequiredService<IWorkflowRunner>();
-
-            if (string.IsNullOrWhiteSpace(message.CorrelationId))
-            {
-                await workflowRunner.TriggerWorkflowsAsync<MessageReceivedTrigger>(
-                    x => x.QueueName == _messageReceiver.Path && (x.CorrelationId == null),
-                    message,
-                    message.CorrelationId,
-                    cancellationToken: cancellationToken);
-            }
-            else
-            {
-                await workflowRunner.TriggerWorkflowsAsync<MessageReceivedTrigger>(
-                    x => x.QueueName == _messageReceiver.Path && x.CorrelationId == message.CorrelationId,
-                    message,
-                    message.CorrelationId,
-                    cancellationToken: cancellationToken);
-            }
+            
+            Func<MessageReceivedTrigger, bool> predicate = string.IsNullOrWhiteSpace(message.CorrelationId)
+                ? x => x.QueueName == _messageReceiver.Path && x.CorrelationId == null
+                : x => x.QueueName == _messageReceiver.Path && x.CorrelationId == message.CorrelationId;
+            
+            await workflowRunner.TriggerWorkflowsAsync(
+                predicate,
+                message,
+                message.CorrelationId,
+                cancellationToken: cancellationToken);
         }
 
         private Task ExceptionReceivedHandler(ExceptionReceivedEventArgs e)
         {
-            var context = e.ExceptionReceivedContext;
-
             switch (e.Exception)
             {
                 case MessageLockLostException:
+                    _logger.LogDebug( e.Exception,"Message lock lost");
+                    break;
                 case ServiceBusCommunicationException:
-                    _logger.LogDebug(e.Exception.Message);
+                    _logger.LogDebug(e.Exception, "Lost service bus communication");
                     break;
                 default:
-                    _logger.LogError("Message handler encountered an exception {Exception}.", e.Exception);
-                    _logger.LogError("Exception context for troubleshooting:");
-                    _logger.LogError("- Endpoint: {Endpoint}", context.Endpoint);
-                    _logger.LogError("- Entity Path: {EntityPath}", context.EntityPath);
-                    _logger.LogError("- Executing Action: {Action}", context.Action);
+                    _logger.LogError(e.Exception, "Unhandled exception");
                     break;
             }
 
