@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Elsa.Services;
@@ -10,7 +9,6 @@ using NetBox.Extensions;
 
 namespace Elsa.Builders
 {
-    [SuppressMessage("ReSharper", "ExplicitCallerInfoArgument")]
     public class CompositeActivityBuilder : ActivityBuilder, ICompositeActivityBuilder
     {
         private readonly Func<ICompositeActivityBuilder> _compositeActivityBuilderFactory;
@@ -35,9 +33,13 @@ namespace Elsa.Builders
 
         public IReadOnlyCollection<IActivityBuilder> Activities => ActivityBuilders.ToList().AsReadOnly();
 
-        public IActivityBuilder New(Type activityType, IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders = default, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default)
+        public IActivityBuilder New(
+            Type activityType,
+            IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders = default,
+            [CallerLineNumber] int lineNumber = default,
+            [CallerFilePath] string? sourceFile = default)
         {
-            var activityBuilder = new ActivityBuilder(activityType, this, propertyValueProviders, lineNumber, sourceFile);
+            var activityBuilder = new ActivityBuilder(activityType, this, propertyValueProviders);
             return activityBuilder;
         }
 
@@ -47,7 +49,7 @@ namespace Elsa.Builders
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default)
             where T : class, IActivity =>
-            New(typeof(T), propertyValueProviders, lineNumber, sourceFile);
+            New(typeof(T), propertyValueProviders);
 
         public IActivityBuilder New<T>(
             Action<ISetupActivity<T>>? setup = default,
@@ -62,41 +64,41 @@ namespace Elsa.Builders
                 x => x.Key,
                 x => (IActivityPropertyValueProvider) new DelegateActivityPropertyValueProvider(x.Value));
 
-            return New<T>(branch, valueProviders, lineNumber, sourceFile);
+            return New<T>(branch, valueProviders);
         }
 
         public IActivityBuilder StartWith<T>(
             Action<ISetupActivity<T>>? setup = default,
             Action<IActivityBuilder>? branch = default,
-            [CallerLineNumber] int lineNumber = default,
-            [CallerFilePath] string? sourceFile = default) where T : class, IActivity
+            int lineNumber = default,
+            string? sourceFile = default) where T : class, IActivity
         {
-            var activityBuilder = New(setup, branch, lineNumber, sourceFile);
+            var activityBuilder = New(setup, branch);
             return Add(activityBuilder, branch);
         }
 
-        public IActivityBuilder StartWith<T>(Action<IActivityBuilder>? branch = default, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default)
+        public IActivityBuilder StartWith<T>(Action<IActivityBuilder>? branch = default, int lineNumber = default, string? sourceFile = default)
             where T : class, IActivity =>
             Add<T>(branch, null, lineNumber, sourceFile);
 
         public IActivityBuilder Add<T>(
             Action<ISetupActivity<T>>? setup = default,
             Action<IActivityBuilder>? branch = default,
-            [CallerLineNumber] int lineNumber = default,
-            [CallerFilePath] string? sourceFile = default) where T : class, IActivity
+            int lineNumber = default,
+            string? sourceFile = default) where T : class, IActivity
         {
-            var activityBuilder = New(setup, branch, lineNumber, sourceFile);
+            var activityBuilder = New(setup, branch);
             return Add(activityBuilder, branch);
         }
 
         public IActivityBuilder Add<T>(
             Action<IActivityBuilder>? branch = default,
             IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders = default,
-            [CallerLineNumber] int lineNumber = default,
-            [CallerFilePath] string? sourceFile = default)
+            int lineNumber = default,
+            string? sourceFile = default)
             where T : class, IActivity
         {
-            var activityBuilder = new ActivityBuilder(typeof(T), this, propertyValueProviders, lineNumber, sourceFile);
+            var activityBuilder = new ActivityBuilder(typeof(T), this, propertyValueProviders);
             return Add(activityBuilder, branch);
         }
 
@@ -109,12 +111,11 @@ namespace Elsa.Builders
             return activityBuilder;
         }
 
-        public override IActivityBuilder Then<T>(Action<ISetupActivity<T>>? setup = null, Action<IActivityBuilder>? branch = null, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
-            StartWith(setup, branch, lineNumber, sourceFile);
+        public override IActivityBuilder Then<T>(Action<ISetupActivity<T>>? setup = null, Action<IActivityBuilder>? branch = null, int lineNumber = default, string? sourceFile = default) => StartWith(setup, branch, lineNumber, sourceFile);
 
         public override IActivityBuilder Then(IActivityBuilder targetActivity) => Add(targetActivity);
 
-        public override IActivityBuilder Then<T>(Action<IActivityBuilder>? branch = null, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) => StartWith<T>(branch, lineNumber, sourceFile);
+        public override IActivityBuilder Then<T>(Action<IActivityBuilder>? branch = null, int lineNumber = default, string? sourceFile = default) => StartWith<T>(branch, lineNumber, sourceFile);
 
         public IConnectionBuilder Connect(
             IActivityBuilder source,
@@ -210,9 +211,9 @@ namespace Elsa.Builders
             var isComposite = typeof(CompositeActivity).IsAssignableFrom(builder.ActivityType);
             return isComposite
                 ? new CompositeActivityBlueprint(builder.ActivityId, parent, builder.Name, builder.DisplayName, builder.Description, builder.ActivityType.Name, builder.PersistWorkflowEnabled, builder.LoadWorkflowContextEnabled,
-                    builder.SaveWorkflowContextEnabled, builder.PersistOutputEnabled, builder.Source)
+                    builder.SaveWorkflowContextEnabled, builder.PersistOutputEnabled, "")
                 : new ActivityBlueprint(builder.ActivityId, parent, builder.Name, builder.DisplayName, builder.Description, builder.ActivityType.Name, builder.PersistWorkflowEnabled, builder.LoadWorkflowContextEnabled,
-                    builder.SaveWorkflowContextEnabled, builder.PersistOutputEnabled, builder.Source);
+                    builder.SaveWorkflowContextEnabled, builder.PersistOutputEnabled, "");
         }
     }
 }

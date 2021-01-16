@@ -1,10 +1,8 @@
 using System;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using Elsa.Services;
 using Elsa.Services.Models;
 
-// ReSharper disable ExplicitCallerInfoArgument
 namespace Elsa.Builders
 {
     public class OutcomeBuilder : IOutcomeBuilder
@@ -22,19 +20,17 @@ namespace Elsa.Builders
 
         public IActivityBuilder Then<T>(
             Action<ISetupActivity<T>>? setup = default,
-            Action<IActivityBuilder>? branch = default,
-            [CallerLineNumber] int lineNumber = default,
-            [CallerFilePath] string? sourceFile = default) where T : class, IActivity
+            Action<IActivityBuilder>? branch = default, int lineNumber = default, string? sourceFile = default) where T : class, IActivity
         {
-            var activityBuilder = WorkflowBuilder.Add(setup, branch, lineNumber, sourceFile);
+            var activityBuilder = WorkflowBuilder.Add(setup, lineNumber, sourceFile);
             Then(activityBuilder, branch);
             return activityBuilder;
         }
 
-        public IActivityBuilder Then<T>(Action<IActivityBuilder>? branch = default, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default)
+        public IActivityBuilder Then<T>(Action<IActivityBuilder>? branch = default, int lineNumber = default, string? sourceFile = default)
             where T : class, IActivity
         {
-            var activityBuilder = WorkflowBuilder.Add<T>(branch, null, lineNumber, sourceFile);
+            var activityBuilder = WorkflowBuilder.Add<T>(branch);
             Then(activityBuilder);
             return activityBuilder;
         }
@@ -42,8 +38,8 @@ namespace Elsa.Builders
         public IConnectionBuilder Then(string activityName)
         {
             return WorkflowBuilder.Connect(
-                () => Source,
-                () => WorkflowBuilder.Activities.First(x => x.Name == activityName),
+                () => Source, 
+                () => WorkflowBuilder.Activities.First(x => x.Name == activityName), 
                 Outcome);
         }
 
@@ -53,6 +49,6 @@ namespace Elsa.Builders
             return WorkflowBuilder.Connect(Source, activityBuilder, Outcome);
         }
 
-        public IWorkflowBlueprint Build() => ((IWorkflowBuilder) WorkflowBuilder).BuildBlueprint();
+        public IWorkflowBlueprint Build() => ((IWorkflowBuilder)WorkflowBuilder).BuildBlueprint();
     }
 }
