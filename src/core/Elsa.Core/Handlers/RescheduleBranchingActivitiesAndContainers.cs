@@ -8,8 +8,7 @@ using MediatR;
 namespace Elsa.Handlers
 {
     /// <summary>
-    /// Walks up the tree of inbound connections along the "Iterate" outcome of the looping construct (While/For/ForEach) and re-schedules the looping activity.
-    /// Also handles composite activity re-scheduling.
+    /// Reschedules the current parent activity in scope.
     /// </summary>
     public class RescheduleBranchingActivitiesAndContainers : INotificationHandler<WorkflowExecutionBurstCompleted>
     {

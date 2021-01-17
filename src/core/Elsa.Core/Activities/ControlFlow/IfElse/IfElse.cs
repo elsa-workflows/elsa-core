@@ -1,9 +1,14 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Events;
 using Elsa.Services;
 using Elsa.Services.Models;
+using MediatR;
+using Newtonsoft.Json.Linq;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.ControlFlow
@@ -14,7 +19,7 @@ namespace Elsa.Activities.ControlFlow
         Description = "Evaluate a Boolean expression and continue execution depending on the result.",
         Outcomes = new[] { True, False, OutcomeNames.Done }
     )]
-    public class IfElse : Activity
+    public class IfElse : Activity, INotificationHandler<ScopeEvicted>
     {
         public const string True = "True";
         public const string False = "False";
@@ -46,6 +51,17 @@ namespace Elsa.Activities.ControlFlow
 
             var outcome = Condition ? True : False;
             return Outcome(outcome);
+        }
+
+        public Task Handle(ScopeEvicted notification, CancellationToken cancellationToken)
+        {
+            if (notification.EvictedScope.Type != nameof(IfElse)) 
+                return Task.CompletedTask;
+            
+            var data = notification.WorkflowExecutionContext.WorkflowInstance.ActivityData.GetItem(notification.EvictedScope.Id, () => new JObject());
+            data.SetState(nameof(EnteredScope), false);
+            
+            return Task.CompletedTask;
         }
     }
 }
