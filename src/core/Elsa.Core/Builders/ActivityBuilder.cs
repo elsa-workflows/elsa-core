@@ -9,7 +9,6 @@ using Elsa.Services.Models;
 
 namespace Elsa.Builders
 {
-    [SuppressMessage("ReSharper", "ExplicitCallerInfoArgument")]
     public class ActivityBuilder : IActivityBuilder
     {
         public ActivityBuilder(
@@ -46,7 +45,9 @@ namespace Elsa.Builders
         public string? Source => SourceFile != null && LineNumber != default ? $"{Path.GetFileName(SourceFile)}:{LineNumber}" : default;
 
         public IActivityBuilder Add<T>(
-            Action<ISetupActivity<T>>? setup = default, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default)
+            Action<ISetupActivity<T>>? setup = default,
+            [CallerLineNumber] int lineNumber = default,
+            [CallerFilePath] string? sourceFile = default)
             where T : class, IActivity =>
             WorkflowBuilder.Add(setup, null, lineNumber, sourceFile);
 
@@ -55,7 +56,7 @@ namespace Elsa.Builders
         public virtual IActivityBuilder Then<T>(
             Action<ISetupActivity<T>>? setup = null,
             Action<IActivityBuilder>? branch = null,
-            [CallerLineNumber] int lineNumber = default, 
+            [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default)
             where T : class, IActivity =>
             When(OutcomeNames.Done).Then(setup, branch, lineNumber, sourceFile);

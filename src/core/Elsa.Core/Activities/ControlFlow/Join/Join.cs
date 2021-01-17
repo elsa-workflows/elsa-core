@@ -48,50 +48,95 @@ namespace Elsa.Activities.ControlFlow
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
             var workflowExecutionContext = context.WorkflowExecutionContext;
+
+            if (!IsDone(workflowExecutionContext))
+                return Noop();
+            
+            var ancestorActivityIds = workflowExecutionContext.GetInboundActivityPath(Id).ToList();
+            var ancestors = workflowExecutionContext.WorkflowBlueprint.Activities.Where(x => ancestorActivityIds.Contains(x.Id)).ToList();
+            var fork = ancestors.FirstOrDefault(x => x.Type == nameof(Fork));
+
+            await RemoveBlockingActivitiesAsync(workflowExecutionContext, fork);
+            await RemoveScopeActivitiesAsync(workflowExecutionContext, ancestors, fork);
+
+            // Clear the recorded inbound transitions. This is necessary in case we're in a looping construct. 
+            InboundTransitions = new List<string>();
+            return Done();
+        }
+
+        private bool IsDone(WorkflowExecutionContext workflowExecutionContext)
+        {
             var recordedInboundTransitions = InboundTransitions;
             var inboundConnections = workflowExecutionContext.GetInboundConnections(Id);
 
-            var done = Mode switch
+            return Mode switch
             {
                 JoinMode.WaitAll => inboundConnections.All(x => recordedInboundTransitions.Contains(GetTransitionKey(x))),
                 JoinMode.WaitAny => inboundConnections.Any(x => recordedInboundTransitions.Contains(GetTransitionKey(x))),
                 _ => false
             };
+        }
 
-            if (done)
+        private async Task RemoveBlockingActivitiesAsync(WorkflowExecutionContext workflowExecutionContext, IActivityBlueprint? fork)
+        {
+            var blockingActivities = workflowExecutionContext.WorkflowInstance.BlockingActivities.ToList();
+
+            // Remove all blocking activities between the fork and this join activity. 
+            foreach (var blockingActivity in blockingActivities)
             {
-                // Remove any blocking activities within the first fork.
-                var ancestorActivityIds = workflowExecutionContext.GetInboundActivityPath(Id).ToList();
-                var ancestors = workflowExecutionContext.WorkflowBlueprint.Activities.Where(x => ancestorActivityIds.Contains(x.Id)).ToList();
-                var fork = ancestors.FirstOrDefault(x => x.Type == nameof(Fork));
-                var blockingActivities = workflowExecutionContext.WorkflowInstance.BlockingActivities.ToList();
+                var blockingActivityBlueprint = workflowExecutionContext.WorkflowBlueprint.GetActivity(blockingActivity.ActivityId)!;
+                var blockingActivityAncestors = workflowExecutionContext.GetInboundActivityPath(blockingActivity.ActivityId).ToList();
 
-                foreach (var blockingActivity in blockingActivities)
+                // Include composite activities in the equation.
+                if (blockingActivityBlueprint.Parent != null)
                 {
-                    var blockingActivityBlueprint = workflowExecutionContext.WorkflowBlueprint.GetActivity(blockingActivity.ActivityId)!;
-                    var blockingActivityAncestors = workflowExecutionContext.GetInboundActivityPath(blockingActivity.ActivityId).ToList();
+                    var compositeBlockingActivityAncestors = workflowExecutionContext.GetInboundActivityPath(blockingActivityBlueprint.Parent.Id).ToList();
+                    blockingActivityAncestors = blockingActivityAncestors.Concat(compositeBlockingActivityAncestors).ToList();
+                }
 
-                    // Include composite activities in the equation.
-                    if (blockingActivityBlueprint.Parent != null)
-                    {
-                        var compositeBlockingActivityAncestors = workflowExecutionContext.GetInboundActivityPath(blockingActivityBlueprint.Parent.Id).ToList();
-                        blockingActivityAncestors = blockingActivityAncestors.Concat(compositeBlockingActivityAncestors).ToList();
-                    }
-
-                    if (fork == null || blockingActivityAncestors.Contains(fork.Id))
-                    {
-                        workflowExecutionContext.WorkflowInstance.BlockingActivities.Remove(blockingActivity);
-                        await _mediator.Publish(new BlockingActivityRemoved(workflowExecutionContext, blockingActivity));
-                    }
+                if (fork == null || blockingActivityAncestors.Contains(fork.Id))
+                {
+                    workflowExecutionContext.WorkflowInstance.BlockingActivities.Remove(blockingActivity);
+                    await _mediator.Publish(new BlockingActivityRemoved(workflowExecutionContext, blockingActivity));
                 }
             }
+        }
 
-            if (!done)
-                return Noop();
+        private async Task RemoveScopeActivitiesAsync(WorkflowExecutionContext workflowExecutionContext, ICollection<IActivityBlueprint> ancestors, IActivityBlueprint? fork)
+        {
+            var scopes = workflowExecutionContext.WorkflowInstance.Scopes.Reverse().ToList();
 
-            // Clear the recorded inbound transitions. This is necessary in case we're in a looping construct. 
-            InboundTransitions = new List<string>();
-            return Done();
+            for (var i = 0; i < scopes.Count; i++)
+            {
+                var scopeActivityId = scopes.ElementAt(i);
+                var scopeActivityBlueprint = workflowExecutionContext.WorkflowBlueprint.GetActivity(scopeActivityId)!;
+                var scopeActivityAncestors = workflowExecutionContext.GetInboundActivityPath(scopeActivityId);
+
+                // Include composite activities in the equation.
+                if (scopeActivityBlueprint.Parent != null)
+                {
+                    var compositeScopeActivityAncestors = workflowExecutionContext.GetInboundActivityPath(scopeActivityBlueprint.Parent.Id).ToList();
+                    scopeActivityAncestors = scopeActivityAncestors.Concat(compositeScopeActivityAncestors).ToList();
+                }
+
+                if (ancestors.All(x => x.Id != scopeActivityId))
+                    continue;
+
+                if (fork != null && !scopeActivityAncestors.Contains(fork.Id))
+                    continue;
+
+                var evictedScopes = scopes.Skip(i).ToList();
+                scopes = scopes.Take(i).ToList();
+                
+                foreach (var evictedScope in evictedScopes)
+                {
+                    var scope = workflowExecutionContext.WorkflowBlueprint.GetActivity(evictedScope)!;
+                    await _mediator.Publish(new ScopeEvicted(workflowExecutionContext, scope));
+                }
+
+                workflowExecutionContext.WorkflowInstance.Scopes = new Stack<string>(scopes);
+                break;
+            }
         }
 
         private void RecordInboundTransitionsAsync(ActivityExecutionContext activityExecutionContext)
@@ -115,7 +160,7 @@ namespace Elsa.Activities.ControlFlow
 
             if (joinActivityData == null)
                 return;
-            
+
             var inboundTransitions = joinActivityData.GetState<IReadOnlyCollection<string>?>(nameof(InboundTransitions)) ?? new List<string>();
 
             // For each inbound connection, record the transition.
@@ -127,7 +172,7 @@ namespace Elsa.Activities.ControlFlow
                     .ToList();
             }
 
-            joinActivityData.SetState(nameof(inboundTransitions), inboundTransitions);
+            joinActivityData.SetState(nameof(InboundTransitions), inboundTransitions);
         }
 
         private string GetTransitionKey(IConnection connection)

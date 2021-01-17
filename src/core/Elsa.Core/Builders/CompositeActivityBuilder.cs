@@ -42,7 +42,6 @@ namespace Elsa.Builders
         }
 
         public IActivityBuilder New<T>(
-            Action<IActivityBuilder>? branch = default,
             IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders = default,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default)
@@ -51,7 +50,6 @@ namespace Elsa.Builders
 
         public IActivityBuilder New<T>(
             Action<ISetupActivity<T>>? setup = default,
-            Action<IActivityBuilder>? branch = default,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default) where T : class, IActivity
         {
@@ -62,7 +60,7 @@ namespace Elsa.Builders
                 x => x.Key,
                 x => (IActivityPropertyValueProvider) new DelegateActivityPropertyValueProvider(x.Value));
 
-            return New<T>(branch, valueProviders, lineNumber, sourceFile);
+            return New<T>(valueProviders, lineNumber, sourceFile);
         }
 
         public IActivityBuilder StartWith<T>(
@@ -71,7 +69,7 @@ namespace Elsa.Builders
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default) where T : class, IActivity
         {
-            var activityBuilder = New(setup, branch, lineNumber, sourceFile);
+            var activityBuilder = New(setup, lineNumber, sourceFile);
             return Add(activityBuilder, branch);
         }
 
@@ -85,7 +83,7 @@ namespace Elsa.Builders
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default) where T : class, IActivity
         {
-            var activityBuilder = New(setup, branch, lineNumber, sourceFile);
+            var activityBuilder = New(setup, lineNumber, sourceFile);
             return Add(activityBuilder, branch);
         }
 

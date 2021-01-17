@@ -22,7 +22,11 @@ namespace Elsa.Activities.ControlFlow
             return activityBuilder;
         }
 
-        public static IActivityBuilder IfElse(this IBuilder builder, Func<ActivityExecutionContext, bool> condition, Action<IActivityBuilder>? activity = default, [CallerLineNumber] int lineNumber = default,
+        public static IActivityBuilder IfElse(
+            this IBuilder builder,
+            Func<ActivityExecutionContext, bool> condition,
+            Action<IActivityBuilder>? activity = default,
+            [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default) => builder.IfElse(x => x.WithCondition(condition), activity, lineNumber, sourceFile);
 
         public static IActivityBuilder IfElse(this IBuilder builder, Func<bool> condition, Action<IActivityBuilder>? activity = default, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
@@ -31,15 +35,67 @@ namespace Elsa.Activities.ControlFlow
         public static IActivityBuilder IfElse(this IBuilder builder, bool condition, Action<IActivityBuilder>? activity = default, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
             builder.IfElse(x => x.WithCondition(condition), activity, lineNumber, sourceFile);
 
-        public static IActivityBuilder IfTrue(this IBuilder builder, Func<ActivityExecutionContext, ValueTask<bool>> condition, Action<IOutcomeBuilder> whenTrue, [CallerLineNumber] int lineNumber = default,
+        public static IActivityBuilder IfTrue(
+            this IBuilder builder,
+            Func<ActivityExecutionContext, ValueTask<bool>> condition,
+            Action<IOutcomeBuilder> whenTrue,
+            [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default) =>
             builder.IfElse(x => x.WithCondition(condition), ifElse => whenTrue(ifElse.When(OutcomeNames.True)), lineNumber, sourceFile);
 
-        public static IActivityBuilder IfTrue(this IBuilder builder, Func<ActivityExecutionContext, bool> condition, Action<IOutcomeBuilder> whenTrue, [CallerLineNumber] int lineNumber = default,
+        public static IActivityBuilder IfTrue(
+            this IBuilder builder,
+            Func<ActivityExecutionContext, bool> condition,
+            Action<IOutcomeBuilder> whenTrue,
+            [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default) =>
             builder.IfElse(x => x.WithCondition(condition), ifElse => whenTrue(ifElse.When(OutcomeNames.True)), lineNumber, sourceFile);
 
-        public static IActivityBuilder IfFalse(this IBuilder builder, Func<ActivityExecutionContext, bool> condition, Action<IOutcomeBuilder> whenFalse, [CallerLineNumber] int lineNumber = default,
+        public static IActivityBuilder IfTrue(
+            this IBuilder builder,
+            Func<bool> condition,
+            Action<IOutcomeBuilder> whenTrue,
+            [CallerLineNumber] int lineNumber = default,
+            [CallerFilePath] string? sourceFile = default) =>
+            builder.IfElse(x => x.WithCondition(condition), ifElse => whenTrue(ifElse.When(OutcomeNames.True)), lineNumber, sourceFile);
+
+        public static IActivityBuilder IfTrue(
+            this IBuilder builder,
+            bool condition,
+            Action<IOutcomeBuilder> whenTrue,
+            [CallerLineNumber] int lineNumber = default,
+            [CallerFilePath] string? sourceFile = default) =>
+            builder.IfElse(x => x.WithCondition(condition), ifElse => whenTrue(ifElse.When(OutcomeNames.True)), lineNumber, sourceFile);
+
+        public static IActivityBuilder IfFalse(
+            this IBuilder builder,
+            Func<ActivityExecutionContext, ValueTask<bool>> condition,
+            Action<IOutcomeBuilder> whenFalse,
+            [CallerLineNumber] int lineNumber = default,
+            [CallerFilePath] string? sourceFile = default) =>
+            builder.IfElse(x => x.WithCondition(condition), ifElse => whenFalse(ifElse.When(OutcomeNames.False)), lineNumber, sourceFile);
+
+        public static IActivityBuilder IfFalse(
+            this IBuilder builder,
+            Func<ActivityExecutionContext, bool> condition,
+            Action<IOutcomeBuilder> whenFalse,
+            [CallerLineNumber] int lineNumber = default,
+            [CallerFilePath] string? sourceFile = default) =>
+            builder.IfElse(x => x.WithCondition(condition), ifElse => whenFalse(ifElse.When(OutcomeNames.False)), lineNumber, sourceFile);
+
+        public static IActivityBuilder IfFalse(
+            this IBuilder builder,
+            Func<bool> condition,
+            Action<IOutcomeBuilder> whenFalse,
+            [CallerLineNumber] int lineNumber = default,
+            [CallerFilePath] string? sourceFile = default) =>
+            builder.IfElse(x => x.WithCondition(condition), ifElse => whenFalse(ifElse.When(OutcomeNames.False)), lineNumber, sourceFile);
+        
+        public static IActivityBuilder IfFalse(
+            this IBuilder builder,
+            bool condition,
+            Action<IOutcomeBuilder> whenFalse,
+            [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default) =>
             builder.IfElse(x => x.WithCondition(condition), ifElse => whenFalse(ifElse.When(OutcomeNames.False)), lineNumber, sourceFile);
 

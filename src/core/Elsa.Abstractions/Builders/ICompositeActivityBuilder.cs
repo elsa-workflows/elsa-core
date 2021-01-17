@@ -12,7 +12,6 @@ namespace Elsa.Builders
         IReadOnlyCollection<IActivityBuilder> Activities { get; }
 
         IActivityBuilder New<T>(
-            Action<IActivityBuilder>? branch = default,
             IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders = default,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default)
@@ -20,7 +19,6 @@ namespace Elsa.Builders
 
         IActivityBuilder New<T>(
             Action<ISetupActivity<T>>? setup,
-            Action<IActivityBuilder>? branch = default,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default) where T : class, IActivity;
 

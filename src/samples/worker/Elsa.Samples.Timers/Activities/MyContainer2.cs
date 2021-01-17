@@ -12,26 +12,19 @@ namespace Elsa.Samples.Timers.Activities
         public override void Build(ICompositeActivityBuilder activity)
         {
             activity
-                .WriteLine("In 2 seconds...")
-                .Timer(Duration.FromSeconds(2))
-                .WriteLine("The time is ripe.")
-                .Then<Fork>(fork => fork.WithBranches("C", "D", "E"), fork =>
+                .StartWith<Fork>(fork => fork.WithBranches("D", "E"), fork =>
                 {
-                    fork.When("C")
-                        .Then<MyContainer1>()
-                        .Then("Join2");
-
                     fork
                         .When("D")
-                        .While(true, @while => @while
-                            .Timer(Duration.FromSeconds(1))
-                            .WriteLine("Timer D went off"))
+                        .Timer(Duration.FromSeconds(20))
+                        .WriteLine("Timer D went off. Exiting fork")
                         .Then("Join2");
 
                     fork
                         .When("E")
-                        .Timer(Duration.FromSeconds(15))
-                        .WriteLine("Timer E went off. Exiting fork.")
+                        .While(true, iterate => iterate
+                            .Timer(Duration.FromSeconds(5))
+                            .WriteLine("Timer E went off. Looping."))
                         .Then("Join2");
                 })
                 .Add<Join>(join => join.WithMode(Join.JoinMode.WaitAny)).WithName("Join2")

@@ -26,7 +26,7 @@ namespace Elsa.Builders
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default) where T : class, IActivity
         {
-            var activityBuilder = WorkflowBuilder.Add(setup, branch, lineNumber, sourceFile);
+            var activityBuilder = WorkflowBuilder.Add(setup, null, lineNumber, sourceFile);
             Then(activityBuilder, branch);
             return activityBuilder;
         }
