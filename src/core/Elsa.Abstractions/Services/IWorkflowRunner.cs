@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Builders;
@@ -17,6 +18,13 @@ namespace Elsa.Services
             string? contextId = default,
             CancellationToken cancellationToken = default)
             where TTrigger : ITrigger;
+
+        Task TriggerWorkflowsAsync(
+            IEnumerable<WorkflowSelectorResult> results,
+            object? input = default,
+            string? correlationId = default,
+            string? contextId = default,
+            CancellationToken cancellationToken = default);
 
         ValueTask<WorkflowInstance> RunWorkflowAsync(
             WorkflowInstance workflowInstance,

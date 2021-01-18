@@ -68,7 +68,16 @@ namespace Elsa.Services
             where TTrigger : ITrigger
         {
             var results = await _workflowSelector.SelectWorkflowsAsync(predicate, cancellationToken).ToList();
-
+            await TriggerWorkflowsAsync(results, input, correlationId, contextId, cancellationToken);
+        }
+        
+        public async Task TriggerWorkflowsAsync(
+            IEnumerable<WorkflowSelectorResult> results,
+            object? input = default,
+            string? correlationId = default,
+            string? contextId = default,
+            CancellationToken cancellationToken = default)
+        {
             foreach (var result in results)
             {
                 if (result.WorkflowInstanceId != null)

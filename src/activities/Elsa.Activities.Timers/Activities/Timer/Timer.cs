@@ -40,7 +40,7 @@ namespace Elsa.Activities.Timers
 
             if (ExecuteAt <= now)
             {
-                _logger.LogDebug("Scheduled trigger time lies in the past ('{Delta}'). Skipping scheduling.", now - ExecuteAt);
+                _logger.LogDebug("Scheduled trigger time lies in the past ('{Delta}'). Skipping scheduling", now - ExecuteAt);
                 return Done();
             }
             
