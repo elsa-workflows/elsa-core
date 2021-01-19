@@ -1,4 +1,3 @@
-using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,18 +15,18 @@ namespace Elsa.StartupTasks
     /// If there are workflows in the Running state while the server starts, it means the workflow instance never finished execution, e.g. because the workflow host terminated.
     /// This startup task resumes these workflows.
     /// </summary>
-    public class ResumeRunningWorkflowsTask : IStartupTask
+    public class ContinueRunningWorkflowsTask : IStartupTask
     {
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
-        private readonly IWorkflowRunner _workflowScheduler;
+        private readonly IWorkflowQueue _workflowScheduler;
         private readonly IDistributedLockProvider _distributedLockProvider;
-        private readonly ILogger<ResumeRunningWorkflowsTask> _logger;
+        private readonly ILogger<ContinueRunningWorkflowsTask> _logger;
 
-        public ResumeRunningWorkflowsTask(
+        public ContinueRunningWorkflowsTask(
             IWorkflowInstanceStore workflowInstanceStore,
-            IWorkflowRunner workflowScheduler,
+            IWorkflowQueue workflowScheduler,
             IDistributedLockProvider distributedLockProvider,
-            ILogger<ResumeRunningWorkflowsTask> logger)
+            ILogger<ContinueRunningWorkflowsTask> logger)
         {
             _workflowInstanceStore = workflowInstanceStore;
             _workflowScheduler = workflowScheduler;
@@ -38,22 +37,34 @@ namespace Elsa.StartupTasks
         public async Task ExecuteAsync(CancellationToken cancellationToken = default)
         {
             var lockKey = GetType().Name;
-            
+
             if (!await _distributedLockProvider.AcquireLockAsync(lockKey, cancellationToken))
                 return;
 
             try
             {
                 var instances = await _workflowInstanceStore.FindManyAsync(new WorkflowStatusSpecification(WorkflowStatus.Running), cancellationToken: cancellationToken).ToList();
-                
-                _logger.LogInformation("Found {WorkflowInstanceCount} workflows with status 'Running'. Resuming each one of them.", instances.Count);
-                
+
+                _logger.LogInformation("Found {WorkflowInstanceCount} workflows with status 'Running'. Resuming each one of them", instances.Count);
+
                 foreach (var instance in instances)
                 {
                     _logger.LogInformation("Resuming {WorkflowInstanceId}", instance.Id);
-                    await _workflowScheduler.RunWorkflowAsync(
-                        instance,
-                        cancellationToken: cancellationToken);
+                    var scheduledActivities = instance.ScheduledActivities;
+
+                    if (instance.CurrentActivity == null || !scheduledActivities.Any())
+                    {
+                        _logger.LogWarning("Workflow '{WorkflowInstanceId}' was in the Running state, but has no scheduled activities nor has a currently executing one", instance.Id);
+                        continue;
+                    }
+
+                    var scheduledActivity = instance.CurrentActivity ?? instance.ScheduledActivities.Peek();
+
+                    await _workflowScheduler.EnqueueWorkflowInstance(
+                        instance.Id,
+                        scheduledActivity.ActivityId,
+                        scheduledActivity.Input,
+                        cancellationToken);
                 }
             }
             finally

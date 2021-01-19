@@ -36,7 +36,8 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
                 entity.BlockingActivities,
                 entity.ScheduledActivities,
                 entity.Scopes,
-                entity.Fault
+                entity.Fault,
+                entity.CurrentActivity
             };
 
             var json = _contentSerializer.Serialize(data);
@@ -55,7 +56,8 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
                 entity.BlockingActivities,
                 entity.ScheduledActivities,
                 entity.Scopes,
-                entity.Fault
+                entity.Fault,
+                entity.CurrentActivity
             };
             
             var json = (string)DbContext.Entry(entity).Property("Data").CurrentValue;
@@ -71,6 +73,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
             entity.ScheduledActivities = data.ScheduledActivities;
             entity.Scopes = data.Scopes ?? new Stack<string>();
             entity.Fault = data.Fault;
+            entity.CurrentActivity = data.CurrentActivity;
         }
     }
 }

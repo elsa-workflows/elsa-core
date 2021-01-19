@@ -287,10 +287,11 @@ namespace Elsa.Services
         {
             var scope = workflowExecutionContext.ServiceScope;
             var workflowBlueprint = workflowExecutionContext.WorkflowBlueprint;
+            var workflowInstance = workflowExecutionContext.WorkflowInstance;
 
             while (workflowExecutionContext.HasScheduledActivities)
             {
-                var scheduledActivity = workflowExecutionContext.PopScheduledActivity();
+                var scheduledActivity = workflowInstance.CurrentActivity = workflowExecutionContext.PopScheduledActivity();
                 var currentActivityId = scheduledActivity.ActivityId;
                 var activityBlueprint = workflowBlueprint.GetActivity(currentActivityId)!;
                 var activityExecutionContext = new ActivityExecutionContext(scope, workflowExecutionContext, activityBlueprint, scheduledActivity.Input, cancellationToken);
@@ -314,6 +315,8 @@ namespace Elsa.Services
                 activityOperation = Execute;
             }
 
+            workflowInstance.CurrentActivity = null;
+            
             if (workflowExecutionContext.HasBlockingActivities)
                 workflowExecutionContext.Suspend();
 
@@ -329,7 +332,7 @@ namespace Elsa.Services
             }
             catch (Exception e)
             {
-                _logger.LogError(e, e.Message);
+                _logger.LogWarning(e, "An error occurred while executing activity {ActivityId}. Entering Faulted state", activity.Id);
                 activityExecutionContext.WorkflowExecutionContext.Fault(activity.Id, e.Message, e.StackTrace);
             }
             

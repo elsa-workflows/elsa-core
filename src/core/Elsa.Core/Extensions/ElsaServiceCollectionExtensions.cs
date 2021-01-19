@@ -53,7 +53,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton(options.DistributedLockProviderFactory)
                 .AddSingleton(options.SignalFactory)
                 .AddSingleton(options.StorageFactory)
-                .AddStartupTask<CreateSubscriptions>();
+                .AddStartupTask<CreateSubscriptions>()
+                .AddStartupTask<ContinueRunningWorkflowsTask>();
 
             options
                 .AddWorkflowsCore()

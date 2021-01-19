@@ -40,8 +40,7 @@ namespace ElsaDashboard.Samples.Monolith
 
             services
                 .AddElsaApiEndpoints()
-                .AddElsaSwagger()
-                .AddStartupTask<ResumeRunningWorkflowsTask>();
+                .AddElsaSwagger();
             
             // Elsa Dashboard.
             services.AddRazorPages();

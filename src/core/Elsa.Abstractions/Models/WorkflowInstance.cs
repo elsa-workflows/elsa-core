@@ -43,5 +43,6 @@ namespace Elsa.Models
         public WorkflowFault? Fault { get; set; }
         public Stack<ScheduledActivity> ScheduledActivities { get; set; }
         public Stack<string> Scopes { get; set; }
+        public ScheduledActivity? CurrentActivity { get; set; }
     }
 }

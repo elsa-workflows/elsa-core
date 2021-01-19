@@ -21,6 +21,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Configuration
             builder.Ignore(x => x.ScheduledActivities);
             builder.Ignore(x => x.Scopes);
             builder.Ignore(x => x.Variables);
+            builder.Ignore(x => x.CurrentActivity);
             builder.Property<string>("Data");
         }
     }

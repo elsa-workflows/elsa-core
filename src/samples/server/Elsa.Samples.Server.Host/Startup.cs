@@ -36,8 +36,7 @@ namespace Elsa.Samples.Server.Host
 
             services
                 .AddElsaApiEndpoints()
-                .AddElsaSwagger()
-                .AddStartupTask<ResumeRunningWorkflowsTask>();
+                .AddElsaSwagger();
         }
 
         public void Configure(IApplicationBuilder app)
