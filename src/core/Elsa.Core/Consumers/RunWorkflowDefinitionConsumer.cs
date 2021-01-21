@@ -1,8 +1,11 @@
 using System.Threading.Tasks;
 using Elsa.Messages;
 using Elsa.Models;
+using Elsa.Persistence;
+using Elsa.Persistence.Specifications;
 using Elsa.Services;
 using Elsa.Services.Models;
+using Elsa.Triggers;
 using Microsoft.Extensions.Logging;
 using Rebus.Handlers;
 
@@ -12,12 +15,16 @@ namespace Elsa.Consumers
     {
         private readonly IWorkflowRunner _workflowRunner;
         private readonly IWorkflowRegistry _workflowRegistry;
+        private readonly IWorkflowInstanceStore _workflowInstanceStore;
+        private readonly IWorkflowSelector _workflowSelector;
         private readonly ILogger _logger;
 
-        public RunWorkflowDefinitionConsumer(IWorkflowRunner workflowRunner, IWorkflowRegistry workflowRegistry, ILogger<RunWorkflowInstanceConsumer> logger)
+        public RunWorkflowDefinitionConsumer(IWorkflowRunner workflowRunner, IWorkflowRegistry workflowRegistry, IWorkflowInstanceStore workflowInstanceStore, IWorkflowSelector workflowSelector, ILogger<RunWorkflowDefinitionConsumer> logger)
         {
             _workflowRunner = workflowRunner;
             _workflowRegistry = workflowRegistry;
+            _workflowInstanceStore = workflowInstanceStore;
+            _workflowSelector = workflowSelector;
             _logger = logger;
         }
 
@@ -29,6 +36,22 @@ namespace Elsa.Consumers
 
             if (!ValidatePreconditions(workflowDefinitionId, workflowBlueprint))
                 return;
+
+            var correlationId = message.CorrelationId;
+            
+            if (!string.IsNullOrWhiteSpace(message.CorrelationId))
+            {
+                var correlatedWorkflowInstanceCount = await _workflowInstanceStore.CountAsync(new CorrelationIdSpecification<WorkflowInstance>(correlationId));
+
+                if (correlatedWorkflowInstanceCount > 0)
+                {
+                    // Do not create a new workflow instance.
+                    _logger.LogWarning("There's already a workflow with correlation ID '{CorrelationId}'", correlationId);
+                    return;
+                }
+                
+                _logger.LogDebug("No existing workflows found with correlation ID '{CorrelationId}'. Starting new workflow", correlationId);
+            }
             
             await _workflowRunner.RunWorkflowAsync(workflowBlueprint!, message.ActivityId, message.Input, message.CorrelationId, message.ContextId);
         }
@@ -37,7 +60,7 @@ namespace Elsa.Consumers
         {
             if (workflowBlueprint == null)
             {
-                _logger.LogError("Could not run workflow with ID {WorkflowDefinitionId} because it does not exist.", workflowDefinitionId);
+                _logger.LogError("Could not run workflow with ID {WorkflowDefinitionId} because it does not exist", workflowDefinitionId);
                 return false;
             }
             
