@@ -14,7 +14,7 @@
 
     <ItemGroup>
         <PackageReference Include="Grpc.Net.Client.Web" Version="2.34.0" />
-        <PackageReference Include="Microsoft.AspNetCore.Components" Version="5.0.1" />
+        <PackageReference Include="Microsoft.AspNetCore.Components" Version="5.0.2" />
         <PackageReference Include="protobuf-net.NodaTime" Version="3.0.73" />
     </ItemGroup>
 

@@ -14,7 +14,7 @@ namespace ElsaDashboard.Application.Shared
         [Parameter] public string? AccentColor { get; set; } = "blue";
         public string Title => BlazoredModal.Title;
 
-        private async Task Close() => await BlazoredModal.Close(ModalResult.Ok(true));
-        private async Task Cancel() => await BlazoredModal.Cancel();
+        private async Task Close() => await BlazoredModal.CloseAsync(ModalResult.Ok(true));
+        private async Task Cancel() => await BlazoredModal.CancelAsync();
     }
 }

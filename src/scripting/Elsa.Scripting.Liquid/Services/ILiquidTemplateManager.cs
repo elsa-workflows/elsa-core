@@ -18,6 +18,6 @@ namespace Elsa.Scripting.Liquid.Services
         /// <summary>
         /// Validates a Liquid template.
         /// </summary>
-        bool Validate(string template, out IEnumerable<string> errors);
+        bool Validate(string template, out string error);
     }
 }

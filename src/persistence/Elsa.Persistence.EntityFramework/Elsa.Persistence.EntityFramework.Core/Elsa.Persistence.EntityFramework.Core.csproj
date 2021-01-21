@@ -13,8 +13,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.1" />
-        <PackageReference Include="Z.EntityFramework.Extensions.EFCore" Version="5.1.12" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.2" />
+        <PackageReference Include="Z.EntityFramework.Extensions.EFCore" Version="5.1.14" />
     </ItemGroup>
 
     <ItemGroup>

@@ -30,6 +30,6 @@
     [Parameter]
     public string ConfirmButtonText { get; set; } = "Yes";
 
-    private async Task OnConfirmClick() => await BlazoredModal.Close(ModalResult.Ok(true));
-    private async Task OnCancelClick() => await BlazoredModal.Cancel();
+    private async Task OnConfirmClick() => await BlazoredModal.CloseAsync(ModalResult.Ok(true));
+    private async Task OnCancelClick() => await BlazoredModal.CancelAsync();
 }

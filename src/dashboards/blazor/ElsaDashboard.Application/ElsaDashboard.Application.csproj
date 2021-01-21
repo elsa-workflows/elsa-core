@@ -13,9 +13,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Blazored.Modal" Version="5.1.0" />
+        <PackageReference Include="Blazored.Modal" Version="6.0.1" />
         <PackageReference Include="Humanizer.Core" Version="2.8.26" />
-        <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="5.0.1" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="5.0.2" />
         <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="2.2.0" />
     </ItemGroup>
 

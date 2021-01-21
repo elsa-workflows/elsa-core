@@ -13,7 +13,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Fluid.Core" Version="1.0.0-beta-9722" />
+        <PackageReference Include="Fluid.Core" Version="2.0.0-beta-1001" />
     </ItemGroup>
 
     <ItemGroup>

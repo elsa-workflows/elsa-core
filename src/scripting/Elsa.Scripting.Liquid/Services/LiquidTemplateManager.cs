@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 using Elsa.Scripting.Liquid.Extensions;
@@ -34,16 +33,16 @@ namespace Elsa.Scripting.Liquid.Services
             return await result.RenderAsync(context, encoder);
         }
 
-        private FluidTemplate GetCachedTemplate(string source)
+        private IFluidTemplate GetCachedTemplate(string source)
         {
-            IEnumerable<string> errors;
+            string error;
 
             var result = _memoryCache.GetOrCreate(
                 source,
                 e =>
                 {
-                    if (!TryParse(source, out var parsed, out errors))
-                        TryParse(string.Join(Environment.NewLine, errors), out parsed, out errors);
+                    if (!TryParse(source, out var parsed, out error))
+                        TryParse(error, out parsed, out error);
 
                     e.SetSlidingExpiration(TimeSpan.FromSeconds(30));
                     return parsed;
@@ -51,7 +50,8 @@ namespace Elsa.Scripting.Liquid.Services
             return result;
         }
 
-        public bool Validate(string template, out IEnumerable<string> errors) => TryParse(template, out _, out errors);
-        private bool TryParse(string template, out FluidTemplate result, out IEnumerable<string> errors) => FluidTemplate.TryParse(template, true, out result, out errors);
+        public bool Validate(string template, out string error) => TryParse(template, out _, out error);
+        
+        private static bool TryParse(string template, out IFluidTemplate result, out string error) => new FluidParser().TryParse(template, out result, out error);
     }
 }
