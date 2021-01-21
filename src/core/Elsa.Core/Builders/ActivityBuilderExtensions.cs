@@ -1,24 +1,29 @@
 using System;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Elsa.Activities.Primitives;
 using Elsa.ActivityResults;
 using Elsa.Services.Models;
 
+// ReSharper disable ExplicitCallerInfoArgument
 namespace Elsa.Builders
 {
     public static class ActivityBuilderExtensions
     {
-        public static IActivityBuilder Then(this IBuilder builder,
-            Func<ActivityExecutionContext, ValueTask<IActivityExecutionResult>> activity) =>
-            builder.Then<Inline>(inline => inline.Set(x => x.Function, RunInline(activity)));
+        public static IActivityBuilder Then(
+            this IBuilder builder,
+            Func<ActivityExecutionContext, ValueTask<IActivityExecutionResult>> activity,
+            [CallerLineNumber] int lineNumber = default,
+            [CallerFilePath] string? sourceFile = default) =>
+            builder.Then<Inline>(inline => inline.Set(x => x.Function, RunInline(activity)), null, lineNumber, sourceFile);
 
         public static IActivityBuilder
-            Then(this IBuilder builder, Func<ActivityExecutionContext, ValueTask> activity) =>
-            builder.Then<Inline>(inline => inline.Set(x => x.Function, RunInline(activity)));
-        
-        public static IActivityBuilder Then(this IBuilder builder, Action<ActivityExecutionContext> activity) =>
-            builder.Then<Inline>(inline => inline.Set(x => x.Function, RunInline(activity)));
-        
+            Then(this IBuilder builder, Func<ActivityExecutionContext, ValueTask> activity, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
+            builder.Then<Inline>(inline => inline.Set(x => x.Function, RunInline(activity)), null, lineNumber, sourceFile);
+
+        public static IActivityBuilder Then(this IBuilder builder, Action<ActivityExecutionContext> activity, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
+            builder.Then<Inline>(inline => inline.Set(x => x.Function, RunInline(activity)), null, lineNumber, sourceFile);
+
         public static IActivityBuilder Then(this IBuilder builder, Action activity) =>
             builder.Then<Inline>(inline => inline.Set(x => x.Function, RunInline(activity)));
 
