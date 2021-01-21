@@ -1,4 +1,5 @@
-﻿using Elsa.Services;
+﻿using System;
+using Elsa.Services;
 using Microsoft.Azure.ServiceBus.Primitives;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -21,7 +22,7 @@ namespace Elsa.Rebus.AzureServiceBus
 
             context.Configurer
                 .Logging(l => l.MicrosoftExtensionsLogging(loggerFactory))
-                .Transport(t => t.UseAzureServiceBus(connectionString, queueName, tokenProvider))
+                .Transport(t => t.UseAzureServiceBus(connectionString, queueName, tokenProvider).SetDefaultMessageTimeToLive(TimeSpan.FromMinutes(90))) // TODO: Make configurable.
                 .Routing(r => r.TypeBased().Map(context.MessageTypeMap))
                 .Options(o => o.Apply(elsaOptions.ServiceBusOptions));
         }
