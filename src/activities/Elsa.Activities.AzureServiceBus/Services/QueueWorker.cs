@@ -48,18 +48,16 @@ namespace Elsa.Activities.AzureServiceBus.Services
         private async Task TriggerWorkflowsAsync(Message message, CancellationToken cancellationToken)
         {
             using var scope = _serviceProvider.CreateScope();
-            var workflowRunner = scope.ServiceProvider.GetRequiredService<IWorkflowRunner>();
+            var workflowRunner = scope.ServiceProvider.GetRequiredService<IWorkflowQueue>();
             var queueName = _messageReceiver.Path;
             var correlationId = message.CorrelationId;
 
-            async Task TriggerNewWorkflowAsync()
-            {
-                await workflowRunner!.TriggerWorkflowsAsync<MessageReceivedTrigger>(
+            async Task TriggerNewWorkflowAsync() =>
+                await workflowRunner.EnqueueWorkflowsAsync<MessageReceivedTrigger>(
                     x => x.QueueName == queueName && x.CorrelationId == null,
                     message,
                     correlationId,
                     cancellationToken: cancellationToken);
-            }
 
             if (string.IsNullOrWhiteSpace(correlationId))
             {
@@ -90,7 +88,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
                     // Trigger existing workflows (if blocked on this message).
                     _logger.LogDebug("{WorkflowInstanceCount} existing workflows found with correlation ID '{CorrelationId}'. Resuming them", correlatedWorkflowInstanceCount, correlationId);
                     var existingWorkflows = await workflowSelector.SelectWorkflowsAsync<MessageReceivedTrigger>(x => x.QueueName == queueName && x.CorrelationId == message.CorrelationId, cancellationToken).ToList();
-                    await workflowRunner.TriggerWorkflowsAsync(existingWorkflows, message, message.CorrelationId, cancellationToken: cancellationToken);
+                    await workflowRunner.EnqueueWorkflowsAsync(existingWorkflows, message, message.CorrelationId, cancellationToken: cancellationToken);
                 }
                 else
                 {

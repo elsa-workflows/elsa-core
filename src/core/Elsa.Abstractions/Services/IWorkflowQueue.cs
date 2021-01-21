@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Triggers;
@@ -17,6 +18,16 @@ namespace Elsa.Services
             string? contextId = default,
             CancellationToken cancellationToken = default)
             where TTrigger : ITrigger;
+        
+        /// <summary>
+        /// Enqueues the specified workflows for execution.
+        /// </summary>
+        Task EnqueueWorkflowsAsync(
+            IEnumerable<WorkflowSelectorResult> results,
+            object? input = default,
+            string? correlationId = default,
+            string? contextId = default,
+            CancellationToken cancellationToken = default);
         
         /// <summary>
         /// Enqueues the specified workflow instance and activity for execution.
