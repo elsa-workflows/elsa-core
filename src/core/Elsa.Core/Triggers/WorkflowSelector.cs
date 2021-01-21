@@ -68,6 +68,8 @@ namespace Elsa.Triggers
             return SelectWorkflowsAsync(_descriptors, triggerType, evaluate).Select(result => result.WorkflowBlueprint.Activities.First(x => x.Id == result.ActivityId));
         }
 
+        public async Task<IDictionary<string, ICollection<TriggerDescriptor>>> GetAllTriggersAsync(CancellationToken cancellationToken = default) => _descriptors ??= await GetDescriptorsAsync(cancellationToken);
+
         public async Task UpdateTriggersAsync(IWorkflowBlueprint workflowBlueprint, string? workflowInstanceId, CancellationToken cancellationToken = default)
         {
             if (workflowInstanceId == null)
@@ -80,7 +82,7 @@ namespace Elsa.Triggers
             _descriptors[workflowBlueprint.Id] = await BuildDescriptorsForAsync(workflowBlueprint, workflowInstanceId, cancellationToken).ToList();
             _memoryCache.Set(CacheKey, _descriptors);
             _stopwatch.Stop();
-            
+
             if (workflowInstanceId == null)
                 _logger.LogDebug("Updated triggers for workflows of {WorkflowDefinitionId} in {ElapsedTime}", workflowBlueprint.Id, _stopwatch.Elapsed);
             else
@@ -143,28 +145,28 @@ namespace Elsa.Triggers
         private async Task<IEnumerable<TriggerDescriptor>> BuildDescriptorsForAsync(IWorkflowBlueprint workflowBlueprint, string? workflowInstanceId, CancellationToken cancellationToken)
         {
             var descriptors = new List<TriggerDescriptor>();
-            
+
             if (workflowInstanceId != null)
-            {    
+            {
                 descriptors = _descriptors!.ContainsKey(workflowBlueprint.Id) ? _descriptors[workflowBlueprint.Id].ToList() : new List<TriggerDescriptor>();
                 descriptors.RemoveAll(x => x.WorkflowInstanceId == workflowInstanceId);
-                
+
                 var workflowInstance = await _workflowInstanceStore.FindByIdAsync(workflowInstanceId, cancellationToken);
                 var blockingActivities = workflowBlueprint.GetBlockingActivities(workflowInstance!);
                 var resumeTriggers = await BuildDescriptorsAsync(workflowBlueprint, blockingActivities, workflowInstance, cancellationToken);
                 descriptors.AddRange(resumeTriggers);
-                    
+
                 return descriptors;
             }
-            
+
             // Build triggers for workflow blue prints.
             var startTriggers = await BuildDescriptorsAsync(workflowBlueprint, cancellationToken).ToList();
             descriptors.AddRange(startTriggers);
 
             // Build triggers for workflow instances.
             var specification = new WorkflowInstanceDefinitionIdSpecification(workflowBlueprint.Id)
-                    .WithTenant(workflowBlueprint.TenantId)
-                    .WithStatus(WorkflowStatus.Suspended);
+                .WithTenant(workflowBlueprint.TenantId)
+                .WithStatus(WorkflowStatus.Suspended);
 
             var workflowInstances = await _workflowInstanceStore
                 .FindManyAsync(specification, cancellationToken: cancellationToken)

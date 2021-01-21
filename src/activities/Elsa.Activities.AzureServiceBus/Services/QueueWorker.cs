@@ -35,7 +35,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
             _messageReceiver.RegisterMessageHandler(OnMessageReceived, new MessageHandlerOptions(ExceptionReceivedHandler)
             {
                 AutoComplete = false,
-                MaxConcurrentCalls = 100
+                MaxConcurrentCalls = 5
             });
         }
 
