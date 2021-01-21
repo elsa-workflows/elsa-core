@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text;
+using Elsa.Activities.AzureServiceBus.Models;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Serialization;
@@ -27,7 +28,7 @@ namespace Elsa.Activities.AzureServiceBus
 
         protected IActivityExecutionResult ExecuteInternal(ActivityExecutionContext context)
         {
-            var message = (Message) context.Input!;
+            var message = (MessageModel) context.Input!;
             var bytes = message.Body;
             var json = Encoding.UTF8.GetString(bytes);
             var model = _serializer.Deserialize(json, MessageType);

@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.AzureServiceBus.Models;
 using Elsa.Activities.AzureServiceBus.Triggers;
 using Elsa.DistributedLock;
 using Elsa.Models;
@@ -51,11 +52,29 @@ namespace Elsa.Activities.AzureServiceBus.Services
             var workflowRunner = scope.ServiceProvider.GetRequiredService<IWorkflowQueue>();
             var queueName = _messageReceiver.Path;
             var correlationId = message.CorrelationId;
+            
+            var model = new MessageModel
+            {
+                Body = message.Body,
+                CorrelationId = message.CorrelationId,
+                ContentType = message.ContentType,
+                Label = message.Label,
+                To = message.To,
+                MessageId = message.MessageId,
+                PartitionKey = message.PartitionKey,
+                ViaPartitionKey = message.ViaPartitionKey,
+                ReplyTo = message.ReplyTo,
+                SessionId = message.SessionId,
+                ExpiresAtUtc = message.ExpiresAtUtc,
+                TimeToLive = message.TimeToLive,
+                ReplyToSessionId = message.ReplyToSessionId,
+                ScheduledEnqueueTimeUtc = message.ScheduledEnqueueTimeUtc
+            };
 
             async Task TriggerNewWorkflowAsync() =>
                 await workflowRunner.EnqueueWorkflowsAsync<MessageReceivedTrigger>(
                     x => x.QueueName == queueName && x.CorrelationId == null,
-                    message,
+                    model,
                     correlationId,
                     cancellationToken: cancellationToken);
 
@@ -81,14 +100,14 @@ namespace Elsa.Activities.AzureServiceBus.Services
             {
                 var workflowSelector = scope.ServiceProvider.GetRequiredService<IWorkflowSelector>();
                 var workflowInstanceStore = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
-                var correlatedWorkflowInstanceCount = await workflowInstanceStore.CountAsync(new CorrelationIdSpecification<WorkflowInstance>(message.CorrelationId), cancellationToken);
+                var correlatedWorkflowInstanceCount = await workflowInstanceStore.CountAsync(new CorrelationIdSpecification<WorkflowInstance>(model.CorrelationId), cancellationToken);
 
                 if (correlatedWorkflowInstanceCount > 0)
                 {
                     // Trigger existing workflows (if blocked on this message).
                     _logger.LogDebug("{WorkflowInstanceCount} existing workflows found with correlation ID '{CorrelationId}'. Resuming them", correlatedWorkflowInstanceCount, correlationId);
-                    var existingWorkflows = await workflowSelector.SelectWorkflowsAsync<MessageReceivedTrigger>(x => x.QueueName == queueName && x.CorrelationId == message.CorrelationId, cancellationToken).ToList();
-                    await workflowRunner.EnqueueWorkflowsAsync(existingWorkflows, message, message.CorrelationId, cancellationToken: cancellationToken);
+                    var existingWorkflows = await workflowSelector.SelectWorkflowsAsync<MessageReceivedTrigger>(x => x.QueueName == queueName && x.CorrelationId == model.CorrelationId, cancellationToken).ToList();
+                    await workflowRunner.EnqueueWorkflowsAsync(existingWorkflows, model, model.CorrelationId, cancellationToken: cancellationToken);
                 }
                 else
                 {
