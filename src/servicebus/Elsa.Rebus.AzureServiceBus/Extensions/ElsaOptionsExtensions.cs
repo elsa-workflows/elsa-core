@@ -22,7 +22,7 @@ namespace Elsa.Rebus.AzureServiceBus
 
             context.Configurer
                 .Logging(l => l.MicrosoftExtensionsLogging(loggerFactory))
-                .Transport(t => t.UseAzureServiceBus(connectionString, queueName, tokenProvider).SetDefaultMessageTimeToLive(TimeSpan.FromMinutes(90))) // TODO: Make configurable.
+                .Transport(t => t.UseAzureServiceBus(connectionString, queueName, tokenProvider).SetMessagePeekLockDuration(TimeSpan.FromMinutes(5)).AutomaticallyRenewPeekLock())
                 .Routing(r => r.TypeBased().Map(context.MessageTypeMap))
                 .Options(o => o.Apply(elsaOptions.ServiceBusOptions));
         }
