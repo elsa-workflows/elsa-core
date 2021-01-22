@@ -47,7 +47,6 @@ namespace Elsa.Consumers
             {
                 // Reschedule message.
                 _logger.LogDebug("Failed to acquire lock on workflow instance {WorkflowInstanceId}. Rescheduling message", workflowInstanceId);
-                await Task.Delay(TimeSpan.FromSeconds(1));
                 await _commandSender.SendAsync(message);
                 return;
             }

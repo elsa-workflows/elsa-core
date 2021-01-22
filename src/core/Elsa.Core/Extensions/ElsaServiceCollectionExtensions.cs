@@ -53,7 +53,6 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton(options.DistributedLockProviderFactory)
                 .AddSingleton(options.SignalFactory)
                 .AddSingleton(options.StorageFactory)
-                .AddStartupTask<CreateSubscriptions>()
                 .AddStartupTask<ContinueRunningWorkflowsTask>();
 
             options
@@ -68,6 +67,8 @@ namespace Microsoft.Extensions.DependencyInjection
             services.Decorate<IWorkflowDefinitionStore, InitializingWorkflowDefinitionStore>();
             services.Decorate<IWorkflowDefinitionStore, EventPublishingWorkflowDefinitionStore>();
             services.Decorate<IWorkflowInstanceStore, EventPublishingWorkflowInstanceStore>();
+            
+            services.AddHostedService<CreateSubscriptions>();
 
             return services;
         }

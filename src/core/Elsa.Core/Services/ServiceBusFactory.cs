@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,7 +13,7 @@ namespace Elsa.Services
     {
         private readonly ElsaOptions _elsaOptions;
         private readonly IServiceProvider _serviceProvider;
-        private readonly IDictionary<string, IBus> _serviceBuses = new Dictionary<string, IBus>();
+        private readonly ConcurrentDictionary<string, IBus> _serviceBuses = new();
         private readonly DependencyInjectionHandlerActivator _handlerActivator;
         private readonly SemaphoreSlim _semaphore = new(1);
 
@@ -40,7 +41,7 @@ namespace Elsa.Services
                 _elsaOptions.ConfigureServiceBusEndpoint(configureContext);
             
                 var newBus = configurer.Start();
-                _serviceBuses.Add(queueName, newBus);
+                _serviceBuses.TryAdd(queueName, newBus);
 
                 return newBus;
             }

@@ -1,4 +1,5 @@
 using System;
+using Elsa.HostedServices;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 

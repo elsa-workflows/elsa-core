@@ -5,7 +5,7 @@ using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-namespace Elsa.Runtime
+namespace Elsa.HostedServices
 {
     public class StartupRunnerHostedService : IHostedService
     {

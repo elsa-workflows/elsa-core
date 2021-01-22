@@ -14,7 +14,7 @@ namespace Elsa.Services
 
         public async Task ScheduleTask(string channelName, Func<ValueTask> task, CancellationToken cancellationToken, Duration? channelTtl)
         {
-            var channel = GetOrCreateChannel(channelName, channelTtl, cancellationToken);
+            var channel = await GetOrCreateChannel(channelName, channelTtl, cancellationToken);
             await channel.Writer.WriteAsync(task, cancellationToken);
         }
 
@@ -27,9 +27,9 @@ namespace Elsa.Services
             }, cancellationToken, channelTtl);
         }
 
-        private Channel<Func<ValueTask>> GetOrCreateChannel(string channelName, Duration? channelTtl, CancellationToken cancellationToken)
+        private async Task<Channel<Func<ValueTask>>> GetOrCreateChannel(string channelName, Duration? channelTtl, CancellationToken cancellationToken)
         {
-            _semaphore.Wait(cancellationToken);
+            await _semaphore.WaitAsync(cancellationToken);
 
             try
             {
