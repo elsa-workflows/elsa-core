@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -345,6 +345,11 @@ namespace Elsa.Services
             IActivity activity,
             CancellationToken cancellationToken)
         {
+            await workflowEventHandlers.InvokeAsync(
+                async x => await x.ExecutingActivityAsync(workflowContext, activity, cancellationToken),
+                logger
+            );
+
             return await InvokeActivityAsync(
                 workflowContext,
                 activity,

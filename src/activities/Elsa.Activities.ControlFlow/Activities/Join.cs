@@ -122,6 +122,11 @@ namespace Elsa.Activities.ControlFlow.Activities
             return $"@{sourceActivityId}_{sourceOutcomeName}";
         }
 
+        public Task ExecutingActivityAsync(
+            WorkflowExecutionContext workflowExecutionContext,
+            IActivity activity,
+            CancellationToken cancellationToken) => Task.CompletedTask;
+
         Task IWorkflowEventHandler.ActivityExecutedAsync(
             WorkflowExecutionContext workflowContext,
             IActivity activity,
