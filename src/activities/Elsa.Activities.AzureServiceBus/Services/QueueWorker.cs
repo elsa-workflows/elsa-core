@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.AzureServiceBus.Models;
+using Elsa.Activities.AzureServiceBus.Options;
 using Elsa.Activities.AzureServiceBus.Triggers;
 using Elsa.DistributedLock;
 using Elsa.Models;
@@ -14,6 +15,7 @@ using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Activities.AzureServiceBus.Services
@@ -25,7 +27,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
         private readonly IDistributedLockProvider _distributedLockProvider;
         private readonly ILogger _logger;
 
-        public QueueWorker(IMessageReceiver messageReceiver, IServiceProvider serviceProvider, IDistributedLockProvider distributedLockProvider, ILogger<QueueWorker> logger)
+        public QueueWorker(IMessageReceiver messageReceiver, IServiceProvider serviceProvider, IDistributedLockProvider distributedLockProvider, IOptions<AzureServiceBusOptions> options, ILogger<QueueWorker> logger)
         {
             _messageReceiver = messageReceiver;
             _serviceProvider = serviceProvider;
@@ -35,7 +37,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
             _messageReceiver.RegisterMessageHandler(OnMessageReceived, new MessageHandlerOptions(ExceptionReceivedHandler)
             {
                 AutoComplete = false,
-                MaxConcurrentCalls = 5
+                MaxConcurrentCalls = options.Value.MaxConcurrentCalls
             });
         }
 
