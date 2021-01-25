@@ -38,6 +38,7 @@ namespace Elsa.ActivityTypeProviders
                 Type = info.Type,
                 Description = info.Description,
                 DisplayName = info.DisplayName,
+                ActivateAsync = async context => await ActivateActivity(context, activityType),
                 CanExecuteAsync = async context =>
                 {
                     var instance = await ActivateActivity(context, activityType);
