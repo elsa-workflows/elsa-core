@@ -1,4 +1,4 @@
-using Elsa.Data;
+using Elsa.Persistence.YesSql.Data;
 using Elsa.Persistence.YesSql.Documents;
 using YesSql.Indexes;
 

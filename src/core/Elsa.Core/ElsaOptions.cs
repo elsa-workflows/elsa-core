@@ -73,6 +73,7 @@ namespace Elsa
         internal Func<IServiceProvider, IWorkflowDefinitionStore> WorkflowDefinitionStoreFactory { get; set; }
         internal Func<IServiceProvider, IWorkflowInstanceStore> WorkflowInstanceStoreFactory { get; set; }
         internal Func<IServiceProvider, IWorkflowExecutionLogStore> WorkflowExecutionLogStoreFactory { get; set; }
+        internal Func<IServiceProvider, IWorkflowTriggerStore> WorkflowTriggerStoreFactory { get; set; }
         internal Func<IServiceProvider, IDistributedLockProvider> DistributedLockProviderFactory { get; private set; }
         internal Func<IServiceProvider, ISignal> SignalFactory { get; private set; }
         internal Func<IServiceProvider, JsonSerializer> CreateJsonSerializer { get; private set; }
@@ -197,6 +198,12 @@ namespace Elsa
         public ElsaOptions UseWorkflowExecutionLogStore(Func<IServiceProvider, IWorkflowExecutionLogStore> factory)
         {
             WorkflowExecutionLogStoreFactory = factory;
+            return this;
+        }
+        
+        public ElsaOptions UseWorkflowTriggerStore(Func<IServiceProvider, IWorkflowTriggerStore> factory)
+        {
+            WorkflowTriggerStoreFactory = factory;
             return this;
         }
 

@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications;
+using Elsa.Persistence.Specifications.WorkflowInstances;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.Caching.Memory;

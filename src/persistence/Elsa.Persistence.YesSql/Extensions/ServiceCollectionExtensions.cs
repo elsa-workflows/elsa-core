@@ -1,7 +1,6 @@
 using System;
 using System.Data;
 using System.Linq;
-using Elsa.Data;
 using Elsa.Persistence.YesSql.Data;
 using Elsa.Persistence.YesSql.Indexes;
 using Elsa.Persistence.YesSql.Mapping;
@@ -26,6 +25,7 @@ namespace Elsa.Persistence.YesSql.Extensions
                 .AddScoped<YesSqlWorkflowDefinitionStore>()
                 .AddScoped<YesSqlWorkflowInstanceStore>()
                 .AddScoped<YesSqlWorkflowExecutionLogStore>()
+                .AddScoped<YesSqlWorkflowTriggerStore>()
                 .AddSingleton(sp => CreateStore(sp, configure))
                 .AddScoped(CreateSession)
                 .AddScoped<IDataMigrationManager, DataMigrationManager>()
@@ -35,7 +35,8 @@ namespace Elsa.Persistence.YesSql.Extensions
                 .AddAutoMapperProfile<AutoMapperProfile>()
                 .AddIndexProvider<WorkflowDefinitionIndexProvider>()
                 .AddIndexProvider<WorkflowInstanceIndexProvider>()
-                .AddIndexProvider<WorkflowExecutionLogRecordIndexProvider>();
+                .AddIndexProvider<WorkflowExecutionLogRecordIndexProvider>()
+                .AddIndexProvider<WorkflowTriggerIndexProvider>();
 
             return elsa
                 .UseWorkflowDefinitionStore(sp => sp.GetRequiredService<YesSqlWorkflowDefinitionStore>())

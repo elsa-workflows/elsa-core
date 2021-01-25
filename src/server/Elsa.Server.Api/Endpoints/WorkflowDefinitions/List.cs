@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications;
+using Elsa.Persistence.Specifications.WorkflowDefinitions;
 using Elsa.Serialization;
 using Elsa.Server.Api.Models;
 using Elsa.Server.Api.Swagger.Examples;

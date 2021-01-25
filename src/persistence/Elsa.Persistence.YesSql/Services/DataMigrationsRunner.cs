@@ -1,6 +1,6 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Data;
+using Elsa.Persistence.YesSql.Data;
 using Elsa.Services;
 
 namespace Elsa.Persistence.YesSql.Services

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using Elsa.Models;
 
-namespace Elsa.Persistence.Specifications
+namespace Elsa.Persistence.Specifications.WorkflowDefinitions
 {
     public class ManyWorkflowDefinitionVersionIdsSpecification : Specification<WorkflowDefinition>
     {

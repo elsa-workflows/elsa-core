@@ -2,7 +2,7 @@
 using System.Linq.Expressions;
 using Elsa.Models;
 
-namespace Elsa.Persistence.Specifications
+namespace Elsa.Persistence.Specifications.WorkflowDefinitions
 {
     public class VersionOptionsSpecification : Specification<WorkflowDefinition>
     {

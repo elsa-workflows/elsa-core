@@ -1,5 +1,4 @@
 using System.Data;
-using Elsa.Data;
 using Elsa.Persistence.YesSql.Data;
 using Elsa.Persistence.YesSql.Indexes;
 using YesSql.Sql;
@@ -57,6 +56,15 @@ namespace Elsa.Persistence.YesSql
                     .Column<string>(nameof(WorkflowExecutionLogRecordIndex.WorkflowInstanceId))
                     .Column(nameof(WorkflowExecutionLogRecordIndex.Timestamp), DbType.DateTime),
                 CollectionNames.WorkflowExecutionLog);
+            
+            SchemaBuilder.CreateMapIndexTable<WorkflowTriggerIndex>(
+                table => table
+                    .Column<string?>(nameof(WorkflowTriggerIndex.TriggerId))
+                    .Column<string?>(nameof(WorkflowTriggerIndex.TenantId))
+                    .Column<string>(nameof(WorkflowTriggerIndex.ActivityType))
+                    .Column<string>(nameof(WorkflowTriggerIndex.WorkflowDefinitionId))
+                    .Column<string>(nameof(WorkflowTriggerIndex.WorkflowInstanceId)),
+                CollectionNames.WorkflowTriggers);
 
             return 1;
         }

@@ -3,7 +3,7 @@ using System.Linq.Expressions;
 using Elsa.Extensions;
 using Elsa.Models;
 
-namespace Elsa.Persistence.Specifications
+namespace Elsa.Persistence.Specifications.WorkflowInstances
 {
     public class WorkflowInstanceContextIdMatchSpecification : Specification<WorkflowInstance>
     {

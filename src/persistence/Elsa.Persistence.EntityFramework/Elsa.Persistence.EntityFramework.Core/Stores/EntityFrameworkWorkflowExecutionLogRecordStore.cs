@@ -13,6 +13,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
         }
 
         protected override DbSet<WorkflowExecutionLogRecord> DbSet => DbContext.WorkflowExecutionLogRecords;
+        
         protected override Expression<Func<WorkflowExecutionLogRecord, bool>> MapSpecification(ISpecification<WorkflowExecutionLogRecord> specification)
         {
             return AutoMapSpecification(specification);

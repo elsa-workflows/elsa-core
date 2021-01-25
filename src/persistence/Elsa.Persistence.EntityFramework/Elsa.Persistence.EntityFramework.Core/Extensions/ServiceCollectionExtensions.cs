@@ -17,7 +17,8 @@ namespace Elsa.Persistence.EntityFramework.Core.Extensions
                 .AddDbContext<ElsaContext>(configure)
                 .AddScoped<EntityFrameworkWorkflowDefinitionStore>()
                 .AddScoped<EntityFrameworkWorkflowInstanceStore>()
-                .AddScoped<EntityFrameworkWorkflowExecutionLogRecordStore>();
+                .AddScoped<EntityFrameworkWorkflowExecutionLogRecordStore>()
+                .AddScoped<EntityFrameworkWorkflowTriggerStore>();
 
             if (autorunMigrations)
                 elsa.Services.AddHostedService<RunEFCoreMigrations>();
@@ -25,7 +26,8 @@ namespace Elsa.Persistence.EntityFramework.Core.Extensions
             return elsa
                 .UseWorkflowDefinitionStore(sp => sp.GetRequiredService<EntityFrameworkWorkflowDefinitionStore>())
                 .UseWorkflowInstanceStore(sp => sp.GetRequiredService<EntityFrameworkWorkflowInstanceStore>())
-                .UseWorkflowExecutionLogStore(sp => sp.GetRequiredService<EntityFrameworkWorkflowExecutionLogRecordStore>());
+                .UseWorkflowExecutionLogStore(sp => sp.GetRequiredService<EntityFrameworkWorkflowExecutionLogRecordStore>())
+                .UseWorkflowTriggerStore(sp => sp.GetRequiredService<EntityFrameworkWorkflowTriggerStore>());
         }
     }
 }

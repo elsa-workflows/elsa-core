@@ -3,7 +3,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using Elsa.Models;
 
-namespace Elsa.Persistence.Specifications
+namespace Elsa.Persistence.Specifications.WorkflowInstances
 {
     public class BlockingActivityTypeSpecification : Specification<WorkflowInstance>
     {

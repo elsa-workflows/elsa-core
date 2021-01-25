@@ -1,6 +1,6 @@
 using Elsa.Models;
 
-namespace Elsa.Persistence.Specifications
+namespace Elsa.Persistence.Specifications.WorkflowDefinitions
 {
     public static class WorkflowDefinitionSpecificationExtensions
     {

@@ -4,6 +4,7 @@ using Elsa.DistributedLock;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications;
+using Elsa.Persistence.Specifications.WorkflowInstances;
 using Elsa.Services;
 using Microsoft.Extensions.Logging;
 using Quartz;

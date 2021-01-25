@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace Elsa.Data
+namespace Elsa.Persistence.YesSql.Data
 {
     /// <summary>
     /// Represents a contract to manage database migrations.

@@ -1,9 +1,9 @@
-using Elsa.Models;
 using System;
+using Elsa.Models;
 
-namespace Elsa.Persistence.Specifications
+namespace Elsa.Persistence.Specifications.WorkflowInstances
 {
-    public static class WorkflowInstancSpecificationExtensions
+    public static class WorkflowInstanceSpecificationExtensions
     {
         public static ISpecification<WorkflowInstance> WithWorkflowDefinition(this ISpecification<WorkflowInstance> specification, string workflowDefinitionId) => specification.And(new WorkflowInstanceDefinitionIdSpecification(workflowDefinitionId));
         public static ISpecification<WorkflowInstance> WithWorkflowName(this ISpecification<WorkflowInstance> specification, string name) => specification.And(new WorkflowInstanceNameMatchSpecification(name));
