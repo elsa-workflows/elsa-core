@@ -6,6 +6,15 @@ namespace Elsa.Services
 {
     public abstract class WorkflowEventHandlerBase : IWorkflowEventHandler
     {
+        public Task ExecutingActivityAsync(
+            WorkflowExecutionContext workflowExecutionContext,
+            IActivity activity,
+            CancellationToken cancellationToken)
+        {
+            ExecutingActivity(workflowExecutionContext, activity);
+            return Task.CompletedTask;
+        }
+
         public virtual Task ActivityExecutedAsync(
             WorkflowExecutionContext workflowExecutionContext,
             IActivity activity,
@@ -39,6 +48,12 @@ namespace Elsa.Services
         {
             WorkflowInvoked(workflowExecutionContext);
             return Task.CompletedTask;
+        }
+
+        protected virtual void ExecutingActivity(
+            WorkflowExecutionContext workflowExecutionContext,
+            IActivity activity)
+        {
         }
 
         protected virtual void ActivityExecuted(WorkflowExecutionContext workflowExecutionContext, IActivity activity)

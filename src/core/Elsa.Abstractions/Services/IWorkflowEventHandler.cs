@@ -9,6 +9,10 @@ namespace Elsa.Services
     /// </summary>
     public interface IWorkflowEventHandler
     {
+        /// <summary>
+        /// Invoked before an activity execution.
+        /// </summary>
+        Task ExecutingActivityAsync(WorkflowExecutionContext workflowExecutionContext, IActivity activity, CancellationToken cancellationToken);
 
         /// <summary>
         /// Invoked when an activity has executed.
