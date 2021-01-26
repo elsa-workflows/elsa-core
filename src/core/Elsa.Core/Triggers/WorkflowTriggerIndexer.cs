@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Persistence;
+using Elsa.Persistence.Specifications.WorkflowTriggers;
 using Elsa.Serialization;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -22,6 +21,7 @@ namespace Elsa.Triggers
         private readonly IWorkflowFactory _workflowFactory;
         private readonly IEnumerable<IWorkflowTriggerProvider> _providers;
         private readonly IIdGenerator _idGenerator;
+        private readonly IContentSerializer _contentSerializer;
         private readonly IWorkflowTriggerHasher _hasher;
         private readonly IServiceProvider _serviceProvider;
 
@@ -42,20 +42,15 @@ namespace Elsa.Triggers
             _workflowFactory = workflowFactory;
             _providers = providers;
             _idGenerator = idGenerator;
+            _contentSerializer = contentSerializer;
             _serviceProvider = serviceProvider;
             _hasher = hasher;
         }
 
-        public async Task IndexTriggersAsync(IWorkflowBlueprint workflowBlueprint, CancellationToken cancellationToken)
-        {
-            var startActivities = workflowBlueprint.GetStartActivities();
-            var workflowInstance = await _workflowFactory.InstantiateAsync(workflowBlueprint, cancellationToken: cancellationToken);
-            var triggerDescriptors = await ExtractTriggersAsync(workflowBlueprint, workflowInstance, startActivities, false, cancellationToken);
-            await PersistTriggersAsync(triggerDescriptors, workflowInstance, cancellationToken);
-        }
-
         public async Task IndexTriggersAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken)
         {
+            await DeleteTriggersAsync(workflowInstance.Id, cancellationToken);
+            
             var workflowBlueprint = await _workflowRegistry.GetWorkflowAsync(workflowInstance.DefinitionId, VersionOptions.SpecificVersion(workflowInstance.Version), cancellationToken);
 
             if (workflowBlueprint == null)
@@ -64,6 +59,18 @@ namespace Elsa.Triggers
             var blockingActivities = workflowBlueprint.GetBlockingActivities(workflowInstance!);
             var triggerDescriptors = await ExtractTriggersAsync(workflowBlueprint, workflowInstance, blockingActivities, true, cancellationToken);
             await PersistTriggersAsync(triggerDescriptors, workflowInstance, cancellationToken);
+        }
+
+        public async Task DeleteTriggersAsync(IEnumerable<string> workflowInstanceIds, CancellationToken cancellationToken = default)
+        {
+            var specification = new WorkflowInstanceIdsSpecification(workflowInstanceIds);
+            await _workflowTriggerStore.DeleteManyAsync(specification, cancellationToken);
+        }
+
+        public async Task DeleteTriggersAsync(string workflowInstanceId, CancellationToken cancellationToken = default)
+        {
+            var specification = new WorkflowInstanceIdSpecification(workflowInstanceId);
+            await _workflowTriggerStore.DeleteManyAsync(specification, cancellationToken);
         }
 
         private async Task PersistTriggersAsync(IEnumerable<TriggerDescriptor> triggerDescriptors, WorkflowInstance workflowInstance, CancellationToken cancellationToken)
@@ -76,9 +83,9 @@ namespace Elsa.Triggers
                     TenantId = workflowInstance.TenantId,
                     ActivityType = triggerDescriptor.ActivityType,
                     ActivityId = triggerDescriptor.ActivityId,
-                    WorkflowDefinitionId = workflowInstance.DefinitionId,
                     WorkflowInstanceId = workflowInstance.Id,
-                    Hash = _hasher.Hash(x)
+                    Hash = _hasher.Hash(x),
+                    Model = _contentSerializer.Serialize(x)
                 });
 
                 await _workflowTriggerStore.AddManyAsync(records, cancellationToken);

@@ -8,6 +8,7 @@ using Elsa.Activities.Timers.Triggers;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Elsa.Triggers;
+using Humanizer;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NodaTime;
@@ -19,6 +20,9 @@ namespace Elsa.Activities.Timers.HostedServices
     /// </summary>
     public class StartJobs : BackgroundService
     {
+        // TODO: Figure out how to start jobs across multiple tenants / how to get a list of all tenants. 
+        private const string TenantId = default;
+
         private readonly IServiceProvider _serviceProvider;
         private readonly IWorkflowBlueprintReflector _workflowBlueprintReflector;
         private readonly IWorkflowScheduler _workflowScheduler;
@@ -60,17 +64,16 @@ namespace Elsa.Activities.Timers.HostedServices
                 var timerWrapper = workflowWrapper.GetActivity<StartAt>(activity.Id)!;
                 var startAt = await timerWrapper.GetPropertyValueAsync(x => x.Instant, cancellationToken);
 
-                await _workflowScheduler.ScheduleWorkflowAsync(workflow, activity.Id, startAt, cancellationToken);
+                await _workflowScheduler.ScheduleWorkflowAsync(workflow.Id, null, activity.Id, workflow.TenantId, startAt, null, cancellationToken);
             }
 
             // Schedule workflow instances that are blocked on a start-at.
-            var startAtTriggers = await workflowSelector.SelectWorkflowsAsync<StartAtTrigger>(x => true, cancellationToken);
+            var startAtTriggers = await workflowSelector.SelectWorkflowsAsync<StartAt>(TenantId, cancellationToken);
 
             foreach (var result in startAtTriggers)
             {
                 var trigger = (StartAtTrigger) result.Trigger;
-                var activity = result.WorkflowBlueprint.GetActivity(result.ActivityId)!;
-                await _workflowScheduler.ScheduleWorkflowAsync(result.WorkflowBlueprint, result.WorkflowInstanceId!, activity.Id, trigger.ExecuteAt, cancellationToken);
+                await _workflowScheduler.ScheduleWorkflowAsync(null, result.WorkflowInstanceId!, result.ActivityId, TenantId, trigger.ExecuteAt, null, cancellationToken);
             }
         }
 
@@ -83,7 +86,7 @@ namespace Elsa.Activities.Timers.HostedServices
                 select (workflow, activity);
 
             var now = _clock.GetCurrentInstant();
-            
+
             foreach (var timerWorkflow in timerWorkflows)
             {
                 var workflow = timerWorkflow.workflow;
@@ -93,20 +96,19 @@ namespace Elsa.Activities.Timers.HostedServices
                 var timeOut = await timerEventWrapper.GetPropertyValueAsync(x => x.Timeout, cancellationToken);
                 var startAt = now.Plus(timeOut);
 
-                await _workflowScheduler.ScheduleWorkflowAsync(workflow, activity.Id, startAt, timeOut, cancellationToken);
+                await _workflowScheduler.ScheduleWorkflowAsync(workflow.Id, null, activity.Id, workflow.TenantId, startAt, timeOut, cancellationToken);
             }
 
             // Schedule workflow instances that are blocked on a timer.
-            var timerEventTriggers = await workflowSelector.SelectWorkflowsAsync<TimerTrigger>(x => true, cancellationToken);
+            var timerEventTriggers = await workflowSelector.SelectWorkflowsAsync<Timer>(TenantId, cancellationToken);
 
             foreach (var result in timerEventTriggers)
             {
                 var trigger = (TimerTrigger) result.Trigger;
-                var activity = result.WorkflowBlueprint.GetActivity(result.ActivityId)!;
-                await _workflowScheduler.ScheduleWorkflowAsync(result.WorkflowBlueprint, result.WorkflowInstanceId!, activity.Id, trigger.ExecuteAt, cancellationToken);
+                await _workflowScheduler.ScheduleWorkflowAsync(null, result.WorkflowInstanceId!, result.ActivityId, TenantId, trigger.ExecuteAt, null, cancellationToken);
             }
         }
-        
+
         private async Task ScheduleCronEventWorkflowsAsync(IServiceScope serviceScope, IEnumerable<IWorkflowBlueprint> workflows, IWorkflowSelector workflowSelector, CancellationToken cancellationToken)
         {
             // Schedule workflow blueprints starting with a cron.
@@ -123,17 +125,16 @@ namespace Elsa.Activities.Timers.HostedServices
                 var timerEventWrapper = workflowWrapper.GetActivity<Cron>(activity.Id)!;
                 var cronExpression = await timerEventWrapper.GetPropertyValueAsync(x => x.CronExpression, cancellationToken);
 
-                await _workflowScheduler.ScheduleWorkflowAsync(workflow, activity.Id, cronExpression!, cancellationToken);
+                await _workflowScheduler.ScheduleWorkflowAsync(workflow.Id, null, activity.Id, workflow.TenantId, cronExpression!, cancellationToken);
             }
 
             // Schedule workflow instances blocked on a cron event.
-            var cronEventTriggers = await workflowSelector.SelectWorkflowsAsync<CronTrigger>(x => true, cancellationToken);
+            var cronEventTriggers = await workflowSelector.SelectWorkflowsAsync<Cron>(TenantId, cancellationToken);
 
             foreach (var result in cronEventTriggers)
             {
                 var trigger = (CronTrigger) result.Trigger;
-                var activity = result.WorkflowBlueprint.GetActivity(result.ActivityId)!;
-                await _workflowScheduler.ScheduleWorkflowAsync(result.WorkflowBlueprint, result.WorkflowInstanceId!, activity.Id, trigger.ExecuteAt, cancellationToken);
+                await _workflowScheduler.ScheduleWorkflowAsync(null, result.WorkflowInstanceId!, result.ActivityId, TenantId, trigger.ExecuteAt, null, cancellationToken);
             }
         }
     }

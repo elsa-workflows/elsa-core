@@ -1,24 +1,25 @@
-﻿using Elsa.Models;
+﻿using System.Collections.Generic;
+using Elsa.Models;
 using Elsa.Triggers;
 using NodaTime;
 
 namespace Elsa.Activities.Timers.Triggers
 {
-    public class StartAtTrigger : Trigger
+    public class StartAtTrigger : ITrigger
     {
         public Instant ExecuteAt { get; set; }
     }
 
     public class StartAtWorkflowTriggerProvider : WorkflowTriggerProvider<StartAtTrigger, StartAt>
     {
-        public override ITrigger GetTrigger(TriggerProviderContext<StartAt> context)
+        public override IEnumerable<ITrigger> GetTriggers(TriggerProviderContext<StartAt> context)
         {
             var executeAt = context.Activity.GetState(x => x.ExecuteAt);
 
             if (executeAt == null || context.ActivityExecutionContext.WorkflowExecutionContext.WorkflowInstance.WorkflowStatus != WorkflowStatus.Suspended)
-                return NullTrigger.Instance;
+                yield break;
 
-            return new StartAtTrigger
+            yield return new StartAtTrigger
             {
                 ExecuteAt = executeAt.Value,
             };

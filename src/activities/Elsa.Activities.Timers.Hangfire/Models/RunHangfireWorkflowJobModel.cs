@@ -2,7 +2,7 @@ namespace Elsa.Activities.Timers.Hangfire.Models
 {
     public class RunHangfireWorkflowJobModel
     {
-        public RunHangfireWorkflowJobModel(string workflowDefinitionId, string activityId, string? workflowInstanceId, string? tenantId, string? cronExpression)
+        public RunHangfireWorkflowJobModel(string? workflowDefinitionId, string activityId, string? workflowInstanceId, string? tenantId, string? cronExpression)
         {
             WorkflowDefinitionId = workflowDefinitionId;
             WorkflowInstanceId = workflowInstanceId;
@@ -11,7 +11,7 @@ namespace Elsa.Activities.Timers.Hangfire.Models
             CronExpression = cronExpression;
         }
 
-        public string WorkflowDefinitionId { get; set; }
+        public string? WorkflowDefinitionId { get; set; }
         public string? WorkflowInstanceId { get; set; }
         public string ActivityId { get; set; }
         public string? TenantId { get; set; }

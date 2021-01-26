@@ -2,7 +2,6 @@ using Elsa.Activities.Console;
 using Elsa.Activities.ControlFlow;
 using Elsa.Activities.Timers;
 using Elsa.Builders;
-using Elsa.Samples.Timers.Activities;
 using NodaTime;
 
 namespace Elsa.Samples.Timers.Workflows

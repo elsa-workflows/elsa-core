@@ -22,6 +22,9 @@ namespace Elsa.Activities.AzureServiceBus.Services
 {
     public class QueueWorker : IAsyncDisposable
     {
+        // TODO: Figure out how to start jobs across multiple tenants / how to get a list of all tenants. 
+        private const string TenantId = default;
+        
         private readonly IMessageReceiver _messageReceiver;
         private readonly IServiceProvider _serviceProvider;
         private readonly IDistributedLockProvider _distributedLockProvider;
@@ -51,7 +54,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
         private async Task TriggerWorkflowsAsync(Message message, CancellationToken cancellationToken)
         {
             using var scope = _serviceProvider.CreateScope();
-            var workflowRunner = scope.ServiceProvider.GetRequiredService<IWorkflowQueue>();
+            var workflowQueue = scope.ServiceProvider.GetRequiredService<IWorkflowQueue>();
             var queueName = _messageReceiver.Path;
             var correlationId = message.CorrelationId;
             
@@ -74,8 +77,9 @@ namespace Elsa.Activities.AzureServiceBus.Services
             };
 
             async Task TriggerNewWorkflowAsync() =>
-                await workflowRunner.EnqueueWorkflowsAsync<MessageReceivedTrigger>(
-                    x => x.QueueName == queueName && x.CorrelationId == null,
+                await workflowQueue.EnqueueWorkflowsAsync<AzureServiceBusMessageReceived>(
+                    new MessageReceivedTrigger(queueName),
+                    TenantId,
                     model,
                     correlationId,
                     cancellationToken: cancellationToken);
@@ -108,8 +112,8 @@ namespace Elsa.Activities.AzureServiceBus.Services
                 {
                     // Trigger existing workflows (if blocked on this message).
                     _logger.LogDebug("{WorkflowInstanceCount} existing workflows found with correlation ID '{CorrelationId}'. Resuming them", correlatedWorkflowInstanceCount, correlationId);
-                    var existingWorkflows = await workflowSelector.SelectWorkflowsAsync<MessageReceivedTrigger>(x => x.QueueName == queueName && x.CorrelationId == model.CorrelationId, cancellationToken).ToList();
-                    await workflowRunner.EnqueueWorkflowsAsync(existingWorkflows, model, model.CorrelationId, cancellationToken: cancellationToken);
+                    var existingWorkflows = await workflowSelector.SelectWorkflowsAsync<AzureServiceBusMessageReceived>(new MessageReceivedTrigger(queueName, correlationId), TenantId, cancellationToken).ToList();
+                    await workflowQueue.EnqueueWorkflowsAsync(existingWorkflows, model, model.CorrelationId, cancellationToken: cancellationToken);
                 }
                 else
                 {

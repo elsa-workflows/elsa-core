@@ -1,10 +1,11 @@
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Triggers;
 
 namespace Elsa.Activities.Entity.Triggers
 {
-    public class EntityChangedTrigger : Trigger
+    public class EntityChangedTrigger : ITrigger
     {
         public EntityChangedTrigger(string? entityName, EntityChangedAction? action, string? contextId, string? correlationId)
         {
@@ -22,12 +23,15 @@ namespace Elsa.Activities.Entity.Triggers
 
     public class EntityChangedWorkflowTriggerProvider : WorkflowTriggerProvider<EntityChangedTrigger, EntityChanged>
     {
-        public override async ValueTask<ITrigger> GetTriggerAsync(TriggerProviderContext<EntityChanged> context, CancellationToken cancellationToken) =>
-            new EntityChangedTrigger(
-                entityName: await context.Activity.GetPropertyValueAsync(x => x.EntityName, cancellationToken),
-                action: await context.Activity.GetPropertyValueAsync(x => x.Action, cancellationToken),
-                contextId: context.ActivityExecutionContext.WorkflowExecutionContext.WorkflowInstance.ContextId,
-                correlationId: context.ActivityExecutionContext.WorkflowExecutionContext.WorkflowInstance.CorrelationId
-            );
+        public override async ValueTask<IEnumerable<ITrigger>> GetTriggersAsync(TriggerProviderContext<EntityChanged> context, CancellationToken cancellationToken) =>
+            new[]
+            {
+                new EntityChangedTrigger(
+                    entityName: await context.Activity.GetPropertyValueAsync(x => x.EntityName, cancellationToken),
+                    action: await context.Activity.GetPropertyValueAsync(x => x.Action, cancellationToken),
+                    contextId: context.ActivityExecutionContext.WorkflowExecutionContext.WorkflowInstance.ContextId,
+                    correlationId: context.ActivityExecutionContext.WorkflowExecutionContext.WorkflowInstance.CorrelationId
+                )
+            };
     }
 }

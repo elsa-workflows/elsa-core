@@ -9,37 +9,34 @@ using MediatR;
 
 namespace Elsa.Handlers
 {
-    public class UpdateTriggers : INotificationHandler<WorkflowInstanceSaved>, INotificationHandler<ManyWorkflowInstancesDeleted>
+    public class UpdateTriggers : INotificationHandler<WorkflowInstanceSaved>, INotificationHandler<ManyWorkflowInstancesDeleted>, INotificationHandler<ManyWorkflowInstancesAdded>
     {
-        private readonly IWorkflowSelector _workflowSelector;
+        private readonly IWorkflowTriggerIndexer _workflowTriggerIndexer;
         private readonly IWorkflowRegistry _workflowRegistry;
 
-        public UpdateTriggers(IWorkflowSelector workflowSelector, IWorkflowRegistry workflowRegistry)
+        public UpdateTriggers(IWorkflowTriggerIndexer workflowTriggerIndexer, IWorkflowRegistry workflowRegistry)
         {
-            _workflowSelector = workflowSelector;
+            _workflowTriggerIndexer = workflowTriggerIndexer;
             _workflowRegistry = workflowRegistry;
         }
 
         public async Task Handle(WorkflowInstanceSaved notification, CancellationToken cancellationToken)
         {
             var workflowInstance = notification.WorkflowInstance;
-            await UpdateTriggersAsync(workflowInstance.DefinitionId, workflowInstance.Id, workflowInstance.TenantId, VersionOptions.SpecificVersion(workflowInstance.Version), cancellationToken);
+            await _workflowTriggerIndexer.IndexTriggersAsync(workflowInstance, cancellationToken);;
         }
 
         public async Task Handle(ManyWorkflowInstancesDeleted notification, CancellationToken cancellationToken)
         {
-            var workflowInstance = notification.WorkflowInstances.First();
-            await UpdateTriggersAsync(workflowInstance.DefinitionId, null, workflowInstance.TenantId, VersionOptions.Latest, cancellationToken);
+            var workflowInstanceIds = notification.WorkflowInstances.Select(x => x.Id).ToList();
+            await _workflowTriggerIndexer.DeleteTriggersAsync(workflowInstanceIds, cancellationToken);
         }
-
-        private async Task UpdateTriggersAsync(string workflowDefinitionId, string? workflowInstanceId, string? tenantId, VersionOptions versionOptions, CancellationToken cancellationToken)
+        
+        public async Task Handle(ManyWorkflowInstancesAdded notification, CancellationToken cancellationToken)
         {
-            var workflowBlueprint = await _workflowRegistry.GetWorkflowAsync(workflowDefinitionId, tenantId, versionOptions, cancellationToken);
-
-            if (workflowBlueprint == null)
-                return;
-
-            await _workflowSelector.UpdateTriggersAsync(workflowBlueprint, workflowInstanceId, cancellationToken);
+            throw new System.NotImplementedException();
         }
+
+        private async Task UpdateTriggersAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken) => await _workflowTriggerIndexer.IndexTriggersAsync(workflowInstance, cancellationToken);
     }
 }

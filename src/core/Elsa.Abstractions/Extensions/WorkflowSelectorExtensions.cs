@@ -1,8 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Services.Models;
+using Elsa.Services;
 using Elsa.Triggers;
 
 namespace Elsa
@@ -11,14 +11,30 @@ namespace Elsa
     {
         public static Task<IEnumerable<WorkflowSelectorResult>> SelectWorkflowsAsync<T>(
             this IWorkflowSelector workflowSelector,
-            Func<T, bool> evaluate,
-            CancellationToken cancellationToken = default) where T : ITrigger =>
-            workflowSelector.SelectWorkflowsAsync(typeof(T), t => evaluate((T)t), cancellationToken);
+            IEnumerable<ITrigger> triggers,
+            string? tenantId,
+            CancellationToken cancellationToken = default) where T : IActivity =>
+            workflowSelector.SelectWorkflowsAsync(typeof(T).Name, triggers, tenantId, cancellationToken);
 
-        public static Task<IEnumerable<IActivityBlueprint>> GetTriggersAsync<T>(
+        public static Task<IEnumerable<WorkflowSelectorResult>> SelectWorkflowsAsync<T>(
             this IWorkflowSelector workflowSelector,
-            Func<T, bool> evaluate,
-            CancellationToken cancellationToken = default) where T : ITrigger =>
-            workflowSelector.GetTriggersAsync(typeof(T), t => evaluate((T)t), cancellationToken);
+            ITrigger trigger,
+            string? tenantId,
+            CancellationToken cancellationToken = default) where T : IActivity =>
+            workflowSelector.SelectWorkflowsAsync(typeof(T).Name, new[] { trigger }, tenantId, cancellationToken);
+        
+        public static Task<IEnumerable<WorkflowSelectorResult>> SelectWorkflowsAsync(
+            this IWorkflowSelector workflowSelector,
+            string activityType,
+            ITrigger trigger,
+            string? tenantId,
+            CancellationToken cancellationToken = default) =>
+            workflowSelector.SelectWorkflowsAsync(activityType, new[] { trigger }, tenantId, cancellationToken);
+
+        public static Task<IEnumerable<WorkflowSelectorResult>> SelectWorkflowsAsync<T>(
+            this IWorkflowSelector workflowSelector,
+            string? tenantId,
+            CancellationToken cancellationToken = default) where T : IActivity =>
+            workflowSelector.SelectWorkflowsAsync(typeof(T).Name, Enumerable.Empty<ITrigger>(), tenantId, cancellationToken);
     }
 }

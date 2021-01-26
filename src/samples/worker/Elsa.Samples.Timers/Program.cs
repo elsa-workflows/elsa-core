@@ -1,13 +1,11 @@
 using System.Threading.Tasks;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Sqlite;
-using Elsa.Persistence.YesSql.Extensions;
 using Elsa.Samples.Timers.Activities;
 using Elsa.Samples.Timers.Workflows;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using NodaTime;
 
 namespace Elsa.Samples.Timers
 {

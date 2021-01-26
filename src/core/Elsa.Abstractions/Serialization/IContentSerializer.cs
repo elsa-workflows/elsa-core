@@ -10,6 +10,7 @@ namespace Elsa.Serialization
         object? Deserialize(JToken token, Type targetType);
         T Deserialize<T>(string json);
         object? Deserialize(string json, Type targetType);
+        public object? Deserialize(string json);
         object GetSettings();
     }
 }

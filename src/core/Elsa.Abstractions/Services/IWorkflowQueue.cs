@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Triggers;
@@ -11,13 +10,14 @@ namespace Elsa.Services
         /// <summary>
         /// Selects workflows and workflow instances based on the specified trigger predicate and enqueues the results for execution.
         /// </summary>
-        Task EnqueueWorkflowsAsync<TTrigger>(
-            Func<TTrigger, bool> predicate,
+        Task EnqueueWorkflowsAsync(
+            string activityType,
+            ITrigger trigger,
+            string? tenantId,
             object? input = default,
             string? correlationId = default,
             string? contextId = default,
-            CancellationToken cancellationToken = default)
-            where TTrigger : ITrigger;
+            CancellationToken cancellationToken = default);
         
         /// <summary>
         /// Enqueues the specified workflows for execution.

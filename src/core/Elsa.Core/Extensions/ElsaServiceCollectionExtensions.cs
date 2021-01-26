@@ -21,7 +21,6 @@ using Elsa.Runtime;
 using Elsa.Serialization;
 using Elsa.Serialization.Converters;
 using Elsa.Services;
-using Elsa.Services.Models;
 using Elsa.StartupTasks;
 using Elsa.Triggers;
 using Elsa.WorkflowProviders;

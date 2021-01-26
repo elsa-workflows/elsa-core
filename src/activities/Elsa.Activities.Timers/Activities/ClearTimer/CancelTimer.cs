@@ -25,7 +25,7 @@ namespace Elsa.Activities.Timers
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            await _workflowScheduler.UnscheduleWorkflowAsync(context.WorkflowExecutionContext, ActivityId);
+            await _workflowScheduler.UnscheduleWorkflowAsync(null, context.WorkflowInstance.Id, ActivityId, context.WorkflowInstance.TenantId, context.CancellationToken);
             return Done();
         }
     }

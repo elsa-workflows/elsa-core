@@ -56,10 +56,9 @@ namespace Elsa.Persistence.MongoDb.Services
         {
             var tenantKeysDefinition = Builders<WorkflowTrigger>.IndexKeys.Ascending(x => x.TenantId);
             var activityTypeKeysDefinition = Builders<WorkflowTrigger>.IndexKeys.Ascending(x => x.ActivityType);
-            var workflowDefinitionKeysDefinition = Builders<WorkflowTrigger>.IndexKeys.Ascending(x => x.WorkflowDefinitionId);
             var workflowInstanceIdKeysDefinition = Builders<WorkflowTrigger>.IndexKeys.Ascending(x => x.WorkflowInstanceId);
 
-            await CreateIndexesAsync(_mongoContext.WorkflowTriggers, cancellationToken, tenantKeysDefinition, activityTypeKeysDefinition, workflowDefinitionKeysDefinition, workflowInstanceIdKeysDefinition);
+            await CreateIndexesAsync(_mongoContext.WorkflowTriggers, cancellationToken, tenantKeysDefinition, activityTypeKeysDefinition, workflowInstanceIdKeysDefinition);
         }
 
         private async Task CreateIndexesAsync<T>(IMongoCollection<T> collection, CancellationToken cancellationToken, params IndexKeysDefinition<T>[] definitions)

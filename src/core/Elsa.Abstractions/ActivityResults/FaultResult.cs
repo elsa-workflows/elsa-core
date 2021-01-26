@@ -1,5 +1,4 @@
 using Elsa.Services.Models;
-using Microsoft.Extensions.Localization;
 
 namespace Elsa.ActivityResults
 {

@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Elsa.ActivityResults;
 using Elsa.Models;
 using Elsa.Services.Models;
-using Microsoft.Extensions.Localization;
 using Newtonsoft.Json.Linq;
 
 namespace Elsa.Services

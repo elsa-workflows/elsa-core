@@ -11,7 +11,7 @@ namespace Elsa.Services
         {
             _serviceBusFactory = serviceBusFactory;
         }
-        
+
         public async Task PublishAsync(object message, IDictionary<string, string>? headers = default)
         {
             var bus = await _serviceBusFactory.GetServiceBusAsync(message.GetType(), default);
