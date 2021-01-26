@@ -35,6 +35,7 @@ namespace Elsa
             WorkflowDefinitionStoreFactory = sp => ActivatorUtilities.CreateInstance<InMemoryWorkflowDefinitionStore>(sp);
             WorkflowInstanceStoreFactory = sp => ActivatorUtilities.CreateInstance<InMemoryWorkflowInstanceStore>(sp);
             WorkflowExecutionLogStoreFactory = sp => ActivatorUtilities.CreateInstance<InMemoryWorkflowExecutionLogStore>(sp);
+            WorkflowTriggerStoreFactory = sp => ActivatorUtilities.CreateInstance<InMemoryWorkflowTriggerStore>(sp);
             StorageFactory = sp => Storage.Net.StorageFactory.Blobs.InMemory();
             DistributedLockProviderFactory = sp => new DefaultLockProvider();
             SignalFactory = sp => new Signal();
