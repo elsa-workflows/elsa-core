@@ -138,8 +138,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IEventPublisher, EventPublisher>()
                 .AutoRegisterHandlersFromAssemblyOf<RunWorkflowInstanceConsumer>()
                 .AddScoped<ISignaler, Signaler>()
-                .AddTriggerProvider<SignalReceivedTriggerProvider>()
-                .AddTriggerProvider<RunWorkflowTriggerProvider>()
+                .AddTriggerProvider<SignalReceivedWorkflowTriggerProvider>()
+                .AddTriggerProvider<RunWorkflowWorkflowTriggerProvider>()
                 .AddMetadataHandlers();
 
             return options;

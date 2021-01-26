@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
@@ -10,7 +11,7 @@ using MongoDB.Driver.Linq;
 
 namespace Elsa.Persistence.MongoDb.Stores
 {
-    public class MongoDbStore<T> : IStore<T> where T : IEntity
+    public class MongoDbStore<T> : IStore<T> where T : class, IEntity
     {
         public MongoDbStore(IMongoCollection<T> collection, IIdGenerator idGenerator)
         {
@@ -28,6 +29,18 @@ namespace Elsa.Persistence.MongoDb.Stores
 
             var filter = GetFilter(entity.Id);
             await Collection.ReplaceOneAsync(filter, entity, new ReplaceOptions { IsUpsert = true }, cancellationToken);
+        }
+
+        public Task AddAsync(T entity, CancellationToken cancellationToken = default) => SaveAsync(entity, cancellationToken);
+
+        public async Task AddManyAsync(IEnumerable<T> entities, CancellationToken cancellationToken = default)
+        {
+            var list = entities.ToList();
+
+            foreach (var entity in list.Where(x => x.Id == null!))
+                entity.Id = IdGenerator.Generate();
+
+            await Collection.InsertManyAsync(list, default, cancellationToken);
         }
 
         public async Task DeleteAsync(T entity, CancellationToken cancellationToken = default)

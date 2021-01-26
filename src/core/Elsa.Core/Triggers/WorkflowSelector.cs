@@ -8,6 +8,7 @@ using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications;
 using Elsa.Persistence.Specifications.WorkflowInstances;
+using Elsa.Persistence.Specifications.WorkflowTriggers;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.Caching.Memory;
@@ -23,8 +24,10 @@ namespace Elsa.Triggers
         private readonly IWorkflowRegistry _workflowRegistry;
         private readonly IWorkflowFactory _workflowFactory;
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
+        private readonly IWorkflowTriggerStore _workflowTriggerStore;
+        private readonly IWorkflowTriggerHasher _hasher;
         private readonly IWorkflowContextManager _workflowContextManager;
-        private readonly IEnumerable<ITriggerProvider> _triggerProviders;
+        private readonly IEnumerable<IWorkflowTriggerProvider> _triggerProviders;
         private readonly IMemoryCache _memoryCache;
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<WorkflowSelector> _logger;
@@ -35,8 +38,10 @@ namespace Elsa.Triggers
             IWorkflowRegistry workflowRegistry,
             IWorkflowFactory workflowFactory,
             IWorkflowInstanceStore workflowInstanceStore,
+            IWorkflowTriggerStore workflowTriggerStore,
+            IWorkflowTriggerHasher hasher,
             IWorkflowContextManager workflowContextManager,
-            IEnumerable<ITriggerProvider> triggerProviders,
+            IEnumerable<IWorkflowTriggerProvider> triggerProviders,
             IMemoryCache memoryCache,
             IServiceProvider serviceProvider,
             ILogger<WorkflowSelector> logger)
@@ -44,6 +49,8 @@ namespace Elsa.Triggers
             _workflowRegistry = workflowRegistry;
             _workflowFactory = workflowFactory;
             _workflowInstanceStore = workflowInstanceStore;
+            _workflowTriggerStore = workflowTriggerStore;
+            _hasher = hasher;
             _workflowContextManager = workflowContextManager;
             _triggerProviders = triggerProviders;
             _memoryCache = memoryCache;
@@ -51,13 +58,13 @@ namespace Elsa.Triggers
             _logger = logger;
         }
 
-        public async Task<IEnumerable<WorkflowSelectorResult>> SelectWorkflowsAsync(
-            Type triggerType,
-            Func<ITrigger, bool> evaluate,
-            CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<WorkflowSelectorResult>> SelectWorkflowsAsync(string activityType, ITrigger trigger, string? tenantId, CancellationToken cancellationToken = default)
         {
-            _descriptors ??= await GetDescriptorsAsync(cancellationToken);
-            return SelectWorkflowsAsync(_descriptors, triggerType, evaluate);
+            var hash = _hasher.Hash(trigger);
+            var specification = new TriggerSpecification(hash, activityType, tenantId);
+            var records = _workflowTriggerStore.FindManyAsync(specification, cancellationToken: cancellationToken);
+
+            return records.Select(x => new WorkflowSelectorResult());
         }
 
         public async Task<IEnumerable<IActivityBlueprint>> GetTriggersAsync(

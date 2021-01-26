@@ -1,24 +1,26 @@
-﻿using Elsa.Models;
+﻿using System.Collections.Generic;
+using System.Linq;
+using Elsa.Models;
 using Elsa.Triggers;
 using NodaTime;
 
 namespace Elsa.Activities.Timers.Triggers
 {
-    public class CronTrigger : Trigger
+    public class CronTrigger : ITrigger
     {
         public Instant ExecuteAt { get; set; }
     }
     
-    public class CronTriggerProvider : TriggerProvider<CronTrigger, Cron>
+    public class CronWorkflowTriggerProvider : WorkflowTriggerProvider<CronTrigger, Cron>
     {
-        public override ITrigger GetTrigger(TriggerProviderContext<Cron> context)
+        public override IEnumerable<ITrigger> GetTriggers(TriggerProviderContext<Cron> context)
         {
             var executeAt = context.Activity.GetState(x => x.ExecuteAt);
 
             if (executeAt == null || context.ActivityExecutionContext.WorkflowExecutionContext.WorkflowInstance.WorkflowStatus != WorkflowStatus.Suspended)
-                return NullTrigger.Instance;
+                yield break;
 
-            return new CronTrigger
+            yield return new CronTrigger
             {
                 ExecuteAt = executeAt.Value,
             };

@@ -19,9 +19,9 @@ namespace Microsoft.Extensions.DependencyInjection
             options.Services
                 .AddNotificationHandlers(typeof(RemoveScheduledTriggers))
                 .AddHostedService<StartJobs>()
-                .AddTriggerProvider<TimerTriggerProvider>()
-                .AddTriggerProvider<CronTriggerProvider>()
-                .AddTriggerProvider<StartAtTriggerProvider>();
+                .AddTriggerProvider<TimerWorkflowTriggerProvider>()
+                .AddTriggerProvider<CronWorkflowTriggerProvider>()
+                .AddTriggerProvider<StartAtWorkflowTriggerProvider>();
 
             return options
                 .AddActivity<Cron>()

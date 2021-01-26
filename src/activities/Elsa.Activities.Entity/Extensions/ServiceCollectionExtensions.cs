@@ -10,7 +10,7 @@ namespace Microsoft.Extensions.DependencyInjection
         public static ElsaOptions AddEntityActivities(this ElsaOptions options)
         {
             options.AddActivity<EntityChanged>();
-            options.Services.AddTriggerProvider<EntityChangedTriggerProvider>();
+            options.Services.AddTriggerProvider<EntityChangedWorkflowTriggerProvider>();
             return options;
         }
     }

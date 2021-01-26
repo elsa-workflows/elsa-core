@@ -9,7 +9,7 @@ namespace Elsa.Activities.Timers.Triggers
         public Instant ExecuteAt { get; set; }
     }
 
-    public class StartAtTriggerProvider : TriggerProvider<StartAtTrigger, StartAt>
+    public class StartAtWorkflowTriggerProvider : WorkflowTriggerProvider<StartAtTrigger, StartAt>
     {
         public override ITrigger GetTrigger(TriggerProviderContext<StartAt> context)
         {

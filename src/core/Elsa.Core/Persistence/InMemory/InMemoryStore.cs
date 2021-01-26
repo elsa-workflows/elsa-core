@@ -12,11 +12,11 @@ namespace Elsa.Persistence.InMemory
 {
     public class InMemoryStore<T> : IStore<T> where T : IEntity
     {
-        protected readonly IMemoryCache _memoryCache;
+        protected readonly IMemoryCache MemoryCache;
 
         public InMemoryStore(IMemoryCache memoryCache, IIdGenerator idGenerator)
         {
-            _memoryCache = memoryCache;
+            MemoryCache = memoryCache;
             IdGenerator = idGenerator;
         }
 
@@ -30,6 +30,18 @@ namespace Elsa.Persistence.InMemory
 
             var dictionary = await GetDictionaryAsync();
             dictionary[entity.Id] = entity;
+            SetDictionary(dictionary);
+        }
+
+        public Task AddAsync(T entity, CancellationToken cancellationToken = default) => SaveAsync(entity, cancellationToken);
+
+        public async Task AddManyAsync(IEnumerable<T> entities, CancellationToken cancellationToken = default)
+        {
+            var dictionary = await GetDictionaryAsync();
+            
+            foreach (var entity in entities) 
+                dictionary[entity.Id] = entity;
+            
             SetDictionary(dictionary);
         }
 
@@ -76,7 +88,7 @@ namespace Elsa.Persistence.InMemory
             return dictionary.Values.AsQueryable().FirstOrDefault(specification.ToExpression());
         }
         
-        private async Task<IDictionary<string, T>> GetDictionaryAsync() => await _memoryCache.GetOrCreateAsync(CacheKey, _ => Task.FromResult(new Dictionary<string, T>()));
-        private void SetDictionary(IDictionary<string, T> dictionary) => _memoryCache.Set(CacheKey, dictionary);
+        private async Task<IDictionary<string, T>> GetDictionaryAsync() => await MemoryCache.GetOrCreateAsync(CacheKey, _ => Task.FromResult(new Dictionary<string, T>()));
+        private void SetDictionary(IDictionary<string, T> dictionary) => MemoryCache.Set(CacheKey, dictionary);
     }
 }

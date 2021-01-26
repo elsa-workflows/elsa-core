@@ -8,7 +8,7 @@ namespace Elsa.Activities.Workflows
         public string ChildWorkflowInstanceId { get; set; } = default!;
     }
     
-    public class RunWorkflowTriggerProvider : TriggerProvider<RunWorkflowTrigger, RunWorkflow>
+    public class RunWorkflowWorkflowTriggerProvider : WorkflowTriggerProvider<RunWorkflowTrigger, RunWorkflow>
     {
         public override ITrigger GetTrigger(TriggerProviderContext<RunWorkflow> context)
         {

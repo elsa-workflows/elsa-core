@@ -26,7 +26,7 @@ namespace Elsa.Activities.AzureServiceBus.Extensions
                 .AddSingleton<IMessageSenderFactory>(sp => sp.GetRequiredService<MessageBusFactory>())
                 .AddSingleton<IMessageReceiverFactory>(sp => sp.GetRequiredService<MessageBusFactory>())
                 .AddHostedService<StartServiceBusQueues>()
-                .AddTriggerProvider<MessageReceivedTriggerProvider>();
+                .AddTriggerProvider<MessageReceivedWorkflowTriggerProvider>();
 
             options
                 .AddActivity<AzureServiceBusMessageReceived>()

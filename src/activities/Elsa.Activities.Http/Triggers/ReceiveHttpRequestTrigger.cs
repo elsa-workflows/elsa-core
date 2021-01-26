@@ -12,7 +12,7 @@ namespace Elsa.Activities.Http.Triggers
         public string? CorrelationId { get; set; }
     }
 
-    public class ReceiveHttpRequestTriggerProvider : TriggerProvider<ReceiveHttpRequestTrigger, HttpRequestReceived>
+    public class ReceiveHttpRequestWorkflowTriggerProvider : WorkflowTriggerProvider<ReceiveHttpRequestTrigger, HttpRequestReceived>
     {
         public override async ValueTask<ITrigger> GetTriggerAsync(TriggerProviderContext<HttpRequestReceived> context, CancellationToken cancellationToken) =>
             new ReceiveHttpRequestTrigger

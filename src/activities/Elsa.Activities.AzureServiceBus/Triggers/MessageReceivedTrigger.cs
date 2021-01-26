@@ -10,7 +10,7 @@ namespace Elsa.Activities.AzureServiceBus.Triggers
         public string? CorrelationId { get; set; }
     }
 
-    public class MessageReceivedTriggerProvider : TriggerProvider<MessageReceivedTrigger, AzureServiceBusMessageReceived>
+    public class MessageReceivedWorkflowTriggerProvider : WorkflowTriggerProvider<MessageReceivedTrigger, AzureServiceBusMessageReceived>
     {
         public override async ValueTask<ITrigger> GetTriggerAsync(TriggerProviderContext<AzureServiceBusMessageReceived> context, CancellationToken cancellationToken) =>
             new MessageReceivedTrigger

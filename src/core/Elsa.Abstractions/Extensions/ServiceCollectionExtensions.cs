@@ -25,11 +25,11 @@ namespace Microsoft.Extensions.DependencyInjection
             return services;
         }
 
-        public static IServiceCollection AddTriggerProvider<T>(this IServiceCollection services) where T : class, ITriggerProvider => services.AddTransient<ITriggerProvider, T>();
+        public static IServiceCollection AddTriggerProvider<T>(this IServiceCollection services) where T : class, IWorkflowTriggerProvider => services.AddTransient<IWorkflowTriggerProvider, T>();
        
         public static IServiceCollection AddTriggerProvider(this IServiceCollection services, Assembly assembly)
         {         
-            var triggerProviderType = typeof(ITriggerProvider);
+            var triggerProviderType = typeof(IWorkflowTriggerProvider);
             var types = assembly.GetAllWithInterface(triggerProviderType);
 
             foreach (var type in types)

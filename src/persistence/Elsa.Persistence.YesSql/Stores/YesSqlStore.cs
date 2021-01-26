@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -50,6 +51,23 @@ namespace Elsa.Persistence.YesSql.Stores
             {
                 _semaphore.Release();
             }
+        }
+
+        public async Task AddAsync(T entity, CancellationToken cancellationToken = default)
+        {
+            var document = Mapper.Map<TDocument>(entity);
+            Session.Save(document, CollectionName);
+            await Session.CommitAsync();
+        }
+
+        public async Task AddManyAsync(IEnumerable<T> entities, CancellationToken cancellationToken = default)
+        {
+            var documents = entities.Select(x => Mapper.Map<TDocument>(x));
+
+            foreach (var document in documents) 
+                Session.Save(document, CollectionName);
+            
+            await Session.CommitAsync();
         }
 
         public async Task DeleteAsync(T entity, CancellationToken cancellationToken = default)

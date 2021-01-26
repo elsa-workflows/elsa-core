@@ -20,7 +20,7 @@ namespace Elsa.Activities.Entity.Triggers
         public string? CorrelationId { get; }
     }
 
-    public class EntityChangedTriggerProvider : TriggerProvider<EntityChangedTrigger, EntityChanged>
+    public class EntityChangedWorkflowTriggerProvider : WorkflowTriggerProvider<EntityChangedTrigger, EntityChanged>
     {
         public override async ValueTask<ITrigger> GetTriggerAsync(TriggerProviderContext<EntityChanged> context, CancellationToken cancellationToken) =>
             new EntityChangedTrigger(

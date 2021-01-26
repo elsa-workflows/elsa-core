@@ -11,7 +11,7 @@ namespace Elsa.Activities.Signaling
         public string? CorrelationId { get; set; }
     }
 
-    public class SignalReceivedTriggerProvider : TriggerProvider<SignalReceivedTrigger, SignalReceived>
+    public class SignalReceivedWorkflowTriggerProvider : WorkflowTriggerProvider<SignalReceivedTrigger, SignalReceived>
     {
         public override async ValueTask<ITrigger> GetTriggerAsync(TriggerProviderContext<SignalReceived> context, CancellationToken cancellationToken) =>
             new SignalReceivedTrigger
