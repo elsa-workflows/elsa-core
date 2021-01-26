@@ -20,6 +20,7 @@ namespace Elsa.Services
             activity.Data = context.GetData();
             activity.Id = context.ActivityId;
 
+            // TODO: Make extensible / apply open/closed.
             if(ShouldSetProperties(activity))
                 await context.WorkflowExecutionContext.WorkflowBlueprint.ActivityPropertyProviders.SetActivityPropertiesAsync(activity, context, context.CancellationToken);
             
