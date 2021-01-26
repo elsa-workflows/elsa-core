@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Services;
@@ -11,7 +12,7 @@ namespace Elsa.Runtime
 
         public StartupRunner(IEnumerable<IStartupTask> startupTasks)
         {
-            _startupTasks = startupTasks;
+            _startupTasks = startupTasks.OrderBy(x => x.Order).ToList();
         }
 
         public async Task StartupAsync(CancellationToken cancellationToken = default)

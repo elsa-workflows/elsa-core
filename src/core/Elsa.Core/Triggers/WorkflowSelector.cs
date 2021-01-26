@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -7,8 +8,9 @@ using Elsa.Persistence;
 using Elsa.Persistence.Specifications;
 using Elsa.Persistence.Specifications.WorkflowTriggers;
 using Elsa.Serialization;
-using Elsa.Services;
-using Elsa.Services.Models;
+using Newtonsoft.Json;
+using NodaTime;
+using NodaTime.Serialization.JsonNet;
 
 namespace Elsa.Triggers
 {
@@ -16,23 +18,20 @@ namespace Elsa.Triggers
     {
         private readonly IWorkflowTriggerStore _workflowTriggerStore;
         private readonly IWorkflowTriggerHasher _hasher;
-        private readonly IContentSerializer _contentSerializer;
+        private JsonSerializerSettings _serializerSettings;
 
-        public WorkflowSelector(
-            IWorkflowTriggerStore workflowTriggerStore,
-            IWorkflowTriggerHasher hasher,
-            IContentSerializer contentSerializer)
+        public WorkflowSelector(IWorkflowTriggerStore workflowTriggerStore, IWorkflowTriggerHasher hasher)
         {
             _workflowTriggerStore = workflowTriggerStore;
             _hasher = hasher;
-            _contentSerializer = contentSerializer;
+            _serializerSettings = new JsonSerializerSettings().ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
         }
 
         public async Task<IEnumerable<WorkflowSelectorResult>> SelectWorkflowsAsync(string activityType, IEnumerable<ITrigger> triggers, string? tenantId, CancellationToken cancellationToken = default)
         {
             var triggerList = triggers as ICollection<ITrigger> ?? triggers.ToList();
             var specification = !triggerList.Any()
-                ? (ISpecification<WorkflowTrigger>) new TriggerSpecification(activityType, tenantId)
+                ? new TriggerSpecification(activityType, tenantId)
                 : BuildSpecification(activityType, triggerList, tenantId);
 
             var records = await _workflowTriggerStore.FindManyAsync(specification, cancellationToken: cancellationToken);
@@ -46,7 +45,8 @@ namespace Elsa.Triggers
 
         private IEnumerable<WorkflowSelectorResult> SelectResults(IEnumerable<WorkflowTrigger> workflowTriggers) =>
             from workflowTrigger in workflowTriggers
-            let model = (ITrigger) _contentSerializer.Deserialize(workflowTrigger.Model)!
+            let triggerType = Type.GetType(workflowTrigger.TypeName)
+            let model = (ITrigger) JsonConvert.DeserializeObject(workflowTrigger.Model, triggerType, _serializerSettings)!
             select new WorkflowSelectorResult(workflowTrigger.WorkflowInstanceId, workflowTrigger.ActivityId, model);
     }
 }

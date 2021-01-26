@@ -24,7 +24,6 @@ namespace Elsa.Serialization
         public object? Deserialize(JToken token, Type targetType) => token.ToObject(targetType, Serializer);
         public T Deserialize<T>(string json) => JsonConvert.DeserializeObject<T>(json, SerializerSettings)!;
         public object? Deserialize(string json, Type targetType) => JsonConvert.DeserializeObject(json, targetType, SerializerSettings);
-        public object? Deserialize(string json) => JsonConvert.DeserializeObject(json, SerializerSettings);
         public object GetSettings() => SerializerSettings;
 
         public static void ConfigureDefaultJsonSerializationSettings(JsonSerializerSettings settings)

@@ -2,7 +2,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Timers.Hangfire.Models;
 using Elsa.Activities.Timers.Services;
-using Elsa.Services.Models;
 using Hangfire;
 using NodaTime;
 

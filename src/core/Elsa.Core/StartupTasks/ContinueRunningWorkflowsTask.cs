@@ -34,6 +34,8 @@ namespace Elsa.StartupTasks
             _logger = logger;
         }
 
+        public int Order => 1000;
+
         public async Task ExecuteAsync(CancellationToken cancellationToken = default)
         {
             var lockKey = GetType().Name;

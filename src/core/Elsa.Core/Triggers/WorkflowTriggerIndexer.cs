@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,6 +11,9 @@ using Elsa.Serialization;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Open.Linq.AsyncExtensions;
+using Rebus.Extensions;
 
 namespace Elsa.Triggers
 {
@@ -18,47 +22,56 @@ namespace Elsa.Triggers
         private readonly IWorkflowRegistry _workflowRegistry;
         private readonly IWorkflowTriggerStore _workflowTriggerStore;
         private readonly IWorkflowContextManager _workflowContextManager;
-        private readonly IWorkflowFactory _workflowFactory;
         private readonly IEnumerable<IWorkflowTriggerProvider> _providers;
         private readonly IIdGenerator _idGenerator;
         private readonly IContentSerializer _contentSerializer;
         private readonly IWorkflowTriggerHasher _hasher;
         private readonly IServiceProvider _serviceProvider;
+        private readonly ILogger _logger;
+        private Stopwatch _stopwatch = new();
 
         public WorkflowTriggerIndexer(
             IWorkflowRegistry workflowRegistry,
             IWorkflowTriggerStore workflowTriggerStore,
             IWorkflowContextManager workflowContextManager,
-            IWorkflowFactory workflowFactory,
             IEnumerable<IWorkflowTriggerProvider> providers,
             IIdGenerator idGenerator,
             IContentSerializer contentSerializer,
             IServiceProvider serviceProvider,
-            IWorkflowTriggerHasher hasher)
+            IWorkflowTriggerHasher hasher,
+            ILogger<WorkflowTriggerIndexer> logger)
         {
             _workflowRegistry = workflowRegistry;
             _workflowTriggerStore = workflowTriggerStore;
             _workflowContextManager = workflowContextManager;
-            _workflowFactory = workflowFactory;
             _providers = providers;
             _idGenerator = idGenerator;
             _contentSerializer = contentSerializer;
             _serviceProvider = serviceProvider;
             _hasher = hasher;
+            _logger = logger;
         }
 
         public async Task IndexTriggersAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken)
         {
+            _logger.LogInformation("Indexing triggers for workflow {WorkflowInstanceId}", workflowInstance.Id);
+            _stopwatch.Restart();
+
             await DeleteTriggersAsync(workflowInstance.Id, cancellationToken);
-            
             var workflowBlueprint = await _workflowRegistry.GetWorkflowAsync(workflowInstance.DefinitionId, VersionOptions.SpecificVersion(workflowInstance.Version), cancellationToken);
 
             if (workflowBlueprint == null)
+            {
+                _logger.LogWarning("Could not find workflow definition for workflow {WorkflowInstanceId}", workflowInstance.Id);
                 return;
+            }
 
             var blockingActivities = workflowBlueprint.GetBlockingActivities(workflowInstance!);
-            var triggerDescriptors = await ExtractTriggersAsync(workflowBlueprint, workflowInstance, blockingActivities, true, cancellationToken);
+            var triggerDescriptors = await ExtractTriggersAsync(workflowBlueprint, workflowInstance, blockingActivities, true, cancellationToken).ToList();
             await PersistTriggersAsync(triggerDescriptors, workflowInstance, cancellationToken);
+
+            _stopwatch.Stop();
+            _logger.LogInformation("Indexed {TriggerCount} triggers for workflow {WorkflowInstanceId} in {ElapsedTime}", triggerDescriptors.Count, workflowInstance.Id, _stopwatch.Elapsed);
         }
 
         public async Task DeleteTriggersAsync(IEnumerable<string> workflowInstanceIds, CancellationToken cancellationToken = default)
@@ -70,7 +83,9 @@ namespace Elsa.Triggers
         public async Task DeleteTriggersAsync(string workflowInstanceId, CancellationToken cancellationToken = default)
         {
             var specification = new WorkflowInstanceIdSpecification(workflowInstanceId);
-            await _workflowTriggerStore.DeleteManyAsync(specification, cancellationToken);
+            var count = await _workflowTriggerStore.DeleteManyAsync(specification, cancellationToken);
+            
+            _logger.LogDebug("Deleted {DeletedTriggerCount} triggers for workflow {WorkflowInstanceId}", count, workflowInstanceId);
         }
 
         private async Task PersistTriggersAsync(IEnumerable<TriggerDescriptor> triggerDescriptors, WorkflowInstance workflowInstance, CancellationToken cancellationToken)
@@ -85,7 +100,8 @@ namespace Elsa.Triggers
                     ActivityId = triggerDescriptor.ActivityId,
                     WorkflowInstanceId = workflowInstance.Id,
                     Hash = _hasher.Hash(x),
-                    Model = _contentSerializer.Serialize(x)
+                    Model = _contentSerializer.Serialize(x),
+                    TypeName = x.GetType().GetSimpleAssemblyQualifiedName()
                 });
 
                 await _workflowTriggerStore.AddManyAsync(records, cancellationToken);

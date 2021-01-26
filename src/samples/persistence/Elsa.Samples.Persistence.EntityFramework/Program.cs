@@ -41,7 +41,7 @@ namespace Elsa.Samples.Persistence.EntityFramework
             var store = services.GetRequiredService<IWorkflowInstanceStore>();
 
             // Count the number of workflow instances of HelloWorld.
-            var count = await store.CountAsync(new WorkflowInstanceDefinitionIdSpecification(nameof(HelloWorld)));
+            var count = await store.CountAsync(new WorkflowDefinitionIdSpecification(nameof(HelloWorld)));
 
             Console.WriteLine(count);
             

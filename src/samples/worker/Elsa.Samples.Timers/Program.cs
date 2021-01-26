@@ -21,7 +21,7 @@ namespace Elsa.Samples.Timers
                         services
                             .AddElsa(options => options
                                     .UseEntityFrameworkPersistence(ef => ef
-                                        .UseSqlite("Data Source=elsa.db;Cache=Shared", db => db.MigrationsAssembly(typeof(SqliteElsaContextFactory).Assembly.GetName().Name)), true)
+                                        .UseSqlite("Data Source=elsa.sqlite.db;Cache=Shared", db => db.MigrationsAssembly(typeof(SqliteElsaContextFactory).Assembly.GetName().Name)), true)
                                     .AddConsoleActivities()
                                     .AddQuartzTimerActivities()
                                     .AddWorkflow<RecurringTaskWorkflow>()

@@ -21,6 +21,8 @@ namespace Elsa.Indexing
             _elasticsearchInstanceStore = elasticsearchInstanceStore;
         }
 
+        public int Order => 0;
+
         public async Task ExecuteAsync(CancellationToken cancellationToken = default)
         {
             if(await _elasticsearchDefinitionStore.ExistsIndexAsync() == false) 

@@ -116,7 +116,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IWorkflowBlueprintMaterializer, WorkflowBlueprintMaterializer>()
                 .AddSingleton<IWorkflowBlueprintReflector, WorkflowBlueprintReflector>()
                 .AddSingleton<IWorkflowTriggerHasher, WorkflowTriggerHasher>()
-                .AddSingleton<IWorkflowTriggerIndexer, WorkflowTriggerIndexer>()
+                .AddScoped<IWorkflowTriggerIndexer, WorkflowTriggerIndexer>()
                 .AddSingleton<IBackgroundWorker, BackgroundWorker>()
                 .AddScoped<IWorkflowQueue, WorkflowQueue>()
                 .AddScoped<IWorkflowSelector, WorkflowSelector>()

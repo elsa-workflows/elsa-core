@@ -56,11 +56,10 @@ namespace Elsa.Activities.Timers.Quartz.Jobs
             
             try
             {
-                
-                var workflowBlueprint = (await _workflowRegistry.GetWorkflowAsync(workflowDefinitionId, tenantId, VersionOptions.Published, cancellationToken))!;
-
                 if (workflowInstanceId == null)
                 {
+                    var workflowBlueprint = (await _workflowRegistry.GetWorkflowAsync(workflowDefinitionId, tenantId, VersionOptions.Published, cancellationToken))!;
+                    
                     if (workflowBlueprint.IsSingleton || await GetWorkflowIsAlreadyExecutingAsync(tenantId, workflowDefinitionId) == false)
                         await _workflowQueue.EnqueueWorkflowDefinition(workflowDefinitionId, tenantId, activityId, null, null, null, cancellationToken);
                 }
@@ -73,7 +72,7 @@ namespace Elsa.Activities.Timers.Quartz.Jobs
             {
                 _stopwatch.Stop();
                 await _distributedLockProvider.ReleaseLockAsync(lockKey, cancellationToken);
-                _logger.LogDebug("Held lock on {WorkflowInstanceId} / {WorkflowDefinitionId} / {ActivityId} for {LockTime}.", workflowInstanceId, workflowDefinitionId, activityId, _stopwatch.Elapsed);
+                _logger.LogDebug("Held lock on {WorkflowInstanceId} / {WorkflowDefinitionId} / {ActivityId} for {LockTime}", workflowInstanceId, workflowDefinitionId, activityId, _stopwatch.Elapsed);
             }
         }
 

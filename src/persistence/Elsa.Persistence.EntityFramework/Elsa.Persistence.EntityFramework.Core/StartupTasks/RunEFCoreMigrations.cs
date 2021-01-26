@@ -1,27 +1,27 @@
-﻿using System;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Services;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 
 namespace Elsa.Persistence.EntityFramework.Core.StartupTasks
 {
     /// <summary>
     /// Executes EF Core migrations.
     /// </summary>
-    public class RunEFCoreMigrations : IHostedService
+    public class RunEFCoreMigrations : IStartupTask
     {
-        private readonly IServiceProvider _serviceProvider;
-        public RunEFCoreMigrations(IServiceProvider serviceProvider) => _serviceProvider = serviceProvider;
+        private readonly ElsaContext _dbContext;
 
-        public async Task StartAsync(CancellationToken cancellationToken)
+        public RunEFCoreMigrations(ElsaContext dbContext)
         {
-            using var scope = _serviceProvider.CreateScope();
-            var elsaContext = scope.ServiceProvider.GetRequiredService<ElsaContext>();
-            await elsaContext.Database.MigrateAsync(cancellationToken);
+            _dbContext = dbContext;
         }
 
-        public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+        public int Order => 0;
+        
+        public async Task ExecuteAsync(CancellationToken cancellationToken = default)
+        {
+            await _dbContext.Database.MigrateAsync(cancellationToken);
+        }
     }
 }

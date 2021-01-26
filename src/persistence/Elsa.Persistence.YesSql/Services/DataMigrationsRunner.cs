@@ -14,6 +14,8 @@ namespace Elsa.Persistence.YesSql.Services
             _dataMigrationManager = dataMigrationManager;
         }
 
+        public int Order => 0;
+
         public async Task ExecuteAsync(CancellationToken cancellationToken = default) =>
             await _dataMigrationManager.RunAllAsync();
     }

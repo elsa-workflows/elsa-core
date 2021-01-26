@@ -11,12 +11,13 @@ namespace Elsa.Samples.Timers.Workflows
         public void Build(IWorkflowBuilder workflow)
         {
             workflow
+                .AsSingleton()
                 .For(0, 3, iterate => iterate
                     .Then<Fork>(fork => fork.WithBranches("A", "B"), fork =>
                     {
                         fork
                             .When("A")
-                            .Timer(Duration.FromSeconds(10)).WithId("timer-a")
+                            .Timer(Duration.FromSeconds(1000)).WithId("timer-a")
                             .WriteLine("Timer A went off. Exiting fork").WithId("write-line-a")
                             .Then("Join2");
 

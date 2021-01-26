@@ -74,6 +74,24 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
                 {
                     table.PrimaryKey("PK_WorkflowInstances", x => x.Id);
                 });
+
+            migrationBuilder.CreateTable(
+                name: "WorkflowTriggers",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    TenantId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Hash = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    TypeName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Model = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ActivityType = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ActivityId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    WorkflowInstanceId = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_WorkflowTriggers", x => x.Id);
+                });
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
@@ -86,6 +104,9 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
 
             migrationBuilder.DropTable(
                 name: "WorkflowInstances");
+
+            migrationBuilder.DropTable(
+                name: "WorkflowTriggers");
         }
     }
 }

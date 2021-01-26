@@ -4,10 +4,10 @@ using Elsa.Models;
 
 namespace Elsa.Persistence.Specifications.WorkflowInstances
 {
-    public class WorkflowInstanceDefinitionIdSpecification : Specification<WorkflowInstance>
+    public class WorkflowDefinitionIdSpecification : Specification<WorkflowInstance>
     {
         public string WorkflowDefinitionId { get; set; }
-        public WorkflowInstanceDefinitionIdSpecification(string workflowDefinitionId) => WorkflowDefinitionId = workflowDefinitionId;
+        public WorkflowDefinitionIdSpecification(string workflowDefinitionId) => WorkflowDefinitionId = workflowDefinitionId;
         public override Expression<Func<WorkflowInstance, bool>> ToExpression() => x => x.DefinitionId == WorkflowDefinitionId;
     }
 }

@@ -10,22 +10,22 @@ namespace Elsa.Runtime
         public static IServiceCollection AddStartupRunner(this IServiceCollection services)
         {
             return services
-                .AddTransient<IStartupRunner, StartupRunner>()
+                .AddScoped<IStartupRunner, StartupRunner>()
                 .AddHostedService<StartupRunnerHostedService>();
         }
 
         public static IServiceCollection AddStartupTask<TStartupTask>(this IServiceCollection services) where TStartupTask : class, IStartupTask
         {
             return services
-                .AddTransient<IStartupTask, TStartupTask>()
-                .AddTransient<TStartupTask>();
+                .AddScoped<IStartupTask, TStartupTask>()
+                .AddScoped<TStartupTask>();
         }
         
         public static IServiceCollection AddStartupTask<TStartupTask>(this IServiceCollection services, Func<IServiceProvider, TStartupTask> factory) where TStartupTask : class, IStartupTask
         {
             return services
-                .AddTransient<IStartupTask, TStartupTask>(factory)
-                .AddTransient<TStartupTask>();
+                .AddScoped<IStartupTask, TStartupTask>(factory)
+                .AddScoped<TStartupTask>();
         }
     }
 }

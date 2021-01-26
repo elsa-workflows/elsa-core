@@ -13,7 +13,7 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "5.0.1");
+                .HasAnnotation("ProductVersion", "5.0.2");
 
             modelBuilder.Entity("Elsa.Models.WorkflowDefinition", b =>
                 {
@@ -153,6 +153,42 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("WorkflowInstances");
+                });
+
+            modelBuilder.Entity("Elsa.Models.WorkflowTrigger", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ActivityId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ActivityType")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Hash")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Model")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TenantId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TypeName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("WorkflowInstanceId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("WorkflowTriggers");
                 });
 #pragma warning restore 612, 618
         }

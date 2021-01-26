@@ -1,6 +1,4 @@
-﻿using Elsa.Services.Models;
-
-namespace Elsa.Triggers
+﻿namespace Elsa.Triggers
 {
     public class WorkflowSelectorResult
     {

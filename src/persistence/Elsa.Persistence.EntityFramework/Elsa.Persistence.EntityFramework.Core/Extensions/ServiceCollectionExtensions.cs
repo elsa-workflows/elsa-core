@@ -1,6 +1,7 @@
 using System;
 using Elsa.Persistence.EntityFramework.Core.StartupTasks;
 using Elsa.Persistence.EntityFramework.Core.Stores;
+using Elsa.Runtime;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -21,7 +22,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Extensions
                 .AddScoped<EntityFrameworkWorkflowTriggerStore>();
 
             if (autorunMigrations)
-                elsa.Services.AddHostedService<RunEFCoreMigrations>();
+                elsa.Services.AddStartupTask<RunEFCoreMigrations>();
 
             return elsa
                 .UseWorkflowDefinitionStore(sp => sp.GetRequiredService<EntityFrameworkWorkflowDefinitionStore>())
