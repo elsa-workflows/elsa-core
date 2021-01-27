@@ -136,8 +136,9 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IServiceBusFactory, ServiceBusFactory>()
                 .AddSingleton<ICommandSender, CommandSender>()
                 .AddSingleton<IEventPublisher, EventPublisher>()
-                .AutoRegisterHandlersFromAssemblyOf<RunWorkflowInstanceConsumer>()
                 .AddScoped<ISignaler, Signaler>()
+                .AddScoped<IWorkflowExecutionLog, WorkflowExecutionLog>()
+                .AutoRegisterHandlersFromAssemblyOf<RunWorkflowInstanceConsumer>()
                 .AddTriggerProvider<SignalReceivedTriggerProvider>()
                 .AddTriggerProvider<RunWorkflowTriggerProvider>()
                 .AddMetadataHandlers();

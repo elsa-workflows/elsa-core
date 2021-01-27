@@ -23,6 +23,12 @@ namespace Elsa.Persistence.Decorators
             entity = Initialize(entity);
             await _store.SaveAsync(entity, cancellationToken);
         }
+        
+        public async Task UpdateAsync(WorkflowDefinition entity, CancellationToken cancellationToken)
+        {
+            entity = Initialize(entity);
+            await _store.UpdateAsync(entity, cancellationToken);
+        }
 
         public Task DeleteAsync(WorkflowDefinition entity, CancellationToken cancellationToken) => _store.DeleteAsync(entity, cancellationToken);
         public Task<int> DeleteManyAsync(ISpecification<WorkflowDefinition> specification, CancellationToken cancellationToken) => _store.DeleteManyAsync(specification, cancellationToken);

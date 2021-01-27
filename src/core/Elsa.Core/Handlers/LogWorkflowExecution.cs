@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Elsa.Handlers
 {
-    public class LogWorkflowExecution : INotificationHandler<ActivityExecuting>, INotificationHandler<ActivityExecuted>, INotificationHandler<WorkflowExecutionBurstCompleted>
+    public class LogWorkflowExecution : INotificationHandler<ActivityExecuting>, INotificationHandler<ActivityExecuted>, INotificationHandler<WorkflowExecutionBurstCompleted>, INotificationHandler<ActivityFaulted>
     {
         private readonly ILogger _logger;
         private readonly Stopwatch _stopwatch = new();
@@ -16,14 +16,14 @@ namespace Elsa.Handlers
         {
             _logger = logger;
         }
-        
+
         public Task Handle(ActivityExecuting notification, CancellationToken cancellationToken)
         {
             _stopwatch.Start();
             var activityBlueprint = notification.Activity;
             var activityId = activityBlueprint.Id;
             var workflowInstanceId = notification.WorkflowExecutionContext.WorkflowInstance.Id;
-            _logger.LogDebug("Executing activity {ActivityType} {ActivityId} for workflow {workflowInstanceId}", activityBlueprint.Type, activityId, workflowInstanceId);
+            _logger.LogDebug("Executing activity {ActivityType} {ActivityId} for workflow {WorkflowInstanceId}", activityBlueprint.Type, activityId, workflowInstanceId);
             return Task.CompletedTask;
         }
 
@@ -33,13 +33,19 @@ namespace Elsa.Handlers
             var activityBlueprint = notification.Activity;
             var activityId = activityBlueprint.Id;
             var workflowInstanceId = notification.WorkflowExecutionContext.WorkflowInstance.Id;
-            _logger.LogDebug("Executed activity {ActivityType} {ActivityId} for workflow {workflowInstanceId} in {ElapsedTime}", activityBlueprint.Type, activityId, workflowInstanceId, _stopwatch.Elapsed);
+            _logger.LogDebug("Executed activity {ActivityType} {ActivityId} for workflow {WorkflowInstanceId} in {ElapsedTime}", activityBlueprint.Type, activityId, workflowInstanceId, _stopwatch.Elapsed);
             return Task.CompletedTask;
         }
 
         public Task Handle(WorkflowExecutionBurstCompleted notification, CancellationToken cancellationToken)
         {
             _logger.LogDebug("Burst of workflow execution completed for workflow {WorkflowInstanceId}", notification.WorkflowExecutionContext.WorkflowInstance.Id);
+            return Task.CompletedTask;
+        }
+
+        public Task Handle(ActivityFaulted notification, CancellationToken cancellationToken)
+        {
+            _logger.LogWarning(notification.Exception, "An error occurred while executing activity {ActivityId}. Entering Faulted state", notification.Activity.Id);
             return Task.CompletedTask;
         }
     }
