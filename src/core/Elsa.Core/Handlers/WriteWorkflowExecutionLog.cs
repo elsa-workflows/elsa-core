@@ -16,8 +16,8 @@ namespace Elsa.Handlers
             _workflowExecutionLog = workflowExecutionLog;
         }
 
-        public async Task Handle(ActivityExecuting notification, CancellationToken cancellationToken) => await WriteEntryAsync("Executing", notification, null, cancellationToken);
-        public async Task Handle(ActivityExecuted notification, CancellationToken cancellationToken) => await WriteEntryAsync("Executed", notification, null, cancellationToken);
+        public async Task Handle(ActivityExecuting notification, CancellationToken cancellationToken) => await WriteEntryAsync(notification.Resuming ? "Resuming" : "Executing", notification, null, cancellationToken);
+        public async Task Handle(ActivityExecuted notification, CancellationToken cancellationToken) => await WriteEntryAsync(notification.Resuming ? "Resumed" : "Executed", notification, null, cancellationToken);
 
         public async Task Handle(ActivityFaulted notification, CancellationToken cancellationToken)
         {
