@@ -11,11 +11,11 @@ This list of sample implementations showcase a variety of workflows using ELSA.
 7. [Document Approval](Sample07) - Example of a Document Approval workflow.
 8. [Create and Handle Orders](Sample08) - Example of a workflow that creates and handles orders. Uses Mass Transit and RabbitMq.
 9. [Calculator: Defined in Json](Sample9) - A simple console program that loads & executes a workflow designed with the HTML5 workflow designer.
-10. [Hellow World: YesSql](Sample10) - A simple demonstration of using YesSql persistence providers.
+10. [Hello World: YesSql](Sample10) - A simple demonstration of using YesSql persistence providers.
 11. [Correlation](Sample11) - Demonstrates workflow correlation.
 12. [User Task](Sample12) - Demonstrates workflow correlation & user tasks.
 13. [Activity Output](Sample13) - A strongly-typed workflows program demonstrating scripting, and branching.
-14. [Hellow World: Entity Framework Core](Sample14) - A simple demonstration of using Entity Framework Core persistence providers.
+14. [Hello World: Entity Framework Core](Sample14) - A simple demonstration of using Entity Framework Core persistence providers.
 15. [Hello World: MongoDb](Sample15) - A simple demonstration of using the MongoDB persistence providers. Docker(optional)
 16. [ELSA Dashboard: Web App, MongoDb Persistence](Sample16) - ELSA Dashboard MVC wep application.
 17. [Create Person: Console Application](Sample17) - Example of a workflow that creates a Person entity.

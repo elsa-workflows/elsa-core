@@ -4,7 +4,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
 {
     public class PostgreSqlContext : ElsaContext
     {
-        public PostgreSqlContext(DbContextOptions<PostgreSqlContext> options) : base(options)
+        public PostgreSqlContext(DbContextOptions options) : base(options)
         {
         }
     }

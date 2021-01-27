@@ -28,7 +28,7 @@ namespace Sample14
             await startupRunner.StartupAsync();
 
             // Create a workflow definition.
-            var registry = services.GetService<IWorkflowRegistry>();
+            var registry = services.GetRequiredService<IWorkflowRegistry>();
             var workflowDefinition = await registry.GetWorkflowDefinitionAsync<HelloWorldWorkflow>();
 
             // Mark this definition as the "latest" version.
@@ -70,9 +70,11 @@ namespace Sample14
         {
             return new ServiceCollection()
                 .AddElsa(
-                    x => x.AddEntityFrameworkStores<SqliteContext>(
+                    x => x.AddEntityFrameworkCoreProvider<SqliteContext>(
                         options => options
-                            .UseSqlite(@"Data Source=c:\data\elsa.entity-framework-core.db;Cache=Shared")))
+                            .UseSqlite(
+                                @"Data Source=c:\data\elsa.entity-framework-core.db;Cache=Shared",
+                                db => db.MigrationsAssembly(typeof(SqliteContextFactory).Assembly.GetName().Name)), autoRunMigrations: true))
                 .AddStartupRunner()
                 .AddConsoleActivities()
                 .AddWorkflow<HelloWorldWorkflow>()

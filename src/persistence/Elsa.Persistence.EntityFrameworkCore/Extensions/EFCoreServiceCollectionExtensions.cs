@@ -2,6 +2,7 @@ using System;
 using Elsa.Extensions;
 using Elsa.Mapping;
 using Elsa.Persistence.EntityFrameworkCore.DbContexts;
+using Elsa.Persistence.EntityFrameworkCore.HostedServices;
 using Elsa.Persistence.EntityFrameworkCore.Mapping;
 using Elsa.Persistence.EntityFrameworkCore.Services;
 using Microsoft.EntityFrameworkCore;
@@ -14,7 +15,8 @@ namespace Elsa.Persistence.EntityFrameworkCore.Extensions
         public static EntityFrameworkCoreElsaBuilder AddEntityFrameworkCoreProvider<TElsaContext>(
             this ElsaBuilder configuration,
             Action<DbContextOptionsBuilder> configureOptions,
-            bool usePooling = true)
+            bool usePooling = true, 
+            bool autoRunMigrations = false)
             where TElsaContext : ElsaContext
         {
             var services = configuration.Services;
@@ -26,6 +28,9 @@ namespace Elsa.Persistence.EntityFrameworkCore.Extensions
             services
                 .AddMapperProfile<NodaTimeProfile>(ServiceLifetime.Singleton)
                 .AddMapperProfile<EntitiesProfile>(ServiceLifetime.Singleton);
+            
+            if (autoRunMigrations)
+                services.AddHostedService<RunMigrations>();
 
             return new EntityFrameworkCoreElsaBuilder(configuration.Services);
         }
