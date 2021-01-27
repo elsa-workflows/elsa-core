@@ -53,7 +53,8 @@ namespace Elsa.Activities.ControlFlow
                 return Noop();
             
             var ancestorActivityIds = workflowExecutionContext.GetInboundActivityPath(Id).ToList();
-            var ancestors = workflowExecutionContext.WorkflowBlueprint.Activities.Where(x => ancestorActivityIds.Contains(x.Id)).ToList();
+            var activities = workflowExecutionContext.WorkflowBlueprint.Activities.ToDictionary(x => x.Id);
+            var ancestors = ancestorActivityIds.Select(x => activities[x]).ToList();
             var fork = ancestors.FirstOrDefault(x => x.Type == nameof(Fork));
 
             await RemoveBlockingActivitiesAsync(workflowExecutionContext, fork);
