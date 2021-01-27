@@ -26,6 +26,12 @@ namespace Elsa.Persistence.Decorators
             await _store.SaveAsync(entity, cancellationToken);
             await _mediator.Publish(new WorkflowInstanceSaved(entity), cancellationToken);
         }
+        
+        public async Task UpdateAsync(WorkflowInstance entity, CancellationToken cancellationToken = default)
+        {
+            await _store.UpdateAsync(entity, cancellationToken);
+            await _mediator.Publish(new WorkflowInstanceSaved(entity), cancellationToken);
+        }
 
         public async Task DeleteAsync(WorkflowInstance entity, CancellationToken cancellationToken = default)
         {

@@ -42,6 +42,12 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
             }
         }
 
+        public async Task UpdateAsync(T entity, CancellationToken cancellationToken = default)
+        {
+            OnSaving(entity);
+            await DbContext.SaveChangesAsync(cancellationToken);
+        }
+
         public async Task DeleteAsync(T entity, CancellationToken cancellationToken = default)
         {
             await DbSet.DeleteByKeyAsync(cancellationToken, entity.Id);
@@ -88,11 +94,11 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
             var entity = await DbSet.FirstOrDefaultAsync(filter, cancellationToken);
             return entity != null ? ReadShadowProperties(entity) : default;
         }
-        
+
         protected virtual void OnSaving(T entity)
         {
         }
-        
+
         protected virtual void OnLoading(T entity)
         {
         }

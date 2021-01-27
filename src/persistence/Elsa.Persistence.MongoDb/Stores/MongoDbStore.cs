@@ -29,6 +29,15 @@ namespace Elsa.Persistence.MongoDb.Stores
             var filter = GetFilter(entity.Id);
             await Collection.ReplaceOneAsync(filter, entity, new ReplaceOptions { IsUpsert = true }, cancellationToken);
         }
+        
+        public async Task UpdateAsync(T entity, CancellationToken cancellationToken = default)
+        {
+            if (entity.Id == null!)
+                entity.Id = IdGenerator.Generate();
+
+            var filter = GetFilter(entity.Id);
+            await Collection.ReplaceOneAsync(filter, entity, new ReplaceOptions { IsUpsert = false }, cancellationToken);
+        }
 
         public async Task DeleteAsync(T entity, CancellationToken cancellationToken = default)
         {
