@@ -45,7 +45,10 @@ namespace Elsa.StartupTasks
             {
                 var instances = await _workflowInstanceStore.FindManyAsync(new WorkflowStatusSpecification(WorkflowStatus.Running), cancellationToken: cancellationToken).ToList();
 
-                _logger.LogInformation("Found {WorkflowInstanceCount} workflows with status 'Running'. Resuming each one of them", instances.Count);
+                if(instances.Any())
+                    _logger.LogInformation("Found {WorkflowInstanceCount} workflows with status 'Running'. Resuming each one of them", instances.Count);
+                else
+                    _logger.LogInformation("Found no workflows with status 'Running'. Nothing to resume");
 
                 foreach (var instance in instances)
                 {

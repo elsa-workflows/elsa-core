@@ -5,7 +5,7 @@ namespace Elsa.Persistence.EntityFramework.Core
 {
     public class ElsaContext : DbContext
     {
-        public ElsaContext(DbContextOptions<ElsaContext> options) : base(options)
+        public ElsaContext(DbContextOptions options) : base(options)
         {
         }
 
