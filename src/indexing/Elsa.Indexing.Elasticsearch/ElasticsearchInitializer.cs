@@ -12,14 +12,16 @@ namespace Elsa.Indexing
 {
     public class ElasticsearchInitializer : IStartupTask
     {
-        ElasticsearchStore<ElasticWorkflowDefinition> _elasticsearchDefinitionStore;
-        ElasticsearchStore<ElasticWorkflowInstance> _elasticsearchInstanceStore;
+        readonly ElasticsearchStore<ElasticWorkflowDefinition> _elasticsearchDefinitionStore;
+        readonly ElasticsearchStore<ElasticWorkflowInstance> _elasticsearchInstanceStore;
 
         public ElasticsearchInitializer(ElasticsearchStore<ElasticWorkflowDefinition> elasticsearchDefinitionStore, ElasticsearchStore<ElasticWorkflowInstance> elasticsearchInstanceStore)
         {
             _elasticsearchDefinitionStore = elasticsearchDefinitionStore;
             _elasticsearchInstanceStore = elasticsearchInstanceStore;
         }
+
+        public int Order => 1000;
 
         public async Task ExecuteAsync(CancellationToken cancellationToken = default)
         {
