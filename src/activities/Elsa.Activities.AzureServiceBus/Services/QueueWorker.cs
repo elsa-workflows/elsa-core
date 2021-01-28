@@ -23,14 +23,14 @@ namespace Elsa.Activities.AzureServiceBus.Services
     public class QueueWorker : IAsyncDisposable
     {
         private readonly IMessageReceiver _messageReceiver;
-        private readonly IServiceProvider _serviceProvider;
+        private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly IDistributedLockProvider _distributedLockProvider;
         private readonly ILogger _logger;
 
-        public QueueWorker(IMessageReceiver messageReceiver, IServiceProvider serviceProvider, IDistributedLockProvider distributedLockProvider, IOptions<AzureServiceBusOptions> options, ILogger<QueueWorker> logger)
+        public QueueWorker(IMessageReceiver messageReceiver, IServiceScopeFactory serviceScopeFactory, IDistributedLockProvider distributedLockProvider, IOptions<AzureServiceBusOptions> options, ILogger<QueueWorker> logger)
         {
             _messageReceiver = messageReceiver;
-            _serviceProvider = serviceProvider;
+            _serviceScopeFactory = serviceScopeFactory;
             _distributedLockProvider = distributedLockProvider;
             _logger = logger;
 
@@ -50,7 +50,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
 
         private async Task TriggerWorkflowsAsync(Message message, CancellationToken cancellationToken)
         {
-            using var scope = _serviceProvider.CreateScope();
+            using var scope = _serviceScopeFactory.CreateScope();
             var workflowRunner = scope.ServiceProvider.GetRequiredService<IWorkflowQueue>();
             var queueName = _messageReceiver.Path;
             var correlationId = message.CorrelationId;
