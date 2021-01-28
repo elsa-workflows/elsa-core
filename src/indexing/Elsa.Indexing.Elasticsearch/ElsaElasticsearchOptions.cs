@@ -4,7 +4,7 @@ namespace Elsa.Indexing
 {
     public class ElsaElasticsearchOptions
     {
-        public Uri[] Uri { get; set; }
+        public Uri[] Uri { get; set; } = new Uri[0];
 
         public string WorkflowDefinitionIndexName { get; set; } = "elsa_workflow_definition";
 
