@@ -8,6 +8,7 @@ using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services;
 using Microsoft.Extensions.Logging;
+using NodaTime;
 using Rebus.Handlers;
 
 namespace Elsa.Consumers
@@ -47,7 +48,7 @@ namespace Elsa.Consumers
             {
                 // Reschedule message.
                 _logger.LogDebug("Failed to acquire lock on workflow instance {WorkflowInstanceId}. Rescheduling message", workflowInstanceId);
-                await _commandSender.SendAsync(message);
+                await _commandSender.DeferAsync(message, Duration.FromSeconds(5));
                 return;
             }
             
