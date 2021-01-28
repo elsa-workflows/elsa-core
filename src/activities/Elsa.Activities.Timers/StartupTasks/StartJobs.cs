@@ -5,19 +5,20 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Timers.Services;
 using Elsa.Activities.Timers.Triggers;
+using Elsa.Persistence;
+using Elsa.Persistence.Specifications;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Elsa.Triggers;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using NodaTime;
 
-namespace Elsa.Activities.Timers.HostedServices
+namespace Elsa.Activities.Timers.StartupTasks
 {
     /// <summary>
     /// Starts Quartz jobs based on workflow blueprints starting with a TimerEvent, CronEvent or StartAtEvent.
     /// </summary>
-    public class StartJobs : BackgroundService
+    public class StartJobs : IStartupTask
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly IWorkflowBlueprintReflector _workflowBlueprintReflector;
@@ -32,7 +33,9 @@ namespace Elsa.Activities.Timers.HostedServices
             _clock = clock;
         }
 
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        public int Order => 2000;
+
+        public async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             using var scope = _serviceProvider.CreateScope();
             var workflowRegistry = scope.ServiceProvider.GetRequiredService<IWorkflowRegistry>();

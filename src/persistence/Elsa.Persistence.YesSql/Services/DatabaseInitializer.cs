@@ -15,6 +15,8 @@ namespace Elsa.Persistence.YesSql.Services
             _store = store;
         }
 
+        public int Order => 0;
+
         public async Task ExecuteAsync(CancellationToken cancellationToken = default)
         {
             await _store.InitializeCollectionAsync(CollectionNames.WorkflowDefinitions);

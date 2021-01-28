@@ -15,24 +15,26 @@ namespace Elsa.StartupTasks
     /// If there are workflows in the Running state while the server starts, it means the workflow instance never finished execution, e.g. because the workflow host terminated.
     /// This startup task resumes these workflows.
     /// </summary>
-    public class ContinueRunningWorkflowsTask : IStartupTask
+    public class ContinueRunningWorkflows : IStartupTask
     {
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
         private readonly IWorkflowQueue _workflowQueue;
         private readonly IDistributedLockProvider _distributedLockProvider;
-        private readonly ILogger<ContinueRunningWorkflowsTask> _logger;
+        private readonly ILogger _logger;
 
-        public ContinueRunningWorkflowsTask(
+        public ContinueRunningWorkflows(
             IWorkflowInstanceStore workflowInstanceStore,
             IWorkflowQueue workflowQueue,
             IDistributedLockProvider distributedLockProvider,
-            ILogger<ContinueRunningWorkflowsTask> logger)
+            ILogger<ContinueRunningWorkflows> logger)
         {
             _workflowInstanceStore = workflowInstanceStore;
             _workflowQueue = workflowQueue;
             _distributedLockProvider = distributedLockProvider;
             _logger = logger;
         }
+
+        public int Order => 1000;
 
         public async Task ExecuteAsync(CancellationToken cancellationToken = default)
         {

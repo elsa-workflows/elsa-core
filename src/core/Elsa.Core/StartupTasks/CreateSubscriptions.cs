@@ -3,11 +3,10 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Services;
-using Microsoft.Extensions.Hosting;
 
-namespace Elsa.HostedServices
+namespace Elsa.StartupTasks
 {
-    public class CreateSubscriptions : IHostedService
+    public class CreateSubscriptions : IStartupTask
     {
         private readonly IServiceBusFactory _serviceBusFactory;
         private readonly IEnumerable<Type> _messageTypes;
@@ -18,7 +17,9 @@ namespace Elsa.HostedServices
             _messageTypes = elsaOptions.MessageTypes;
         }
 
-        public async Task StartAsync(CancellationToken cancellationToken)
+        public int Order => 900;
+
+        public async Task ExecuteAsync(CancellationToken cancellationToken)
         {
             foreach (var messageType in _messageTypes)
             {
@@ -26,7 +27,5 @@ namespace Elsa.HostedServices
                 await bus.Subscribe(messageType);
             }
         }
-
-        public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     }
 }

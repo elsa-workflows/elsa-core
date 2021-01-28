@@ -40,8 +40,6 @@ namespace Microsoft.Extensions.DependencyInjection
             this IServiceCollection services,
             Action<ElsaOptions>? configure = default)
         {
-            services.AddStartupRunner();
-            
             var options = new ElsaOptions(services);
             configure?.Invoke(options);
 
@@ -53,7 +51,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton(options.DistributedLockProviderFactory)
                 .AddSingleton(options.SignalFactory)
                 .AddSingleton(options.StorageFactory)
-                .AddStartupTask<ContinueRunningWorkflowsTask>();
+                .AddStartupTask<ContinueRunningWorkflows>();
 
             options
                 .AddWorkflowsCore()
@@ -67,8 +65,6 @@ namespace Microsoft.Extensions.DependencyInjection
             services.Decorate<IWorkflowDefinitionStore, InitializingWorkflowDefinitionStore>();
             services.Decorate<IWorkflowDefinitionStore, EventPublishingWorkflowDefinitionStore>();
             services.Decorate<IWorkflowInstanceStore, EventPublishingWorkflowInstanceStore>();
-            
-            services.AddHostedService<CreateSubscriptions>();
 
             return services;
         }

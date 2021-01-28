@@ -16,6 +16,8 @@ namespace Elsa.Persistence.MongoDb.Services
             _mongoClient = mongoClient;
         }
 
+        public int Order => 0;
+
         public async Task ExecuteAsync(CancellationToken cancellationToken = default)
         {
             await CreateWorkflowInstancesIndexes(cancellationToken);

@@ -7,11 +7,10 @@ using System.Threading.Tasks;
 using Elsa.Activities.AzureServiceBus.Services;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 
-namespace Elsa.Activities.AzureServiceBus.HostedServices
+namespace Elsa.Activities.AzureServiceBus.StartupTasks
 {
-    public class StartServiceBusQueues : BackgroundService
+    public class StartServiceBusQueues : IStartupTask
     {
         private readonly IWorkflowBlueprintReflector _workflowBlueprintReflector;
         private readonly IMessageReceiverFactory _messageReceiverFactory;
@@ -24,7 +23,9 @@ namespace Elsa.Activities.AzureServiceBus.HostedServices
             _serviceProvider = serviceProvider;
         }
 
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        public int Order => 2000;
+
+        public async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             var cancellationToken = stoppingToken;
             var queueNames = (await GetQueueNamesAsync(cancellationToken).ToListAsync(cancellationToken)).Distinct();

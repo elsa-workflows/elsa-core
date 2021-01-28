@@ -16,8 +16,10 @@ namespace Elsa.Activities.Rebus.StartupTasks
             _serviceBusFactory = serviceBusFactory;
             _messageTypes = messageTypes;
         }
-        
-        public async Task ExecuteAsync(CancellationToken cancellationToken = default)
+
+        public int Order => 900;
+
+        public async Task ExecuteAsync(CancellationToken cancellationToken)
         {
             foreach (var messageType in _messageTypes)
             {
