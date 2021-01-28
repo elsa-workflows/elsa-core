@@ -6,6 +6,7 @@ using Elsa.Samples.Timers.Workflows;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using NodaTime;
 
 namespace Elsa.Samples.Timers
 {
@@ -27,9 +28,9 @@ namespace Elsa.Samples.Timers
                                     .AddWorkflow<RecurringTaskWorkflow>()
                                     .AddActivity<MyContainer1>()
                                     .AddActivity<MyContainer2>()
-                                //.AddWorkflow<CancelTimerWorkflow>()
-                                //.AddWorkflow<CronTaskWorkflow>()
-                                //.AddWorkflow(sp => ActivatorUtilities.CreateInstance<OneOffWorkflow>(sp, sp.GetRequiredService<IClock>().GetCurrentInstant().Plus(Duration.FromSeconds(5))))
+                                .AddWorkflow<CancelTimerWorkflow>()
+                                .AddWorkflow<CronTaskWorkflow>()
+                                .AddWorkflow(sp => ActivatorUtilities.CreateInstance<OneOffWorkflow>(sp, sp.GetRequiredService<IClock>().GetCurrentInstant().Plus(Duration.FromSeconds(5))))
                             )
                             .StartWorkflow<RecurringTaskWorkflow>()
                             ;

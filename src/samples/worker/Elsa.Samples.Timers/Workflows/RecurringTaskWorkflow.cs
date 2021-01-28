@@ -17,7 +17,7 @@ namespace Elsa.Samples.Timers.Workflows
                     {
                         fork
                             .When("A")
-                            .Timer(Duration.FromSeconds(1000)).WithId("timer-a")
+                            .Timer(Duration.FromSeconds(10)).WithId("timer-a")
                             .WriteLine("Timer A went off. Exiting fork").WithId("write-line-a")
                             .Then("Join2");
 
