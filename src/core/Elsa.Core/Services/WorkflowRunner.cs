@@ -314,14 +314,18 @@ namespace Elsa.Services
                 var activityBlueprint = workflowBlueprint.GetActivity(currentActivityId)!;
                 var activityExecutionContext = new ActivityExecutionContext(scope, workflowExecutionContext, activityBlueprint, scheduledActivity.Input, cancellationToken);
                 var activity = await activityExecutionContext.ActivateActivityAsync(cancellationToken);
-                await _mediator.Publish(new ActivityExecuting(activityExecutionContext), cancellationToken);
+                var resuming = activityOperation == Resume;
+                
+                if(resuming)
+                    await _mediator.Publish(new ActivityResuming(activityExecutionContext), cancellationToken);
 
-                var result = await TryExecuteActivityAsync(activityOperation, activityExecutionContext, activity);
-
-                if (result == null)
+                await _mediator.Publish(new ActivityExecuting(resuming, activityExecutionContext), cancellationToken);
+                var result = await TryExecuteActivityAsync(activityOperation, activityExecutionContext, activity, cancellationToken);
+                
+                if(result == null)
                     return;
 
-                await _mediator.Publish(new ActivityExecuted(activityExecutionContext), cancellationToken);
+                await _mediator.Publish(new ActivityExecuted(resuming, activityExecutionContext), cancellationToken);
                 await result.ExecuteAsync(activityExecutionContext, cancellationToken);
                 workflowExecutionContext.WorkflowInstance.Output = activityExecutionContext.Output;
                 workflowExecutionContext.CompletePass();
@@ -342,7 +346,7 @@ namespace Elsa.Services
                 workflowExecutionContext.Complete();
         }
 
-        private async ValueTask<IActivityExecutionResult?> TryExecuteActivityAsync(ActivityOperation activityOperation, ActivityExecutionContext activityExecutionContext, RuntimeActivityInstance activity)
+        private async ValueTask<IActivityExecutionResult?> TryExecuteActivityAsync(ActivityOperation activityOperation, ActivityExecutionContext activityExecutionContext, RuntimeActivityInstance activity, CancellationToken cancellationToken)
         {
             try
             {
@@ -350,7 +354,7 @@ namespace Elsa.Services
             }
             catch (Exception e)
             {
-                _logger.LogWarning(e, "An error occurred while executing activity {ActivityId}. Entering Faulted state", activity.Id);
+                await _mediator.Publish(new ActivityFaulted(e, activityExecutionContext), cancellationToken);
                 activityExecutionContext.WorkflowExecutionContext.Fault(activity.Id, e.Message, e.StackTrace);
             }
 

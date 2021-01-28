@@ -4,8 +4,12 @@ namespace Elsa.Events
 {
     public class ActivityExecuted : ActivityNotification
     {
-        public ActivityExecuted(ActivityExecutionContext activityExecutionContext) : base(activityExecutionContext)
+        public ActivityExecuted(bool resuming, ActivityExecutionContext activityExecutionContext) : base(activityExecutionContext)
         {
+            Resuming = resuming;
         }
+        
+        public bool Resuming { get; }
+
     }
 }

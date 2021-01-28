@@ -15,21 +15,21 @@ namespace Elsa.StartupTasks
     /// If there are workflows in the Running state while the server starts, it means the workflow instance never finished execution, e.g. because the workflow host terminated.
     /// This startup task resumes these workflows.
     /// </summary>
-    public class ContinueRunningWorkflowsTask : IStartupTask
+    public class ContinueRunningWorkflows : IStartupTask
     {
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
-        private readonly IWorkflowQueue _workflowScheduler;
+        private readonly IWorkflowQueue _workflowQueue;
         private readonly IDistributedLockProvider _distributedLockProvider;
-        private readonly ILogger<ContinueRunningWorkflowsTask> _logger;
+        private readonly ILogger _logger;
 
-        public ContinueRunningWorkflowsTask(
+        public ContinueRunningWorkflows(
             IWorkflowInstanceStore workflowInstanceStore,
-            IWorkflowQueue workflowScheduler,
+            IWorkflowQueue workflowQueue,
             IDistributedLockProvider distributedLockProvider,
-            ILogger<ContinueRunningWorkflowsTask> logger)
+            ILogger<ContinueRunningWorkflows> logger)
         {
             _workflowInstanceStore = workflowInstanceStore;
-            _workflowScheduler = workflowScheduler;
+            _workflowQueue = workflowQueue;
             _distributedLockProvider = distributedLockProvider;
             _logger = logger;
         }
@@ -47,22 +47,33 @@ namespace Elsa.StartupTasks
             {
                 var instances = await _workflowInstanceStore.FindManyAsync(new WorkflowStatusSpecification(WorkflowStatus.Running), cancellationToken: cancellationToken).ToList();
 
-                _logger.LogInformation("Found {WorkflowInstanceCount} workflows with status 'Running'. Resuming each one of them", instances.Count);
+                if(instances.Any())
+                    _logger.LogInformation("Found {WorkflowInstanceCount} workflows with status 'Running'. Resuming each one of them", instances.Count);
+                else
+                    _logger.LogInformation("Found no workflows with status 'Running'. Nothing to resume");
 
                 foreach (var instance in instances)
                 {
                     _logger.LogInformation("Resuming {WorkflowInstanceId}", instance.Id);
                     var scheduledActivities = instance.ScheduledActivities;
 
-                    if (instance.CurrentActivity == null || !scheduledActivities.Any())
+                    if (instance.CurrentActivity == null && !scheduledActivities.Any())
                     {
+                        if (instance.BlockingActivities.Any())
+                        {
+                            _logger.LogWarning("Workflow '{WorkflowInstanceId}' was in the Running state, but has no scheduled activities not has a currently executing one. However, it does have blocking activities, so switching to Suspended status", instance.Id);
+                            instance.WorkflowStatus = WorkflowStatus.Suspended;
+                            await _workflowInstanceStore.SaveAsync(instance, cancellationToken);
+                            continue;
+                        }
+
                         _logger.LogWarning("Workflow '{WorkflowInstanceId}' was in the Running state, but has no scheduled activities nor has a currently executing one", instance.Id);
                         continue;
                     }
 
                     var scheduledActivity = instance.CurrentActivity ?? instance.ScheduledActivities.Peek();
 
-                    await _workflowScheduler.EnqueueWorkflowInstance(
+                    await _workflowQueue.EnqueueWorkflowInstance(
                         instance.Id,
                         scheduledActivity.ActivityId,
                         scheduledActivity.Input,

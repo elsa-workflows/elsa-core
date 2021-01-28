@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using NodaTime;
 
 namespace Elsa.Services
 {
@@ -16,6 +17,12 @@ namespace Elsa.Services
         {
             var bus = await _serviceBusFactory.GetServiceBusAsync(message.GetType(), default);
             await bus.Send(message, headers);
+        }
+        
+        public async Task DeferAsync(object message, Duration delay, IDictionary<string, string>? headers = default)
+        {
+            var bus = await _serviceBusFactory.GetServiceBusAsync(message.GetType(), default);
+            await bus.Defer(delay.ToTimeSpan(), message, headers);
         }
     }
 }

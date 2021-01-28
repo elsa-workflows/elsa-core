@@ -52,6 +52,8 @@ namespace Elsa.Persistence.YesSql.Stores
                 _semaphore.Release();
             }
         }
+        
+        public virtual async Task UpdateAsync(T entity, CancellationToken cancellationToken = default) => await SaveAsync(entity, cancellationToken);
 
         public async Task AddAsync(T entity, CancellationToken cancellationToken = default)
         {

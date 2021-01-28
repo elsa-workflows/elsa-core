@@ -1,41 +1,42 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Events;
-using Elsa.Models;
-using Elsa.Persistence;
 using Elsa.Services;
 using MediatR;
-using NodaTime;
+using Newtonsoft.Json.Linq;
 
 namespace Elsa.Handlers
 {
-    public class WriteWorkflowExecutionLog : INotificationHandler<ActivityExecuted>
+    public class WriteWorkflowExecutionLog : INotificationHandler<ActivityExecuting>, INotificationHandler<ActivityExecuted>, INotificationHandler<ActivityFaulted>
     {
-        private readonly IWorkflowExecutionLogStore _store;
-        private readonly IIdGenerator _idGenerator;
-        private readonly IClock _clock;
+        private readonly IWorkflowExecutionLog _workflowExecutionLog;
 
-        public WriteWorkflowExecutionLog(IWorkflowExecutionLogStore store, IIdGenerator idGenerator, IClock clock)
+        public WriteWorkflowExecutionLog(IWorkflowExecutionLog workflowExecutionLog)
         {
-            _store = store;
-            _idGenerator = idGenerator;
-            _clock = clock;
+            _workflowExecutionLog = workflowExecutionLog;
         }
 
-        public async Task Handle(ActivityExecuted notification, CancellationToken cancellationToken)
+        public async Task Handle(ActivityExecuting notification, CancellationToken cancellationToken) => await WriteEntryAsync(notification.Resuming ? "Resuming" : "Executing", notification, null, cancellationToken);
+        public async Task Handle(ActivityExecuted notification, CancellationToken cancellationToken) => await WriteEntryAsync(notification.Resuming ? "Resumed" : "Executed", notification, null, cancellationToken);
+
+        public async Task Handle(ActivityFaulted notification, CancellationToken cancellationToken)
+        {
+            var exception = notification.Exception;
+
+            var data = JObject.FromObject(new
+            {
+                exception.Message,
+                exception.StackTrace
+            });
+            
+            await WriteEntryAsync("Faulted", notification, data, cancellationToken);
+        }
+
+        private async Task WriteEntryAsync(string message, ActivityNotification notification, JObject? data, CancellationToken cancellationToken)
         {
             var workflowInstance = notification.WorkflowExecutionContext.WorkflowInstance;
-            var id = _idGenerator.Generate();
-            var tenantId = workflowInstance.TenantId;
-            var workflowInstanceId = workflowInstance.Id;
-            var activityId = notification.Activity.Id;
             var activityBlueprint = notification.Activity;
-            var activityType = activityBlueprint.Type;
-            var source = activityBlueprint.Source;
-            var timeStamp = _clock.GetCurrentInstant();
-            const string message = "Activity Executed";
-            var record = new WorkflowExecutionLogRecord(id, tenantId, workflowInstanceId, activityId, activityType, timeStamp, message, source);
-            await _store.SaveAsync(record, cancellationToken);
+            await _workflowExecutionLog.AddEntryAsync(message, workflowInstance, activityBlueprint, data, cancellationToken);
         }
     }
 }

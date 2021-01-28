@@ -1,8 +1,9 @@
 using System;
-using Elsa.Activities.AzureServiceBus.HostedServices;
 using Elsa.Activities.AzureServiceBus.Options;
 using Elsa.Activities.AzureServiceBus.Services;
+using Elsa.Activities.AzureServiceBus.StartupTasks;
 using Elsa.Activities.AzureServiceBus.Triggers;
+using Elsa.Runtime;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Management;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,7 +26,7 @@ namespace Elsa.Activities.AzureServiceBus.Extensions
                 .AddSingleton<MessageBusFactory>()
                 .AddSingleton<IMessageSenderFactory>(sp => sp.GetRequiredService<MessageBusFactory>())
                 .AddSingleton<IMessageReceiverFactory>(sp => sp.GetRequiredService<MessageBusFactory>())
-                .AddHostedService<StartServiceBusQueues>()
+                .AddStartupTask<StartServiceBusQueues>()
                 .AddTriggerProvider<MessageReceivedWorkflowTriggerProvider>();
 
             options

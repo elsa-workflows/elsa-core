@@ -32,6 +32,13 @@ namespace Elsa.Persistence.InMemory
             dictionary[entity.Id] = entity;
             SetDictionary(dictionary);
         }
+        
+        public async Task UpdateAsync(T entity, CancellationToken cancellationToken = default)
+        {
+            var dictionary = await GetDictionaryAsync();
+            dictionary[entity.Id] = entity;
+            SetDictionary(dictionary);
+        }
 
         public Task AddAsync(T entity, CancellationToken cancellationToken = default) => SaveAsync(entity, cancellationToken);
 

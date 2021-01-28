@@ -7,6 +7,7 @@ namespace Elsa
 {
     public static class ElsaOptionsExtensions
     {
-        public static ElsaOptions AddQuartzTimerActivities(this ElsaOptions options, Action<QuartzOptions>? configureOptions = default, Action<IServiceCollectionQuartzConfigurator>? configureQuartz = default) => options.AddTimerActivities(timer => timer.UseQuartzProvider(configureOptions, configureQuartz));
+        public static ElsaOptions AddQuartzTimerActivities(this ElsaOptions options, Action<QuartzOptions>? configureOptions = default, Action<IServiceCollectionQuartzConfigurator>? configureQuartz = default) =>
+            options.AddTimerActivities(timer => timer.UseQuartzProvider(configureOptions, configureQuartz));
     }
 }

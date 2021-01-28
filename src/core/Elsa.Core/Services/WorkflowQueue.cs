@@ -10,13 +10,11 @@ namespace Elsa.Services
     public class WorkflowQueue : IWorkflowQueue
     {
         private readonly IWorkflowSelector _workflowSelector;
-        private readonly IEventPublisher _bus;
         private readonly ICommandSender _commandSender;
 
-        public WorkflowQueue(IWorkflowSelector workflowSelector, IEventPublisher bus, ICommandSender commandSender)
+        public WorkflowQueue(IWorkflowSelector workflowSelector, ICommandSender commandSender)
         {
             _workflowSelector = workflowSelector;
-            _bus = bus;
             _commandSender = commandSender;
         }
 
@@ -46,7 +44,7 @@ namespace Elsa.Services
 
         public async Task EnqueueWorkflowDefinition(string workflowDefinitionId, string? tenantId, string activityId, object? input, string? correlationId, string? contextId, CancellationToken cancellationToken = default)
         {
-            await _bus.PublishAsync(new RunWorkflowDefinition(workflowDefinitionId, tenantId, activityId, input, correlationId, contextId));
+            await _commandSender.SendAsync(new RunWorkflowDefinition(workflowDefinitionId, tenantId, activityId, input, correlationId, contextId));
         }
     }
 }
