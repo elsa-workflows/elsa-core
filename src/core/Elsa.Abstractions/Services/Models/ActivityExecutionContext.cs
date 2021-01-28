@@ -84,10 +84,17 @@ namespace Elsa.Services.Models
             var activityTypeService = ServiceScope.ServiceProvider.GetRequiredService<IActivityTypeService>();
             return await activityTypeService.ActivateActivityAsync(ActivityBlueprint, cancellationToken);
         }
-
+        
         public T? GetInput<T>() => Input.ConvertTo<T>();
+        public T? GetInput<T>(Func<T?> defaultValue) => Input != null ? Input.ConvertTo<T>() : defaultValue();
+        public T? GetInput<T>(T? defaultValue) => Input != null ? Input.ConvertTo<T>() : defaultValue;
+
         public object? GetOutputFrom(string activityName) => WorkflowExecutionContext.GetOutputFrom(activityName);
-        public T GetOutputFrom<T>(string activityName) => (T) GetOutputFrom(activityName)!;
+        public object? GetOutputFrom(string activityName, object? defaultValue) => WorkflowExecutionContext.GetOutputFrom(activityName) ?? defaultValue;
+        public object? GetOutputFrom(string activityName, Func<object?> defaultValue) => WorkflowExecutionContext.GetOutputFrom(activityName) ?? defaultValue();
+        public T? GetOutputFrom<T>(string activityName) => (T?) GetOutputFrom(activityName)!;
+        public T? GetOutputFrom<T>(string activityName, Func<T?> defaultValue) => (T?) GetOutputFrom(activityName, defaultValue())!;
+        public T? GetOutputFrom<T>(string activityName, T? defaultValue) => (T?) GetOutputFrom(activityName, () => defaultValue)!;
         public void SetWorkflowContext(object? value) => WorkflowExecutionContext.SetWorkflowContext(value);
         public T GetWorkflowContext<T>() => WorkflowExecutionContext.GetWorkflowContext<T>();
     }
