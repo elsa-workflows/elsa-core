@@ -7,6 +7,7 @@ namespace Elsa.Triggers
 {
     public interface IWorkflowTriggerIndexer
     {
+        Task IndexTriggersAsync(IEnumerable<WorkflowInstance> workflowInstances, CancellationToken cancellationToken = default);
         Task IndexTriggersAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken = default);
         Task DeleteTriggersAsync(IEnumerable<string> workflowInstanceIds, CancellationToken cancellationToken = default);
         Task DeleteTriggersAsync(string workflowInstanceId, CancellationToken cancellationToken = default);

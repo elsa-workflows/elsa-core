@@ -28,7 +28,7 @@ namespace Elsa.Triggers
         private readonly IWorkflowTriggerHasher _hasher;
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger _logger;
-        private Stopwatch _stopwatch = new();
+        private readonly Stopwatch _stopwatch = new();
 
         public WorkflowTriggerIndexer(
             IWorkflowRegistry workflowRegistry,
@@ -52,27 +52,42 @@ namespace Elsa.Triggers
             _logger = logger;
         }
 
-        public async Task IndexTriggersAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken)
+        public async Task IndexTriggersAsync(IEnumerable<WorkflowInstance> workflowInstances, CancellationToken cancellationToken)
         {
-            _logger.LogInformation("Indexing triggers for workflow {WorkflowInstanceId}", workflowInstance.Id);
             _stopwatch.Restart();
+            _logger.LogInformation("Indexing triggers");
 
-            await DeleteTriggersAsync(workflowInstance.Id, cancellationToken);
-            var workflowBlueprint = await _workflowRegistry.GetWorkflowAsync(workflowInstance.DefinitionId, VersionOptions.SpecificVersion(workflowInstance.Version), cancellationToken);
+            var workflowInstanceList = workflowInstances.ToList();
+            var workflowInstanceIds = workflowInstanceList.Select(x => x.Id).ToList();
+            await DeleteTriggersAsync(workflowInstanceIds, cancellationToken);
 
-            if (workflowBlueprint == null)
+            var workflowBlueprints = await _workflowRegistry.GetWorkflowsAsync(cancellationToken).ToDictionaryAsync(x => (x.Id, x.Version), cancellationToken);
+            var allWorkflowTriggers = new List<WorkflowTrigger>();
+            
+            foreach (var workflowInstance in workflowInstanceList)
             {
-                _logger.LogWarning("Could not find workflow definition for workflow {WorkflowInstanceId}", workflowInstance.Id);
-                return;
-            }
+                var workflowBlueprintKey = (workflowInstance.DefinitionId, workflowInstance.Version);
+                var workflowBlueprint = workflowBlueprints.ContainsKey(workflowBlueprintKey) ? workflowBlueprints[workflowBlueprintKey] : default;
 
-            var blockingActivities = workflowBlueprint.GetBlockingActivities(workflowInstance!);
-            var triggerDescriptors = await ExtractTriggersAsync(workflowBlueprint, workflowInstance, blockingActivities, true, cancellationToken).ToList();
-            await PersistTriggersAsync(triggerDescriptors, workflowInstance, cancellationToken);
+                if (workflowBlueprint == null)
+                {
+                    _logger.LogWarning("Could not find workflow definition for workflow {WorkflowInstanceId}", workflowInstance.Id);
+                    return;
+                }
+
+                var blockingActivities = workflowBlueprint.GetBlockingActivities(workflowInstance!);
+                var triggerDescriptors = await ExtractTriggersAsync(workflowBlueprint, workflowInstance, blockingActivities, true, cancellationToken).ToList();
+                var workflowTriggers = ToWorkflowTriggers(triggerDescriptors, workflowInstance);
+                allWorkflowTriggers.AddRange(workflowTriggers);
+            }
+            
+            await _workflowTriggerStore.AddManyAsync(allWorkflowTriggers, cancellationToken);
 
             _stopwatch.Stop();
-            _logger.LogInformation("Indexed {TriggerCount} triggers for workflow {WorkflowInstanceId} in {ElapsedTime}", triggerDescriptors.Count, workflowInstance.Id, _stopwatch.Elapsed);
+            _logger.LogInformation("Indexed {TriggerCount} triggers in {ElapsedTime}", allWorkflowTriggers.Count, _stopwatch.Elapsed);
         }
+        
+        public async Task IndexTriggersAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken) => await IndexTriggersAsync(new[] { workflowInstance }, cancellationToken);
 
         public async Task DeleteTriggersAsync(IEnumerable<string> workflowInstanceIds, CancellationToken cancellationToken = default)
         {
@@ -87,26 +102,19 @@ namespace Elsa.Triggers
             
             _logger.LogDebug("Deleted {DeletedTriggerCount} triggers for workflow {WorkflowInstanceId}", count, workflowInstanceId);
         }
-
-        private async Task PersistTriggersAsync(IEnumerable<TriggerDescriptor> triggerDescriptors, WorkflowInstance workflowInstance, CancellationToken cancellationToken)
-        {
-            foreach (var triggerDescriptor in triggerDescriptors)
+        
+        private IEnumerable<WorkflowTrigger> ToWorkflowTriggers(IEnumerable<TriggerDescriptor> triggerDescriptors, WorkflowInstance workflowInstance) =>
+            triggerDescriptors.SelectMany(triggerDescriptor => triggerDescriptor.Triggers.Select(x => new WorkflowTrigger
             {
-                var records = triggerDescriptor.Triggers.Select(x => new WorkflowTrigger
-                {
-                    Id = _idGenerator.Generate(),
-                    TenantId = workflowInstance.TenantId,
-                    ActivityType = triggerDescriptor.ActivityType,
-                    ActivityId = triggerDescriptor.ActivityId,
-                    WorkflowInstanceId = workflowInstance.Id,
-                    Hash = _hasher.Hash(x),
-                    Model = _contentSerializer.Serialize(x),
-                    TypeName = x.GetType().GetSimpleAssemblyQualifiedName()
-                });
-
-                await _workflowTriggerStore.AddManyAsync(records, cancellationToken);
-            }
-        }
+                Id = _idGenerator.Generate(),
+                TenantId = workflowInstance.TenantId,
+                ActivityType = triggerDescriptor.ActivityType,
+                ActivityId = triggerDescriptor.ActivityId,
+                WorkflowInstanceId = workflowInstance.Id,
+                Hash = _hasher.Hash(x),
+                Model = _contentSerializer.Serialize(x),
+                TypeName = x.GetType().GetSimpleAssemblyQualifiedName()
+            }));
 
         private async Task<IEnumerable<TriggerDescriptor>> ExtractTriggersAsync(
             IWorkflowBlueprint workflowBlueprint,

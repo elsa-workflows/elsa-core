@@ -12,18 +12,16 @@ namespace Elsa.Handlers
     public class UpdateTriggers : INotificationHandler<WorkflowInstanceSaved>, INotificationHandler<ManyWorkflowInstancesDeleted>, INotificationHandler<ManyWorkflowInstancesAdded>
     {
         private readonly IWorkflowTriggerIndexer _workflowTriggerIndexer;
-        private readonly IWorkflowRegistry _workflowRegistry;
 
-        public UpdateTriggers(IWorkflowTriggerIndexer workflowTriggerIndexer, IWorkflowRegistry workflowRegistry)
+        public UpdateTriggers(IWorkflowTriggerIndexer workflowTriggerIndexer)
         {
             _workflowTriggerIndexer = workflowTriggerIndexer;
-            _workflowRegistry = workflowRegistry;
         }
 
         public async Task Handle(WorkflowInstanceSaved notification, CancellationToken cancellationToken)
         {
             var workflowInstance = notification.WorkflowInstance;
-            await _workflowTriggerIndexer.IndexTriggersAsync(workflowInstance, cancellationToken);;
+            await _workflowTriggerIndexer.IndexTriggersAsync(workflowInstance, cancellationToken);
         }
 
         public async Task Handle(ManyWorkflowInstancesDeleted notification, CancellationToken cancellationToken)
@@ -31,12 +29,10 @@ namespace Elsa.Handlers
             var workflowInstanceIds = notification.WorkflowInstances.Select(x => x.Id).ToList();
             await _workflowTriggerIndexer.DeleteTriggersAsync(workflowInstanceIds, cancellationToken);
         }
-        
+
         public async Task Handle(ManyWorkflowInstancesAdded notification, CancellationToken cancellationToken)
         {
-            throw new System.NotImplementedException();
+            await _workflowTriggerIndexer.IndexTriggersAsync(notification.WorkflowInstances, cancellationToken);
         }
-
-        private async Task UpdateTriggersAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken) => await _workflowTriggerIndexer.IndexTriggersAsync(workflowInstance, cancellationToken);
     }
 }
