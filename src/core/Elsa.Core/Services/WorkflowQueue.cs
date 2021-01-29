@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Bookmarks;
 using Elsa.Messages;
-using Elsa.Triggers;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Services
@@ -20,14 +20,14 @@ namespace Elsa.Services
 
         public async Task EnqueueWorkflowsAsync(
             string activityType,
-            ITrigger trigger,
+            IBookmark bookmark,
             string? tenantId,
             object? input = default,
             string? correlationId = default,
             string? contextId = default,
             CancellationToken cancellationToken = default)
         {
-            var results = await _workflowSelector.SelectWorkflowsAsync(activityType, trigger, tenantId, cancellationToken).ToList();
+            var results = await _workflowSelector.SelectWorkflowsAsync(activityType, bookmark, tenantId, cancellationToken).ToList();
             await EnqueueWorkflowsAsync(results, input, correlationId, contextId, cancellationToken);
         }
 

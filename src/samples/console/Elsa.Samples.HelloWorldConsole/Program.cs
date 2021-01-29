@@ -4,7 +4,7 @@ using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications;
 using Elsa.Persistence.Specifications.WorkflowInstances;
-using Elsa.Persistence.YesSql.Extensions;
+using Elsa.Persistence.YesSql;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 

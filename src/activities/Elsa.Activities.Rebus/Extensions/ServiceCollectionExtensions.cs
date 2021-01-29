@@ -1,9 +1,9 @@
 using System;
 using Elsa;
 using Elsa.Activities.Rebus;
+using Elsa.Activities.Rebus.Bookmarks;
 using Elsa.Activities.Rebus.Consumers;
 using Elsa.Activities.Rebus.StartupTasks;
-using Elsa.Activities.Rebus.Triggers;
 using Elsa.Runtime;
 using Rebus.Handlers;
 
@@ -24,7 +24,7 @@ namespace Microsoft.Extensions.DependencyInjection
             }
 
             services
-                .AddTriggerProvider<MessageReceivedTriggerProvider>()
+                .AddBookmarkProvider<MessageReceivedTriggerProvider>()
                 .AddStartupTask(sp => ActivatorUtilities.CreateInstance<CreateSubscriptions>(sp, (object) messageTypes));
 
             options

@@ -29,7 +29,7 @@ namespace Elsa.Activities.Workflows
                 Output = output
             };
 
-            var trigger = new RunWorkflowTrigger
+            var trigger = new RunWorkflowBookmark
             {
                 ChildWorkflowInstanceId = workflowInstanceId
             };

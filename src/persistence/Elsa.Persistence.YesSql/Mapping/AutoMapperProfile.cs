@@ -26,11 +26,11 @@ namespace Elsa.Persistence.YesSql.Mapping
                 .ReverseMap()
                 .ForMember(d => d.Id, d => d.MapFrom(s => s.RecordId));
             
-            CreateMap<WorkflowTrigger, WorkflowTriggerDocument>()
-                .ForMember(d => d.TriggerId, d => d.MapFrom(s => s.Id))
+            CreateMap<Bookmark, BookmarkDocument>()
+                .ForMember(d => d.BookmarkId, d => d.MapFrom(s => s.Id))
                 .ForMember(d => d.Id, d => d.Ignore())
                 .ReverseMap()
-                .ForMember(d => d.Id, d => d.MapFrom(s => s.TriggerId));
+                .ForMember(d => d.Id, d => d.MapFrom(s => s.BookmarkId));
         }
     }
 }

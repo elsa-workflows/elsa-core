@@ -1,6 +1,6 @@
 using System;
 using Elsa;
-using Elsa.Persistence.YesSql.Extensions;
+using Elsa.Persistence.YesSql;
 using ElsaDashboard.Backend.Extensions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;

@@ -57,14 +57,14 @@ namespace Elsa.Persistence.YesSql
                     .Column(nameof(WorkflowExecutionLogRecordIndex.Timestamp), DbType.DateTime),
                 CollectionNames.WorkflowExecutionLog);
             
-            SchemaBuilder.CreateMapIndexTable<WorkflowTriggerIndex>(
+            SchemaBuilder.CreateMapIndexTable<BookmarkIndex>(
                 table => table
-                    .Column<string?>(nameof(WorkflowTriggerIndex.TriggerId))
-                    .Column<string?>(nameof(WorkflowTriggerIndex.TenantId))
-                    .Column<string>(nameof(WorkflowTriggerIndex.ActivityType))
-                    .Column<string>(nameof(WorkflowTriggerIndex.WorkflowDefinitionId))
-                    .Column<string>(nameof(WorkflowTriggerIndex.WorkflowInstanceId)),
-                CollectionNames.WorkflowTriggers);
+                    .Column<string?>(nameof(BookmarkIndex.BookmarkId))
+                    .Column<string?>(nameof(BookmarkIndex.TenantId))
+                    .Column<string>(nameof(BookmarkIndex.Hash))
+                    .Column<string>(nameof(BookmarkIndex.ActivityType))
+                    .Column<string>(nameof(BookmarkIndex.WorkflowInstanceId)),
+                CollectionNames.Bookmarks);
 
             return 1;
         }

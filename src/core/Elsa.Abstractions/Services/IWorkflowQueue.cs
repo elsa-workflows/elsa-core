@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Triggers;
+using Elsa.Bookmarks;
 
 namespace Elsa.Services
 {
@@ -12,7 +12,7 @@ namespace Elsa.Services
         /// </summary>
         Task EnqueueWorkflowsAsync(
             string activityType,
-            ITrigger trigger,
+            IBookmark bookmark,
             string? tenantId,
             object? input = default,
             string? correlationId = default,

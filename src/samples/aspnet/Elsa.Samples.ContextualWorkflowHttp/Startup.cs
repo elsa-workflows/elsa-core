@@ -1,9 +1,9 @@
+using Elsa.Persistence.YesSql;
 using Elsa.Samples.ContextualWorkflowHttp.Indexes;
 using Elsa.Samples.ContextualWorkflowHttp.WorkflowContextProviders;
 using Elsa.Samples.ContextualWorkflowHttp.Workflows;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
-using Elsa.Persistence.YesSql.Extensions;
 
 namespace Elsa.Samples.ContextualWorkflowHttp
 {

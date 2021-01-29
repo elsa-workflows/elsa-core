@@ -33,7 +33,7 @@ namespace Elsa.Activities.AzureServiceBus.StartupTasks
             foreach (var queueName in queueNames)
             {
                 var receiver = await _messageReceiverFactory.GetReceiverAsync(queueName, cancellationToken);
-                ActivatorUtilities.CreateInstance<QueueWorker>(_serviceProvider, receiver);
+                ActivatorUtilities.CreateInstance<QueueWorker>(_serviceProvider, receiver, queueName);
             }
         }
 

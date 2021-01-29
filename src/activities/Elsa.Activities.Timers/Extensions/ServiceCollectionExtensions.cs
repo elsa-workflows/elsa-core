@@ -1,6 +1,7 @@
 using System;
 using Elsa;
 using Elsa.Activities.Timers;
+using Elsa.Activities.Timers.Bookmarks;
 using Elsa.Activities.Timers.Handlers;
 using Elsa.Activities.Timers.Options;
 using Elsa.Activities.Timers.StartupTasks;
@@ -20,9 +21,9 @@ namespace Microsoft.Extensions.DependencyInjection
             options.Services
                 .AddNotificationHandlers(typeof(RemoveScheduledTriggers))
                 .AddStartupTask<StartJobs>()
-                .AddTriggerProvider<TimerWorkflowTriggerProvider>()
-                .AddTriggerProvider<CronWorkflowTriggerProvider>()
-                .AddTriggerProvider<StartAtWorkflowTriggerProvider>();
+                .AddBookmarkProvider<TimerBookmarkProvider>()
+                .AddBookmarkProvider<CronBookmarkProvider>()
+                .AddBookmarkProvider<StartAtBookmarkProvider>();
 
             return options
                 .AddActivity<Cron>()

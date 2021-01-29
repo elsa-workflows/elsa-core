@@ -19,7 +19,7 @@ namespace Elsa.Activities.Signaling.Services
 
         public async Task SendSignalAsync(string signal, object? input = default, string? correlationId = default, CancellationToken cancellationToken = default) =>
             await _workflowScheduler.TriggerWorkflowsAsync<SignalReceived>(
-                new SignalReceivedTrigger{ Signal = signal, CorrelationId = correlationId},
+                new SignalReceivedBookmark{ Signal = signal, CorrelationId = correlationId},
                 TenantId,
                 new Signal(signal, input),
                 correlationId,

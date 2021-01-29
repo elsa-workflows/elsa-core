@@ -1,6 +1,5 @@
 using System;
 using System.Linq.Expressions;
-using Elsa.Extensions;
 using Elsa.Models;
 
 namespace Elsa.Persistence.Specifications.WorkflowInstances

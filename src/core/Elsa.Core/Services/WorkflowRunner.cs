@@ -5,13 +5,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.ActivityProviders;
 using Elsa.ActivityResults;
+using Elsa.Bookmarks;
 using Elsa.Builders;
 using Elsa.Events;
 using Elsa.Exceptions;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services.Models;
-using Elsa.Triggers;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -60,14 +60,14 @@ namespace Elsa.Services
 
         public async Task TriggerWorkflowsAsync(
             string activityType,
-            ITrigger trigger,
+            IBookmark bookmark,
             string? tenantId,
             object? input = default,
             string? correlationId = default,
             string? contextId = default,
             CancellationToken cancellationToken = default)
         {
-            var results = await _workflowSelector.SelectWorkflowsAsync(activityType, trigger, tenantId, cancellationToken).ToList();
+            var results = await _workflowSelector.SelectWorkflowsAsync(activityType, bookmark, tenantId, cancellationToken).ToList();
             await TriggerWorkflowsAsync(results, input, correlationId, contextId, cancellationToken);
         }
 

@@ -1,9 +1,9 @@
 using System;
 using System.Threading.Tasks;
+using Elsa.Bookmarks;
 using Elsa.Builders;
 using Elsa.Services;
 using Elsa.Testing.Shared.Helpers;
-using Elsa.Triggers;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 using Xunit.Abstractions;

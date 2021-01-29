@@ -2,14 +2,15 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.Timers.Bookmarks;
 using Elsa.Activities.Timers.Services;
 using Elsa.Activities.Timers.Triggers;
+using Elsa.Bookmarks;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications;
 using Elsa.Persistence.Specifications.WorkflowInstances;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Elsa.Triggers;
 using Microsoft.Extensions.DependencyInjection;
 using NodaTime;
 
@@ -89,7 +90,7 @@ namespace Elsa.Activities.Timers.StartupTasks
 
             foreach (var result in startAtTriggers)
             {
-                var trigger = (StartAtTrigger) result.Trigger;
+                var trigger = (StartAtBookmark) result.Bookmark;
                 await _workflowScheduler.ScheduleWorkflowAsync(null, result.WorkflowInstanceId!, result.ActivityId, TenantId, trigger.ExecuteAt, null, cancellationToken);
             }
         }
@@ -125,7 +126,7 @@ namespace Elsa.Activities.Timers.StartupTasks
 
             foreach (var result in timerEventTriggers)
             {
-                var trigger = (TimerTrigger) result.Trigger;
+                var trigger = (TimerBookmark) result.Bookmark;
                 await _workflowScheduler.ScheduleWorkflowAsync(null, result.WorkflowInstanceId!, result.ActivityId, TenantId, trigger.ExecuteAt, null, cancellationToken);
             }
         }
@@ -158,7 +159,7 @@ namespace Elsa.Activities.Timers.StartupTasks
 
             foreach (var result in cronEventTriggers)
             {
-                var trigger = (CronTrigger) result.Trigger;
+                var trigger = (CronBookmark) result.Bookmark;
                 await _workflowScheduler.ScheduleWorkflowAsync(null, result.WorkflowInstanceId!, result.ActivityId, TenantId, trigger.ExecuteAt, null, cancellationToken);
             }
         }

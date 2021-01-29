@@ -4,7 +4,7 @@ using Elsa.Models;
 
 namespace Elsa.Persistence.Specifications.WorkflowTriggers
 {
-    public class TriggerSpecification : Specification<WorkflowTrigger>
+    public class TriggerSpecification : Specification<Bookmark>
     {
         public TriggerSpecification(string activityType, string? tenantId)
         {
@@ -15,7 +15,7 @@ namespace Elsa.Persistence.Specifications.WorkflowTriggers
         public string? TenantId { get; set; }
         public string ActivityType { get; set; }
         
-        public override Expression<Func<WorkflowTrigger, bool>> ToExpression() => trigger => 
+        public override Expression<Func<Bookmark, bool>> ToExpression() => trigger => 
             trigger.TenantId == TenantId &&
             trigger.ActivityType == ActivityType;
     }

@@ -1,11 +1,11 @@
 using System.Threading.Tasks;
+using Elsa.Bookmarks;
 using Elsa.Messages;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Elsa.Triggers;
 using Microsoft.Extensions.Logging;
 using Rebus.Handlers;
 

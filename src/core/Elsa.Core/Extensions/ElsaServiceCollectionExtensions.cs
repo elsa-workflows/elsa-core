@@ -7,6 +7,7 @@ using Elsa.Activities.Signaling.Services;
 using Elsa.Activities.Workflows;
 using Elsa.ActivityProviders;
 using Elsa.ActivityTypeProviders;
+using Elsa.Bookmarks;
 using Elsa.Builders;
 using Elsa.Consumers;
 using Elsa.Expressions;
@@ -22,7 +23,6 @@ using Elsa.Serialization;
 using Elsa.Serialization.Converters;
 using Elsa.Services;
 using Elsa.StartupTasks;
-using Elsa.Triggers;
 using Elsa.WorkflowProviders;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -111,8 +111,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IWorkflowFactory, WorkflowFactory>()
                 .AddSingleton<IWorkflowBlueprintMaterializer, WorkflowBlueprintMaterializer>()
                 .AddSingleton<IWorkflowBlueprintReflector, WorkflowBlueprintReflector>()
-                .AddSingleton<IWorkflowTriggerHasher, WorkflowTriggerHasher>()
-                .AddScoped<IWorkflowTriggerIndexer, WorkflowTriggerIndexer>()
+                .AddSingleton<IBookmarkHasher, BookmarkHasher>()
+                .AddScoped<IBookmarkIndexer, BookmarkIndexer>()
                 .AddSingleton<IBackgroundWorker, BackgroundWorker>()
                 .AddScoped<IWorkflowQueue, WorkflowQueue>()
                 .AddScoped<IWorkflowSelector, WorkflowSelector>()
@@ -137,8 +137,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddScoped<ISignaler, Signaler>()
                 .AddScoped<IWorkflowExecutionLog, WorkflowExecutionLog>()
                 .AutoRegisterHandlersFromAssemblyOf<RunWorkflowInstanceConsumer>()
-                .AddTriggerProvider<SignalReceivedWorkflowTriggerProvider>()
-                .AddTriggerProvider<RunWorkflowWorkflowTriggerProvider>()
+                .AddBookmarkProvider<SignalReceivedBookmarkProvider>()
+                .AddBookmarkProvider<RunWorkflowBookmarkProvider>()
                 .AddMetadataHandlers();
 
             return options;

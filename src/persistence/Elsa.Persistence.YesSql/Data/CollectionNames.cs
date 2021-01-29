@@ -5,6 +5,6 @@
         public const string WorkflowDefinitions = "WorkflowDefinitions";
         public const string WorkflowInstances = "WorkflowInstances";
         public const string WorkflowExecutionLog = "WorkflowExecutionLog";
-        public const string WorkflowTriggers = "WorkflowTriggers";
+        public const string Bookmarks = "Bookmarks";
     }
 }

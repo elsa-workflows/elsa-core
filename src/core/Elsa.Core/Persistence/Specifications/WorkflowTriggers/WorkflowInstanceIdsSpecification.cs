@@ -6,7 +6,7 @@ using Elsa.Models;
 
 namespace Elsa.Persistence.Specifications.WorkflowTriggers
 {
-    public class WorkflowInstanceIdsSpecification : Specification<WorkflowTrigger>
+    public class WorkflowInstanceIdsSpecification : Specification<Bookmark>
     {
         public WorkflowInstanceIdsSpecification(IEnumerable<string> workflowInstanceIds)
         {
@@ -15,6 +15,6 @@ namespace Elsa.Persistence.Specifications.WorkflowTriggers
 
         public IEnumerable<string> WorkflowInstanceIds { get; }
 
-        public override Expression<Func<WorkflowTrigger, bool>> ToExpression() => trigger => WorkflowInstanceIds.Contains(trigger.WorkflowInstanceId);
+        public override Expression<Func<Bookmark, bool>> ToExpression() => trigger => WorkflowInstanceIds.Contains(trigger.WorkflowInstanceId);
     }
 }

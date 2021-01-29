@@ -23,6 +23,7 @@ namespace Elsa.Persistence.MongoDb.Services
             await CreateWorkflowInstancesIndexes(cancellationToken);
             await CreateWorkflowDefinitionsIndexes(cancellationToken);
             await CreateWorkflowExecutionLogIndexes(cancellationToken);
+            await CreateBookmarkIndexes(cancellationToken);
         }
 
         private async Task CreateWorkflowInstancesIndexes(CancellationToken cancellationToken)
@@ -54,13 +55,14 @@ namespace Elsa.Persistence.MongoDb.Services
             await CreateIndexesAsync(_mongoContext.WorkflowExecutionLog, cancellationToken, tenantKeysDefinition, workflowInstanceIdKeysDefinition, timestampKeysDefinition);
         }
 
-        private async Task CreateWorkflowTriggerIndexes(CancellationToken cancellationToken)
+        private async Task CreateBookmarkIndexes(CancellationToken cancellationToken)
         {
-            var tenantKeysDefinition = Builders<WorkflowTrigger>.IndexKeys.Ascending(x => x.TenantId);
-            var activityTypeKeysDefinition = Builders<WorkflowTrigger>.IndexKeys.Ascending(x => x.ActivityType);
-            var workflowInstanceIdKeysDefinition = Builders<WorkflowTrigger>.IndexKeys.Ascending(x => x.WorkflowInstanceId);
+            var tenantKeysDefinition = Builders<Bookmark>.IndexKeys.Ascending(x => x.TenantId);
+            var activityTypeKeysDefinition = Builders<Bookmark>.IndexKeys.Ascending(x => x.ActivityType);
+            var hashKeysDefinition = Builders<Bookmark>.IndexKeys.Ascending(x => x.Hash);
+            var workflowInstanceIdKeysDefinition = Builders<Bookmark>.IndexKeys.Ascending(x => x.WorkflowInstanceId);
 
-            await CreateIndexesAsync(_mongoContext.WorkflowTriggers, cancellationToken, tenantKeysDefinition, activityTypeKeysDefinition, workflowInstanceIdKeysDefinition);
+            await CreateIndexesAsync(_mongoContext.Bookmarks, cancellationToken, tenantKeysDefinition, activityTypeKeysDefinition, hashKeysDefinition, workflowInstanceIdKeysDefinition);
         }
 
         private async Task CreateIndexesAsync<T>(IMongoCollection<T> collection, CancellationToken cancellationToken, params IndexKeysDefinition<T>[] definitions)

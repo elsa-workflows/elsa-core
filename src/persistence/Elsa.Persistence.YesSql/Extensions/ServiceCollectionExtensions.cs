@@ -12,7 +12,7 @@ using YesSql;
 using YesSql.Indexes;
 using YesSql.Provider.Sqlite;
 
-namespace Elsa.Persistence.YesSql.Extensions
+namespace Elsa.Persistence.YesSql
 {
     public static class ServiceCollectionExtensions
     {
@@ -25,7 +25,7 @@ namespace Elsa.Persistence.YesSql.Extensions
                 .AddScoped<YesSqlWorkflowDefinitionStore>()
                 .AddScoped<YesSqlWorkflowInstanceStore>()
                 .AddScoped<YesSqlWorkflowExecutionLogStore>()
-                .AddScoped<YesSqlWorkflowTriggerStore>()
+                .AddScoped<YesSqlBookmarkStore>()
                 .AddSingleton(sp => CreateStore(sp, configure))
                 .AddScoped(CreateSession)
                 .AddScoped<IDataMigrationManager, DataMigrationManager>()
@@ -36,7 +36,7 @@ namespace Elsa.Persistence.YesSql.Extensions
                 .AddIndexProvider<WorkflowDefinitionIndexProvider>()
                 .AddIndexProvider<WorkflowInstanceIndexProvider>()
                 .AddIndexProvider<WorkflowExecutionLogRecordIndexProvider>()
-                .AddIndexProvider<WorkflowTriggerIndexProvider>();
+                .AddIndexProvider<BookmarkIndexProvider>();
 
             return elsa
                 .UseWorkflowDefinitionStore(sp => sp.GetRequiredService<YesSqlWorkflowDefinitionStore>())

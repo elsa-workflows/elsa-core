@@ -1,5 +1,5 @@
 using System.Threading.Tasks;
-using Elsa.Activities.Rebus.Triggers;
+using Elsa.Activities.Rebus.Bookmarks;
 using Elsa.Services;
 using Rebus.Extensions;
 using Rebus.Handlers;
@@ -24,7 +24,7 @@ namespace Elsa.Activities.Rebus.Consumers
         {
             var correlationId = MessageContext.Current.TransportMessage.Headers.GetValueOrNull(Headers.CorrelationId);
             await _workflowRunner.TriggerWorkflowsAsync<RebusMessageReceived>(
-                new MessageReceivedTrigger{ MessageType = message.GetType().Name, CorrelationId = correlationId},
+                new MessageReceivedBookmark{ MessageType = message.GetType().Name, CorrelationId = correlationId},
                 TenantId,
                 message, 
                 correlationId);

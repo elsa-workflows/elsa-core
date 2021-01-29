@@ -4,12 +4,12 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.Http.Bookmarks;
 using Elsa.Activities.Http.Extensions;
-using Elsa.Activities.Http.Triggers;
+using Elsa.Bookmarks;
 using Elsa.Persistence;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Elsa.Triggers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Open.Linq.AsyncExtensions;
@@ -62,14 +62,14 @@ namespace Elsa.Activities.Http.Middleware
             }
 
             // Find workflow instances blocked on an HttpRequestReceived activity and a matching Path and Method.
-            var triggerWithMethod = new HttpRequestReceivedTrigger
+            var triggerWithMethod = new HttpRequestReceivedBookmark
             {
                 Path = ((string) path).ToLowerInvariant(),
                 Method = method.ToLowerInvariant(),
                 CorrelationId = correlationId?.ToLowerInvariant()
             };
 
-            var triggerWithoutMethod = new HttpRequestReceivedTrigger
+            var triggerWithoutMethod = new HttpRequestReceivedBookmark
             {
                 Path = ((string) path).ToLowerInvariant(),
                 CorrelationId = correlationId?.ToLowerInvariant()

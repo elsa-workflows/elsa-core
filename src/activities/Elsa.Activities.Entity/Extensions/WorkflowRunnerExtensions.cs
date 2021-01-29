@@ -1,7 +1,7 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.Entity.Bookmarks;
 using Elsa.Activities.Entity.Models;
-using Elsa.Activities.Entity.Triggers;
 using Elsa.Services;
 
 namespace Elsa.Activities.Entity.Extensions
@@ -22,7 +22,7 @@ namespace Elsa.Activities.Entity.Extensions
         {
             var input = new EntityChangedContext(entityId, entityName, changedAction);
 
-            var trigger = new EntityChangedTrigger(
+            var trigger = new EntityChangedBookmark(
             
                 entityName,
                 changedAction,

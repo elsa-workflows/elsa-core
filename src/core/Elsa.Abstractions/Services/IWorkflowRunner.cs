@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Bookmarks;
 using Elsa.Builders;
 using Elsa.Models;
 using Elsa.Services.Models;
-using Elsa.Triggers;
 
 namespace Elsa.Services
 {
@@ -12,7 +12,7 @@ namespace Elsa.Services
     {
         Task TriggerWorkflowsAsync(
             string activityType,
-            ITrigger trigger,
+            IBookmark bookmark,
             string? tenantId,
             object? input = default, 
             string? correlationId = default, 

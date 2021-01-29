@@ -6,7 +6,6 @@ using Elsa.Persistence.Specifications;
 using Elsa.Persistence.Specifications.WorkflowDefinitions;
 using Elsa.Persistence.YesSql.Data;
 using Elsa.Persistence.YesSql.Documents;
-using Elsa.Persistence.YesSql.Extensions;
 using Elsa.Persistence.YesSql.Indexes;
 using Microsoft.Extensions.Logging;
 using YesSql;

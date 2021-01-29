@@ -19,16 +19,16 @@ namespace Elsa.Persistence.EntityFramework.Core.Extensions
                 .AddScoped<EntityFrameworkWorkflowDefinitionStore>()
                 .AddScoped<EntityFrameworkWorkflowInstanceStore>()
                 .AddScoped<EntityFrameworkWorkflowExecutionLogRecordStore>()
-                .AddScoped<EntityFrameworkWorkflowTriggerStore>();
+                .AddScoped<EntityFrameworkBookmarkStore>();
 
             if (autorunMigrations)
-                elsa.Services.AddStartupTask<RunEFCoreMigrations>();
+                elsa.Services.AddStartupTask<RunMigrations>();
 
             return elsa
                 .UseWorkflowDefinitionStore(sp => sp.GetRequiredService<EntityFrameworkWorkflowDefinitionStore>())
                 .UseWorkflowInstanceStore(sp => sp.GetRequiredService<EntityFrameworkWorkflowInstanceStore>())
                 .UseWorkflowExecutionLogStore(sp => sp.GetRequiredService<EntityFrameworkWorkflowExecutionLogRecordStore>())
-                .UseWorkflowTriggerStore(sp => sp.GetRequiredService<EntityFrameworkWorkflowTriggerStore>());
+                .UseWorkflowTriggerStore(sp => sp.GetRequiredService<EntityFrameworkBookmarkStore>());
         }
     }
 }
