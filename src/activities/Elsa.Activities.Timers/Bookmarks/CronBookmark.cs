@@ -1,26 +1,53 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Elsa.Bookmarks;
-using Elsa.Models;
 using NodaTime;
 
-namespace Elsa.Activities.Timers.Triggers
+namespace Elsa.Activities.Timers.Bookmarks
 {
     public class CronBookmark : IBookmark
     {
-        public Instant ExecuteAt { get; set; }
+        public Instant? ExecuteAt { get; set; }
+        public string CronExpression { get; set; } = default!;
     }
-    
+
     public class CronBookmarkProvider : BookmarkProvider<CronBookmark, Cron>
     {
-        public override IEnumerable<IBookmark> GetTriggers(BookmarkProviderContext<Cron> context)
+        public override async ValueTask<IEnumerable<IBookmark>> GetBookmarksAsync(BookmarkProviderContext<Cron> context, CancellationToken cancellationToken)
         {
-            var executeAt = context.Activity.GetState(x => x.ExecuteAt);
+            var cronExpression = await context.Activity.GetPropertyValueAsync(x => x.CronExpression, cancellationToken);
 
-            if (executeAt != null)
-                yield return new CronBookmark
+            if (context.Mode == BookmarkIndexingMode.WorkflowInstance)
+            {
+                var executeAt = context.Activity.GetState(x => x.ExecuteAt);
+                
+                if(executeAt == null)
+                    return Enumerable.Empty<IBookmark>();
+                
+                return new[]
                 {
-                    ExecuteAt = executeAt.Value,
+                    new CronBookmark
+                    {
+                        ExecuteAt = executeAt.Value,
+                        CronExpression = cronExpression!
+                    }
                 };
+            }
+
+            return new[]
+            {
+                new CronBookmark
+                {
+                    CronExpression = cronExpression!
+                }
+            };
         }
+
+        private Instant? GetExecuteAt(BookmarkProviderContext<Cron> context) =>
+            context.Mode == BookmarkIndexingMode.WorkflowInstance
+                ? context.Activity.GetState(x => x.ExecuteAt)
+                : default;
     }
 }

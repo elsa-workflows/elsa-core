@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.AzureServiceBus.Bookmarks;
@@ -12,8 +10,8 @@ using Elsa.DistributedLock;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications;
-using Elsa.Persistence.Specifications.WorkflowInstances;
 using Elsa.Services;
+using Elsa.Triggers;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Extensions.DependencyInjection;
@@ -32,26 +30,18 @@ namespace Elsa.Activities.AzureServiceBus.Services
         private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly IDistributedLockProvider _distributedLockProvider;
         private readonly ILogger _logger;
-        private readonly IWorkflowBlueprintReflector _workflowBlueprintReflector;
-        private readonly string _queueName;
-        private ICollection<BookmarkedWorkflow>? _startTriggers;
 
         public QueueWorker(
             IMessageReceiver messageReceiver,
             IServiceScopeFactory serviceScopeFactory,
             IDistributedLockProvider distributedLockProvider,
-            IWorkflowRegistry workflowRegistry,
-            IWorkflowBlueprintReflector workflowBlueprintReflector,
             IOptions<AzureServiceBusOptions> options,
-            ILogger<QueueWorker> logger,
-            string queueName)
+            ILogger<QueueWorker> logger)
         {
             _messageReceiver = messageReceiver;
             _serviceScopeFactory = serviceScopeFactory;
             _distributedLockProvider = distributedLockProvider;
             _logger = logger;
-            _workflowBlueprintReflector = workflowBlueprintReflector;
-            _queueName = queueName;
 
             _messageReceiver.RegisterMessageHandler(OnMessageReceived, new MessageHandlerOptions(ExceptionReceivedHandler)
             {
@@ -75,7 +65,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
             var workflowQueue = scope.ServiceProvider.GetRequiredService<IWorkflowQueue>();
             var queueName = _messageReceiver.Path;
             var correlationId = message.CorrelationId;
-            var startTriggers = _startTriggers ??= (await GetStartTriggersAsync(cancellationToken)).ToList();
+            var triggerFinder = scope.ServiceProvider.GetRequiredService<ITriggerFinder>();
 
             var model = new MessageModel
             {
@@ -95,12 +85,16 @@ namespace Elsa.Activities.AzureServiceBus.Services
                 ScheduledEnqueueTimeUtc = message.ScheduledEnqueueTimeUtc
             };
 
+            var bookmark = new MessageReceivedBookmark(queueName, correlationId);
+
             async Task TriggerNewWorkflowAsync()
             {
-                foreach (var startTrigger in startTriggers)
+                var triggers = await triggerFinder.FindTriggersAsync<AzureServiceBusMessageReceived>(bookmark, TenantId, cancellationToken);
+                
+                foreach (var trigger in triggers)
                 {
-                    var workflowBlueprint = startTrigger.WorkflowBlueprint;
-                    await workflowQueue.EnqueueWorkflowDefinition(workflowBlueprint.Id, workflowBlueprint.TenantId, startTrigger.ActivityId, model, correlationId, null, cancellationToken);
+                    var workflowBlueprint = trigger.WorkflowBlueprint;
+                    await workflowQueue.EnqueueWorkflowDefinition(workflowBlueprint.Id, workflowBlueprint.TenantId, trigger.ActivityId, model, correlationId, null, cancellationToken);
                 }
             }
 
@@ -124,7 +118,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
 
             try
             {
-                var workflowSelector = scope.ServiceProvider.GetRequiredService<IWorkflowSelector>();
+                var bookmarkFinder = scope.ServiceProvider.GetRequiredService<IBookmarkFinder>();
                 var workflowInstanceStore = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
                 var correlatedWorkflowInstanceCount = await workflowInstanceStore.CountAsync(new CorrelationIdSpecification<WorkflowInstance>(model.CorrelationId), cancellationToken);
 
@@ -132,7 +126,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
                 {
                     // Trigger existing workflows (if blocked on this message).
                     _logger.LogDebug("{WorkflowInstanceCount} existing workflows found with correlation ID '{CorrelationId}'. Resuming them", correlatedWorkflowInstanceCount, correlationId);
-                    var existingWorkflows = await workflowSelector.SelectWorkflowsAsync<AzureServiceBusMessageReceived>(new MessageReceivedBookmark(queueName, correlationId), TenantId, cancellationToken).ToList();
+                    var existingWorkflows = await bookmarkFinder.FindBookmarksAsync<AzureServiceBusMessageReceived>(bookmark, TenantId, cancellationToken).ToList();
                     await workflowQueue.EnqueueWorkflowsAsync(existingWorkflows, model, model.CorrelationId, cancellationToken: cancellationToken);
                 }
                 else
@@ -166,58 +160,6 @@ namespace Elsa.Activities.AzureServiceBus.Services
             }
 
             return Task.CompletedTask;
-        }
-
-        private async Task<IEnumerable<BookmarkedWorkflow>> GetStartTriggersAsync(CancellationToken cancellationToken)
-        {
-            using var scope = _serviceScopeFactory.CreateScope();
-            var workflowRegistry = scope.ServiceProvider.GetRequiredService<IWorkflowRegistry>();
-            var workflowBlueprints = await workflowRegistry.GetWorkflowsAsync(cancellationToken).ToListAsync(cancellationToken);
-            var workflowInstanceStore = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
-
-            var messageWorkflows =
-                from workflow in workflowBlueprints
-                from activity in workflow.GetStartActivities<AzureServiceBusMessageReceived>()
-                select (workflow, activity);
-
-            var triggers = new List<BookmarkedWorkflow>();
-
-            foreach (var messageWorkflow in messageWorkflows)
-            {
-                var workflow = messageWorkflow.workflow;
-
-                if (workflow.IsSingleton && await HasRunningInstancesAsync(workflowInstanceStore, workflow.Id, cancellationToken))
-                    continue;
-
-                var activity = messageWorkflow.activity;
-                var workflowWrapper = await _workflowBlueprintReflector.ReflectAsync(scope, workflow, cancellationToken);
-                var activityBlueprintWrapper = workflowWrapper.GetActivity<AzureServiceBusMessageReceived>(activity.Id)!;
-                var queueName = await activityBlueprintWrapper.GetPropertyValueAsync(x => x.QueueName, cancellationToken);
-
-                if (queueName == null)
-                {
-                    _logger.LogWarning("Activity {ActivityId} at {Source} does not have a queue name configured and can therefore not act as a trigger", activity.Id, activity.Source);
-                    continue;
-                }
-                
-                if(queueName != _queueName)
-                    continue;
-
-                triggers.Add(new BookmarkedWorkflow
-                {
-                    ActivityId = activity.Id,
-                    ActivityType = activity.Type,
-                    WorkflowBlueprint = workflow
-                });
-            }
-
-            return triggers;
-        }
-
-        private static async Task<bool> HasRunningInstancesAsync(IWorkflowInstanceStore workflowInstanceStore, string workflowDefinitionId, CancellationToken cancellationToken)
-        {
-            var workflowInstanceCount = await workflowInstanceStore.CountAsync(new WorkflowDefinitionIdSpecification(workflowDefinitionId).And(new WorkflowIsAlreadyExecutingSpecification()), cancellationToken);
-            return workflowInstanceCount > 0;
         }
     }
 }

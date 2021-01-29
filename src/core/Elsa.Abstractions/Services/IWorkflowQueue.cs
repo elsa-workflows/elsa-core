@@ -23,7 +23,7 @@ namespace Elsa.Services
         /// Enqueues the specified workflows for execution.
         /// </summary>
         Task EnqueueWorkflowsAsync(
-            IEnumerable<WorkflowSelectorResult> results,
+            IEnumerable<BookmarkFinderResult> results,
             object? input = default,
             string? correlationId = default,
             string? contextId = default,

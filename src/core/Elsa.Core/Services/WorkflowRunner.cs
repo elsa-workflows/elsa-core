@@ -28,7 +28,7 @@ namespace Elsa.Services
 
         private readonly IWorkflowRegistry _workflowRegistry;
         private readonly IWorkflowFactory _workflowFactory;
-        private readonly IWorkflowSelector _workflowSelector;
+        private readonly IBookmarkFinder _bookmarkFinder;
         private readonly IWorkflowInstanceStore _workflowInstanceManager;
         private readonly IWorkflowContextManager _workflowContextManager;
         private readonly Func<IWorkflowBuilder> _workflowBuilderFactory;
@@ -39,7 +39,7 @@ namespace Elsa.Services
         public WorkflowRunner(
             IWorkflowRegistry workflowRegistry,
             IWorkflowFactory workflowFactory,
-            IWorkflowSelector workflowSelector,
+            IBookmarkFinder bookmarkFinder,
             IWorkflowInstanceStore workflowInstanceStore,
             IWorkflowContextManager workflowContextManager,
             Func<IWorkflowBuilder> workflowBuilderFactory,
@@ -55,7 +55,7 @@ namespace Elsa.Services
             _logger = logger;
             _workflowInstanceManager = workflowInstanceStore;
             _workflowContextManager = workflowContextManager;
-            _workflowSelector = workflowSelector;
+            _bookmarkFinder = bookmarkFinder;
         }
 
         public async Task TriggerWorkflowsAsync(
@@ -67,12 +67,12 @@ namespace Elsa.Services
             string? contextId = default,
             CancellationToken cancellationToken = default)
         {
-            var results = await _workflowSelector.SelectWorkflowsAsync(activityType, bookmark, tenantId, cancellationToken).ToList();
+            var results = await _bookmarkFinder.FindBookmarksAsync(activityType, bookmark, tenantId, cancellationToken).ToList();
             await TriggerWorkflowsAsync(results, input, correlationId, contextId, cancellationToken);
         }
 
         public async Task TriggerWorkflowsAsync(
-            IEnumerable<WorkflowSelectorResult> results,
+            IEnumerable<BookmarkFinderResult> results,
             object? input = default,
             string? correlationId = default,
             string? contextId = default,

@@ -9,12 +9,12 @@ namespace Elsa.Services
 {
     public class WorkflowQueue : IWorkflowQueue
     {
-        private readonly IWorkflowSelector _workflowSelector;
+        private readonly IBookmarkFinder _bookmarkFinder;
         private readonly ICommandSender _commandSender;
 
-        public WorkflowQueue(IWorkflowSelector workflowSelector, ICommandSender commandSender)
+        public WorkflowQueue(IBookmarkFinder bookmarkFinder, ICommandSender commandSender)
         {
-            _workflowSelector = workflowSelector;
+            _bookmarkFinder = bookmarkFinder;
             _commandSender = commandSender;
         }
 
@@ -27,11 +27,11 @@ namespace Elsa.Services
             string? contextId = default,
             CancellationToken cancellationToken = default)
         {
-            var results = await _workflowSelector.SelectWorkflowsAsync(activityType, bookmark, tenantId, cancellationToken).ToList();
+            var results = await _bookmarkFinder.FindBookmarksAsync(activityType, bookmark, tenantId, cancellationToken).ToList();
             await EnqueueWorkflowsAsync(results, input, correlationId, contextId, cancellationToken);
         }
 
-        public async Task EnqueueWorkflowsAsync(IEnumerable<WorkflowSelectorResult> results, object? input = default, string? correlationId = default, string? contextId = default, CancellationToken cancellationToken = default)
+        public async Task EnqueueWorkflowsAsync(IEnumerable<BookmarkFinderResult> results, object? input = default, string? correlationId = default, string? contextId = default, CancellationToken cancellationToken = default)
         {
             foreach (var result in results) 
                 await EnqueueWorkflowInstance(result.WorkflowInstanceId, result.ActivityId, input, cancellationToken);

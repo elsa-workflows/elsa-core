@@ -3,8 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Bookmarks;
 using Elsa.Events;
-using Elsa.Models;
-using Elsa.Services;
 using MediatR;
 
 namespace Elsa.Handlers

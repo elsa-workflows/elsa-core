@@ -23,6 +23,7 @@ using Elsa.Serialization;
 using Elsa.Serialization.Converters;
 using Elsa.Services;
 using Elsa.StartupTasks;
+using Elsa.Triggers;
 using Elsa.WorkflowProviders;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -51,7 +52,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton(options.DistributedLockProviderFactory)
                 .AddSingleton(options.SignalFactory)
                 .AddSingleton(options.StorageFactory)
-                .AddStartupTask<ContinueRunningWorkflows>();
+                .AddStartupTask<ContinueRunningWorkflows>()
+                .AddStartupTask<IndexTriggers>();
 
             options
                 .AddWorkflowsCore()
@@ -113,9 +115,12 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IWorkflowBlueprintReflector, WorkflowBlueprintReflector>()
                 .AddSingleton<IBookmarkHasher, BookmarkHasher>()
                 .AddScoped<IBookmarkIndexer, BookmarkIndexer>()
+                .AddScoped<IBookmarkFinder, BookmarkFinder>()
+                .AddScoped<ITriggerIndexer, TriggerIndexer>()
+                .AddSingleton<ITriggerStore, TriggerStore>()
+                .AddScoped<ITriggerFinder, TriggerFinder>()
                 .AddSingleton<IBackgroundWorker, BackgroundWorker>()
                 .AddScoped<IWorkflowQueue, WorkflowQueue>()
-                .AddScoped<IWorkflowSelector, WorkflowSelector>()
                 .AddScoped<IWorkflowPublisher, WorkflowPublisher>()
                 .AddScoped<IWorkflowContextManager, WorkflowContextManager>()
                 .AddSingleton<IActivityTypeService, ActivityTypeService>()

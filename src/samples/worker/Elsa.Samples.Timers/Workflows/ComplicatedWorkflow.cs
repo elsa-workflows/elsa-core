@@ -6,7 +6,7 @@ using NodaTime;
 
 namespace Elsa.Samples.Timers.Workflows
 {
-    public class RecurringTaskWorkflow : IWorkflow
+    public class ComplicatedWorkflow : IWorkflow
     {
         public void Build(IWorkflowBuilder workflow)
         {

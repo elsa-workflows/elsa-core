@@ -1,8 +1,8 @@
 ﻿namespace Elsa.Bookmarks
 {
-    public class WorkflowSelectorResult
+    public class BookmarkFinderResult
     {
-        public WorkflowSelectorResult(string workflowInstanceId, string activityId, IBookmark bookmark)
+        public BookmarkFinderResult(string workflowInstanceId, string activityId, IBookmark bookmark)
         {
             WorkflowInstanceId = workflowInstanceId;
             ActivityId = activityId;

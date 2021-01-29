@@ -2,11 +2,11 @@
 using System.Linq.Expressions;
 using Elsa.Models;
 
-namespace Elsa.Persistence.Specifications.WorkflowTriggers
+namespace Elsa.Persistence.Specifications.Bookmarks
 {
-    public class TriggerHashSpecification : Specification<Bookmark>
+    public class BookmarkHashSpecification : Specification<Bookmark>
     {
-        public TriggerHashSpecification(string hash, string activityType, string? tenantId)
+        public BookmarkHashSpecification(string hash, string activityType, string? tenantId)
         {
             Hash = hash;
             ActivityType = activityType;

@@ -20,7 +20,7 @@ namespace Elsa.Services
             CancellationToken cancellationToken = default);
 
         Task TriggerWorkflowsAsync(
-            IEnumerable<WorkflowSelectorResult> results,
+            IEnumerable<BookmarkFinderResult> results,
             object? input = default,
             string? correlationId = default,
             string? contextId = default,

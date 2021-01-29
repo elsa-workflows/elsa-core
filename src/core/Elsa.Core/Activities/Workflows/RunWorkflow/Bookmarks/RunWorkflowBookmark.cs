@@ -11,7 +11,7 @@ namespace Elsa.Activities.Workflows
     
     public class RunWorkflowBookmarkProvider : BookmarkProvider<RunWorkflowBookmark, RunWorkflow>
     {
-        public override IEnumerable<IBookmark> GetTriggers(BookmarkProviderContext<RunWorkflow> context)
+        public override IEnumerable<IBookmark> GetBookmarks(BookmarkProviderContext<RunWorkflow> context)
         {
             var childWorkflowInstanceId = context.GetActivity<RunWorkflow>().GetState(x => x.ChildWorkflowInstanceId);
 

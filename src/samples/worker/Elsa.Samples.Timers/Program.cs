@@ -25,14 +25,16 @@ namespace Elsa.Samples.Timers
                                         .UseSqlite("Data Source=elsa.sqlite.db;Cache=Shared", db => db.MigrationsAssembly(typeof(SqliteElsaContextFactory).Assembly.GetName().Name)), true)
                                     .AddConsoleActivities()
                                     .AddQuartzTimerActivities()
-                                    .AddWorkflow<RecurringTaskWorkflow>()
                                     .AddActivity<MyContainer1>()
                                     .AddActivity<MyContainer2>()
-                                .AddWorkflow<CancelTimerWorkflow>()
-                                .AddWorkflow<CronTaskWorkflow>()
-                                .AddWorkflow(sp => ActivatorUtilities.CreateInstance<OneOffWorkflow>(sp, sp.GetRequiredService<IClock>().GetCurrentInstant().Plus(Duration.FromSeconds(5))))
+                                    .AddWorkflow<SingletonTimerWorkflow>()
+                                    //.AddWorkflow<TimerWorkflow>()
+                                //.AddWorkflow<ComplicatedWorkflow>()
+                                //.AddWorkflow<CancelTimerWorkflow>()
+                                //.AddWorkflow<CronTaskWorkflow>()
+                                //.AddWorkflow(sp => ActivatorUtilities.CreateInstance<OneOffWorkflow>(sp, sp.GetRequiredService<IClock>().GetCurrentInstant().Plus(Duration.FromSeconds(5))))
                             )
-                            .StartWorkflow<RecurringTaskWorkflow>()
+                            //.StartWorkflow<ComplicatedWorkflow>()
                             ;
                     });
     }

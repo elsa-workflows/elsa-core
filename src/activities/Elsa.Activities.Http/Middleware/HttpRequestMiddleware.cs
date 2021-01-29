@@ -30,7 +30,7 @@ namespace Elsa.Activities.Http.Middleware
         public async Task InvokeAsync(
             HttpContext httpContext,
             IWorkflowRegistry workflowRegistry,
-            IWorkflowSelector workflowSelector,
+            IBookmarkFinder bookmarkFinder,
             IWorkflowRunner workflowRunner,
             IWorkflowInstanceStore workflowInstanceStore,
             IWorkflowBlueprintReflector workflowBlueprintReflector,
@@ -76,7 +76,7 @@ namespace Elsa.Activities.Http.Middleware
             };
 
             var triggers = new[] { triggerWithMethod, triggerWithoutMethod };
-            var results = await workflowSelector.SelectWorkflowsAsync<HttpRequestReceived>(triggers, TenantId, cancellationToken).ToList();
+            var results = await bookmarkFinder.FindBookmarksAsync<HttpRequestReceived>(triggers, TenantId, cancellationToken).ToList();
 
             if (!results.Any())
             {

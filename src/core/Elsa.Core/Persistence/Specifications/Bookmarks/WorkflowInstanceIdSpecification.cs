@@ -2,7 +2,7 @@
 using System.Linq.Expressions;
 using Elsa.Models;
 
-namespace Elsa.Persistence.Specifications.WorkflowTriggers
+namespace Elsa.Persistence.Specifications.Bookmarks
 {
     public class WorkflowInstanceIdSpecification : Specification<Bookmark>
     {

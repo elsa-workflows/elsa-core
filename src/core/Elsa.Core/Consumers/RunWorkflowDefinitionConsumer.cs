@@ -16,15 +16,15 @@ namespace Elsa.Consumers
         private readonly IWorkflowRunner _workflowRunner;
         private readonly IWorkflowRegistry _workflowRegistry;
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
-        private readonly IWorkflowSelector _workflowSelector;
+        private readonly IBookmarkFinder _bookmarkFinder;
         private readonly ILogger _logger;
 
-        public RunWorkflowDefinitionConsumer(IWorkflowRunner workflowRunner, IWorkflowRegistry workflowRegistry, IWorkflowInstanceStore workflowInstanceStore, IWorkflowSelector workflowSelector, ILogger<RunWorkflowDefinitionConsumer> logger)
+        public RunWorkflowDefinitionConsumer(IWorkflowRunner workflowRunner, IWorkflowRegistry workflowRegistry, IWorkflowInstanceStore workflowInstanceStore, IBookmarkFinder bookmarkFinder, ILogger<RunWorkflowDefinitionConsumer> logger)
         {
             _workflowRunner = workflowRunner;
             _workflowRegistry = workflowRegistry;
             _workflowInstanceStore = workflowInstanceStore;
-            _workflowSelector = workflowSelector;
+            _bookmarkFinder = bookmarkFinder;
             _logger = logger;
         }
 

@@ -8,6 +8,24 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "Bookmarks",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "TEXT", nullable: false),
+                    TenantId = table.Column<string>(type: "TEXT", nullable: true),
+                    Hash = table.Column<string>(type: "TEXT", nullable: false),
+                    Model = table.Column<string>(type: "TEXT", nullable: false),
+                    ModelType = table.Column<string>(type: "TEXT", nullable: false),
+                    ActivityType = table.Column<string>(type: "TEXT", nullable: false),
+                    ActivityId = table.Column<string>(type: "TEXT", nullable: false),
+                    WorkflowInstanceId = table.Column<string>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Bookmarks", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "WorkflowDefinitions",
                 columns: table => new
                 {
@@ -74,28 +92,13 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
                 {
                     table.PrimaryKey("PK_WorkflowInstances", x => x.Id);
                 });
-
-            migrationBuilder.CreateTable(
-                name: "WorkflowTriggers",
-                columns: table => new
-                {
-                    Id = table.Column<string>(type: "TEXT", nullable: false),
-                    TenantId = table.Column<string>(type: "TEXT", nullable: true),
-                    Hash = table.Column<string>(type: "TEXT", nullable: false),
-                    TypeName = table.Column<string>(type: "TEXT", nullable: false),
-                    Model = table.Column<string>(type: "TEXT", nullable: false),
-                    ActivityType = table.Column<string>(type: "TEXT", nullable: false),
-                    ActivityId = table.Column<string>(type: "TEXT", nullable: false),
-                    WorkflowInstanceId = table.Column<string>(type: "TEXT", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_WorkflowTriggers", x => x.Id);
-                });
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "Bookmarks");
+
             migrationBuilder.DropTable(
                 name: "WorkflowDefinitions");
 
@@ -104,9 +107,6 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
 
             migrationBuilder.DropTable(
                 name: "WorkflowInstances");
-
-            migrationBuilder.DropTable(
-                name: "WorkflowTriggers");
         }
     }
 }

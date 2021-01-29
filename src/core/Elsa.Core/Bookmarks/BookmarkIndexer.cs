@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Persistence;
-using Elsa.Persistence.Specifications.WorkflowTriggers;
+using Elsa.Persistence.Specifications.Bookmarks;
 using Elsa.Serialization;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -55,14 +55,14 @@ namespace Elsa.Bookmarks
         public async Task IndexBookmarksAsync(IEnumerable<WorkflowInstance> workflowInstances, CancellationToken cancellationToken)
         {
             _stopwatch.Restart();
-            _logger.LogInformation("Indexing triggers");
+            _logger.LogInformation("Indexing bookmarks");
 
             var workflowInstanceList = workflowInstances.ToList();
             var workflowInstanceIds = workflowInstanceList.Select(x => x.Id).ToList();
             await DeleteBookmarksAsync(workflowInstanceIds, cancellationToken);
 
             var workflowBlueprints = await _workflowRegistry.GetWorkflowsAsync(cancellationToken).ToDictionaryAsync(x => (x.Id, x.Version), cancellationToken);
-            var allWorkflowTriggers = new List<Bookmark>();
+            var entities = new List<Bookmark>();
             
             foreach (var workflowInstance in workflowInstanceList.Where(x => x.WorkflowStatus == WorkflowStatus.Suspended))
             {
@@ -76,15 +76,15 @@ namespace Elsa.Bookmarks
                 }
 
                 var blockingActivities = workflowBlueprint.GetBlockingActivities(workflowInstance!);
-                var triggerDescriptors = await ExtractBookmarksAsync(workflowBlueprint, workflowInstance, blockingActivities, true, cancellationToken).ToList();
-                var workflowTriggers = ToWorkflowTriggers(triggerDescriptors, workflowInstance);
-                allWorkflowTriggers.AddRange(workflowTriggers);
+                var bookmarkedWorkflows = await ExtractBookmarksAsync(workflowBlueprint, workflowInstance, blockingActivities, true, cancellationToken).ToList();
+                var bookmarks = MapBookmarks(bookmarkedWorkflows, workflowInstance);
+                entities.AddRange(bookmarks);
             }
             
-            await _bookmarkStore.AddManyAsync(allWorkflowTriggers, cancellationToken);
+            await _bookmarkStore.AddManyAsync(entities, cancellationToken);
 
             _stopwatch.Stop();
-            _logger.LogInformation("Indexed {TriggerCount} triggers in {ElapsedTime}", allWorkflowTriggers.Count, _stopwatch.Elapsed);
+            _logger.LogInformation("Indexed {BookmarkCount} bookmarks in {ElapsedTime}", entities.Count, _stopwatch.Elapsed);
         }
         
         public async Task IndexBookmarksAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken) => await IndexBookmarksAsync(new[] { workflowInstance }, cancellationToken);
@@ -100,11 +100,11 @@ namespace Elsa.Bookmarks
             var specification = new WorkflowInstanceIdSpecification(workflowInstanceId);
             var count = await _bookmarkStore.DeleteManyAsync(specification, cancellationToken);
             
-            _logger.LogDebug("Deleted {DeletedTriggerCount} triggers for workflow {WorkflowInstanceId}", count, workflowInstanceId);
+            _logger.LogDebug("Deleted {DeletedBookmarkCount} bookmarks for workflow {WorkflowInstanceId}", count, workflowInstanceId);
         }
         
-        private IEnumerable<Bookmark> ToWorkflowTriggers(IEnumerable<BookmarkedWorkflow> triggerDescriptors, WorkflowInstance workflowInstance) =>
-            triggerDescriptors.SelectMany(triggerDescriptor => triggerDescriptor.Bookmarks.Select(x => new Bookmark
+        private IEnumerable<Bookmark> MapBookmarks(IEnumerable<BookmarkedWorkflow> bookmarkedWorkflows, WorkflowInstance workflowInstance) =>
+            bookmarkedWorkflows.SelectMany(triggerDescriptor => triggerDescriptor.Bookmarks.Select(x => new Bookmark
             {
                 Id = _idGenerator.Generate(),
                 TenantId = workflowInstance.TenantId,
@@ -141,7 +141,7 @@ namespace Elsa.Bookmarks
             foreach (var blockingActivity in blockingActivities)
             {
                 var activityExecutionContext = new ActivityExecutionContext(scope, workflowExecutionContext, blockingActivity, null, cancellationToken);
-                var providerContext = new BookmarkProviderContext(activityExecutionContext);
+                var providerContext = new BookmarkProviderContext(activityExecutionContext, BookmarkIndexingMode.WorkflowInstance);
                 var providers = _providers.Where(x => x.ForActivityType == blockingActivity.Type);
 
                 foreach (var provider in providers)

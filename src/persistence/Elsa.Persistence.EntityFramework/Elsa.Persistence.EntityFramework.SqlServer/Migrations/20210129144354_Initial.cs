@@ -8,6 +8,24 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "Bookmarks",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    TenantId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Hash = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Model = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ModelType = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ActivityType = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ActivityId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    WorkflowInstanceId = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Bookmarks", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "WorkflowDefinitions",
                 columns: table => new
                 {
@@ -74,28 +92,13 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
                 {
                     table.PrimaryKey("PK_WorkflowInstances", x => x.Id);
                 });
-
-            migrationBuilder.CreateTable(
-                name: "WorkflowTriggers",
-                columns: table => new
-                {
-                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    TenantId = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Hash = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    TypeName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Model = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ActivityType = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ActivityId = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    WorkflowInstanceId = table.Column<string>(type: "nvarchar(max)", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_WorkflowTriggers", x => x.Id);
-                });
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "Bookmarks");
+
             migrationBuilder.DropTable(
                 name: "WorkflowDefinitions");
 
@@ -104,9 +107,6 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
 
             migrationBuilder.DropTable(
                 name: "WorkflowInstances");
-
-            migrationBuilder.DropTable(
-                name: "WorkflowTriggers");
         }
     }
 }
