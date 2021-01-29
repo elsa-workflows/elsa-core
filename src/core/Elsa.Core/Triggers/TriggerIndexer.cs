@@ -77,7 +77,7 @@ namespace Elsa.Triggers
                     
                     foreach (var activity in startActivities)
                     {
-                        var activityExecutionContext = new ActivityExecutionContext(scope, workflowExecutionContext, activity, null, cancellationToken);
+                        var activityExecutionContext = new ActivityExecutionContext(scope, workflowExecutionContext, activity, null, false, cancellationToken);
                         var context = new BookmarkProviderContext(activityExecutionContext, BookmarkIndexingMode.WorkflowBlueprint);
                         var bookmarks = (await provider.GetBookmarksAsync(context, cancellationToken)).ToList();
                         var triggers = bookmarks.Select(x => new WorkflowTrigger(workflowBlueprint, activity.Id, activity.Type, _bookmarkHasher.Hash(x), x)).ToList();

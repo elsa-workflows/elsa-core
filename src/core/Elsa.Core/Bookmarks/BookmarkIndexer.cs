@@ -140,7 +140,7 @@ namespace Elsa.Bookmarks
 
             foreach (var blockingActivity in blockingActivities)
             {
-                var activityExecutionContext = new ActivityExecutionContext(scope, workflowExecutionContext, blockingActivity, null, cancellationToken);
+                var activityExecutionContext = new ActivityExecutionContext(scope, workflowExecutionContext, blockingActivity, null, false, cancellationToken);
                 var providerContext = new BookmarkProviderContext(activityExecutionContext, BookmarkIndexingMode.WorkflowInstance);
                 var providers = _providers.Where(x => x.ForActivityType == blockingActivity.Type);
 

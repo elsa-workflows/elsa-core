@@ -13,7 +13,8 @@ namespace Elsa.Handlers
         INotificationHandler<WorkflowExecuted>,
         INotificationHandler<WorkflowSuspended>,
         INotificationHandler<WorkflowExecutionPassCompleted>,
-        INotificationHandler<WorkflowExecutionFinished>
+        INotificationHandler<WorkflowExecutionFinished>,
+        INotificationHandler<WorkflowFaulted>
     {
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
         private readonly ILogger _logger;
@@ -40,6 +41,11 @@ namespace Elsa.Handlers
         {
             if (notification.WorkflowExecutionContext.WorkflowBlueprint.PersistenceBehavior == WorkflowPersistenceBehavior.ActivityExecuted || notification.ActivityExecutionContext.ActivityBlueprint.PersistWorkflow)
                 await SaveWorkflowAsync(notification.WorkflowExecutionContext, cancellationToken);
+        }
+        
+        public async Task Handle(WorkflowFaulted notification, CancellationToken cancellationToken)
+        {
+            await SaveWorkflowAsync(notification.WorkflowExecutionContext, cancellationToken);
         }
 
         public async Task Handle(WorkflowExecutionFinished notification, CancellationToken cancellationToken)

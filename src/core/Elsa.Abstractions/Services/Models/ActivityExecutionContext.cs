@@ -17,12 +17,14 @@ namespace Elsa.Services.Models
             WorkflowExecutionContext workflowExecutionContext,
             IActivityBlueprint activityBlueprint,
             object? input,
+            bool resuming,
             CancellationToken cancellationToken)
         {
             WorkflowExecutionContext = workflowExecutionContext;
             ServiceScope = serviceProvider;
             ActivityBlueprint = activityBlueprint;
             Input = input;
+            Resuming = resuming;
             CancellationToken = cancellationToken;
             Outcomes = new List<string>(0);
         }
@@ -35,6 +37,7 @@ namespace Elsa.Services.Models
         public string ActivityId => ActivityBlueprint.Id;
         public IReadOnlyCollection<string> Outcomes { get; set; }
         public object? Input { get; }
+        public bool Resuming { get; }
         public CancellationToken CancellationToken { get; }
 
         public JObject GetData() => WorkflowInstance.ActivityData.GetItem(ActivityBlueprint.Id, () => new JObject());
