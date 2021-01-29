@@ -3,7 +3,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Persistence;
-using Elsa.Persistence.Specifications;
+using Elsa.Persistence.Specifications.WorkflowDefinitions;
+using WorkflowDefinitionIdSpecification = Elsa.Persistence.Specifications.WorkflowInstances.WorkflowDefinitionIdSpecification;
 
 namespace Elsa.Services
 {
@@ -132,10 +133,10 @@ namespace Elsa.Services
 
         public async Task DeleteAsync(string workflowDefinitionId, CancellationToken cancellationToken)
         {
-            var allVersions = await _workflowDefinitionStore.FindManyAsync(new WorkflowDefinitionIdSpecification(workflowDefinitionId), cancellationToken: cancellationToken);
+            var allVersions = await _workflowDefinitionStore.FindManyAsync(new Persistence.Specifications.WorkflowDefinitions.WorkflowDefinitionIdSpecification(workflowDefinitionId), cancellationToken: cancellationToken);
             var allVersionIds = allVersions.Select(x => x.DefinitionVersionId).ToList();
 
-            await _workflowInstanceStore.DeleteManyAsync(new WorkflowInstanceDefinitionIdSpecification(workflowDefinitionId), cancellationToken);
+            await _workflowInstanceStore.DeleteManyAsync(new WorkflowDefinitionIdSpecification(workflowDefinitionId), cancellationToken);
             await _workflowDefinitionStore.DeleteManyAsync(new ManyWorkflowDefinitionVersionIdsSpecification(allVersionIds), cancellationToken);
         }
 

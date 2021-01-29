@@ -1,9 +1,8 @@
-using Elsa.Attributes;
 using System;
 using System.Reflection;
+using Elsa.Attributes;
 
-
-namespace Elsa.Extensions
+namespace Elsa
 {
     public static class TypeExtensions
     {

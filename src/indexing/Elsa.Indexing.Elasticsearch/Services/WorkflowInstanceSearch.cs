@@ -3,7 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using AutoMapper;
-using Elsa.Extensions;
 using Elsa.Indexing.Extensions;
 using Elsa.Indexing.Models;
 using Elsa.Models;

@@ -2,13 +2,12 @@
 using System.Threading.Tasks;
 using Elsa.Activities.Timers.Quartz.Jobs;
 using Elsa.Activities.Timers.Services;
-using Elsa.Services.Models;
 using NodaTime;
 using Quartz;
 
 namespace Elsa.Activities.Timers.Quartz.Services
 {
-    public class QuartzWorkflowScheduler: IWorkflowScheduler
+    public class QuartzWorkflowScheduler : IWorkflowScheduler
     {
         private static readonly string RunWorkflowJobKey = nameof(RunQuartzWorkflowJob);
         private readonly ISchedulerFactory _schedulerFactory;
@@ -19,44 +18,27 @@ namespace Elsa.Activities.Timers.Quartz.Services
             _schedulerFactory = schedulerFactory;
         }
 
-        public async Task ScheduleWorkflowAsync(IWorkflowBlueprint workflowBlueprint, string activityId, Instant startAt, Duration interval, CancellationToken cancellationToken = default)
+        public async Task ScheduleWorkflowAsync(string? workflowDefinitionId, string? workflowInstanceId, string activityId, string? tenantId, Instant startAt, Duration? interval, CancellationToken cancellationToken)
         {
-            var trigger = CreateTrigger(workflowBlueprint, activityId)
-                .StartAt(startAt.ToDateTimeOffset())
-                .WithSimpleSchedule(x => x.WithInterval(interval.ToTimeSpan()).RepeatForever())
-                .Build();
+            var triggerBuilder = CreateTrigger(workflowDefinitionId, workflowInstanceId, activityId, tenantId).StartAt(startAt.ToDateTimeOffset());
 
+            if (interval != null)
+                triggerBuilder.WithSimpleSchedule(x => x.WithInterval(interval.Value.ToTimeSpan()).RepeatForever());
+
+            var trigger = triggerBuilder.Build();
             await ScheduleJob(trigger, cancellationToken);
         }
 
-        public async Task ScheduleWorkflowAsync(IWorkflowBlueprint workflowBlueprint, string activityId, Instant startAt, CancellationToken cancellationToken = default)
+        public async Task ScheduleWorkflowAsync(string? workflowDefinitionId, string? workflowInstanceId, string activityId, string? tenantId, string cronExpression, CancellationToken cancellationToken)
         {
-            var trigger = CreateTrigger(workflowBlueprint, activityId).StartAt(startAt.ToDateTimeOffset()).Build();
+            var trigger = CreateTrigger(workflowDefinitionId, workflowInstanceId, activityId, tenantId).WithCronSchedule(cronExpression).Build();
             await ScheduleJob(trigger, cancellationToken);
         }
-
-        public async Task ScheduleWorkflowAsync(IWorkflowBlueprint workflowBlueprint, string activityId, string cronExpression, CancellationToken cancellationToken = default)
-        {
-            var trigger = CreateTrigger(workflowBlueprint, activityId).WithCronSchedule(cronExpression).Build();
-            await ScheduleJob(trigger, cancellationToken);
-        }
-
-        public async Task ScheduleWorkflowAsync(IWorkflowBlueprint workflowBlueprint, string workflowInstanceId, string activityId, Instant startAt, CancellationToken cancellationToken = default)
-        {
-            var trigger = CreateTrigger(workflowBlueprint, activityId, workflowInstanceId)
-                .StartAt(startAt.ToDateTimeOffset()).Build();
-
-            await ScheduleJob(trigger, cancellationToken);
-        }
-
-        public async Task UnscheduleWorkflowAsync(WorkflowExecutionContext workflowExecutionContext, string activityId, CancellationToken cancellationToken = default)
+        
+        public async Task UnscheduleWorkflowAsync(string? workflowDefinitionId, string? workflowInstanceId, string activityId, string? tenantId, CancellationToken cancellationToken)
         {
             var scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
-            var trigger = CreateTriggerKey(tenantId: workflowExecutionContext.WorkflowBlueprint.TenantId,
-                workflowDefinitionId: workflowExecutionContext.WorkflowBlueprint.Id,
-                workflowInstanceId: workflowExecutionContext.WorkflowInstance.Id,
-                activityId: activityId);
-
+            var trigger = CreateTriggerKey(tenantId, workflowDefinitionId, workflowInstanceId, activityId);
             var existingTrigger = await scheduler.GetTrigger(trigger, cancellationToken);
 
             if (existingTrigger != null)
@@ -83,21 +65,16 @@ namespace Elsa.Activities.Timers.Quartz.Services
             }
         }
 
-        private TriggerBuilder CreateTrigger(IWorkflowBlueprint workflowBlueprint, string activityId) => CreateTrigger(workflowBlueprint.TenantId, workflowBlueprint.Id, null, activityId);
-        private TriggerBuilder CreateTrigger(IWorkflowBlueprint workflowBlueprint, string activityId, string workflowInstanceId) => CreateTrigger(workflowBlueprint.TenantId, workflowBlueprint.Id, workflowInstanceId, activityId);
-
-        private TriggerBuilder CreateTrigger(string? tenantId, string workflowDefinitionId, string? workflowInstanceId, string activityId)
-        {
-            return TriggerBuilder.Create()
+        private TriggerBuilder CreateTrigger(string? workflowDefinitionId, string? workflowInstanceId, string activityId, string? tenantId) =>
+            TriggerBuilder.Create()
                 .ForJob(RunWorkflowJobKey)
                 .WithIdentity(CreateTriggerKey(tenantId, workflowDefinitionId, workflowInstanceId, activityId))
                 .UsingJobData("TenantId", tenantId!)
-                .UsingJobData("WorkflowDefinitionId", workflowDefinitionId)
+                .UsingJobData("WorkflowDefinitionId", workflowDefinitionId!)
                 .UsingJobData("WorkflowInstanceId", workflowInstanceId!)
                 .UsingJobData("ActivityId", activityId);
-        }
 
-        private TriggerKey CreateTriggerKey(string? tenantId, string workflowDefinitionId, string? workflowInstanceId, string activityId)
+        private TriggerKey CreateTriggerKey(string? tenantId, string? workflowDefinitionId, string? workflowInstanceId, string activityId)
         {
             var groupName = $"tenant:{tenantId ?? "default"}-workflow-instance:{workflowInstanceId ?? workflowDefinitionId}";
             return new TriggerKey($"activity:{activityId}", groupName);

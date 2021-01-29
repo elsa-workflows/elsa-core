@@ -21,14 +21,20 @@ namespace Elsa.Activities.Workflows
             var workflowExecutionContext = notification.WorkflowExecutionContext;
             var workflowInstanceId = workflowExecutionContext.WorkflowInstance.Id;
             var output = workflowExecutionContext.WorkflowInstance.Output;
+            var tenantId = workflowExecutionContext.WorkflowInstance.TenantId;
             
             var input = new FinishedWorkflowModel
             {
                 WorkflowInstanceId = workflowInstanceId,
                 Output = output
             };
+
+            var trigger = new RunWorkflowBookmark
+            {
+                ChildWorkflowInstanceId = workflowInstanceId
+            };
             
-            await _workflowScheduler.TriggerWorkflowsAsync<RunWorkflowTrigger>(x => x.ChildWorkflowInstanceId == workflowInstanceId, input, cancellationToken: cancellationToken);
+            await _workflowScheduler.TriggerWorkflowsAsync<RunWorkflow>(trigger, tenantId, input, cancellationToken: cancellationToken);
         }
     }
 }

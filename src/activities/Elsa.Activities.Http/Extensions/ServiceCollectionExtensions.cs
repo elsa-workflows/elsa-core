@@ -1,12 +1,12 @@
 using System;
 using Elsa;
 using Elsa.Activities.Http;
+using Elsa.Activities.Http.Bookmarks;
 using Elsa.Activities.Http.Handlers;
 using Elsa.Activities.Http.Options;
 using Elsa.Activities.Http.Parsers;
 using Elsa.Activities.Http.RequestHandlers.Handlers;
 using Elsa.Activities.Http.Services;
-using Elsa.Activities.Http.Triggers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -42,7 +42,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IHttpResponseBodyParser, JsonHttpResponseBodyParser>()
                 .AddSingleton<IActionContextAccessor, ActionContextAccessor>()
                 .AddSingleton<IAbsoluteUrlProvider, DefaultAbsoluteUrlProvider>()
-                .AddTriggerProvider<ReceiveHttpRequestTriggerProvider>()
+                .AddBookmarkProvider<HttpRequestReceivedTriggerProvider>()
                 .AddHttpContextAccessor()
                 .AddNotificationHandlers(typeof(HttpJavaScriptHandler))
                 .AddDataProtection();

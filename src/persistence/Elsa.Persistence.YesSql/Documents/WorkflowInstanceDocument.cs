@@ -37,7 +37,7 @@ namespace Elsa.Persistence.YesSql.Documents
         
         public WorkflowFault? Fault { get; set; }
         public Stack<ScheduledActivity> ScheduledActivities { get; set; } = new();
-        public Stack<string> Scopes { get; set; }
+        public Stack<string> Scopes { get; set; } = new();
         public ScheduledActivity? CurrentActivity { get; set; }
     }
 }

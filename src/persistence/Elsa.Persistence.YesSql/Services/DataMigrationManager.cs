@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-
-using Elsa.Data;
 using Elsa.Persistence.YesSql.Data;
 using Elsa.Persistence.YesSql.Documents;
 using Microsoft.Extensions.Logging;

@@ -3,7 +3,8 @@ using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications;
-using Elsa.Persistence.YesSql.Extensions;
+using Elsa.Persistence.Specifications.WorkflowInstances;
+using Elsa.Persistence.YesSql;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -35,11 +36,11 @@ namespace Elsa.Samples.HelloWorldConsole
             var store = services.GetRequiredService<IWorkflowInstanceStore>();
 
             var results = await store.FindManyAsync(
-                new WorkflowInstanceDefinitionIdSpecification(nameof(HelloWorld)),
+                new WorkflowDefinitionIdSpecification(nameof(HelloWorld)),
                 OrderBySpecification.OrderByDescending<WorkflowInstance>(x => x.CreatedAt),
                 Paging.Page(1, 2));
 
-            var count = await store.CountAsync(new WorkflowInstanceDefinitionIdSpecification(nameof(HelloWorld)));
+            var count = await store.CountAsync(new WorkflowDefinitionIdSpecification(nameof(HelloWorld)));
 
             Console.WriteLine(count);
 

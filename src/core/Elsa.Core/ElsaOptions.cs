@@ -6,7 +6,6 @@ using AutoMapper;
 using Elsa.Builders;
 using Elsa.Caching;
 using Elsa.DistributedLock;
-using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.InMemory;
@@ -35,6 +34,7 @@ namespace Elsa
             WorkflowDefinitionStoreFactory = sp => ActivatorUtilities.CreateInstance<InMemoryWorkflowDefinitionStore>(sp);
             WorkflowInstanceStoreFactory = sp => ActivatorUtilities.CreateInstance<InMemoryWorkflowInstanceStore>(sp);
             WorkflowExecutionLogStoreFactory = sp => ActivatorUtilities.CreateInstance<InMemoryWorkflowExecutionLogStore>(sp);
+            WorkflowTriggerStoreFactory = sp => ActivatorUtilities.CreateInstance<InMemoryBookmarkStore>(sp);
             StorageFactory = sp => Storage.Net.StorageFactory.Blobs.InMemory();
             DistributedLockProviderFactory = sp => new DefaultLockProvider();
             SignalFactory = sp => new Signal();
@@ -73,6 +73,7 @@ namespace Elsa
         internal Func<IServiceProvider, IWorkflowDefinitionStore> WorkflowDefinitionStoreFactory { get; set; }
         internal Func<IServiceProvider, IWorkflowInstanceStore> WorkflowInstanceStoreFactory { get; set; }
         internal Func<IServiceProvider, IWorkflowExecutionLogStore> WorkflowExecutionLogStoreFactory { get; set; }
+        internal Func<IServiceProvider, IBookmarkStore> WorkflowTriggerStoreFactory { get; set; }
         internal Func<IServiceProvider, IDistributedLockProvider> DistributedLockProviderFactory { get; private set; }
         internal Func<IServiceProvider, ISignal> SignalFactory { get; private set; }
         internal Func<IServiceProvider, JsonSerializer> CreateJsonSerializer { get; private set; }
@@ -197,6 +198,12 @@ namespace Elsa
         public ElsaOptions UseWorkflowExecutionLogStore(Func<IServiceProvider, IWorkflowExecutionLogStore> factory)
         {
             WorkflowExecutionLogStoreFactory = factory;
+            return this;
+        }
+        
+        public ElsaOptions UseWorkflowTriggerStore(Func<IServiceProvider, IBookmarkStore> factory)
+        {
+            WorkflowTriggerStoreFactory = factory;
             return this;
         }
 

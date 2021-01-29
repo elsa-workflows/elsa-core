@@ -1,6 +1,6 @@
 using Elsa;
 using Elsa.Activities.Entity;
-using Elsa.Activities.Entity.Triggers;
+using Elsa.Activities.Entity.Bookmarks;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -10,7 +10,7 @@ namespace Microsoft.Extensions.DependencyInjection
         public static ElsaOptions AddEntityActivities(this ElsaOptions options)
         {
             options.AddActivity<EntityChanged>();
-            options.Services.AddTriggerProvider<EntityChangedTriggerProvider>();
+            options.Services.AddBookmarkProvider<EntityChangedWorkflowTriggerProvider>();
             return options;
         }
     }

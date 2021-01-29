@@ -1,45 +1,36 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Bookmarks;
 using Elsa.Events;
-using Elsa.Models;
-using Elsa.Services;
-using Elsa.Triggers;
 using MediatR;
 
 namespace Elsa.Handlers
 {
-    public class UpdateTriggers : INotificationHandler<WorkflowInstanceSaved>, INotificationHandler<ManyWorkflowInstancesDeleted>
+    public class UpdateTriggers : INotificationHandler<WorkflowInstanceSaved>, INotificationHandler<ManyWorkflowInstancesDeleted>, INotificationHandler<ManyWorkflowInstancesAdded>
     {
-        private readonly IWorkflowSelector _workflowSelector;
-        private readonly IWorkflowRegistry _workflowRegistry;
+        private readonly IBookmarkIndexer _bookmarkIndexer;
 
-        public UpdateTriggers(IWorkflowSelector workflowSelector, IWorkflowRegistry workflowRegistry)
+        public UpdateTriggers(IBookmarkIndexer bookmarkIndexer)
         {
-            _workflowSelector = workflowSelector;
-            _workflowRegistry = workflowRegistry;
+            _bookmarkIndexer = bookmarkIndexer;
         }
 
         public async Task Handle(WorkflowInstanceSaved notification, CancellationToken cancellationToken)
         {
             var workflowInstance = notification.WorkflowInstance;
-            await UpdateTriggersAsync(workflowInstance.DefinitionId, workflowInstance.Id, workflowInstance.TenantId, VersionOptions.SpecificVersion(workflowInstance.Version), cancellationToken);
+            await _bookmarkIndexer.IndexBookmarksAsync(workflowInstance, cancellationToken);
         }
 
         public async Task Handle(ManyWorkflowInstancesDeleted notification, CancellationToken cancellationToken)
         {
-            var workflowInstance = notification.WorkflowInstances.First();
-            await UpdateTriggersAsync(workflowInstance.DefinitionId, null, workflowInstance.TenantId, VersionOptions.Latest, cancellationToken);
+            var workflowInstanceIds = notification.WorkflowInstances.Select(x => x.Id).ToList();
+            await _bookmarkIndexer.DeleteBookmarksAsync(workflowInstanceIds, cancellationToken);
         }
 
-        private async Task UpdateTriggersAsync(string workflowDefinitionId, string? workflowInstanceId, string? tenantId, VersionOptions versionOptions, CancellationToken cancellationToken)
+        public async Task Handle(ManyWorkflowInstancesAdded notification, CancellationToken cancellationToken)
         {
-            var workflowBlueprint = await _workflowRegistry.GetWorkflowAsync(workflowDefinitionId, tenantId, versionOptions, cancellationToken);
-
-            if (workflowBlueprint == null)
-                return;
-
-            await _workflowSelector.UpdateTriggersAsync(workflowBlueprint, workflowInstanceId, cancellationToken);
+            await _bookmarkIndexer.IndexBookmarksAsync(notification.WorkflowInstances, cancellationToken);
         }
     }
 }

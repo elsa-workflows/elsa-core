@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
@@ -28,6 +29,22 @@ namespace Elsa.Persistence.Decorators
         {
             entity = Initialize(entity);
             await _store.UpdateAsync(entity, cancellationToken);
+        }
+
+        public async Task AddAsync(WorkflowDefinition entity, CancellationToken cancellationToken = default)
+        {
+            entity = Initialize(entity);
+            await _store.AddAsync(entity, cancellationToken);
+        }
+
+        public async Task AddManyAsync(IEnumerable<WorkflowDefinition> entities, CancellationToken cancellationToken = default)
+        {
+            var list = entities.ToList();
+
+            foreach (var entity in list)
+                Initialize(entity);
+            
+            await _store.AddManyAsync(list, cancellationToken);
         }
 
         public Task DeleteAsync(WorkflowDefinition entity, CancellationToken cancellationToken) => _store.DeleteAsync(entity, cancellationToken);

@@ -1,6 +1,4 @@
-using Elsa.Persistence.YesSql.Extensions;
-using Elsa.Runtime;
-using Elsa.StartupTasks;
+using Elsa.Persistence.YesSql;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;

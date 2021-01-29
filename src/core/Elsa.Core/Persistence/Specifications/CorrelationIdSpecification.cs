@@ -10,11 +10,4 @@ namespace Elsa.Persistence.Specifications
         public CorrelationIdSpecification(string? correlationId) => CorrelationId = correlationId;
         public override Expression<Func<T, bool>> ToExpression() => x => x.CorrelationId == CorrelationId;
     }
-
-    public class WorkflowInstanceCorrelationIdSpecification : CorrelationIdSpecification<WorkflowInstance>
-    {
-        public WorkflowInstanceCorrelationIdSpecification(string? correlationId) : base(correlationId)
-        {
-        }
-    }
 }

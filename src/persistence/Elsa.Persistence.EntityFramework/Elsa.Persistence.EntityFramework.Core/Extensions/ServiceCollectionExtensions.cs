@@ -1,6 +1,7 @@
 using System;
 using Elsa.Persistence.EntityFramework.Core.StartupTasks;
 using Elsa.Persistence.EntityFramework.Core.Stores;
+using Elsa.Runtime;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -17,15 +18,17 @@ namespace Elsa.Persistence.EntityFramework.Core.Extensions
                 .AddDbContext<ElsaContext>(configure)
                 .AddScoped<EntityFrameworkWorkflowDefinitionStore>()
                 .AddScoped<EntityFrameworkWorkflowInstanceStore>()
-                .AddScoped<EntityFrameworkWorkflowExecutionLogRecordStore>();
+                .AddScoped<EntityFrameworkWorkflowExecutionLogRecordStore>()
+                .AddScoped<EntityFrameworkBookmarkStore>();
 
             if (autorunMigrations)
-                elsa.Services.AddHostedService<RunEFCoreMigrations>();
+                elsa.Services.AddStartupTask<RunMigrations>();
 
             return elsa
                 .UseWorkflowDefinitionStore(sp => sp.GetRequiredService<EntityFrameworkWorkflowDefinitionStore>())
                 .UseWorkflowInstanceStore(sp => sp.GetRequiredService<EntityFrameworkWorkflowInstanceStore>())
-                .UseWorkflowExecutionLogStore(sp => sp.GetRequiredService<EntityFrameworkWorkflowExecutionLogRecordStore>());
+                .UseWorkflowExecutionLogStore(sp => sp.GetRequiredService<EntityFrameworkWorkflowExecutionLogRecordStore>())
+                .UseWorkflowTriggerStore(sp => sp.GetRequiredService<EntityFrameworkBookmarkStore>());
         }
     }
 }

@@ -1,9 +1,9 @@
 using System;
 using System.Threading.Tasks;
+using Elsa.Bookmarks;
 using Elsa.Builders;
 using Elsa.Services;
 using Elsa.Testing.Shared.Helpers;
-using Elsa.Triggers;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 using Xunit.Abstractions;
@@ -30,7 +30,7 @@ namespace Elsa.Testing.Shared.Unit
             WorkflowBlueprintMaterializer = ServiceScope.ServiceProvider.GetRequiredService<IWorkflowBlueprintMaterializer>();
             WorkflowBuilder = ServiceScope.ServiceProvider.GetRequiredService<IWorkflowBuilder>();
             WorkflowRegistry = ServiceScope.ServiceProvider.GetRequiredService<IWorkflowRegistry>();
-            WorkflowSelector = ServiceScope.ServiceProvider.GetRequiredService<IWorkflowSelector>();
+            BookmarkFinder = ServiceScope.ServiceProvider.GetRequiredService<IBookmarkFinder>();
         }
 
         protected ITestOutputHelper TestOutputHelper { get; }
@@ -40,7 +40,7 @@ namespace Elsa.Testing.Shared.Unit
         protected IWorkflowBlueprintMaterializer WorkflowBlueprintMaterializer { get; }
         protected IWorkflowBuilder WorkflowBuilder { get; }
         protected IWorkflowRegistry WorkflowRegistry { get; }
-        protected IWorkflowSelector WorkflowSelector { get; }
+        protected IBookmarkFinder BookmarkFinder { get; }
         public virtual void Dispose() => _tempFolder.Dispose();
 
         public virtual async Task InitializeAsync()

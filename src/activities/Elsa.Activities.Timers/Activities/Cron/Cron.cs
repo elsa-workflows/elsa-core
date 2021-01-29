@@ -5,7 +5,6 @@ using Elsa.Attributes;
 using Elsa.Persistence;
 using Elsa.Services;
 using Elsa.Services.Models;
-
 using NodaTime;
 
 // ReSharper disable once CheckNamespace
@@ -21,14 +20,14 @@ namespace Elsa.Activities.Timers
         private readonly IClock _clock;
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
         private readonly IWorkflowScheduler _workflowScheduler;
-		private readonly ICrontabParser _crontabParser;
+        private readonly ICrontabParser _crontabParser;
 
         public Cron(IWorkflowInstanceStore workflowInstanceStore, IWorkflowScheduler workflowScheduler, ICrontabParser crontabParser, IClock clock)
         {
             _clock = clock;
             _workflowInstanceStore = workflowInstanceStore;
             _workflowScheduler = workflowScheduler;
-			_crontabParser = crontabParser;
+            _crontabParser = crontabParser;
         }
 
         [ActivityProperty(Hint = "Specify a CRON expression. See https://crontab.guru/ for help.")]
@@ -46,7 +45,7 @@ namespace Elsa.Activities.Timers
                 return Done();
 
             var cancellationToken = context.CancellationToken;
-            var workflowBlueprint = context.WorkflowExecutionContext.WorkflowBlueprint;
+            var tenantId = context.WorkflowExecutionContext.WorkflowBlueprint.TenantId;
             var workflowInstance = context.WorkflowExecutionContext.WorkflowInstance;
             var executeAt = _crontabParser.GetNextOccurrence(CronExpression);
 
@@ -56,7 +55,7 @@ namespace Elsa.Activities.Timers
                 return Done();
 
             await _workflowInstanceStore.SaveAsync(context.WorkflowExecutionContext.WorkflowInstance, cancellationToken);
-            await _workflowScheduler.ScheduleWorkflowAsync(workflowBlueprint, workflowInstance.Id, Id, executeAt, cancellationToken);
+            await _workflowScheduler.ScheduleWorkflowAsync(null, workflowInstance.Id, Id, tenantId, executeAt, null, cancellationToken);
 
             return Suspend();
         }

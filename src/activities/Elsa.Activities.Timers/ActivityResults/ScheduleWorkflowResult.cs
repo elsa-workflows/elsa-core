@@ -21,13 +21,13 @@ namespace Elsa.Activities.Timers.ActivityResults
         {
             var workflowInstanceId = activityExecutionContext.WorkflowExecutionContext.WorkflowInstance.Id;
             var activityId = activityExecutionContext.ActivityBlueprint.Id;
-            var workflowBlueprint = activityExecutionContext.WorkflowExecutionContext.WorkflowBlueprint;
+            var tenantId  = activityExecutionContext.WorkflowExecutionContext.WorkflowBlueprint.TenantId;
             var executeAt = ExecuteAt;
             
             async ValueTask ScheduleWorkflowAsync(WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
             {
                 var scheduler = workflowExecutionContext.ServiceScope.ServiceProvider.GetRequiredService<IWorkflowScheduler>(); 
-                await scheduler.ScheduleWorkflowAsync(workflowBlueprint, workflowInstanceId, activityId, executeAt, cancellationToken);
+                await scheduler.ScheduleWorkflowAsync(null, workflowInstanceId, activityId, tenantId, executeAt, null, cancellationToken);
             }
 
             activityExecutionContext.WorkflowExecutionContext.RegisterTask(nameof(ScheduleWorkflowResult), ScheduleWorkflowAsync);

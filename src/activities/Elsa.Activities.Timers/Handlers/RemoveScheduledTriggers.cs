@@ -12,13 +12,18 @@ namespace Elsa.Activities.Timers.Handlers
         private readonly string[] _supportedTypes = { nameof(Timer), nameof(StartAt), nameof(Cron) };
         private readonly IWorkflowScheduler _workflowScheduler;
         public RemoveScheduledTriggers(IWorkflowScheduler workflowScheduler) => _workflowScheduler = workflowScheduler;
-        
+
         public async Task Handle(BlockingActivityRemoved notification, CancellationToken cancellationToken)
         {
-            if(!_supportedTypes.Contains(notification.BlockingActivity.ActivityType))
+            if (!_supportedTypes.Contains(notification.BlockingActivity.ActivityType))
                 return;
-            
-            await _workflowScheduler.UnscheduleWorkflowAsync(notification.WorkflowExecutionContext, notification.BlockingActivity.ActivityId, cancellationToken);
+
+            await _workflowScheduler.UnscheduleWorkflowAsync(
+                null,
+                notification.WorkflowExecutionContext.WorkflowInstance.Id,
+                notification.BlockingActivity.ActivityId,
+                notification.WorkflowExecutionContext.WorkflowInstance.TenantId,
+                cancellationToken);
         }
     }
 }

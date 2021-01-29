@@ -9,11 +9,11 @@ namespace Elsa.Persistence.MongoDb.Services
 {
     public class DatabaseInitializer : IStartupTask
     {
-        private readonly ElsaMongoDbClient _mongoClient;
+        private readonly ElsaMongoDbContext _mongoContext;
 
-        public DatabaseInitializer(ElsaMongoDbClient mongoClient)
+        public DatabaseInitializer(ElsaMongoDbContext mongoContext)
         {
-            _mongoClient = mongoClient;
+            _mongoContext = mongoContext;
         }
 
         public int Order => 0;
@@ -23,6 +23,7 @@ namespace Elsa.Persistence.MongoDb.Services
             await CreateWorkflowInstancesIndexes(cancellationToken);
             await CreateWorkflowDefinitionsIndexes(cancellationToken);
             await CreateWorkflowExecutionLogIndexes(cancellationToken);
+            await CreateBookmarkIndexes(cancellationToken);
         }
 
         private async Task CreateWorkflowInstancesIndexes(CancellationToken cancellationToken)
@@ -32,7 +33,7 @@ namespace Elsa.Persistence.MongoDb.Services
             var workflowStatusKeysDefinition = Builders<WorkflowInstance>.IndexKeys.Ascending(x => x.WorkflowStatus);
             var workflowNameKeysDefinition = Builders<WorkflowInstance>.IndexKeys.Ascending(x => x.Name);
 
-            await CreateIndexesAsync(_mongoClient.WorkflowInstances, cancellationToken, tenantKeysDefinition, versionKeysDefinition, workflowStatusKeysDefinition, workflowNameKeysDefinition);
+            await CreateIndexesAsync(_mongoContext.WorkflowInstances, cancellationToken, tenantKeysDefinition, versionKeysDefinition, workflowStatusKeysDefinition, workflowNameKeysDefinition);
         }
 
         private async Task CreateWorkflowDefinitionsIndexes(CancellationToken cancellationToken)
@@ -42,7 +43,7 @@ namespace Elsa.Persistence.MongoDb.Services
             var versionKeysDefinition = Builders<WorkflowDefinition>.IndexKeys.Ascending(x => x.Version);
             var nameKeysDefinition = Builders<WorkflowDefinition>.IndexKeys.Ascending(x => x.Name);
 
-            await CreateIndexesAsync(_mongoClient.WorkflowDefinitions, cancellationToken, tenantKeysDefinition, definitionVersionIdKeysDefinition, versionKeysDefinition, nameKeysDefinition);
+            await CreateIndexesAsync(_mongoContext.WorkflowDefinitions, cancellationToken, tenantKeysDefinition, definitionVersionIdKeysDefinition, versionKeysDefinition, nameKeysDefinition);
         }
 
         private async Task CreateWorkflowExecutionLogIndexes(CancellationToken cancellationToken)
@@ -51,7 +52,17 @@ namespace Elsa.Persistence.MongoDb.Services
             var workflowInstanceIdKeysDefinition = Builders<WorkflowExecutionLogRecord>.IndexKeys.Ascending(x => x.WorkflowInstanceId);
             var timestampKeysDefinition = Builders<WorkflowExecutionLogRecord>.IndexKeys.Ascending(x => x.Timestamp);
 
-            await CreateIndexesAsync(_mongoClient.WorkflowExecutionLog, cancellationToken, tenantKeysDefinition, workflowInstanceIdKeysDefinition, timestampKeysDefinition);
+            await CreateIndexesAsync(_mongoContext.WorkflowExecutionLog, cancellationToken, tenantKeysDefinition, workflowInstanceIdKeysDefinition, timestampKeysDefinition);
+        }
+
+        private async Task CreateBookmarkIndexes(CancellationToken cancellationToken)
+        {
+            var tenantKeysDefinition = Builders<Bookmark>.IndexKeys.Ascending(x => x.TenantId);
+            var activityTypeKeysDefinition = Builders<Bookmark>.IndexKeys.Ascending(x => x.ActivityType);
+            var hashKeysDefinition = Builders<Bookmark>.IndexKeys.Ascending(x => x.Hash);
+            var workflowInstanceIdKeysDefinition = Builders<Bookmark>.IndexKeys.Ascending(x => x.WorkflowInstanceId);
+
+            await CreateIndexesAsync(_mongoContext.Bookmarks, cancellationToken, tenantKeysDefinition, activityTypeKeysDefinition, hashKeysDefinition, workflowInstanceIdKeysDefinition);
         }
 
         private async Task CreateIndexesAsync<T>(IMongoCollection<T> collection, CancellationToken cancellationToken, params IndexKeysDefinition<T>[] definitions)

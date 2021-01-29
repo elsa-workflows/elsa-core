@@ -1,50 +1,40 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Bookmarks;
 using Elsa.Messages;
-using Elsa.Triggers;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Services
 {
     public class WorkflowQueue : IWorkflowQueue
     {
-        private readonly IWorkflowSelector _workflowSelector;
+        private readonly IBookmarkFinder _bookmarkFinder;
         private readonly ICommandSender _commandSender;
 
-        public WorkflowQueue(IWorkflowSelector workflowSelector, ICommandSender commandSender)
+        public WorkflowQueue(IBookmarkFinder bookmarkFinder, ICommandSender commandSender)
         {
-            _workflowSelector = workflowSelector;
+            _bookmarkFinder = bookmarkFinder;
             _commandSender = commandSender;
         }
 
-        public async Task EnqueueWorkflowsAsync<TTrigger>(
-            Func<TTrigger, bool> predicate,
+        public async Task EnqueueWorkflowsAsync(
+            string activityType,
+            IBookmark bookmark,
+            string? tenantId,
             object? input = default,
             string? correlationId = default,
             string? contextId = default,
             CancellationToken cancellationToken = default)
-            where TTrigger : ITrigger
         {
-            var results = await _workflowSelector.SelectWorkflowsAsync(predicate, cancellationToken).ToList();
+            var results = await _bookmarkFinder.FindBookmarksAsync(activityType, bookmark, tenantId, cancellationToken).ToList();
             await EnqueueWorkflowsAsync(results, input, correlationId, contextId, cancellationToken);
         }
 
-        public async Task EnqueueWorkflowsAsync(IEnumerable<WorkflowSelectorResult> results, object? input = default, string? correlationId = default, string? contextId = default, CancellationToken cancellationToken = default)
+        public async Task EnqueueWorkflowsAsync(IEnumerable<BookmarkFinderResult> results, object? input = default, string? correlationId = default, string? contextId = default, CancellationToken cancellationToken = default)
         {
-            foreach (var result in results)
-            {
-                if (result.WorkflowInstanceId != null)
-                {
-                    await EnqueueWorkflowInstance(result.WorkflowInstanceId, result.ActivityId, input, cancellationToken);
-                }
-                else
-                    await EnqueueWorkflowDefinition(result.WorkflowBlueprint.Id, result.WorkflowBlueprint.TenantId, result.ActivityId, input, correlationId, contextId, cancellationToken);
-
-                if (result.Trigger.IsOneOff)
-                    await _workflowSelector.RemoveTriggerAsync(result.Trigger, cancellationToken);
-            }
+            foreach (var result in results) 
+                await EnqueueWorkflowInstance(result.WorkflowInstanceId, result.ActivityId, input, cancellationToken);
         }
 
         public async Task EnqueueWorkflowInstance(string workflowInstanceId, string activityId, object? input, CancellationToken cancellationToken = default)

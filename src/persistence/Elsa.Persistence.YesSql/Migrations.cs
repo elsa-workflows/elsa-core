@@ -1,5 +1,4 @@
 using System.Data;
-using Elsa.Data;
 using Elsa.Persistence.YesSql.Data;
 using Elsa.Persistence.YesSql.Indexes;
 using YesSql.Sql;
@@ -57,6 +56,15 @@ namespace Elsa.Persistence.YesSql
                     .Column<string>(nameof(WorkflowExecutionLogRecordIndex.WorkflowInstanceId))
                     .Column(nameof(WorkflowExecutionLogRecordIndex.Timestamp), DbType.DateTime),
                 CollectionNames.WorkflowExecutionLog);
+            
+            SchemaBuilder.CreateMapIndexTable<BookmarkIndex>(
+                table => table
+                    .Column<string?>(nameof(BookmarkIndex.BookmarkId))
+                    .Column<string?>(nameof(BookmarkIndex.TenantId))
+                    .Column<string>(nameof(BookmarkIndex.Hash))
+                    .Column<string>(nameof(BookmarkIndex.ActivityType))
+                    .Column<string>(nameof(BookmarkIndex.WorkflowInstanceId)),
+                CollectionNames.Bookmarks);
 
             return 1;
         }

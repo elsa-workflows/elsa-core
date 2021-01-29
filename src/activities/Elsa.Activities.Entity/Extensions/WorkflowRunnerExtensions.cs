@@ -1,13 +1,16 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.Entity.Bookmarks;
 using Elsa.Activities.Entity.Models;
-using Elsa.Activities.Entity.Triggers;
 using Elsa.Services;
 
 namespace Elsa.Activities.Entity.Extensions
 {
     public static class WorkflowRunnerExtensions
     {
+        // TODO: Figure out how to start jobs across multiple tenants / how to get a list of all tenants. 
+        private const string TenantId = default;
+        
         public static async Task TriggerEntityChangedWorkflowsAsync(
             this IWorkflowRunner workflowRunner,
             string entityId,
@@ -18,14 +21,18 @@ namespace Elsa.Activities.Entity.Extensions
             CancellationToken cancellationToken = default)
         {
             var input = new EntityChangedContext(entityId, entityName, changedAction);
-            bool Filter(EntityChangedTrigger x) => 
-                (x.Action == null || x.Action == changedAction) && 
-                (x.EntityName == null || x.EntityName == entityName) &&
-                (x.ContextId == null || x.ContextId == contextId) &&
-                (x.CorrelationId == null || x.CorrelationId == correlationId);
 
-            await workflowRunner.TriggerWorkflowsAsync<EntityChangedTrigger>(
-                Filter,
+            var trigger = new EntityChangedBookmark(
+            
+                entityName,
+                changedAction,
+                contextId,
+                correlationId
+            );
+
+            await workflowRunner.TriggerWorkflowsAsync<EntityChanged>(
+                trigger,
+                TenantId,
                 input,
                 correlationId,
                 contextId,

@@ -41,6 +41,24 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
                 _semaphore.Release();
             }
         }
+        
+        public async Task AddAsync(T entity, CancellationToken cancellationToken = default)
+        {
+            await DbSet.AddAsync(entity, cancellationToken);
+            OnSaving(entity);
+            await DbContext.SaveChangesAsync(cancellationToken);
+        }
+        
+        public async Task AddManyAsync(IEnumerable<T> entities, CancellationToken cancellationToken = default)
+        {
+            var list = entities.ToList();
+            await DbSet.AddRangeAsync(list, cancellationToken);
+            
+            foreach (var entity in list) 
+                OnSaving(entity);
+            
+            await DbContext.SaveChangesAsync(cancellationToken);
+        }
 
         public async Task UpdateAsync(T entity, CancellationToken cancellationToken = default)
         {

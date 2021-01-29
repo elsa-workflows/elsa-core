@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Elsa.Persistence;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Sqlite;
-using Elsa.Persistence.Specifications;
+using Elsa.Persistence.Specifications.WorkflowInstances;
 using Elsa.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -41,7 +41,7 @@ namespace Elsa.Samples.Persistence.EntityFramework
             var store = services.GetRequiredService<IWorkflowInstanceStore>();
 
             // Count the number of workflow instances of HelloWorld.
-            var count = await store.CountAsync(new WorkflowInstanceDefinitionIdSpecification(nameof(HelloWorld)));
+            var count = await store.CountAsync(new WorkflowDefinitionIdSpecification(nameof(HelloWorld)));
 
             Console.WriteLine(count);
             

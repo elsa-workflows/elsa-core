@@ -1,4 +1,4 @@
-using Elsa.Persistence.YesSql.Extensions;
+using Elsa.Persistence.YesSql;
 using Elsa.Samples.Faulting.Workflows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

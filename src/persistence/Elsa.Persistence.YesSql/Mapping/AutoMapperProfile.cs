@@ -25,6 +25,12 @@ namespace Elsa.Persistence.YesSql.Mapping
                 .ForMember(d => d.Id, d => d.Ignore())
                 .ReverseMap()
                 .ForMember(d => d.Id, d => d.MapFrom(s => s.RecordId));
+            
+            CreateMap<Bookmark, BookmarkDocument>()
+                .ForMember(d => d.BookmarkId, d => d.MapFrom(s => s.Id))
+                .ForMember(d => d.Id, d => d.Ignore())
+                .ReverseMap()
+                .ForMember(d => d.Id, d => d.MapFrom(s => s.BookmarkId));
         }
     }
 }

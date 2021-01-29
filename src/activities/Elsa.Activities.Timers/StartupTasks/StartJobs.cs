@@ -1,17 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.Timers.Bookmarks;
 using Elsa.Activities.Timers.Services;
-using Elsa.Activities.Timers.Triggers;
-using Elsa.Persistence;
-using Elsa.Persistence.Specifications;
+using Elsa.Bookmarks;
 using Elsa.Services;
-using Elsa.Services.Models;
 using Elsa.Triggers;
-using Microsoft.Extensions.DependencyInjection;
-using NodaTime;
 
 namespace Elsa.Activities.Timers.StartupTasks
 {
@@ -20,123 +13,89 @@ namespace Elsa.Activities.Timers.StartupTasks
     /// </summary>
     public class StartJobs : IStartupTask
     {
-        private readonly IServiceProvider _serviceProvider;
-        private readonly IWorkflowBlueprintReflector _workflowBlueprintReflector;
-        private readonly IWorkflowScheduler _workflowScheduler;
-        private readonly IClock _clock;
+        // TODO: Figure out how to start jobs across multiple tenants / how to get a list of all tenants. 
+        private const string TenantId = default;
 
-        public StartJobs(IServiceProvider serviceProvider, IWorkflowBlueprintReflector workflowBlueprintReflector, IWorkflowScheduler workflowScheduler, IClock clock)
+        private readonly IBookmarkFinder _bookmarkFinder;
+        private readonly ITriggerFinder _triggerFinder;
+        private readonly IWorkflowScheduler _workflowScheduler;
+
+        public StartJobs(IBookmarkFinder bookmarkFinder, ITriggerFinder triggerFinder, IWorkflowScheduler workflowScheduler)
         {
-            _serviceProvider = serviceProvider;
-            _workflowBlueprintReflector = workflowBlueprintReflector;
+            _bookmarkFinder = bookmarkFinder;
             _workflowScheduler = workflowScheduler;
-            _clock = clock;
+            _triggerFinder = triggerFinder;
         }
 
         public int Order => 2000;
 
-        public async Task ExecuteAsync(CancellationToken stoppingToken)
+        public async Task ExecuteAsync(CancellationToken cancellationToken)
         {
-            using var scope = _serviceProvider.CreateScope();
-            var workflowRegistry = scope.ServiceProvider.GetRequiredService<IWorkflowRegistry>();
-            var workflowSelector = scope.ServiceProvider.GetRequiredService<IWorkflowSelector>();
-            var workflows = await workflowRegistry.GetWorkflowsAsync(stoppingToken).ToListAsync(stoppingToken);
-
-            await ScheduleTimerEventWorkflowsAsync(scope, workflows, workflowSelector, stoppingToken);
-            await ScheduleCronEventWorkflowsAsync(scope, workflows, workflowSelector, stoppingToken);
-            await ScheduleStartAtWorkflowsAsync(scope, workflows, workflowSelector, stoppingToken);
+            await ScheduleTimerEventWorkflowsAsync(cancellationToken);
+            await ScheduleCronEventWorkflowsAsync(cancellationToken);
+            await ScheduleStartAtWorkflowsAsync(cancellationToken);
         }
 
-        private async Task ScheduleStartAtWorkflowsAsync(IServiceScope serviceScope, IEnumerable<IWorkflowBlueprint> workflows, IWorkflowSelector workflowSelector, CancellationToken cancellationToken)
+        private async Task ScheduleStartAtWorkflowsAsync(CancellationToken cancellationToken)
         {
             // Schedule workflow blueprints that start with a run-at.
-            var runAtWorkflows =
-                from workflow in workflows
-                from activity in workflow.GetStartActivities<StartAt>()
-                select (workflow, activity);
+            var triggerResults = await _triggerFinder.FindTriggersAsync<StartAt>(TenantId, cancellationToken);
 
-            foreach (var runAtWorkflow in runAtWorkflows)
+            foreach (var result in triggerResults)
             {
-                var workflow = runAtWorkflow.workflow;
-                var activity = runAtWorkflow.activity;
-                var workflowWrapper = await _workflowBlueprintReflector.ReflectAsync(serviceScope, workflow, cancellationToken);
-                var timerWrapper = workflowWrapper.GetActivity<StartAt>(activity.Id)!;
-                var startAt = await timerWrapper.GetPropertyValueAsync(x => x.Instant, cancellationToken);
-
-                await _workflowScheduler.ScheduleWorkflowAsync(workflow, activity.Id, startAt, cancellationToken);
+                var bookmark = (StartAtBookmark) result.Bookmark;
+                await _workflowScheduler.ScheduleWorkflowAsync(result.WorkflowBlueprint.Id, null, result.ActivityId, TenantId, bookmark.ExecuteAt, null, cancellationToken);
             }
 
             // Schedule workflow instances that are blocked on a start-at.
-            var startAtTriggers = await workflowSelector.SelectWorkflowsAsync<StartAtTrigger>(x => true, cancellationToken);
+            var bookmarkResults = await _bookmarkFinder.FindBookmarksAsync<StartAt>(TenantId, cancellationToken);
 
-            foreach (var result in startAtTriggers)
+            foreach (var result in bookmarkResults)
             {
-                var trigger = (StartAtTrigger) result.Trigger;
-                var activity = result.WorkflowBlueprint.GetActivity(result.ActivityId)!;
-                await _workflowScheduler.ScheduleWorkflowAsync(result.WorkflowBlueprint, result.WorkflowInstanceId!, activity.Id, trigger.ExecuteAt, cancellationToken);
+                var bookmark = (StartAtBookmark) result.Bookmark;
+                await _workflowScheduler.ScheduleWorkflowAsync(null, result.WorkflowInstanceId!, result.ActivityId, TenantId, bookmark.ExecuteAt, null, cancellationToken);
             }
         }
 
-        private async Task ScheduleTimerEventWorkflowsAsync(IServiceScope serviceScope, IEnumerable<IWorkflowBlueprint> workflows, IWorkflowSelector workflowSelector, CancellationToken cancellationToken)
+        private async Task ScheduleTimerEventWorkflowsAsync(CancellationToken cancellationToken)
         {
             // Schedule workflow blueprints that start with a timer.
-            var timerWorkflows =
-                from workflow in workflows
-                from activity in workflow.GetStartActivities<Timer>()
-                select (workflow, activity);
+            var triggerResults = await _triggerFinder.FindTriggersAsync<Timer>(TenantId, cancellationToken);
 
-            var now = _clock.GetCurrentInstant();
-            
-            foreach (var timerWorkflow in timerWorkflows)
+            foreach (var result in triggerResults)
             {
-                var workflow = timerWorkflow.workflow;
-                var activity = timerWorkflow.activity;
-                var workflowWrapper = await _workflowBlueprintReflector.ReflectAsync(serviceScope, workflow, cancellationToken);
-                var timerEventWrapper = workflowWrapper.GetActivity<Timer>(activity.Id)!;
-                var timeOut = await timerEventWrapper.GetPropertyValueAsync(x => x.Timeout, cancellationToken);
-                var startAt = now.Plus(timeOut);
-
-                await _workflowScheduler.ScheduleWorkflowAsync(workflow, activity.Id, startAt, timeOut, cancellationToken);
+                var bookmark = (TimerBookmark) result.Bookmark;
+                await _workflowScheduler.ScheduleWorkflowAsync(result.WorkflowBlueprint.Id, null, result.ActivityId, TenantId, bookmark.ExecuteAt, bookmark.Interval, cancellationToken);
             }
 
             // Schedule workflow instances that are blocked on a timer.
-            var timerEventTriggers = await workflowSelector.SelectWorkflowsAsync<TimerTrigger>(x => true, cancellationToken);
+            var bookmarkResults = await _bookmarkFinder.FindBookmarksAsync<Timer>(TenantId, cancellationToken);
 
-            foreach (var result in timerEventTriggers)
+            foreach (var result in bookmarkResults)
             {
-                var trigger = (TimerTrigger) result.Trigger;
-                var activity = result.WorkflowBlueprint.GetActivity(result.ActivityId)!;
-                await _workflowScheduler.ScheduleWorkflowAsync(result.WorkflowBlueprint, result.WorkflowInstanceId!, activity.Id, trigger.ExecuteAt, cancellationToken);
+                var bookmark = (TimerBookmark) result.Bookmark;
+                await _workflowScheduler.ScheduleWorkflowAsync(null, result.WorkflowInstanceId!, result.ActivityId, TenantId, bookmark.ExecuteAt, null, cancellationToken);
             }
         }
-        
-        private async Task ScheduleCronEventWorkflowsAsync(IServiceScope serviceScope, IEnumerable<IWorkflowBlueprint> workflows, IWorkflowSelector workflowSelector, CancellationToken cancellationToken)
+
+        private async Task ScheduleCronEventWorkflowsAsync(CancellationToken cancellationToken)
         {
             // Schedule workflow blueprints starting with a cron.
-            var cronWorkflows =
-                from workflow in workflows
-                from activity in workflow.GetStartActivities<Cron>()
-                select (workflow, activity);
+            var triggerResults = await _triggerFinder.FindTriggersAsync<Cron>(TenantId, cancellationToken);
 
-            foreach (var cronWorkflow in cronWorkflows)
+            foreach (var result in triggerResults)
             {
-                var workflow = cronWorkflow.workflow;
-                var activity = cronWorkflow.activity;
-                var workflowWrapper = await _workflowBlueprintReflector.ReflectAsync(serviceScope, workflow, cancellationToken);
-                var timerEventWrapper = workflowWrapper.GetActivity<Cron>(activity.Id)!;
-                var cronExpression = await timerEventWrapper.GetPropertyValueAsync(x => x.CronExpression, cancellationToken);
-
-                await _workflowScheduler.ScheduleWorkflowAsync(workflow, activity.Id, cronExpression!, cancellationToken);
+                var bookmark = (CronBookmark) result.Bookmark;
+                await _workflowScheduler.ScheduleWorkflowAsync(result.WorkflowBlueprint.Id, null, result.ActivityId, TenantId, bookmark.CronExpression, cancellationToken);
             }
 
             // Schedule workflow instances blocked on a cron event.
-            var cronEventTriggers = await workflowSelector.SelectWorkflowsAsync<CronTrigger>(x => true, cancellationToken);
+            var cronEventTriggers = await _bookmarkFinder.FindBookmarksAsync<Cron>(TenantId, cancellationToken);
 
             foreach (var result in cronEventTriggers)
             {
-                var trigger = (CronTrigger) result.Trigger;
-                var activity = result.WorkflowBlueprint.GetActivity(result.ActivityId)!;
-                await _workflowScheduler.ScheduleWorkflowAsync(result.WorkflowBlueprint, result.WorkflowInstanceId!, activity.Id, trigger.ExecuteAt, cancellationToken);
+                var trigger = (CronBookmark) result.Bookmark;
+                await _workflowScheduler.ScheduleWorkflowAsync(null, result.WorkflowInstanceId!, result.ActivityId, TenantId, trigger.ExecuteAt!.Value, null, cancellationToken);
             }
         }
     }

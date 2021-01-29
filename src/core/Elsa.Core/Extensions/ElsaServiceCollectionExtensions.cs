@@ -7,6 +7,7 @@ using Elsa.Activities.Signaling.Services;
 using Elsa.Activities.Workflows;
 using Elsa.ActivityProviders;
 using Elsa.ActivityTypeProviders;
+using Elsa.Bookmarks;
 using Elsa.Builders;
 using Elsa.Consumers;
 using Elsa.Expressions;
@@ -21,7 +22,6 @@ using Elsa.Runtime;
 using Elsa.Serialization;
 using Elsa.Serialization.Converters;
 using Elsa.Services;
-using Elsa.Services.Models;
 using Elsa.StartupTasks;
 using Elsa.Triggers;
 using Elsa.WorkflowProviders;
@@ -48,10 +48,12 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddScoped(options.WorkflowDefinitionStoreFactory)
                 .AddScoped(options.WorkflowInstanceStoreFactory)
                 .AddScoped(options.WorkflowExecutionLogStoreFactory)
+                .AddScoped(options.WorkflowTriggerStoreFactory)
                 .AddSingleton(options.DistributedLockProviderFactory)
                 .AddSingleton(options.SignalFactory)
                 .AddSingleton(options.StorageFactory)
-                .AddStartupTask<ContinueRunningWorkflows>();
+                .AddStartupTask<ContinueRunningWorkflows>()
+                .AddStartupTask<IndexTriggers>();
 
             options
                 .AddWorkflowsCore()
@@ -111,9 +113,14 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IWorkflowFactory, WorkflowFactory>()
                 .AddSingleton<IWorkflowBlueprintMaterializer, WorkflowBlueprintMaterializer>()
                 .AddSingleton<IWorkflowBlueprintReflector, WorkflowBlueprintReflector>()
+                .AddSingleton<IBookmarkHasher, BookmarkHasher>()
+                .AddScoped<IBookmarkIndexer, BookmarkIndexer>()
+                .AddScoped<IBookmarkFinder, BookmarkFinder>()
+                .AddScoped<ITriggerIndexer, TriggerIndexer>()
+                .AddSingleton<ITriggerStore, TriggerStore>()
+                .AddScoped<ITriggerFinder, TriggerFinder>()
                 .AddSingleton<IBackgroundWorker, BackgroundWorker>()
                 .AddScoped<IWorkflowQueue, WorkflowQueue>()
-                .AddScoped<IWorkflowSelector, WorkflowSelector>()
                 .AddScoped<IWorkflowPublisher, WorkflowPublisher>()
                 .AddScoped<IWorkflowContextManager, WorkflowContextManager>()
                 .AddSingleton<IActivityTypeService, ActivityTypeService>()
@@ -135,8 +142,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddScoped<ISignaler, Signaler>()
                 .AddScoped<IWorkflowExecutionLog, WorkflowExecutionLog>()
                 .AutoRegisterHandlersFromAssemblyOf<RunWorkflowInstanceConsumer>()
-                .AddTriggerProvider<SignalReceivedTriggerProvider>()
-                .AddTriggerProvider<RunWorkflowTriggerProvider>()
+                .AddBookmarkProvider<SignalReceivedBookmarkProvider>()
+                .AddBookmarkProvider<RunWorkflowBookmarkProvider>()
                 .AddMetadataHandlers();
 
             return options;

@@ -3,6 +3,7 @@ using Elsa.Activities.Timers.Hangfire.Models;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications;
+using Elsa.Persistence.Specifications.WorkflowInstances;
 using Elsa.Services;
 
 namespace Elsa.Activities.Timers.Hangfire.Jobs
