@@ -84,11 +84,10 @@ namespace Elsa.Activities.AzureServiceBus.Services
                 ReplyToSessionId = message.ReplyToSessionId,
                 ScheduledEnqueueTimeUtc = message.ScheduledEnqueueTimeUtc
             };
-
-            var bookmark = new MessageReceivedBookmark(queueName, correlationId);
-
+            
             async Task TriggerNewWorkflowAsync()
             {
+                var bookmark = new MessageReceivedBookmark(queueName);
                 var triggers = await triggerFinder.FindTriggersAsync<AzureServiceBusMessageReceived>(bookmark, TenantId, cancellationToken);
                 
                 foreach (var trigger in triggers)
@@ -126,6 +125,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
                 {
                     // Trigger existing workflows (if blocked on this message).
                     _logger.LogDebug("{WorkflowInstanceCount} existing workflows found with correlation ID '{CorrelationId}'. Resuming them", correlatedWorkflowInstanceCount, correlationId);
+                    var bookmark = new MessageReceivedBookmark(queueName, correlationId);
                     var existingWorkflows = await bookmarkFinder.FindBookmarksAsync<AzureServiceBusMessageReceived>(bookmark, TenantId, cancellationToken).ToList();
                     await workflowQueue.EnqueueWorkflowsAsync(existingWorkflows, model, model.CorrelationId, cancellationToken: cancellationToken);
                 }
