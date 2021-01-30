@@ -5,9 +5,9 @@ namespace Elsa.Samples.Persistence.EntityFramework
 {
     public class HelloWorld : IWorkflow
     {
-        public void Build(IWorkflowBuilder workflow)
+        public void Build(IWorkflowBuilder builder)
         {
-            workflow.WriteLine("Hello World!");
+            builder.WriteLine("Hello World!");
         }
     }
 }

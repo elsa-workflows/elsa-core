@@ -16,11 +16,11 @@ namespace Elsa.Samples.ReadModelHttp.Workflows
     /// </summary>
     public class SaveContactWorkflow : IWorkflow
     {
-        public void Build(IWorkflowBuilder workflow)
+        public void Build(IWorkflowBuilder builder)
         {
-            var serializer = workflow.ServiceProvider.GetRequiredService<IContentSerializer>();
+            var serializer = builder.ServiceProvider.GetRequiredService<IContentSerializer>();
 
-            workflow
+            builder
                 // Configure a Receive HTTP Request trigger that executes on incoming HTTP POST requests.
                 .HttpRequestReceived(activity => activity.WithPath("/contacts").WithMethod(HttpMethods.Post).WithTargetType<Contact>()).WithName("HttpRequest")
 

@@ -11,9 +11,9 @@ namespace Elsa.Samples.EntityChanged
     /// </summary>
     public class EntityChangedWorkflow : IWorkflow
     {
-        public void Build(IWorkflowBuilder workflow)
+        public void Build(IWorkflowBuilder builder)
         {
-            workflow
+            builder
                 .WithContextType<Entity>()
                 .EntityChanged<Entity>(EntityChangedAction.Added)
                 .WriteLine(context => $"Entity '{context.GetInput<EntityChangedContext>()!.EntityId}' was '{context.GetInput<EntityChangedContext>()!.Action}'")

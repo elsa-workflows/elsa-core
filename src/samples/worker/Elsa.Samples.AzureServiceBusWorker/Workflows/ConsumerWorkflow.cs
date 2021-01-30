@@ -7,9 +7,9 @@ namespace Elsa.Samples.AzureServiceBusWorker.Workflows
 {
     public class ConsumerWorkflow : IWorkflow
     {
-        public void Build(IWorkflowBuilder workflow)
+        public void Build(IWorkflowBuilder builder)
         {
-            workflow
+            builder
                 .MessageReceived<Greeting>("greetings")
                 .WriteLine(context =>
                 {

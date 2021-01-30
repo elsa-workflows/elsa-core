@@ -7,9 +7,9 @@ namespace Elsa.Core.IntegrationTests.Workflows
 {
     public class IfElseWorkflow : IWorkflow
     {
-        public void Build(IWorkflowBuilder workflow)
+        public void Build(IWorkflowBuilder builder)
         {
-            workflow
+            builder
                 .WriteLine("Start")
                 .Then<IfElse>(
                     ifElse => ifElse.WithCondition(context => context.GetVariable<bool>("Flag")),

@@ -5,9 +5,9 @@ namespace Elsa.Samples.MultiTenantChildWorker.Workflows
 {
     public class Tenant2ChildWorkflow : IWorkflow
     {
-        public void Build(IWorkflowBuilder workflow)
+        public void Build(IWorkflowBuilder builder)
         {
-            workflow
+            builder
                 .WithWorkflowDefinitionId("ProcessOrderWorkflow")
                 .WithTenantId("Customer2")
                 .WriteLine("Specialized workflow for Customer 2");

@@ -9,9 +9,9 @@ namespace Elsa.Samples.DistributedLock
 {
     public class RecurringWorkflow : IWorkflow
     {
-        public void Build(IWorkflowBuilder workflow)
+        public void Build(IWorkflowBuilder builder)
         {
-            workflow
+            builder
                 .WithPersistenceBehavior(WorkflowPersistenceBehavior.ActivityExecuted)
                 .Timer(Duration.FromSeconds(1))
                 .WriteLine("Hello World")

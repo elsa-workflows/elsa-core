@@ -8,9 +8,9 @@ namespace Elsa.Samples.Timers.Workflows
 {
     public class ComplicatedWorkflow : IWorkflow
     {
-        public void Build(IWorkflowBuilder workflow)
+        public void Build(IWorkflowBuilder builder)
         {
-            workflow
+            builder
                 .AsSingleton()
                 .For(0, 3, iterate => iterate
                     .Then<Fork>(fork => fork.WithBranches("A", "B"), fork =>

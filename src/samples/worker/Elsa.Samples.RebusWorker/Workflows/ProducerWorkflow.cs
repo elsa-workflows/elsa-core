@@ -19,9 +19,9 @@ namespace Elsa.Samples.RebusWorker.Workflows
             _random = new Random();
         }
 
-        public void Build(IWorkflowBuilder workflow)
+        public void Build(IWorkflowBuilder builder)
         {
-            workflow
+            builder
                 .Timer(Duration.FromSeconds(5))
                 .WriteLine("Sending a random greeting to the \"greetings\" queue.")
                 .Then<SendRebusMessage>(sendMessage => sendMessage.Set(x => x.Message, GetRandomGreeting));

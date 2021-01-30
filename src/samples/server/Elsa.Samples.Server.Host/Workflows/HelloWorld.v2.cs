@@ -6,9 +6,9 @@ namespace Elsa.Samples.Server.Host.Workflows
 {
     public class HelloWorldV2 : IWorkflow
     {
-        public void Build(IWorkflowBuilder workflow)
+        public void Build(IWorkflowBuilder builder)
         {
-            workflow
+            builder
                 .WithWorkflowDefinitionId("HelloWorld")
                 .WithVersion(2)
                 .WithDisplayName("Hello World!")

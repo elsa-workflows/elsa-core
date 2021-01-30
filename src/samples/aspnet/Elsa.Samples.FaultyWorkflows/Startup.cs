@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Samples.HelloWorldHttp
+namespace Elsa.Samples.FaultyWorkflows
 {
     public class Startup
     {
@@ -10,7 +10,7 @@ namespace Elsa.Samples.HelloWorldHttp
             services
                 .AddElsa(options => options
                     .AddHttpActivities()
-                    .AddWorkflow<HelloHttpWorkflow>());
+                    .AddWorkflow<FaultyWorkflow>());
         }
 
         public void Configure(IApplicationBuilder app)

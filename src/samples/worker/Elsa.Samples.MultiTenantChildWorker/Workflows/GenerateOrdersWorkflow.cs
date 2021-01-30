@@ -17,9 +17,9 @@ namespace Elsa.Samples.MultiTenantChildWorker.Workflows
         private readonly Random _random;
         public GenerateOrdersWorkflow() => _random = new Random();
 
-        public void Build(IWorkflowBuilder workflow)
+        public void Build(IWorkflowBuilder builder)
         {
-            workflow
+            builder
                 .Timer(Duration.FromSeconds(5))
                 .SetVariable("CustomerId", SelectRandomCustomerId)
                 .WriteLine(context => $"Creating a new order for customer {context.GetVariable<string>("CustomerId")}.")

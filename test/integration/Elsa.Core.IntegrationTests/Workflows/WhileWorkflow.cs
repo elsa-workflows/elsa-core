@@ -16,9 +16,9 @@ namespace Elsa.Core.IntegrationTests.Workflows
             _loopCount = loopCount;
         }
         
-        public void Build(IWorkflowBuilder workflow)
+        public void Build(IWorkflowBuilder builder)
         {
-            workflow
+            builder
                 .Then<While>(
                     @while => @while.WithCondition(context => GetCounter(context) < _loopCount),
                     @while =>

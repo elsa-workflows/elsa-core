@@ -14,9 +14,9 @@ namespace Elsa.Samples.WhileLoopConsole
             _counter = counter;
         }
         
-        public void Build(IWorkflowBuilder workflow)
+        public void Build(IWorkflowBuilder builder)
         {
-            workflow
+            builder
                 .WriteLine($"Looping {_counter} iterations.")
                 .Then(context => SetCurrentCount(context, _counter))
                 .While(

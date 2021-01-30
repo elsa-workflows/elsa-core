@@ -18,9 +18,9 @@ namespace Elsa.Samples.WhileLoopWorker.Workflows
             _phoneCallService = phoneCallService;
         }
         
-        public void Build(IWorkflowBuilder workflow)
+        public void Build(IWorkflowBuilder builder)
         {
-            workflow
+            builder
                 .WriteLine("Simulating a phone call...")
                 .Then<MakePhoneCall>()
                 .WriteLine("Workflow finished.");

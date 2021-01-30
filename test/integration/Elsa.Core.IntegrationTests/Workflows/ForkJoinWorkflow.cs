@@ -14,9 +14,9 @@ namespace Elsa.Core.IntegrationTests.Workflows
             _joinMode = joinMode;
         }
         
-        public void Build(IWorkflowBuilder workflow)
+        public void Build(IWorkflowBuilder builder)
         {
-            workflow.StartWith<Fork>(
+            builder.StartWith<Fork>(
                     activity => activity.Set(x => x.Branches, new HashSet<string>(new[] { "Branch 1", "Branch 2", "Branch 3" })),
                     fork =>
                     {

@@ -11,9 +11,9 @@ namespace Elsa.Samples.RunChildWorkflowWorker.Workflows
     {
         private const long Count = 3;
         
-        public void Build(IWorkflowBuilder workflow)
+        public void Build(IWorkflowBuilder builder)
         {
-            workflow
+            builder
                 .WriteLine("This is the parent workflow.")
                 .WriteLine("Let's kick off the child workflow.")
                 .RunWorkflow<ChildWorkflow>(RunWorkflow.RunWorkflowMode.Blocking, Count)

@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 
-namespace Elsa.Samples.HelloWorldHttp
+namespace Elsa.Samples.FaultyWorkflows
 {
     public class Program
     {

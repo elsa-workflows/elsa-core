@@ -14,9 +14,9 @@ namespace Elsa.Samples.CorrelationHttp.Workflows
     /// </summary>
     public class RegistrationWorkflow : IWorkflow
     {
-        public void Build(IWorkflowBuilder workflow)
+        public void Build(IWorkflowBuilder builder)
         {
-            workflow
+            builder
                 // Configure a Receive HTTP Request trigger that executes on incoming HTTP POST requests.
                 .HttpRequestReceived(activity => activity.WithPath("/register").WithMethod(HttpMethods.Post).WithTargetType<Registration>())
                 

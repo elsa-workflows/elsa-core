@@ -15,7 +15,7 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
     },
-    "Elsa.Samples.HelloWorldHttp": {
+    "Elsa.Samples.FaultyWorkflows": {
       "commandName": "Project",
       "launchBrowser": true,
       "environmentVariables": {

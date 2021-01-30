@@ -14,13 +14,13 @@ namespace Elsa.Samples.ContextualWorkflowHttp.Workflows
     /// </summary>
     public class DocumentApprovalWorkflow : IWorkflow
     {
-        public void Build(IWorkflowBuilder workflow)
+        public void Build(IWorkflowBuilder builder)
         {
             // Demonstrating that we can create activities and connect to them later on by using the activity builder reference.
-            var join = workflow.Add<Join>(x => x.WithMode(Join.JoinMode.WaitAny));
+            var join = builder.Add<Join>(x => x.WithMode(Join.JoinMode.WaitAny));
             join.Finish();
 
-            workflow
+            builder
                 // The workflow context type of this workflow.
                 .WithContextType<Document>()
 

@@ -9,9 +9,9 @@ namespace Elsa.Samples.HelloWorldHttp
     /// </summary>
     public class HelloHttpWorkflow : IWorkflow
     {
-        public void Build(IWorkflowBuilder workflow)
+        public void Build(IWorkflowBuilder builder)
         {
-            workflow
+            builder
                 .HttpRequestReceived("/hello")
                 .WriteHttpResponse(HttpStatusCode.OK, "Hello World!", "text/html");
         }

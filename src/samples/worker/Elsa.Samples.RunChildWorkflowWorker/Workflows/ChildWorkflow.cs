@@ -7,9 +7,9 @@ namespace Elsa.Samples.RunChildWorkflowWorker.Workflows
 {
     public class ChildWorkflow : IWorkflow
     {
-        public void Build(IWorkflowBuilder workflow)
+        public void Build(IWorkflowBuilder builder)
         {
-            workflow
+            builder
                 .SetVariable("Count", context => (long)context.Input!)
                 .WriteLine(context => $"Child workflow counting down from {context.GetVariable<long>("Count")} to 0")
                 .For(

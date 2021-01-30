@@ -14,9 +14,9 @@ namespace Elsa.Samples.Timers
             _clock = clock;
         }
         
-        public void Build(IWorkflowBuilder workflow)
+        public void Build(IWorkflowBuilder builder)
         {
-            workflow
+            builder
                 .AsSingleton()
                 .Timer(Duration.FromSeconds(30))
                 .WriteLine(context => $"{context.WorkflowExecutionContext.WorkflowInstance.Id} triggered by timer at {_clock.GetCurrentInstant()}.")

@@ -6,9 +6,9 @@ namespace ElsaDashboard.Samples.Monolith.Workflows
 {
     public class GoodbyeWorld : IWorkflow
     {
-        public void Build(IWorkflowBuilder workflow)
+        public void Build(IWorkflowBuilder builder)
         {
-            workflow
+            builder
                 .WithDisplayName("Goodbye cruel World!")
                 .HttpRequestReceived("/goodbye-world")
                 .WriteHttpResponse(HttpStatusCode.OK, "Goodbye Cruel World!", "text/plain");

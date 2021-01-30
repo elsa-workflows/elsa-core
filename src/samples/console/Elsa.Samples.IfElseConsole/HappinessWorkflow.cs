@@ -14,9 +14,9 @@ namespace Elsa.Samples.IfElseConsole
             _random = new Random();
         }
 
-        public void Build(IWorkflowBuilder workflow)
+        public void Build(IWorkflowBuilder builder)
         {
-            workflow
+            builder
                 .WriteLine("--POND OF HAPPINESS--")
                 .WriteLine("Throw some Rupees in and your wishes will surely come true.")
                 .WriteLine("Do you want to throw Rupees?")

@@ -8,9 +8,9 @@ namespace Elsa.Samples.Timers.Workflows
 {
     public class TimerWorkflow : IWorkflow
     {
-        public void Build(IWorkflowBuilder workflow)
+        public void Build(IWorkflowBuilder builder)
         {
-            workflow
+            builder
                 .Timer(Duration.FromSeconds(1))
                 .WriteLine(() => $"Timer event at {DateTime.Now}");
         }
