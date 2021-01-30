@@ -27,6 +27,7 @@ using Elsa.Triggers;
 using Elsa.WorkflowProviders;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Newtonsoft.Json;
 using NodaTime;
 using Rebus.Handlers;
 using Rebus.ServiceProvider;
@@ -99,7 +100,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddLocalization()
                 .AddMemoryCache()
                 .AddSingleton<IIdGenerator, IdGenerator>()
-                .AddSingleton(sp => sp.GetRequiredService<ElsaOptions>().CreateJsonSerializer(sp))
+                .AddTransient<Func<JsonSerializer>>(sp => sp.GetRequiredService<JsonSerializer>)
+                .AddTransient(sp => sp.GetRequiredService<ElsaOptions>().CreateJsonSerializer(sp))
                 .AddSingleton<IContentSerializer, DefaultContentSerializer>()
                 .AddSingleton<TypeJsonConverter>()
                 .TryAddProvider<IExpressionHandler, LiteralHandler>(ServiceLifetime.Singleton)
