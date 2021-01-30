@@ -124,8 +124,7 @@ namespace Elsa.Bookmarks
             CancellationToken cancellationToken)
         {
             // Setup workflow execution context
-            var scope = _serviceProvider.CreateScope();
-            var workflowExecutionContext = new WorkflowExecutionContext(scope, workflowBlueprint, workflowInstance);
+            var workflowExecutionContext = new WorkflowExecutionContext(_serviceProvider, workflowBlueprint, workflowInstance);
 
             // Load workflow context.
             workflowExecutionContext.WorkflowContext =
@@ -140,7 +139,7 @@ namespace Elsa.Bookmarks
 
             foreach (var blockingActivity in blockingActivities)
             {
-                var activityExecutionContext = new ActivityExecutionContext(scope, workflowExecutionContext, blockingActivity, null, false, cancellationToken);
+                var activityExecutionContext = new ActivityExecutionContext(_serviceProvider, workflowExecutionContext, blockingActivity, null, false, cancellationToken);
                 var providerContext = new BookmarkProviderContext(activityExecutionContext, BookmarkIndexingMode.WorkflowInstance);
                 var providers = _providers.Where(x => x.ForActivityType == blockingActivity.Type);
 

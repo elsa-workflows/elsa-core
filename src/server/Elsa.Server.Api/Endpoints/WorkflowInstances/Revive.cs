@@ -11,7 +11,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
 {
     [ApiController]
     [ApiVersion("1")]
-    [Route("v{apiVersion:apiVersion}/workflow-instances/{id}/revive")]
+    [Route("v{apiVersion:apiVersion}/workflow-instances/{id}/retry")]
     [Produces("application/json")]
     public class Revive : Controller
     {
@@ -29,9 +29,9 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [SwaggerOperation(
-            Summary = "Revives a faulted workflow instance.",
-            Description = "Revives a workflow instance.",
-            OperationId = "WorkflowInstances.Revive",
+            Summary = "Retries a faulted workflow instance.",
+            Description = "Retries a workflow instance.",
+            OperationId = "WorkflowInstances.Retry",
             Tags = new[] { "WorkflowInstances" })
         ]
         public async Task<IActionResult> Handle(string id, RevivalOptions? options, CancellationToken cancellationToken = default)

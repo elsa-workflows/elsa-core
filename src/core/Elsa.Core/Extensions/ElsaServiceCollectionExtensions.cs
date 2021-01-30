@@ -109,6 +109,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IActivityActivator, ActivityActivator>()
                 .AddScoped<IWorkflowRunner, WorkflowRunner>()
                 .AddScoped<IWorkflowTriggerInterruptor, WorkflowTriggerInterruptor>()
+                .AddScoped<IWorkflowReviver, WorkflowReviver>()
                 .AddSingleton<IActivityDescriber, ActivityDescriber>()
                 .AddSingleton<IWorkflowFactory, WorkflowFactory>()
                 .AddSingleton<IWorkflowBlueprintMaterializer, WorkflowBlueprintMaterializer>()

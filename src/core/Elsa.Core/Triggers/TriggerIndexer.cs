@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
@@ -16,7 +17,7 @@ namespace Elsa.Triggers
         private readonly IWorkflowRegistry _workflowRegistry;
         private readonly IBookmarkHasher _bookmarkHasher;
         private readonly IEnumerable<IBookmarkProvider> _providers;
-        private readonly IServiceScopeFactory _serviceScopeFactory;
+        private readonly IServiceProvider _serviceProvider;
         private readonly IWorkflowFactory _workflowFactory;
         private readonly ITriggerStore _triggerStore;
         private readonly ILogger _logger;
@@ -26,7 +27,7 @@ namespace Elsa.Triggers
             IWorkflowRegistry workflowRegistry,
             IBookmarkHasher bookmarkHasher,
             IEnumerable<IBookmarkProvider> providers,
-            IServiceScopeFactory serviceScopeFactory,
+            IServiceProvider serviceProvider,
             IWorkflowFactory workflowFactory,
             ITriggerStore triggerStore,
             ILogger<TriggerIndexer> logger)
@@ -34,7 +35,7 @@ namespace Elsa.Triggers
             _workflowRegistry = workflowRegistry;
             _bookmarkHasher = bookmarkHasher;
             _providers = providers;
-            _serviceScopeFactory = serviceScopeFactory;
+            _serviceProvider = serviceProvider;
             _workflowFactory = workflowFactory;
             _triggerStore = triggerStore;
             _logger = logger;
@@ -62,7 +63,6 @@ namespace Elsa.Triggers
         
         private async Task<IEnumerable<WorkflowTrigger>> GetTriggersAsync(ICollection<IWorkflowBlueprint> workflowBlueprints, CancellationToken cancellationToken)
         {
-            using var scope = _serviceScopeFactory.CreateScope();
             var allTriggers = new List<WorkflowTrigger>();
             
             foreach (var provider in _providers)
@@ -73,11 +73,11 @@ namespace Elsa.Triggers
                 {
                     var startActivities = workflowBlueprint.GetStartActivities(activityType);
                     var workflowInstance = await _workflowFactory.InstantiateAsync(workflowBlueprint, cancellationToken: cancellationToken);
-                    var workflowExecutionContext = new WorkflowExecutionContext(scope, workflowBlueprint, workflowInstance);
+                    var workflowExecutionContext = new WorkflowExecutionContext(_serviceProvider, workflowBlueprint, workflowInstance);
                     
                     foreach (var activity in startActivities)
                     {
-                        var activityExecutionContext = new ActivityExecutionContext(scope, workflowExecutionContext, activity, null, false, cancellationToken);
+                        var activityExecutionContext = new ActivityExecutionContext(_serviceProvider, workflowExecutionContext, activity, null, false, cancellationToken);
                         var context = new BookmarkProviderContext(activityExecutionContext, BookmarkIndexingMode.WorkflowBlueprint);
                         var bookmarks = (await provider.GetBookmarksAsync(context, cancellationToken)).ToList();
                         var triggers = bookmarks.Select(x => new WorkflowTrigger(workflowBlueprint, activity.Id, activity.Type, _bookmarkHasher.Hash(x), x)).ToList();

@@ -33,7 +33,7 @@ namespace Elsa.Services
         private readonly IWorkflowContextManager _workflowContextManager;
         private readonly Func<IWorkflowBuilder> _workflowBuilderFactory;
         private readonly IMediator _mediator;
-        private readonly IServiceProvider _serviceProvider;
+        private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly ILogger _logger;
 
         public WorkflowRunner(
@@ -44,14 +44,14 @@ namespace Elsa.Services
             IWorkflowContextManager workflowContextManager,
             Func<IWorkflowBuilder> workflowBuilderFactory,
             IMediator mediator,
-            IServiceProvider serviceProvider,
+            IServiceScopeFactory serviceScopeFactory,
             ILogger<WorkflowRunner> logger)
         {
             _workflowRegistry = workflowRegistry;
             _workflowFactory = workflowFactory;
             _workflowBuilderFactory = workflowBuilderFactory;
             _mediator = mediator;
-            _serviceProvider = serviceProvider;
+            _serviceScopeFactory = serviceScopeFactory;
             _logger = logger;
             _workflowInstanceManager = workflowInstanceStore;
             _workflowContextManager = workflowContextManager;
@@ -168,8 +168,8 @@ namespace Elsa.Services
             CancellationToken cancellationToken = default)
         {
             using var loggingScope = _logger.BeginScope(new Dictionary<string, object> { ["WorkflowInstanceId"] = workflowInstance.Id });
-            using var workflowExecutionScope = _serviceProvider.CreateScope();
-            var workflowExecutionContext = new WorkflowExecutionContext(workflowExecutionScope, workflowBlueprint, workflowInstance, input);
+            using var workflowExecutionScope = _serviceScopeFactory.CreateScope();
+            var workflowExecutionContext = new WorkflowExecutionContext(workflowExecutionScope.ServiceProvider, workflowBlueprint, workflowInstance, input);
 
             if (!string.IsNullOrWhiteSpace(workflowInstance.ContextId))
             {
@@ -277,10 +277,10 @@ namespace Elsa.Services
 
         private async ValueTask<bool> CanExecuteAsync(WorkflowExecutionContext workflowExecutionContext, IActivityBlueprint activityBlueprint, object? input, bool resuming, CancellationToken cancellationToken)
         {
-            using var scope = _serviceProvider.CreateScope();
+            using var scope = _serviceScopeFactory.CreateScope();
 
             var activityExecutionContext = new ActivityExecutionContext(
-                scope,
+                scope.ServiceProvider,
                 workflowExecutionContext,
                 activityBlueprint,
                 input,
@@ -315,7 +315,7 @@ namespace Elsa.Services
 
         private async ValueTask RunCoreAsync(WorkflowExecutionContext workflowExecutionContext, ActivityOperation activityOperation, CancellationToken cancellationToken = default)
         {
-            var scope = workflowExecutionContext.ServiceScope;
+            var scope = workflowExecutionContext.ServiceProvider;
             var workflowBlueprint = workflowExecutionContext.WorkflowBlueprint;
             var workflowInstance = workflowExecutionContext.WorkflowInstance;
 

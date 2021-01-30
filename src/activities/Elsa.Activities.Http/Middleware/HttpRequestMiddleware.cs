@@ -33,16 +33,16 @@ namespace Elsa.Activities.Http.Middleware
             IBookmarkFinder bookmarkFinder,
             IWorkflowRunner workflowRunner,
             IWorkflowInstanceStore workflowInstanceStore,
-            IWorkflowBlueprintReflector workflowBlueprintReflector,
-            IServiceScope serviceScope)
+            IWorkflowBlueprintReflector workflowBlueprintReflector)
         {
             var path = httpContext.Request.Path;
             var method = httpContext.Request.Method!;
             var cancellationToken = httpContext.RequestAborted;
+            var serviceProvider = httpContext.RequestServices;
             httpContext.Request.TryGetCorrelationId(out var correlationId);
 
             // Find workflow definitions starting with an HttpRequestReceived activity and a matching Path and Method.
-            var definitions = await FindHttpWorkflowBlueprints(workflowRegistry, workflowBlueprintReflector, serviceScope, cancellationToken);
+            var definitions = await FindHttpWorkflowBlueprints(workflowRegistry, workflowBlueprintReflector, serviceProvider, cancellationToken);
             var matchingDefinitions = definitions.Where(definition => AreSame(definition.Path, path) && (string.IsNullOrWhiteSpace(definition.Method) || AreSame(definition.Method!, method))).ToList();
 
             if (matchingDefinitions.Count > 1)
@@ -106,7 +106,7 @@ namespace Elsa.Activities.Http.Middleware
         private async Task<IEnumerable<(IWorkflowBlueprint WorkflowBlueprint, IActivityBlueprint ActivityBlueprint, PathString Path, string? Method)>> FindHttpWorkflowBlueprints(
             IWorkflowRegistry workflowRegistry,
             IWorkflowBlueprintReflector workflowBlueprintReflector,
-            IServiceScope serviceScope,
+            IServiceProvider serviceProvider,
             CancellationToken cancellationToken)
         {
             // Find workflows starting with HttpRequestReceived.
@@ -124,7 +124,7 @@ namespace Elsa.Activities.Http.Middleware
             {
                 var workflow = httpWorkflow.workflow;
                 var activity = httpWorkflow.activity;
-                var workflowWrapper = await workflowBlueprintReflector.ReflectAsync(serviceScope, workflow, cancellationToken);
+                var workflowWrapper = await workflowBlueprintReflector.ReflectAsync(serviceProvider, workflow, cancellationToken);
                 var activityWrapper = workflowWrapper.GetActivity<HttpRequestReceived>(activity.Id)!;
                 var path = await activityWrapper.GetPropertyValueAsync(x => x.Path, cancellationToken);
                 var method = await activityWrapper.GetPropertyValueAsync(x => x.Method, cancellationToken);

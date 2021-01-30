@@ -220,6 +220,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.Faulting", "sr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Activities.Rebus", "src\activities\Elsa.Activities.Rebus\Elsa.Activities.Rebus.csproj", "{9CBD9317-FD12-4BB9-A17D-CE7FA6B12DD8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.FaultyWorkflows", "src\samples\aspnet\Elsa.Samples.FaultyWorkflows\Elsa.Samples.FaultyWorkflows.csproj", "{F85E5B47-0409-4BA7-9FDF-18551F724A2C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -526,6 +528,10 @@ Global
 		{9CBD9317-FD12-4BB9-A17D-CE7FA6B12DD8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9CBD9317-FD12-4BB9-A17D-CE7FA6B12DD8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9CBD9317-FD12-4BB9-A17D-CE7FA6B12DD8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F85E5B47-0409-4BA7-9FDF-18551F724A2C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F85E5B47-0409-4BA7-9FDF-18551F724A2C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F85E5B47-0409-4BA7-9FDF-18551F724A2C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F85E5B47-0409-4BA7-9FDF-18551F724A2C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -629,6 +635,7 @@ Global
 		{F97339EF-424F-46F1-AD8D-B36B8C2F716E} = {C865B0FD-E505-48F0-BFAF-0D4D7C1B5CA1}
 		{76BF833E-3CAE-4402-99F1-B3BFD90622E4} = {E42743A0-FBDD-4150-9D53-6000496D9B87}
 		{9CBD9317-FD12-4BB9-A17D-CE7FA6B12DD8} = {B43B546E-23F3-46E8-ACB7-D04F05CDA180}
+		{F85E5B47-0409-4BA7-9FDF-18551F724A2C} = {22E75696-6FE9-436A-9097-EE21C603F818}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}
