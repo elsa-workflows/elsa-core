@@ -7,11 +7,12 @@ using System.Threading.Tasks;
 using Elsa.Activities.Http.Bookmarks;
 using Elsa.Activities.Http.Extensions;
 using Elsa.Bookmarks;
+using Elsa.Models;
 using Elsa.Persistence;
+using Elsa.Serialization;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Activities.Http.Middleware
@@ -33,6 +34,38 @@ namespace Elsa.Activities.Http.Middleware
             IBookmarkFinder bookmarkFinder,
             IWorkflowRunner workflowRunner,
             IWorkflowInstanceStore workflowInstanceStore,
+            IWorkflowBlueprintReflector workflowBlueprintReflector,
+            IContentSerializer contentSerializer)
+        {
+            var workflowInstance = await RunWorkflow(httpContext, workflowRegistry, bookmarkFinder, workflowRunner, workflowInstanceStore, workflowBlueprintReflector);
+
+            if (workflowInstance == null)
+            {
+                httpContext.Response.StatusCode = (int) HttpStatusCode.NotFound;
+                return;
+            }
+
+            if (workflowInstance.WorkflowStatus == WorkflowStatus.Faulted)
+            {
+                httpContext.Response.StatusCode = (int) HttpStatusCode.InternalServerError;
+                
+                var model = new
+                {
+                    WorkflowInstanceId = workflowInstance.Id,
+                    WorkflowStatus = workflowInstance.WorkflowStatus,
+                    Fault = workflowInstance.Fault
+                };
+                
+                await httpContext.Response.WriteAsync(contentSerializer.Serialize(model));
+            }
+        }
+        
+        private async Task<WorkflowInstance?> RunWorkflow(
+            HttpContext httpContext,
+            IWorkflowRegistry workflowRegistry,
+            IBookmarkFinder bookmarkFinder,
+            IWorkflowRunner workflowRunner,
+            IWorkflowInstanceStore workflowInstanceStore,
             IWorkflowBlueprintReflector workflowBlueprintReflector)
         {
             var path = httpContext.Request.Path;
@@ -49,7 +82,7 @@ namespace Elsa.Activities.Http.Middleware
             {
                 httpContext.Response.StatusCode = (int) HttpStatusCode.BadRequest;
                 await httpContext.Response.WriteAsync("Request matches multiple workflows.", cancellationToken);
-                return;
+                return null;
             }
 
             if (matchingDefinitions.Count == 1)
@@ -57,8 +90,7 @@ namespace Elsa.Activities.Http.Middleware
                 var definition = matchingDefinitions.First();
                 var workflowBlueprint = definition.WorkflowBlueprint;
                 var activityId = definition.ActivityBlueprint.Id;
-                await workflowRunner.RunWorkflowAsync(workflowBlueprint, activityId, cancellationToken: cancellationToken);
-                return;
+                return await workflowRunner.RunWorkflowAsync(workflowBlueprint, activityId, cancellationToken: cancellationToken);
             }
 
             // Find workflow instances blocked on an HttpRequestReceived activity and a matching Path and Method.
@@ -81,26 +113,23 @@ namespace Elsa.Activities.Http.Middleware
             if (!results.Any())
             {
                 await _next(httpContext);
-                return;
+                return null;
             }
 
             if (results.Count > 1)
             {
                 httpContext.Response.StatusCode = (int) HttpStatusCode.BadRequest;
                 await httpContext.Response.WriteAsync("Request matches multiple workflows.", cancellationToken);
-                return;
+                return null;
             }
 
             var result = results.First();
             var workflowInstance = await workflowInstanceStore.FindByIdAsync(result.WorkflowInstanceId, cancellationToken);
 
             if (workflowInstance == null)
-            {
-                httpContext.Response.StatusCode = 404;
-                return;
-            }
+                return null;
 
-            await workflowRunner.RunWorkflowAsync(workflowInstance, result.ActivityId, cancellationToken: cancellationToken);
+            return await workflowRunner.RunWorkflowAsync(workflowInstance, result.ActivityId, cancellationToken: cancellationToken);
         }
 
         private async Task<IEnumerable<(IWorkflowBlueprint WorkflowBlueprint, IActivityBlueprint ActivityBlueprint, PathString Path, string? Method)>> FindHttpWorkflowBlueprints(
