@@ -9,13 +9,13 @@ namespace Elsa.Persistence.EntityFramework.Core.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        public static ElsaOptions UseEntityFrameworkPersistence(this ElsaOptions elsa, Action<DbContextOptionsBuilder> configure, bool autoRunMigrations = false) =>
+        public static ElsaOptions UseEntityFrameworkPersistence(this ElsaOptions elsa, Action<DbContextOptionsBuilder> configure, bool autoRunMigrations = true) =>
             elsa.UseEntityFrameworkPersistence((_, builder) => configure(builder), autoRunMigrations);
 
-        public static ElsaOptions UseEntityFrameworkPersistence(this ElsaOptions elsa, Action<IServiceProvider, DbContextOptionsBuilder> configure, bool autorunMigrations = false)
+        public static ElsaOptions UseEntityFrameworkPersistence(this ElsaOptions elsa, Action<IServiceProvider, DbContextOptionsBuilder> configure, bool autorunMigrations = true)
         {
             elsa.Services
-                .AddDbContext<ElsaContext>(configure)
+                .AddPooledDbContextFactory<ElsaContext>(configure)
                 .AddScoped<EntityFrameworkWorkflowDefinitionStore>()
                 .AddScoped<EntityFrameworkWorkflowInstanceStore>()
                 .AddScoped<EntityFrameworkWorkflowExecutionLogRecordStore>()
