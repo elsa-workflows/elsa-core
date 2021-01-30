@@ -237,17 +237,13 @@ namespace Elsa
         private void ConfigureInMemoryServiceBusEndpoint(ServiceBusEndpointConfigurationContext context)
         {
             var serviceProvider = context.ServiceProvider;
-            var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
             var transport = serviceProvider.GetService<InMemNetwork>();
             var store = serviceProvider.GetRequiredService<InMemorySubscriberStore>();
             var queueName = context.QueueName;
 
             context.Configurer
-                .Logging(l => l.MicrosoftExtensionsLogging(loggerFactory))
                 .Subscriptions(s => s.StoreInMemory(store))
-                .Transport(t => t.UseInMemoryTransport(transport, queueName))
-                .Routing(r => r.TypeBased().Map(context.MessageTypeMap))
-                .Options(options => options.Apply(ServiceBusOptions));
+                .Transport(t => t.UseInMemoryTransport(transport, queueName));
         }
     }
 }

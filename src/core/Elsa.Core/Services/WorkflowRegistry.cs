@@ -21,18 +21,8 @@ namespace Elsa.Services
 
         public async Task<IEnumerable<IWorkflowBlueprint>> ListAsync(CancellationToken cancellationToken) => await GetWorkflowsInternalAsync(cancellationToken).ToListAsync(cancellationToken);
 
-        public async Task<IWorkflowBlueprint?> GetAsync(string id, string? tenantId, VersionOptions version, CancellationToken cancellationToken)
-        {
-            var workflows = await ListAsync(cancellationToken).ToList();
-            var query = workflows.Where(workflow => workflow.Id == id && workflow.WithVersion(version));
-
-            if (tenantId != null)
-                query = query.Where(x => x.TenantId == tenantId);
-
-            return query
-                .OrderByDescending(x => x.Version)
-                .FirstOrDefault();
-        }
+        public async Task<IWorkflowBlueprint?> GetAsync(string id, string? tenantId, VersionOptions version, CancellationToken cancellationToken) =>
+            await FindAsync(x => x.Id == id && x.TenantId == tenantId && x.WithVersion(version), cancellationToken);
 
         public async Task<IEnumerable<IWorkflowBlueprint>> FindManyAsync(Func<IWorkflowBlueprint, bool> predicate, CancellationToken cancellationToken) =>
             (await ListAsync(cancellationToken).Where(predicate).OrderByDescending(x => x.Version)).ToList();

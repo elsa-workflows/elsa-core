@@ -45,6 +45,13 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
                 ? await _reviver.ReviveAndRunAsync(workflowInstance, cancellationToken) 
                 : await _reviver.ReviveAndQueueAsync(workflowInstance, cancellationToken);
 
+            if (workflowInstance.WorkflowStatus == WorkflowStatus.Faulted)
+                return StatusCode(500, new
+                {
+                    WorkflowInstanceId = workflowInstance.Id,
+                    Fault = workflowInstance.Fault
+                });
+
             return Response.HasStarted ? (IActionResult) new EmptyResult() : Ok(workflowInstance);
         }
     }
