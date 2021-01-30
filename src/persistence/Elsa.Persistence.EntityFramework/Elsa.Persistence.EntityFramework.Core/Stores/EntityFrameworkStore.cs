@@ -27,14 +27,15 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
 
             try
             {
-                await DoWorkOnSet(async dbSet =>
+                await DoWork(async dbContext =>
                 {
+                    var dbSet = dbContext.Set<T>();
                     var existingEntity = await dbSet.FindAsync(new object[] { entity.Id }, cancellationToken);
-
+                    
                     if (existingEntity == null!)
                         await dbSet.AddAsync(entity, cancellationToken);
-
-                    OnSaving(entity);
+                    
+                    OnSaving(dbContext, entity);
                 }, cancellationToken);
             }
             finally
@@ -46,10 +47,11 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
 
         public async Task AddAsync(T entity, CancellationToken cancellationToken)
         {
-            await DoWorkOnSet(async dbSet =>
+            await DoWork(async dbContext =>
             {
+                var dbSet = dbContext.Set<T>();
                 await dbSet.AddAsync(entity, cancellationToken);
-                OnSaving(entity);
+                OnSaving(dbContext, entity);
             }, cancellationToken);
         }
 
@@ -57,21 +59,23 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
         {
             var list = entities.ToList();
 
-            await DoWorkOnSet(async dbSet =>
+            await DoWork(async dbContext =>
             {
+                var dbSet = dbContext.Set<T>();
                 await dbSet.AddRangeAsync(list, cancellationToken);
 
                 foreach (var entity in list)
-                    OnSaving(entity);
+                    OnSaving(dbContext, entity);
             }, cancellationToken);
         }
 
         public async Task UpdateAsync(T entity, CancellationToken cancellationToken = default)
         {
-            await DoWorkOnSet(dbSet =>
+            await DoWork(dbContext =>
             {
+                var dbSet = dbContext.Set<T>();
                 dbSet.Attach(entity);
-                OnSaving(entity);
+                OnSaving(dbContext, entity);
             }, cancellationToken);
         }
 
@@ -87,8 +91,9 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
         {
             var filter = MapSpecification(specification);
 
-            return await DoWorkOnSet(async dbSet =>
+            return await DoWork(async dbContext =>
             {
+                var dbSet = dbContext.Set<T>();
                 var queryable = dbSet.Where(filter);
 
                 if (orderBy != null)
@@ -100,13 +105,13 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
                 if (paging != null)
                     queryable = queryable.Skip(paging.Skip).Take(paging.Take);
 
-                return (await queryable.ToListAsync(cancellationToken)).Select(ReadShadowProperties).ToList();
+                return (await queryable.ToListAsync(cancellationToken)).Select(x => ReadShadowProperties(dbContext, x)).ToList();
             }, cancellationToken);
         }
 
-        private T ReadShadowProperties(T entity)
+        private T ReadShadowProperties(ElsaContext dbContext, T entity)
         {
-            OnLoading(entity);
+            OnLoading(dbContext, entity);
             return entity;
         }
 
@@ -116,10 +121,11 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
         public async Task<T?> FindAsync(ISpecification<T> specification, CancellationToken cancellationToken = default)
         {
             var filter = MapSpecification(specification);
-            return await DoWorkOnSet(async dbSet =>
+            return await DoWork(async dbContext =>
             {
+                var dbSet = dbContext.Set<T>();
                 var entity = await dbSet.FirstOrDefaultAsync(filter, cancellationToken);
-                return entity != null ? ReadShadowProperties(entity) : default;
+                return entity != null ? ReadShadowProperties(dbContext, entity) : default;
             }, cancellationToken);
         }
 
