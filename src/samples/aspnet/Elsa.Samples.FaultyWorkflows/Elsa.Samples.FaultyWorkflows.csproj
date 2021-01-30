@@ -7,6 +7,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\..\core\Elsa\Elsa.csproj" />
+        <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.Sqlite\Elsa.Persistence.EntityFramework.Sqlite.csproj" />
     </ItemGroup>
 
 </Project>
