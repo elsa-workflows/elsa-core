@@ -13,12 +13,12 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
     [ApiVersion("1")]
     [Route("v{apiVersion:apiVersion}/workflow-instances/{id}/retry")]
     [Produces("application/json")]
-    public class Revive : Controller
+    public class Retry : Controller
     {
         private readonly IWorkflowInstanceStore _store;
         private readonly IWorkflowReviver _reviver;
 
-        public Revive(IWorkflowInstanceStore store, IWorkflowReviver reviver)
+        public Retry(IWorkflowInstanceStore store, IWorkflowReviver reviver)
         {
             _store = store;
             _reviver = reviver;
@@ -45,7 +45,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
                 ? await _reviver.ReviveAndRunAsync(workflowInstance, cancellationToken) 
                 : await _reviver.ReviveAndQueueAsync(workflowInstance, cancellationToken);
 
-            return Ok(workflowInstance);
+            return Response.HasStarted ? (IActionResult) new EmptyResult() : Ok(workflowInstance);
         }
     }
 

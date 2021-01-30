@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Net;
-using Elsa.Activities.ControlFlow;
 using Elsa.Activities.Http;
 using Elsa.Activities.Http.Models;
 using Elsa.Builders;
 using Elsa.Serialization;
 using Elsa.Services.Models;
 
-namespace Elsa.Samples.FaultyWorkflows
+namespace Elsa.Samples.Server.Host.Workflows
 {
     /// <summary>
     /// A workflow that is triggered when HTTP requests are made to /hello and writes a response.
@@ -25,9 +24,17 @@ namespace Elsa.Samples.FaultyWorkflows
         {
             builder
                 .HttpRequestReceived("/faulty")
-                .IfTrue(context => context.GetInput<HttpRequestModel>()!.QueryString.GetItem("fault")?.Value == "true", ifTrue =>
-                    ifTrue.Then(() => throw new Exception("This is quite a serious fault!")))
+                .Then(MaybeThrow)
                 .WriteHttpResponse(response => response.WithStatusCode(HttpStatusCode.OK).WithContentType("application/json").WithContent(WriteWorkflowInfoAsync));
+        }
+
+        private void MaybeThrow(ActivityExecutionContext context)
+        {
+            var model = context.GetInput<HttpRequestModel>()!;
+            var fault = model.QueryString.GetItem("fault")?.Value == "true";
+
+            if (fault)
+                throw new Exception("This is quite a serious fault!");
         }
 
         private string WriteWorkflowInfoAsync(ActivityExecutionContext context)
