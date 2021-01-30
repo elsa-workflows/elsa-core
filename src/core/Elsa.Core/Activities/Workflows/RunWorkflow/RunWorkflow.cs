@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -46,13 +47,17 @@ namespace Elsa.Activities.Workflows
             var cancellationToken = context.CancellationToken;
             var workflowBlueprint = await FindWorkflowBlueprintAsync(cancellationToken);
             var workflowInstance = await _workflowScheduler.RunWorkflowAsync(workflowBlueprint!, TenantId, Input, CorrelationId, ContextId, cancellationToken);
+            var workflowStatus = workflowInstance.WorkflowStatus;
+            
             ChildWorkflowInstanceId = workflowInstance.Id;
 
             return Mode switch
             {
                 RunWorkflowMode.FireAndForget => Done(),
-                RunWorkflowMode.Blocking => Suspend(),
-                _ => Suspend()
+                RunWorkflowMode.Blocking when workflowStatus == WorkflowStatus.Finished => Done(),
+                RunWorkflowMode.Blocking when workflowStatus == WorkflowStatus.Suspended => Suspend(),
+                RunWorkflowMode.Blocking when workflowStatus == WorkflowStatus.Faulted => Fault($"Workflow {workflowInstance.Id} faulted"),
+                _ => throw new ArgumentOutOfRangeException(nameof(Mode))
             };
         }
 
