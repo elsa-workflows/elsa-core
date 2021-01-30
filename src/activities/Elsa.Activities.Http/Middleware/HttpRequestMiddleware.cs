@@ -48,6 +48,7 @@ namespace Elsa.Activities.Http.Middleware
             if (workflowInstance.WorkflowStatus == WorkflowStatus.Faulted)
             {
                 httpContext.Response.StatusCode = (int) HttpStatusCode.InternalServerError;
+                httpContext.Response.ContentType = "application/json";
                 
                 var model = new
                 {
