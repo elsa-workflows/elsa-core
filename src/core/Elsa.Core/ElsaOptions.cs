@@ -91,9 +91,12 @@ namespace Elsa
             return this;
         }
         
-        public ElsaOptions AddActivitiesFrom(Assembly assembly)
+        public ElsaOptions AddActivitiesFrom(Assembly assembly) => AddActivitiesFrom(new[] { assembly });
+        public ElsaOptions AddActivitiesFrom(params Assembly[] assemblies) => AddActivitiesFrom((IEnumerable<Assembly>) assemblies);
+        
+        public ElsaOptions AddActivitiesFrom(IEnumerable<Assembly> assemblies)
         {
-            var types = assembly.GetAllWithInterface<IActivity>();
+            var types = assemblies.SelectMany(x => x.GetAllWithInterface<IActivity>());
 
             foreach (var type in types) 
                 AddActivity(type);
