@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Exceptions;
 using Elsa.Models;
+using Elsa.Persistence;
 
 namespace Elsa.Services
 {
@@ -12,15 +13,17 @@ namespace Elsa.Services
         private readonly IWorkflowRunner _workflowRunner;
         private readonly IWorkflowQueue _workflowQueue;
         private readonly IWorkflowRegistry _workflowRegistry;
+        private readonly IWorkflowInstanceStore _workflowInstanceStore;
 
-        public WorkflowReviver(IWorkflowRunner workflowRunner, IWorkflowQueue workflowQueue, IWorkflowRegistry workflowRegistry)
+        public WorkflowReviver(IWorkflowRunner workflowRunner, IWorkflowQueue workflowQueue, IWorkflowRegistry workflowRegistry, IWorkflowInstanceStore workflowInstanceStore)
         {
             _workflowRunner = workflowRunner;
             _workflowQueue = workflowQueue;
             _workflowRegistry = workflowRegistry;
+            _workflowInstanceStore = workflowInstanceStore;
         }
         
-        public WorkflowInstance Revive(WorkflowInstance workflowInstance)
+        public async Task<WorkflowInstance> ReviveAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken)
         {
             if (workflowInstance.WorkflowStatus != WorkflowStatus.Faulted)
                 throw new InvalidOperationException($"Cannot revive non-faulted workflow with status {workflowInstance.WorkflowStatus}");
@@ -47,18 +50,20 @@ namespace Elsa.Services
             }
 
             workflowInstance.Fault = null;
+            workflowInstance.FaultedAt = null;
+            await _workflowInstanceStore.SaveAsync(workflowInstance, cancellationToken);
             return workflowInstance;
         }
 
         public async Task<WorkflowInstance> ReviveAndRunAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken)
         {
-            workflowInstance = Revive(workflowInstance);
+            workflowInstance = await ReviveAsync(workflowInstance, cancellationToken);
             return await _workflowRunner.RunWorkflowAsync(workflowInstance, null, null, cancellationToken);
         }
         
         public async Task<WorkflowInstance> ReviveAndQueueAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken)
         {
-            workflowInstance = Revive(workflowInstance);
+            workflowInstance = await ReviveAsync(workflowInstance, cancellationToken);
             var currentActivity = await GetActivityToScheduleAsync(workflowInstance, cancellationToken); 
             await _workflowQueue.EnqueueWorkflowInstance(workflowInstance.Id, currentActivity.ActivityId, currentActivity.Input, cancellationToken);
             return workflowInstance;

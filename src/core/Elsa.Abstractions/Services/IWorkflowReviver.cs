@@ -9,7 +9,7 @@ namespace Elsa.Services
     /// </summary>
     public interface IWorkflowReviver
     {
-        WorkflowInstance Revive(WorkflowInstance workflowInstance);
+        Task<WorkflowInstance> ReviveAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken = default);
         Task<WorkflowInstance> ReviveAndRunAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken = default);
         Task<WorkflowInstance> ReviveAndQueueAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken = default);
     }
