@@ -148,7 +148,7 @@ namespace Elsa.Services
             object? input = default,
             CancellationToken cancellationToken = default)
         {
-            var workflowBlueprint = await _workflowRegistry.GetWorkflowAsync(
+            var workflowBlueprint = await _workflowRegistry.GetAsync(
                 workflowInstance.DefinitionId,
                 workflowInstance.TenantId,
                 VersionOptions.SpecificVersion(workflowInstance.Version),

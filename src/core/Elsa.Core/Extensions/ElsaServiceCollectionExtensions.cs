@@ -10,7 +10,9 @@ using Elsa.ActivityTypeProviders;
 using Elsa.Bookmarks;
 using Elsa.Builders;
 using Elsa.Consumers;
+using Elsa.Decorators;
 using Elsa.Expressions;
+using Elsa.Handlers;
 using Elsa.HostedServices;
 using Elsa.Mapping;
 using Elsa.Messages;
@@ -30,7 +32,6 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Newtonsoft.Json;
 using NodaTime;
 using Rebus.Handlers;
-using Rebus.ServiceProvider;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -60,7 +61,6 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddWorkflowsCore()
                 .AddCoreActivities();
             
-            options.AddMediatR();
             options.AddAutoMapper();
             options.AddConsumer<RunWorkflowDefinitionConsumer, RunWorkflowDefinition>();
             options.AddConsumer<RunWorkflowInstanceConsumer, RunWorkflowInstance>();
@@ -71,12 +71,12 @@ namespace Microsoft.Extensions.DependencyInjection
 
             return services;
         }
-        
+
         /// <summary>
         /// Starts the specified workflow upon application startup.
         /// </summary>
         public static IServiceCollection StartWorkflow<T>(this IServiceCollection services) where T : class, IWorkflow => services.AddHostedService<StartWorkflow<T>>();
-        
+
         public static ElsaOptions AddConsumer<TConsumer, TMessage>(this ElsaOptions elsaOptions) where TConsumer : class, IHandleMessages<TMessage>
         {
             elsaOptions.Services.AddTransient<IHandleMessages<TMessage>, TConsumer>();
@@ -84,70 +84,101 @@ namespace Microsoft.Extensions.DependencyInjection
             return elsaOptions;
         }
 
-        private static ElsaOptions AddMediatR(this ElsaOptions options)
-        {
-            options.Services.AddMediatR(mediatr => mediatr.AsScoped(), typeof(IActivity));
-            return options;
-        }
-
         private static ElsaOptions AddWorkflowsCore(this ElsaOptions options)
         {
             var services = options.Services;
-            services.TryAddSingleton<IClock>(SystemClock.Instance);
+
+            services
+                .TryAddSingleton<IClock>(SystemClock.Instance);
 
             services
                 .AddLogging()
                 .AddLocalization()
-                .AddMemoryCache()
                 .AddSingleton<IIdGenerator, IdGenerator>()
-                .AddTransient<Func<JsonSerializer>>(sp => sp.GetRequiredService<JsonSerializer>)
-                .AddTransient(sp => sp.GetRequiredService<ElsaOptions>().CreateJsonSerializer(sp))
-                .AddSingleton<IContentSerializer, DefaultContentSerializer>()
-                .AddSingleton<TypeJsonConverter>()
-                .TryAddProvider<IExpressionHandler, LiteralHandler>(ServiceLifetime.Singleton)
-                .TryAddProvider<IExpressionHandler, VariableHandler>(ServiceLifetime.Singleton)
-                .AddScoped<IExpressionEvaluator, ExpressionEvaluator>()
                 .AddScoped<IWorkflowRegistry, WorkflowRegistry>()
                 .AddSingleton<IActivityActivator, ActivityActivator>()
                 .AddScoped<IWorkflowRunner, WorkflowRunner>()
                 .AddScoped<IWorkflowTriggerInterruptor, WorkflowTriggerInterruptor>()
                 .AddScoped<IWorkflowReviver, WorkflowReviver>()
-                .AddSingleton<IActivityDescriber, ActivityDescriber>()
                 .AddSingleton<IWorkflowFactory, WorkflowFactory>()
                 .AddSingleton<IWorkflowBlueprintMaterializer, WorkflowBlueprintMaterializer>()
                 .AddSingleton<IWorkflowBlueprintReflector, WorkflowBlueprintReflector>()
+                .AddSingleton<IBackgroundWorker, BackgroundWorker>()
+                .AddScoped<IWorkflowPublisher, WorkflowPublisher>()
+                .AddScoped<IWorkflowContextManager, WorkflowContextManager>()
+                .AddSingleton<IActivityTypeService, ActivityTypeService>()
+                .AddSingleton<IActivityTypeProvider, TypeBasedActivityProvider>()
+                .AddScoped<IWorkflowExecutionLog, WorkflowExecutionLog>()
+                ;
+
+            // Serialization.
+            services
+                .AddTransient<Func<JsonSerializer>>(sp => sp.GetRequiredService<JsonSerializer>)
+                .AddTransient(sp => sp.GetRequiredService<ElsaOptions>().CreateJsonSerializer(sp))
+                .AddSingleton<IContentSerializer, DefaultContentSerializer>()
+                .AddSingleton<TypeJsonConverter>();
+
+            // Expressions.
+            services
+                .TryAddProvider<IExpressionHandler, LiteralHandler>(ServiceLifetime.Singleton)
+                .TryAddProvider<IExpressionHandler, VariableHandler>(ServiceLifetime.Singleton)
+                .AddScoped<IExpressionEvaluator, ExpressionEvaluator>();
+
+            // Workflow providers.
+            services
+                .AddWorkflowProvider<ProgrammaticWorkflowProvider>()
+                .AddWorkflowProvider<StorageWorkflowProvider>()
+                .AddWorkflowProvider<DatabaseWorkflowProvider>();
+
+            // Metadata.
+            services
+                .AddSingleton<IActivityDescriber, ActivityDescriber>()
+                .AddMetadataHandlers();
+
+            // Bookmarks.
+            services
                 .AddSingleton<IBookmarkHasher, BookmarkHasher>()
                 .AddScoped<IBookmarkIndexer, BookmarkIndexer>()
                 .AddScoped<IBookmarkFinder, BookmarkFinder>()
                 .AddScoped<ITriggerIndexer, TriggerIndexer>()
                 .AddSingleton<ITriggerStore, TriggerStore>()
                 .AddScoped<ITriggerFinder, TriggerFinder>()
-                .AddSingleton<IBackgroundWorker, BackgroundWorker>()
+                .AddBookmarkProvider<SignalReceivedBookmarkProvider>()
+                .AddBookmarkProvider<RunWorkflowBookmarkProvider>();
+
+            // Mediator.
+            services
+                .AddMediatR(mediatr => mediatr.AsScoped(), typeof(IActivity), typeof(LogWorkflowExecution));
+
+            // Service Bus.
+            services
                 .AddScoped<IWorkflowQueue, WorkflowQueue>()
-                .AddScoped<IWorkflowPublisher, WorkflowPublisher>()
-                .AddScoped<IWorkflowContextManager, WorkflowContextManager>()
-                .AddSingleton<IActivityTypeService, ActivityTypeService>()
-                .AddSingleton<IActivityTypeProvider, TypeBasedActivityProvider>()
-                .AddWorkflowProvider<ProgrammaticWorkflowProvider>()
-                .AddWorkflowProvider<StorageWorkflowProvider>()
-                .AddWorkflowProvider<DatabaseWorkflowProvider>()
-                .AddTransient<IWorkflowBuilder, WorkflowBuilder>()
-                .AddTransient<ICompositeActivityBuilder, CompositeActivityBuilder>()
-                .AddTransient<Func<IWorkflowBuilder>>(sp => sp.GetRequiredService<IWorkflowBuilder>)
-                .AddAutoMapperProfile<NodaTimeProfile>()
-                .AddAutoMapperProfile<CloningProfile>()
-                .AddSingleton<ICloner, AutoMapperCloner>()
-                .AddNotificationHandlers(typeof(ElsaServiceCollectionExtensions))
                 .AddSingleton<ServiceBusFactory>()
                 .AddSingleton<IServiceBusFactory, ServiceBusFactory>()
                 .AddSingleton<ICommandSender, CommandSender>()
-                .AddSingleton<IEventPublisher, EventPublisher>()
+                .AddSingleton<IEventPublisher, EventPublisher>();
+            
+            options
+                .AddConsumer<RunWorkflowDefinitionConsumer, RunWorkflowDefinition>()
+                .AddConsumer<RunWorkflowInstanceConsumer, RunWorkflowInstance>();
+
+            // AutoMapper.
+            services
+                .AddAutoMapperProfile<NodaTimeProfile>()
+                .AddAutoMapperProfile<CloningProfile>()
+                .AddSingleton<ICloner, AutoMapperCloner>();
+
+            // Caching.
+            services
+                .AddMemoryCache()
                 .AddScoped<ISignaler, Signaler>()
-                .AddScoped<IWorkflowExecutionLog, WorkflowExecutionLog>()
-                .AutoRegisterHandlersFromAssemblyOf<RunWorkflowInstanceConsumer>()
-                .AddBookmarkProvider<SignalReceivedBookmarkProvider>()
-                .AddBookmarkProvider<RunWorkflowBookmarkProvider>()
-                .AddMetadataHandlers();
+                .Decorate<IWorkflowRegistry, CachingWorkflowRegistry>();
+
+            // Builder API.
+            services
+                .AddTransient<IWorkflowBuilder, WorkflowBuilder>()
+                .AddTransient<ICompositeActivityBuilder, CompositeActivityBuilder>()
+                .AddTransient<Func<IWorkflowBuilder>>(sp => sp.GetRequiredService<IWorkflowBuilder>);
 
             return options;
         }

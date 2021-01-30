@@ -32,7 +32,7 @@ namespace Elsa.Consumers
         {
             var workflowDefinitionId = message.WorkflowDefinitionId;
             var tenantId = message.TenantId;
-            var workflowBlueprint = await _workflowRegistry.GetWorkflowAsync(workflowDefinitionId, tenantId, VersionOptions.Published);
+            var workflowBlueprint = await _workflowRegistry.GetAsync(workflowDefinitionId, tenantId, VersionOptions.Published);
 
             if (!ValidatePreconditions(workflowDefinitionId, workflowBlueprint))
                 return;

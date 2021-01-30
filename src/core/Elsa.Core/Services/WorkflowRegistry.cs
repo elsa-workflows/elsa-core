@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Services.Models;
+using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Services
 {
@@ -18,22 +19,11 @@ namespace Elsa.Services
             _workflowProviders = workflowProviders;
         }
 
-        public async IAsyncEnumerable<IWorkflowBlueprint> GetWorkflowsAsync([EnumeratorCancellation] CancellationToken cancellationToken)
-        {
-            var providers = _workflowProviders;
+        public async Task<IEnumerable<IWorkflowBlueprint>> ListAsync(CancellationToken cancellationToken) => await GetWorkflowsInternalAsync(cancellationToken).ToListAsync(cancellationToken);
 
-            foreach (var provider in providers)
-            await foreach (var workflow in provider.GetWorkflowsAsync(cancellationToken).WithCancellation(cancellationToken))
-                yield return workflow;
-        }
-
-        public async Task<IWorkflowBlueprint?> GetWorkflowAsync(
-            string id,
-            string? tenantId,
-            VersionOptions version,
-            CancellationToken cancellationToken)
+        public async Task<IWorkflowBlueprint?> GetAsync(string id, string? tenantId, VersionOptions version, CancellationToken cancellationToken)
         {
-            var workflows = await GetWorkflowsAsync(cancellationToken).ToListAsync(cancellationToken);
+            var workflows = await ListAsync(cancellationToken).ToList();
             var query = workflows.Where(workflow => workflow.Id == id && workflow.WithVersion(version));
 
             if (tenantId != null)
@@ -44,10 +34,19 @@ namespace Elsa.Services
                 .FirstOrDefault();
         }
 
-        public async Task<IEnumerable<IWorkflowBlueprint>> FindWorkflowsAsync(Func<IWorkflowBlueprint, bool> predicate, CancellationToken cancellationToken) =>
-            await GetWorkflowsAsync(cancellationToken).Where(predicate).OrderByDescending(x => x.Version).ToListAsync(cancellationToken);
+        public async Task<IEnumerable<IWorkflowBlueprint>> FindManyAsync(Func<IWorkflowBlueprint, bool> predicate, CancellationToken cancellationToken) =>
+            (await ListAsync(cancellationToken).Where(predicate).OrderByDescending(x => x.Version)).ToList();
 
-        public async Task<IWorkflowBlueprint?> FindWorkflowAsync(Func<IWorkflowBlueprint, bool> predicate, CancellationToken cancellationToken) => 
-            await GetWorkflowsAsync(cancellationToken).Where(predicate).OrderByDescending(x => x.Version).FirstOrDefaultAsync(cancellationToken);
+        public async Task<IWorkflowBlueprint?> FindAsync(Func<IWorkflowBlueprint, bool> predicate, CancellationToken cancellationToken) =>
+            (await ListAsync(cancellationToken).Where(predicate).OrderByDescending(x => x.Version)).FirstOrDefault();
+
+        private async IAsyncEnumerable<IWorkflowBlueprint> GetWorkflowsInternalAsync([EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            var providers = _workflowProviders;
+
+            foreach (var provider in providers)
+            await foreach (var workflow in provider.GetWorkflowsAsync(cancellationToken).WithCancellation(cancellationToken))
+                yield return workflow;
+        }
     }
 }

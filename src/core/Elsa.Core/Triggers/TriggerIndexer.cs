@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Elsa.Bookmarks;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Triggers
@@ -43,7 +42,7 @@ namespace Elsa.Triggers
 
         public async Task IndexTriggersAsync(CancellationToken cancellationToken = default)
         {
-            var workflowBlueprints = await _workflowRegistry.GetWorkflowsAsync(cancellationToken).ToListAsync(cancellationToken);
+            var workflowBlueprints = await _workflowRegistry.ListAsync(cancellationToken);
             await IndexTriggersAsync(workflowBlueprints, cancellationToken);
         }
 

@@ -6,7 +6,6 @@ using Elsa.Samples.Timers.Workflows;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using NodaTime;
 
 namespace Elsa.Samples.Timers
 {

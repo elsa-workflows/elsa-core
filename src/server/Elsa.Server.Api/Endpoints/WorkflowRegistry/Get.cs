@@ -42,7 +42,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowRegistry
         public async Task<ActionResult<WorkflowBlueprintModel>> Handle(string id, VersionOptions? versionOptions = default, CancellationToken cancellationToken = default)
         {
             versionOptions ??= VersionOptions.Latest;
-            var workflowBlueprint = await _workflowRegistry.GetWorkflowAsync(id, null, versionOptions.Value, cancellationToken);
+            var workflowBlueprint = await _workflowRegistry.GetAsync(id, null, versionOptions.Value, cancellationToken);
 
             if (workflowBlueprint == null)
                 return NotFound();

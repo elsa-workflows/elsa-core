@@ -25,7 +25,7 @@ namespace Elsa.Activities.Timers.Hangfire.Jobs
 
         public async Task ExecuteAsync(RunHangfireWorkflowJobModel data)
         {
-            var workflowBlueprint = (await _workflowRegistry.GetWorkflowAsync(data.WorkflowDefinitionId, data.TenantId, VersionOptions.Published));
+            var workflowBlueprint = (await _workflowRegistry.GetAsync(data.WorkflowDefinitionId, data.TenantId, VersionOptions.Published));
             
             if(workflowBlueprint == null)
                 return;

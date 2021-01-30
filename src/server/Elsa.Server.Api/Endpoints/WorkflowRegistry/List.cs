@@ -10,6 +10,7 @@ using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
+using Open.Linq.AsyncExtensions;
 using Swashbuckle.AspNetCore.Annotations;
 
 namespace Elsa.Server.Api.Endpoints.WorkflowRegistry
@@ -42,7 +43,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowRegistry
         public async Task<ActionResult<PagedList<WorkflowBlueprintSummaryModel>>> Handle(int? page = default, int? pageSize = default, VersionOptions? version = default, CancellationToken cancellationToken = default)
         {
             version ??= VersionOptions.Latest;
-            var workflowBlueprints = await _workflowRegistry.GetWorkflowsAsync(cancellationToken).Where(x => x.WithVersion(version.Value)).ToListAsync(cancellationToken);
+            var workflowBlueprints = await _workflowRegistry.FindManyAsync(x => x.WithVersion(version.Value), cancellationToken).ToList();
             var totalCount = workflowBlueprints.Count;
             var skip = page * pageSize;
             var items = workflowBlueprints.AsEnumerable();

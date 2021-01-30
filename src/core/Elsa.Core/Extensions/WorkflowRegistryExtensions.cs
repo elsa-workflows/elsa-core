@@ -12,7 +12,7 @@ namespace Elsa
             this IWorkflowRegistry workflowRegistry,
             string? tenantId,
             CancellationToken cancellationToken = default) =>
-            workflowRegistry.GetWorkflowAsync(typeof(T).Name, tenantId, VersionOptions.Latest, cancellationToken);
+            workflowRegistry.GetAsync(typeof(T).Name, tenantId, VersionOptions.Latest, cancellationToken);
 
         public static Task<IWorkflowBlueprint?> GetWorkflowAsync<T>(
             this IWorkflowRegistry workflowRegistry,
@@ -24,7 +24,7 @@ namespace Elsa
             string id,
             VersionOptions versionOptions,
             CancellationToken cancellationToken = default) =>
-            workflowRegistry.GetWorkflowAsync(id, default, versionOptions, cancellationToken);
+            workflowRegistry.GetAsync(id, default, versionOptions, cancellationToken);
 
         // public static async Task<IEnumerable<(IWorkflowBlueprint Workflow, IActivityBlueprint Activity)>>
         //     GetWorkflowsByStartActivityAsync<T>(

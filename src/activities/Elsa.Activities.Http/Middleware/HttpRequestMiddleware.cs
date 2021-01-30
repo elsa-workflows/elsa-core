@@ -134,7 +134,7 @@ namespace Elsa.Activities.Http.Middleware
             CancellationToken cancellationToken)
         {
             // Find workflows starting with HttpRequestReceived.
-            var workflows = await workflowRegistry.GetWorkflowsAsync(cancellationToken).ToListAsync(cancellationToken);
+            var workflows = await workflowRegistry.ListAsync(cancellationToken);
 
             var httpWorkflows =
                 from workflow in workflows

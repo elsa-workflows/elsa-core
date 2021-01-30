@@ -10,7 +10,6 @@ using Elsa.Persistence.Specifications.Bookmarks;
 using Elsa.Serialization;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Open.Linq.AsyncExtensions;
 using Rebus.Extensions;
@@ -61,7 +60,7 @@ namespace Elsa.Bookmarks
             var workflowInstanceIds = workflowInstanceList.Select(x => x.Id).ToList();
             await DeleteBookmarksAsync(workflowInstanceIds, cancellationToken);
 
-            var workflowBlueprints = await _workflowRegistry.GetWorkflowsAsync(cancellationToken).ToDictionaryAsync(x => (x.Id, x.Version), cancellationToken);
+            var workflowBlueprints = (await _workflowRegistry.ListAsync(cancellationToken)).ToDictionary(x => (x.Id, x.Version));
             var entities = new List<Bookmark>();
             
             foreach (var workflowInstance in workflowInstanceList.Where(x => x.WorkflowStatus == WorkflowStatus.Suspended))
