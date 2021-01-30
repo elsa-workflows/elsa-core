@@ -9,6 +9,6 @@ namespace Elsa.ActivityResults
         public string? StackTrace { get; set; }
         
         protected override void Execute(ActivityExecutionContext activityExecutionContext) => 
-            activityExecutionContext.WorkflowExecutionContext.Fault(activityExecutionContext.ActivityBlueprint.Id, Message, StackTrace);
+            activityExecutionContext.WorkflowExecutionContext.Fault(activityExecutionContext.ActivityBlueprint.Id, Message, StackTrace, activityExecutionContext.Input, activityExecutionContext.Resuming);
     }
 }

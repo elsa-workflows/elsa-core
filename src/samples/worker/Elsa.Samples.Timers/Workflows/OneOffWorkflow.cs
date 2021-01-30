@@ -19,9 +19,9 @@ namespace Elsa.Samples.Timers.Workflows
             _clock = clock;
         }
         
-        public void Build(IWorkflowBuilder workflow)
+        public void Build(IWorkflowBuilder builder)
         {
-            workflow
+            builder
                 .StartAt(_executeAt)
                 .WriteLine(() => $"Started at {_clock.GetCurrentInstant()}. Next event happens 3 seconds from now.")
                 .StartIn(Duration.FromSeconds(3))

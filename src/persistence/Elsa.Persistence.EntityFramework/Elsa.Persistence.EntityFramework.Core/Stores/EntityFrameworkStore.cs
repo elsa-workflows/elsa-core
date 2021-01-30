@@ -14,108 +14,154 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
     {
         private readonly SemaphoreSlim _semaphore = new(1);
 
-        protected EntityFrameworkStore(ElsaContext dbContext)
+        protected EntityFrameworkStore(IDbContextFactory<ElsaContext> dbContextFactory)
         {
-            DbContext = dbContext;
+            DbContextFactory = dbContextFactory;
         }
 
-        protected ElsaContext DbContext { get; }
-        protected abstract DbSet<T> DbSet { get; }
+        protected IDbContextFactory<ElsaContext> DbContextFactory { get; }
 
-        public async Task SaveAsync(T entity, CancellationToken cancellationToken = default)
+        public async Task SaveAsync(T entity, CancellationToken cancellationToken)
         {
             await _semaphore.WaitAsync(cancellationToken);
 
             try
             {
-                var existingEntity = await DbSet.FindAsync(new object[] { entity.Id }, cancellationToken);
-
-                if (existingEntity == null!)
-                    await DbSet.AddAsync(entity, cancellationToken);
-
-                OnSaving(entity);
-                await DbContext.SaveChangesAsync(cancellationToken);
+                await DoWork(async dbContext =>
+                {
+                    var dbSet = dbContext.Set<T>();
+                    var existingEntity = await dbSet.FindAsync(new object[] { entity.Id }, cancellationToken);
+                    
+                    if (existingEntity == null!)
+                        await dbSet.AddAsync(entity, cancellationToken);
+                    
+                    OnSaving(dbContext, entity);
+                }, cancellationToken);
             }
             finally
             {
                 _semaphore.Release();
             }
         }
-        
-        public async Task AddAsync(T entity, CancellationToken cancellationToken = default)
+
+
+        public async Task AddAsync(T entity, CancellationToken cancellationToken)
         {
-            await DbSet.AddAsync(entity, cancellationToken);
-            OnSaving(entity);
-            await DbContext.SaveChangesAsync(cancellationToken);
+            await DoWork(async dbContext =>
+            {
+                var dbSet = dbContext.Set<T>();
+                await dbSet.AddAsync(entity, cancellationToken);
+                OnSaving(dbContext, entity);
+            }, cancellationToken);
         }
-        
+
         public async Task AddManyAsync(IEnumerable<T> entities, CancellationToken cancellationToken = default)
         {
             var list = entities.ToList();
-            await DbSet.AddRangeAsync(list, cancellationToken);
-            
-            foreach (var entity in list) 
-                OnSaving(entity);
-            
-            await DbContext.SaveChangesAsync(cancellationToken);
+
+            await DoWork(async dbContext =>
+            {
+                var dbSet = dbContext.Set<T>();
+                await dbSet.AddRangeAsync(list, cancellationToken);
+
+                foreach (var entity in list)
+                    OnSaving(dbContext, entity);
+            }, cancellationToken);
         }
 
         public async Task UpdateAsync(T entity, CancellationToken cancellationToken = default)
         {
-            OnSaving(entity);
-            await DbContext.SaveChangesAsync(cancellationToken);
+            await DoWork(dbContext =>
+            {
+                var dbSet = dbContext.Set<T>();
+                dbSet.Attach(entity);
+                OnSaving(dbContext, entity);
+            }, cancellationToken);
         }
 
-        public async Task DeleteAsync(T entity, CancellationToken cancellationToken = default)
-        {
-            await DbSet.DeleteByKeyAsync(cancellationToken, entity.Id);
-        }
+        public async Task DeleteAsync(T entity, CancellationToken cancellationToken = default) => await DoWorkOnSet(async dbSet => await dbSet.DeleteByKeyAsync(cancellationToken, entity.Id), cancellationToken);
 
         public async Task<int> DeleteManyAsync(ISpecification<T> specification, CancellationToken cancellationToken = default)
         {
             var filter = MapSpecification(specification);
-            return await DbSet.Where(filter).DeleteFromQueryAsync(cancellationToken);
+            return await DoWorkOnSet(async dbSet => await dbSet.Where(filter).DeleteFromQueryAsync(cancellationToken), cancellationToken);
         }
 
         public async Task<IEnumerable<T>> FindManyAsync(ISpecification<T> specification, IOrderBy<T>? orderBy = default, IPaging? paging = default, CancellationToken cancellationToken = default)
         {
             var filter = MapSpecification(specification);
-            var queryable = DbSet.Where(filter);
 
-            if (orderBy != null)
+            return await DoWork(async dbContext =>
             {
-                var orderByExpression = orderBy.OrderByExpression;
-                queryable = orderBy.SortDirection == SortDirection.Ascending ? queryable.OrderBy(orderByExpression) : queryable.OrderByDescending(orderByExpression);
-            }
+                var dbSet = dbContext.Set<T>();
+                var queryable = dbSet.Where(filter);
 
-            if (paging != null)
-                queryable = queryable.Skip(paging.Skip).Take(paging.Take);
+                if (orderBy != null)
+                {
+                    var orderByExpression = orderBy.OrderByExpression;
+                    queryable = orderBy.SortDirection == SortDirection.Ascending ? queryable.OrderBy(orderByExpression) : queryable.OrderByDescending(orderByExpression);
+                }
 
-            return (await queryable.ToListAsync(cancellationToken)).Select(ReadShadowProperties).ToList();
+                if (paging != null)
+                    queryable = queryable.Skip(paging.Skip).Take(paging.Take);
+
+                return (await queryable.ToListAsync(cancellationToken)).Select(x => ReadShadowProperties(dbContext, x)).ToList();
+            }, cancellationToken);
         }
 
-        private T ReadShadowProperties(T entity)
+        private T ReadShadowProperties(ElsaContext dbContext, T entity)
         {
-            OnLoading(entity);
+            OnLoading(dbContext, entity);
             return entity;
         }
 
-        public Task<int> CountAsync(ISpecification<T> specification, CancellationToken cancellationToken = default)
-        {
-            var filter = MapSpecification(specification);
-            return DbSet.CountAsync(filter, cancellationToken);
-        }
+        public async Task<int> CountAsync(ISpecification<T> specification, CancellationToken cancellationToken = default) =>
+            await DoWorkOnSet(async dbSet => await dbSet.CountAsync(MapSpecification(specification), cancellationToken), cancellationToken);
 
         public async Task<T?> FindAsync(ISpecification<T> specification, CancellationToken cancellationToken = default)
         {
             var filter = MapSpecification(specification);
-            var entity = await DbSet.FirstOrDefaultAsync(filter, cancellationToken);
-            return entity != null ? ReadShadowProperties(entity) : default;
+            return await DoWork(async dbContext =>
+            {
+                var dbSet = dbContext.Set<T>();
+                var entity = await dbSet.FirstOrDefaultAsync(filter, cancellationToken);
+                return entity != null ? ReadShadowProperties(dbContext, entity) : default;
+            }, cancellationToken);
         }
+
+        protected ValueTask DoWorkOnSet(Func<DbSet<T>, ValueTask> work, CancellationToken cancellationToken) => DoWork(dbContext => work(dbContext.Set<T>()), cancellationToken);
+        protected ValueTask<TResult> DoWorkOnSet<TResult>(Func<DbSet<T>, ValueTask<TResult>> work, CancellationToken cancellationToken) => DoWork(dbContext => work(dbContext.Set<T>()), cancellationToken);
+        protected ValueTask DoWorkOnSet(Action<DbSet<T>> work, CancellationToken cancellationToken) => DoWork(dbContext => work(dbContext.Set<T>()), cancellationToken);
+
+        protected async ValueTask DoWork(Func<ElsaContext, ValueTask> work, CancellationToken cancellationToken)
+        {
+            await using var dbContext = DbContextFactory.CreateDbContext();
+            await work(dbContext);
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        protected async ValueTask<TResult> DoWork<TResult>(Func<ElsaContext, ValueTask<TResult>> work, CancellationToken cancellationToken)
+        {
+            await using var dbContext = DbContextFactory.CreateDbContext();
+            var result = await work(dbContext);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            return result;
+        }
+
+        protected async ValueTask DoWork(Action<ElsaContext> work, CancellationToken cancellationToken)
+        {
+            await using var dbContext = DbContextFactory.CreateDbContext();
+            work(dbContext);
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        
+        protected virtual void OnSaving(ElsaContext dbContext, T entity) => OnSaving(entity);
 
         protected virtual void OnSaving(T entity)
         {
         }
+
+        protected virtual void OnLoading(ElsaContext dbContext, T entity) => OnLoading(entity);
 
         protected virtual void OnLoading(T entity)
         {

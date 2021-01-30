@@ -7,9 +7,9 @@ namespace Elsa.Samples.RebusWorker.Workflows
 {
     public class ConsumerWorkflow : IWorkflow
     {
-        public void Build(IWorkflowBuilder workflow)
+        public void Build(IWorkflowBuilder builder)
         {
-            workflow
+            builder
                 .StartWith<RebusMessageReceived>(messageReceived => messageReceived.Set(x => x.MessageType, typeof(Greeting)))
                 .WriteLine(context =>
                 {

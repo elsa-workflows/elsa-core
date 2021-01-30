@@ -24,7 +24,7 @@ namespace Elsa.Services.Models
 
             foreach (var activity in activities)
             {
-                var activityExecutionContext = new ActivityExecutionContext(_workflowExecutionContext.ServiceScope, _workflowExecutionContext, activity, null, CancellationToken.None);
+                var activityExecutionContext = new ActivityExecutionContext(_workflowExecutionContext.ServiceProvider, _workflowExecutionContext, activity, null, false, CancellationToken.None);
                 yield return new ActivityBlueprintWrapper(activityExecutionContext);
             }
         }

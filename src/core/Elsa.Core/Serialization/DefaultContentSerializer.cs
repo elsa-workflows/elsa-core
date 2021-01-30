@@ -11,20 +11,18 @@ namespace Elsa.Serialization
 {
     public class DefaultContentSerializer : IContentSerializer
     {
-        public DefaultContentSerializer(JsonSerializer serializer)
+        public DefaultContentSerializer(Func<JsonSerializer> serializerFactory)
         {
-            Serializer = serializer;
-            SerializerSettings = CreateDefaultJsonSerializationSettings();
+            CreateSerializer = serializerFactory;
         }
-
-        private JsonSerializerSettings SerializerSettings { get; }
-        private JsonSerializer Serializer { get; }
-        public string Serialize<T>(T value) => JObject.FromObject(value!, Serializer).ToString();
-        public T Deserialize<T>(JToken token) => token.ToObject<T>(Serializer)!;
-        public object? Deserialize(JToken token, Type targetType) => token.ToObject(targetType, Serializer);
-        public T Deserialize<T>(string json) => JsonConvert.DeserializeObject<T>(json, SerializerSettings)!;
-        public object? Deserialize(string json, Type targetType) => JsonConvert.DeserializeObject(json, targetType, SerializerSettings);
-        public object GetSettings() => SerializerSettings;
+        
+        private Func<JsonSerializer> CreateSerializer { get; }
+        public string Serialize<T>(T value) => JObject.FromObject(value!, CreateSerializer()).ToString();
+        public T Deserialize<T>(JToken token) => token.ToObject<T>(CreateSerializer())!;
+        public object? Deserialize(JToken token, Type targetType) => token.ToObject(targetType, CreateSerializer());
+        public T Deserialize<T>(string json) => JsonConvert.DeserializeObject<T>(json, CreateDefaultJsonSerializationSettings())!;
+        public object? Deserialize(string json, Type targetType) => JsonConvert.DeserializeObject(json, targetType, CreateDefaultJsonSerializationSettings());
+        public object GetSettings() => CreateDefaultJsonSerializationSettings();
 
         public static void ConfigureDefaultJsonSerializationSettings(JsonSerializerSettings settings)
         {

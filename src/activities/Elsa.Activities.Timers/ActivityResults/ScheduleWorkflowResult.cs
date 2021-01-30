@@ -26,7 +26,7 @@ namespace Elsa.Activities.Timers.ActivityResults
             
             async ValueTask ScheduleWorkflowAsync(WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
             {
-                var scheduler = workflowExecutionContext.ServiceScope.ServiceProvider.GetRequiredService<IWorkflowScheduler>(); 
+                var scheduler = workflowExecutionContext.ServiceProvider.GetRequiredService<IWorkflowScheduler>(); 
                 await scheduler.ScheduleWorkflowAsync(null, workflowInstanceId, activityId, tenantId, executeAt, null, cancellationToken);
             }
 

@@ -13,19 +13,17 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
     {
         private readonly IContentSerializer _contentSerializer;
 
-        public EntityFrameworkWorkflowInstanceStore(ElsaContext dbContext, IContentSerializer contentSerializer) : base(dbContext)
+        public EntityFrameworkWorkflowInstanceStore(IDbContextFactory<ElsaContext> dbContextFactory, IContentSerializer contentSerializer) : base(dbContextFactory)
         {
             _contentSerializer = contentSerializer;
         }
 
-        protected override DbSet<WorkflowInstance> DbSet => DbContext.WorkflowInstances;
-        
         protected override Expression<Func<WorkflowInstance, bool>> MapSpecification(ISpecification<WorkflowInstance> specification)
         {
             return AutoMapSpecification(specification);
         }
 
-        protected override void OnSaving(WorkflowInstance entity)
+        protected override void OnSaving(ElsaContext dbContext, WorkflowInstance entity)
         {
             var data = new
             {
@@ -42,10 +40,10 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
 
             var json = _contentSerializer.Serialize(data);
             
-            DbContext.Entry(entity).Property("Data").CurrentValue = json;
+            dbContext.Entry(entity).Property("Data").CurrentValue = json;
         }
 
-        protected override void OnLoading(WorkflowInstance entity)
+        protected override void OnLoading(ElsaContext dbContext, WorkflowInstance entity)
         {
             var data = new
             {
@@ -60,7 +58,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
                 entity.CurrentActivity
             };
             
-            var json = (string)DbContext.Entry(entity).Property("Data").CurrentValue;
+            var json = (string)dbContext.Entry(entity).Property("Data").CurrentValue;
             
             if(!string.IsNullOrWhiteSpace(json))
                 data = JsonConvert.DeserializeAnonymousType(json, data, DefaultContentSerializer.CreateDefaultJsonSerializationSettings());

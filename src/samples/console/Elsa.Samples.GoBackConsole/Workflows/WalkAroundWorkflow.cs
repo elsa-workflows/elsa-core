@@ -7,9 +7,9 @@ namespace Elsa.Samples.GoBackConsole.Workflows
 {
     public class WalkAroundWorkflow : IWorkflow
     {
-        public void Build(IWorkflowBuilder workflow)
+        public void Build(IWorkflowBuilder builder)
         {
-            workflow
+            builder
                 .WriteLine("Taking a stroll...")
                 .IfElse(context => (string?)context.Input == "Brick Wall",
                     ifElse =>

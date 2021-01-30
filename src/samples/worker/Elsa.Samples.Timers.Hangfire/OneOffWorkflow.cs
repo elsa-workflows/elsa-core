@@ -17,9 +17,9 @@ namespace Elsa.Samples.Timers
             _executeAt = executeAt;
         }
         
-        public void Build(IWorkflowBuilder workflow)
+        public void Build(IWorkflowBuilder builder)
         {
-            workflow
+            builder
                 .StartAt(_executeAt)
                 .WriteLine(context => $"Started at {context.GetService<IClock>().GetCurrentInstant()}. Next event happens 30 seconds from now.")
                 .StartIn(Duration.FromSeconds(30))

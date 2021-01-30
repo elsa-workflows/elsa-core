@@ -13,9 +13,9 @@ namespace Elsa.Samples.MultiTenantChildWorker.Workflows
     public class OrderReceivedWorkflow : IWorkflow
     {
 
-        public void Build(IWorkflowBuilder workflow)
+        public void Build(IWorkflowBuilder builder)
         {
-            workflow
+            builder
                 .StartWith<RebusMessageReceived>(activity => activity.Set(x => x.MessageType, typeof(OrderReceived)))
                 .SetVariable(context => context.GetInput<OrderReceived>())
                 .WriteLine(context => $"Received a new order for {context.GetVariable<OrderReceived>().CustomerId}.")

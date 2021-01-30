@@ -14,7 +14,7 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.2" />
-        <PackageReference Include="Z.EntityFramework.Extensions.EFCore" Version="5.1.14" />
+        <PackageReference Include="Z.EntityFramework.Plus.EFCore" Version="5.1.15" />
     </ItemGroup>
 
     <ItemGroup>

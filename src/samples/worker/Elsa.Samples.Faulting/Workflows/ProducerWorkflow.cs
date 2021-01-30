@@ -8,9 +8,9 @@ namespace Elsa.Samples.Faulting.Workflows
 {
     public class FaultyWorkflow : IWorkflow
     {
-        public void Build(IWorkflowBuilder workflow)
+        public void Build(IWorkflowBuilder builder)
         {
-            workflow
+            builder
                 .StartIn(Duration.FromSeconds(1))
                 .WriteLine("Catch this!")
                 .Then(() => throw new ArithmeticException("Does not compute"));

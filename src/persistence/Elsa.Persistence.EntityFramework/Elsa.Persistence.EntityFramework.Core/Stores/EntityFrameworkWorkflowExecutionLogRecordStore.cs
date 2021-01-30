@@ -8,12 +8,10 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
 {
     public class EntityFrameworkWorkflowExecutionLogRecordStore : EntityFrameworkStore<WorkflowExecutionLogRecord>, IWorkflowExecutionLogStore
     {
-        public EntityFrameworkWorkflowExecutionLogRecordStore(ElsaContext dbContext) : base(dbContext)
+        public EntityFrameworkWorkflowExecutionLogRecordStore(IDbContextFactory<ElsaContext> dbContextFactory) : base(dbContextFactory)
         {
         }
 
-        protected override DbSet<WorkflowExecutionLogRecord> DbSet => DbContext.WorkflowExecutionLogRecords;
-        
         protected override Expression<Func<WorkflowExecutionLogRecord, bool>> MapSpecification(ISpecification<WorkflowExecutionLogRecord> specification)
         {
             return AutoMapSpecification(specification);

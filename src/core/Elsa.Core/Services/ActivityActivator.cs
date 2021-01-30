@@ -16,7 +16,7 @@ namespace Elsa.Services
         
         public async Task<IActivity> ActivateActivityAsync(ActivityExecutionContext context, Type type)
         {
-            var activity = _elsaOptions.ActivityFactory.CreateService(type, context.ServiceScope.ServiceProvider);
+            var activity = _elsaOptions.ActivityFactory.CreateService(type, context.ServiceProvider);
             activity.Data = context.GetData();
             activity.Id = context.ActivityId;
 

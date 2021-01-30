@@ -8,7 +8,7 @@ namespace Elsa.Samples.Elasticsearch
     /// </summary>
     public class HelloWorld : IWorkflow
     {
-        public void Build(IWorkflowBuilder workflow) => workflow
+        public void Build(IWorkflowBuilder builder) => builder
             .WriteLine("Hello World!");
     }
 }

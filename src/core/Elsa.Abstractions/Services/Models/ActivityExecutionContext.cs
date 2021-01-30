@@ -13,28 +13,31 @@ namespace Elsa.Services.Models
     public class ActivityExecutionContext
     {
         public ActivityExecutionContext(
-            IServiceScope serviceProvider,
+            IServiceProvider serviceProvider,
             WorkflowExecutionContext workflowExecutionContext,
             IActivityBlueprint activityBlueprint,
             object? input,
+            bool resuming,
             CancellationToken cancellationToken)
         {
             WorkflowExecutionContext = workflowExecutionContext;
-            ServiceScope = serviceProvider;
+            ServiceProvider = serviceProvider;
             ActivityBlueprint = activityBlueprint;
             Input = input;
+            Resuming = resuming;
             CancellationToken = cancellationToken;
             Outcomes = new List<string>(0);
         }
 
         public WorkflowExecutionContext WorkflowExecutionContext { get; }
         public WorkflowInstance WorkflowInstance => WorkflowExecutionContext.WorkflowInstance;
-        public IServiceScope ServiceScope { get; }
+        public IServiceProvider ServiceProvider { get; }
         public IActivityBlueprint ActivityBlueprint { get; }
 
         public string ActivityId => ActivityBlueprint.Id;
         public IReadOnlyCollection<string> Outcomes { get; set; }
         public object? Input { get; }
+        public bool Resuming { get; }
         public CancellationToken CancellationToken { get; }
 
         public JObject GetData() => WorkflowInstance.ActivityData.GetItem(ActivityBlueprint.Id, () => new JObject());
@@ -77,11 +80,11 @@ namespace Elsa.Services.Models
         public object? GetTransientVariable(string name) => WorkflowExecutionContext.GetTransientVariable(name);
         public T? GetTransientVariable<T>(string name) => WorkflowExecutionContext.GetTransientVariable<T>(name);
         public T? GetTransientVariable<T>() => GetTransientVariable<T>(typeof(T).Name);
-        public T GetService<T>() where T : notnull => ServiceScope.ServiceProvider.GetRequiredService<T>();
+        public T GetService<T>() where T : notnull => ServiceProvider.GetRequiredService<T>();
 
         public async ValueTask<RuntimeActivityInstance> ActivateActivityAsync(CancellationToken cancellationToken = default)
         {
-            var activityTypeService = ServiceScope.ServiceProvider.GetRequiredService<IActivityTypeService>();
+            var activityTypeService = ServiceProvider.GetRequiredService<IActivityTypeService>();
             return await activityTypeService.ActivateActivityAsync(ActivityBlueprint, cancellationToken);
         }
         

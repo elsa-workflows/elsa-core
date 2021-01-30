@@ -9,7 +9,7 @@ namespace Elsa.Samples.ProgrammaticCompositeActivitiesConsole.Workflows
     /// </summary>
     public class CompositionWorkflow : IWorkflow
     {
-        public void Build(IWorkflowBuilder workflow) => workflow
+        public void Build(IWorkflowBuilder builder) => builder
             .WriteLine("Welcome to the Composite Activities demo workflow!")
 
             // A custom, composite activity

@@ -39,8 +39,7 @@ namespace Elsa.Activities.AzureServiceBus.StartupTasks
 
         private async IAsyncEnumerable<string> GetQueueNamesAsync([EnumeratorCancellation] CancellationToken cancellationToken)
         {
-            using var scope = _serviceProvider.CreateScope();
-            var workflowRegistry = scope.ServiceProvider.GetRequiredService<IWorkflowRegistry>();
+            var workflowRegistry = _serviceProvider.GetRequiredService<IWorkflowRegistry>();
             var workflows = await workflowRegistry.GetWorkflowsAsync(cancellationToken).ToListAsync(cancellationToken);
 
             var query =
@@ -51,7 +50,7 @@ namespace Elsa.Activities.AzureServiceBus.StartupTasks
 
             foreach (var workflow in query)
             {
-                var workflowBlueprintWrapper = await _workflowBlueprintReflector.ReflectAsync(scope, workflow, cancellationToken);
+                var workflowBlueprintWrapper = await _workflowBlueprintReflector.ReflectAsync(_serviceProvider, workflow, cancellationToken);
 
                 foreach (var activity in workflowBlueprintWrapper.Filter<AzureServiceBusMessageReceived>())
                 {

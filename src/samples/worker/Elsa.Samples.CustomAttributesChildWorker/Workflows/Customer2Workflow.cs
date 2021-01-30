@@ -5,9 +5,9 @@ namespace Elsa.Samples.CustomAttributesChildWorker.Workflows
 {
     public class Customer2Workflow : IWorkflow
     {
-        public void Build(IWorkflowBuilder workflow)
+        public void Build(IWorkflowBuilder builder)
         {
-            workflow
+            builder
                 .WithCustomAttribute("Customer","Customer2")
                 .WriteLine("Specialized workflow for Customer 2");
         }

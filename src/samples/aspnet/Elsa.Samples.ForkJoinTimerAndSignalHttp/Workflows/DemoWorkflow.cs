@@ -22,9 +22,9 @@ namespace Elsa.Samples.ForkJoinTimerAndSignalHttp.Workflows
             _timeOut = Duration.FromSeconds(10);
         }
 
-        public void Build(IWorkflowBuilder workflow)
+        public void Build(IWorkflowBuilder builder)
         {
-            workflow
+            builder
                 .WriteLine(context =>
                     $"The demo completes in {_timeOut.ToString()} ({_clock.GetCurrentInstant().Plus(_timeOut)}). Can't wait that long? Send me the secret \"hurry\" signal! (http://localhost:7304/signal/hurry/trigger?correlationId={GetCorrelationId(context)})")
                 .Then<Fork>(

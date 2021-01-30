@@ -10,9 +10,9 @@ namespace Elsa.Samples.Timers
 {
     public class CancelTimerWorkflow : IWorkflow
     {
-        public void Build(IWorkflowBuilder workflow)
+        public void Build(IWorkflowBuilder builder)
         {
-            workflow
+            builder
                 .StartAt(SystemClock.Instance.GetCurrentInstant().Plus(Duration.FromSeconds(5)))
                 .WriteLine("CancelTimerWorkflow is executed")
                 .Then<Fork>(

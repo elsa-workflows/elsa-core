@@ -13,22 +13,22 @@ namespace Elsa.Services.Models
     public class WorkflowExecutionContext
     {
         public WorkflowExecutionContext(
-            IServiceScope serviceScope,
+            IServiceProvider serviceProvider,
             IWorkflowBlueprint workflowBlueprint,
             WorkflowInstance workflowInstance,
             object? input = default
         )
         {
-            ServiceScope = serviceScope;
+            ServiceProvider = serviceProvider;
             WorkflowBlueprint = workflowBlueprint;
             WorkflowInstance = workflowInstance;
             Input = input;
             IsFirstPass = true;
-            Serializer = serviceScope.ServiceProvider.GetRequiredService<JsonSerializer>();
+            Serializer = serviceProvider.GetRequiredService<JsonSerializer>();
         }
 
         public IWorkflowBlueprint WorkflowBlueprint { get; }
-        public IServiceScope ServiceScope { get; }
+        public IServiceProvider ServiceProvider { get; }
         public WorkflowInstance WorkflowInstance { get; }
         public JsonSerializer Serializer { get; }
         public object? Input { get; }
@@ -112,12 +112,12 @@ namespace Elsa.Services.Models
         public void Resume() => WorkflowInstance.WorkflowStatus = WorkflowStatus.Running;
         public void Suspend() => WorkflowInstance.WorkflowStatus = WorkflowStatus.Suspended;
 
-        public void Fault(string? activityId, string? message, string? stackTrace)
+        public void Fault(string? activityId, string? message, string? stackTrace, object? activityInput, bool resuming)
         {
-            var clock = ServiceScope.ServiceProvider.GetRequiredService<IClock>();
+            var clock = ServiceProvider.GetRequiredService<IClock>();
             WorkflowInstance.WorkflowStatus = WorkflowStatus.Faulted;
             WorkflowInstance.FaultedAt = clock.GetCurrentInstant();
-            WorkflowInstance.Fault = new WorkflowFault(activityId, message, stackTrace);
+            WorkflowInstance.Fault = new WorkflowFault(activityId, message, stackTrace, activityInput, resuming);
         }
 
         public void Complete() => WorkflowInstance.WorkflowStatus = WorkflowStatus.Finished;

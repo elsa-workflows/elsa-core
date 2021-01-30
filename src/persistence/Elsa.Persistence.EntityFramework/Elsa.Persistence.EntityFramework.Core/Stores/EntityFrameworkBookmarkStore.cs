@@ -8,12 +8,10 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
 {
     public class EntityFrameworkBookmarkStore : EntityFrameworkStore<Bookmark>, IBookmarkStore
     {
-        public EntityFrameworkBookmarkStore(ElsaContext dbContext) : base(dbContext)
+        public EntityFrameworkBookmarkStore(IDbContextFactory<ElsaContext> dbContextFactory) : base(dbContextFactory)
         {
         }
 
-        protected override DbSet<Bookmark> DbSet => DbContext.Bookmarks;
-        
         protected override Expression<Func<Bookmark, bool>> MapSpecification(ISpecification<Bookmark> specification)
         {
             return AutoMapSpecification(specification);

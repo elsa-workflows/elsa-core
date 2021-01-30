@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Reflection;
 using Elsa.Attributes;
@@ -8,11 +9,11 @@ namespace Elsa.Metadata.Handlers
 {
     public class SelectOptionsProvider : IActivityPropertyOptionsProvider
     {
-        private readonly JsonSerializer _serializer;
+        private readonly Func<JsonSerializer> _createSerializer;
 
-        public SelectOptionsProvider(JsonSerializer serializer)
+        public SelectOptionsProvider(Func<JsonSerializer> serializerFactory)
         {
-            _serializer = serializer;
+            _createSerializer = serializerFactory;
         }
         
         public bool SupportsProperty(PropertyInfo property) => property.GetCustomAttribute<SelectOptionsAttribute>() != null || property.PropertyType.IsEnum;
@@ -20,14 +21,15 @@ namespace Elsa.Metadata.Handlers
         public void SupplyOptions(PropertyInfo property, JObject options)
         {
             var attr = property.GetCustomAttribute<SelectOptionsAttribute>();
+            var serializer = _createSerializer();
             
             if(attr != null)
-                options["Items"] = JToken.FromObject(attr.GetOptions(), _serializer);
+                options["Items"] = JToken.FromObject(attr.GetOptions(), serializer);
             else
             {
                 var enumValues = property.PropertyType.GetEnumNames().OrderBy(x => x);
                 var items = enumValues.Select(x => new SelectOption(x)).ToList();
-                options["Items"] = JToken.FromObject(items, _serializer);
+                options["Items"] = JToken.FromObject(items, serializer);
             }
         }
     }

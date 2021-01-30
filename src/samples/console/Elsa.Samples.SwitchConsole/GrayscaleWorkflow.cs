@@ -14,9 +14,9 @@ namespace Elsa.Samples.SwitchConsole
             _random = new Random();
         }
 
-        public void Build(IWorkflowBuilder workflow)
+        public void Build(IWorkflowBuilder builder)
         {
-            workflow
+            builder
                 .WriteLine("--Grayscale Calculator--").WithName("Start")
                 .WriteLine("Enter a number between 0 and 100.")
                 .ReadLine()

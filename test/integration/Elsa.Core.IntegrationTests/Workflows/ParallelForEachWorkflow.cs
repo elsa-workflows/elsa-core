@@ -16,9 +16,9 @@ namespace Elsa.Core.IntegrationTests.Workflows
             _items = items.Cast<object>().ToList();
         }
 
-        public void Build(IWorkflowBuilder workflow)
+        public void Build(IWorkflowBuilder builder)
         {
-            workflow
+            builder
                 .ParallelForEach(
                     _items,
                     iterate => iterate

@@ -10,18 +10,19 @@ namespace Elsa.Persistence.EntityFramework.Core.StartupTasks
     /// </summary>
     public class RunMigrations : IStartupTask
     {
-        private readonly ElsaContext _dbContext;
+        private readonly IDbContextFactory<ElsaContext> _dbContextFactory;
 
-        public RunMigrations(ElsaContext dbContext)
+        public RunMigrations(IDbContextFactory<ElsaContext> dbContextFactoryFactory)
         {
-            _dbContext = dbContext;
+            _dbContextFactory = dbContextFactoryFactory;
         }
 
         public int Order => 0;
         
         public async Task ExecuteAsync(CancellationToken cancellationToken = default)
         {
-            await _dbContext.Database.MigrateAsync(cancellationToken);
+            await using var dbContext = _dbContextFactory.CreateDbContext();
+            await dbContext.Database.MigrateAsync(cancellationToken);
         }
     }
 }

@@ -11,9 +11,9 @@ namespace Elsa.Samples.Server.Host.Workflows
 {
     public class NamingWorkflow : IWorkflow
     {
-        public void Build(IWorkflowBuilder workflow)
+        public void Build(IWorkflowBuilder builder)
         {
-            workflow
+            builder
                 .WithDisplayName("Onboarding")
                 .HttpRequestReceived("/signup")
                 .Correlate(() => Guid.NewGuid().ToString("N"))

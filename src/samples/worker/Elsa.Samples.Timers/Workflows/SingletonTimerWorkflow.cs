@@ -8,9 +8,9 @@ namespace Elsa.Samples.Timers.Workflows
 {
     public class SingletonTimerWorkflow : IWorkflow
     {
-        public void Build(IWorkflowBuilder workflow)
+        public void Build(IWorkflowBuilder builder)
         {
-            workflow
+            builder
                 .AsSingleton()
                 .Timer(Duration.FromSeconds(1))
                 .WriteLine(context => $"{context.WorkflowInstance.Id} - Timer event at {DateTime.Now}. Waiting for a couple of seconds.")

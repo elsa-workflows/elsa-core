@@ -9,9 +9,9 @@ namespace Elsa.Samples.CustomActivities
 {
     public class EchoQueryStringWorkflow : IWorkflow
     {
-        public void Build(IWorkflowBuilder workflow)
+        public void Build(IWorkflowBuilder builder)
         {
-            workflow
+            builder
                 .HttpRequestReceived("/test")
                 .Then<ReadQueryString>()
                 .WriteHttpResponse(_ => HttpStatusCode.OK, GenerateSomeHtml, _ => "text/html");
