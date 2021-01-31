@@ -12,10 +12,10 @@ namespace Elsa.Models
         public WorkflowInstance()
         {
             Variables = new Variables();
-            ScheduledActivities = new Stack<ScheduledActivity>();
-            Scopes = new Stack<string>();
+            ScheduledActivities = new SimpleStack<ScheduledActivity>();
+            Scopes = new SimpleStack<string>();
         }
-        
+
         public string DefinitionId { get; set; } = default!;
         public string? TenantId { get; set; }
         public int Version { get; set; }
@@ -41,8 +41,8 @@ namespace Elsa.Models
         }
 
         public WorkflowFault? Fault { get; set; }
-        public Stack<ScheduledActivity> ScheduledActivities { get; set; }
-        public Stack<string> Scopes { get; set; }
+        public SimpleStack<ScheduledActivity> ScheduledActivities { get; set; }
+        public SimpleStack<string> Scopes { get; set; }
         public ScheduledActivity? CurrentActivity { get; set; }
     }
 }

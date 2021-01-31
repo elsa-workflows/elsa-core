@@ -6,6 +6,7 @@ using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Events;
+using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
 using MediatR;
@@ -105,7 +106,7 @@ namespace Elsa.Activities.ControlFlow
 
         private async Task RemoveScopeActivitiesAsync(WorkflowExecutionContext workflowExecutionContext, ICollection<IActivityBlueprint> ancestors, IActivityBlueprint? fork)
         {
-            var scopes = workflowExecutionContext.WorkflowInstance.Scopes.Reverse().ToList();
+            var scopes = workflowExecutionContext.WorkflowInstance.Scopes.AsEnumerable().Reverse().ToList();
 
             for (var i = 0; i < scopes.Count; i++)
             {
@@ -135,7 +136,7 @@ namespace Elsa.Activities.ControlFlow
                     await _mediator.Publish(new ScopeEvicted(workflowExecutionContext, scope));
                 }
 
-                workflowExecutionContext.WorkflowInstance.Scopes = new Stack<string>(scopes);
+                workflowExecutionContext.WorkflowInstance.Scopes = new SimpleStack<string>(scopes.AsEnumerable().Reverse());
                 break;
             }
         }

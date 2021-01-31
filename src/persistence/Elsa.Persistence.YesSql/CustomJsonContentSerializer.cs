@@ -19,11 +19,14 @@ namespace Elsa.Persistence.YesSql
         {
             JsonSettings = new JsonSerializerSettings
             {
-                TypeNameHandling = TypeNameHandling.Auto
+                TypeNameHandling = TypeNameHandling.Auto,
+                NullValueHandling = NullValueHandling.Ignore,
+                ReferenceLoopHandling = ReferenceLoopHandling.Serialize,
+                PreserveReferencesHandling = PreserveReferencesHandling.Objects,
+                TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Simple
             };
             
             JsonSettings.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
-            JsonSettings.Converters.Add(new StackJsonConverter());
             JsonSettings.Converters.Add(new VersionOptionsJsonConverter());
             JsonSettings.Converters.Add(new TypeJsonConverter());
             JsonSettings.Converters.Add(new StringEnumConverter(new DefaultNamingStrategy()));
