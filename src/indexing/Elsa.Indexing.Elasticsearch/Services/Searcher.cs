@@ -39,7 +39,7 @@ namespace Elsa.Indexing.Services
                 .From(from)
                 .Take(take)
                 .Sort(s => s
-                       .Field("_score", Nest.SortOrder.Descending)
+                       .Field("_score", SortOrder.Descending)
                 )
                 .Query(q => q
                     .Bool(b => b

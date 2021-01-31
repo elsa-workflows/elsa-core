@@ -15,7 +15,7 @@ namespace Elsa.Consumers
     public class RunWorkflowInstanceConsumer : IHandleMessages<RunWorkflowInstance>
     {
         private readonly IWorkflowRunner _workflowRunner;
-        private readonly IWorkflowInstanceStore _workflowInstanceManager;
+        private readonly IWorkflowInstanceStore _workflowInstanceStore;
         private readonly IDistributedLockProvider _distributedLockProvider;
         private readonly ICommandSender _commandSender;
         private readonly ILogger _logger;
@@ -29,7 +29,7 @@ namespace Elsa.Consumers
             ILogger<RunWorkflowInstanceConsumer> logger)
         {
             _workflowRunner = workflowRunner;
-            _workflowInstanceManager = workflowInstanceStore;
+            _workflowInstanceStore = workflowInstanceStore;
             _distributedLockProvider = distributedLockProvider;
             _commandSender = commandSender;
             _logger = logger;
@@ -53,7 +53,7 @@ namespace Elsa.Consumers
             
             try
             {
-                var workflowInstance = await _workflowInstanceManager.FindByIdAsync(message.WorkflowInstanceId);
+                var workflowInstance = await _workflowInstanceStore.FindByIdAsync(message.WorkflowInstanceId);
 
                 if (!ValidatePreconditions(workflowInstanceId, workflowInstance, message.ActivityId))
                     return;
