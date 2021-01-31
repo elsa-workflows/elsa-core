@@ -1,4 +1,5 @@
-using Elsa.Persistence.YesSql;
+using Elsa.Persistence.EntityFramework.Core.Extensions;
+using Elsa.Persistence.EntityFramework.Sqlite;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -23,8 +24,8 @@ namespace Elsa.Samples.Server.Host
             var elsaSection = Configuration.GetSection("Elsa");
 
             services
-                .AddElsa(options => options
-                    .UseYesSqlPersistence()
+                .AddElsa(elsa => elsa
+                    .UseEntityFrameworkPersistence(ef => ef.UseSqlite())
                     .AddConsoleActivities()
                     .AddHttpActivities(elsaSection.GetSection("Http").Bind)
                     .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)
