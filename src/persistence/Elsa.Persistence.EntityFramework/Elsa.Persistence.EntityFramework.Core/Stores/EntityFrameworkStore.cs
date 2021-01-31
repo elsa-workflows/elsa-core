@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
+using AutoMapper;
 using Elsa.Models;
 using Elsa.Persistence.Specifications;
 using Microsoft.EntityFrameworkCore;
@@ -12,10 +13,12 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
 {
     public abstract class EntityFrameworkStore<T> : IStore<T> where T : class, IEntity
     {
+        private readonly IMapper _mapper;
         private readonly SemaphoreSlim _semaphore = new(1);
 
-        protected EntityFrameworkStore(IDbContextFactory<ElsaContext> dbContextFactory)
+        protected EntityFrameworkStore(IDbContextFactory<ElsaContext> dbContextFactory, IMapper mapper)
         {
+            _mapper = mapper;
             DbContextFactory = dbContextFactory;
         }
 
@@ -32,10 +35,21 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
                     var dbSet = dbContext.Set<T>();
                     var existingEntity = await dbSet.FindAsync(new object[] { entity.Id }, cancellationToken);
                     
-                    if (existingEntity == null!)
+                    if (existingEntity == null)
+                    {
                         await dbSet.AddAsync(entity, cancellationToken);
-                    
-                    OnSaving(dbContext, entity);
+                        existingEntity = entity;
+                    }
+                    else
+                    {
+                        // Can't use the approach on the next line because we explicitly ignore certain properties (in order for them to be stored in the Data shadow property).
+                        // dbContext.Entry(existingEntity).CurrentValues.SetValues(entity);
+                        
+                        // Therefore using AutoMapper to copy properties instead.
+                        existingEntity = _mapper.Map(entity, existingEntity);
+                    }
+
+                    OnSaving(dbContext, existingEntity);
                 }, cancellationToken);
             }
             finally

@@ -11,6 +11,7 @@ namespace Elsa.Mapping
         public CloningProfile()
         {
             CreateMap<WorkflowDefinition, WorkflowDefinition>();
+            CreateMap<WorkflowInstance, WorkflowInstance>();
         }
     }
 }

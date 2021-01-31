@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq.Expressions;
+using AutoMapper;
 using Elsa.Models;
 using Elsa.Persistence.Specifications;
 using Elsa.Serialization;
@@ -13,7 +13,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
     {
         private readonly IContentSerializer _contentSerializer;
 
-        public EntityFrameworkWorkflowInstanceStore(IDbContextFactory<ElsaContext> dbContextFactory, IContentSerializer contentSerializer) : base(dbContextFactory)
+        public EntityFrameworkWorkflowInstanceStore(IDbContextFactory<ElsaContext> dbContextFactory, IMapper mapper, IContentSerializer contentSerializer) : base(dbContextFactory, mapper)
         {
             _contentSerializer = contentSerializer;
         }
@@ -69,7 +69,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
             entity.ActivityOutput = data.ActivityOutput;
             entity.BlockingActivities = data.BlockingActivities;
             entity.ScheduledActivities = data.ScheduledActivities;
-            entity.Scopes = data.Scopes ?? new Stack<string>();
+            entity.Scopes = data.Scopes;
             entity.Fault = data.Fault;
             entity.CurrentActivity = data.CurrentActivity;
         }

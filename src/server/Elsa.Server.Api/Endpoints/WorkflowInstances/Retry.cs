@@ -25,7 +25,8 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
         }
 
         [HttpPost]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(WorkflowInstance))]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status202Accepted)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [SwaggerOperation(
@@ -41,9 +42,19 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
             if (workflowInstance == null)
                 return NotFound();
 
-            workflowInstance = options?.RunImmediately == true 
-                ? await _reviver.ReviveAndRunAsync(workflowInstance, cancellationToken) 
-                : await _reviver.ReviveAndQueueAsync(workflowInstance, cancellationToken);
+            if (options?.RunImmediately == false)
+            {
+                workflowInstance = await _reviver.ReviveAndQueueAsync(workflowInstance, cancellationToken);
+
+                var model = new
+                {
+                    WorkflowInstanceId = workflowInstance.Id,
+                };
+
+                return Accepted(model);
+            }
+
+            workflowInstance = await _reviver.ReviveAndRunAsync(workflowInstance, cancellationToken);
 
             if (workflowInstance.WorkflowStatus == WorkflowStatus.Faulted)
                 return StatusCode(500, new
@@ -52,7 +63,11 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
                     Fault = workflowInstance.Fault
                 });
 
-            return Response.HasStarted ? (IActionResult) new EmptyResult() : Ok(workflowInstance);
+            return Response.HasStarted ? (IActionResult) new EmptyResult() : Ok(new
+            {
+                WorkflowInstanceId = workflowInstance.Id,
+                WorkflowStatus = workflowInstance.WorkflowStatus
+            });
         }
     }
 
