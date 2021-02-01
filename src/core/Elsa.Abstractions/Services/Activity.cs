@@ -46,6 +46,7 @@ namespace Elsa.Services
         protected ScheduleActivitiesResult Schedule(IEnumerable<ScheduledActivity> activities) => new(activities);
         protected CombinedResult Combine(IEnumerable<IActivityExecutionResult> results) => new(results);
         protected CombinedResult Combine(params IActivityExecutionResult[] results) => new(results);
+        protected FaultResult Fault(Exception exception) => new(exception);
         protected FaultResult Fault(string message) => new(message);
         
         protected T? GetState<T>([CallerMemberName] string name = null!) => Data.GetState<T>(name);

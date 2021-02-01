@@ -1,14 +1,21 @@
+using System;
 using Elsa.Services.Models;
 
 namespace Elsa.ActivityResults
 {
     public class FaultResult : ActivityExecutionResult
     {
+        public FaultResult(Exception exception) => Exception = exception;
         public FaultResult(string message) => Message = message;
-        public string Message { get; set; }
-        public string? StackTrace { get; set; }
-        
-        protected override void Execute(ActivityExecutionContext activityExecutionContext) => 
-            activityExecutionContext.WorkflowExecutionContext.Fault(activityExecutionContext.ActivityBlueprint.Id, Message, StackTrace, activityExecutionContext.Input, activityExecutionContext.Resuming);
+        public Exception Exception { get; } = default!;
+        public string Message { get; } = default!;
+
+        protected override void Execute(ActivityExecutionContext activityExecutionContext)
+        {
+            if(Exception != null!)
+                activityExecutionContext.WorkflowExecutionContext.Fault(Exception, activityExecutionContext.ActivityBlueprint.Id, activityExecutionContext.Input, activityExecutionContext.Resuming);
+            else 
+                activityExecutionContext.WorkflowExecutionContext.Fault(Message!, activityExecutionContext.ActivityBlueprint.Id, activityExecutionContext.Input, activityExecutionContext.Resuming); 
+        }
     }
 }

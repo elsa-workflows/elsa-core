@@ -1,4 +1,4 @@
 ﻿namespace Elsa.Models
 {
-    public record WorkflowFault(string? FaultedActivityId, string? Message, string? StackTrace, object? ActivityInput, bool Resuming);
+    public record WorkflowFault(SimpleException? Exception, string Message, string? FaultedActivityId, object? ActivityInput, bool Resuming);
 }

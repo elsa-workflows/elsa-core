@@ -176,10 +176,10 @@ namespace Elsa.Services
                 var loadContext = new LoadWorkflowContext(workflowExecutionContext);
                 workflowExecutionContext.WorkflowContext = await _workflowContextManager.LoadContext(loadContext, cancellationToken);
             }
-            
+
             // If the workflow instance has a CurrentActivity, it means the workflow instance is being retried.
             var currentActivity = workflowInstance.CurrentActivity;
-            
+
             if (currentActivity != null)
             {
                 activityId = currentActivity.ActivityId;
@@ -187,7 +187,7 @@ namespace Elsa.Services
             }
 
             var activity = activityId != null ? workflowBlueprint.GetActivity(activityId) : default;
-            
+
             // Give application a chance to prevent workflow from executing.
             var validateWorkflowExecution = new ValidateWorkflowExecution(workflowExecutionContext, activity);
             await _mediator.Publish(validateWorkflowExecution, cancellationToken);
@@ -309,7 +309,7 @@ namespace Elsa.Services
             catch (Exception e)
             {
                 _logger.LogWarning(e, "Failed to run workflow {WorkflowInstanceId}", workflowExecutionContext.WorkflowInstance.Id);
-                workflowExecutionContext.Fault(null, e.Message, e.StackTrace, null, activityOperation == Resume);
+                workflowExecutionContext.Fault(e, null, null, activityOperation == Resume);
             }
         }
 
@@ -371,7 +371,7 @@ namespace Elsa.Services
             catch (Exception e)
             {
                 _logger.LogWarning(e, "Failed to run activity {ActivityId} of workflow {WorkflowInstanceId}", activity.Id, activityExecutionContext.WorkflowInstance.Id);
-                activityExecutionContext.WorkflowExecutionContext.Fault(activity.Id, e.Message, e.StackTrace, activityExecutionContext.Input, activityExecutionContext.Resuming);
+                activityExecutionContext.WorkflowExecutionContext.Fault(e, activity.Id, activityExecutionContext.Input, activityExecutionContext.Resuming);
                 await _mediator.Publish(new ActivityFaulted(e, activityExecutionContext), cancellationToken);
             }
 

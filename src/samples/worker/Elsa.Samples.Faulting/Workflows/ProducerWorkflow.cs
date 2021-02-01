@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net;
 using Elsa.Activities.Console;
 using Elsa.Activities.Timers;
 using Elsa.Builders;
@@ -13,7 +14,7 @@ namespace Elsa.Samples.Faulting.Workflows
             builder
                 .StartIn(Duration.FromSeconds(1))
                 .WriteLine("Catch this!")
-                .Then(() => throw new ArithmeticException("Does not compute"));
+                .Then(() => throw new ArithmeticException("Does not compute", new ArgumentException("Incorrect argument", new ArgumentOutOfRangeException("This is the root problem", default(Exception)))));
         }
     }
 }

@@ -111,13 +111,15 @@ namespace Elsa.Services.Models
         public void Begin() => WorkflowInstance.WorkflowStatus = WorkflowStatus.Running;
         public void Resume() => WorkflowInstance.WorkflowStatus = WorkflowStatus.Running;
         public void Suspend() => WorkflowInstance.WorkflowStatus = WorkflowStatus.Suspended;
-
-        public void Fault(string? activityId, string? message, string? stackTrace, object? activityInput, bool resuming)
+        public void Fault(Exception ex, string? activityId, object? activityInput, bool resuming) => Fault(ex, ex.Message, activityId, activityInput, resuming);
+        public void Fault(string message, string? activityId, object? activityInput, bool resuming) => Fault(null, message, activityId, activityInput, resuming);
+        
+        public void Fault(Exception? exception, string message, string? activityId, object? activityInput, bool resuming)
         {
             var clock = ServiceProvider.GetRequiredService<IClock>();
             WorkflowInstance.WorkflowStatus = WorkflowStatus.Faulted;
             WorkflowInstance.FaultedAt = clock.GetCurrentInstant();
-            WorkflowInstance.Fault = new WorkflowFault(activityId, message, stackTrace, activityInput, resuming);
+            WorkflowInstance.Fault = new WorkflowFault(SimpleException.FromException(exception), message, activityId, activityInput, resuming);
         }
 
         public void Complete() => WorkflowInstance.WorkflowStatus = WorkflowStatus.Finished;

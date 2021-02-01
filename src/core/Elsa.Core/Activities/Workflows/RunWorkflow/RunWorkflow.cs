@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Exceptions;
 using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
