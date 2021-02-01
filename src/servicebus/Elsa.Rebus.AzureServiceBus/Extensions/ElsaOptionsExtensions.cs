@@ -1,10 +1,7 @@
 ﻿using System;
 using Elsa.Services;
 using Microsoft.Azure.ServiceBus.Primitives;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Rebus.Config;
-using Rebus.Routing.TypeBased;
 
 namespace Elsa.Rebus.AzureServiceBus
 {

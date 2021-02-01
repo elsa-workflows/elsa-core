@@ -1,7 +1,5 @@
 ﻿using Elsa.Services;
 using Rebus.Config;
-using Rebus.Logging;
-using Rebus.Routing.TypeBased;
 
 namespace Elsa.Rebus.RabbitMq.Extensions
 {
