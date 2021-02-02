@@ -117,6 +117,17 @@ namespace ElsaDashboard.Application.Pages.WorkflowInstances
             await WorkflowInstanceService.DeleteAsync(workflowInstance.Id);
             await LoadWorkflowInstancesAsync();
         }
+        
+        private async Task OnRetryWorkflowInstanceClick(WorkflowInstanceSummary workflowInstance)
+        {
+            var result = await ConfirmDialogService.Show("Retry Workflow Instance", "Are you sure you want to retry this workflow instance?", "Retry");
+
+            if (result.Cancelled)
+                return;
+
+            await WorkflowInstanceService.RetryAsync(workflowInstance.Id);
+            await LoadWorkflowInstancesAsync();
+        }
 
         private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
         {

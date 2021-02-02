@@ -3,7 +3,7 @@ using NodaTime;
 
 namespace Elsa.Server.Api.Endpoints.WorkflowInstances
 {
-    public class WorkflowInstanceSummaryModel
+    public record WorkflowInstanceSummaryModel
     {
         public string Id { get; set; } = default!;
         public string DefinitionId { get; set; } = default!;
@@ -19,5 +19,13 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
         public Instant? FinishedAt { get; set; }
         public Instant? CancelledAt { get; set; }
         public Instant? FaultedAt { get; set; }
+    }
+    
+    public record RetryWorkflowRequest(bool RunImmediately)
+    {
+        /// <summary>
+        /// Set to true to run the revived workflow immediately, set to false to enqueue the revived workflow for execution.
+        /// </summary>
+        public bool RunImmediately { get; set; } = RunImmediately;
     }
 }
