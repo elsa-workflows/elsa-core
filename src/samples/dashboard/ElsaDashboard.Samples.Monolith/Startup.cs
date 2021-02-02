@@ -74,10 +74,10 @@ namespace ElsaDashboard.Samples.Monolith
                 app.UseBlazorFrameworkFiles();
             
             app.UseStaticFiles();
+            app.UseHttpActivities();
             app.UseCors();
             app.UseRouting();
             app.UseElsaGrpcServices();
-            app.UseHttpActivities();
             
             app.UseEndpoints(endpoints =>
             {
