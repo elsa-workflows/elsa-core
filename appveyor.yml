@@ -21,7 +21,7 @@
     file_version: '{version}'
     informational_version: '{version}'
   cache:
-    - src\dashboards\blazor\ElsaDashboard.Application\ClientApp\node_modules
+    - src\dashboards\blazor\ElsaDashboard.Application\node_modules
     - '%APPDATA%\npm-cache'
   install:
     - ps: >-
@@ -74,7 +74,7 @@
     informational_version: '{version}'
   cache:
     - '%APPDATA%\npm-cache'
-    - src\dashboards\blazor\ElsaDashboard.Application\ClientApp\node_modules
+    - src\dashboards\blazor\ElsaDashboard.Application\node_modules
   build_script:
     - ps: >-
         cd .\src\dashboards\blazor\ElsaDashboard.Application
