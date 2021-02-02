@@ -22,5 +22,8 @@ namespace Elsa.Client.Services
 
         [Delete("/v1/workflow-instances/{id}")]
         Task DeleteAsync(string id, CancellationToken cancellationToken = default);
+        
+        [Post("/v1/workflow-instances/{id}/retry")]
+        Task RetryAsync(string id, RetryWorkflowRequest request, CancellationToken cancellationToken = default);
     }
 }

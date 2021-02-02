@@ -35,7 +35,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
             OperationId = "WorkflowInstances.Retry",
             Tags = new[] { "WorkflowInstances" })
         ]
-        public async Task<IActionResult> Handle(string id, RevivalOptions? options, CancellationToken cancellationToken = default)
+        public async Task<IActionResult> Handle(string id, RetryWorkflowRequest? options, CancellationToken cancellationToken = default)
         {
             var workflowInstance = await _store.FindByIdAsync(id, cancellationToken);
 
@@ -69,13 +69,5 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
                 WorkflowStatus = workflowInstance.WorkflowStatus
             });
         }
-    }
-
-    public record RevivalOptions(bool RunImmediately)
-    {
-        /// <summary>
-        /// Set to true to run the revived workflow immediately, set to false to enqueue the revived workflow for execution.
-        /// </summary>
-        public bool RunImmediately { get; set; } = RunImmediately;
     }
 }

@@ -31,5 +31,6 @@ namespace ElsaDashboard.Backend.Rpc
 
         public Task<WorkflowInstance?> GetByIdAsync(GetWorkflowInstanceByIdRequest request, CallContext context = default) => _elsaClient.WorkflowInstances.GetByIdAsync(request.WorkflowInstanceId, context.CancellationToken);
         public Task DeleteAsync(DeleteWorkflowInstanceRequest request, CallContext context = default) => _elsaClient.WorkflowInstances.DeleteAsync(request.WorkflowInstanceId, context.CancellationToken);
+        public Task RetryAsync(RetryWorkflowInstanceRequest request, CallContext context = default) => _elsaClient.WorkflowInstances.RetryAsync(request.WorkflowInstanceId, new RetryWorkflowRequest(request.RunImmediately), context.CancellationToken);
     }
 }

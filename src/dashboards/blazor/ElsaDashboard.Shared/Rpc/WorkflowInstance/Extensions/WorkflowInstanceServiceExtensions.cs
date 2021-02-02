@@ -18,5 +18,6 @@ namespace ElsaDashboard.Shared.Rpc
 
         public static Task<WorkflowInstance?> GetByIdAsync(this IWorkflowInstanceService service, string workflowInstanceId) => service.GetByIdAsync(new GetWorkflowInstanceByIdRequest(workflowInstanceId));
         public static Task DeleteAsync(this IWorkflowInstanceService service, string workflowInstanceId) => service.DeleteAsync(new DeleteWorkflowInstanceRequest(workflowInstanceId));
+        public static Task RetryAsync(this IWorkflowInstanceService service, string workflowInstanceId) => service.RetryAsync(new RetryWorkflowInstanceRequest(workflowInstanceId));
     }
 }
