@@ -1,6 +1,7 @@
 import {Component, Host, h, Prop} from '@stencil/core';
-import {ActivityModel, WorkflowModel} from "../../../../models";
-import {getChildActivities} from "../../../../utils/utils";
+import {ActivityModel, WorkflowModel} from '../../../../models';
+import {getChildActivities} from '../../../../utils/utils';
+import {updateConnections} from '../../../../utils/jsplumb-helper';
 
 @Component({
   tag: 'elsa-designer-orgtree',
@@ -11,6 +12,7 @@ import {getChildActivities} from "../../../../utils/utils";
 export class ElsaWorkflowDesigner {
 
   @Prop() workflowModel: WorkflowModel = {activities: [], connections: []}
+  canvasElement: HTMLElement;
 
   render() {
     const renderedActivities = new Set<string>();
@@ -20,7 +22,7 @@ export class ElsaWorkflowDesigner {
         <div class="workflow-canvas flex-1 flex">
           <div class="flex-1 text-gray-200">
             <div class="p-10">
-              <div class="canvas select-none">
+              <div class="canvas select-none" ref={el => this.canvasElement = el}>
                 <div class="tree">
                   <ul>
                     <li>
@@ -41,6 +43,15 @@ export class ElsaWorkflowDesigner {
         </div>
       </Host>
     );
+  }
+
+  componentDidRender() {
+    const canvasElement = this.canvasElement;
+    const connections = this.getJsPlumbConnections();
+    const sourceEndpoints = this.getJsPlumbSourceEndpoints();
+    const targets = this.getJsPlumbTargets();
+
+    updateConnections(canvasElement, connections, sourceEndpoints, targets);
   }
 
   getRootActivities(): Array<ActivityModel> {
@@ -105,5 +116,77 @@ export class ElsaWorkflowDesigner {
   renderActivity(activity: ActivityModel) {
     // return <elsa-designer-orgtree-activity activityModel={activity}><p slot="body">Hello Slots!</p></elsa-designer-orgtree-activity>;
     return <elsa-designer-orgtree-activity activityModel={activity}/>;
+  }
+
+  getJsPlumbConnections(): Array<any> {
+    const rootActivities = getChildActivities(this.workflowModel, null);
+
+    const rootConnections = rootActivities.flatMap(x => {
+      return [
+        {
+          sourceId: `start-button`,
+          sourceActivityId: undefined,
+          targetId: `start-button-plus-${x.activityId}`,
+          targetActivityId: x.activityId,
+          outcome: undefined
+        },
+        {
+          sourceId: `start-button-plus-${x.activityId}`,
+          sourceActivityId: undefined,
+          targetId: `activity-${x.activityId}`,
+          targetActivityId: x.activityId,
+          outcome: undefined
+        }]
+    });
+
+    const sourceConnections = this.workflowModel.activities.flatMap(activity => activity.outcomes.map(x =>
+      ({
+        sourceId: `activity-${activity.activityId}`,
+        sourceActivityId: activity.activityId,
+        targetId: `${activity.activityId}-${x}`,
+        targetActivityId: undefined,
+        outcome: x
+      })));
+
+    const connections = this.workflowModel.connections.flatMap(x => [
+      {
+        sourceId: `${x.sourceId}-${x.outcome}`,
+        sourceActivityId: x.sourceId,
+        targetId: `activity-${x.targetId}`,
+        targetActivityId: x.targetId,
+        outcome: x.outcome
+      }]
+    );
+
+    return [...rootConnections, ...connections, ...sourceConnections];
+  }
+
+  getJsPlumbSourceEndpoints(): Array<any> {
+    const rootActivities = getChildActivities(this.workflowModel, null);
+
+    const rootSourceEndpoints = rootActivities.map(x =>
+      ({
+        sourceId: `start-button-plus-${x.activityId}`,
+        sourceActivityId: x.activityId,
+        outcome: undefined
+      }));
+
+    const otherSourceEndpoints = this.workflowModel.activities.flatMap(activity => activity.outcomes.map(x =>
+      ({
+        sourceId: `${activity.activityId}-${x}`,
+        sourceActivityId: activity.activityId,
+        outcome: x
+      })));
+
+    return [...rootSourceEndpoints, ...otherSourceEndpoints];
+  }
+
+  getJsPlumbTargets() {
+    return this.workflowModel.activities.map(x =>
+      ({
+          targetId: `activity-${x.activityId}`,
+          targetActivityId: x.activityId
+        }
+      ));
   }
 }

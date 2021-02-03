@@ -7,7 +7,7 @@
     "experimentalDecorators": true,
     "lib": [
       "dom",
-      "es2017"
+      "es2019"
     ],
     "moduleResolution": "node",
     "module": "esnext",
