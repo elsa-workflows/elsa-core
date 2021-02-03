@@ -4,16 +4,41 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0"/>
   <title>Stencil Component Starter</title>
-  <link rel="stylesheet" href="/assets/inter/inter.css">
+  <link rel="stylesheet" href="/assets/fonts/inter/inter.css">
   <script type="module" src="/build/elsa-workflows-studio.esm.js"></script>
   <script nomodule src="/build/elsa-workflows-studio.js"></script>
 </head>
 <body>
-<elsa-workflow-designer id="designer"></elsa-workflow-designer>
+<elsa-designer-orgtree id="designer"></elsa-designer-orgtree>
 <script>
     const designer = document.getElementById('designer');
-    designer.workflowModel = new {
-      activities: []
+    designer.workflowModel = {
+      activities: [{
+        activityId: 'activity-1',
+        type: 'WriteLine',
+        description: 'Write a message to standard out.',
+        outcomes: ['Done']
+      },{
+        activityId: 'activity-2',
+        type: 'ReadLine',
+        description: 'Reads input from standard in.',
+        outcomes: ['Done']
+      },{
+        activityId: 'activity-3',
+        type: 'ReadLine',
+        description: 'Reads input from standard in.',
+        outcomes: ['Done']
+      }],
+      connections: [{
+        sourceId: 'activity-1',
+        targetId: 'activity-2',
+        outcome: 'Done'
+      },
+        {
+          sourceId: 'activity-1',
+          targetId: 'activity-3',
+          outcome: 'Done'
+        }]
     }
 </script>
 </body>

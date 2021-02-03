@@ -4,6 +4,7 @@ import postcssImport from 'postcss-import';
 import tailwindcss from 'tailwindcss';
 import cssnano from 'cssnano';
 
+// @ts-ignore
 const purgecss = require('@fullhuman/postcss-purgecss')({
   content: ['./src/**/*.tsx', './src/index.html', './src/**/*.pcss'],
   defaultExtractor: content => content.match(/[A-Za-z0-9-_:/]+/g) || []
@@ -26,7 +27,7 @@ export const config: Config = {
       type: 'www',
       serviceWorker: null, // disable service workers,
       copy: [
-        {src: 'assets/inter', dest: 'assets/inter'}
+        {src: 'assets', dest: 'assets'}
       ]
     },
   ],

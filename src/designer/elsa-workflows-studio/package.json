@@ -22,18 +22,19 @@
     "generate": "stencil generate"
   },
   "dependencies": {
+    "@fullhuman/postcss-purgecss": "^4.0.0",
     "@stencil/core": "^2.0.1",
     "@stencil/postcss": "^2.0.0",
-    "@tailwindcss/ui": "^0.7.2",
     "@tailwindcss/forms": "^0.2.1",
+    "@tailwindcss/ui": "^0.7.2",
+    "autoprefixer": "10.2.4",
     "cssnano": "^4.1.10",
+    "el-transition": "^0.0.7",
     "postcss": "^8.2.4",
     "postcss-import": "^14.0.0",
     "postcss-preset-env": "^6.7.0",
-    "autoprefixer": "10.2.4",
-    "tailwindcss": "2.0.2",
-    "@fullhuman/postcss-purgecss": "^4.0.0"
+    "stencil-click-outside": "^1.7.1",
+    "tailwindcss": "2.0.2"
   },
-  "license": "MIT",
-  "devDependencies": {}
+  "license": "MIT"
 }

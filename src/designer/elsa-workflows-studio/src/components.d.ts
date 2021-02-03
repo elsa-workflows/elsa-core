@@ -5,36 +5,53 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
-import { WorkflowModel } from "./models";
+import { ActivityModel, WorkflowModel } from "./models";
 export namespace Components {
-    interface ElsaWorkflowDesigner {
+    interface ElsaDesignerOrgtree {
         "workflowModel": WorkflowModel;
+    }
+    interface ElsaDesignerOrgtreeActivity {
+        "activityModel": ActivityModel;
+        "icon": string;
     }
 }
 declare global {
-    interface HTMLElsaWorkflowDesignerElement extends Components.ElsaWorkflowDesigner, HTMLStencilElement {
+    interface HTMLElsaDesignerOrgtreeElement extends Components.ElsaDesignerOrgtree, HTMLStencilElement {
     }
-    var HTMLElsaWorkflowDesignerElement: {
-        prototype: HTMLElsaWorkflowDesignerElement;
-        new (): HTMLElsaWorkflowDesignerElement;
+    var HTMLElsaDesignerOrgtreeElement: {
+        prototype: HTMLElsaDesignerOrgtreeElement;
+        new (): HTMLElsaDesignerOrgtreeElement;
+    };
+    interface HTMLElsaDesignerOrgtreeActivityElement extends Components.ElsaDesignerOrgtreeActivity, HTMLStencilElement {
+    }
+    var HTMLElsaDesignerOrgtreeActivityElement: {
+        prototype: HTMLElsaDesignerOrgtreeActivityElement;
+        new (): HTMLElsaDesignerOrgtreeActivityElement;
     };
     interface HTMLElementTagNameMap {
-        "elsa-workflow-designer": HTMLElsaWorkflowDesignerElement;
+        "elsa-designer-orgtree": HTMLElsaDesignerOrgtreeElement;
+        "elsa-designer-orgtree-activity": HTMLElsaDesignerOrgtreeActivityElement;
     }
 }
 declare namespace LocalJSX {
-    interface ElsaWorkflowDesigner {
+    interface ElsaDesignerOrgtree {
         "workflowModel"?: WorkflowModel;
     }
+    interface ElsaDesignerOrgtreeActivity {
+        "activityModel"?: ActivityModel;
+        "icon"?: string;
+    }
     interface IntrinsicElements {
-        "elsa-workflow-designer": ElsaWorkflowDesigner;
+        "elsa-designer-orgtree": ElsaDesignerOrgtree;
+        "elsa-designer-orgtree-activity": ElsaDesignerOrgtreeActivity;
     }
 }
 export { LocalJSX as JSX };
 declare module "@stencil/core" {
     export namespace JSX {
         interface IntrinsicElements {
-            "elsa-workflow-designer": LocalJSX.ElsaWorkflowDesigner & JSXBase.HTMLAttributes<HTMLElsaWorkflowDesignerElement>;
+            "elsa-designer-orgtree": LocalJSX.ElsaDesignerOrgtree & JSXBase.HTMLAttributes<HTMLElsaDesignerOrgtreeElement>;
+            "elsa-designer-orgtree-activity": LocalJSX.ElsaDesignerOrgtreeActivity & JSXBase.HTMLAttributes<HTMLElsaDesignerOrgtreeActivityElement>;
         }
     }
 }
