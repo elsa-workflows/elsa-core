@@ -56,3 +56,8 @@ App_Data/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Elsa Studio
+src/designer/elsa-workflows-studio/dist
+src/designer/elsa-workflows-studio/www
+src/designer/elsa-workflows-studio/loader
