@@ -6,8 +6,9 @@ import cssnano from 'cssnano';
 
 // @ts-ignore
 const purgecss = require('@fullhuman/postcss-purgecss')({
-  content: ['./src/**/*.tsx', './src/index.html', './src/**/*.pcss'],
-  defaultExtractor: content => content.match(/[A-Za-z0-9-_:/]+/g) || []
+  content: ['./src/**/*.tsx', './src/**/*.css', './src/**/*.html'],
+  defaultExtractor: content => content.match(/[A-Za-z0-9-_:/]+/g) || [],
+  safelist: ['jtk-connector'],
 });
 
 export const config: Config = {

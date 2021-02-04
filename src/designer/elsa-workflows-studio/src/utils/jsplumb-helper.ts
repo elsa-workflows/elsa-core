@@ -32,18 +32,12 @@ export function updateConnections(canvas, connections, sourceEndpoints, targets)
 
   destroy();
 
-
   jsPlumbInstance = jsPlumb.getInstance({
 
     Container: canvas,
-    PaintStyle:{
-      strokeWidth:6,
-      stroke:"#567567",
-    },
     Connector: ['Flowchart', {cornerRadius: 5}],
     Anchor: ['Bottom', 'Top', 'Left', 'Right'],
-    Endpoint: ['Dot', {radius: 5}],
-    EndpointStyle : { fill: "#567567"  }
+    Endpoint: ['Dot', {radius: 5}]
   });
 
   jsPlumbInstance.ready(() => {
@@ -54,40 +48,39 @@ export function updateConnections(canvas, connections, sourceEndpoints, targets)
         const jsPlumbConnection = jsPlumbInstance.connect({
           source: connection.sourceId,
           target: connection.targetId,
-          // endpoint: 'Blank',
-          // paintStyle: {lineWidth: 15, strokeStyle: 'rgb(243,230,18)'},
-          // detachable: true,
-          // parameters: {
-          //   sourceActivityId: connection.sourceActivityId,
-          //   targetActivityId: connection.targetActivityId,
-          //   outcome: connection.outcome
-          // }
+          endpoint: 'Blank',
+          detachable: true,
+          parameters: {
+            sourceActivityId: connection.sourceActivityId,
+            targetActivityId: connection.targetActivityId,
+            outcome: connection.outcome
+          }
         });
       }
 
-      // for (const endpoint of sourceEndpoints) {
-      //   jsPlumbInstance.makeSource(endpoint.sourceId, {
-      //     anchor: ['Bottom', 'Top', 'Left', 'Right'],
-      //     endpoint: 'Blank',
-      //     maxConnections: 1,
-      //     parameters: {
-      //       sourceActivityId: endpoint.sourceActivityId,
-      //       outcome: endpoint.outcome
-      //     }
-      //   });
-      // }
-      //
-      // for (const target of targets) {
-      //   jsPlumbInstance.makeTarget(target.targetId, {
-      //     anchor: ['Bottom', 'Top', 'Left', 'Right'],
-      //     endpoint: 'Blank',
-      //     parameters: {
-      //       targetActivityId: target.targetActivityId
-      //     }
-      //   });
-      // }
+      for (const endpoint of sourceEndpoints) {
+        jsPlumbInstance.makeSource(endpoint.sourceId, {
+          anchor: ['Bottom', 'Top', 'Left', 'Right'],
+          endpoint: 'Blank',
+          maxConnections: 1,
+          parameters: {
+            sourceActivityId: endpoint.sourceActivityId,
+            outcome: endpoint.outcome
+          }
+        });
+      }
+
+      for (const target of targets) {
+        jsPlumbInstance.makeTarget(target.targetId, {
+          anchor: ['Bottom', 'Top', 'Left', 'Right'],
+          endpoint: 'Blank',
+          parameters: {
+            targetActivityId: target.targetActivityId
+          }
+        });
+      }
     });
 
-    //jsPlumbInstance.bind("connection", onConnectionCreated);
+    jsPlumbInstance.bind("connection", onConnectionCreated);
   });
 }
