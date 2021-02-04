@@ -1,0 +1,3 @@
+﻿interface AddActivityEventArgs {
+  sourceActivityId?: string
+}

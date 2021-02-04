@@ -2,14 +2,14 @@ import {Component, Host, h, Prop, State} from '@stencil/core';
 import {enter, leave, toggle} from 'el-transition'
 import {registerClickOutside, ClickOutside} from "stencil-click-outside";
 import {ActivityIcon} from '../../../icons/activity-icon';
-import {ActivityModel} from "../../../../models";
+import {ActivityModel} from "../../../../models/domain";
 
 @Component({
-  tag: 'elsa-designer-orgtree-activity',
-  styleUrl: 'elsa-designer-orgtree-activity.css',
+  tag: 'elsa-designer-tree-activity',
+  styleUrl: 'elsa-designer-tree-activity.css',
   shadow: false,
 })
-export class ElsaWorkflowDesignerActivity {
+export class ElsaDesignerTreeActivity {
 
   defaultIconClass = "h-10 w-10 text-blue-500";
 

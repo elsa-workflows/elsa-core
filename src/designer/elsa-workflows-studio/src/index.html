@@ -5,12 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0"/>
   <title>Stencil Component Starter</title>
   <link rel="stylesheet" href="/assets/fonts/inter/inter.css">
+
+  <!-- Only included for development; when building a production build, tailwind is included -->
+  <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
+
   <script type="module" src="/build/elsa-workflows-studio.esm.js"></script>
   <script nomodule src="/build/elsa-workflows-studio.js"></script>
 </head>
 <body>
 
-<elsa-designer-orgtree id="designer"></elsa-designer-orgtree>
+<div class="h-screen flex overflow-hidden bg-white">
+  <elsa-studio class="flex flex-col w-0 flex-1 overflow-hidden">
+
+      <elsa-designer-tree id="designer" class="flex-1 flex"></elsa-designer-tree>
+      <elsa-activity-picker-modal></elsa-activity-picker-modal>
+
+  </elsa-studio>
+</div>
 
 <script>
   const designer = document.getElementById('designer');

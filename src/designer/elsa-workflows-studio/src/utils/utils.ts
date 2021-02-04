@@ -1,4 +1,4 @@
-import {WorkflowModel} from "../models";
+import {WorkflowModel} from "../models/domain";
 
 declare global {
   interface Array<T> {

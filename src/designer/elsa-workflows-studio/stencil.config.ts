@@ -4,6 +4,8 @@ import postcssImport from 'postcss-import';
 import tailwindcss from 'tailwindcss';
 import cssnano from 'cssnano';
 
+const dev: boolean = process.argv && process.argv.indexOf('--dev') > -1;
+
 // @ts-ignore
 const purgecss = require('@fullhuman/postcss-purgecss')({
   content: ['./src/**/*.tsx', './src/**/*.css', './src/**/*.html'],
@@ -33,14 +35,16 @@ export const config: Config = {
     },
   ],
   globalStyle: 'src/globals/styles.css',
-  plugins: [
+  plugins: dev ? [] : [
     postcss({
-      plugins: [
-        postcssImport,
-        tailwindcss,
-        purgecss,
-        cssnano
-      ],
+      plugins: dev
+        ? [postcssImport,
+          tailwindcss]
+        : [postcssImport,
+          tailwindcss,
+          purgecss,
+          cssnano
+        ],
       injectGlobalPaths: [
         'src/globals/tailwind.css'
       ]
