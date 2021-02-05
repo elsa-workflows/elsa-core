@@ -32,6 +32,7 @@ export function updateConnections(canvas, connections, sourceEndpoints, targets)
 
   destroy();
 
+  console.debug("Creating JsPlumb instance");
   jsPlumbInstance = jsPlumb.getInstance({
 
     Container: canvas,

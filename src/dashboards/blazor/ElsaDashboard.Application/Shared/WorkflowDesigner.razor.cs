@@ -33,7 +33,7 @@ namespace ElsaDashboard.Application.Shared
         private bool _connectionsChanged = true;
         private EventCallbackFactory EventCallbackFactory { get; } = new();
 
-        private readonly ActivityInfo _unknownActivityDescriptor =
+        private readonly ActivityDescriptor _unknownActivityDescriptor =
             new()
             {
                 Type = "Unknown",

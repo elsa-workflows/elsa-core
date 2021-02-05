@@ -1,7 +1,7 @@
 ﻿@using Humanizer
 <div class="py-6 space-y-6 sm:py-0 sm:space-y-0 sm:divide-y sm:divide-gray-200">
     
-    @foreach (var property in ActivityInfo.Properties)
+    @foreach (var property in ActivityDescriptor.Properties)
     {
         var controlId = property.Name.ToLowerInvariant().Underscore();
         

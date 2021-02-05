@@ -6,28 +6,20 @@
   <title>Stencil Component Starter</title>
   <link rel="stylesheet" href="/assets/fonts/inter/inter.css">
 
-  <!-- Only included for development; when building a production build, tailwind is included -->
-  <link href="https://unpkg.com/@tailwindcss/custom-forms/dist/custom-forms.min.css" rel="stylesheet">
-  <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
-  <link href="https://unpkg.com/tailwindcss@^2/dist/utilities.min.css" rel="stylesheet">
+  <!-- Including a pre-built tailwind.css file for development. Don't include this when using a production build, since tailwind would already be included -->
+  <link href="/assets/styles/tailwind.css" rel="stylesheet">
 
   <script type="module" src="/build/elsa-workflows-studio.esm.js"></script>
   <script nomodule src="/build/elsa-workflows-studio.js"></script>
 </head>
 <body>
 
-<div class="h-screen flex overflow-hidden bg-white">
-  <elsa-studio class="flex flex-col w-0 flex-1 overflow-hidden">
-
-      <elsa-designer-tree id="designer" class="flex-1 flex"></elsa-designer-tree>
-      <elsa-activity-picker-modal></elsa-activity-picker-modal>
-
-  </elsa-studio>
-</div>
+<elsa-studio id="studio"></elsa-studio>
 
 <script>
-  const designer = document.getElementById('designer');
-  designer.workflowModel = {
+  const studio = document.getElementById('studio');
+
+  studio.workflowModel = {
     activities: [{
       activityId: 'activity-1',
       type: 'WriteLine',
@@ -54,7 +46,7 @@
         targetId: 'activity-3',
         outcome: 'Done'
       }]
-  }
+  };
 
 </script>
 </body>

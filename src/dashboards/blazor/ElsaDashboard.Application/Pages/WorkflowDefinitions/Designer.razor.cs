@@ -20,7 +20,7 @@ namespace ElsaDashboard.Application.Pages.WorkflowDefinitions
         [Inject] private IActivityService ActivityService { get; set; } = default!;
         [Inject] private NavigationManager NavigationManager { get; set; } = default!;
         [Inject] private IFlyoutPanelService FlyoutPanelService { get; set; } = default!;
-        private IDictionary<string, ActivityInfo> ActivityDescriptors { get; set; } = default!;
+        private IDictionary<string, ActivityDescriptor> ActivityDescriptors { get; set; } = default!;
         private EventCallbackFactory EventCallbackFactory { get; } = new();
 
         private WorkflowDefinition WorkflowDefinition { get; set; } = new()
@@ -112,16 +112,16 @@ namespace ElsaDashboard.Application.Pages.WorkflowDefinitions
             };
         }
         
-        private async Task AddActivityAsync(ActivityInfo activityInfo, string? sourceActivityId, string? targetActivityId, string? outcome)
+        private async Task AddActivityAsync(ActivityDescriptor activityDescriptor, string? sourceActivityId, string? targetActivityId, string? outcome)
         {
             outcome ??= "Done";
 
             var activity = new ActivityModel
             {
                 ActivityId = Guid.NewGuid().ToString("N"),
-                Type = activityInfo.Type,
-                Outcomes = activityInfo.Outcomes,
-                DisplayName = activityInfo.DisplayName
+                Type = activityDescriptor.Type,
+                Outcomes = activityDescriptor.Outcomes,
+                DisplayName = activityDescriptor.DisplayName
             };
 
             var model = WorkflowModel.AddActivity(activity);
@@ -234,7 +234,7 @@ namespace ElsaDashboard.Application.Pages.WorkflowDefinitions
         
         private async Task OnActivityPickedAsync(ActivityDescriptorSelectedEventArgs e, string? sourceActivityId, string? targetActivityId, string? outcome)
         {
-            var activityInfo = e.ActivityInfo;
+            var activityInfo = e.ActivityDescriptor;
 
             await FlyoutPanelService.ShowAsync<ActivityEditor>(
                 activityInfo.DisplayName,

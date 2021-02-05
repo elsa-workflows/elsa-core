@@ -5,7 +5,7 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
-import { ActivityModel, WorkflowModel } from "./models/domain";
+import { ActivityDescriptor, ActivityModel, WorkflowModel } from "./models/domain";
 export namespace Components {
     interface ElsaActivityPickerFlyout {
     }
@@ -23,6 +23,10 @@ export namespace Components {
         "show": () => Promise<void>;
     }
     interface ElsaStudio {
+        "activityDescriptors": Array<ActivityDescriptor>;
+        "overrideActivityPicker": boolean;
+        "overrideContent": boolean;
+        "workflowModel": WorkflowModel;
     }
 }
 declare global {
@@ -86,6 +90,10 @@ declare namespace LocalJSX {
     interface ElsaModalDialog {
     }
     interface ElsaStudio {
+        "activityDescriptors"?: Array<ActivityDescriptor>;
+        "overrideActivityPicker"?: boolean;
+        "overrideContent"?: boolean;
+        "workflowModel"?: WorkflowModel;
     }
     interface IntrinsicElements {
         "elsa-activity-picker-flyout": ElsaActivityPickerFlyout;

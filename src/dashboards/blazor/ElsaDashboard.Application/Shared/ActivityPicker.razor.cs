@@ -12,13 +12,13 @@ namespace ElsaDashboard.Application.Shared
     partial class ActivityPicker
     {
         [Parameter] public EventCallback<ActivityDescriptorSelectedEventArgs> ActivitySelected { get; set; }
-        [Parameter] public ICollection<ActivityInfo> Activities { get; set; } = new List<ActivityInfo>();
+        [Parameter] public ICollection<ActivityDescriptor> Activities { get; set; } = new List<ActivityDescriptor>();
         [Inject] private IActivityService ActivityService { get; set; } = default!;
         private ActivityTraitFilter SelectedActivityTraitFilter { get; set; }
         private string? ActivitySearchText { get; set; }
         private ICollection<ActivityTraitFilter> ActivityTraitFilters => new[] { ActivityTraitFilter.All, ActivityTraitFilter.Actions, ActivityTraitFilter.Triggers };
 
-        private ICollection<IGrouping<string, ActivityInfo>> ActivityGroupings =>
+        private ICollection<IGrouping<string, ActivityDescriptor>> ActivityGroupings =>
             FilterBySearchText(
                     FilterByTrait(Activities, SelectedActivityTraitFilter),
                     ActivitySearchText)
@@ -30,7 +30,7 @@ namespace ElsaDashboard.Application.Shared
             SelectedActivityTraitFilter = activityTraitFilter;
         }
 
-        private static IEnumerable<ActivityInfo> FilterByTrait(IEnumerable<ActivityInfo> activities, ActivityTraitFilter filter) =>
+        private static IEnumerable<ActivityDescriptor> FilterByTrait(IEnumerable<ActivityDescriptor> activities, ActivityTraitFilter filter) =>
             filter switch
             {
                 ActivityTraitFilter.Actions => activities.Where(x => (x.Traits & ActivityTraits.Action) == ActivityTraits.Action),
@@ -39,7 +39,7 @@ namespace ElsaDashboard.Application.Shared
                 _ => activities
             };
 
-        private static IEnumerable<ActivityInfo> FilterBySearchText(IEnumerable<ActivityInfo> activities, string? searchText)
+        private static IEnumerable<ActivityDescriptor> FilterBySearchText(IEnumerable<ActivityDescriptor> activities, string? searchText)
         {
             if (string.IsNullOrWhiteSpace(searchText))
                 return activities;
@@ -54,6 +54,6 @@ namespace ElsaDashboard.Application.Shared
                 select activity;
         }
 
-        private Task OnActivityClick(ActivityInfo activityInfo) => ActivitySelected.InvokeAsync(new ActivityDescriptorSelectedEventArgs(activityInfo));
+        private Task OnActivityClick(ActivityDescriptor activityDescriptor) => ActivitySelected.InvokeAsync(new ActivityDescriptorSelectedEventArgs(activityDescriptor));
     }
 }

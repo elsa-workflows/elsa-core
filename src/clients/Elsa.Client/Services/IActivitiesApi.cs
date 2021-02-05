@@ -9,6 +9,6 @@ namespace Elsa.Client.Services
     public interface IActivitiesApi
     {
         [Get("/v1/activities")]
-        Task<ICollection<ActivityInfo>> ListAsync(CancellationToken cancellationToken = default);
+        Task<ICollection<ActivityDescriptor>> ListAsync(CancellationToken cancellationToken = default);
     }
 }

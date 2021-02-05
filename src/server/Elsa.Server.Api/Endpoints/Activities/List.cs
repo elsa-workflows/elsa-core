@@ -24,7 +24,7 @@ namespace Elsa.Server.Api.Endpoints.Activities
         }
 
         [HttpGet]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(List<ActivityInfo>))]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(List<ActivityDescriptor>))]
         [SwaggerOperation(
             Summary = "Returns all available activities.",
             Description = "Returns all available activities from which a workflow definition can be built.",
@@ -34,10 +34,10 @@ namespace Elsa.Server.Api.Endpoints.Activities
         public IActionResult Handle()
         {
             var descriptors = _activityTypes.Select(DescribeActivity).Where(x => x != null).Select(x => x!).ToList();
-            var model = new List<ActivityInfo>(descriptors);
+            var model = new List<ActivityDescriptor>(descriptors);
             return Ok(model);
         }
 
-        private ActivityInfo? DescribeActivity(Type activityType) => _activityDescriber.Describe(activityType);
+        private ActivityDescriptor? DescribeActivity(Type activityType) => _activityDescriber.Describe(activityType);
     }
 }

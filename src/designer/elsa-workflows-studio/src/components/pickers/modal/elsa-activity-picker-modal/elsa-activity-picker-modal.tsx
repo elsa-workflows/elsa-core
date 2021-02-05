@@ -1,6 +1,7 @@
 import {Component, Host, h, Prop, State} from '@stencil/core';
 import {eventBus} from '../../../../utils/event-bus';
 import {EventTypes} from "../../../../models/events";
+import state from '../../../../utils/store';
 
 @Component({
   tag: 'elsa-activity-picker-modal',
@@ -20,6 +21,8 @@ export class ElsaActivityPickerModal {
   }
 
   renderModal() {
+    const activityDescriptors = state.activityDescriptors;
+
     return (
       <Host>
         <elsa-modal-dialog ref={el => this.dialog = el}>
@@ -27,19 +30,23 @@ export class ElsaActivityPickerModal {
             <div class="flex">
               <div class="px-8">
                 <nav class="space-y-1" aria-label="Sidebar">
-                  <a href="#" class="bg-gray-100 text-gray-900 flex items-center px-3 py-2 text-sm font-medium rounded-md" aria-current="page">
+                  <a href="#"
+                     class="bg-gray-100 text-gray-900 flex items-center px-3 py-2 text-sm font-medium rounded-md"
+                     aria-current="page">
                     <span class="truncate">
                       All
                     </span>
                   </a>
 
-                  <a href="#" class="text-gray-600 hover:bg-gray-50 hover:text-gray-900 flex items-center px-3 py-2 text-sm font-medium rounded-md">
+                  <a href="#"
+                     class="text-gray-600 hover:bg-gray-50 hover:text-gray-900 flex items-center px-3 py-2 text-sm font-medium rounded-md">
                     <span class="truncate">
                       Actions
                     </span>
                   </a>
 
-                  <a href="#" class="text-gray-600 hover:bg-gray-50 hover:text-gray-900 flex items-center px-3 py-2 text-sm font-medium rounded-md">
+                  <a href="#"
+                     class="text-gray-600 hover:bg-gray-50 hover:text-gray-900 flex items-center px-3 py-2 text-sm font-medium rounded-md">
                     <span class="truncate">
                       Triggers
                     </span>
@@ -59,31 +66,23 @@ export class ElsaActivityPickerModal {
                         <line x1="21" y1="21" x2="15" y2="15"/>
                       </svg>
                     </div>
-                    <input type="text" class="form-input block w-full pl-10 sm:text-sm sm:leading-5"
-                           placeholder="Search activities"/>
+                    <input type="text" class="form-input block w-full pl-10 sm:text-sm sm:leading-5" placeholder="Search activities"/>
                   </div>
                 </div>
 
                 <div class="max-w-4xl mx-auto p-0">
-
-                  <div
-                    class="rounded-lg bg-gray-200 overflow-hidden shadow divide-y divide-gray-200 sm:divide-y-0 sm:grid sm:grid-cols-2 sm:gap-px">
-
-                    <div
-                      class="rounded-tl-lg rounded-tr-lg sm:rounded-tr-none    relative group bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-indigo-500">
+                  <div class="rounded-lg bg-gray-200 overflow-hidden shadow divide-y divide-gray-200 sm:divide-y-0 sm:grid sm:grid-cols-2 sm:gap-px">
+                    <div class="rounded-tl-lg rounded-tr-lg sm:rounded-tr-none relative group bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-indigo-500">
                       <div>
-          <span class="rounded-lg inline-flex p-3 bg-teal-50 text-teal-700 ring-4 ring-white">
-            <svg class="h-6 w-6" x-description="Heroicon name: outline/clock" xmlns="http://www.w3.org/2000/svg"
-                 fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-</svg>
-          </span>
+                        <span class="rounded-lg inline-flex p-3 bg-teal-50 text-teal-700 ring-4 ring-white">
+                          <svg class="h-6 w-6" x-description="Heroicon name: outline/clock" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                          </svg>
+                        </span>
                       </div>
                       <div class="mt-8">
                         <h3 class="text-lg font-medium">
                           <a href="#" class="focus:outline-none">
-
                             <span class="absolute inset-0" aria-hidden="true"/>
                             Request time off
                           </a>
@@ -93,17 +92,15 @@ export class ElsaActivityPickerModal {
                           blanditiis et quo et molestiae.
                         </p>
                       </div>
-                      <span class="pointer-events-none absolute top-6 right-6 text-gray-300 group-hover:text-gray-400"
-                            aria-hidden="true">
-          <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
-            <path
-              d="M20 4h1a1 1 0 00-1-1v1zm-1 12a1 1 0 102 0h-2zM8 3a1 1 0 000 2V3zM3.293 19.293a1 1 0 101.414 1.414l-1.414-1.414zM19 4v12h2V4h-2zm1-1H8v2h12V3zm-.707.293l-16 16 1.414 1.414 16-16-1.414-1.414z"/>
-          </svg>
-        </span>
+                      <span class="pointer-events-none absolute top-6 right-6 text-gray-300 group-hover:text-gray-400" aria-hidden="true">
+                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+                          <path
+                            d="M20 4h1a1 1 0 00-1-1v1zm-1 12a1 1 0 102 0h-2zM8 3a1 1 0 000 2V3zM3.293 19.293a1 1 0 101.414 1.414l-1.414-1.414zM19 4v12h2V4h-2zm1-1H8v2h12V3zm-.707.293l-16 16 1.414 1.414 16-16-1.414-1.414z"/>
+                        </svg>
+                      </span>
                     </div>
 
-                    <div
-                      class=" sm:rounded-tr-lg   relative group bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-indigo-500">
+                    <div class="sm:rounded-tr-lg   relative group bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-indigo-500">
                       <div>
           <span class="rounded-lg inline-flex p-3 bg-purple-50 text-purple-700 ring-4 ring-white">
             <svg class="h-6 w-6" x-description="Heroicon name: outline/badge-check" xmlns="http://www.w3.org/2000/svg"

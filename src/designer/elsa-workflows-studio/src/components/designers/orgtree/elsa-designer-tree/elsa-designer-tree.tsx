@@ -4,6 +4,7 @@ import {updateConnections} from '../../../../utils/jsplumb-helper';
 import {ActivityModel, WorkflowModel} from "../../../../models/domain";
 import {eventBus} from '../../../../utils/event-bus';
 import {EventTypes} from "../../../../models/events";
+import state from '../../../../utils/store';
 
 @Component({
   tag: 'elsa-designer-tree',
