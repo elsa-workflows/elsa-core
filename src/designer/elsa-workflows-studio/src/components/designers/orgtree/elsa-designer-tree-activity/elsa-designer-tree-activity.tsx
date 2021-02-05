@@ -23,13 +23,16 @@ export class ElsaDesignerTreeActivity {
     leave(this.contextMenu);
   }
 
+  toggleMenu() {
+    toggle(this.contextMenu);
+  }
+
   render() {
 
     const activity = this.activityModel;
     const activityId = activity.activityId;
     const iconClass = this.icon && this.icon.length > 0 ? this.icon : this.defaultIconClass;
     const displayName = activity.displayName && activity.displayName.length > 0 ? activity.displayName : activity.name && activity.name.length > 0 ? activity.name : activity.type
-    const showMenu = this.showMenu;
 
     return (
       <Host id={`activity-${activityId}`}
@@ -90,17 +93,5 @@ export class ElsaDesignerTreeActivity {
         </div>
       </Host>
     );
-  }
-
-  toggleMenu() {
-    toggle(this.contextMenu);
-  }
-
-  open() {
-    enter(this.contextMenu);
-  }
-
-  close() {
-    leave(this.contextMenu);
   }
 }

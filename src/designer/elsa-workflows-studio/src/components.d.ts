@@ -10,7 +10,6 @@ export namespace Components {
     interface ElsaActivityPickerFlyout {
     }
     interface ElsaActivityPickerModal {
-        "show": boolean;
     }
     interface ElsaDesignerTree {
         "workflowModel": WorkflowModel;
@@ -18,6 +17,10 @@ export namespace Components {
     interface ElsaDesignerTreeActivity {
         "activityModel": ActivityModel;
         "icon": string;
+    }
+    interface ElsaModalDialog {
+        "hide": () => Promise<void>;
+        "show": () => Promise<void>;
     }
     interface ElsaStudio {
     }
@@ -47,6 +50,12 @@ declare global {
         prototype: HTMLElsaDesignerTreeActivityElement;
         new (): HTMLElsaDesignerTreeActivityElement;
     };
+    interface HTMLElsaModalDialogElement extends Components.ElsaModalDialog, HTMLStencilElement {
+    }
+    var HTMLElsaModalDialogElement: {
+        prototype: HTMLElsaModalDialogElement;
+        new (): HTMLElsaModalDialogElement;
+    };
     interface HTMLElsaStudioElement extends Components.ElsaStudio, HTMLStencilElement {
     }
     var HTMLElsaStudioElement: {
@@ -58,6 +67,7 @@ declare global {
         "elsa-activity-picker-modal": HTMLElsaActivityPickerModalElement;
         "elsa-designer-tree": HTMLElsaDesignerTreeElement;
         "elsa-designer-tree-activity": HTMLElsaDesignerTreeActivityElement;
+        "elsa-modal-dialog": HTMLElsaModalDialogElement;
         "elsa-studio": HTMLElsaStudioElement;
     }
 }
@@ -65,24 +75,24 @@ declare namespace LocalJSX {
     interface ElsaActivityPickerFlyout {
     }
     interface ElsaActivityPickerModal {
-        "show"?: boolean;
     }
     interface ElsaDesignerTree {
-        "onAdd-activity"?: (event: CustomEvent<AddActivityEventArgs>) => void;
         "workflowModel"?: WorkflowModel;
     }
     interface ElsaDesignerTreeActivity {
         "activityModel"?: ActivityModel;
         "icon"?: string;
     }
+    interface ElsaModalDialog {
+    }
     interface ElsaStudio {
-        "onDebug"?: (event: CustomEvent<AddActivityEventArgs>) => void;
     }
     interface IntrinsicElements {
         "elsa-activity-picker-flyout": ElsaActivityPickerFlyout;
         "elsa-activity-picker-modal": ElsaActivityPickerModal;
         "elsa-designer-tree": ElsaDesignerTree;
         "elsa-designer-tree-activity": ElsaDesignerTreeActivity;
+        "elsa-modal-dialog": ElsaModalDialog;
         "elsa-studio": ElsaStudio;
     }
 }
@@ -94,6 +104,7 @@ declare module "@stencil/core" {
             "elsa-activity-picker-modal": LocalJSX.ElsaActivityPickerModal & JSXBase.HTMLAttributes<HTMLElsaActivityPickerModalElement>;
             "elsa-designer-tree": LocalJSX.ElsaDesignerTree & JSXBase.HTMLAttributes<HTMLElsaDesignerTreeElement>;
             "elsa-designer-tree-activity": LocalJSX.ElsaDesignerTreeActivity & JSXBase.HTMLAttributes<HTMLElsaDesignerTreeActivityElement>;
+            "elsa-modal-dialog": LocalJSX.ElsaModalDialog & JSXBase.HTMLAttributes<HTMLElsaModalDialogElement>;
             "elsa-studio": LocalJSX.ElsaStudio & JSXBase.HTMLAttributes<HTMLElsaStudioElement>;
         }
     }

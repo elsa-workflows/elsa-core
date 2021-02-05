@@ -2,6 +2,8 @@ import {Component, Host, h, Prop, State, Event, EventEmitter, Listen} from '@ste
 import {getChildActivities} from '../../../../utils/utils';
 import {updateConnections} from '../../../../utils/jsplumb-helper';
 import {ActivityModel, WorkflowModel} from "../../../../models/domain";
+import {eventBus} from '../../../../utils/event-bus';
+import {EventTypes} from "../../../../models/events";
 
 @Component({
   tag: 'elsa-designer-tree',
@@ -12,7 +14,6 @@ import {ActivityModel, WorkflowModel} from "../../../../models/domain";
 export class ElsaWorkflowDesigner {
 
   @Prop() workflowModel: WorkflowModel = {activities: [], connections: []};
-  @Event({eventName: 'add-activity'}) addActivity: EventEmitter<AddActivityEventArgs>
   canvasElement: HTMLElement;
 
   render() {
@@ -55,7 +56,7 @@ export class ElsaWorkflowDesigner {
   }
 
   onAddButtonClick() {
-    this.addActivity.emit({sourceActivityId: 'activity-1'});
+    eventBus.emit(EventTypes.ShowActivityPicker);
   }
 
   getRootActivities(): Array<ActivityModel> {
