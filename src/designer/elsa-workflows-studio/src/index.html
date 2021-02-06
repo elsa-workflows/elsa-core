@@ -19,7 +19,31 @@
 <script>
   const studio = document.getElementById('studio');
 
-  studio.workflowModel = {
+  const activityDescriptors = [{
+    type: 'WriteLine',
+    displayName: 'Write Line',
+    description: 'Write a message to standard out.',
+    category: 'Console',
+    traits: 1,
+    outcomes: ['Done'],
+    browsable: true,
+    properties: [{
+      name: 'Text',
+      type: 'Text'
+    }]
+  },
+    {
+      type: 'ReadLine',
+      displayName: 'Read Line',
+      description: 'Read a message from standard in.',
+      category: 'Console',
+      traits: 2,
+      outcomes: ['Done'],
+      browsable: true,
+      properties: []
+    }];
+
+  const workflowModel = {
     activities: [{
       activityId: 'activity-1',
       type: 'WriteLine',
@@ -47,6 +71,9 @@
         outcome: 'Done'
       }]
   };
+
+  studio.activityDescriptors = activityDescriptors;
+  studio.workflowModel = workflowModel;
 
 </script>
 </body>
