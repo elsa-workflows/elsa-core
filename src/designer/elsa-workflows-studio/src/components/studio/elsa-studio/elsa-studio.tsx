@@ -9,8 +9,6 @@ import state from '../../../utils/store';
 })
 export class ElsaWorkflowStudio {
 
-  @Prop({attribute: "override-content", reflect: true}) overrideContent: boolean = false;
-  @Prop({attribute: "override-activity-picker", reflect: true}) overrideActivityPicker: boolean;
   @Prop() workflowModel: WorkflowModel = {activities: [], connections: []};
   @Prop() activityDescriptors: Array<ActivityDescriptor> = [];
   el: HTMLElement;
@@ -21,42 +19,40 @@ export class ElsaWorkflowStudio {
     state.activityDescriptors = newValue;
   }
 
+  componentWillLoad(){
+    this.activityDescriptorsChangedHandler(this.activityDescriptors);
+  }
+
   componentDidLoad() {
     if (!this.designer) {
       this.designer = this.el.querySelector("elsa-designer-tree") as HTMLElsaDesignerTreeElement;
-      this.designer.workflowModel = this.workflowModel;
+      this.designer.model = this.workflowModel;
     }
   }
 
   render() {
     return (
       <Host class="flex flex-col" ref={el => this.el = el}>
-        <slot name="content">
-          {this.renderContentSlot()}
-        </slot>
-        <slot name="activity-picker">
-          {this.renderActivityPicker()}
-        </slot>
+        {this.renderContentSlot()}
+        {this.renderActivityPicker()}
+        {this.renderActivityEditor()}
       </Host>
     );
   }
 
   renderContentSlot() {
-    if (this.overrideContent)
-      return undefined;
-
     return (
       <div class="h-screen flex ">
-        <elsa-designer-tree workflowModel={this.workflowModel} class="flex-1" ref={el => this.designer = el}/>
+        <elsa-designer-tree model={this.workflowModel} class="flex-1" ref={el => this.designer = el}/>
       </div>
     );
   }
 
   renderActivityPicker() {
-    if (this.overrideActivityPicker)
-      return undefined;
-
     return <elsa-activity-picker-modal/>;
   }
 
+  renderActivityEditor() {
+    return <elsa-activity-editor-modal/>;
+  }
 }

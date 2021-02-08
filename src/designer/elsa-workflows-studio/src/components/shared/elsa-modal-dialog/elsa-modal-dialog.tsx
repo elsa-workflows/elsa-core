@@ -1,6 +1,7 @@
-import {Component, Host, h, Prop, State} from '@stencil/core';
+import {Component, Host, h, Prop, State, Listen} from '@stencil/core';
 import {enter, leave, toggle} from 'el-transition'
 import {Method} from "../../../../dist/types/stencil-public-runtime";
+import {list} from "postcss";
 
 @Component({
   tag: 'elsa-modal-dialog',
@@ -19,13 +20,21 @@ export class ElsaModalDialog {
 
   @Method()
   async show() {
+    this.showInternal();
+  }
+
+  @Method()
+  async hide() {
+    this.hideInternal();
+  }
+
+  showInternal() {
     this.isVisible = true;
     enter(this.overlay);
     enter(this.modal);
   }
 
-  @Method()
-  async hide() {
+  hideInternal() {
     leave(this.overlay);
     leave(this.modal).then(() => this.isVisible = false);
   }
@@ -52,19 +61,20 @@ export class ElsaModalDialog {
                  data-transition-leave="ease-in duration-200"
                  data-transition-leave-start="opacity-100 translate-y-0 sm:scale-100"
                  data-transition-leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                 class="hidden inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full"
+                 class="hidden inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-top sm:max-w-4xl sm:w-full"
                  role="dialog" aria-modal="true" aria-labelledby="modal-headline">
               <div class="modal-content">
                 <slot name="content"/>
               </div>
-              <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                <slot name="buttons">
+
+              <slot name="buttons">
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
                   <button type="button"
                           class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
                     Close
                   </button>
-                </slot>
-              </div>
+                </div>
+              </slot>
             </div>
           </div>
         </div>

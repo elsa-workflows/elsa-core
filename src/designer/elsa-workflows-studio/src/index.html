@@ -29,7 +29,8 @@
     browsable: true,
     properties: [{
       name: 'Text',
-      type: 'Text'
+      type: 'Text',
+      hint: 'The text to write.'
     }]
   },
     {
@@ -39,6 +40,36 @@
       category: 'Console',
       traits: 2,
       outcomes: ['Done'],
+      browsable: true,
+      properties: []
+    },
+    {
+      type: 'SendHttpRequest',
+      displayName: 'Send HTTP Request',
+      description: 'Send an HTTP request',
+      category: 'HTTP',
+      traits: 1,
+      outcomes: ['Done'],
+      browsable: true,
+      properties: []
+    },
+    {
+      type: 'HttpRequestReceived',
+      displayName: 'HTTP Request Received',
+      description: 'Doloribus dolores nostrum quia qui natus officia quod et dolorem. Sit repellendus qui ut at blanditiis et quo et molestiae.',
+      category: 'HTTP',
+      traits: 2,
+      outcomes: ['Done'],
+      browsable: true,
+      properties: []
+    },
+    {
+      type: 'IfElse',
+      displayName: 'If/Else',
+      description: 'Doloribus dolores nostrum quia qui natus officia quod et dolorem. Sit repellendus qui ut at blanditiis et quo et molestiae.',
+      category: 'Control Flow',
+      traits: 1,
+      outcomes: ['True', 'False', 'Done'],
       browsable: true,
       properties: []
     }];
@@ -56,9 +87,9 @@
       outcomes: ['Done']
     }, {
       activityId: 'activity-3',
-      type: 'ReadLine',
-      description: 'Reads input from standard in.',
-      outcomes: ['Done']
+      type: 'IfElse',
+      description: 'Evaluates the specified condition',
+      outcomes: ['True', 'False', 'Done']
     }],
     connections: [{
       sourceId: 'activity-1',

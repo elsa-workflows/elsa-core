@@ -7,12 +7,14 @@
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
 import { ActivityDescriptor, ActivityModel, WorkflowModel } from "./models/domain";
 export namespace Components {
+    interface ElsaActivityEditorModal {
+    }
     interface ElsaActivityPickerFlyout {
     }
     interface ElsaActivityPickerModal {
     }
     interface ElsaDesignerTree {
-        "workflowModel": WorkflowModel;
+        "model": WorkflowModel;
     }
     interface ElsaDesignerTreeActivity {
         "activityModel": ActivityModel;
@@ -24,12 +26,16 @@ export namespace Components {
     }
     interface ElsaStudio {
         "activityDescriptors": Array<ActivityDescriptor>;
-        "overrideActivityPicker": boolean;
-        "overrideContent": boolean;
         "workflowModel": WorkflowModel;
     }
 }
 declare global {
+    interface HTMLElsaActivityEditorModalElement extends Components.ElsaActivityEditorModal, HTMLStencilElement {
+    }
+    var HTMLElsaActivityEditorModalElement: {
+        prototype: HTMLElsaActivityEditorModalElement;
+        new (): HTMLElsaActivityEditorModalElement;
+    };
     interface HTMLElsaActivityPickerFlyoutElement extends Components.ElsaActivityPickerFlyout, HTMLStencilElement {
     }
     var HTMLElsaActivityPickerFlyoutElement: {
@@ -67,6 +73,7 @@ declare global {
         new (): HTMLElsaStudioElement;
     };
     interface HTMLElementTagNameMap {
+        "elsa-activity-editor-modal": HTMLElsaActivityEditorModalElement;
         "elsa-activity-picker-flyout": HTMLElsaActivityPickerFlyoutElement;
         "elsa-activity-picker-modal": HTMLElsaActivityPickerModalElement;
         "elsa-designer-tree": HTMLElsaDesignerTreeElement;
@@ -76,26 +83,29 @@ declare global {
     }
 }
 declare namespace LocalJSX {
+    interface ElsaActivityEditorModal {
+    }
     interface ElsaActivityPickerFlyout {
     }
     interface ElsaActivityPickerModal {
     }
     interface ElsaDesignerTree {
-        "workflowModel"?: WorkflowModel;
+        "model"?: WorkflowModel;
     }
     interface ElsaDesignerTreeActivity {
         "activityModel"?: ActivityModel;
         "icon"?: string;
+        "onEdit-activity"?: (event: CustomEvent<ActivityModel>) => void;
+        "onRemove-activity"?: (event: CustomEvent<ActivityModel>) => void;
     }
     interface ElsaModalDialog {
     }
     interface ElsaStudio {
         "activityDescriptors"?: Array<ActivityDescriptor>;
-        "overrideActivityPicker"?: boolean;
-        "overrideContent"?: boolean;
         "workflowModel"?: WorkflowModel;
     }
     interface IntrinsicElements {
+        "elsa-activity-editor-modal": ElsaActivityEditorModal;
         "elsa-activity-picker-flyout": ElsaActivityPickerFlyout;
         "elsa-activity-picker-modal": ElsaActivityPickerModal;
         "elsa-designer-tree": ElsaDesignerTree;
@@ -108,6 +118,7 @@ export { LocalJSX as JSX };
 declare module "@stencil/core" {
     export namespace JSX {
         interface IntrinsicElements {
+            "elsa-activity-editor-modal": LocalJSX.ElsaActivityEditorModal & JSXBase.HTMLAttributes<HTMLElsaActivityEditorModalElement>;
             "elsa-activity-picker-flyout": LocalJSX.ElsaActivityPickerFlyout & JSXBase.HTMLAttributes<HTMLElsaActivityPickerFlyoutElement>;
             "elsa-activity-picker-modal": LocalJSX.ElsaActivityPickerModal & JSXBase.HTMLAttributes<HTMLElsaActivityPickerModalElement>;
             "elsa-designer-tree": LocalJSX.ElsaDesignerTree & JSXBase.HTMLAttributes<HTMLElsaDesignerTreeElement>;

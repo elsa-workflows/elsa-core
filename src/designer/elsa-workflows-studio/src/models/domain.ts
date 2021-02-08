@@ -6,9 +6,9 @@
 export interface ActivityModel {
   activityId: string
   type: string
-  name: string
-  displayName: string
-  description: string
+  name?: string
+  displayName?: string
+  description?: string
   outcomes: Array<string>
 }
 

@@ -33,11 +33,11 @@ export function updateConnections(canvas, connections, sourceEndpoints, targets)
   destroy();
 
   console.debug("Creating JsPlumb instance");
-  jsPlumbInstance = jsPlumb.getInstance({
+  jsPlumbInstance = (jsPlumb as any).getInstance({
 
     Container: canvas,
     Connector: ['Flowchart', {cornerRadius: 5}],
-    Anchor: ['Bottom', 'Top', 'Left', 'Right'],
+    Anchors: ['Bottom', 'Top', 'Left', 'Right'], // The typescript definition does not have an `Anchors` field, but the jsPlumb library does.
     Endpoint: ['Dot', {radius: 5}]
   });
 
