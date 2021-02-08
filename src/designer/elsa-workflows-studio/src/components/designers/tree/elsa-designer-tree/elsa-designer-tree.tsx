@@ -44,6 +44,11 @@ export class ElsaWorkflowDesigner {
       const activityDescriptor = (args as ActivityDescriptor);
       this.addActivity(activityDescriptor, this.parentActivityId, null, this.parentActivityOutcome);
     });
+
+    eventBus.on(EventTypes.UpdateActivity, async args => {
+      const activityModel = (args as ActivityModel);
+      this.updateActivity(activityModel);
+    });
   }
 
   componentDidRender() {
@@ -78,7 +83,8 @@ export class ElsaWorkflowDesigner {
         activityId: uuid(),
         type: activityDescriptor.type,
         outcomes: activityDescriptor.outcomes,
-        displayName: activityDescriptor.displayName
+        displayName: activityDescriptor.displayName,
+        state: {}
       };
 
     const workflowModel = {...this.workflowModel, activities: [...this.workflowModel.activities, activity]};
@@ -140,8 +146,15 @@ export class ElsaWorkflowDesigner {
         workflowModel = addConnection(workflowModel, incomingActivity.activityId, outgoingConnection.targetId, incomingConnection.outcome);
     }
 
-    debugger;
     this.workflowModel = workflowModel;
+  }
+
+  updateActivity(activity: ActivityModel){
+    let workflowModel = {...this.workflowModel};
+    const activities = [...workflowModel.activities];
+    const index = activities.findIndex(x => x.activityId === activity.activityId);
+    activities[index] = activity;
+    this.workflowModel = {...workflowModel, activities: activities};
   }
 
   onAddButtonClick() {

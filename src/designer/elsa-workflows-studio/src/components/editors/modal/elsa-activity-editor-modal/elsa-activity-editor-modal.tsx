@@ -4,6 +4,7 @@ import {eventBus} from '../../../../utils/event-bus';
 import {EventTypes} from "../../../../models/events";
 import {ActivityDescriptor, ActivityModel, ActivityPropertyDescriptor} from "../../../../models/domain";
 import state from '../../../../utils/store';
+import {propertyDisplayManager} from '../../../../services/property-display-manager';
 
 @Component({
   tag: 'elsa-activity-editor-modal',
@@ -18,23 +19,36 @@ export class ElsaActivityPickerModal {
 
   componentDidLoad() {
     eventBus.on(EventTypes.ShowActivityEditor, async (activity: ActivityModel) => {
-      this.activityModel = {...activity};
+      this.activityModel = {...activity, state: activity.state || {}};
       this.activityDescriptor = state.activityDescriptors.find(x => x.type == activity.type);
       await this.dialog.show();
     });
+  }
+
+  updateActivity(formData: FormData){
+    const activity = this.activityModel;
+    const activityDescriptor = this.activityDescriptor;
+    const properties: Array<ActivityPropertyDescriptor> = activityDescriptor.properties;
+
+    for (const property of properties)
+      propertyDisplayManager.update(activity, property, formData);
   }
 
   async onCancelClick() {
     await this.dialog.hide();
   }
 
-  async onSubmit(e: Event){
+  async onSubmit(e: Event) {
     e.preventDefault();
+    const form: any = e.target;
+    const formData = new FormData(form);
+    this.updateActivity(formData);
+    eventBus.emit(EventTypes.UpdateActivity, this, this.activityModel);
     await this.dialog.hide();
   }
 
   render() {
-    const activityModel = this.activityModel || {type: '', activityId: '', outcomes: []};
+    const activityModel: ActivityModel = this.activityModel || {type: '', activityId: '', outcomes: [], state: {}};
     const activityDescriptor = this.activityDescriptor || {displayName: '', type: '', outcomes: [], category: '', traits: 0, browsable: false, properties: [], description: ''};
     const propertyDescriptors: Array<ActivityPropertyDescriptor> = activityDescriptor.properties;
 
@@ -56,27 +70,7 @@ export class ElsaActivityPickerModal {
                     </div>
 
                     <div class="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
-
-                      {propertyDescriptors.map(x => this.renderPropertyEditor(x, activityModel))}
-
-                      <div class="sm:col-span-6">
-                        <label htmlFor="username" class="block text-sm font-medium text-gray-700">
-                          Username
-                        </label>
-                        <div class="mt-1">
-                          <input type="text" name="username" id="username" autocomplete="username" class="focus:ring-blue-500 focus:border-blue-500 block w-full min-w-0 rounded-md sm:text-sm border-gray-300"/>
-                        </div>
-                      </div>
-
-                      <div class="sm:col-span-6">
-                        <label htmlFor="about" class="block text-sm font-medium text-gray-700">
-                          About
-                        </label>
-                        <div class="mt-1">
-                          <textarea id="about" name="about" rows={3} class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"/>
-                        </div>
-                        <p class="mt-2 text-sm text-gray-500">Write a few sentences about yourself.</p>
-                      </div>
+                      {propertyDescriptors.map(property => this.renderPropertyEditor(activityModel, property))}
                     </div>
                   </div>
 
@@ -84,7 +78,8 @@ export class ElsaActivityPickerModal {
               </div>
               <div class="pt-5">
                 <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                  <button type="submit" class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                  <button type="submit"
+                          class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                     Save
                   </button>
                   <button type="button"
@@ -103,22 +98,7 @@ export class ElsaActivityPickerModal {
     );
   }
 
-  renderPropertyEditor(propertyDescriptor: ActivityPropertyDescriptor, activity: ActivityModel){
-    const key = `${activity.activityId}:${propertyDescriptor.name}`;
-    const fieldId = propertyDescriptor.name;
-    const fieldLabel = propertyDescriptor.label || propertyDescriptor.name;
-    const fieldHint = propertyDescriptor.hint;
-
-    return (
-      <div key={key} class="sm:col-span-6">
-        <label htmlFor={fieldId} class="block text-sm font-medium text-gray-700">
-          {fieldLabel}
-        </label>
-        <div class="mt-1">
-          <input type="text" id={fieldId} class="focus:ring-blue-500 focus:border-blue-500 block w-full min-w-0 rounded-md sm:text-sm border-gray-300"/>
-        </div>
-        {fieldHint ? <p class="mt-2 text-sm text-gray-500">{fieldHint}</p> : undefined}
-      </div>
-    )
+  renderPropertyEditor(activity: ActivityModel, property: ActivityPropertyDescriptor) {
+    return propertyDisplayManager.display(activity, property);
   }
 }

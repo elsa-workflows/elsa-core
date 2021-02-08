@@ -1,4 +1,6 @@
-﻿export interface WorkflowModel {
+﻿import {Map} from '../utils/utils';
+
+export interface WorkflowModel {
   activities: Array<ActivityModel>
   connections: Array<ConnectionModel>
 }
@@ -10,6 +12,7 @@ export interface ActivityModel {
   displayName?: string
   description?: string
   outcomes: Array<string>
+  state: Map<any>;
 }
 
 export interface ConnectionModel {
