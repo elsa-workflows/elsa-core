@@ -5,6 +5,7 @@ using Elsa.Client.Models;
 using ElsaDashboard.Shared.Rpc;
 using Microsoft.Extensions.Logging;
 using ProtoBuf.Grpc;
+using RetryWorkflowRequest = ElsaDashboard.Shared.Rpc.RetryWorkflowRequest;
 
 namespace ElsaDashboard.Backend.Rpc
 {
@@ -30,7 +31,10 @@ namespace ElsaDashboard.Backend.Rpc
         }
 
         public Task<WorkflowInstance?> GetByIdAsync(GetWorkflowInstanceByIdRequest request, CallContext context = default) => _elsaClient.WorkflowInstances.GetByIdAsync(request.WorkflowInstanceId, context.CancellationToken);
-        public Task DeleteAsync(DeleteWorkflowInstanceRequest request, CallContext context = default) => _elsaClient.WorkflowInstances.DeleteAsync(request.WorkflowInstanceId, context.CancellationToken);
-        public Task RetryAsync(RetryWorkflowInstanceRequest request, CallContext context = default) => _elsaClient.WorkflowInstances.RetryAsync(request.WorkflowInstanceId, new RetryWorkflowRequest(request.RunImmediately), context.CancellationToken);
+        public Task DeleteAsync(DeleteWorkflowRequest request, CallContext context = default) => _elsaClient.WorkflowInstances.DeleteAsync(request.WorkflowInstanceId, context.CancellationToken);
+        public Task BulkDeleteAsync(BulkDeleteWorkflowInstancesRequest instancesRequest, CallContext context = default) => _elsaClient.WorkflowInstances.BulkDeleteAsync(instancesRequest, context.CancellationToken);
+
+        public Task RetryAsync(RetryWorkflowRequest request, CallContext context = default) => _elsaClient.WorkflowInstances.RetryAsync(request.WorkflowInstanceId, new Elsa.Client.Models.RetryWorkflowRequest(request.RunImmediately), context.CancellationToken);
+        public Task BulkRetryAsync(BulkRetryWorkflowInstancesRequest instancesRequest, CallContext context = default) => _elsaClient.WorkflowInstances.BulkRetryAsync(instancesRequest, context.CancellationToken);
     }
 }

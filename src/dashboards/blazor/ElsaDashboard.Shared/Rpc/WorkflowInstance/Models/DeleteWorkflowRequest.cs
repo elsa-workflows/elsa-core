@@ -1,16 +1,17 @@
-﻿using ProtoBuf;
+﻿using System;
+using ProtoBuf;
 
 // ReSharper disable once CheckNamespace
 namespace ElsaDashboard.Shared.Rpc
 {
     [ProtoContract]
-    public class DeleteWorkflowInstanceRequest
+    public class DeleteWorkflowRequest
     {
-        public DeleteWorkflowInstanceRequest()
+        public DeleteWorkflowRequest()
         {
         }
 
-        public DeleteWorkflowInstanceRequest(string workflowInstanceId)
+        public DeleteWorkflowRequest(string workflowInstanceId)
         {
             WorkflowInstanceId = workflowInstanceId;
         }
