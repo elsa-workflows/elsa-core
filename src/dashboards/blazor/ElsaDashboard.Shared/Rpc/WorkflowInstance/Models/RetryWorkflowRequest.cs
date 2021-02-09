@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using ProtoBuf;
+﻿using ProtoBuf;
 
 // ReSharper disable once CheckNamespace
 namespace ElsaDashboard.Shared.Rpc

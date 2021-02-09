@@ -10,7 +10,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
 {
     [ApiController]
     [ApiVersion("1")]
-    [Route("v{apiVersion:apiVersion}/bulk/workflow-instances")]
+    [Route("v{apiVersion:apiVersion}/workflow-instances/bulk")]
     [Produces("application/json")]
     public class BulkDelete : Controller
     {
@@ -22,7 +22,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
         }
 
         [HttpDelete]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [SwaggerOperation(
             Summary = "Deletes a workflow instance.",
@@ -30,10 +30,13 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
             OperationId = "WorkflowInstances.BulkDelete",
             Tags = new[] { "WorkflowInstances" })
         ]
-        public async Task<IActionResult> Handle(BulkDeleteWorkflowRequest request, CancellationToken cancellationToken = default)
+        public async Task<IActionResult> Handle(BulkDeleteWorkflowsRequest request, CancellationToken cancellationToken = default)
         {
-            await _workflowInstanceStore.DeleteManyAsync(new WorkflowInstanceIdsSpecification(request.WorkflowInstanceIds), cancellationToken);
-            return NoContent();
+            var count = await _workflowInstanceStore.DeleteManyAsync(new WorkflowInstanceIdsSpecification(request.WorkflowInstanceIds), cancellationToken);
+            return Ok(new
+            {
+                DeletedWorkflowCount = count
+            });
         }
     }
 }

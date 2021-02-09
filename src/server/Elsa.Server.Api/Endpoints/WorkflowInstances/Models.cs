@@ -30,7 +30,11 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
         public bool RunImmediately { get; set; } = RunImmediately;
     }
     
-    public record BulkDeleteWorkflowRequest(ICollection<string> WorkflowInstanceIds)
+    public record BulkRetryWorkflowsRequest(ICollection<string> WorkflowInstanceIds)
+    {
+    }
+    
+    public record BulkDeleteWorkflowsRequest(ICollection<string> WorkflowInstanceIds)
     {
     }
 }
