@@ -1,4 +1,5 @@
-﻿using Elsa.Models;
+﻿using System.Collections.Generic;
+using Elsa.Models;
 using NodaTime;
 
 namespace Elsa.Server.Api.Endpoints.WorkflowInstances
@@ -27,5 +28,13 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
         /// Set to true to run the revived workflow immediately, set to false to enqueue the revived workflow for execution.
         /// </summary>
         public bool RunImmediately { get; set; } = RunImmediately;
+    }
+    
+    public record BulkRetryWorkflowsRequest(ICollection<string> WorkflowInstanceIds)
+    {
+    }
+    
+    public record BulkDeleteWorkflowsRequest(ICollection<string> WorkflowInstanceIds)
+    {
     }
 }

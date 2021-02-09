@@ -16,9 +16,15 @@ namespace ElsaDashboard.Shared.Rpc
         Task<WorkflowInstance?> GetByIdAsync(GetWorkflowInstanceByIdRequest request, CallContext context = default);
 
         [Operation]
-        Task DeleteAsync(DeleteWorkflowInstanceRequest request, CallContext context = default);
+        Task DeleteAsync(DeleteWorkflowRequest request, CallContext context = default);
+        
+        [Operation]
+        Task BulkDeleteAsync(BulkDeleteWorkflowInstancesRequest request, CallContext context = default);
 
         [Operation]
-        Task RetryAsync(RetryWorkflowInstanceRequest request, CallContext context = default);
+        Task RetryAsync(RetryWorkflowRequest request, CallContext context = default);
+        
+        [Operation]
+        Task BulkRetryAsync(BulkRetryWorkflowInstancesRequest request, CallContext context = default);
     }
 }

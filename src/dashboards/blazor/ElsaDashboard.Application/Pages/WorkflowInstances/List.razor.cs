@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Elsa.Client.Models;
@@ -28,11 +27,12 @@ namespace ElsaDashboard.Application.Pages.WorkflowInstances
         [Inject] private IWorkflowRegistryService WorkflowRegistryService { get; set; } = default!;
         [Inject] private IConfirmDialogService ConfirmDialogService { get; set; } = default!;
         private PagedList<WorkflowInstanceSummary> WorkflowInstances { get; set; } = new();
+        private bool SelectAllCheck { get; set; }
         private IDictionary<(string, int), WorkflowBlueprintSummary> WorkflowBlueprints { get; set; } = new Dictionary<(string, int), WorkflowBlueprintSummary>();
         private IEnumerable<WorkflowBlueprintSummary> LatestWorkflowBlueprints => GetLatestVersions(WorkflowBlueprints.Values);
+        private HashSet<string> SelectedWorkflowInstanceIds { get; } = new();
         private SearchModel SearchModel { get; set; } = new();
         private EditContext EditContext { get; set; } = default!;
-        private Stopwatch Stopwatch { get; set; } = new();
 
         private IEnumerable<ButtonDropdownItem> WorkflowFilterItems =>
             LatestWorkflowBlueprints.Select(x => new ButtonDropdownItem(x.DisplayName!, x.Id, BuildFilterUrl(x.Id, SelectedWorkflowStatus, SelectedOrderBy), x.Id == SelectedWorkflowId))
@@ -71,7 +71,7 @@ namespace ElsaDashboard.Application.Pages.WorkflowInstances
         {
             NavigationManager.LocationChanged += OnLocationChanged;
             EditContext = new EditContext(SearchModel);
-            
+
             var workflowBlueprints = await WorkflowRegistryService.ListAsync();
             WorkflowBlueprints = workflowBlueprints.Items.ToDictionary(x => (x.Id, x.Version));
         }
@@ -83,11 +83,8 @@ namespace ElsaDashboard.Application.Pages.WorkflowInstances
 
         private async Task LoadWorkflowInstancesAsync()
         {
-            Stopwatch.Restart();
             SetDefaults();
             WorkflowInstances = await WorkflowInstanceService.ListAsync(Page, PageSize, SelectedWorkflowId, SelectedWorkflowStatus, SelectedOrderBy, SearchModel.SearchTerm);
-            Stopwatch.Stop();
-            Console.WriteLine(Stopwatch.Elapsed.ToString());
         }
 
         private static string BuildFilterUrl(string? workflowId, WorkflowStatus? workflowStatus, OrderBy? orderBy)
@@ -106,10 +103,16 @@ namespace ElsaDashboard.Application.Pages.WorkflowInstances
 
             return QueryHelpers.AddQueryString("workflow-instances", query);
         }
-
-        private async Task OnDeleteWorkflowInstanceClick(WorkflowInstanceSummary workflowInstance)
+        
+        private void SetDefaults()
         {
-            var result = await ConfirmDialogService.Show("Delete Workflow Instance", "Are you sure you want to delete this workflow instance?", "Delete");
+            if (PageSize == 0)
+                PageSize = 15;
+        }
+
+        private async Task OnDeleteWorkflowClick(WorkflowInstanceSummary workflowInstance)
+        {
+            var result = await ConfirmDialogService.Show("Delete Workflow", "Are you sure you want to delete this workflow instance?", "Delete");
 
             if (result.Cancelled)
                 return;
@@ -118,14 +121,26 @@ namespace ElsaDashboard.Application.Pages.WorkflowInstances
             await LoadWorkflowInstancesAsync();
         }
         
-        private async Task OnRetryWorkflowInstanceClick(WorkflowInstanceSummary workflowInstance)
+        private async Task OnBulkDeleteWorkflowsClick()
         {
-            var result = await ConfirmDialogService.Show("Retry Workflow Instance", "Are you sure you want to retry this workflow instance?", "Retry");
+            var result = await ConfirmDialogService.Show("Bulk Delete Workflows", "Are you sure you want to delete ALL selected workflow instances?", "Delete");
 
             if (result.Cancelled)
                 return;
 
+            await WorkflowInstanceService.BulkDeleteAsync(SelectedWorkflowInstanceIds);
+            await LoadWorkflowInstancesAsync();
+        }
+
+        private async Task OnRetryWorkflowInstanceClick(WorkflowInstanceSummary workflowInstance)
+        {
             await WorkflowInstanceService.RetryAsync(workflowInstance.Id);
+            await LoadWorkflowInstancesAsync();
+        }
+
+        private async Task OnBulkRetryWorkflowsClick()
+        {
+            await WorkflowInstanceService.BulkRetryAsync(SelectedWorkflowInstanceIds);
             await LoadWorkflowInstancesAsync();
         }
 
@@ -136,11 +151,31 @@ namespace ElsaDashboard.Application.Pages.WorkflowInstances
         }
 
         private async Task OnSearchSubmit() => await LoadWorkflowInstancesAsync();
-
-        private void SetDefaults()
+        
+        private void OnCheckAllChange(ChangeEventArgs args)
         {
-            if (PageSize == 0)
-                PageSize = 15;
+            SelectAllCheck = (bool?)args.Value == true;
+
+            SelectedWorkflowInstanceIds.Clear();
+
+            if (SelectAllCheck)
+                foreach (var item in WorkflowInstances.Items)
+                    SelectedWorkflowInstanceIds.Add(item.Id);
+
+            StateHasChanged();
+        }
+
+        private void OnWorkflowInstanceCheckChange(ChangeEventArgs args, WorkflowInstanceSummary model)
+        {
+            var isChecked = (bool?)args.Value == true;
+
+            if (isChecked)
+                SelectedWorkflowInstanceIds.Add(model.Id);
+            else
+                SelectedWorkflowInstanceIds.Remove(model.Id);
+
+            SelectAllCheck = WorkflowInstances.Items.All(x => SelectedWorkflowInstanceIds.Contains(x.Id));
+            StateHasChanged();
         }
 
         private static string GetStatusColor(WorkflowStatus status) =>
