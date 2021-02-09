@@ -46,9 +46,8 @@ namespace Elsa.Consumers
 
             if (!await _distributedLockProvider.AcquireLockAsync(lockKey))
             {
-                // TODO: Reschedule message if it's not a redelivery.
-                // var currentContext = MessageContext.Current;
-                _logger.LogDebug("Failed to acquire lock on workflow instance {WorkflowInstanceId}", workflowInstanceId);
+                _logger.LogDebug("Failed to acquire lock on workflow instance {WorkflowInstanceId}. Re-queueing message", workflowInstanceId);
+                await _commandSender.SendAsync(message);
                 return;
             }
             
