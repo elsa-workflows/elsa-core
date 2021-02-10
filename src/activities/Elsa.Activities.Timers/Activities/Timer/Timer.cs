@@ -29,6 +29,13 @@ namespace Elsa.Activities.Timers
             get => GetState<Instant?>();
             set => SetState(value);
         }
+        
+        protected override bool OnCanExecute(ActivityExecutionContext context)
+        {
+            var now = _clock.GetCurrentInstant();
+            var executeAt = ExecuteAt;
+            return executeAt == null || executeAt <= now;
+        }
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
