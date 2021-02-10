@@ -33,6 +33,10 @@
         <ButtonDropdown Text="Bulk Actions" IconType="@typeof(BulkActionIcon)" Origin="@ButtonDropdownOrigin.TopLeft">
             <a href="#" x-on:click="open = false" @onclick="@OnBulkRetryWorkflowsClick" @onclick:preventDefault class="block px-4 py-2 text-sm hover:bg-gray-100 text-gray-700 hover:text-gray-900" role="menuitem">Retry</a>
             <a href="#" x-on:click="open = false" @onclick="@OnBulkDeleteWorkflowsClick" @onclick:preventDefault class="block px-4 py-2 text-sm hover:bg-gray-100 text-gray-700 hover:text-gray-900" role="menuitem">Delete</a>
+            @foreach (var menuItem in WorkflowInstanceListViewContext.BulkMenuItems)
+            {
+                @menuItem
+            }
         </ButtonDropdown>
     </div>
     <div class="flex-1">
@@ -49,18 +53,26 @@
         <h2 class="text-gray-500 text-xs font-medium uppercase tracking-wide">Workflow Instances</h2>
     </div>
     <ul class="mt-3 border-t border-gray-200 divide-y divide-gray-100">
-        @foreach(var workflowInstance in WorkflowInstances.Items)
-        <li>
-            <a href="#" class="flex items-center justify-between px-4 py-4 hover:bg-gray-50 sm:px-6">
-                <div class="flex items-center truncate space-x-3">
-                    <div class="w-2.5 h-2.5 flex-shrink-0 rounded-full bg-pink-600"></div>
-                    <p class="font-medium truncate text-sm leading-6">Document Approval</p>
-                </div>
-                <svg class="ml-4 h-5 w-5 text-gray-400 group-hover:text-gray-500 group-focus:text-gray-600 transition ease-in-out duration-150" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
-                </svg>
-            </a>
-        </li>
+        @foreach (var workflowInstance in WorkflowInstances.Items)
+        {
+            var workflowKey = (workflowInstance.DefinitionId, workflowInstance.Version);
+            var workflowBlueprint = WorkflowBlueprints.ContainsKey(workflowKey) ? WorkflowBlueprints[workflowKey] : new WorkflowBlueprintSummary { DisplayName = "(Blueprint Not Found)" };
+            var displayName = workflowBlueprint.DisplayName!;
+            var statusColor = GetStatusColor(workflowInstance.WorkflowStatus);
+            var viewUrl = $"workflow-instances/{workflowInstance.Id}/viewer";
+            
+            <li>
+                <a href="@viewUrl" class="flex items-center justify-between px-4 py-4 hover:bg-gray-50 sm:px-6">
+                    <div class="flex items-center truncate space-x-3">
+                        <div class="w-2.5 h-2.5 flex-shrink-0 rounded-full bg-@statusColor-600"></div>
+                        <p class="font-medium truncate text-sm leading-6">@displayName</p>
+                    </div>
+                    <svg class="ml-4 h-5 w-5 text-gray-400 group-hover:text-gray-500 group-focus:text-gray-600 transition ease-in-out duration-150" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+                    </svg>
+                </a>
+            </li>
+        }
     </ul>
 </div>
 <!-- Workflow instances table (small breakpoint and up) -->
