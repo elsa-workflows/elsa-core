@@ -7,7 +7,9 @@ using ElsaDashboard.Application.Attributes;
 using ElsaDashboard.Application.Extensions;
 using ElsaDashboard.Application.Services;
 using ElsaDashboard.Application.Shared;
+using ElsaDashboard.Events;
 using ElsaDashboard.Shared.Rpc;
+using MediatR;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Routing;
@@ -17,6 +19,11 @@ namespace ElsaDashboard.Application.Pages.WorkflowInstances
 {
     partial class List : IDisposable
     {
+        public List()
+        {
+            WorkflowInstanceListViewContext = new DisplayingWorkflowInstanceListView(GetSelectedWorkflowInstanceIds, ReloadAsync);
+        }
+        
         [QueryStringParameter] public int Page { get; set; } = 0;
         [QueryStringParameter] public int PageSize { get; set; } = 15;
         [QueryStringParameter("workflow")] public string? SelectedWorkflowId { get; set; }
@@ -26,7 +33,10 @@ namespace ElsaDashboard.Application.Pages.WorkflowInstances
         [Inject] private IWorkflowInstanceService WorkflowInstanceService { get; set; } = default!;
         [Inject] private IWorkflowRegistryService WorkflowRegistryService { get; set; } = default!;
         [Inject] private IConfirmDialogService ConfirmDialogService { get; set; } = default!;
+        [Inject] private IMediator Mediator { get; set; } = default!;
         private PagedList<WorkflowInstanceSummary> WorkflowInstances { get; set; } = new();
+        private IDictionary<WorkflowInstanceSummary, DisplayingWorkflowInstanceRecord> WorkflowInstanceDisplayContexts { get; set; } = new Dictionary<WorkflowInstanceSummary, DisplayingWorkflowInstanceRecord>();
+        private DisplayingWorkflowInstanceListView WorkflowInstanceListViewContext { get; set; }
         private bool SelectAllCheck { get; set; }
         private IDictionary<(string, int), WorkflowBlueprintSummary> WorkflowBlueprints { get; set; } = new Dictionary<(string, int), WorkflowBlueprintSummary>();
         private IEnumerable<WorkflowBlueprintSummary> LatestWorkflowBlueprints => GetLatestVersions(WorkflowBlueprints.Values);
@@ -64,6 +74,8 @@ namespace ElsaDashboard.Application.Pages.WorkflowInstances
         public override async Task SetParametersAsync(ParameterView parameters)
         {
             this.SetParametersFromQueryString(NavigationManager);
+            WorkflowInstanceListViewContext = new DisplayingWorkflowInstanceListView(GetSelectedWorkflowInstanceIds, ReloadAsync);
+            await Mediator.Publish(WorkflowInstanceListViewContext);
             await base.SetParametersAsync(parameters);
         }
 
@@ -85,7 +97,19 @@ namespace ElsaDashboard.Application.Pages.WorkflowInstances
         {
             SetDefaults();
             WorkflowInstances = await WorkflowInstanceService.ListAsync(Page, PageSize, SelectedWorkflowId, SelectedWorkflowStatus, SelectedOrderBy, SearchModel.SearchTerm);
+            WorkflowInstanceDisplayContexts = WorkflowInstances.Items.Select(x => new DisplayingWorkflowInstanceRecord(x, ReloadAsync)).ToDictionary(x => x.WorkflowInstance);
+
+            foreach (var notification in WorkflowInstanceDisplayContexts) 
+                await Mediator.Publish(notification.Value);
         }
+
+        private async Task ReloadAsync()
+        {
+            await LoadWorkflowInstancesAsync();
+            await InvokeAsync(StateHasChanged);
+        }
+
+        private IEnumerable<string> GetSelectedWorkflowInstanceIds() => SelectedWorkflowInstanceIds;
 
         private static string BuildFilterUrl(string? workflowId, WorkflowStatus? workflowStatus, OrderBy? orderBy)
         {

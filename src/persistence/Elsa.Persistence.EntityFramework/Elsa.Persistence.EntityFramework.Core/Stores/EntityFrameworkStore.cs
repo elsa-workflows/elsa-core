@@ -89,13 +89,14 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
             {
                 var dbSet = dbContext.Set<T>();
                 dbSet.Attach(entity);
+                dbContext.Entry(entity).State = EntityState.Modified;
                 OnSaving(dbContext, entity);
             }, cancellationToken);
         }
 
-        public async Task DeleteAsync(T entity, CancellationToken cancellationToken = default) => await DoWorkOnSet(async dbSet => await dbSet.DeleteByKeyAsync(cancellationToken, entity.Id), cancellationToken);
+        public virtual async Task DeleteAsync(T entity, CancellationToken cancellationToken = default) => await DoWorkOnSet(async dbSet => await dbSet.DeleteByKeyAsync(cancellationToken, entity.Id), cancellationToken);
 
-        public async Task<int> DeleteManyAsync(ISpecification<T> specification, CancellationToken cancellationToken = default)
+        public virtual async Task<int> DeleteManyAsync(ISpecification<T> specification, CancellationToken cancellationToken = default)
         {
             var filter = MapSpecification(specification);
             return await DoWorkOnSet(async dbSet => await dbSet.Where(filter).DeleteFromQueryAsync(cancellationToken), cancellationToken);
