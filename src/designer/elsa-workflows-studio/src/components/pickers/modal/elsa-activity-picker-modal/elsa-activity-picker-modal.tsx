@@ -16,7 +16,7 @@ export class ElsaActivityPickerModal {
   dialog: HTMLElsaModalDialogElement;
 
   componentDidLoad() {
-    eventBus.on(EventTypes.ShowActivityPicker, async () => await this.dialog.show());
+    eventBus.on(EventTypes.ShowActivityPicker, async () => await this.dialog.show(true));
   }
 
   selectTrait(trait: number) {
@@ -33,12 +33,12 @@ export class ElsaActivityPickerModal {
   }
 
   async onCancelClick() {
-    await this.dialog.hide();
+    await this.dialog.hide(true);
   }
 
   async onActivityClick(e: Event, activityDescriptor: ActivityDescriptor) {
     eventBus.emit(EventTypes.ActivityPicked, this, activityDescriptor);
-    await this.dialog.hide();
+    await this.dialog.hide(false);
   }
 
   render() {

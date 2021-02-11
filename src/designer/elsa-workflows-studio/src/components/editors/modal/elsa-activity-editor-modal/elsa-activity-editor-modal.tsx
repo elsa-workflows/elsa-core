@@ -17,10 +17,10 @@ export class ElsaActivityPickerModal {
   dialog: HTMLElsaModalDialogElement;
 
   componentDidLoad() {
-    eventBus.on(EventTypes.ShowActivityEditor, async (activity: ActivityModel) => {
+    eventBus.on(EventTypes.ShowActivityEditor, async (activity: ActivityModel, animate: boolean) => {
       this.activityModel = {...activity, properties: activity.properties || {}};
       this.activityDescriptor = state.activityDescriptors.find(x => x.type == activity.type);
-      await this.dialog.show();
+      await this.dialog.show(animate);
     });
   }
 
@@ -34,7 +34,7 @@ export class ElsaActivityPickerModal {
   }
 
   async onCancelClick() {
-    await this.dialog.hide();
+    await this.dialog.hide(true);
   }
 
   async onSubmit(e: Event) {
@@ -43,7 +43,7 @@ export class ElsaActivityPickerModal {
     const formData = new FormData(form);
     this.updateActivity(formData);
     eventBus.emit(EventTypes.UpdateActivity, this, this.activityModel);
-    await this.dialog.hide();
+    await this.dialog.hide(true);
   }
 
   render() {

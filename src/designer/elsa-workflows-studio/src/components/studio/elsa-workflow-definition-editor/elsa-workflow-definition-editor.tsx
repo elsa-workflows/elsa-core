@@ -33,7 +33,14 @@ export class ElsaWorkflowDefinitionEditor {
     const client = createElsaClient(this.serverUrl);
 
     if(workflowDefinitionId && workflowDefinitionId.length > 0)
-      workflowDefinition = await client.workflowDefinitionsApi.getByDefinitionAndVersion(workflowDefinitionId, {isLatest: true});
+    {
+      try {
+        workflowDefinition = await client.workflowDefinitionsApi.getByDefinitionAndVersion(workflowDefinitionId, {isLatest: true});
+      }
+      catch {
+       console.warn(`The specified workflow definition does not exist. Creating a new one.`)
+      }
+    }
 
     this.workflowDefinition = workflowDefinition;
     this.workflowModelInternal = this.mapWorkflowModel(workflowDefinition);

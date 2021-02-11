@@ -21,8 +21,8 @@ export namespace Components {
         "icon": string;
     }
     interface ElsaModalDialog {
-        "hide": () => Promise<void>;
-        "show": () => Promise<void>;
+        "hide": (animate: boolean) => Promise<void>;
+        "show": (animate: boolean) => Promise<void>;
     }
     interface ElsaStudio {
         "serverUrl": string;

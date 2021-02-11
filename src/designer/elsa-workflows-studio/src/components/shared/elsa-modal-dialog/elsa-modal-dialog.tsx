@@ -18,22 +18,32 @@ export class ElsaModalDialog {
   }
 
   @Method()
-  async show() {
-    this.showInternal();
+  async show(animate: boolean) {
+    this.showInternal(animate);
   }
 
   @Method()
-  async hide() {
-    this.hideInternal();
+  async hide(animate: boolean) {
+    this.hideInternal(animate);
   }
 
-  showInternal() {
+  showInternal(animate: boolean) {
     this.isVisible = true;
+
+    if (!animate) {
+      this.overlay.style.opacity = "1";
+      this.modal.style.opacity = "1";
+    }
+
     enter(this.overlay);
     enter(this.modal);
   }
 
-  hideInternal() {
+  hideInternal(animate: boolean) {
+    if (!animate) {
+      this.isVisible = false
+    }
+
     leave(this.overlay);
     leave(this.modal).then(() => this.isVisible = false);
   }
@@ -44,7 +54,7 @@ export class ElsaModalDialog {
         <div class="fixed z-10 inset-0 overflow-y-auto">
           <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             <div ref={el => this.overlay = el}
-                 onClick={() => this.hide()}
+                 onClick={() => this.hide(true)}
                  data-transition-enter="ease-out duration-300" data-transition-enter-start="opacity-0"
                  data-transition-enter-end="opacity-100" data-transition-leave="ease-in duration-200"
                  data-transition-leave-start="opacity-100" data-transition-leave-end="opacity-0"

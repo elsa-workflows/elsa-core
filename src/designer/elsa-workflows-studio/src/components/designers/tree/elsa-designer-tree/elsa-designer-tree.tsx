@@ -28,7 +28,7 @@ export class ElsaWorkflowDesigner {
 
   @Listen('edit-activity')
   handleEditActivity(e: CustomEvent<ActivityModel>) {
-    this.showActivityEditor(e.detail);
+    this.showActivityEditor(e.detail, true);
   }
 
   @Listen('remove-activity')
@@ -41,7 +41,10 @@ export class ElsaWorkflowDesigner {
 
     eventBus.on(EventTypes.ActivityPicked, async args => {
       const activityDescriptor = (args as ActivityDescriptor);
-      this.addActivity(activityDescriptor, this.parentActivityId, null, this.parentActivityOutcome);
+      const activityModel = this.addActivity(activityDescriptor, this.parentActivityId, null, this.parentActivityOutcome);
+
+      if(activityDescriptor.properties.length > 0)
+        this.showActivityEditor(activityModel, false);
     });
 
     eventBus.on(EventTypes.UpdateActivity, async args => {
@@ -67,15 +70,15 @@ export class ElsaWorkflowDesigner {
     eventBus.emit(EventTypes.ShowActivityPicker);
   }
 
-  showActivityEditor(activity: ActivityModel) {
-    eventBus.emit(EventTypes.ShowActivityEditor, this, activity);
+  showActivityEditor(activity: ActivityModel, animate: boolean) {
+    eventBus.emit(EventTypes.ShowActivityEditor, this, activity, animate);
   }
 
   getRootActivities(): Array<ActivityModel> {
     return getChildActivities(this.workflowModel, null);
   }
 
-  addActivity(activityDescriptor: ActivityDescriptor, sourceActivityId?: string, targetActivityId?: string, outcome?: string) {
+  addActivity(activityDescriptor: ActivityDescriptor, sourceActivityId?: string, targetActivityId?: string, outcome?: string): ActivityModel {
 
     outcome = outcome || 'Done';
 
@@ -135,6 +138,7 @@ export class ElsaWorkflowDesigner {
     }
 
     this.updateWorkflowModel(workflowModel);
+    return activity;
   }
 
   removeActivity(activityId: string) {
