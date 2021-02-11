@@ -45,7 +45,7 @@ namespace Elsa.Activities.UserTask.Activities
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
         {
             var userAction = GetUserAction(context);
-            return Done(userAction);
+            return Outcome(userAction, userAction);
         }
 
         private string GetUserAction(ActivityExecutionContext context) => (string)context.Input!;
