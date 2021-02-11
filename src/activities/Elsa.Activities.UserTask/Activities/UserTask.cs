@@ -22,10 +22,7 @@ namespace Elsa.Activities.UserTask.Activities
     {
         private readonly IContentSerializer _serializer;
 
-        [ActivityProperty(
-            Type = ActivityPropertyTypes.List,
-            Hint = "Provide a list of available actions"
-        )]
+        [ActivityProperty(Type = ActivityPropertyTypes.List, Hint = "Provide a list of available actions")]
         public ICollection<string> Actions { get; set; } = new List<string>();
 
         public UserTask(IContentSerializer serializer)

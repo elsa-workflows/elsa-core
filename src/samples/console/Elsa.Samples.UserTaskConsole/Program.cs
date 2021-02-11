@@ -40,14 +40,11 @@ namespace Elsa.Samples.UserTaskConsole
                 "Needs Work"
             };
 
-            //do
-            //{
             // Workflow is now halted on the user task activity. Ask user for input:
             Console.WriteLine($"What action will you take? Choose one of: {string.Join(", ", availableActions)}");
             var userAction = Console.ReadLine();
             var currentActivityId = workflowInstance.BlockingActivities.Select(i => i.ActivityId).First();
             await workflowTriggerInterruptor.InterruptActivityAsync(workflowInstance, currentActivityId, userAction);
-            //} while (executionContext.Workflow.IsExecuting());
         }
     }
 }
