@@ -2,7 +2,7 @@ import {Component, Host, h, Prop, State, Event, EventEmitter} from '@stencil/cor
 import {enter, leave, toggle} from 'el-transition'
 import {registerClickOutside, ClickOutside} from "stencil-click-outside";
 import {ActivityIcon} from '../../../icons/activity-icon';
-import {ActivityModel} from "../../../../models/domain";
+import {ActivityModel} from "../../../../models";
 
 @Component({
   tag: 'elsa-designer-tree-activity',

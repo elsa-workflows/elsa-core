@@ -31,7 +31,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             Description =
                 "Creates a new workflow definition or updates an existing one. If the workflow already exists, a new draft is created and updated with the specified values. Use the Publish field to automatically publish the workflow.",
             OperationId = "WorkflowDefinitions.Post",
-            Tags = new[] {"WorkflowDefinitions"})
+            Tags = new[] { "WorkflowDefinitions" })
         ]
         public async Task<ActionResult<WorkflowDefinition>> Handle(SaveRequest request, ApiVersion apiVersion, CancellationToken cancellationToken)
         {
@@ -63,7 +63,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             else
                 workflowDefinition = await _workflowPublisher.SaveDraftAsync(workflowDefinition, cancellationToken);
 
-            return CreatedAtAction("Handle", "GetByVersionId", new {versionId = workflowDefinition.DefinitionVersionId, apiVersion = apiVersion.ToString()}, workflowDefinition);
+            return CreatedAtAction("Handle", "GetByVersionId", new { versionId = workflowDefinition.DefinitionVersionId, apiVersion = apiVersion.ToString() }, workflowDefinition);
         }
     }
 }

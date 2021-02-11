@@ -32,6 +32,6 @@
         /// </summary>
         public bool SaveWorkflowContext { get; set; }
         
-        public override string ToString() => $"{ActivityType.Type} - {Id}";
+        public override string ToString() => $"{ActivityType.TypeName} - {Id}";
     }
 }

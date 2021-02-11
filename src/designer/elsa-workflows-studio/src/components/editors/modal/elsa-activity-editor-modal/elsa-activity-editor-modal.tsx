@@ -1,8 +1,7 @@
 import {Component, Host, h, State} from '@stencil/core';
 import '../../../../utils/utils';
 import {eventBus} from '../../../../utils/event-bus';
-import {EventTypes} from "../../../../models/events";
-import {ActivityDescriptor, ActivityModel, ActivityPropertyDescriptor} from "../../../../models/domain";
+import {ActivityDescriptor, ActivityModel, ActivityPropertyDescriptor, EventTypes} from "../../../../models";
 import state from '../../../../utils/store';
 import {propertyDisplayManager} from '../../../../services/property-display-manager';
 
@@ -14,12 +13,12 @@ import {propertyDisplayManager} from '../../../../services/property-display-mana
 export class ElsaActivityPickerModal {
 
   @State() activityModel: ActivityModel;
-  activityDescriptor: ActivityDescriptor;
+  @State() activityDescriptor: ActivityDescriptor;
   dialog: HTMLElsaModalDialogElement;
 
   componentDidLoad() {
     eventBus.on(EventTypes.ShowActivityEditor, async (activity: ActivityModel) => {
-      this.activityModel = {...activity, state: activity.state || {}};
+      this.activityModel = {...activity, properties: activity.properties || {}};
       this.activityDescriptor = state.activityDescriptors.find(x => x.type == activity.type);
       await this.dialog.show();
     });
@@ -48,7 +47,7 @@ export class ElsaActivityPickerModal {
   }
 
   render() {
-    const activityModel: ActivityModel = this.activityModel || {type: '', activityId: '', outcomes: [], state: {}};
+    const activityModel: ActivityModel = this.activityModel || {type: '', activityId: '', outcomes: [], properties: {}};
     const activityDescriptor = this.activityDescriptor || {displayName: '', type: '', outcomes: [], category: '', traits: 0, browsable: false, properties: [], description: ''};
     const propertyDescriptors: Array<ActivityPropertyDescriptor> = activityDescriptor.properties;
 

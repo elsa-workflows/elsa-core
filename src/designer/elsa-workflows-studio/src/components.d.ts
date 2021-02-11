@@ -5,7 +5,7 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
-import { ActivityDescriptor, ActivityModel, WorkflowModel } from "./models/domain";
+import { ActivityDescriptor, ActivityModel, WorkflowModel } from "./models";
 export namespace Components {
     interface ElsaActivityEditorModal {
     }
@@ -25,8 +25,13 @@ export namespace Components {
         "show": () => Promise<void>;
     }
     interface ElsaStudio {
+        "serverUrl": string;
+        "workflowDefinitionId": string;
+    }
+    interface ElsaWorkflowDefinitionEditor {
         "activityDescriptors": Array<ActivityDescriptor>;
-        "workflowModel": WorkflowModel;
+        "serverUrl": string;
+        "workflowDefinitionId": string;
     }
 }
 declare global {
@@ -72,6 +77,12 @@ declare global {
         prototype: HTMLElsaStudioElement;
         new (): HTMLElsaStudioElement;
     };
+    interface HTMLElsaWorkflowDefinitionEditorElement extends Components.ElsaWorkflowDefinitionEditor, HTMLStencilElement {
+    }
+    var HTMLElsaWorkflowDefinitionEditorElement: {
+        prototype: HTMLElsaWorkflowDefinitionEditorElement;
+        new (): HTMLElsaWorkflowDefinitionEditorElement;
+    };
     interface HTMLElementTagNameMap {
         "elsa-activity-editor-modal": HTMLElsaActivityEditorModalElement;
         "elsa-activity-picker-flyout": HTMLElsaActivityPickerFlyoutElement;
@@ -80,6 +91,7 @@ declare global {
         "elsa-designer-tree-activity": HTMLElsaDesignerTreeActivityElement;
         "elsa-modal-dialog": HTMLElsaModalDialogElement;
         "elsa-studio": HTMLElsaStudioElement;
+        "elsa-workflow-definition-editor": HTMLElsaWorkflowDefinitionEditorElement;
     }
 }
 declare namespace LocalJSX {
@@ -91,6 +103,7 @@ declare namespace LocalJSX {
     }
     interface ElsaDesignerTree {
         "model"?: WorkflowModel;
+        "onWorkflow-changed"?: (event: CustomEvent<WorkflowModel>) => void;
     }
     interface ElsaDesignerTreeActivity {
         "activityModel"?: ActivityModel;
@@ -101,8 +114,13 @@ declare namespace LocalJSX {
     interface ElsaModalDialog {
     }
     interface ElsaStudio {
+        "serverUrl"?: string;
+        "workflowDefinitionId"?: string;
+    }
+    interface ElsaWorkflowDefinitionEditor {
         "activityDescriptors"?: Array<ActivityDescriptor>;
-        "workflowModel"?: WorkflowModel;
+        "serverUrl"?: string;
+        "workflowDefinitionId"?: string;
     }
     interface IntrinsicElements {
         "elsa-activity-editor-modal": ElsaActivityEditorModal;
@@ -112,6 +130,7 @@ declare namespace LocalJSX {
         "elsa-designer-tree-activity": ElsaDesignerTreeActivity;
         "elsa-modal-dialog": ElsaModalDialog;
         "elsa-studio": ElsaStudio;
+        "elsa-workflow-definition-editor": ElsaWorkflowDefinitionEditor;
     }
 }
 export { LocalJSX as JSX };
@@ -125,6 +144,7 @@ declare module "@stencil/core" {
             "elsa-designer-tree-activity": LocalJSX.ElsaDesignerTreeActivity & JSXBase.HTMLAttributes<HTMLElsaDesignerTreeActivityElement>;
             "elsa-modal-dialog": LocalJSX.ElsaModalDialog & JSXBase.HTMLAttributes<HTMLElsaModalDialogElement>;
             "elsa-studio": LocalJSX.ElsaStudio & JSXBase.HTMLAttributes<HTMLElsaStudioElement>;
+            "elsa-workflow-definition-editor": LocalJSX.ElsaWorkflowDefinitionEditor & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionEditorElement>;
         }
     }
 }

@@ -2,7 +2,8 @@
   ShowActivityPicker: 'show-activity-picker',
   ActivityPicked: 'activity-picked',
   ShowActivityEditor: 'show-activity-editor',
-  UpdateActivity: 'update-activity'
+  UpdateActivity: 'update-activity',
+  WorkflowModelChanged: 'workflow-model-changed'
 }
 
 export interface AddActivityEventArgs {

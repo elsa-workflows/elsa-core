@@ -34,7 +34,7 @@ namespace Elsa.Server.Api.Swagger.Examples
                         DisplayName = "Write \"Hello\"",
                         Properties = new ActivityDefinitionProperties
                         {
-                            ["Text"] = new ActivityDefinitionPropertyValue("Hello", LiteralHandler.SyntaxName, typeof(string))
+                            ["Text"] = new ActivityDefinitionPropertyValue("Hello", LiteralHandler.SyntaxName)
                         }
                     },
                     new ActivityDefinition
@@ -46,7 +46,7 @@ namespace Elsa.Server.Api.Swagger.Examples
                         DisplayName = "Write \"World!\"",
                         Properties = new ActivityDefinitionProperties
                         {
-                            ["Text"] = new ActivityDefinitionPropertyValue("World!", LiteralHandler.SyntaxName, typeof(string))
+                            ["Text"] = new ActivityDefinitionPropertyValue("World!", LiteralHandler.SyntaxName)
                         }
                     }
                 },

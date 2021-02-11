@@ -67,7 +67,7 @@ namespace Elsa.Samples.DeclarativeCompositeActivitiesConsole
 
             // Materialize workflow.
             var materializer = services.GetRequiredService<IWorkflowBlueprintMaterializer>();
-            var workflowBlueprint = materializer.CreateWorkflowBlueprint(deserializedWorkflowDefinition);
+            var workflowBlueprint = await materializer.CreateWorkflowBlueprintAsync(deserializedWorkflowDefinition);
 
             // Execute workflow.
             var workflowRunner = services.GetRequiredService<IWorkflowRunner>();
@@ -75,7 +75,7 @@ namespace Elsa.Samples.DeclarativeCompositeActivitiesConsole
         }
 
         private static ActivityDefinition WriteLine(string id, string text) =>
-            new ActivityDefinition
+            new()
             {
                 ActivityId = id,
                 Type = nameof(Activities.Console.WriteLine),
@@ -84,8 +84,7 @@ namespace Elsa.Samples.DeclarativeCompositeActivitiesConsole
                     [nameof(Activities.Console.WriteLine.Text)] = new ActivityDefinitionPropertyValue
                     {
                         Syntax = LiquidExpressionHandler.SyntaxName,
-                        Expression = text,
-                        Type = typeof(string)
+                        Expression = text
                     }
                 }
             };

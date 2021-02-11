@@ -51,8 +51,7 @@ namespace Elsa.Samples.Serialization
                             [nameof(WriteLine.Text)] = new()
                             {
                                 Syntax = LiquidExpressionHandler.SyntaxName,
-                                Expression = "Hello World!",
-                                Type = typeof(string)
+                                Expression = "Hello World!"
                             }
                         }
                     },
@@ -70,7 +69,7 @@ namespace Elsa.Samples.Serialization
 
             // Materialize workflow.
             var materializer = services.GetRequiredService<IWorkflowBlueprintMaterializer>();
-            var workflowBlueprint = materializer.CreateWorkflowBlueprint(deserializedWorkflowDefinition);
+            var workflowBlueprint = await materializer.CreateWorkflowBlueprintAsync(deserializedWorkflowDefinition);
 
             // Execute workflow.
             var workflowRunner = services.GetRequiredService<IWorkflowRunner>();

@@ -31,7 +31,7 @@ namespace Elsa.WorkflowProviders
             {
                 var json = await _storage.ReadTextAsync(blob.FullPath, Encoding.UTF8, cancellationToken);
                 var model = _contentSerializer.Deserialize<WorkflowDefinition>(json);
-                var blueprint = _workflowBlueprintMaterializer.CreateWorkflowBlueprint(model);
+                var blueprint = await _workflowBlueprintMaterializer.CreateWorkflowBlueprintAsync(model, cancellationToken);
                 yield return blueprint;
             }
         }

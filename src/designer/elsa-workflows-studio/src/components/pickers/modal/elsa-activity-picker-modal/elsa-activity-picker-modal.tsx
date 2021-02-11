@@ -1,9 +1,8 @@
 import {Component, Host, h, Prop, State, Event, EventEmitter} from '@stencil/core';
 import '../../../../utils/utils';
 import {eventBus} from '../../../../utils/event-bus';
-import {EventTypes} from "../../../../models/events";
+import {ActivityDescriptor, EventTypes} from "../../../../models";
 import state from '../../../../utils/store';
-import {ActivityDescriptor} from "../../../../models/domain";
 
 @Component({
   tag: 'elsa-activity-picker-modal',

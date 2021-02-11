@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Elsa.ActivityResults;
+using Elsa.Metadata;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -12,7 +13,12 @@ namespace Elsa.ActivityProviders
         /// <summary>
         /// The type name of this activity.
         /// </summary>
-        public string Type { get; set; } = default!;
+        public string TypeName { get; set; } = default!;
+
+        /// <summary>
+        /// The .NET Runtime type of this activity.
+        /// </summary>
+        public Type Type { get; set; } = default!;
 
         /// <summary>
         /// Display name of this activity.
@@ -45,5 +51,6 @@ namespace Elsa.ActivityProviders
         public Func<ActivityExecutionContext, ValueTask<IActivityExecutionResult>> ResumeAsync { get; set; } = _ => new ValueTask<IActivityExecutionResult>(new DoneResult());
 
         public Func<ActivityExecutionContext, ValueTask<IActivity>> ActivateAsync { get; set; } = _ => new ValueTask<IActivity>();
+        public Func<ActivityDescriptor> Describe { get; set; } = () => new ActivityDescriptor();
     }
 }

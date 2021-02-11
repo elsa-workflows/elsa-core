@@ -1,5 +1,6 @@
 ﻿import {jsPlumb} from 'jsplumb';
 
+let count = 0;
 let jsPlumbInstance = null;
 
 function onConnectionCreated(e) {
@@ -23,23 +24,29 @@ function onConnectionClick(connection) {
 export function destroy() {
   if (jsPlumbInstance != null) {
     console.debug("Destroying JsPlumb instance");
-    jsPlumbInstance.reset();
+
     jsPlumbInstance.unbind("connection", onConnectionCreated);
+    jsPlumbInstance.unmakeEverySource(); // Ensures all mouse event handlers are removed.
+    jsPlumbInstance.unmakeEveryTarget();
+    jsPlumbInstance.reset();
+    jsPlumbInstance = null;
   }
 }
 
-export function updateConnections(canvas, connections, sourceEndpoints, targets) {
+export function updateConnections(container, connections, sourceEndpoints, targets) {
 
   destroy();
 
   console.debug("Creating JsPlumb instance");
   jsPlumbInstance = (jsPlumb as any).getInstance({
 
-    Container: canvas,
+    Container: container,
     Connector: ['Flowchart', {cornerRadius: 5}],
     Anchors: ['Bottom', 'Top', 'Left', 'Right'], // The typescript definition does not have an `Anchors` field, but the jsPlumb library does.
     Endpoint: ['Dot', {radius: 5}]
   });
+
+  (jsPlumbInstance as any).MyCount = ++count;
 
   jsPlumbInstance.ready(() => {
 

@@ -1,25 +1,94 @@
 ﻿import {Map} from '../utils/utils';
 
-export interface WorkflowModel {
-  activities: Array<ActivityModel>
-  connections: Array<ConnectionModel>
+export interface WorkflowDefinition {
+  id?: string,
+  definitionVersionId?: string,
+  tenantId?: string,
+  name?: string,
+  displayName?: string,
+  description?: string,
+  version: number,
+  variables?: Variables,
+  customAttributes?: Variables,
+  contextOptions?: WorkflowContextOptions,
+  isSingleton?: boolean,
+  persistenceBehavior?: WorkflowPersistenceBehavior,
+  deleteCompletedInstances?: boolean,
+  isEnabled?: boolean,
+  isPublished?: boolean,
+  isLatest?: boolean,
+  activities: Array<ActivityDefinition>,
+  connections: Array<ConnectionDefinition>
 }
 
-export interface ActivityModel {
-  activityId: string
-  type: string
-  name?: string
-  displayName?: string
-  description?: string
-  outcomes: Array<string>
-  state: Map<any>;
+export interface ActivityDefinition {
+  activityId: string,
+  type: string,
+  name: string,
+  displayName: string,
+  description: string,
+  persistWorkflow: boolean
+  loadWorkflowContext: boolean
+  saveWorkflowContext: boolean
+  persistOutput: boolean
+  properties: ActivityDefinitionProperties
 }
 
-export interface ConnectionModel {
-  sourceId: string,
-  targetId: string,
-  outcome: string
+export interface ConnectionDefinition {
+  sourceActivityId?: string
+  targetActivityId?: string,
+  outcome?: string
 }
+
+export interface ActivityDefinitionPropertyValue {
+  syntax: string,
+  expression: string
+}
+
+export type ActivityDefinitionProperties = Map<ActivityDefinitionPropertyValue>;
+
+export interface Variables {
+  data: Map<object>
+}
+
+export interface WorkflowContextOptions {
+  contextType: string,
+  contextFidelity: WorkflowContextFidelity
+}
+
+export enum WorkflowContextFidelity {
+  Burst,
+  Activity
+}
+
+export enum WorkflowPersistenceBehavior {
+  Suspended,
+  WorkflowPAssCompleted,
+  ActivityExecuted
+}
+
+export interface VersionOptions {
+  isLatest?: boolean,
+  isLatestOrPublished?: boolean,
+  isPublished?: boolean,
+  isDraft?: boolean,
+  allVersions?: boolean,
+  version?: number
+}
+
+export const getVersionOptionsString = (versionOptions: VersionOptions) => {
+  return versionOptions.allVersions
+    ? "AllVersions"
+    : versionOptions.isDraft
+      ? "Draft"
+      : versionOptions.isLatest
+        ? "Latest"
+        : versionOptions.isPublished
+          ? "Published"
+          : versionOptions.isLatestOrPublished
+            ? "LatestOrPublished"
+            : versionOptions.version.toString();
+};
 
 export interface ActivityDescriptor {
   type: string,

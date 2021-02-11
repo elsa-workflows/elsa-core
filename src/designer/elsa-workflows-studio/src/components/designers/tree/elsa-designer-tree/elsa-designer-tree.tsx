@@ -1,10 +1,8 @@
 import {Component, Host, h, Prop, State, Event, EventEmitter, Listen, Watch} from '@stencil/core';
 import {addConnection, findActivity, getChildActivities, getInboundConnections, getOutboundConnections, removeActivity} from '../../../../utils/utils';
-import {updateConnections} from '../../../../utils/jsplumb-helper';
-import {ActivityDescriptor, ActivityModel, ConnectionModel, WorkflowModel} from "../../../../models/domain";
+import {destroy, updateConnections} from '../../../../utils/jsplumb-helper';
+import {ActivityDescriptor, ActivityModel, ConnectionModel, EventTypes, WorkflowModel} from "../../../../models";
 import {eventBus} from '../../../../utils/event-bus';
-import {ActivityPickedEventArgs, EventTypes} from "../../../../models/events";
-import state from '../../../../utils/store';
 import jsPlumb from "jsplumb";
 import uuid = jsPlumb.jsPlumbUtil.uuid;
 
@@ -17,6 +15,7 @@ import uuid = jsPlumb.jsPlumbUtil.uuid;
 export class ElsaWorkflowDesigner {
 
   @Prop() model: WorkflowModel = {activities: [], connections: []};
+  @Event({eventName: 'workflow-changed', bubbles: true, composed: true, cancelable: true}) workflowChanged: EventEmitter<WorkflowModel>
   @State() workflowModel: WorkflowModel
   canvasElement: HTMLElement;
   parentActivityId?: string;
@@ -51,6 +50,10 @@ export class ElsaWorkflowDesigner {
     });
   }
 
+  componentWillRender() {
+    destroy();
+  }
+
   componentDidRender() {
     const canvasElement = this.canvasElement;
     const connections = this.getJsPlumbConnections();
@@ -76,16 +79,21 @@ export class ElsaWorkflowDesigner {
 
     outcome = outcome || 'Done';
 
-    console.debug(outcome);
-
     const activity: ActivityModel =
       {
         activityId: uuid(),
         type: activityDescriptor.type,
         outcomes: activityDescriptor.outcomes,
         displayName: activityDescriptor.displayName,
-        state: {}
+        properties: {}
       };
+
+    for (const property of activityDescriptor.properties) {
+      activity.properties[property.name] = {
+        syntax: '',
+        expression: ''
+      }
+    }
 
     const workflowModel = {...this.workflowModel, activities: [...this.workflowModel.activities, activity]};
 
@@ -126,7 +134,7 @@ export class ElsaWorkflowDesigner {
       }
     }
 
-    this.workflowModel = workflowModel;
+    this.updateWorkflowModel(workflowModel);
   }
 
   removeActivity(activityId: string) {
@@ -146,15 +154,20 @@ export class ElsaWorkflowDesigner {
         workflowModel = addConnection(workflowModel, incomingActivity.activityId, outgoingConnection.targetId, incomingConnection.outcome);
     }
 
-    this.workflowModel = workflowModel;
+    this.updateWorkflowModel(workflowModel);
   }
 
-  updateActivity(activity: ActivityModel){
+  updateActivity(activity: ActivityModel) {
     let workflowModel = {...this.workflowModel};
     const activities = [...workflowModel.activities];
     const index = activities.findIndex(x => x.activityId === activity.activityId);
     activities[index] = activity;
-    this.workflowModel = {...workflowModel, activities: activities};
+    this.updateWorkflowModel({...workflowModel, activities: activities});
+  }
+
+  updateWorkflowModel(model: WorkflowModel) {
+    this.workflowModel = model;
+    this.workflowChanged.emit(model);
   }
 
   onAddButtonClick() {

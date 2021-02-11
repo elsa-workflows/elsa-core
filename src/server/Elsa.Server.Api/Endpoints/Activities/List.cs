@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using Elsa.ActivityProviders;
 using Elsa.Metadata;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -14,30 +16,28 @@ namespace Elsa.Server.Api.Endpoints.Activities
     [Produces("application/json")]
     public class List : Controller
     {
-        private readonly ICollection<Type> _activityTypes;
-        private readonly IActivityDescriber _activityDescriber;
+        private readonly IActivityTypeService _activityTypeService;
 
-        public List(ElsaOptions elsaOptions, IActivityDescriber activityDescriber)
+        public List(IActivityTypeService activityTypeService)
         {
-            _activityTypes = elsaOptions.ActivityTypes.ToList();
-            _activityDescriber = activityDescriber;
+            _activityTypeService = activityTypeService;
         }
 
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(List<ActivityDescriptor>))]
         [SwaggerOperation(
             Summary = "Returns all available activities.",
-            Description = "Returns all available activities from which a workflow definition can be built.",
+            Description = "Returns all available activities from which workflow definitions can be built.",
             OperationId = "Activities.List",
             Tags = new[] { "Activities" })
         ]
-        public IActionResult Handle()
+        public async Task<IActionResult> Handle()
         {
-            var descriptors = _activityTypes.Select(DescribeActivity).Where(x => x != null).Select(x => x!).ToList();
-            var model = new List<ActivityDescriptor>(descriptors);
-            return Ok(model);
+            var activityTypes = await _activityTypeService.GetActivityTypesAsync();
+            var descriptors = activityTypes.Select(DescribeActivity).Where(x => x != null && x.Browsable).Select(x => x!).ToList();
+            return Ok(descriptors);
         }
 
-        private ActivityDescriptor? DescribeActivity(Type activityType) => _activityDescriber.Describe(activityType);
+        private ActivityDescriptor? DescribeActivity(ActivityType activityType) => activityType.Describe();
     }
 }
