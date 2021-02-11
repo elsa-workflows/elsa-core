@@ -2,7 +2,7 @@ using System.Threading.Tasks;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Samples.ForLoopConsole
+namespace Elsa.Samples.ForEachLoopConsole
 {
     /// <summary>
     /// Demonstrates a workflow with a For looping construct.
@@ -15,7 +15,7 @@ namespace Elsa.Samples.ForLoopConsole
             var services = new ServiceCollection()
                 .AddElsa(options => options
                     .AddConsoleActivities()
-                    .AddWorkflow<ForLoopWorkflow>())
+                    .AddWorkflow<ForEachLoopWorkflow>())
                 .BuildServiceProvider();
 
             // Run startup actions (not needed when registering Elsa with a Host).
@@ -26,7 +26,7 @@ namespace Elsa.Samples.ForLoopConsole
             var workflowRunner = services.GetRequiredService<IWorkflowRunner>();
 
             // Execute the workflow.
-            await workflowRunner.RunWorkflowAsync<ForLoopWorkflow>();
+            await workflowRunner.RunWorkflowAsync<ForEachLoopWorkflow>();
         }
     }
 }

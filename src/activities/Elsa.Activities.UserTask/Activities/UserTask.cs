@@ -22,10 +22,7 @@ namespace Elsa.Activities.UserTask.Activities
     {
         private readonly IContentSerializer _serializer;
 
-        [ActivityProperty(
-            Type = ActivityPropertyTypes.List,
-            Hint = "Provide a list of available actions"
-        )]
+        [ActivityProperty(Type = ActivityPropertyTypes.List, Hint = "Provide a list of available actions")]
         public ICollection<string> Actions { get; set; } = new List<string>();
 
         public UserTask(IContentSerializer serializer)
@@ -45,7 +42,7 @@ namespace Elsa.Activities.UserTask.Activities
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
         {
             var userAction = GetUserAction(context);
-            return Done(userAction);
+            return Outcome(userAction, userAction);
         }
 
         private string GetUserAction(ActivityExecutionContext context) => (string)context.Input!;

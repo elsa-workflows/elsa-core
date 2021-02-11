@@ -10,7 +10,7 @@ namespace Elsa.Samples.ForLoopConsole
     /// This workflow prompts the user to enter an integer start value, then iterates back from that value to 0.
     /// The workflow also demonstrates retrieving runtime values such as user input. 
     /// </summary>
-    public class LoopingWorkflow : IWorkflow
+    public class ForLoopWorkflow : IWorkflow
     {
         public void Build(IWorkflowBuilder builder)
         {
