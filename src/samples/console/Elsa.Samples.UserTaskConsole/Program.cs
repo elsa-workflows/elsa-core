@@ -27,12 +27,13 @@ namespace Elsa.Samples.UserTaskConsole
             // Get a workflow runner.
             var workflowRunner = services.GetRequiredService<IWorkflowRunner>();
 
+            // And an interruptor.
             var workflowTriggerInterruptor = services.GetRequiredService<IWorkflowTriggerInterruptor>();
 
             // Execute the workflow.
             var workflowInstance = await workflowRunner.RunWorkflowAsync<UserTaskWorkflow>();
 
-            var availableActions = new string[]
+            var availableActions = new[]
             {
                 "Accept",
                 "Reject",
@@ -44,11 +45,9 @@ namespace Elsa.Samples.UserTaskConsole
             // Workflow is now halted on the user task activity. Ask user for input:
             Console.WriteLine($"What action will you take? Choose one of: {string.Join(", ", availableActions)}");
             var userAction = Console.ReadLine();
-
             var currentActivityId = workflowInstance.BlockingActivities.Select(i => i.ActivityId).First();
             await workflowTriggerInterruptor.InterruptActivityAsync(workflowInstance, currentActivityId, userAction);
             //} while (executionContext.Workflow.IsExecuting());
-
         }
     }
 }
