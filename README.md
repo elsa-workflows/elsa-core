@@ -53,6 +53,7 @@ Version 2.0
 - [ ] Lucene Indexing
 - [ ] New Workflow Designer + Dashboard
 - [ ] Generic Command & Event Activities
+- [ ] Job Activities (simplify kicking off a background process while the workflow sleeps & gets resumed once job finishes)
 
 Version 3.0
 - [ ] Composite Activity Definitions (with designer support)
