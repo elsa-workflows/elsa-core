@@ -25,9 +25,7 @@ namespace Elsa.Activities.Http.Extensions
             return content;
         }
 
-        public static async Task<string?> ReadContentAsStringAsync(
-            this HttpRequest request,
-            CancellationToken cancellationToken = default)
+        public static async Task<string?> ReadContentAsStringAsync(this HttpRequest request, CancellationToken cancellationToken = default)
         {
             var bytes = await request.ReadContentAsBytesAsync(cancellationToken);
             return bytes != null ? Encoding.UTF8.GetString(bytes) : default;
