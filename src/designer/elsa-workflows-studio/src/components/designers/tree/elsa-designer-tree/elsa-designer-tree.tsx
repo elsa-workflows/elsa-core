@@ -17,6 +17,7 @@ export class ElsaWorkflowDesigner {
   @Prop() model: WorkflowModel = {activities: [], connections: []};
   @Event({eventName: 'workflow-changed', bubbles: true, composed: true, cancelable: true}) workflowChanged: EventEmitter<WorkflowModel>
   @State() workflowModel: WorkflowModel
+  el: HTMLElement
   canvasElement: HTMLElement;
   parentActivityId?: string;
   parentActivityOutcome?: string;
@@ -43,7 +44,7 @@ export class ElsaWorkflowDesigner {
       const activityDescriptor = (args as ActivityDescriptor);
       const activityModel = this.addActivity(activityDescriptor, this.parentActivityId, null, this.parentActivityOutcome);
 
-      if(activityDescriptor.properties.length > 0)
+      if (activityDescriptor.properties.length > 0)
         this.showActivityEditor(activityModel, false);
     });
 
@@ -64,6 +65,10 @@ export class ElsaWorkflowDesigner {
     const targets = this.getJsPlumbTargets();
 
     updateConnections(canvasElement, connections, sourceEndpoints, targets);
+  }
+
+  disconnectedCallback() {
+    destroy();
   }
 
   showActivityPicker() {
@@ -189,7 +194,7 @@ export class ElsaWorkflowDesigner {
     const renderedActivities = new Set<string>();
 
     return (
-      <Host class="workflow-canvas flex-1 flex">
+      <Host class="workflow-canvas flex-1 flex" ref={el => this.el = el}>
         <div class="flex-1 text-gray-200">
           <div class="p-10">
             <div class="canvas select-none" ref={el => this.canvasElement = el}>

@@ -12,10 +12,10 @@
   resolved "https://registry.yarnpkg.com/@discoveryjs/json-ext/-/json-ext-0.5.2.tgz#8f03a22a04de437254e8ce8cc84ba39689288752"
   integrity sha512-HyYEUDeIj5rRQU2Hk5HTB2uHsbRQpF70nvMhVzi+VJR0X+xNEhjPui4/kBf3VeH/wqD28PT4sVOm8qqLjBrSZg==
 
-"@elsa-workflows/elsa-workflow-designer@^2.0.0-preview-6":
-  version "2.0.0-preview-6"
-  resolved "https://registry.yarnpkg.com/@elsa-workflows/elsa-workflow-designer/-/elsa-workflow-designer-2.0.0-preview-6.tgz#9358e00a0d6c9e41aecc1589cb2c215abd71574d"
-  integrity sha512-iikI0U62wD1BWeHZnfPSRrJxNC6855SSxa8piLyh96XbZTpe2iKsQFu0IuQGuGEuIQPHzmTFGb8GGJkp7SkbWw==
+"@elsa-workflows/elsa-workflow-designer@^2.0.0-preview-8":
+  version "2.0.0-preview-8"
+  resolved "https://registry.yarnpkg.com/@elsa-workflows/elsa-workflow-designer/-/elsa-workflow-designer-2.0.0-preview-8.tgz#506d0be8b9196d025a2adde28cc7f17c9db0a267"
+  integrity sha512-WSvsCAFvkkgTI27W494ir1Ti8Op6Mzb9TTWse/w/lay7tT3knZ5jYIIBYJB6/TW3fWz2Zz+rWxK+Bh3S/Vj0eg==
   dependencies:
     "@fullhuman/postcss-purgecss" "^4.0.0"
     "@stencil/core" "^2.0.1"

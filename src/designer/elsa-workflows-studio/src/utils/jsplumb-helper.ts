@@ -33,6 +33,30 @@ export function destroy() {
   }
 }
 
+function unmakeSourceWrapper(){
+  this.jsPlumbInstance.unmakeSource = function (el, connectionType, doNotClearArrays) {
+    debugger;
+    var info = this._info(el);
+    this._currentInstance.destroyDroppable(info.el, "internal");
+    var eldefs = this.sourceEndpointDefinitions[info.id];
+    if (eldefs) {
+      for (var def in eldefs) {
+        if (connectionType == null || connectionType === def) {
+          var mouseDownListener = eldefs[def].trigger;
+          if (mouseDownListener) {
+            this._currentInstance.off(info.el, "mousedown", mouseDownListener);
+          }
+          if (!doNotClearArrays) {
+            delete this.sourceEndpointDefinitions[info.id][def];
+          }
+        }
+      }
+    }
+
+    return this;
+  };
+}
+
 export function updateConnections(container, connections, sourceEndpoints, targets) {
 
   destroy();

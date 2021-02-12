@@ -1,4 +1,4 @@
-import {Component, h, Host, Prop, Watch} from '@stencil/core';
+import {Component, h, Host, Prop, State, Watch} from '@stencil/core';
 import {createElsaClient} from "../../../services/elsa-client";
 import state from "../../../utils/store";
 
@@ -19,13 +19,19 @@ export class ElsaWorkflowStudio {
       await this.loadActivityDescriptors();
   }
 
-  async componentWillLoad(){
+  async componentWillLoad() {
     await this.serverUrlChangedHandler(this.serverUrl);
   }
 
   async loadActivityDescriptors() {
     const client = createElsaClient(this.serverUrl);
     state.activityDescriptors = await client.activitiesApi.list();
+  }
+
+  @State() clicked: boolean;
+
+  onClick() {
+    this.clicked = !this.clicked;
   }
 
   render() {
@@ -39,8 +45,10 @@ export class ElsaWorkflowStudio {
   renderContentSlot() {
     return (
       <div class="h-screen flex ">
-        <elsa-workflow-definition-editor serverUrl={this.serverUrl} workflowDefinitionId={this.workflowDefinitionId} class="flex-1"/>
+        <button onClick={() => this.onClick()}>Toggle</button>
+        {!this.clicked ? <elsa-workflow-definition-editor serverUrl={this.serverUrl} workflowDefinitionId={this.workflowDefinitionId} class="flex-1"/> : undefined}
       </div>
     );
   }
+
 }
