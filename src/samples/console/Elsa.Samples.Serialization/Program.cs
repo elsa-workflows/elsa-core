@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Elsa.Activities.Console;
 using Elsa.Models;
@@ -46,13 +47,9 @@ namespace Elsa.Samples.Serialization
                     {
                         ActivityId = "activity-1",
                         Type = nameof(WriteLine),
-                        Properties = new ActivityDefinitionProperties
+                        Properties = new List<ActivityDefinitionProperty>()
                         {
-                            [nameof(WriteLine.Text)] = new()
-                            {
-                                Syntax = LiquidExpressionHandler.SyntaxName,
-                                Expression = "Hello World!"
-                            }
+                            ActivityDefinitionProperty.Liquid(nameof(WriteLine.Text), "Hello World")
                         }
                     },
                 }

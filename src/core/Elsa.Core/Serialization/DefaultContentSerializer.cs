@@ -36,12 +36,12 @@ namespace Elsa.Serialization
             {
                 NamingStrategy = new CamelCaseNamingStrategy
                 {
-                    ProcessDictionaryKeys = false,
+                    ProcessDictionaryKeys = true,
                     ProcessExtensionDataNames = true,
                     OverrideSpecifiedNames = false
                 }
             };
-            settings.Converters.Add(new StringEnumConverter(new DefaultNamingStrategy()));
+            settings.Converters.Add(new FlagEnumConverter(new DefaultNamingStrategy()));
             settings.Converters.Add(new TypeJsonConverter());
             settings.Converters.Add(new VersionOptionsJsonConverter());
             settings.Converters.Add(new InlineFunctionJsonConverter());

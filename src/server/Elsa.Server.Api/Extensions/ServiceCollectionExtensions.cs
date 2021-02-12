@@ -8,6 +8,7 @@ using Elsa.Server.Api.Swagger.Examples;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
+using Newtonsoft.Json;
 using Swashbuckle.AspNetCore.Filters;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
@@ -16,9 +17,9 @@ namespace Microsoft.Extensions.DependencyInjection
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddElsaApiEndpoints(this IServiceCollection services)
+        public static IServiceCollection AddElsaApiEndpoints(this IServiceCollection services, Action<JsonSerializerSettings>? configureOptions = default)
         {
-            services.AddControllers().AddJsonSerialization();
+            services.AddControllers().AddJsonSerialization(configureOptions);
             services.AddRouting(options => options.LowercaseUrls = true);
 
             services.AddVersionedApiExplorer(o =>

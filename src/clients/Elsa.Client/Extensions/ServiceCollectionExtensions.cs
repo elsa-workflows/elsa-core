@@ -81,7 +81,7 @@ namespace Elsa.Client.Extensions
             };
 
             serializerSettings.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
-            serializerSettings.Converters.Add(new StringEnumConverter(new DefaultNamingStrategy()));
+            serializerSettings.Converters.Add(new FlagEnumConverter(new DefaultNamingStrategy()));
             serializerSettings.Converters.Add(new TypeConverter());
             serializerSettings.Converters.Add(new VersionOptionsConverter());
 

@@ -5,7 +5,7 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
-import { ActivityDescriptor, ActivityModel, WorkflowModel } from "./models";
+import { ActivityModel, WorkflowModel } from "./models";
 export namespace Components {
     interface ElsaActivityEditorModal {
     }
@@ -29,7 +29,6 @@ export namespace Components {
         "workflowDefinitionId": string;
     }
     interface ElsaWorkflowDefinitionEditor {
-        "activityDescriptors": Array<ActivityDescriptor>;
         "serverUrl": string;
         "workflowDefinitionId": string;
     }
@@ -118,7 +117,6 @@ declare namespace LocalJSX {
         "workflowDefinitionId"?: string;
     }
     interface ElsaWorkflowDefinitionEditor {
-        "activityDescriptors"?: Array<ActivityDescriptor>;
         "serverUrl"?: string;
         "workflowDefinitionId"?: string;
     }

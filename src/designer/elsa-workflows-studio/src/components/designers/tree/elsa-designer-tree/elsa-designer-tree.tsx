@@ -88,7 +88,7 @@ export class ElsaWorkflowDesigner {
         type: activityDescriptor.type,
         outcomes: activityDescriptor.outcomes,
         displayName: activityDescriptor.displayName,
-        properties: {}
+        properties: []
       };
 
     for (const property of activityDescriptor.properties) {

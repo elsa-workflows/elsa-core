@@ -59,7 +59,7 @@ namespace Elsa.Metadata
 
                 yield return new ActivityPropertyDescriptor
                 (
-                    (activityProperty.Name ?? propertyInfo.Name).Camelize(),
+                    (activityProperty.Name ?? propertyInfo.Name).Pascalize(),
                     (activityProperty.Type ?? DeterminePropertyType(propertyInfo)).Pascalize(),
                     activityProperty.Label ?? propertyInfo.Name.Humanize(LetterCasing.Title),
                     activityProperty.Hint,

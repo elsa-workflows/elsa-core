@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Elsa.Expressions;
 using Elsa.Models;
 using Swashbuckle.AspNetCore.Filters;
@@ -32,9 +33,9 @@ namespace Elsa.Server.Api.Swagger.Examples
                         Type = "WriteLine",
                         Name = "Activity1",
                         DisplayName = "Write \"Hello\"",
-                        Properties = new ActivityDefinitionProperties
+                        Properties = new List<ActivityDefinitionProperty>()
                         {
-                            ["Text"] = new ActivityDefinitionPropertyValue("Hello", LiteralHandler.SyntaxName)
+                            ActivityDefinitionProperty.Literal("Text", "Hello")
                         }
                     },
                     new ActivityDefinition
@@ -44,9 +45,9 @@ namespace Elsa.Server.Api.Swagger.Examples
                         Type = "WriteLine",
                         Name = "Activity2",
                         DisplayName = "Write \"World!\"",
-                        Properties = new ActivityDefinitionProperties
+                        Properties = new List<ActivityDefinitionProperty>()
                         {
-                            ["Text"] = new ActivityDefinitionPropertyValue("World!", LiteralHandler.SyntaxName)
+                            ActivityDefinitionProperty.Literal("Text", "World!")
                         }
                     }
                 },

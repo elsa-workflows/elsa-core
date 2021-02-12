@@ -1,4 +1,4 @@
-import {ConnectionModel, WorkflowModel} from "../models";
+import {ActivityDefinition, ActivityDefinitionProperty, ActivityModel, ConnectionModel, WorkflowModel} from "../models";
 
 declare global {
   interface Array<T> {
@@ -14,8 +14,11 @@ export function format(first: string, middle: string, last: string): string {
   return (first || '') + (middle ? ` ${middle}` : '') + (last ? ` ${last}` : '');
 }
 
-interface Array<T> {
+export interface Array<T> {
   distinct(): Array<T>;
+  find<S extends T>(predicate: (this: void, value: T, index: number, obj: T[]) => value is S, thisArg?: any): S | undefined;
+  find(predicate: (value: T, index: number, obj: T[]) => unknown, thisArg?: any): T | undefined;
+  push(...items: T[]): number;
 }
 
 Array.prototype.distinct = function () {
@@ -66,4 +69,34 @@ export function addConnection(workflowModel: WorkflowModel, ...args: any) {
     ...workflowModel,
     connections: [...workflowModel.connections, connection]
   };
+}
+
+export function setActivityDefinitionProperty(activityDefinition: ActivityDefinition, name: string, expression: string, syntax: string) {
+  setProperty(activityDefinition.properties, name, expression, syntax);
+}
+
+export function setActivityModelProperty(activityModel: ActivityModel, name: string, expression: string, syntax: string) {
+  setProperty(activityModel.properties, name, expression, syntax);
+}
+
+export function setProperty(properties: Array<ActivityDefinitionProperty>, name: string, expression: string, syntax: string) {
+  let property: ActivityDefinitionProperty = properties.find(x => x.name == name);
+
+  if (!property) {
+    property = {name: name, expression: expression, syntax: syntax};
+    properties.push(property);
+  } else {
+    property.expression = expression;
+    property.syntax = syntax;
+  }
+}
+
+export function getProperty(properties: Array<ActivityDefinitionProperty>, name: string, defaultExpression?: () => string, defaultSyntax?: () => string): ActivityDefinitionProperty
+{
+  let property: ActivityDefinitionProperty = properties.find(x => x.name == name);
+
+  if(!property)
+    property = {name: name, expression: defaultExpression ? defaultExpression() : null, syntax: defaultSyntax ? defaultSyntax() : 'Literal'};
+
+  return property;
 }

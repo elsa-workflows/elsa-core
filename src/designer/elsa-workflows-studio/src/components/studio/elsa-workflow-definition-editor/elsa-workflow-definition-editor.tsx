@@ -10,7 +10,7 @@ import state from '../../../utils/store';
 })
 export class ElsaWorkflowDefinitionEditor {
 
-  constructor(){
+  constructor() {
     this.workflowDefinition = {
       version: 1,
       connections: [],
@@ -19,7 +19,6 @@ export class ElsaWorkflowDefinitionEditor {
   }
 
   @Prop({attribute: 'workflow-definition-id', reflect: true}) workflowDefinitionId: string;
-  @Prop() activityDescriptors: Array<ActivityDescriptor> = [];
   @Prop({attribute: 'server-url', reflect: true}) serverUrl: string;
   @State() workflowDefinition: WorkflowDefinition;
   @State() workflowModelInternal: WorkflowModel;
@@ -29,32 +28,19 @@ export class ElsaWorkflowDefinitionEditor {
   @Watch('workflowDefinitionId')
   async workflowDefinitionIdChangedHandler(newValue: string) {
     const workflowDefinitionId = newValue;
-    let workflowDefinition = {version: 1, activities: [], connections: []};
+    let workflowDefinition: WorkflowDefinition = {id: this.workflowDefinitionId, version: 1, activities: [], connections: []};
     const client = createElsaClient(this.serverUrl);
 
-    if(workflowDefinitionId && workflowDefinitionId.length > 0)
-    {
+    if (workflowDefinitionId && workflowDefinitionId.length > 0) {
       try {
         workflowDefinition = await client.workflowDefinitionsApi.getByDefinitionAndVersion(workflowDefinitionId, {isLatest: true});
-      }
-      catch {
-       console.warn(`The specified workflow definition does not exist. Creating a new one.`)
+      } catch {
+        console.warn(`The specified workflow definition does not exist. Creating a new one.`)
       }
     }
 
     this.workflowDefinition = workflowDefinition;
     this.workflowModelInternal = this.mapWorkflowModel(workflowDefinition);
-  }
-
-  @Watch("activityDescriptors")
-  activityDescriptorsChangedHandler(newValue: Array<ActivityDescriptor>) {
-    state.activityDescriptors = newValue;
-  }
-
-  @Watch("serverUrl")
-  async serverUrlChangedHandler(newValue: string) {
-    if (newValue && newValue.length > 0)
-      await this.loadActivityDescriptors();
   }
 
   @Listen('workflow-changed')
@@ -65,17 +51,12 @@ export class ElsaWorkflowDefinitionEditor {
       await this.saveWorkflow(workflowModel);
   }
 
-  async loadActivityDescriptors() {
-    const client = createElsaClient(this.serverUrl);
-    state.activityDescriptors = await client.activitiesApi.list();
-  }
-
   async saveWorkflow(workflowModel: WorkflowModel) {
     const client = createElsaClient(this.serverUrl);
     let workflowDefinition = this.workflowDefinition;
 
     const request: SaveWorkflowDefinitionRequest = {
-      workflowDefinitionId: workflowDefinition.id,
+      workflowDefinitionId: workflowDefinition.id || this.workflowDefinitionId,
       contextOptions: workflowDefinition.contextOptions,
       deleteCompletedInstances: workflowDefinition.deleteCompletedInstances,
       description: workflowDefinition.description,
@@ -164,8 +145,6 @@ export class ElsaWorkflowDefinitionEditor {
   }
 
   async componentWillLoad() {
-    this.activityDescriptorsChangedHandler(this.activityDescriptors);
-    await this.serverUrlChangedHandler(this.serverUrl);
     await this.workflowDefinitionIdChangedHandler(this.workflowDefinitionId);
   }
 

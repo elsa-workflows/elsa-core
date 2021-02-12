@@ -1,6 +1,7 @@
 ﻿import {PropertyDisplayDriver} from "../services/property-display-driver";
 import {ActivityModel, ActivityPropertyDescriptor} from "../models";
 import {h} from "@stencil/core";
+import {getProperty, setActivityDefinitionProperty, setActivityModelProperty} from "../utils/utils";
 
 export class TextPropertyDriver implements PropertyDisplayDriver {
   display(activity: ActivityModel, property: ActivityPropertyDescriptor) {
@@ -9,7 +10,8 @@ export class TextPropertyDriver implements PropertyDisplayDriver {
     const fieldName = property.name;
     const fieldLabel = property.label || property.name;
     const fieldHint = property.hint;
-    const value = activity.properties[property.name].expression;
+    const prop = getProperty(activity.properties, property.name);
+    const value = prop.expression;
 
     return (
       <div key={key} class="sm:col-span-6">
@@ -25,9 +27,8 @@ export class TextPropertyDriver implements PropertyDisplayDriver {
   }
 
   update(activity: ActivityModel, property: ActivityPropertyDescriptor, form: FormData) {
-    activity.properties[property.name] = {
-      expression: form.get(property.name) as string,
-      syntax: ''
-    };
+    const value = form.get(property.name) as string;
+    const syntax = 'Literal';
+    setActivityModelProperty(activity, property.name, value, syntax);
   }
 }

@@ -18,7 +18,7 @@ export class ElsaActivityPickerModal {
 
   componentDidLoad() {
     eventBus.on(EventTypes.ShowActivityEditor, async (activity: ActivityModel, animate: boolean) => {
-      this.activityModel = {...activity, properties: activity.properties || {}};
+      this.activityModel = {...activity, properties: activity.properties || []};
       this.activityDescriptor = state.activityDescriptors.find(x => x.type == activity.type);
       await this.dialog.show(animate);
     });
@@ -47,7 +47,7 @@ export class ElsaActivityPickerModal {
   }
 
   render() {
-    const activityModel: ActivityModel = this.activityModel || {type: '', activityId: '', outcomes: [], properties: {}};
+    const activityModel: ActivityModel = this.activityModel || {type: '', activityId: '', outcomes: [], properties: []};
     const activityDescriptor = this.activityDescriptor || {displayName: '', type: '', outcomes: [], category: '', traits: 0, browsable: false, properties: [], description: ''};
     const propertyDescriptors: Array<ActivityPropertyDescriptor> = activityDescriptor.properties;
 

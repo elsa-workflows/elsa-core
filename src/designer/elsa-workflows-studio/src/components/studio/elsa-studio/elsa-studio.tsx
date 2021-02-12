@@ -1,4 +1,6 @@
-import {Component, h, Host, Prop} from '@stencil/core';
+import {Component, h, Host, Prop, Watch} from '@stencil/core';
+import {createElsaClient} from "../../../services/elsa-client";
+import state from "../../../utils/store";
 
 @Component({
   tag: 'elsa-studio',
@@ -10,6 +12,21 @@ export class ElsaWorkflowStudio {
   @Prop({attribute: 'workflow-definition-id', reflect: true}) workflowDefinitionId: string;
   @Prop({attribute: 'server-url', reflect: true}) serverUrl: string;
   el: HTMLElement;
+
+  @Watch("serverUrl")
+  async serverUrlChangedHandler(newValue: string) {
+    if (newValue && newValue.length > 0)
+      await this.loadActivityDescriptors();
+  }
+
+  async componentWillLoad(){
+    await this.serverUrlChangedHandler(this.serverUrl);
+  }
+
+  async loadActivityDescriptors() {
+    const client = createElsaClient(this.serverUrl);
+    state.activityDescriptors = await client.activitiesApi.list();
+  }
 
   render() {
     return (

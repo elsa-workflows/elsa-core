@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Scripting.Liquid.Services;
@@ -79,13 +80,9 @@ namespace Elsa.Samples.DeclarativeCompositeActivitiesConsole
             {
                 ActivityId = id,
                 Type = nameof(Activities.Console.WriteLine),
-                Properties = new ActivityDefinitionProperties
+                Properties = new List<ActivityDefinitionProperty>()
                 {
-                    [nameof(Activities.Console.WriteLine.Text)] = new ActivityDefinitionPropertyValue
-                    {
-                        Syntax = LiquidExpressionHandler.SyntaxName,
-                        Expression = text
-                    }
+                    ActivityDefinitionProperty.Liquid(nameof(Activities.Console.WriteLine.Text), text)
                 }
             };
     }

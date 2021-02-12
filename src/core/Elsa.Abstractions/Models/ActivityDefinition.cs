@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace Elsa.Models
 {
     public class ActivityDefinition
@@ -11,6 +13,6 @@ namespace Elsa.Models
         public bool LoadWorkflowContext { get; set; }
         public bool SaveWorkflowContext { get; set; }
         public bool PersistOutput { get; set; }
-        public ActivityDefinitionProperties Properties { get; set; } = new();
+        public ICollection<ActivityDefinitionProperty> Properties { get; set; } = new List<ActivityDefinitionProperty>();
     }
 }

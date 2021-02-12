@@ -63,9 +63,9 @@ namespace Elsa.Services
                 
                 foreach (var property in activityDefinition.Properties)
                 {
-                    var prop = props.First(x => x.Name == property.Key);
-                    var provider = new ExpressionActivityPropertyValueProvider(property.Value.Expression, property.Value.Syntax, prop.PropertyType);
-                    propertyProviders.AddProvider(activityDefinition.ActivityId, property.Key, provider);
+                    var prop = props.First(x => x.Name == property.Name);
+                    var provider = new ExpressionActivityPropertyValueProvider(property.Expression, property.Syntax, prop.PropertyType);
+                    propertyProviders.AddProvider(activityDefinition.ActivityId, property.Name, provider);
                 }
             }
 

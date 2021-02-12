@@ -1,4 +1,4 @@
-﻿import {ActivityDefinitionProperties} from "./domain";
+﻿import {ActivityDefinitionProperty} from "./domain";
 
 export interface WorkflowModel {
   activities: Array<ActivityModel>
@@ -12,7 +12,7 @@ export interface ActivityModel {
   displayName?: string
   description?: string
   outcomes: Array<string>
-  properties: ActivityDefinitionProperties;
+  properties: Array<ActivityDefinitionProperty>;
 }
 
 export interface ConnectionModel {

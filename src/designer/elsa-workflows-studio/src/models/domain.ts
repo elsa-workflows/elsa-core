@@ -22,38 +22,37 @@ export interface WorkflowDefinition {
 }
 
 export interface ActivityDefinition {
-  activityId: string,
-  type: string,
-  name: string,
-  displayName: string,
-  description: string,
-  persistWorkflow: boolean
-  loadWorkflowContext: boolean
-  saveWorkflowContext: boolean
-  persistOutput: boolean
-  properties: ActivityDefinitionProperties
+  activityId: string;
+  type: string;
+  name: string;
+  displayName: string;
+  description: string;
+  persistWorkflow: boolean;
+  loadWorkflowContext: boolean;
+  saveWorkflowContext: boolean;
+  persistOutput: boolean;
+  properties: Array<ActivityDefinitionProperty>;
 }
 
 export interface ConnectionDefinition {
-  sourceActivityId?: string
-  targetActivityId?: string,
-  outcome?: string
+  sourceActivityId?: string;
+  targetActivityId?: string;
+  outcome?: string;
 }
 
-export interface ActivityDefinitionPropertyValue {
-  syntax: string,
-  expression: string
+export interface ActivityDefinitionProperty {
+  name: string;
+  syntax: string;
+  expression: string;
 }
-
-export type ActivityDefinitionProperties = Map<ActivityDefinitionPropertyValue>;
 
 export interface Variables {
-  data: Map<object>
+  data: Map<object>;
 }
 
 export interface WorkflowContextOptions {
-  contextType: string,
-  contextFidelity: WorkflowContextFidelity
+  contextType: string;
+  contextFidelity: WorkflowContextFidelity;
 }
 
 export enum WorkflowContextFidelity {
@@ -68,12 +67,12 @@ export enum WorkflowPersistenceBehavior {
 }
 
 export interface VersionOptions {
-  isLatest?: boolean,
-  isLatestOrPublished?: boolean,
-  isPublished?: boolean,
-  isDraft?: boolean,
-  allVersions?: boolean,
-  version?: number
+  isLatest?: boolean;
+  isLatestOrPublished?: boolean;
+  isPublished?: boolean;
+  isDraft?: boolean;
+  allVersions?: boolean;
+  version?: number;
 }
 
 export const getVersionOptionsString = (versionOptions: VersionOptions) => {
@@ -91,22 +90,22 @@ export const getVersionOptionsString = (versionOptions: VersionOptions) => {
 };
 
 export interface ActivityDescriptor {
-  type: string,
-  displayName: string,
-  description?: string,
-  category: string,
-  traits: ActivityTraits,
-  outcomes: Array<string>,
-  browsable: boolean,
-  properties: Array<ActivityPropertyDescriptor>
+  type: string;
+  displayName: string;
+  description?: string;
+  category: string;
+  traits: ActivityTraits;
+  outcomes: Array<string>;
+  browsable: boolean;
+  properties: Array<ActivityPropertyDescriptor>;
 }
 
 export interface ActivityPropertyDescriptor {
-  name: string,
-  type: string,
-  label?: string,
-  hint?: string,
-  options?: any
+  name: string;
+  type: string;
+  label?: string;
+  hint?: string;
+  options?: any;
 }
 
 export enum ActivityTraits {

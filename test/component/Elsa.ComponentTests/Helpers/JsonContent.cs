@@ -1,5 +1,6 @@
 using System.Net.Http;
 using System.Text;
+using Elsa.Serialization.Converters;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
@@ -15,7 +16,7 @@ namespace Elsa.ComponentTests.Helpers
         static JsonContent()
         {
             SerializerSettings = new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver() }.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
-            SerializerSettings.Converters.Add(new StringEnumConverter());
+            SerializerSettings.Converters.Add(new FlagEnumConverter(new DefaultNamingStrategy()));
         }
 
         public JsonContent(string content) : base(content, Encoding.UTF8, "application/json")
