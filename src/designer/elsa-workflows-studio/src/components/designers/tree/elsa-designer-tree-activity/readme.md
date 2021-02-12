@@ -13,6 +13,14 @@
 | `icon`          | `icon`    |             | `string`        | `undefined` |
 
 
+## Events
+
+| Event             | Description | Type                         |
+| ----------------- | ----------- | ---------------------------- |
+| `edit-activity`   |             | `CustomEvent<ActivityModel>` |
+| `remove-activity` |             | `CustomEvent<ActivityModel>` |
+
+
 ## Dependencies
 
 ### Used by

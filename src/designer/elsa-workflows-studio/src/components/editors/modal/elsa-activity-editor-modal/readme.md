@@ -1,4 +1,4 @@
-# elsa-activity-picker-modal
+# elsa-activity-editor-modal
 
 
 
@@ -18,9 +18,9 @@
 ### Graph
 ```mermaid
 graph TD;
-  elsa-activity-picker-modal --> elsa-modal-dialog
-  elsa-workflow-definition-editor --> elsa-activity-picker-modal
-  style elsa-activity-picker-modal fill:#f9f,stroke:#333,stroke-width:4px
+  elsa-activity-editor-modal --> elsa-modal-dialog
+  elsa-workflow-definition-editor --> elsa-activity-editor-modal
+  style elsa-activity-editor-modal fill:#f9f,stroke:#333,stroke-width:4px
 ```
 
 ----------------------------------------------

@@ -7,7 +7,7 @@
 
 ## Methods
 
-### `hide() => Promise<void>`
+### `hide(animate: boolean) => Promise<void>`
 
 
 
@@ -17,7 +17,7 @@ Type: `Promise<void>`
 
 
 
-### `show() => Promise<void>`
+### `show(animate: boolean) => Promise<void>`
 
 
 
@@ -32,11 +32,13 @@ Type: `Promise<void>`
 
 ### Used by
 
+ - [elsa-activity-editor-modal](../../editors/modal/elsa-activity-editor-modal)
  - [elsa-activity-picker-modal](../../pickers/modal/elsa-activity-picker-modal)
 
 ### Graph
 ```mermaid
 graph TD;
+  elsa-activity-editor-modal --> elsa-modal-dialog
   elsa-activity-picker-modal --> elsa-modal-dialog
   style elsa-modal-dialog fill:#f9f,stroke:#333,stroke-width:4px
 ```

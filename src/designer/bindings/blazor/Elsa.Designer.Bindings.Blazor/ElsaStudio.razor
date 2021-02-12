@@ -1,0 +1,16 @@
+﻿@using Microsoft.JSInterop
+@inject IJSRuntime JS;
+
+<elsa-studio id="studio" server-url="https://localhost:3956" workflow-definition-id="7eed1333c2674370a1e9b300aa94fda2"></elsa-studio>
+
+@code{
+
+    private IJSObjectReference _designerModule = default!;
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_designerModule == null!)
+            _designerModule = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/Elsa.Designer.Bindings.Blazor/elsa-studio.js");
+    }
+
+}

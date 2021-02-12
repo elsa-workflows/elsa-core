@@ -35,7 +35,9 @@
 <div class="flex flex-1 relative">
     @if (CurrentTab.Name == "Designer")
     {
-        <WorkflowDesigner Model="WorkflowModel" WorkflowChanged="@OnWorkflowChanged" EditActivityInvoked="@OnEditActivityInvoked" DeleteActivityInvoked="@OnDeleteActivityInvoked" AddActivityInvoked="@OnAddActivityInvoked" ActivitySelected="@OnActivitySelected"/>
+        //<WorkflowDesigner Model="WorkflowModel" WorkflowChanged="@OnWorkflowChanged" EditActivityInvoked="@OnEditActivityInvoked" DeleteActivityInvoked="@OnDeleteActivityInvoked" AddActivityInvoked="@OnAddActivityInvoked" ActivitySelected="@OnActivitySelected"/>
+        
+        <ElsaStudio/>
     }
     else if (CurrentTab.Name == "Dsl")
     {

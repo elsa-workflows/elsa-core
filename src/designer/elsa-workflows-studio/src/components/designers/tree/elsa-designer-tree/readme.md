@@ -7,12 +7,23 @@
 
 ## Properties
 
-| Property        | Attribute | Description | Type            | Default                             |
-| --------------- | --------- | ----------- | --------------- | ----------------------------------- |
-| `workflowModel` | --        |             | `WorkflowModel` | `{activities: [], connections: []}` |
+| Property | Attribute | Description | Type            | Default                             |
+| -------- | --------- | ----------- | --------------- | ----------------------------------- |
+| `model`  | --        |             | `WorkflowModel` | `{activities: [], connections: []}` |
+
+
+## Events
+
+| Event              | Description | Type                         |
+| ------------------ | ----------- | ---------------------------- |
+| `workflow-changed` |             | `CustomEvent<WorkflowModel>` |
 
 
 ## Dependencies
+
+### Used by
+
+ - [elsa-workflow-definition-editor](../../../studio/elsa-workflow-definition-editor)
 
 ### Depends on
 
@@ -22,6 +33,7 @@
 ```mermaid
 graph TD;
   elsa-designer-tree --> elsa-designer-tree-activity
+  elsa-workflow-definition-editor --> elsa-designer-tree
   style elsa-designer-tree fill:#f9f,stroke:#333,stroke-width:4px
 ```
 

@@ -20,6 +20,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\..\..\designer\bindings\blazor\Elsa.Designer.Bindings.Blazor\Elsa.Designer.Bindings.Blazor.csproj" />
       <ProjectReference Include="..\ElsaDashboard.Abstractions\ElsaDashboard.Abstractions.csproj" />
       <ProjectReference Include="..\ElsaDashboard.Shared\ElsaDashboard.Shared.csproj" />
     </ItemGroup>

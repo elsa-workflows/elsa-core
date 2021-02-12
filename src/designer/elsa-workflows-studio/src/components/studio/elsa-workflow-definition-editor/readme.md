@@ -1,4 +1,4 @@
-# elsa-studio
+# elsa-workflow-definition-editor
 
 
 
@@ -15,21 +15,27 @@
 
 ## Dependencies
 
+### Used by
+
+ - [elsa-studio](../elsa-studio)
+
 ### Depends on
 
-- [elsa-workflow-definition-editor](../elsa-workflow-definition-editor)
+- [elsa-designer-tree](../../designers/tree/elsa-designer-tree)
+- [elsa-activity-picker-modal](../../pickers/modal/elsa-activity-picker-modal)
+- [elsa-activity-editor-modal](../../editors/modal/elsa-activity-editor-modal)
 
 ### Graph
 ```mermaid
 graph TD;
-  elsa-studio --> elsa-workflow-definition-editor
   elsa-workflow-definition-editor --> elsa-designer-tree
   elsa-workflow-definition-editor --> elsa-activity-picker-modal
   elsa-workflow-definition-editor --> elsa-activity-editor-modal
   elsa-designer-tree --> elsa-designer-tree-activity
   elsa-activity-picker-modal --> elsa-modal-dialog
   elsa-activity-editor-modal --> elsa-modal-dialog
-  style elsa-studio fill:#f9f,stroke:#333,stroke-width:4px
+  elsa-studio --> elsa-workflow-definition-editor
+  style elsa-workflow-definition-editor fill:#f9f,stroke:#333,stroke-width:4px
 ```
 
 ----------------------------------------------
