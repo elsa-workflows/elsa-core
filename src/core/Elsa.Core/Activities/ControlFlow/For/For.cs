@@ -32,8 +32,21 @@ namespace Elsa.Activities.ControlFlow
             set => SetState(value);
         }
 
+        private bool Break
+        {
+            get => GetState<bool>();
+            set => SetState(value);
+        }
+
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
+            if (Break)
+            {
+                CurrentValue = null;
+                Break = false;
+                return Done();
+            }
+            
             var currentValue = CurrentValue ?? Start;
             
             var loop = Operator switch

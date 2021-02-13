@@ -15,9 +15,21 @@ namespace Elsa.Activities.ControlFlow
     {
         [ActivityProperty(Hint = "The condition to evaluate.")]
         public bool Condition { get; set; }
+        
+        private bool Break
+        {
+            get => GetState<bool>();
+            set => SetState(value);
+        }
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
+            if (Break)
+            {
+                Break = false;
+                return Done();
+            }
+            
             var loop = Condition;
 
             if (loop)
