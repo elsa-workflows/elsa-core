@@ -1,6 +1,6 @@
 import {Component, Host, h, Prop, State, Event, EventEmitter, Listen, Watch} from '@stencil/core';
 import {addConnection, findActivity, getChildActivities, getInboundConnections, getOutboundConnections, removeActivity} from '../../../../utils/utils';
-import {destroy, updateConnections} from '../../../../utils/jsplumb-helper';
+import {cleanup, destroy, updateConnections} from '../../../../utils/jsplumb-helper';
 import {ActivityDescriptor, ActivityModel, ConnectionModel, EventTypes, WorkflowModel} from "../../../../models";
 import {eventBus} from '../../../../utils/event-bus';
 import jsPlumb from "jsplumb";
@@ -68,7 +68,7 @@ export class ElsaWorkflowDesigner {
   }
 
   disconnectedCallback() {
-    destroy();
+    cleanup();
   }
 
   showActivityPicker() {

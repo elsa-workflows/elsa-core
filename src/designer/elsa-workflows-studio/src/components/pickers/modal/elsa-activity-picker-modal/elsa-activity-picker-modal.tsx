@@ -53,11 +53,17 @@ export class ElsaActivityPickerModal {
     filteredActivityDescriptors = filteredActivityDescriptors.filter(x => (x.traits & this.selectedTrait) == x.traits)
 
     if (searchText.length > 0)
-      filteredActivityDescriptors = filteredActivityDescriptors.filter(x =>
-        x.category.toLowerCase().indexOf(searchText) >= 0
-        || x.description.toLowerCase().indexOf(searchText) >= 0
-        || x.displayName.toLowerCase().indexOf(searchText) >= 0
-        || x.type.toLowerCase().indexOf(searchText) >= 0);
+      filteredActivityDescriptors = filteredActivityDescriptors.filter(x => {
+        const category = x.category || '';
+        const description = x.description || '';
+        const displayName = x.displayName || '';
+        const type = x.type || '';
+
+        return category.toLowerCase().indexOf(searchText) >= 0
+          || description.toLowerCase().indexOf(searchText) >= 0
+          || displayName.toLowerCase().indexOf(searchText) >= 0
+          || type.toLowerCase().indexOf(searchText) >= 0;
+      });
 
     return (
       <Host>

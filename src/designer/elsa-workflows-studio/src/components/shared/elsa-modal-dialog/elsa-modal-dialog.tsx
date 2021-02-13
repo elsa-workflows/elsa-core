@@ -1,6 +1,5 @@
-import {Component, Host, h, Prop, State, Listen} from '@stencil/core';
+import {Component, Host, h, Prop, State, Listen, Method} from '@stencil/core';
 import {enter, leave, toggle} from 'el-transition'
-import {Method} from "../../../../dist/types/stencil-public-runtime";
 
 @Component({
   tag: 'elsa-modal-dialog',
