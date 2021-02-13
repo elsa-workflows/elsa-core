@@ -40,9 +40,7 @@ namespace Elsa.Services
 
             if (finishOutput != null)
             {
-                if(!string.IsNullOrWhiteSpace(finishOutput.Outcome))
-                    outcomes.Add(finishOutput.Outcome!);
-
+                outcomes.AddRange(finishOutput.Outcomes);
                 output = finishOutput.Output;
             }
             

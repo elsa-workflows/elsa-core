@@ -10,7 +10,7 @@
   image: Previous Visual Studio 2019
   environment:
     matrix:
-      - nodejs_version: "10"
+      - nodejs_version: "11"
   dotnet_csproj:
     patch: true
     file: '**\*.csproj'
@@ -29,7 +29,7 @@
 
         cd .\src\dashboards\blazor\ElsaDashboard.Application
 
-        npm install
+        npm install --force
 
         cd ..\..\..\..\
   build_script:
