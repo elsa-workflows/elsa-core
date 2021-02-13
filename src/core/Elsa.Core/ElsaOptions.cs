@@ -90,6 +90,8 @@ namespace Elsa
         
         public ElsaOptions AddActivitiesFrom(Assembly assembly) => AddActivitiesFrom(new[] { assembly });
         public ElsaOptions AddActivitiesFrom(params Assembly[] assemblies) => AddActivitiesFrom((IEnumerable<Assembly>) assemblies);
+        public ElsaOptions AddActivitiesFrom(params Type[] assemblyMarkerTypes) => AddActivitiesFrom(assemblyMarkerTypes.Select(x => x.Assembly).Distinct());
+        public ElsaOptions AddActivitiesFrom<TMarker>() where TMarker:class => AddActivitiesFrom(typeof(TMarker));
         
         public ElsaOptions AddActivitiesFrom(IEnumerable<Assembly> assemblies)
         {
