@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
@@ -16,9 +17,9 @@ namespace Elsa.Activities.ControlFlow
     {
         [ActivityProperty(Hint = "The value to set as the workflow's output")]
         public object? OutputValue { get; set; }
-        
-        [ActivityProperty(Hint = "The outcome to set on the container activity")]
-        public string? OutcomeName { get; set; }
+
+        [ActivityProperty(Hint = "The outcomes to set on the container activity")]
+        public IEnumerable<string> OutcomeNames { get; set; } = new[] { Elsa.OutcomeNames.Done };
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
@@ -28,7 +29,7 @@ namespace Elsa.Activities.ControlFlow
             var containedBlockingActivityIds = parentBlueprint == null ? blockingActivityIds : parentBlueprint.Activities.Where(x => blockingActivityIds.Contains(x.Id)).Select(x => x.Id).ToList();
 
             blockingActivities.RemoveWhere(x => containedBlockingActivityIds.Contains(x.ActivityId));
-            var output = new FinishOutput(OutputValue, OutcomeName);
+            var output = new FinishOutput(OutputValue, OutcomeNames);
             context.WorkflowExecutionContext.WorkflowInstance.Output = output;
             return Done(output);
         }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Elsa.Builders;
 using Elsa.Services.Models;
@@ -13,9 +14,9 @@ namespace Elsa.Activities.ControlFlow
         public static ISetupActivity<Finish> WithOutput(this ISetupActivity<Finish> activity, Func<object?> value) => activity.Set(x => x.OutputValue, value);
         public static ISetupActivity<Finish> WithOutput(this ISetupActivity<Finish> activity, object? value) => activity.Set(x => x.OutputValue, value);
         
-        public static ISetupActivity<Finish> WithOutcome(this ISetupActivity<Finish> activity, Func<ActivityExecutionContext, ValueTask<string?>> value) => activity.Set(x => x.OutcomeName, value);
-        public static ISetupActivity<Finish> WithOutcome(this ISetupActivity<Finish> activity, Func<ActivityExecutionContext, string?> value) => activity.Set(x => x.OutcomeName, value);
-        public static ISetupActivity<Finish> WithOutcome(this ISetupActivity<Finish> activity, Func<string?> value) => activity.Set(x => x.OutcomeName, value);
-        public static ISetupActivity<Finish> WithOutcome(this ISetupActivity<Finish> activity, string? value) => activity.Set(x => x.OutcomeName, value);
+        public static ISetupActivity<Finish> WithOutcome(this ISetupActivity<Finish> activity, Func<ActivityExecutionContext, ValueTask<IEnumerable<string>?>> value) => activity.Set(x => x.OutcomeNames, value);
+        public static ISetupActivity<Finish> WithOutcome(this ISetupActivity<Finish> activity, Func<ActivityExecutionContext, IEnumerable<string>> value) => activity.Set(x => x.OutcomeNames, value);
+        public static ISetupActivity<Finish> WithOutcome(this ISetupActivity<Finish> activity, Func<IEnumerable<string>> value) => activity.Set(x => x.OutcomeNames, value);
+        public static ISetupActivity<Finish> WithOutcome(this ISetupActivity<Finish> activity, IEnumerable<string> value) => activity.Set(x => x.OutcomeNames, value);
     }
 }
