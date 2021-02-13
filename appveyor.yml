@@ -29,7 +29,7 @@
 
         cd .\src\dashboards\blazor\ElsaDashboard.Application
 
-        npm install
+        npm install --force
 
         cd ..\..\..\..\
   build_script:
