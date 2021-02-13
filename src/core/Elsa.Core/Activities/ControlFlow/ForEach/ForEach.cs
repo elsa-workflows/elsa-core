@@ -25,8 +25,21 @@ namespace Elsa.Activities.ControlFlow
             set => SetState(value);
         }
         
+        private bool Break
+        {
+            get => GetState<bool>();
+            set => SetState(value);
+        }
+        
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
+            if (Break)
+            {
+                CurrentIndex = null;
+                Break = false;
+                return Done();
+            }
+            
             var collection = Items.ToList();
             var currentIndex = CurrentIndex ?? 0;
 
