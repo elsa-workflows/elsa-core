@@ -60,7 +60,7 @@ namespace Microsoft.Extensions.DependencyInjection
             options
                 .AddWorkflowsCore()
                 .AddCoreActivities();
-            
+
             options.AddAutoMapper();
             options.AddConsumer<RunWorkflowDefinitionConsumer, RunWorkflowDefinition>();
             options.AddConsumer<RunWorkflowInstanceConsumer, RunWorkflowInstance>();
@@ -157,7 +157,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IServiceBusFactory, ServiceBusFactory>()
                 .AddSingleton<ICommandSender, CommandSender>()
                 .AddSingleton<IEventPublisher, EventPublisher>();
-            
+
             options
                 .AddConsumer<RunWorkflowDefinitionConsumer, RunWorkflowDefinition>()
                 .AddConsumer<RunWorkflowInstanceConsumer, RunWorkflowInstance>();
@@ -187,27 +187,6 @@ namespace Microsoft.Extensions.DependencyInjection
             services
                 .AddSingleton<IActivityPropertyOptionsProvider, SelectOptionsProvider>();
 
-        private static ElsaOptions AddCoreActivities(this ElsaOptions services) =>
-            services
-                .AddActivity<CompositeActivity>()
-                .AddActivity<Inline>()
-                .AddActivity<SetName>()
-                .AddActivity<Finish>()
-                .AddActivity<For>()
-                .AddActivity<ForEach>()
-                .AddActivity<ParallelForEach>()
-                .AddActivity<Fork>()
-                .AddActivity<IfElse>()
-                .AddActivity<Join>()
-                .AddActivity<Switch>()
-                .AddActivity<While>()
-                .AddActivity<Correlate>()
-                .AddActivity<SetVariable>()
-                .AddActivity<SetTransientVariable>()
-                .AddActivity<SetContextId>()
-                .AddActivity<SignalReceived>()
-                .AddActivity<SendSignal>()
-                .AddActivity<RunWorkflow>()
-                .AddActivity<InterruptTrigger>();
+        private static ElsaOptions AddCoreActivities(this ElsaOptions services) => services.AddActivitiesFrom<ElsaOptions>();
     }
 }
