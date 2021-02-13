@@ -7,6 +7,6 @@ namespace Elsa.Core.IntegrationTests.Workflows
     {
         private readonly object _output;
         public FinishWorkflow(object output) => _output = output;
-        public void Build(IWorkflowBuilder builder) => builder.Finish(_output);
+        public void Build(IWorkflowBuilder builder) => builder.Finish(finish => finish.WithOutput(_output));
     }
 }
