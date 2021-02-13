@@ -36,7 +36,7 @@ namespace Elsa.Handlers
         {
             var workflowInstance = notification.WorkflowExecutionContext.WorkflowInstance;
             var activityBlueprint = notification.Activity;
-            await _workflowExecutionLog.AddEntryAsync(message, workflowInstance, activityBlueprint, data, cancellationToken);
+            await _workflowExecutionLog.AddEntryAsync(message, workflowInstance, activityBlueprint, data, default, cancellationToken);
         }
     }
 }
