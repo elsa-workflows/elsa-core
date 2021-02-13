@@ -11,6 +11,12 @@ namespace Elsa
     {
         public static async Task AddEntryAsync(this IWorkflowExecutionLog log, string message, WorkflowInstance workflowInstance, IActivityBlueprint activity, CancellationToken cancellationToken = default) =>
             await log.AddEntryAsync(message, workflowInstance, activity, default, cancellationToken);
+        
+        public static async Task AddEntryAsync(this IWorkflowExecutionLog log, string message, ActivityExecutionContext activityExecutionContext, JObject? data, CancellationToken cancellationToken = default) =>
+            await log.AddEntryAsync(message, activityExecutionContext.WorkflowInstance, activityExecutionContext.ActivityBlueprint, data, cancellationToken);
+        
+        public static async Task AddEntryAsync(this IWorkflowExecutionLog log, string message, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken = default) =>
+            await log.AddEntryAsync(message, activityExecutionContext, default, cancellationToken);
 
         public static async Task AddEntryAsync(this IWorkflowExecutionLog log, string message, WorkflowInstance workflowInstance, IActivityBlueprint activity, JObject? data, CancellationToken cancellationToken = default)
         {
