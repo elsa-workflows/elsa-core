@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Elsa.Comparers;
@@ -71,7 +71,8 @@ namespace Elsa.Services.Models
                 AbortedAt = AbortedAt,
                 Activities = activities,
                 Scope = Scope,
-                
+                Input = Input,
+
                 BlockingActivities = new HashSet<BlockingActivity>(
                     BlockingActivities.Select(x => new BlockingActivity(x.Id, x.Type)),
                     new BlockingActivityEqualityComparer()
@@ -99,6 +100,7 @@ namespace Elsa.Services.Models
             AbortedAt = instance.AbortedAt;
             ExecutionLog = instance.ExecutionLog.ToList();
             Scope = instance.Scope;
+            Input = Input;
 
             BlockingActivities =
                 new HashSet<IActivity>(instance.BlockingActivities.Select(x => activityLookup[x.ActivityId]));
