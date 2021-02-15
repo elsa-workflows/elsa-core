@@ -102,7 +102,7 @@
                         @latestVersion
                     </td>
                     <td class="hidden md:table-cell px-6 py-3 whitespace-no-wrap text-sm leading-5 text-gray-500 text-right">
-                        @(publishedVersion?.ToString() ?? "-")
+                        @(publishedVersion?.Version.ToString() ?? "-")
                     </td>
                     <td class="pr-6">
                         <ContextMenu>
