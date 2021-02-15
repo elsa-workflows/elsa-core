@@ -30,7 +30,7 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    DefinitionVersionId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    DefinitionId = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     TenantId = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     DisplayName = table.Column<string>(type: "nvarchar(max)", nullable: true),

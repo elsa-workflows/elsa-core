@@ -30,7 +30,7 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "TEXT", nullable: false),
-                    DefinitionVersionId = table.Column<string>(type: "TEXT", nullable: false),
+                    DefinitionId = table.Column<string>(type: "TEXT", nullable: false),
                     TenantId = table.Column<string>(type: "TEXT", nullable: true),
                     Name = table.Column<string>(type: "TEXT", nullable: true),
                     DisplayName = table.Column<string>(type: "TEXT", nullable: true),
