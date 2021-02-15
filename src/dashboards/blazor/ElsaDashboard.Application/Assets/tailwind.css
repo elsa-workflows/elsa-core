@@ -94,3 +94,7 @@ svg.jtk-connector path {
     @apply stroke-current;
     @apply text-gray-400;
 }
+
+elsa-studio .workflow-settings-button {
+    top: 10rem;
+}

@@ -6,11 +6,13 @@
 @code{
 
     private IJSObjectReference _designerModule = default!;
-    
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (_designerModule == null!)
+        {
             _designerModule = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/Elsa.Designer.Bindings.Blazor/elsa-studio.js");
+        }
     }
 
 }

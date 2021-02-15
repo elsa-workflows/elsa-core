@@ -53,6 +53,10 @@ namespace ElsaDashboard.Samples.Monolith
                     options.DetailedErrors = !Environment.IsProduction();
                     options.JSInteropDefaultCallTimeout = TimeSpan.FromSeconds(30);
                 });
+            
+            // Allow arbitrary client browser apps to access the API for demo purposes only.
+            // In a production environment, make sure to allow only origins you trust.
+            services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()));
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

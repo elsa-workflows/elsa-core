@@ -5,22 +5,29 @@
 <!-- Auto Generated Below -->
 
 
+## Properties
+
+| Property             | Attribute | Description | Type                 | Default     |
+| -------------------- | --------- | ----------- | -------------------- | ----------- |
+| `workflowDefinition` | --        |             | `WorkflowDefinition` | `undefined` |
+
+
 ## Dependencies
 
 ### Used by
 
- - [elsa-workflow-definition-editor](../../../studio/elsa-workflow-definition-editor)
+ - [elsa-workflow-definition-editor](../elsa-workflow-definition-editor)
 
 ### Depends on
 
-- [elsa-modal-dialog](../../../shared/elsa-modal-dialog)
+- [elsa-modal-dialog](../../shared/elsa-modal-dialog)
 
 ### Graph
 ```mermaid
 graph TD;
-  elsa-activity-picker-modal --> elsa-modal-dialog
-  elsa-workflow-definition-editor --> elsa-activity-picker-modal
-  style elsa-activity-picker-modal fill:#f9f,stroke:#333,stroke-width:4px
+  elsa-workflow-definition-settings-modal --> elsa-modal-dialog
+  elsa-workflow-definition-editor --> elsa-workflow-definition-settings-modal
+  style elsa-workflow-definition-settings-modal fill:#f9f,stroke:#333,stroke-width:4px
 ```
 
 ----------------------------------------------

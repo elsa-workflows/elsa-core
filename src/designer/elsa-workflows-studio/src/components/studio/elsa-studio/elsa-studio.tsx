@@ -30,7 +30,7 @@ export class ElsaWorkflowStudio {
 
   render() {
     return (
-      <Host class="flex flex-col" ref={el => this.el = el}>
+      <Host class="flex flex-col w-full" ref={el => this.el = el}>
         {this.renderContentSlot()}
       </Host>
     );

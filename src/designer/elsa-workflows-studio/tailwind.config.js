@@ -3,7 +3,11 @@ const defaultTheme = require('tailwindcss/defaultTheme');
 module.exports = {
   theme: {
     purge:{
-      enabled: false,
+      enabled: true,
+      content: ['./src/**/*.tsx', './src/**/*.html'],
+      options: {
+        safelist: ['jtk-connector']
+      },
     },
     extend: {
       fontFamily: {

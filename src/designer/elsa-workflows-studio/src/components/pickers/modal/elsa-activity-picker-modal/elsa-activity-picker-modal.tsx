@@ -37,6 +37,7 @@ export class ElsaActivityPickerModal {
   }
 
   async onActivityClick(e: Event, activityDescriptor: ActivityDescriptor) {
+    e.preventDefault();
     eventBus.emit(EventTypes.ActivityPicked, this, activityDescriptor);
     await this.dialog.hide(false);
   }
