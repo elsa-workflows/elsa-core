@@ -3,8 +3,8 @@ import {eventBus} from "../../../utils/event-bus";
 import {ActivityModel, EventTypes, WorkflowDefinition, WorkflowModel} from "../../../models";
 
 @Component({
-  tag: 'elsa-workflow-definition-settings-modal',
-  styleUrl: 'elsa-workflow-definition-settings-modal.css',
+  tag: 'elsa-workflow-settings-modal',
+  styleUrl: 'elsa-workflow-settings-modal.css',
   shadow: false,
 })
 export class ElsaWorkflowDefinitionSettingsModal {

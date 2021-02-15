@@ -9,8 +9,6 @@ import { ActivityModel, WorkflowDefinition, WorkflowModel } from "./models";
 export namespace Components {
     interface ElsaActivityEditorModal {
     }
-    interface ElsaActivityPickerFlyout {
-    }
     interface ElsaActivityPickerModal {
     }
     interface ElsaDesignerTree {
@@ -24,15 +22,13 @@ export namespace Components {
         "hide": (animate: boolean) => Promise<void>;
         "show": (animate: boolean) => Promise<void>;
     }
-    interface ElsaStudio {
+    interface ElsaWorkflowEditor {
         "serverUrl": string;
         "workflowDefinitionId": string;
     }
-    interface ElsaWorkflowDefinitionEditor {
-        "serverUrl": string;
-        "workflowDefinitionId": string;
+    interface ElsaWorkflowPublishButton {
     }
-    interface ElsaWorkflowDefinitionSettingsModal {
+    interface ElsaWorkflowSettingsModal {
         "workflowDefinition": WorkflowDefinition;
     }
 }
@@ -42,12 +38,6 @@ declare global {
     var HTMLElsaActivityEditorModalElement: {
         prototype: HTMLElsaActivityEditorModalElement;
         new (): HTMLElsaActivityEditorModalElement;
-    };
-    interface HTMLElsaActivityPickerFlyoutElement extends Components.ElsaActivityPickerFlyout, HTMLStencilElement {
-    }
-    var HTMLElsaActivityPickerFlyoutElement: {
-        prototype: HTMLElsaActivityPickerFlyoutElement;
-        new (): HTMLElsaActivityPickerFlyoutElement;
     };
     interface HTMLElsaActivityPickerModalElement extends Components.ElsaActivityPickerModal, HTMLStencilElement {
     }
@@ -73,40 +63,37 @@ declare global {
         prototype: HTMLElsaModalDialogElement;
         new (): HTMLElsaModalDialogElement;
     };
-    interface HTMLElsaStudioElement extends Components.ElsaStudio, HTMLStencilElement {
+    interface HTMLElsaWorkflowEditorElement extends Components.ElsaWorkflowEditor, HTMLStencilElement {
     }
-    var HTMLElsaStudioElement: {
-        prototype: HTMLElsaStudioElement;
-        new (): HTMLElsaStudioElement;
+    var HTMLElsaWorkflowEditorElement: {
+        prototype: HTMLElsaWorkflowEditorElement;
+        new (): HTMLElsaWorkflowEditorElement;
     };
-    interface HTMLElsaWorkflowDefinitionEditorElement extends Components.ElsaWorkflowDefinitionEditor, HTMLStencilElement {
+    interface HTMLElsaWorkflowPublishButtonElement extends Components.ElsaWorkflowPublishButton, HTMLStencilElement {
     }
-    var HTMLElsaWorkflowDefinitionEditorElement: {
-        prototype: HTMLElsaWorkflowDefinitionEditorElement;
-        new (): HTMLElsaWorkflowDefinitionEditorElement;
+    var HTMLElsaWorkflowPublishButtonElement: {
+        prototype: HTMLElsaWorkflowPublishButtonElement;
+        new (): HTMLElsaWorkflowPublishButtonElement;
     };
-    interface HTMLElsaWorkflowDefinitionSettingsModalElement extends Components.ElsaWorkflowDefinitionSettingsModal, HTMLStencilElement {
+    interface HTMLElsaWorkflowSettingsModalElement extends Components.ElsaWorkflowSettingsModal, HTMLStencilElement {
     }
-    var HTMLElsaWorkflowDefinitionSettingsModalElement: {
-        prototype: HTMLElsaWorkflowDefinitionSettingsModalElement;
-        new (): HTMLElsaWorkflowDefinitionSettingsModalElement;
+    var HTMLElsaWorkflowSettingsModalElement: {
+        prototype: HTMLElsaWorkflowSettingsModalElement;
+        new (): HTMLElsaWorkflowSettingsModalElement;
     };
     interface HTMLElementTagNameMap {
         "elsa-activity-editor-modal": HTMLElsaActivityEditorModalElement;
-        "elsa-activity-picker-flyout": HTMLElsaActivityPickerFlyoutElement;
         "elsa-activity-picker-modal": HTMLElsaActivityPickerModalElement;
         "elsa-designer-tree": HTMLElsaDesignerTreeElement;
         "elsa-designer-tree-activity": HTMLElsaDesignerTreeActivityElement;
         "elsa-modal-dialog": HTMLElsaModalDialogElement;
-        "elsa-studio": HTMLElsaStudioElement;
-        "elsa-workflow-definition-editor": HTMLElsaWorkflowDefinitionEditorElement;
-        "elsa-workflow-definition-settings-modal": HTMLElsaWorkflowDefinitionSettingsModalElement;
+        "elsa-workflow-editor": HTMLElsaWorkflowEditorElement;
+        "elsa-workflow-publish-button": HTMLElsaWorkflowPublishButtonElement;
+        "elsa-workflow-settings-modal": HTMLElsaWorkflowSettingsModalElement;
     }
 }
 declare namespace LocalJSX {
     interface ElsaActivityEditorModal {
-    }
-    interface ElsaActivityPickerFlyout {
     }
     interface ElsaActivityPickerModal {
     }
@@ -122,27 +109,25 @@ declare namespace LocalJSX {
     }
     interface ElsaModalDialog {
     }
-    interface ElsaStudio {
+    interface ElsaWorkflowEditor {
         "serverUrl"?: string;
         "workflowDefinitionId"?: string;
     }
-    interface ElsaWorkflowDefinitionEditor {
-        "serverUrl"?: string;
-        "workflowDefinitionId"?: string;
+    interface ElsaWorkflowPublishButton {
+        "onPublishClicked"?: (event: CustomEvent<any>) => void;
     }
-    interface ElsaWorkflowDefinitionSettingsModal {
+    interface ElsaWorkflowSettingsModal {
         "workflowDefinition"?: WorkflowDefinition;
     }
     interface IntrinsicElements {
         "elsa-activity-editor-modal": ElsaActivityEditorModal;
-        "elsa-activity-picker-flyout": ElsaActivityPickerFlyout;
         "elsa-activity-picker-modal": ElsaActivityPickerModal;
         "elsa-designer-tree": ElsaDesignerTree;
         "elsa-designer-tree-activity": ElsaDesignerTreeActivity;
         "elsa-modal-dialog": ElsaModalDialog;
-        "elsa-studio": ElsaStudio;
-        "elsa-workflow-definition-editor": ElsaWorkflowDefinitionEditor;
-        "elsa-workflow-definition-settings-modal": ElsaWorkflowDefinitionSettingsModal;
+        "elsa-workflow-editor": ElsaWorkflowEditor;
+        "elsa-workflow-publish-button": ElsaWorkflowPublishButton;
+        "elsa-workflow-settings-modal": ElsaWorkflowSettingsModal;
     }
 }
 export { LocalJSX as JSX };
@@ -150,14 +135,13 @@ declare module "@stencil/core" {
     export namespace JSX {
         interface IntrinsicElements {
             "elsa-activity-editor-modal": LocalJSX.ElsaActivityEditorModal & JSXBase.HTMLAttributes<HTMLElsaActivityEditorModalElement>;
-            "elsa-activity-picker-flyout": LocalJSX.ElsaActivityPickerFlyout & JSXBase.HTMLAttributes<HTMLElsaActivityPickerFlyoutElement>;
             "elsa-activity-picker-modal": LocalJSX.ElsaActivityPickerModal & JSXBase.HTMLAttributes<HTMLElsaActivityPickerModalElement>;
             "elsa-designer-tree": LocalJSX.ElsaDesignerTree & JSXBase.HTMLAttributes<HTMLElsaDesignerTreeElement>;
             "elsa-designer-tree-activity": LocalJSX.ElsaDesignerTreeActivity & JSXBase.HTMLAttributes<HTMLElsaDesignerTreeActivityElement>;
             "elsa-modal-dialog": LocalJSX.ElsaModalDialog & JSXBase.HTMLAttributes<HTMLElsaModalDialogElement>;
-            "elsa-studio": LocalJSX.ElsaStudio & JSXBase.HTMLAttributes<HTMLElsaStudioElement>;
-            "elsa-workflow-definition-editor": LocalJSX.ElsaWorkflowDefinitionEditor & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionEditorElement>;
-            "elsa-workflow-definition-settings-modal": LocalJSX.ElsaWorkflowDefinitionSettingsModal & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionSettingsModalElement>;
+            "elsa-workflow-editor": LocalJSX.ElsaWorkflowEditor & JSXBase.HTMLAttributes<HTMLElsaWorkflowEditorElement>;
+            "elsa-workflow-publish-button": LocalJSX.ElsaWorkflowPublishButton & JSXBase.HTMLAttributes<HTMLElsaWorkflowPublishButtonElement>;
+            "elsa-workflow-settings-modal": LocalJSX.ElsaWorkflowSettingsModal & JSXBase.HTMLAttributes<HTMLElsaWorkflowSettingsModalElement>;
         }
     }
 }

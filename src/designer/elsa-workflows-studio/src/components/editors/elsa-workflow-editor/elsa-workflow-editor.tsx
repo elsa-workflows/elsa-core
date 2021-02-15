@@ -5,8 +5,8 @@ import {createElsaClient, SaveWorkflowDefinitionRequest} from "../../../services
 import state from '../../../utils/store';
 
 @Component({
-  tag: 'elsa-workflow-definition-editor',
-  styleUrl: 'elsa-workflow-definition-editor.css',
+  tag: 'elsa-workflow-editor',
+  styleUrl: 'elsa-workflow-editor.css',
   shadow: false,
 })
 export class ElsaWorkflowDefinitionEditor {
@@ -43,13 +43,20 @@ export class ElsaWorkflowDefinitionEditor {
     this.updateWorkflowDefinition(workflowDefinition);
   }
 
+  @Watch("serverUrl")
+  async serverUrlChangedHandler(newValue: string) {
+    if (newValue && newValue.length > 0)
+      await this.loadActivityDescriptors();
+  }
+
   @Listen('workflow-changed')
   async workflowChangedHandler(event: CustomEvent<WorkflowModel>) {
     const workflowModel = event.detail;
-    await this.saveWorkflow(workflowModel);
+    await this.saveWorkflowInternal(workflowModel);
   }
 
   async componentWillLoad() {
+    await this.serverUrlChangedHandler(this.serverUrl);
     await this.workflowDefinitionIdChangedHandler(this.workflowDefinitionId);
   }
 
@@ -61,8 +68,13 @@ export class ElsaWorkflowDefinitionEditor {
 
     eventBus.on(EventTypes.UpdateWorkflowSettings, async (workflowDefinition: WorkflowDefinition) => {
       this.updateWorkflowDefinition(workflowDefinition);
-      await this.saveWorkflow(this.workflowModel);
+      await this.saveWorkflowInternal(this.workflowModel);
     });
+  }
+
+  async loadActivityDescriptors() {
+    const client = createElsaClient(this.serverUrl);
+    state.activityDescriptors = await client.activitiesApi.list();
   }
 
   updateWorkflowDefinition(value: WorkflowDefinition) {
@@ -70,9 +82,19 @@ export class ElsaWorkflowDefinitionEditor {
     this.workflowModel = this.mapWorkflowModel(value);
   }
 
-  async saveWorkflow(workflowModel: WorkflowModel) {
+  async publishWorkflow(){
+    await this.saveWorkflow(true);
+  }
+
+  async saveWorkflow(publish?: boolean) {
+    await this.saveWorkflowInternal(null, publish);
+  }
+
+  async saveWorkflowInternal(workflowModel?: WorkflowModel, publish?: boolean) {
     if (!this.serverUrl || this.serverUrl.length == 0)
       return;
+
+    workflowModel = workflowModel || this.workflowModel;
 
     const client = createElsaClient(this.serverUrl);
     let workflowDefinition = this.workflowDefinition;
@@ -87,7 +109,7 @@ export class ElsaWorkflowDefinitionEditor {
       isSingleton: workflowDefinition.isSingleton,
       name: workflowDefinition.name,
       persistenceBehavior: workflowDefinition.persistenceBehavior,
-      publish: workflowDefinition.isPublished,
+      publish: publish || false,
       variables: workflowDefinition.variables,
       activities: workflowModel.activities.map<ActivityDefinition>(x => ({
         activityId: x.activityId,
@@ -147,9 +169,13 @@ export class ElsaWorkflowDefinitionEditor {
     eventBus.emit(EventTypes.ShowWorkflowSettings);
   }
 
+  async onPublishClicked(){
+    await this.publishWorkflow();
+  }
+
   render() {
     return (
-      <Host class="flex flex-col" ref={el => this.el = el}>
+      <Host class="flex flex-col w-full" ref={el => this.el = el}>
         {this.renderCanvas()}
         {this.renderActivityPicker()}
         {this.renderActivityEditor()}
@@ -163,6 +189,7 @@ export class ElsaWorkflowDefinitionEditor {
         <elsa-designer-tree model={this.workflowModel} class="flex-1" ref={el => this.designer = el}/>
         {this.renderWorkflowSettingsButton()}
         {this.renderWorkflowSettingsModal()}
+        {this.renderPublishButton()}
       </div>
     );
   }
@@ -189,6 +216,10 @@ export class ElsaWorkflowDefinitionEditor {
   }
 
   renderWorkflowSettingsModal() {
-    return <elsa-workflow-definition-settings-modal workflowDefinition={this.workflowDefinition}/>;
+    return <elsa-workflow-settings-modal workflowDefinition={this.workflowDefinition}/>;
+  }
+
+  renderPublishButton() {
+    return <elsa-workflow-publish-button onPublishClicked={() => this.onPublishClicked()}/>;
   }
 }

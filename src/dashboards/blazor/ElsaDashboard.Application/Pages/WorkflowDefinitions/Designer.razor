@@ -35,7 +35,7 @@
 <div class="flex flex-1 relative">
     @if (CurrentTab.Name == "Designer")
     {
-        <ElsaStudio ServerUrl="@ElsaServerUrl" WorkflowDefinitionId="@WorkflowDefinitionId"/>
+        <WorkflowEditor ServerUrl="@ElsaServerUrl" WorkflowDefinitionId="@WorkflowDefinitionId"/>
     }
     else if (CurrentTab.Name == "Dsl")
     {

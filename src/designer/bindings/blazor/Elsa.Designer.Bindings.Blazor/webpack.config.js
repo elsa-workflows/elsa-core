@@ -3,7 +3,7 @@ const path = require('path');
 module.exports = env => {
 
     return {
-        entry: ['./Interop/ElsaElements.tsx'],
+        entry: ['./Interop/elsa-interop.ts'],
         devtool: env && env.production ? 'none' : 'source-map',
         module: {
             rules: [
@@ -14,21 +14,6 @@ module.exports = env => {
                 },
                 {
                     test: /\.(js|jsx)$/,
-                    // use: {
-                    //     loader: 'babel-loader',
-                    //     options: {
-                    //         presets: [
-                    //             [
-                    //                 "@babel/preset-env",
-                    //                 {
-                    //                     targets: {
-                    //                         esmodules: true
-                    //                     }
-                    //                 }
-                    //             ]
-                    //         ]
-                    //     }
-                    //},
                     exclude: /node_modules/,
                 },
             ],
@@ -40,13 +25,9 @@ module.exports = env => {
             outputModule: true
         },
         output: {
-            filename: 'elsa-studio.js',
+            filename: 'elsa-workflows.js',
             path: path.resolve(__dirname, 'wwwroot'),
-            //module: true,
-            //iife: false,
-            //library: 'MyLib',
-            libraryTarget: 'module',
-            //scriptType: 'module'
+            libraryTarget: 'module'
         },
     };
 };

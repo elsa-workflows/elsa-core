@@ -16,7 +16,7 @@
 
 ### Used by
 
- - [elsa-workflow-definition-editor](../elsa-workflow-definition-editor)
+ - [elsa-workflow-editor](../elsa-workflow-editor)
 
 ### Depends on
 
@@ -25,9 +25,9 @@
 ### Graph
 ```mermaid
 graph TD;
-  elsa-workflow-definition-settings-modal --> elsa-modal-dialog
-  elsa-workflow-definition-editor --> elsa-workflow-definition-settings-modal
-  style elsa-workflow-definition-settings-modal fill:#f9f,stroke:#333,stroke-width:4px
+  elsa-workflow-settings-modal --> elsa-modal-dialog
+  elsa-workflow-editor --> elsa-workflow-settings-modal
+  style elsa-workflow-settings-modal fill:#f9f,stroke:#333,stroke-width:4px
 ```
 
 ----------------------------------------------

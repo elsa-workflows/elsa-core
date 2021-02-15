@@ -23,7 +23,7 @@
 
 ### Used by
 
- - [elsa-workflow-definition-editor](../../../studio/elsa-workflow-definition-editor)
+ - [elsa-workflow-editor](../../../editors/elsa-workflow-editor)
 
 ### Depends on
 
@@ -33,7 +33,7 @@
 ```mermaid
 graph TD;
   elsa-designer-tree --> elsa-designer-tree-activity
-  elsa-workflow-definition-editor --> elsa-designer-tree
+  elsa-workflow-editor --> elsa-designer-tree
   style elsa-designer-tree fill:#f9f,stroke:#333,stroke-width:4px
 ```
 

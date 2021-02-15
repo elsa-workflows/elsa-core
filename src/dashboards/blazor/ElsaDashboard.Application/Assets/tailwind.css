@@ -95,6 +95,6 @@ svg.jtk-connector path {
     @apply text-gray-400;
 }
 
-elsa-studio .workflow-settings-button {
+elsa-workflow-editor .workflow-settings-button {
     top: 10rem;
 }

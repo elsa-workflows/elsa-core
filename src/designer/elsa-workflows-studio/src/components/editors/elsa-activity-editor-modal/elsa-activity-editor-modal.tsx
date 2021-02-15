@@ -1,9 +1,8 @@
 import {Component, Host, h, State} from '@stencil/core';
-import '../../../../utils/utils';
-import {eventBus} from '../../../../utils/event-bus';
-import {ActivityDescriptor, ActivityModel, ActivityPropertyDescriptor, EventTypes} from "../../../../models";
-import state from '../../../../utils/store';
-import {propertyDisplayManager} from '../../../../services/property-display-manager';
+import {eventBus} from '../../../utils/event-bus';
+import state from '../../../utils/store';
+import {ActivityDescriptor, ActivityModel, ActivityPropertyDescriptor, EventTypes} from "../../../models";
+import {propertyDisplayManager} from '../../../services/property-display-manager';
 
 @Component({
   tag: 'elsa-activity-editor-modal',
