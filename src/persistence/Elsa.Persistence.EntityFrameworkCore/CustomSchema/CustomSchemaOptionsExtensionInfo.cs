@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -24,7 +24,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.CustomSchema
         {
             get
             {
-                if (!string.IsNullOrWhiteSpace(LogFragment)) 
+                if (!string.IsNullOrWhiteSpace(logFragment)) 
                     return logFragment;
 
                 if (Extension.ContextCustomSchema != null && Extension.ContextCustomSchema.UseCustomSchema)
