@@ -1,9 +1,7 @@
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Persistence;
-using Elsa.Persistence.Specifications.WorkflowDefinitions;
 using WorkflowDefinitionIdSpecification = Elsa.Persistence.Specifications.WorkflowInstances.WorkflowDefinitionIdSpecification;
 
 namespace Elsa.Services
@@ -28,7 +26,7 @@ namespace Elsa.Services
             var definition = new WorkflowDefinition
             {
                 Id = _idGenerator.Generate(),
-                DefinitionVersionId = _idGenerator.Generate(),
+                DefinitionId = _idGenerator.Generate(),
                 Name = "New Workflow",
                 Version = 1,
                 IsLatest = true,
@@ -42,7 +40,7 @@ namespace Elsa.Services
 
         public async Task<WorkflowDefinition?> PublishAsync(string workflowDefinitionId, CancellationToken cancellationToken)
         {
-            var definition = await _workflowDefinitionStore.FindByIdAsync(
+            var definition = await _workflowDefinitionStore.FindByDefinitionIdAsync(
                 workflowDefinitionId,
                 VersionOptions.Latest,
                 cancellationToken);
@@ -55,7 +53,7 @@ namespace Elsa.Services
 
         public async Task<WorkflowDefinition> PublishAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken)
          {
-            var publishedDefinition = await _workflowDefinitionStore.FindByIdAsync(
+            var publishedDefinition = await _workflowDefinitionStore.FindByDefinitionIdAsync(
                 workflowDefinition.Id,
                 VersionOptions.Published,
                 cancellationToken);
@@ -86,7 +84,7 @@ namespace Elsa.Services
 
         public async Task<WorkflowDefinition?> GetDraftAsync(string workflowDefinitionId, CancellationToken cancellationToken)
         {
-            var definition = await _workflowDefinitionStore.FindByIdAsync(
+            var definition = await _workflowDefinitionStore.FindByDefinitionIdAsync(
                 workflowDefinitionId,
                 VersionOptions.Latest,
                 cancellationToken);
@@ -98,7 +96,7 @@ namespace Elsa.Services
                 return definition;
 
             var draft =  _cloner.Clone(definition);
-            draft.DefinitionVersionId = _idGenerator.Generate();
+            draft.DefinitionId = _idGenerator.Generate();
             draft.IsPublished = false;
             draft.IsLatest = true;
             draft.Version++;
@@ -110,7 +108,7 @@ namespace Elsa.Services
         {
             var draft = workflowDefinition;
 
-            var latestVersion = await _workflowDefinitionStore.FindByIdAsync(
+            var latestVersion = await _workflowDefinitionStore.FindByDefinitionIdAsync(
                 workflowDefinition.Id,
                 VersionOptions.Latest,
                 cancellationToken);
@@ -133,11 +131,8 @@ namespace Elsa.Services
 
         public async Task DeleteAsync(string workflowDefinitionId, CancellationToken cancellationToken)
         {
-            var allVersions = await _workflowDefinitionStore.FindManyAsync(new Persistence.Specifications.WorkflowDefinitions.WorkflowDefinitionIdSpecification(workflowDefinitionId), cancellationToken: cancellationToken);
-            var allVersionIds = allVersions.Select(x => x.DefinitionVersionId).ToList();
-
             await _workflowInstanceStore.DeleteManyAsync(new WorkflowDefinitionIdSpecification(workflowDefinitionId), cancellationToken);
-            await _workflowDefinitionStore.DeleteManyAsync(new ManyWorkflowDefinitionVersionIdsSpecification(allVersionIds), cancellationToken);
+            await _workflowDefinitionStore.DeleteManyAsync(new Persistence.Specifications.WorkflowDefinitions.WorkflowDefinitionIdSpecification(workflowDefinitionId), cancellationToken);
         }
 
         public Task DeleteAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken) => DeleteAsync(workflowDefinition.Id, cancellationToken); 
@@ -150,8 +145,8 @@ namespace Elsa.Services
             if (workflowDefinition.Version == 0)
                 workflowDefinition.Version = 1;
 
-            if (workflowDefinition.DefinitionVersionId == null!)
-                workflowDefinition.DefinitionVersionId = _idGenerator.Generate();
+            if (workflowDefinition.DefinitionId == null!)
+                workflowDefinition.DefinitionId = _idGenerator.Generate();
 
             return workflowDefinition;
         }

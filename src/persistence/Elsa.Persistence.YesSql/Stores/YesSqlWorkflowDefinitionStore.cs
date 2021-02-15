@@ -28,7 +28,6 @@ namespace Elsa.Persistence.YesSql.Stores
             {
                 EntityIdSpecification<WorkflowDefinition> s => Query<WorkflowDefinitionIndex>(x => x.DefinitionId == s.Id),
                 VersionOptionsSpecification s => Query<WorkflowDefinitionIndex>().WithVersion(s.VersionOptions),
-                ManyWorkflowDefinitionVersionIdsSpecification s => Query<WorkflowDefinitionIndex>(x => x.DefinitionVersionId.IsIn(s.Ids)),
                 _ => AutoMapSpecification<WorkflowDefinitionIndex>(specification)
             };
         }
