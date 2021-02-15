@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Elsa.Activities.Timers.Quartz.Jobs;
 using Elsa.Activities.Timers.Services;
+using Microsoft.Extensions.Logging;
 using NodaTime;
 using Quartz;
 
@@ -11,18 +12,20 @@ namespace Elsa.Activities.Timers.Quartz.Services
     {
         private static readonly string RunWorkflowJobKey = nameof(RunQuartzWorkflowJob);
         private readonly ISchedulerFactory _schedulerFactory;
+        private readonly ILogger _logger;
         private readonly SemaphoreSlim _semaphore = new(1);
 
-        public QuartzWorkflowScheduler(ISchedulerFactory schedulerFactory)
+        public QuartzWorkflowScheduler(ISchedulerFactory schedulerFactory, ILogger<QuartzWorkflowScheduler> logger)
         {
             _schedulerFactory = schedulerFactory;
+            _logger = logger;
         }
 
         public async Task ScheduleWorkflowAsync(string? workflowDefinitionId, string? workflowInstanceId, string activityId, string? tenantId, Instant startAt, Duration? interval, CancellationToken cancellationToken)
         {
             var triggerBuilder = CreateTrigger(workflowDefinitionId, workflowInstanceId, activityId, tenantId).StartAt(startAt.ToDateTimeOffset());
-
-            if (interval != null)
+            
+            if (interval != null && interval != Duration.Zero)
                 triggerBuilder.WithSimpleSchedule(x => x.WithInterval(interval.Value.ToTimeSpan()).RepeatForever());
 
             var trigger = triggerBuilder.Build();
@@ -58,6 +61,10 @@ namespace Elsa.Activities.Timers.Quartz.Services
                     await scheduler.UnscheduleJob(existingTrigger.Key, cancellationToken);
 
                 await scheduler.ScheduleJob(trigger, cancellationToken);
+            }
+            catch (SchedulerException e)
+            {
+                _logger.LogWarning(e, "Failed to schedule trigger {TriggerKey}", trigger.Key.ToString());
             }
             finally
             {
