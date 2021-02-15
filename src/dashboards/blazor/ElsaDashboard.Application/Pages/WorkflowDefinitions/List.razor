@@ -66,7 +66,7 @@
             {
                 var name = string.IsNullOrWhiteSpace(workflowDefinition.Name) ? "-" : workflowDefinition.Name;
                 var displayName = !string.IsNullOrWhiteSpace(workflowDefinition.DisplayName) ? workflowDefinition.DisplayName : !string.IsNullOrWhiteSpace(workflowDefinition.Name) ? workflowDefinition.Name : "(Untitled)";
-                var viewUrl = $"workflow-definitions/{workflowDefinition.DefinitionVersionId}/designer";
+                var viewUrl = $"workflow-definitions/{workflowDefinition.Id}/designer";
                 
                 <tr>
                     <td class="px-6 py-3 whitespace-no-wrap text-sm leading-5 font-medium text-gray-900">

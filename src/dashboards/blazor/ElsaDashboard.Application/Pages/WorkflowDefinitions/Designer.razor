@@ -1,5 +1,5 @@
 @page "/workflow-definitions/designer"
-@page "/workflow-definitions/{WorkflowDefinitionVersionId}/designer"
+@page "/workflow-definitions/{WorkflowDefinitionId}/designer"
 
 
 <div class="flex-0 border-b border-gray-200 px-4 pt-4 sm:flex sm:items-start sm:justify-between sm:px-6 lg:px-8">
@@ -35,9 +35,7 @@
 <div class="flex flex-1 relative">
     @if (CurrentTab.Name == "Designer")
     {
-        //<WorkflowDesigner Model="WorkflowModel" WorkflowChanged="@OnWorkflowChanged" EditActivityInvoked="@OnEditActivityInvoked" DeleteActivityInvoked="@OnDeleteActivityInvoked" AddActivityInvoked="@OnAddActivityInvoked" ActivitySelected="@OnActivitySelected"/>
-        
-        <ElsaStudio/>
+        <ElsaStudio ServerUrl="@ElsaServerUrl" WorkflowDefinitionId="@WorkflowDefinitionId"/>
     }
     else if (CurrentTab.Name == "Dsl")
     {

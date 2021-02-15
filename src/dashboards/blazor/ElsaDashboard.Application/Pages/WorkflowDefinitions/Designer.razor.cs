@@ -4,24 +4,28 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using Elsa.Client.Models;
+using Elsa.Client.Options;
 using ElsaDashboard.Application.Extensions;
 using ElsaDashboard.Application.Models;
 using ElsaDashboard.Application.Services;
 using ElsaDashboard.Application.Shared;
 using ElsaDashboard.Shared.Rpc;
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Options;
 
 namespace ElsaDashboard.Application.Pages.WorkflowDefinitions
 {
     partial class Designer
     {
-        [Parameter] public string? WorkflowDefinitionVersionId { get; set; }
+        [Parameter] public string? WorkflowDefinitionId { get; set; }
         [Inject] private IWorkflowDefinitionService WorkflowDefinitionService { get; set; } = default!;
         [Inject] private IActivityService ActivityService { get; set; } = default!;
         [Inject] private NavigationManager NavigationManager { get; set; } = default!;
         [Inject] private IFlyoutPanelService FlyoutPanelService { get; set; } = default!;
+        [Inject] private IOptions<ElsaClientOptions> ElsaClientOptions { get; set; } = default!;
         private IDictionary<string, ActivityDescriptor> ActivityDescriptors { get; set; } = default!;
         private EventCallbackFactory EventCallbackFactory { get; } = new();
+        private string ElsaServerUrl => ElsaClientOptions.Value.ServerUrl.ToString();
 
         private WorkflowDefinition WorkflowDefinition { get; set; } = new()
         {
@@ -44,9 +48,9 @@ namespace ElsaDashboard.Application.Pages.WorkflowDefinitions
 
         protected override async Task OnParametersSetAsync()
         {
-            if (WorkflowDefinitionVersionId != null)
+            if (WorkflowDefinitionId != null)
             {
-                WorkflowDefinition = await WorkflowDefinitionService.GetByVersionIdAsync(WorkflowDefinitionVersionId);
+                WorkflowDefinition = await WorkflowDefinitionService.GetByIdAsync(WorkflowDefinitionId, VersionOptions.Latest);
                 WorkflowModel = CreateWorkflowModel(WorkflowDefinition);
             }
             else
