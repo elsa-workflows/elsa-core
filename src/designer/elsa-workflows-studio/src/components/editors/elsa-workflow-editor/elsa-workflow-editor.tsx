@@ -29,7 +29,7 @@ export class ElsaWorkflowDefinitionEditor {
   @Watch('workflowDefinitionId')
   async workflowDefinitionIdChangedHandler(newValue: string) {
     const workflowDefinitionId = newValue;
-    let workflowDefinition: WorkflowDefinition = {id: this.workflowDefinitionId, version: 1, activities: [], connections: []};
+    let workflowDefinition: WorkflowDefinition = {definitionId: this.workflowDefinitionId, version: 1, activities: [], connections: []};
     const client = createElsaClient(this.serverUrl);
 
     if (workflowDefinitionId && workflowDefinitionId.length > 0) {
@@ -100,7 +100,7 @@ export class ElsaWorkflowDefinitionEditor {
     let workflowDefinition = this.workflowDefinition;
 
     const request: SaveWorkflowDefinitionRequest = {
-      workflowDefinitionId: workflowDefinition.id || this.workflowDefinitionId,
+      workflowDefinitionId: workflowDefinition.definitionId || this.workflowDefinitionId,
       contextOptions: workflowDefinition.contextOptions,
       deleteCompletedInstances: workflowDefinition.deleteCompletedInstances,
       description: workflowDefinition.description,

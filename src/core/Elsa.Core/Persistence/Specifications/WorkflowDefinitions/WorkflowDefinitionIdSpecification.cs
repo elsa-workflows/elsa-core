@@ -13,6 +13,6 @@ namespace Elsa.Persistence.Specifications.WorkflowDefinitions
             Id = id;
         }
 
-        public override Expression<Func<WorkflowDefinition, bool>> ToExpression() => x => x.Id == Id;
+        public override Expression<Func<WorkflowDefinition, bool>> ToExpression() => x => x.DefinitionId == Id;
     }
 }

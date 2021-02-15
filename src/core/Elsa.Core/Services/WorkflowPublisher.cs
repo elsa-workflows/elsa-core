@@ -52,13 +52,13 @@ namespace Elsa.Services
         }
 
         public async Task<WorkflowDefinition> PublishAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken)
-         {
+        {
             var publishedDefinition = await _workflowDefinitionStore.FindByDefinitionIdAsync(
-                workflowDefinition.Id,
+                workflowDefinition.DefinitionId,
                 VersionOptions.Published,
                 cancellationToken);
 
-             if (publishedDefinition != null)
+            if (publishedDefinition != null)
             {
                 publishedDefinition.IsPublished = false;
                 publishedDefinition.IsLatest = false;
@@ -66,19 +66,14 @@ namespace Elsa.Services
             }
 
             if (workflowDefinition.IsPublished)
-            {
                 workflowDefinition.Version++;
-            }
             else
-            {
                 workflowDefinition.IsPublished = true;
-            }
 
             workflowDefinition.IsLatest = true;
             workflowDefinition = Initialize(workflowDefinition);
 
             await _workflowDefinitionStore.SaveAsync(workflowDefinition, cancellationToken);
-
             return workflowDefinition;
         }
 
@@ -95,8 +90,8 @@ namespace Elsa.Services
             if (!definition.IsPublished)
                 return definition;
 
-            var draft =  _cloner.Clone(definition);
-            draft.DefinitionId = _idGenerator.Generate();
+            var draft = _cloner.Clone(definition);
+            draft.Id = _idGenerator.Generate();
             draft.IsPublished = false;
             draft.IsLatest = true;
             draft.Version++;
@@ -109,14 +104,13 @@ namespace Elsa.Services
             var draft = workflowDefinition;
 
             var latestVersion = await _workflowDefinitionStore.FindByDefinitionIdAsync(
-                workflowDefinition.Id,
+                workflowDefinition.DefinitionId,
                 VersionOptions.Latest,
                 cancellationToken);
 
             if (latestVersion != null && latestVersion.IsPublished && latestVersion.IsLatest)
             {
                 latestVersion.IsLatest = false;
-
                 await _workflowDefinitionStore.SaveAsync(latestVersion, cancellationToken);
             }
 
@@ -125,7 +119,6 @@ namespace Elsa.Services
             draft = Initialize(draft);
 
             await _workflowDefinitionStore.SaveAsync(draft, cancellationToken);
-
             return draft;
         }
 
@@ -135,7 +128,7 @@ namespace Elsa.Services
             await _workflowDefinitionStore.DeleteManyAsync(new Persistence.Specifications.WorkflowDefinitions.WorkflowDefinitionIdSpecification(workflowDefinitionId), cancellationToken);
         }
 
-        public Task DeleteAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken) => DeleteAsync(workflowDefinition.Id, cancellationToken); 
+        public Task DeleteAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken) => DeleteAsync(workflowDefinition.Id, cancellationToken);
 
         private WorkflowDefinition Initialize(WorkflowDefinition workflowDefinition)
         {

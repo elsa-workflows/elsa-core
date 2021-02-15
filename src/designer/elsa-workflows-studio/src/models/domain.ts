@@ -2,7 +2,7 @@
 
 export interface WorkflowDefinition {
   id?: string,
-  definitionVersionId?: string,
+  definitionId?: string,
   tenantId?: string,
   name?: string,
   displayName?: string,

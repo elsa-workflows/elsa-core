@@ -15,6 +15,7 @@ namespace Elsa.Models
         }
         
         public string DefinitionId { get; set; } = default!;
+        public string VersionId => Id;
         public string? TenantId { get; set; }
         public string? Name { get; set; }
         public string? DisplayName { get; set; }

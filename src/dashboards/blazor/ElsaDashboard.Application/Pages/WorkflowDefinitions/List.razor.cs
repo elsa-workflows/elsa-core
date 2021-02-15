@@ -1,4 +1,6 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Elsa.Client.Models;
 using ElsaDashboard.Application.Services;
 using ElsaDashboard.Shared.Rpc;
@@ -12,7 +14,8 @@ namespace ElsaDashboard.Application.Pages.WorkflowDefinitions
         [Parameter] public int PageSize { get; set; } = 10;
         [Inject] private IWorkflowDefinitionService WorkflowDefinitionService { get; set; } = default!;
         [Inject] private IConfirmDialogService ConfirmDialogService { get; set; } = default!;
-        private PagedList<WorkflowDefinition> Definitions { get; set; } = new();
+        private ICollection<WorkflowDefinition> Definitions { get; set; } = new List<WorkflowDefinition>();
+        private ICollection<IGrouping<string, WorkflowDefinition>> DefinitionGroupings { get; set; } = new List<IGrouping<string, WorkflowDefinition>>();
 
         protected override async Task OnParametersSetAsync()
         {
@@ -21,7 +24,8 @@ namespace ElsaDashboard.Application.Pages.WorkflowDefinitions
 
         private async Task LoadWorkflowDefinitionsAsync()
         {
-            Definitions = await WorkflowDefinitionService.ListAsync(Page, PageSize);
+            Definitions = (await WorkflowDefinitionService.ListAsync()).Items;
+            DefinitionGroupings = Definitions.GroupBy(x => x.DefinitionId).ToList();
         }
         
         private async Task OnDeleteWorkflowDefinitionClick(WorkflowDefinition workflowDefinition)

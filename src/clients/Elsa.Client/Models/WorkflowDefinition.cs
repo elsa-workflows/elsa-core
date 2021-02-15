@@ -14,7 +14,7 @@ namespace Elsa.Client.Models
         }
 
         [DataMember(Order = 1)] public string Id { get; set; } = default!;
-        [DataMember(Order = 2)] public string DefinitionVersionId { get; set; } = default!;
+        [DataMember(Order = 2)] public string DefinitionId { get; set; } = default!;
         [DataMember(Order = 3)] public string TenantId { get; set; } = default!;
         [DataMember(Order = 4)] public string? Name { get; set; }
         [DataMember(Order = 5)] public string? DisplayName { get; set; }

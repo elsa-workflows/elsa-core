@@ -15,7 +15,7 @@ using Microsoft.Extensions.Options;
 
 namespace ElsaDashboard.Application.Pages.WorkflowDefinitions
 {
-    partial class Designer
+    partial class Edit
     {
         [Parameter] public string? WorkflowDefinitionId { get; set; }
         [Inject] private IWorkflowDefinitionService WorkflowDefinitionService { get; set; } = default!;
@@ -83,7 +83,7 @@ namespace ElsaDashboard.Application.Pages.WorkflowDefinitions
             var savedWorkflowDefinition = await WorkflowDefinitionService.SaveAsync(request);
 
             if (isNew)
-                NavigationManager.NavigateTo($"workflow-definitions/{savedWorkflowDefinition.DefinitionVersionId}/designer");
+                NavigationManager.NavigateTo($"workflow-definitions/{savedWorkflowDefinition.DefinitionId}/designer");
         }
 
         private ActivityDefinition CreateActivityDefinition(ActivityModel activityModel) =>
