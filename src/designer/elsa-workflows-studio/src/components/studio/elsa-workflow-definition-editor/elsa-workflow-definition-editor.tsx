@@ -113,29 +113,6 @@ export class ElsaWorkflowDefinitionEditor {
     this.workflowModel = this.mapWorkflowModel(workflowDefinition);
   }
 
-  // updateWorkflowDefinition(workflowModel: WorkflowModel) {
-  //   this.workflowDefinition = {
-  //     ...this.workflowDefinition,
-  //     activities: [...workflowModel.activities.map<ActivityDefinition>(x => ({
-  //       activityId: x.activityId,
-  //       type: x.type,
-  //       name: x.name,
-  //       displayName: x.displayName,
-  //       description: x.description,
-  //       persistWorkflow: false,
-  //       loadWorkflowContext: false,
-  //       saveWorkflowContext: false,
-  //       persistOutput: false,
-  //       properties: null
-  //     }))],
-  //     connections: workflowModel.connections.map<ConnectionDefinition>(x => ({
-  //       sourceActivityId: x.sourceId,
-  //       targetActivityId: x.targetId,
-  //       outcome: x.outcome
-  //     }))
-  //   };
-  // }
-
   mapWorkflowModel(workflowDefinition: WorkflowDefinition): WorkflowModel {
     return {
       activities: workflowDefinition.activities.map(this.mapActivityModel),
