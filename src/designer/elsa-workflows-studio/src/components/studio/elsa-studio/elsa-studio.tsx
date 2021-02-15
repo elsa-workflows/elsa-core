@@ -28,12 +28,6 @@ export class ElsaWorkflowStudio {
     state.activityDescriptors = await client.activitiesApi.list();
   }
 
-  @State() clicked: boolean;
-
-  onClick() {
-    this.clicked = !this.clicked;
-  }
-
   render() {
     return (
       <Host class="flex flex-col" ref={el => this.el = el}>
@@ -45,8 +39,7 @@ export class ElsaWorkflowStudio {
   renderContentSlot() {
     return (
       <div class="h-screen flex ">
-        <button onClick={() => this.onClick()}>Toggle</button>
-        {!this.clicked ? <elsa-workflow-definition-editor serverUrl={this.serverUrl} workflowDefinitionId={this.workflowDefinitionId} class="flex-1"/> : undefined}
+        <elsa-workflow-definition-editor serverUrl={this.serverUrl} workflowDefinitionId={this.workflowDefinitionId} class="flex-1"/>
       </div>
     );
   }

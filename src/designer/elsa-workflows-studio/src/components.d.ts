@@ -5,7 +5,7 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
-import { ActivityModel, WorkflowModel } from "./models";
+import { ActivityModel, WorkflowDefinition, WorkflowModel } from "./models";
 export namespace Components {
     interface ElsaActivityEditorModal {
     }
@@ -31,6 +31,9 @@ export namespace Components {
     interface ElsaWorkflowDefinitionEditor {
         "serverUrl": string;
         "workflowDefinitionId": string;
+    }
+    interface ElsaWorkflowDefinitionSettingsModal {
+        "workflowDefinition": WorkflowDefinition;
     }
 }
 declare global {
@@ -82,6 +85,12 @@ declare global {
         prototype: HTMLElsaWorkflowDefinitionEditorElement;
         new (): HTMLElsaWorkflowDefinitionEditorElement;
     };
+    interface HTMLElsaWorkflowDefinitionSettingsModalElement extends Components.ElsaWorkflowDefinitionSettingsModal, HTMLStencilElement {
+    }
+    var HTMLElsaWorkflowDefinitionSettingsModalElement: {
+        prototype: HTMLElsaWorkflowDefinitionSettingsModalElement;
+        new (): HTMLElsaWorkflowDefinitionSettingsModalElement;
+    };
     interface HTMLElementTagNameMap {
         "elsa-activity-editor-modal": HTMLElsaActivityEditorModalElement;
         "elsa-activity-picker-flyout": HTMLElsaActivityPickerFlyoutElement;
@@ -91,6 +100,7 @@ declare global {
         "elsa-modal-dialog": HTMLElsaModalDialogElement;
         "elsa-studio": HTMLElsaStudioElement;
         "elsa-workflow-definition-editor": HTMLElsaWorkflowDefinitionEditorElement;
+        "elsa-workflow-definition-settings-modal": HTMLElsaWorkflowDefinitionSettingsModalElement;
     }
 }
 declare namespace LocalJSX {
@@ -120,6 +130,9 @@ declare namespace LocalJSX {
         "serverUrl"?: string;
         "workflowDefinitionId"?: string;
     }
+    interface ElsaWorkflowDefinitionSettingsModal {
+        "workflowDefinition"?: WorkflowDefinition;
+    }
     interface IntrinsicElements {
         "elsa-activity-editor-modal": ElsaActivityEditorModal;
         "elsa-activity-picker-flyout": ElsaActivityPickerFlyout;
@@ -129,6 +142,7 @@ declare namespace LocalJSX {
         "elsa-modal-dialog": ElsaModalDialog;
         "elsa-studio": ElsaStudio;
         "elsa-workflow-definition-editor": ElsaWorkflowDefinitionEditor;
+        "elsa-workflow-definition-settings-modal": ElsaWorkflowDefinitionSettingsModal;
     }
 }
 export { LocalJSX as JSX };
@@ -143,6 +157,7 @@ declare module "@stencil/core" {
             "elsa-modal-dialog": LocalJSX.ElsaModalDialog & JSXBase.HTMLAttributes<HTMLElsaModalDialogElement>;
             "elsa-studio": LocalJSX.ElsaStudio & JSXBase.HTMLAttributes<HTMLElsaStudioElement>;
             "elsa-workflow-definition-editor": LocalJSX.ElsaWorkflowDefinitionEditor & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionEditorElement>;
+            "elsa-workflow-definition-settings-modal": LocalJSX.ElsaWorkflowDefinitionSettingsModal & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionSettingsModalElement>;
         }
     }
 }
