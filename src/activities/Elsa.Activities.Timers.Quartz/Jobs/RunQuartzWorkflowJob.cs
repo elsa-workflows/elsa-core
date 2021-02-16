@@ -58,7 +58,13 @@ namespace Elsa.Activities.Timers.Quartz.Jobs
             {
                 if (workflowInstanceId == null)
                 {
-                    var workflowBlueprint = (await _workflowRegistry.GetAsync(workflowDefinitionId, tenantId, VersionOptions.Published, cancellationToken))!;
+                    var workflowBlueprint = (await _workflowRegistry.GetAsync(workflowDefinitionId, tenantId, VersionOptions.Published, cancellationToken));
+
+                    if (workflowBlueprint == null)
+                    {
+                        _logger.LogWarning("No workflow definition {WorkflowDefinitionId} found. Make sure the scheduled workflow definition is published and enabled", workflowDefinitionId);
+                        return;
+                    }
                     
                     if (!workflowBlueprint.IsSingleton || await GetWorkflowIsAlreadyExecutingAsync(tenantId, workflowDefinitionId) == false)
                         await _workflowQueue.EnqueueWorkflowDefinition(workflowDefinitionId, tenantId, activityId, null, null, null, cancellationToken);

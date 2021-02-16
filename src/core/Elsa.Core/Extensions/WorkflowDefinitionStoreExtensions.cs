@@ -8,11 +8,11 @@ namespace Elsa
 {
     public static class WorkflowDefinitionStoreExtensions
     {
-        public static Task<WorkflowDefinition?> FindByIdAsync(
+        public static Task<WorkflowDefinition?> FindByDefinitionIdAsync(
             this IWorkflowDefinitionStore store,
-            string id,
+            string definitionId,
             VersionOptions versionOptions,
             CancellationToken cancellationToken = default) =>
-            store.FindAsync(new WorkflowDefinitionIdSpecification(id, versionOptions), cancellationToken);
+            store.FindAsync(new WorkflowDefinitionIdSpecification(definitionId).WithVersionOptions(versionOptions), cancellationToken);
     }
 }

@@ -3,6 +3,7 @@ using System;
 using Elsa.Persistence.EntityFramework.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
 {
@@ -60,7 +61,7 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
                     b.Property<string>("Data")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("DefinitionVersionId")
+                    b.Property<string>("DefinitionId")
                         .IsRequired()
                         .HasColumnType("TEXT");
 

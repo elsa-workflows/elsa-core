@@ -11,6 +11,6 @@ namespace ElsaDashboard.Shared.Rpc
     public interface IActivityService
     {
         [Operation]
-        Task<IEnumerable<ActivityInfo>> GetActivitiesAsync(CallContext context = default);
+        Task<IEnumerable<ActivityDescriptor>> GetActivitiesAsync(CallContext context = default);
     }
 }

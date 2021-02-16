@@ -2,24 +2,24 @@
 
 namespace Elsa.Client.Models
 {
-    public class ActivityDefinitionPropertyValue
+    public class ActivityDefinitionProperty
     {
-        public static ActivityDefinitionPropertyValue Literal<T>(T value) => new ActivityDefinitionPropertyValue(value!.ToString(), "Literal", typeof(T));
-        public static ActivityDefinitionPropertyValue Liquid<T>(string expression) => new ActivityDefinitionPropertyValue(expression, "Liquid", typeof(T));
-        public static ActivityDefinitionPropertyValue JavaScript<T>(string expression) => new ActivityDefinitionPropertyValue(expression, "JavaScript", typeof(T));
+        public static ActivityDefinitionProperty Literal(string name, string expression) => new ActivityDefinitionProperty(name, expression, "Literal");
+        public static ActivityDefinitionProperty Liquid(string name, string expression) => new ActivityDefinitionProperty(name, expression, "Liquid");
+        public static ActivityDefinitionProperty JavaScript(string name, string expression) => new ActivityDefinitionProperty(name, expression, "JavaScript");
 
-        public ActivityDefinitionPropertyValue()
+        public ActivityDefinitionProperty()
         {
         }
 
-        public ActivityDefinitionPropertyValue(string expression, string syntax, Type type)
+        public ActivityDefinitionProperty(string name, string expression, string syntax)
         {
+            Name = name;
             Expression = expression;
             Syntax = syntax;
-            Type = type;
         }
 
-        public Type Type { get; set; } = default!;
+        public string Name { get; set; } = default!;
         public string Syntax { get; set; } = default!;
         public string Expression { get; set; } = default!;
     }

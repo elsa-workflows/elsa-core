@@ -20,7 +20,7 @@ namespace Elsa.Metadata
             _optionsProviders = optionsProviders;
         }
         
-        public ActivityInfo? Describe(Type activityType)
+        public ActivityDescriptor? Describe(Type activityType)
         {
             var browsableAttribute = activityType.GetCustomAttribute<BrowsableAttribute>();
             var isBrowsable = browsableAttribute == null || browsableAttribute.Browsable;
@@ -33,7 +33,7 @@ namespace Elsa.Metadata
             var outcomes = activityAttribute?.Outcomes ?? new[] { OutcomeNames.Done };
             var properties = DescribeProperties(activityType);
 
-            return new ActivityInfo
+            return new ActivityDescriptor
             {
                 Type = typeName.Pascalize(),
                 DisplayName = displayName,
@@ -46,7 +46,7 @@ namespace Elsa.Metadata
             };
         }
 
-        private IEnumerable<ActivityPropertyInfo> DescribeProperties(Type activityType)
+        private IEnumerable<ActivityPropertyDescriptor> DescribeProperties(Type activityType)
         {
             var properties = activityType.GetProperties();
 
@@ -57,9 +57,9 @@ namespace Elsa.Metadata
                 if (activityProperty == null)
                     continue;
 
-                yield return new ActivityPropertyInfo
+                yield return new ActivityPropertyDescriptor
                 (
-                    (activityProperty.Name ?? propertyInfo.Name).Camelize(),
+                    (activityProperty.Name ?? propertyInfo.Name).Pascalize(),
                     (activityProperty.Type ?? DeterminePropertyType(propertyInfo)).Pascalize(),
                     activityProperty.Label ?? propertyInfo.Name.Humanize(LetterCasing.Title),
                     activityProperty.Hint,

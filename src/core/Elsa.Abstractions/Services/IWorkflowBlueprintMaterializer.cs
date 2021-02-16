@@ -1,4 +1,6 @@
-﻿using Elsa.Models;
+﻿using System.Threading;
+using System.Threading.Tasks;
+using Elsa.Models;
 using Elsa.Services.Models;
 
 namespace Elsa.Services
@@ -8,6 +10,6 @@ namespace Elsa.Services
     /// </summary>
     public interface IWorkflowBlueprintMaterializer
     {
-        IWorkflowBlueprint CreateWorkflowBlueprint(WorkflowDefinition workflowDefinition);
+        Task<IWorkflowBlueprint> CreateWorkflowBlueprintAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken = default);
     }
 }

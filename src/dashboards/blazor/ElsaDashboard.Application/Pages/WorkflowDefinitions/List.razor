@@ -8,7 +8,7 @@
     </div>
     <div class="mt-4 flex sm:mt-0 sm:ml-4">
         <span class="order-0 sm:order-1 sm:ml-3 shadow-sm rounded-md">
-            <a href="workflow-definitions/designer" type="button" class="inline-flex items-center px-4 py-2 border border-transparent text-sm leading-5 font-medium rounded-md text-white bg-blue-500 hover:bg-blue-400 focus:outline-none focus:shadow-outline-blue focus:border-blue-700 active:bg-blue-700 transition duration-150 ease-in-out">
+            <a href="workflow-definitions/create" type="button" class="inline-flex items-center px-4 py-2 border border-transparent text-sm leading-5 font-medium rounded-md text-white bg-blue-500 hover:bg-blue-400 focus:outline-none focus:shadow-outline-blue focus:border-blue-700 active:bg-blue-700 transition duration-150 ease-in-out">
                 Create
             </a>
         </span>
@@ -62,23 +62,27 @@
             </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-100">
-            @foreach (var workflowDefinition in Definitions.Items)
+            @foreach (var workflowDefinitionGroup in DefinitionGroupings)
             {
+                var versions = workflowDefinitionGroup.OrderByDescending(x => x.Version).ToList();
+                var workflowDefinition = versions.First();
+                var latestVersion = workflowDefinition.Version;
+                var publishedVersion = versions.FirstOrDefault(x => x.IsPublished);
                 var name = string.IsNullOrWhiteSpace(workflowDefinition.Name) ? "-" : workflowDefinition.Name;
                 var displayName = !string.IsNullOrWhiteSpace(workflowDefinition.DisplayName) ? workflowDefinition.DisplayName : !string.IsNullOrWhiteSpace(workflowDefinition.Name) ? workflowDefinition.Name : "(Untitled)";
-                var viewUrl = $"workflow-definitions/{workflowDefinition.DefinitionVersionId}/designer";
+                var editUrl = $"workflow-definitions/{workflowDefinition.DefinitionId}/edit";
                 
                 <tr>
                     <td class="px-6 py-3 whitespace-no-wrap text-sm leading-5 font-medium text-gray-900">
                         <div class="flex items-center space-x-3 lg:pl-2">
-                            <a href="@viewUrl" class="truncate hover:text-gray-600">
+                            <a href="@editUrl" class="truncate hover:text-gray-600">
                                 <span>@name</span>
                             </a>
                         </div>
                     </td>
                     <td class="px-6 py-3 whitespace-no-wrap text-sm leading-5 font-medium text-gray-900">
                         <div class="flex items-center space-x-3 lg:pl-2">
-                            <a href="@viewUrl" class="truncate hover:text-gray-600">
+                            <a href="@editUrl" class="truncate hover:text-gray-600">
                                 <span>@displayName</span>
                             </a>
                         </div>
@@ -95,14 +99,14 @@
                         </div>
                     </td>
                     <td class="hidden md:table-cell px-6 py-3 whitespace-no-wrap text-sm leading-5 text-gray-500 text-right">
-                        1
+                        @latestVersion
                     </td>
                     <td class="hidden md:table-cell px-6 py-3 whitespace-no-wrap text-sm leading-5 text-gray-500 text-right">
-                        1
+                        @(publishedVersion?.Version.ToString() ?? "-")
                     </td>
                     <td class="pr-6">
                         <ContextMenu>
-                            <ContextMenuItem Url="@viewUrl">
+                            <ContextMenuItem Url="@editUrl">
                                 <!-- Heroicon name: pencil-alt -->
                                 <svg class="mr-3 h-5 w-5 text-gray-400 group-hover:text-gray-500 group-focus:text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                     <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z"/>
@@ -124,6 +128,5 @@
             }
             </tbody>
         </table>
-        <Pager Page="@Definitions.Page" PageSize="@Definitions.PageSize" TotalCount="@Definitions.TotalCount"/>
     </div>
 </div>

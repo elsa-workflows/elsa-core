@@ -39,11 +39,11 @@ namespace Elsa.Persistence.MongoDb.Services
         private async Task CreateWorkflowDefinitionsIndexes(CancellationToken cancellationToken)
         {
             var tenantKeysDefinition = Builders<WorkflowDefinition>.IndexKeys.Ascending(x => x.TenantId);
-            var definitionVersionIdKeysDefinition = Builders<WorkflowDefinition>.IndexKeys.Ascending(x => x.DefinitionVersionId);
+            var definitionIdKeysDefinition = Builders<WorkflowDefinition>.IndexKeys.Ascending(x => x.DefinitionId);
             var versionKeysDefinition = Builders<WorkflowDefinition>.IndexKeys.Ascending(x => x.Version);
             var nameKeysDefinition = Builders<WorkflowDefinition>.IndexKeys.Ascending(x => x.Name);
 
-            await CreateIndexesAsync(_mongoContext.WorkflowDefinitions, cancellationToken, tenantKeysDefinition, definitionVersionIdKeysDefinition, versionKeysDefinition, nameKeysDefinition);
+            await CreateIndexesAsync(_mongoContext.WorkflowDefinitions, cancellationToken, tenantKeysDefinition, definitionIdKeysDefinition, versionKeysDefinition, nameKeysDefinition);
         }
 
         private async Task CreateWorkflowExecutionLogIndexes(CancellationToken cancellationToken)

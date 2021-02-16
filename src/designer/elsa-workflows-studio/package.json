@@ -1,0 +1,48 @@
+{
+  "name": "@elsa-workflows/elsa-workflow-designer",
+  "version": "2.0.0-preview-9",
+  "description": "Stencil Component Starter",
+  "main": "dist/index.cjs.js",
+  "module": "dist/custom-elements/index.js",
+  "es2015": "dist/esm/index.mjs",
+  "es2017": "dist/esm/index.mjs",
+  "types": "dist/custom-elements/index.d.ts",
+  "collection": "dist/collection/collection-manifest.json",
+  "collection:main": "dist/collection/index.js",
+  "unpkg": "dist/elsa-workflows-studio/elsa-workflows-studio.esm.js",
+  "files": [
+    "dist/",
+    "loader/"
+  ],
+  "scripts": {
+    "push:preview": "npm publish --access-public --tag preview",
+    "build": "stencil build --docs",
+    "build:dev": "stencil build --dev",
+    "start:dev": "stencil build --dev --watch --serve",
+    "start": "stencil build --watch --serve",
+    "test": "stencil test --spec --e2e",
+    "test.watch": "stencil test --spec --e2e --watchAll",
+    "generate": "stencil generate",
+    "build:tailwind": "tailwind build ./src/globals/tailwind.css -o ./src/assets/styles/tailwind.css"
+  },
+  "dependencies": {
+    "@fullhuman/postcss-purgecss": "^4.0.0",
+    "@stencil/core": "^2.0.1",
+    "@stencil/postcss": "^2.0.0",
+    "@stencil/store": "^1.3.0",
+    "@tailwindcss/forms": "^0.2.1",
+    "@tailwindcss/ui": "^0.7.2",
+    "autoprefixer": "10.2.4",
+    "axios": "^0.21.1",
+    "cssnano": "^4.1.10",
+    "el-transition": "^0.0.7",
+    "js-event-bus": "^1.0.3",
+    "jsplumb": "2.15.5",
+    "postcss": "^8.2.4",
+    "postcss-import": "^14.0.0",
+    "postcss-preset-env": "^6.7.0",
+    "stencil-click-outside": "^1.7.1",
+    "tailwindcss": "2.0.2"
+  },
+  "license": "MIT"
+}

@@ -32,7 +32,7 @@ namespace ElsaDashboard.Application.Extensions
             return leaves;
         }
 
-        public static IEnumerable<ConnectionModel> GetInboundConnections(this WorkflowModel workflowBlueprint, string activityId) => workflowBlueprint.Connections.Where(x => x.TargetId == activityId).ToList();
+        public static IEnumerable<ConnectionModel> GetInboundConnections(this WorkflowModel workflowModel, string activityId) => workflowModel.Connections.Where(x => x.TargetId == activityId).ToList();
 
         public static IEnumerable<ConnectionModel> GetOutboundConnections(this WorkflowModel workflowModel, string activityId) => workflowModel.Connections.Where(x => x.SourceId == activityId).ToList();
 

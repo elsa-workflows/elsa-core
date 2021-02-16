@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using AutoFixture;
 using Elsa.Activities.Console;
@@ -28,9 +29,9 @@ namespace Elsa.ComponentTests.Clients.RestClient.WorkflowDefinitions
             {
                 ActivityId = Fixture.Create<string>(),
                 Type = nameof(WriteLine),
-                Properties = new ActivityDefinitionProperties
+                Properties = new List<ActivityDefinitionProperty>()
                 {
-                    [nameof(WriteLine.Text)] = ActivityDefinitionPropertyValue.Literal("Hello World!")
+                    ActivityDefinitionProperty.Literal(nameof(WriteLine.Text), "Hello World!")
                 }
             };
 

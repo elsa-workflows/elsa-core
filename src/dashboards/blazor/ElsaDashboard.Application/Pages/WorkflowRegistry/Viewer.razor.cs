@@ -16,7 +16,7 @@ namespace ElsaDashboard.Application.Pages.WorkflowRegistry
         [Inject] private IWorkflowRegistryService WorkflowRegistryService { get; set; } = default!;
         [Inject] private IActivityService ActivityService { get; set; } = default!;
         [Inject] private IActivityDisplayService ActivityDisplayService { get; set; } = default!;
-        private IDictionary<string, ActivityInfo> ActivityDescriptors { get; set; } = default!;
+        private IDictionary<string, ActivityDescriptor> ActivityDescriptors { get; set; } = default!;
         private WorkflowBlueprint WorkflowBlueprint { get; set; } = default!;
         private WorkflowModel WorkflowModel { get; set; } = WorkflowModel.Blank();
 

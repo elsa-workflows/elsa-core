@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Elsa.Activities.Console;
 using Elsa.Models;
@@ -33,8 +34,8 @@ namespace Elsa.Samples.Serialization
             // Define a workflow.
             var workflowDefinition = new WorkflowDefinition
             {
-                Id = "SampleWorkflow",
-                DefinitionVersionId = "1",
+                Id = "1",
+                DefinitionId = "SampleWorkflow",
                 Version = 1,
                 IsPublished = true,
                 IsLatest = true,
@@ -46,14 +47,9 @@ namespace Elsa.Samples.Serialization
                     {
                         ActivityId = "activity-1",
                         Type = nameof(WriteLine),
-                        Properties = new ActivityDefinitionProperties
+                        Properties = new List<ActivityDefinitionProperty>()
                         {
-                            [nameof(WriteLine.Text)] = new()
-                            {
-                                Syntax = LiquidExpressionHandler.SyntaxName,
-                                Expression = "Hello World!",
-                                Type = typeof(string)
-                            }
+                            ActivityDefinitionProperty.Liquid(nameof(WriteLine.Text), "Hello World")
                         }
                     },
                 }
@@ -70,7 +66,7 @@ namespace Elsa.Samples.Serialization
 
             // Materialize workflow.
             var materializer = services.GetRequiredService<IWorkflowBlueprintMaterializer>();
-            var workflowBlueprint = materializer.CreateWorkflowBlueprint(deserializedWorkflowDefinition);
+            var workflowBlueprint = await materializer.CreateWorkflowBlueprintAsync(deserializedWorkflowDefinition);
 
             // Execute workflow.
             var workflowRunner = services.GetRequiredService<IWorkflowRunner>();

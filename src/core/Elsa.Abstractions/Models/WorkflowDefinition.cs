@@ -2,6 +2,8 @@ using System.Collections.Generic;
 
 namespace Elsa.Models
 {
+    // WorkflowDefinition represents a version of a workflow.
+    // Therefore, the Id represents the individual version ID of the workflow definition.
     public class WorkflowDefinition : Entity, ITenantScope, ICompositeActivityDefinition
     {
         public WorkflowDefinition()
@@ -12,7 +14,8 @@ namespace Elsa.Models
             Connections = new List<ConnectionDefinition>();
         }
         
-        public string DefinitionVersionId { get; set; } = default!;
+        public string DefinitionId { get; set; } = default!;
+        public string VersionId => Id;
         public string? TenantId { get; set; }
         public string? Name { get; set; }
         public string? DisplayName { get; set; }

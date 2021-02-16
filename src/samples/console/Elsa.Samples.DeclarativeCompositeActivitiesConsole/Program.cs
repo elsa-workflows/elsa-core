@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Scripting.Liquid.Services;
@@ -26,8 +27,8 @@ namespace Elsa.Samples.DeclarativeCompositeActivitiesConsole
             // Define a workflow.
             var workflowDefinition = new WorkflowDefinition
             {
-                Id = "SampleWorkflow",
-                DefinitionVersionId = "1",
+                Id = "1",
+                DefinitionId = "SampleWorkflow",
                 Version = 1,
                 IsPublished = true,
                 IsLatest = true,
@@ -67,7 +68,7 @@ namespace Elsa.Samples.DeclarativeCompositeActivitiesConsole
 
             // Materialize workflow.
             var materializer = services.GetRequiredService<IWorkflowBlueprintMaterializer>();
-            var workflowBlueprint = materializer.CreateWorkflowBlueprint(deserializedWorkflowDefinition);
+            var workflowBlueprint = await materializer.CreateWorkflowBlueprintAsync(deserializedWorkflowDefinition);
 
             // Execute workflow.
             var workflowRunner = services.GetRequiredService<IWorkflowRunner>();
@@ -75,18 +76,13 @@ namespace Elsa.Samples.DeclarativeCompositeActivitiesConsole
         }
 
         private static ActivityDefinition WriteLine(string id, string text) =>
-            new ActivityDefinition
+            new()
             {
                 ActivityId = id,
                 Type = nameof(Activities.Console.WriteLine),
-                Properties = new ActivityDefinitionProperties
+                Properties = new List<ActivityDefinitionProperty>()
                 {
-                    [nameof(Activities.Console.WriteLine.Text)] = new ActivityDefinitionPropertyValue
-                    {
-                        Syntax = LiquidExpressionHandler.SyntaxName,
-                        Expression = text,
-                        Type = typeof(string)
-                    }
+                    ActivityDefinitionProperty.Liquid(nameof(Activities.Console.WriteLine.Text), text)
                 }
             };
     }

@@ -1,0 +1,24 @@
+﻿@using Microsoft.JSInterop
+@inject IJSRuntime JS;
+
+<elsa-workflow-editor id="studio" server-url="@ServerUrl" workflow-definition-id="@WorkflowDefinitionId"></elsa-workflow-editor>
+
+@code{
+
+    [Parameter]
+    public string ServerUrl { get; set; } = default!;
+    
+    [Parameter]
+    public string WorkflowDefinitionId { get; set; } = default!;
+
+    private IJSObjectReference _designerModule = default!;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_designerModule == null!)
+        {
+            _designerModule = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/Elsa.Designer.Bindings.Blazor/elsa-workflows.js");
+        }
+    }
+
+}

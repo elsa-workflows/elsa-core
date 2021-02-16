@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using Elsa.ActivityProviders;
 using Elsa.Metadata;
+using Elsa.Serialization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
@@ -14,30 +17,30 @@ namespace Elsa.Server.Api.Endpoints.Activities
     [Produces("application/json")]
     public class List : Controller
     {
-        private readonly ICollection<Type> _activityTypes;
-        private readonly IActivityDescriber _activityDescriber;
+        private readonly IActivityTypeService _activityTypeService;
+        private readonly IContentSerializer _contentSerializer;
 
-        public List(ElsaOptions elsaOptions, IActivityDescriber activityDescriber)
+        public List(IActivityTypeService activityTypeService, IContentSerializer contentSerializer)
         {
-            _activityTypes = elsaOptions.ActivityTypes.ToList();
-            _activityDescriber = activityDescriber;
+            _activityTypeService = activityTypeService;
+            _contentSerializer = contentSerializer;
         }
 
         [HttpGet]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(List<ActivityInfo>))]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(List<ActivityDescriptor>))]
         [SwaggerOperation(
             Summary = "Returns all available activities.",
-            Description = "Returns all available activities from which a workflow definition can be built.",
+            Description = "Returns all available activities from which workflow definitions can be built.",
             OperationId = "Activities.List",
             Tags = new[] { "Activities" })
         ]
-        public IActionResult Handle()
+        public async Task<IActionResult> Handle()
         {
-            var descriptors = _activityTypes.Select(DescribeActivity).Where(x => x != null).Select(x => x!).ToList();
-            var model = new List<ActivityInfo>(descriptors);
-            return Ok(model);
+            var activityTypes = await _activityTypeService.GetActivityTypesAsync();
+            var descriptors = activityTypes.Select(DescribeActivity).Where(x => x != null && x.Browsable).Select(x => x!).ToList();
+            return Json(descriptors, _contentSerializer.GetSettings());
         }
 
-        private ActivityInfo? DescribeActivity(Type activityType) => _activityDescriber.Describe(activityType);
+        private ActivityDescriptor? DescribeActivity(ActivityType activityType) => activityType.Describe();
     }
 }

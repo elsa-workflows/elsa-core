@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Runtime.Serialization;
 
 namespace Elsa.Client.Models
@@ -15,6 +16,6 @@ namespace Elsa.Client.Models
         [DataMember(Order = 8)] public bool PersistWorkflow { get; set; }
         [DataMember(Order = 9)] public bool LoadWorkflowContext { get; set; }
         [DataMember(Order = 10)] public bool SaveWorkflowContext { get; set; }
-        [DataMember(Order = 11)] public ActivityDefinitionProperties Properties { get; set; } = new ActivityDefinitionProperties();
+        [DataMember(Order = 11)] public ICollection<ActivityDefinitionProperty> Properties { get; set; } = new List<ActivityDefinitionProperty>();
     }
 }

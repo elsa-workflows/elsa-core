@@ -5,11 +5,11 @@ namespace ElsaDashboard.Application.Models
 {
     public class ActivityDescriptorSelectedEventArgs : EventArgs
     {
-        public ActivityInfo ActivityInfo { get; }
+        public ActivityDescriptor ActivityDescriptor { get; }
 
-        public ActivityDescriptorSelectedEventArgs(ActivityInfo activityInfo)
+        public ActivityDescriptorSelectedEventArgs(ActivityDescriptor activityDescriptor)
         {
-            ActivityInfo = activityInfo;
+            ActivityDescriptor = activityDescriptor;
         }
     }
 }

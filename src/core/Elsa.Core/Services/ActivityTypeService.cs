@@ -50,7 +50,7 @@ namespace Elsa.Services
             if (_activityTypeDictionary != null)
                 return _activityTypeDictionary;
             
-            _activityTypeDictionary = await GetActivityTypesInternalAsync(cancellationToken).ToDictionaryAsync(x => x.Type, cancellationToken);
+            _activityTypeDictionary = await GetActivityTypesInternalAsync(cancellationToken).ToDictionaryAsync(x => x.TypeName, cancellationToken);
             return _activityTypeDictionary;
         }
 

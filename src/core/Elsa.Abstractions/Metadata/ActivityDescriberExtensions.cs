@@ -4,6 +4,6 @@ namespace Elsa.Metadata
 {
     public static class ActivityDescriberExtensions
     {
-        public static ActivityInfo? Describe<T>(this IActivityDescriber describer) where T : IActivity => describer.Describe(typeof(T));
+        public static ActivityDescriptor? Describe<T>(this IActivityDescriber describer) where T : IActivity => describer.Describe(typeof(T));
     }
 }

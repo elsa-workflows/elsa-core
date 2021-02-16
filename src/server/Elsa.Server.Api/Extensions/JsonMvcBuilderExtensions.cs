@@ -12,6 +12,7 @@ namespace Elsa.Server.Api.Extensions
                 options =>
                 {
                     configureOptions ??= DefaultContentSerializer.ConfigureDefaultJsonSerializationSettings;
+                    configureOptions(options.SerializerSettings);
                 });
     }
 }

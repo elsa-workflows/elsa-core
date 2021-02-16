@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -42,9 +43,9 @@ namespace Elsa.ComponentTests.Endpoints.WorkflowDefinitions
             {
                 ActivityId = _fixture.Create<string>(),
                 Type = nameof(WriteLine),
-                Properties = new ActivityDefinitionProperties
+                Properties = new List<ActivityDefinitionProperty>()
                 {
-                    [nameof(WriteLine.Text)] = ActivityDefinitionPropertyValue.Literal("Hello World!")
+                    ActivityDefinitionProperty.Literal(nameof(WriteLine.Text), "Hello World!")
                 }
             };
 

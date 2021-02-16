@@ -45,11 +45,10 @@ namespace Elsa.Expressions
             }
             catch (Exception e)
             {
-                var message = $"Error while evaluating {expression}. Message: {e.Message}";
-
-                _logger.LogError(e, message);
-                throw new WorkflowException(message);
+                _logger.LogWarning(e, "Failed to evaluate expression {Expression} using syntax {Syntax}", expression, syntax);
             }
+
+            return default;
         }
     }
 }

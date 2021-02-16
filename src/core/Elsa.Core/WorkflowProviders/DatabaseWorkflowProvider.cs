@@ -27,7 +27,7 @@ namespace Elsa.WorkflowProviders
         protected override async ValueTask<IEnumerable<IWorkflowBlueprint>> OnGetWorkflowsAsync(CancellationToken cancellationToken)
         {
             var workflowDefinitions = await _workflowDefinitionStore.FindManyAsync(Specification<WorkflowDefinition>.All, cancellationToken: cancellationToken);
-            return workflowDefinitions.Select(_workflowBlueprintMaterializer.CreateWorkflowBlueprint);
+            return await Task.WhenAll(workflowDefinitions.Select(async x => await _workflowBlueprintMaterializer.CreateWorkflowBlueprintAsync(x, cancellationToken)));
         }
     }
 }

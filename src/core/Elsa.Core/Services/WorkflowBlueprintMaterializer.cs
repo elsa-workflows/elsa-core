@@ -1,5 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Elsa.ActivityProviders;
 using Elsa.Models;
 using Elsa.Services.Models;
 
@@ -7,15 +10,23 @@ namespace Elsa.Services
 {
     public class WorkflowBlueprintMaterializer : IWorkflowBlueprintMaterializer
     {
-        public IWorkflowBlueprint CreateWorkflowBlueprint(WorkflowDefinition workflowDefinition)
+        private readonly IActivityTypeService _activityTypeService;
+
+        public WorkflowBlueprintMaterializer(IActivityTypeService activityTypeService)
         {
-            var activityBlueprints = workflowDefinition.Activities.SelectMany(CreateBlueprints).Distinct().ToDictionary(x => x.Id);
+            _activityTypeService = activityTypeService;
+        }
+        
+        public async Task<IWorkflowBlueprint> CreateWorkflowBlueprintAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken)
+        {
+            var manyActivityBlueprints = await Task.WhenAll(workflowDefinition.Activities.Select(async x => await CreateBlueprintsAsync(x, cancellationToken)));
+            var activityBlueprints = manyActivityBlueprints.SelectMany(x => x).Distinct().ToDictionary(x => x.Id);
             var compositeActivityBlueprints = activityBlueprints.Values.Where(x => x is ICompositeActivityBlueprint).Cast<ICompositeActivityBlueprint>().ToList(); 
             var connections = compositeActivityBlueprints.SelectMany(x => x.Connections).Distinct().ToList();
             var propertyProviders = compositeActivityBlueprints.SelectMany(x => x.ActivityPropertyProviders).ToList();
             
             connections.AddRange(workflowDefinition.Connections.Select(x => ResolveConnection(x, activityBlueprints)));
-            propertyProviders.AddRange(CreatePropertyProviders(workflowDefinition));
+            propertyProviders.AddRange(await CreatePropertyProviders(workflowDefinition, cancellationToken));
 
             return new WorkflowBlueprint(
                 workflowDefinition.Id,
@@ -39,17 +50,22 @@ namespace Elsa.Services
             );
         }
 
-        private static ActivityPropertyProviders CreatePropertyProviders(ICompositeActivityDefinition compositeActivityDefinition)
+        private async Task<ActivityPropertyProviders> CreatePropertyProviders(ICompositeActivityDefinition compositeActivityDefinition, CancellationToken cancellationToken)
         {
             var propertyProviders = new ActivityPropertyProviders();
             var activityDefinitions = compositeActivityDefinition.Activities;
 
             foreach (var activityDefinition in activityDefinitions)
             {
+                var activityType = await _activityTypeService.GetActivityTypeAsync(activityDefinition.Type, cancellationToken);
+                var type = activityType.Type;
+                var props = type.GetProperties();
+                
                 foreach (var property in activityDefinition.Properties)
                 {
-                    var provider = new ExpressionActivityPropertyValueProvider(property.Value.Expression, property.Value.Syntax, property.Value.Type);
-                    propertyProviders.AddProvider(activityDefinition.ActivityId, property.Key, provider);
+                    var prop = props.First(x => x.Name == property.Name);
+                    var provider = new ExpressionActivityPropertyValueProvider(property.Expression, property.Syntax, prop.PropertyType);
+                    propertyProviders.AddProvider(activityDefinition.ActivityId, property.Name, provider);
                 }
             }
 
@@ -67,16 +83,18 @@ namespace Elsa.Services
             return new Connection(source, target, outcome!);
         }
 
-        private static IEnumerable<IActivityBlueprint> CreateBlueprints(ActivityDefinition activityDefinition)
+        private async Task<IEnumerable<IActivityBlueprint>> CreateBlueprintsAsync(ActivityDefinition activityDefinition, CancellationToken cancellationToken)
         {
+            var list = new List<IActivityBlueprint>();
+            
             if (activityDefinition is CompositeActivityDefinition compositeActivityDefinition)
             {
-                var activityBlueprints = compositeActivityDefinition.Activities.SelectMany(CreateBlueprints).ToDictionary(x => x.Id);
-
-                foreach (var activityBlueprint in activityBlueprints.Values)
-                    yield return activityBlueprint;
+                var manyActivityBlueprints = await Task.WhenAll(compositeActivityDefinition.Activities.Select(async x => await CreateBlueprintsAsync(x, cancellationToken)));
+                var activityBlueprints = manyActivityBlueprints.SelectMany(x => x).ToDictionary(x => x.Id);
                 
-                yield return new CompositeActivityBlueprint
+                list.AddRange(activityBlueprints.Values);
+                
+                list.Add(new CompositeActivityBlueprint
                 {
                     Id = activityDefinition.ActivityId,
                     Type = activityDefinition.Type,
@@ -87,12 +105,12 @@ namespace Elsa.Services
                     PersistWorkflow = activityDefinition.PersistWorkflow,
                     LoadWorkflowContext = activityDefinition.LoadWorkflowContext,
                     SaveWorkflowContext = activityDefinition.SaveWorkflowContext,
-                    ActivityPropertyProviders = CreatePropertyProviders(compositeActivityDefinition)
-                };
+                    ActivityPropertyProviders = await CreatePropertyProviders(compositeActivityDefinition, cancellationToken)
+                });
             }
             else
             {
-                yield return new ActivityBlueprint
+                list.Add(new ActivityBlueprint
                 {
                     Id = activityDefinition.ActivityId,
                     Type = activityDefinition.Type,
@@ -101,8 +119,10 @@ namespace Elsa.Services
                     PersistWorkflow = activityDefinition.PersistWorkflow,
                     LoadWorkflowContext = activityDefinition.LoadWorkflowContext,
                     SaveWorkflowContext = activityDefinition.SaveWorkflowContext,
-                };    
+                });    
             }
+
+            return list;
         }
     }
 }

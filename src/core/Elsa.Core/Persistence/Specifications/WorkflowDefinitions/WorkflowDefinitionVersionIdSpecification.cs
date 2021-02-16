@@ -8,6 +8,6 @@ namespace Elsa.Persistence.Specifications.WorkflowDefinitions
     {
         public string VersionId { get; set; }
         public WorkflowDefinitionVersionIdSpecification(string versionId) => VersionId = versionId;
-        public override Expression<Func<WorkflowDefinition, bool>> ToExpression() => x => x.DefinitionVersionId == VersionId;
+        public override Expression<Func<WorkflowDefinition, bool>> ToExpression() => x => x.Id == VersionId;
     }
 }
