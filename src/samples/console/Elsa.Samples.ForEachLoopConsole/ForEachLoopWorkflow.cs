@@ -18,7 +18,7 @@ namespace Elsa.Samples.ForEachLoopConsole
         {
             builder
                 .WriteLine("Enumerating all months of the year:")
-                .ForEach(DateTimeFormatInfo.CurrentInfo!.MonthNames.Cast<object>().ToList, iterate => iterate.WriteLine(context => context.GetInput<string>()))
+                .ForEach(DateTimeFormatInfo.CurrentInfo!.MonthNames, iterate => iterate.WriteLine(context => context.GetInput<string>()))
                 .WriteLine("Done.");
         }
     }

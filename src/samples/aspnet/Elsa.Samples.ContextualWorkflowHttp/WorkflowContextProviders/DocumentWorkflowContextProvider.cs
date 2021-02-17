@@ -20,12 +20,12 @@ namespace Elsa.Samples.ContextualWorkflowHttp.WorkflowContextProviders
             _idGenerator = idGenerator;
         }
 
-        public override async ValueTask<object?> LoadAsync(LoadWorkflowContext context, CancellationToken cancellationToken = default) =>
+        public override async ValueTask<Document?> LoadAsync(LoadWorkflowContext context, CancellationToken cancellationToken = default) =>
             await _session.Query<Document, DocumentIndex>(x => x.DocumentUid == context.ContextId).FirstOrDefaultAsync();
 
-        public override ValueTask<string?> SaveAsync(SaveWorkflowContext context, CancellationToken cancellationToken = default)
+        public override ValueTask<string?> SaveAsync(SaveWorkflowContext<Document> context, CancellationToken cancellationToken = default)
         {
-            var document = (Document)context.Context;
+            var document = context.Context;
 
             if (string.IsNullOrWhiteSpace(document.DocumentId))
                 document.DocumentId = _idGenerator.Generate();
