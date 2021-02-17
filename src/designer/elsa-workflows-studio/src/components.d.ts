@@ -5,7 +5,7 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
-import { ActivityModel, WorkflowDefinition, WorkflowModel } from "./models";
+import { ActivityDefinitionProperty, ActivityModel, ActivityPropertyDescriptor, WorkflowDefinition, WorkflowModel } from "./models";
 export namespace Components {
     interface ElsaActivityEditorModal {
     }
@@ -21,6 +21,12 @@ export namespace Components {
     interface ElsaModalDialog {
         "hide": (animate: boolean) => Promise<void>;
         "show": (animate: boolean) => Promise<void>;
+    }
+    interface ElsaMonaco {
+    }
+    interface ElsaTextProperty {
+        "propertyDescriptor": ActivityPropertyDescriptor;
+        "propertyModel": ActivityDefinitionProperty;
     }
     interface ElsaWorkflowEditor {
         "serverUrl": string;
@@ -63,6 +69,18 @@ declare global {
         prototype: HTMLElsaModalDialogElement;
         new (): HTMLElsaModalDialogElement;
     };
+    interface HTMLElsaMonacoElement extends Components.ElsaMonaco, HTMLStencilElement {
+    }
+    var HTMLElsaMonacoElement: {
+        prototype: HTMLElsaMonacoElement;
+        new (): HTMLElsaMonacoElement;
+    };
+    interface HTMLElsaTextPropertyElement extends Components.ElsaTextProperty, HTMLStencilElement {
+    }
+    var HTMLElsaTextPropertyElement: {
+        prototype: HTMLElsaTextPropertyElement;
+        new (): HTMLElsaTextPropertyElement;
+    };
     interface HTMLElsaWorkflowEditorElement extends Components.ElsaWorkflowEditor, HTMLStencilElement {
     }
     var HTMLElsaWorkflowEditorElement: {
@@ -87,6 +105,8 @@ declare global {
         "elsa-designer-tree": HTMLElsaDesignerTreeElement;
         "elsa-designer-tree-activity": HTMLElsaDesignerTreeActivityElement;
         "elsa-modal-dialog": HTMLElsaModalDialogElement;
+        "elsa-monaco": HTMLElsaMonacoElement;
+        "elsa-text-property": HTMLElsaTextPropertyElement;
         "elsa-workflow-editor": HTMLElsaWorkflowEditorElement;
         "elsa-workflow-publish-button": HTMLElsaWorkflowPublishButtonElement;
         "elsa-workflow-settings-modal": HTMLElsaWorkflowSettingsModalElement;
@@ -109,6 +129,12 @@ declare namespace LocalJSX {
     }
     interface ElsaModalDialog {
     }
+    interface ElsaMonaco {
+    }
+    interface ElsaTextProperty {
+        "propertyDescriptor"?: ActivityPropertyDescriptor;
+        "propertyModel"?: ActivityDefinitionProperty;
+    }
     interface ElsaWorkflowEditor {
         "serverUrl"?: string;
         "workflowDefinitionId"?: string;
@@ -125,6 +151,8 @@ declare namespace LocalJSX {
         "elsa-designer-tree": ElsaDesignerTree;
         "elsa-designer-tree-activity": ElsaDesignerTreeActivity;
         "elsa-modal-dialog": ElsaModalDialog;
+        "elsa-monaco": ElsaMonaco;
+        "elsa-text-property": ElsaTextProperty;
         "elsa-workflow-editor": ElsaWorkflowEditor;
         "elsa-workflow-publish-button": ElsaWorkflowPublishButton;
         "elsa-workflow-settings-modal": ElsaWorkflowSettingsModal;
@@ -139,6 +167,8 @@ declare module "@stencil/core" {
             "elsa-designer-tree": LocalJSX.ElsaDesignerTree & JSXBase.HTMLAttributes<HTMLElsaDesignerTreeElement>;
             "elsa-designer-tree-activity": LocalJSX.ElsaDesignerTreeActivity & JSXBase.HTMLAttributes<HTMLElsaDesignerTreeActivityElement>;
             "elsa-modal-dialog": LocalJSX.ElsaModalDialog & JSXBase.HTMLAttributes<HTMLElsaModalDialogElement>;
+            "elsa-monaco": LocalJSX.ElsaMonaco & JSXBase.HTMLAttributes<HTMLElsaMonacoElement>;
+            "elsa-text-property": LocalJSX.ElsaTextProperty & JSXBase.HTMLAttributes<HTMLElsaTextPropertyElement>;
             "elsa-workflow-editor": LocalJSX.ElsaWorkflowEditor & JSXBase.HTMLAttributes<HTMLElsaWorkflowEditorElement>;
             "elsa-workflow-publish-button": LocalJSX.ElsaWorkflowPublishButton & JSXBase.HTMLAttributes<HTMLElsaWorkflowPublishButtonElement>;
             "elsa-workflow-settings-modal": LocalJSX.ElsaWorkflowSettingsModal & JSXBase.HTMLAttributes<HTMLElsaWorkflowSettingsModalElement>;

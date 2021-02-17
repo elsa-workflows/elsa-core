@@ -1,6 +1,6 @@
 import {Component, Host, h, Prop, State, Event, EventEmitter, Watch} from '@stencil/core';
-import {eventBus} from "../../../utils/event-bus";
-import {ActivityModel, EventTypes, WorkflowDefinition, WorkflowModel} from "../../../models";
+import {eventBus} from "../../../../utils/event-bus";
+import {ActivityModel, EventTypes, WorkflowDefinition, WorkflowModel} from "../../../../models";
 
 @Component({
   tag: 'elsa-workflow-settings-modal',

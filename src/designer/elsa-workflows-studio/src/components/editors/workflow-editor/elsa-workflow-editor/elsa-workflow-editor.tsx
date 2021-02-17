@@ -1,8 +1,8 @@
 import {Component, Event, EventEmitter, h, Host, Listen, Prop, State, Watch} from '@stencil/core';
-import {eventBus} from '../../../utils/event-bus';
-import {ActivityDefinition, ActivityDescriptor, ActivityModel, ConnectionDefinition, ConnectionModel, EventTypes, WorkflowDefinition, WorkflowModel} from "../../../models";
-import {createElsaClient, SaveWorkflowDefinitionRequest} from "../../../services/elsa-client";
-import state from '../../../utils/store';
+import {eventBus} from '../../../../utils/event-bus';
+import {ActivityDefinition, ActivityDescriptor, ActivityModel, ConnectionDefinition, ConnectionModel, EventTypes, WorkflowDefinition, WorkflowModel} from "../../../../models";
+import {createElsaClient, SaveWorkflowDefinitionRequest} from "../../../../services/elsa-client";
+import state from '../../../../utils/store';
 
 @Component({
   tag: 'elsa-workflow-editor',

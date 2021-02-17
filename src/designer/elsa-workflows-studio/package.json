@@ -38,6 +38,7 @@
     "el-transition": "^0.0.7",
     "js-event-bus": "^1.0.3",
     "jsplumb": "2.15.5",
+    "monaco-editor": "^0.22.3",
     "postcss": "^8.2.4",
     "postcss-import": "^14.0.0",
     "postcss-preset-env": "^6.7.0",
