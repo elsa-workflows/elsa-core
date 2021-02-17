@@ -75,6 +75,12 @@ namespace Elsa.Services.Models
         /// </summary>
         public IDictionary<string, ICollection<Func<WorkflowExecutionContext, CancellationToken, ValueTask>>> Tasks { get; set; } = new Dictionary<string, ICollection<Func<WorkflowExecutionContext, CancellationToken, ValueTask>>>();
 
+        public string? ContextId
+        {
+            get => WorkflowInstance.ContextId;
+            set => WorkflowInstance.ContextId = value;
+        }
+
         public void RegisterTask(string groupName, Func<WorkflowExecutionContext, CancellationToken, ValueTask> task)
         {
             if (!Tasks.ContainsKey(groupName))

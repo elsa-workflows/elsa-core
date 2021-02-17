@@ -35,13 +35,32 @@ namespace Elsa.Services.Models
         public IActivityBlueprint ActivityBlueprint { get; }
 
         public string ActivityId => ActivityBlueprint.Id;
+
+        public string? ContextId
+        {
+            get => WorkflowExecutionContext.ContextId;
+            set => WorkflowExecutionContext.ContextId = value;
+        }
         public IReadOnlyCollection<string> Outcomes { get; set; }
         public object? Input { get; }
         public bool Resuming { get; }
+        
+        public string? CorrelationId
+        {
+            get => WorkflowExecutionContext.CorrelationId;
+            set => WorkflowExecutionContext.CorrelationId = value;
+        }
+        
         public CancellationToken CancellationToken { get; }
 
         public JObject GetData() => WorkflowInstance.ActivityData.GetItem(ActivityBlueprint.Id, () => new JObject());
 
+        public void SetState(string propertyName, object? value)
+        {
+            var data = GetData();
+            data.SetState(propertyName, value);
+        }
+        
         public T? GetState<T>(string propertyName)
         {
             var data = GetData();
@@ -54,8 +73,10 @@ namespace Elsa.Services.Models
             string propertyName = expression.Member.Name;
             return GetState<T>(propertyName);
         }
+
+        public T? GetContainerState<T>() => GetContainerState<T>(typeof(T).Name);
         
-        public T? GetParentState<T>(string key)
+        public T? GetContainerState<T>(string key)
         {
             var parentActivityId = ActivityBlueprint.Parent?.Id;
 
@@ -64,6 +85,19 @@ namespace Elsa.Services.Models
             
             var parentData = WorkflowExecutionContext.WorkflowInstance.ActivityData.GetItem(parentActivityId);
             return parentData.GetState<T>(key);
+        }
+
+        public void SetContainerState<T>(object? value) => SetContainerState(typeof(T).Name, value); 
+        
+        public void SetContainerState(string key, object? value)
+        {
+            var parentActivityId = ActivityBlueprint.Parent?.Id;
+
+            if (parentActivityId == null)
+                return;
+            
+            var parentData = WorkflowExecutionContext.WorkflowInstance.ActivityData.GetItem(parentActivityId);
+            parentData?.SetState(key, value);
         }
 
         public object? Output
