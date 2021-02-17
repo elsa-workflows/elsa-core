@@ -1,11 +1,13 @@
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
-
+using Elsa.Activities.Email.Options;
 using Elsa.Activities.Email.Services;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Services;
 using Elsa.Services.Models;
-
+using Microsoft.Extensions.Options;
 using MimeKit;
 using MimeKit.Text;
 
@@ -16,23 +18,25 @@ namespace Elsa.Activities.Email
     public class SendEmail : Activity
     {
         private readonly ISmtpService _smtpService;
+        private readonly SmtpOptions _options;
 
-        public SendEmail(ISmtpService smtpService)
+        public SendEmail(ISmtpService smtpService, IOptions<SmtpOptions> options)
         {
             _smtpService = smtpService;
+            _options = options.Value;
         }
 
         [ActivityProperty(Hint = "The sender's email address.")]
         public string? From { get; set; }
 
         [ActivityProperty(Hint = "The recipients email addresses.")]
-        public string[] To { get; set; } = default!;
+        public ICollection<string> To { get; set; } = new List<string>();
 
         [ActivityProperty(Hint = "The cc recipients email addresses. (Optional)")]
-        public string[]? Cc { get; set; }
+        public ICollection<string> Cc { get; set; } = new List<string>();
 
         [ActivityProperty(Hint = "The Bcc recipients email addresses. (Optional)")]
-        public string[]? Bcc { get; set; }
+        public ICollection<string> Bcc { get; set; } = new List<string>();
 
         [ActivityProperty(Hint = "The subject of the email message.")]
         public string? Subject { get; set; }
@@ -44,8 +48,9 @@ namespace Elsa.Activities.Email
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
             var message = new MimeMessage();
+            var from = From is null or "" ? _options.DefaultSender : From; 
 
-            message.From.Add(MailboxAddress.Parse(From));
+            message.From.Add(MailboxAddress.Parse(from));
             message.Subject = Subject;
 
             message.Body = new TextPart(TextFormat.Html)
@@ -53,26 +58,15 @@ namespace Elsa.Activities.Email
                 Text = Body
             };
 
-            SetRecipiensEmailAddresses(message.To, To);
-            SetRecipiensEmailAddresses(message.Cc, Cc);
-            SetRecipiensEmailAddresses(message.Bcc, Bcc);
+            SetRecipientsEmailAddresses(message.To, To);
+            SetRecipientsEmailAddresses(message.Cc, Cc);
+            SetRecipientsEmailAddresses(message.Bcc, Bcc);
            
             await _smtpService.SendAsync(message, context.CancellationToken);
 
             return Done();
         }
 
-        private void SetRecipiensEmailAddresses(InternetAddressList list, string[]? addresses)
-        {
-            if (addresses == null)
-            {
-                return;
-            }
-
-            for (var i = 0; i < addresses.Length; i++)
-            {
-                list.Add(MailboxAddress.Parse(addresses[i]));
-            }
-        }
+        private void SetRecipientsEmailAddresses(InternetAddressList list, IEnumerable<string> addresses) => list.AddRange(addresses.Select(MailboxAddress.Parse));
     }
 }

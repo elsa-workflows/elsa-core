@@ -15,12 +15,12 @@ namespace Elsa.Activities.Email
             builder.SendEmail(setup => setup.WithSender(from).WithRecipient(to).WithSubject(subject).WithBody(body), lineNumber, sourceFile);
 
         public static IActivityBuilder SendEmail(this IBuilder builder, string from, string[] to, string subject, string body, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
-            builder.SendEmail(setup => setup.WithSender(from).WithRecipient(to).WithSubject(subject).WithBody(body), lineNumber, sourceFile);
+            builder.SendEmail(setup => setup.WithSender(from).WithRecipients(to).WithSubject(subject).WithBody(body), lineNumber, sourceFile);
 
         public static IActivityBuilder SendEmail(this IBuilder builder, string from, string[] to, string[] cc, string subject, string body, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
-            builder.SendEmail(setup => setup.WithSender(from).WithRecipient(to).WithCcRecipient(cc).WithSubject(subject).WithBody(body), lineNumber, sourceFile);
+            builder.SendEmail(setup => setup.WithSender(from).WithRecipients(to).WithCcRecipients(cc).WithSubject(subject).WithBody(body), lineNumber, sourceFile);
 
         public static IActivityBuilder SendEmail(this IBuilder builder, string from, string[] to, string[] cc, string[] bcc, string subject, string body, [CallerLineNumber] int lineNumber = default,
-            [CallerFilePath] string? sourceFile = default) => builder.SendEmail(setup => setup.WithSender(from).WithRecipient(to).WithCcRecipient(cc).WithBccRecipient(bcc).WithSubject(subject).WithBody(body), lineNumber, sourceFile);
+            [CallerFilePath] string? sourceFile = default) => builder.SendEmail(setup => setup.WithSender(from).WithRecipients(to).WithCcRecipients(cc).WithBccRecipients(bcc).WithSubject(subject).WithBody(body), lineNumber, sourceFile);
     }
 }
