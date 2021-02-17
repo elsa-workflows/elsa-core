@@ -10,33 +10,38 @@ namespace Elsa.Persistence.MongoDb.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        public static ElsaOptions UseMongoDbPersistence(this ElsaOptions elsa, Action<ElsaMongoDbOptions> configureOptions)
+        public static ElsaOptions UseMongoDbPersistence(this ElsaOptions elsa, Action<ElsaMongoDbOptions> configureOptions) => UseMongoDbPersistence<ElsaMongoDbContext>(elsa, configureOptions);
+        
+        public static ElsaOptions UseMongoDbPersistence<TDbContext>(this ElsaOptions elsa, Action<ElsaMongoDbOptions> configureOptions) where TDbContext: ElsaMongoDbContext
         {
-            AddCore(elsa);
+            AddCore<TDbContext>(elsa);
             elsa.Services.Configure(configureOptions);
 
             return elsa;
         }
 
-        public static ElsaOptions UseMongoDbPersistence(this ElsaOptions elsa, IConfiguration options)
+        public static ElsaOptions UseMongoDbPersistence(this ElsaOptions elsa, IConfiguration configuration) => UseMongoDbPersistence<ElsaMongoDbContext>(elsa, configuration);
+
+        public static ElsaOptions UseMongoDbPersistence<TDbContext>(this ElsaOptions elsa, IConfiguration configuration) where TDbContext: ElsaMongoDbContext
         {
-            AddCore(elsa);
-            elsa.Services.Configure<ElsaMongoDbOptions>(options);
+            AddCore<TDbContext>(elsa);
+            elsa.Services.Configure<ElsaMongoDbOptions>(configuration);
             return elsa;
         }
 
-        private static void AddCore(ElsaOptions elsa)
+        private static void AddCore<TDbContext>(ElsaOptions elsa) where TDbContext : ElsaMongoDbContext
         {
             elsa.Services
                 .AddSingleton<MongoDbWorkflowDefinitionStore>()
                 .AddSingleton<MongoDbWorkflowInstanceStore>()
                 .AddSingleton<MongoDbWorkflowExecutionLogStore>()
                 .AddSingleton<MongoDbBookmarkStore>()
-                .AddSingleton<ElsaMongoDbContext>()
-                .AddSingleton(sp => sp.GetRequiredService<ElsaMongoDbContext>().WorkflowDefinitions)
-                .AddSingleton(sp => sp.GetRequiredService<ElsaMongoDbContext>().WorkflowInstances)
-                .AddSingleton(sp => sp.GetRequiredService<ElsaMongoDbContext>().WorkflowExecutionLog)
-                .AddSingleton(sp => sp.GetRequiredService<ElsaMongoDbContext>().Bookmarks)
+                .AddSingleton<TDbContext>()
+                .AddSingleton<ElsaMongoDbContext, TDbContext>()
+                .AddSingleton(sp => sp.GetRequiredService<TDbContext>().WorkflowDefinitions)
+                .AddSingleton(sp => sp.GetRequiredService<TDbContext>().WorkflowInstances)
+                .AddSingleton(sp => sp.GetRequiredService<TDbContext>().WorkflowExecutionLog)
+                .AddSingleton(sp => sp.GetRequiredService<TDbContext>().Bookmarks)
                 .AddStartupTask<DatabaseInitializer>();
 
             elsa
