@@ -9,12 +9,20 @@
   <!-- Including a pre-built tailwind.css file for development. Don't include this when using a production build, since tailwind would already be included -->
   <link href="/assets/styles/tailwind.css" rel="stylesheet">
 
+  <script>var require = { paths: { 'vs': 'https://microsoft.github.io/monaco-editor/node_modules/monaco-editor/min/vs' } };</script>
+
+<!--  Until I figure out why the ESM loader doesn't work properly, we need to include these scripts manually-->
+  <script src="https://microsoft.github.io/monaco-editor/node_modules/monaco-editor/min/vs/loader.js"></script>
+  <script src="https://microsoft.github.io/monaco-editor/node_modules/monaco-editor/min/vs/editor/editor.main.nls.js"></script>
+  <script src="https://microsoft.github.io/monaco-editor/node_modules/monaco-editor/min/vs/editor/editor.main.js"></script>
+
   <script type="module" src="/build/elsa-workflows-studio.esm.js"></script>
   <script nomodule src="/build/elsa-workflows-studio.js"></script>
 </head>
 <body>
 
 <elsa-workflow-editor id="workflowEditor" server-url="https://localhost:3956/" workflow-definition-id="7eed1333c2674370a1e9b300aa94fda2"></elsa-workflow-editor>
+<!--<elsa-monaco></elsa-monaco>-->
 
 </body>
 </html>

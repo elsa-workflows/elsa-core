@@ -23,6 +23,9 @@ export namespace Components {
         "show": (animate: boolean) => Promise<void>;
     }
     interface ElsaMonaco {
+        "editorHeight": string;
+        "syntax": string;
+        "value": string;
     }
     interface ElsaTextProperty {
         "propertyDescriptor": ActivityPropertyDescriptor;
@@ -130,6 +133,10 @@ declare namespace LocalJSX {
     interface ElsaModalDialog {
     }
     interface ElsaMonaco {
+        "editorHeight"?: string;
+        "onValueChanged"?: (event: CustomEvent<string>) => void;
+        "syntax"?: string;
+        "value"?: string;
     }
     interface ElsaTextProperty {
         "propertyDescriptor"?: ActivityPropertyDescriptor;

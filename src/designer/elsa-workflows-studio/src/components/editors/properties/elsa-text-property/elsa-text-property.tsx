@@ -11,13 +11,24 @@ export class ElsaTextProperty {
   @Prop() propertyDescriptor: ActivityPropertyDescriptor;
   @Prop() propertyModel: ActivityDefinitionProperty;
   @State() selectedSyntax?: string;
+  @State() currentValue?: string
 
-  componentWillLoad(){
+  componentWillLoad() {
     this.selectedSyntax = this.propertyModel.syntax;
+    this.currentValue = this.propertyModel.expression;
+  }
+
+  onSyntaxChange(e: Event, syntax: string) {
+    e.preventDefault();
+    this.selectedSyntax = syntax;
+  }
+
+  onMonacoValueChanged(newValue: string){
+    this.currentValue = newValue;
   }
 
   render() {
-    const syntaxes = ['Literal', 'JavaScript', 'Liquid'];
+    const syntaxes = ['Literal', 'JavaScript', 'Liquid'].reverse();
     const selectedSyntax = this.selectedSyntax ?? 'Literal';
     const propertyDescriptor = this.propertyDescriptor;
     const propertyName = propertyDescriptor.name;
@@ -28,58 +39,54 @@ export class ElsaTextProperty {
     const syntaxFieldId = `${fieldId}Syntax`;
     const syntaxFieldName = `${fieldName}Syntax`;
     const property = this.propertyModel;
-    const value = property.expression;
+    const value = this.currentValue;
 
     return (
       <div>
         <label htmlFor={fieldId} class="block text-sm font-medium text-gray-700">
           {fieldLabel}
         </label>
-        <div class="mt-1 relative rounded-md">
-          {this.editor(fieldId, fieldName, value, selectedSyntax)}
-          <div class="absolute inset-y-0 right-0 flex items-center">
-            <label htmlFor={syntaxFieldId} class="sr-only">Syntax</label>
-            <select id={syntaxFieldId} name={syntaxFieldName} onChange={e => this.onSyntaxChange(e)}
-                    class="focus:ring-indigo-500 focus:border-indigo-500 h-full py-0 pl-2 pr-7 border-transparent bg-transparent text-gray-500 sm:text-sm rounded-md">
-              {syntaxes.map(syntax => <option selected={syntax == selectedSyntax}>{syntax}</option>)}
+        <div class="mb-2">
+          <div class="sm:hidden">
+            <label htmlFor="tabs" class="sr-only">Select a tab</label>
+            <select id="tabs" name="tabs" onChange={e => {this.onSyntaxChange(e, (e.currentTarget as HTMLSelectElement).value)}}
+                    class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+              {syntaxes.map(syntax => {
+                const isSelected = syntax == selectedSyntax;
+                return (
+                  <option selected={isSelected}>{syntax}</option>
+                );
+              })}
             </select>
           </div>
+          <div class="hidden sm:block">
+              <nav class="flex flex-row-reverse" aria-label="Tabs">
+                {syntaxes.map(syntax => {
+                  const isSelected = syntax == selectedSyntax;
+                  const className = isSelected ? 'bg-blue-100 text-blue-700' : 'text-gray-500 hover:text-gray-700';
+
+                  return (
+                    <a href="#" onClick={e => {
+                      this.onSyntaxChange(e, syntax)
+                    }} class={`${className} px-3 py-2 font-medium text-sm rounded-md`}>
+                      {syntax}
+                    </a>
+                  );
+                })}
+              </nav>
+
+          </div>
+        </div>
+        <div class="border border-gray-200 border-t-0">
+          <elsa-monaco value={value} syntax={selectedSyntax} onValueChanged={e => this.onMonacoValueChanged(e.detail)}/>
         </div>
         {fieldHint ? <p class="mt-2 text-sm text-gray-500">{fieldHint}</p> : undefined}
+        <input type="hidden" name={fieldName} value={value} />
+        <input type="hidden" name={syntaxFieldName} value={selectedSyntax} />
       </div>
     )
   }
 
-  editor(fieldId: string, fieldName: string, value: string, syntax: string) {
-    const selectedSyntax = syntax;
 
-    if (selectedSyntax == 'Literal')
-      return this.literalInputEditor(fieldId, fieldName, value);
-
-    if (selectedSyntax == 'JavaScript')
-      return this.javaScriptInputEditor(fieldId, fieldName, value);
-
-    if (selectedSyntax == 'Liquid')
-      return this.liquidInputEditor(fieldId, fieldName, value);
-  }
-
-  literalInputEditor(fieldId: string, fieldName: string, value: string) {
-    return (<input type="text" id={fieldId} name={fieldName} value={value} class="focus:ring-blue-500 focus:border-blue-500 block w-full min-w-0 rounded-md sm:text-sm border-gray-300"/>);
-  }
-
-  javaScriptInputEditor(fieldId: string, fieldName: string, value: string) {
-    return (<div class="w-4/5 h-16">
-      <elsa-monaco/>
-    </div>);
-  }
-
-  liquidInputEditor(fieldId: string, fieldName: string, value: string) {
-    return (<input type="text" id={fieldId} name={fieldName} value={value} class="focus:ring-green-500 focus:border-green-500 block w-full min-w-0 rounded-md sm:text-sm border-gray-300"/>);
-  }
-
-  onSyntaxChange(e: Event) {
-    const selectElement = e.currentTarget as HTMLSelectElement;
-    this.selectedSyntax = selectElement.value;
-  }
 
 }
