@@ -9,14 +9,16 @@ namespace Elsa.Services
     public abstract class WorkflowContextRefresher : ILoadWorkflowContext, ISaveWorkflowContext
     {
         public abstract IEnumerable<Type> SupportedTypes { get; }
-        public virtual ValueTask<string?> SaveAsync(SaveWorkflowContext context, CancellationToken cancellationToken = default) => new ValueTask<string?>();
-        public virtual ValueTask<object?> LoadAsync(LoadWorkflowContext context, CancellationToken cancellationToken = default) => new ValueTask<object?>();
+        public virtual ValueTask<string?> SaveAsync(SaveWorkflowContext context, CancellationToken cancellationToken = default) => new();
+        public virtual ValueTask<object?> LoadAsync(LoadWorkflowContext context, CancellationToken cancellationToken = default) => new();
     }
     
     public abstract class WorkflowContextRefresher<T> : ILoadWorkflowContext, ISaveWorkflowContext
     {
         public virtual IEnumerable<Type> SupportedTypes => new[] { typeof(T) };
-        public virtual ValueTask<string?> SaveAsync(SaveWorkflowContext context, CancellationToken cancellationToken = default) => new ValueTask<string?>();
-        public virtual ValueTask<object?> LoadAsync(LoadWorkflowContext context, CancellationToken cancellationToken = default) => new ValueTask<object?>();
+        ValueTask<string?> ISaveWorkflowContext.SaveAsync(SaveWorkflowContext context, CancellationToken cancellationToken) => SaveAsync(new SaveWorkflowContext<T>(context), cancellationToken);
+        async ValueTask<object?> ILoadWorkflowContext.LoadAsync(LoadWorkflowContext context, CancellationToken cancellationToken) => (T)await LoadAsync(context, cancellationToken);
+        public virtual ValueTask<string?> SaveAsync(SaveWorkflowContext<T> context, CancellationToken cancellationToken = default) => new();
+        public virtual ValueTask<T?> LoadAsync(LoadWorkflowContext context, CancellationToken cancellationToken) => new();
     }
 }

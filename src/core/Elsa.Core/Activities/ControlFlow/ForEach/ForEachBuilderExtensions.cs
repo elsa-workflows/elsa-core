@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using Elsa.Builders;
 using Elsa.Services.Models;
@@ -18,28 +19,28 @@ namespace Elsa.Activities.ControlFlow
             [CallerFilePath] string? sourceFile = default) =>
             builder.Then(setup, branch => iterate(branch.When(OutcomeNames.Iterate)), lineNumber, sourceFile);
 
-        public static IActivityBuilder ForEach(
+        public static IActivityBuilder ForEach<T>(
             this IBuilder builder,
-            Func<ActivityExecutionContext, ICollection<object>> items,
+            Func<ActivityExecutionContext, ICollection<T>> items,
             Action<IOutcomeBuilder> iterate,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default) =>
-            builder.ForEach(activity => activity.Set(x => x.Items, items), iterate, lineNumber, sourceFile);
+            builder.ForEach(activity => activity.Set(x => x.Items, context => items(context).Cast<object>()), iterate, lineNumber, sourceFile);
 
-        public static IActivityBuilder ForEach(
+        public static IActivityBuilder ForEach<T>(
             this IBuilder builder,
-            Func<ICollection<object>> items,
+            Func<ICollection<T>> items,
             Action<IOutcomeBuilder> iterate,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default) =>
-            builder.ForEach(activity => activity.Set(x => x.Items, items), iterate, lineNumber, sourceFile);
+            builder.ForEach(activity => activity.Set(x => x.Items, () => items().Cast<object>()), iterate, lineNumber, sourceFile);
 
-        public static IActivityBuilder ForEach(
+        public static IActivityBuilder ForEach<T>(
             this IBuilder builder,
-            ICollection<object> items,
+            ICollection<T> items,
             Action<IOutcomeBuilder> iterate,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default) =>
-            builder.ForEach(activity => activity.Set(x => x.Items, items), iterate, lineNumber, sourceFile);
+            builder.ForEach(activity => activity.Set(x => x.Items, items.Cast<object>()), iterate, lineNumber, sourceFile);
     }
 }

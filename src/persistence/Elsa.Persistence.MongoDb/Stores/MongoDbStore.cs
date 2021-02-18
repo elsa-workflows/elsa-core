@@ -49,6 +49,9 @@ namespace Elsa.Persistence.MongoDb.Stores
             foreach (var entity in list.Where(x => x.Id == null!))
                 entity.Id = IdGenerator.Generate();
 
+            if (!list.Any())
+                return;
+            
             await Collection.InsertManyAsync(list, default, cancellationToken);
         }
 

@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Bookmarks;
+using Elsa.Builders;
 
 namespace Elsa.Services
 {
@@ -18,7 +19,7 @@ namespace Elsa.Services
             string? correlationId = default,
             string? contextId = default,
             CancellationToken cancellationToken = default);
-        
+
         /// <summary>
         /// Enqueues the specified workflows for execution.
         /// </summary>
@@ -28,12 +29,17 @@ namespace Elsa.Services
             string? correlationId = default,
             string? contextId = default,
             CancellationToken cancellationToken = default);
-        
+
         /// <summary>
         /// Enqueues the specified workflow instance and activity for execution.
         /// </summary>
         Task EnqueueWorkflowInstance(string workflowInstanceId, string activityId, object? input, CancellationToken cancellationToken = default);
-        
+
+        /// <summary>
+        /// Enqueues the specified workflow definition and activity for execution. 
+        /// </summary>
+        Task EnqueueWorkflowDefinition<T>(string? tenantId, string activityId, object? input, string? correlationId, string? contextId, CancellationToken cancellationToken) where T : IWorkflow;
+
         /// <summary>
         /// Enqueues the specified workflow definition and activity for execution.
         /// </summary>

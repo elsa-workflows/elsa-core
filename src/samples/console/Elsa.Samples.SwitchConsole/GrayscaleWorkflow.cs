@@ -32,14 +32,14 @@ namespace Elsa.Samples.SwitchConsole
                             .Add("Invalid", input < 0 || input > 100);
                     },
                     SwitchMode.MatchFirst,
-                    ifThen =>
+                    @case =>
                     {
-                        ifThen.When("Black").WriteLine("That number is black");
-                        ifThen.When("Dark Gray").WriteLine("That number is dark gray");
-                        ifThen.When("Light Gray").WriteLine("That number is light gray");
-                        ifThen.When("Gray").WriteLine("That number is gray");
-                        ifThen.When("White").WriteLine("That number is white");
-                        ifThen.When("Invalid").WriteLine("That number is invalid");
+                        @case.When("Black").WriteLine("That number is black");
+                        @case.When("Dark Gray").WriteLine("That number is dark gray");
+                        @case.When("Light Gray").WriteLine("That number is light gray");
+                        @case.When("Gray").WriteLine("That number is gray");
+                        @case.When("White").WriteLine("That number is white");
+                        @case.When("Invalid").WriteLine("That number is invalid");
                     })
                 .WriteLine("Goodbye");
         }

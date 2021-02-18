@@ -15,6 +15,5 @@ namespace Elsa.Services.Models
         public WorkflowInstance WorkflowInstance => WorkflowExecutionContext.WorkflowInstance;
         public Type ContextType => WorkflowBlueprint.ContextOptions!.ContextType;
         public string ContextId => WorkflowInstance.ContextId!;
-
     }
 }

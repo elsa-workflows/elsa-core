@@ -25,7 +25,7 @@ namespace Elsa.Samples.ProgrammaticCompositeActivitiesConsole.Activities
             activity
                 // IMPORTANT: Notice that we need to get the "parent" state to get the `Start` value, since here we are in a different context than the CountDownActivity itself.
                 // Accessing `Start` directly would return the captured value at the time this `Build` method executed when creating workflow blueprints.
-                .For(context => context.GetParentState<int>(nameof(Start)), _ => 0, _ => -1, iterate =>
+                .For(context => context.GetContainerState<int>(nameof(Start)), _ => 0, _ => -1, iterate =>
                 {
                     iterate.WriteLine(context => $"{context.GetInput<int>()}...");
                 }, Operator.GreaterThan)

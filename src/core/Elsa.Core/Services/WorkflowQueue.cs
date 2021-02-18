@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Bookmarks;
+using Elsa.Builders;
 using Elsa.Messages;
 using Open.Linq.AsyncExtensions;
 
@@ -31,7 +32,7 @@ namespace Elsa.Services
             await EnqueueWorkflowsAsync(results, input, correlationId, contextId, cancellationToken);
         }
 
-        public async Task EnqueueWorkflowsAsync(IEnumerable<BookmarkFinderResult> results, object? input = default, string? correlationId = default, string? contextId = default, CancellationToken cancellationToken = default)
+        public async Task EnqueueWorkflowsAsync(IEnumerable<BookmarkFinderResult> results, object? input, string? correlationId, string? contextId, CancellationToken cancellationToken)
         {
             foreach (var result in results) 
                 await EnqueueWorkflowInstance(result.WorkflowInstanceId, result.ActivityId, input, cancellationToken);
@@ -41,8 +42,14 @@ namespace Elsa.Services
         {
             await _commandSender.SendAsync(new RunWorkflowInstance(workflowInstanceId, activityId, input));
         }
+        
+        public async Task EnqueueWorkflowDefinition<T>(string? tenantId, string activityId, object? input, string? correlationId, string? contextId, CancellationToken cancellationToken) where T : IWorkflow
+        {
+            var workflowDefinitionId = typeof(T).Name;
+            await EnqueueWorkflowDefinition(workflowDefinitionId, tenantId, activityId, input, correlationId, contextId, cancellationToken);
+        }
 
-        public async Task EnqueueWorkflowDefinition(string workflowDefinitionId, string? tenantId, string activityId, object? input, string? correlationId, string? contextId, CancellationToken cancellationToken = default)
+        public async Task EnqueueWorkflowDefinition(string workflowDefinitionId, string? tenantId, string activityId, object? input, string? correlationId, string? contextId, CancellationToken cancellationToken)
         {
             await _commandSender.SendAsync(new RunWorkflowDefinition(workflowDefinitionId, tenantId, activityId, input, correlationId, contextId));
         }
