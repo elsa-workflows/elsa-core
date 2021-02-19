@@ -12,6 +12,7 @@ namespace Microsoft.Extensions.DependencyInjection
         public static IServiceCollection AddJavaScriptExpressionEvaluator(this IServiceCollection services)
         {
             return services
+                .AddSingleton<ITypeScriptDefinitionService, TypeScriptDefinitionService>()
                 .TryAddProvider<IExpressionHandler, JavaScriptHandler>(ServiceLifetime.Scoped)
                 .AddNotificationHandlers(typeof(JavaScriptServiceCollectionExtensions));
         }

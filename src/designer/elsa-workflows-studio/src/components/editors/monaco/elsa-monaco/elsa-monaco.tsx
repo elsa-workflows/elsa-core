@@ -1,4 +1,6 @@
 import {Component, Host, h, Prop, State, Listen, Method, Watch, Event, EventEmitter} from '@stencil/core';
+import {createElsaClient} from "../../../../services/elsa-client";
+import Tunnel, {WorkflowEditorState} from '../../../data/workflow-editor';
 
 // Until I figure out why the ESM loader doesn't work properly, we need to include these scripts manually from index.html
 // import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
@@ -15,15 +17,20 @@ export class ElsaMonaco {
   @Prop({attribute: 'editor-height', reflect: true}) editorHeight: string = '6em';
   @Prop() value: string;
   @Prop() syntax: string;
+  @Prop() serverUrl: string;
+  @Prop() workflowDefinitionId: string;
   @Event({eventName: 'valueChanged'}) valueChanged: EventEmitter<string>;
 
   container: HTMLElement;
-  editorInstance: any;
+  editor: any;
 
   @Watch('syntax')
   syntaxChangeHandler(newValue: string) {
+    if(!this.editor)
+      return;
+
     const language = this.mapSyntaxToLanguage(newValue);
-    const model = this.editorInstance.getModel();
+    const model = this.editor.getModel();
     this.monaco.editor.setModelLanguage(model, language);
   }
 
@@ -32,19 +39,35 @@ export class ElsaMonaco {
   }
 
   componentDidLoad() {
-    // monaco.editor.create(this.container, {
-    //       value: "function hello() {\n\talert('Hello world!');\n}",
-    //       language: "javascript",
-    //       fontFamily: "Roboto Mono, monospace"
-    // });
-
     const require = (window as any).require;
-    const monaco = this.monaco;
-    const language = this.mapSyntaxToLanguage(this.syntax);
 
-    require(['require', 'vs/editor/editor.main'], require => {
+    require(['require', 'vs/editor/editor.main'], async require => {
+      const monaco = this.monaco;
+      const language = this.mapSyntaxToLanguage(this.syntax);
 
-      this.editorInstance = monaco.editor.create(this.container, {
+      // Validation settings.
+      monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
+        noSemanticValidation: true,
+        noSyntaxValidation: false
+      });
+
+      // Compiler options.
+      monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
+        target: monaco.languages.typescript.ScriptTarget.ES6,
+        lib: [],
+        allowNonTsExtensions: true,
+        allowJs: true
+      });
+
+      // Extra libraries.
+      const elsaClient = createElsaClient(this.serverUrl);
+      const libSource = await elsaClient.scriptingApi.getJavaScriptTypeDefinitions(this.workflowDefinitionId);
+      const libUri = `ts:filename/elsa.d.ts`;
+
+      monaco.languages.typescript.javascriptDefaults.addExtraLib(libSource, libUri);
+      monaco.editor.createModel(libSource, 'typescript', monaco.Uri.parse(libUri));
+
+      this.editor = monaco.editor.create(this.container, {
         value: this.value,
         language: language,
         fontFamily: "Roboto Mono, monospace",
@@ -58,15 +81,15 @@ export class ElsaMonaco {
         readOnly: false,
       });
 
-      this.editorInstance.onDidChangeModelContent(e => {
-        const value = this.editorInstance.getValue();
+      this.editor.onDidChangeModelContent(e => {
+        const value = this.editor.getValue();
         this.valueChanged.emit(value);
       });
     });
   }
 
   disconnectedCallback() {
-    this.editorInstance.destroy;
+    this.editor.destroy();
   }
 
   mapSyntaxToLanguage(syntax: string): any {
@@ -123,3 +146,5 @@ export class ElsaMonaco {
     )
   }
 }
+
+Tunnel.injectProps(ElsaMonaco, ['serverUrl', 'workflowDefinitionId']);

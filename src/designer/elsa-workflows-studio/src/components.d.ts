@@ -24,14 +24,18 @@ export namespace Components {
     }
     interface ElsaMonaco {
         "editorHeight": string;
+        "serverUrl": string;
         "syntax": string;
         "value": string;
+        "workflowDefinitionId": string;
     }
     interface ElsaTextProperty {
         "propertyDescriptor": ActivityPropertyDescriptor;
         "propertyModel": ActivityDefinitionProperty;
     }
     interface ElsaWorkflowEditor {
+        "getServerUrl": () => Promise<string>;
+        "getWorkflowDefinitionId": () => Promise<string>;
         "serverUrl": string;
         "workflowDefinitionId": string;
     }
@@ -135,8 +139,10 @@ declare namespace LocalJSX {
     interface ElsaMonaco {
         "editorHeight"?: string;
         "onValueChanged"?: (event: CustomEvent<string>) => void;
+        "serverUrl"?: string;
         "syntax"?: string;
         "value"?: string;
+        "workflowDefinitionId"?: string;
     }
     interface ElsaTextProperty {
         "propertyDescriptor"?: ActivityPropertyDescriptor;

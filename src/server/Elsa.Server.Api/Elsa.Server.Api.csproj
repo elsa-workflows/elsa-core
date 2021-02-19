@@ -28,9 +28,4 @@
         <ProjectReference Include="..\..\core\Elsa\Elsa.csproj" />
     </ItemGroup>
     
-    <ItemGroup>
-        <Compile Update="Endpoints\WorkflowDefinitions\Save.Request.cs">
-            <DependentUpon>Endpoints\WorkflowDefinitions\Save.cs</DependentUpon>
-        </Compile>
-    </ItemGroup>
 </Project>

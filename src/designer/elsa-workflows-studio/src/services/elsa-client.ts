@@ -25,22 +25,34 @@ export const createElsaClient = function (serverUrl: string): ElsaClient {
         const response = await httpClient.post<WorkflowDefinition>('v1/workflow-definitions', request);
         return response.data;
       }
+    },
+    scriptingApi: {
+      getJavaScriptTypeDefinitions: async (workflowDefinitionId: string): Promise<string> => {
+        const response = await httpClient.get<string>(`v1/scripting/javascript/type-definitions/${workflowDefinitionId}`);
+        return response.data;
+      }
     }
   }
 }
 
 export interface ElsaClient {
-  activitiesApi: ActivitiesApi
-  workflowDefinitionsApi: WorkflowDefinitionsApi
+  activitiesApi: ActivitiesApi;
+  workflowDefinitionsApi: WorkflowDefinitionsApi;
+  scriptingApi: ScriptingApi;
 }
 
 export interface ActivitiesApi {
-  list(): Promise<Array<ActivityDescriptor>>
+  list(): Promise<Array<ActivityDescriptor>>;
 }
 
 export interface WorkflowDefinitionsApi {
   getByDefinitionAndVersion(definitionId: string, versionOptions: VersionOptions): Promise<WorkflowDefinition>
+
   save(request: SaveWorkflowDefinitionRequest): Promise<WorkflowDefinition>
+}
+
+export interface ScriptingApi {
+  getJavaScriptTypeDefinitions(workflowDefinitionId: string): Promise<string>
 }
 
 export interface SaveWorkflowDefinitionRequest {
