@@ -17,10 +17,11 @@ namespace Elsa.Handlers
             var activityExecutionContext = notification.ActivityExecutionContext;
             var workflowExecutionContext = activityExecutionContext.WorkflowExecutionContext;
 
-            // If no suspension has been instructed, re-schedule any container activities.
+            // Check to see if a suspension / completion has been instructed. If so, do nothing.
             if (workflowExecutionContext.HasScheduledActivities || workflowExecutionContext.Status != WorkflowStatus.Running || !workflowExecutionContext.WorkflowInstance.Scopes.Any())
                 return Task.CompletedTask;
 
+            // No suspension has been instructed, so re-schedule any container activities.
             var parentActivityId = workflowExecutionContext.WorkflowInstance.Scopes.Pop();
             workflowExecutionContext.ScheduleActivity(parentActivityId, activityExecutionContext.Output);
             

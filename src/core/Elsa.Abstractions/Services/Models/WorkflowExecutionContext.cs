@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Events;
 using Elsa.Models;
+using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using NodaTime;
@@ -25,12 +27,14 @@ namespace Elsa.Services.Models
             Input = input;
             IsFirstPass = true;
             Serializer = serviceProvider.GetRequiredService<JsonSerializer>();
+            Mediator = serviceProvider.GetRequiredService<IMediator>();
         }
 
         public IWorkflowBlueprint WorkflowBlueprint { get; }
         public IServiceProvider ServiceProvider { get; }
         public WorkflowInstance WorkflowInstance { get; }
         public JsonSerializer Serializer { get; }
+        public IMediator Mediator { get; }
         public object? Input { get; }
         public bool HasScheduledActivities => WorkflowInstance.ScheduledActivities.Any();
         public bool IsFirstPass { get; private set; }
@@ -106,6 +110,12 @@ namespace Elsa.Services.Models
             Tasks.Remove(groupName);
         }
 
+        public async Task RemoveBlockingActivityAsync(BlockingActivity blockingActivity)
+        {
+            WorkflowInstance.BlockingActivities.Remove(blockingActivity);
+            await Mediator.Publish(new BlockingActivityRemoved(this, blockingActivity));
+        }
+
         public void SetVariable(string name, object? value) => WorkflowInstance.Variables.Set(name, value);
         public T? GetVariable<T>() => GetVariable<T>(typeof(T).Name);
         public T? GetVariable<T>(string name) => WorkflowInstance.Variables.Get<T>(name);
@@ -117,6 +127,7 @@ namespace Elsa.Services.Models
         public void Begin() => WorkflowInstance.WorkflowStatus = WorkflowStatus.Running;
         public void Resume() => WorkflowInstance.WorkflowStatus = WorkflowStatus.Running;
         public void Suspend() => WorkflowInstance.WorkflowStatus = WorkflowStatus.Suspended;
+
         public void Fault(Exception ex, string? activityId, object? activityInput, bool resuming) => Fault(ex, ex.Message, activityId, activityInput, resuming);
         public void Fault(string message, string? activityId, object? activityInput, bool resuming) => Fault(null, message, activityId, activityInput, resuming);
         
@@ -128,7 +139,17 @@ namespace Elsa.Services.Models
             WorkflowInstance.Fault = new WorkflowFault(SimpleException.FromException(exception), message, activityId, activityInput, resuming);
         }
 
-        public void Complete() => WorkflowInstance.WorkflowStatus = WorkflowStatus.Finished;
+        public async Task CompleteAsync()
+        {
+            foreach (var blockingActivity in WorkflowInstance.BlockingActivities) 
+                await RemoveBlockingActivityAsync(blockingActivity);
+            
+            foreach (var scope in WorkflowInstance.Scopes.AsEnumerable().Reverse()) 
+                await EvictScopeAsync(scope);
+
+            WorkflowInstance.Scopes = new SimpleStack<string>();
+            WorkflowInstance.WorkflowStatus = WorkflowStatus.Finished;
+        }
 
         public IActivityBlueprint? GetActivityBlueprintById(string id) => WorkflowBlueprint.Activities.FirstOrDefault(x => x.Id == id);
         public IActivityBlueprint? GetActivityBlueprintByName(string name) => WorkflowBlueprint.Activities.FirstOrDefault(x => x.Name == name);
@@ -156,6 +177,12 @@ namespace Elsa.Services.Models
         {
             var activityBlueprint = WorkflowBlueprint.GetActivity(activityId);
             return activityBlueprint != null && activityBlueprint.PersistOutput;
+        }
+        
+        private async Task EvictScopeAsync(string scope)
+        {
+            var scopeActivity = WorkflowBlueprint.GetActivity(scope)!;
+            await Mediator.Publish(new ScopeEvicted(this, scopeActivity));
         }
     }
 

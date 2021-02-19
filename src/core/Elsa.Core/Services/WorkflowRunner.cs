@@ -355,7 +355,7 @@ namespace Elsa.Services
                 workflowExecutionContext.Suspend();
 
             if (workflowExecutionContext.Status == WorkflowStatus.Running)
-                workflowExecutionContext.Complete();
+                await workflowExecutionContext.CompleteAsync();
         }
 
         private async ValueTask<IActivityExecutionResult?> TryExecuteActivityAsync(

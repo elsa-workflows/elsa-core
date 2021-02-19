@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Models;
@@ -31,7 +32,8 @@ namespace Elsa.Activities.ControlFlow
             blockingActivities.RemoveWhere(x => containedBlockingActivityIds.Contains(x.ActivityId));
             var output = new FinishOutput(OutputValue, OutcomeNames);
             context.WorkflowExecutionContext.WorkflowInstance.Output = output;
-            return Done(output);
+            
+            return Output(output);
         }
     }
 }
