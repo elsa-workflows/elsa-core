@@ -18,7 +18,7 @@ namespace Elsa.Activities.ControlFlow
         Description = "Evaluate a Boolean expression and continue execution depending on the result.",
         Outcomes = new[] { True, False, OutcomeNames.Done }
     )]
-    public class IfElse : Activity, INotificationHandler<ScopeEvicted>
+    public class If : Activity, INotificationHandler<ScopeEvicted>
     {
         public const string True = "True";
         public const string False = "False";
@@ -54,7 +54,7 @@ namespace Elsa.Activities.ControlFlow
 
         public Task Handle(ScopeEvicted notification, CancellationToken cancellationToken)
         {
-            if (notification.EvictedScope.Type != nameof(IfElse)) 
+            if (notification.EvictedScope.Type != nameof(If)) 
                 return Task.CompletedTask;
             
             var data = notification.WorkflowExecutionContext.WorkflowInstance.ActivityData.GetItem(notification.EvictedScope.Id, () => new JObject());

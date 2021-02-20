@@ -3,7 +3,7 @@ using Elsa.Activities.Console;
 using Elsa.Activities.ControlFlow;
 using Elsa.Builders;
 
-namespace Elsa.Samples.IfElseConsole
+namespace Elsa.Samples.HappinessConsole
 {
     public class HappinessWorkflow : IWorkflow
     {
