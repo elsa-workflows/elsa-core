@@ -18,10 +18,14 @@ namespace Elsa.Handlers
             var workflowExecutionContext = activityExecutionContext.WorkflowExecutionContext;
 
             // Check to see if a suspension / completion has been instructed. If so, do nothing.
-            if (workflowExecutionContext.HasScheduledActivities || workflowExecutionContext.Status != WorkflowStatus.Running || !workflowExecutionContext.WorkflowInstance.Scopes.Any())
+            if (workflowExecutionContext.HasScheduledActivities || workflowExecutionContext.Status != WorkflowStatus.Running)
+                return Task.CompletedTask;
+            
+            // Check if we are within a scope.
+            if(!workflowExecutionContext.WorkflowInstance.Scopes.Any())
                 return Task.CompletedTask;
 
-            // No suspension has been instructed, so re-schedule any container activities.
+            // Re-schedule the current scope activity.
             var parentActivityId = workflowExecutionContext.WorkflowInstance.Scopes.Pop();
             workflowExecutionContext.ScheduleActivity(parentActivityId, activityExecutionContext.Output);
             

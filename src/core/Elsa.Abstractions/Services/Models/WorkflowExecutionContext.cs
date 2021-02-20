@@ -98,15 +98,16 @@ namespace Elsa.Services.Models
             }
         }
 
-        public IEnumerable<Func<WorkflowExecutionContext, CancellationToken, ValueTask>> GetRegisteredTasks(string groupName) => Tasks.ContainsKey(groupName) ? Tasks[groupName] : Enumerable.Empty<Func<WorkflowExecutionContext, CancellationToken, ValueTask>>();
+        public IEnumerable<Func<WorkflowExecutionContext, CancellationToken, ValueTask>> GetRegisteredTasks(string groupName) =>
+            Tasks.ContainsKey(groupName) ? Tasks[groupName] : Enumerable.Empty<Func<WorkflowExecutionContext, CancellationToken, ValueTask>>();
 
         public async ValueTask ExecuteRegisteredTasksAsync(string groupName, CancellationToken cancellationToken = default)
         {
             var tasks = GetRegisteredTasks(groupName);
-            
-            foreach (var task in tasks) 
+
+            foreach (var task in tasks)
                 await task(this, cancellationToken);
-            
+
             Tasks.Remove(groupName);
         }
 
@@ -115,6 +116,8 @@ namespace Elsa.Services.Models
             WorkflowInstance.BlockingActivities.Remove(blockingActivity);
             await Mediator.Publish(new BlockingActivityRemoved(this, blockingActivity));
         }
+        
+        public async Task EvictScopeAsync(IActivityBlueprint scope) => await Mediator.Publish(new ScopeEvicted(this, scope));
 
         public void SetVariable(string name, object? value) => WorkflowInstance.Variables.Set(name, value);
         public T? GetVariable<T>() => GetVariable<T>(typeof(T).Name);
@@ -130,7 +133,7 @@ namespace Elsa.Services.Models
 
         public void Fault(Exception ex, string? activityId, object? activityInput, bool resuming) => Fault(ex, ex.Message, activityId, activityInput, resuming);
         public void Fault(string message, string? activityId, object? activityInput, bool resuming) => Fault(null, message, activityId, activityInput, resuming);
-        
+
         public void Fault(Exception? exception, string message, string? activityId, object? activityInput, bool resuming)
         {
             var clock = ServiceProvider.GetRequiredService<IClock>();
@@ -141,10 +144,12 @@ namespace Elsa.Services.Models
 
         public async Task CompleteAsync()
         {
-            foreach (var blockingActivity in WorkflowInstance.BlockingActivities) 
+            // Remove all blocking activities.
+            foreach (var blockingActivity in WorkflowInstance.BlockingActivities)
                 await RemoveBlockingActivityAsync(blockingActivity);
-            
-            foreach (var scope in WorkflowInstance.Scopes.AsEnumerable().Reverse()) 
+
+            // Evict all scopes.
+            foreach (var scope in WorkflowInstance.Scopes.AsEnumerable().Reverse())
                 await EvictScopeAsync(scope);
 
             WorkflowInstance.Scopes = new SimpleStack<string>();
@@ -178,11 +183,12 @@ namespace Elsa.Services.Models
             var activityBlueprint = WorkflowBlueprint.GetActivity(activityId);
             return activityBlueprint != null && activityBlueprint.PersistOutput;
         }
-        
-        private async Task EvictScopeAsync(string scope)
+
+        private async Task<IActivityBlueprint> EvictScopeAsync(string scope)
         {
             var scopeActivity = WorkflowBlueprint.GetActivity(scope)!;
-            await Mediator.Publish(new ScopeEvicted(this, scopeActivity));
+            await EvictScopeAsync(scopeActivity);
+            return scopeActivity;
         }
     }
 
