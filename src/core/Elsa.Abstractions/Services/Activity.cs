@@ -19,7 +19,7 @@ namespace Elsa.Services
         public bool PersistWorkflow { get; set; }
         public bool LoadWorkflowContext { get; set; }
         public bool SaveWorkflowContext { get; set; }
-        public JObject Data { get; set; } = new();
+        public virtual JObject Data { get; set; } = new();
         public ValueTask<bool> CanExecuteAsync(ActivityExecutionContext context) => OnCanExecuteAsync(context);
         public ValueTask<IActivityExecutionResult> ExecuteAsync(ActivityExecutionContext context) => OnExecuteAsync(context);
         public ValueTask<IActivityExecutionResult> ResumeAsync(ActivityExecutionContext context) => OnResumeAsync(context);
