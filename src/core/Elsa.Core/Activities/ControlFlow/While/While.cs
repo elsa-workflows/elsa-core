@@ -32,14 +32,11 @@ namespace Elsa.Activities.ControlFlow
             
             var loop = Condition;
 
-            if (loop)
-            {
-                context.WorkflowInstance.Scopes.Push(Id);
-                    
-                return Outcome(OutcomeNames.Iterate);
-            }
+            if (!loop) 
+                return Done();
             
-            return Done();
+            context.CreateScope();
+            return Outcome(OutcomeNames.Iterate);
         }
     }
 }

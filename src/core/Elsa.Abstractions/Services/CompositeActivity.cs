@@ -25,7 +25,7 @@ namespace Elsa.Services
         {
             if (!IsScheduled)
             {
-                context.WorkflowInstance.Scopes.Push(Id);
+                context.WorkflowInstance.Scopes.Push(new ActivityScope(Id));
                 IsScheduled = true;
                 await OnEnterAsync(context);
                 return Outcome(Enter);

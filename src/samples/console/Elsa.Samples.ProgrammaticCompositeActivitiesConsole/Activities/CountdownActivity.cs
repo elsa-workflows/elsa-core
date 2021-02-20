@@ -19,7 +19,7 @@ namespace Elsa.Samples.ProgrammaticCompositeActivitiesConsole.Activities
             get => GetState<int>();
             set => SetState(value);
         }
-        
+
         public override void Build(ICompositeActivityBuilder activity)
         {
             activity
@@ -27,7 +27,7 @@ namespace Elsa.Samples.ProgrammaticCompositeActivitiesConsole.Activities
                 // Accessing `Start` directly would return the captured value at the time this `Build` method executed when creating workflow blueprints.
                 .For(context => context.GetContainerState<int>(nameof(Start)), _ => 0, _ => -1, iterate =>
                 {
-                    iterate.WriteLine(context => $"{context.GetInput<int>()}...");
+                    iterate.WriteLine(context => $"{context.ForScope().CurrentValue}...");
                 }, Operator.GreaterThan)
                 .WriteLine("Happy New Year!");
         }

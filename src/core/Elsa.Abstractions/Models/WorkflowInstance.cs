@@ -13,7 +13,7 @@ namespace Elsa.Models
         {
             Variables = new Variables();
             ScheduledActivities = new SimpleStack<ScheduledActivity>();
-            Scopes = new SimpleStack<string>();
+            Scopes = new SimpleStack<ActivityScope>();
         }
 
         public string DefinitionId { get; set; } = default!;
@@ -42,7 +42,7 @@ namespace Elsa.Models
 
         public WorkflowFault? Fault { get; set; }
         public SimpleStack<ScheduledActivity> ScheduledActivities { get; set; }
-        public SimpleStack<string> Scopes { get; set; }
+        public SimpleStack<ActivityScope> Scopes { get; set; }
         public ScheduledActivity? CurrentActivity { get; set; }
     }
 }

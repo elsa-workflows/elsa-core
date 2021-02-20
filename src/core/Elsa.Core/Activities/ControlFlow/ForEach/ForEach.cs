@@ -16,7 +16,7 @@ namespace Elsa.Activities.ControlFlow
     )]
     public class ForEach : Activity
     {
-        [ActivityProperty(Hint = "Enter an expression that evaluates to a collection of items to iterate over.")]
+        [ActivityProperty(Hint = "A collection of items to iterate over.")]
         public ICollection<object> Items { get; set; } = new Collection<object>();
         
         private int? CurrentIndex
@@ -43,12 +43,16 @@ namespace Elsa.Activities.ControlFlow
             var collection = Items.ToList();
             var currentIndex = CurrentIndex ?? 0;
 
-            if (currentIndex < collection.Count)
+            if (currentIndex < collection.Count - 1)
             {
-                var output = collection[currentIndex];
+                var currentValue = collection[currentIndex];
+                var scope = context.CreateScope();
+
+                scope.Variables.Set("CurrentIndex", currentIndex);
+                scope.Variables.Set("CurrentValue", currentValue);
+                
                 CurrentIndex = currentIndex + 1;
-                context.WorkflowInstance.Scopes.Push(Id);
-                return Combine(Outcome(OutcomeNames.Iterate, output));
+                return Combine(Outcome(OutcomeNames.Iterate, currentValue));
             }
 
             CurrentIndex = null;
