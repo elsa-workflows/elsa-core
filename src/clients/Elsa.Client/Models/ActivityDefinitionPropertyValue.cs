@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Elsa.Client.Models
+﻿namespace Elsa.Client.Models
 {
     public class ActivityDefinitionProperty
     {

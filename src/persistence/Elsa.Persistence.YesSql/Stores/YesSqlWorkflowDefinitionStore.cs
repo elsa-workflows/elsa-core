@@ -9,7 +9,6 @@ using Elsa.Persistence.YesSql.Documents;
 using Elsa.Persistence.YesSql.Indexes;
 using Microsoft.Extensions.Logging;
 using YesSql;
-using YesSql.Services;
 using IIdGenerator = Elsa.Services.IIdGenerator;
 
 namespace Elsa.Persistence.YesSql.Stores

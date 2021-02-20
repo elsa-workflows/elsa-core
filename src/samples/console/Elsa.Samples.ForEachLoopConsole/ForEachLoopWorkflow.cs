@@ -1,9 +1,6 @@
-﻿using System;
-using System.Globalization;
-using System.Linq;
+﻿using System.Globalization;
 using Elsa.Activities.Console;
 using Elsa.Activities.ControlFlow;
-using Elsa.Activities.Primitives;
 using Elsa.Builders;
 
 namespace Elsa.Samples.ForEachLoopConsole

@@ -1,6 +1,5 @@
 using Elsa.Activities.UserTask.Extensions;
 using Elsa.Services;
-using Elsa.Services.Models;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Linq;
