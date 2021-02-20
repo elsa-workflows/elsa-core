@@ -6,7 +6,6 @@ using Elsa.Attributes;
 using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
-using NetBox.Extensions;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.ControlFlow
@@ -37,7 +36,7 @@ namespace Elsa.Activities.ControlFlow
                 await context.WorkflowExecutionContext.RemoveBlockingActivityAsync(blockingActivity);
             
             // Evict & remove any scope activities within the scope of the composite activity.
-            var scopes = Enumerable.AsEnumerable(context.WorkflowInstance.Scopes).Reverse().ToList();
+            var scopes = context.WorkflowInstance.Scopes.AsEnumerable().Reverse().ToList();
             var containedScopeActivityIds = parentBlueprint == null ? scopes : parentBlueprint.Activities.Where(x => scopes.Contains(x.Id)).Select(x => x.Id).ToList();
 
             foreach (var scope in containedScopeActivityIds)
@@ -47,7 +46,7 @@ namespace Elsa.Activities.ControlFlow
                 scopes.Remove(scope);
             }
             
-            context.WorkflowInstance.Scopes = new SimpleStack<string>(((IEnumerable<string>)scopes).Reverse());
+            context.WorkflowInstance.Scopes = new SimpleStack<string>(scopes.AsEnumerable().Reverse());
             
             // Return output
             var output = new FinishOutput(OutputValue, OutcomeNames);
