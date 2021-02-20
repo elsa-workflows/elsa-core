@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Elsa.Expressions;
 using Elsa.Models;
 using Swashbuckle.AspNetCore.Filters;
 

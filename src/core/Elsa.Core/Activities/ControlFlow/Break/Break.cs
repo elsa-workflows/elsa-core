@@ -1,4 +1,3 @@
-using System;
 using System.Linq;
 using Elsa.ActivityResults;
 using Elsa.Attributes;

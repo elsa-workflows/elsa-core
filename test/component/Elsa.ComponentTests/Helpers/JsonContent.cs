@@ -2,7 +2,6 @@ using System.Net.Http;
 using System.Text;
 using Elsa.Serialization.Converters;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 using NodaTime;
 using NodaTime.Serialization.JsonNet;

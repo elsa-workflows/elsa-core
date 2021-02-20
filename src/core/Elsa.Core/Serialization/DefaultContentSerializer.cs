@@ -1,7 +1,6 @@
 using System;
 using Elsa.Serialization.Converters;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 using NodaTime;

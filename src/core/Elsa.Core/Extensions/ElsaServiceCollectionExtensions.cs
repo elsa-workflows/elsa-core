@@ -1,7 +1,5 @@
 using System;
 using Elsa;
-using Elsa.Activities.ControlFlow;
-using Elsa.Activities.Primitives;
 using Elsa.Activities.Signaling;
 using Elsa.Activities.Signaling.Services;
 using Elsa.Activities.Workflows;

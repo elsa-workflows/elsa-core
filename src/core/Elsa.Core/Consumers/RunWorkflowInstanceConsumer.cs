@@ -7,9 +7,7 @@ using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services;
 using Microsoft.Extensions.Logging;
-using NodaTime;
 using Rebus.Handlers;
-using Rebus.Pipeline;
 
 namespace Elsa.Consumers
 {
