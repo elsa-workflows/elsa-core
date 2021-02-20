@@ -9,6 +9,7 @@ using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using NodaTime;
+using Rebus.Extensions;
 
 namespace Elsa.Services.Models
 {
@@ -116,13 +117,44 @@ namespace Elsa.Services.Models
             WorkflowInstance.BlockingActivities.Remove(blockingActivity);
             await Mediator.Publish(new BlockingActivityRemoved(this, blockingActivity));
         }
-        
+
         public async Task EvictScopeAsync(IActivityBlueprint scope) => await Mediator.Publish(new ScopeEvicted(this, scope));
 
         public void SetVariable(string name, object? value) => WorkflowInstance.Variables.Set(name, value);
         public T? GetVariable<T>() => GetVariable<T>(typeof(T).Name);
         public T? GetVariable<T>(string name) => WorkflowInstance.Variables.Get<T>(name);
-        public object? GetVariable(string name) => WorkflowInstance.Variables.Get(name);
+        
+        /// <summary>
+        /// Gets a variable from across all scopes, starting with the current scope, going up each scope until the requested variable is found.
+        /// </summary>
+        /// <remarks>Use <see cref="GetWorkflowVariable"/>if you want to access a workflow variable directly without going through the scopes.</remarks>
+        public object? GetVariable(string name)
+        {
+            var scopes = WorkflowInstance.Scopes.ToList();
+            
+            var mergedVariables = scopes.Select(x => x.Variables).Aggregate(new Variables(), (current, next) =>
+            {
+                var combined = current.Data.MergedWith(next.Data);
+                return new Variables(combined);
+            });
+            
+            return mergedVariables.Get(name);
+        }
+        
+        /// <summary>
+        /// Gets a workflow variable.
+        /// </summary>
+        public object? GetWorkflowVariable(string name) => WorkflowInstance.Variables.Get(name);
+
+        public ActivityScope CurrentScope => WorkflowInstance.Scopes.Peek();
+        public ActivityScope GetScope(string activityId) => WorkflowInstance.Scopes.First(x => x.ActivityId == activityId);
+        
+        public ActivityScope GetNamedScope(string activityName)
+        {
+            var activityBlueprint = GetActivityBlueprintByName(activityName)!;
+            return GetScope(activityBlueprint.Id);
+        }
+
         public void SetTransientVariable(string name, object? value) => TransientState.Set(name, value);
         public T? GetTransientVariable<T>(string name) => TransientState.Get<T>(name);
         public object? GetTransientVariable(string name) => TransientState.Get(name);
@@ -152,7 +184,7 @@ namespace Elsa.Services.Models
             foreach (var scope in WorkflowInstance.Scopes.AsEnumerable().Reverse())
                 await EvictScopeAsync(scope);
 
-            WorkflowInstance.Scopes = new SimpleStack<string>();
+            WorkflowInstance.Scopes = new SimpleStack<ActivityScope>();
             WorkflowInstance.WorkflowStatus = WorkflowStatus.Finished;
         }
 
@@ -184,11 +216,18 @@ namespace Elsa.Services.Models
             return activityBlueprint != null && activityBlueprint.PersistOutput;
         }
 
-        private async Task<IActivityBlueprint> EvictScopeAsync(string scope)
+        private async Task<IActivityBlueprint> EvictScopeAsync(ActivityScope scope)
         {
-            var scopeActivity = WorkflowBlueprint.GetActivity(scope)!;
+            var scopeActivity = WorkflowBlueprint.GetActivity(scope.ActivityId)!;
             await EvictScopeAsync(scopeActivity);
             return scopeActivity;
+        }
+
+        public ActivityScope CreateScope(string activityId)
+        {
+            var scope = new ActivityScope(activityId);
+            WorkflowInstance.Scopes.Push(scope);
+            return scope;
         }
     }
 

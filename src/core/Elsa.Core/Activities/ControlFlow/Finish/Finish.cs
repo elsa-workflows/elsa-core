@@ -36,17 +36,18 @@ namespace Elsa.Activities.ControlFlow
                 await context.WorkflowExecutionContext.RemoveBlockingActivityAsync(blockingActivity);
             
             // Evict & remove any scope activities within the scope of the composite activity.
-            var scopes = context.WorkflowInstance.Scopes.AsEnumerable().Reverse().ToList();
-            var containedScopeActivityIds = parentBlueprint == null ? scopes : parentBlueprint.Activities.Where(x => scopes.Contains(x.Id)).Select(x => x.Id).ToList();
+            var scopes = context.WorkflowInstance.Scopes.Select(x => x).Reverse().ToList();
+            var scopeIds = scopes.Select(x => x.ActivityId).ToList();
+            var containedScopeActivityIds = parentBlueprint == null ? scopeIds : parentBlueprint.Activities.Where(x => scopeIds.Contains(x.Id)).Select(x => x.Id).ToList();
 
-            foreach (var scope in containedScopeActivityIds)
+            foreach (var scopeId in containedScopeActivityIds)
             {
-                var scopeActivity = context.WorkflowExecutionContext.GetActivityBlueprintById(scope)!;
+                var scopeActivity = context.WorkflowExecutionContext.GetActivityBlueprintById(scopeId)!;
                 await context.WorkflowExecutionContext.EvictScopeAsync(scopeActivity);
-                scopes.Remove(scope);
+                scopes.RemoveAll(x => x.ActivityId == scopeId);
             }
             
-            context.WorkflowInstance.Scopes = new SimpleStack<string>(scopes.AsEnumerable().Reverse());
+            context.WorkflowInstance.Scopes = new SimpleStack<ActivityScope>(scopes.AsEnumerable().Reverse());
             
             // Return output
             var output = new FinishOutput(OutputValue, OutcomeNames);

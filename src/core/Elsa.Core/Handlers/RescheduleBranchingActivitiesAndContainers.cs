@@ -26,8 +26,8 @@ namespace Elsa.Handlers
                 return Task.CompletedTask;
 
             // Re-schedule the current scope activity.
-            var parentActivityId = workflowExecutionContext.WorkflowInstance.Scopes.Pop();
-            workflowExecutionContext.ScheduleActivity(parentActivityId, activityExecutionContext.Output);
+            var scope = workflowExecutionContext.WorkflowInstance.Scopes.Pop();
+            workflowExecutionContext.ScheduleActivity(scope.ActivityId, activityExecutionContext.Output);
             
             return Task.CompletedTask;
         }

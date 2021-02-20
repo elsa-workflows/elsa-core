@@ -1,8 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 
-namespace Elsa.Models
+namespace Elsa.Client.Models
 {
     /// <summary>
     /// A custom stack implementation that gets serialized properly by NewtonsoftJson, respecting things like element order and typename handling for each element.
@@ -27,7 +26,5 @@ namespace Elsa.Models
         }
         
         public T Peek() => this.ElementAt(0);
-
-        public bool Contains(Func<T, bool> predicate) => this.Any(predicate);
     }
 }

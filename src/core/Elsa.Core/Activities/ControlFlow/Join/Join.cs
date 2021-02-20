@@ -107,9 +107,9 @@ namespace Elsa.Activities.ControlFlow
 
             for (var i = 0; i < scopes.Count; i++)
             {
-                var scopeActivityId = scopes.ElementAt(i);
-                var scopeActivityBlueprint = workflowExecutionContext.WorkflowBlueprint.GetActivity(scopeActivityId)!;
-                var scopeActivityAncestors = workflowExecutionContext.GetInboundActivityPath(scopeActivityId);
+                var activityScope = scopes.ElementAt(i);
+                var scopeActivityBlueprint = workflowExecutionContext.WorkflowBlueprint.GetActivity(activityScope.ActivityId)!;
+                var scopeActivityAncestors = workflowExecutionContext.GetInboundActivityPath(activityScope.ActivityId);
 
                 // Include composite activities in the equation.
                 if (scopeActivityBlueprint.Parent != null)
@@ -118,7 +118,7 @@ namespace Elsa.Activities.ControlFlow
                     scopeActivityAncestors = scopeActivityAncestors.Concat(compositeScopeActivityAncestors).ToList();
                 }
 
-                if (ancestors.All(x => x.Id != scopeActivityId))
+                if (ancestors.All(x => x.Id != activityScope.ActivityId))
                     continue;
 
                 if (fork != null && !scopeActivityAncestors.Contains(fork.Id))
@@ -129,11 +129,11 @@ namespace Elsa.Activities.ControlFlow
                 
                 foreach (var evictedScope in evictedScopes)
                 {
-                    var scope = workflowExecutionContext.WorkflowBlueprint.GetActivity(evictedScope)!;
-                    await _mediator.Publish(new ScopeEvicted(workflowExecutionContext, scope));
+                    var activity = workflowExecutionContext.WorkflowBlueprint.GetActivity(evictedScope.ActivityId)!;
+                    await _mediator.Publish(new ScopeEvicted(workflowExecutionContext, activity));
                 }
 
-                workflowExecutionContext.WorkflowInstance.Scopes = new SimpleStack<string>(scopes.AsEnumerable().Reverse());
+                workflowExecutionContext.WorkflowInstance.Scopes = new SimpleStack<ActivityScope>(scopes.AsEnumerable().Reverse());
                 break;
             }
         }

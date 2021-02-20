@@ -41,11 +41,11 @@ namespace Elsa.Activities.ControlFlow
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
-            if (!context.WorkflowInstance.Scopes.Contains(Id))
+            if (!context.WorkflowInstance.Scopes.Contains(x => x.ActivityId == Id))
             {
                 if (!EnteredScope)
                 {
-                    context.WorkflowInstance.Scopes.Push(Id);
+                    context.CreateScope();
                     EnteredScope = true;
                 }
                 else
