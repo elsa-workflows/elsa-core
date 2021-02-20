@@ -96,11 +96,8 @@ namespace Elsa.Activities.ControlFlow
                     blockingActivityAncestors = blockingActivityAncestors.Concat(compositeBlockingActivityAncestors).ToList();
                 }
 
-                if (fork == null || blockingActivityAncestors.Contains(fork.Id))
-                {
-                    workflowExecutionContext.WorkflowInstance.BlockingActivities.Remove(blockingActivity);
-                    await _mediator.Publish(new BlockingActivityRemoved(workflowExecutionContext, blockingActivity));
-                }
+                if (fork == null || blockingActivityAncestors.Contains(fork.Id)) 
+                    await workflowExecutionContext.RemoveBlockingActivityAsync(blockingActivity);
             }
         }
 
