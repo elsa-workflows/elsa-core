@@ -36,6 +36,8 @@ export class ElsaMonaco {
 
   componentWillLoad() {
     this.registerLiquid();
+
+    debugger;
   }
 
   componentDidLoad() {

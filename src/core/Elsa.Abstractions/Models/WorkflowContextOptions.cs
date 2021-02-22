@@ -10,7 +10,7 @@ namespace Elsa.Models
     {
         [JsonConverter(typeof(TypeJsonConverter))]
         [TypeConverter(typeof(TypeTypeConverter))]
-        public Type ContextType { get; set; } = default!;
+        public Type? ContextType { get; set; }
         public WorkflowContextFidelity ContextFidelity { get; set; }
     }
 }
