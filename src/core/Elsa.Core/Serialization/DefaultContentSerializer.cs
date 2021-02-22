@@ -35,7 +35,7 @@ namespace Elsa.Serialization
             {
                 NamingStrategy = new CamelCaseNamingStrategy
                 {
-                    ProcessDictionaryKeys = true,
+                    ProcessDictionaryKeys = false,
                     ProcessExtensionDataNames = true,
                     OverrideSpecifiedNames = false
                 }
