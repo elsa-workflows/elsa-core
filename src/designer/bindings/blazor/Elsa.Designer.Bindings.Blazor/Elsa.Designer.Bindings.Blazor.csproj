@@ -20,47 +20,4 @@
         <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="5.0.1" />
     </ItemGroup>
 
-    <ItemGroup>
-      <_ContentIncludedByDefault Remove="wwwroot\elsa-studio.js" />
-      <_ContentIncludedByDefault Remove="wwwroot\elsa-studio.js.map" />
-      <_ContentIncludedByDefault Remove="wwwroot\elsa-workflows-studio_dist_elsa-workflows-studio_elsa-activity-editor-modal_entry_js.elsa-studio.js" />
-      <_ContentIncludedByDefault Remove="wwwroot\elsa-workflows-studio_dist_elsa-workflows-studio_elsa-activity-editor-modal_entry_js.elsa-studio.js.map" />
-      <_ContentIncludedByDefault Remove="wwwroot\elsa-workflows-studio_dist_elsa-workflows-studio_elsa-activity-picker-flyout_entry_js.elsa-studio.js" />
-      <_ContentIncludedByDefault Remove="wwwroot\elsa-workflows-studio_dist_elsa-workflows-studio_elsa-activity-picker-flyout_entry_js.elsa-studio.js.map" />
-      <_ContentIncludedByDefault Remove="wwwroot\elsa-workflows-studio_dist_elsa-workflows-studio_elsa-activity-picker-modal_entry_js.elsa-studio.js" />
-      <_ContentIncludedByDefault Remove="wwwroot\elsa-workflows-studio_dist_elsa-workflows-studio_elsa-activity-picker-modal_entry_js.elsa-studio.js.map" />
-      <_ContentIncludedByDefault Remove="wwwroot\elsa-workflows-studio_dist_elsa-workflows-studio_elsa-client-21dd9762_js-elsa-workflows-studi-5a640e.elsa-studio.js" />
-      <_ContentIncludedByDefault Remove="wwwroot\elsa-workflows-studio_dist_elsa-workflows-studio_elsa-client-21dd9762_js-elsa-workflows-studi-5a640e.elsa-studio.js.map" />
-      <_ContentIncludedByDefault Remove="wwwroot\elsa-workflows-studio_dist_elsa-workflows-studio_elsa-designer-tree-activity_entry_js.elsa-studio.js" />
-      <_ContentIncludedByDefault Remove="wwwroot\elsa-workflows-studio_dist_elsa-workflows-studio_elsa-designer-tree-activity_entry_js.elsa-studio.js.map" />
-      <_ContentIncludedByDefault Remove="wwwroot\elsa-workflows-studio_dist_elsa-workflows-studio_elsa-designer-tree_entry_js.elsa-studio.js" />
-      <_ContentIncludedByDefault Remove="wwwroot\elsa-workflows-studio_dist_elsa-workflows-studio_elsa-designer-tree_entry_js.elsa-studio.js.map" />
-      <_ContentIncludedByDefault Remove="wwwroot\elsa-workflows-studio_dist_elsa-workflows-studio_elsa-modal-dialog_entry_js.elsa-studio.js" />
-      <_ContentIncludedByDefault Remove="wwwroot\elsa-workflows-studio_dist_elsa-workflows-studio_elsa-modal-dialog_entry_js.elsa-studio.js.map" />
-      <_ContentIncludedByDefault Remove="wwwroot\elsa-workflows-studio_dist_elsa-workflows-studio_elsa-studio_entry_js.elsa-studio.js" />
-      <_ContentIncludedByDefault Remove="wwwroot\elsa-workflows-studio_dist_elsa-workflows-studio_elsa-studio_entry_js.elsa-studio.js.map" />
-      <_ContentIncludedByDefault Remove="wwwroot\elsa-workflows-studio_dist_elsa-workflows-studio_elsa-workflow-definition-editor_entry_js.elsa-studio.js" />
-      <_ContentIncludedByDefault Remove="wwwroot\elsa-workflows-studio_dist_elsa-workflows-studio_elsa-workflow-definition-editor_entry_js.elsa-studio.js.map" />
-      <_ContentIncludedByDefault Remove="wwwroot\elsa-workflows-studio_dist_elsa-workflows-studio_elsa-workflow-definition-settings-modal_entry_js.elsa-studio.js" />
-      <_ContentIncludedByDefault Remove="wwwroot\elsa-workflows-studio_dist_elsa-workflows-studio_elsa-workflow-definition-settings-modal_entry_js.elsa-studio.js.map" />
-      <_ContentIncludedByDefault Remove="wwwroot\elsa-workflows-studio_dist_elsa-workflows-studio_event-bus-bfa30fa3_js-elsa-workflows-studio_-4ff7de.elsa-studio.js" />
-      <_ContentIncludedByDefault Remove="wwwroot\elsa-workflows-studio_dist_elsa-workflows-studio_event-bus-bfa30fa3_js-elsa-workflows-studio_-4ff7de.elsa-studio.js.map" />
-      <_ContentIncludedByDefault Remove="wwwroot\elsa-workflows-studio_dist_elsa-workflows-studio_p-172469d9_entry_js.elsa-studio.js" />
-      <_ContentIncludedByDefault Remove="wwwroot\elsa-workflows-studio_dist_elsa-workflows-studio_p-172469d9_entry_js.elsa-studio.js.map" />
-      <_ContentIncludedByDefault Remove="wwwroot\elsa-workflows-studio_dist_elsa-workflows-studio_p-28acc01f_entry_js.elsa-studio.js" />
-      <_ContentIncludedByDefault Remove="wwwroot\elsa-workflows-studio_dist_elsa-workflows-studio_p-28acc01f_entry_js.elsa-studio.js.map" />
-      <_ContentIncludedByDefault Remove="wwwroot\elsa-workflows-studio_dist_elsa-workflows-studio_p-6f4bcecb_entry_js.elsa-studio.js" />
-      <_ContentIncludedByDefault Remove="wwwroot\elsa-workflows-studio_dist_elsa-workflows-studio_p-6f4bcecb_entry_js.elsa-studio.js.map" />
-      <_ContentIncludedByDefault Remove="wwwroot\elsa-workflows-studio_dist_elsa-workflows-studio_p-78205c1a_entry_js.elsa-studio.js" />
-      <_ContentIncludedByDefault Remove="wwwroot\elsa-workflows-studio_dist_elsa-workflows-studio_p-78205c1a_entry_js.elsa-studio.js.map" />
-      <_ContentIncludedByDefault Remove="wwwroot\elsa-workflows-studio_dist_elsa-workflows-studio_p-cf47bc14_entry_js.elsa-studio.js" />
-      <_ContentIncludedByDefault Remove="wwwroot\elsa-workflows-studio_dist_elsa-workflows-studio_p-cf47bc14_entry_js.elsa-studio.js.map" />
-      <_ContentIncludedByDefault Remove="wwwroot\elsa-workflows-studio_dist_elsa-workflows-studio_p-d8745d7c_entry_js.elsa-studio.js" />
-      <_ContentIncludedByDefault Remove="wwwroot\elsa-workflows-studio_dist_elsa-workflows-studio_p-d8745d7c_entry_js.elsa-studio.js.map" />
-      <_ContentIncludedByDefault Remove="wwwroot\elsa-workflows-studio_dist_elsa-workflows-studio_shadow-css-23c95dd7_js.elsa-studio.js" />
-      <_ContentIncludedByDefault Remove="wwwroot\elsa-workflows-studio_dist_elsa-workflows-studio_shadow-css-23c95dd7_js.elsa-studio.js.map" />
-      <_ContentIncludedByDefault Remove="wwwroot\polyfills-dom.elsa-studio.js" />
-      <_ContentIncludedByDefault Remove="wwwroot\polyfills-dom.elsa-studio.js.map" />
-    </ItemGroup>
-
 </Project>

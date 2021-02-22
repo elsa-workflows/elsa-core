@@ -287,6 +287,7 @@ namespace Elsa.Services
                 resuming,
                 cancellationToken);
 
+            using var executionScope = AmbientActivityExecutionContext.EnterScope(activityExecutionContext);
             var activity = await activityExecutionContext.ActivateActivityAsync(cancellationToken);
             var canExecute = await activity.ActivityType.CanExecuteAsync(activityExecutionContext);
 
@@ -328,6 +329,8 @@ namespace Elsa.Services
                 var activityExecutionContext = new ActivityExecutionContext(scope, workflowExecutionContext, activityBlueprint, scheduledActivity.Input, resuming, cancellationToken);
                 var activity = await activityExecutionContext.ActivateActivityAsync(cancellationToken);
 
+                using var executionScope = AmbientActivityExecutionContext.EnterScope(activityExecutionContext);
+                
                 if (resuming)
                     await _mediator.Publish(new ActivityResuming(activityExecutionContext), cancellationToken);
 
@@ -355,7 +358,7 @@ namespace Elsa.Services
                 workflowExecutionContext.Suspend();
 
             if (workflowExecutionContext.Status == WorkflowStatus.Running)
-                workflowExecutionContext.Complete();
+                await workflowExecutionContext.CompleteAsync();
         }
 
         private async ValueTask<IActivityExecutionResult?> TryExecuteActivityAsync(

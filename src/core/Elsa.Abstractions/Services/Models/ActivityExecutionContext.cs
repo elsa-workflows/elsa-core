@@ -100,11 +100,17 @@ namespace Elsa.Services.Models
             parentData?.SetState(key, value);
         }
 
+        public ActivityScope CreateScope() => WorkflowExecutionContext.CreateScope(ActivityId);
+
         public object? Output
         {
             get => WorkflowExecutionContext.WorkflowInstance.ActivityOutput.GetItem(ActivityBlueprint.Id, () => null!);
             set => WorkflowExecutionContext.WorkflowInstance.ActivityOutput.SetItem(ActivityBlueprint.Id, value);
         }
+
+        public ActivityScope CurrentScope => WorkflowExecutionContext.CurrentScope;
+        public ActivityScope GetScope(string activityId) => WorkflowExecutionContext.GetScope(activityId);
+        public ActivityScope GetNamedScope(string activityName) => WorkflowExecutionContext.GetNamedScope(activityName);
 
         public void SetVariable(string name, object? value) => WorkflowExecutionContext.SetVariable(name, value);
         public object? GetVariable(string name) => WorkflowExecutionContext.GetVariable(name);

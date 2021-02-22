@@ -2,7 +2,7 @@ using System.Threading.Tasks;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Samples.IfElseConsole
+namespace Elsa.Samples.HappinessConsole
 {
     /// <summary>
     /// Demonstrates a workflow with a While looping construct.

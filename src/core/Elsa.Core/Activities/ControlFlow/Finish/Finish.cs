@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Models;
@@ -21,17 +22,37 @@ namespace Elsa.Activities.ControlFlow
         [ActivityProperty(Hint = "The outcomes to set on the container activity")]
         public IEnumerable<string> OutcomeNames { get; set; } = new[] { Elsa.OutcomeNames.Done };
 
-        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
+        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
             var parentBlueprint = context.ActivityBlueprint.Parent;
+            
+            // Remove any blocking activities within the scope of the composite activity.
             var blockingActivities = context.WorkflowExecutionContext.WorkflowInstance.BlockingActivities;
             var blockingActivityIds = blockingActivities.Select(x => x.ActivityId).ToList();
             var containedBlockingActivityIds = parentBlueprint == null ? blockingActivityIds : parentBlueprint.Activities.Where(x => blockingActivityIds.Contains(x.Id)).Select(x => x.Id).ToList();
+            var containedBlockingActivities = blockingActivities.Where(x => containedBlockingActivityIds.Contains(x.ActivityId));
+            
+            foreach (var blockingActivity in containedBlockingActivities) 
+                await context.WorkflowExecutionContext.RemoveBlockingActivityAsync(blockingActivity);
+            
+            // Evict & remove any scope activities within the scope of the composite activity.
+            var scopes = context.WorkflowInstance.Scopes.Select(x => x).Reverse().ToList();
+            var scopeIds = scopes.Select(x => x.ActivityId).ToList();
+            var containedScopeActivityIds = parentBlueprint == null ? scopeIds : parentBlueprint.Activities.Where(x => scopeIds.Contains(x.Id)).Select(x => x.Id).ToList();
 
-            blockingActivities.RemoveWhere(x => containedBlockingActivityIds.Contains(x.ActivityId));
+            foreach (var scopeId in containedScopeActivityIds)
+            {
+                var scopeActivity = context.WorkflowExecutionContext.GetActivityBlueprintById(scopeId)!;
+                await context.WorkflowExecutionContext.EvictScopeAsync(scopeActivity);
+                scopes.RemoveAll(x => x.ActivityId == scopeId);
+            }
+            
+            context.WorkflowInstance.Scopes = new SimpleStack<ActivityScope>(scopes.AsEnumerable().Reverse());
+            
+            // Return output
             var output = new FinishOutput(OutputValue, OutcomeNames);
-            context.WorkflowExecutionContext.WorkflowInstance.Output = output;
-            return Done(output);
+
+            return Output(output);
         }
     }
 }

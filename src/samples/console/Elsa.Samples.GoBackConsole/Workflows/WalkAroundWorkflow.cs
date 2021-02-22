@@ -11,16 +11,16 @@ namespace Elsa.Samples.GoBackConsole.Workflows
         {
             builder
                 .WriteLine("Taking a stroll...")
-                .IfElse(context => (string?)context.Input == "Brick Wall",
-                    ifElse =>
+                .If(context => (string?)context.Input == "Brick Wall",
+                    @if =>
                     {
-                        ifElse
-                            .When(IfElse.False)
+                        @if
+                            .When(If.False)
                             .WriteLine("Hitting a wall...")
                             .Then<BrickWallActivity>();
 
-                        ifElse
-                            .When(IfElse.True)
+                        @if
+                            .When(If.True)
                             .WriteLine("Going around the wall...")
                             .WriteLine("Made it!");
                     });

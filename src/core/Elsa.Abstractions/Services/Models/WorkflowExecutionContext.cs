@@ -3,10 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Events;
 using Elsa.Models;
+using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using NodaTime;
+using Rebus.Extensions;
 
 namespace Elsa.Services.Models
 {
@@ -25,12 +28,14 @@ namespace Elsa.Services.Models
             Input = input;
             IsFirstPass = true;
             Serializer = serviceProvider.GetRequiredService<JsonSerializer>();
+            Mediator = serviceProvider.GetRequiredService<IMediator>();
         }
 
         public IWorkflowBlueprint WorkflowBlueprint { get; }
         public IServiceProvider ServiceProvider { get; }
         public WorkflowInstance WorkflowInstance { get; }
         public JsonSerializer Serializer { get; }
+        public IMediator Mediator { get; }
         public object? Input { get; }
         public bool HasScheduledActivities => WorkflowInstance.ScheduledActivities.Any();
         public bool IsFirstPass { get; private set; }
@@ -94,22 +99,62 @@ namespace Elsa.Services.Models
             }
         }
 
-        public IEnumerable<Func<WorkflowExecutionContext, CancellationToken, ValueTask>> GetRegisteredTasks(string groupName) => Tasks.ContainsKey(groupName) ? Tasks[groupName] : Enumerable.Empty<Func<WorkflowExecutionContext, CancellationToken, ValueTask>>();
+        public IEnumerable<Func<WorkflowExecutionContext, CancellationToken, ValueTask>> GetRegisteredTasks(string groupName) =>
+            Tasks.ContainsKey(groupName) ? Tasks[groupName] : Enumerable.Empty<Func<WorkflowExecutionContext, CancellationToken, ValueTask>>();
 
         public async ValueTask ExecuteRegisteredTasksAsync(string groupName, CancellationToken cancellationToken = default)
         {
             var tasks = GetRegisteredTasks(groupName);
-            
-            foreach (var task in tasks) 
+
+            foreach (var task in tasks)
                 await task(this, cancellationToken);
-            
+
             Tasks.Remove(groupName);
         }
+
+        public async Task RemoveBlockingActivityAsync(BlockingActivity blockingActivity)
+        {
+            WorkflowInstance.BlockingActivities.Remove(blockingActivity);
+            await Mediator.Publish(new BlockingActivityRemoved(this, blockingActivity));
+        }
+
+        public async Task EvictScopeAsync(IActivityBlueprint scope) => await Mediator.Publish(new ScopeEvicted(this, scope));
 
         public void SetVariable(string name, object? value) => WorkflowInstance.Variables.Set(name, value);
         public T? GetVariable<T>() => GetVariable<T>(typeof(T).Name);
         public T? GetVariable<T>(string name) => WorkflowInstance.Variables.Get<T>(name);
-        public object? GetVariable(string name) => WorkflowInstance.Variables.Get(name);
+        
+        /// <summary>
+        /// Gets a variable from across all scopes, starting with the current scope, going up each scope until the requested variable is found.
+        /// </summary>
+        /// <remarks>Use <see cref="GetWorkflowVariable"/>if you want to access a workflow variable directly without going through the scopes.</remarks>
+        public object? GetVariable(string name)
+        {
+            var scopes = WorkflowInstance.Scopes.ToList();
+            
+            var mergedVariables = scopes.Select(x => x.Variables).Aggregate(new Variables(), (current, next) =>
+            {
+                var combined = current.Data.MergedWith(next.Data);
+                return new Variables(combined);
+            });
+            
+            return mergedVariables.Get(name);
+        }
+        
+        /// <summary>
+        /// Gets a workflow variable.
+        /// </summary>
+        public object? GetWorkflowVariable(string name) => WorkflowInstance.Variables.Get(name);
+
+        public ActivityScope CurrentScope => WorkflowInstance.Scopes.Peek();
+        public ActivityScope GetScope(string activityId) => WorkflowInstance.Scopes.First(x => x.ActivityId == activityId);
+        
+        public ActivityScope GetNamedScope(string activityName)
+        {
+            var activityBlueprint = GetActivityBlueprintByName(activityName)!;
+            return GetScope(activityBlueprint.Id);
+        }
+
         public void SetTransientVariable(string name, object? value) => TransientState.Set(name, value);
         public T? GetTransientVariable<T>(string name) => TransientState.Get<T>(name);
         public object? GetTransientVariable(string name) => TransientState.Get(name);
@@ -117,9 +162,10 @@ namespace Elsa.Services.Models
         public void Begin() => WorkflowInstance.WorkflowStatus = WorkflowStatus.Running;
         public void Resume() => WorkflowInstance.WorkflowStatus = WorkflowStatus.Running;
         public void Suspend() => WorkflowInstance.WorkflowStatus = WorkflowStatus.Suspended;
+
         public void Fault(Exception ex, string? activityId, object? activityInput, bool resuming) => Fault(ex, ex.Message, activityId, activityInput, resuming);
         public void Fault(string message, string? activityId, object? activityInput, bool resuming) => Fault(null, message, activityId, activityInput, resuming);
-        
+
         public void Fault(Exception? exception, string message, string? activityId, object? activityInput, bool resuming)
         {
             var clock = ServiceProvider.GetRequiredService<IClock>();
@@ -128,7 +174,19 @@ namespace Elsa.Services.Models
             WorkflowInstance.Fault = new WorkflowFault(SimpleException.FromException(exception), message, activityId, activityInput, resuming);
         }
 
-        public void Complete() => WorkflowInstance.WorkflowStatus = WorkflowStatus.Finished;
+        public async Task CompleteAsync()
+        {
+            // Remove all blocking activities.
+            foreach (var blockingActivity in WorkflowInstance.BlockingActivities)
+                await RemoveBlockingActivityAsync(blockingActivity);
+
+            // Evict all scopes.
+            foreach (var scope in WorkflowInstance.Scopes.AsEnumerable().Reverse())
+                await EvictScopeAsync(scope);
+
+            WorkflowInstance.Scopes = new SimpleStack<ActivityScope>();
+            WorkflowInstance.WorkflowStatus = WorkflowStatus.Finished;
+        }
 
         public IActivityBlueprint? GetActivityBlueprintById(string id) => WorkflowBlueprint.Activities.FirstOrDefault(x => x.Id == id);
         public IActivityBlueprint? GetActivityBlueprintByName(string name) => WorkflowBlueprint.Activities.FirstOrDefault(x => x.Name == name);
@@ -156,6 +214,20 @@ namespace Elsa.Services.Models
         {
             var activityBlueprint = WorkflowBlueprint.GetActivity(activityId);
             return activityBlueprint != null && activityBlueprint.PersistOutput;
+        }
+
+        private async Task<IActivityBlueprint> EvictScopeAsync(ActivityScope scope)
+        {
+            var scopeActivity = WorkflowBlueprint.GetActivity(scope.ActivityId)!;
+            await EvictScopeAsync(scopeActivity);
+            return scopeActivity;
+        }
+
+        public ActivityScope CreateScope(string activityId)
+        {
+            var scope = new ActivityScope(activityId);
+            WorkflowInstance.Scopes.Push(scope);
+            return scope;
         }
     }
 

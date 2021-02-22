@@ -8,11 +8,11 @@ using Elsa.Services.Models;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.ControlFlow
 {
-    public static class IfElseBuilderExtensions
+    public static class IfBuilderExtensions
     {
-        public static IActivityBuilder IfElse(
+        public static IActivityBuilder If(
             this IBuilder builder,
-            Action<ISetupActivity<IfElse>>? setup = default,
+            Action<ISetupActivity<If>>? setup = default,
             Action<IActivityBuilder>? activity = default,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default)
@@ -22,18 +22,18 @@ namespace Elsa.Activities.ControlFlow
             return activityBuilder;
         }
 
-        public static IActivityBuilder IfElse(
+        public static IActivityBuilder If(
             this IBuilder builder,
             Func<ActivityExecutionContext, bool> condition,
             Action<IActivityBuilder>? activity = default,
             [CallerLineNumber] int lineNumber = default,
-            [CallerFilePath] string? sourceFile = default) => builder.IfElse(x => x.WithCondition(condition), activity, lineNumber, sourceFile);
+            [CallerFilePath] string? sourceFile = default) => builder.If(x => x.WithCondition(condition), activity, lineNumber, sourceFile);
 
-        public static IActivityBuilder IfElse(this IBuilder builder, Func<bool> condition, Action<IActivityBuilder>? activity = default, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
-            builder.IfElse(x => x.WithCondition(condition), activity, lineNumber, sourceFile);
+        public static IActivityBuilder If(this IBuilder builder, Func<bool> condition, Action<IActivityBuilder>? activity = default, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
+            builder.If(x => x.WithCondition(condition), activity, lineNumber, sourceFile);
 
-        public static IActivityBuilder IfElse(this IBuilder builder, bool condition, Action<IActivityBuilder>? activity = default, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
-            builder.IfElse(x => x.WithCondition(condition), activity, lineNumber, sourceFile);
+        public static IActivityBuilder If(this IBuilder builder, bool condition, Action<IActivityBuilder>? activity = default, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
+            builder.If(x => x.WithCondition(condition), activity, lineNumber, sourceFile);
 
         public static IActivityBuilder IfTrue(
             this IBuilder builder,
@@ -41,7 +41,7 @@ namespace Elsa.Activities.ControlFlow
             Action<IOutcomeBuilder> whenTrue,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default) =>
-            builder.IfElse(x => x.WithCondition(condition), ifElse => whenTrue(ifElse.When(OutcomeNames.True)), lineNumber, sourceFile);
+            builder.If(x => x.WithCondition(condition), @if => whenTrue(@if.When(OutcomeNames.True)), lineNumber, sourceFile);
 
         public static IActivityBuilder IfTrue(
             this IBuilder builder,
@@ -49,7 +49,7 @@ namespace Elsa.Activities.ControlFlow
             Action<IOutcomeBuilder> whenTrue,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default) =>
-            builder.IfElse(x => x.WithCondition(condition), ifElse => whenTrue(ifElse.When(OutcomeNames.True)), lineNumber, sourceFile);
+            builder.If(x => x.WithCondition(condition), @if => whenTrue(@if.When(OutcomeNames.True)), lineNumber, sourceFile);
 
         public static IActivityBuilder IfTrue(
             this IBuilder builder,
@@ -57,7 +57,7 @@ namespace Elsa.Activities.ControlFlow
             Action<IOutcomeBuilder> whenTrue,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default) =>
-            builder.IfElse(x => x.WithCondition(condition), ifElse => whenTrue(ifElse.When(OutcomeNames.True)), lineNumber, sourceFile);
+            builder.If(x => x.WithCondition(condition), @if => whenTrue(@if.When(OutcomeNames.True)), lineNumber, sourceFile);
 
         public static IActivityBuilder IfTrue(
             this IBuilder builder,
@@ -65,7 +65,7 @@ namespace Elsa.Activities.ControlFlow
             Action<IOutcomeBuilder> whenTrue,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default) =>
-            builder.IfElse(x => x.WithCondition(condition), ifElse => whenTrue(ifElse.When(OutcomeNames.True)), lineNumber, sourceFile);
+            builder.If(x => x.WithCondition(condition), @if => whenTrue(@if.When(OutcomeNames.True)), lineNumber, sourceFile);
 
         public static IActivityBuilder IfFalse(
             this IBuilder builder,
@@ -73,7 +73,7 @@ namespace Elsa.Activities.ControlFlow
             Action<IOutcomeBuilder> whenFalse,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default) =>
-            builder.IfElse(x => x.WithCondition(condition), ifElse => whenFalse(ifElse.When(OutcomeNames.False)), lineNumber, sourceFile);
+            builder.If(x => x.WithCondition(condition), @if => whenFalse(@if.When(OutcomeNames.False)), lineNumber, sourceFile);
 
         public static IActivityBuilder IfFalse(
             this IBuilder builder,
@@ -81,7 +81,7 @@ namespace Elsa.Activities.ControlFlow
             Action<IOutcomeBuilder> whenFalse,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default) =>
-            builder.IfElse(x => x.WithCondition(condition), ifElse => whenFalse(ifElse.When(OutcomeNames.False)), lineNumber, sourceFile);
+            builder.If(x => x.WithCondition(condition), @if => whenFalse(@if.When(OutcomeNames.False)), lineNumber, sourceFile);
 
         public static IActivityBuilder IfFalse(
             this IBuilder builder,
@@ -89,7 +89,7 @@ namespace Elsa.Activities.ControlFlow
             Action<IOutcomeBuilder> whenFalse,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default) =>
-            builder.IfElse(x => x.WithCondition(condition), ifElse => whenFalse(ifElse.When(OutcomeNames.False)), lineNumber, sourceFile);
+            builder.If(x => x.WithCondition(condition), @if => whenFalse(@if.When(OutcomeNames.False)), lineNumber, sourceFile);
         
         public static IActivityBuilder IfFalse(
             this IBuilder builder,
@@ -97,19 +97,19 @@ namespace Elsa.Activities.ControlFlow
             Action<IOutcomeBuilder> whenFalse,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default) =>
-            builder.IfElse(x => x.WithCondition(condition), ifElse => whenFalse(ifElse.When(OutcomeNames.False)), lineNumber, sourceFile);
+            builder.If(x => x.WithCondition(condition), @if => whenFalse(@if.When(OutcomeNames.False)), lineNumber, sourceFile);
 
-        public static IActivityBuilder IfElse(
+        public static IActivityBuilder If(
             this IBuilder builder,
             Func<ActivityExecutionContext, bool> condition,
             Action<IOutcomeBuilder> whenTrue,
             Action<IOutcomeBuilder> whenFalse,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default) =>
-            builder.IfElse(x => x.WithCondition(condition), ifElse =>
+            builder.If(x => x.WithCondition(condition), @if =>
             {
-                whenTrue(ifElse.When(OutcomeNames.True));
-                whenFalse(ifElse.When(OutcomeNames.False));
+                whenTrue(@if.When(OutcomeNames.True));
+                whenFalse(@if.When(OutcomeNames.False));
             }, lineNumber, sourceFile);
     }
 }

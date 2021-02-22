@@ -1,4 +1,3 @@
-using System;
 using System.Linq;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
@@ -22,7 +21,7 @@ namespace Elsa.Activities.ControlFlow
             
             var query =
                 from scope in context.WorkflowInstance.Scopes
-                let scopeActivity = context.WorkflowExecutionContext.GetActivityBlueprintById(scope)!
+                let scopeActivity = context.WorkflowExecutionContext.GetActivityBlueprintById(scope.ActivityId)!
                 let scopeType = scopeActivity.Type
                 let supportsBreak = supportedScopeTypes.Contains(scopeType)
                 where supportsBreak
@@ -31,7 +30,7 @@ namespace Elsa.Activities.ControlFlow
             var supportedScope = query.FirstOrDefault();
             
             if(supportedScope != null)
-                context.WorkflowInstance.ActivityData[supportedScope].SetState("Break", true);
+                context.WorkflowInstance.ActivityData[supportedScope.ActivityId].SetState("Break", true);
 
             return Done();
         }

@@ -18,7 +18,7 @@ namespace Elsa.Samples.Server.Host.Workflows
                 .ReadLine()
                 .Timer(Duration.FromMinutes(5))
                 .SetVariable("Age", context => int.Parse(context.GetInput<string>()!))
-                .IfElse(
+                .If(
                     context => context.GetVariable<int>("Age") < 18, 
                     whenTrue => whenTrue.WriteLine("You are not allowed to drink beer."),
                     whenFalse => whenFalse.WriteLine("Enjoy your beer!"));
