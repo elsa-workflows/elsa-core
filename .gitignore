@@ -63,3 +63,6 @@ FodyWeavers.xsd
 src/designer/elsa-workflows-studio/dist
 src/designer/elsa-workflows-studio/www
 src/designer/elsa-workflows-studio/loader
+
+# Created by developers using GNU/Linux
+.directory
