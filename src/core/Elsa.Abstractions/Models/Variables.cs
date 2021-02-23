@@ -37,9 +37,7 @@ namespace Elsa.Models
         /// <returns>A reference to this same <see cref="Variables"/> instance, so calls may be chained.</returns>
         public Variables Remove(string name)
         {
-            if (Has(name))
-                Data.Remove(name);
-
+            Data.Remove(name);
             return this;
         }
 
