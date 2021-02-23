@@ -49,7 +49,8 @@ namespace Elsa.Models
         /// <returns>A reference to this same <see cref="Variables"/> instance, so calls may be chained.</returns>
         public Variables RemoveAll()
         {
-            throw new NotImplementedException();
+            Data.Clear();
+            return this;
         }
 
         public bool Has(string name) => Data.ContainsKey(name);
