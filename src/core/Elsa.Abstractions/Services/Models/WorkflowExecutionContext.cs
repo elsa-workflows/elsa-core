@@ -146,6 +146,13 @@ namespace Elsa.Services.Models
         /// </summary>
         public object? GetWorkflowVariable(string name) => WorkflowInstance.Variables.Get(name);
 
+        /// <summary>
+        /// Clears all of the variables associated with the current <see cref="WorkflowInstance"/>.
+        /// </summary>
+        /// <seealso cref="Variables.RemoveAll"/>
+        public void PurgeVariables() => WorkflowInstance.Variables.RemoveAll();
+
+
         public ActivityScope CurrentScope => WorkflowInstance.Scopes.Peek();
         public ActivityScope GetScope(string activityId) => WorkflowInstance.Scopes.First(x => x.ActivityId == activityId);
         
