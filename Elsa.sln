@@ -232,6 +232,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Designer.Bindings.Blaz
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.Timers.Quartz", "src\samples\worker\Elsa.Samples.Timers.Quartz\Elsa.Samples.Timers.Quartz.csproj", "{FE724143-B24C-43DA-BBF5-15431BCA6E27}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.AutoConnectNextActivityConsole", "src\samples\console\Elsa.Samples.AutoConnectNextActivityConsole\Elsa.Samples.AutoConnectNextActivityConsole.csproj", "{DB42A8DA-06CA-4402-9C87-8F7F055AB37E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -554,6 +556,10 @@ Global
 		{FE724143-B24C-43DA-BBF5-15431BCA6E27}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FE724143-B24C-43DA-BBF5-15431BCA6E27}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FE724143-B24C-43DA-BBF5-15431BCA6E27}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DB42A8DA-06CA-4402-9C87-8F7F055AB37E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DB42A8DA-06CA-4402-9C87-8F7F055AB37E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DB42A8DA-06CA-4402-9C87-8F7F055AB37E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DB42A8DA-06CA-4402-9C87-8F7F055AB37E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -664,6 +670,7 @@ Global
 		{5C005CC7-B5F2-49C3-8A8B-7640FCDBEE50} = {E42743A0-FBDD-4150-9D53-6000496D9B87}
 		{45A06CA3-199B-4650-8880-30DDF2E38E19} = {8B6B40A8-DF21-4CD2-BABD-474B79D0C3AF}
 		{FE724143-B24C-43DA-BBF5-15431BCA6E27} = {E42743A0-FBDD-4150-9D53-6000496D9B87}
+		{DB42A8DA-06CA-4402-9C87-8F7F055AB37E} = {FC9F520F-BA51-4AD2-BFEE-EF787798E734}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}
