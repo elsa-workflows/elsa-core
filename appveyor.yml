@@ -41,7 +41,6 @@
         cd ..\..\..\..\
 
         dotnet pack Elsa.sln --include-symbols /p:Version=$env:APPVEYOR_BUILD_VERSION
-  test: off
   artifacts:
     - path: '**/*.nupkg'
       name: MyGet
