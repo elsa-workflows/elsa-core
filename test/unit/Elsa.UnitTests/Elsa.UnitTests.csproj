@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>Elsa</RootNamespace>               
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Autofixture" Version="4.15.0" />
+    <PackageReference Include="Autofixture.AutoMoq" Version="4.15.0" />
+    <PackageReference Include="autofixture.xunit2" Version="4.15.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.7.1" />
+    <PackageReference Include="Moq" Version="4.16.0" />
+    <PackageReference Include="xunit" Version="2.4.1" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="coverlet.collector" Version="1.3.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../src/core/Elsa.Abstractions/Elsa.Abstractions.csproj" />
+    <ProjectReference Include="../../shared/Elsa.Testing.Shared/Elsa.Testing.Shared.csproj" />
+  </ItemGroup>
+
+</Project>
