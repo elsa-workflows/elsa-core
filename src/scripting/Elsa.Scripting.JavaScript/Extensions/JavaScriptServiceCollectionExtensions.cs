@@ -3,6 +3,7 @@ using Elsa.Scripting.JavaScript.Services;
 using System;
 using Elsa;
 using Elsa.Expressions;
+using Elsa.Scripting.JavaScript.Typings;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -13,6 +14,7 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             return services
                 .AddSingleton<ITypeScriptDefinitionService, TypeScriptDefinitionService>()
+                .AddSingleton<ITypeDefinitionProvider, PrimitiveTypeDefinitionProvider>()
                 .TryAddProvider<IExpressionHandler, JavaScriptHandler>(ServiceLifetime.Scoped)
                 .AddNotificationHandlers(typeof(JavaScriptServiceCollectionExtensions));
         }

@@ -5,7 +5,8 @@ namespace Elsa.Scripting.JavaScript.Extensions
 {
     public static class TypeExtensions
     {
-        private static readonly HashSet<Type> NumericTypes = new HashSet<Type> {
+        private static readonly HashSet<Type> NumericTypes = new()
+        {
             typeof(byte),
             typeof(sbyte),
             typeof(short),

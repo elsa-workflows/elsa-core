@@ -1,6 +1,7 @@
 ﻿using Elsa.Activities.Console;
 using Elsa.Activities.ControlFlow;
 using Elsa.Activities.Timers;
+using Elsa.Attributes;
 using Elsa.Builders;
 using Elsa.Samples.WhileLoopWorker.Services;
 using Elsa.Services;
@@ -11,6 +12,13 @@ namespace Elsa.Samples.WhileLoopWorker.Activities
     public class MakePhoneCall : CompositeActivity
     {
         private readonly PhoneCallService _phoneCallService;
+
+        [ActivityProperty]
+        public string PhoneNumber
+        {
+            get => GetState<string>();
+            set => SetState(value);
+        }
 
         public MakePhoneCall(PhoneCallService phoneCallService)
         {
@@ -24,7 +32,7 @@ namespace Elsa.Samples.WhileLoopWorker.Activities
                     @while =>
                     {
                         @while
-                            .WriteLine("Ringgggg ringgg.")
+                            .WriteLine(() => $"Ringgggg ringgg. {PhoneNumber}")
                             .Timer(Duration.FromSeconds(5))
                             .Then(() => _phoneCallService.Progress())
                             .WriteLine(() => $"Call status: {_phoneCallService.CallStatus}");

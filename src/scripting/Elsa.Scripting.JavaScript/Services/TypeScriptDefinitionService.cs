@@ -12,20 +12,26 @@ namespace Elsa.Scripting.JavaScript.Services
 {
     public class TypeScriptDefinitionService : ITypeScriptDefinitionService
     {
-        
+        private readonly IEnumerable<ITypeDefinitionProvider> _providers;
+
+        public TypeScriptDefinitionService(IEnumerable<ITypeDefinitionProvider> providers)
+        {
+            _providers = providers;
+        }
         public string GenerateTypeScriptDefinition(WorkflowDefinition? workflowDefinition = default)
         {
             var builder = new StringBuilder();
             var types = CollectTypes(workflowDefinition);
 
-            foreach (var type in types) 
+            // Render type declarations for anything except those listed in TypeConverters.
+            foreach (var type in types.Where(x => !TypeConverters.ContainsKey(x)))
                 RenderTypeDeclaration(type, builder);
-            
+
             if (workflowDefinition != null)
             {
                 var contextType = workflowDefinition.ContextOptions?.ContextType;
 
-                if (contextType != null) 
+                if (contextType != null)
                     builder.AppendLine("declare const context: Document");
             }
 
@@ -35,29 +41,29 @@ namespace Elsa.Scripting.JavaScript.Services
         private IEnumerable<Type> CollectTypes(WorkflowDefinition? workflowDefinition = default)
         {
             var collectedTypes = new HashSet<Type>();
-            
+
             if (workflowDefinition != null)
             {
                 var contextType = workflowDefinition.ContextOptions?.ContextType;
 
-                if (contextType != null) 
+                if (contextType != null)
                     CollectType(contextType, collectedTypes);
             }
 
             return collectedTypes;
         }
-        
+
         private void CollectType(Type type, HashSet<Type> collectedTypes)
         {
             collectedTypes.Add(type);
-            
+
             // Collect generic type argument types.
             foreach (var typeArgType in type.GenericTypeArguments.Where(x => !collectedTypes.Contains(x)))
             {
                 collectedTypes.Add(typeArgType);
                 CollectType(typeArgType, collectedTypes);
             }
-            
+
             // Collect property types.
             var propertyTypes = type.GetProperties().Select(x => x.PropertyType).Where(x => !collectedTypes.Contains(x));
 
@@ -70,10 +76,18 @@ namespace Elsa.Scripting.JavaScript.Services
 
         private void RenderTypeDeclaration(Type type, StringBuilder output)
         {
+            if (type.IsClass)
+                RenderClassOrInterfaceDeclaration("class", type, output);
+            else if (type.IsInterface)
+                RenderClassOrInterfaceDeclaration("interface", type, output);
+        }
+
+        private void RenderClassOrInterfaceDeclaration(string symbol, Type type, StringBuilder output)
+        {
             var typeName = type.Name;
             var properties = type.GetProperties();
 
-            output.AppendLine($"declare class {typeName} {{");
+            output.AppendLine($"declare {symbol} {typeName} {{");
 
             foreach (var property in properties)
             {
@@ -89,24 +103,12 @@ namespace Elsa.Scripting.JavaScript.Services
         {
             if (type.IsNullableType())
                 type = type.GetTypeOfNullable();
-            
-            return type switch
-            {
-                { } t when t == typeof(short) => "number",
-                { } t when t == typeof(ushort) => "number",
-                { } t when t == typeof(int) => "number",
-                { } t when t == typeof(uint) => "number",
-                { } t when t == typeof(long) => "number",
-                { } t when t == typeof(ulong) => "number",
-                { } t when t == typeof(float) => "number",
-                { } t when t == typeof(decimal) => "number",
-                { } t when t == typeof(string) => "string",
-                { } t when t == typeof(DateTime) => "Date",
-                { } t when t == typeof(DateTimeOffset) => "Date",
-                { } t when typeof(IDictionary<,>).IsAssignableFrom(t) => "any",
-                { } t when typeof(IEnumerable).IsAssignableFrom(t) => $"Array<{t.GenericTypeArguments[0].Name}>",
-                _ => type.Name
-            };
+
+            if (type.IsEnum)
+                return "number";
+
+            var entry = TypeConverters.FirstOrDefault(x => x.Key.IsAssignableFrom(type));
+            return entry.Key == null ? type.Name : entry.Value(type);
         }
     }
 }
