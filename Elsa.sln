@@ -238,6 +238,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.UnitTests", "test\unit
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "unit", "unit", "{E1378A53-424A-4E50-9D03-71DB9F7EE57C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.InvokeWorkflowFromController", "src\samples\aspnet\Elsa.Samples.InvokeWorkflowFromController\Elsa.Samples.InvokeWorkflowFromController.csproj", "{346A3A87-A839-499A-A143-3D267A951905}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -568,6 +570,10 @@ Global
 		{F822DE2F-A91D-416E-BF4A-A6C466C1BF0A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F822DE2F-A91D-416E-BF4A-A6C466C1BF0A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F822DE2F-A91D-416E-BF4A-A6C466C1BF0A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{346A3A87-A839-499A-A143-3D267A951905}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{346A3A87-A839-499A-A143-3D267A951905}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{346A3A87-A839-499A-A143-3D267A951905}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{346A3A87-A839-499A-A143-3D267A951905}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -681,6 +687,7 @@ Global
 		{DB42A8DA-06CA-4402-9C87-8F7F055AB37E} = {FC9F520F-BA51-4AD2-BFEE-EF787798E734}
 		{E1378A53-424A-4E50-9D03-71DB9F7EE57C} = {AB1AE008-6FD6-414C-8E88-D735F42E1FA6}
 		{F822DE2F-A91D-416E-BF4A-A6C466C1BF0A} = {E1378A53-424A-4E50-9D03-71DB9F7EE57C}
+		{346A3A87-A839-499A-A143-3D267A951905} = {22E75696-6FE9-436A-9097-EE21C603F818}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}
