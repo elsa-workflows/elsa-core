@@ -6,10 +6,10 @@ environment:
   # picks an old version that's not compatible with SonarQube.
   # This brings it up to date.
   JAVA_HOME: "C:\\Program Files\\Java\\jdk13"
-  sonarcloud_org_name: CHANGE_ME # But perhaps elsa-workflows
-  sonarcloud_project_name: CHANGE_ME # But perhaps elsa-core
+  sonarcloud_org_name: elsa-workflows
+  sonarcloud_project_name: elsa-core
   sonarcloud_api_key:
-    secure: CHANGE_ME
+    secure: +886yMchgwCvv3Bza9K43mtftx+bAhWS46fF6sihvk9DUq+dxAQZemMDhBcMFp2V
 
 version: 2.0.0-preview6.{build}
 
