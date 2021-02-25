@@ -12,15 +12,15 @@ namespace Elsa.Models
         Suspended,
         
         /// <summary>
+        /// Workflow instances are persisted after the workflow completed a burst of execution.
+        /// </summary>
+        WorkflowBurst,
+        
+        /// <summary>
         /// Workflow instances are persisted after the workflow executed scheduled activities.
         /// </summary>
         WorkflowPassCompleted,
-        
-        /// <summary>
-        /// Workflow instances are persisted after the workflow completed a burst of execution.
-        /// </summary>
-        WorkflowBurstCompleted,
-        
+
         /// <summary>
         /// Workflow instances are persisted after each activity that executed.
         /// </summary>
