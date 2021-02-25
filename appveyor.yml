@@ -28,15 +28,21 @@ cache:
 install:
   - ps: >-
       Install-Product node $env:nodejs_version
+
       cd .\src\dashboards\blazor\ElsaDashboard.Application
+
       npm install --force
+
       cd ..\..\..\..\
 
 build_script:
   - ps: >-
       cd .\src\dashboards\blazor\ElsaDashboard.Application
+
       npm run build:css
+
       cd ..\..\..\..\
+      
       dotnet pack Elsa.sln --include-symbols /p:Version=$env:APPVEYOR_BUILD_VERSION
 
 test_script:
