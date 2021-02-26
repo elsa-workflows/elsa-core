@@ -100,8 +100,10 @@ namespace Elsa.Services.Models
             AbortedAt = instance.AbortedAt;
             ExecutionLog = instance.ExecutionLog.ToList();
             Scope = instance.Scope;
-            Input = Input;
-
+            Input = new Variables(Input.Concat(instance.Input)
+               .GroupBy(kv => kv.Key)
+               .ToDictionary(g => g.Key, g => g.First().Value));
+            
             BlockingActivities =
                 new HashSet<IActivity>(instance.BlockingActivities.Select(x => activityLookup[x.ActivityId]));
             
