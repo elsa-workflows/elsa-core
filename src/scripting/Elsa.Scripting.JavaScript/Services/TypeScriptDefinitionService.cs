@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Reflection.Emit;
 using System.Text;
 using AutoMapper.Internal;
 using Elsa.Models;
@@ -18,13 +15,14 @@ namespace Elsa.Scripting.JavaScript.Services
         {
             _providers = providers;
         }
+        
         public string GenerateTypeScriptDefinition(WorkflowDefinition? workflowDefinition = default)
         {
             var builder = new StringBuilder();
             var types = CollectTypes(workflowDefinition);
 
             // Render type declarations for anything except those listed in TypeConverters.
-            foreach (var type in types.Where(x => !TypeConverters.ContainsKey(x)))
+            foreach (var type in types)
                 RenderTypeDeclaration(type, builder);
 
             if (workflowDefinition != null)
@@ -104,11 +102,8 @@ namespace Elsa.Scripting.JavaScript.Services
             if (type.IsNullableType())
                 type = type.GetTypeOfNullable();
 
-            if (type.IsEnum)
-                return "number";
-
-            var entry = TypeConverters.FirstOrDefault(x => x.Key.IsAssignableFrom(type));
-            return entry.Key == null ? type.Name : entry.Value(type);
+            var provider = _providers.FirstOrDefault(x => x.SupportsType(type));
+            return provider == null ? "any" : provider.GetTypeDefinition(type);
         }
     }
 }
