@@ -15,7 +15,7 @@ namespace Elsa.Scripting.JavaScript.Services
         {
             _providers = providers;
         }
-        
+
         public string GenerateTypeScriptDefinition(WorkflowDefinition? workflowDefinition = default)
         {
             var builder = new StringBuilder();
@@ -23,14 +23,19 @@ namespace Elsa.Scripting.JavaScript.Services
 
             // Render type declarations for anything except those listed in TypeConverters.
             foreach (var type in types)
-                RenderTypeDeclaration(type, builder);
+            {
+                var shouldRenderDeclaration = ShouldRenderTypeDeclaration(type);
+
+                if (shouldRenderDeclaration)
+                    RenderTypeDeclaration(type, builder);
+            }
 
             if (workflowDefinition != null)
             {
                 var contextType = workflowDefinition.ContextOptions?.ContextType;
 
                 if (contextType != null)
-                    builder.AppendLine("declare const context: Document");
+                    builder.AppendLine($"declare const workflowContext: {contextType.Name}");
             }
 
             return builder.ToString();
@@ -74,13 +79,10 @@ namespace Elsa.Scripting.JavaScript.Services
 
         private void RenderTypeDeclaration(Type type, StringBuilder output)
         {
-            if (type.IsClass)
-                RenderClassOrInterfaceDeclaration("class", type, output);
-            else if (type.IsInterface)
-                RenderClassOrInterfaceDeclaration("interface", type, output);
+            RenderTypeDeclaration("interface", type, output);
         }
 
-        private void RenderClassOrInterfaceDeclaration(string symbol, Type type, StringBuilder output)
+        private void RenderTypeDeclaration(string symbol, Type type, StringBuilder output)
         {
             var typeName = type.Name;
             var properties = type.GetProperties();
@@ -104,6 +106,12 @@ namespace Elsa.Scripting.JavaScript.Services
 
             var provider = _providers.FirstOrDefault(x => x.SupportsType(type));
             return provider == null ? "any" : provider.GetTypeDefinition(type);
+        }
+
+        private bool ShouldRenderTypeDeclaration(Type type)
+        {
+            var provider = _providers.FirstOrDefault(x => x.SupportsType(type));
+            return provider == null;
         }
     }
 }

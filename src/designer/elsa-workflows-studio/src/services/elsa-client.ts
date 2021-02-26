@@ -28,7 +28,7 @@ export const createElsaClient = function (serverUrl: string): ElsaClient {
     },
     scriptingApi: {
       getJavaScriptTypeDefinitions: async (workflowDefinitionId: string): Promise<string> => {
-        const response = await httpClient.get<string>(`v1/scripting/javascript/type-definitions/${workflowDefinitionId}`);
+        const response = await httpClient.get<string>(`v1/scripting/javascript/type-definitions/${workflowDefinitionId}?t=${new Date().getTime()}`);
         return response.data;
       }
     }

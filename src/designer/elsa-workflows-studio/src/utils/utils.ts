@@ -39,6 +39,11 @@ if (!Array.prototype.last) {
   };
 }
 
+export function isNumeric(str: string): boolean {
+  return !isNaN(str as any) && // use type coercion to parse the _entirety_ of the string (`parseFloat` alone does not do this)...
+    !isNaN(parseFloat(str)) // ...and ensure strings of whitespace fail
+}
+
 export function getChildActivities(workflowModel: WorkflowModel, parentId?: string) {
   if (parentId == null) {
     const targetIds = new Set(workflowModel.connections.map(x => x.targetId));

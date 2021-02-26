@@ -16,6 +16,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<ITypeScriptDefinitionService, TypeScriptDefinitionService>()
                 .AddSingleton<ITypeDefinitionProvider, PrimitiveTypeDefinitionProvider>()
                 .AddSingleton<ITypeDefinitionProvider, EnumTypeDefinitionProvider>()
+                .AddSingleton<ITypeDefinitionProvider, EnumerableTypeDefinitionProvider>()
                 .TryAddProvider<IExpressionHandler, JavaScriptExpressionHandler>(ServiceLifetime.Scoped)
                 .AddNotificationHandlers(typeof(JavaScriptServiceCollectionExtensions));
         }

@@ -1,10 +1,16 @@
 import {Component, Event, h, Host, Prop, State, Watch} from '@stencil/core';
 import {eventBus} from "../../../../utils/event-bus";
-import {ActivityModel, EventTypes, WorkflowContextFidelity, WorkflowContextOptions, WorkflowDefinition, WorkflowModel} from "../../../../models";
+import {isNumeric, Map} from "../../../../utils/utils";
+import {EventTypes, Variables, WorkflowContextFidelity, WorkflowContextOptions, WorkflowDefinition} from "../../../../models";
 
 interface SelectOption {
   value: string;
   text: string;
+}
+
+interface VariableDefinition {
+  name?: string;
+  value?: string
 }
 
 @Component({
@@ -17,6 +23,7 @@ export class ElsaWorkflowDefinitionSettingsModal {
   @Prop() workflowDefinition: WorkflowDefinition;
   @State() workflowDefinitionInternal: WorkflowDefinition;
   @State() selectedTab: string = 'Settings';
+  @State() newVariable: VariableDefinition = {};
   dialog: HTMLElsaModalDialogElement;
 
   @Watch('workflowDefinition')
@@ -39,7 +46,7 @@ export class ElsaWorkflowDefinitionSettingsModal {
     let current = model;
 
     for (const name of fieldNameHierarchy.slice(0, fieldNameHierarchy.length - 1)) {
-      if(!current[name])
+      if (!current[name])
         current[name] = {};
 
       current = current[name];
@@ -85,9 +92,41 @@ export class ElsaWorkflowDefinitionSettingsModal {
     this.updateField(element.name, element.value.trim());
   }
 
+  onNewVariableNameChange(e: Event) {
+    const element = e.target as HTMLInputElement;
+    const variableName = element.value.trim();
+    const workflowDefinition = this.workflowDefinitionInternal;
+    const variables: Variables = workflowDefinition.variables || {data: {}};
+    const data: Map<any> = variables.data || {};
+
+    this.newVariable.name = variableName;
+
+    const value: string = this.newVariable.value;
+
+    if (value && value.indexOf('{') >= 0) {
+      try {
+        data[variableName] = JSON.parse(value);
+      } catch (e) {
+        data[variableName] = value;
+      }
+    } else {
+      data[variableName] = isNumeric(value) ? parseFloat(value) : value;
+    }
+
+    this.newVariable = {name: '', value: ''};
+    variables.data = data;
+    workflowDefinition.variables = variables;
+    this.workflowDefinitionInternal = workflowDefinition;
+  }
+
+  onNewVariableValueChange(e: Event) {
+    const element = e.target as HTMLInputElement;
+    this.newVariable.value = element.value.trim();
+  }
+
   render() {
 
-    const workflowDefinition = this.workflowDefinition;
+    const workflowDefinition = this.workflowDefinitionInternal;
     const tabs = ['Settings', 'Variables', 'Workflow Context'];
     const selectedTab = this.selectedTab;
     const inactiveClass = 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300';
@@ -150,7 +189,7 @@ export class ElsaWorkflowDefinitionSettingsModal {
   }
 
   renderSettingsTab() {
-    const workflowDefinition = this.workflowDefinition;
+    const workflowDefinition = this.workflowDefinitionInternal;
 
     return (
       <div class="flex px-8">
@@ -166,17 +205,59 @@ export class ElsaWorkflowDefinitionSettingsModal {
   }
 
   renderVariablesTab() {
+    const workflowDefinition = this.workflowDefinitionInternal;
+    const variables: Variables = workflowDefinition.variables || {data: {}};
+
+    const renderVariableGridRow = function(name: string, value: any){
+      return [
+        <div key={`${name}-name`}>
+          <input type="text" value={name} class="max-w-lg block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:max-w-xs sm:text-sm border-solid border-gray-300 rounded-md"/>
+        </div>,
+        <div key={`${name}-value`}>
+          <input type="text" value={value} class="max-w-lg block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:max-w-xs sm:text-sm border-solid border-gray-300 rounded-md"/>
+        </div>
+      ];
+    }
+
+    const renderVariablesGridRow = function () {
+      const rows: Array<any> = [];
+
+      for (const [key, value] of Object.entries(variables.data)) {
+        rows.push(renderVariableGridRow(key, value));
+      }
+
+      return rows;
+    }
+
     return (
       <div class="flex px-8">
         <div class="space-y-8 w-full">
-          <p>Variables</p>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <p class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Name</p>
+            </div>
+            <div>
+              <p class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Default Value</p>
+            </div>
+
+            {renderVariablesGridRow()}
+
+            <div>
+              <input type="text" value={this.newVariable.name} onChange={e => this.onNewVariableNameChange(e)}
+                     class="max-w-lg block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:max-w-xs sm:text-sm border-dashed border-gray-300 rounded-md"/>
+            </div>
+            <div>
+              <input type="text" value={this.newVariable.value} onChange={e => this.onNewVariableValueChange(e)}
+                     class="max-w-lg block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:max-w-xs sm:text-sm border-dashed border-gray-300 rounded-md"/>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
   renderWorkflowContextTab() {
-    const workflowDefinition = this.workflowDefinition;
+    const workflowDefinition = this.workflowDefinitionInternal;
 
     const contextOptions: WorkflowContextOptions = workflowDefinition.contextOptions || {
       contextType: undefined,

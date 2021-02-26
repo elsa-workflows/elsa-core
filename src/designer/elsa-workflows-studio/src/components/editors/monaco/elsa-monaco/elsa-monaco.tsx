@@ -36,8 +36,6 @@ export class ElsaMonaco {
 
   componentWillLoad() {
     this.registerLiquid();
-
-    debugger;
   }
 
   componentDidLoad() {
@@ -64,7 +62,8 @@ export class ElsaMonaco {
       // Extra libraries.
       const elsaClient = createElsaClient(this.serverUrl);
       const libSource = await elsaClient.scriptingApi.getJavaScriptTypeDefinitions(this.workflowDefinitionId);
-      const libUri = `ts:filename/elsa.d.ts`;
+      //const libUri = `ts:filename/elsa.d.ts?t=${new Date().getTime()}`;
+      const libUri = 'defaultLib:lib.es6.d.ts';
 
       monaco.languages.typescript.javascriptDefaults.addExtraLib(libSource, libUri);
       monaco.editor.createModel(libSource, 'typescript', monaco.Uri.parse(libUri));
