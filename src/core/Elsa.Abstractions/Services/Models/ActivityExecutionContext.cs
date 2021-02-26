@@ -116,6 +116,14 @@ namespace Elsa.Services.Models
         public object? GetVariable(string name) => WorkflowExecutionContext.GetVariable(name);
         public T? GetVariable<T>(string name) => WorkflowExecutionContext.GetVariable<T>(name);
         public T? GetVariable<T>() => GetVariable<T>(typeof(T).Name);
+
+        /// <summary>
+        /// Clears all of the variables associated with the current <see cref="Elsa.Models.WorkflowInstance"/>.
+        /// </summary>
+        /// <seealso cref="WorkflowExecutionContext.PurgeVariables"/>
+        /// <seealso cref="Variables.RemoveAll"/>
+        public void PurgeVariables() => WorkflowExecutionContext.PurgeVariables();
+
         public void SetTransientVariable(string name, object? value) => WorkflowExecutionContext.SetTransientVariable(name, value);
         public object? GetTransientVariable(string name) => WorkflowExecutionContext.GetTransientVariable(name);
         public T? GetTransientVariable<T>(string name) => WorkflowExecutionContext.GetTransientVariable<T>(name);

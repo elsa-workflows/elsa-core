@@ -319,6 +319,7 @@ namespace Elsa.Services
             var scope = workflowExecutionContext.ServiceProvider;
             var workflowBlueprint = workflowExecutionContext.WorkflowBlueprint;
             var workflowInstance = workflowExecutionContext.WorkflowInstance;
+            var burstStarted = false;
 
             while (workflowExecutionContext.HasScheduledActivities)
             {
@@ -330,6 +331,12 @@ namespace Elsa.Services
                 var activity = await activityExecutionContext.ActivateActivityAsync(cancellationToken);
 
                 using var executionScope = AmbientActivityExecutionContext.EnterScope(activityExecutionContext);
+                
+                if (!burstStarted)
+                {
+                    await _mediator.Publish(new WorkflowExecutionBurstStarting(workflowExecutionContext, activityExecutionContext), cancellationToken);
+                    burstStarted = true;
+                }
                 
                 if (resuming)
                     await _mediator.Publish(new ActivityResuming(activityExecutionContext), cancellationToken);

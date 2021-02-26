@@ -6,7 +6,8 @@
 
 [![Nuget (with prereleases)](https://img.shields.io/nuget/vpre/Elsa)](https://www.nuget.org/packages/Elsa/2.0.0-preview5-0)
 [![MyGet (with prereleases)](https://img.shields.io/myget/elsa-2/vpre/Elsa?label=myget)](https://www.myget.org/gallery/elsa-2)
-[![Build status](https://ci.appveyor.com/api/projects/status/wix4v6o2inamn153?svg=true)](https://ci.appveyor.com/project/sfmskywalker/elsa-2-builds)
+[![Build status](https://ci.appveyor.com/api/projects/status/github/elsa-workflows/elsa-core?svg=true&branch=feature/elsa-2.0)](https://ci.appveyor.com/project/sfmskywalker/elsa)
+[![Discord](https://img.shields.io/discord/814605913783795763?label=chat&logo=discord)](https://discord.gg/hhChk5H472)
 [![Gitter](https://badges.gitter.im/elsa-workflows/community.svg)](https://gitter.im/elsa-workflows/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 [![Stack Overflow questions](https://img.shields.io/badge/stackoverflow-elsa_workflows-orange.svg)]( http://stackoverflow.com/questions/tagged/elsa-workflows )
 ![Docker Pulls](https://img.shields.io/docker/pulls/elsaworkflows/elsa-dashboard?label=elsa%20dashboard%3Adocker%20pulls)

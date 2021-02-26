@@ -15,7 +15,10 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "jsx": "react",
-    "jsxFactory": "h"
+    "jsxFactory": "h",
+    "plugins": [
+      { "name": "typescript-tslint-plugin" }
+    ]
   },
   "include": [
     "src"
