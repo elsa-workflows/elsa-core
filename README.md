@@ -1,6 +1,6 @@
 <a href="https://elsa-workflows.github.io/elsa-core/">
   <p align="center">
-    <img src="./doc/github-social-preview-banner-for-elsa.png" alt="Elsa Logo">
+    <img src="./doc/github-social-preview-banner-for-elsa.png" alt="Elsa Workflows">
   </p>
 </a>
 
