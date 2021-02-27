@@ -10,8 +10,6 @@ environment:
   sonarcloud_project_name: elsa-workflows_elsa-core
   sonarcloud_api_key:
     secure: qaE9kOVkGGFM7ZMf3YeliZxDU9udTCy6W5xXHJ9T+tXv5qXPMYlIdR7hyNgxW04A
-  sample_variable:
-    secure: MrPipn2VVHXu68PxZWztGA==
 
 version: 2.0.0-preview7.{build}
 
@@ -48,18 +46,19 @@ install:
       dotnet tool install --global dotnet-sonarscanner
 
 before_build:
-  - cmd: echo "The sample variable is %sample_variable%"
-  - cmd: >-
-      dotnet-sonarscanner begin
-      /k:%sonarcloud_project_name%
-      /v:AppVeyor_build_%APPVEYOR_BUILD_VERSION%
-      /o:%sonarcloud_org_name%
-      /s:%APPVEYOR_BUILD_FOLDER%\.SonarQube.Analysis.xml
+  - ps: >-
+      if(-Not $env:APPVEYOR_PULL_REQUEST_NUMBER) {
+      & dotnet-sonarscanner begin
+      /k:$env:sonarcloud_project_name
+      /v:AppVeyor_build_$env:APPVEYOR_BUILD_VERSION
+      /o:$env:sonarcloud_org_name
+      /s:$env:APPVEYOR_BUILD_FOLDER\.SonarQube.Analysis.xml
       /d:sonar.host.url="https://sonarcloud.io"
-      /d:sonar.login=%sonarcloud_api_key%
-      /d:sonar.cs.xunit.reportsPaths=%APPVEYOR_BUILD_FOLDER%\**\TestResults\TestResults.xml
-      /d:sonar.cs.opencover.reportsPaths=%APPVEYOR_BUILD_FOLDER%\**\TestResults\*\coverage.opencover.xml
-      /d:sonar.branch.name=%APPVEYOR_REPO_BRANCH%
+      /d:sonar.login=$env:sonarcloud_api_key
+      /d:sonar.cs.xunit.reportsPaths=$env:APPVEYOR_BUILD_FOLDER\**\TestResults\TestResults.xml
+      /d:sonar.cs.opencover.reportsPaths=$env:APPVEYOR_BUILD_FOLDER\**\TestResults\*\coverage.opencover.xml
+      /d:sonar.branch.name=$env:APPVEYOR_REPO_BRANCH
+      }
 
 build_script:
   - ps: >-
@@ -75,7 +74,7 @@ test_script:
   - ps: dotnet test --collect:"XPlat Code Coverage" --logger:xunit -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
 
 after_test:
-  - cmd: dotnet-sonarscanner end /d:sonar.login=%sonarcloud_api_key%
+  - ps: if(-Not $env:APPVEYOR_PULL_REQUEST_NUMBER) { & dotnet-sonarscanner end /d:sonar.login=$env:sonarcloud_api_key }
   - ps: dotnet pack Elsa.sln --include-symbols /p:Version="$env:APPVEYOR_BUILD_VERSION"
 
 artifacts:
