@@ -13,7 +13,7 @@ environment:
   sample_variable:
     secure: MrPipn2VVHXu68PxZWztGA==
 
-version: 2.0.0-preview6.{build}
+version: 2.0.0-preview7.{build}
 
 init:
   - cmd: git config --global core.autocrlf true
