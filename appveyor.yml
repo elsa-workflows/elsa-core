@@ -52,7 +52,7 @@ before_build:
   - cmd: >-
       dotnet-sonarscanner begin
       /k:%sonarcloud_project_name%
-      /v:AppVeyor_build_%version%
+      /v:AppVeyor_build_%APPVEYOR_BUILD_VERSION%
       /o:%sonarcloud_org_name%
       /s:%APPVEYOR_BUILD_FOLDER%\.SonarQube.Analysis.xml
       /d:sonar.host.url="https://sonarcloud.io"
