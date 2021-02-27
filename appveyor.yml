@@ -76,8 +76,6 @@ test_script:
 
 after_test:
   - cmd: dotnet-sonarscanner end /d:sonar.login=%sonarcloud_api_key%
-
-before_package:
   - ps: dotnet pack Elsa.sln --include-symbols /p:Version="$env:APPVEYOR_BUILD_VERSION"
 
 artifacts:
