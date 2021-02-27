@@ -7,7 +7,7 @@ environment:
   # This brings it up to date.
   JAVA_HOME: "C:\\Program Files\\Java\\jdk13"
   sonarcloud_org_name: elsa-workflows
-  sonarcloud_project_name: elsa-core
+  sonarcloud_project_name: elsa-workflows_elsa-core
   sonarcloud_api_key:
     secure: qaE9kOVkGGFM7ZMf3YeliZxDU9udTCy6W5xXHJ9T+tXv5qXPMYlIdR7hyNgxW04A
   sample_variable:
