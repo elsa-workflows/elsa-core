@@ -25,7 +25,7 @@ namespace Elsa.Samples.AzureServiceBusWorker
                             //.UseYesSqlPersistence(yesSql => yesSql.UseSqLite("Data Source=elsa.yessql.db;Cache=Shared", IsolationLevel.ReadUncommitted))
                             .UseEntityFrameworkPersistence(db => db.UseSqlite("Data Source=elsa.efcore.db;Cache=Shared", sqlite => sqlite.MigrationsAssembly(typeof(SqliteElsaContextFactory).Assembly.GetName().Name)), true)
                             .AddConsoleActivities()
-                            .AddQuartzTimerActivities()
+                            .AddQuartzTemporalActivities()
                             .AddAzureServiceBusActivities(o => o.ConnectionString = hostContext.Configuration.GetConnectionString("AzureServiceBus"))
                             .AddWorkflow<ProducerWorkflow>()
                             .AddWorkflow<ConsumerWorkflow>());

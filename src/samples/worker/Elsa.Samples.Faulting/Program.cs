@@ -20,7 +20,7 @@ namespace Elsa.Samples.Faulting
                         .AddElsa(options => options
                             .UseYesSqlPersistence()
                             .AddConsoleActivities()
-                            .AddQuartzTimerActivities()
+                            .AddQuartzTemporalActivities()
                             .AddWorkflow<FaultyWorkflow>());
                 });
     }

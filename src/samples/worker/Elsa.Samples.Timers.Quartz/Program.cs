@@ -21,7 +21,7 @@ namespace Elsa.Samples.Timers
                             .AddElsa(options => options
                                     .UseEntityFrameworkPersistence(ef => ef.UseSqlite())
                                     .AddConsoleActivities()
-                                    .AddQuartzTimerActivities()
+                                    .AddQuartzTemporalActivities()
                                     .AddActivity<MyContainer1>()
                                     .AddActivity<MyContainer2>()
                                     //.AddWorkflow<SingletonTimerWorkflow>()

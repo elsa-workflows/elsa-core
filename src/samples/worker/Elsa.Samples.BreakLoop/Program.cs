@@ -17,7 +17,7 @@ namespace Elsa.Samples.BreakLoop
                         services
                             .AddElsa(options => options.UseYesSqlPersistence()
                                 .AddConsoleActivities()
-                                .AddQuartzTimerActivities()
+                                .AddQuartzTemporalActivities()
                                 .AddActivitiesFrom<Program>()
                                 .AddWorkflowsFrom<Program>());
 
