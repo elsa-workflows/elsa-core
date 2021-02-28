@@ -1,5 +1,8 @@
-import {Component, Host, h, Prop, State, Listen, Method} from '@stencil/core';
+import {Component, h, Prop, State} from '@stencil/core';
 import {ActivityDefinitionProperty, ActivityPropertyDescriptor} from "../../../../models";
+import {createElsaClient} from "../../../../services/elsa-client";
+import Tunnel from '../../../data/workflow-editor';
+import {MonacoValueChangedArgs} from "../../monaco/elsa-monaco/elsa-monaco";
 
 @Component({
   tag: 'elsa-text-property',
@@ -8,28 +11,56 @@ import {ActivityDefinitionProperty, ActivityPropertyDescriptor} from "../../../.
 })
 export class ElsaTextProperty {
 
+  @Prop() key: string;
   @Prop() propertyDescriptor: ActivityPropertyDescriptor;
   @Prop() propertyModel: ActivityDefinitionProperty;
+  @Prop({mutable: true}) serverUrl: string;
+  @Prop({mutable: true}) workflowDefinitionId: string;
   @State() selectedSyntax?: string;
   @State() currentValue?: string
+  monacoEditor: HTMLElsaMonacoElement;
 
   async componentWillLoad() {
     this.selectedSyntax = this.propertyModel.syntax;
     this.currentValue = this.propertyModel.expression;
   }
 
-  onSyntaxChange(e: Event, syntax: string) {
-    e.preventDefault();
+  async componentDidLoad() {
+    const elsaClient = createElsaClient(this.serverUrl);
+    const libSource = await elsaClient.scriptingApi.getJavaScriptTypeDefinitions(this.workflowDefinitionId);
+    const libUri = 'defaultLib:lib.es6.d.ts';
+    await this.monacoEditor.addJavaScriptLib(libSource, libUri);
+  }
+
+  mapSyntaxToLanguage(syntax: string): any {
+    switch (syntax) {
+      case 'JavaScript':
+        return 'javascript';
+      case 'Liquid':
+        return 'handlebars';
+      case 'Literal':
+      default:
+        return 'plaintext';
+    }
+  }
+
+  onSyntaxListChange(e: Event) {
+    this.selectedSyntax = (e.currentTarget as HTMLSelectElement).value;
+  }
+
+  onSyntaxSelect(e: Event, syntax: string) {
+    e.preventDefault()
     this.selectedSyntax = syntax;
   }
 
-  onMonacoValueChanged(newValue: string) {
-    this.currentValue = newValue;
+  onMonacoValueChanged(e: MonacoValueChangedArgs) {
+    this.currentValue = e.value;
   }
 
   render() {
     const syntaxes = ['Literal', 'JavaScript', 'Liquid'].reverse();
     const selectedSyntax = this.selectedSyntax ?? 'Literal';
+    const monacoLanguage = this.mapSyntaxToLanguage(selectedSyntax);
     const propertyDescriptor = this.propertyDescriptor;
     const propertyName = propertyDescriptor.name;
     const fieldId = propertyName;
@@ -42,7 +73,7 @@ export class ElsaTextProperty {
     const value = this.currentValue;
 
     return (
-      <div>
+      <div key={this.key}>
         <label htmlFor={fieldId} class="block text-sm font-medium text-gray-700">
           {fieldLabel}
         </label>
@@ -50,9 +81,8 @@ export class ElsaTextProperty {
           <div class="sm:hidden">
             <label htmlFor="tabs" class="sr-only">Select a tab</label>
             <select id="tabs" name="tabs" onChange={e => {
-              this.onSyntaxChange(e, (e.currentTarget as HTMLSelectElement).value)
-            }}
-                    class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+              this.onSyntaxListChange(e)
+            }} class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
               {syntaxes.map(syntax => {
                 const isSelected = syntax == selectedSyntax;
                 return (
@@ -69,18 +99,17 @@ export class ElsaTextProperty {
 
                 return (
                   <a href="#" onClick={e => {
-                    this.onSyntaxChange(e, syntax)
-                  }} class={`${className} px-3 py-2 font-medium text-sm rounded-md`}>
+                    this.onSyntaxSelect(e, syntax)
+                  }} data-syntax={syntax} class={`${className} px-3 py-2 font-medium text-sm rounded-md`}>
                     {syntax}
                   </a>
                 );
               })}
             </nav>
-
           </div>
         </div>
         <div class="border border-gray-200 border-t-0">
-          <elsa-monaco value={value} syntax={selectedSyntax} onValueChanged={e => this.onMonacoValueChanged(e.detail)}/>
+          <elsa-monaco value={value} language={monacoLanguage} onValueChanged={e => this.onMonacoValueChanged(e.detail)} ref={el => this.monacoEditor = el}/>
         </div>
         {fieldHint ? <p class="mt-2 text-sm text-gray-500">{fieldHint}</p> : undefined}
         <input type="hidden" name={fieldName} value={value}/>
@@ -88,6 +117,6 @@ export class ElsaTextProperty {
       </div>
     )
   }
-
-
 }
+
+Tunnel.injectProps(ElsaTextProperty, ['serverUrl', 'workflowDefinitionId']);

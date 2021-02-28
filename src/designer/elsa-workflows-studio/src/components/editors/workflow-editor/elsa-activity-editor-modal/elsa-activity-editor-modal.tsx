@@ -49,6 +49,7 @@ export class ElsaActivityPickerModal {
     const activityModel: ActivityModel = this.activityModel || {type: '', activityId: '', outcomes: [], properties: []};
     const activityDescriptor = this.activityDescriptor || {displayName: '', type: '', outcomes: [], category: '', traits: 0, browsable: false, properties: [], description: ''};
     const propertyDescriptors: Array<ActivityPropertyDescriptor> = activityDescriptor.properties;
+    const key = new Date().getTime().toString();
 
     return (
       <Host>
@@ -67,7 +68,7 @@ export class ElsaActivityPickerModal {
                       </p>
                     </div>
 
-                    <div class="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                    <div key={key} class="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
                       {propertyDescriptors.map(property => this.renderPropertyEditor(activityModel, property))}
                     </div>
                   </div>

@@ -8,14 +8,23 @@
 
   <!-- Including a pre-built tailwind.css file for development. Don't include this when using a production build, since tailwind would already be included -->
   <link href="/assets/styles/tailwind.css" rel="stylesheet">
+<!--  <link href="https://unpkg.com/monaco-editor@latest/min/vs/editor/editor.main.css" rel="stylesheet" />-->
 
-  <script>var require = { paths: { 'vs': 'https://microsoft.github.io/monaco-editor/node_modules/monaco-editor/min/vs' } };</script>
+<!--  Until I figure out why the ESM loader doesn't work properly, we need to include these scripts manually. -->
+  <script src="https://unpkg.com/monaco-editor@latest/min/vs/loader.js"></script>
 
-<!--  Until I figure out why the ESM loader doesn't work properly, we need to include these scripts manually-->
-  <script src="https://microsoft.github.io/monaco-editor/node_modules/monaco-editor/min/vs/loader.js"></script>
-  <script src="https://microsoft.github.io/monaco-editor/node_modules/monaco-editor/min/vs/editor/editor.main.nls.js"></script>
-  <script src="https://microsoft.github.io/monaco-editor/node_modules/monaco-editor/min/vs/editor/editor.main.js"></script>
+  <script>
+    require.config({paths: {'vs': 'https://unpkg.com/monaco-editor@latest/min/vs'}});
+    window.MonacoEnvironment = {getWorkerUrl: () => proxy};
 
+    let proxy = URL.createObjectURL(new Blob([`
+	self.MonacoEnvironment = {
+		baseUrl: 'https://unpkg.com/monaco-editor@latest/min/'
+	};
+	importScripts('https://unpkg.com/monaco-editor@latest/min/vs/base/worker/workerMain.js');
+`], {type: 'text/javascript'}));
+
+  </script>
   <script type="module" src="/build/elsa-workflows-studio.esm.js"></script>
   <script nomodule src="/build/elsa-workflows-studio.js"></script>
 </head>

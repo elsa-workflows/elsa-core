@@ -6,6 +6,7 @@
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
 import { ActivityDefinitionProperty, ActivityModel, ActivityPropertyDescriptor, WorkflowDefinition, WorkflowModel } from "./models";
+import { MonacoValueChangedArgs } from "./components/editors/monaco/elsa-monaco/elsa-monaco";
 export namespace Components {
     interface ElsaActivityEditorModal {
     }
@@ -23,15 +24,17 @@ export namespace Components {
         "show": (animate: boolean) => Promise<void>;
     }
     interface ElsaMonaco {
+        "addJavaScriptLib": (libSource: string, libUri: string) => Promise<void>;
         "editorHeight": string;
-        "serverUrl": string;
-        "syntax": string;
+        "language": string;
         "value": string;
-        "workflowDefinitionId": string;
     }
     interface ElsaTextProperty {
+        "key": string;
         "propertyDescriptor": ActivityPropertyDescriptor;
         "propertyModel": ActivityDefinitionProperty;
+        "serverUrl": string;
+        "workflowDefinitionId": string;
     }
     interface ElsaWorkflowEditor {
         "getServerUrl": () => Promise<string>;
@@ -138,15 +141,16 @@ declare namespace LocalJSX {
     }
     interface ElsaMonaco {
         "editorHeight"?: string;
-        "onValueChanged"?: (event: CustomEvent<string>) => void;
-        "serverUrl"?: string;
-        "syntax"?: string;
+        "language"?: string;
+        "onValueChanged"?: (event: CustomEvent<MonacoValueChangedArgs>) => void;
         "value"?: string;
-        "workflowDefinitionId"?: string;
     }
     interface ElsaTextProperty {
+        "key"?: string;
         "propertyDescriptor"?: ActivityPropertyDescriptor;
         "propertyModel"?: ActivityDefinitionProperty;
+        "serverUrl"?: string;
+        "workflowDefinitionId"?: string;
     }
     interface ElsaWorkflowEditor {
         "serverUrl"?: string;

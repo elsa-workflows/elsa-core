@@ -1,14 +1,18 @@
 import {Component, Host, h, Prop, State, Listen, Method, Watch, Event, EventEmitter} from '@stencil/core';
 import {createElsaClient} from "../../../../services/elsa-client";
-import Tunnel, {WorkflowEditorState} from '../../../data/workflow-editor';
 
 // Until I figure out why the ESM loader doesn't work properly, we need to include these scripts manually from index.html
 // import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 
+export interface MonacoValueChangedArgs {
+  value: string;
+  markers: Array<any>;
+}
+
 @Component({
   tag: 'elsa-monaco',
   styleUrl: 'elsa-monaco.css',
-  shadow: false,
+  shadow: false
 })
 export class ElsaMonaco {
 
@@ -16,22 +20,36 @@ export class ElsaMonaco {
 
   @Prop({attribute: 'editor-height', reflect: true}) editorHeight: string = '6em';
   @Prop() value: string;
-  @Prop() syntax: string;
-  @Prop() serverUrl: string;
-  @Prop() workflowDefinitionId: string;
-  @Event({eventName: 'valueChanged'}) valueChanged: EventEmitter<string>;
+  @Prop() language: string;
+  @Event({eventName: 'valueChanged'}) valueChanged: EventEmitter<MonacoValueChangedArgs>;
 
   container: HTMLElement;
   editor: any;
 
-  @Watch('syntax')
-  syntaxChangeHandler(newValue: string) {
-    if(!this.editor)
+  @Watch('language')
+  languageChangeHandler(newValue: string) {
+    if (!this.editor)
       return;
 
-    const language = this.mapSyntaxToLanguage(newValue);
     const model = this.editor.getModel();
-    this.monaco.editor.setModelLanguage(model, language);
+    this.monaco.editor.setModelLanguage(model, this.language);
+  }
+
+  @Method()
+  async addJavaScriptLib(libSource: string, libUri: string) {
+    const monaco = this.monaco;
+    monaco.languages.typescript.javascriptDefaults.setExtraLibs([{
+      content: libSource,
+      filePath: libUri
+    }]);
+
+    //debugger;
+    const oldModel = monaco.editor.getModel(libUri);
+
+    if (oldModel)
+      oldModel.dispose();
+
+    const newModel = monaco.editor.createModel(libSource, 'typescript', monaco.Uri.parse(libUri));
   }
 
   componentWillLoad() {
@@ -43,30 +61,23 @@ export class ElsaMonaco {
 
     require(['require', 'vs/editor/editor.main'], async require => {
       const monaco = this.monaco;
-      const language = this.mapSyntaxToLanguage(this.syntax);
+      const language = this.language;
 
       // Validation settings.
       monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
         noSemanticValidation: true,
-        noSyntaxValidation: false
+        noSyntaxValidation: false,
       });
 
       // Compiler options.
       monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
-        target: monaco.languages.typescript.ScriptTarget.ES6,
+        target: monaco.languages.typescript.ScriptTarget.ES2020,
         lib: [],
         allowNonTsExtensions: true,
         allowJs: true
       });
 
-      // Extra libraries.
-      const elsaClient = createElsaClient(this.serverUrl);
-      const libSource = await elsaClient.scriptingApi.getJavaScriptTypeDefinitions(this.workflowDefinitionId);
-      //const libUri = `ts:filename/elsa.d.ts?t=${new Date().getTime()}`;
-      const libUri = 'defaultLib:lib.es6.d.ts';
-
-      monaco.languages.typescript.javascriptDefaults.addExtraLib(libSource, libUri);
-      monaco.editor.createModel(libSource, 'typescript', monaco.Uri.parse(libUri));
+      monaco.languages.typescript.javascriptDefaults.setEagerModelSync(true);
 
       this.editor = monaco.editor.create(this.container, {
         value: this.value,
@@ -84,13 +95,14 @@ export class ElsaMonaco {
 
       this.editor.onDidChangeModelContent(e => {
         const value = this.editor.getValue();
-        this.valueChanged.emit(value);
+        const markers = monaco.editor.getModelMarkers({owner: language});
+        this.valueChanged.emit({value: value, markers: markers});
       });
     });
   }
 
   disconnectedCallback() {
-    this.editor.destroy();
+    this.editor.dispose();
   }
 
   mapSyntaxToLanguage(syntax: string): any {
@@ -147,5 +159,3 @@ export class ElsaMonaco {
     )
   }
 }
-
-Tunnel.injectProps(ElsaMonaco, ['serverUrl', 'workflowDefinitionId']);

@@ -27,7 +27,7 @@ namespace Elsa.Scripting.JavaScript.Services
                 var shouldRenderDeclaration = ShouldRenderTypeDeclaration(type);
 
                 if (shouldRenderDeclaration)
-                    RenderTypeDeclaration(type, builder);
+                    RenderTypeDeclaration(type, types, builder);
             }
 
             if (workflowDefinition != null)
@@ -35,13 +35,23 @@ namespace Elsa.Scripting.JavaScript.Services
                 var contextType = workflowDefinition.ContextOptions?.ContextType;
 
                 if (contextType != null)
-                    builder.AppendLine($"declare const workflowContext: {contextType.Name}");
+                {
+                    var typeScriptType = GetTypeScriptType(contextType, types);
+                    builder.AppendLine($"declare const workflowContext: {typeScriptType}");
+                }
+
+                foreach (var variable in workflowDefinition.Variables!.Data)
+                {
+                    var variableType = variable.Value?.GetType() ?? typeof(object);
+                    var typeScriptType = GetTypeScriptType(variableType, types);
+                    builder.AppendLine($"declare const {variable.Key}: {typeScriptType}");
+                }
             }
 
             return builder.ToString();
         }
 
-        private IEnumerable<Type> CollectTypes(WorkflowDefinition? workflowDefinition = default)
+        private HashSet<Type> CollectTypes(WorkflowDefinition? workflowDefinition = default)
         {
             var collectedTypes = new HashSet<Type>();
 
@@ -51,6 +61,9 @@ namespace Elsa.Scripting.JavaScript.Services
 
                 if (contextType != null)
                     CollectType(contextType, collectedTypes);
+
+                foreach (var variable in workflowDefinition.Variables!.Data.Values)
+                    CollectType(variable!.GetType(), collectedTypes);
             }
 
             return collectedTypes;
@@ -58,31 +71,31 @@ namespace Elsa.Scripting.JavaScript.Services
 
         private void CollectType(Type type, HashSet<Type> collectedTypes)
         {
+            if (type.IsNullableType())
+            {
+                CollectType(type.GetTypeOfNullable(), collectedTypes);
+                return;
+            }
+
             collectedTypes.Add(type);
 
             // Collect generic type argument types.
             foreach (var typeArgType in type.GenericTypeArguments.Where(x => !collectedTypes.Contains(x)))
-            {
-                collectedTypes.Add(typeArgType);
                 CollectType(typeArgType, collectedTypes);
-            }
 
             // Collect property types.
             var propertyTypes = type.GetProperties().Select(x => x.PropertyType).Where(x => !collectedTypes.Contains(x));
 
             foreach (var propertyType in propertyTypes)
-            {
-                collectedTypes.Add(propertyType);
                 CollectType(propertyType, collectedTypes);
-            }
         }
 
-        private void RenderTypeDeclaration(Type type, StringBuilder output)
+        private void RenderTypeDeclaration(Type type, HashSet<Type> collectedTypes, StringBuilder output)
         {
-            RenderTypeDeclaration("interface", type, output);
+            RenderTypeDeclaration("interface", type, collectedTypes, output);
         }
 
-        private void RenderTypeDeclaration(string symbol, Type type, StringBuilder output)
+        private void RenderTypeDeclaration(string symbol, Type type, HashSet<Type> collectedTypes, StringBuilder output)
         {
             var typeName = type.Name;
             var properties = type.GetProperties();
@@ -91,7 +104,7 @@ namespace Elsa.Scripting.JavaScript.Services
 
             foreach (var property in properties)
             {
-                var typeScriptType = GetTypeScriptType(property.PropertyType);
+                var typeScriptType = GetTypeScriptType(property.PropertyType, collectedTypes);
                 var propertyName = property.PropertyType.IsNullableType() ? $"{property.Name}?" : property.Name;
                 output.AppendLine($"{propertyName}: {typeScriptType};");
             }
@@ -99,13 +112,13 @@ namespace Elsa.Scripting.JavaScript.Services
             output.AppendLine("}");
         }
 
-        private string GetTypeScriptType(Type type)
+        private string GetTypeScriptType(Type type, HashSet<Type> collectedTypes)
         {
             if (type.IsNullableType())
                 type = type.GetTypeOfNullable();
 
             var provider = _providers.FirstOrDefault(x => x.SupportsType(type));
-            return provider == null ? "any" : provider.GetTypeDefinition(type);
+            return provider != null ? provider.GetTypeDefinition(type) : collectedTypes.Contains(type) ? type.Name : "any";
         }
 
         private bool ShouldRenderTypeDeclaration(Type type)

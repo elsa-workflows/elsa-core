@@ -10,8 +10,8 @@ export class TextPropertyDriver implements PropertyDisplayDriver {
     const prop = getProperty(activity.properties, property.name);
 
     return (
-      <div key={key} class="sm:col-span-6">
-        <elsa-text-property propertyDescriptor={property} propertyModel={prop}/>
+      <div class="sm:col-span-6">
+        <elsa-text-property key={key} propertyDescriptor={property} propertyModel={prop}/>
       </div>
     )
   }

@@ -3,6 +3,8 @@ import {postcss} from '@stencil/postcss';
 import postcssImport from 'postcss-import';
 import tailwindcss from 'tailwindcss';
 import cssnano from 'cssnano';
+//import monaco from 'rollup-plugin-monaco-editor';
+import monaco from './dev/rollup/rollup-plugin-monaco-editor/dist';
 
 const dev: boolean = process.argv && process.argv.indexOf('--dev') > -1;
 
@@ -35,19 +37,19 @@ export const config: Config = {
     },
   ],
   globalStyle: 'src/globals/styles.css',
-  plugins: dev ? [] : [
-    postcss({
-      plugins: dev
-        ? [postcssImport,
-          tailwindcss]
-        : [postcssImport,
-          tailwindcss,
-          purgecss,
-          cssnano
-        ],
+  plugins: [
+    dev ? [] : postcss({
+      plugins: [postcssImport,
+        tailwindcss,
+        purgecss,
+        cssnano
+      ],
       injectGlobalPaths: [
         'src/globals/tailwind.css'
       ]
-    })
+    }),
+    // monaco({
+    //   languages: ['json'],
+    // }),
   ]
 };
