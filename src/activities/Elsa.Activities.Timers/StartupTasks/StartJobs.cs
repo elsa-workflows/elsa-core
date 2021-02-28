@@ -1,12 +1,12 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Activities.Timers.Bookmarks;
-using Elsa.Activities.Timers.Services;
+using Elsa.Activities.Temporal.Bookmarks;
+using Elsa.Activities.Temporal.Services;
 using Elsa.Bookmarks;
 using Elsa.Services;
 using Elsa.Triggers;
 
-namespace Elsa.Activities.Timers.StartupTasks
+namespace Elsa.Activities.Temporal.StartupTasks
 {
     /// <summary>
     /// Starts Quartz jobs based on workflow blueprints starting with a TimerEvent, CronEvent or StartAtEvent.

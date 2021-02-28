@@ -1,11 +1,11 @@
 ﻿using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Activities.Timers.Services;
+using Elsa.Activities.Temporal.Services;
 using Elsa.Events;
 using MediatR;
 
-namespace Elsa.Activities.Timers.Handlers
+namespace Elsa.Activities.Temporal.Handlers
 {
     public class RemoveScheduledTriggers : INotificationHandler<BlockingActivityRemoved>
     {

@@ -1,12 +1,12 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Activities.Timers.Quartz.Jobs;
-using Elsa.Activities.Timers.Services;
+using Elsa.Activities.Temporal.Quartz.Jobs;
+using Elsa.Activities.Temporal.Services;
 using Microsoft.Extensions.Logging;
 using NodaTime;
 using Quartz;
 
-namespace Elsa.Activities.Timers.Quartz.Services
+namespace Elsa.Activities.Temporal.Quartz.Services
 {
     public class QuartzWorkflowScheduler : IWorkflowScheduler
     {

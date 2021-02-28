@@ -1,13 +1,13 @@
 using System.Threading.Tasks;
 
-using Elsa.Activities.Timers.Services;
+using Elsa.Activities.Temporal.Services;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Services;
 using Elsa.Services.Models;
 
 // ReSharper disable once CheckNamespace
-namespace Elsa.Activities.Timers
+namespace Elsa.Activities.Temporal
 {
 
     [Trigger(Category = "Timers", Description = "Cancel a timer (Cron, StartAt, Timer) so that it is not executed. ")]

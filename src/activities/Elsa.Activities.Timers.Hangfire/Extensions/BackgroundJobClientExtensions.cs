@@ -1,11 +1,11 @@
 using System;
 using System.Linq;
-using Elsa.Activities.Timers.Hangfire.Jobs;
-using Elsa.Activities.Timers.Hangfire.Models;
+using Elsa.Activities.Temporal.Hangfire.Jobs;
+using Elsa.Activities.Temporal.Hangfire.Models;
 using Hangfire;
 
 // ReSharper disable once CheckNamespace
-namespace Elsa.Activities.Timers
+namespace Elsa.Activities.Temporal
 {
     public static class BackgroundJobClientExtensions
     {

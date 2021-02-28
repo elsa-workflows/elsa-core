@@ -1,5 +1,5 @@
 using System.Threading.Tasks;
-using Elsa.Activities.Timers.Services;
+using Elsa.Activities.Temporal.Services;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Persistence;
@@ -8,7 +8,7 @@ using Elsa.Services.Models;
 using NodaTime;
 
 // ReSharper disable once CheckNamespace
-namespace Elsa.Activities.Timers
+namespace Elsa.Activities.Temporal
 {
     [Trigger(
         Category = "Timers",

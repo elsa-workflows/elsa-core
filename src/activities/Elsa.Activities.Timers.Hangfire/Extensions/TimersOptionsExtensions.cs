@@ -1,8 +1,8 @@
 using System;
 
-using Elsa.Activities.Timers.Hangfire.Services;
-using Elsa.Activities.Timers.Options;
-using Elsa.Activities.Timers.Services;
+using Elsa.Activities.Temporal.Hangfire.Services;
+using Elsa.Activities.Temporal.Options;
+using Elsa.Activities.Temporal.Services;
 
 using Hangfire;
 

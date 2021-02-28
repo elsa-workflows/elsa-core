@@ -9,7 +9,7 @@ using Elsa.Services;
 using Microsoft.Extensions.Logging;
 using Quartz;
 
-namespace Elsa.Activities.Timers.Quartz.Jobs
+namespace Elsa.Activities.Temporal.Quartz.Jobs
 {
     public class RunQuartzWorkflowJob : IJob
     {

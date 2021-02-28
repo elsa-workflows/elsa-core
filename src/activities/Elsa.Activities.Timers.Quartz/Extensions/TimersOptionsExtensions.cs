@@ -1,8 +1,8 @@
 using System;
-using Elsa.Activities.Timers.Options;
-using Elsa.Activities.Timers.Quartz.Jobs;
-using Elsa.Activities.Timers.Quartz.Services;
-using Elsa.Activities.Timers.Services;
+using Elsa.Activities.Temporal.Options;
+using Elsa.Activities.Temporal.Quartz.Jobs;
+using Elsa.Activities.Temporal.Quartz.Services;
+using Elsa.Activities.Temporal.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Quartz;
 

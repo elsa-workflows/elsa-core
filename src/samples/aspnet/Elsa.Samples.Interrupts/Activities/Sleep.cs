@@ -1,5 +1,5 @@
-using Elsa.Activities.Timers;
-using Elsa.Activities.Timers.Services;
+using Elsa.Activities.Temporal;
+using Elsa.Activities.Temporal.Services;
 using Elsa.Attributes;
 using Elsa.Persistence;
 using Microsoft.Extensions.Logging;

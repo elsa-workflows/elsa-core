@@ -1,11 +1,11 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Activities.Timers.Hangfire.Models;
-using Elsa.Activities.Timers.Services;
+using Elsa.Activities.Temporal.Hangfire.Models;
+using Elsa.Activities.Temporal.Services;
 using Hangfire;
 using NodaTime;
 
-namespace Elsa.Activities.Timers.Hangfire.Services
+namespace Elsa.Activities.Temporal.Hangfire.Services
 {
     public class HangfireWorkflowScheduler : IWorkflowScheduler
     {

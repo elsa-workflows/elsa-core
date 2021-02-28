@@ -1,12 +1,12 @@
 using System;
 
-using Elsa.Activities.Timers.Services;
+using Elsa.Activities.Temporal.Services;
 
 using NCrontab;
 
 using NodaTime;
 
-namespace Elsa.Activities.Timers.Hangfire.Services
+namespace Elsa.Activities.Temporal.Hangfire.Services
 {
     public class HangfireCrontabParser : ICrontabParser
     {
