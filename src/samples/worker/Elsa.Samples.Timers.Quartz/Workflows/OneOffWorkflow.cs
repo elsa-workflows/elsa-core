@@ -3,7 +3,7 @@ using Elsa.Activities.Temporal;
 using Elsa.Builders;
 using NodaTime;
 
-namespace Elsa.Samples.Timers.Workflows
+namespace Elsa.Samples.Temporal.Workflows
 {
     /// <summary>
     /// A workflow that executes only once in the near future.
