@@ -5,17 +5,18 @@ using Xunit;
 using Hangfire;
 using System.Threading.Tasks;
 using System.Threading;
+using Elsa.Activities.Temporal;
 
 namespace Elsa.UnitTests.Extensions
 {
     public class TemporalServiceCollectionExtensionsTests
     {
-        [Fact(DisplayName = "Starting a hosted app which uses only AddTimerActivities should throw InvalidOperationException because of the missing impl")]
-        public void AddTimerActivitiesThrowsDuringStartupIfNoTemporalImplementationPresent()
+        [Fact(DisplayName = "Starting a hosted app which uses only AddCommonTemporalActivities should throw InvalidOperationException because of the missing impl")]
+        public void AddCommonTemporalActivitiesThrowsDuringStartupIfNoTemporalImplementationPresent()
         {
             var hostBuilder = CreateHostBuilderUsingServices(services => {
                 services.AddElsa(elsa => {
-                    elsa.AddTimerActivities();
+                    CommonTemporalActivityServices.AddCommonTemporalActivities(elsa);
                 });
             });
 
@@ -32,12 +33,12 @@ namespace Elsa.UnitTests.Extensions
             }
         }
 
-        [Fact(DisplayName = "Starting a hosted app which uses AddHangfireTimerActivities should not throw")]
-        public void AddHangfireTimerActivitiesDoesNotThrowDuringStartup()
+        [Fact(DisplayName = "Starting a hosted app which uses AddHangfireTemporalActivities should not throw")]
+        public void AddHangfireTemporalActivitiesDoesNotThrowDuringStartup()
         {
             var hostBuilder = CreateHostBuilderUsingServices(services => {
                 services.AddElsa(elsa => {
-                    elsa.AddHangfireTimerActivities(config => config.UseInMemoryStorage());
+                    elsa.AddHangfireTemporalActivities(config => config.UseInMemoryStorage());
                 });
             });
 
@@ -56,12 +57,12 @@ namespace Elsa.UnitTests.Extensions
             }
         }
 
-        [Fact(DisplayName = "Starting a hosted app which uses AddQuartzTimerActivities should not throw")]
-        public void AddQuartzTimerActivitiesDoesNotThrowDuringStartup()
+        [Fact(DisplayName = "Starting a hosted app which uses AddQuartzTemporalActivities should not throw")]
+        public void AddQuartzTemporalActivitiesDoesNotThrowDuringStartup()
         {
             var hostBuilder = CreateHostBuilderUsingServices(services => {
                 services.AddElsa(elsa => {
-                    elsa.AddQuartzTimerActivities();
+                    elsa.AddQuartzTemporalActivities();
                 });
             });
 

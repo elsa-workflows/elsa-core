@@ -20,7 +20,7 @@ namespace Elsa.Samples.DistributedLock
                         services
                             .AddElsa(options => options.UseRedisLockProvider("localhost:6379,abortConnect=false")
                                 .AddConsoleActivities()
-                                .AddQuartzTimerActivities()
+                                .AddQuartzTemporalActivities()
                                 .AddWorkflow<RecurringWorkflow>());
                     });
     }

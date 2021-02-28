@@ -15,7 +15,7 @@ namespace Elsa.Samples.ForkJoinTimerAndSignalHttp
             services
                 .AddElsa(options => options
                     .AddConsoleActivities()
-                    .AddQuartzTimerActivities()
+                    .AddQuartzTemporalActivities()
                     .AddWorkflow<DemoWorkflow>()         
                 )
                 .AddHostedService<WorkflowStarter<DemoWorkflow>>();
