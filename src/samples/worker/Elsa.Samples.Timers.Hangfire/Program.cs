@@ -4,7 +4,7 @@ using Microsoft.Extensions.Hosting;
 using NodaTime;
 using Hangfire;
 
-namespace Elsa.Samples.Timers
+namespace Elsa.Samples.Temporal
 {
     internal class Program
     {
