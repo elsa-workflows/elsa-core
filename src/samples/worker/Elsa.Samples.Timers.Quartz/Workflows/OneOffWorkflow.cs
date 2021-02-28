@@ -1,5 +1,5 @@
 using Elsa.Activities.Console;
-using Elsa.Activities.Timers;
+using Elsa.Activities.Temporal;
 using Elsa.Builders;
 using NodaTime;
 

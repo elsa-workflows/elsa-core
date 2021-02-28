@@ -1,4 +1,4 @@
-namespace Elsa.Activities.Timers.Hangfire.Models
+namespace Elsa.Activities.Temporal.Hangfire.Models
 {
     public class RunHangfireWorkflowJobModel
     {

@@ -1,4 +1,4 @@
-using Elsa.Activities.Timers.ActivityResults;
+using Elsa.Activities.Temporal.ActivityResults;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Services;
@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 using NodaTime;
 
 // ReSharper disable once CheckNamespace
-namespace Elsa.Activities.Timers
+namespace Elsa.Activities.Temporal
 {
     [Trigger(Category = "Timers", Description = "Triggers at a specified interval.")]
     public class Timer : Activity

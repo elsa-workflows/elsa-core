@@ -1,12 +1,12 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Activities.Timers.Services;
+using Elsa.Activities.Temporal.Services;
 using Elsa.ActivityResults;
 using Elsa.Services.Models;
 using Microsoft.Extensions.DependencyInjection;
 using NodaTime;
 
-namespace Elsa.Activities.Timers.ActivityResults
+namespace Elsa.Activities.Temporal.ActivityResults
 {
     public class ScheduleWorkflowResult : ActivityExecutionResult
     {

@@ -6,7 +6,7 @@ using NodaTime;
 
 // ReSharper disable ExplicitCallerInfoArgument
 // ReSharper disable once CheckNamespace
-namespace Elsa.Activities.Timers
+namespace Elsa.Activities.Temporal
 {
     public static class TimerBuilderExtensions
     {

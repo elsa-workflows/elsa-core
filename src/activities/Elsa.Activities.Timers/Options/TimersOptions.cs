@@ -1,6 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Activities.Timers.Options
+namespace Elsa.Activities.Temporal.Options
 {
     public class TimersOptions
     {

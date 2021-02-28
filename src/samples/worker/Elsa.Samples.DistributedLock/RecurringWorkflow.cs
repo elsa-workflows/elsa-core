@@ -3,7 +3,7 @@ using Elsa.Builders;
 using Elsa.Models;
 using NodaTime;
 using System;
-using Elsa.Activities.Timers;
+using Elsa.Activities.Temporal;
 
 namespace Elsa.Samples.DistributedLock
 {

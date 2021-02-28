@@ -1,4 +1,4 @@
-namespace Elsa.Activities.Timers
+namespace Elsa.Activities.Temporal
 {
     public static class TimerConsts
     {

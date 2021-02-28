@@ -1,10 +1,10 @@
-using Elsa.Activities.Timers.Services;
+using Elsa.Activities.Temporal.Services;
 
 using NodaTime;
 
 using Quartz;
 
-namespace Elsa.Activities.Timers.Quartz.Services
+namespace Elsa.Activities.Temporal.Quartz.Services
 {
     public class QuartzCrontabParser : ICrontabParser
     {

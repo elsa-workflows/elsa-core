@@ -1,10 +1,10 @@
 using System;
 using Elsa;
-using Elsa.Activities.Timers;
-using Elsa.Activities.Timers.Bookmarks;
-using Elsa.Activities.Timers.Handlers;
-using Elsa.Activities.Timers.Options;
-using Elsa.Activities.Timers.StartupTasks;
+using Elsa.Activities.Temporal;
+using Elsa.Activities.Temporal.Bookmarks;
+using Elsa.Activities.Temporal.Handlers;
+using Elsa.Activities.Temporal.Options;
+using Elsa.Activities.Temporal.StartupTasks;
 using Elsa.Runtime;
 
 // ReSharper disable once CheckNamespace

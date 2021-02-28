@@ -2,7 +2,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using NodaTime;
 
-namespace Elsa.Activities.Timers.Services
+namespace Elsa.Activities.Temporal.Services
 {
     public interface IWorkflowScheduler
     {

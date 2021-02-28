@@ -2,7 +2,7 @@
 using Elsa.Activities.Console;
 using Elsa.Activities.Primitives;
 using Elsa.Activities.Rebus;
-using Elsa.Activities.Timers;
+using Elsa.Activities.Temporal;
 using Elsa.Builders;
 using Elsa.Samples.MultiTenantChildWorker.Messages;
 using NodaTime;

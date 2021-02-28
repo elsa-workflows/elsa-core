@@ -1,7 +1,7 @@
 ﻿using System;
 using Elsa.Activities.Console;
 using Elsa.Activities.Rebus;
-using Elsa.Activities.Timers;
+using Elsa.Activities.Temporal;
 using Elsa.Builders;
 using Elsa.Samples.RebusWorker.Messages;
 using NodaTime;
