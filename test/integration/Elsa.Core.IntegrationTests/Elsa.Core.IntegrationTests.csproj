@@ -25,6 +25,9 @@
         </PackageReference>
         <PackageReference Include="YesSql.Core" Version="2.0.0-beta-1620" />
         <PackageReference Include="YesSql.Provider.Sqlite" Version="1.0.0-beta-1620" />
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0" />
+        <PackageReference Include="Hangfire.AspNetCore" Version="1.7.19" />
+        <PackageReference Include="Hangfire.InMemory" Version="0.3.4" />
     </ItemGroup>
 
     <ItemGroup>
@@ -39,6 +42,9 @@
     <ItemGroup>
       <ProjectReference Include="..\..\..\src\core\Elsa\Elsa.csproj" />
       <ProjectReference Include="..\..\shared\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj" />
+      <ProjectReference Include="..\..\..\src\activities\Elsa.Activities.Temporal.Common\Elsa.Activities.Temporal.Common.csproj" />
+      <ProjectReference Include="..\..\..\src\activities\Elsa.Activities.Temporal.Hangfire\Elsa.Activities.Temporal.Hangfire.csproj" />
+      <ProjectReference Include="..\..\..\src\activities\Elsa.Activities.Temporal.Quartz\Elsa.Activities.Temporal.Quartz.csproj" />
     </ItemGroup>
 
 </Project>
