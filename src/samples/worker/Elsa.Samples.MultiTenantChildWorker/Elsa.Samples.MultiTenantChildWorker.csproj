@@ -11,7 +11,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.Rebus\Elsa.Activities.Rebus.csproj" />
-        <ProjectReference Include="..\..\..\activities\Elsa.Activities.Timers.Quartz\Elsa.Activities.Timers.Quartz.csproj" />
+        <ProjectReference Include="..\..\..\activities\Elsa.Activities.Temporal.Quartz\Elsa.Activities.Temporal.Quartz.csproj" />
         <ProjectReference Include="..\..\..\core\Elsa\Elsa.csproj" />
     </ItemGroup>
 </Project>
