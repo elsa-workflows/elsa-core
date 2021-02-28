@@ -34,7 +34,7 @@ services:
             - 5050:5050
 
     smtp4dev:
-        image: opvolger/rnwoodsmtp4dev
+        image: rnwood/smtp4dev:linux-amd64-latest
         ports:
             - "3000:80"
             - "2525:25"
