@@ -17,16 +17,16 @@ namespace Elsa.Activities.Http
 {
     [Trigger(
         Category = "HTTP",
-        DisplayName = "Receive HTTP Request",
-        Description = "Receive an incoming HTTP request.",
+        DisplayName = "HTTP Endpoint",
+        Description = "Handle an incoming HTTP request.",
         Outcomes = new[] { OutcomeNames.Done }
     )]
-    public class HttpRequestReceived : Activity
+    public class HttpEndpoint : Activity
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IEnumerable<IHttpRequestBodyParser> _parsers;
 
-        public HttpRequestReceived(
+        public HttpEndpoint(
             IHttpContextAccessor httpContextAccessor,
             IEnumerable<IHttpRequestBodyParser> parsers)
         {

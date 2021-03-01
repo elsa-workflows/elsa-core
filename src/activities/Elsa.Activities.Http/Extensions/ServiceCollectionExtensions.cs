@@ -53,7 +53,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
         private static ElsaOptions AddHttpActivitiesInternal(this ElsaOptions options) =>
             options
-                .AddActivity<HttpRequestReceived>()
+                .AddActivity<HttpEndpoint>()
                 .AddActivity<WriteHttpResponse>()
                 .AddActivity<SendHttpRequest>()
                 .AddActivity<Redirect>();

@@ -18,7 +18,7 @@ namespace Elsa.Samples.CorrelationHttp.Workflows
         {
             builder
                 // Configure a Receive HTTP Request trigger that executes on incoming HTTP POST requests.
-                .HttpRequestReceived(activity => activity.WithPath("/register").WithMethod(HttpMethods.Post).WithTargetType<Registration>())
+                .HttpEndpoint(activity => activity.WithPath("/register").WithMethod(HttpMethods.Post).WithTargetType<Registration>())
                 
                 // Store the registration as a workflow variable for easier access.
                 .SetVariable(context => (Registration)((HttpRequestModel)(context.Input))?.Body)
@@ -38,7 +38,7 @@ namespace Elsa.Samples.CorrelationHttp.Workflows
                 
                 // Configure another Receive HTTP Request trigger that executes on incoming HTTP GET requests.
                 // This will cause the workflow to become suspended and executed once the request comes in.
-                .HttpRequestReceived(activity => activity.WithPath("/confirm"))
+                .HttpEndpoint(activity => activity.WithPath("/confirm"))
                 
                 // Write an HTTP response with a thank-you note.
                 // Notice that the correct workflow instance is resumed base on the incoming correlation ID.
