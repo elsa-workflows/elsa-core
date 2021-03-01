@@ -22,7 +22,7 @@ namespace Elsa.Samples.ReadModelHttp.Workflows
 
             builder
                 // Configure a Receive HTTP Request trigger that executes on incoming HTTP POST requests.
-                .HttpRequestReceived(activity => activity.WithPath("/contacts").WithMethod(HttpMethods.Post).WithTargetType<Contact>()).WithName("HttpRequest")
+                .HttpEndpoint(activity => activity.WithPath("/contacts").WithMethod(HttpMethods.Post).WithTargetType<Contact>()).WithName("HttpRequest")
 
                 // Write something to the console to demonstrate that we can receive the outcome of the previous activity (HttpRequest) as an input to this WriteLine activity. 
                 .WriteLine(context => $"Received some contact details: {JsonConvert.SerializeObject(context.Input)}")

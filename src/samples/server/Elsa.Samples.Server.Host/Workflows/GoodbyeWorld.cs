@@ -10,7 +10,7 @@ namespace Elsa.Samples.Server.Host.Workflows
         {
             builder
                 .WithDisplayName("Goodbye cruel World!")
-                .HttpRequestReceived("/goodbye-world")
+                .HttpEndpoint("/goodbye-world")
                 .WriteHttpResponse(HttpStatusCode.OK, "Goodbye Cruel World!", "text/plain");
         }
     }

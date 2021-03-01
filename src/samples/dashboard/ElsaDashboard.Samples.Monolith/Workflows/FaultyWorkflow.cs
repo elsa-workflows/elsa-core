@@ -12,7 +12,7 @@ namespace ElsaDashboard.Samples.Monolith.Workflows
         {
             builder
                 .WithDisplayName("Faulty Workflow")
-                .HttpRequestReceived("/faulty")
+                .HttpEndpoint("/faulty")
                 .Then(ThrowErrorIfFirstRun)
                 .WriteLine("Made it!");
         }
