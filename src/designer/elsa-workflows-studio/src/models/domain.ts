@@ -47,7 +47,7 @@ export interface ActivityDefinitionProperty {
 }
 
 export interface Variables {
-  data: Map<object>;
+  data: Map<any>;
 }
 
 export interface WorkflowContextOptions {

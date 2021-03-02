@@ -3,6 +3,7 @@ using Elsa.Scripting.JavaScript.Services;
 using System;
 using Elsa;
 using Elsa.Expressions;
+using Elsa.Scripting.JavaScript.Typings;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -12,7 +13,11 @@ namespace Microsoft.Extensions.DependencyInjection
         public static IServiceCollection AddJavaScriptExpressionEvaluator(this IServiceCollection services)
         {
             return services
-                .TryAddProvider<IExpressionHandler, JavaScriptHandler>(ServiceLifetime.Scoped)
+                .AddSingleton<ITypeScriptDefinitionService, TypeScriptDefinitionService>()
+                .AddSingleton<ITypeDefinitionProvider, PrimitiveTypeDefinitionProvider>()
+                .AddSingleton<ITypeDefinitionProvider, EnumTypeDefinitionProvider>()
+                .AddSingleton<ITypeDefinitionProvider, EnumerableTypeDefinitionProvider>()
+                .TryAddProvider<IExpressionHandler, JavaScriptExpressionHandler>(ServiceLifetime.Scoped)
                 .AddNotificationHandlers(typeof(JavaScriptServiceCollectionExtensions));
         }
 

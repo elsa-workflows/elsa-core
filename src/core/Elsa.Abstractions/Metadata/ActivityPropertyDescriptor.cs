@@ -2,21 +2,7 @@ using Newtonsoft.Json.Linq;
 
 namespace Elsa.Metadata
 {
-    public class ActivityPropertyDescriptor
+    public record ActivityPropertyDescriptor(string Name, string Type, string Label, string? Hint = null, JObject? Options = null)
     {
-        public ActivityPropertyDescriptor(string name, string type, string label, string? hint = null, JObject? options = null)
-        {
-            Name = name;
-            Type = type;
-            Label = label;
-            Hint = hint;
-            Options = options;
-        }
-        
-        public string Name { get; }
-        public string Type { get; }
-        public string? Label { get; }
-        public string? Hint { get; }
-        public JObject? Options { get; }
     }
 }

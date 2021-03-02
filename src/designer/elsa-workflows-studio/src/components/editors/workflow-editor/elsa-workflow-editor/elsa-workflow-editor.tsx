@@ -1,8 +1,9 @@
-import {Component, Event, EventEmitter, h, Host, Listen, Prop, State, Watch} from '@stencil/core';
-import {eventBus} from '../../../utils/event-bus';
-import {ActivityDefinition, ActivityDescriptor, ActivityModel, ConnectionDefinition, ConnectionModel, EventTypes, WorkflowDefinition, WorkflowModel} from "../../../models";
-import {createElsaClient, SaveWorkflowDefinitionRequest} from "../../../services/elsa-client";
-import state from '../../../utils/store';
+import {Component, Event, EventEmitter, h, Host, Listen, Method, Prop, State, Watch} from '@stencil/core';
+import {eventBus} from '../../../../utils/event-bus';
+import {ActivityDefinition, ActivityDescriptor, ActivityModel, ConnectionDefinition, ConnectionModel, EventTypes, WorkflowDefinition, WorkflowModel} from "../../../../models";
+import {createElsaClient, SaveWorkflowDefinitionRequest} from "../../../../services/elsa-client";
+import state from '../../../../utils/store';
+import Tunnel, {WorkflowEditorState} from '../../../data/workflow-editor';
 
 @Component({
   tag: 'elsa-workflow-editor',
@@ -25,6 +26,16 @@ export class ElsaWorkflowDefinitionEditor {
   @State() workflowModel: WorkflowModel;
   el: HTMLElement;
   designer: HTMLElsaDesignerTreeElement;
+
+  @Method()
+  async getServerUrl(): Promise<string> {
+    return this.serverUrl;
+  }
+
+  @Method()
+  async getWorkflowDefinitionId(): Promise<string> {
+    return this.workflowDefinition.definitionId;
+  }
 
   @Watch('workflowDefinitionId')
   async workflowDefinitionIdChangedHandler(newValue: string) {
@@ -82,7 +93,7 @@ export class ElsaWorkflowDefinitionEditor {
     this.workflowModel = this.mapWorkflowModel(value);
   }
 
-  async publishWorkflow(){
+  async publishWorkflow() {
     await this.saveWorkflow(true);
   }
 
@@ -169,16 +180,23 @@ export class ElsaWorkflowDefinitionEditor {
     eventBus.emit(EventTypes.ShowWorkflowSettings);
   }
 
-  async onPublishClicked(){
+  async onPublishClicked() {
     await this.publishWorkflow();
   }
 
   render() {
+    const tunnelState: WorkflowEditorState = {
+      serverUrl: this.serverUrl,
+      workflowDefinitionId: this.workflowDefinition.definitionId
+    };
+
     return (
       <Host class="flex flex-col w-full" ref={el => this.el = el}>
-        {this.renderCanvas()}
-        {this.renderActivityPicker()}
-        {this.renderActivityEditor()}
+        <Tunnel.Provider state={tunnelState}>
+          {this.renderCanvas()}
+          {this.renderActivityPicker()}
+          {this.renderActivityEditor()}
+        </Tunnel.Provider>
       </Host>
     );
   }

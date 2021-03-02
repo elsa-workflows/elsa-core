@@ -1,7 +1,7 @@
 import {Component, Host, h, Prop, State, Event, EventEmitter, Watch} from '@stencil/core';
 import {enter, leave, toggle} from 'el-transition'
 import {registerClickOutside} from "stencil-click-outside";
-import {ActivityModel} from "../../../models";
+import {ActivityModel} from "../../../../models";
 
 @Component({
   tag: 'elsa-workflow-publish-button',

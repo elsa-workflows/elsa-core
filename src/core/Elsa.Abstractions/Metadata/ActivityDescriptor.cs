@@ -5,7 +5,6 @@ namespace Elsa.Metadata
         public ActivityDescriptor()
         {
             Type = "Activity";
-            Properties = new ActivityPropertyDescriptor[0];
             Category = "Miscellaneous";
             Traits = ActivityTraits.Action;
             DisplayName = "Activity";

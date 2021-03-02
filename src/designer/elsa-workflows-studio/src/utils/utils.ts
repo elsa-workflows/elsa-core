@@ -3,6 +3,8 @@ import {ActivityDefinition, ActivityDefinitionProperty, ActivityModel, Connectio
 declare global {
   interface Array<T> {
     distinct(): Array<T>;
+
+    last(): T;
   }
 }
 
@@ -16,13 +18,30 @@ export function format(first: string, middle: string, last: string): string {
 
 export interface Array<T> {
   distinct(): Array<T>;
+
+  last(): T;
+
   find<S extends T>(predicate: (this: void, value: T, index: number, obj: T[]) => value is S, thisArg?: any): S | undefined;
+
   find(predicate: (value: T, index: number, obj: T[]) => unknown, thisArg?: any): T | undefined;
+
   push(...items: T[]): number;
+
 }
 
 Array.prototype.distinct = function () {
   return [...new Set(this)];
+}
+
+if (!Array.prototype.last) {
+  Array.prototype.last = function () {
+    return this[this.length - 1];
+  };
+}
+
+export function isNumeric(str: string): boolean {
+  return !isNaN(str as any) && // use type coercion to parse the _entirety_ of the string (`parseFloat` alone does not do this)...
+    !isNaN(parseFloat(str)) // ...and ensure strings of whitespace fail
 }
 
 export function getChildActivities(workflowModel: WorkflowModel, parentId?: string) {
@@ -91,11 +110,10 @@ export function setProperty(properties: Array<ActivityDefinitionProperty>, name:
   }
 }
 
-export function getProperty(properties: Array<ActivityDefinitionProperty>, name: string, defaultExpression?: () => string, defaultSyntax?: () => string): ActivityDefinitionProperty
-{
+export function getProperty(properties: Array<ActivityDefinitionProperty>, name: string, defaultExpression?: () => string, defaultSyntax?: () => string): ActivityDefinitionProperty {
   let property: ActivityDefinitionProperty = properties.find(x => x.name == name);
 
-  if(!property)
+  if (!property)
     property = {name: name, expression: defaultExpression ? defaultExpression() : null, syntax: defaultSyntax ? defaultSyntax() : 'Literal'};
 
   return property;

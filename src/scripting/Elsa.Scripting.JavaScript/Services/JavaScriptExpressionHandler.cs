@@ -20,14 +20,14 @@ using NodaTime.Serialization.JsonNet;
 
 namespace Elsa.Scripting.JavaScript.Services
 {
-    public class JavaScriptHandler : IExpressionHandler
+    public class JavaScriptExpressionHandler : IExpressionHandler
     {
         public const string SyntaxName = "JavaScript";
         private readonly IMediator _mediator;
         private readonly IOptions<ScriptOptions> _options;
         private readonly JsonSerializerSettings _serializerSettings;
 
-        public JavaScriptHandler(IMediator mediator, IOptions<ScriptOptions> options)
+        public JavaScriptExpressionHandler(IMediator mediator, IOptions<ScriptOptions> options)
         {
             _mediator = mediator;
             _options = options;

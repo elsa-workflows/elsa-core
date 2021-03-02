@@ -10,13 +10,13 @@ using MediatR;
 
 namespace Elsa.Scripting.Liquid.Services
 {
-    public class LiquidExpressionHandler : IExpressionHandler
+    public class LiquidHandler : IExpressionHandler
     {
         public const string SyntaxName = "Liquid";
         private readonly ILiquidTemplateManager _liquidTemplateManager;
         private readonly IMediator _mediator;
 
-        public LiquidExpressionHandler(ILiquidTemplateManager liquidTemplateManager, IMediator mediator)
+        public LiquidHandler(ILiquidTemplateManager liquidTemplateManager, IMediator mediator)
         {
             _liquidTemplateManager = liquidTemplateManager;
             _mediator = mediator;
