@@ -12,7 +12,7 @@ namespace Elsa.Samples.HelloWorldHttp
         public void Build(IWorkflowBuilder builder)
         {
             builder
-                .HttpRequestReceived("/hello")
+                .HttpEndpoint("/hello")
                 .WriteHttpResponse(HttpStatusCode.OK, "Hello World!", "text/html");
         }
     }

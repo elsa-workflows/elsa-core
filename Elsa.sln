@@ -158,9 +158,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ElsaDashboard.WebAssembly",
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "timers", "timers", "{37D2E628-5CC1-4C8E-8C02-3B0A29E2ACAA}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.Timers.Quartz", "src\activities\Elsa.Activities.Timers.Quartz\Elsa.Activities.Timers.Quartz.csproj", "{08D9CB18-2BFB-4CF2-9763-5EE913F56D3E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.Temporal.Quartz", "src\activities\Elsa.Activities.Temporal.Quartz\Elsa.Activities.Temporal.Quartz.csproj", "{08D9CB18-2BFB-4CF2-9763-5EE913F56D3E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.Timers.Hangfire", "src\activities\Elsa.Activities.Timers.Hangfire\Elsa.Activities.Timers.Hangfire.csproj", "{34FB968B-A147-4811-823D-D206FD0027AD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.Temporal.Hangfire", "src\activities\Elsa.Activities.Temporal.Hangfire\Elsa.Activities.Temporal.Hangfire.csproj", "{34FB968B-A147-4811-823D-D206FD0027AD}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.Timers.Hangfire", "src\samples\worker\Elsa.Samples.Timers.Hangfire\Elsa.Samples.Timers.Hangfire.csproj", "{7BDF193D-CD69-4D47-B7BF-A8A1D93EBCB9}"
 EndProject
@@ -174,7 +174,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.DistributedLocking.Red
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.DistributedLocking.SqlServer", "src\locking\Elsa.DistributedLocking.SqlServer\Elsa.DistributedLocking.SqlServer.csproj", "{78F2A9DC-3092-4371-ABFE-87C5DA4DE351}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.Timers", "src\activities\Elsa.Activities.Timers\Elsa.Activities.Timers.csproj", "{74E83393-50AF-41E3-A1C8-97202673CD85}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.Temporal", "src\activities\Elsa.Activities.Temporal.Common\Elsa.Activities.Temporal.Common.csproj", "{74E83393-50AF-41E3-A1C8-97202673CD85}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ElsaDashboard.Abstractions", "src\dashboards\blazor\ElsaDashboard.Abstractions\ElsaDashboard.Abstractions.csproj", "{599CEC92-0EC9-4378-A1B6-E7741B1E4E57}"
 EndProject

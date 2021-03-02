@@ -13,9 +13,9 @@ namespace Elsa.Activities.Http.Bookmarks
         public string? CorrelationId { get; set; }
     }
 
-    public class HttpRequestReceivedTriggerProvider : BookmarkProvider<HttpRequestReceivedBookmark, HttpRequestReceived>
+    public class HttpRequestReceivedTriggerProvider : BookmarkProvider<HttpRequestReceivedBookmark, HttpEndpoint>
     {
-        public override async ValueTask<IEnumerable<IBookmark>> GetBookmarksAsync(BookmarkProviderContext<HttpRequestReceived> context, CancellationToken cancellationToken)
+        public override async ValueTask<IEnumerable<IBookmark>> GetBookmarksAsync(BookmarkProviderContext<HttpEndpoint> context, CancellationToken cancellationToken)
         {
             var path = ToLower(await context.Activity.GetPropertyValueAsync(x => x.Path, cancellationToken));
             var method = ToLower(await context.Activity.GetPropertyValueAsync(x => x.Method, cancellationToken));

@@ -2,11 +2,11 @@ using System.Collections.Generic;
 
 using Elsa.Activities.Console;
 using Elsa.Activities.ControlFlow;
-using Elsa.Activities.Timers;
+using Elsa.Activities.Temporal;
 using Elsa.Builders;
 using NodaTime;
 
-namespace Elsa.Samples.Timers
+namespace Elsa.Samples.Temporal
 {
     public class CancelTimerWorkflow : IWorkflow
     {

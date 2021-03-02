@@ -1,12 +1,12 @@
 using System.Threading.Tasks;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Sqlite;
-using Elsa.Samples.Timers.Activities;
-using Elsa.Samples.Timers.Workflows;
+using Elsa.Samples.Temporal.Activities;
+using Elsa.Samples.Temporal.Workflows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-namespace Elsa.Samples.Timers
+namespace Elsa.Samples.Temporal
 {
     internal static class Program
     {
@@ -21,7 +21,7 @@ namespace Elsa.Samples.Timers
                             .AddElsa(options => options
                                     .UseEntityFrameworkPersistence(ef => ef.UseSqlite())
                                     .AddConsoleActivities()
-                                    .AddQuartzTimerActivities()
+                                    .AddQuartzTemporalActivities()
                                     .AddActivity<MyContainer1>()
                                     .AddActivity<MyContainer2>()
                                     //.AddWorkflow<SingletonTimerWorkflow>()

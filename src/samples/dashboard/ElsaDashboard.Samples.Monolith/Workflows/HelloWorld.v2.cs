@@ -12,7 +12,7 @@ namespace ElsaDashboard.Samples.Monolith.Workflows
                 .WithWorkflowDefinitionId("HelloWorld")
                 .WithVersion(2)
                 .WithDisplayName("Hello World!")
-                .HttpRequestReceived("/hello-world/v2")
+                .HttpEndpoint("/hello-world/v2")
                 .WriteHttpResponse(HttpStatusCode.OK, "Hello World V2!", "text/plain");
         }
     }

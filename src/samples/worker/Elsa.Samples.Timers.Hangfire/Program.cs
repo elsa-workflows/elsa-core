@@ -4,7 +4,7 @@ using Microsoft.Extensions.Hosting;
 using NodaTime;
 using Hangfire;
 
-namespace Elsa.Samples.Timers
+namespace Elsa.Samples.Temporal
 {
     internal class Program
     {
@@ -18,7 +18,7 @@ namespace Elsa.Samples.Timers
                         services
                             .AddElsa(options => options
                                 .AddConsoleActivities()
-                                .AddHangfireTimerActivities(hangfire => hangfire.UseSqlServerStorage("Server=(localdb)\\MSSQLLocalDB;Database=ElsaHangfire;Trusted_Connection=True;MultipleActiveResultSets=true"))
+                                .AddHangfireTemporalActivities(hangfire => hangfire.UseSqlServerStorage("Server=(localdb)\\MSSQLLocalDB;Database=ElsaHangfire;Trusted_Connection=True;MultipleActiveResultSets=true"))
                                 .AddWorkflow<RecurringTaskWorkflow>()
                                 .AddWorkflow<CronTaskWorkflow>()
                                 .AddWorkflow<CancelTimerWorkflow>()

@@ -79,7 +79,7 @@ namespace Elsa.Activities.Http.Middleware
             };
 
             var triggers = new[] { triggerWithMethod, triggerWithoutMethod };
-            var results = await bookmarkFinder.FindBookmarksAsync<HttpRequestReceived>(triggers, TenantId, cancellationToken).ToList();
+            var results = await bookmarkFinder.FindBookmarksAsync<HttpEndpoint>(triggers, TenantId, cancellationToken).ToList();
 
             if (!results.Any())
             {
@@ -139,7 +139,7 @@ namespace Elsa.Activities.Http.Middleware
             var httpWorkflows =
                 from workflow in workflows
                 where workflow.TenantId == TenantId
-                from activity in workflow.GetStartActivities<HttpRequestReceived>()
+                from activity in workflow.GetStartActivities<HttpEndpoint>()
                 select (workflow, activity);
 
             var matches = new List<(IWorkflowBlueprint, IActivityBlueprint, PathString, string?)>();
@@ -149,7 +149,7 @@ namespace Elsa.Activities.Http.Middleware
                 var workflow = httpWorkflow.workflow;
                 var activity = httpWorkflow.activity;
                 var workflowWrapper = await workflowBlueprintReflector.ReflectAsync(serviceProvider, workflow, cancellationToken);
-                var activityWrapper = workflowWrapper.GetActivity<HttpRequestReceived>(activity.Id)!;
+                var activityWrapper = workflowWrapper.GetActivity<HttpEndpoint>(activity.Id)!;
                 var path = await activityWrapper.GetPropertyValueAsync(x => x.Path, cancellationToken);
                 var method = await activityWrapper.GetPropertyValueAsync(x => x.Method, cancellationToken);
 

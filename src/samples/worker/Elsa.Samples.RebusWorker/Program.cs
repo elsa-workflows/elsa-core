@@ -26,7 +26,7 @@ namespace Elsa.Samples.RebusWorker
                                     db => db.MigrationsAssembly(typeof(SqliteElsaContextFactory).Assembly.GetName().Name));
                             }, true)
                             .AddConsoleActivities()
-                            .AddQuartzTimerActivities()
+                            .AddQuartzTemporalActivities()
                             .AddRebusActivities<Greeting>()
                             .AddWorkflow<ProducerWorkflow>()
                             .AddWorkflow<ConsumerWorkflow>());

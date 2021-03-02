@@ -29,7 +29,7 @@ namespace Elsa.Samples.Server.Host
                     .AddConsoleActivities()
                     .AddHttpActivities(elsaSection.GetSection("Http").Bind)
                     .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)
-                    .AddQuartzTimerActivities()
+                    .AddQuartzTemporalActivities()
                     .AddWorkflowsFrom<Startup>()
                 );
 

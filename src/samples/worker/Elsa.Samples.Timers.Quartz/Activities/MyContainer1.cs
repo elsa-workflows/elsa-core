@@ -1,11 +1,11 @@
 ﻿using Elsa.Activities.Console;
 using Elsa.Activities.ControlFlow;
-using Elsa.Activities.Timers;
+using Elsa.Activities.Temporal;
 using Elsa.Builders;
 using Elsa.Services;
 using NodaTime;
 
-namespace Elsa.Samples.Timers.Activities
+namespace Elsa.Samples.Temporal.Activities
 {
     public class MyContainer1 : CompositeActivity
     {
