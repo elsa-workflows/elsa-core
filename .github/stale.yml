@@ -17,13 +17,13 @@ exemptLabels:
   - core
   - dashboard
   - devops
+  - do later
+  - do now
+  - do soon
   - documentation
   - enhancement
   - good first issue
-  - help wanted
   - persistence
-  - priority high
-  - priority low
   - workflow tooling  
 
 # Set to true to ignore issues in a project (defaults to false)
