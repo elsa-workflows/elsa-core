@@ -5,6 +5,7 @@ using Elsa.Activities.Email.Options;
 using Elsa.Activities.Email.Services;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Design;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.Options;
@@ -41,8 +42,7 @@ namespace Elsa.Activities.Email
         [ActivityProperty(Hint = "The subject of the email message.")]
         public string? Subject { get; set; }
 
-        [ActivityProperty(Hint = "The body of the email message.")]
-        [WorkflowExpressionOptions(Multiline = true)]
+        [ActivityProperty(Hint = "The body of the email message.", UIHint = ActivityPropertyUIHints.MultiLine)]
         public string? Body { get; set; }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)

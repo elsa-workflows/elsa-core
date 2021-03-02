@@ -43,8 +43,7 @@ namespace Elsa.Activities.Http
         /// <summary>
         /// The HTTP method that triggers this activity.
         /// </summary>
-        [ActivityProperty(Type = ActivityPropertyTypes.Select, Hint = "The HTTP method that triggers this activity.")]
-        [SelectOptions("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD")]
+        [ActivityProperty(UIHint = ActivityPropertyUIHints.CheckList, Hint = "The HTTP methods that triggers this activity.", Options = new[]{ "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD" })]
         public string? Method { get; set; }
 
         /// <summary>
