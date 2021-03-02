@@ -57,6 +57,7 @@ before_build:
       /d:sonar.cs.xunit.reportsPaths=$env:APPVEYOR_BUILD_FOLDER\**\TestResults\TestResults.xml
       /d:sonar.cs.opencover.reportsPaths=$env:APPVEYOR_BUILD_FOLDER\**\TestResults\*\coverage.opencover.xml
       /d:sonar.branch.name=$env:APPVEYOR_REPO_BRANCH
+      }
 
 build_script:
   - ps: >-
