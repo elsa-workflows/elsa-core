@@ -15,7 +15,6 @@ using Elsa.HostedServices;
 using Elsa.Mapping;
 using Elsa.Messages;
 using Elsa.Metadata;
-using Elsa.Metadata.Handlers;
 using Elsa.Persistence;
 using Elsa.Persistence.Decorators;
 using Elsa.Runtime;
@@ -82,6 +81,8 @@ namespace Microsoft.Extensions.DependencyInjection
             return elsaOptions;
         }
 
+        public static IServiceCollection AddActivityPropertyOptionsProvider<T>(this IServiceCollection services) where T : class, IActivityPropertyOptionsProvider => services.AddSingleton<IActivityPropertyOptionsProvider, T>();
+
         private static ElsaOptions AddWorkflowsCore(this ElsaOptions options)
         {
             var services = options.Services;
@@ -129,9 +130,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddWorkflowProvider<DatabaseWorkflowProvider>();
 
             // Metadata.
-            services
-                .AddSingleton<IActivityDescriber, ActivityDescriber>()
-                .AddMetadataHandlers();
+            services.AddSingleton<IActivityDescriber, ActivityDescriber>();
 
             // Bookmarks.
             services
@@ -180,10 +179,6 @@ namespace Microsoft.Extensions.DependencyInjection
 
             return options;
         }
-
-        private static IServiceCollection AddMetadataHandlers(this IServiceCollection services) =>
-            services
-                .AddSingleton<IActivityPropertyOptionsProvider, SelectOptionsProvider>();
 
         private static ElsaOptions AddCoreActivities(this ElsaOptions services) => services.AddActivitiesFrom<ElsaOptions>();
     }

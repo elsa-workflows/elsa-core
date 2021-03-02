@@ -60,7 +60,7 @@ namespace Elsa.Metadata
                 yield return new ActivityPropertyDescriptor
                 (
                     (activityProperty.Name ?? propertyInfo.Name).Pascalize(),
-                    (activityProperty.Type ?? DeterminePropertyType(propertyInfo)).Pascalize(),
+                    (activityProperty.UIHint ?? InferPropertyUIHint(propertyInfo)).Pascalize(),
                     activityProperty.Label ?? propertyInfo.Name.Humanize(LetterCasing.Title),
                     activityProperty.Hint,
                     GetPropertyTypeOptions(propertyInfo)
@@ -78,20 +78,20 @@ namespace Elsa.Metadata
             return options;
         }
 
-        private string DeterminePropertyType(PropertyInfo propertyInfo)
+        private string InferPropertyUIHint(PropertyInfo propertyInfo)
         {
             var type = propertyInfo.PropertyType;
 
             if (type == typeof(bool) || type == typeof(bool?))
-                return ActivityPropertyTypes.Boolean;
+                return ActivityPropertyUIHints.Checkbox;
             
             if (type == typeof(string))
-                return ActivityPropertyTypes.Text;
+                return ActivityPropertyUIHints.SingleLine;
 
             if (typeof(IEnumerable).IsAssignableFrom(type))
-                return ActivityPropertyTypes.List;
+                return ActivityPropertyUIHints.DropdownList;
 
-            return ActivityPropertyTypes.Text;
+            return ActivityPropertyUIHints.SingleLine;
         }
     }
 }

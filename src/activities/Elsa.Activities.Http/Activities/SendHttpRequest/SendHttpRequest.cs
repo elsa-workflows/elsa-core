@@ -47,27 +47,26 @@ namespace Elsa.Activities.Http
         /// The HTTP method to use.
         /// </summary>
         [ActivityProperty(
-            Type = ActivityPropertyTypes.Select,
-            Hint = "The HTTP method to use when making the request."
+            UIHint = ActivityPropertyUIHints.DropdownList,
+            Hint = "The HTTP method to use when making the request.",
+            Options = new[] { "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD" }
         )]
-        [SelectOptions("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD")]
         public string? Method { get; set; }
 
         /// <summary>
         /// The body to send along with the request.
         /// </summary>
-        [ActivityProperty(Hint = "The HTTP content to send along with the request.")]
-        [WorkflowExpressionOptions(Multiline = true)]
+        [ActivityProperty(Hint = "The HTTP content to send along with the request.", UIHint = ActivityPropertyUIHints.MultiLine)]
         public string? Content { get; set; }
 
         /// <summary>
         /// The Content Type header to send along with the request body.
         /// </summary>
         [ActivityProperty(
-            Type = ActivityPropertyTypes.Select,
-            Hint = "The content type to send with the request (if applicable)."
+            UIHint = ActivityPropertyUIHints.DropdownList,
+            Hint = "The content type to send with the request.",
+            Options = new[] { "text/plain", "text/html", "application/json", "application/xml" }
         )]
-        [SelectOptions("text/plain", "text/html", "application/json", "application/xml")]
         public string? ContentType { get; set; }
 
         [ActivityProperty(Hint = "The Authorization header value to send.")]
@@ -76,19 +75,18 @@ namespace Elsa.Activities.Http
         /// <summary>
         /// The headers to send along with the request.
         /// </summary>
-        [ActivityProperty(Hint = "The headers to send along with the request.")]
-        [WorkflowExpressionOptions(Multiline = true)]
-        public HttpRequestHeaders RequestHeaders { get; set; } = new HttpRequestHeaders();
+        [ActivityProperty(Hint = "Additional headers to send along with the request.", UIHint = ActivityPropertyUIHints.Json)]
+        public HttpRequestHeaders RequestHeaders { get; set; } = new();
 
-        [ActivityProperty(Hint = "Check to read the content of the response.")]
+        [ActivityProperty(Hint = "Read the content of the response.")]
         public bool ReadContent { get; set; }
 
         /// <summary>
         /// A list of HTTP status codes this activity can handle.
         /// </summary>
         [ActivityProperty(
-            Type = ActivityPropertyTypes.List,
-            Hint = "A list of possible HTTP status codes to handle, comma-separated. Example: 200, 400, 404"
+            Hint = "A list of possible HTTP status codes to handle, comma-separated. Example: 200, 400, 404",
+            UIHint = ActivityPropertyUIHints.DynamicList
         )]
         public ICollection<int> SupportedStatusCodes { get; set; } = new HashSet<int>(new[] { 200 });
 
@@ -114,7 +112,7 @@ namespace Elsa.Activities.Http
                 responseModel.Content = await formatter.ParseAsync(response, cancellationToken);
             }
 
-            var statusCode = (int)response.StatusCode;
+            var statusCode = (int) response.StatusCode;
             var statusOutcome = statusCode.ToString();
             var isSupportedStatusCode = SupportedStatusCodes.Contains(statusCode);
             var outcomes = new List<string> { OutcomeNames.Done, statusOutcome };

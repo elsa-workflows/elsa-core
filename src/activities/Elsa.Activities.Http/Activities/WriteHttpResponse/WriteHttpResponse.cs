@@ -34,32 +34,32 @@ namespace Elsa.Activities.Http
         /// The HTTP status code to return.
         /// </summary>
         [ActivityProperty(
-            Type = ActivityPropertyTypes.Select,
-            Hint = "The HTTP status code to write."
+            UIHint = ActivityPropertyUIHints.DropdownList,
+            Hint = "The HTTP status code to write.",
+            Options = new[] { HttpStatusCode.OK, HttpStatusCode.Created, HttpStatusCode.Accepted, HttpStatusCode.NoContent, HttpStatusCode.Redirect, HttpStatusCode.BadRequest, HttpStatusCode.NotFound, HttpStatusCode.Conflict }
         )]
         public HttpStatusCode StatusCode { get; set; }
 
         /// <summary>
         /// The content to send along with the response
         /// </summary>
-        [ActivityProperty(Hint = "The HTTP content to write.")]
-        [WorkflowExpressionOptions(Multiline = true)]
+        [ActivityProperty(Hint = "The HTTP content to write.", UIHint = ActivityPropertyUIHints.MultiLine)]
         public string? Content { get; set; }
 
         /// <summary>
         /// The Content-Type header to send along with the response.
         /// </summary>
         [ActivityProperty(
-            Type = ActivityPropertyTypes.Select,
-            Hint = "The HTTP content type header to write."
+            UIHint = ActivityPropertyUIHints.DropdownList,
+            Hint = "The HTTP content type header to write.",
+            Options = new[]{ "text/plain", "text/html", "application/json", "application/xml" }
         )]
-        [SelectOptions("text/plain", "text/html", "application/json", "application/xml")]
         public string? ContentType { get; set; }
 
         /// <summary>
         /// The headers to send along with the response.
         /// </summary>
-        [ActivityProperty(Hint = "The headers to send along with the response.")]
+        [ActivityProperty(Hint = "Additional headers to write.", UIHint = ActivityPropertyUIHints.Json)]
         public HttpResponseHeaders? ResponseHeaders { get; set; }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
@@ -70,7 +70,7 @@ namespace Elsa.Activities.Http
             if (response.HasStarted)
                 return Fault(T["Response has already started"]!);
 
-            response.StatusCode = (int)StatusCode;
+            response.StatusCode = (int) StatusCode;
             response.ContentType = ContentType;
 
             var headers = ResponseHeaders;
