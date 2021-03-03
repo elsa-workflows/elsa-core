@@ -17,9 +17,9 @@ exemptLabels:
   - core
   - dashboard
   - devops
-  - do later
-  - do now
-  - do soon
+  - prio low
+  - prio immediate
+  - prio high
   - documentation
   - enhancement
   - good first issue
