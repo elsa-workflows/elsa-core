@@ -5,13 +5,10 @@ using Elsa.Services.Models;
 
 namespace Elsa.Activities.Startup.Activities
 {
-    [Activity(
-        Category = "Startup",
-        Description = "Triggers at startup."
-    )]
+    [Activity(Category = "Startup", Description = "Triggers at startup.")]
     public class Startup : Activity
     {
-        protected override ActivityExecutionResult OnExecute(WorkflowExecutionContext context)
+        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
             return Done();
         }
