@@ -9,11 +9,12 @@ import {MonacoValueChangedArgs} from "../../monaco/elsa-monaco/elsa-monaco";
   styleUrl: 'elsa-text-property.css',
   shadow: false,
 })
-export class ElsaTextProperty {
+export class ElsaSingleLineProperty {
 
-  @Prop() key: string;
   @Prop() propertyDescriptor: ActivityPropertyDescriptor;
   @Prop() propertyModel: ActivityDefinitionProperty;
+  @Prop({attribute: 'editor-height', reflect: true}) editorHeight: string = '6em';
+  @Prop({attribute: 'single-line', reflect: true}) singleLineMode: boolean = false;
   @Prop({mutable: true}) serverUrl: string;
   @Prop({mutable: true}) workflowDefinitionId: string;
   @State() selectedSyntax?: string;
@@ -73,7 +74,7 @@ export class ElsaTextProperty {
     const value = this.currentValue;
 
     return (
-      <div key={this.key}>
+      <div>
         <label htmlFor={fieldId} class="block text-sm font-medium text-gray-700">
           {fieldLabel}
         </label>
@@ -108,8 +109,13 @@ export class ElsaTextProperty {
             </nav>
           </div>
         </div>
-        <div class="border border-gray-200 border-t-0">
-          <elsa-monaco value={value} language={monacoLanguage} onValueChanged={e => this.onMonacoValueChanged(e.detail)} ref={el => this.monacoEditor = el}/>
+        <div class="">
+          <elsa-monaco value={value}
+                       language={monacoLanguage}
+                       editor-height={this.editorHeight}
+                       single-line={this.singleLineMode}
+                       onValueChanged={e => this.onMonacoValueChanged(e.detail)}
+                       ref={el => this.monacoEditor = el}/>
         </div>
         {fieldHint ? <p class="mt-2 text-sm text-gray-500">{fieldHint}</p> : undefined}
         <input type="hidden" name={fieldName} value={value}/>
@@ -119,4 +125,4 @@ export class ElsaTextProperty {
   }
 }
 
-Tunnel.injectProps(ElsaTextProperty, ['serverUrl', 'workflowDefinitionId']);
+Tunnel.injectProps(ElsaSingleLineProperty, ['serverUrl', 'workflowDefinitionId']);

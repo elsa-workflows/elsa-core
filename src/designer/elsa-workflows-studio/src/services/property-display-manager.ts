@@ -1,7 +1,9 @@
 ﻿import {ActivityModel, ActivityPropertyDescriptor} from "../models/";
 import {PropertyDisplayDriver} from "./property-display-driver";
-import {NullPropertyDriver, TextPropertyDriver} from "../property-display-drivers";
+import {NullPropertyDriver, SingleLineDriver} from "../property-display-drivers";
 import {Map} from '../utils/utils';
+import {MultilineDriver} from "../property-display-drivers/multiline-driver";
+import {CheckListDriver} from "../property-display-drivers/check-list-driver";
 
 export type PropertyDisplayDriverMap = Map<() => PropertyDisplayDriver>;
 
@@ -11,17 +13,19 @@ export class PropertyDisplayManager {
 
   constructor() {
     this.drivers = {
-      'Text': () => new TextPropertyDriver()
+      'single-line': () => new SingleLineDriver(),
+      'multi-line': () => new MultilineDriver(),
+      'check-list': () => new CheckListDriver()
     };
   }
 
   display(activity: ActivityModel, property: ActivityPropertyDescriptor) {
-    const driver = this.getDriver(property.type);
+    const driver = this.getDriver(property.uiHint);
     return driver.display(activity, property);
   }
 
   update(activity: ActivityModel, property: ActivityPropertyDescriptor, form: FormData) {
-    const driver = this.getDriver(property.type);
+    const driver = this.getDriver(property.uiHint);
     return driver.update(activity, property, form);
   }
 

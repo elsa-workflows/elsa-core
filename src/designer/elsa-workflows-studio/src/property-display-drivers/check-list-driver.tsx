@@ -1,9 +1,9 @@
 ﻿import {PropertyDisplayDriver} from "../services/property-display-driver";
 import {ActivityModel, ActivityPropertyDescriptor} from "../models";
 import {h, State} from "@stencil/core";
-import {getProperty, setActivityDefinitionProperty, setActivityModelProperty} from "../utils/utils";
+import {getProperty, setActivityModelProperty} from "../utils/utils";
 
-export class TextPropertyDriver implements PropertyDisplayDriver {
+export class CheckListDriver implements PropertyDisplayDriver {
 
   display(activity: ActivityModel, property: ActivityPropertyDescriptor) {
     const key = `${activity.activityId}:${property.name}`;
@@ -11,14 +11,13 @@ export class TextPropertyDriver implements PropertyDisplayDriver {
 
     return (
       <div class="sm:col-span-6">
-        <elsa-text-property key={key} propertyDescriptor={property} propertyModel={prop}/>
+        <elsa-check-list-property propertyDescriptor={property} propertyModel={prop} />
       </div>
     )
   }
 
   update(activity: ActivityModel, property: ActivityPropertyDescriptor, form: FormData) {
     const value = form.get(property.name) as string;
-    const syntax = form.get(`${property.name}Syntax`) as string || 'Literal';
-    setActivityModelProperty(activity, property.name, value, syntax);
+    setActivityModelProperty(activity, property.name, value, 'Literal');
   }
 }

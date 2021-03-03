@@ -12,6 +12,12 @@ export namespace Components {
     }
     interface ElsaActivityPickerModal {
     }
+    interface ElsaCheckListProperty {
+        "propertyDescriptor": ActivityPropertyDescriptor;
+        "propertyModel": ActivityDefinitionProperty;
+        "serverUrl": string;
+        "workflowDefinitionId": string;
+    }
     interface ElsaDesignerTree {
         "model": WorkflowModel;
     }
@@ -27,13 +33,15 @@ export namespace Components {
         "addJavaScriptLib": (libSource: string, libUri: string) => Promise<void>;
         "editorHeight": string;
         "language": string;
+        "singleLineMode": boolean;
         "value": string;
     }
     interface ElsaTextProperty {
-        "key": string;
+        "editorHeight": string;
         "propertyDescriptor": ActivityPropertyDescriptor;
         "propertyModel": ActivityDefinitionProperty;
         "serverUrl": string;
+        "singleLineMode": boolean;
         "workflowDefinitionId": string;
     }
     interface ElsaWorkflowEditor {
@@ -60,6 +68,12 @@ declare global {
     var HTMLElsaActivityPickerModalElement: {
         prototype: HTMLElsaActivityPickerModalElement;
         new (): HTMLElsaActivityPickerModalElement;
+    };
+    interface HTMLElsaCheckListPropertyElement extends Components.ElsaCheckListProperty, HTMLStencilElement {
+    }
+    var HTMLElsaCheckListPropertyElement: {
+        prototype: HTMLElsaCheckListPropertyElement;
+        new (): HTMLElsaCheckListPropertyElement;
     };
     interface HTMLElsaDesignerTreeElement extends Components.ElsaDesignerTree, HTMLStencilElement {
     }
@@ -112,6 +126,7 @@ declare global {
     interface HTMLElementTagNameMap {
         "elsa-activity-editor-modal": HTMLElsaActivityEditorModalElement;
         "elsa-activity-picker-modal": HTMLElsaActivityPickerModalElement;
+        "elsa-check-list-property": HTMLElsaCheckListPropertyElement;
         "elsa-designer-tree": HTMLElsaDesignerTreeElement;
         "elsa-designer-tree-activity": HTMLElsaDesignerTreeActivityElement;
         "elsa-modal-dialog": HTMLElsaModalDialogElement;
@@ -126,6 +141,12 @@ declare namespace LocalJSX {
     interface ElsaActivityEditorModal {
     }
     interface ElsaActivityPickerModal {
+    }
+    interface ElsaCheckListProperty {
+        "propertyDescriptor"?: ActivityPropertyDescriptor;
+        "propertyModel"?: ActivityDefinitionProperty;
+        "serverUrl"?: string;
+        "workflowDefinitionId"?: string;
     }
     interface ElsaDesignerTree {
         "model"?: WorkflowModel;
@@ -143,13 +164,15 @@ declare namespace LocalJSX {
         "editorHeight"?: string;
         "language"?: string;
         "onValueChanged"?: (event: CustomEvent<MonacoValueChangedArgs>) => void;
+        "singleLineMode"?: boolean;
         "value"?: string;
     }
     interface ElsaTextProperty {
-        "key"?: string;
+        "editorHeight"?: string;
         "propertyDescriptor"?: ActivityPropertyDescriptor;
         "propertyModel"?: ActivityDefinitionProperty;
         "serverUrl"?: string;
+        "singleLineMode"?: boolean;
         "workflowDefinitionId"?: string;
     }
     interface ElsaWorkflowEditor {
@@ -165,6 +188,7 @@ declare namespace LocalJSX {
     interface IntrinsicElements {
         "elsa-activity-editor-modal": ElsaActivityEditorModal;
         "elsa-activity-picker-modal": ElsaActivityPickerModal;
+        "elsa-check-list-property": ElsaCheckListProperty;
         "elsa-designer-tree": ElsaDesignerTree;
         "elsa-designer-tree-activity": ElsaDesignerTreeActivity;
         "elsa-modal-dialog": ElsaModalDialog;
@@ -181,6 +205,7 @@ declare module "@stencil/core" {
         interface IntrinsicElements {
             "elsa-activity-editor-modal": LocalJSX.ElsaActivityEditorModal & JSXBase.HTMLAttributes<HTMLElsaActivityEditorModalElement>;
             "elsa-activity-picker-modal": LocalJSX.ElsaActivityPickerModal & JSXBase.HTMLAttributes<HTMLElsaActivityPickerModalElement>;
+            "elsa-check-list-property": LocalJSX.ElsaCheckListProperty & JSXBase.HTMLAttributes<HTMLElsaCheckListPropertyElement>;
             "elsa-designer-tree": LocalJSX.ElsaDesignerTree & JSXBase.HTMLAttributes<HTMLElsaDesignerTreeElement>;
             "elsa-designer-tree-activity": LocalJSX.ElsaDesignerTreeActivity & JSXBase.HTMLAttributes<HTMLElsaDesignerTreeActivityElement>;
             "elsa-modal-dialog": LocalJSX.ElsaModalDialog & JSXBase.HTMLAttributes<HTMLElsaModalDialogElement>;

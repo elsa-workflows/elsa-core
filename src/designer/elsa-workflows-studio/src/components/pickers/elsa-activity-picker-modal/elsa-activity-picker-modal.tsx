@@ -12,6 +12,7 @@ import state from '../../../utils/store';
 export class ElsaActivityPickerModal {
 
   @State() selectedTrait: number = 7;
+  @State() selectedCategory: string = 'All';
   @State() searchText: string;
   dialog: HTMLElsaModalDialogElement;
 
@@ -23,9 +24,18 @@ export class ElsaActivityPickerModal {
     this.selectedTrait = trait;
   }
 
+  selectCategory(category: string) {
+    this.selectedCategory = category;
+  }
+
   onTraitClick(e: MouseEvent, trait: number) {
     e.preventDefault();
     this.selectTrait(trait);
+  }
+
+  onCategoryClick(e: MouseEvent, category: string) {
+    e.preventDefault();
+    this.selectCategory(category);
   }
 
   onSearchTextChange(e: TextEvent) {
@@ -44,14 +54,15 @@ export class ElsaActivityPickerModal {
 
   render() {
     const activityDescriptors: Array<ActivityDescriptor> = state.activityDescriptors;
-    const categories = activityDescriptors.map(x => x.category).distinct().sort();
+    const categories = ['All', ...activityDescriptors.map(x => x.category).distinct().sort()];
     const traits = [{text: 'All', value: 7}, {text: 'Actions', value: 1}, {text: 'Triggers', value: 2}, {text: 'Jobs', value: 4}];
-    const selectedTraitClass = 'bg-gray-100 text-gray-900 flex';
-    const defaultTraitClass = 'text-gray-600 hover:bg-gray-50 hover:text-gray-900';
+    const selectedCategoryClass = 'bg-gray-100 text-gray-900 flex';
+    const defaultCategoryClass = 'text-gray-600 hover:bg-gray-50 hover:text-gray-900';
     const searchText = this.searchText ? this.searchText.toLowerCase() : '';
     let filteredActivityDescriptors = activityDescriptors;
 
     filteredActivityDescriptors = filteredActivityDescriptors.filter(x => (x.traits & this.selectedTrait) == x.traits)
+    filteredActivityDescriptors = !this.selectedCategory || this.selectedCategory == 'All' ? filteredActivityDescriptors : filteredActivityDescriptors.filter(x => x.category == this.selectedCategory);
 
     if (searchText.length > 0)
       filteredActivityDescriptors = filteredActivityDescriptors.filter(x => {
@@ -73,11 +84,11 @@ export class ElsaActivityPickerModal {
             <div class="flex">
               <div class="px-8">
                 <nav class="space-y-1" aria-label="Sidebar">
-                  {traits.map(trait => (
-                    <a href="#" onClick={e => this.onTraitClick(e, trait.value)}
-                       class={`${trait.value == this.selectedTrait ? selectedTraitClass : defaultTraitClass} text-gray-600 hover:bg-gray-50 hover:text-gray-900 flex items-center px-3 py-2 text-sm font-medium rounded-md`}>
+                  {categories.map(category => (
+                    <a href="#" onClick={e => this.onCategoryClick(e, category)}
+                       class={`${category == this.selectedCategory ? selectedCategoryClass : defaultCategoryClass} text-gray-600 hover:bg-gray-50 hover:text-gray-900 flex items-center px-3 py-2 text-sm font-medium rounded-md`}>
                     <span class="truncate">
-                      {trait.text}
+                      {category}
                     </span>
                     </a>
                   ))}

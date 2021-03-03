@@ -19,10 +19,9 @@ namespace Elsa.Server.Api.Endpoints.Activities
         private readonly IActivityTypeService _activityTypeService;
         private readonly IContentSerializer _contentSerializer;
 
-        public List(IActivityTypeService activityTypeService, IContentSerializer contentSerializer)
+        public List(IActivityTypeService activityTypeService)
         {
             _activityTypeService = activityTypeService;
-            _contentSerializer = contentSerializer;
         }
 
         [HttpGet]
@@ -37,7 +36,7 @@ namespace Elsa.Server.Api.Endpoints.Activities
         {
             var activityTypes = await _activityTypeService.GetActivityTypesAsync();
             var descriptors = activityTypes.Select(DescribeActivity).Where(x => x != null && x.Browsable).Select(x => x!).ToList();
-            return Json(descriptors, _contentSerializer.GetSettings());
+            return Json(descriptors);
         }
 
         private ActivityDescriptor? DescribeActivity(ActivityType activityType) => activityType.Describe();
