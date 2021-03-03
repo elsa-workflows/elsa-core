@@ -19,7 +19,7 @@ namespace Elsa.Metadata
         {
             _optionsProviders = optionsProviders;
         }
-        
+
         public ActivityDescriptor? Describe(Type activityType)
         {
             var browsableAttribute = activityType.GetCustomAttribute<BrowsableAttribute>();
@@ -60,22 +60,12 @@ namespace Elsa.Metadata
                 yield return new ActivityPropertyDescriptor
                 (
                     (activityProperty.Name ?? propertyInfo.Name).Pascalize(),
-                    (activityProperty.UIHint ?? InferPropertyUIHint(propertyInfo)).Pascalize(),
+                    (activityProperty.UIHint ?? InferPropertyUIHint(propertyInfo)),
                     activityProperty.Label ?? propertyInfo.Name.Humanize(LetterCasing.Title),
                     activityProperty.Hint,
-                    GetPropertyTypeOptions(propertyInfo)
+                    activityProperty.Options
                 );
             }
-        }
-        
-        private JObject GetPropertyTypeOptions(PropertyInfo propertyInfo)
-        {
-            var options = new JObject();
-
-            foreach (var provider in _optionsProviders.Where(x => x.SupportsProperty(propertyInfo))) 
-                provider.SupplyOptions(propertyInfo, options);
-
-            return options;
         }
 
         private string InferPropertyUIHint(PropertyInfo propertyInfo)
@@ -84,7 +74,7 @@ namespace Elsa.Metadata
 
             if (type == typeof(bool) || type == typeof(bool?))
                 return ActivityPropertyUIHints.Checkbox;
-            
+
             if (type == typeof(string))
                 return ActivityPropertyUIHints.SingleLine;
 

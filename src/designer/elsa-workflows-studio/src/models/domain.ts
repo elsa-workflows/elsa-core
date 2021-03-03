@@ -102,7 +102,7 @@ export interface ActivityDescriptor {
 
 export interface ActivityPropertyDescriptor {
   name: string;
-  type: string;
+  uiHint: string;
   label?: string;
   hint?: string;
   options?: any;
