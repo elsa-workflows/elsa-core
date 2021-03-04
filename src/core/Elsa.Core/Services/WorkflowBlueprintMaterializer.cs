@@ -6,6 +6,7 @@ using Elsa.ActivityProviders;
 using Elsa.Models;
 using Elsa.Services.Models;
 using Microsoft.Extensions.Logging;
+using NetBox.Extensions;
 
 namespace Elsa.Services
 {
@@ -103,8 +104,8 @@ namespace Elsa.Services
                 var activityBlueprints = manyActivityBlueprints.SelectMany(x => x).ToDictionary(x => x.Id);
                 
                 list.AddRange(activityBlueprints.Values);
-                
-                list.Add(new CompositeActivityBlueprint
+
+                var compositeActivityBlueprint = new CompositeActivityBlueprint
                 {
                     Id = activityDefinition.ActivityId,
                     Type = activityDefinition.Type,
@@ -116,7 +117,13 @@ namespace Elsa.Services
                     LoadWorkflowContext = activityDefinition.LoadWorkflowContext,
                     SaveWorkflowContext = activityDefinition.SaveWorkflowContext,
                     ActivityPropertyProviders = await CreatePropertyProviders(compositeActivityDefinition, cancellationToken)
-                });
+                }; 
+                
+                list.Add(compositeActivityBlueprint);
+                
+                // Connect the composite activity to its starting activities.
+                var startActivities = compositeActivityBlueprint.GetStartActivities().ToList();
+                compositeActivityBlueprint.Connections.AddRange(startActivities.Select(x => new Connection(compositeActivityBlueprint, x, CompositeActivity.Enter)));
             }
             else
             {
