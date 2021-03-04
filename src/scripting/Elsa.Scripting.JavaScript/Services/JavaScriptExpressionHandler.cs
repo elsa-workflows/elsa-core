@@ -88,9 +88,7 @@ namespace Elsa.Scripting.JavaScript.Services
             {
                 var stringValue = value.AsString();
                 return targetType != null
-                    ? targetType == typeof(Uri)
-                        ? new Uri(stringValue, UriKind.RelativeOrAbsolute)
-                        : Convert.ChangeType(stringValue, targetType)
+                    ? stringValue.Parse(targetType)
                     : value.AsString();
             }
 
