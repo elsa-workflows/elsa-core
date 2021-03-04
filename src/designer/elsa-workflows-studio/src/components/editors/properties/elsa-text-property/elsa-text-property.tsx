@@ -73,55 +73,51 @@ export class ElsaTextProperty {
     const property = this.propertyModel;
     const value = this.currentValue;
 
-    return (
-      <div>
-        <label htmlFor={fieldId} class="block text-sm font-medium text-gray-700">
-          {fieldLabel}
-        </label>
-        <div class="mb-2">
-          <div class="sm:hidden">
-            <label htmlFor="tabs" class="sr-only">Select a tab</label>
-            <select id="tabs" name="tabs" onChange={e => {
-              this.onSyntaxListChange(e)
-            }} class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
-              {syntaxes.map(syntax => {
-                const isSelected = syntax == selectedSyntax;
-                return (
-                  <option selected={isSelected}>{syntax}</option>
-                );
-              })}
-            </select>
-          </div>
-          <div class="hidden sm:block">
-            <nav class="flex flex-row-reverse" aria-label="Tabs">
-              {syntaxes.map(syntax => {
-                const isSelected = syntax == selectedSyntax;
-                const className = isSelected ? 'bg-blue-100 text-blue-700' : 'text-gray-500 hover:text-gray-700';
+    return <div>
 
-                return (
-                  <a href="#" onClick={e => {
-                    this.onSyntaxSelect(e, syntax)
-                  }} data-syntax={syntax} class={`${className} px-3 py-2 font-medium text-sm rounded-md`}>
+      <div class="flex">
+        <div class="">
+          <label htmlFor={fieldId} class="block text-sm font-medium text-gray-700">
+            {fieldLabel}
+          </label>
+        </div>
+        <div class="flex-1">
+          <div class="">
+            <div class="sm:hidden">
+              <label htmlFor="tabs" class="sr-only">Select a tab</label>
+              <select id="tabs" name="tabs" onChange={e => this.onSyntaxListChange(e)} class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                {syntaxes.map(syntax => {
+                  return <option selected={syntax == selectedSyntax}>{syntax}</option>;
+                })}
+              </select>
+            </div>
+            <div class="hidden sm:block">
+              <nav class="flex flex-row-reverse" aria-label="Tabs">
+                {syntaxes.map(syntax => {
+                  const isSelected = syntax == selectedSyntax;
+                  const className = isSelected ? 'bg-blue-100 text-blue-700' : 'text-gray-500 hover:text-gray-700';
+
+                  return <a href="#" onClick={e => this.onSyntaxSelect(e, syntax)} data-syntax={syntax} class={`${className} px-3 py-2 font-medium text-sm rounded-md`}>
                     {syntax}
-                  </a>
-                );
-              })}
-            </nav>
+                  </a>;
+                })}
+              </nav>
+            </div>
           </div>
         </div>
-        <div class="">
-          <elsa-monaco value={value}
-                       language={monacoLanguage}
-                       editor-height={this.editorHeight}
-                       single-line={this.singleLineMode}
-                       onValueChanged={e => this.onMonacoValueChanged(e.detail)}
-                       ref={el => this.monacoEditor = el}/>
-        </div>
-        {fieldHint ? <p class="mt-2 text-sm text-gray-500">{fieldHint}</p> : undefined}
-        <input type="hidden" name={fieldName} value={value}/>
-        <input type="hidden" name={syntaxFieldName} value={selectedSyntax}/>
       </div>
-    )
+      <div class="mt-1">
+        <elsa-monaco value={value}
+                     language={monacoLanguage}
+                     editor-height={this.editorHeight}
+                     single-line={this.singleLineMode}
+                     onValueChanged={e => this.onMonacoValueChanged(e.detail)}
+                     ref={el => this.monacoEditor = el}/>
+      </div>
+      {fieldHint ? <p class="mt-2 text-sm text-gray-500">{fieldHint}</p> : undefined}
+      <input type="hidden" name={fieldName} value={value}/>
+      <input type="hidden" name={syntaxFieldName} value={selectedSyntax}/>
+    </div>
   }
 }
 

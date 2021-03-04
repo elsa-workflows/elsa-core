@@ -37,7 +37,7 @@ namespace Elsa.Activities.ControlFlow
         }
 
         [ActivityProperty(
-            UIHint = ActivityPropertyUIHints.DropdownList,
+            UIHint = ActivityPropertyUIHints.Dropdown,
             Hint = "WaitAll: wait for all incoming activities to have executed. WaitAny: continue execution as soon as any of the incoming activity has executed.",
             Options = new[] { "WaitAll", "WaitAny" }
         )]

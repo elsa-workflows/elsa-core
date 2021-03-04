@@ -47,7 +47,7 @@ namespace Elsa.Activities.Http
         /// The HTTP method to use.
         /// </summary>
         [ActivityProperty(
-            UIHint = ActivityPropertyUIHints.DropdownList,
+            UIHint = ActivityPropertyUIHints.Dropdown,
             Hint = "The HTTP method to use when making the request.",
             Options = new[] { "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD" }
         )]
@@ -63,7 +63,7 @@ namespace Elsa.Activities.Http
         /// The Content Type header to send along with the request body.
         /// </summary>
         [ActivityProperty(
-            UIHint = ActivityPropertyUIHints.DropdownList,
+            UIHint = ActivityPropertyUIHints.Dropdown,
             Hint = "The content type to send with the request.",
             Options = new[] { "text/plain", "text/html", "application/json", "application/xml" }
         )]

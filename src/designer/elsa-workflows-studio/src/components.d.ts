@@ -27,6 +27,10 @@ export namespace Components {
         "activityModel": ActivityModel;
         "icon": string;
     }
+    interface ElsaDropdownProperty {
+        "propertyDescriptor": ActivityPropertyDescriptor;
+        "propertyModel": ActivityDefinitionProperty;
+    }
     interface ElsaModalDialog {
         "hide": (animate: boolean) => Promise<void>;
         "show": (animate: boolean) => Promise<void>;
@@ -95,6 +99,12 @@ declare global {
         prototype: HTMLElsaDesignerTreeActivityElement;
         new (): HTMLElsaDesignerTreeActivityElement;
     };
+    interface HTMLElsaDropdownPropertyElement extends Components.ElsaDropdownProperty, HTMLStencilElement {
+    }
+    var HTMLElsaDropdownPropertyElement: {
+        prototype: HTMLElsaDropdownPropertyElement;
+        new (): HTMLElsaDropdownPropertyElement;
+    };
     interface HTMLElsaModalDialogElement extends Components.ElsaModalDialog, HTMLStencilElement {
     }
     var HTMLElsaModalDialogElement: {
@@ -138,6 +148,7 @@ declare global {
         "elsa-checkbox-property": HTMLElsaCheckboxPropertyElement;
         "elsa-designer-tree": HTMLElsaDesignerTreeElement;
         "elsa-designer-tree-activity": HTMLElsaDesignerTreeActivityElement;
+        "elsa-dropdown-property": HTMLElsaDropdownPropertyElement;
         "elsa-modal-dialog": HTMLElsaModalDialogElement;
         "elsa-monaco": HTMLElsaMonacoElement;
         "elsa-text-property": HTMLElsaTextPropertyElement;
@@ -168,6 +179,10 @@ declare namespace LocalJSX {
         "icon"?: string;
         "onEdit-activity"?: (event: CustomEvent<ActivityModel>) => void;
         "onRemove-activity"?: (event: CustomEvent<ActivityModel>) => void;
+    }
+    interface ElsaDropdownProperty {
+        "propertyDescriptor"?: ActivityPropertyDescriptor;
+        "propertyModel"?: ActivityDefinitionProperty;
     }
     interface ElsaModalDialog {
     }
@@ -203,6 +218,7 @@ declare namespace LocalJSX {
         "elsa-checkbox-property": ElsaCheckboxProperty;
         "elsa-designer-tree": ElsaDesignerTree;
         "elsa-designer-tree-activity": ElsaDesignerTreeActivity;
+        "elsa-dropdown-property": ElsaDropdownProperty;
         "elsa-modal-dialog": ElsaModalDialog;
         "elsa-monaco": ElsaMonaco;
         "elsa-text-property": ElsaTextProperty;
@@ -221,6 +237,7 @@ declare module "@stencil/core" {
             "elsa-checkbox-property": LocalJSX.ElsaCheckboxProperty & JSXBase.HTMLAttributes<HTMLElsaCheckboxPropertyElement>;
             "elsa-designer-tree": LocalJSX.ElsaDesignerTree & JSXBase.HTMLAttributes<HTMLElsaDesignerTreeElement>;
             "elsa-designer-tree-activity": LocalJSX.ElsaDesignerTreeActivity & JSXBase.HTMLAttributes<HTMLElsaDesignerTreeActivityElement>;
+            "elsa-dropdown-property": LocalJSX.ElsaDropdownProperty & JSXBase.HTMLAttributes<HTMLElsaDropdownPropertyElement>;
             "elsa-modal-dialog": LocalJSX.ElsaModalDialog & JSXBase.HTMLAttributes<HTMLElsaModalDialogElement>;
             "elsa-monaco": LocalJSX.ElsaMonaco & JSXBase.HTMLAttributes<HTMLElsaMonacoElement>;
             "elsa-text-property": LocalJSX.ElsaTextProperty & JSXBase.HTMLAttributes<HTMLElsaTextPropertyElement>;

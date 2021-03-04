@@ -19,7 +19,7 @@ namespace Elsa.Activities.Entity
         public string? EntityName { get; set; }
 
         [ActivityProperty(
-            UIHint = ActivityPropertyUIHints.DropdownList,
+            UIHint = ActivityPropertyUIHints.Dropdown,
             Hint = "The Entity Changed Action to observe. Matches any action if no value is specified.",
             Options = new[] { "Added", "Updated", "Deleted" }
         )]
