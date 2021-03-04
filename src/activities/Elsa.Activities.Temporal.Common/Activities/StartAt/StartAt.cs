@@ -1,4 +1,4 @@
-using Elsa.Activities.Temporal.ActivityResults;
+using Elsa.Activities.Temporal.Common.ActivityResults;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Services;

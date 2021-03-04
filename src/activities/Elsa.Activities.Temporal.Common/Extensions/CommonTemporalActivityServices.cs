@@ -1,8 +1,8 @@
 using System;
-using Elsa.Activities.Temporal.Bookmarks;
-using Elsa.Activities.Temporal.Handlers;
-using Elsa.Activities.Temporal.Options;
-using Elsa.Activities.Temporal.StartupTasks;
+using Elsa.Activities.Temporal.Common.Bookmarks;
+using Elsa.Activities.Temporal.Common.Handlers;
+using Elsa.Activities.Temporal.Common.Options;
+using Elsa.Activities.Temporal.Common.StartupTasks;
 using Elsa.Runtime;
 using Microsoft.Extensions.DependencyInjection;
 

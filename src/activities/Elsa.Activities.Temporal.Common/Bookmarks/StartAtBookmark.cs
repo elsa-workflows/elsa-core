@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Elsa.Bookmarks;
 using NodaTime;
 
-namespace Elsa.Activities.Temporal.Bookmarks
+namespace Elsa.Activities.Temporal.Common.Bookmarks
 {
     public class StartAtBookmark : IBookmark
     {
