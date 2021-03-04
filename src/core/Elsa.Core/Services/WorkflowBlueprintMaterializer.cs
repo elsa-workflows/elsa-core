@@ -5,16 +5,19 @@ using System.Threading.Tasks;
 using Elsa.ActivityProviders;
 using Elsa.Models;
 using Elsa.Services.Models;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Services
 {
     public class WorkflowBlueprintMaterializer : IWorkflowBlueprintMaterializer
     {
         private readonly IActivityTypeService _activityTypeService;
+        private readonly ILogger _logger;
 
-        public WorkflowBlueprintMaterializer(IActivityTypeService activityTypeService)
+        public WorkflowBlueprintMaterializer(IActivityTypeService activityTypeService, ILogger<WorkflowBlueprintMaterializer> logger)
         {
             _activityTypeService = activityTypeService;
+            _logger = logger;
         }
         
         public async Task<IWorkflowBlueprint> CreateWorkflowBlueprintAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken)
@@ -63,7 +66,14 @@ namespace Elsa.Services
                 
                 foreach (var property in activityDefinition.Properties)
                 {
-                    var prop = props.First(x => x.Name == property.Name);
+                    var prop = props.FirstOrDefault(x => x.Name == property.Name);
+
+                    if (prop == null)
+                    {
+                        _logger.LogWarning("Could not find the specified property '{PropertyName}' for activity type {ActivityTypeName}. The most likely reason is that the activity property was renamed/removed/refactored after the workflow definition was created", property.Name, activityType.Type.Name);
+                        continue;
+                    }
+                    
                     var provider = new ExpressionActivityPropertyValueProvider(property.Expression, property.Syntax, prop.PropertyType);
                     propertyProviders.AddProvider(activityDefinition.ActivityId, property.Name, provider);
                 }
