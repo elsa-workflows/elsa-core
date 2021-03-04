@@ -1,9 +1,7 @@
 ﻿import {ActivityModel, ActivityPropertyDescriptor} from "../models/";
 import {PropertyDisplayDriver} from "./property-display-driver";
-import {NullPropertyDriver, SingleLineDriver} from "../property-display-drivers";
+import {CheckBoxDriver, CheckListDriver, MultilineDriver, NullPropertyDriver, SingleLineDriver} from "../property-display-drivers";
 import {Map} from '../utils/utils';
-import {MultilineDriver} from "../property-display-drivers/multiline-driver";
-import {CheckListDriver} from "../property-display-drivers/check-list-driver";
 
 export type PropertyDisplayDriverMap = Map<() => PropertyDisplayDriver>;
 
@@ -15,7 +13,8 @@ export class PropertyDisplayManager {
     this.drivers = {
       'single-line': () => new SingleLineDriver(),
       'multi-line': () => new MultilineDriver(),
-      'check-list': () => new CheckListDriver()
+      'check-list': () => new CheckListDriver(),
+      'checkbox': () => new CheckBoxDriver()
     };
   }
 

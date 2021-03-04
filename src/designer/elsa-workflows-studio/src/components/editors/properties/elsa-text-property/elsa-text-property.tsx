@@ -9,7 +9,7 @@ import {MonacoValueChangedArgs} from "../../monaco/elsa-monaco/elsa-monaco";
   styleUrl: 'elsa-text-property.css',
   shadow: false,
 })
-export class ElsaSingleLineProperty {
+export class ElsaTextProperty {
 
   @Prop() propertyDescriptor: ActivityPropertyDescriptor;
   @Prop() propertyModel: ActivityDefinitionProperty;
@@ -125,4 +125,4 @@ export class ElsaSingleLineProperty {
   }
 }
 
-Tunnel.injectProps(ElsaSingleLineProperty, ['serverUrl', 'workflowDefinitionId']);
+Tunnel.injectProps(ElsaTextProperty, ['serverUrl', 'workflowDefinitionId']);
