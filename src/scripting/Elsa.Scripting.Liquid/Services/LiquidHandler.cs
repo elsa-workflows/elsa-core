@@ -28,7 +28,7 @@ namespace Elsa.Scripting.Liquid.Services
         {
             var templateContext = await CreateTemplateContextAsync(context, cancellationToken);
             var result = await _liquidTemplateManager.RenderAsync(expression, templateContext);
-            return string.IsNullOrWhiteSpace(result) ? default : Convert.ChangeType(result, returnType);
+            return string.IsNullOrWhiteSpace(result) ? default : result.Parse(returnType);
         }
 
         private async Task<TemplateContext> CreateTemplateContextAsync(ActivityExecutionContext workflowContext, CancellationToken cancellationToken)

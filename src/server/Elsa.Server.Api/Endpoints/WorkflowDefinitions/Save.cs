@@ -50,7 +50,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             workflowDefinition.Connections = request.Connections;
             workflowDefinition.Description = request.Description?.Trim();
             workflowDefinition.Name = request.Name?.Trim();
-            workflowDefinition.Variables = request.Variables;
+            workflowDefinition.Variables = request.Variables ?? new Variables();
             workflowDefinition.IsEnabled = request.Enabled;
             workflowDefinition.IsSingleton = request.IsSingleton;
             workflowDefinition.PersistenceBehavior = request.PersistenceBehavior;
