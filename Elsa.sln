@@ -174,7 +174,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.DistributedLocking.Red
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.DistributedLocking.SqlServer", "src\locking\Elsa.DistributedLocking.SqlServer\Elsa.DistributedLocking.SqlServer.csproj", "{78F2A9DC-3092-4371-ABFE-87C5DA4DE351}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.Temporal", "src\activities\Elsa.Activities.Temporal.Common\Elsa.Activities.Temporal.Common.csproj", "{74E83393-50AF-41E3-A1C8-97202673CD85}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.Temporal.Common", "src\activities\Elsa.Activities.Temporal.Common\Elsa.Activities.Temporal.Common.csproj", "{74E83393-50AF-41E3-A1C8-97202673CD85}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ElsaDashboard.Abstractions", "src\dashboards\blazor\ElsaDashboard.Abstractions\ElsaDashboard.Abstractions.csproj", "{599CEC92-0EC9-4378-A1B6-E7741B1E4E57}"
 EndProject
@@ -218,7 +218,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.Rebus", "sr
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.UserTaskConsole", "src\samples\console\Elsa.Samples.UserTaskConsole\Elsa.Samples.UserTaskConsole.csproj", "{9BF25FEF-B667-4BB0-882D-6911B9F5B3C7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.ForEachLoopConsole", "src\samples\console\Elsa.Samples.ForEachLoopConsole\Elsa.Samples.ForEachLoopConsole.csproj", "{43EC7BEE-35C5-4B70-AC39-C89696710310}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.ForEachLoopConsole", "src\samples\console\Elsa.Samples.ForEachLoopConsole\Elsa.Samples.ForEachLoopConsole.csproj", "{43EC7BEE-35C5-4B70-AC39-C89696710310}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "designer", "designer", "{335B3523-C8FC-471A-8107-2268D797C8C3}"
 EndProject
@@ -226,19 +226,21 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "bindings", "bindings", "{BB
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "blazor", "blazor", "{8B6B40A8-DF21-4CD2-BABD-474B79D0C3AF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.BreakLoop", "src\samples\worker\Elsa.Samples.BreakLoop\Elsa.Samples.BreakLoop.csproj", "{5C005CC7-B5F2-49C3-8A8B-7640FCDBEE50}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.BreakLoop", "src\samples\worker\Elsa.Samples.BreakLoop\Elsa.Samples.BreakLoop.csproj", "{5C005CC7-B5F2-49C3-8A8B-7640FCDBEE50}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Designer.Bindings.Blazor", "src\designer\bindings\blazor\Elsa.Designer.Bindings.Blazor\Elsa.Designer.Bindings.Blazor.csproj", "{45A06CA3-199B-4650-8880-30DDF2E38E19}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Designer.Bindings.Blazor", "src\designer\bindings\blazor\Elsa.Designer.Bindings.Blazor\Elsa.Designer.Bindings.Blazor.csproj", "{45A06CA3-199B-4650-8880-30DDF2E38E19}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.Timers.Quartz", "src\samples\worker\Elsa.Samples.Timers.Quartz\Elsa.Samples.Timers.Quartz.csproj", "{FE724143-B24C-43DA-BBF5-15431BCA6E27}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.Timers.Quartz", "src\samples\worker\Elsa.Samples.Timers.Quartz\Elsa.Samples.Timers.Quartz.csproj", "{FE724143-B24C-43DA-BBF5-15431BCA6E27}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.AutoConnectNextActivityConsole", "src\samples\console\Elsa.Samples.AutoConnectNextActivityConsole\Elsa.Samples.AutoConnectNextActivityConsole.csproj", "{DB42A8DA-06CA-4402-9C87-8F7F055AB37E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AutoConnectNextActivityConsole", "src\samples\console\Elsa.Samples.AutoConnectNextActivityConsole\Elsa.Samples.AutoConnectNextActivityConsole.csproj", "{DB42A8DA-06CA-4402-9C87-8F7F055AB37E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.UnitTests", "test\unit\Elsa.UnitTests\Elsa.UnitTests.csproj", "{F822DE2F-A91D-416E-BF4A-A6C466C1BF0A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.UnitTests", "test\unit\Elsa.UnitTests\Elsa.UnitTests.csproj", "{F822DE2F-A91D-416E-BF4A-A6C466C1BF0A}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "unit", "unit", "{E1378A53-424A-4E50-9D03-71DB9F7EE57C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.InvokeWorkflowFromController", "src\samples\aspnet\Elsa.Samples.InvokeWorkflowFromController\Elsa.Samples.InvokeWorkflowFromController.csproj", "{346A3A87-A839-499A-A143-3D267A951905}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.InvokeWorkflowFromController", "src\samples\aspnet\Elsa.Samples.InvokeWorkflowFromController\Elsa.Samples.InvokeWorkflowFromController.csproj", "{346A3A87-A839-499A-A143-3D267A951905}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Persistence.EntityFramework.PostgreSql", "src\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.PostgreSql\Elsa.Persistence.EntityFramework.PostgreSql.csproj", "{E3EA6449-28EC-48E4-91C4-E82DE08A7DD9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -574,6 +576,10 @@ Global
 		{346A3A87-A839-499A-A143-3D267A951905}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{346A3A87-A839-499A-A143-3D267A951905}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{346A3A87-A839-499A-A143-3D267A951905}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E3EA6449-28EC-48E4-91C4-E82DE08A7DD9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E3EA6449-28EC-48E4-91C4-E82DE08A7DD9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E3EA6449-28EC-48E4-91C4-E82DE08A7DD9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E3EA6449-28EC-48E4-91C4-E82DE08A7DD9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -685,9 +691,10 @@ Global
 		{45A06CA3-199B-4650-8880-30DDF2E38E19} = {8B6B40A8-DF21-4CD2-BABD-474B79D0C3AF}
 		{FE724143-B24C-43DA-BBF5-15431BCA6E27} = {E42743A0-FBDD-4150-9D53-6000496D9B87}
 		{DB42A8DA-06CA-4402-9C87-8F7F055AB37E} = {FC9F520F-BA51-4AD2-BFEE-EF787798E734}
-		{E1378A53-424A-4E50-9D03-71DB9F7EE57C} = {AB1AE008-6FD6-414C-8E88-D735F42E1FA6}
 		{F822DE2F-A91D-416E-BF4A-A6C466C1BF0A} = {E1378A53-424A-4E50-9D03-71DB9F7EE57C}
+		{E1378A53-424A-4E50-9D03-71DB9F7EE57C} = {AB1AE008-6FD6-414C-8E88-D735F42E1FA6}
 		{346A3A87-A839-499A-A143-3D267A951905} = {22E75696-6FE9-436A-9097-EE21C603F818}
+		{E3EA6449-28EC-48E4-91C4-E82DE08A7DD9} = {C865B0FD-E505-48F0-BFAF-0D4D7C1B5CA1}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}
