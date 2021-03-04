@@ -70,7 +70,7 @@ namespace Elsa.Services
 
                     if (prop == null)
                     {
-                        _logger.LogWarning("Could not find the specified property '{PropertyName}' for activity type {ActivityTypeName}. The most likely reason is that the activity property was renamed/removed/refactored after the workflow definition was created", property.Name, activityType.Type.Name);
+                        _logger.LogWarning("Could not find the specified property '{PropertyName}' for activity type {ActivityTypeName}. Was the activity property renamed/removed/refactored after the workflow definition was created?", property.Name, activityType.Type.Name);
                         continue;
                     }
                     
