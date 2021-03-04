@@ -43,8 +43,8 @@ namespace Elsa.Activities.Http
         /// <summary>
         /// The HTTP methods that triggers this activity.
         /// </summary>
-        [ActivityProperty(UIHint = ActivityPropertyUIHints.CheckList, Hint = "The HTTP methods that triggers this activity.", Options = new[] { "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD" })]
-        public HashSet<string> Methods { get; set; } = new HashSet<string>();
+        [ActivityProperty(UIHint = ActivityPropertyUIHints.CheckList, Hint = "The HTTP methods that trigger this activity.", Options = new[] { "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD" })]
+        public HashSet<string> Methods { get; set; } = new();
 
         /// <summary>
         /// A value indicating whether the HTTP request content body should be read and stored as part of the HTTP request model.
