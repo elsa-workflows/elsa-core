@@ -79,7 +79,7 @@ namespace Elsa.Metadata
                 return ActivityPropertyUIHints.SingleLine;
 
             if (typeof(IEnumerable).IsAssignableFrom(type))
-                return ActivityPropertyUIHints.DropdownList;
+                return ActivityPropertyUIHints.Dropdown;
 
             return ActivityPropertyUIHints.SingleLine;
         }

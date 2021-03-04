@@ -57,7 +57,7 @@ export class ElsaCheckListProperty {
                 <div class="flex items-center h-5">
                   <input id={inputId} type="checkbox" checked={isSelected} value={option} onChange={e => this.onCheckChanged(e)} class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded"/>
                 </div>
-                <div class="ml-3 text-sm">
+                <div class="ml-3 mt-1 text-sm">
                   <label htmlFor={inputId} class="font-medium text-gray-700">{option}</label>
                 </div>
               </div>

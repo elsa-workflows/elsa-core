@@ -14,7 +14,7 @@ namespace Elsa.Activities.Http
 {
     [Action(
         Category = "HTTP",
-        DisplayName = "Write HTTP Response",
+        DisplayName = "HTTP Response",
         Description = "Write an HTTP response.",
         Outcomes = new[] { OutcomeNames.Done }
     )]
@@ -34,7 +34,7 @@ namespace Elsa.Activities.Http
         /// The HTTP status code to return.
         /// </summary>
         [ActivityProperty(
-            UIHint = ActivityPropertyUIHints.DropdownList,
+            UIHint = ActivityPropertyUIHints.Dropdown,
             Hint = "The HTTP status code to write.",
             Options = new[] { HttpStatusCode.OK, HttpStatusCode.Created, HttpStatusCode.Accepted, HttpStatusCode.NoContent, HttpStatusCode.Redirect, HttpStatusCode.BadRequest, HttpStatusCode.NotFound, HttpStatusCode.Conflict }
         )]
@@ -50,7 +50,7 @@ namespace Elsa.Activities.Http
         /// The Content-Type header to send along with the response.
         /// </summary>
         [ActivityProperty(
-            UIHint = ActivityPropertyUIHints.DropdownList,
+            UIHint = ActivityPropertyUIHints.Dropdown,
             Hint = "The HTTP content type header to write.",
             Options = new[]{ "text/plain", "text/html", "application/json", "application/xml" }
         )]
