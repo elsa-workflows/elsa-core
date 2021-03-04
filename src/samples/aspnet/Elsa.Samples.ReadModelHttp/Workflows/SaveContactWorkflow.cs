@@ -33,7 +33,7 @@ namespace Elsa.Samples.ReadModelHttp.Workflows
                     .WithContentType("application/json")
                     .WithContent(context =>
                     {
-                        var request = context.GetOutputFrom<HttpRequestModel>("HttpRequest");
+                        var request = context.GetOutputFrom<HttpRequestModel>("HttpRequest")!;
                         var contact = request.GetBody<Contact>();
                         return serializer.Serialize(contact);
                     }));

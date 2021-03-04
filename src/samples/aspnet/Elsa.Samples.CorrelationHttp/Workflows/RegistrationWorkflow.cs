@@ -24,7 +24,7 @@ namespace Elsa.Samples.CorrelationHttp.Workflows
                 .SetVariable(context => (Registration)((HttpRequestModel)(context.Input))?.Body)
                 
                 // Correlate the workflow by email address.
-                .Correlate(context => context.GetVariable<Registration>().Email)
+                .Correlate(context => context.GetVariable<Registration>()!.Email)
 
                 // Write an HTTP response with a hyperlink to continue the workflow (notice the presence of the "correlation" query string parameter). 
                 .WriteHttpResponse(activity => activity
@@ -32,7 +32,7 @@ namespace Elsa.Samples.CorrelationHttp.Workflows
                     .WithContentType("text/html")
                     .WithContent(context =>
                     {
-                        var registration = context.GetVariable<Registration>();
+                        var registration = context.GetVariable<Registration>()!;
                         return $"Welcome onboard, {registration.Name}! Please <a href=\"http://localhost:8201/confirm?correlation={registration.Email}\">confirm your registration</a>";
                     }))
                 
