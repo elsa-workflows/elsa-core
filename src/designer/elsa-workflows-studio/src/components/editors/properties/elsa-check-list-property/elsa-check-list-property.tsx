@@ -7,12 +7,10 @@ import {parseJson} from "../../../../utils/utils";
   styleUrl: 'elsa-check-list-property.css',
   shadow: false,
 })
-export class ElsaSingleLineProperty {
+export class ElsaCheckListProperty {
 
   @Prop() propertyDescriptor: ActivityPropertyDescriptor;
   @Prop() propertyModel: ActivityDefinitionProperty;
-  @Prop({mutable: true}) serverUrl: string;
-  @Prop({mutable: true}) workflowDefinitionId: string;
   @State() currentValues?: Array<string>
   monacoEditor: HTMLElsaMonacoElement;
 
