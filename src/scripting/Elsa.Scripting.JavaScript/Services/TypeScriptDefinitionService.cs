@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using AutoMapper.Internal;
 using Elsa.Models;
+using NodaTime;
 
 namespace Elsa.Scripting.JavaScript.Services
 {
@@ -66,16 +68,28 @@ namespace Elsa.Scripting.JavaScript.Services
                     CollectType(variable!.GetType(), collectedTypes);
             }
 
+            CollectType<Instant>(collectedTypes);
+            CollectType<Duration>(collectedTypes);
+            CollectType<Period>(collectedTypes);
+            CollectType<LocalDate>(collectedTypes);
+            CollectType<LocalTime>(collectedTypes);
+            CollectType<LocalDateTime>(collectedTypes);
+
             return collectedTypes;
         }
 
-        private void CollectType(Type type, HashSet<Type> collectedTypes)
+        private static void CollectType<T>(ISet<Type> collectedTypes) => CollectType(typeof(T), collectedTypes);
+
+        private static void CollectType(Type type, ISet<Type> collectedTypes)
         {
             if (type.IsNullableType())
             {
                 CollectType(type.GetTypeOfNullable(), collectedTypes);
                 return;
             }
+
+            if (collectedTypes.Contains(type))
+                return;
 
             collectedTypes.Add(type);
 
@@ -88,17 +102,34 @@ namespace Elsa.Scripting.JavaScript.Services
 
             foreach (var propertyType in propertyTypes)
                 CollectType(propertyType, collectedTypes);
+
+            // Collect method return and argument types.
+            var methods = type.GetMethods(BindingFlags.Public);
+
+            foreach (var method in methods)
+            {
+                var returnType = method.ReturnType;
+
+                if (returnType != typeof(void))
+                    CollectType(returnType, collectedTypes);
+
+                var argTypes = method.GetParameters().Select(x => x.ParameterType).ToList();
+
+                foreach (var argType in argTypes)
+                    CollectType(argType, collectedTypes);
+            }
         }
 
         private void RenderTypeDeclaration(Type type, HashSet<Type> collectedTypes, StringBuilder output)
         {
-            RenderTypeDeclaration("interface", type, collectedTypes, output);
+            RenderTypeDeclaration("class", type, collectedTypes, output);
         }
 
         private void RenderTypeDeclaration(string symbol, Type type, HashSet<Type> collectedTypes, StringBuilder output)
         {
             var typeName = type.Name;
             var properties = type.GetProperties();
+            var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static).Where(x => !x.IsSpecialName).ToList();
 
             output.AppendLine($"declare {symbol} {typeName} {{");
 
@@ -107,6 +138,24 @@ namespace Elsa.Scripting.JavaScript.Services
                 var typeScriptType = GetTypeScriptType(property.PropertyType, collectedTypes);
                 var propertyName = property.PropertyType.IsNullableType() ? $"{property.Name}?" : property.Name;
                 output.AppendLine($"{propertyName}: {typeScriptType};");
+            }
+
+            foreach (var method in methods)
+            {
+                if (method.IsStatic)
+                    output.Append("static ");
+
+                output.Append($"{method.Name}(");
+
+                var arguments = method.GetParameters().Select(x => $"{x.Name}:{GetTypeScriptType(x.ParameterType, collectedTypes)}");
+                output.Append(string.Join(", ", arguments));
+                output.Append(")");
+
+                var returnType = method.ReturnType;
+                if (returnType != typeof(void))
+                    output.AppendFormat(":{0}", GetTypeScriptType(returnType, collectedTypes));
+
+                output.AppendLine(";");
             }
 
             output.AppendLine("}");
