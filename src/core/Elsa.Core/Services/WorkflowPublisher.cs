@@ -1,7 +1,9 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Events;
 using Elsa.Models;
 using Elsa.Persistence;
+using MediatR;
 using WorkflowDefinitionIdSpecification = Elsa.Persistence.Specifications.WorkflowInstances.WorkflowDefinitionIdSpecification;
 
 namespace Elsa.Services
@@ -12,13 +14,15 @@ namespace Elsa.Services
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
         private readonly IIdGenerator _idGenerator;
         private readonly ICloner _cloner;
+        private readonly IMediator _mediator;
 
-        public WorkflowPublisher(IWorkflowDefinitionStore workflowDefinitionStore, IWorkflowInstanceStore workflowInstanceStore, IIdGenerator idGenerator, ICloner cloner)
+        public WorkflowPublisher(IWorkflowDefinitionStore workflowDefinitionStore, IWorkflowInstanceStore workflowInstanceStore, IIdGenerator idGenerator, ICloner cloner, IMediator mediator)
         {
             _workflowDefinitionStore = workflowDefinitionStore;
             _workflowInstanceStore = workflowInstanceStore;
             _idGenerator = idGenerator;
             _cloner = cloner;
+            _mediator = mediator;
         }
 
         public WorkflowDefinition New()
@@ -74,6 +78,7 @@ namespace Elsa.Services
             workflowDefinition = Initialize(workflowDefinition);
 
             await _workflowDefinitionStore.SaveAsync(workflowDefinition, cancellationToken);
+            await _mediator.Publish(new WorkflowDefinitionPublished(workflowDefinition), cancellationToken);
             return workflowDefinition;
         }
 
