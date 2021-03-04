@@ -16,6 +16,6 @@ namespace Elsa.Services
                 yield return workflow;
         }
         
-        protected virtual ValueTask<IEnumerable<IWorkflowBlueprint>> OnGetWorkflowsAsync(CancellationToken cancellationToken) => new ValueTask<IEnumerable<IWorkflowBlueprint>>(new IWorkflowBlueprint[0]);
+        protected virtual ValueTask<IEnumerable<IWorkflowBlueprint>> OnGetWorkflowsAsync(CancellationToken cancellationToken) => new(new IWorkflowBlueprint[0]);
     }
 }

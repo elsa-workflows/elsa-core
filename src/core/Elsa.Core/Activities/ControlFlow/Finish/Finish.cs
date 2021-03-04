@@ -49,7 +49,7 @@ namespace Elsa.Activities.ControlFlow
             
             context.WorkflowInstance.Scopes = new SimpleStack<ActivityScope>(scopes.AsEnumerable().Reverse());
             
-            // Return output
+            // Return output.
             var output = new FinishOutput(OutputValue, OutcomeNames);
 
             return Output(output);
