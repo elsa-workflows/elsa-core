@@ -50,8 +50,7 @@ namespace Sample25
                         ifElse
                             .When(OutcomeNames.True)
                             .Then<WriteLine>(x => x.TextExpression = new LiteralExpression("Data exceeds threshold (TRUE)"));
-                    })
-                .Then<WriteLine>(x => x.TextExpression = new JavaScriptExpression<string>("(`Finished data processing. Result: ${Absolute.Result}`)"));
+                    });
         }
     }
 }
