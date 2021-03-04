@@ -44,7 +44,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IAbsoluteUrlProvider, DefaultAbsoluteUrlProvider>()
                 .AddBookmarkProvider<HttpEndpointBookmarkProvider>()
                 .AddHttpContextAccessor()
-                .AddNotificationHandlers(typeof(HttpJavaScriptHandler))
+                .AddNotificationHandlers(typeof(ConfigureJavaScriptEngine))
                 .AddDataProtection();
             
             return services

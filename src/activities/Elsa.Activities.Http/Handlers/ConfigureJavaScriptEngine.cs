@@ -10,13 +10,13 @@ using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Activities.Http.Handlers
 {
-    public class HttpJavaScriptHandler : INotificationHandler<EvaluatingJavaScriptExpression>
+    public class ConfigureJavaScriptEngine : INotificationHandler<EvaluatingJavaScriptExpression>
     {
         private readonly ITokenService _tokenService;
         private readonly IAbsoluteUrlProvider _absoluteUrlProvider;
         private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public HttpJavaScriptHandler(
+        public ConfigureJavaScriptEngine(
             ITokenService tokenService,
             IAbsoluteUrlProvider absoluteUrlProvider,
             IHttpContextAccessor httpContextAccessor)
