@@ -23,7 +23,7 @@
     "test": "stencil test --spec --e2e",
     "test.watch": "stencil test --spec --e2e --watchAll",
     "generate": "stencil generate",
-    "build:tailwind": "tailwind build ./src/globals/tailwind.css -o ./src/assets/styles/tailwind.css"
+    "build:tailwind": "tailwind build ./tailwind.css -o ./src/globals/tailwind.css"
   },
   "dependencies": {
     "@fullhuman/postcss-purgecss": "^4.0.2",

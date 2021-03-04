@@ -1,0 +1,8 @@
+﻿@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+svg.jtk-connector path {
+  @apply stroke-current;
+  @apply text-gray-400;
+}
