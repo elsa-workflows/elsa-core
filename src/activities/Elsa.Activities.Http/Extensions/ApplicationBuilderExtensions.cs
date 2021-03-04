@@ -10,7 +10,7 @@ namespace Microsoft.AspNetCore.Builder
         public static IApplicationBuilder UseHttpActivities(this IApplicationBuilder app)
         {
             return app
-                .UseMiddleware<ReceiveHttpRequestMiddleware>()
+                .UseMiddleware<HttpEndpointMiddleware>()
                 .UseRequestHandler<SignalRequestHandler>("/workflows/signal");
         }
 
