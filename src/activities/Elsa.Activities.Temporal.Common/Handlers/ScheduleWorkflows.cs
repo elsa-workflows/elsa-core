@@ -1,10 +1,10 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Activities.Temporal.ActivityResults;
+using Elsa.Activities.Temporal.Common.ActivityResults;
 using Elsa.Events;
 using MediatR;
 
-namespace Elsa.Activities.Temporal.Handlers
+namespace Elsa.Activities.Temporal.Common.Handlers
 {
     public class ScheduleWorkflows : INotificationHandler<WorkflowSuspended>
     {

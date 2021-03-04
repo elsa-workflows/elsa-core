@@ -1,7 +1,5 @@
 using System;
-
-using Elsa.Activities.Temporal.Services;
-
+using Elsa.Activities.Temporal.Common.Services;
 using NCrontab;
 
 using NodaTime;

@@ -32,7 +32,7 @@ namespace Elsa.Services
             propertyProviders.AddRange(await CreatePropertyProviders(workflowDefinition, cancellationToken));
 
             return new WorkflowBlueprint(
-                workflowDefinition.Id,
+                workflowDefinition.DefinitionId,
                 workflowDefinition.Version,
                 workflowDefinition.TenantId,
                 workflowDefinition.IsSingleton,

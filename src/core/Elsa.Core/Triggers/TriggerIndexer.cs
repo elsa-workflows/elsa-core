@@ -5,8 +5,10 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Bookmarks;
+using Elsa.Events;
 using Elsa.Services;
 using Elsa.Services.Models;
+using MediatR;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Triggers
@@ -19,6 +21,7 @@ namespace Elsa.Triggers
         private readonly IServiceProvider _serviceProvider;
         private readonly IWorkflowFactory _workflowFactory;
         private readonly ITriggerStore _triggerStore;
+        private readonly IMediator _mediator;
         private readonly ILogger _logger;
         private readonly Stopwatch _stopwatch = new();
 
@@ -29,6 +32,7 @@ namespace Elsa.Triggers
             IServiceProvider serviceProvider,
             IWorkflowFactory workflowFactory,
             ITriggerStore triggerStore,
+            IMediator mediator,
             ILogger<TriggerIndexer> logger)
         {
             _workflowRegistry = workflowRegistry;
@@ -37,6 +41,7 @@ namespace Elsa.Triggers
             _serviceProvider = serviceProvider;
             _workflowFactory = workflowFactory;
             _triggerStore = triggerStore;
+            _mediator = mediator;
             _logger = logger;
         }
 
@@ -45,6 +50,7 @@ namespace Elsa.Triggers
             var allWorkflowBlueprints = await _workflowRegistry.ListAsync(cancellationToken);
             var publishedWorkflowBlueprints = allWorkflowBlueprints.Where(x => x.IsPublished).ToList();
             await IndexTriggersAsync(publishedWorkflowBlueprints, cancellationToken);
+            await _mediator.Publish(new TriggerIndexingFinished(), cancellationToken);
         }
 
         private async Task IndexTriggersAsync(IEnumerable<IWorkflowBlueprint> workflowBlueprints, CancellationToken cancellationToken = default)
