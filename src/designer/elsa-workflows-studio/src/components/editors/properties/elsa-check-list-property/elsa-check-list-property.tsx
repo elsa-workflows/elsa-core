@@ -1,5 +1,6 @@
 import {Component, h, Prop, State} from '@stencil/core';
 import {ActivityDefinitionProperty, ActivityPropertyDescriptor} from "../../../../models";
+import {parseJson} from "../../../../utils/utils";
 
 @Component({
   tag: 'elsa-check-list-property',
@@ -16,8 +17,8 @@ export class ElsaSingleLineProperty {
   monacoEditor: HTMLElsaMonacoElement;
 
   async componentWillLoad() {
-    const expression = this.propertyModel.expression || '';
-    this.currentValues = expression.split(',');
+    const expression = this.propertyModel.expression || '[]';
+    this.currentValues = parseJson(expression) ?? [];
   }
 
   onCheckChanged(e: Event) {
@@ -38,9 +39,9 @@ export class ElsaSingleLineProperty {
     const fieldName = propertyName;
     const fieldLabel = propertyDescriptor.label || propertyName;
     const fieldHint = propertyDescriptor.hint;
-    const property = this.propertyModel;
     const options = propertyDescriptor.options as Array<any>;
-    const values = this.currentValues;
+    const values = this.currentValues.map(x => x ? x.trim() : '').filter(x => x.length > 0);
+    const valuesJson = JSON.stringify(values);
 
     return (
       <div>
@@ -67,7 +68,7 @@ export class ElsaSingleLineProperty {
         </div>
 
         {fieldHint ? <p class="mt-2 text-sm text-gray-500">{fieldHint}</p> : undefined}
-        <input type="hidden" name={fieldName} value={values.join(',')}/>
+        <input type="hidden" name={fieldName} value={valuesJson}/>
       </div>
     )
   }
