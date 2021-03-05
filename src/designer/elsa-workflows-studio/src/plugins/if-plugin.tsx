@@ -16,7 +16,7 @@ export class IfPlugin implements ElsaPlugin {
     if (descriptor.type !== 'If')
       return;
 
-    context.activityIcon = <IfIcon/>
+    context.activityIcon = <IfIcon/>;
   }
 
   onActivityDesignDisplaying(context: ActivityDesignDisplayContext) {
@@ -29,6 +29,6 @@ export class IfPlugin implements ElsaPlugin {
     const condition = props.find(x => x.name == 'Condition') || { expression: '' };
     const expression = condition.expression || '';
     context.bodyDisplay = <p>{expression}</p>;
-    context.activityIcon = <IfIcon/>
+    context.activityIcon = <IfIcon/>;
   }
 }

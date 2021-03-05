@@ -3,7 +3,7 @@ import {ActivityModel, ActivityPropertyDescriptor} from "../models";
 import {h, State} from "@stencil/core";
 import {getProperty, setActivityModelProperty} from "../utils/utils";
 
-export class CheckBoxDriver implements PropertyDisplayDriver {
+export class CheckboxDriver implements PropertyDisplayDriver {
 
   display(activity: ActivityModel, property: ActivityPropertyDescriptor) {
     const key = `${activity.activityId}:${property.name}`;

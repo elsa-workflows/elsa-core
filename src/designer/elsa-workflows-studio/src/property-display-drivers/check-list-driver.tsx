@@ -1,6 +1,6 @@
 ﻿import {PropertyDisplayDriver} from "../services/property-display-driver";
 import {ActivityModel, ActivityPropertyDescriptor} from "../models";
-import {h, State} from "@stencil/core";
+import {h} from "@stencil/core";
 import {getProperty, setActivityModelProperty} from "../utils/utils";
 
 export class CheckListDriver implements PropertyDisplayDriver {

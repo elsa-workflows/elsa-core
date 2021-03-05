@@ -1,10 +1,11 @@
 import {Component, Host, h, Prop, State, Event, EventEmitter, Listen, Watch} from '@stencil/core';
-import {addConnection, findActivity, getChildActivities, getInboundConnections, getOutboundConnections, removeActivity} from '../../../../utils/utils';
+import {Map, addConnection, findActivity, getChildActivities, getInboundConnections, getOutboundConnections, removeActivity} from '../../../../utils/utils';
 import {cleanup, destroy, updateConnections} from '../../../../utils/jsplumb-helper';
-import {ActivityDescriptor, ActivityModel, ConnectionModel, EventTypes, WorkflowModel} from "../../../../models";
+import {ActivityDescriptor, ActivityDesignDisplayContext, ActivityModel, ConnectionModel, EventTypes, WorkflowModel} from "../../../../models";
 import {eventBus} from '../../../../services/event-bus';
 import jsPlumb from "jsplumb";
 import uuid = jsPlumb.jsPlumbUtil.uuid;
+import {ActivityIcon} from "../../../icons/activity-icon";
 
 @Component({
   tag: 'elsa-designer-tree',
@@ -21,6 +22,7 @@ export class ElsaWorkflowDesigner {
   canvasElement: HTMLElement;
   parentActivityId?: string;
   parentActivityOutcome?: string;
+  activityDisplayContexts: Map<ActivityDesignDisplayContext> = {};
 
   @Watch('model')
   handleModelChanged(newValue: WorkflowModel) {
@@ -56,6 +58,23 @@ export class ElsaWorkflowDesigner {
 
   componentWillRender() {
     destroy();
+
+    const activityModels = this.workflowModel.activities;
+    const displayContexts: Map<ActivityDesignDisplayContext> = {};
+
+    for (const model of activityModels) {
+      const displayContext: ActivityDesignDisplayContext = {
+        activityModel: model,
+        activityIcon: <ActivityIcon/>,
+        bodyDisplay: <p>{model.description}</p>,
+        outcomes: [...model.outcomes]
+      };
+
+      eventBus.emit(EventTypes.ActivityDesignDisplaying, this, displayContext);
+      displayContexts[model.activityId] = displayContext;
+    }
+
+    this.activityDisplayContexts = displayContexts;
   }
 
   componentDidRender() {
@@ -235,12 +254,13 @@ export class ElsaWorkflowDesigner {
         {activities.map(x => {
           const activityId = x.activityId;
           const children = getChildActivities(this.workflowModel, activityId);
+          const displayContext = this.activityDisplayContexts[activityId];
 
           return <li key={x.activityId}>
             <div class="inline-flex flex flex-col items-center">
               {isRoot ? this.renderOutcomeButton(`start-button-plus-${x.activityId}`, '', e => this.onOutcomeButtonClick(e, null, null)) : undefined}
-              {this.renderActivity(x)}
-              {this.renderOutcomeButtons(x)}
+              {this.renderActivity(displayContext)}
+              {this.renderOutcomeButtons(displayContext)}
             </div>
             {children.length > 0 ? this.renderTree(children, false, renderedActivities) : undefined}
           </li>;
@@ -249,12 +269,12 @@ export class ElsaWorkflowDesigner {
     );
   }
 
-  renderOutcomeButtons(activity: ActivityModel) {
-    const activityId = activity.activityId;
+  renderOutcomeButtons(displayContext: ActivityDesignDisplayContext) {
+    const activityId = displayContext.activityModel.activityId;
 
     return (
       <div class="flex flex-row space-x-6">
-        {activity.outcomes.map(x => this.renderOutcomeButton(`${activityId}-${x}`, x, e => this.onOutcomeButtonClick(e, x, activityId)))}
+        {displayContext.outcomes.map(x => this.renderOutcomeButton(`${activityId}-${x}`, x, e => this.onOutcomeButtonClick(e, x, activityId)))}
       </div>
     );
   }
@@ -273,8 +293,8 @@ export class ElsaWorkflowDesigner {
     );
   }
 
-  renderActivity(activity: ActivityModel) {
-    return <elsa-designer-tree-activity activityModel={activity}/>;
+  renderActivity(displayContext: ActivityDesignDisplayContext) {
+    return <elsa-designer-tree-activity displayContext={displayContext}/>;
   }
 
   getJsPlumbConnections(): Array<any> {
@@ -298,14 +318,17 @@ export class ElsaWorkflowDesigner {
         }]
     });
 
-    const sourceConnections = this.workflowModel.activities.flatMap(activity => activity.outcomes.map(x =>
-      ({
-        sourceId: `activity-${activity.activityId}`,
-        sourceActivityId: activity.activityId,
-        targetId: `${activity.activityId}-${x}`,
-        targetActivityId: undefined,
-        outcome: x
-      })));
+    const sourceConnections = this.workflowModel.activities.flatMap(activity => {
+      const displayContext = this.activityDisplayContexts[activity.activityId];
+      return displayContext.outcomes.map(x =>
+        ({
+          sourceId: `activity-${activity.activityId}`,
+          sourceActivityId: activity.activityId,
+          targetId: `${activity.activityId}-${x}`,
+          targetActivityId: undefined,
+          outcome: x
+        }));
+    });
 
     const connections = this.workflowModel.connections.flatMap(x => [
       {
@@ -330,12 +353,16 @@ export class ElsaWorkflowDesigner {
         outcome: undefined
       }));
 
-    const otherSourceEndpoints = this.workflowModel.activities.flatMap(activity => activity.outcomes.map(x =>
-      ({
-        sourceId: `${activity.activityId}-${x}`,
-        sourceActivityId: activity.activityId,
-        outcome: x
-      })));
+    const otherSourceEndpoints = this.workflowModel.activities.flatMap(activity => {
+      const displayContext = this.activityDisplayContexts[activity.activityId];
+
+      return displayContext.outcomes.map(x =>
+        ({
+          sourceId: `${activity.activityId}-${x}`,
+          sourceActivityId: activity.activityId,
+          outcome: x
+        }));
+    });
 
     return [...rootSourceEndpoints, ...otherSourceEndpoints];
   }

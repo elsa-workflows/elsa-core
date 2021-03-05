@@ -16,7 +16,7 @@ export class HttpEndpointPlugin implements ElsaPlugin {
     if (descriptor.type !== 'HttpEndpoint')
       return;
 
-    context.activityIcon = <HttpEndpointIcon/>
+    context.activityIcon = <HttpEndpointIcon/>;
   }
 
   onActivityDisplaying(context: ActivityDesignDisplayContext) {
@@ -28,6 +28,6 @@ export class HttpEndpointPlugin implements ElsaPlugin {
     const props = activityModel.properties || [];
     const path = props.find(x => x.name == 'Path') || { expression: '' };
     context.bodyDisplay = <p>{path.expression}</p>;
-    context.activityIcon = <HttpEndpointIcon/>
+    context.activityIcon = <HttpEndpointIcon/>;
   }
 }
