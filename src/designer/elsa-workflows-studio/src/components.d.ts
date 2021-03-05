@@ -5,7 +5,7 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
-import { ActivityDefinitionProperty, ActivityModel, ActivityPropertyDescriptor, WorkflowDefinition, WorkflowModel } from "./models";
+import { ActivityDefinitionProperty, ActivityDesignDisplayContext, ActivityModel, ActivityPropertyDescriptor, WorkflowDefinition, WorkflowModel } from "./models";
 import { MonacoValueChangedArgs } from "./components/editors/monaco/elsa-monaco/elsa-monaco";
 export namespace Components {
     interface ElsaActivityEditorModal {
@@ -24,12 +24,18 @@ export namespace Components {
         "model": WorkflowModel;
     }
     interface ElsaDesignerTreeActivity {
-        "activityModel": ActivityModel;
+        "displayContext": ActivityDesignDisplayContext;
         "icon": string;
     }
     interface ElsaDropdownProperty {
         "propertyDescriptor": ActivityPropertyDescriptor;
         "propertyModel": ActivityDefinitionProperty;
+    }
+    interface ElsaInputTags {
+        "fieldId"?: string;
+        "fieldName"?: string;
+        "placeHolder"?: string;
+        "values"?: Array<string>;
     }
     interface ElsaModalDialog {
         "hide": (animate: boolean) => Promise<void>;
@@ -41,6 +47,10 @@ export namespace Components {
         "language": string;
         "singleLineMode": boolean;
         "value": string;
+    }
+    interface ElsaMultiTextProperty {
+        "propertyDescriptor": ActivityPropertyDescriptor;
+        "propertyModel": ActivityDefinitionProperty;
     }
     interface ElsaTextProperty {
         "editorHeight": string;
@@ -105,6 +115,12 @@ declare global {
         prototype: HTMLElsaDropdownPropertyElement;
         new (): HTMLElsaDropdownPropertyElement;
     };
+    interface HTMLElsaInputTagsElement extends Components.ElsaInputTags, HTMLStencilElement {
+    }
+    var HTMLElsaInputTagsElement: {
+        prototype: HTMLElsaInputTagsElement;
+        new (): HTMLElsaInputTagsElement;
+    };
     interface HTMLElsaModalDialogElement extends Components.ElsaModalDialog, HTMLStencilElement {
     }
     var HTMLElsaModalDialogElement: {
@@ -116,6 +132,12 @@ declare global {
     var HTMLElsaMonacoElement: {
         prototype: HTMLElsaMonacoElement;
         new (): HTMLElsaMonacoElement;
+    };
+    interface HTMLElsaMultiTextPropertyElement extends Components.ElsaMultiTextProperty, HTMLStencilElement {
+    }
+    var HTMLElsaMultiTextPropertyElement: {
+        prototype: HTMLElsaMultiTextPropertyElement;
+        new (): HTMLElsaMultiTextPropertyElement;
     };
     interface HTMLElsaTextPropertyElement extends Components.ElsaTextProperty, HTMLStencilElement {
     }
@@ -149,8 +171,10 @@ declare global {
         "elsa-designer-tree": HTMLElsaDesignerTreeElement;
         "elsa-designer-tree-activity": HTMLElsaDesignerTreeActivityElement;
         "elsa-dropdown-property": HTMLElsaDropdownPropertyElement;
+        "elsa-input-tags": HTMLElsaInputTagsElement;
         "elsa-modal-dialog": HTMLElsaModalDialogElement;
         "elsa-monaco": HTMLElsaMonacoElement;
+        "elsa-multi-text-property": HTMLElsaMultiTextPropertyElement;
         "elsa-text-property": HTMLElsaTextPropertyElement;
         "elsa-workflow-editor": HTMLElsaWorkflowEditorElement;
         "elsa-workflow-publish-button": HTMLElsaWorkflowPublishButtonElement;
@@ -175,7 +199,7 @@ declare namespace LocalJSX {
         "onWorkflow-changed"?: (event: CustomEvent<WorkflowModel>) => void;
     }
     interface ElsaDesignerTreeActivity {
-        "activityModel"?: ActivityModel;
+        "displayContext"?: ActivityDesignDisplayContext;
         "icon"?: string;
         "onEdit-activity"?: (event: CustomEvent<ActivityModel>) => void;
         "onRemove-activity"?: (event: CustomEvent<ActivityModel>) => void;
@@ -183,6 +207,12 @@ declare namespace LocalJSX {
     interface ElsaDropdownProperty {
         "propertyDescriptor"?: ActivityPropertyDescriptor;
         "propertyModel"?: ActivityDefinitionProperty;
+    }
+    interface ElsaInputTags {
+        "fieldId"?: string;
+        "fieldName"?: string;
+        "placeHolder"?: string;
+        "values"?: Array<string>;
     }
     interface ElsaModalDialog {
     }
@@ -192,6 +222,10 @@ declare namespace LocalJSX {
         "onValueChanged"?: (event: CustomEvent<MonacoValueChangedArgs>) => void;
         "singleLineMode"?: boolean;
         "value"?: string;
+    }
+    interface ElsaMultiTextProperty {
+        "propertyDescriptor"?: ActivityPropertyDescriptor;
+        "propertyModel"?: ActivityDefinitionProperty;
     }
     interface ElsaTextProperty {
         "editorHeight"?: string;
@@ -219,8 +253,10 @@ declare namespace LocalJSX {
         "elsa-designer-tree": ElsaDesignerTree;
         "elsa-designer-tree-activity": ElsaDesignerTreeActivity;
         "elsa-dropdown-property": ElsaDropdownProperty;
+        "elsa-input-tags": ElsaInputTags;
         "elsa-modal-dialog": ElsaModalDialog;
         "elsa-monaco": ElsaMonaco;
+        "elsa-multi-text-property": ElsaMultiTextProperty;
         "elsa-text-property": ElsaTextProperty;
         "elsa-workflow-editor": ElsaWorkflowEditor;
         "elsa-workflow-publish-button": ElsaWorkflowPublishButton;
@@ -238,8 +274,10 @@ declare module "@stencil/core" {
             "elsa-designer-tree": LocalJSX.ElsaDesignerTree & JSXBase.HTMLAttributes<HTMLElsaDesignerTreeElement>;
             "elsa-designer-tree-activity": LocalJSX.ElsaDesignerTreeActivity & JSXBase.HTMLAttributes<HTMLElsaDesignerTreeActivityElement>;
             "elsa-dropdown-property": LocalJSX.ElsaDropdownProperty & JSXBase.HTMLAttributes<HTMLElsaDropdownPropertyElement>;
+            "elsa-input-tags": LocalJSX.ElsaInputTags & JSXBase.HTMLAttributes<HTMLElsaInputTagsElement>;
             "elsa-modal-dialog": LocalJSX.ElsaModalDialog & JSXBase.HTMLAttributes<HTMLElsaModalDialogElement>;
             "elsa-monaco": LocalJSX.ElsaMonaco & JSXBase.HTMLAttributes<HTMLElsaMonacoElement>;
+            "elsa-multi-text-property": LocalJSX.ElsaMultiTextProperty & JSXBase.HTMLAttributes<HTMLElsaMultiTextPropertyElement>;
             "elsa-text-property": LocalJSX.ElsaTextProperty & JSXBase.HTMLAttributes<HTMLElsaTextPropertyElement>;
             "elsa-workflow-editor": LocalJSX.ElsaWorkflowEditor & JSXBase.HTMLAttributes<HTMLElsaWorkflowEditorElement>;
             "elsa-workflow-publish-button": LocalJSX.ElsaWorkflowPublishButton & JSXBase.HTMLAttributes<HTMLElsaWorkflowPublishButtonElement>;

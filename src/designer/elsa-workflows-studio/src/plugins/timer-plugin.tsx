@@ -16,7 +16,7 @@ export class TimerPlugin implements ElsaPlugin {
     if (descriptor.type !== 'Timer')
       return;
 
-    context.activityIcon = <TimerIcon/>
+    context.activityIcon = <TimerIcon/>;
   }
 
   onActivityDesignDisplaying(context: ActivityDesignDisplayContext) {
@@ -29,6 +29,6 @@ export class TimerPlugin implements ElsaPlugin {
     const condition = props.find(x => x.name == 'Timeout') || { expression: '' };
     const expression = condition.expression || '';
     context.bodyDisplay = <p>{expression}</p>;
-    context.activityIcon = <TimerIcon/>
+    context.activityIcon = <TimerIcon/>;
   }
 }

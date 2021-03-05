@@ -14,23 +14,13 @@ export class ElsaDesignerTreeActivity {
 
   defaultIconClass = "h-10 w-10 text-blue-500";
 
-  @Prop() activityModel: ActivityModel
+  @Prop() displayContext: ActivityDesignDisplayContext
   @Prop() icon: string
   @Event({eventName: 'remove-activity', bubbles: true}) removeActivityEmitter: EventEmitter<ActivityModel>;
   @Event({eventName: 'edit-activity', bubbles: true}) editActivityEmitter: EventEmitter<ActivityModel>;
   @State() showMenu: boolean
   contextMenu: HTMLElement;
   el: HTMLElement;
-  displayContext: ActivityDesignDisplayContext;
-
-  componentWillRender() {
-    this.displayContext = {
-      activityModel: this.activityModel,
-      activityIcon: <ActivityIcon className="h-10 w-10 text-blue-500"/>,
-      bodyDisplay: <p>{this.activityModel.description}</p>
-    };
-    eventBus.emit(EventTypes.ActivityDesignDisplaying, this, this.displayContext);
-  }
 
   closeContextMenu() {
     leave(this.contextMenu);
@@ -43,18 +33,18 @@ export class ElsaDesignerTreeActivity {
   onEditActivityClick(e: Event) {
     e.preventDefault();
     this.closeContextMenu();
-    this.editActivityEmitter.emit(this.activityModel);
+    this.editActivityEmitter.emit(this.displayContext.activityModel);
   }
 
   onDeleteActivityClick(e: Event) {
     e.preventDefault();
     this.closeContextMenu();
-    this.removeActivityEmitter.emit(this.activityModel);
+    this.removeActivityEmitter.emit(this.displayContext.activityModel);
   }
 
   render() {
-
-    const activity = this.activityModel;
+    const displayContext = this.displayContext;
+    const activity = displayContext.activityModel;
     const activityId = activity.activityId;
     const displayName = activity.displayName && activity.displayName.length > 0 ? activity.displayName : activity.name && activity.name.length > 0 ? activity.name : activity.type
 
@@ -64,7 +54,7 @@ export class ElsaDesignerTreeActivity {
         <div class="p-5 border-b border-b-solid">
           <div class="flex justify-between space-x-8">
             <div class="flex-shrink-0">
-              {this.displayContext.activityIcon}
+              {displayContext.activityIcon}
             </div>
             <div class="flex-1 font-medium leading-8">
               <p>{displayName}</p>

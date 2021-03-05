@@ -8,6 +8,7 @@ namespace Elsa.Design
         public const string CheckList = "check-list";
         public const string RadioList = "radio-list";
         public const string Dropdown = "dropdown";
+        public const string MultiText = "multi-text";
         
         /// <summary>
         /// A list that allows the user to enter zero or more values.

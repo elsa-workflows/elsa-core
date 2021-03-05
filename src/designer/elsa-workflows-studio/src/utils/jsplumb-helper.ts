@@ -35,7 +35,6 @@ export function destroy() {
   }
 }
 
-
 export function updateConnections(container, connections, sourceEndpoints, targets) {
 
   destroy();

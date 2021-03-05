@@ -16,7 +16,7 @@ export class WriteLinePlugin implements ElsaPlugin {
     if (descriptor.type !== 'WriteLine')
       return;
 
-    context.activityIcon = <WriteLineIcon/>
+    context.activityIcon = <WriteLineIcon/>;
   }
 
   onActivityDesignDisplaying(context: ActivityDesignDisplayContext) {
@@ -29,6 +29,6 @@ export class WriteLinePlugin implements ElsaPlugin {
     const condition = props.find(x => x.name == 'Text') || { expression: '' };
     const expression = condition.expression || '';
     context.bodyDisplay = <p>{expression}</p>;
-    context.activityIcon = <WriteLineIcon/>
+    context.activityIcon = <WriteLineIcon/>;
   }
 }

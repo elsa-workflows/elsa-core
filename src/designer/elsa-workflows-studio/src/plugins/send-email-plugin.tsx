@@ -16,7 +16,7 @@ export class SendEmailPlugin implements ElsaPlugin {
     if (descriptor.type !== 'SendEmail')
       return;
 
-    context.activityIcon = <SendEmailIcon/>
+    context.activityIcon = <SendEmailIcon/>;
   }
 
   onActivityDesignDisplaying(context: ActivityDesignDisplayContext) {
@@ -29,6 +29,6 @@ export class SendEmailPlugin implements ElsaPlugin {
     const condition = props.find(x => x.name == 'To') || { expression: '' };
     const expression = condition.expression || '';
     context.bodyDisplay = <p>{expression}</p>;
-    context.activityIcon = <SendEmailIcon/>
+    context.activityIcon = <SendEmailIcon/>;
   }
 }

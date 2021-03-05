@@ -29,7 +29,7 @@ namespace Elsa.Services
             var connections = compositeActivityBlueprints.SelectMany(x => x.Connections).Distinct().ToList();
             var propertyProviders = compositeActivityBlueprints.SelectMany(x => x.ActivityPropertyProviders).ToList();
             
-            connections.AddRange(workflowDefinition.Connections.Select(x => ResolveConnection(x, activityBlueprints)));
+            connections.AddRange(workflowDefinition.Connections.Select(x => ResolveConnection(x, activityBlueprints)).Where(x => x != null).Select(x => x!));
             propertyProviders.AddRange(await CreatePropertyProviders(workflowDefinition, cancellationToken));
 
             return new WorkflowBlueprint(
@@ -83,13 +83,18 @@ namespace Elsa.Services
             return propertyProviders;
         }
 
-        private static IConnection ResolveConnection(
+        private static IConnection? ResolveConnection(
             ConnectionDefinition connectionDefinition,
             IReadOnlyDictionary<string, IActivityBlueprint> activityDictionary)
         {
-            var source = activityDictionary[connectionDefinition.SourceActivityId!];
-            var target = activityDictionary[connectionDefinition.TargetActivityId!];
+            var sourceActivityId = connectionDefinition.SourceActivityId;
+            var targetActivityId = connectionDefinition.TargetActivityId;
+            var source = sourceActivityId != null ? activityDictionary.GetValueOrDefault(sourceActivityId) : default;
+            var target = targetActivityId != null ? activityDictionary.GetValueOrDefault(targetActivityId) : default;
             var outcome = connectionDefinition.Outcome;
+
+            if (source == null || target == null)
+                return default;
 
             return new Connection(source, target, outcome!);
         }
@@ -110,7 +115,7 @@ namespace Elsa.Services
                     Id = activityDefinition.ActivityId,
                     Type = activityDefinition.Type,
                     Activities = activityBlueprints.Values,
-                    Connections = compositeActivityDefinition.Connections.Select(x => ResolveConnection(x, activityBlueprints)).ToList(),
+                    Connections = compositeActivityDefinition.Connections.Select(x => ResolveConnection(x, activityBlueprints)).Where(x => x != null).Select(x => x!).ToList(),
                     Name = activityDefinition.Name,
                     PersistOutput = activityDefinition.PersistOutput,
                     PersistWorkflow = activityDefinition.PersistWorkflow,

@@ -20,12 +20,14 @@
 
 ### Depends on
 
-- [elsa-modal-dialog](../../shared/elsa-modal-dialog)
+- [elsa-modal-dialog](../../../shared/elsa-modal-dialog)
+- [elsa-monaco](../../monaco/elsa-monaco)
 
 ### Graph
 ```mermaid
 graph TD;
   elsa-workflow-settings-modal --> elsa-modal-dialog
+  elsa-workflow-settings-modal --> elsa-monaco
   elsa-workflow-editor --> elsa-workflow-settings-modal
   style elsa-workflow-settings-modal fill:#f9f,stroke:#333,stroke-width:4px
 ```

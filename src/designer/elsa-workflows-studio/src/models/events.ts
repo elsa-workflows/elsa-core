@@ -25,6 +25,7 @@ export interface ActivityDesignDisplayContext {
   activityModel: ActivityModel;
   activityIcon: any;
   bodyDisplay: any;
+  outcomes: Array<string>;
 }
 
 export interface ActivityDescriptorDisplayContext {
