@@ -5,3 +5,4 @@ export interface PropertyDisplayDriver {
 
   update(activity: ActivityModel, property: ActivityPropertyDescriptor, form: FormData)
 }
+

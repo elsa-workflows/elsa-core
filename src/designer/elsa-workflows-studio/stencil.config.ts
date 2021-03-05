@@ -35,7 +35,7 @@ export const config: Config = {
     },
   ],
   globalStyle: 'src/globals/styles.css',
-  plugins: [
+  plugins: dev ? [] : [
     postcss({
       plugins: [
         postcssImport,

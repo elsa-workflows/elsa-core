@@ -1,5 +1,5 @@
 import {Component, Event, h, Host, Prop, State, Watch} from '@stencil/core';
-import {eventBus} from "../../../../utils/event-bus";
+import {eventBus} from "../../../../services/event-bus";
 import {Map} from "../../../../utils/utils";
 import {EventTypes, Variables, WorkflowContextFidelity, WorkflowContextOptions, WorkflowDefinition} from "../../../../models";
 import {MonacoValueChangedArgs} from "../../monaco/elsa-monaco/elsa-monaco";
