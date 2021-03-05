@@ -28,7 +28,7 @@ export class ElsaDropdownProperty {
     const fieldName = propertyName;
     const fieldLabel = propertyDescriptor.label || propertyName;
     const fieldHint = propertyDescriptor.hint;
-    const options = propertyDescriptor.options as Array<any>;
+    const options = propertyDescriptor.options as Array<any> || [];
     const value = this.currentValue;
 
     return (
