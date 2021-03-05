@@ -2,7 +2,7 @@ import {Component, Host, h, Prop, State, Event, EventEmitter, Listen, Watch} fro
 import {addConnection, findActivity, getChildActivities, getInboundConnections, getOutboundConnections, removeActivity} from '../../../../utils/utils';
 import {cleanup, destroy, updateConnections} from '../../../../utils/jsplumb-helper';
 import {ActivityDescriptor, ActivityModel, ConnectionModel, EventTypes, WorkflowModel} from "../../../../models";
-import {eventBus} from '../../../../utils/event-bus';
+import {eventBus} from '../../../../services/event-bus';
 import jsPlumb from "jsplumb";
 import uuid = jsPlumb.jsPlumbUtil.uuid;
 

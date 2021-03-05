@@ -1,15 +1,22 @@
 const defaultTheme = require('tailwindcss/defaultTheme');
+const colors = require('tailwindcss/colors')
 
 module.exports = {
   purge: {
     enabled: true,
     content: ['./src/**/*.tsx', './src/**/*.html'],
     options: {
-      safelist: ['jtk-connector']
+      safelist: ['jtk-connector', 'rose', 'light-blue']
     },
   },
   theme: {
     extend: {
+      colors: {
+        'light-blue': colors.lightBlue,
+        teal: colors.teal,
+        cyan: colors.cyan,
+        rose: colors.rose,
+      },
       fontFamily: {
         sans: ['Inter var', ...defaultTheme.fontFamily.sans],
       },

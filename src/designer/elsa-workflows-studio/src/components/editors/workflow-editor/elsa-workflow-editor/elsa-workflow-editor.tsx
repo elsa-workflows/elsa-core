@@ -1,7 +1,8 @@
 import {Component, Event, EventEmitter, h, Host, Listen, Method, Prop, State, Watch} from '@stencil/core';
-import {eventBus} from '../../../../utils/event-bus';
+import {eventBus} from '../../../../services/event-bus';
 import {ActivityDefinition, ActivityDescriptor, ActivityModel, ConnectionDefinition, ConnectionModel, EventTypes, WorkflowDefinition, WorkflowModel} from "../../../../models";
 import {createElsaClient, SaveWorkflowDefinitionRequest} from "../../../../services/elsa-client";
+import {pluginManager} from '../../../../services/plugin-manager';
 import state from '../../../../utils/store';
 import Tunnel, {WorkflowEditorState} from '../../../data/workflow-editor';
 
@@ -18,6 +19,8 @@ export class ElsaWorkflowDefinitionEditor {
       connections: [],
       activities: []
     };
+
+    pluginManager.initialize();
   }
 
   @Prop({attribute: 'workflow-definition-id', reflect: true}) workflowDefinitionId: string;
