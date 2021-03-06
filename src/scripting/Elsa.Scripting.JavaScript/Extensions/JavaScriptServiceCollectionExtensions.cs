@@ -2,6 +2,7 @@ using Elsa.Scripting.JavaScript.Options;
 using Elsa.Scripting.JavaScript.Services;
 using System;
 using Elsa;
+using Elsa.Activities.JavaScript;
 using Elsa.Expressions;
 using Elsa.Scripting.JavaScript.Typings;
 
@@ -13,10 +14,11 @@ namespace Microsoft.Extensions.DependencyInjection
         public static IServiceCollection AddJavaScriptExpressionEvaluator(this IServiceCollection services)
         {
             return services
-                .AddSingleton<ITypeScriptDefinitionService, TypeScriptDefinitionService>()
-                .AddSingleton<ITypeDefinitionProvider, PrimitiveTypeDefinitionProvider>()
-                .AddSingleton<ITypeDefinitionProvider, EnumTypeDefinitionProvider>()
-                .AddSingleton<ITypeDefinitionProvider, EnumerableTypeDefinitionProvider>()
+                .AddScoped<ITypeScriptDefinitionService, TypeScriptDefinitionService>()
+                .AddScoped<ITypeDefinitionProvider, PrimitiveTypeDefinitionProvider>()
+                .AddScoped<ITypeDefinitionProvider, EnumTypeDefinitionProvider>()
+                .AddScoped<ITypeDefinitionProvider, EnumerableTypeDefinitionProvider>()
+                .AddScoped<IJavaScriptService, JavaScriptService>()
                 .TryAddProvider<IExpressionHandler, JavaScriptExpressionHandler>(ServiceLifetime.Scoped)
                 .AddNotificationHandlers(typeof(JavaScriptServiceCollectionExtensions));
         }
@@ -26,6 +28,11 @@ namespace Microsoft.Extensions.DependencyInjection
             services.Configure(configureOptions);
 
             return services;
+        }
+
+        public static ElsaOptions AddJavaScriptActivities(this ElsaOptions options)
+        {
+            return options.AddActivitiesFrom<RunJavaScript>();
         }
     }
 }

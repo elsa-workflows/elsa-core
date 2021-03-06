@@ -3,8 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using AutoMapper.Internal;
 using Elsa.Models;
+using Elsa.Scripting.JavaScript.Events;
+using MediatR;
 using NodaTime;
 
 namespace Elsa.Scripting.JavaScript.Services
@@ -12,17 +16,19 @@ namespace Elsa.Scripting.JavaScript.Services
     public class TypeScriptDefinitionService : ITypeScriptDefinitionService
     {
         private readonly IEnumerable<ITypeDefinitionProvider> _providers;
+        private readonly IMediator _mediator;
 
-        public TypeScriptDefinitionService(IEnumerable<ITypeDefinitionProvider> providers)
+        public TypeScriptDefinitionService(IEnumerable<ITypeDefinitionProvider> providers, IMediator mediator)
         {
             _providers = providers;
+            _mediator = mediator;
         }
 
-        public string GenerateTypeScriptDefinition(WorkflowDefinition? workflowDefinition = default)
+        public async Task<string> GenerateTypeScriptDefinitionsAsync(WorkflowDefinition? workflowDefinition = default, string? context = default, CancellationToken cancellationToken = default)
         {
             var builder = new StringBuilder();
-            var types = CollectTypes(workflowDefinition);
-
+            var types = await CollectTypesAsync(workflowDefinition, cancellationToken);
+            
             // Render type declarations for anything except those listed in TypeConverters.
             foreach (var type in types)
             {
@@ -31,6 +37,8 @@ namespace Elsa.Scripting.JavaScript.Services
                 if (shouldRenderDeclaration)
                     RenderTypeDeclaration(type, types, builder);
             }
+            
+            string GetTypeScriptTypeInternal(Type type) => GetTypeScriptType(type, types);
 
             if (workflowDefinition != null)
             {
@@ -38,22 +46,25 @@ namespace Elsa.Scripting.JavaScript.Services
 
                 if (contextType != null)
                 {
-                    var typeScriptType = GetTypeScriptType(contextType, types);
+                    var typeScriptType = GetTypeScriptTypeInternal(contextType);
                     builder.AppendLine($"declare const workflowContext: {typeScriptType}");
                 }
 
                 foreach (var variable in workflowDefinition.Variables!.Data)
                 {
                     var variableType = variable.Value?.GetType() ?? typeof(object);
-                    var typeScriptType = GetTypeScriptType(variableType, types);
+                    var typeScriptType = GetTypeScriptTypeInternal(variableType);
                     builder.AppendLine($"declare const {variable.Key}: {typeScriptType}");
                 }
             }
 
+            var renderingTypeScriptDefinitions = new RenderingTypeScriptDefinitions(workflowDefinition, GetTypeScriptTypeInternal, context, builder);
+            await _mediator.Publish(renderingTypeScriptDefinitions, cancellationToken);
+
             return builder.ToString();
         }
 
-        private HashSet<Type> CollectTypes(WorkflowDefinition? workflowDefinition = default)
+        private async Task<ISet<Type>> CollectTypesAsync(WorkflowDefinition? workflowDefinition = default, CancellationToken cancellationToken = default)
         {
             var collectedTypes = new HashSet<Type>();
 
@@ -74,6 +85,15 @@ namespace Elsa.Scripting.JavaScript.Services
             CollectType<LocalDate>(collectedTypes);
             CollectType<LocalTime>(collectedTypes);
             CollectType<LocalDateTime>(collectedTypes);
+
+            void CollectTypesInternal(IEnumerable<Type> types)
+            {
+                foreach (var type in types) 
+                    CollectType(type, collectedTypes);
+            }
+
+            var collectTypesEvent = new CollectingTypeScriptDefinitionTypes(workflowDefinition, CollectTypesInternal);
+            await _mediator.Publish(collectTypesEvent, cancellationToken);
 
             return collectedTypes;
         }
@@ -120,12 +140,12 @@ namespace Elsa.Scripting.JavaScript.Services
             }
         }
 
-        private void RenderTypeDeclaration(Type type, HashSet<Type> collectedTypes, StringBuilder output)
+        private void RenderTypeDeclaration(Type type, ISet<Type> collectedTypes, StringBuilder output)
         {
             RenderTypeDeclaration("class", type, collectedTypes, output);
         }
 
-        private void RenderTypeDeclaration(string symbol, Type type, HashSet<Type> collectedTypes, StringBuilder output)
+        private void RenderTypeDeclaration(string symbol, Type type, ISet<Type> collectedTypes, StringBuilder output)
         {
             var typeName = type.Name;
             var properties = type.GetProperties();
@@ -161,7 +181,7 @@ namespace Elsa.Scripting.JavaScript.Services
             output.AppendLine("}");
         }
 
-        private string GetTypeScriptType(Type type, HashSet<Type> collectedTypes)
+        private string GetTypeScriptType(Type type, ISet<Type> collectedTypes)
         {
             if (type.IsNullableType())
                 type = type.GetTypeOfNullable();

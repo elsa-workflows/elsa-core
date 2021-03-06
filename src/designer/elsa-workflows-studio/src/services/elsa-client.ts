@@ -27,8 +27,9 @@ export const createElsaClient = function (serverUrl: string): ElsaClient {
       }
     },
     scriptingApi: {
-      getJavaScriptTypeDefinitions: async (workflowDefinitionId: string): Promise<string> => {
-        const response = await httpClient.get<string>(`v1/scripting/javascript/type-definitions/${workflowDefinitionId}?t=${new Date().getTime()}`);
+      getJavaScriptTypeDefinitions: async (workflowDefinitionId: string, context?: string): Promise<string> => {
+        context = context || '';
+        const response = await httpClient.get<string>(`v1/scripting/javascript/type-definitions/${workflowDefinitionId}?t=${new Date().getTime()}&context=${context}`);
         return response.data;
       }
     }
@@ -52,7 +53,7 @@ export interface WorkflowDefinitionsApi {
 }
 
 export interface ScriptingApi {
-  getJavaScriptTypeDefinitions(workflowDefinitionId: string): Promise<string>
+  getJavaScriptTypeDefinitions(workflowDefinitionId: string, context?: string): Promise<string>
 }
 
 export interface SaveWorkflowDefinitionRequest {
