@@ -89,7 +89,7 @@ export class ElsaToastNotification {
 
     return (
       <p class="text-sm font-medium text-gray-900">
-        Successfully saved!
+        {this.title}
       </p>
     );
   }
