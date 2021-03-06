@@ -57,15 +57,28 @@ namespace Elsa.Metadata
                 if (activityProperty == null)
                     continue;
 
+                var options = activityProperty.OptionsProvider is not null and not "" ? GetOptions(activityType, activityProperty.OptionsProvider) : activityProperty.Options;
+
                 yield return new ActivityPropertyDescriptor
                 (
                     (activityProperty.Name ?? propertyInfo.Name).Pascalize(),
                     (activityProperty.UIHint ?? InferPropertyUIHint(propertyInfo)),
                     activityProperty.Label ?? propertyInfo.Name.Humanize(LetterCasing.Title),
                     activityProperty.Hint,
-                    activityProperty.Options
+                    options
                 );
             }
+        }
+
+        private object? GetOptions(Type activityType, string providerMethodName)
+        {
+            var providerMethod = activityType.GetMethod(providerMethodName, BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
+
+            if (providerMethod == null)
+                throw new MissingMethodException(activityType.Name, providerMethodName);
+
+            var options = providerMethod.Invoke(null, new object[0]);
+            return options;
         }
 
         private string InferPropertyUIHint(PropertyInfo propertyInfo)

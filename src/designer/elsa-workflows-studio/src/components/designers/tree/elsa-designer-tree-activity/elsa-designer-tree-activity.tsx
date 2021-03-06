@@ -51,7 +51,7 @@ export class ElsaDesignerTreeActivity {
     return (
       <Host id={`activity-${activityId}`}
             class="activity border-2 border-solid border-white rounded bg-white text-left text-black text-lg hover:border-blue-600 select-none max-w-md shadow-sm relative">
-        <div class="p-5 border-b border-b-solid">
+        <div class="p-5">
           <div class="flex justify-between space-x-8">
             <div class="flex-shrink-0">
               {displayContext.activityIcon}
@@ -109,7 +109,7 @@ export class ElsaDesignerTreeActivity {
       return undefined;
 
     return (
-      <div class="p-6 text-gray-400 text-sm">
+      <div class="p-6 text-gray-400 text-sm border-t border-t-solid">
         {this.displayContext.bodyDisplay}
       </div>
     )

@@ -52,7 +52,18 @@ export namespace Components {
         "propertyDescriptor": ActivityPropertyDescriptor;
         "propertyModel": ActivityDefinitionProperty;
     }
+    interface ElsaScriptProperty {
+        "context"?: string;
+        "editorHeight": string;
+        "propertyDescriptor": ActivityPropertyDescriptor;
+        "propertyModel": ActivityDefinitionProperty;
+        "serverUrl": string;
+        "singleLineMode": boolean;
+        "syntax"?: string;
+        "workflowDefinitionId": string;
+    }
     interface ElsaTextProperty {
+        "context"?: string;
         "editorHeight": string;
         "propertyDescriptor": ActivityPropertyDescriptor;
         "propertyModel": ActivityDefinitionProperty;
@@ -139,6 +150,12 @@ declare global {
         prototype: HTMLElsaMultiTextPropertyElement;
         new (): HTMLElsaMultiTextPropertyElement;
     };
+    interface HTMLElsaScriptPropertyElement extends Components.ElsaScriptProperty, HTMLStencilElement {
+    }
+    var HTMLElsaScriptPropertyElement: {
+        prototype: HTMLElsaScriptPropertyElement;
+        new (): HTMLElsaScriptPropertyElement;
+    };
     interface HTMLElsaTextPropertyElement extends Components.ElsaTextProperty, HTMLStencilElement {
     }
     var HTMLElsaTextPropertyElement: {
@@ -175,6 +192,7 @@ declare global {
         "elsa-modal-dialog": HTMLElsaModalDialogElement;
         "elsa-monaco": HTMLElsaMonacoElement;
         "elsa-multi-text-property": HTMLElsaMultiTextPropertyElement;
+        "elsa-script-property": HTMLElsaScriptPropertyElement;
         "elsa-text-property": HTMLElsaTextPropertyElement;
         "elsa-workflow-editor": HTMLElsaWorkflowEditorElement;
         "elsa-workflow-publish-button": HTMLElsaWorkflowPublishButtonElement;
@@ -227,7 +245,18 @@ declare namespace LocalJSX {
         "propertyDescriptor"?: ActivityPropertyDescriptor;
         "propertyModel"?: ActivityDefinitionProperty;
     }
+    interface ElsaScriptProperty {
+        "context"?: string;
+        "editorHeight"?: string;
+        "propertyDescriptor"?: ActivityPropertyDescriptor;
+        "propertyModel"?: ActivityDefinitionProperty;
+        "serverUrl"?: string;
+        "singleLineMode"?: boolean;
+        "syntax"?: string;
+        "workflowDefinitionId"?: string;
+    }
     interface ElsaTextProperty {
+        "context"?: string;
         "editorHeight"?: string;
         "propertyDescriptor"?: ActivityPropertyDescriptor;
         "propertyModel"?: ActivityDefinitionProperty;
@@ -257,6 +286,7 @@ declare namespace LocalJSX {
         "elsa-modal-dialog": ElsaModalDialog;
         "elsa-monaco": ElsaMonaco;
         "elsa-multi-text-property": ElsaMultiTextProperty;
+        "elsa-script-property": ElsaScriptProperty;
         "elsa-text-property": ElsaTextProperty;
         "elsa-workflow-editor": ElsaWorkflowEditor;
         "elsa-workflow-publish-button": ElsaWorkflowPublishButton;
@@ -278,6 +308,7 @@ declare module "@stencil/core" {
             "elsa-modal-dialog": LocalJSX.ElsaModalDialog & JSXBase.HTMLAttributes<HTMLElsaModalDialogElement>;
             "elsa-monaco": LocalJSX.ElsaMonaco & JSXBase.HTMLAttributes<HTMLElsaMonacoElement>;
             "elsa-multi-text-property": LocalJSX.ElsaMultiTextProperty & JSXBase.HTMLAttributes<HTMLElsaMultiTextPropertyElement>;
+            "elsa-script-property": LocalJSX.ElsaScriptProperty & JSXBase.HTMLAttributes<HTMLElsaScriptPropertyElement>;
             "elsa-text-property": LocalJSX.ElsaTextProperty & JSXBase.HTMLAttributes<HTMLElsaTextPropertyElement>;
             "elsa-workflow-editor": LocalJSX.ElsaWorkflowEditor & JSXBase.HTMLAttributes<HTMLElsaWorkflowEditorElement>;
             "elsa-workflow-publish-button": LocalJSX.ElsaWorkflowPublishButton & JSXBase.HTMLAttributes<HTMLElsaWorkflowPublishButtonElement>;

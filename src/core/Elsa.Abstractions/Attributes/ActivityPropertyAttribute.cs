@@ -29,5 +29,10 @@ namespace Elsa.Attributes
         /// A value representing options specific to a given UI hint.
         /// </summary>
         public object? Options { get; set; }
+        
+        /// <summary>
+        /// The name of a static method that provides options.
+        /// </summary>
+        public string? OptionsProvider { get; set; }
     }
 }

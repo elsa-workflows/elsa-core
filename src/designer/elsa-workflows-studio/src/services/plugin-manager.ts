@@ -6,6 +6,7 @@ import {WriteLinePlugin} from "../plugins/write-line-plugin";
 import {SendEmailPlugin} from "../plugins/send-email-plugin";
 import {DefaultDriversPlugin} from "../plugins/default-drivers-plugin";
 import {ForkPlugin} from "../plugins/fork-plugin";
+import {RunJavascriptPlugin} from "../plugins/run-javascript-plugin";
 
 export class PluginManager {
 
@@ -19,6 +20,7 @@ export class PluginManager {
       new HttpEndpointPlugin(),
       new TimerPlugin(),
       new WriteLinePlugin(),
+      new RunJavascriptPlugin(),
       new SendEmailPlugin()
     ];
   }

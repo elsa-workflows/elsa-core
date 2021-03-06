@@ -3,7 +3,7 @@ import {ActivityModel, ActivityPropertyDescriptor} from "../models";
 import {h, State} from "@stencil/core";
 import {getProperty, setActivityModelProperty} from "../utils/utils";
 
-export class MultilineDriver implements PropertyDisplayDriver {
+export class CodeEditorDriver implements PropertyDisplayDriver {
 
   display(activity: ActivityModel, property: ActivityPropertyDescriptor) {
     const key = `${activity.activityId}:${property.name}`;
@@ -11,18 +11,18 @@ export class MultilineDriver implements PropertyDisplayDriver {
     const options = property.options || {};
     const editorHeight = this.getEditorHeight(options);
     const context: string = options.context;
+    const syntax = options.syntax;
 
     return (
       <div class="sm:col-span-6">
-        <elsa-text-property propertyDescriptor={property} propertyModel={prop} editor-height={editorHeight} context={context}/>
+        <elsa-script-property propertyDescriptor={property} propertyModel={prop} editor-height={editorHeight} syntax={syntax} context={context}/>
       </div>
     );
   }
 
   update(activity: ActivityModel, property: ActivityPropertyDescriptor, form: FormData) {
     const value = form.get(property.name) as string;
-    const syntax = form.get(`${property.name}Syntax`) as string || 'Literal';
-    setActivityModelProperty(activity, property.name, value, syntax);
+    setActivityModelProperty(activity, property.name, value, "Literal");
   }
 
   getEditorHeight(options: any) {
