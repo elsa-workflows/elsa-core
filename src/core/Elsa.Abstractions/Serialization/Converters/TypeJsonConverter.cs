@@ -18,7 +18,7 @@ namespace Elsa.Serialization.Converters
         public override Type ReadJson(JsonReader reader, Type objectType, Type? existingValue, bool hasExistingValue, JsonSerializer serializer)
         {
             var typeName = serializer.Deserialize<string>(reader)!;
-            return Type.GetType(typeName)!;
+            return typeName is not null and not "" ? Type.GetType(typeName)! : default!;
         }
     }
 }

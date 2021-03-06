@@ -11,6 +11,7 @@ export const EventTypes = {
   WorkflowModelChanged: 'workflow-model-changed',
   ActivityDesignDisplaying: 'activity-design-displaying',
   ActivityDescriptorDisplaying: 'activity-descriptor-displaying',
+  WorkflowPublished: 'workflow-published',
 };
 
 export interface AddActivityEventArgs {
