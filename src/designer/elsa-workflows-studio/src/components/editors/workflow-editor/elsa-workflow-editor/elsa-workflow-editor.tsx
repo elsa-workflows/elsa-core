@@ -27,6 +27,7 @@ export class ElsaWorkflowDefinitionEditor {
   @Prop({attribute: 'server-url', reflect: true}) serverUrl: string;
   @State() workflowDefinition: WorkflowDefinition;
   @State() workflowModel: WorkflowModel;
+  @State() publishing: boolean;
   el: HTMLElement;
   designer: HTMLElsaDesignerTreeElement;
 
@@ -97,7 +98,10 @@ export class ElsaWorkflowDefinitionEditor {
   }
 
   async publishWorkflow() {
+    this.publishing = true;
     await this.saveWorkflow(true);
+    this.publishing = false;
+    eventBus.emit(EventTypes.WorkflowPublished, this, this.workflowDefinition);
   }
 
   async saveWorkflow(publish?: boolean) {
@@ -199,6 +203,7 @@ export class ElsaWorkflowDefinitionEditor {
           {this.renderCanvas()}
           {this.renderActivityPicker()}
           {this.renderActivityEditor()}
+          <elsa-workflow-editor-notifications/>
         </Tunnel.Provider>
       </Host>
     );
@@ -241,6 +246,6 @@ export class ElsaWorkflowDefinitionEditor {
   }
 
   renderPublishButton() {
-    return <elsa-workflow-publish-button onPublishClicked={() => this.onPublishClicked()}/>;
+    return <elsa-workflow-publish-button onPublishClicked={() => this.onPublishClicked()} publishing={this.publishing}/>;
   }
 }

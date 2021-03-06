@@ -7,6 +7,7 @@
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
 import { ActivityDefinitionProperty, ActivityDesignDisplayContext, ActivityModel, ActivityPropertyDescriptor, WorkflowDefinition, WorkflowModel } from "./models";
 import { MonacoValueChangedArgs } from "./components/editors/monaco/elsa-monaco/elsa-monaco";
+import { ToastNotificationOptions } from "./components/shared/elsa-toast-notification/elsa-toast-notification";
 export namespace Components {
     interface ElsaActivityEditorModal {
     }
@@ -71,13 +72,20 @@ export namespace Components {
         "singleLineMode": boolean;
         "workflowDefinitionId": string;
     }
+    interface ElsaToastNotification {
+        "hide": () => Promise<void>;
+        "show": (options: ToastNotificationOptions) => Promise<void>;
+    }
     interface ElsaWorkflowEditor {
         "getServerUrl": () => Promise<string>;
         "getWorkflowDefinitionId": () => Promise<string>;
         "serverUrl": string;
         "workflowDefinitionId": string;
     }
+    interface ElsaWorkflowEditorNotifications {
+    }
     interface ElsaWorkflowPublishButton {
+        "publishing": boolean;
     }
     interface ElsaWorkflowSettingsModal {
         "workflowDefinition": WorkflowDefinition;
@@ -162,11 +170,23 @@ declare global {
         prototype: HTMLElsaTextPropertyElement;
         new (): HTMLElsaTextPropertyElement;
     };
+    interface HTMLElsaToastNotificationElement extends Components.ElsaToastNotification, HTMLStencilElement {
+    }
+    var HTMLElsaToastNotificationElement: {
+        prototype: HTMLElsaToastNotificationElement;
+        new (): HTMLElsaToastNotificationElement;
+    };
     interface HTMLElsaWorkflowEditorElement extends Components.ElsaWorkflowEditor, HTMLStencilElement {
     }
     var HTMLElsaWorkflowEditorElement: {
         prototype: HTMLElsaWorkflowEditorElement;
         new (): HTMLElsaWorkflowEditorElement;
+    };
+    interface HTMLElsaWorkflowEditorNotificationsElement extends Components.ElsaWorkflowEditorNotifications, HTMLStencilElement {
+    }
+    var HTMLElsaWorkflowEditorNotificationsElement: {
+        prototype: HTMLElsaWorkflowEditorNotificationsElement;
+        new (): HTMLElsaWorkflowEditorNotificationsElement;
     };
     interface HTMLElsaWorkflowPublishButtonElement extends Components.ElsaWorkflowPublishButton, HTMLStencilElement {
     }
@@ -194,7 +214,9 @@ declare global {
         "elsa-multi-text-property": HTMLElsaMultiTextPropertyElement;
         "elsa-script-property": HTMLElsaScriptPropertyElement;
         "elsa-text-property": HTMLElsaTextPropertyElement;
+        "elsa-toast-notification": HTMLElsaToastNotificationElement;
         "elsa-workflow-editor": HTMLElsaWorkflowEditorElement;
+        "elsa-workflow-editor-notifications": HTMLElsaWorkflowEditorNotificationsElement;
         "elsa-workflow-publish-button": HTMLElsaWorkflowPublishButtonElement;
         "elsa-workflow-settings-modal": HTMLElsaWorkflowSettingsModalElement;
     }
@@ -264,12 +286,17 @@ declare namespace LocalJSX {
         "singleLineMode"?: boolean;
         "workflowDefinitionId"?: string;
     }
+    interface ElsaToastNotification {
+    }
     interface ElsaWorkflowEditor {
         "serverUrl"?: string;
         "workflowDefinitionId"?: string;
     }
+    interface ElsaWorkflowEditorNotifications {
+    }
     interface ElsaWorkflowPublishButton {
         "onPublishClicked"?: (event: CustomEvent<any>) => void;
+        "publishing"?: boolean;
     }
     interface ElsaWorkflowSettingsModal {
         "workflowDefinition"?: WorkflowDefinition;
@@ -288,7 +315,9 @@ declare namespace LocalJSX {
         "elsa-multi-text-property": ElsaMultiTextProperty;
         "elsa-script-property": ElsaScriptProperty;
         "elsa-text-property": ElsaTextProperty;
+        "elsa-toast-notification": ElsaToastNotification;
         "elsa-workflow-editor": ElsaWorkflowEditor;
+        "elsa-workflow-editor-notifications": ElsaWorkflowEditorNotifications;
         "elsa-workflow-publish-button": ElsaWorkflowPublishButton;
         "elsa-workflow-settings-modal": ElsaWorkflowSettingsModal;
     }
@@ -310,7 +339,9 @@ declare module "@stencil/core" {
             "elsa-multi-text-property": LocalJSX.ElsaMultiTextProperty & JSXBase.HTMLAttributes<HTMLElsaMultiTextPropertyElement>;
             "elsa-script-property": LocalJSX.ElsaScriptProperty & JSXBase.HTMLAttributes<HTMLElsaScriptPropertyElement>;
             "elsa-text-property": LocalJSX.ElsaTextProperty & JSXBase.HTMLAttributes<HTMLElsaTextPropertyElement>;
+            "elsa-toast-notification": LocalJSX.ElsaToastNotification & JSXBase.HTMLAttributes<HTMLElsaToastNotificationElement>;
             "elsa-workflow-editor": LocalJSX.ElsaWorkflowEditor & JSXBase.HTMLAttributes<HTMLElsaWorkflowEditorElement>;
+            "elsa-workflow-editor-notifications": LocalJSX.ElsaWorkflowEditorNotifications & JSXBase.HTMLAttributes<HTMLElsaWorkflowEditorNotificationsElement>;
             "elsa-workflow-publish-button": LocalJSX.ElsaWorkflowPublishButton & JSXBase.HTMLAttributes<HTMLElsaWorkflowPublishButtonElement>;
             "elsa-workflow-settings-modal": LocalJSX.ElsaWorkflowSettingsModal & JSXBase.HTMLAttributes<HTMLElsaWorkflowSettingsModalElement>;
         }
