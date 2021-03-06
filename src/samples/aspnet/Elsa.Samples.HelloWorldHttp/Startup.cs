@@ -1,3 +1,4 @@
+using ElsaDashboard.Backend.Extensions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -11,6 +12,9 @@ namespace Elsa.Samples.HelloWorldHttp
                 .AddElsa(options => options
                     .AddHttpActivities()
                     .AddWorkflow<HelloHttpWorkflow>());
+
+            services.AddElsaDashboardUI();
+            services.AddElsaDashboardBackend();
         }
 
         public void Configure(IApplicationBuilder app)
