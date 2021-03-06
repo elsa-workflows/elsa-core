@@ -13,6 +13,9 @@ environment:
 
 version: 2.0.0-preview7.{build}
 
+services:
+  - mongodb
+
 init:
   - cmd: git config --global core.autocrlf true
 

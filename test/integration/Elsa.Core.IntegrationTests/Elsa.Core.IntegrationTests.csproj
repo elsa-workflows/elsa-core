@@ -45,6 +45,7 @@
       <ProjectReference Include="..\..\..\src\activities\Elsa.Activities.Temporal.Common\Elsa.Activities.Temporal.Common.csproj" />
       <ProjectReference Include="..\..\..\src\activities\Elsa.Activities.Temporal.Hangfire\Elsa.Activities.Temporal.Hangfire.csproj" />
       <ProjectReference Include="..\..\..\src\activities\Elsa.Activities.Temporal.Quartz\Elsa.Activities.Temporal.Quartz.csproj" />
+      <ProjectReference Include="..\..\..\src\persistence\Elsa.Persistence.MongoDb\Elsa.Persistence.MongoDb.csproj" />
     </ItemGroup>
 
 </Project>
