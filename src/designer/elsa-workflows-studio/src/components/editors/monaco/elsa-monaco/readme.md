@@ -39,12 +39,14 @@ Type: `Promise<void>`
 
 ### Used by
 
+ - [elsa-script-property](../../properties/elsa-script-property)
  - [elsa-text-property](../../properties/elsa-text-property)
  - [elsa-workflow-settings-modal](../../workflow-editor/elsa-workflow-settings-modal)
 
 ### Graph
 ```mermaid
 graph TD;
+  elsa-script-property --> elsa-monaco
   elsa-text-property --> elsa-monaco
   elsa-workflow-settings-modal --> elsa-monaco
   style elsa-monaco fill:#f9f,stroke:#333,stroke-width:4px

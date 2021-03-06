@@ -3,7 +3,7 @@ const colors = require('tailwindcss/colors')
 
 module.exports = {
   purge: {
-    enabled: false,
+    enabled: true,
     content: ['./src/**/*.tsx', './src/**/*.html'],
     options: {
       safelist: ['jtk-connector', 'rose', 'light-blue']

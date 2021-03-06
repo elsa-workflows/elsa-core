@@ -35,17 +35,23 @@ export const config: Config = {
     },
   ],
   globalStyle: 'src/globals/styles.css',
-  plugins: dev ? [] : [
-    postcss({
-      plugins: [
-        postcssImport,
-        tailwindcss,
-        purgecss,
-        cssnano
-      ],
+  plugins: dev
+    ? [postcss({
       injectGlobalPaths: [
         'src/globals/tailwind.css'
       ]
-    })
-  ],
+    })]
+    : [
+      postcss({
+        plugins: [
+          postcssImport,
+          tailwindcss,
+          purgecss,
+          cssnano
+        ],
+        injectGlobalPaths: [
+          'src/globals/tailwind.css'
+        ]
+      })
+    ],
 };

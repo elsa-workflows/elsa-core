@@ -7,10 +7,10 @@
 
 ## Properties
 
-| Property        | Attribute | Description | Type            | Default     |
-| --------------- | --------- | ----------- | --------------- | ----------- |
-| `activityModel` | --        |             | `ActivityModel` | `undefined` |
-| `icon`          | `icon`    |             | `string`        | `undefined` |
+| Property         | Attribute | Description | Type                           | Default     |
+| ---------------- | --------- | ----------- | ------------------------------ | ----------- |
+| `displayContext` | --        |             | `ActivityDesignDisplayContext` | `undefined` |
+| `icon`           | `icon`    |             | `string`                       | `undefined` |
 
 
 ## Events
