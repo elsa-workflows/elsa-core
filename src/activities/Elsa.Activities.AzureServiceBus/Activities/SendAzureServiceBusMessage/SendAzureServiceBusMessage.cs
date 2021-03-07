@@ -10,7 +10,7 @@ using Microsoft.Azure.ServiceBus;
 
 namespace Elsa.Activities.AzureServiceBus
 {
-    [Trigger(Category = "Azure Service Bus", DisplayName = "Send Service Bus Message", Description = "Sends a message to the specified queue", Outcomes = new[] { OutcomeNames.Done })]
+    [Action(Category = "Azure Service Bus", DisplayName = "Send Service Bus Message", Description = "Sends a message to the specified queue", Outcomes = new[] { OutcomeNames.Done })]
     public class SendAzureServiceBusMessage : Activity
     {
         private readonly IMessageSenderFactory _messageSenderFactory;
