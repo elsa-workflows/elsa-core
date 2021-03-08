@@ -3,6 +3,7 @@ using System;
 using Elsa.Persistence.EntityFramework.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
 {
@@ -72,9 +73,6 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
 
                     b.Property<string>("DisplayName")
                         .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsEnabled")
-                        .HasColumnType("INTEGER");
 
                     b.Property<bool>("IsLatest")
                         .HasColumnType("INTEGER");

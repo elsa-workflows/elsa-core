@@ -39,7 +39,6 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
                     IsSingleton = table.Column<bool>(type: "bit", nullable: false),
                     PersistenceBehavior = table.Column<int>(type: "int", nullable: false),
                     DeleteCompletedInstances = table.Column<bool>(type: "bit", nullable: false),
-                    IsEnabled = table.Column<bool>(type: "bit", nullable: false),
                     IsPublished = table.Column<bool>(type: "bit", nullable: false),
                     IsLatest = table.Column<bool>(type: "bit", nullable: false),
                     Data = table.Column<string>(type: "nvarchar(max)", nullable: true)

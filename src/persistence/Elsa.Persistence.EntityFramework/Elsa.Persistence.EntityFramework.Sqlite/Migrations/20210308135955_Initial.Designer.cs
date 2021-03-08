@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
 {
     [DbContext(typeof(ElsaContext))]
-    [Migration("20210215204504_Initial")]
+    [Migration("20210308135955_Initial")]
     partial class Initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -75,9 +75,6 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
 
                     b.Property<string>("DisplayName")
                         .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsEnabled")
-                        .HasColumnType("INTEGER");
 
                     b.Property<bool>("IsLatest")
                         .HasColumnType("INTEGER");
