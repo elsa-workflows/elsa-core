@@ -1,20 +1,17 @@
 ﻿import {jsPlumb} from 'jsplumb';
 
-let count = 0;
 let jsPlumbInstance = null;
 
-function onConnectionCreated(e) {
+function onConnectionCreated(e, callback) {
   const source = e.sourceEndpoint;
   const target = e.targetEndpoint;
 
-  const model = {
-    SourceId: source.getParameter('sourceActivityId'),
-    TargetId: target.getParameter('targetActivityId'),
-    Outcome: source.getParameter('outcome')
-  }
+  const sourceId = source.getParameter('sourceActivityId');
+  const targetId = target.getParameter('targetActivityId');
+  const outcome = source.getParameter('outcome');
 
-  console.log(`Connection created between ${model.SourceId}:${model.Outcome} and ${model.TargetId}.`);
-  //DotNet.invokeMethodAsync('ElsaDashboard.Application', 'InvokeConnectionCreated', model);
+  debugger;
+  callback(sourceId, targetId, outcome);
 }
 
 function onConnectionClick(connection) {
@@ -27,15 +24,19 @@ export function cleanup() {
 
 export function destroy() {
   if (jsPlumbInstance != null) {
-    jsPlumbInstance.unbind("connection", onConnectionCreated);
-    jsPlumbInstance.unmakeEverySource(); // Ensures all mouse event handlers are removed.
-    jsPlumbInstance.unmakeEveryTarget();
-    jsPlumbInstance.reset();
+
+    jsPlumbInstance.batch(() => {
+      jsPlumbInstance.unbind("connection", onConnectionCreated);
+      jsPlumbInstance.unmakeEverySource(); // Ensures all mouse event handlers are removed.
+      jsPlumbInstance.unmakeEveryTarget();
+      jsPlumbInstance.reset();
+    });
+
     jsPlumbInstance = null;
   }
 }
 
-export function updateConnections(container, connections, sourceEndpoints, targets) {
+export function updateConnections(container, connections, sourceEndpoints, targets, connectionCreatedCallback) {
 
   destroy();
 
@@ -45,8 +46,6 @@ export function updateConnections(container, connections, sourceEndpoints, targe
     Anchors: ['Bottom', 'Top', 'Left', 'Right'], // The typescript definition does not have an `Anchors` field, but the jsPlumb library does.
     Endpoint: ['Dot', {radius: 5}]
   });
-
-  (jsPlumbInstance as any).MyCount = ++count;
 
   jsPlumbInstance.ready(() => {
 
@@ -80,7 +79,7 @@ export function updateConnections(container, connections, sourceEndpoints, targe
 
       for (const target of targets) {
         jsPlumbInstance.makeTarget(target.targetId, {
-          anchor: ['Bottom', 'Top', 'Left', 'Right'],
+          anchor: ['Left', 'Right'],
           endpoint: 'Blank',
           parameters: {
             targetActivityId: target.targetActivityId
@@ -89,6 +88,6 @@ export function updateConnections(container, connections, sourceEndpoints, targe
       }
     });
 
-    jsPlumbInstance.bind("connection", onConnectionCreated);
+    jsPlumbInstance.bind("connection", e => onConnectionCreated(e, connectionCreatedCallback));
   });
 }

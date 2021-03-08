@@ -23,7 +23,7 @@
     "test": "stencil test --spec --e2e",
     "test.watch": "stencil test --spec --e2e --watchAll",
     "generate": "stencil generate",
-    "build:tailwind": "tailwind build ./tailwind.css -o ./src/globals/tailwind.css"
+    "build:tailwind": "tailwind build ./tailwind.css -o ./src/globals/tailwind.css & copyfiles -u 2 \"./src/globals/tailwind.css\" \"./src/assets\""
   },
   "dependencies": {
     "@fullhuman/postcss-purgecss": "^4.0.2",
@@ -37,6 +37,7 @@
     "axios": "^0.21.1",
     "cssnano": "^4.1.10",
     "el-transition": "^0.0.7",
+    "eslint": "7.20.0",
     "js-event-bus": "^1.0.3",
     "jsplumb": "2.15.5",
     "monaco-editor": "^0.22.3",
@@ -45,11 +46,13 @@
     "postcss-preset-env": "^6.7.0",
     "stencil-click-outside": "^1.7.1",
     "tailwindcss": "2.0.3",
-    "eslint": "7.20.0",
     "tslint": "6.1.3",
     "tslint-stencil": "1.0.1",
     "typescript": "4.2.2",
     "typescript-tslint-plugin": "1.0.1"
+  },
+  "devDependencies": {
+    "copyfiles": "^2.4.1"
   },
   "license": "MIT"
 }

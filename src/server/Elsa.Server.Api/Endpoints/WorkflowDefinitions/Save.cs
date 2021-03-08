@@ -1,4 +1,6 @@
-﻿using System.Threading;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Server.Api.Swagger.Examples;
@@ -47,7 +49,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             }
 
             workflowDefinition.Activities = request.Activities;
-            workflowDefinition.Connections = request.Connections;
+            workflowDefinition.Connections = FilterInvalidConnections(request).ToList();
             workflowDefinition.Description = request.Description?.Trim();
             workflowDefinition.Name = request.Name?.Trim();
             workflowDefinition.Variables = request.Variables ?? new Variables();
@@ -63,6 +65,18 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
                 workflowDefinition = await _workflowPublisher.SaveDraftAsync(workflowDefinition, cancellationToken);
 
             return CreatedAtAction("Handle", "GetByVersionId", new { versionId = workflowDefinition.Id, apiVersion = apiVersion.ToString() }, workflowDefinition);
+        }
+
+        private IEnumerable<ConnectionDefinition> FilterInvalidConnections(SaveRequest request)
+        {
+            var validConnections =
+                from connection in request.Connections
+                let sourceActivity = request.Activities.FirstOrDefault(x => x.ActivityId == connection.SourceActivityId)
+                let targetActivity = request.Activities.FirstOrDefault(x => x.ActivityId == connection.TargetActivityId)
+                where sourceActivity != null && targetActivity != null
+                select connection;
+
+            return validConnections;
         }
     }
 }
