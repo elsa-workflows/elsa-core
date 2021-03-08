@@ -42,7 +42,7 @@ namespace Elsa.Services
             return definition;
         }
 
-        public async Task<WorkflowDefinition?> PublishAsync(string workflowDefinitionId, CancellationToken cancellationToken)
+        public async Task<WorkflowDefinition?> PublishAsync(string workflowDefinitionId, CancellationToken cancellationToken = default)
         {
             var definition = await _workflowDefinitionStore.FindByDefinitionIdAsync(
                 workflowDefinitionId,
@@ -55,7 +55,7 @@ namespace Elsa.Services
             return await PublishAsync(definition, cancellationToken);
         }
 
-        public async Task<WorkflowDefinition> PublishAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken)
+        public async Task<WorkflowDefinition> PublishAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken = default)
         {
             var publishedDefinition = await _workflowDefinitionStore.FindByDefinitionIdAsync(
                 workflowDefinition.DefinitionId,
@@ -82,7 +82,7 @@ namespace Elsa.Services
             return workflowDefinition;
         }
         
-        public async Task<WorkflowDefinition?> UnpublishAsync(string workflowDefinitionId, CancellationToken cancellationToken)
+        public async Task<WorkflowDefinition?> RetractAsync(string workflowDefinitionId, CancellationToken cancellationToken = default)
         {
             var definition = await _workflowDefinitionStore.FindByDefinitionIdAsync(
                 workflowDefinitionId,
@@ -92,15 +92,14 @@ namespace Elsa.Services
             if (definition == null)
                 return null;
 
-            return await UnpublishAsync(definition, cancellationToken);
+            return await RetractAsync(definition, cancellationToken);
         }
         
-        public async Task<WorkflowDefinition> UnpublishAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken)
+        public async Task<WorkflowDefinition> RetractAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken = default)
         {
             if (!workflowDefinition.IsPublished)
                 throw new InvalidOperationException("Cannot unpublish an unpublished workflow definition.");
-
-
+            
             workflowDefinition.IsPublished = false;
             workflowDefinition = Initialize(workflowDefinition);
 
@@ -109,7 +108,7 @@ namespace Elsa.Services
             return workflowDefinition;
         }
 
-        public async Task<WorkflowDefinition?> GetDraftAsync(string workflowDefinitionId, CancellationToken cancellationToken)
+        public async Task<WorkflowDefinition?> GetDraftAsync(string workflowDefinitionId, CancellationToken cancellationToken = default)
         {
             var definition = await _workflowDefinitionStore.FindByDefinitionIdAsync(
                 workflowDefinitionId,
@@ -131,7 +130,7 @@ namespace Elsa.Services
             return draft;
         }
 
-        public async Task<WorkflowDefinition> SaveDraftAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken)
+        public async Task<WorkflowDefinition> SaveDraftAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken = default)
         {
             var draft = workflowDefinition;
 
@@ -154,13 +153,13 @@ namespace Elsa.Services
             return draft;
         }
 
-        public async Task DeleteAsync(string workflowDefinitionId, CancellationToken cancellationToken)
+        public async Task DeleteAsync(string workflowDefinitionId, CancellationToken cancellationToken = default)
         {
             await _workflowInstanceStore.DeleteManyAsync(new WorkflowDefinitionIdSpecification(workflowDefinitionId), cancellationToken);
             await _workflowDefinitionStore.DeleteManyAsync(new Persistence.Specifications.WorkflowDefinitions.WorkflowDefinitionIdSpecification(workflowDefinitionId), cancellationToken);
         }
 
-        public Task DeleteAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken) => DeleteAsync(workflowDefinition.Id, cancellationToken);
+        public Task DeleteAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken = default) => DeleteAsync(workflowDefinition.Id, cancellationToken);
 
         private WorkflowDefinition Initialize(WorkflowDefinition workflowDefinition)
         {
