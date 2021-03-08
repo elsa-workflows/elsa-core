@@ -14,7 +14,6 @@ export interface WorkflowDefinition {
   isSingleton?: boolean,
   persistenceBehavior?: WorkflowPersistenceBehavior,
   deleteCompletedInstances?: boolean,
-  isEnabled?: boolean,
   isPublished?: boolean,
   isLatest?: boolean,
   activities: Array<ActivityDefinition>,

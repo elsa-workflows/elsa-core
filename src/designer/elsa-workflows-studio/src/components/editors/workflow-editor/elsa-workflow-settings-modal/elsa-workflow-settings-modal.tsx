@@ -187,7 +187,6 @@ export class ElsaWorkflowDefinitionSettingsModal {
           {this.textInput('displayName', 'Display Name', workflowDefinition.displayName, 'A user-friendly display name of the workflow.', 'workflowDisplayName')}
           {this.textArea('description', 'Description', workflowDefinition.description, null, 'workflowDescription')}
           {this.checkBox('isSingleton', 'Singleton', workflowDefinition.isSingleton, 'Singleton workflows will only have one active instance executing at a time.')}
-          {this.checkBox('isEnabled', 'Enabled', workflowDefinition.isEnabled, 'Check to enable this workflow.')}
         </div>
       </div>
     );

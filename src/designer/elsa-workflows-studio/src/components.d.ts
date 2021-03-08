@@ -86,6 +86,7 @@ export namespace Components {
     }
     interface ElsaWorkflowPublishButton {
         "publishing": boolean;
+        "workflowDefinition": WorkflowDefinition;
     }
     interface ElsaWorkflowSettingsModal {
         "workflowDefinition": WorkflowDefinition;
@@ -296,7 +297,9 @@ declare namespace LocalJSX {
     }
     interface ElsaWorkflowPublishButton {
         "onPublishClicked"?: (event: CustomEvent<any>) => void;
+        "onUnPublishClicked"?: (event: CustomEvent<any>) => void;
         "publishing"?: boolean;
+        "workflowDefinition"?: WorkflowDefinition;
     }
     interface ElsaWorkflowSettingsModal {
         "workflowDefinition"?: WorkflowDefinition;
