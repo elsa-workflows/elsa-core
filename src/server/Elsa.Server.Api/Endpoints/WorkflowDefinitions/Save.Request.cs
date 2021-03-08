@@ -16,7 +16,6 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             public bool IsSingleton { get; init; }
             public WorkflowPersistenceBehavior PersistenceBehavior { get; init; }
             public bool DeleteCompletedInstances { get; init; }
-            public bool Enabled { get; init; }
             public bool Publish { get; init; }
             public ICollection<ActivityDefinition> Activities { get; init; } = new List<ActivityDefinition>();
             public ICollection<ConnectionDefinition> Connections { get; init; } = new List<ConnectionDefinition>();

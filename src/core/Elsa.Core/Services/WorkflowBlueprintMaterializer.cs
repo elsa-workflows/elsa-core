@@ -37,7 +37,6 @@ namespace Elsa.Services
                 workflowDefinition.Version,
                 workflowDefinition.TenantId,
                 workflowDefinition.IsSingleton,
-                workflowDefinition.IsEnabled,
                 workflowDefinition.Name,
                 workflowDefinition.DisplayName,
                 workflowDefinition.Description,

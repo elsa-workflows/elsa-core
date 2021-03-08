@@ -13,7 +13,6 @@ namespace Elsa.Builders
         public WorkflowBuilder(IIdGenerator idGenerator, IServiceProvider serviceProvider) : base(serviceProvider)
         {
             Version = 1;
-            IsEnabled = true;
             Variables = new Variables();
             CustomAttributes = new Variables();
             ActivityId = idGenerator.Generate();
@@ -31,7 +30,6 @@ namespace Elsa.Builders
         public WorkflowContextOptions? ContextOptions { get; private set; }
         public WorkflowPersistenceBehavior PersistenceBehavior { get; private set; }
         public bool DeleteCompletedInstances { get; private set; }
-        public bool IsEnabled { get; private set; }
 
         public IWorkflowBuilder WithWorkflowDefinitionId(string? value)
         {
@@ -97,12 +95,6 @@ namespace Elsa.Builders
             return this;
         }
 
-        public IWorkflowBuilder Enable(bool value)
-        {
-            IsEnabled = value;
-            return this;
-        }
-
         public IWorkflowBuilder WithDeleteCompletedInstances(bool value)
         {
             DeleteCompletedInstances = value;
@@ -156,7 +148,6 @@ namespace Elsa.Builders
                 Version,
                 TenantId,
                 IsSingleton,
-                IsEnabled,
                 Name,
                 DisplayName,
                 Description,
