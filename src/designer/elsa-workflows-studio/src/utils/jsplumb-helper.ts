@@ -1,21 +1,17 @@
-﻿import {jsPlumb} from 'jsplumb';
+﻿import {Connection, jsPlumb} from 'jsplumb';
+import {ConnectionModel} from "../models";
 
 let jsPlumbInstance = null;
 
 function onConnectionCreated(e, callback) {
-  const source = e.sourceEndpoint;
-  const target = e.targetEndpoint;
-
-  const sourceId = source.getParameter('sourceActivityId');
-  const targetId = target.getParameter('targetActivityId');
-  const outcome = source.getParameter('outcome');
-
   debugger;
-  callback(sourceId, targetId, outcome);
-}
+  const connection: ConnectionModel = {
+    sourceId: e.connection.getParameter('sourceActivityId'),
+    targetId: e.connection.getParameter('targetActivityId'),
+    outcome: e.connection.getParameter('outcome')
+  };
 
-function onConnectionClick(connection) {
-
+  callback(connection);
 }
 
 export function cleanup() {
@@ -36,7 +32,7 @@ export function destroy() {
   }
 }
 
-export function updateConnections(container, connections, sourceEndpoints, targets, connectionCreatedCallback) {
+export function updateConnections(container, connections, sourceEndpoints, targets, connectionCreatedCallback, connectionDetachedCallback) {
 
   destroy();
 
@@ -53,16 +49,19 @@ export function updateConnections(container, connections, sourceEndpoints, targe
 
       for (const connection of connections) {
         const jsPlumbConnection = jsPlumbInstance.connect({
+
           source: connection.sourceId,
           target: connection.targetId,
           endpoint: 'Blank',
-          detachable: true,
+          detachable: connection.sourceActivityId && connection.targetActivityId,
           parameters: {
             sourceActivityId: connection.sourceActivityId,
             targetActivityId: connection.targetActivityId,
             outcome: connection.outcome
           }
         });
+
+        jsPlumbConnection.setData(connection);
       }
 
       for (const endpoint of sourceEndpoints) {
@@ -89,5 +88,20 @@ export function updateConnections(container, connections, sourceEndpoints, targe
     });
 
     jsPlumbInstance.bind("connection", e => onConnectionCreated(e, connectionCreatedCallback));
+    jsPlumbInstance.bind("click", (connection, e) => {
+      const data = connection.getData();
+      const sourceActivityId: string = data.sourceActivityId;
+      const targetActivityId: string = data.targetActivityId;
+      const outcome: string = data.outcome;
+
+      if (sourceActivityId && targetActivityId && outcome) {
+        const model: ConnectionModel = {
+          sourceId: sourceActivityId,
+          targetId: targetActivityId,
+          outcome: outcome
+        }
+        connectionDetachedCallback(model);
+      }
+    });
   });
 }

@@ -83,7 +83,13 @@ export class ElsaWorkflowDesigner {
     const sourceEndpoints = this.getJsPlumbSourceEndpoints();
     const targets = this.getJsPlumbTargets();
 
-    updateConnections(canvasElement, connections, sourceEndpoints, targets, (sourceId, targetId, outcome) => this.onConnectionCreated(sourceId, targetId, outcome));
+    updateConnections(
+      canvasElement,
+      connections,
+      sourceEndpoints,
+      targets,
+      connection => this.onConnectionCreated(connection),
+      connection => this.onConnectionDetached(connection));
   }
 
   disconnectedCallback() {
@@ -198,10 +204,16 @@ export class ElsaWorkflowDesigner {
     this.workflowChanged.emit(model);
   }
 
-  onConnectionCreated(sourceActivityId: string, targetActivityId: string, outcome: string) {
-    const newConnection: ConnectionModel = {sourceId: sourceActivityId, targetId: targetActivityId, outcome: outcome};
+  onConnectionCreated(connection: ConnectionModel) {
     const workflowModel = {...this.workflowModel};
-    workflowModel.connections = [...workflowModel.connections, newConnection];
+    workflowModel.connections = [...workflowModel.connections, connection];
+
+    this.updateWorkflowModel(workflowModel);
+  }
+
+  onConnectionDetached(connection: ConnectionModel) {
+    const workflowModel = {...this.workflowModel};
+    workflowModel.connections = workflowModel.connections.filter(x => !(x.sourceId == connection.sourceId && x.targetId == connection.targetId && x.outcome == connection.outcome));
 
     this.updateWorkflowModel(workflowModel);
   }
