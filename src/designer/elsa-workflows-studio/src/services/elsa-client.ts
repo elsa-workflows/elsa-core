@@ -24,6 +24,10 @@ export const createElsaClient = function (serverUrl: string): ElsaClient {
       save: async request => {
         const response = await httpClient.post<WorkflowDefinition>('v1/workflow-definitions', request);
         return response.data;
+      },
+      retract: async workflowDefinitionId => {
+        const response = await httpClient.post<WorkflowDefinition>(`v1/workflow-definitions/${workflowDefinitionId}/retract`);
+        return response.data;
       }
     },
     scriptingApi: {
@@ -50,6 +54,8 @@ export interface WorkflowDefinitionsApi {
   getByDefinitionAndVersion(definitionId: string, versionOptions: VersionOptions): Promise<WorkflowDefinition>
 
   save(request: SaveWorkflowDefinitionRequest): Promise<WorkflowDefinition>
+
+  retract(workflowDefinitionId: string): Promise<WorkflowDefinition>
 }
 
 export interface ScriptingApi {
@@ -66,7 +72,6 @@ export interface SaveWorkflowDefinitionRequest {
   isSingleton?: boolean
   persistenceBehavior?: WorkflowPersistenceBehavior
   deleteCompletedInstances?: boolean
-  enabled?: boolean
   publish?: boolean
   activities: Array<ActivityDefinition>
   connections: Array<ConnectionDefinition>

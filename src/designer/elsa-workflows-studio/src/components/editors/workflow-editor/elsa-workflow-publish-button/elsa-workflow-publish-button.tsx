@@ -1,7 +1,7 @@
 import {Component, Host, h, Prop, State, Event, EventEmitter, Watch} from '@stencil/core';
 import {enter, leave, toggle} from 'el-transition'
 import {registerClickOutside} from "stencil-click-outside";
-import {ActivityModel} from "../../../../models";
+import {ActivityModel, WorkflowDefinition} from "../../../../models";
 
 @Component({
   tag: 'elsa-workflow-publish-button',
@@ -10,8 +10,10 @@ import {ActivityModel} from "../../../../models";
 })
 export class ElsaWorkflowPublishButton {
 
+  @Prop() workflowDefinition: WorkflowDefinition;
   @Prop() publishing: boolean;
   @Event({bubbles: true}) publishClicked: EventEmitter;
+  @Event({bubbles: true}) unPublishClicked: EventEmitter;
 
   menu: HTMLElement;
 
@@ -23,12 +25,16 @@ export class ElsaWorkflowPublishButton {
     toggle(this.menu);
   }
 
-  async onPublishClick() {
+  onPublishClick() {
     this.publishClicked.emit();
   }
 
-  render() {
+  onUnPublishClick(e: Event) {
+    e.preventDefault();
+    this.unPublishClicked.emit();
+  }
 
+  render() {
     return (
       <Host ref={el => registerClickOutside(this, el, this.closeMenu)}>
         <span class="relative z-0 inline-flex shadow-sm rounded-md">
@@ -61,11 +67,7 @@ export class ElsaWorkflowPublishButton {
                   </a>
                 </div>
 
-                <div class="py-1" role="none">
-                  <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900" role="menuitem">
-                    Unpublish
-                  </a>
-                </div>
+                {this.renderUnpublishButton()}
 
               </div>
             </div>
@@ -97,5 +99,18 @@ export class ElsaWorkflowPublishButton {
         </svg>
         Publishing
       </button>);
+  }
+
+  renderUnpublishButton() {
+    if (!this.workflowDefinition.isPublished)
+      return undefined;
+
+    return (
+      <div class="py-1" role="none">
+        <a href="#" onClick={e => this.onUnPublishClick(e)} class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900" role="menuitem">
+          Unpublish
+        </a>
+      </div>
+    );
   }
 }

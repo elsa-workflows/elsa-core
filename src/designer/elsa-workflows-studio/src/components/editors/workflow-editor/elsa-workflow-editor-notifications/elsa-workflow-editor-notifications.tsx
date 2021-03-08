@@ -9,11 +9,15 @@ import {EventTypes, WorkflowDefinition} from "../../../../models";
 })
 export class ElsaWorkflowEditorNotifications {
 
-  publishedNotification: HTMLElsaToastNotificationElement;
+  toastNotificationElement: HTMLElsaToastNotificationElement;
 
   componentDidLoad() {
     eventBus.on(EventTypes.WorkflowPublished, async (workflowDefinition: WorkflowDefinition) => {
-      await this.publishedNotification.show({autoCloseIn: 1500, title: 'Workflow Published', message: `Workflow successfully published at version ${workflowDefinition.version}.`});
+      await this.toastNotificationElement.show({autoCloseIn: 1500, title: 'Workflow Published', message: `Workflow successfully published at version ${workflowDefinition.version}.`});
+    });
+
+    eventBus.on(EventTypes.WorkflowRetracted, async (workflowDefinition: WorkflowDefinition) => {
+      await this.toastNotificationElement.show({autoCloseIn: 1500, title: 'Workflow Unpublished', message: `Workflow successfully retracted.`});
     });
   }
 
@@ -21,7 +25,7 @@ export class ElsaWorkflowEditorNotifications {
 
     return (
       <Host>
-        <elsa-toast-notification ref={el => this.publishedNotification = el}/>
+        <elsa-toast-notification ref={el => this.toastNotificationElement = el}/>
       </Host>
     );
   }

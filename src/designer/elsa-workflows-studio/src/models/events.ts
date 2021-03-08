@@ -12,6 +12,7 @@ export const EventTypes = {
   ActivityDesignDisplaying: 'activity-design-displaying',
   ActivityDescriptorDisplaying: 'activity-descriptor-displaying',
   WorkflowPublished: 'workflow-published',
+  WorkflowRetracted: 'workflow-retracted',
 };
 
 export interface AddActivityEventArgs {

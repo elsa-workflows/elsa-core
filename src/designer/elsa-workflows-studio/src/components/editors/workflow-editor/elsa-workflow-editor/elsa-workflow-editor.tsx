@@ -28,9 +28,11 @@ export class ElsaWorkflowDefinitionEditor {
   @State() workflowDefinition: WorkflowDefinition;
   @State() workflowModel: WorkflowModel;
   @State() publishing: boolean;
+  @State() unPublishing: boolean;
+  @State() unPublished: boolean;
   @State() saving: boolean;
   @State() saved: boolean;
-  @State() savingError: string;
+  @State() networkError: string;
   el: HTMLElement;
   designer: HTMLElsaDesignerTreeElement;
 
@@ -107,6 +109,13 @@ export class ElsaWorkflowDefinitionEditor {
     eventBus.emit(EventTypes.WorkflowPublished, this, this.workflowDefinition);
   }
 
+  async unPublishWorkflow() {
+    this.unPublishing = true;
+    await this.unpublishWorkflow();
+    this.unPublishing = false;
+    eventBus.emit(EventTypes.WorkflowRetracted, this, this.workflowDefinition);
+  }
+
   async saveWorkflow(publish?: boolean) {
     await this.saveWorkflowInternal(null, publish);
   }
@@ -126,7 +135,6 @@ export class ElsaWorkflowDefinitionEditor {
       deleteCompletedInstances: workflowDefinition.deleteCompletedInstances,
       description: workflowDefinition.description,
       displayName: workflowDefinition.displayName,
-      enabled: workflowDefinition.isEnabled,
       isSingleton: workflowDefinition.isSingleton,
       name: workflowDefinition.name,
       persistenceBehavior: workflowDefinition.persistenceBehavior,
@@ -151,20 +159,43 @@ export class ElsaWorkflowDefinitionEditor {
       })),
     };
 
-    this.saving = true;
+    this.saving = !publish;
+    this.publishing = publish;
 
     try {
       workflowDefinition = await client.workflowDefinitionsApi.save(request);
       this.workflowDefinition = workflowDefinition;
       this.workflowModel = this.mapWorkflowModel(workflowDefinition);
+
+      this.saving = false;
+      this.saved = !publish;
+      this.publishing = false;
+      setTimeout(() => this.saved = false, 500);
     } catch (e) {
       console.error(e);
-      this.savingError = e.message;
-      setTimeout(() => this.savingError = null, 2000);
-    } finally {
       this.saving = false;
-      this.saved = true;
-      setTimeout(() => this.saved = false, 750);
+      this.saved = false;
+      this.networkError = e.message;
+      setTimeout(() => this.networkError = null, 2000);
+    }
+  }
+
+  async unpublishWorkflow() {
+    const client = createElsaClient(this.serverUrl);
+    const workflowDefinitionId = this.workflowDefinition.definitionId;
+    this.unPublishing = true;
+
+    try {
+      this.workflowDefinition = await client.workflowDefinitionsApi.retract(workflowDefinitionId);
+      this.unPublishing = false;
+      this.unPublished = true
+      setTimeout(() => this.unPublished = false, 500);
+    } catch (e) {
+      console.error(e);
+      this.unPublishing = false;
+      this.unPublished = false;
+      this.networkError = e.message;
+      setTimeout(() => this.networkError = null, 2000);
     }
   }
 
@@ -206,6 +237,10 @@ export class ElsaWorkflowDefinitionEditor {
     await this.publishWorkflow();
   }
 
+  async onUnPublishClicked() {
+    await this.unPublishWorkflow();
+  }
+
   render() {
     const tunnelState: WorkflowEditorState = {
       serverUrl: this.serverUrl,
@@ -233,7 +268,7 @@ export class ElsaWorkflowDefinitionEditor {
         <div class="fixed bottom-10 right-12">
           <div class="flex items-center space-x-4">
             {this.renderSavingIndicator()}
-            {this.renderSavingError()}
+            {this.renderNetworkError()}
             {this.renderPublishButton()}
           </div>
         </div>
@@ -271,7 +306,10 @@ export class ElsaWorkflowDefinitionEditor {
     if (this.publishing)
       return undefined;
 
-    const message = this.saving ? `Saving...` : this.saved ? `Saved` : null;
+    const message =
+      this.unPublishing ? 'Unpublishing...' : this.unPublished ? 'Unpublished'
+        : this.saving ? 'Saving...' : this.saved ? 'Saved'
+          : null;
 
     if (!message)
       return undefined;
@@ -283,17 +321,22 @@ export class ElsaWorkflowDefinitionEditor {
     );
   }
 
-  renderSavingError() {
-    if (!this.savingError)
+  renderNetworkError() {
+    if (!this.networkError)
       return undefined;
 
     return (
       <div>
-        <span class="text-rose-400 text-sm">An error occurred: {this.savingError}</span>
+        <span class="text-rose-400 text-sm">An error occurred: {this.networkError}</span>
       </div>);
   }
 
   renderPublishButton() {
-    return <elsa-workflow-publish-button onPublishClicked={() => this.onPublishClicked()} publishing={this.publishing}/>;
+    return <elsa-workflow-publish-button
+      publishing={this.publishing}
+      workflowDefinition={this.workflowDefinition}
+      onPublishClicked={() => this.onPublishClicked()}
+      onUnPublishClicked={() => this.onUnPublishClicked()}
+    />;
   }
 }
