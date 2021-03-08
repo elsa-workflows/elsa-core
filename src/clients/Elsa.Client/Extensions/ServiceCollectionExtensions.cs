@@ -20,8 +20,6 @@ namespace Elsa.Client.Extensions
         {
             if (configure != null)
                 services.Configure(configure);
-            else
-                services.ConfigureOptions<ElsaClientOptions>();
 
             var refitSettings = CreateRefitSettings();
 
