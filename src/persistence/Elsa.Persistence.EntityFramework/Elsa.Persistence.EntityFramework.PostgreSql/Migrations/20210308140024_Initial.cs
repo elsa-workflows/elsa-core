@@ -39,7 +39,6 @@ namespace Elsa.Persistence.EntityFramework.PostgreSql.Migrations
                     IsSingleton = table.Column<bool>(type: "boolean", nullable: false),
                     PersistenceBehavior = table.Column<int>(type: "integer", nullable: false),
                     DeleteCompletedInstances = table.Column<bool>(type: "boolean", nullable: false),
-                    IsEnabled = table.Column<bool>(type: "boolean", nullable: false),
                     IsPublished = table.Column<bool>(type: "boolean", nullable: false),
                     IsLatest = table.Column<bool>(type: "boolean", nullable: false),
                     Data = table.Column<string>(type: "text", nullable: true)

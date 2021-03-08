@@ -39,7 +39,6 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
                     IsSingleton = table.Column<bool>(type: "INTEGER", nullable: false),
                     PersistenceBehavior = table.Column<int>(type: "INTEGER", nullable: false),
                     DeleteCompletedInstances = table.Column<bool>(type: "INTEGER", nullable: false),
-                    IsEnabled = table.Column<bool>(type: "INTEGER", nullable: false),
                     IsPublished = table.Column<bool>(type: "INTEGER", nullable: false),
                     IsLatest = table.Column<bool>(type: "INTEGER", nullable: false),
                     Data = table.Column<string>(type: "TEXT", nullable: true)

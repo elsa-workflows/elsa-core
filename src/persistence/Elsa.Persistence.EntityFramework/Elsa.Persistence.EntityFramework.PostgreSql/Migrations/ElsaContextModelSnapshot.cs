@@ -77,9 +77,6 @@ namespace Elsa.Persistence.EntityFramework.PostgreSql.Migrations
                     b.Property<string>("DisplayName")
                         .HasColumnType("text");
 
-                    b.Property<bool>("IsEnabled")
-                        .HasColumnType("boolean");
-
                     b.Property<bool>("IsLatest")
                         .HasColumnType("boolean");
 
