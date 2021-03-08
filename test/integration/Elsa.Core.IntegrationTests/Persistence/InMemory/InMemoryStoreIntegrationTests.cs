@@ -7,14 +7,13 @@ using System.Threading;
 using Elsa.Services;
 using Elsa.Core.IntegrationTests.Workflows;
 using Elsa.Persistence;
-using System;
 
-namespace Elsa.Core.IntegrationTests.Persistence.MongoDb
+namespace Elsa.Core.IntegrationTests.Persistence.InMemory
 {
-    public class MongoDbIntegrationTests
+    public class InMemoryStoreIntegrationTests
     {
-        [Theory(DisplayName = "A saved workflow instance should be persisted-to and readable-from a MongoDb store after being run"), AutoMoqData]
-        public async Task ASavedWorkflowInstanceShouldBeRoundTrippable([HostBuilderWithElsaSampleWorkflowAndMongoDbAttribute] IHostBuilder hostBuilder)
+        [Theory(DisplayName = "A saved workflow instance should be persisted-to and readable-from an in-memory store after being run"), AutoMoqData]
+        public async Task ASavedWorkflowInstanceShouldBeRoundTrippable([HostBuilderWithElsaSampleWorkflow] IHostBuilder hostBuilder)
         {
             hostBuilder.ConfigureServices((ctx, services) => services.AddHostedService<HostedWorkflowRunner>());
             var host = await hostBuilder.StartAsync();
@@ -30,7 +29,10 @@ namespace Elsa.Core.IntegrationTests.Persistence.MongoDb
                 var instance = await workflowRunner.RunWorkflowAsync<SampleWorkflow>();
                 var retrievedInstance = await instanceStore.FindByIdAsync(instance.Id);
 
+                // An instance should totally be retrieved from the store
                 Assert.NotNull(retrievedInstance);
+                // Because we are in-memory, it should be a reference to the same instance
+                Assert.Same(instance, retrievedInstance);
             }
 
             public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
