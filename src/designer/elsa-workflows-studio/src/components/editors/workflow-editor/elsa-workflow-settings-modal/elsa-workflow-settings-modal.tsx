@@ -180,12 +180,27 @@ export class ElsaWorkflowDefinitionSettingsModal {
   renderSettingsTab() {
     const workflowDefinition = this.workflowDefinitionInternal;
 
+    const persistenceBehaviorOptions: Array<SelectOption> = [{
+      text: 'Suspended',
+      value: 'Suspended'
+    }, {
+      text: 'Workflow Burst',
+      value: 'WorkflowBurst'
+    }, {
+      text: 'Workflow Pass Completed',
+      value: 'WorkflowPassCompleted'
+    }, {
+      text: 'Activity Executed',
+      value: 'ActivityExecuted'
+    }]
+
     return (
       <div class="flex px-8">
         <div class="space-y-8 w-full">
           {this.textInput('name', 'Name', workflowDefinition.name, 'The technical name of the workflow.', 'workflowName')}
           {this.textInput('displayName', 'Display Name', workflowDefinition.displayName, 'A user-friendly display name of the workflow.', 'workflowDisplayName')}
           {this.textArea('description', 'Description', workflowDefinition.description, null, 'workflowDescription')}
+          {this.selectField('persistenceBehavior', 'Persistence Behavior', workflowDefinition.persistenceBehavior.toString(), persistenceBehaviorOptions, 'The persistence behavior controls how often a workflow instance is persisted during workflow execution.', 'workflowContextFidelity')}
           {this.checkBox('isSingleton', 'Singleton', workflowDefinition.isSingleton, 'Singleton workflows will only have one active instance executing at a time.')}
         </div>
       </div>
