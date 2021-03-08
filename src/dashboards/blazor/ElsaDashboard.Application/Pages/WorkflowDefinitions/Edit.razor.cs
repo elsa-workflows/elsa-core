@@ -70,7 +70,6 @@ namespace ElsaDashboard.Application.Pages.WorkflowDefinitions
                 Name = WorkflowDefinition.Name,
                 DisplayName = WorkflowDefinition.DisplayName,
                 Description = WorkflowDefinition.Description,
-                Enabled = WorkflowDefinition.IsEnabled,
                 Publish = false,
                 Variables = WorkflowDefinition.Variables,
                 ContextOptions = WorkflowDefinition.ContextOptions,

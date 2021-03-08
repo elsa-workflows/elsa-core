@@ -15,9 +15,8 @@ namespace Elsa.Client.Models
         [DataMember(Order = 7)] public bool IsSingleton { get; set; }
         [DataMember(Order = 8)] public WorkflowPersistenceBehavior PersistenceBehavior { get; set; }
         [DataMember(Order = 9)] public bool DeleteCompletedInstances { get; set; }
-        [DataMember(Order = 10)] public bool Enabled { get; set; }
-        [DataMember(Order = 11)] public bool Publish { get; set; }
-        [DataMember(Order = 12)] public ICollection<ActivityDefinition> Activities { get; set; } = new List<ActivityDefinition>();
-        [DataMember(Order = 13)] public ICollection<ConnectionDefinition> Connections { get; set; } = new List<ConnectionDefinition>();
+        [DataMember(Order = 10)] public bool Publish { get; set; }
+        [DataMember(Order = 11)] public ICollection<ActivityDefinition> Activities { get; set; } = new List<ActivityDefinition>();
+        [DataMember(Order = 12)] public ICollection<ConnectionDefinition> Connections { get; set; } = new List<ConnectionDefinition>();
     }
 }

@@ -31,7 +31,6 @@ namespace Elsa.Samples.DeclarativeCompositeActivitiesConsole
                 Version = 1,
                 IsPublished = true,
                 IsLatest = true,
-                IsEnabled = true,
                 PersistenceBehavior = WorkflowPersistenceBehavior.Suspended,
                 Activities = new[]
                 {

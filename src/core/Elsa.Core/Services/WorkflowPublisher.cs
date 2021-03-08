@@ -35,8 +35,7 @@ namespace Elsa.Services
                 Version = 1,
                 IsLatest = true,
                 IsPublished = false,
-                IsSingleton = false,
-                IsEnabled = true
+                IsSingleton = false
             };
 
             return definition;
