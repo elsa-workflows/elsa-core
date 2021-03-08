@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Events;
@@ -78,6 +79,33 @@ namespace Elsa.Services
 
             await _workflowDefinitionStore.SaveAsync(workflowDefinition, cancellationToken);
             await _mediator.Publish(new WorkflowDefinitionPublished(workflowDefinition), cancellationToken);
+            return workflowDefinition;
+        }
+        
+        public async Task<WorkflowDefinition?> UnpublishAsync(string workflowDefinitionId, CancellationToken cancellationToken)
+        {
+            var definition = await _workflowDefinitionStore.FindByDefinitionIdAsync(
+                workflowDefinitionId,
+                VersionOptions.Published,
+                cancellationToken);
+
+            if (definition == null)
+                return null;
+
+            return await UnpublishAsync(definition, cancellationToken);
+        }
+        
+        public async Task<WorkflowDefinition> UnpublishAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken)
+        {
+            if (!workflowDefinition.IsPublished)
+                throw new InvalidOperationException("Cannot unpublish an unpublished workflow definition.");
+
+
+            workflowDefinition.IsPublished = false;
+            workflowDefinition = Initialize(workflowDefinition);
+
+            await _workflowDefinitionStore.SaveAsync(workflowDefinition, cancellationToken);
+            await _mediator.Publish(new WorkflowDefinitionRetracted(workflowDefinition), cancellationToken);
             return workflowDefinition;
         }
 
