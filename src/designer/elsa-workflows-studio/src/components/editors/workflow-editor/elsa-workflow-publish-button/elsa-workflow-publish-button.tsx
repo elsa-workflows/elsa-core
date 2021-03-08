@@ -30,7 +30,7 @@ export class ElsaWorkflowPublishButton {
   render() {
 
     return (
-      <Host class="fixed bottom-10 right-12" ref={el => registerClickOutside(this, el, this.closeMenu)}>
+      <Host ref={el => registerClickOutside(this, el, this.closeMenu)}>
         <span class="relative z-0 inline-flex shadow-sm rounded-md">
           {this.publishing ? this.renderPublishingButton() : this.renderPublishButton()}
           <span x-data="{ open: true }" class="-ml-px relative block">

@@ -28,6 +28,9 @@ export class ElsaWorkflowDefinitionEditor {
   @State() workflowDefinition: WorkflowDefinition;
   @State() workflowModel: WorkflowModel;
   @State() publishing: boolean;
+  @State() saving: boolean;
+  @State() saved: boolean;
+  @State() savingError: string;
   el: HTMLElement;
   designer: HTMLElsaDesignerTreeElement;
 
@@ -148,9 +151,21 @@ export class ElsaWorkflowDefinitionEditor {
       })),
     };
 
-    workflowDefinition = await client.workflowDefinitionsApi.save(request);
-    this.workflowDefinition = workflowDefinition;
-    this.workflowModel = this.mapWorkflowModel(workflowDefinition);
+    this.saving = true;
+
+    try {
+      workflowDefinition = await client.workflowDefinitionsApi.save(request);
+      this.workflowDefinition = workflowDefinition;
+      this.workflowModel = this.mapWorkflowModel(workflowDefinition);
+    } catch (e) {
+      console.error(e);
+      this.savingError = e.message;
+      setTimeout(() => this.savingError = null, 2000);
+    } finally {
+      this.saving = false;
+      this.saved = true;
+      setTimeout(() => this.saved = false, 750);
+    }
   }
 
   mapWorkflowModel(workflowDefinition: WorkflowDefinition): WorkflowModel {
@@ -203,7 +218,6 @@ export class ElsaWorkflowDefinitionEditor {
           {this.renderCanvas()}
           {this.renderActivityPicker()}
           {this.renderActivityEditor()}
-          <elsa-workflow-editor-notifications/>
         </Tunnel.Provider>
       </Host>
     );
@@ -214,8 +228,15 @@ export class ElsaWorkflowDefinitionEditor {
       <div class="h-screen flex relative">
         <elsa-designer-tree model={this.workflowModel} class="flex-1" ref={el => this.designer = el}/>
         {this.renderWorkflowSettingsButton()}
-        {this.renderWorkflowSettingsModal()}
-        {this.renderPublishButton()}
+        <elsa-workflow-settings-modal workflowDefinition={this.workflowDefinition}/>
+        <elsa-workflow-editor-notifications/>
+        <div class="fixed bottom-10 right-12">
+          <div class="flex items-center space-x-4">
+            {this.renderSavingIndicator()}
+            {this.renderSavingError()}
+            {this.renderPublishButton()}
+          </div>
+        </div>
       </div>
     );
   }
@@ -242,7 +263,34 @@ export class ElsaWorkflowDefinitionEditor {
   }
 
   renderWorkflowSettingsModal() {
-    return <elsa-workflow-settings-modal workflowDefinition={this.workflowDefinition}/>;
+    return;
+  }
+
+  renderSavingIndicator() {
+
+    if (this.publishing)
+      return undefined;
+
+    const message = this.saving ? `Saving...` : this.saved ? `Saved` : null;
+
+    if (!message)
+      return undefined;
+
+    return (
+      <div>
+        <span class="text-gray-400 text-sm">{message}</span>
+      </div>
+    );
+  }
+
+  renderSavingError() {
+    if (!this.savingError)
+      return undefined;
+
+    return (
+      <div>
+        <span class="text-rose-400 text-sm">An error occurred: {this.savingError}</span>
+      </div>);
   }
 
   renderPublishButton() {
