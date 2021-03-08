@@ -6,18 +6,11 @@ using MediatR;
 
 namespace Elsa.Handlers
 {
-    public class UpdateWorkflowTriggersIndex : INotificationHandler<WorkflowDefinitionPublished>
+    public class UpdateWorkflowTriggersIndex : INotificationHandler<WorkflowDefinitionPublished>, INotificationHandler<WorkflowDefinitionRetracted>
     {
         private readonly ITriggerIndexer _triggerIndexer;
-
-        public UpdateWorkflowTriggersIndex(ITriggerIndexer triggerIndexer)
-        {
-            _triggerIndexer = triggerIndexer;
-        }
-        
-        public async Task Handle(WorkflowDefinitionPublished notification, CancellationToken cancellationToken)
-        {
-            await _triggerIndexer.IndexTriggersAsync(cancellationToken);
-        }
+        public UpdateWorkflowTriggersIndex(ITriggerIndexer triggerIndexer) => _triggerIndexer = triggerIndexer;
+        public async Task Handle(WorkflowDefinitionPublished notification, CancellationToken cancellationToken) => await _triggerIndexer.IndexTriggersAsync(cancellationToken);
+        public async Task Handle(WorkflowDefinitionRetracted notification, CancellationToken cancellationToken) => await _triggerIndexer.IndexTriggersAsync(cancellationToken);
     }
 }
