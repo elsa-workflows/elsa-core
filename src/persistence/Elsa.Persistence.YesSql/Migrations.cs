@@ -16,8 +16,7 @@ namespace Elsa.Persistence.YesSql
                     .Column<string>(nameof(WorkflowDefinitionIndex.DefinitionVersionId))
                     .Column<int>(nameof(WorkflowDefinitionIndex.Version))
                     .Column<bool>(nameof(WorkflowDefinitionIndex.IsLatest))
-                    .Column<bool>(nameof(WorkflowDefinitionIndex.IsPublished))
-                    .Column<bool>(nameof(WorkflowDefinitionIndex.IsEnabled)),
+                    .Column<bool>(nameof(WorkflowDefinitionIndex.IsPublished)),
                 CollectionNames.WorkflowDefinitions);
 
             SchemaBuilder.CreateMapIndexTable<WorkflowInstanceIndex>(
@@ -38,7 +37,7 @@ namespace Elsa.Persistence.YesSql
                     .Column(nameof(WorkflowInstanceIndex.FaultedAt), DbType.DateTime)
                 ,
                 CollectionNames.WorkflowInstances);
-            
+
             SchemaBuilder.CreateMapIndexTable<WorkflowInstanceBlockingActivitiesIndex>(
                 table => table
                     .Column<string?>(nameof(WorkflowInstanceBlockingActivitiesIndex.TenantId))
@@ -48,7 +47,7 @@ namespace Elsa.Persistence.YesSql
                     .Column(nameof(WorkflowInstanceBlockingActivitiesIndex.WorkflowStatus), DbType.String)
                     .Column(nameof(WorkflowInstanceBlockingActivitiesIndex.CreatedAt), DbType.DateTime),
                 CollectionNames.WorkflowInstances);
-            
+
             SchemaBuilder.CreateMapIndexTable<WorkflowExecutionLogRecordIndex>(
                 table => table
                     .Column<string?>(nameof(WorkflowExecutionLogRecordIndex.RecordId))
@@ -56,7 +55,7 @@ namespace Elsa.Persistence.YesSql
                     .Column<string>(nameof(WorkflowExecutionLogRecordIndex.WorkflowInstanceId))
                     .Column(nameof(WorkflowExecutionLogRecordIndex.Timestamp), DbType.DateTime),
                 CollectionNames.WorkflowExecutionLog);
-            
+
             SchemaBuilder.CreateMapIndexTable<BookmarkIndex>(
                 table => table
                     .Column<string?>(nameof(BookmarkIndex.BookmarkId))

@@ -18,7 +18,6 @@ namespace Elsa.Persistence.YesSql.Documents
         public bool IsSingleton { get; set; }
         public WorkflowPersistenceBehavior PersistenceBehavior { get; set; }
         public bool DeleteCompletedInstances { get; set; }
-        public bool IsEnabled { get; set; }
         public bool IsPublished { get; set; }
         public bool IsLatest { get; set; }
         public ICollection<ActivityDefinition> Activities { get; set; } = new List<ActivityDefinition>();
