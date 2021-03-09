@@ -73,7 +73,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
                 from connection in request.Connections
                 let sourceActivity = request.Activities.FirstOrDefault(x => x.ActivityId == connection.SourceActivityId)
                 let targetActivity = request.Activities.FirstOrDefault(x => x.ActivityId == connection.TargetActivityId)
-                where sourceActivity != null && targetActivity != null
+                where sourceActivity != null && targetActivity != null && connection.Outcome is not null and not ""
                 select connection;
 
             return validConnections;
