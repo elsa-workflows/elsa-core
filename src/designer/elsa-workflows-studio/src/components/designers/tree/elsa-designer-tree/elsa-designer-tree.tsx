@@ -204,119 +204,6 @@ export class ElsaWorkflowDesigner {
     this.workflowChanged.emit(model);
   }
 
-  onConnectionCreated(connection: ConnectionModel) {
-    const workflowModel = {...this.workflowModel};
-    workflowModel.connections = [...workflowModel.connections, connection];
-
-    this.updateWorkflowModel(workflowModel);
-  }
-
-  onConnectionDetached(connection: ConnectionModel) {
-    const workflowModel = {...this.workflowModel};
-    workflowModel.connections = workflowModel.connections.filter(x => !(x.sourceId == connection.sourceId && x.targetId == connection.targetId && x.outcome == connection.outcome));
-
-    this.updateWorkflowModel(workflowModel);
-  }
-
-  onAddButtonClick() {
-    this.showActivityPicker();
-  }
-
-  onOutcomeButtonClick(e: Event, outcome?: string, activityId?: string) {
-    e.preventDefault();
-    this.parentActivityId = activityId;
-    this.parentActivityOutcome = outcome;
-    this.showActivityPicker();
-  }
-
-  render() {
-    const renderedActivities = new Set<string>();
-
-    return (
-      <Host class="workflow-canvas flex-1 flex" ref={el => this.el = el}>
-        <div class="flex-1 text-gray-200">
-          <div class="p-10">
-            <div class="canvas select-none" ref={el => this.canvasElement = el}>
-              <div class="tree">
-                <ul>
-                  <li>
-                    <div class="inline-flex flex flex-col items-center">
-                      <button id="start-button"
-                              onClick={() => this.onAddButtonClick()}
-                              type="button"
-                              class="px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-green active:bg-green-700 transition ease-in-out duration-150">
-                        Start
-                      </button>
-                    </div>
-                    {this.renderTree(this.getRootActivities(), true, renderedActivities)}
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-      </Host>
-    );
-  }
-
-  renderTree(activities: Array<ActivityModel>, isRoot: boolean, renderedActivities: Set<string>): any {
-    const list = activities.filter(x => !renderedActivities.has(x.activityId));
-    const cssClass = isRoot ? "root" : undefined;
-
-    for (const activity of list)
-      renderedActivities.add(activity.activityId);
-
-    if (list.length == 0)
-      return null;
-
-    return (
-      <ul class={cssClass}>
-        {activities.map(x => {
-          const activityId = x.activityId;
-          const children = getChildActivities(this.workflowModel, activityId);
-          const displayContext = this.activityDisplayContexts[activityId];
-
-          return <li key={x.activityId}>
-            <div class="inline-flex flex flex-col items-center">
-              {isRoot ? this.renderOutcomeButton(`start-button-plus-${x.activityId}`, '', e => this.onOutcomeButtonClick(e, null, null)) : undefined}
-              {this.renderActivity(displayContext)}
-              {this.renderOutcomeButtons(displayContext)}
-            </div>
-            {children.length > 0 ? this.renderTree(children, false, renderedActivities) : undefined}
-          </li>;
-        })}
-      </ul>
-    );
-  }
-
-  renderOutcomeButtons(displayContext: ActivityDesignDisplayContext) {
-    const activityId = displayContext.activityModel.activityId;
-
-    return (
-      <div class="flex flex-row space-x-6">
-        {displayContext.outcomes.map(x => this.renderOutcomeButton(`${activityId}-${x}`, x, e => this.onOutcomeButtonClick(e, x, activityId)))}
-      </div>
-    );
-  }
-
-  renderOutcomeButton(id: string, outcome: string, clickHandler: (e: MouseEvent) => void) {
-    return (
-      <div class="my-6 flex flex-col items-center">
-        {outcome && outcome.length > 0 ? <div
-          class="mb-4 relative z-10 px-2.5 py-0.5 rounded-full text-xs font-medium leading-4 bg-cool-gray-100 text-cool-gray-800 capitalize">{outcome}</div> : undefined}
-        <a key={id} id={id} href="#" onClick={e => clickHandler(e)}>
-          <svg class="h-8 w-8 text-gray-400 hover:text-blue-500 cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
-          </svg>
-        </a>
-      </div>
-    );
-  }
-
-  renderActivity(displayContext: ActivityDesignDisplayContext) {
-    return <elsa-designer-tree-activity displayContext={displayContext}/>;
-  }
-
   getJsPlumbConnections(): Array<any> {
     const rootActivities = getChildActivities(this.workflowModel, null);
 
@@ -394,5 +281,182 @@ export class ElsaWorkflowDesigner {
           targetActivityId: x.activityId
         }
       ));
+  }
+
+  onConnectionCreated(connection: ConnectionModel) {
+    const workflowModel = {...this.workflowModel};
+    workflowModel.connections = [...workflowModel.connections, connection];
+
+    this.updateWorkflowModel(workflowModel);
+  }
+
+  onConnectionDetached(connection: ConnectionModel) {
+    const workflowModel = {...this.workflowModel};
+    workflowModel.connections = workflowModel.connections.filter(x => !(x.sourceId == connection.sourceId && x.targetId == connection.targetId && x.outcome == connection.outcome));
+
+    this.updateWorkflowModel(workflowModel);
+  }
+
+  onAddButtonClick() {
+    this.showActivityPicker();
+  }
+
+  onOutcomeButtonClick(e: Event, outcome?: string, activityId?: string) {
+    e.preventDefault();
+    this.parentActivityId = activityId;
+    this.parentActivityOutcome = outcome;
+    this.showActivityPicker();
+  }
+
+  async onDragStartActivity(e: DragEvent, activityDisplayContext: ActivityDesignDisplayContext) {
+    const activityModel = activityDisplayContext.activityModel;
+    e.dataTransfer.setData("text", activityModel.activityId);
+    e.dataTransfer.effectAllowed = 'move';
+  }
+
+  onDragOverOutcome(e: DragEvent, outcome: string, sourceActivityId: string) {
+    e.preventDefault();
+  }
+
+  onDropOnOutcome(e: DragEvent, outcome: string, sourceActivityId) {
+    const targetActivityId = e.dataTransfer.getData('text');
+
+    if (sourceActivityId === targetActivityId)
+      return;
+
+    e.preventDefault();
+
+    const workflowModel = {...this.workflowModel};
+    const targetActivityDisplayContext = this.activityDisplayContexts[targetActivityId];
+    let connections = [...workflowModel.connections];
+
+    // Remove current connection where dropped activity is target.
+    connections = connections.filter(x => x.targetId !== targetActivityId)
+
+    // Check if there is already a connection.
+    const existingConnection = connections.find(x => x.sourceId == sourceActivityId && x.outcome == outcome);
+
+    if (existingConnection) {
+      // Try to find a matching outcome on the dropped activity to attach the existing activity to.
+      const newOutcome = targetActivityDisplayContext.outcomes.find(x => x == existingConnection.outcome) || targetActivityDisplayContext.outcomes[0];
+
+      existingConnection.sourceId = targetActivityId;
+      existingConnection.outcome = newOutcome;
+
+      // Create new connection.
+      const newConnection: ConnectionModel = {
+        sourceId: sourceActivityId,
+        targetId: targetActivityId,
+        outcome: outcome
+      };
+
+      workflowModel.connections = [...connections, newConnection];
+    }
+    else
+    {
+      // Create new connection.
+      const newConnection: ConnectionModel = {
+        sourceId: sourceActivityId,
+        targetId: targetActivityId,
+        outcome: outcome
+      };
+
+      workflowModel.connections = [...connections, newConnection];
+    }
+
+    this.updateWorkflowModel(workflowModel);
+  }
+
+  render() {
+    const renderedActivities = new Set<string>();
+
+    return (
+      <Host class="workflow-canvas flex-1 flex" ref={el => this.el = el}>
+        <div class="flex-1 text-gray-200">
+          <div class="p-10">
+            <div class="canvas select-none" ref={el => this.canvasElement = el}>
+              <div class="tree">
+                <ul>
+                  <li>
+                    <div class="inline-flex flex flex-col items-center">
+                      <button id="start-button"
+                              onClick={() => this.onAddButtonClick()}
+                              type="button"
+                              class="px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-green active:bg-green-700 transition ease-in-out duration-150">
+                        Start
+                      </button>
+                    </div>
+                    {this.renderTree(this.getRootActivities(), true, renderedActivities)}
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Host>
+    );
+  }
+
+  renderTree(activities: Array<ActivityModel>, isRoot: boolean, renderedActivities: Set<string>): any {
+    const list = activities.filter(x => !renderedActivities.has(x.activityId));
+    const cssClass = isRoot ? "root" : undefined;
+
+    for (const activity of list)
+      renderedActivities.add(activity.activityId);
+
+    if (list.length == 0)
+      return null;
+
+    return (
+      <ul class={cssClass}>
+        {activities.map(x => {
+          const activityId = x.activityId;
+          const children = getChildActivities(this.workflowModel, activityId);
+          const displayContext = this.activityDisplayContexts[activityId];
+
+          return <li key={x.activityId}>
+            <div class="inline-flex flex flex-col items-center">
+              {isRoot ? this.renderOutcomeButton(`start-button-plus-${x.activityId}`, '', activityId, e => this.onOutcomeButtonClick(e, null, null)) : undefined}
+              {this.renderActivity(displayContext)}
+              {this.renderOutcomeButtons(displayContext)}
+            </div>
+            {children.length > 0 ? this.renderTree(children, false, renderedActivities) : undefined}
+          </li>;
+        })}
+      </ul>
+    );
+  }
+
+  renderOutcomeButtons(displayContext: ActivityDesignDisplayContext) {
+    const activityId = displayContext.activityModel.activityId;
+
+    return (
+      <div class="flex flex-row space-x-6">
+        {displayContext.outcomes.map(x => this.renderOutcomeButton(`${activityId}-${x}`, x, activityId, e => this.onOutcomeButtonClick(e, x, activityId)))}
+      </div>
+    );
+  }
+
+  renderOutcomeButton(id: string, outcome: string, activityId: string, clickHandler: (e: MouseEvent) => void) {
+    return (
+      <div class="my-6 flex flex-col items-center">
+        {outcome && outcome.length > 0 ? <div
+          class="mb-4 relative z-10 px-2.5 py-0.5 rounded-full text-xs font-medium leading-4 bg-cool-gray-100 text-cool-gray-800 capitalize">{outcome}</div> : undefined}
+        <a key={id} id={id} href="#" onClick={e => clickHandler(e)}
+           onDragOver={e => this.onDragOverOutcome(e, outcome, activityId)}
+           onDrop={e => this.onDropOnOutcome(e, outcome, activityId)}
+        >
+          <svg class="h-8 w-8 text-gray-400 hover:text-blue-500 cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </a>
+      </div>
+    );
+  }
+
+  renderActivity(displayContext: ActivityDesignDisplayContext) {
+    return <elsa-designer-tree-activity displayContext={displayContext} draggable={true}
+                                        onDragStart={e => this.onDragStartActivity(e, displayContext)}
+    />;
   }
 }
