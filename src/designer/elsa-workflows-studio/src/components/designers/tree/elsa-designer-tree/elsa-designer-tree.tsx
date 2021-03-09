@@ -44,7 +44,10 @@ export class ElsaWorkflowDesigner {
 
     eventBus.on(EventTypes.ActivityPicked, async args => {
       const activityDescriptor = (args as ActivityDescriptor);
-      const activityModel = this.addActivity(activityDescriptor, this.parentActivityId, null, this.parentActivityOutcome);
+      const connectFromRoot = !this.parentActivityOutcome || this.parentActivityOutcome == "";
+      const sourceId = connectFromRoot ? null : this.parentActivityId;
+      const targetId = connectFromRoot ? this.parentActivityId : null;
+      const activityModel = this.addActivity(activityDescriptor, sourceId, targetId, this.parentActivityOutcome);
 
       if (activityDescriptor.properties.length > 0)
         this.showActivityEditor(activityModel, false);
@@ -351,9 +354,7 @@ export class ElsaWorkflowDesigner {
       };
 
       workflowModel.connections = [...connections, newConnection];
-    }
-    else
-    {
+    } else {
       // Create new connection.
       const newConnection: ConnectionModel = {
         sourceId: sourceActivityId,
@@ -416,7 +417,7 @@ export class ElsaWorkflowDesigner {
 
           return <li key={x.activityId}>
             <div class="inline-flex flex flex-col items-center">
-              {isRoot ? this.renderOutcomeButton(`start-button-plus-${x.activityId}`, '', activityId, e => this.onOutcomeButtonClick(e, null, null)) : undefined}
+              {isRoot ? this.renderOutcomeButton(`start-button-plus-${x.activityId}`, '', activityId, e => this.onOutcomeButtonClick(e, null, activityId)) : undefined}
               {this.renderActivity(displayContext)}
               {this.renderOutcomeButtons(displayContext)}
             </div>
