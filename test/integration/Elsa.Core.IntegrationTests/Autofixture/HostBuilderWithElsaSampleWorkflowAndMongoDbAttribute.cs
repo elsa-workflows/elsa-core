@@ -22,7 +22,7 @@ namespace Elsa.Core.IntegrationTests.Autofixture
                             opts.Db = "IntegrationTests";
                         });
                         elsa.AddActivity<UserTask>();
-                        elsa.AddWorkflow<SampleWorkflow>();
+                        elsa.AddWorkflow<PersistableWorkflow>();
                     })
                     ;
             }, parameter);

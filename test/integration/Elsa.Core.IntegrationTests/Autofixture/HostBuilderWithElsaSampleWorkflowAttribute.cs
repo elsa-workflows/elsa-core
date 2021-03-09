@@ -5,6 +5,7 @@ using Elsa.Activities.UserTask.Activities;
 using Elsa.Core.IntegrationTests.Workflows;
 using Elsa.Testing.Shared.AutoFixture.Customizations;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Core.IntegrationTests.Autofixture
 {
@@ -16,9 +17,8 @@ namespace Elsa.Core.IntegrationTests.Autofixture
                 services
                     .AddElsa(elsa => {
                         elsa.AddActivity<UserTask>();
-                        elsa.AddWorkflow<SampleWorkflow>();
-                    })
-                    ;
+                        elsa.AddWorkflow<PersistableWorkflow>();
+                    });
             }, parameter);
         }
     }

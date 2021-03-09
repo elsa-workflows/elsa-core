@@ -28,12 +28,16 @@ namespace Elsa.Handlers
 
         public async Task Handle(WorkflowSuspended notification, CancellationToken cancellationToken)
         {
+            _logger.LogTrace("Received notification {notification}", notification);
+            
             if (notification.WorkflowExecutionContext.WorkflowBlueprint.PersistenceBehavior == WorkflowPersistenceBehavior.Suspended)
                 await SaveWorkflowAsync(notification.WorkflowExecutionContext, cancellationToken);
         }
 
         public async Task Handle(WorkflowExecutionBurstStarting notification, CancellationToken cancellationToken)
         {
+            _logger.LogTrace("Received notification {notification}", notification);
+            
             var behavior = notification.WorkflowExecutionContext.WorkflowBlueprint.PersistenceBehavior;
             
             if (behavior == WorkflowPersistenceBehavior.WorkflowBurst || behavior == WorkflowPersistenceBehavior.WorkflowPassCompleted)
@@ -42,6 +46,8 @@ namespace Elsa.Handlers
 
         public async Task Handle(WorkflowExecutionBurstCompleted notification, CancellationToken cancellationToken)
         {
+            _logger.LogTrace("Received notification {notification}", notification);
+            
             var behavior = notification.WorkflowExecutionContext.WorkflowBlueprint.PersistenceBehavior;
             
             if (behavior == WorkflowPersistenceBehavior.WorkflowBurst)
@@ -50,6 +56,8 @@ namespace Elsa.Handlers
 
         public async Task Handle(WorkflowExecutionPassCompleted notification, CancellationToken cancellationToken)
         {
+            _logger.LogTrace("Received notification {notification}", notification);
+            
             var behavior = notification.WorkflowExecutionContext.WorkflowBlueprint.PersistenceBehavior;
 
             if (behavior == WorkflowPersistenceBehavior.WorkflowPassCompleted || notification.ActivityExecutionContext.ActivityBlueprint.PersistWorkflow)
@@ -58,6 +66,8 @@ namespace Elsa.Handlers
 
         public async Task Handle(WorkflowExecuted notification, CancellationToken cancellationToken)
         {
+            _logger.LogTrace("Received notification {notification}", notification);
+            
             var behavior = notification.WorkflowExecutionContext.WorkflowBlueprint.PersistenceBehavior;
 
             if (behavior == WorkflowPersistenceBehavior.WorkflowPassCompleted || behavior == WorkflowPersistenceBehavior.WorkflowBurst)
@@ -66,6 +76,8 @@ namespace Elsa.Handlers
 
         public async Task Handle(WorkflowExecutionFinished notification, CancellationToken cancellationToken)
         {
+            _logger.LogTrace("Received notification {notification}", notification);
+            
             var workflowExecutionContext = notification.WorkflowExecutionContext;
 
             if (workflowExecutionContext.DeleteCompletedInstances)
@@ -84,9 +96,12 @@ namespace Elsa.Handlers
 
         private async ValueTask SaveWorkflowAsync(WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
         {
+            _logger.LogTrace("Persisting workflow instance {instanceId}", workflowExecutionContext.WorkflowInstance.Id);
+
             workflowExecutionContext.PruneActivityData();
             var workflowInstance = workflowExecutionContext.WorkflowInstance;
             await _workflowInstanceStore.SaveAsync(workflowInstance, cancellationToken);
+
             _logger.LogDebug("Committed workflow {WorkflowInstanceId} to storage", workflowInstance.Id);
         }
     }
