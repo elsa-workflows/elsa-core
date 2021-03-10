@@ -25,46 +25,51 @@ import {InterruptTriggerIcon} from "../components/icons/interrupt-trigger-icon";
 import {CorrelateIcon} from "../components/icons/correlate-icon";
 
 export class ActivityIconProvider {
-  map: Map<any> = {
-    'If': <IfIcon/>,
-    'Fork': <ForkIcon/>,
-    'Join': <JoinIcon/>,
-    'For': <LoopIcon/>,
-    'ForEach': <LoopIcon/>,
-    'While': <LoopIcon/>,
-    'ParallelForEach': <LoopIcon/>,
-    'Break': <BreakIcon/>,
-    'Switch': <SwitchIcon/>,
-    'SetVariable': <CogIcon/>,
-    'SetTransientVariable': <CogIcon/>,
-    'SetContextId': <CogIcon/>,
-    'Correlate': <CorrelateIcon/>,
-    'SetName': <CogIcon/>,
-    'RunWorkflow': <RunWorkflowIcon/>,
-    'Timer': <TimerIcon/>,
-    'StartAt': <TimerIcon/>,
-    'Cron': <TimerIcon/>,
-    'ClearTimer': <EraseIcon/>,
-    'SendSignal': <SendSignalIcon/>,
-    'SignalReceived': <SignalReceivedIcon/>,
-    'Finish': <FinishIcon/>,
-    'InterruptTrigger': <InterruptTriggerIcon/>,
-    'RunJavaScript': <ScriptIcon/>,
-    'ReadLine': <ReadLineIcon/>,
-    'WriteLine': <WriteLineIcon/>,
-    'HttpEndpoint': <HttpEndpointIcon/>,
-    'SendHttpRequest': <SendHttpRequestIcon/>,
-    'WriteHttpResponse': <WriteHttpResponseIcon/>,
-    'Redirect': <RedirectIcon/>,
-    'SendEmail': <SendEmailIcon/>
+  map: Map<() => any> = {
+    'If': () => <IfIcon/>,
+    'Fork': () => <ForkIcon/>,
+    'Join': () => <JoinIcon/>,
+    'For': () => <LoopIcon/>,
+    'ForEach': () => <LoopIcon/>,
+    'While': () => <LoopIcon/>,
+    'ParallelForEach': () => <LoopIcon/>,
+    'Break': () => <BreakIcon/>,
+    'Switch': () => <SwitchIcon/>,
+    'SetVariable': () => <CogIcon/>,
+    'SetTransientVariable': () => <CogIcon/>,
+    'SetContextId': () => <CogIcon/>,
+    'Correlate': () => <CorrelateIcon/>,
+    'SetName': () => <CogIcon/>,
+    'RunWorkflow': () => <RunWorkflowIcon/>,
+    'Timer': () => <TimerIcon/>,
+    'StartAt': () => <TimerIcon/>,
+    'Cron': () => <TimerIcon/>,
+    'ClearTimer': () => <EraseIcon/>,
+    'SendSignal': () => <SendSignalIcon/>,
+    'SignalReceived': () => <SignalReceivedIcon/>,
+    'Finish': () => <FinishIcon/>,
+    'InterruptTrigger': () => <InterruptTriggerIcon/>,
+    'RunJavaScript': () => <ScriptIcon/>,
+    'ReadLine': () => <ReadLineIcon/>,
+    'WriteLine': () => <WriteLineIcon/>,
+    'HttpEndpoint': () => <HttpEndpointIcon/>,
+    'SendHttpRequest': () => <SendHttpRequestIcon/>,
+    'WriteHttpResponse': () => <WriteHttpResponseIcon/>,
+    'Redirect': () => <RedirectIcon/>,
+    'SendEmail': () => <SendEmailIcon/>
   };
 
-  register(activityType: string, icon: any) {
+  register(activityType: string, icon: () => any) {
     this.map[activityType] = icon;
   }
 
   getIcon(activityType: string): any {
-    return this.map[activityType];
+    const provider = this.map[activityType];
+
+    if(!provider)
+      return undefined;
+
+    return provider();
   }
 }
 

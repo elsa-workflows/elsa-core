@@ -19,6 +19,10 @@ export class RunJavascriptPlugin implements ElsaPlugin {
     const outcomes = props.find(x => x.name == 'Outcomes') || { expression: '' };
     const expression = outcomes.expression;
     context.outcomes = parseJson(expression) || ['Done'];
+
+    if(context.outcomes.length == 0)
+      context.outcomes = ['Done'];
+
     context.bodyDisplay = undefined;
   }
 }
