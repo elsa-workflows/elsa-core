@@ -1,8 +1,9 @@
-﻿import {ActivityDefinitionProperty} from "./domain";
+﻿import {ActivityDefinitionProperty, WorkflowPersistenceBehavior} from "./domain";
 
 export interface WorkflowModel {
   activities: Array<ActivityModel>
   connections: Array<ConnectionModel>
+  persistenceBehavior?: WorkflowPersistenceBehavior,
 }
 
 export interface ActivityModel {
