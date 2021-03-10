@@ -5,24 +5,22 @@
 <!-- Auto Generated Below -->
 
 
-## Events
-
-| Event            | Description | Type               |
-| ---------------- | ----------- | ------------------ |
-| `publishClicked` |             | `CustomEvent<any>` |
-
-
 ## Dependencies
 
 ### Used by
 
  - [elsa-workflow-editor](../elsa-workflow-editor)
 
+### Depends on
+
+- [elsa-toast-notification](../../../shared/elsa-toast-notification)
+
 ### Graph
 ```mermaid
 graph TD;
-  elsa-workflow-editor --> elsa-workflow-publish-button
-  style elsa-workflow-publish-button fill:#f9f,stroke:#333,stroke-width:4px
+  elsa-workflow-editor-notifications --> elsa-toast-notification
+  elsa-workflow-editor --> elsa-workflow-editor-notifications
+  style elsa-workflow-editor-notifications fill:#f9f,stroke:#333,stroke-width:4px
 ```
 
 ----------------------------------------------

@@ -1,4 +1,5 @@
 const path = require('path');
+const CopyPlugin = require("copy-webpack-plugin");
 
 module.exports = env => {
 
@@ -29,5 +30,13 @@ module.exports = env => {
             path: path.resolve(__dirname, 'wwwroot'),
             libraryTarget: 'module'
         },
+        plugins: [
+            new CopyPlugin({
+                patterns: [
+                    { from: "node_modules/monaco-editor/min", to: "monaco-editor/min" },
+                    { from: "node_modules/monaco-editor/min-maps", to: "monaco-editor/min-maps" },
+                ],
+            }),
+        ],
     };
 };

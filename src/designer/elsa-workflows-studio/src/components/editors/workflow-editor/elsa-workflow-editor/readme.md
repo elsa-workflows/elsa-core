@@ -41,9 +41,10 @@ Type: `Promise<string>`
 ### Depends on
 
 - [elsa-designer-tree](../../../designers/tree/elsa-designer-tree)
+- [elsa-workflow-settings-modal](../elsa-workflow-settings-modal)
+- [elsa-workflow-editor-notifications](../elsa-workflow-editor-notifications)
 - [elsa-activity-picker-modal](../../../pickers/elsa-activity-picker-modal)
 - [elsa-activity-editor-modal](../elsa-activity-editor-modal)
-- [elsa-workflow-settings-modal](../elsa-workflow-settings-modal)
 - [elsa-workflow-publish-button](../elsa-workflow-publish-button)
 - context-consumer
 
@@ -51,16 +52,18 @@ Type: `Promise<string>`
 ```mermaid
 graph TD;
   elsa-workflow-editor --> elsa-designer-tree
+  elsa-workflow-editor --> elsa-workflow-settings-modal
+  elsa-workflow-editor --> elsa-workflow-editor-notifications
   elsa-workflow-editor --> elsa-activity-picker-modal
   elsa-workflow-editor --> elsa-activity-editor-modal
-  elsa-workflow-editor --> elsa-workflow-settings-modal
   elsa-workflow-editor --> elsa-workflow-publish-button
   elsa-workflow-editor --> context-consumer
   elsa-designer-tree --> elsa-designer-tree-activity
-  elsa-activity-picker-modal --> elsa-modal-dialog
-  elsa-activity-editor-modal --> elsa-modal-dialog
   elsa-workflow-settings-modal --> elsa-modal-dialog
   elsa-workflow-settings-modal --> elsa-monaco
+  elsa-workflow-editor-notifications --> elsa-toast-notification
+  elsa-activity-picker-modal --> elsa-modal-dialog
+  elsa-activity-editor-modal --> elsa-modal-dialog
   style elsa-workflow-editor fill:#f9f,stroke:#333,stroke-width:4px
 ```
 

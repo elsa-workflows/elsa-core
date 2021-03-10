@@ -25,6 +25,7 @@ export class ElsaWorkflowDefinitionEditor {
 
   @Prop({attribute: 'workflow-definition-id', reflect: true}) workflowDefinitionId: string;
   @Prop({attribute: 'server-url', reflect: true}) serverUrl: string;
+  @Prop({attribute: 'monaco-lib-path', reflect: true}) monacoLibPath: string;
   @State() workflowDefinition: WorkflowDefinition;
   @State() workflowModel: WorkflowModel;
   @State() publishing: boolean;
@@ -69,6 +70,11 @@ export class ElsaWorkflowDefinitionEditor {
       await this.loadActivityDescriptors();
   }
 
+  @Watch("monacoLibPath")
+  async monacoLibPathChangedHandler(newValue: string) {
+      state.monacoLibPath = newValue;
+  }
+
   @Listen('workflow-changed')
   async workflowChangedHandler(event: CustomEvent<WorkflowModel>) {
     const workflowModel = event.detail;
@@ -78,6 +84,7 @@ export class ElsaWorkflowDefinitionEditor {
   async componentWillLoad() {
     await this.serverUrlChangedHandler(this.serverUrl);
     await this.workflowDefinitionIdChangedHandler(this.workflowDefinitionId);
+    await this.monacoLibPathChangedHandler(this.monacoLibPath);
   }
 
   componentDidLoad() {

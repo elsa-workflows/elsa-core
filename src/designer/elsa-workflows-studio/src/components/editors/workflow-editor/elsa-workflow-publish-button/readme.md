@@ -5,11 +5,20 @@
 <!-- Auto Generated Below -->
 
 
+## Properties
+
+| Property             | Attribute    | Description | Type                 | Default     |
+| -------------------- | ------------ | ----------- | -------------------- | ----------- |
+| `publishing`         | `publishing` |             | `boolean`            | `undefined` |
+| `workflowDefinition` | --           |             | `WorkflowDefinition` | `undefined` |
+
+
 ## Events
 
-| Event            | Description | Type               |
-| ---------------- | ----------- | ------------------ |
-| `publishClicked` |             | `CustomEvent<any>` |
+| Event              | Description | Type               |
+| ------------------ | ----------- | ------------------ |
+| `publishClicked`   |             | `CustomEvent<any>` |
+| `unPublishClicked` |             | `CustomEvent<any>` |
 
 
 ## Dependencies

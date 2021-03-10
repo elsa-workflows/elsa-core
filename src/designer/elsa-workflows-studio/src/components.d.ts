@@ -79,6 +79,7 @@ export namespace Components {
     interface ElsaWorkflowEditor {
         "getServerUrl": () => Promise<string>;
         "getWorkflowDefinitionId": () => Promise<string>;
+        "monacoLibPath": string;
         "serverUrl": string;
         "workflowDefinitionId": string;
     }
@@ -290,6 +291,7 @@ declare namespace LocalJSX {
     interface ElsaToastNotification {
     }
     interface ElsaWorkflowEditor {
+        "monacoLibPath"?: string;
         "serverUrl"?: string;
         "workflowDefinitionId"?: string;
     }

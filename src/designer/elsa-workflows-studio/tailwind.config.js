@@ -1,9 +1,11 @@
 const defaultTheme = require('tailwindcss/defaultTheme');
 const colors = require('tailwindcss/colors')
 
+const dev = process.env.NODE_ENV == 'development';
+
 module.exports = {
   purge: {
-    enabled: false,
+    enabled: !dev,
     content: ['./src/**/*.tsx', './src/**/*.html'],
     options: {
       safelist: ['jtk-connector', 'rose', 'light-blue']
