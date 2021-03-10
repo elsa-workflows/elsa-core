@@ -14,12 +14,6 @@ import Tunnel, {WorkflowEditorState} from '../../../data/workflow-editor';
 export class ElsaWorkflowDefinitionEditor {
 
   constructor() {
-    this.workflowDefinition = {
-      version: 1,
-      connections: [],
-      activities: []
-    };
-
     pluginManager.initialize();
   }
 
@@ -72,7 +66,7 @@ export class ElsaWorkflowDefinitionEditor {
 
   @Watch("monacoLibPath")
   async monacoLibPathChangedHandler(newValue: string) {
-      state.monacoLibPath = newValue;
+    state.monacoLibPath = newValue;
   }
 
   @Listen('workflow-changed')
