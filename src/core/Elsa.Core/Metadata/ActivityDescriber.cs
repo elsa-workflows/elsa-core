@@ -7,17 +7,18 @@ using System.Reflection;
 using Elsa.Attributes;
 using Elsa.Design;
 using Humanizer;
+using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Linq;
 
 namespace Elsa.Metadata
 {
     public class ActivityDescriber : IActivityDescriber
     {
-        private readonly IEnumerable<IActivityPropertyOptionsProvider> _optionsProviders;
+        private readonly IServiceProvider _serviceProvider;
 
-        public ActivityDescriber(IEnumerable<IActivityPropertyOptionsProvider> optionsProviders)
+        public ActivityDescriber(IServiceProvider serviceProvider)
         {
-            _optionsProviders = optionsProviders;
+            _serviceProvider = serviceProvider;
         }
 
         public ActivityDescriptor? Describe(Type activityType)
@@ -49,36 +50,36 @@ namespace Elsa.Metadata
         private IEnumerable<ActivityPropertyDescriptor> DescribeProperties(Type activityType)
         {
             var properties = activityType.GetProperties();
+            using var scope = _serviceProvider.CreateScope();
 
             foreach (var propertyInfo in properties)
             {
-                var activityProperty = propertyInfo.GetCustomAttribute<ActivityPropertyAttribute>();
+                var activityPropertyAttribute = propertyInfo.GetCustomAttribute<ActivityPropertyAttribute>();
 
-                if (activityProperty == null)
+                if (activityPropertyAttribute == null)
                     continue;
 
-                var options = activityProperty.OptionsProvider is not null and not "" ? GetOptions(activityType, activityProperty.OptionsProvider) : activityProperty.Options;
+                var options = GetOptions(propertyInfo, activityPropertyAttribute, scope);
 
                 yield return new ActivityPropertyDescriptor
                 (
-                    (activityProperty.Name ?? propertyInfo.Name).Pascalize(),
-                    (activityProperty.UIHint ?? InferPropertyUIHint(propertyInfo)),
-                    activityProperty.Label ?? propertyInfo.Name.Humanize(LetterCasing.Title),
-                    activityProperty.Hint,
+                    (activityPropertyAttribute.Name ?? propertyInfo.Name).Pascalize(),
+                    (activityPropertyAttribute.UIHint ?? InferPropertyUIHint(propertyInfo)),
+                    activityPropertyAttribute.Label ?? propertyInfo.Name.Humanize(LetterCasing.Title),
+                    activityPropertyAttribute.Hint,
                     options
                 );
             }
         }
 
-        private object? GetOptions(Type activityType, string providerMethodName)
+        private object? GetOptions(PropertyInfo activityProperty, ActivityPropertyAttribute activityPropertyAttribute, IServiceScope scope)
         {
-            var providerMethod = activityType.GetMethod(providerMethodName, BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
+            if (activityPropertyAttribute.OptionsProvider == null)
+                return activityPropertyAttribute.Options;
 
-            if (providerMethod == null)
-                throw new MissingMethodException(activityType.Name, providerMethodName);
-
-            var options = providerMethod.Invoke(null, new object[0]);
-            return options;
+            var providerType = activityPropertyAttribute.OptionsProvider;
+            var provider = (IActivityPropertyOptionsProvider) ActivatorUtilities.GetServiceOrCreateInstance(scope.ServiceProvider, providerType);
+            return provider.GetOptions(activityProperty);
         }
 
         private string InferPropertyUIHint(PropertyInfo propertyInfo)
