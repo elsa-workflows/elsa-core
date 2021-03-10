@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Design;
+using Elsa.Metadata;
 using Elsa.Scripting.JavaScript.Events;
 using Elsa.Scripting.JavaScript.Messages;
 using Elsa.Scripting.JavaScript.Services;
@@ -19,7 +21,7 @@ using NetBox.Extensions;
 namespace Elsa.Activities.JavaScript
 {
     [Action(Category = "Scripting", Description = "Run JavaScript code.")]
-    public class RunJavaScript : Activity, INotificationHandler<RenderingTypeScriptDefinitions>
+    public class RunJavaScript : Activity, INotificationHandler<RenderingTypeScriptDefinitions>, IActivityPropertyOptionsProvider
     {
         private readonly IJavaScriptService _javaScriptService;
 
@@ -28,7 +30,7 @@ namespace Elsa.Activities.JavaScript
             _javaScriptService = javaScriptService;
         }
 
-        [ActivityProperty(Hint = "The JavaScript to run.", UIHint = ActivityPropertyUIHints.CodeEditor, OptionsProvider = nameof(GetOptions))]
+        [ActivityProperty(Hint = "The JavaScript to run.", UIHint = ActivityPropertyUIHints.CodeEditor, OptionsProvider = typeof(RunJavaScript))]
         public string? Script { get; set; }
 
         [ActivityProperty(Hint = "The possible outcomes that can be set by the script.", UIHint = ActivityPropertyUIHints.MultiText)]
@@ -60,13 +62,6 @@ namespace Elsa.Activities.JavaScript
             return new CombinedResult(Output(output), new OutcomeResult(outcomes));
         }
 
-        private static object GetOptions() => new
-        {
-            EditorHeight = "Large",
-            Context = nameof(RunJavaScript),
-            Syntax = JavaScriptExpressionHandler.SyntaxName
-        };
-
         public Task Handle(RenderingTypeScriptDefinitions notification, CancellationToken cancellationToken)
         {
             var context = notification.Context;
@@ -79,5 +74,13 @@ namespace Elsa.Activities.JavaScript
 
             return Task.CompletedTask;
         }
+
+        object IActivityPropertyOptionsProvider.GetOptions(PropertyInfo property) =>
+            new
+            {
+                EditorHeight = "Large",
+                Context = nameof(RunJavaScript),
+                Syntax = JavaScriptExpressionHandler.SyntaxName
+            };
     }
 }
