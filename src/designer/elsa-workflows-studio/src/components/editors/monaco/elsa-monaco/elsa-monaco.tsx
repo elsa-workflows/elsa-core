@@ -1,5 +1,6 @@
 import {Component, Host, h, Prop, State, Listen, Method, Watch, Event, EventEmitter} from '@stencil/core';
-import {createElsaClient} from "../../../../services/elsa-client";
+import {initializeMonacoWorker} from "./elsa-monaco-utils";
+import state from '../../../../utils/store';
 
 // Until I figure out why the ESM loader doesn't work properly, we need to include these scripts manually from index.html
 // import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
@@ -54,6 +55,7 @@ export class ElsaMonaco {
   }
 
   componentWillLoad() {
+    initializeMonacoWorker(state.monacoLibPath);
     this.registerLiquid();
   }
 

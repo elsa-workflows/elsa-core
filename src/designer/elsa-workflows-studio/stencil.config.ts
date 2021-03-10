@@ -5,6 +5,7 @@ import tailwindcss from 'tailwindcss';
 import cssnano from 'cssnano';
 
 const dev: boolean = process.argv && process.argv.indexOf('--dev') > -1;
+const tailwindDev: boolean = process.argv && process.argv.indexOf('--tailwind:dev') > -1;
 
 // @ts-ignore
 const purgecss = require('@fullhuman/postcss-purgecss')({
@@ -30,17 +31,15 @@ export const config: Config = {
       type: 'www',
       serviceWorker: null, // disable service workers,
       copy: [
-        {src: 'assets', dest: 'assets'}
+        {src: 'assets', dest: 'build/assets'},
+        {src: '../node_modules/monaco-editor/min', dest: 'build/assets/js/monaco-editor/min'},
+        {src: '../node_modules/monaco-editor/min-maps', dest: 'build/assets/js/monaco-editor/min-maps'}
       ]
     },
   ],
   globalStyle: 'src/globals/styles.css',
-  plugins: dev
-    ? [postcss({
-      injectGlobalPaths: [
-        'src/globals/tailwind.css'
-      ]
-    })]
+  plugins: tailwindDev
+    ? []
     : [
       postcss({
         plugins: [

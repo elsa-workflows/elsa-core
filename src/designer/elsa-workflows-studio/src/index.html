@@ -4,33 +4,20 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0"/>
   <title>Stencil Component Starter</title>
-  <link rel="stylesheet" href="/assets/fonts/inter/inter.css">
+  <link rel="stylesheet" href="/build/assets/fonts/inter/inter.css">
 
   <!-- Including a pre-built tailwind.css file for development. Don't include this when using a production build, since tailwind would already be included -->
-  <link href="/assets/tailwind.css" rel="stylesheet">
-  <!--  <link href="https://unpkg.com/monaco-editor@latest/min/vs/editor/editor.main.css" rel="stylesheet" />-->
+  <link href="/build/assets/tailwind.css" rel="stylesheet">
 
   <!--  Until I figure out why the ESM loader doesn't work properly, we need to include these scripts manually. -->
-  <script src="https://unpkg.com/monaco-editor@latest/min/vs/loader.js"></script>
+  <script src="/build/assets/js/monaco-editor/min/vs/loader.js"></script>
 
-  <script>
-    require.config({paths: {'vs': 'https://unpkg.com/monaco-editor@latest/min/vs'}});
-    window.MonacoEnvironment = {getWorkerUrl: () => proxy};
-
-    let proxy = URL.createObjectURL(new Blob([`
-	self.MonacoEnvironment = {
-		baseUrl: 'https://unpkg.com/monaco-editor@latest/min/'
-	};
-	importScripts('https://unpkg.com/monaco-editor@latest/min/vs/base/worker/workerMain.js');
-`], {type: 'text/javascript'}));
-
-  </script>
   <script type="module" src="/build/elsa-workflows-studio.esm.js"></script>
   <script nomodule src="/build/elsa-workflows-studio.js"></script>
 </head>
 <body>
 
-<elsa-workflow-editor id="workflowEditor" server-url="https://localhost:3956/" workflow-definition-id="7eed1333c2674370a1e9b300aa94fda2"></elsa-workflow-editor>
+<elsa-workflow-editor id="workflowEditor" server-url="https://localhost:3956/" workflow-definition-id="7eed1333c2674370a1e9b300aa94fda2" monaco-lib-path="build/assets/js"></elsa-workflow-editor>
 
 </body>
 </html>
