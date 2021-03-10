@@ -22,7 +22,7 @@ namespace Elsa.Metadata
 
         public ActivityDescriptor? Describe(Type activityType)
         {
-            var browsableAttribute = activityType.GetCustomAttribute<BrowsableAttribute>();
+            var browsableAttribute = activityType.GetCustomAttribute<BrowsableAttribute>(false);
             var isBrowsable = browsableAttribute == null || browsableAttribute.Browsable;
             var activityAttribute = activityType.GetCustomAttribute<ActivityAttribute>(false);
             var typeName = activityAttribute?.Type ?? activityType.Name;
