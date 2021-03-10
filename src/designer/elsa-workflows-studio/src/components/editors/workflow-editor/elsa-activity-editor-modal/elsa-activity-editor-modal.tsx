@@ -1,8 +1,9 @@
-import {Component, Host, h, State} from '@stencil/core';
+import {Component, Host, h, State, Event} from '@stencil/core';
 import {eventBus} from '../../../../services/event-bus';
 import state from '../../../../utils/store';
 import {ActivityDescriptor, ActivityModel, ActivityPropertyDescriptor, EventTypes} from "../../../../models";
 import {propertyDisplayManager} from '../../../../services/property-display-manager';
+import {FormContext, textArea, textInput} from "../../../../utils/forms";
 
 @Component({
   tag: 'elsa-activity-editor-modal',
@@ -13,17 +14,21 @@ export class ElsaActivityPickerModal {
 
   @State() activityModel: ActivityModel;
   @State() activityDescriptor: ActivityDescriptor;
+  @State() selectedTab: string = 'Properties';
   dialog: HTMLElsaModalDialogElement;
+  form: HTMLFormElement;
+  formContext: FormContext;
 
   componentDidLoad() {
     eventBus.on(EventTypes.ShowActivityEditor, async (activity: ActivityModel, animate: boolean) => {
       this.activityModel = {...activity, properties: activity.properties || []};
       this.activityDescriptor = state.activityDescriptors.find(x => x.type == activity.type);
+      this.formContext = new FormContext(this.activityModel, newValue => this.activityModel = newValue);
       await this.dialog.show(animate);
     });
   }
 
-  updateActivity(formData: FormData){
+  updateActivity(formData: FormData) {
     const activity = this.activityModel;
     const activityDescriptor = this.activityDescriptor;
     const properties: Array<ActivityPropertyDescriptor> = activityDescriptor.properties;
@@ -45,17 +50,24 @@ export class ElsaActivityPickerModal {
     await this.dialog.hide(true);
   }
 
+  onTabClick(e: Event, tab: string) {
+    e.preventDefault();
+    this.selectedTab = tab;
+  }
+
   render() {
+    const tabs = ['Properties', 'Common', 'Workflow Context'];
+    const selectedTab = this.selectedTab;
+    const inactiveClass = 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300';
+    const selectedClass = 'border-blue-500 text-blue-600';
     const activityModel: ActivityModel = this.activityModel || {type: '', activityId: '', outcomes: [], properties: []};
     const activityDescriptor = this.activityDescriptor || {displayName: '', type: '', outcomes: [], category: '', traits: 0, browsable: false, properties: [], description: ''};
-    const propertyDescriptors: Array<ActivityPropertyDescriptor> = activityDescriptor.properties;
-    const key = new Date().getTime().toString();
 
     return (
       <Host>
         <elsa-modal-dialog ref={el => this.dialog = el}>
           <div slot="content" class="py-8 pb-0">
-            <form onSubmit={e => this.onSubmit(e)}>
+            <form onSubmit={e => this.onSubmit(e)} ref={el => this.form = el}>
               <div class="flex px-8">
                 <div class="space-y-8 divide-y divide-gray-200 w-full">
                   <div>
@@ -68,8 +80,18 @@ export class ElsaActivityPickerModal {
                       </p>
                     </div>
 
-                    <div key={key} class="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
-                      {propertyDescriptors.map(property => this.renderPropertyEditor(activityModel, property))}
+                    <div class="border-b border-gray-200">
+                      <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                        {tabs.map(tab => {
+                          const isSelected = tab === selectedTab;
+                          const cssClass = isSelected ? selectedClass : inactiveClass;
+                          return <a href="#" onClick={e => this.onTabClick(e, tab)} class={`${cssClass} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}>{tab}</a>;
+                        })}
+                      </nav>
+                    </div>
+
+                    <div class="mt-8">
+                      {this.renderSelectedTab(activityModel, activityDescriptor)}
                     </div>
                   </div>
 
@@ -97,7 +119,52 @@ export class ElsaActivityPickerModal {
     );
   }
 
+  renderSelectedTab(activityModel: ActivityModel, activityDescriptor: ActivityDescriptor) {
+    return [
+      this.renderWorkflowContextTab(activityModel),
+      this.renderCommonTab(activityModel),
+      this.renderPropertiesTab(activityModel, activityDescriptor)
+    ];
+  }
+
+  renderWorkflowContextTab(activityModel: ActivityModel) {
+    return (
+      <div class={`flex ${this.getHiddenClass('Workflow Context')}`}>
+        <div class="space-y-8 w-full">
+        </div>
+      </div>
+    );
+  }
+
+  renderCommonTab(activityModel: ActivityModel) {
+    const formContext = this.formContext;
+
+    return (
+      <div class={`flex ${this.getHiddenClass('Common')}`}>
+        <div class="space-y-8 w-full">
+          {textInput(formContext, 'name', 'Name', activityModel.name, 'The technical name of the activity.', 'activityName')}
+          {textArea(formContext, 'description', 'Description', activityModel.description, 'A custom description for this activity', 'activityDescription')}
+        </div>
+      </div>
+    );
+  }
+
+  renderPropertiesTab(activityModel: ActivityModel, activityDescriptor: ActivityDescriptor) {
+    const propertyDescriptors: Array<ActivityPropertyDescriptor> = activityDescriptor.properties;
+    const key = `activity-settings:${activityModel.activityId}`;
+
+    return (
+      <div key={key} class={`grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6 ${this.getHiddenClass('Properties')}`}>
+        {propertyDescriptors.map(property => this.renderPropertyEditor(activityModel, property))}
+      </div>
+    );
+  }
+
   renderPropertyEditor(activity: ActivityModel, property: ActivityPropertyDescriptor) {
     return propertyDisplayManager.display(activity, property);
+  }
+
+  getHiddenClass(tab: string) {
+    return this.selectedTab == tab ? '' : 'hidden';
   }
 }
