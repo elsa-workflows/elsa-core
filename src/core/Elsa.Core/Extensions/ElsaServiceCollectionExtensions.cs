@@ -131,7 +131,10 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddWorkflowProvider<DatabaseWorkflowProvider>();
 
             // Metadata.
-            services.AddSingleton<IActivityDescriber, ActivityDescriber>();
+            services
+                .AddSingleton<IActivityDescriber, ActivityDescriber>()
+                .AddSingleton<IActivityPropertyOptionsResolver, ActivityPropertyOptionsResolver>()
+                .AddSingleton<IActivityPropertyUIHintResolver, ActivityPropertyUIHintResolver>();
 
             // Bookmarks.
             services

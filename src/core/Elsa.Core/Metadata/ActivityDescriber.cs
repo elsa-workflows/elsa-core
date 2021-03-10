@@ -1,24 +1,22 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using Elsa.Attributes;
-using Elsa.Design;
 using Humanizer;
-using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json.Linq;
 
 namespace Elsa.Metadata
 {
     public class ActivityDescriber : IActivityDescriber
     {
-        private readonly IServiceProvider _serviceProvider;
+        private readonly IActivityPropertyOptionsResolver _optionsResolver;
+        private readonly IActivityPropertyUIHintResolver _uiHintResolver;
 
-        public ActivityDescriber(IServiceProvider serviceProvider)
+        public ActivityDescriber(IActivityPropertyOptionsResolver optionsResolver, IActivityPropertyUIHintResolver uiHintResolver)
         {
-            _serviceProvider = serviceProvider;
+            _optionsResolver = optionsResolver;
+            _uiHintResolver = uiHintResolver;
         }
 
         public ActivityDescriptor? Describe(Type activityType)
@@ -50,7 +48,6 @@ namespace Elsa.Metadata
         private IEnumerable<ActivityPropertyDescriptor> DescribeProperties(Type activityType)
         {
             var properties = activityType.GetProperties();
-            using var scope = _serviceProvider.CreateScope();
 
             foreach (var propertyInfo in properties)
             {
@@ -59,43 +56,15 @@ namespace Elsa.Metadata
                 if (activityPropertyAttribute == null)
                     continue;
 
-                var options = GetOptions(propertyInfo, activityPropertyAttribute, scope);
-
                 yield return new ActivityPropertyDescriptor
                 (
                     (activityPropertyAttribute.Name ?? propertyInfo.Name).Pascalize(),
-                    (activityPropertyAttribute.UIHint ?? InferPropertyUIHint(propertyInfo)),
+                    _uiHintResolver.GetUIHint(propertyInfo),
                     activityPropertyAttribute.Label ?? propertyInfo.Name.Humanize(LetterCasing.Title),
                     activityPropertyAttribute.Hint,
-                    options
+                    _optionsResolver.GetOptions(propertyInfo)
                 );
             }
-        }
-
-        private object? GetOptions(PropertyInfo activityProperty, ActivityPropertyAttribute activityPropertyAttribute, IServiceScope scope)
-        {
-            if (activityPropertyAttribute.OptionsProvider == null)
-                return activityPropertyAttribute.Options;
-
-            var providerType = activityPropertyAttribute.OptionsProvider;
-            var provider = (IActivityPropertyOptionsProvider) ActivatorUtilities.GetServiceOrCreateInstance(scope.ServiceProvider, providerType);
-            return provider.GetOptions(activityProperty);
-        }
-
-        private string InferPropertyUIHint(PropertyInfo propertyInfo)
-        {
-            var type = propertyInfo.PropertyType;
-
-            if (type == typeof(bool) || type == typeof(bool?))
-                return ActivityPropertyUIHints.Checkbox;
-
-            if (type == typeof(string))
-                return ActivityPropertyUIHints.SingleLine;
-
-            if (typeof(IEnumerable).IsAssignableFrom(type))
-                return ActivityPropertyUIHints.Dropdown;
-
-            return ActivityPropertyUIHints.SingleLine;
         }
     }
 }
