@@ -32,9 +32,10 @@ export function destroy() {
   }
 }
 
-export function updateConnections(container, connections, sourceEndpoints, targets, connectionCreatedCallback, connectionDetachedCallback) {
+export function updateConnections(container, connections, sourceEndpoints, targets, connectionCreatedCallback, connectionDetachedCallback): Array<ConnectionModel> {
 
   destroy();
+  const invalidConnections: Array<ConnectionModel> = [];
 
   jsPlumbInstance = (jsPlumb as any).getInstance({
     Container: container,
@@ -61,7 +62,12 @@ export function updateConnections(container, connections, sourceEndpoints, targe
           }
         });
 
-        jsPlumbConnection.setData(connection);
+        if (!jsPlumbConnection) {
+          console.warn(`Unable to connect ${connection.sourceId} to ${connection.targetId} via ${connection.outcome}`);
+          invalidConnections.push({sourceId: connection.sourceActivityId, targetId: connection.targetActivityId, outcome: connection.outcome});
+        }
+        else
+          jsPlumbConnection.setData(connection);
       }
 
       for (const endpoint of sourceEndpoints) {
@@ -104,4 +110,6 @@ export function updateConnections(container, connections, sourceEndpoints, targe
       }
     });
   });
+
+  return invalidConnections;
 }

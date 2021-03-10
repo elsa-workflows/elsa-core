@@ -86,13 +86,15 @@ export class ElsaWorkflowDesigner {
     const sourceEndpoints = this.getJsPlumbSourceEndpoints();
     const targets = this.getJsPlumbTargets();
 
-    updateConnections(
+    const invalidConnections = updateConnections(
       canvasElement,
       connections,
       sourceEndpoints,
       targets,
       connection => this.onConnectionCreated(connection),
       connection => this.onConnectionDetached(connection));
+
+    this.removeInvalidConnections(invalidConnections);
   }
 
   disconnectedCallback() {
@@ -205,6 +207,17 @@ export class ElsaWorkflowDesigner {
   updateWorkflowModel(model: WorkflowModel) {
     this.workflowModel = model;
     this.workflowChanged.emit(model);
+  }
+
+  removeInvalidConnections(invalidConnections: Array<ConnectionModel>){
+    if (invalidConnections.length > 0) {
+
+      const isValid = (connection: ConnectionModel): boolean => invalidConnections.findIndex(x => x.targetId == connection.targetId && x.sourceId == connection.sourceId && x.outcome == connection.outcome) < 0;
+      const workflowModel = {...this.workflowModel};
+
+      workflowModel.connections = workflowModel.connections.filter(isValid);
+      this.updateWorkflowModel(workflowModel);
+    }
   }
 
   getJsPlumbConnections(): Array<any> {
