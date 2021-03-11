@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Dynamic;
 using System.Globalization;
 using System.Linq;
 using System.Threading;
@@ -25,12 +27,12 @@ namespace Elsa.Scripting.JavaScript.Handlers
             engine.SetValue("guid", (Func<string>) (() => Guid.NewGuid().ToString()));
             engine.SetValue("setVariable", (Action<string, object>) ((name, value) => activityContext.SetVariable(name, value)));
             engine.SetValue("getVariable", (Func<string, object?>) (name => activityContext.GetVariable(name)));
-            
+
             // Global variables.
             engine.SetValue("input", activityContext.Input);
             engine.SetValue("correlationId", workflowInstance.CorrelationId);
             engine.SetValue("currentCulture", CultureInfo.InvariantCulture);
-            
+
             // NodaTime types.
             RegisterType<Instant>(engine);
             RegisterType<Duration>(engine);
@@ -46,12 +48,15 @@ namespace Elsa.Scripting.JavaScript.Handlers
                 engine.SetValue(variable.Key, variable.Value);
 
             // Add activity outputs.
-            foreach (var activity in workflowBlueprint.Activities.Where(x => x.Name is not null and not "" && workflowInstance.ActivityOutput.ContainsKey(x.Name))) 
-                engine.SetValue(activity.Name, workflowInstance.ActivityOutput[activity.Name!]);
+            foreach (var activity in workflowBlueprint.Activities.Where(x => x.Name is not null and not "" && workflowInstance.ActivityOutput.ContainsKey(x.Id)))
+            {
+                var output = new { Output = workflowInstance.ActivityOutput[activity.Id!] };
+                engine.SetValue(activity.Name, output);
+            }
 
             return Task.CompletedTask;
         }
-        
+
         private void RegisterType<T>(Engine engine) => engine.SetValue(typeof(T).Name, TypeReference.CreateTypeReference(engine, typeof(T)));
     }
 }
