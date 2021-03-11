@@ -61,7 +61,8 @@ export enum WorkflowContextFidelity {
 
 export enum WorkflowPersistenceBehavior {
   Suspended,
-  WorkflowPAssCompleted,
+  WorkflowBurst,
+  WorkflowPassCompleted,
   ActivityExecuted
 }
 

@@ -15,7 +15,8 @@ namespace Elsa.Handlers
         INotificationHandler<WorkflowExecutionPassCompleted>,
         INotificationHandler<WorkflowExecutionBurstStarting>,
         INotificationHandler<WorkflowExecutionBurstCompleted>,
-        INotificationHandler<WorkflowExecutionFinished>
+        INotificationHandler<WorkflowExecutionFinished>,
+        INotificationHandler<ActivityExecuted>
     {
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
         private readonly ILogger _logger;
@@ -82,11 +83,22 @@ namespace Elsa.Handlers
             }
         }
 
+        public async Task Handle(ActivityExecuted notification, CancellationToken cancellationToken)
+        {
+            var behavior = notification.WorkflowExecutionContext.WorkflowBlueprint.PersistenceBehavior;
+
+            if (behavior == WorkflowPersistenceBehavior.ActivityExecuted)
+                await SaveWorkflowAsync(notification.WorkflowExecutionContext, cancellationToken);
+        }
+
         private async ValueTask SaveWorkflowAsync(WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
         {
+            _logger.LogTrace("Persisting workflow instance {instanceId}", workflowExecutionContext.WorkflowInstance.Id);
+
             workflowExecutionContext.PruneActivityData();
             var workflowInstance = workflowExecutionContext.WorkflowInstance;
             await _workflowInstanceStore.SaveAsync(workflowInstance, cancellationToken);
+
             _logger.LogDebug("Committed workflow {WorkflowInstanceId} to storage", workflowInstance.Id);
         }
     }

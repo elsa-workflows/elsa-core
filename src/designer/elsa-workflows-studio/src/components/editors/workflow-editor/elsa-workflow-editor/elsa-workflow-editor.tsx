@@ -1,6 +1,6 @@
 import {Component, Event, EventEmitter, h, Host, Listen, Method, Prop, State, Watch} from '@stencil/core';
 import {eventBus} from '../../../../services/event-bus';
-import {ActivityDefinition, ActivityDescriptor, ActivityModel, ConnectionDefinition, ConnectionModel, EventTypes, WorkflowDefinition, WorkflowModel} from "../../../../models";
+import {ActivityDefinition, ActivityDescriptor, ActivityModel, ConnectionDefinition, ConnectionModel, EventTypes, WorkflowDefinition, WorkflowModel, WorkflowPersistenceBehavior} from "../../../../models";
 import {createElsaClient, SaveWorkflowDefinitionRequest} from "../../../../services/elsa-client";
 import {pluginManager} from '../../../../services/plugin-manager';
 import state from '../../../../utils/store';
@@ -44,7 +44,7 @@ export class ElsaWorkflowDefinitionEditor {
   @Watch('workflowDefinitionId')
   async workflowDefinitionIdChangedHandler(newValue: string) {
     const workflowDefinitionId = newValue;
-    let workflowDefinition: WorkflowDefinition = {definitionId: this.workflowDefinitionId, version: 1, activities: [], connections: []};
+    let workflowDefinition: WorkflowDefinition = this.createWorkflowDefinition();
     const client = createElsaClient(this.serverUrl);
 
     if (workflowDefinitionId && workflowDefinitionId.length > 0) {
@@ -339,5 +339,15 @@ export class ElsaWorkflowDefinitionEditor {
       onPublishClicked={() => this.onPublishClicked()}
       onUnPublishClicked={() => this.onUnPublishClicked()}
     />;
+  }
+
+  private createWorkflowDefinition() : WorkflowDefinition {
+    return {
+      definitionId: this.workflowDefinitionId,
+      version: 1,
+      activities: [],
+      connections: [],
+      persistenceBehavior: WorkflowPersistenceBehavior.WorkflowBurst,
+    };
   }
 }
