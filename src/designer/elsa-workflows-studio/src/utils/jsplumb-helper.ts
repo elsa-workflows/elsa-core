@@ -19,6 +19,7 @@ export function cleanup() {
 }
 
 export function destroy() {
+  console.debug(`destroy called`);
   if (jsPlumbInstance != null) {
 
     jsPlumbInstance.batch(() => {
@@ -64,7 +65,7 @@ export function updateConnections(container, connections, sourceEndpoints, targe
 
         if (!jsPlumbConnection) {
           console.warn(`Unable to connect ${connection.sourceId} to ${connection.targetId} via ${connection.outcome}`);
-          invalidConnections.push({sourceId: connection.sourceActivityId, targetId: connection.targetActivityId, outcome: connection.outcome});
+          //invalidConnections.push({sourceId: connection.sourceActivityId, targetId: connection.targetActivityId, outcome: connection.outcome});
         }
         else
           jsPlumbConnection.setData(connection);

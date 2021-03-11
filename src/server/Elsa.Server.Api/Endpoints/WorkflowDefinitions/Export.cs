@@ -34,7 +34,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             OperationId = "WorkflowDefinitions.Export",
             Tags = new[] { "WorkflowDefinitions" })
         ]
-        public async Task<IActionResult> Handle(string workflowDefinitionId, VersionOptions versionOptions, ApiVersion apiVersion, CancellationToken cancellationToken)
+        public async Task<IActionResult> Handle(string workflowDefinitionId, VersionOptions versionOptions, CancellationToken cancellationToken)
         {
             var workflowDefinition = await _workflowDefinitionStore.FindByDefinitionIdAsync(workflowDefinitionId, versionOptions, cancellationToken);
 

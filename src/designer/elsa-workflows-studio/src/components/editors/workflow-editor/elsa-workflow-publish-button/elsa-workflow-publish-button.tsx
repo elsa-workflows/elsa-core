@@ -1,11 +1,9 @@
 import {Component, Host, h, Prop, State, Event, EventEmitter, Watch} from '@stencil/core';
 import {enter, leave, toggle} from 'el-transition'
 import {registerClickOutside} from "stencil-click-outside";
-import {ActivityModel, VersionOptions, WorkflowDefinition} from "../../../../models";
+import {VersionOptions, WorkflowDefinition} from "../../../../models";
 import {createElsaClient} from "../../../../services/elsa-client";
-import Tunnel, {WorkflowEditorState} from '../../../data/workflow-editor';
-import {ElsaTextProperty} from "../../properties/elsa-text-property/elsa-text-property";
-import {downloadFromBlob, downloadFromText} from "../../../../utils/download";
+import Tunnel from '../../../data/workflow-editor';
 
 @Component({
   tag: 'elsa-workflow-publish-button',
@@ -16,11 +14,13 @@ export class ElsaWorkflowPublishButton {
 
   @Prop() workflowDefinition: WorkflowDefinition;
   @Prop() publishing: boolean;
-  @Prop({attribute: 'server-url', reflect: true}) serverUrl: string;
   @Event({bubbles: true}) publishClicked: EventEmitter;
   @Event({bubbles: true}) unPublishClicked: EventEmitter;
+  @Event({bubbles: true}) exportClicked: EventEmitter;
+  @Event({bubbles: true}) importClicked: EventEmitter<File>;
 
   menu: HTMLElement;
+  fileInput: HTMLInputElement;
 
   closeMenu() {
     leave(this.menu);
@@ -32,21 +32,37 @@ export class ElsaWorkflowPublishButton {
 
   onPublishClick() {
     this.publishClicked.emit();
+    leave(this.menu);
   }
 
   onUnPublishClick(e: Event) {
     e.preventDefault();
     this.unPublishClicked.emit();
+    leave(this.menu);
   }
 
   async onExportClick(e: Event) {
     e.preventDefault();
+    this.exportClicked.emit();
+    leave(this.menu);
+  }
 
-    const client = createElsaClient(this.serverUrl);
-    const workflowDefinition = this.workflowDefinition;
-    const versionOptions: VersionOptions = {version: workflowDefinition.version};
-    const response = await client.workflowDefinitionsApi.export(workflowDefinition.definitionId, versionOptions);
-    downloadFromBlob(response.data, { contentType: 'application/json', fileName: response.fileName });
+  async onImportClick(e: Event) {
+    this.fileInput.value = null;
+    this.fileInput.click();
+
+    leave(this.menu);
+  }
+
+  async onFileInputChange(e: Event)
+  {
+    const files = this.fileInput.files;
+
+    if (files.length == 0) {
+      return;
+    }
+
+    this.importClicked.emit(files[0]);
   }
 
   render() {
@@ -77,7 +93,7 @@ export class ElsaWorkflowPublishButton {
                     Export
                   </a>
 
-                  <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900" role="menuitem">
+                  <a href="#" onClick={e => this.onImportClick(e)} class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900" role="menuitem">
                     Import
                   </a>
                 </div>
@@ -88,6 +104,7 @@ export class ElsaWorkflowPublishButton {
             </div>
           </span>
         </span>
+        <input type="file" class="hidden" onChange={e => this.onFileInputChange(e)} ref={el => this.fileInput = el}/>
       </Host>
     );
   }
