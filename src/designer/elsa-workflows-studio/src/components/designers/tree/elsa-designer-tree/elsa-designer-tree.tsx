@@ -1,7 +1,7 @@
 import {Component, Host, h, Prop, State, Event, EventEmitter, Listen, Watch} from '@stencil/core';
 import {Map, addConnection, findActivity, getChildActivities, getInboundConnections, getOutboundConnections, removeActivity} from '../../../../utils/utils';
 import {cleanup, destroy, updateConnections} from '../../../../utils/jsplumb-helper';
-import {ActivityDescriptor, ActivityDesignDisplayContext, ActivityModel, ConnectionModel, EventTypes, WorkflowModel} from "../../../../models";
+import {ActivityDescriptor, ActivityDesignDisplayContext, ActivityModel, ConnectionModel, EventTypes, WorkflowModel, WorkflowPersistenceBehavior} from "../../../../models";
 import {eventBus} from '../../../../services/event-bus';
 import jsPlumb from "jsplumb";
 import uuid = jsPlumb.jsPlumbUtil.uuid;
@@ -15,7 +15,7 @@ import {ActivityIcon} from "../../../icons/activity-icon";
 })
 export class ElsaWorkflowDesigner {
 
-  @Prop() model: WorkflowModel = {activities: [], connections: []};
+  @Prop() model: WorkflowModel = { activities: [], connections: [], persistenceBehavior: WorkflowPersistenceBehavior.WorkflowBurst };
   @Event({eventName: 'workflow-changed', bubbles: true, composed: true, cancelable: true}) workflowChanged: EventEmitter<WorkflowModel>
   @State() workflowModel: WorkflowModel
   el: HTMLElement

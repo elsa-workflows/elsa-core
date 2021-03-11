@@ -19,6 +19,7 @@ namespace Elsa.Builders
             ActivityType = typeof(Workflow);
             WorkflowBuilder = this;
             PropertyValueProviders = new Dictionary<string, IActivityPropertyValueProvider>();
+            PersistenceBehavior = WorkflowPersistenceBehavior.WorkflowBurst;
         }
         
         public int Version { get; private set; }

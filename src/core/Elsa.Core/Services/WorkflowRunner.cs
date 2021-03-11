@@ -171,6 +171,8 @@ namespace Elsa.Services
             using var workflowExecutionScope = _serviceScopeFactory.CreateScope();
             var workflowExecutionContext = new WorkflowExecutionContext(workflowExecutionScope.ServiceProvider, workflowBlueprint, workflowInstance, input);
 
+            _logger.LogDebug("{methodName} is running workflow instance Id {instanceId}", nameof(RunWorkflowAsync), workflowInstance.Id);
+
             if (!string.IsNullOrWhiteSpace(workflowInstance.ContextId))
             {
                 var loadContext = new LoadWorkflowContext(workflowExecutionContext);
@@ -204,7 +206,10 @@ namespace Elsa.Services
             {
                 case WorkflowStatus.Idle:
                     if (!await BeginWorkflow(workflowExecutionContext, activity, input, cancellationToken))
+                    {
+                        _logger.LogDebug("Workflow {WorkflowInstanceId} cannot begin from an idle state (perhaps it needs a specific input)", workflowInstance.Id);
                         return workflowInstance;
+                    }
                     break;
 
                 case WorkflowStatus.Running:
@@ -213,7 +218,10 @@ namespace Elsa.Services
 
                 case WorkflowStatus.Suspended:
                     if (!await ResumeWorkflowAsync(workflowExecutionContext, activity!, input, cancellationToken))
+                    {
+                        _logger.LogDebug("Workflow {WorkflowInstanceId} cannot be resumed from a suspended state (perhaps it needs a specific input)", workflowInstance.Id);
                         return workflowInstance;
+                    }
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -231,7 +239,10 @@ namespace Elsa.Services
             };
 
             if (statusEvent != null)
+            {
+                _logger.LogTrace("Publishing a status event of type {eventType} for workflow {WorkflowInstanceId}", statusEvent.GetType().Name, workflowInstance.Id);
                 await _mediator.Publish(statusEvent, cancellationToken);
+            }
 
             await _mediator.Publish(new WorkflowExecutionFinished(workflowExecutionContext), cancellationToken);
             return workflowExecutionContext.WorkflowInstance;
