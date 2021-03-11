@@ -30,7 +30,7 @@ export class ElsaWorkflowDesigner {
   }
 
   @Method()
-  destroyJsPlumb(){
+  async destroyJsPlumb(){
     destroy();
   }
 
