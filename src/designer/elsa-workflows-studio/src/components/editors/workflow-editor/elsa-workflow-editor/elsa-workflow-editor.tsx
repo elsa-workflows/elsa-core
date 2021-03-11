@@ -147,10 +147,10 @@ export class ElsaWorkflowDefinitionEditor {
         name: x.name,
         displayName: x.displayName,
         description: x.description,
-        persistWorkflow: false,
-        loadWorkflowContext: false,
-        saveWorkflowContext: false,
-        persistOutput: false,
+        persistWorkflow: x.persistWorkflow,
+        loadWorkflowContext: x.loadWorkflowContext,
+        saveWorkflowContext: x.saveWorkflowContext,
+        persistOutput: x.persistOutput,
         properties: x.properties
       })),
       connections: workflowModel.connections.map<ConnectionDefinition>(x => ({
@@ -218,7 +218,11 @@ export class ElsaWorkflowDefinitionEditor {
       name: source.name,
       type: source.type,
       properties: source.properties,
-      outcomes: [...descriptor.outcomes]
+      outcomes: [...descriptor.outcomes],
+      persistOutput: source.persistOutput,
+      persistWorkflow: source.persistWorkflow,
+      saveWorkflowContext: source.saveWorkflowContext,
+      loadWorkflowContext: source.loadWorkflowContext
     }
   }
 

@@ -56,7 +56,7 @@ export class ElsaActivityPickerModal {
   }
 
   render() {
-    const tabs = ['Properties', 'Common', 'Workflow Context'];
+    const tabs = ['Properties', 'Common', 'Behaviors'];
     const selectedTab = this.selectedTab;
     const inactiveClass = 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300';
     const selectedClass = 'border-blue-500 text-blue-600';
@@ -131,10 +131,12 @@ export class ElsaActivityPickerModal {
     const formContext = this.formContext;
 
     return (
-      <div class={`flex ${this.getHiddenClass('Workflow Context')}`}>
+      <div class={`flex ${this.getHiddenClass('Behaviors')}`}>
         <div class="space-y-8 w-full">
-          {checkBox(formContext, 'loadWorkflowContext', 'Load Workflow Context', activityModel.loadWorkflowContext, 'When enabled, loads the workflow context into memory before executing this activity.', 'loadWorkflowContext')}
-          {checkBox(formContext, 'saveWorkflowContext', 'Save Workflow Context', activityModel.saveWorkflowContext, 'When enabled, saves the workflow context back into storage after executing this activity.', 'saveWorkflowContext')}
+          {checkBox(formContext, 'loadWorkflowContext', 'Load Workflow Context', activityModel.loadWorkflowContext, 'When enabled, this will load the workflow context into memory before executing this activity.', 'loadWorkflowContext')}
+          {checkBox(formContext, 'saveWorkflowContext', 'Save Workflow Context', activityModel.saveWorkflowContext, 'When enabled, this will save the workflow context back into storage after executing this activity.', 'saveWorkflowContext')}
+          {checkBox(formContext, 'persistWorkflow', 'Save Workflow Instance', activityModel.persistWorkflow, 'When enabled, this will save the workflow instance back into storage right after executing this activity.', 'persistWorkflow')}
+          {checkBox(formContext, 'persistOutput', 'Save Activity Output', activityModel.persistOutput, 'When enabled, this will store this activity\'s output as part of the workflow instance. Enable this when you plan to reference this output from other activities', 'persistOutput')}
         </div>
       </div>
     );

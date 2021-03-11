@@ -14,10 +14,10 @@ export interface ActivityModel {
   description?: string;
   outcomes: Array<string>;
   properties: Array<ActivityDefinitionProperty>;
-  persistWorkflow: boolean;
-  persistOutput: boolean;
-  loadWorkflowContext: boolean;
-  saveWorkflowContext: boolean;
+  persistWorkflow?: boolean;
+  persistOutput?: boolean;
+  loadWorkflowContext?: boolean;
+  saveWorkflowContext?: boolean;
 }
 
 export interface ConnectionModel {
