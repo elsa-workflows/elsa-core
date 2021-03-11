@@ -15,6 +15,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\..\..\activities\Elsa.Activities.Http\Elsa.Activities.Http.csproj" />
         <ProjectReference Include="..\..\..\dashboards\blazor\ElsaDashboard.Application\ElsaDashboard.Application.csproj" />
         <ProjectReference Include="..\..\..\dashboards\blazor\ElsaDashboard.Backend\ElsaDashboard.Backend.csproj" />
         <ProjectReference Include="..\ElsaDashboard.Samples.WebAssembly\ElsaDashboard.Samples.WebAssembly.csproj" />
