@@ -316,7 +316,7 @@ export class ElsaWorkflowDefinitionEditor {
 
   renderCanvas() {
     return (
-      <div class="h-screen flex relative">
+      <div class="flex-1 flex relative">
         <elsa-designer-tree model={this.workflowModel} class="flex-1" ref={el => this.designer = el}/>
         {this.renderWorkflowSettingsButton()}
         <elsa-workflow-settings-modal workflowDefinition={this.workflowDefinition}/>
