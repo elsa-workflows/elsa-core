@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -106,6 +107,10 @@ namespace Elsa.Activities.Http.Activities
             {
                 var parser = SelectContentParser(request.ContentType);
                 model.Body = await parser.ParseAsync(request, cancellationToken);
+                if (model.Body is ExpandoObject expando)
+                {
+                    AddVariables(workflowContext, expando);
+                }
             }
 
             workflowContext.CurrentScope.LastResult = Output.SetVariable("Content", model);
@@ -119,6 +124,37 @@ namespace Elsa.Activities.Http.Activities
             return formatters.FirstOrDefault(
                        x => x.SupportedContentTypes.Contains(contentType, StringComparer.OrdinalIgnoreCase)
                    ) ?? formatters.Last();
+        }
+
+        protected static void AddVariables(WorkflowExecutionContext workflowContext, ExpandoObject input, string parent = null)
+        {
+            var data = (IDictionary<string, object>)input;
+            if (data != null)
+            {
+                foreach (var item in data)
+                {
+                    if (item.Value is ExpandoObject complexData)
+                    {
+                        if (parent is null)
+                        {
+                            AddVariables(workflowContext, complexData, item.Key);
+                        }
+                        else
+                        {
+                            AddVariables(workflowContext, complexData, $"{parent}.{item.Key}");
+                        }
+                    }
+
+                    if (parent is null)
+                    {
+                        workflowContext.SetVariable(item.Key, item.Value);
+                    }
+                    else
+                    {
+                        workflowContext.SetVariable($"{parent}.{item.Key}", item.Value);
+                    }
+                }
+            }
         }
     }
 }
