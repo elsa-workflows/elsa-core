@@ -19,7 +19,7 @@ namespace Elsa.Core.IntegrationTests.Autofixture
                     .AddElsa(elsa => {
                         elsa.UseMongoDbPersistence(opts => {
                             opts.ConnectionString = "mongodb://localhost:27017";
-                            opts.Db = "IntegrationTests";
+                            opts.DatabaseName = "IntegrationTests";
                         });
                         elsa.AddActivity<UserTask>();
                         elsa.AddWorkflow<PersistableWorkflow>();

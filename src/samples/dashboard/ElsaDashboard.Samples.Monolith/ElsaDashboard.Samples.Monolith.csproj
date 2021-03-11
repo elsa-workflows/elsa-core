@@ -19,6 +19,7 @@
         <ProjectReference Include="..\..\..\dashboards\blazor\ElsaDashboard.Application\ElsaDashboard.Application.csproj" />
         <ProjectReference Include="..\..\..\dashboards\blazor\ElsaDashboard.Backend\ElsaDashboard.Backend.csproj" />
         <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.Sqlite\Elsa.Persistence.EntityFramework.Sqlite.csproj" />
+        <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.MongoDb\Elsa.Persistence.MongoDb.csproj" />
         <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.YesSql\Elsa.Persistence.YesSql.csproj" />
         <ProjectReference Include="..\..\..\server\Elsa.Server.Api\Elsa.Server.Api.csproj" />
         <ProjectReference Include="..\ElsaDashboard.Samples.WebAssembly\ElsaDashboard.Samples.WebAssembly.csproj" />

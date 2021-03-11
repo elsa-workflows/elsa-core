@@ -1,3 +1,4 @@
+using System;
 using Elsa.Models;
 using Elsa.Persistence.MongoDb.Options;
 using Microsoft.Extensions.Options;
@@ -11,7 +12,11 @@ namespace Elsa.Persistence.MongoDb.Services
         {
             var connectionString = options.Value.ConnectionString;
             var mongoClient = new MongoClient(connectionString);
-            var databaseName = options.Value.Db is not null and not "" ? options.Value.Db : MongoUrl.Create(connectionString).DatabaseName;
+            var databaseName = options.Value.DatabaseName is not null and not "" ? options.Value.DatabaseName : MongoUrl.Create(connectionString).DatabaseName;
+
+            if (databaseName == null)
+                throw new Exception("Please specify a database name, either via the connection string or via the DatabaseName setting.");
+            
             MongoDatabase = mongoClient.GetDatabase(databaseName);
         }
         

@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using Elsa;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Sqlite;
+using Elsa.Persistence.MongoDb.Extensions;
 using ElsaDashboard.Backend.Extensions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -31,7 +32,8 @@ namespace ElsaDashboard.Samples.Monolith
             services
                 .AddElsa(options => options
                     //.UseYesSqlPersistence()
-                    .UseEntityFrameworkPersistence(ef => ef.UseSqlite())
+                    .UseMongoDbPersistence(mongo => mongo.ConnectionString = "mongodb://localhost/elsa")
+                    //.UseEntityFrameworkPersistence(ef => ef.UseSqlite())
                     .AddConsoleActivities()
                     .AddHttpActivities(elsaSection.GetSection("Http").Bind)
                     .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)
