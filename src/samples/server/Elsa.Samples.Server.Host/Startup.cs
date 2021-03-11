@@ -36,10 +36,10 @@ namespace Elsa.Samples.Server.Host
             services
                 .AddElsaApiEndpoints()
                 .AddElsaSwagger();
-            
+
             // Allow arbitrary client browser apps to access the API for demo purposes only.
             // In a production environment, make sure to allow only origins you trust.
-            services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()));
+            services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("Content-Disposition")));
         }
 
         public void Configure(IApplicationBuilder app)
@@ -54,6 +54,7 @@ namespace Elsa.Samples.Server.Host
             app
                 .UseCors()
                 .UseHttpActivities()
+                .UseCors()
                 .UseRouting()
                 .UseEndpoints(configure => configure.MapControllers());
         }

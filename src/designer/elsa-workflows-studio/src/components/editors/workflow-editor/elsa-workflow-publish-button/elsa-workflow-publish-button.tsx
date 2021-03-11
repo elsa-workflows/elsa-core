@@ -1,7 +1,11 @@
 import {Component, Host, h, Prop, State, Event, EventEmitter, Watch} from '@stencil/core';
 import {enter, leave, toggle} from 'el-transition'
 import {registerClickOutside} from "stencil-click-outside";
-import {ActivityModel, WorkflowDefinition} from "../../../../models";
+import {ActivityModel, VersionOptions, WorkflowDefinition} from "../../../../models";
+import {createElsaClient} from "../../../../services/elsa-client";
+import Tunnel, {WorkflowEditorState} from '../../../data/workflow-editor';
+import {ElsaTextProperty} from "../../properties/elsa-text-property/elsa-text-property";
+import {downloadFromBlob, downloadFromText} from "../../../../utils/download";
 
 @Component({
   tag: 'elsa-workflow-publish-button',
@@ -12,6 +16,7 @@ export class ElsaWorkflowPublishButton {
 
   @Prop() workflowDefinition: WorkflowDefinition;
   @Prop() publishing: boolean;
+  @Prop({attribute: 'server-url', reflect: true}) serverUrl: string;
   @Event({bubbles: true}) publishClicked: EventEmitter;
   @Event({bubbles: true}) unPublishClicked: EventEmitter;
 
@@ -32,6 +37,16 @@ export class ElsaWorkflowPublishButton {
   onUnPublishClick(e: Event) {
     e.preventDefault();
     this.unPublishClicked.emit();
+  }
+
+  async onExportClick(e: Event) {
+    e.preventDefault();
+
+    const client = createElsaClient(this.serverUrl);
+    const workflowDefinition = this.workflowDefinition;
+    const versionOptions: VersionOptions = {version: workflowDefinition.version};
+    const response = await client.workflowDefinitionsApi.export(workflowDefinition.definitionId, versionOptions);
+    downloadFromBlob(response.data, { contentType: 'application/json', fileName: response.fileName });
   }
 
   render() {
@@ -58,7 +73,7 @@ export class ElsaWorkflowPublishButton {
               <div class="divide-y divide-gray-100 focus:outline-none" role="menu" aria-orientation="vertical" aria-labelledby="option-menu">
 
                 <div class="py-1" role="none">
-                  <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900" role="menuitem">
+                  <a href="#" onClick={e => this.onExportClick(e)} class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900" role="menuitem">
                     Export
                   </a>
 
@@ -114,3 +129,5 @@ export class ElsaWorkflowPublishButton {
     );
   }
 }
+
+Tunnel.injectProps(ElsaWorkflowPublishButton, ['serverUrl']);

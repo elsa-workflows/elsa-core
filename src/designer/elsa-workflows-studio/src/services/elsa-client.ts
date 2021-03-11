@@ -28,6 +28,21 @@ export const createElsaClient = function (serverUrl: string): ElsaClient {
       retract: async workflowDefinitionId => {
         const response = await httpClient.post<WorkflowDefinition>(`v1/workflow-definitions/${workflowDefinitionId}/retract`);
         return response.data;
+      },
+      export: async (workflowDefinitionId, versionOptions): Promise<ExportWorkflowResponse> => {
+        const versionOptionsString = getVersionOptionsString(versionOptions);
+        const response = await httpClient.post(`v1/workflow-definitions/${workflowDefinitionId}/${versionOptionsString}/export`, null, {
+          responseType: 'blob'
+        });
+
+        const contentDispositionHeader = response.headers["content-disposition"]; // Only available if the Elsa Server exposes the "Content-Disposition" header.
+        const fileName = contentDispositionHeader ? contentDispositionHeader.split(";")[1].split("=")[1] : `workflow-definition-${workflowDefinitionId}.json`;
+        const data = response.data;
+
+        return {
+          fileName: fileName,
+          data: data
+        };
       }
     },
     scriptingApi: {
@@ -56,6 +71,8 @@ export interface WorkflowDefinitionsApi {
   save(request: SaveWorkflowDefinitionRequest): Promise<WorkflowDefinition>
 
   retract(workflowDefinitionId: string): Promise<WorkflowDefinition>
+
+  export(workflowDefinitionId: string, versionOptions: VersionOptions): Promise<ExportWorkflowResponse>
 }
 
 export interface ScriptingApi {
@@ -75,4 +92,9 @@ export interface SaveWorkflowDefinitionRequest {
   publish?: boolean
   activities: Array<ActivityDefinition>
   connections: Array<ConnectionDefinition>
+}
+
+export interface ExportWorkflowResponse {
+  fileName: string;
+  data: Blob;
 }
