@@ -3,7 +3,7 @@ import {eventBus} from '../../../../services/event-bus';
 import state from '../../../../utils/store';
 import {ActivityDescriptor, ActivityModel, ActivityPropertyDescriptor, EventTypes} from "../../../../models";
 import {propertyDisplayManager} from '../../../../services/property-display-manager';
-import {FormContext, textArea, textInput} from "../../../../utils/forms";
+import {checkBox, FormContext, textArea, textInput} from "../../../../utils/forms";
 
 @Component({
   tag: 'elsa-activity-editor-modal',
@@ -128,9 +128,13 @@ export class ElsaActivityPickerModal {
   }
 
   renderWorkflowContextTab(activityModel: ActivityModel) {
+    const formContext = this.formContext;
+
     return (
       <div class={`flex ${this.getHiddenClass('Workflow Context')}`}>
         <div class="space-y-8 w-full">
+          {checkBox(formContext, 'loadWorkflowContext', 'Load Workflow Context', activityModel.loadWorkflowContext, 'When enabled, loads the workflow context into memory before executing this activity.', 'loadWorkflowContext')}
+          {checkBox(formContext, 'saveWorkflowContext', 'Save Workflow Context', activityModel.saveWorkflowContext, 'When enabled, saves the workflow context back into storage after executing this activity.', 'saveWorkflowContext')}
         </div>
       </div>
     );
@@ -143,6 +147,7 @@ export class ElsaActivityPickerModal {
       <div class={`flex ${this.getHiddenClass('Common')}`}>
         <div class="space-y-8 w-full">
           {textInput(formContext, 'name', 'Name', activityModel.name, 'The technical name of the activity.', 'activityName')}
+          {textInput(formContext, 'displayName', 'Display Name', activityModel.displayName, 'A friendly name of the activity.', 'activityDisplayName')}
           {textArea(formContext, 'description', 'Description', activityModel.description, 'A custom description for this activity', 'activityDescription')}
         </div>
       </div>
