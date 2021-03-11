@@ -5,7 +5,7 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
-import { ActivityDefinitionProperty, ActivityDesignDisplayContext, ActivityModel, ActivityPropertyDescriptor, WorkflowDefinition, WorkflowModel } from "./models";
+import { ActivityDefinitionProperty, ActivityDesignDisplayContext, ActivityModel, ActivityPropertyDescriptor, VersionOptions, WorkflowDefinition, WorkflowModel } from "./models";
 import { MonacoValueChangedArgs } from "./components/editors/monaco/elsa-monaco/elsa-monaco";
 import { ToastNotificationOptions } from "./components/shared/elsa-toast-notification/elsa-toast-notification";
 export namespace Components {
@@ -22,6 +22,7 @@ export namespace Components {
         "propertyModel": ActivityDefinitionProperty;
     }
     interface ElsaDesignerTree {
+        "destroyJsPlumb": () => Promise<void>;
         "model": WorkflowModel;
     }
     interface ElsaDesignerTreeActivity {
@@ -77,8 +78,10 @@ export namespace Components {
         "show": (options: ToastNotificationOptions) => Promise<void>;
     }
     interface ElsaWorkflowEditor {
+        "exportWorkflow": () => Promise<void>;
         "getServerUrl": () => Promise<string>;
         "getWorkflowDefinitionId": () => Promise<string>;
+        "importWorkflow": (file: File) => Promise<void>;
         "monacoLibPath": string;
         "serverUrl": string;
         "workflowDefinitionId": string;
@@ -87,7 +90,6 @@ export namespace Components {
     }
     interface ElsaWorkflowPublishButton {
         "publishing": boolean;
-        "serverUrl": string;
         "workflowDefinition": WorkflowDefinition;
     }
     interface ElsaWorkflowSettingsModal {
@@ -299,10 +301,11 @@ declare namespace LocalJSX {
     interface ElsaWorkflowEditorNotifications {
     }
     interface ElsaWorkflowPublishButton {
+        "onExportClicked"?: (event: CustomEvent<any>) => void;
+        "onImportClicked"?: (event: CustomEvent<File>) => void;
         "onPublishClicked"?: (event: CustomEvent<any>) => void;
         "onUnPublishClicked"?: (event: CustomEvent<any>) => void;
         "publishing"?: boolean;
-        "serverUrl"?: string;
         "workflowDefinition"?: WorkflowDefinition;
     }
     interface ElsaWorkflowSettingsModal {

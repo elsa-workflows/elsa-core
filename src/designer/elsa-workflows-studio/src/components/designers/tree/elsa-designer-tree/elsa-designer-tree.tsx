@@ -1,4 +1,4 @@
-import {Component, Host, h, Prop, State, Event, EventEmitter, Listen, Watch} from '@stencil/core';
+import {Component, Host, h, Prop, State, Event, EventEmitter, Listen, Watch, Method} from '@stencil/core';
 import {Map, addConnection, findActivity, getChildActivities, getInboundConnections, getOutboundConnections, removeActivity} from '../../../../utils/utils';
 import {cleanup, destroy, updateConnections} from '../../../../utils/jsplumb-helper';
 import {ActivityDescriptor, ActivityDesignDisplayContext, ActivityModel, ConnectionModel, EventTypes, WorkflowModel, WorkflowPersistenceBehavior} from "../../../../models";
@@ -27,6 +27,11 @@ export class ElsaWorkflowDesigner {
   @Watch('model')
   handleModelChanged(newValue: WorkflowModel) {
     this.workflowModel = newValue;
+  }
+
+  @Method()
+  destroyJsPlumb(){
+    destroy();
   }
 
   @Listen('edit-activity')

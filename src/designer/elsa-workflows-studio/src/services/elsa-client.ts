@@ -43,6 +43,16 @@ export const createElsaClient = function (serverUrl: string): ElsaClient {
           fileName: fileName,
           data: data
         };
+      },
+      import: async (workflowDefinitionId, file: File): Promise<WorkflowDefinition> => {
+        const formData = new FormData();
+        formData.append("file", file);
+        const response = await httpClient.post<WorkflowDefinition>(`v1/workflow-definitions/${workflowDefinitionId}/import`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+        return response.data;
       }
     },
     scriptingApi: {
@@ -73,6 +83,8 @@ export interface WorkflowDefinitionsApi {
   retract(workflowDefinitionId: string): Promise<WorkflowDefinition>
 
   export(workflowDefinitionId: string, versionOptions: VersionOptions): Promise<ExportWorkflowResponse>
+
+  import(workflowDefinitionId: string, file: File): Promise<WorkflowDefinition>
 }
 
 export interface ScriptingApi {

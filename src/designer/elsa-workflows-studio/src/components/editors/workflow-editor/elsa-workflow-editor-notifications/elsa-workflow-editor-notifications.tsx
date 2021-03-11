@@ -19,6 +19,10 @@ export class ElsaWorkflowEditorNotifications {
     eventBus.on(EventTypes.WorkflowRetracted, async (workflowDefinition: WorkflowDefinition) => {
       await this.toastNotificationElement.show({autoCloseIn: 1500, title: 'Workflow Unpublished', message: `Workflow successfully retracted.`});
     });
+
+    eventBus.on(EventTypes.WorkflowImported, async (workflowDefinition: WorkflowDefinition) => {
+      await this.toastNotificationElement.show({autoCloseIn: 1500, title: 'Workflow Imported', message: `Workflow successfully imported.`});
+    });
   }
 
   render() {

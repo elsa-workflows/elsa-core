@@ -1,10 +1,11 @@
 import {Component, Event, EventEmitter, h, Host, Listen, Method, Prop, State, Watch} from '@stencil/core';
 import {eventBus} from '../../../../services/event-bus';
-import {ActivityDefinition, ActivityDescriptor, ActivityModel, ConnectionDefinition, ConnectionModel, EventTypes, WorkflowDefinition, WorkflowModel, WorkflowPersistenceBehavior} from "../../../../models";
+import {ActivityDefinition, ActivityDescriptor, ActivityModel, ConnectionDefinition, ConnectionModel, EventTypes, VersionOptions, WorkflowDefinition, WorkflowModel, WorkflowPersistenceBehavior} from "../../../../models";
 import {createElsaClient, SaveWorkflowDefinitionRequest} from "../../../../services/elsa-client";
 import {pluginManager} from '../../../../services/plugin-manager';
 import state from '../../../../utils/store';
 import Tunnel, {WorkflowEditorState} from '../../../data/workflow-editor';
+import {downloadFromBlob} from "../../../../utils/download";
 
 @Component({
   tag: 'elsa-workflow-editor',
@@ -27,6 +28,8 @@ export class ElsaWorkflowDefinitionEditor {
   @State() unPublished: boolean;
   @State() saving: boolean;
   @State() saved: boolean;
+  @State() importing: boolean;
+  @State() imported: boolean;
   @State() networkError: string;
   el: HTMLElement;
   designer: HTMLElsaDesignerTreeElement;
@@ -39,6 +42,44 @@ export class ElsaWorkflowDefinitionEditor {
   @Method()
   async getWorkflowDefinitionId(): Promise<string> {
     return this.workflowDefinition.definitionId;
+  }
+
+  @Method()
+  async exportWorkflow() {
+    const client = createElsaClient(this.serverUrl);
+    const workflowDefinition = this.workflowDefinition;
+    const versionOptions: VersionOptions = {version: workflowDefinition.version};
+    const response = await client.workflowDefinitionsApi.export(workflowDefinition.definitionId, versionOptions);
+    downloadFromBlob(response.data, {contentType: 'application/json', fileName: response.fileName});
+  }
+
+  @Method()
+  async importWorkflow(file: File) {
+    const client = createElsaClient(this.serverUrl);
+
+    this.importing = true;
+    this.imported = false;
+    this.networkError = null;
+
+    // A small hack to make sure JS Plumb is cleaned up before HTML elements get removed.
+    await this.designer.destroyJsPlumb();
+
+    try {
+      const workflowDefinition = await client.workflowDefinitionsApi.import(this.workflowDefinition.definitionId, file);
+      this.workflowDefinition = workflowDefinition;
+      this.workflowModel = this.mapWorkflowModel(workflowDefinition);
+
+      this.importing = false;
+      this.imported = true;
+      setTimeout(() => this.imported = false, 500);
+      eventBus.emit(EventTypes.WorkflowImported, this, this.workflowDefinition);
+    } catch (e) {
+      console.error(e);
+      this.importing = false;
+      this.imported = false;
+      this.networkError = e.message;
+      setTimeout(() => this.networkError = null, 10000);
+    }
   }
 
   @Watch('workflowDefinitionId')
@@ -177,7 +218,7 @@ export class ElsaWorkflowDefinitionEditor {
       this.saving = false;
       this.saved = false;
       this.networkError = e.message;
-      setTimeout(() => this.networkError = null, 2000);
+      setTimeout(() => this.networkError = null, 10000);
     }
   }
 
@@ -203,7 +244,9 @@ export class ElsaWorkflowDefinitionEditor {
   mapWorkflowModel(workflowDefinition: WorkflowDefinition): WorkflowModel {
     return {
       activities: workflowDefinition.activities.map(this.mapActivityModel),
-      connections: workflowDefinition.connections.map(this.mapConnectionModel)
+      connections: workflowDefinition.connections.map(this.mapConnectionModel),
+      persistenceBehavior: workflowDefinition.persistenceBehavior,
+
     };
   }
 
@@ -244,6 +287,14 @@ export class ElsaWorkflowDefinitionEditor {
 
   async onUnPublishClicked() {
     await this.unPublishWorkflow();
+  }
+
+  async onExportClicked() {
+    await this.exportWorkflow();
+  }
+
+  async onImportClicked(file: File) {
+    await this.importWorkflow(file);
   }
 
   render() {
@@ -314,6 +365,7 @@ export class ElsaWorkflowDefinitionEditor {
     const message =
       this.unPublishing ? 'Unpublishing...' : this.unPublished ? 'Unpublished'
         : this.saving ? 'Saving...' : this.saved ? 'Saved'
+          : this.importing ? 'Importing...' : this.imported ? 'Imported'
           : null;
 
     if (!message)
@@ -342,10 +394,12 @@ export class ElsaWorkflowDefinitionEditor {
       workflowDefinition={this.workflowDefinition}
       onPublishClicked={() => this.onPublishClicked()}
       onUnPublishClicked={() => this.onUnPublishClicked()}
+      onExportClicked={() => this.onExportClicked()}
+      onImportClicked={e => this.onImportClicked(e.detail)}
     />;
   }
 
-  private createWorkflowDefinition() : WorkflowDefinition {
+  private createWorkflowDefinition(): WorkflowDefinition {
     return {
       definitionId: this.workflowDefinitionId,
       version: 1,
