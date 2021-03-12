@@ -252,6 +252,6 @@ This project is supported by the [.NET Foundation](https://dotnetfoundation.org)
 
 ## Sponsored by Interfirst
 
-This project is backed by [Interfirst](http://www.interfirst.com/), a Residential Mortgage Licensee.
+This project is proudly backed by [Interfirst](http://www.interfirst.com/), a Residential Mortgage Licensee.
 
-[![Interfirst](./doc/sponsors/interfirst.svg | width=300)](http://www.interfirst.com/)
+[![Interfirst](./doc/sponsors/interfirst.svg)](http://www.interfirst.com/)
