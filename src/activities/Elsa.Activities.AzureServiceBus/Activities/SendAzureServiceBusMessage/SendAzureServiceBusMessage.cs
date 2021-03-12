@@ -28,9 +28,8 @@ namespace Elsa.Activities.AzureServiceBus
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
             var sender = await _messageSenderFactory.GetSenderAsync(QueueName, context.CancellationToken);
-            var json = _serializer.Serialize(Message);
-            var bytes = Encoding.UTF8.GetBytes(json);
-            var message = new Message(bytes);
+            
+            var message = Extensions.MessageBodyExtensions.CreateMessage(_serializer, Message);
 
             if (!string.IsNullOrWhiteSpace(context.WorkflowExecutionContext.CorrelationId))
                 message.CorrelationId = context.WorkflowExecutionContext.CorrelationId;
