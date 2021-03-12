@@ -10,7 +10,7 @@ namespace Elsa.Samples.AzureServiceBusWorker.Workflows
         public void Build(IWorkflowBuilder builder)
         {
             builder
-                .MessageReceived<Greeting>("greetings")
+                .MessageQueueReceived<Greeting>("greetings")
                 .WriteLine(context =>
                 {
                     var greeting = context.GetInput<Greeting>();

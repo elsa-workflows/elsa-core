@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Elsa.Activities.AzureServiceBus.Extensions;
 using Elsa.Activities.AzureServiceBus.Models;
 using Elsa.ActivityResults;
@@ -10,11 +10,11 @@ using Elsa.Services.Models;
 namespace Elsa.Activities.AzureServiceBus
 {
     [Trigger(Category = "Azure Service Bus", DisplayName = "Service Bus Message Received", Description = "Triggered when a message is received on the specified queue", Outcomes = new[] { OutcomeNames.Done })]
-    public class AzureServiceBusMessageReceived : Activity
+    public class AzureServiceBusQueueMessageReceived : Activity
     {
         private readonly IContentSerializer _serializer;
 
-        public AzureServiceBusMessageReceived(IContentSerializer serializer)
+        public AzureServiceBusQueueMessageReceived(IContentSerializer serializer)
         {
             _serializer = serializer;
         }
