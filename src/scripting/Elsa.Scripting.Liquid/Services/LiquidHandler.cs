@@ -31,12 +31,12 @@ namespace Elsa.Scripting.Liquid.Services
             return string.IsNullOrWhiteSpace(result) ? default : result.Parse(returnType);
         }
 
-        private async Task<TemplateContext> CreateTemplateContextAsync(ActivityExecutionContext workflowContext, CancellationToken cancellationToken)
+        private async Task<TemplateContext> CreateTemplateContextAsync(ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
         {
             var context = new TemplateContext();
-            context.SetValue("WorkflowExecutionContext", workflowContext);
-            await _mediator.Publish(new EvaluatingLiquidExpression(context, workflowContext), cancellationToken);
-            context.Model = workflowContext;
+            context.SetValue("ActivityExecutionContext", activityExecutionContext);
+            context.Model = activityExecutionContext;
+            await _mediator.Publish(new EvaluatingLiquidExpression(context, activityExecutionContext), cancellationToken);
             return context;
         }
     }

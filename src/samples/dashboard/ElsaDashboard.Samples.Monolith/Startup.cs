@@ -32,8 +32,8 @@ namespace ElsaDashboard.Samples.Monolith
             services
                 .AddElsa(options => options
                     //.UseYesSqlPersistence()
-                    .UseMongoDbPersistence(mongo => mongo.ConnectionString = "mongodb://localhost/elsa")
-                    //.UseEntityFrameworkPersistence(ef => ef.UseSqlite())
+                    //.UseMongoDbPersistence(mongo => mongo.ConnectionString = "mongodb://localhost/elsa")
+                    .UseEntityFrameworkPersistence(ef => ef.UseSqlite())
                     .AddConsoleActivities()
                     .AddHttpActivities(elsaSection.GetSection("Http").Bind)
                     .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)
