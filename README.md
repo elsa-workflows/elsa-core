@@ -197,7 +197,7 @@ In order to build & run Elsa on your local machine, follow these steps:
 4. Open a shell and navigate to `src\dashboard\Elsa.Dashboard.Web` and run `dotnet run`.
 5. Navigate to http://localhost:22174/elsa/home
 
-# Code of Conduct
+## Code of Conduct
 
 This project has adopted the code of conduct defined by the Contributor Covenant to clarify expected behavior in our community.
 For more information see the [.NET Foundation Code of Conduct](https://dotnetfoundation.org/code-of-conduct). 
