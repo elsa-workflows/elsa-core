@@ -27,7 +27,7 @@ namespace Elsa.Activities.AzureServiceBus.Extensions
                 .AddSingleton<IMessageSenderFactory>(sp => sp.GetRequiredService<MessageBusFactory>())
                 .AddSingleton<IMessageReceiverFactory>(sp => sp.GetRequiredService<MessageBusFactory>())
                 .AddStartupTask<StartServiceBusQueues>()
-                .AddBookmarkProvider<MessageReceivedBookmarkProvider>()
+                .AddBookmarkProvider<QueueMessageReceivedBookmarkProvider>()
 
                  .AddSingleton<ITopicMessageSenderFactory>(sp => sp.GetRequiredService<MessageBusFactory>())
                 .AddSingleton<ITopicMessageReceiverFactory>(sp => sp.GetRequiredService<MessageBusFactory>())
@@ -36,8 +36,8 @@ namespace Elsa.Activities.AzureServiceBus.Extensions
                 ;
 
             options
-                .AddActivity<AzureServiceBusMessageReceived>()
-                .AddActivity<SendAzureServiceBusMessage>()
+                .AddActivity<AzureServiceBusQueueMessageReceived>()
+                .AddActivity<SendAzureServiceBusQueueMessage>()
                 .AddActivity<SendAzureServiceBusTopicMessage>()
                 .AddActivity<AzureServiceBusTopicMessageReceived>()
 

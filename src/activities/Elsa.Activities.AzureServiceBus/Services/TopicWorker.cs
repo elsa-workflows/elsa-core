@@ -127,7 +127,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
                     // Trigger existing workflows (if blocked on this message).
                     _logger.LogDebug("{WorkflowInstanceCount} existing workflows found with correlation ID '{CorrelationId}'. Resuming them", correlatedWorkflowInstanceCount, correlationId);
                     var bookmark = new TopicMessageReceivedBookmark(topicName, subscriptionName, correlationId);
-                    var existingWorkflows = await bookmarkFinder.FindBookmarksAsync<AzureServiceBusMessageReceived>(bookmark, TenantId, cancellationToken).ToList();
+                    var existingWorkflows = await bookmarkFinder.FindBookmarksAsync<AzureServiceBusTopicMessageReceived>(bookmark, TenantId, cancellationToken).ToList();
                     await workflowQueue.EnqueueWorkflowsAsync(existingWorkflows, model, model.CorrelationId, cancellationToken: cancellationToken);
                 }
                 else

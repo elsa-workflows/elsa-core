@@ -1,17 +1,17 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Bookmarks;
 
 namespace Elsa.Activities.AzureServiceBus.Bookmarks
 {
-    public class MessageReceivedBookmark : IBookmark
+    public class QueueMessageReceivedBookmark : IBookmark
     {
-        public MessageReceivedBookmark()
+        public QueueMessageReceivedBookmark()
         {
         }
 
-        public MessageReceivedBookmark(string queueName, string? correlationId = default)
+        public QueueMessageReceivedBookmark(string queueName, string? correlationId = default)
         {
             QueueName = queueName;
             CorrelationId = correlationId;
@@ -21,12 +21,12 @@ namespace Elsa.Activities.AzureServiceBus.Bookmarks
         public string? CorrelationId { get; set; }
     }
 
-    public class MessageReceivedBookmarkProvider : BookmarkProvider<MessageReceivedBookmark, AzureServiceBusMessageReceived>
+    public class QueueMessageReceivedBookmarkProvider : BookmarkProvider<QueueMessageReceivedBookmark, AzureServiceBusQueueMessageReceived>
     {
-        public override async ValueTask<IEnumerable<IBookmark>> GetBookmarksAsync(BookmarkProviderContext<AzureServiceBusMessageReceived> context, CancellationToken cancellationToken) =>
+        public override async ValueTask<IEnumerable<IBookmark>> GetBookmarksAsync(BookmarkProviderContext<AzureServiceBusQueueMessageReceived> context, CancellationToken cancellationToken) =>
             new[]
             {
-                new MessageReceivedBookmark
+                new QueueMessageReceivedBookmark
                 {
                     QueueName = (await context.Activity.GetPropertyValueAsync(x => x.QueueName, cancellationToken))!,
                     CorrelationId = context.ActivityExecutionContext.WorkflowExecutionContext.CorrelationId
