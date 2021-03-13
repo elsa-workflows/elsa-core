@@ -20,10 +20,12 @@
         <PackageReference Include="NodaTime" Version="3.0.3" />
         <PackageReference Include="xunit.extensibility.core" Version="2.4.1" />
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.2" />
     </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\..\..\src\core\Elsa\Elsa.csproj" />
+        <ProjectReference Include="..\..\..\src\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.Core\Elsa.Persistence.EntityFramework.Core.csproj" />
     </ItemGroup>
 
 </Project>
