@@ -24,7 +24,7 @@ namespace Elsa.Samples.AzureServiceBusWorker.Workflows
             builder
                 .Timer(Duration.FromSeconds(5))
                 .WriteLine("Sending a random greeting to the \"greetings\" queue.")
-                .SendMessage("greetings", GetRandomGreeting);
+                .SendQueueMessage("greetings", GetRandomGreeting);
         }
 
         private Greeting GetRandomGreeting()

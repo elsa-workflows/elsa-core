@@ -10,13 +10,13 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Activities.AzureServiceBus.StartupTasks
 {
-    public class StartServiceBusQueues : IStartupTask
+    public class StartServiceBusSubscription : IStartupTask
     {
         private readonly IWorkflowBlueprintReflector _workflowBlueprintReflector;
-        private readonly IMessageReceiverFactory _messageReceiverFactory;
+        private readonly ITopicMessageReceiverFactory _messageReceiverFactory;
         private readonly IServiceProvider _serviceProvider;
 
-        public StartServiceBusQueues(IWorkflowBlueprintReflector workflowBlueprintReflector, IMessageReceiverFactory messageReceiverFactory, IServiceProvider serviceProvider)
+        public StartServiceBusSubscription(IWorkflowBlueprintReflector workflowBlueprintReflector, ITopicMessageReceiverFactory messageReceiverFactory, IServiceProvider serviceProvider)
         {
             _workflowBlueprintReflector = workflowBlueprintReflector;
             _messageReceiverFactory = messageReceiverFactory;
@@ -28,16 +28,16 @@ namespace Elsa.Activities.AzureServiceBus.StartupTasks
         public async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             var cancellationToken = stoppingToken;
-            var queueNames = (await GetQueueNamesAsync(cancellationToken).ToListAsync(cancellationToken)).Distinct();
+            var entities = (await GetTopicSubscriptionNamesAsync(cancellationToken).ToListAsync(cancellationToken)).Distinct();
 
-            foreach (var queueName in queueNames)
+            foreach (var entity in entities)
             {
-                var receiver = await _messageReceiverFactory.GetReceiverAsync(queueName, cancellationToken);
-                ActivatorUtilities.CreateInstance<QueueWorker>(_serviceProvider, receiver);
+                var receiver = await _messageReceiverFactory.GetTopicReceiverAsync(entity.topicName, entity.subscriptionName, cancellationToken);
+                ActivatorUtilities.CreateInstance<TopicWorker>(_serviceProvider, receiver);
             }
         }
 
-        private async IAsyncEnumerable<string> GetQueueNamesAsync([EnumeratorCancellation] CancellationToken cancellationToken)
+        private async IAsyncEnumerable<(string topicName, string subscriptionName)> GetTopicSubscriptionNamesAsync([EnumeratorCancellation] CancellationToken cancellationToken)
         {
             var workflowRegistry = _serviceProvider.GetRequiredService<IWorkflowRegistry>();
             var workflows = await workflowRegistry.ListAsync(cancellationToken);
@@ -45,17 +45,18 @@ namespace Elsa.Activities.AzureServiceBus.StartupTasks
             var query =
                 from workflow in workflows
                 from activity in workflow.Activities
-                where activity.Type == nameof(AzureServiceBusQueueMessageReceived)
+                where activity.Type == nameof(AzureServiceBusTopicMessageReceived)
                 select workflow;
 
             foreach (var workflow in query)
             {
                 var workflowBlueprintWrapper = await _workflowBlueprintReflector.ReflectAsync(_serviceProvider, workflow, cancellationToken);
 
-                foreach (var activity in workflowBlueprintWrapper.Filter<AzureServiceBusQueueMessageReceived>())
+                foreach (var activity in workflowBlueprintWrapper.Filter<AzureServiceBusTopicMessageReceived>())
                 {
-                    var queueName = await activity.GetPropertyValueAsync(x => x.QueueName, cancellationToken);
-                    yield return queueName!;
+                    var topicName = await activity.GetPropertyValueAsync(x => x.TopicName, cancellationToken);
+                    var subscriptionName = await activity.GetPropertyValueAsync(x => x.SubscriptionName, cancellationToken);
+                    yield return (topicName, subscriptionName)!;
                 }
             }
         }
