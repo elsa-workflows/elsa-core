@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Elsa.Activities.AzureServiceBus.Extensions;
 using Elsa.Activities.AzureServiceBus.Models;
 using Elsa.ActivityResults;
@@ -9,17 +9,18 @@ using Elsa.Services.Models;
 
 namespace Elsa.Activities.AzureServiceBus
 {
-    [Trigger(Category = "Azure Service Bus", DisplayName = "Service Bus Message Received", Description = "Triggered when a message is received on the specified queue", Outcomes = new[] { OutcomeNames.Done })]
-    public class AzureServiceBusMessageReceived : Activity
+    [Trigger(Category = "Azure Service Bus", DisplayName = "Service Bus Topic Message Received", Description = "Triggered when a message is received on the specified topic/subscription", Outcomes = new[] { OutcomeNames.Done })]
+    public class AzureServiceBusTopicMessageReceived : Activity
     {
         private readonly IContentSerializer _serializer;
 
-        public AzureServiceBusMessageReceived(IContentSerializer serializer)
+        public AzureServiceBusTopicMessageReceived(IContentSerializer serializer)
         {
             _serializer = serializer;
         }
 
-        [ActivityProperty] public string QueueName { get; set; } = default!;
+        [ActivityProperty] public string TopicName { get; set; } = default!;
+        [ActivityProperty] public string SubscriptionName { get; set; } = default!;
         [ActivityProperty] public Type MessageType { get; set; } = default!;
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => context.WorkflowExecutionContext.IsFirstPass ? ExecuteInternal(context) : Suspend();
@@ -27,7 +28,7 @@ namespace Elsa.Activities.AzureServiceBus
 
         private IActivityExecutionResult ExecuteInternal(ActivityExecutionContext context)
         {
-            var message = (MessageModel) context.Input!;
+            var message = (MessageModel)context.Input!;
             var model = message.ReadBody(MessageType, _serializer);
 
             return Done(model);
