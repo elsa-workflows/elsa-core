@@ -23,11 +23,12 @@
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="YesSql.Core" Version="2.0.0-beta-1620" />
-        <PackageReference Include="YesSql.Provider.Sqlite" Version="1.0.0-beta-1620" />
+        <PackageReference Include="YesSql.Core" Version="2.0.0-beta-1637" />
+        <PackageReference Include="YesSql.Provider.Sqlite" Version="1.0.0-beta-1637" />
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0" />
         <PackageReference Include="Hangfire.AspNetCore" Version="1.7.19" />
         <PackageReference Include="Hangfire.InMemory" Version="0.3.4" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="5.0.2" />
     </ItemGroup>
 
     <ItemGroup>
@@ -46,6 +47,9 @@
       <ProjectReference Include="..\..\..\src\activities\Elsa.Activities.Temporal.Hangfire\Elsa.Activities.Temporal.Hangfire.csproj" />
       <ProjectReference Include="..\..\..\src\activities\Elsa.Activities.Temporal.Quartz\Elsa.Activities.Temporal.Quartz.csproj" />
       <ProjectReference Include="..\..\..\src\persistence\Elsa.Persistence.MongoDb\Elsa.Persistence.MongoDb.csproj" />
+      <ProjectReference Include="..\..\..\src\persistence\Elsa.Persistence.YesSql\Elsa.Persistence.YesSql.csproj" />
+      <ProjectReference Include="..\..\..\src\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.Core\Elsa.Persistence.EntityFramework.Core.csproj" />
+      <ProjectReference Include="..\..\..\src\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.Sqlite\Elsa.Persistence.EntityFramework.Sqlite.csproj" />
     </ItemGroup>
 
 </Project>
