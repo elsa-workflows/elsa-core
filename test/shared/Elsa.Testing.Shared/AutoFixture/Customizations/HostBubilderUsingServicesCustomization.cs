@@ -7,31 +7,17 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Testing.Shared.AutoFixture.Customizations
 {
-    public class HostBubilderUsingServicesCustomization : ICustomization
+    public class HostBubilderUsingServicesCustomization : SpecimenBuilderForParameterCustomization
     {
         readonly Action<IServiceCollection> serviceConfig;
-        readonly ParameterInfo? parameter;
 
-        public void Customize(IFixture fixture)
-        {
-            fixture.Customizations.Insert(0, GetSpecimenBuilder());
-        }
-
-        ISpecimenBuilder GetSpecimenBuilder()
-        {
-            var specimenBuilder = new HostBubilderUsingServicesSpecimenBuilder(serviceConfig);
-            if(parameter is null) return specimenBuilder;
-
-            var paramSpec = new ParameterSpecification(parameter.ParameterType, parameter.Name);
-            return new FilteringSpecimenBuilder(specimenBuilder, paramSpec);
-        }
+        protected override ISpecimenBuilder GetUnfilteredSpecimenBuilder()
+            => new HostBubilderUsingServicesSpecimenBuilder(serviceConfig);
 
         public HostBubilderUsingServicesCustomization(Action<IServiceCollection> serviceConfig,
-                                                      ParameterInfo? parameter = null)
+                                                      ParameterInfo? parameter) : base(parameter)
         {
-            this.parameter = parameter ?? throw new ArgumentNullException(nameof(parameter));
             this.serviceConfig = serviceConfig ?? throw new ArgumentNullException(nameof(serviceConfig));
-
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,22 +21,22 @@ using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Activities.AzureServiceBus.Services
 {
-    public class QueueWorker : IAsyncDisposable
+    public class TopicWorker : IAsyncDisposable
     {
         // TODO: Figure out how to start jobs across multiple tenants / how to get a list of all tenants. 
         private const string TenantId = default;
 
-        private readonly IMessageReceiver _messageReceiver;
+        private readonly IReceiverClient _messageReceiver;
         private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly IDistributedLockProvider _distributedLockProvider;
         private readonly ILogger _logger;
 
-        public QueueWorker(
-            IMessageReceiver messageReceiver,
+        public TopicWorker(
+            IReceiverClient messageReceiver,
             IServiceScopeFactory serviceScopeFactory,
             IDistributedLockProvider distributedLockProvider,
             IOptions<AzureServiceBusOptions> options,
-            ILogger<QueueWorker> logger)
+            ILogger<TopicWorker> logger)
         {
             _messageReceiver = messageReceiver;
             _serviceScopeFactory = serviceScopeFactory;
@@ -63,7 +63,8 @@ namespace Elsa.Activities.AzureServiceBus.Services
         {
             using var scope = _serviceScopeFactory.CreateScope();
             var workflowQueue = scope.ServiceProvider.GetRequiredService<IWorkflowQueue>();
-            var queueName = _messageReceiver.Path;
+            var topicName = _messageReceiver.Path.Split('/')[0];
+            var subscriptionName = _messageReceiver.Path.Split('/')[2];
             var correlationId = message.CorrelationId;
             var triggerFinder = scope.ServiceProvider.GetRequiredService<ITriggerFinder>();
 
@@ -84,12 +85,12 @@ namespace Elsa.Activities.AzureServiceBus.Services
                 ReplyToSessionId = message.ReplyToSessionId,
                 ScheduledEnqueueTimeUtc = message.ScheduledEnqueueTimeUtc
             };
-            
+
             async Task TriggerNewWorkflowAsync()
             {
-                var bookmark = new QueueMessageReceivedBookmark(queueName);
-                var triggers = await triggerFinder.FindTriggersAsync<AzureServiceBusQueueMessageReceived>(bookmark, TenantId, cancellationToken);
-                
+                var bookmark = new TopicMessageReceivedBookmark(topicName, subscriptionName);
+                var triggers = await triggerFinder.FindTriggersAsync<AzureServiceBusTopicMessageReceived>(bookmark, TenantId, cancellationToken);
+
                 foreach (var trigger in triggers)
                 {
                     var workflowBlueprint = trigger.WorkflowBlueprint;
@@ -103,7 +104,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
                 return;
             }
 
-            var lockKey = $"azure-service-bus:{queueName}:correlation-{correlationId}";
+            var lockKey = $"azure-service-bus:{topicName}:{subscriptionName}:correlation-{correlationId}";
             var stopwatch = new Stopwatch();
 
             _logger.LogDebug("Acquiring lock {LockKey}", lockKey);
@@ -125,8 +126,8 @@ namespace Elsa.Activities.AzureServiceBus.Services
                 {
                     // Trigger existing workflows (if blocked on this message).
                     _logger.LogDebug("{WorkflowInstanceCount} existing workflows found with correlation ID '{CorrelationId}'. Resuming them", correlatedWorkflowInstanceCount, correlationId);
-                    var bookmark = new QueueMessageReceivedBookmark(queueName, correlationId);
-                    var existingWorkflows = await bookmarkFinder.FindBookmarksAsync<AzureServiceBusQueueMessageReceived>(bookmark, TenantId, cancellationToken).ToList();
+                    var bookmark = new TopicMessageReceivedBookmark(topicName, subscriptionName, correlationId);
+                    var existingWorkflows = await bookmarkFinder.FindBookmarksAsync<AzureServiceBusTopicMessageReceived>(bookmark, TenantId, cancellationToken).ToList();
                     await workflowQueue.EnqueueWorkflowsAsync(existingWorkflows, model, model.CorrelationId, cancellationToken: cancellationToken);
                 }
                 else
