@@ -5,12 +5,27 @@ using Elsa.Bookmarks;
 using Elsa.Builders;
 using Elsa.Models;
 using Elsa.Services.Models;
+using Elsa.Triggers;
 
 namespace Elsa.Services
 {
     public interface IWorkflowRunner
     {
-        Task TriggerWorkflowsAsync(
+        Task StartWorkflowsAsync(
+            string activityType,
+            IBookmark bookmark,
+            string? tenantId,
+            object? input = default,
+            string? contextId = default,
+            CancellationToken cancellationToken = default);
+
+        Task StartWorkflowsAsync(
+            IEnumerable<TriggerFinderResult> results,
+            object? input = default,
+            string? contextId = default,
+            CancellationToken cancellationToken = default);
+        
+        Task ResumeWorkflowsAsync(
             string activityType,
             IBookmark bookmark,
             string? tenantId,
@@ -19,7 +34,7 @@ namespace Elsa.Services
             string? contextId = default,
             CancellationToken cancellationToken = default);
 
-        Task TriggerWorkflowsAsync(
+        Task ResumeWorkflowsAsync(
             IEnumerable<BookmarkFinderResult> results,
             object? input = default,
             string? correlationId = default,

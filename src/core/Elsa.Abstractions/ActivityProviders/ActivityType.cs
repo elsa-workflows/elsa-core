@@ -52,5 +52,10 @@ namespace Elsa.ActivityProviders
 
         public Func<ActivityExecutionContext, ValueTask<IActivity>> ActivateAsync { get; set; } = _ => new ValueTask<IActivity>();
         public Func<ActivityDescriptor> Describe { get; set; } = () => new ActivityDescriptor();
+        public bool IsBrowsable { get; set; } = true;
+
+        public IDictionary<string, object> Attributes { get; set; } = new Dictionary<string, object>();
+
+        public override string ToString() => TypeName;
     }
 }

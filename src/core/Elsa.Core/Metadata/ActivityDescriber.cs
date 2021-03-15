@@ -21,8 +21,6 @@ namespace Elsa.Metadata
 
         public ActivityDescriptor? Describe(Type activityType)
         {
-            var browsableAttribute = activityType.GetCustomAttribute<BrowsableAttribute>(false);
-            var isBrowsable = browsableAttribute == null || browsableAttribute.Browsable;
             var activityAttribute = activityType.GetCustomAttribute<ActivityAttribute>(false);
             var typeName = activityAttribute?.Type ?? activityType.Name;
             var displayName = activityAttribute?.DisplayName ?? activityType.Name.Humanize(LetterCasing.Title);
@@ -41,7 +39,6 @@ namespace Elsa.Metadata
                 Traits = traits,
                 Properties = properties.ToArray(),
                 Outcomes = outcomes,
-                Browsable = isBrowsable
             };
         }
 

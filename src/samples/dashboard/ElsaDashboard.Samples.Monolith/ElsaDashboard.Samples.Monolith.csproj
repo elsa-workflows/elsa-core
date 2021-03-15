@@ -14,6 +14,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\..\..\activities\Elsa.Activities.Telnyx\Elsa.Activities.Telnyx.csproj" />
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.Temporal.Quartz\Elsa.Activities.Temporal.Quartz.csproj" />
         <ProjectReference Include="..\..\..\core\Elsa\Elsa.csproj" />
         <ProjectReference Include="..\..\..\dashboards\blazor\ElsaDashboard.Application\ElsaDashboard.Application.csproj" />

@@ -1,6 +1,7 @@
 using System;
 using System.Net.Http.Headers;
 using Elsa;
+using Elsa.Activities.Telnyx.Extensions;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Sqlite;
 using Elsa.Persistence.MongoDb.Extensions;
@@ -38,6 +39,7 @@ namespace ElsaDashboard.Samples.Monolith
                     .AddHttpActivities(elsaSection.GetSection("Http").Bind)
                     .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)
                     .AddQuartzTemporalActivities()
+                    .AddTelnyx()
                     .AddJavaScriptActivities()
                     .AddWorkflowsFrom<Startup>()
                 );
@@ -93,6 +95,9 @@ namespace ElsaDashboard.Samples.Monolith
             {
                 // Elsa Server uses ASP.NET Core Controllers.
                 endpoints.MapControllers();
+                
+                // Telnyx webhook endpoint.
+                endpoints.MapTelnyxWebhook();
                 
                 if (Program.RuntimeModel == BlazorRuntimeModel.Server)
                     endpoints.MapBlazorHub();

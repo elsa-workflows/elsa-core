@@ -12,6 +12,7 @@ using Elsa.Exceptions;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services.Models;
+using Elsa.Triggers;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -29,6 +30,7 @@ namespace Elsa.Services
         private readonly IWorkflowRegistry _workflowRegistry;
         private readonly IWorkflowFactory _workflowFactory;
         private readonly IBookmarkFinder _bookmarkFinder;
+        private readonly ITriggerFinder _triggerFinder;
         private readonly IWorkflowInstanceStore _workflowInstanceManager;
         private readonly IWorkflowContextManager _workflowContextManager;
         private readonly Func<IWorkflowBuilder> _workflowBuilderFactory;
@@ -40,6 +42,7 @@ namespace Elsa.Services
             IWorkflowRegistry workflowRegistry,
             IWorkflowFactory workflowFactory,
             IBookmarkFinder bookmarkFinder,
+            ITriggerFinder triggerFinder,
             IWorkflowInstanceStore workflowInstanceStore,
             IWorkflowContextManager workflowContextManager,
             Func<IWorkflowBuilder> workflowBuilderFactory,
@@ -56,9 +59,35 @@ namespace Elsa.Services
             _workflowInstanceManager = workflowInstanceStore;
             _workflowContextManager = workflowContextManager;
             _bookmarkFinder = bookmarkFinder;
+            _triggerFinder = triggerFinder;
         }
 
-        public async Task TriggerWorkflowsAsync(
+        public async Task StartWorkflowsAsync(
+            string activityType,
+            IBookmark bookmark,
+            string? tenantId,
+            object? input = default,
+            string? contextId = default,
+            CancellationToken cancellationToken = default)
+        {
+            var results = await _triggerFinder.FindTriggersAsync(activityType, bookmark, tenantId, cancellationToken).ToList();
+            await StartWorkflowsAsync(results, input, contextId, cancellationToken);
+        }
+
+        public async Task StartWorkflowsAsync(
+            IEnumerable<TriggerFinderResult> results,
+            object? input = default,
+            string? contextId = default,
+            CancellationToken cancellationToken = default)
+        {
+            foreach (var result in results)
+            {
+                var workflowBlueprint = result.WorkflowBlueprint;
+                await RunWorkflowAsync(workflowBlueprint, result.ActivityId, input, contextId: contextId, cancellationToken: cancellationToken);
+            }
+        }
+
+        public async Task ResumeWorkflowsAsync(
             string activityType,
             IBookmark bookmark,
             string? tenantId,
@@ -68,10 +97,10 @@ namespace Elsa.Services
             CancellationToken cancellationToken = default)
         {
             var results = await _bookmarkFinder.FindBookmarksAsync(activityType, bookmark, tenantId, cancellationToken).ToList();
-            await TriggerWorkflowsAsync(results, input, correlationId, contextId, cancellationToken);
+            await ResumeWorkflowsAsync(results, input, correlationId, contextId, cancellationToken);
         }
 
-        public async Task TriggerWorkflowsAsync(
+        public async Task ResumeWorkflowsAsync(
             IEnumerable<BookmarkFinderResult> results,
             object? input = default,
             string? correlationId = default,
@@ -210,6 +239,7 @@ namespace Elsa.Services
                         _logger.LogDebug("Workflow {WorkflowInstanceId} cannot begin from an idle state (perhaps it needs a specific input)", workflowInstance.Id);
                         return workflowInstance;
                     }
+
                     break;
 
                 case WorkflowStatus.Running:
@@ -222,6 +252,7 @@ namespace Elsa.Services
                         _logger.LogDebug("Workflow {WorkflowInstanceId} cannot be resumed from a suspended state (perhaps it needs a specific input)", workflowInstance.Id);
                         return workflowInstance;
                     }
+
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -342,13 +373,13 @@ namespace Elsa.Services
                 var activity = await activityExecutionContext.ActivateActivityAsync(cancellationToken);
 
                 using var executionScope = AmbientActivityExecutionContext.EnterScope(activityExecutionContext);
-                
+
                 if (!burstStarted)
                 {
                     await _mediator.Publish(new WorkflowExecutionBurstStarting(workflowExecutionContext, activityExecutionContext), cancellationToken);
                     burstStarted = true;
                 }
-                
+
                 if (resuming)
                     await _mediator.Publish(new ActivityResuming(activityExecutionContext), cancellationToken);
 

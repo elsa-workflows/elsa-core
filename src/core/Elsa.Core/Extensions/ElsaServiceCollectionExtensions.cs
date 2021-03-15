@@ -82,6 +82,7 @@ namespace Microsoft.Extensions.DependencyInjection
         }
 
         public static IServiceCollection AddActivityPropertyOptionsProvider<T>(this IServiceCollection services) where T : class, IActivityPropertyOptionsProvider => services.AddSingleton<IActivityPropertyOptionsProvider, T>();
+        public static IServiceCollection AddActivityTypeProvider<T>(this IServiceCollection services) where T : class, IActivityTypeProvider => services.AddSingleton<IActivityTypeProvider, T>();
 
         private static ElsaOptions AddWorkflowsCore(this ElsaOptions options)
         {
@@ -106,7 +107,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddScoped<IWorkflowPublisher, WorkflowPublisher>()
                 .AddScoped<IWorkflowContextManager, WorkflowContextManager>()
                 .AddSingleton<IActivityTypeService, ActivityTypeService>()
-                .AddSingleton<IActivityTypeProvider, TypeBasedActivityProvider>()
+                .AddActivityTypeProvider<TypeBasedActivityProvider>()
                 .AddScoped<IWorkflowExecutionLog, WorkflowExecutionLog>()
                 ;
 
