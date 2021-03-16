@@ -110,7 +110,9 @@ namespace Elsa.Services
             foreach (var result in results)
             {
                 var workflowInstance = await _workflowInstanceManager.FindByIdAsync(result.WorkflowInstanceId, cancellationToken);
-                await RunWorkflowAsync(workflowInstance!, result.ActivityId, input, cancellationToken);
+                
+                if(workflowInstance?.WorkflowStatus == WorkflowStatus.Suspended)
+                    await RunWorkflowAsync(workflowInstance!, result.ActivityId, input, cancellationToken);
             }
         }
 
@@ -271,7 +273,7 @@ namespace Elsa.Services
 
             if (statusEvent != null)
             {
-                _logger.LogTrace("Publishing a status event of type {eventType} for workflow {WorkflowInstanceId}", statusEvent.GetType().Name, workflowInstance.Id);
+                _logger.LogTrace("Publishing a status event of type {EventType} for workflow {WorkflowInstanceId}", statusEvent.GetType().Name, workflowInstance.Id);
                 await _mediator.Publish(statusEvent, cancellationToken);
             }
 

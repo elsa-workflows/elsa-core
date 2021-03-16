@@ -37,7 +37,7 @@ namespace ElsaDashboard.Samples.Monolith
                     .AddHttpActivities(elsaSection.GetSection("Http").Bind)
                     .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)
                     .AddQuartzTemporalActivities()
-                    .AddTelnyx()
+                    .AddTelnyx(Configuration.GetSection("Telnyx").Bind)
                     .AddJavaScriptActivities()
                     .AddWorkflowsFrom<Startup>()
                 );

@@ -39,6 +39,10 @@ namespace Elsa.Scripting.JavaScript.Services
             engine.Execute(expression);
 
             var returnValue = engine.GetCompletionValue().ToObject();
+
+            if (returnValue == null)
+                return null;
+            
             var converter = TypeDescriptor.GetConverter(returnValue);
 
             if (converter.CanConvertTo(returnType))

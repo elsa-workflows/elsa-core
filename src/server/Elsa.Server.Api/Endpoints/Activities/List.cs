@@ -17,7 +17,6 @@ namespace Elsa.Server.Api.Endpoints.Activities
     public class List : Controller
     {
         private readonly IActivityTypeService _activityTypeService;
-        private readonly IContentSerializer _contentSerializer;
 
         public List(IActivityTypeService activityTypeService)
         {

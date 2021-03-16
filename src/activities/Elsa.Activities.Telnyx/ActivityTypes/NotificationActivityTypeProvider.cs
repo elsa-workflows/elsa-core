@@ -1,10 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Activities.Telnyx.Attributes;
-using Elsa.Activities.Telnyx.Payloads;
+using Elsa.Activities.Telnyx.Webhooks.Attributes;
+using Elsa.Activities.Telnyx.Webhooks.Models;
+using Elsa.Activities.Telnyx.Webhooks.Payloads;
+using Elsa.Activities.Telnyx.Webhooks.Payloads.Abstract;
+using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
 using Elsa.ActivityProviders;
 using Elsa.ActivityResults;
 using Elsa.Metadata;
@@ -23,15 +27,15 @@ namespace Elsa.Activities.Telnyx.ActivityTypes
             return new ValueTask<IEnumerable<ActivityType>>(activityTypes);
         }
 
-        private static IEnumerable<ActivityType> GetActivityTypes()
+        private IEnumerable<ActivityType> GetActivityTypes()
         {
-            yield return CreateWebhookActivityType<CallInitiatedPayload>();
-            yield return CreateWebhookActivityType<CallHangupPayload>();
+            var types = GetType().Assembly.GetAllWithBaseClass<Payload>().Where(x => x.GetCustomAttribute<PayloadAttribute>() != null);
+            return types.Select(CreateWebhookActivityType);
         }
-
-        private static ActivityType CreateWebhookActivityType<TPayload>()
+        
+        private static ActivityType CreateWebhookActivityType(Type payloadType)
         {
-            var payloadAttribute = typeof(TPayload).GetCustomAttribute<PayloadAttribute>();
+            var payloadAttribute = payloadType.GetCustomAttribute<PayloadAttribute>();
 
             if (payloadAttribute == null)
                 throw new InvalidOperationException($"Make sure that the payload type is annotated with the ${nameof(PayloadAttribute)} attribute");
@@ -64,9 +68,11 @@ namespace Elsa.Activities.Telnyx.ActivityTypes
                 ResumeAsync = ExecuteInternal,
             };
         }
-
+        
         private static ValueTask<IActivityExecutionResult> ExecuteInternal(ActivityExecutionContext context)
         {
+            var webhook = (TelnyxWebhook) context.Input!; 
+            context.WorkflowExecutionContext.CorrelationId ??= (webhook.Data.Payload as ICorrelationId)?.CorrelationId;
             return new(new CombinedResult(new OutputResult(context.Input), new DoneResult()));
         }
     }

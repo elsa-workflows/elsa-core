@@ -19,5 +19,11 @@
     <ItemGroup>
       <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
     </ItemGroup>
+    
+    <ItemGroup>
+      <PackageReference Include="Refit" Version="6.0.24" />
+      <PackageReference Include="Refit.HttpClientFactory" Version="6.0.24" />
+      <PackageReference Include="Refit.Newtonsoft.Json" Version="6.0.24" />
+    </ItemGroup>
 
 </Project>
