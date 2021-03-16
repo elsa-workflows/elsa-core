@@ -30,7 +30,7 @@ namespace Elsa.Activities.Temporal.Common.ActivityResults
                 await scheduler.ScheduleWorkflowAsync(null, workflowInstanceId, activityId, tenantId, executeAt, null, cancellationToken);
             }
 
-            activityExecutionContext.WorkflowExecutionContext.RegisterTask(nameof(ScheduleWorkflowResult), ScheduleWorkflowAsync);
+            activityExecutionContext.WorkflowExecutionContext.RegisterTask(ScheduleWorkflowAsync);
         }
     }
 }
