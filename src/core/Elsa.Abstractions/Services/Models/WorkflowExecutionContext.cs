@@ -76,9 +76,11 @@ namespace Elsa.Services.Models
         public object? WorkflowContext { get; set; }
 
         /// <summary>
-        /// A collection of tasks to execute post-workflow burst execution.
+        /// A collection of tasks to execute after the workflow is suspended.
+        /// This is useful for avoiding race conditions, such as sending a message and then waiting for a message to be received using some MessageReceived activity for example. If the workflow didn't get suspended while that message is received, the workflow would get stuck.
+        /// By designing activities such as `SendMessage` to only actually send the message post-suspension using the Tasks collection, you can be sure that the workflow gets suspended and blocked on the `MessageReceived` activity before a message reply gets received.  
         /// </summary>
-        public IDictionary<string, ICollection<Func<WorkflowExecutionContext, CancellationToken, ValueTask>>> Tasks { get; set; } = new Dictionary<string, ICollection<Func<WorkflowExecutionContext, CancellationToken, ValueTask>>>();
+        public ICollection<Func<WorkflowExecutionContext, CancellationToken, ValueTask>> Tasks { get; private set; } = new List<Func<WorkflowExecutionContext, CancellationToken, ValueTask>>();
 
         public string? ContextId
         {
@@ -86,30 +88,15 @@ namespace Elsa.Services.Models
             set => WorkflowInstance.ContextId = value;
         }
 
-        public void RegisterTask(string groupName, Func<WorkflowExecutionContext, CancellationToken, ValueTask> task)
-        {
-            if (!Tasks.ContainsKey(groupName))
-            {
-                var list = new List<Func<WorkflowExecutionContext, CancellationToken, ValueTask>> { task };
-                Tasks[groupName] = list;
-            }
-            else
-            {
-                Tasks[groupName].Add(task);
-            }
-        }
+        public void RegisterTask(Func<WorkflowExecutionContext, CancellationToken, ValueTask> task) => Tasks.Add(task);
 
-        public IEnumerable<Func<WorkflowExecutionContext, CancellationToken, ValueTask>> GetRegisteredTasks(string groupName) =>
-            Tasks.ContainsKey(groupName) ? Tasks[groupName] : Enumerable.Empty<Func<WorkflowExecutionContext, CancellationToken, ValueTask>>();
-
-        public async ValueTask ExecuteRegisteredTasksAsync(string groupName, CancellationToken cancellationToken = default)
+        public async ValueTask ProcessRegisteredTasksAsync(CancellationToken cancellationToken = default)
         {
-            var tasks = GetRegisteredTasks(groupName);
+            var tasks = Tasks.ToList();
+            Tasks = new List<Func<WorkflowExecutionContext, CancellationToken, ValueTask>>();
 
             foreach (var task in tasks)
                 await task(this, cancellationToken);
-
-            Tasks.Remove(groupName);
         }
 
         public async Task RemoveBlockingActivityAsync(BlockingActivity blockingActivity)
@@ -123,7 +110,7 @@ namespace Elsa.Services.Models
         public void SetVariable(string name, object? value) => WorkflowInstance.Variables.Set(name, value);
         public T? GetVariable<T>() => GetVariable<T>(typeof(T).Name);
         public T? GetVariable<T>(string name) => WorkflowInstance.Variables.Get<T>(name);
-        
+
         /// <summary>
         /// Gets a variable from across all scopes, starting with the current scope, going up each scope until the requested variable is found.
         /// </summary>
@@ -131,16 +118,16 @@ namespace Elsa.Services.Models
         public object? GetVariable(string name)
         {
             var scopes = WorkflowInstance.Scopes.ToList();
-            
+
             var mergedVariables = scopes.Select(x => x.Variables).Aggregate(new Variables(), (current, next) =>
             {
                 var combined = current.Data.MergedWith(next.Data);
                 return new Variables(combined);
             });
-            
+
             return mergedVariables.Get(name);
         }
-        
+
         /// <summary>
         /// Gets a workflow variable.
         /// </summary>
@@ -155,7 +142,7 @@ namespace Elsa.Services.Models
 
         public ActivityScope CurrentScope => WorkflowInstance.Scopes.Peek();
         public ActivityScope GetScope(string activityId) => WorkflowInstance.Scopes.First(x => x.ActivityId == activityId);
-        
+
         public ActivityScope GetNamedScope(string activityName)
         {
             var activityBlueprint = GetActivityBlueprintByName(activityName)!;
