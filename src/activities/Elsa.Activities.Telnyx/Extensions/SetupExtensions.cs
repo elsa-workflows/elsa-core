@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Elsa.Activities.Telnyx.Activities;
 using Elsa.Activities.Telnyx.ActivityTypes;
 using Elsa.Activities.Telnyx.Bookmarks;
 using Elsa.Activities.Telnyx.Handlers;
@@ -23,10 +22,8 @@ namespace Elsa.Activities.Telnyx.Extensions
 
             configure?.Invoke(telnyxOptions);
 
-            elsaOptions.AddActivity<TelnyxNotification>();
-
             services
-                .AddActivityTypeProvider<TelnyxNotificationsActivityTypeProvider>()
+                .AddActivityTypeProvider<NotificationActivityTypeProvider>()
                 .AddBookmarkProvider<NotificationBookmarkProvider>()
                 .AddNotificationHandlers(typeof(TriggerWorkflows))
                 .AddScoped<IWebhookHandler, WebhookHandler>();

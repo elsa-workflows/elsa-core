@@ -9,7 +9,6 @@ using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Metadata;
 using Elsa.Scripting.JavaScript.Events;
-using Elsa.Scripting.JavaScript.Messages;
 using Elsa.Scripting.JavaScript.Services;
 using Elsa.Services;
 using Elsa.Services.Models;

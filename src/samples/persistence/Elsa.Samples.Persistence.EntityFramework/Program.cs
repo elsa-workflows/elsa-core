@@ -2,8 +2,6 @@ using System;
 using System.Threading.Tasks;
 using Elsa.Persistence;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
-using Elsa.Persistence.EntityFramework.PostgreSql;
-using Elsa.Persistence.EntityFramework.Sqlite;
 using Elsa.Persistence.Specifications.WorkflowInstances;
 using Elsa.Services;
 using Microsoft.EntityFrameworkCore;

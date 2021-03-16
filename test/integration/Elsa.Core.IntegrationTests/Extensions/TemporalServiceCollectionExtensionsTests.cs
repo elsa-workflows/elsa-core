@@ -1,11 +1,8 @@
 using System;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Xunit;
-using Hangfire;
 using System.Threading.Tasks;
 using System.Threading;
-using Elsa.Activities.Temporal;
 using Elsa.Core.IntegrationTests.Extensions;
 
 namespace Elsa.UnitTests.Extensions

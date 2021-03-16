@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Elsa.Activities.Telnyx.Attributes;
 using Elsa.Activities.Telnyx.Bookmarks;
 using Elsa.Activities.Telnyx.Events;
+using Elsa.Activities.Telnyx.Payloads.Abstract;
 using Elsa.Services;
 using MediatR;
 
@@ -28,7 +29,7 @@ namespace Elsa.Activities.Telnyx.Handlers
             var payload = notification.Webhook.Data.Payload;
             var payloadAttribute = payload.GetType().GetCustomAttribute<PayloadAttribute>()!;
             var activityType = payloadAttribute.ActivityType;
-            var correlationId = default(string);
+            var correlationId = (payload as ICorrelationId)?.CorrelationId;
 
             await _workflowRunner.StartWorkflowsAsync(activityType, new NotificationBookmark(eventType), TenantId, webhook, cancellationToken: cancellationToken);
             await _workflowRunner.ResumeWorkflowsAsync(activityType, new NotificationBookmark(eventType, correlationId), TenantId, payload, correlationId, cancellationToken: cancellationToken);

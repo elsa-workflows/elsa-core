@@ -1,10 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Activities.Telnyx.Activities;
-using Elsa.ActivityProviders;
+using Elsa.Activities.Telnyx.ActivityTypes;
 using Elsa.Bookmarks;
-using Elsa.Services.Models;
 
 namespace Elsa.Activities.Telnyx.Bookmarks
 {
@@ -12,26 +10,18 @@ namespace Elsa.Activities.Telnyx.Bookmarks
     {
     }
 
-    public class NotificationBookmarkProvider : BookmarkProvider<NotificationBookmark, TelnyxNotification>
+    public class NotificationBookmarkProvider : BookmarkProvider<NotificationBookmark>
     {
-        private readonly IActivityTypeService _activityTypeService;
-
-        public NotificationBookmarkProvider(IActivityTypeService activityTypeService)
-        {
-            _activityTypeService = activityTypeService;
-        }
-        
-        public override async ValueTask<bool> SupportsActivityAsync(BookmarkProviderContext<TelnyxNotification> context, CancellationToken cancellationToken = default)
-        {
-            var activityBlueprint = context.ActivityExecutionContext.ActivityBlueprint;
-            var activityType = await _activityTypeService.GetActivityTypeAsync(activityBlueprint.Type, cancellationToken);
-            return activityType.Type == typeof(TelnyxNotification);
-        }
-
-        public override ValueTask<IEnumerable<IBookmark>> GetBookmarksAsync(BookmarkProviderContext<TelnyxNotification> context, CancellationToken cancellationToken)
+        public override bool SupportsActivity(BookmarkProviderContext context)
         {
             var activityType = context.ActivityType;
-            var eventType = (string)activityType.Attributes[nameof(TelnyxNotification.EventType)];
+            return activityType.Attributes.ContainsKey(NotificationActivityTypeProvider.NotificationAttribute);
+        }
+
+        public override ValueTask<IEnumerable<IBookmark>> GetBookmarksAsync(BookmarkProviderContext context, CancellationToken cancellationToken)
+        {
+            var activityType = context.ActivityType;
+            var eventType = (string)activityType.Attributes[NotificationActivityTypeProvider.EventTypeAttribute];
             var correlationId = context.ActivityExecutionContext.WorkflowExecutionContext.CorrelationId;
             var bookmarks = new[] { new NotificationBookmark(eventType, correlationId) };
             return new ValueTask<IEnumerable<IBookmark>>(bookmarks);

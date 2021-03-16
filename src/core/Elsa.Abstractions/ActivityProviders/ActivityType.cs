@@ -18,7 +18,7 @@ namespace Elsa.ActivityProviders
         /// <summary>
         /// The .NET Runtime type of this activity.
         /// </summary>
-        public Type Type { get; set; } = default!;
+        public Type Type { get; set; } = typeof(IActivity);
 
         /// <summary>
         /// Display name of this activity.

@@ -1,4 +1,3 @@
-using System;
 using AutoFixture.Kernel;
 using Elsa.Persistence.EntityFramework.Core;
 using Microsoft.EntityFrameworkCore;
