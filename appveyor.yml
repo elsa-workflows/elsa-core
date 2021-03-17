@@ -10,6 +10,10 @@ environment:
   sonarcloud_project_name: elsa-workflows_elsa-core
   sonarcloud_api_key:
     secure: qaE9kOVkGGFM7ZMf3YeliZxDU9udTCy6W5xXHJ9T+tXv5qXPMYlIdR7hyNgxW04A
+  docker_user:
+    secure: 8HsbQtQbUTeYHTl9t49uwQ==
+  docker_pass:
+     secure: mpp6dyL1U47aXSuO1TA4lBVDkPSVejyiVK0eJ+NPm3M=
 
 version: 2.0.0-preview7.{build}
 
@@ -65,7 +69,7 @@ before_build:
       }
 
 build_script:
-  - docker build -t me/elsadashboard_samples_monolith -f ./docker/ElsaDashboard.Samples.Monolith.Dockerfile .
+  - docker build -t elsaworkflows/elsadashboard-samples-monolith -f ./docker/ElsaDashboard.Samples.Monolith.Dockerfile .
   - ps: >-
       cd .\src\dashboards\blazor\ElsaDashboard.Application
 
@@ -114,5 +118,5 @@ deploy:
       APPVEYOR_REPO_TAG: true
 
 deploy_script:
-  - docker login -u="$env:DOCKER_USER" -p="$env:DOCKER_PASS"
-  - docker push me/elsadashboard_samples_monolith
+  - docker login -u="$env:docker_user" -p="$env:docker_pass"
+  - docker push elsaworkflows/elsadashboard-samples-monolith
