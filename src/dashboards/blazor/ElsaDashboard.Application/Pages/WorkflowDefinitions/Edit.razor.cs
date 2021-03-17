@@ -7,6 +7,7 @@ using Elsa.Client.Models;
 using Elsa.Client.Options;
 using ElsaDashboard.Application.Extensions;
 using ElsaDashboard.Application.Models;
+using ElsaDashboard.Application.Options;
 using ElsaDashboard.Application.Services;
 using ElsaDashboard.Application.Shared;
 using ElsaDashboard.Shared.Rpc;
@@ -22,10 +23,10 @@ namespace ElsaDashboard.Application.Pages.WorkflowDefinitions
         [Inject] private IActivityService ActivityService { get; set; } = default!;
         [Inject] private NavigationManager NavigationManager { get; set; } = default!;
         [Inject] private IFlyoutPanelService FlyoutPanelService { get; set; } = default!;
-        [Inject] private IOptions<ElsaClientOptions> ElsaClientOptions { get; set; } = default!;
+        [Inject] private IOptions<ElsaDashboardOptions> Options { get; set; } = default!;
         private IDictionary<string, ActivityDescriptor> ActivityDescriptors { get; set; } = default!;
         private EventCallbackFactory EventCallbackFactory { get; } = new();
-        private string ElsaServerUrl => ElsaClientOptions.Value.ServerUrl.ToString();
+        private string ElsaServerUrl => Options.Value.ElsaServerUrl.ToString();
 
         private WorkflowDefinition WorkflowDefinition { get; set; } = new()
         {

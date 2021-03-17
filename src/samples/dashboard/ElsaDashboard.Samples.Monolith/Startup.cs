@@ -48,7 +48,7 @@ namespace ElsaDashboard.Samples.Monolith
             
             // Elsa Dashboard.
             services.AddRazorPages();
-            services.AddElsaDashboardUI();
+            services.AddElsaDashboardUI(options => options.ElsaServerUrl = Configuration.GetValue<Uri>("Dashboard:ElsaServerUrl"));
             services.AddElsaDashboardBackend(options => options.ServerUrl = Configuration.GetValue<Uri>("Elsa:Http:BaseUrl"));
 
             if (Program.RuntimeModel == BlazorRuntimeModel.Server) 

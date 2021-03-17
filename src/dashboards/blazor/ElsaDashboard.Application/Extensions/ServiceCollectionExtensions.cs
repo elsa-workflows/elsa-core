@@ -1,5 +1,7 @@
-﻿using Blazored.Modal;
+﻿using System;
+using Blazored.Modal;
 using ElsaDashboard.Application.Display;
+using ElsaDashboard.Application.Options;
 using ElsaDashboard.Application.Services;
 using ElsaDashboard.Extensions;
 using ElsaDashboard.Services;
@@ -9,8 +11,11 @@ namespace Microsoft.Extensions.DependencyInjection
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddElsaDashboardUI(this IServiceCollection services)
+        public static IServiceCollection AddElsaDashboardUI(this IServiceCollection services, Action<ElsaDashboardOptions>? configure = default)
         {
+            if (configure != null)
+                services.Configure(configure);
+            
             return services
                 .AddBlazoredModal()
                 .AddScoped<IConfirmDialogService, ConfirmDialogService>()
