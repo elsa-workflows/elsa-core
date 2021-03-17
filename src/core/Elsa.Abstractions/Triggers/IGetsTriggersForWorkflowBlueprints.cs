@@ -17,6 +17,6 @@ namespace Elsa.Triggers
         /// <param name="cancellationToken">An optional cancellation token.</param>
         /// <returns>A task which exposes an enumerable collection of workflow triggers.</returns>
         Task<IEnumerable<WorkflowTrigger>> GetTriggersAsync(IEnumerable<IWorkflowBlueprint> workflowBlueprints,
-                                                            CancellationToken cancellationToken);
+                                                            CancellationToken cancellationToken = default);
     }
 }

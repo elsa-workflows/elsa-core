@@ -42,7 +42,7 @@ namespace Elsa.Triggers
         /// <param name="cancellationToken">An optional cancellation token.</param>
         /// <returns>A task which exposes an enumerable collection of workflow triggers.</returns>
         public async Task<IEnumerable<WorkflowTrigger>> GetTriggersAsync(IEnumerable<IWorkflowBlueprint> workflowBlueprints,
-                                                                         CancellationToken cancellationToken)
+                                                                         CancellationToken cancellationToken = default)
         {
             var allTriggers = new List<WorkflowTrigger>();
             var activityTypes = (await _activityTypeService.GetActivityTypesAsync(cancellationToken)).ToDictionary(x => x.TypeName);
