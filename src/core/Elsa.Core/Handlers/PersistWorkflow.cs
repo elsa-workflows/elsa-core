@@ -79,10 +79,7 @@ namespace Elsa.Handlers
             }
             else
             {
-                var behavior = notification.WorkflowExecutionContext.WorkflowBlueprint.PersistenceBehavior;
-
-                if (behavior == WorkflowPersistenceBehavior.WorkflowPassCompleted || behavior == WorkflowPersistenceBehavior.WorkflowBurst)
-                    await SaveWorkflowAsync(notification.WorkflowExecutionContext, cancellationToken);
+                await SaveWorkflowAsync(notification.WorkflowExecutionContext, cancellationToken);
             }
         }
         

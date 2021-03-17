@@ -12,7 +12,8 @@ namespace Elsa.Activities.ControlFlow
 {
     [Activity(
         Category = "Workflows",
-        Description = "Removes any blocking activities from the current container (workflow or composite activity)."
+        Description = "Removes any blocking activities from the current container (workflow or composite activity).",
+        Outcomes = new string[0]
     )]
     public class Finish : Activity
     {

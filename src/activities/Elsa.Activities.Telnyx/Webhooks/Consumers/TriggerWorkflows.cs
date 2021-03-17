@@ -11,7 +11,6 @@ using Elsa.Persistence;
 using Elsa.Persistence.Specifications;
 using Elsa.Services;
 using Microsoft.Extensions.Logging;
-using NodaTime;
 using Rebus.Handlers;
 
 namespace Elsa.Activities.Telnyx.Webhooks.Consumers

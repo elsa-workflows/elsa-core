@@ -6,7 +6,6 @@ using Elsa.Activities.Telnyx.Webhooks.Attributes;
 using Elsa.Activities.Telnyx.Webhooks.Models;
 using Elsa.Activities.Telnyx.Webhooks.Payloads;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Abstract;
-using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 

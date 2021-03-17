@@ -5,6 +5,7 @@ using Elsa.Activities.Telnyx.Client.Models;
 using Elsa.Activities.Telnyx.Client.Services;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Exceptions;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Refit;
@@ -86,9 +87,8 @@ namespace Elsa.Activities.Telnyx.Activities
             }
             catch (ApiException e)
             {
-                throw;
+                throw new WorkflowException(e.Content ?? e.Message, e);
             }
-            
         }
 
         private string? EmptyToNull(string? value) => value is "" ? null : value;

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Elsa.Activities.Telnyx.Webhooks.Payloads;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
 
 namespace Elsa.Activities.Telnyx.Options

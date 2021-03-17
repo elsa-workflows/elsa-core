@@ -10,6 +10,12 @@ namespace Elsa.Activities.Telnyx.Client.Services
         [Post("/v2/calls/{callControlId}/actions/answer")]
         Task AnswerCallAsync(string callControlId, [Body]AnswerCallRequest request, CancellationToken cancellationToken = default);
         
+        [Post("/v2/calls/{callControlId}/actions/transfer")]
+        Task TransferCallAsync(string callControlId, [Body]TransferCallRequest request, CancellationToken cancellationToken = default);
+        
+        [Post("/v2/calls/{callControlId}/actions/hangup")]
+        Task HangupCallAsync(string callControlId, [Body]HangupCallRequest request, CancellationToken cancellationToken = default);
+        
         [Post("/v2/calls/{callControlId}/actions/gather_using_audio")]
         Task GatherUsingAudiAsync(string callControlId, [Body]GatherUsingAudioRequest request, CancellationToken cancellationToken = default);
     }
