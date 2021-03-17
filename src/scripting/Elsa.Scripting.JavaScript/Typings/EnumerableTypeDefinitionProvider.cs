@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Reflection;
 using Elsa.Scripting.JavaScript.Services;
-using NodaTime;
 
 namespace Elsa.Scripting.JavaScript.Typings
 {

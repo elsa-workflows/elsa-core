@@ -1,9 +1,8 @@
 using System;
-using System.Net.Http.Headers;
 using Elsa;
+using Elsa.Activities.Telnyx.Extensions;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Sqlite;
-using Elsa.Persistence.MongoDb.Extensions;
 using ElsaDashboard.Backend.Extensions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -32,12 +31,13 @@ namespace ElsaDashboard.Samples.Monolith
             services
                 .AddElsa(options => options
                     //.UseYesSqlPersistence()
-                    .UseMongoDbPersistence(mongo => mongo.ConnectionString = "mongodb://localhost/elsa")
-                    //.UseEntityFrameworkPersistence(ef => ef.UseSqlite())
+                    //.UseMongoDbPersistence(mongo => mongo.ConnectionString = "mongodb://localhost/elsa")
+                    .UseEntityFrameworkPersistence(ef => ef.UseSqlite())
                     .AddConsoleActivities()
                     .AddHttpActivities(elsaSection.GetSection("Http").Bind)
                     .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)
                     .AddQuartzTemporalActivities()
+                    .AddTelnyx(Configuration.GetSection("Telnyx").Bind)
                     .AddJavaScriptActivities()
                     .AddWorkflowsFrom<Startup>()
                 );
@@ -93,6 +93,9 @@ namespace ElsaDashboard.Samples.Monolith
             {
                 // Elsa Server uses ASP.NET Core Controllers.
                 endpoints.MapControllers();
+                
+                // Telnyx webhook endpoint.
+                endpoints.MapTelnyxWebhook();
                 
                 if (Program.RuntimeModel == BlazorRuntimeModel.Server)
                     endpoints.MapBlazorHub();

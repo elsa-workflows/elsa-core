@@ -6,7 +6,7 @@ namespace Elsa.Bookmarks
 {
     public interface IBookmarkProvider
     {
-        string ForActivityType { get; }
+        ValueTask<bool> SupportsActivityAsync(BookmarkProviderContext context, CancellationToken cancellationToken = default);
         ValueTask<IEnumerable<IBookmark>> GetBookmarksAsync(BookmarkProviderContext context, CancellationToken cancellationToken = default);
     }
 }

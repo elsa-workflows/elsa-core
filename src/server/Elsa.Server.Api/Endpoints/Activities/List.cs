@@ -17,7 +17,6 @@ namespace Elsa.Server.Api.Endpoints.Activities
     public class List : Controller
     {
         private readonly IActivityTypeService _activityTypeService;
-        private readonly IContentSerializer _contentSerializer;
 
         public List(IActivityTypeService activityTypeService)
         {
@@ -35,7 +34,7 @@ namespace Elsa.Server.Api.Endpoints.Activities
         public async Task<IActionResult> Handle()
         {
             var activityTypes = await _activityTypeService.GetActivityTypesAsync();
-            var descriptors = activityTypes.Select(DescribeActivity).Where(x => x != null && x.Browsable).Select(x => x!).ToList();
+            var descriptors = activityTypes.Where(x => x.IsBrowsable).Select(DescribeActivity).Where(x => x != null).Select(x => x!).ToList();
             return Json(descriptors);
         }
 

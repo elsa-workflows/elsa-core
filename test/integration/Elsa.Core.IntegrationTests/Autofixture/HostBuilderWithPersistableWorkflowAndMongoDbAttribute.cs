@@ -1,8 +1,6 @@
 using System.Reflection;
 using AutoFixture;
 using AutoFixture.Xunit2;
-using Elsa.Activities.UserTask.Activities;
-using Elsa.Core.IntegrationTests.Workflows;
 using Elsa.Persistence.MongoDb.Extensions;
 using Elsa.Testing.Shared.AutoFixture.Customizations;
 using Microsoft.Extensions.DependencyInjection;

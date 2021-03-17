@@ -12,6 +12,7 @@ namespace Elsa.Handlers
     public class PersistWorkflow :
         INotificationHandler<WorkflowExecuted>,
         INotificationHandler<WorkflowSuspended>,
+        INotificationHandler<WorkflowFaulted>,
         INotificationHandler<WorkflowExecutionPassCompleted>,
         INotificationHandler<WorkflowExecutionBurstStarting>,
         INotificationHandler<WorkflowExecutionBurstCompleted>,
@@ -29,7 +30,9 @@ namespace Elsa.Handlers
 
         public async Task Handle(WorkflowSuspended notification, CancellationToken cancellationToken)
         {
-            if (notification.WorkflowExecutionContext.WorkflowBlueprint.PersistenceBehavior == WorkflowPersistenceBehavior.Suspended)
+            var behavior = notification.WorkflowExecutionContext.WorkflowBlueprint.PersistenceBehavior;
+            
+            if (behavior == WorkflowPersistenceBehavior.Suspended)
                 await SaveWorkflowAsync(notification.WorkflowExecutionContext, cancellationToken);
         }
 
@@ -76,11 +79,13 @@ namespace Elsa.Handlers
             }
             else
             {
-                var behavior = notification.WorkflowExecutionContext.WorkflowBlueprint.PersistenceBehavior;
-
-                if (behavior == WorkflowPersistenceBehavior.WorkflowPassCompleted || behavior == WorkflowPersistenceBehavior.WorkflowBurst)
-                    await SaveWorkflowAsync(notification.WorkflowExecutionContext, cancellationToken);
+                await SaveWorkflowAsync(notification.WorkflowExecutionContext, cancellationToken);
             }
+        }
+        
+        public async Task Handle(WorkflowFaulted notification, CancellationToken cancellationToken)
+        {
+            await SaveWorkflowAsync(notification.WorkflowExecutionContext, cancellationToken);
         }
 
         public async Task Handle(ActivityExecuted notification, CancellationToken cancellationToken)

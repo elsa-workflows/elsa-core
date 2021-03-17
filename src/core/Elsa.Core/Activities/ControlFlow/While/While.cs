@@ -1,5 +1,6 @@
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Design;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -13,7 +14,7 @@ namespace Elsa.Activities.ControlFlow
     )]
     public class While : Activity
     {
-        [ActivityProperty(Hint = "The condition to evaluate.")]
+        [ActivityProperty(Hint = "The condition to evaluate.", UIHint = ActivityPropertyUIHints.SingleLine)]
         public bool Condition { get; set; }
         
         private bool Break

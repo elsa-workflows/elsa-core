@@ -1,4 +1,3 @@
-using Elsa.Persistence.EntityFramework.PostgreSql;
 using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Persistence.EntityFramework.PostgreSql

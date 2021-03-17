@@ -74,7 +74,7 @@ export class ElsaWorkflowDesigner {
       const displayContext: ActivityDesignDisplayContext = {
         activityModel: model,
         activityIcon: <ActivityIcon/>,
-        bodyDisplay: <p>{model.description}</p>,
+        bodyDisplay: null,
         outcomes: [...model.outcomes]
       };
 

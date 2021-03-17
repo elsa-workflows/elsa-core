@@ -1,3 +1,4 @@
+using Elsa.Activities.Telnyx.Extensions;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Sqlite;
 using Microsoft.AspNetCore.Builder;
@@ -30,6 +31,7 @@ namespace Elsa.Samples.Server.Host
                     .AddHttpActivities(elsaSection.GetSection("Http").Bind)
                     .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)
                     .AddQuartzTemporalActivities()
+                    .AddTelnyx()
                     .AddWorkflowsFrom<Startup>()
                 );
 
@@ -56,7 +58,11 @@ namespace Elsa.Samples.Server.Host
                 .UseHttpActivities()
                 .UseCors()
                 .UseRouting()
-                .UseEndpoints(configure => configure.MapControllers());
+                .UseEndpoints(endpoints =>
+                {
+                    endpoints.MapControllers();
+                    endpoints.MapTelnyxWebhook();
+                });
         }
     }
 }

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.ComponentModel;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Scripting.JavaScript.Converters;
@@ -21,15 +20,14 @@ namespace Elsa.Scripting.JavaScript.Services
     {
         private readonly IMediator _mediator;
         private readonly ScriptOptions _options;
-        private readonly JsonSerializerSettings _serializerSettings;
 
         public JavaScriptService(IMediator mediator, IOptions<ScriptOptions> options)
         {
             _mediator = mediator;
             _options = options.Value;
 
-            _serializerSettings = new JsonSerializerSettings().ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
-            _serializerSettings.Converters.Add(new TruncatingNumberJsonConverter());
+            var serializerSettings = new JsonSerializerSettings().ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
+            serializerSettings.Converters.Add(new TruncatingNumberJsonConverter());
         }
         
         public async Task<object?> EvaluateAsync(string expression, Type returnType, ActivityExecutionContext context, Action<Engine>? configureEngine = default, CancellationToken cancellationToken = default)
@@ -41,6 +39,10 @@ namespace Elsa.Scripting.JavaScript.Services
             engine.Execute(expression);
 
             var returnValue = engine.GetCompletionValue().ToObject();
+
+            if (returnValue == null)
+                return null;
+            
             var converter = TypeDescriptor.GetConverter(returnValue);
 
             if (converter.CanConvertTo(returnType))

@@ -1,5 +1,4 @@
-﻿@using ElsaDashboard.Application.Services
-<div x-show="$store.flyoutPanel.show" x-data="{}" x-on:keydown.window.escape="$store.flyoutPanel.show = false" class="fixed z-10 inset-0 overflow-hidden">
+﻿<div x-show="$store.flyoutPanel.show" x-data="{}" x-on:keydown.window.escape="$store.flyoutPanel.show = false" class="fixed z-10 inset-0 overflow-hidden">
     <div class="absolute inset-0 overflow-hidden">
         <section x-on:click.away="$store.flyoutPanel.show = false" class="absolute inset-y-0 right-0 pl-10 max-w-md md:max-w-full flex sm:pl-16">
             <div class="w-screen max-w-2xl" x-description="Slide-over panel, show/hide based on slide-over state." x-show="$store.flyoutPanel.show == true" x-transition:enter="transform transition ease-in-out duration-500 sm:duration-700" x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0" x-transition:leave="transform transition ease-in-out duration-500 sm:duration-700" x-transition:leave-start="translate-x-0" x-transition:leave-end="translate-x-full">

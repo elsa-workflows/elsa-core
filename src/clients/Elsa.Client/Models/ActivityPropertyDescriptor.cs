@@ -1,5 +1,4 @@
 using System.Runtime.Serialization;
-using Newtonsoft.Json.Linq;
 
 namespace Elsa.Client.Models
 {

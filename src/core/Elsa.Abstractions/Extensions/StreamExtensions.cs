@@ -3,7 +3,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Elsa.Activities.Http.Extensions
+namespace Elsa
 {
     public static class StreamExtensions
     {

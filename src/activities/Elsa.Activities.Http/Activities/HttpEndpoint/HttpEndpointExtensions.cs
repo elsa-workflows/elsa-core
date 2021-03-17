@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Elsa.Builders;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
-using YamlDotNet.Core.Tokens;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.Http

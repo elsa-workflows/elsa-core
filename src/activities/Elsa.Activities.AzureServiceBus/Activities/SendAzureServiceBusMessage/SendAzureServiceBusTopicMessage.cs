@@ -1,4 +1,3 @@
-using System.Text;
 using System.Threading.Tasks;
 using Elsa.Activities.AzureServiceBus.Services;
 using Elsa.ActivityResults;
@@ -6,7 +5,6 @@ using Elsa.Attributes;
 using Elsa.Serialization;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Microsoft.Azure.ServiceBus;
 
 namespace Elsa.Activities.AzureServiceBus
 {

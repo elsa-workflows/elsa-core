@@ -1,5 +1,4 @@
 using System.Reflection;
-using AutoFixture;
 using AutoFixture.Kernel;
 using Elsa.Testing.Shared.AutoFixture.SpecimenBuilders;
 
