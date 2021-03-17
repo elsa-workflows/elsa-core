@@ -49,7 +49,11 @@ install:
 
       npm install --force
 
-      cd ..\..\..\..\
+      cd ..\..\..\src\designer\bindings\blazor\Elsa.Designer.Bindings.Blazor
+        
+      npm install --force
+
+      cd ..\..\..\..\..\
 
       dotnet tool install --global dotnet-sonarscanner
 
@@ -75,11 +79,11 @@ build_script:
 
       npm run build:css
         
-      cd .\src\designer\bindings\blazor\Elsa.Designer.Bindings.Blazor
+      cd ..\..\..\designer\bindings\blazor\Elsa.Designer.Bindings.Blazor
         
       npm run build
 
-      cd ..\..\..\..\
+      cd ..\..\..\..\..\
       
       dotnet build
 
