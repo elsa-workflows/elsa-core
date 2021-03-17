@@ -49,7 +49,7 @@ install:
 
       npm install --force
 
-      cd ..\..\..\src\designer\bindings\blazor\Elsa.Designer.Bindings.Blazor
+      cd ..\..\..\designer\bindings\blazor\Elsa.Designer.Bindings.Blazor
         
       npm install --force
 
