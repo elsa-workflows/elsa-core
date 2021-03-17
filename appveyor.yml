@@ -37,6 +37,7 @@ cache:
   - '%APPDATA%\npm-cache'
 
 install:
+  - docker version
   - ps: >-
       Install-Product node $env:nodejs_version
 
@@ -64,10 +65,15 @@ before_build:
       }
 
 build_script:
+  - docker build -t me/elsadashboard_samples_monolith -f ./docker/ElsaDashboard.Samples.Monolith.Dockerfile .
   - ps: >-
       cd .\src\dashboards\blazor\ElsaDashboard.Application
 
       npm run build:css
+        
+      cd .\src\designer\bindings\blazor\Elsa.Designer.Bindings.Blazor
+        
+      npm run build
 
       cd ..\..\..\..\
       
@@ -106,3 +112,7 @@ deploy:
     skip_symbols: true
     on:
       APPVEYOR_REPO_TAG: true
+
+deploy_script:
+  - docker login -u="$env:DOCKER_USER" -p="$env:DOCKER_PASS"
+  - docker push me/elsadashboard_samples_monolith

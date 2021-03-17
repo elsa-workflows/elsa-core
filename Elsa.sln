@@ -17,7 +17,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "solution", "solution", "{71
 		configureawait.props = configureawait.props
 		CONTRIBUTING.md = CONTRIBUTING.md
 		docker-compose.yaml = docker-compose.yaml
-		Dockerfile = Dockerfile
 		Nuget.Config = Nuget.Config
 		README.md = README.md
 	EndProjectSection
