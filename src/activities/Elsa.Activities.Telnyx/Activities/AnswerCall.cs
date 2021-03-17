@@ -43,9 +43,13 @@ namespace Elsa.Activities.Telnyx.Activities
         [ActivityProperty(Label = "Webhook URL Method", Hint = "HTTP request type used for Webhook URL", UIHint = ActivityPropertyUIHints.Dropdown, Options = new[] { "GET", "POST" })]
         public string? WebhookUrlMethod { get; set; }
 
-        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => Combine(RegisterTask(AnswerCallAsync), Done());
+        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
+        {
+            await AnswerCallAsync(context.CancellationToken);
+            return Done();
+        }
 
-        private async ValueTask AnswerCallAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
+        private async ValueTask AnswerCallAsync(CancellationToken cancellationToken)
         {
             var request = new AnswerCallRequest(BillingGroupId, ClientState, CommandId, WebhookUrl, WebhookUrlMethod);
             await _telnyxClient.Calls.AnswerCallAsync(CallControlId, request, cancellationToken);

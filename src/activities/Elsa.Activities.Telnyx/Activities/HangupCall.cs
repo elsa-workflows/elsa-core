@@ -4,8 +4,10 @@ using Elsa.Activities.Telnyx.Client.Models;
 using Elsa.Activities.Telnyx.Client.Services;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Exceptions;
 using Elsa.Services;
 using Elsa.Services.Models;
+using Refit;
 
 namespace Elsa.Activities.Telnyx.Activities
 {
@@ -32,13 +34,25 @@ namespace Elsa.Activities.Telnyx.Activities
 
         [ActivityProperty(Label = "Command ID", Hint = "Use this field to avoid duplicate commands. Telnyx will ignore commands with the same Command ID.")]
         public string? CommandId { get; set; }
-        
-        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => Combine(RegisterTask(HangupCallAsync), Done());
 
-        private async ValueTask HangupCallAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
+        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
+        {
+            await HangupCallAsync(context.CancellationToken);
+            return Done();
+        }
+
+        private async ValueTask HangupCallAsync(CancellationToken cancellationToken)
         {
             var request = new HangupCallRequest(ClientState, CommandId);
-            await _telnyxClient.Calls.HangupCallAsync(CallControlId, request, cancellationToken);
+            
+            try
+            {
+                await _telnyxClient.Calls.HangupCallAsync(CallControlId, request, cancellationToken);
+            }
+            catch (ApiException e)
+            {
+                throw new WorkflowException(e.Content ?? e.Message, e);
+            }
         }
     }
 }

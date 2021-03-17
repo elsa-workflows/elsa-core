@@ -7,8 +7,10 @@ using Elsa.Activities.Telnyx.Client.Services;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Design;
+using Elsa.Exceptions;
 using Elsa.Services;
 using Elsa.Services.Models;
+using Refit;
 
 namespace Elsa.Activities.Telnyx.Activities
 {
@@ -82,9 +84,13 @@ namespace Elsa.Activities.Telnyx.Activities
         [ActivityProperty(Label = "Webhook URL Method", Hint = "HTTP request type used for Webhook URL", UIHint = ActivityPropertyUIHints.Dropdown, Options = new[] { "GET", "POST" })]
         public string? WebhookUrlMethod { get; set; }
 
-        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => Combine(RegisterTask(TransferCallAsync), Done());
+        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
+        {
+            await TransferCallAsync(context.CancellationToken);
+            return Done();
+        }
 
-        private async ValueTask TransferCallAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
+        private async ValueTask TransferCallAsync(CancellationToken cancellationToken)
         {
             var request = new TransferCallRequest(
                 To,
@@ -105,7 +111,14 @@ namespace Elsa.Activities.Telnyx.Activities
                 WebhookUrlMethod
             );
 
-            await _telnyxClient.Calls.TransferCallAsync(CallControlId, request, cancellationToken);
+            try
+            {
+                await _telnyxClient.Calls.TransferCallAsync(CallControlId, request, cancellationToken);
+            }
+            catch (ApiException e)
+            {
+                throw new WorkflowException(e.Content ?? e.Message, e);
+            }
         }
     }
 }

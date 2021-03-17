@@ -63,9 +63,13 @@ namespace Elsa.Activities.Telnyx.Activities
         [ActivityProperty(Label = "Timeout", Hint = "The number of milliseconds to wait for a DTMF response after file playback ends before a replaying the sound file.")]
         public int? TimeoutMillis { get; set; } = 60000;
 
-        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => Combine(RegisterTask(GatherUsingAudioAsync), Done());
+        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
+        {
+            await GatherUsingAudioAsync(context.CancellationToken);
+            return Done();
+        }
 
-        private async ValueTask GatherUsingAudioAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
+        private async ValueTask GatherUsingAudioAsync(CancellationToken cancellationToken)
         {
             var request = new GatherUsingAudioRequest(
                 AudioUrl,
