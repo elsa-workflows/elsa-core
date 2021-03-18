@@ -8,16 +8,13 @@
 
   <!-- Including a pre-built tailwind.css file for development. Don't include this when using a production build, since tailwind would already be included -->
   <link href="/build/assets/tailwind.css" rel="stylesheet">
-
-  <!--  Until I figure out why the ESM loader doesn't work properly, we need to include these scripts manually. -->
   <script src="/build/assets/js/monaco-editor/min/vs/loader.js"></script>
-
   <script type="module" src="/build/elsa-workflows-studio.esm.js"></script>
   <script nomodule src="/build/elsa-workflows-studio.js"></script>
 </head>
 <body class="h-screen" style="background-size: 30px 30px; background-image: url(/build/assets/tile.png); background-color: #FBFBFB;">
 
-<elsa-workflow-editor id="workflowEditor" server-url="https://localhost:3956/" workflow-definition-id="7eed1333c2674370a1e9b300aa94fda2" monaco-lib-path="build/assets/js"></elsa-workflow-editor>
+<elsa-workflow-editor id="workflowEditor" server-url="http://localhost:5000/" workflow-definition-id="7eed1333c2674370a1e9b300aa94fda2" monaco-lib-path="build/assets/js"></elsa-workflow-editor>
 
 </body>
 </html>

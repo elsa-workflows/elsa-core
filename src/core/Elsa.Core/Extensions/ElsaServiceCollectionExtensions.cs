@@ -133,7 +133,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
             // Metadata.
             services
-                .AddSingleton<IActivityDescriber, ActivityDescriber>()
+                .AddSingleton<IDescribeActivityType, TypedActivityTypeDescriber>()
                 .AddSingleton<IActivityPropertyOptionsResolver, ActivityPropertyOptionsResolver>()
                 .AddSingleton<IActivityPropertyUIHintResolver, ActivityPropertyUIHintResolver>();
 

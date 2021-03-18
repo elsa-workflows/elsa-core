@@ -29,7 +29,7 @@ export class ElsaDropdownProperty {
     const fieldLabel = propertyDescriptor.label || propertyName;
     const fieldHint = propertyDescriptor.hint;
     const options = propertyDescriptor.options as Array<any> || [];
-    const value = this.currentValue;
+    const currentValue = this.currentValue;
 
     return (
       <div>
@@ -38,7 +38,11 @@ export class ElsaDropdownProperty {
         </label>
 
         <select id={fieldId} name={fieldName} class="mt-1 block focus:ring-blue-500 focus:border-blue-500 w-full shadow-sm sm:max-w-xs sm:text-sm border-gray-300 rounded-md">
-          {options.map((option, index) => <option value={option} selected={option === value}>{option}</option>)}
+          {options.map(option => {
+            const value = option.value || option;
+            const text = option.text || option;
+            return <option value={value} selected={value === currentValue}>{text}</option>;
+          })}
         </select>
 
         {fieldHint ? <p class="mt-2 text-sm text-gray-500">{fieldHint}</p> : undefined}
