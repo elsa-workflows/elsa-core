@@ -56,8 +56,7 @@ namespace Elsa.Triggers
                                                                                         CancellationToken cancellationToken)
         {
             var startingActivityBlueprints = startingActivitiesProvider.GetStartActivities(workflowBlueprint);
-            var workflowExecutionContext = await workflowExecutionContextFactory.CreateWorkflowExecutionContextAsync(workflowBlueprint,
-                                                                                                                        cancellationToken);
+            var workflowExecutionContext = await workflowExecutionContextFactory.CreateWorkflowExecutionContextAsync(workflowBlueprint, cancellationToken);
             var tasksOfCollectionsOfTriggers = startingActivityBlueprints
                 .Select(async activityBlueprint => await triggerProvider.GetTriggersForActivityBlueprintAsync(activityBlueprint,
                                                                                                                 workflowExecutionContext,
