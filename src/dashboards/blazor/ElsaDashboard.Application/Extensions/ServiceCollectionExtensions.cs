@@ -5,6 +5,7 @@ using ElsaDashboard.Application.Options;
 using ElsaDashboard.Application.Services;
 using ElsaDashboard.Extensions;
 using ElsaDashboard.Services;
+using MediatR;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -17,6 +18,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 services.Configure(configure);
             
             return services
+                .AddMediatR(typeof(FlyoutPanelService))
                 .AddBlazoredModal()
                 .AddScoped<IConfirmDialogService, ConfirmDialogService>()
                 .AddScoped<IFlyoutPanelService, FlyoutPanelService>()
