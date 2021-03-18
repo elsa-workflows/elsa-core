@@ -12,15 +12,15 @@ namespace Elsa.ActivityTypeProviders
 {
     public class TypeBasedActivityProvider : IActivityTypeProvider
     {
-        private readonly IActivityDescriber _activityDescriber;
+        private readonly IDescribeActivityType _describeActivityType;
         private readonly IActivityActivator _activityActivator;
         private readonly ElsaOptions _elsaOptions;
 
         public TypeBasedActivityProvider(ElsaOptions options,
-            IActivityDescriber activityDescriber, 
+            IDescribeActivityType describeActivityType, 
             IActivityActivator activityActivator)
         {
-            _activityDescriber = activityDescriber;
+            _describeActivityType = describeActivityType;
             _activityActivator = activityActivator;
             _elsaOptions = options;
         }
@@ -31,7 +31,7 @@ namespace Elsa.ActivityTypeProviders
        
         private ActivityType? CreateActivityType(Type activityType)
         {
-            var info = _activityDescriber.Describe(activityType);
+            var info = _describeActivityType.Describe(activityType);
 
             if (info == null)
                 return default;

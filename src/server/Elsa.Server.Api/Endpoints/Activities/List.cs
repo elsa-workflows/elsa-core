@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.ActivityProviders;
 using Elsa.Metadata;
-using Elsa.Serialization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
@@ -31,13 +31,14 @@ namespace Elsa.Server.Api.Endpoints.Activities
             OperationId = "Activities.List",
             Tags = new[] { "Activities" })
         ]
-        public async Task<IActionResult> Handle()
+        public async Task<IActionResult> Handle(CancellationToken cancellationToken)
         {
-            var activityTypes = await _activityTypeService.GetActivityTypesAsync();
-            var descriptors = activityTypes.Where(x => x.IsBrowsable).Select(DescribeActivity).Where(x => x != null).Select(x => x!).ToList();
+            var activityTypes = await _activityTypeService.GetActivityTypesAsync(cancellationToken);
+            var tasks = activityTypes.Where(x => x.IsBrowsable).Select(x => DescribeActivity(x, cancellationToken)).ToList();
+            var descriptors = await Task.WhenAll(tasks);
             return Json(descriptors);
         }
 
-        private ActivityDescriptor? DescribeActivity(ActivityType activityType) => activityType.Describe();
+        private async Task<ActivityDescriptor> DescribeActivity(ActivityType activityType, CancellationToken cancellationToken) => await _activityTypeService.DescribeActivityType(activityType, cancellationToken);
     }
 }
