@@ -18,14 +18,17 @@ namespace Elsa.Triggers
         readonly IActivityTypeService activityTypeService;
         readonly ICreatesWorkflowExecutionContextForWorkflowBlueprint workflowExecutionContextFactory;
         readonly IGetsTriggersForActivityBlueprintAndWorkflow triggerProvider;
+        readonly IGetsStartActivitiesForCompositeActivityBlueprint startingActivitiesProvider;
 
         public TriggersForBlueprintsProvider(IActivityTypeService activityTypeService,
                                              ICreatesWorkflowExecutionContextForWorkflowBlueprint workflowExecutionContextFactory,
-                                             IGetsTriggersForActivityBlueprintAndWorkflow triggerProvider)
+                                             IGetsTriggersForActivityBlueprintAndWorkflow triggerProvider,
+                                             IGetsStartActivitiesForCompositeActivityBlueprint startingActivitiesProvider)
         {
             this.activityTypeService = activityTypeService ?? throw new ArgumentNullException(nameof(activityTypeService));
             this.workflowExecutionContextFactory = workflowExecutionContextFactory ?? throw new ArgumentNullException(nameof(workflowExecutionContextFactory));
             this.triggerProvider = triggerProvider ?? throw new ArgumentNullException(nameof(triggerProvider));
+            this.startingActivitiesProvider = startingActivitiesProvider ?? throw new ArgumentNullException(nameof(startingActivitiesProvider));
         }
 
         /// <summary>
@@ -52,7 +55,7 @@ namespace Elsa.Triggers
                                                                                         IDictionary<string, ActivityType> activityTypes,
                                                                                         CancellationToken cancellationToken)
         {
-            var startingActivityBlueprints = workflowBlueprint.GetStartActivities();
+            var startingActivityBlueprints = startingActivitiesProvider.GetStartActivities(workflowBlueprint);
             var workflowExecutionContext = await workflowExecutionContextFactory.CreateWorkflowExecutionContextAsync(workflowBlueprint,
                                                                                                                         cancellationToken);
             var tasksOfCollectionsOfTriggers = startingActivityBlueprints

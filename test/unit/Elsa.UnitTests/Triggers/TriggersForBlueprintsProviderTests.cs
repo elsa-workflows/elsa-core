@@ -68,10 +68,12 @@ namespace Elsa.UnitTests.Triggers
             var triggersForActivityProvider = new TriggersForActivityBlueprintAndWorkflowProvider(bookmarkHasher,
                                                                                                   new[] { provider1, provider2, provider3 },
                                                                                                   activityExecutionContextFactory);
+            var startingActivitiesProvider = new StartActivitiesForCompositeActivityBlueprintProvider();
 
             var sut = new TriggersForBlueprintsProvider(activityTypeService,
                                                         workflowExecutionContextFactory,
-                                                        triggersForActivityProvider);
+                                                        triggersForActivityProvider,
+                                                        startingActivitiesProvider);
 
             Mock.Get(activityTypeService)
                 .Setup(x => x.GetActivityTypesAsync(default))
