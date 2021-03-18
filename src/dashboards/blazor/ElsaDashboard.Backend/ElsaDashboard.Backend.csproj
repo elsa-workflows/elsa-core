@@ -17,11 +17,11 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Grpc.AspNetCore.Server" Version="2.34.0" />
-        <PackageReference Include="Grpc.AspNetCore.Web" Version="2.34.0" />
+        <PackageReference Include="Grpc.AspNetCore.Server" Version="2.36.0" />
+        <PackageReference Include="Grpc.AspNetCore.Web" Version="2.36.0" />
         <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
         <PackageReference Include="NodaTime.Serialization.Protobuf" Version="2.0.0" />
-        <PackageReference Include="protobuf-net.Grpc.AspNetCore" Version="1.0.140" />
+        <PackageReference Include="protobuf-net.Grpc.AspNetCore" Version="1.0.147" />
         <PackageReference Include="protobuf-net.NodaTime" Version="3.0.73" />
     </ItemGroup>
 

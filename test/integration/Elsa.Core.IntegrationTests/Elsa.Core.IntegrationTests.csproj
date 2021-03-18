@@ -10,16 +10,16 @@
     <PackageReference Include="Autofixture" Version="4.15.0" />
     <PackageReference Include="Autofixture.AutoMoq" Version="4.15.0" />
     <PackageReference Include="autofixture.xunit2" Version="4.15.0" />
-    <PackageReference Include="Moq" Version="4.16.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.8.3" />
-    <PackageReference Include="NodaTime.Testing" Version="3.0.3" />
+    <PackageReference Include="Moq" Version="4.16.1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.9.1" />
+    <PackageReference Include="NodaTime.Testing" Version="3.0.5" />
     <PackageReference Include="xunit" Version="2.4.1" />
-    <PackageReference Include="XunitXml.TestLogger" Version="3.0.62" />
+    <PackageReference Include="XunitXml.TestLogger" Version="3.0.66" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="coverlet.collector" Version="3.0.1">
+    <PackageReference Include="coverlet.collector" Version="3.0.3">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
@@ -28,7 +28,7 @@
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0" />
     <PackageReference Include="Hangfire.AspNetCore" Version="1.7.19" />
     <PackageReference Include="Hangfire.InMemory" Version="0.3.4" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="5.0.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="5.0.4" />
   </ItemGroup>
 
   <ItemGroup>

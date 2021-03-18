@@ -9,8 +9,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="5.0.2" />
-        <PackageReference Include="protobuf-net.Grpc.AspNetCore" Version="1.0.140" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="5.0.4" />
+        <PackageReference Include="protobuf-net.Grpc.AspNetCore" Version="1.0.147" />
     </ItemGroup>
 
     <ItemGroup>
@@ -19,9 +19,9 @@
         <ProjectReference Include="..\..\..\core\Elsa\Elsa.csproj" />
         <ProjectReference Include="..\..\..\dashboards\blazor\ElsaDashboard.Application\ElsaDashboard.Application.csproj" />
         <ProjectReference Include="..\..\..\dashboards\blazor\ElsaDashboard.Backend\ElsaDashboard.Backend.csproj" />
+        <ProjectReference Include="..\..\..\dashboards\blazor\ElsaDashboard.WebAssembly\ElsaDashboard.WebAssembly.csproj" />
         <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.Sqlite\Elsa.Persistence.EntityFramework.Sqlite.csproj" />
         <ProjectReference Include="..\..\..\server\Elsa.Server.Api\Elsa.Server.Api.csproj" />
-        <ProjectReference Include="..\ElsaDashboard.Samples.WebAssembly\ElsaDashboard.Samples.WebAssembly.csproj" />
     </ItemGroup>
 
 </Project>

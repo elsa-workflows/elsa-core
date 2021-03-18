@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <Import Project="..\..\..\common.props"/>
-    <Import Project="..\..\..\configureawait.props"/>
+    <Import Project="..\..\..\common.props" />
+    <Import Project="..\..\..\configureawait.props" />
 
     <PropertyGroup>
         <TargetFramework>netstandard2.1</TargetFramework>
@@ -13,11 +13,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="NodaTime" Version="3.0.3"/>
-        <PackageReference Include="NodaTime.Serialization.JsonNet" Version="3.0.0"/>
-        <PackageReference Include="Refit" Version="6.0.24"/>
-        <PackageReference Include="Refit.HttpClientFactory" Version="6.0.24"/>
-        <PackageReference Include="Refit.Newtonsoft.Json" Version="6.0.24"/>
+        <PackageReference Include="NodaTime" Version="3.0.5" />
+        <PackageReference Include="NodaTime.Serialization.JsonNet" Version="3.0.0" />
+        <PackageReference Include="Refit" Version="6.0.24" />
+        <PackageReference Include="Refit.HttpClientFactory" Version="6.0.24" />
+        <PackageReference Include="Refit.Newtonsoft.Json" Version="6.0.24" />
     </ItemGroup>
 
 </Project>

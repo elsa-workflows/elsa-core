@@ -14,10 +14,10 @@
 
     <ItemGroup>
         <PackageReference Include="Google.Api.CommonProtos" Version="2.2.0" />
-        <PackageReference Include="Grpc.Net.Client" Version="2.34.0" />
-        <PackageReference Include="Grpc.Net.ClientFactory" Version="2.34.0" />
+        <PackageReference Include="Grpc.Net.Client" Version="2.36.0" />
+        <PackageReference Include="Grpc.Net.ClientFactory" Version="2.36.0" />
         <PackageReference Include="protobuf-net" Version="3.0.73" />
-        <PackageReference Include="protobuf-net.Grpc" Version="1.0.140" />
+        <PackageReference Include="protobuf-net.Grpc" Version="1.0.147" />
     </ItemGroup>
 
     <ItemGroup>

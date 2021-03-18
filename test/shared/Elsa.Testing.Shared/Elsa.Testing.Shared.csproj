@@ -17,10 +17,10 @@
         <PackageReference Include="autofixture.xunit2" Version="4.15.0" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.1" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="5.0.0" />
-        <PackageReference Include="NodaTime" Version="3.0.3" />
+        <PackageReference Include="NodaTime" Version="3.0.5" />
         <PackageReference Include="xunit.extensibility.core" Version="2.4.1" />
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.2" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.4" />
     </ItemGroup>
 
     <ItemGroup>
