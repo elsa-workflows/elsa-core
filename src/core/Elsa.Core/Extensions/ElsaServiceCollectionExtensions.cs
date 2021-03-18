@@ -109,6 +109,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IActivityTypeService, ActivityTypeService>()
                 .AddActivityTypeProvider<TypeBasedActivityProvider>()
                 .AddScoped<IWorkflowExecutionLog, WorkflowExecutionLog>()
+                .AddTransient<ICreatesWorkflowExecutionContextForWorkflowBlueprint, WorkflowExecutionContextForWorkflowBlueprintFactory>()
+                .AddTransient<ICreatesActivityExecutionContextForActivityBlueprint, ActivityExecutionContextForActivityBlueprintFactory>()
                 ;
 
             // Serialization.

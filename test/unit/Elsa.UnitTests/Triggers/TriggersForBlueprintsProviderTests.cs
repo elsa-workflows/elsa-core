@@ -63,8 +63,15 @@ namespace Elsa.UnitTests.Triggers
                                                                                                                string bookmarkHash5,
                                                                                                                string bookmarkHash6)
         {
+            var workflowExecutionContextFactory = new WorkflowExecutionContextForWorkflowBlueprintFactory(serviceProvider, workflowFactory);
+            var activityExecutionContextFactory = new ActivityExecutionContextForActivityBlueprintFactory(serviceProvider);
+
             // Unfortunately the SUT can't be created by Autofixture because of the IEnumerable<IBookmarkProvider> in the ctor
-            var sut = new TriggersForBlueprintsProvider(activityTypeService, bookmarkHasher, new [] { provider1, provider2, provider3 }, serviceProvider, workflowFactory);
+            var sut = new TriggersForBlueprintsProvider(activityTypeService,
+                                                        bookmarkHasher,
+                                                        new[] { provider1, provider2, provider3 },
+                                                        workflowExecutionContextFactory,
+                                                        activityExecutionContextFactory);
 
             Mock.Get(activityTypeService)
                 .Setup(x => x.GetActivityTypesAsync(default))
