@@ -45,11 +45,11 @@ namespace Elsa.Triggers
                 .ToListAsync(cancellationToken);
 
             var tasksOfListsOfTriggers = supportedBookmarkProviders
-                .Select(async bookmarkProvider => await GetTriggersForBookmarkProvider(bookmarkProvider,
-                                                                                       bookmarkProviderContext,
-                                                                                       activityBlueprint,
-                                                                                       workflowExecutionContext.WorkflowBlueprint,
-                                                                                       cancellationToken));
+                .Select(bookmarkProvider => GetTriggersForBookmarkProvider(bookmarkProvider,
+                                                                           bookmarkProviderContext,
+                                                                           activityBlueprint,
+                                                                           workflowExecutionContext.WorkflowBlueprint,
+                                                                           cancellationToken));
             return (await Task.WhenAll(tasksOfListsOfTriggers))
                 .SelectMany(x => x)
                 .ToList();
