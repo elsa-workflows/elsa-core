@@ -1,7 +1,7 @@
 image: Previous Visual Studio 2019
 
 environment:
-  nodejs_version: "11"
+  # nodejs_version: "11"
   # AppVeyor installs Java on its build agents by default, but it
   # picks an old version that's not compatible with SonarQube.
   # This brings it up to date.
