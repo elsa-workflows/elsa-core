@@ -71,7 +71,7 @@ namespace ElsaDashboard.Samples.Monolith
                 app.UseSwagger();
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Elsa"));
                 
-                if (Program.RuntimeModel == BlazorRuntimeModel.Browser)
+                if (Program.RuntimeModel == BlazorRuntimeModel.WebAssembly)
                     app.UseWebAssemblyDebugging();
             }
             else
@@ -80,7 +80,7 @@ namespace ElsaDashboard.Samples.Monolith
                 app.UseHsts();
             }
 
-            if (Program.RuntimeModel == BlazorRuntimeModel.Browser)
+            if (Program.RuntimeModel == BlazorRuntimeModel.WebAssembly)
                 app.UseBlazorFrameworkFiles();
             
             app.UseStaticFiles();

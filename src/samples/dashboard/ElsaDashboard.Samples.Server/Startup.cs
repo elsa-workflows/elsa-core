@@ -1,5 +1,6 @@
 using System;
 using ElsaDashboard.Backend.Extensions;
+using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -22,9 +23,13 @@ namespace ElsaDashboard.Samples.Server
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddRazorPages();
-            services.AddElsaDashboardUI();
-            services.AddElsaDashboardBackend(options => options.ServerUrl = Configuration.GetValue<Uri>("Elsa:HostUrl"));
 
+            var elsaServerUrl = Configuration.GetValue<Uri>("Elsa:HostUrl");
+            
+            services
+                .AddElsaDashboardUI(options => options.ElsaServerUrl = elsaServerUrl)
+                .AddElsaDashboardBackend(options => options.ServerUrl = elsaServerUrl);
+            
             if (Program.RuntimeModel == BlazorRuntimeModel.Server) 
                 services.AddServerSideBlazor(options =>
                 {
@@ -39,7 +44,7 @@ namespace ElsaDashboard.Samples.Server
             {
                 app.UseDeveloperExceptionPage();
                 
-                if (Program.RuntimeModel == BlazorRuntimeModel.Browser)
+                if (Program.RuntimeModel == BlazorRuntimeModel.WebAssembly)
                     app.UseWebAssemblyDebugging();
             }
             else
@@ -48,17 +53,19 @@ namespace ElsaDashboard.Samples.Server
                 app.UseHsts();
             }
 
-            if (Program.RuntimeModel == BlazorRuntimeModel.Browser)
+            if (Program.RuntimeModel == BlazorRuntimeModel.WebAssembly)
                 app.UseBlazorFrameworkFiles();
             
             app.UseStaticFiles();
             app.UseRouting();
             app.UseElsaGrpcServices();
+            
             app.UseEndpoints(endpoints =>
             {
                 if (Program.RuntimeModel == BlazorRuntimeModel.Server)
                     endpoints.MapBlazorHub();
                 
+                endpoints.MapRazorPages();
                 endpoints.MapFallbackToPage("/_Host");
             });
         }

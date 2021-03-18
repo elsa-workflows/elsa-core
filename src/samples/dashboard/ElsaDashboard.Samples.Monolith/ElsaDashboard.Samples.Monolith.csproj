@@ -19,9 +19,9 @@
         <ProjectReference Include="..\..\..\core\Elsa\Elsa.csproj" />
         <ProjectReference Include="..\..\..\dashboards\blazor\ElsaDashboard.Application\ElsaDashboard.Application.csproj" />
         <ProjectReference Include="..\..\..\dashboards\blazor\ElsaDashboard.Backend\ElsaDashboard.Backend.csproj" />
-        <ProjectReference Include="..\..\..\dashboards\blazor\ElsaDashboard.WebAssembly\ElsaDashboard.WebAssembly.csproj" />
         <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.Sqlite\Elsa.Persistence.EntityFramework.Sqlite.csproj" />
         <ProjectReference Include="..\..\..\server\Elsa.Server.Api\Elsa.Server.Api.csproj" />
+        <ProjectReference Include="..\ElsaDashboard.Samples.WebAssembly\ElsaDashboard.Samples.WebAssembly.csproj" />
     </ItemGroup>
 
 </Project>

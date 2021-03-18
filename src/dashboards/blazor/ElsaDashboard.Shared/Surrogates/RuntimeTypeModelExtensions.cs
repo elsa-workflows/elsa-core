@@ -20,7 +20,7 @@ namespace ElsaDashboard.Shared.Surrogates
         };
 
         /// <summary>
-        /// Register all NodaTime surrogate types with the protobuf runtime model.
+        /// Register all surrogate types with the protobuf runtime model.
         /// </summary>
         public static RuntimeTypeModel AddElsaGrpcSurrogates(this RuntimeTypeModel runtimeTypeModel)
         {

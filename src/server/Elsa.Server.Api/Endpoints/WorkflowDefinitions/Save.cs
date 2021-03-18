@@ -35,7 +35,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             OperationId = "WorkflowDefinitions.Post",
             Tags = new[] { "WorkflowDefinitions" })
         ]
-        public async Task<ActionResult<WorkflowDefinition>> Handle(SaveRequest request, ApiVersion apiVersion, CancellationToken cancellationToken)
+        public async Task<ActionResult<WorkflowDefinition>> Handle([FromBody]SaveRequest request, [FromRoute]ApiVersion apiVersion, CancellationToken cancellationToken)
         {
             var workflowDefinitionId = request.WorkflowDefinitionId;
             var workflowDefinition = !string.IsNullOrWhiteSpace(workflowDefinitionId) ? await _workflowPublisher.GetDraftAsync(workflowDefinitionId, cancellationToken) : default;

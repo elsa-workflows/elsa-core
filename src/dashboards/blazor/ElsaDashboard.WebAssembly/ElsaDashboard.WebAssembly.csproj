@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <Import Project="..\..\..\..\common.props" />
     <Import Project="..\..\..\..\configureawait.props" />
@@ -15,8 +15,6 @@
     <ItemGroup>
         <PackageReference Include="Grpc.Net.Client.Web" Version="2.36.0" />
         <PackageReference Include="Microsoft.AspNetCore.Components" Version="5.0.4" />
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="5.0.4" />
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="5.0.2" PrivateAssets="all" />
         <PackageReference Include="protobuf-net.NodaTime" Version="3.0.73" />
     </ItemGroup>
 

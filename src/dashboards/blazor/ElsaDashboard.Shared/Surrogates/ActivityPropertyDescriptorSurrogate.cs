@@ -27,7 +27,7 @@ namespace ElsaDashboard.Shared.Surrogates
             Type = value.UIHint;
             Label = value.Label;
             Hint = value.Hint;
-            Options = value.Options != null ? JsonConvert.SerializeObject(value.Options, SerializerSettings) : default;
+            Options = value.Options?.ToString(Formatting.None);
         }
 
         [ProtoMember(1)] public string? Name { get; }
@@ -44,7 +44,7 @@ namespace ElsaDashboard.Shared.Surrogates
                     UIHint = surrogate.Type!,
                     Hint = surrogate.Hint,
                     Label = surrogate.Label,
-                    Options = !string.IsNullOrEmpty(surrogate.Options) ? JsonConvert.DeserializeObject<JObject>(surrogate.Options) : new JObject()
+                    Options = surrogate.Options is null or "" ? default : JToken.Parse(surrogate.Options) 
                 }
                 : default;
 
