@@ -17,7 +17,7 @@ namespace Elsa.UnitTests.Triggers
 {
     public class TriggersForBlueprintsProviderTests
     {
-        [Theory(DisplayName = "The GetTriggersAsync method should return all triggers for the compatible bookmarks of the start activities of the blueprints"), AutoMoqData]
+        [Theory(DisplayName = "The GetTriggersAsync method should return all triggers for the compatible bookmarks of the start activities of the blueprints.  This is actually an integration test."), AutoMoqData]
         public async Task GetTriggersAsyncGetsAllTriggersForAllBlueprintsStartActivitiesAndCompatibleBookmarks(IActivityTypeService activityTypeService,
                                                                                                                IBookmarkHasher bookmarkHasher,
                                                                                                                IBookmarkProvider provider1,
@@ -65,13 +65,13 @@ namespace Elsa.UnitTests.Triggers
         {
             var workflowExecutionContextFactory = new WorkflowExecutionContextForWorkflowBlueprintFactory(serviceProvider, workflowFactory);
             var activityExecutionContextFactory = new ActivityExecutionContextForActivityBlueprintFactory(serviceProvider);
+            var triggersForActivityProvider = new TriggersForActivityBlueprintAndWorkflowProvider(bookmarkHasher,
+                                                                                                  new[] { provider1, provider2, provider3 },
+                                                                                                  activityExecutionContextFactory);
 
-            // Unfortunately the SUT can't be created by Autofixture because of the IEnumerable<IBookmarkProvider> in the ctor
             var sut = new TriggersForBlueprintsProvider(activityTypeService,
-                                                        bookmarkHasher,
-                                                        new[] { provider1, provider2, provider3 },
                                                         workflowExecutionContextFactory,
-                                                        activityExecutionContextFactory);
+                                                        triggersForActivityProvider);
 
             Mock.Get(activityTypeService)
                 .Setup(x => x.GetActivityTypesAsync(default))
