@@ -15,7 +15,7 @@ namespace Elsa.Activities.Telnyx.Options
         }
         
         public IList<Type> PayloadTypes { get; set; }
-        public Uri ApiUrl { get; set; } = default!;
+        public Uri ApiUrl { get; set; } = new("https://api.telnyx.com");
         public string ApiKey { get; set; } = default!;
     }
 }
