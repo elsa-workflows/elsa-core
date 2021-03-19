@@ -14,7 +14,6 @@ namespace Elsa.Services
         public ActivityExecutionContextForActivityBlueprintFactory(IServiceProvider serviceProvider)
         {
             this.serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
-
         }
 
         /// <summary>
