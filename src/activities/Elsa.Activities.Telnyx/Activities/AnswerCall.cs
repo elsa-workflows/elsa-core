@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Telnyx.Client.Models;
 using Elsa.Activities.Telnyx.Client.Services;
@@ -45,14 +46,15 @@ namespace Elsa.Activities.Telnyx.Activities
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            await AnswerCallAsync(context.CancellationToken);
+            await AnswerCallAsync(context);
             return Done();
         }
 
-        private async ValueTask AnswerCallAsync(CancellationToken cancellationToken)
+        private async ValueTask AnswerCallAsync(ActivityExecutionContext context)
         {
+            var callControlId = CallControlId is not null and not "" ? CallControlId : context.CorrelationId ?? throw new InvalidOperationException("Cannot answer call without a call control ID");
             var request = new AnswerCallRequest(BillingGroupId, ClientState, CommandId, WebhookUrl, WebhookUrlMethod);
-            await _telnyxClient.Calls.AnswerCallAsync(CallControlId, request, cancellationToken);
+            await _telnyxClient.Calls.AnswerCallAsync(callControlId, request, context.CancellationToken);
         }
     }
 }
