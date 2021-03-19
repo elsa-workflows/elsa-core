@@ -18,5 +18,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
+        <ProjectReference Include="..\Elsa.Activities.Http\Elsa.Activities.Http.csproj" />
     </ItemGroup>
 </Project>

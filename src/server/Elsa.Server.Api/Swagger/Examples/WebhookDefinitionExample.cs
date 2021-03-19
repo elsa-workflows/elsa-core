@@ -12,7 +12,7 @@ namespace Elsa.Server.Api.Swagger.Examples
             {
                 Id = Guid.NewGuid().ToString("N"),
                 Path = "/sample-path",
-                Description = "Sample description"
+                Description = "Sample description",
                 PayloadTypeName = "PayloadType",
                 TenantId = "tenant",
             };

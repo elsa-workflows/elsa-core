@@ -9,36 +9,39 @@ using Elsa.Exceptions;
 using Elsa.Metadata;
 using Elsa.Services.Models;
 using MediatR;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Elsa.Services
 {
     public class ActivityTypeService : IActivityTypeService
     {
         private readonly IEnumerable<IActivityTypeProvider> _providers;
+        private readonly IMemoryCache _memoryCache;
         private readonly IMediator _mediator;
-        private IDictionary<string, ActivityType>? _activityTypeDictionary;
 
-        public ActivityTypeService(IEnumerable<IActivityTypeProvider> providers, IMediator mediator)
+        public ActivityTypeService(IEnumerable<IActivityTypeProvider> providers, IMemoryCache memoryCache, IMediator mediator)
         {
             _providers = providers;
+            _memoryCache = memoryCache;
             _mediator = mediator;
         }
 
         public async ValueTask<IEnumerable<ActivityType>> GetActivityTypesAsync(CancellationToken cancellationToken) => (await GetDictionaryAsync(cancellationToken)).Values;
+
         public async ValueTask<ActivityType> GetActivityTypeAsync(string type, CancellationToken cancellationToken)
         {
             var dictionary = await GetDictionaryAsync(cancellationToken);
 
             if (!dictionary.ContainsKey(type))
                 throw new WorkflowException($"The activity type '{type}' has not been registered. Did you forget to register it with ElsaOptions?");
-            
+
             return dictionary[type];
         }
 
         public async ValueTask<RuntimeActivityInstance> ActivateActivityAsync(IActivityBlueprint activityBlueprint, CancellationToken cancellationToken = default)
         {
             var type = await GetActivityTypeAsync(activityBlueprint.Type, cancellationToken);
-            
+
             return new RuntimeActivityInstance
             {
                 ActivityType = type,
@@ -59,12 +62,8 @@ namespace Elsa.Services
 
         private async ValueTask<IDictionary<string, ActivityType>> GetDictionaryAsync(CancellationToken cancellationToken)
         {
-            if (_activityTypeDictionary != null)
-                return _activityTypeDictionary;
-            
-            _activityTypeDictionary = await GetActivityTypesInternalAsync(cancellationToken).ToDictionaryAsync(x => x.TypeName, cancellationToken);
-
-            return _activityTypeDictionary;
+            const string key = "ActivityTypes";
+            return await _memoryCache.GetOrCreate(key, async _ => await GetActivityTypesInternalAsync(cancellationToken).ToDictionaryAsync(x => x.TypeName, cancellationToken));
         }
 
         private async IAsyncEnumerable<ActivityType> GetActivityTypesInternalAsync([EnumeratorCancellation] CancellationToken cancellationToken)

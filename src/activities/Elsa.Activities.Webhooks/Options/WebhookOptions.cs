@@ -3,7 +3,7 @@ using Elsa.Activities.Webhooks.Persistence;
 using Elsa.Activities.Webhooks.Persistence.InMemory;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Activities.Webhooks
+namespace Elsa.Activities.Webhooks.Options
 {
     public class WebhookOptions
     {
