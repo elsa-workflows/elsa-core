@@ -6,6 +6,7 @@ using Elsa.Activities.Http;
 using Elsa.Activities.Webhooks.Models;
 using Elsa.Activities.Webhooks.Persistence;
 using Elsa.ActivityProviders;
+using Elsa.Design;
 using Elsa.Metadata;
 using Elsa.Persistence.Specifications;
 using Elsa.Services;
@@ -60,26 +61,20 @@ namespace Elsa.Activities.Webhooks.ActivityTypes
                 {
                     new ActivityPropertyDescriptor(
                         "RequestMethod",
-                        "select",
+                        ActivityPropertyUIHints.Dropdown,
                         "Request Method",
                         "Specify what request method this webhook should handle. Leave empty to handle both GET and POST requests",
-                        JObject.FromObject(new { Options = new[] { "", "GET", "POST" } }))
+                        new[] { "", "GET", "POST" })
                 }
             };
 
-            async ValueTask<IActivity> ActivateActivityAsync(ActivityExecutionContext context, WebhookDefinition webhook)
+            async ValueTask<IActivity> ActivateActivityAsync(ActivityExecutionContext context)
             {
-                var activity = await _activityActivator.ActivateActivityAsync(context, typeof(HttpEndpoint));
+                var activity = await _activityActivator.ActivateActivityAsync<HttpEndpoint>(context);
 
-                if (activity is HttpEndpoint httpEndpointActivity)
-                {
-                    httpEndpointActivity.Path = webhook.Path;
-                    httpEndpointActivity.ReadContent = true;
-                    httpEndpointActivity.TargetType = webhook.PayloadTypeName is not null and not ""
-                        ? Type.GetType(webhook.PayloadTypeName)
-                        : default;
-                }
-
+                activity.Path = webhook.Path;
+                activity.ReadContent = true;
+                activity.TargetType = webhook.PayloadTypeName is not null and not "" ? Type.GetType(webhook.PayloadTypeName) : throw new Exception($"Type {webhook.PayloadTypeName} not found");
                 return activity;
             }
 
@@ -87,11 +82,9 @@ namespace Elsa.Activities.Webhooks.ActivityTypes
             {
                 TypeName = webhook.Name,
                 Type = typeof(HttpEndpoint),
-                Description = webhook.Description is not null and not ""
-                    ? webhook.Description
-                    : $"A webhook at {webhook.Path}",
+                Description = webhook.Description is not null and not "" ? webhook.Description : $"A webhook at {webhook.Path}",
                 DisplayName = webhook.Name,
-                ActivateAsync = context => ActivateActivityAsync(context, webhook),
+                ActivateAsync = ActivateActivityAsync,
                 Describe = () => descriptor
             };
         }
