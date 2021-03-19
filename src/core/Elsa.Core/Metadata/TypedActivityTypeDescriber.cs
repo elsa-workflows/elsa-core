@@ -59,7 +59,8 @@ namespace Elsa.Metadata
                     activityPropertyAttribute.Label ?? propertyInfo.Name.Humanize(LetterCasing.Title),
                     activityPropertyAttribute.Hint,
                     _optionsResolver.GetOptions(propertyInfo),
-                    activityPropertyAttribute.Category
+                    activityPropertyAttribute.Category,
+                    activityPropertyAttribute.DefaultValue
                 );
             }
         }

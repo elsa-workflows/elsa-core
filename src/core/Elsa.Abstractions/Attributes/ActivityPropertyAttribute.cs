@@ -39,5 +39,10 @@ namespace Elsa.Attributes
         /// A category to group this property with.
         /// </summary>
         public string? Category { get; set; }
+        
+        /// <summary>
+        /// The default value to set.
+        /// </summary>
+        public object? DefaultValue { get; set; }
     }
 }

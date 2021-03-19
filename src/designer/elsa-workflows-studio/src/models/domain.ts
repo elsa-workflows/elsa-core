@@ -107,6 +107,7 @@ export interface ActivityPropertyDescriptor {
   hint?: string;
   options?: any;
   category?: string;
+  defaultValue?: any;
 }
 
 export enum ActivityTraits {
