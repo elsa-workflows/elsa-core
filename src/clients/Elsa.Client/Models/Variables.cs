@@ -1,9 +1,6 @@
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Runtime.Serialization;
 using Elsa.Client.Extensions;
-using NodaTime;
-using NodaTime.Text;
 
 namespace Elsa.Client.Models
 {

@@ -24,15 +24,15 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
 
                     b.Property<string>("ActivityId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("ActivityType")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Hash")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Model")
                         .IsRequired()
@@ -43,13 +43,31 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("TenantId")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ActivityId")
+                        .HasDatabaseName("IX_Bookmark_ActivityId");
+
+                    b.HasIndex("ActivityType")
+                        .HasDatabaseName("IX_Bookmark_ActivityType");
+
+                    b.HasIndex("Hash")
+                        .HasDatabaseName("IX_Bookmark_Hash");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_Bookmark_TenantId");
+
+                    b.HasIndex("WorkflowInstanceId")
+                        .HasDatabaseName("IX_Bookmark_WorkflowInstanceId");
+
+                    b.HasIndex("ActivityType", "TenantId", "Hash")
+                        .HasDatabaseName("IX_Bookmark_ActivityType_TenantId_Hash");
 
                     b.ToTable("Bookmarks");
                 });
@@ -64,7 +82,7 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
 
                     b.Property<string>("DefinitionId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<bool>("DeleteCompletedInstances")
                         .HasColumnType("bit");
@@ -74,9 +92,6 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
 
                     b.Property<string>("DisplayName")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsEnabled")
-                        .HasColumnType("bit");
 
                     b.Property<bool>("IsLatest")
                         .HasColumnType("bit");
@@ -88,18 +103,36 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("Name")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("PersistenceBehavior")
                         .HasColumnType("int");
 
                     b.Property<string>("TenantId")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("Version")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("IsLatest")
+                        .HasDatabaseName("IX_WorkflowDefinition_IsLatest");
+
+                    b.HasIndex("IsPublished")
+                        .HasDatabaseName("IX_WorkflowDefinition_IsPublished");
+
+                    b.HasIndex("Name")
+                        .HasDatabaseName("IX_WorkflowDefinition_Name");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_WorkflowDefinition_TenantId");
+
+                    b.HasIndex("Version")
+                        .HasDatabaseName("IX_WorkflowDefinition_Version");
+
+                    b.HasIndex("DefinitionId", "Version")
+                        .HasDatabaseName("IX_WorkflowDefinition_DefinitionId_VersionId");
 
                     b.ToTable("WorkflowDefinitions");
                 });
@@ -150,13 +183,13 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("ContextId")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("ContextType")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("CorrelationId")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
@@ -166,7 +199,7 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
 
                     b.Property<string>("DefinitionId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTimeOffset?>("FaultedAt")
                         .HasColumnType("datetimeoffset");
@@ -178,10 +211,10 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("Name")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("TenantId")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("Version")
                         .HasColumnType("int");
@@ -190,6 +223,42 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ContextId")
+                        .HasDatabaseName("IX_WorkflowInstance_ContextId");
+
+                    b.HasIndex("ContextType")
+                        .HasDatabaseName("IX_WorkflowInstance_ContextType");
+
+                    b.HasIndex("CorrelationId")
+                        .HasDatabaseName("IX_WorkflowInstance_CorrelationId");
+
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("IX_WorkflowInstance_CreatedAt");
+
+                    b.HasIndex("DefinitionId")
+                        .HasDatabaseName("IX_WorkflowInstance_DefinitionId");
+
+                    b.HasIndex("FaultedAt")
+                        .HasDatabaseName("IX_WorkflowInstance_FaultedAt");
+
+                    b.HasIndex("FinishedAt")
+                        .HasDatabaseName("IX_WorkflowInstance_FinishedAt");
+
+                    b.HasIndex("LastExecutedAt")
+                        .HasDatabaseName("IX_WorkflowInstance_LastExecutedAt");
+
+                    b.HasIndex("Name")
+                        .HasDatabaseName("IX_WorkflowInstance_Name");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_WorkflowInstance_TenantId");
+
+                    b.HasIndex("WorkflowStatus")
+                        .HasDatabaseName("IX_WorkflowInstance_WorkflowStatus");
+
+                    b.HasIndex("WorkflowStatus", "DefinitionId", "Version")
+                        .HasDatabaseName("IX_WorkflowInstance_WorkflowStatus_DefinitionId_Version");
 
                     b.ToTable("WorkflowInstances");
                 });

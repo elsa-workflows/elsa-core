@@ -1,7 +1,7 @@
 image: Previous Visual Studio 2019
 
 environment:
-  nodejs_version: "11"
+  # nodejs_version: "11"
   # AppVeyor installs Java on its build agents by default, but it
   # picks an old version that's not compatible with SonarQube.
   # This brings it up to date.
@@ -10,8 +10,15 @@ environment:
   sonarcloud_project_name: elsa-workflows_elsa-core
   sonarcloud_api_key:
     secure: qaE9kOVkGGFM7ZMf3YeliZxDU9udTCy6W5xXHJ9T+tXv5qXPMYlIdR7hyNgxW04A
+  docker_user:
+    secure: 8HsbQtQbUTeYHTl9t49uwQ==
+  docker_pass:
+     secure: mpp6dyL1U47aXSuO1TA4lBVDkPSVejyiVK0eJ+NPm3M=
 
 version: 2.0.0-preview7.{build}
+
+services:
+  - mongodb
 
 init:
   - cmd: git config --global core.autocrlf true
@@ -34,6 +41,7 @@ cache:
   - '%APPDATA%\npm-cache'
 
 install:
+  - docker version
   - ps: >-
       Install-Product node $env:nodejs_version
 
@@ -41,7 +49,11 @@ install:
 
       npm install --force
 
-      cd ..\..\..\..\
+      cd ..\..\..\designer\bindings\blazor\Elsa.Designer.Bindings.Blazor
+        
+      npm install --force
+
+      cd ..\..\..\..\..\
 
       dotnet tool install --global dotnet-sonarscanner
 
@@ -61,12 +73,17 @@ before_build:
       }
 
 build_script:
+  - docker build -t elsaworkflows/elsadashboard-samples-monolith -f ./docker/ElsaDashboard.Samples.Monolith.Dockerfile .
   - ps: >-
       cd .\src\dashboards\blazor\ElsaDashboard.Application
 
       npm run build:css
+        
+      cd ..\..\..\designer\bindings\blazor\Elsa.Designer.Bindings.Blazor
+        
+      npm run build
 
-      cd ..\..\..\..\
+      cd ..\..\..\..\..\
       
       dotnet build
 
@@ -103,3 +120,7 @@ deploy:
     skip_symbols: true
     on:
       APPVEYOR_REPO_TAG: true
+
+deploy_script:
+  - docker login -u="$env:docker_user" -p="$env:docker_pass"
+  - docker push elsaworkflows/elsadashboard-samples-monolith

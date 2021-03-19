@@ -1,25 +1,17 @@
 using System;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Xunit;
-using Hangfire;
 using System.Threading.Tasks;
 using System.Threading;
-using Elsa.Activities.Temporal;
+using Elsa.Core.IntegrationTests.Extensions;
 
 namespace Elsa.UnitTests.Extensions
 {
     public class TemporalServiceCollectionExtensionsTests
     {
-        [Fact(DisplayName = "Starting a hosted app which uses only AddCommonTemporalActivities should throw InvalidOperationException because of the missing impl")]
-        public void AddCommonTemporalActivitiesThrowsDuringStartupIfNoTemporalImplementationPresent()
+        [Theory(DisplayName = "Starting a hosted app which uses only AddCommonTemporalActivities should throw InvalidOperationException because of the missing impl"), AutoMoqData]
+        public void AddCommonTemporalActivitiesThrowsDuringStartupIfNoTemporalImplementationPresent([HostBuilderWithElsaAndCommonTemporalActivities] IHostBuilder hostBuilder)
         {
-            var hostBuilder = CreateHostBuilderUsingServices(services => {
-                services.AddElsa(elsa => {
-                    CommonTemporalActivityServices.AddCommonTemporalActivities(elsa);
-                });
-            });
-
             var cancellationSource = new CancellationTokenSource();
             try
             {
@@ -33,15 +25,9 @@ namespace Elsa.UnitTests.Extensions
             }
         }
 
-        [Fact(DisplayName = "Starting a hosted app which uses AddHangfireTemporalActivities should not throw")]
-        public void AddHangfireTemporalActivitiesDoesNotThrowDuringStartup()
+        [Theory(DisplayName = "Starting a hosted app which uses AddHangfireTemporalActivities should not throw"), AutoMoqData]
+        public void AddHangfireTemporalActivitiesDoesNotThrowDuringStartup([HostBuilderWithElsaAndHangfire] IHostBuilder hostBuilder)
         {
-            var hostBuilder = CreateHostBuilderUsingServices(services => {
-                services.AddElsa(elsa => {
-                    elsa.AddHangfireTemporalActivities(config => config.UseInMemoryStorage());
-                });
-            });
-
             var cancellationSource = new CancellationTokenSource();
             try
             {
@@ -57,15 +43,9 @@ namespace Elsa.UnitTests.Extensions
             }
         }
 
-        [Fact(DisplayName = "Starting a hosted app which uses AddQuartzTemporalActivities should not throw")]
-        public void AddQuartzTemporalActivitiesDoesNotThrowDuringStartup()
+        [Theory(DisplayName = "Starting a hosted app which uses AddQuartzTemporalActivities should not throw"), AutoMoqData]
+        public void AddQuartzTemporalActivitiesDoesNotThrowDuringStartup([HostBuilderWithElsaAndQuartz] IHostBuilder hostBuilder)
         {
-            var hostBuilder = CreateHostBuilderUsingServices(services => {
-                services.AddElsa(elsa => {
-                    elsa.AddQuartzTemporalActivities();
-                });
-            });
-
             var cancellationSource = new CancellationTokenSource();
             try
             {
@@ -80,15 +60,6 @@ namespace Elsa.UnitTests.Extensions
                 CancelAndSquelchExceptions(cancellationSource);
             }
         }
-
-        /// <summary>
-        /// Convenience method creates an <see cref="IHostBuilder"/> using the specified services.
-        /// </summary>
-        /// <param name="serviceConfig">Services to use in the created host builder</param>
-        /// <returns>A host builder</returns>
-        static IHostBuilder CreateHostBuilderUsingServices(Action<IServiceCollection> serviceConfig)
-            => Host.CreateDefaultBuilder()
-                .ConfigureServices((hostBuilder, services) => serviceConfig(services));
 
         /// <summary>
         /// Starts up the specified <paramref name="hostBuilder"/> instance using console lifetime.
@@ -111,10 +82,10 @@ namespace Elsa.UnitTests.Extensions
         /// <param name="cancellationSource">The cancellation source</param>
         static void CancelAndSquelchExceptions(CancellationTokenSource cancellationSource)
         {
-                try { cancellationSource.Cancel(); }
-                catch(Exception) {
-                    // This is only ever used as teardown code, which is why we don't care about exceptions.
-                }
+            try { cancellationSource.Cancel(); }
+            catch(Exception) {
+                // This is only ever used as teardown code, which is why we don't care about exceptions.
+            }
         }
     }
 }

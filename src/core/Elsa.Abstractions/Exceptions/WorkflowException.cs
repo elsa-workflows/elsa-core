@@ -7,5 +7,9 @@ namespace Elsa.Exceptions
         public WorkflowException(string message) : base(message)
         {
         }
+        
+        public WorkflowException(string message, Exception innerException) : base(message, innerException)
+        {
+        }
     }
 }

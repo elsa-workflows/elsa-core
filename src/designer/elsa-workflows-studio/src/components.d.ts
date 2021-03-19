@@ -5,19 +5,39 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
-import { ActivityDefinitionProperty, ActivityModel, ActivityPropertyDescriptor, WorkflowDefinition, WorkflowModel } from "./models";
+import { ActivityDefinitionProperty, ActivityDesignDisplayContext, ActivityModel, ActivityPropertyDescriptor, VersionOptions, WorkflowDefinition, WorkflowModel } from "./models";
 import { MonacoValueChangedArgs } from "./components/editors/monaco/elsa-monaco/elsa-monaco";
+import { ToastNotificationOptions } from "./components/shared/elsa-toast-notification/elsa-toast-notification";
 export namespace Components {
     interface ElsaActivityEditorModal {
     }
     interface ElsaActivityPickerModal {
     }
+    interface ElsaCheckListProperty {
+        "propertyDescriptor": ActivityPropertyDescriptor;
+        "propertyModel": ActivityDefinitionProperty;
+    }
+    interface ElsaCheckboxProperty {
+        "propertyDescriptor": ActivityPropertyDescriptor;
+        "propertyModel": ActivityDefinitionProperty;
+    }
     interface ElsaDesignerTree {
+        "destroyJsPlumb": () => Promise<void>;
         "model": WorkflowModel;
     }
     interface ElsaDesignerTreeActivity {
-        "activityModel": ActivityModel;
+        "displayContext": ActivityDesignDisplayContext;
         "icon": string;
+    }
+    interface ElsaDropdownProperty {
+        "propertyDescriptor": ActivityPropertyDescriptor;
+        "propertyModel": ActivityDefinitionProperty;
+    }
+    interface ElsaInputTags {
+        "fieldId"?: string;
+        "fieldName"?: string;
+        "placeHolder"?: string;
+        "values"?: Array<string>;
     }
     interface ElsaModalDialog {
         "hide": (animate: boolean) => Promise<void>;
@@ -27,22 +47,50 @@ export namespace Components {
         "addJavaScriptLib": (libSource: string, libUri: string) => Promise<void>;
         "editorHeight": string;
         "language": string;
+        "singleLineMode": boolean;
         "value": string;
     }
-    interface ElsaTextProperty {
-        "key": string;
+    interface ElsaMultiTextProperty {
+        "propertyDescriptor": ActivityPropertyDescriptor;
+        "propertyModel": ActivityDefinitionProperty;
+    }
+    interface ElsaScriptProperty {
+        "context"?: string;
+        "editorHeight": string;
         "propertyDescriptor": ActivityPropertyDescriptor;
         "propertyModel": ActivityDefinitionProperty;
         "serverUrl": string;
+        "singleLineMode": boolean;
+        "syntax"?: string;
         "workflowDefinitionId": string;
     }
+    interface ElsaTextProperty {
+        "context"?: string;
+        "editorHeight": string;
+        "propertyDescriptor": ActivityPropertyDescriptor;
+        "propertyModel": ActivityDefinitionProperty;
+        "serverUrl": string;
+        "singleLineMode": boolean;
+        "workflowDefinitionId": string;
+    }
+    interface ElsaToastNotification {
+        "hide": () => Promise<void>;
+        "show": (options: ToastNotificationOptions) => Promise<void>;
+    }
     interface ElsaWorkflowEditor {
+        "exportWorkflow": () => Promise<void>;
         "getServerUrl": () => Promise<string>;
         "getWorkflowDefinitionId": () => Promise<string>;
+        "importWorkflow": (file: File) => Promise<void>;
+        "monacoLibPath": string;
         "serverUrl": string;
         "workflowDefinitionId": string;
     }
+    interface ElsaWorkflowEditorNotifications {
+    }
     interface ElsaWorkflowPublishButton {
+        "publishing": boolean;
+        "workflowDefinition": WorkflowDefinition;
     }
     interface ElsaWorkflowSettingsModal {
         "workflowDefinition": WorkflowDefinition;
@@ -61,6 +109,18 @@ declare global {
         prototype: HTMLElsaActivityPickerModalElement;
         new (): HTMLElsaActivityPickerModalElement;
     };
+    interface HTMLElsaCheckListPropertyElement extends Components.ElsaCheckListProperty, HTMLStencilElement {
+    }
+    var HTMLElsaCheckListPropertyElement: {
+        prototype: HTMLElsaCheckListPropertyElement;
+        new (): HTMLElsaCheckListPropertyElement;
+    };
+    interface HTMLElsaCheckboxPropertyElement extends Components.ElsaCheckboxProperty, HTMLStencilElement {
+    }
+    var HTMLElsaCheckboxPropertyElement: {
+        prototype: HTMLElsaCheckboxPropertyElement;
+        new (): HTMLElsaCheckboxPropertyElement;
+    };
     interface HTMLElsaDesignerTreeElement extends Components.ElsaDesignerTree, HTMLStencilElement {
     }
     var HTMLElsaDesignerTreeElement: {
@@ -72,6 +132,18 @@ declare global {
     var HTMLElsaDesignerTreeActivityElement: {
         prototype: HTMLElsaDesignerTreeActivityElement;
         new (): HTMLElsaDesignerTreeActivityElement;
+    };
+    interface HTMLElsaDropdownPropertyElement extends Components.ElsaDropdownProperty, HTMLStencilElement {
+    }
+    var HTMLElsaDropdownPropertyElement: {
+        prototype: HTMLElsaDropdownPropertyElement;
+        new (): HTMLElsaDropdownPropertyElement;
+    };
+    interface HTMLElsaInputTagsElement extends Components.ElsaInputTags, HTMLStencilElement {
+    }
+    var HTMLElsaInputTagsElement: {
+        prototype: HTMLElsaInputTagsElement;
+        new (): HTMLElsaInputTagsElement;
     };
     interface HTMLElsaModalDialogElement extends Components.ElsaModalDialog, HTMLStencilElement {
     }
@@ -85,17 +157,41 @@ declare global {
         prototype: HTMLElsaMonacoElement;
         new (): HTMLElsaMonacoElement;
     };
+    interface HTMLElsaMultiTextPropertyElement extends Components.ElsaMultiTextProperty, HTMLStencilElement {
+    }
+    var HTMLElsaMultiTextPropertyElement: {
+        prototype: HTMLElsaMultiTextPropertyElement;
+        new (): HTMLElsaMultiTextPropertyElement;
+    };
+    interface HTMLElsaScriptPropertyElement extends Components.ElsaScriptProperty, HTMLStencilElement {
+    }
+    var HTMLElsaScriptPropertyElement: {
+        prototype: HTMLElsaScriptPropertyElement;
+        new (): HTMLElsaScriptPropertyElement;
+    };
     interface HTMLElsaTextPropertyElement extends Components.ElsaTextProperty, HTMLStencilElement {
     }
     var HTMLElsaTextPropertyElement: {
         prototype: HTMLElsaTextPropertyElement;
         new (): HTMLElsaTextPropertyElement;
     };
+    interface HTMLElsaToastNotificationElement extends Components.ElsaToastNotification, HTMLStencilElement {
+    }
+    var HTMLElsaToastNotificationElement: {
+        prototype: HTMLElsaToastNotificationElement;
+        new (): HTMLElsaToastNotificationElement;
+    };
     interface HTMLElsaWorkflowEditorElement extends Components.ElsaWorkflowEditor, HTMLStencilElement {
     }
     var HTMLElsaWorkflowEditorElement: {
         prototype: HTMLElsaWorkflowEditorElement;
         new (): HTMLElsaWorkflowEditorElement;
+    };
+    interface HTMLElsaWorkflowEditorNotificationsElement extends Components.ElsaWorkflowEditorNotifications, HTMLStencilElement {
+    }
+    var HTMLElsaWorkflowEditorNotificationsElement: {
+        prototype: HTMLElsaWorkflowEditorNotificationsElement;
+        new (): HTMLElsaWorkflowEditorNotificationsElement;
     };
     interface HTMLElsaWorkflowPublishButtonElement extends Components.ElsaWorkflowPublishButton, HTMLStencilElement {
     }
@@ -112,12 +208,20 @@ declare global {
     interface HTMLElementTagNameMap {
         "elsa-activity-editor-modal": HTMLElsaActivityEditorModalElement;
         "elsa-activity-picker-modal": HTMLElsaActivityPickerModalElement;
+        "elsa-check-list-property": HTMLElsaCheckListPropertyElement;
+        "elsa-checkbox-property": HTMLElsaCheckboxPropertyElement;
         "elsa-designer-tree": HTMLElsaDesignerTreeElement;
         "elsa-designer-tree-activity": HTMLElsaDesignerTreeActivityElement;
+        "elsa-dropdown-property": HTMLElsaDropdownPropertyElement;
+        "elsa-input-tags": HTMLElsaInputTagsElement;
         "elsa-modal-dialog": HTMLElsaModalDialogElement;
         "elsa-monaco": HTMLElsaMonacoElement;
+        "elsa-multi-text-property": HTMLElsaMultiTextPropertyElement;
+        "elsa-script-property": HTMLElsaScriptPropertyElement;
         "elsa-text-property": HTMLElsaTextPropertyElement;
+        "elsa-toast-notification": HTMLElsaToastNotificationElement;
         "elsa-workflow-editor": HTMLElsaWorkflowEditorElement;
+        "elsa-workflow-editor-notifications": HTMLElsaWorkflowEditorNotificationsElement;
         "elsa-workflow-publish-button": HTMLElsaWorkflowPublishButtonElement;
         "elsa-workflow-settings-modal": HTMLElsaWorkflowSettingsModalElement;
     }
@@ -127,15 +231,33 @@ declare namespace LocalJSX {
     }
     interface ElsaActivityPickerModal {
     }
+    interface ElsaCheckListProperty {
+        "propertyDescriptor"?: ActivityPropertyDescriptor;
+        "propertyModel"?: ActivityDefinitionProperty;
+    }
+    interface ElsaCheckboxProperty {
+        "propertyDescriptor"?: ActivityPropertyDescriptor;
+        "propertyModel"?: ActivityDefinitionProperty;
+    }
     interface ElsaDesignerTree {
         "model"?: WorkflowModel;
         "onWorkflow-changed"?: (event: CustomEvent<WorkflowModel>) => void;
     }
     interface ElsaDesignerTreeActivity {
-        "activityModel"?: ActivityModel;
+        "displayContext"?: ActivityDesignDisplayContext;
         "icon"?: string;
         "onEdit-activity"?: (event: CustomEvent<ActivityModel>) => void;
         "onRemove-activity"?: (event: CustomEvent<ActivityModel>) => void;
+    }
+    interface ElsaDropdownProperty {
+        "propertyDescriptor"?: ActivityPropertyDescriptor;
+        "propertyModel"?: ActivityDefinitionProperty;
+    }
+    interface ElsaInputTags {
+        "fieldId"?: string;
+        "fieldName"?: string;
+        "placeHolder"?: string;
+        "values"?: Array<string>;
     }
     interface ElsaModalDialog {
     }
@@ -143,21 +265,48 @@ declare namespace LocalJSX {
         "editorHeight"?: string;
         "language"?: string;
         "onValueChanged"?: (event: CustomEvent<MonacoValueChangedArgs>) => void;
+        "singleLineMode"?: boolean;
         "value"?: string;
     }
-    interface ElsaTextProperty {
-        "key"?: string;
+    interface ElsaMultiTextProperty {
+        "propertyDescriptor"?: ActivityPropertyDescriptor;
+        "propertyModel"?: ActivityDefinitionProperty;
+    }
+    interface ElsaScriptProperty {
+        "context"?: string;
+        "editorHeight"?: string;
         "propertyDescriptor"?: ActivityPropertyDescriptor;
         "propertyModel"?: ActivityDefinitionProperty;
         "serverUrl"?: string;
+        "singleLineMode"?: boolean;
+        "syntax"?: string;
         "workflowDefinitionId"?: string;
     }
+    interface ElsaTextProperty {
+        "context"?: string;
+        "editorHeight"?: string;
+        "propertyDescriptor"?: ActivityPropertyDescriptor;
+        "propertyModel"?: ActivityDefinitionProperty;
+        "serverUrl"?: string;
+        "singleLineMode"?: boolean;
+        "workflowDefinitionId"?: string;
+    }
+    interface ElsaToastNotification {
+    }
     interface ElsaWorkflowEditor {
+        "monacoLibPath"?: string;
         "serverUrl"?: string;
         "workflowDefinitionId"?: string;
     }
+    interface ElsaWorkflowEditorNotifications {
+    }
     interface ElsaWorkflowPublishButton {
+        "onExportClicked"?: (event: CustomEvent<any>) => void;
+        "onImportClicked"?: (event: CustomEvent<File>) => void;
         "onPublishClicked"?: (event: CustomEvent<any>) => void;
+        "onUnPublishClicked"?: (event: CustomEvent<any>) => void;
+        "publishing"?: boolean;
+        "workflowDefinition"?: WorkflowDefinition;
     }
     interface ElsaWorkflowSettingsModal {
         "workflowDefinition"?: WorkflowDefinition;
@@ -165,12 +314,20 @@ declare namespace LocalJSX {
     interface IntrinsicElements {
         "elsa-activity-editor-modal": ElsaActivityEditorModal;
         "elsa-activity-picker-modal": ElsaActivityPickerModal;
+        "elsa-check-list-property": ElsaCheckListProperty;
+        "elsa-checkbox-property": ElsaCheckboxProperty;
         "elsa-designer-tree": ElsaDesignerTree;
         "elsa-designer-tree-activity": ElsaDesignerTreeActivity;
+        "elsa-dropdown-property": ElsaDropdownProperty;
+        "elsa-input-tags": ElsaInputTags;
         "elsa-modal-dialog": ElsaModalDialog;
         "elsa-monaco": ElsaMonaco;
+        "elsa-multi-text-property": ElsaMultiTextProperty;
+        "elsa-script-property": ElsaScriptProperty;
         "elsa-text-property": ElsaTextProperty;
+        "elsa-toast-notification": ElsaToastNotification;
         "elsa-workflow-editor": ElsaWorkflowEditor;
+        "elsa-workflow-editor-notifications": ElsaWorkflowEditorNotifications;
         "elsa-workflow-publish-button": ElsaWorkflowPublishButton;
         "elsa-workflow-settings-modal": ElsaWorkflowSettingsModal;
     }
@@ -181,12 +338,20 @@ declare module "@stencil/core" {
         interface IntrinsicElements {
             "elsa-activity-editor-modal": LocalJSX.ElsaActivityEditorModal & JSXBase.HTMLAttributes<HTMLElsaActivityEditorModalElement>;
             "elsa-activity-picker-modal": LocalJSX.ElsaActivityPickerModal & JSXBase.HTMLAttributes<HTMLElsaActivityPickerModalElement>;
+            "elsa-check-list-property": LocalJSX.ElsaCheckListProperty & JSXBase.HTMLAttributes<HTMLElsaCheckListPropertyElement>;
+            "elsa-checkbox-property": LocalJSX.ElsaCheckboxProperty & JSXBase.HTMLAttributes<HTMLElsaCheckboxPropertyElement>;
             "elsa-designer-tree": LocalJSX.ElsaDesignerTree & JSXBase.HTMLAttributes<HTMLElsaDesignerTreeElement>;
             "elsa-designer-tree-activity": LocalJSX.ElsaDesignerTreeActivity & JSXBase.HTMLAttributes<HTMLElsaDesignerTreeActivityElement>;
+            "elsa-dropdown-property": LocalJSX.ElsaDropdownProperty & JSXBase.HTMLAttributes<HTMLElsaDropdownPropertyElement>;
+            "elsa-input-tags": LocalJSX.ElsaInputTags & JSXBase.HTMLAttributes<HTMLElsaInputTagsElement>;
             "elsa-modal-dialog": LocalJSX.ElsaModalDialog & JSXBase.HTMLAttributes<HTMLElsaModalDialogElement>;
             "elsa-monaco": LocalJSX.ElsaMonaco & JSXBase.HTMLAttributes<HTMLElsaMonacoElement>;
+            "elsa-multi-text-property": LocalJSX.ElsaMultiTextProperty & JSXBase.HTMLAttributes<HTMLElsaMultiTextPropertyElement>;
+            "elsa-script-property": LocalJSX.ElsaScriptProperty & JSXBase.HTMLAttributes<HTMLElsaScriptPropertyElement>;
             "elsa-text-property": LocalJSX.ElsaTextProperty & JSXBase.HTMLAttributes<HTMLElsaTextPropertyElement>;
+            "elsa-toast-notification": LocalJSX.ElsaToastNotification & JSXBase.HTMLAttributes<HTMLElsaToastNotificationElement>;
             "elsa-workflow-editor": LocalJSX.ElsaWorkflowEditor & JSXBase.HTMLAttributes<HTMLElsaWorkflowEditorElement>;
+            "elsa-workflow-editor-notifications": LocalJSX.ElsaWorkflowEditorNotifications & JSXBase.HTMLAttributes<HTMLElsaWorkflowEditorNotificationsElement>;
             "elsa-workflow-publish-button": LocalJSX.ElsaWorkflowPublishButton & JSXBase.HTMLAttributes<HTMLElsaWorkflowPublishButtonElement>;
             "elsa-workflow-settings-modal": LocalJSX.ElsaWorkflowSettingsModal & JSXBase.HTMLAttributes<HTMLElsaWorkflowSettingsModalElement>;
         }

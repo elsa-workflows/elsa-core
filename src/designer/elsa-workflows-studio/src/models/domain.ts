@@ -14,7 +14,6 @@ export interface WorkflowDefinition {
   isSingleton?: boolean,
   persistenceBehavior?: WorkflowPersistenceBehavior,
   deleteCompletedInstances?: boolean,
-  isEnabled?: boolean,
   isPublished?: boolean,
   isLatest?: boolean,
   activities: Array<ActivityDefinition>,
@@ -62,7 +61,8 @@ export enum WorkflowContextFidelity {
 
 export enum WorkflowPersistenceBehavior {
   Suspended,
-  WorkflowPAssCompleted,
+  WorkflowBurst,
+  WorkflowPassCompleted,
   ActivityExecuted
 }
 
@@ -102,7 +102,7 @@ export interface ActivityDescriptor {
 
 export interface ActivityPropertyDescriptor {
   name: string;
-  type: string;
+  uiHint: string;
   label?: string;
   hint?: string;
   options?: any;

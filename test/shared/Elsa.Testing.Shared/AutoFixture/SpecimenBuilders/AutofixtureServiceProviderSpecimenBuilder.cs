@@ -1,5 +1,4 @@
 using System;
-using System.Reflection;
 using AutoFixture.Kernel;
 using Moq;
 
@@ -13,9 +12,7 @@ namespace Elsa.Testing.Shared.AutoFixture.SpecimenBuilders
     {
         public object Create(object request, ISpecimenContext context)
         {
-            if(Equals(request, typeof(IServiceProvider)))
-                return GetServiceProvider(context);
-            if(request is ParameterInfo paramInfo && paramInfo.ParameterType == typeof(IServiceProvider))
+            if(request.IsAnAutofixtureRequestForType<IServiceProvider>())
                 return GetServiceProvider(context);
 
             return new NoSpecimen();

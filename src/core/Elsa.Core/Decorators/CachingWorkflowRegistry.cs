@@ -4,15 +4,17 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Caching;
+using Elsa.Events;
 using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
+using MediatR;
 using Microsoft.Extensions.Caching.Memory;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Decorators
 {
-    public class CachingWorkflowRegistry : IWorkflowRegistry
+    public class CachingWorkflowRegistry : IWorkflowRegistry, INotificationHandler<WorkflowDefinitionSaved>
     {
         private const string CacheKey = "WorkflowRegistry";
         private readonly IWorkflowRegistry _workflowRegistry;
@@ -50,6 +52,12 @@ namespace Elsa.Decorators
                 entry.Monitor(_signal.GetToken(CacheKey));
                 return await _workflowRegistry.ListAsync(cancellationToken).ToList();
             });
+        }
+
+        Task INotificationHandler<WorkflowDefinitionSaved>.Handle(WorkflowDefinitionSaved notification, CancellationToken cancellationToken)
+        {
+            _signal.Trigger(CacheKey);
+            return Task.CompletedTask;
         }
     }
 }

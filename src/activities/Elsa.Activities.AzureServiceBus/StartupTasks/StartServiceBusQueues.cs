@@ -45,14 +45,14 @@ namespace Elsa.Activities.AzureServiceBus.StartupTasks
             var query =
                 from workflow in workflows
                 from activity in workflow.Activities
-                where activity.Type == nameof(AzureServiceBusMessageReceived)
+                where activity.Type == nameof(AzureServiceBusQueueMessageReceived)
                 select workflow;
 
             foreach (var workflow in query)
             {
                 var workflowBlueprintWrapper = await _workflowBlueprintReflector.ReflectAsync(_serviceProvider, workflow, cancellationToken);
 
-                foreach (var activity in workflowBlueprintWrapper.Filter<AzureServiceBusMessageReceived>())
+                foreach (var activity in workflowBlueprintWrapper.Filter<AzureServiceBusQueueMessageReceived>())
                 {
                     var queueName = await activity.GetPropertyValueAsync(x => x.QueueName, cancellationToken);
                     yield return queueName!;

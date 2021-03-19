@@ -1,4 +1,6 @@
-﻿using System.Threading;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Server.Api.Swagger.Examples;
@@ -33,7 +35,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             OperationId = "WorkflowDefinitions.Post",
             Tags = new[] { "WorkflowDefinitions" })
         ]
-        public async Task<ActionResult<WorkflowDefinition>> Handle(SaveRequest request, ApiVersion apiVersion, CancellationToken cancellationToken)
+        public async Task<ActionResult<WorkflowDefinition>> Handle([FromBody]SaveRequest request, [FromRoute]ApiVersion apiVersion, CancellationToken cancellationToken)
         {
             var workflowDefinitionId = request.WorkflowDefinitionId;
             var workflowDefinition = !string.IsNullOrWhiteSpace(workflowDefinitionId) ? await _workflowPublisher.GetDraftAsync(workflowDefinitionId, cancellationToken) : default;
@@ -47,11 +49,10 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             }
 
             workflowDefinition.Activities = request.Activities;
-            workflowDefinition.Connections = request.Connections;
+            workflowDefinition.Connections = FilterInvalidConnections(request).ToList();
             workflowDefinition.Description = request.Description?.Trim();
             workflowDefinition.Name = request.Name?.Trim();
-            workflowDefinition.Variables = request.Variables;
-            workflowDefinition.IsEnabled = request.Enabled;
+            workflowDefinition.Variables = request.Variables ?? new Variables();
             workflowDefinition.IsSingleton = request.IsSingleton;
             workflowDefinition.PersistenceBehavior = request.PersistenceBehavior;
             workflowDefinition.DeleteCompletedInstances = request.DeleteCompletedInstances;
@@ -64,6 +65,18 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
                 workflowDefinition = await _workflowPublisher.SaveDraftAsync(workflowDefinition, cancellationToken);
 
             return CreatedAtAction("Handle", "GetByVersionId", new { versionId = workflowDefinition.Id, apiVersion = apiVersion.ToString() }, workflowDefinition);
+        }
+
+        private IEnumerable<ConnectionDefinition> FilterInvalidConnections(SaveRequest request)
+        {
+            var validConnections =
+                from connection in request.Connections
+                let sourceActivity = request.Activities.FirstOrDefault(x => x.ActivityId == connection.SourceActivityId)
+                let targetActivity = request.Activities.FirstOrDefault(x => x.ActivityId == connection.TargetActivityId)
+                where sourceActivity != null && targetActivity != null && connection.Outcome is not null and not ""
+                select connection;
+
+            return validConnections;
         }
     }
 }

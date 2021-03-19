@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.ActivityResults;
 using Elsa.Models;
@@ -48,6 +49,7 @@ namespace Elsa.Services
         protected CombinedResult Combine(params IActivityExecutionResult[] results) => new(results);
         protected FaultResult Fault(Exception exception) => new(exception);
         protected FaultResult Fault(string message) => new(message);
+        protected RegisterTaskResult RegisterTask(Func<WorkflowExecutionContext, CancellationToken, ValueTask> task) => new(task);
         
         protected T? GetState<T>([CallerMemberName] string name = null!) => Data.GetState<T>(name);
         protected T GetState<T>(Func<T> defaultValue, [CallerMemberName] string name = null!) => Data.GetState(name, defaultValue);

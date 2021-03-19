@@ -7,7 +7,7 @@
         <Authors>Elsa Contributors</Authors>
         <Description>
             Elsa is a set of workflow libraries and tools that enable lean and mean workflowing capabilities in any .NET Core application.
-            This package Rebus activities to send, publish and receive messages using the Rebus library.
+            This package provides activities to send, publish and receive messages using the Rebus library.
         </Description>
         <Copyright>2020</Copyright>
         <PackageProjectUrl>https://github.com/elsa-workflows/elsa-core</PackageProjectUrl>

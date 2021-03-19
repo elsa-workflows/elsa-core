@@ -15,7 +15,6 @@ using Elsa.HostedServices;
 using Elsa.Mapping;
 using Elsa.Messages;
 using Elsa.Metadata;
-using Elsa.Metadata.Handlers;
 using Elsa.Persistence;
 using Elsa.Persistence.Decorators;
 using Elsa.Runtime;
@@ -82,6 +81,9 @@ namespace Microsoft.Extensions.DependencyInjection
             return elsaOptions;
         }
 
+        public static IServiceCollection AddActivityPropertyOptionsProvider<T>(this IServiceCollection services) where T : class, IActivityPropertyOptionsProvider => services.AddSingleton<IActivityPropertyOptionsProvider, T>();
+        public static IServiceCollection AddActivityTypeProvider<T>(this IServiceCollection services) where T : class, IActivityTypeProvider => services.AddSingleton<IActivityTypeProvider, T>();
+
         private static ElsaOptions AddWorkflowsCore(this ElsaOptions options)
         {
             var services = options.Services;
@@ -105,7 +107,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddScoped<IWorkflowPublisher, WorkflowPublisher>()
                 .AddScoped<IWorkflowContextManager, WorkflowContextManager>()
                 .AddSingleton<IActivityTypeService, ActivityTypeService>()
-                .AddSingleton<IActivityTypeProvider, TypeBasedActivityProvider>()
+                .AddActivityTypeProvider<TypeBasedActivityProvider>()
                 .AddScoped<IWorkflowExecutionLog, WorkflowExecutionLog>()
                 ;
 
@@ -120,6 +122,7 @@ namespace Microsoft.Extensions.DependencyInjection
             services
                 .TryAddProvider<IExpressionHandler, LiteralHandler>(ServiceLifetime.Singleton)
                 .TryAddProvider<IExpressionHandler, VariableHandler>(ServiceLifetime.Singleton)
+                .TryAddProvider<IExpressionHandler, JsonHandler>(ServiceLifetime.Singleton)
                 .AddScoped<IExpressionEvaluator, ExpressionEvaluator>();
 
             // Workflow providers.
@@ -130,8 +133,9 @@ namespace Microsoft.Extensions.DependencyInjection
 
             // Metadata.
             services
-                .AddSingleton<IActivityDescriber, ActivityDescriber>()
-                .AddMetadataHandlers();
+                .AddSingleton<IDescribeActivityType, TypedActivityTypeDescriber>()
+                .AddSingleton<IActivityPropertyOptionsResolver, ActivityPropertyOptionsResolver>()
+                .AddSingleton<IActivityPropertyUIHintResolver, ActivityPropertyUIHintResolver>();
 
             // Bookmarks.
             services
@@ -181,10 +185,8 @@ namespace Microsoft.Extensions.DependencyInjection
             return options;
         }
 
-        private static IServiceCollection AddMetadataHandlers(this IServiceCollection services) =>
-            services
-                .AddSingleton<IActivityPropertyOptionsProvider, SelectOptionsProvider>();
-
-        private static ElsaOptions AddCoreActivities(this ElsaOptions services) => services.AddActivitiesFrom<ElsaOptions>();
+        private static ElsaOptions AddCoreActivities(this ElsaOptions services) => services
+            .AddActivitiesFrom<ElsaOptions>()
+            .AddActivitiesFrom<CompositeActivity>();
     }
 }

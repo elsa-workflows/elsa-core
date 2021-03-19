@@ -13,7 +13,7 @@ namespace Elsa
                 return value;
             
             var converter = TypeDescriptor.GetConverter(targetType);
-            return converter.ConvertFromString(value);
+            return converter.ConvertFromString(value)!;
         }
     }
 }

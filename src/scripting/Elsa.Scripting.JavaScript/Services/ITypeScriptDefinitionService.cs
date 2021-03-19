@@ -1,10 +1,11 @@
-﻿using System.Threading.Tasks;
+﻿using System.Threading;
+using System.Threading.Tasks;
 using Elsa.Models;
 
 namespace Elsa.Scripting.JavaScript.Services
 {
     public interface ITypeScriptDefinitionService
     {
-        string GenerateTypeScriptDefinition(WorkflowDefinition? workflowDefinition = default);
+        Task<string> GenerateTypeScriptDefinitionsAsync(WorkflowDefinition? workflowDefinition = default, string? context = default, CancellationToken cancellationToken = default);
     }
 }

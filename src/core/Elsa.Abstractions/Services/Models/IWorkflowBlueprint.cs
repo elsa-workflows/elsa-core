@@ -7,7 +7,6 @@ namespace Elsa.Services.Models
         int Version { get; }
         string? TenantId { get; }
         bool IsSingleton { get; }
-        bool IsEnabled { get; }
         bool IsPublished { get; }
         bool IsLatest { get; }
         

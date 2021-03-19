@@ -1,5 +1,6 @@
 import {Component, Host, h, Prop, State, Listen, Method, Watch, Event, EventEmitter} from '@stencil/core';
-import {createElsaClient} from "../../../../services/elsa-client";
+import {initializeMonacoWorker} from "./elsa-monaco-utils";
+import state from '../../../../utils/store';
 
 // Until I figure out why the ESM loader doesn't work properly, we need to include these scripts manually from index.html
 // import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
@@ -21,6 +22,7 @@ export class ElsaMonaco {
   @Prop({attribute: 'editor-height', reflect: true}) editorHeight: string = '6em';
   @Prop() value: string;
   @Prop() language: string;
+  @Prop({attribute: 'single-line', reflect: true}) singleLineMode: boolean = false;
   @Event({eventName: 'valueChanged'}) valueChanged: EventEmitter<MonacoValueChangedArgs>;
 
   container: HTMLElement;
@@ -53,6 +55,7 @@ export class ElsaMonaco {
   }
 
   componentWillLoad() {
+    initializeMonacoWorker(state.monacoLibPath);
     this.registerLiquid();
   }
 
@@ -79,25 +82,72 @@ export class ElsaMonaco {
 
       monaco.languages.typescript.javascriptDefaults.setEagerModelSync(true);
 
-      this.editor = monaco.editor.create(this.container, {
+      const defaultOptions = {
         value: this.value,
         language: language,
         fontFamily: "Roboto Mono, monospace",
+        renderLineHighlight: 'none',
         minimap: {
           enabled: false
         },
         lineNumbers: "on",
-        theme: "vs-dark",
+        theme: "vs",
         roundedSelection: true,
         scrollBeyondLastLine: false,
         readOnly: false,
-      });
+        overviewRulerLanes: 0,
+        overviewRulerBorder: false,
+        lineDecorationsWidth: 0,
+        hideCursorInOverviewRuler: true,
+        glyphMargin: false
+      };
+
+      let options = defaultOptions;
+
+      if (this.singleLineMode) {
+        options = {
+          ...defaultOptions, ...{
+            wordWrap: 'off',
+            lineNumbers: 'off',
+            lineNumbersMinChars: 0,
+            folding: false,
+            scrollBeyondLastColumn: 0,
+            scrollbar: {horizontal: 'hidden', vertical: 'hidden'},
+            find: {addExtraSpaceOnTop: false, autoFindInSelection: 'never', seedSearchStringFromSelection: false},
+          }
+        }
+      }
+
+      this.editor = monaco.editor.create(this.container, options);
 
       this.editor.onDidChangeModelContent(e => {
         const value = this.editor.getValue();
         const markers = monaco.editor.getModelMarkers({owner: language});
         this.valueChanged.emit({value: value, markers: markers});
       });
+
+      if (this.singleLineMode) {
+        this.editor.onKeyDown(e => {
+          if (e.keyCode == monaco.KeyCode.Enter) {
+            // We only prevent enter when the suggest model is not active
+            if (this.editor.getContribution('editor.contrib.suggestController').model.state == 0) {
+              e.preventDefault();
+            }
+          }
+        });
+
+        this.editor.onDidPaste(e => {
+          if (e.range.endLineNumber > 1) {
+            let newContent = "";
+            const model = this.editor.getModel();
+            let lineCount = model.getLineCount();
+            for (let i = 0; i < lineCount; i++) {
+              newContent += model.getLineContent(i + 1);
+            }
+            model.setValue(newContent);
+          }
+        });
+      }
     });
   }
 
@@ -153,8 +203,8 @@ export class ElsaMonaco {
 
   render() {
     return (
-      <Host class="monaco-editor-host" style={{'min-height': this.editorHeight}}>
-        <div ref={el => this.container = el} class="monaco-editor-container rounded"/>
+      <Host class="monaco-editor-host border border-gray-200 rounded p-4" style={{'min-height': this.editorHeight}}>
+        <div ref={el => this.container = el} class="monaco-editor-container"/>
       </Host>
     )
   }

@@ -1,24 +1,17 @@
-﻿import {jsPlumb} from 'jsplumb';
+﻿import {Connection, jsPlumb} from 'jsplumb';
+import {ConnectionModel} from "../models";
 
-let count = 0;
 let jsPlumbInstance = null;
 
-function onConnectionCreated(e) {
-  const source = e.sourceEndpoint;
-  const target = e.targetEndpoint;
+function onConnectionCreated(e, callback) {
+  debugger;
+  const connection: ConnectionModel = {
+    sourceId: e.connection.getParameter('sourceActivityId'),
+    targetId: e.connection.getParameter('targetActivityId'),
+    outcome: e.connection.getParameter('outcome')
+  };
 
-  const model = {
-    SourceId: source.getParameter('sourceActivityId'),
-    TargetId: target.getParameter('targetActivityId'),
-    Outcome: source.getParameter('outcome')
-  }
-
-  console.log(`Connection created between ${model.SourceId}:${model.Outcome} and ${model.TargetId}.`);
-  //DotNet.invokeMethodAsync('ElsaDashboard.Application', 'InvokeConnectionCreated', model);
-}
-
-function onConnectionClick(connection) {
-
+  callback(connection);
 }
 
 export function cleanup() {
@@ -26,19 +19,24 @@ export function cleanup() {
 }
 
 export function destroy() {
+  console.debug(`destroy called`);
   if (jsPlumbInstance != null) {
-    jsPlumbInstance.unbind("connection", onConnectionCreated);
-    jsPlumbInstance.unmakeEverySource(); // Ensures all mouse event handlers are removed.
-    jsPlumbInstance.unmakeEveryTarget();
-    jsPlumbInstance.reset();
+
+    jsPlumbInstance.batch(() => {
+      jsPlumbInstance.unbind("connection", onConnectionCreated);
+      jsPlumbInstance.unmakeEverySource(); // Ensures all mouse event handlers are removed.
+      jsPlumbInstance.unmakeEveryTarget();
+      jsPlumbInstance.reset();
+    });
+
     jsPlumbInstance = null;
   }
 }
 
-
-export function updateConnections(container, connections, sourceEndpoints, targets) {
+export function updateConnections(container, connections, sourceEndpoints, targets, connectionCreatedCallback, connectionDetachedCallback): Array<ConnectionModel> {
 
   destroy();
+  const invalidConnections: Array<ConnectionModel> = [];
 
   jsPlumbInstance = (jsPlumb as any).getInstance({
     Container: container,
@@ -47,24 +45,30 @@ export function updateConnections(container, connections, sourceEndpoints, targe
     Endpoint: ['Dot', {radius: 5}]
   });
 
-  (jsPlumbInstance as any).MyCount = ++count;
-
   jsPlumbInstance.ready(() => {
 
     jsPlumbInstance.batch(function () {
 
       for (const connection of connections) {
         const jsPlumbConnection = jsPlumbInstance.connect({
+
           source: connection.sourceId,
           target: connection.targetId,
           endpoint: 'Blank',
-          detachable: true,
+          detachable: connection.sourceActivityId && connection.targetActivityId,
           parameters: {
             sourceActivityId: connection.sourceActivityId,
             targetActivityId: connection.targetActivityId,
             outcome: connection.outcome
           }
         });
+
+        if (!jsPlumbConnection) {
+          console.warn(`Unable to connect ${connection.sourceId} to ${connection.targetId} via ${connection.outcome}`);
+          //invalidConnections.push({sourceId: connection.sourceActivityId, targetId: connection.targetActivityId, outcome: connection.outcome});
+        }
+        else
+          jsPlumbConnection.setData(connection);
       }
 
       for (const endpoint of sourceEndpoints) {
@@ -81,7 +85,7 @@ export function updateConnections(container, connections, sourceEndpoints, targe
 
       for (const target of targets) {
         jsPlumbInstance.makeTarget(target.targetId, {
-          anchor: ['Bottom', 'Top', 'Left', 'Right'],
+          anchor: ['Left', 'Right'],
           endpoint: 'Blank',
           parameters: {
             targetActivityId: target.targetActivityId
@@ -90,6 +94,23 @@ export function updateConnections(container, connections, sourceEndpoints, targe
       }
     });
 
-    jsPlumbInstance.bind("connection", onConnectionCreated);
+    jsPlumbInstance.bind("connection", e => onConnectionCreated(e, connectionCreatedCallback));
+    jsPlumbInstance.bind("click", (connection, e) => {
+      const data = connection.getData();
+      const sourceActivityId: string = data.sourceActivityId;
+      const targetActivityId: string = data.targetActivityId;
+      const outcome: string = data.outcome;
+
+      if (sourceActivityId && targetActivityId && outcome) {
+        const model: ConnectionModel = {
+          sourceId: sourceActivityId,
+          targetId: targetActivityId,
+          outcome: outcome
+        }
+        connectionDetachedCallback(model);
+      }
+    });
   });
+
+  return invalidConnections;
 }

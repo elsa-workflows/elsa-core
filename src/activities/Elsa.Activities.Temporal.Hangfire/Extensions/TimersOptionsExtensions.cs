@@ -1,9 +1,7 @@
 using System;
-
+using Elsa.Activities.Temporal.Common.Options;
+using Elsa.Activities.Temporal.Common.Services;
 using Elsa.Activities.Temporal.Hangfire.Services;
-using Elsa.Activities.Temporal.Options;
-using Elsa.Activities.Temporal.Services;
-
 using Hangfire;
 
 using Microsoft.Extensions.DependencyInjection;

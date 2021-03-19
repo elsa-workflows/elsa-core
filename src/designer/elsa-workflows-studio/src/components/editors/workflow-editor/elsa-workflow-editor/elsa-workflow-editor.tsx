@@ -1,9 +1,11 @@
 import {Component, Event, EventEmitter, h, Host, Listen, Method, Prop, State, Watch} from '@stencil/core';
-import {eventBus} from '../../../../utils/event-bus';
-import {ActivityDefinition, ActivityDescriptor, ActivityModel, ConnectionDefinition, ConnectionModel, EventTypes, WorkflowDefinition, WorkflowModel} from "../../../../models";
+import {eventBus} from '../../../../services/event-bus';
+import {ActivityDefinition, ActivityDescriptor, ActivityModel, ConnectionDefinition, ConnectionModel, EventTypes, VersionOptions, WorkflowDefinition, WorkflowModel, WorkflowPersistenceBehavior} from "../../../../models";
 import {createElsaClient, SaveWorkflowDefinitionRequest} from "../../../../services/elsa-client";
+import {pluginManager} from '../../../../services/plugin-manager';
 import state from '../../../../utils/store';
 import Tunnel, {WorkflowEditorState} from '../../../data/workflow-editor';
+import {downloadFromBlob} from "../../../../utils/download";
 
 @Component({
   tag: 'elsa-workflow-editor',
@@ -13,17 +15,22 @@ import Tunnel, {WorkflowEditorState} from '../../../data/workflow-editor';
 export class ElsaWorkflowDefinitionEditor {
 
   constructor() {
-    this.workflowDefinition = {
-      version: 1,
-      connections: [],
-      activities: []
-    };
+    pluginManager.initialize();
   }
 
   @Prop({attribute: 'workflow-definition-id', reflect: true}) workflowDefinitionId: string;
   @Prop({attribute: 'server-url', reflect: true}) serverUrl: string;
+  @Prop({attribute: 'monaco-lib-path', reflect: true}) monacoLibPath: string;
   @State() workflowDefinition: WorkflowDefinition;
   @State() workflowModel: WorkflowModel;
+  @State() publishing: boolean;
+  @State() unPublishing: boolean;
+  @State() unPublished: boolean;
+  @State() saving: boolean;
+  @State() saved: boolean;
+  @State() importing: boolean;
+  @State() imported: boolean;
+  @State() networkError: string;
   el: HTMLElement;
   designer: HTMLElsaDesignerTreeElement;
 
@@ -37,10 +44,48 @@ export class ElsaWorkflowDefinitionEditor {
     return this.workflowDefinition.definitionId;
   }
 
+  @Method()
+  async exportWorkflow() {
+    const client = createElsaClient(this.serverUrl);
+    const workflowDefinition = this.workflowDefinition;
+    const versionOptions: VersionOptions = {version: workflowDefinition.version};
+    const response = await client.workflowDefinitionsApi.export(workflowDefinition.definitionId, versionOptions);
+    downloadFromBlob(response.data, {contentType: 'application/json', fileName: response.fileName});
+  }
+
+  @Method()
+  async importWorkflow(file: File) {
+    const client = createElsaClient(this.serverUrl);
+
+    this.importing = true;
+    this.imported = false;
+    this.networkError = null;
+
+    // A small hack to make sure JS Plumb is cleaned up before HTML elements get removed.
+    await this.designer.destroyJsPlumb();
+
+    try {
+      const workflowDefinition = await client.workflowDefinitionsApi.import(this.workflowDefinition.definitionId, file);
+      this.workflowDefinition = workflowDefinition;
+      this.workflowModel = this.mapWorkflowModel(workflowDefinition);
+
+      this.importing = false;
+      this.imported = true;
+      setTimeout(() => this.imported = false, 500);
+      eventBus.emit(EventTypes.WorkflowImported, this, this.workflowDefinition);
+    } catch (e) {
+      console.error(e);
+      this.importing = false;
+      this.imported = false;
+      this.networkError = e.message;
+      setTimeout(() => this.networkError = null, 10000);
+    }
+  }
+
   @Watch('workflowDefinitionId')
   async workflowDefinitionIdChangedHandler(newValue: string) {
     const workflowDefinitionId = newValue;
-    let workflowDefinition: WorkflowDefinition = {definitionId: this.workflowDefinitionId, version: 1, activities: [], connections: []};
+    let workflowDefinition: WorkflowDefinition = this.createWorkflowDefinition();
     const client = createElsaClient(this.serverUrl);
 
     if (workflowDefinitionId && workflowDefinitionId.length > 0) {
@@ -60,6 +105,11 @@ export class ElsaWorkflowDefinitionEditor {
       await this.loadActivityDescriptors();
   }
 
+  @Watch("monacoLibPath")
+  async monacoLibPathChangedHandler(newValue: string) {
+    state.monacoLibPath = newValue;
+  }
+
   @Listen('workflow-changed')
   async workflowChangedHandler(event: CustomEvent<WorkflowModel>) {
     const workflowModel = event.detail;
@@ -69,6 +119,7 @@ export class ElsaWorkflowDefinitionEditor {
   async componentWillLoad() {
     await this.serverUrlChangedHandler(this.serverUrl);
     await this.workflowDefinitionIdChangedHandler(this.workflowDefinitionId);
+    await this.monacoLibPathChangedHandler(this.monacoLibPath);
   }
 
   componentDidLoad() {
@@ -94,7 +145,17 @@ export class ElsaWorkflowDefinitionEditor {
   }
 
   async publishWorkflow() {
+    this.publishing = true;
     await this.saveWorkflow(true);
+    this.publishing = false;
+    eventBus.emit(EventTypes.WorkflowPublished, this, this.workflowDefinition);
+  }
+
+  async unPublishWorkflow() {
+    this.unPublishing = true;
+    await this.unpublishWorkflow();
+    this.unPublishing = false;
+    eventBus.emit(EventTypes.WorkflowRetracted, this, this.workflowDefinition);
   }
 
   async saveWorkflow(publish?: boolean) {
@@ -116,7 +177,6 @@ export class ElsaWorkflowDefinitionEditor {
       deleteCompletedInstances: workflowDefinition.deleteCompletedInstances,
       description: workflowDefinition.description,
       displayName: workflowDefinition.displayName,
-      enabled: workflowDefinition.isEnabled,
       isSingleton: workflowDefinition.isSingleton,
       name: workflowDefinition.name,
       persistenceBehavior: workflowDefinition.persistenceBehavior,
@@ -128,10 +188,10 @@ export class ElsaWorkflowDefinitionEditor {
         name: x.name,
         displayName: x.displayName,
         description: x.description,
-        persistWorkflow: false,
-        loadWorkflowContext: false,
-        saveWorkflowContext: false,
-        persistOutput: false,
+        persistWorkflow: x.persistWorkflow,
+        loadWorkflowContext: x.loadWorkflowContext,
+        saveWorkflowContext: x.saveWorkflowContext,
+        persistOutput: x.persistOutput,
         properties: x.properties
       })),
       connections: workflowModel.connections.map<ConnectionDefinition>(x => ({
@@ -141,15 +201,52 @@ export class ElsaWorkflowDefinitionEditor {
       })),
     };
 
-    workflowDefinition = await client.workflowDefinitionsApi.save(request);
-    this.workflowDefinition = workflowDefinition;
-    this.workflowModel = this.mapWorkflowModel(workflowDefinition);
+    this.saving = !publish;
+    this.publishing = publish;
+
+    try {
+      workflowDefinition = await client.workflowDefinitionsApi.save(request);
+      this.workflowDefinition = workflowDefinition;
+      this.workflowModel = this.mapWorkflowModel(workflowDefinition);
+
+      this.saving = false;
+      this.saved = !publish;
+      this.publishing = false;
+      setTimeout(() => this.saved = false, 500);
+    } catch (e) {
+      console.error(e);
+      this.saving = false;
+      this.saved = false;
+      this.networkError = e.message;
+      setTimeout(() => this.networkError = null, 10000);
+    }
+  }
+
+  async unpublishWorkflow() {
+    const client = createElsaClient(this.serverUrl);
+    const workflowDefinitionId = this.workflowDefinition.definitionId;
+    this.unPublishing = true;
+
+    try {
+      this.workflowDefinition = await client.workflowDefinitionsApi.retract(workflowDefinitionId);
+      this.unPublishing = false;
+      this.unPublished = true
+      setTimeout(() => this.unPublished = false, 500);
+    } catch (e) {
+      console.error(e);
+      this.unPublishing = false;
+      this.unPublished = false;
+      this.networkError = e.message;
+      setTimeout(() => this.networkError = null, 2000);
+    }
   }
 
   mapWorkflowModel(workflowDefinition: WorkflowDefinition): WorkflowModel {
     return {
       activities: workflowDefinition.activities.map(this.mapActivityModel),
-      connections: workflowDefinition.connections.map(this.mapConnectionModel)
+      connections: workflowDefinition.connections.map(this.mapConnectionModel),
+      persistenceBehavior: workflowDefinition.persistenceBehavior,
+
     };
   }
 
@@ -164,7 +261,11 @@ export class ElsaWorkflowDefinitionEditor {
       name: source.name,
       type: source.type,
       properties: source.properties,
-      outcomes: [...descriptor.outcomes]
+      outcomes: [...descriptor.outcomes],
+      persistOutput: source.persistOutput,
+      persistWorkflow: source.persistWorkflow,
+      saveWorkflowContext: source.saveWorkflowContext,
+      loadWorkflowContext: source.loadWorkflowContext
     }
   }
 
@@ -182,6 +283,18 @@ export class ElsaWorkflowDefinitionEditor {
 
   async onPublishClicked() {
     await this.publishWorkflow();
+  }
+
+  async onUnPublishClicked() {
+    await this.unPublishWorkflow();
+  }
+
+  async onExportClicked() {
+    await this.exportWorkflow();
+  }
+
+  async onImportClicked(file: File) {
+    await this.importWorkflow(file);
   }
 
   render() {
@@ -203,11 +316,18 @@ export class ElsaWorkflowDefinitionEditor {
 
   renderCanvas() {
     return (
-      <div class="h-screen flex relative">
+      <div class="flex-1 flex relative">
         <elsa-designer-tree model={this.workflowModel} class="flex-1" ref={el => this.designer = el}/>
         {this.renderWorkflowSettingsButton()}
-        {this.renderWorkflowSettingsModal()}
-        {this.renderPublishButton()}
+        <elsa-workflow-settings-modal workflowDefinition={this.workflowDefinition}/>
+        <elsa-workflow-editor-notifications/>
+        <div class="fixed bottom-10 right-12">
+          <div class="flex items-center space-x-4">
+            {this.renderSavingIndicator()}
+            {this.renderNetworkError()}
+            {this.renderPublishButton()}
+          </div>
+        </div>
       </div>
     );
   }
@@ -234,10 +354,58 @@ export class ElsaWorkflowDefinitionEditor {
   }
 
   renderWorkflowSettingsModal() {
-    return <elsa-workflow-settings-modal workflowDefinition={this.workflowDefinition}/>;
+    return;
+  }
+
+  renderSavingIndicator() {
+
+    if (this.publishing)
+      return undefined;
+
+    const message =
+      this.unPublishing ? 'Unpublishing...' : this.unPublished ? 'Unpublished'
+        : this.saving ? 'Saving...' : this.saved ? 'Saved'
+          : this.importing ? 'Importing...' : this.imported ? 'Imported'
+          : null;
+
+    if (!message)
+      return undefined;
+
+    return (
+      <div>
+        <span class="text-gray-400 text-sm">{message}</span>
+      </div>
+    );
+  }
+
+  renderNetworkError() {
+    if (!this.networkError)
+      return undefined;
+
+    return (
+      <div>
+        <span class="text-rose-400 text-sm">An error occurred: {this.networkError}</span>
+      </div>);
   }
 
   renderPublishButton() {
-    return <elsa-workflow-publish-button onPublishClicked={() => this.onPublishClicked()}/>;
+    return <elsa-workflow-publish-button
+      publishing={this.publishing}
+      workflowDefinition={this.workflowDefinition}
+      onPublishClicked={() => this.onPublishClicked()}
+      onUnPublishClicked={() => this.onUnPublishClicked()}
+      onExportClicked={() => this.onExportClicked()}
+      onImportClicked={e => this.onImportClicked(e.detail)}
+    />;
+  }
+
+  private createWorkflowDefinition(): WorkflowDefinition {
+    return {
+      definitionId: this.workflowDefinitionId,
+      version: 1,
+      activities: [],
+      connections: [],
+      persistenceBehavior: WorkflowPersistenceBehavior.WorkflowBurst,
+    };
   }
 }

@@ -18,7 +18,6 @@ namespace Elsa.Services.Models
             int version,
             string? tenantId,
             bool isSingleton,
-            bool isEnabled,
             string? name,
             string? displayName,
             string? description,
@@ -38,7 +37,6 @@ namespace Elsa.Services.Models
             Version = version;
             TenantId = tenantId;
             IsSingleton = isSingleton;
-            IsEnabled = isEnabled;
             IsLatest = isLatest;
             IsPublished = isPublished;
             ContextOptions = contextOptions;
@@ -55,7 +53,6 @@ namespace Elsa.Services.Models
         public int Version { get; set; }
         public string? TenantId { get; set; }
         public bool IsSingleton { get; set; }
-        public bool IsEnabled { get; set; }
         public bool IsPublished { get; set; }
         public bool IsLatest { get; set; }
         public Variables Variables { get; set; }

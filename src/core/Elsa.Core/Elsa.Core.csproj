@@ -16,7 +16,7 @@
 
     <ItemGroup>
         <PackageReference Include="AutoMapper" Version="10.1.1" />
-        <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="8.1.0" />
+        <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="8.1.1" />
         <PackageReference Include="Humanizer.Core" Version="2.8.26" />
         <PackageReference Include="MediatR" Version="9.0.0" />
         <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="9.0.0" />
@@ -27,7 +27,7 @@
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="5.0.0" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.1" />
         <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="5.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Localization" Version="5.0.2" />
+        <PackageReference Include="Microsoft.Extensions.Localization" Version="5.0.4" />
         <PackageReference Include="Microsoft.Extensions.Logging" Version="5.0.0" />
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.0" />
         <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="5.0.0" />
@@ -40,7 +40,7 @@
         <PackageReference Include="System.Linq.Async" Version="5.0.0" />
         <PackageReference Include="System.Threading.Channels" Version="5.0.0" />
         <PackageReference Include="YamlDotNet" Version="9.1.4" />
-        <PackageReference Include="Rebus.ServiceProvider" Version="6.0.0" />
+        <PackageReference Include="Rebus.ServiceProvider" Version="6.4.1" />
     </ItemGroup>
 
     <ItemGroup>

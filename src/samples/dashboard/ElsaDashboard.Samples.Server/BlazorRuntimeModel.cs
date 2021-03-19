@@ -3,6 +3,6 @@
     public enum BlazorRuntimeModel
     {
         Server,
-        Browser
+        WebAssembly
     }
 }

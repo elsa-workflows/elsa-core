@@ -33,11 +33,11 @@ namespace Elsa.Server.Api.Endpoints.Scripting.JavaScript.TypeDefinitions
             OperationId = "JavaScriptLanguageServices.GetTypeDefinitions",
             Tags = new[] { "JavaScriptLanguageServices" })
         ]
-        public async Task<IActionResult> Handle(string workflowDefinitionId, VersionOptions? version = default, CancellationToken cancellationToken = default)
+        public async Task<IActionResult> Handle(string workflowDefinitionId, string? context = default, VersionOptions? version = default, CancellationToken cancellationToken = default)
         {
             version ??= VersionOptions.Latest;
             var workflowDefinition = await _workflowDefinitionStore.FindByDefinitionIdAsync(workflowDefinitionId, version.Value, cancellationToken);
-            var typeDefinitions = _typeScriptDefinitionService.GenerateTypeScriptDefinition(workflowDefinition);
+            var typeDefinitions = await _typeScriptDefinitionService.GenerateTypeScriptDefinitionsAsync(workflowDefinition, context, cancellationToken);
             var fileName = $"elsa.{workflowDefinitionId}.d.ts";
             var data = Encoding.UTF8.GetBytes(typeDefinitions);
             return File(data, "application/x-typescript", fileName);

@@ -5,6 +5,7 @@ using Elsa.Activities.Email.Options;
 using Elsa.Activities.Email.Services;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Design;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.Options;
@@ -29,26 +30,25 @@ namespace Elsa.Activities.Email
         [ActivityProperty(Hint = "The sender's email address.")]
         public string? From { get; set; }
 
-        [ActivityProperty(Hint = "The recipients email addresses.")]
+        [ActivityProperty(Hint = "The recipients email addresses.", UIHint = ActivityPropertyUIHints.MultiText)]
         public ICollection<string> To { get; set; } = new List<string>();
 
-        [ActivityProperty(Hint = "The cc recipients email addresses. (Optional)")]
+        [ActivityProperty(Hint = "The cc recipients email addresses. (Optional)", UIHint = ActivityPropertyUIHints.MultiText)]
         public ICollection<string> Cc { get; set; } = new List<string>();
 
-        [ActivityProperty(Hint = "The Bcc recipients email addresses. (Optional)")]
+        [ActivityProperty(Hint = "The Bcc recipients email addresses. (Optional)", UIHint = ActivityPropertyUIHints.MultiText)]
         public ICollection<string> Bcc { get; set; } = new List<string>();
 
         [ActivityProperty(Hint = "The subject of the email message.")]
         public string? Subject { get; set; }
 
-        [ActivityProperty(Hint = "The body of the email message.")]
-        [WorkflowExpressionOptions(Multiline = true)]
+        [ActivityProperty(Hint = "The body of the email message.", UIHint = ActivityPropertyUIHints.MultiLine)]
         public string? Body { get; set; }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
             var message = new MimeMessage();
-            var from = From is null or "" ? _options.DefaultSender : From; 
+            var from = From is null or "" ? _options.DefaultSender : From;
 
             message.From.Add(MailboxAddress.Parse(from));
             message.Subject = Subject;
@@ -61,7 +61,7 @@ namespace Elsa.Activities.Email
             SetRecipientsEmailAddresses(message.To, To);
             SetRecipientsEmailAddresses(message.Cc, Cc);
             SetRecipientsEmailAddresses(message.Bcc, Bcc);
-           
+
             await _smtpService.SendAsync(message, context.CancellationToken);
 
             return Done();

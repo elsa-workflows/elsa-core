@@ -119,6 +119,15 @@ export function getProperty(properties: Array<ActivityDefinitionProperty>, name:
   return property;
 }
 
+export function parseJson(json: string): any {
+  try {
+    return JSON.parse(json);
+  } catch (e) {
+    console.warn(`Error parsing JSON: ${e}`);
+  }
+  return undefined;
+}
+
 export function timeSince(time) {
   switch (typeof time) {
     case 'number':

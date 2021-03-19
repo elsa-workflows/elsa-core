@@ -1,6 +1,6 @@
 using NodaTime;
 
-namespace Elsa.Activities.Temporal.Services
+namespace Elsa.Activities.Temporal.Common.Services
 {
     /// <summary></summary>
     /// <remarks>The providers can support different formats. Quartz, for example, supports years.</remarks>

@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
-
-using Elsa.Activities.Temporal.Services;
+using Elsa.Activities.Temporal.Common.Services;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Services;

@@ -12,7 +12,6 @@ namespace Elsa.Persistence.YesSql.Indexes
         public int Version { get; set; }
         public bool IsLatest { get; set; }
         public bool IsPublished { get; set; }
-        public bool IsEnabled { get; set; }
     }
 
     public class WorkflowDefinitionIndexProvider : IndexProvider<WorkflowDefinitionDocument>
@@ -30,8 +29,7 @@ namespace Elsa.Persistence.YesSql.Indexes
                         DefinitionVersionId = workflowDefinition.DefinitionVersionId,
                         Version = workflowDefinition.Version,
                         IsPublished = workflowDefinition.IsPublished,
-                        IsLatest = workflowDefinition.IsLatest,
-                        IsEnabled = workflowDefinition.IsEnabled
+                        IsLatest = workflowDefinition.IsLatest
                     }
                 );
         }

@@ -32,9 +32,9 @@ Type: `Promise<void>`
 
 ### Used by
 
- - [elsa-activity-editor-modal](../../editors/elsa-activity-editor-modal)
+ - [elsa-activity-editor-modal](../../editors/workflow-editor/elsa-activity-editor-modal)
  - [elsa-activity-picker-modal](../../pickers/elsa-activity-picker-modal)
- - [elsa-workflow-settings-modal](../../editors/elsa-workflow-settings-modal)
+ - [elsa-workflow-settings-modal](../../editors/workflow-editor/elsa-workflow-settings-modal)
 
 ### Graph
 ```mermaid

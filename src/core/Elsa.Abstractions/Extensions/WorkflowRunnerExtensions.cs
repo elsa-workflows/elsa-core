@@ -15,6 +15,6 @@ namespace Elsa
             string? correlationId = default,
             string? contextId = default,
             CancellationToken cancellationToken = default) where T : IActivity =>
-            workflowRunner.TriggerWorkflowsAsync(typeof(T).Name, bookmark, tenantId, input, correlationId, contextId, cancellationToken);
+            workflowRunner.ResumeWorkflowsAsync(typeof(T).Name, bookmark, tenantId, input, correlationId, contextId, cancellationToken);
     }
 }

@@ -1,8 +1,9 @@
-import {Component, Host, h, Prop, State, Event, EventEmitter} from '@stencil/core';
-import {enter, leave, toggle} from 'el-transition'
-import {registerClickOutside, ClickOutside} from "stencil-click-outside";
+import {Component, Event, EventEmitter, h, Host, Prop, State} from '@stencil/core';
+import {leave, toggle} from 'el-transition'
+import {registerClickOutside} from "stencil-click-outside";
 import {ActivityIcon} from '../../../icons/activity-icon';
-import {ActivityModel} from "../../../../models";
+import {ActivityModel, ActivityDesignDisplayContext, EventTypes} from "../../../../models";
+import {eventBus} from '../../../../services/event-bus';
 
 @Component({
   tag: 'elsa-designer-tree-activity',
@@ -13,7 +14,7 @@ export class ElsaDesignerTreeActivity {
 
   defaultIconClass = "h-10 w-10 text-blue-500";
 
-  @Prop() activityModel: ActivityModel
+  @Prop() displayContext: ActivityDesignDisplayContext
   @Prop() icon: string
   @Event({eventName: 'remove-activity', bubbles: true}) removeActivityEmitter: EventEmitter<ActivityModel>;
   @Event({eventName: 'edit-activity', bubbles: true}) editActivityEmitter: EventEmitter<ActivityModel>;
@@ -29,39 +30,36 @@ export class ElsaDesignerTreeActivity {
     toggle(this.contextMenu);
   }
 
-  onEditActivityClick(e: Event){
+  onEditActivityClick(e: Event) {
     e.preventDefault();
     this.closeContextMenu();
-    this.editActivityEmitter.emit(this.activityModel);
+    this.editActivityEmitter.emit(this.displayContext.activityModel);
   }
 
-  onDeleteActivityClick(e: Event){
+  onDeleteActivityClick(e: Event) {
     e.preventDefault();
     this.closeContextMenu();
-    this.removeActivityEmitter.emit(this.activityModel);
+    this.removeActivityEmitter.emit(this.displayContext.activityModel);
   }
 
   render() {
-
-    const activity = this.activityModel;
+    const displayContext = this.displayContext;
+    const activity = displayContext.activityModel;
     const activityId = activity.activityId;
-    const iconClass = this.icon && this.icon.length > 0 ? this.icon : this.defaultIconClass;
     const displayName = activity.displayName && activity.displayName.length > 0 ? activity.displayName : activity.name && activity.name.length > 0 ? activity.name : activity.type
 
     return (
       <Host id={`activity-${activityId}`}
             class="activity border-2 border-solid border-white rounded bg-white text-left text-black text-lg hover:border-blue-600 select-none max-w-md shadow-sm relative">
-        <div class="p-5 border-b border-b-solid">
+        <div class="p-5">
           <div class="flex justify-between space-x-8">
             <div class="flex-shrink-0">
-              <ActivityIcon className={iconClass}/>
+              {displayContext.activityIcon}
             </div>
             <div class="flex-1 font-medium leading-8">
               <p>{displayName}</p>
             </div>
-            <div class="context-menu-wrapper flex-shrink-0"
-                 ref={el => registerClickOutside(this, el, this.closeContextMenu)}
-            >
+            <div class="context-menu-wrapper flex-shrink-0" ref={el => registerClickOutside(this, el, this.closeContextMenu)}>
               <button onClick={() => this.toggleMenu()} aria-haspopup="true"
                       class="w-8 h-8 inline-flex items-center justify-center text-gray-400 rounded-full bg-transparent hover:text-gray-500 focus:outline-none focus:text-gray-500 focus:bg-gray-100 transition ease-in-out duration-150">
                 <svg class="h-6 w-6 text-gray-400" width="24" height="24" viewBox="0 0 24 24" stroke-width="2"
@@ -100,14 +98,20 @@ export class ElsaDesignerTreeActivity {
               </div>
             </div>
           </div>
-
         </div>
-        <div class="p-6 text-gray-400 text-sm">
-          <slot name="body">
-            <p>{activity.description}</p>
-          </slot>
-        </div>
+        {this.renderBody()}
       </Host>
     );
+  }
+
+  renderBody() {
+    if (!this.displayContext.bodyDisplay)
+      return undefined;
+
+    return (
+      <div class="p-6 text-gray-400 text-sm border-t border-t-solid">
+        {this.displayContext.bodyDisplay}
+      </div>
+    )
   }
 }

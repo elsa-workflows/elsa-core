@@ -10,7 +10,6 @@
 [![MyGet (with prereleases)](https://img.shields.io/myget/elsa-2/vpre/Elsa?label=myget)](https://www.myget.org/gallery/elsa-2)
 [![Build status](https://ci.appveyor.com/api/projects/status/github/elsa-workflows/elsa-core?svg=true&branch=feature/elsa-2.0)](https://ci.appveyor.com/project/sfmskywalker/elsa)
 [![Discord](https://img.shields.io/discord/814605913783795763?label=chat&logo=discord)](https://discord.gg/hhChk5H472)
-[![Gitter](https://badges.gitter.im/elsa-workflows/community.svg)](https://gitter.im/elsa-workflows/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 [![Stack Overflow questions](https://img.shields.io/badge/stackoverflow-elsa_workflows-orange.svg)]( http://stackoverflow.com/questions/tagged/elsa-workflows )
 ![Docker Pulls](https://img.shields.io/docker/pulls/elsaworkflows/elsa-dashboard?label=elsa%20dashboard%3Adocker%20pulls)
 
@@ -53,6 +52,7 @@ Version 2.0
 - [x] Workflow Host REST API
 - [x] Workflow Server
 - [x] Distributed Hosting Support (support for multi-node environments)
+- [x] Persistence: MongoDB, YesSQL, Entity Framework Core (SQL Server, SQLLite, PostgreSql)
 - [ ] Lucene Indexing
 - [ ] New Workflow Designer + Dashboard
 - [ ] Generic Command & Event Activities
@@ -241,7 +241,7 @@ TODO: describe all the steps to add packages and register services.
 
 TODO
 
-# Code of Conduct
+## Code of Conduct
 
 This project has adopted the code of conduct defined by the Contributor Covenant to clarify expected behavior in our community.
 For more information see the [.NET Foundation Code of Conduct](https://dotnetfoundation.org/code-of-conduct). 
@@ -249,3 +249,9 @@ For more information see the [.NET Foundation Code of Conduct](https://dotnetfou
 ### .NET Foundation
 
 This project is supported by the [.NET Foundation](https://dotnetfoundation.org).
+
+## Sponsored by Interfirst
+
+This project is proudly backed by [Interfirst](http://www.interfirst.com/), a Residential Mortgage Licensee.
+
+<a href="http://www.interfirst.com/"><img src="./doc/sponsors/interfirst.svg" alt="Interfirst" width="600" height="120" /></a>

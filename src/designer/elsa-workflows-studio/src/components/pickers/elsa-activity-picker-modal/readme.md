@@ -9,7 +9,7 @@
 
 ### Used by
 
- - [elsa-workflow-editor](../../editors/elsa-workflow-editor)
+ - [elsa-workflow-editor](../../editors/workflow-editor/elsa-workflow-editor)
 
 ### Depends on
 

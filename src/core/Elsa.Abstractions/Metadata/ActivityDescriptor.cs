@@ -19,6 +19,5 @@ namespace Elsa.Metadata
         public ActivityTraits Traits { get; set; }
         public string[] Outcomes { get; set; }
         public ActivityPropertyDescriptor[] Properties { get; set; }
-        public bool Browsable { get; set; }
     }
 }

@@ -13,7 +13,7 @@
 
 ### Depends on
 
-- [elsa-modal-dialog](../../shared/elsa-modal-dialog)
+- [elsa-modal-dialog](../../../shared/elsa-modal-dialog)
 
 ### Graph
 ```mermaid

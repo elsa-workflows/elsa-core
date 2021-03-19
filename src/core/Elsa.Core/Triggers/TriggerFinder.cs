@@ -17,18 +17,18 @@ namespace Elsa.Triggers
             _bookmarkHasher = bookmarkHasher;
         }
 
-        public async Task<IEnumerable<TriggerFinderResult>> FindTriggersAsync(string activityType, IEnumerable<IBookmark> bookmarks, string? tenantId, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<TriggerFinderResult>> FindTriggersAsync(string activityType, IEnumerable<IBookmark> filters, string? tenantId, CancellationToken cancellationToken = default)
         {
             var allTriggers = (await _triggerStore.GetAsync(cancellationToken)).ToList();
             var scopedTriggers = allTriggers.Where(x => x.ActivityType == activityType && x.WorkflowBlueprint.TenantId == tenantId);
-            var bookmarkList = bookmarks as ICollection<IBookmark> ?? bookmarks.ToList();
+            var filterList = filters as ICollection<IBookmark> ?? filters.ToList();
 
-            if (!bookmarkList.Any())
+            if (!filterList.Any())
             {
                 return scopedTriggers.Select(x => new TriggerFinderResult(x.WorkflowBlueprint, x.ActivityId, x.ActivityType, x.Bookmark)).ToList();
             }
 
-            var hashes = bookmarkList.Select(x => _bookmarkHasher.Hash(x)).ToList();
+            var hashes = filterList.Select(x => _bookmarkHasher.Hash(x)).ToList();
             var matchingTriggers = scopedTriggers.Where(x => hashes.Contains(x.BookmarkHash));
             return matchingTriggers.Select(x => new TriggerFinderResult(x.WorkflowBlueprint, x.ActivityId, x.ActivityType, x.Bookmark)).ToList();
         }

@@ -1,0 +1,1 @@
+docker build -t elsadashboard_samples_monolith -f ./ElsaDashboard.Samples.Monolith.Dockerfile ../

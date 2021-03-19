@@ -18,7 +18,7 @@ namespace Elsa.ActivityProviders
         /// <summary>
         /// The .NET Runtime type of this activity.
         /// </summary>
-        public Type Type { get; set; } = default!;
+        public Type Type { get; set; } = typeof(IActivity);
 
         /// <summary>
         /// Display name of this activity.
@@ -52,5 +52,10 @@ namespace Elsa.ActivityProviders
 
         public Func<ActivityExecutionContext, ValueTask<IActivity>> ActivateAsync { get; set; } = _ => new ValueTask<IActivity>();
         public Func<ActivityDescriptor> Describe { get; set; } = () => new ActivityDescriptor();
+        public bool IsBrowsable { get; set; } = true;
+
+        public IDictionary<string, object> Attributes { get; set; } = new Dictionary<string, object>();
+
+        public override string ToString() => TypeName;
     }
 }

@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.ActivityProviders;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications.Bookmarks;
@@ -22,6 +23,7 @@ namespace Elsa.Bookmarks
         private readonly IBookmarkStore _bookmarkStore;
         private readonly IWorkflowContextManager _workflowContextManager;
         private readonly IEnumerable<IBookmarkProvider> _providers;
+        private readonly IActivityTypeService _activityTypeService;
         private readonly IIdGenerator _idGenerator;
         private readonly IContentSerializer _contentSerializer;
         private readonly IBookmarkHasher _hasher;
@@ -34,6 +36,7 @@ namespace Elsa.Bookmarks
             IBookmarkStore bookmarkStore,
             IWorkflowContextManager workflowContextManager,
             IEnumerable<IBookmarkProvider> providers,
+            IActivityTypeService activityTypeService,
             IIdGenerator idGenerator,
             IContentSerializer contentSerializer,
             IServiceProvider serviceProvider,
@@ -44,6 +47,7 @@ namespace Elsa.Bookmarks
             _bookmarkStore = bookmarkStore;
             _workflowContextManager = workflowContextManager;
             _providers = providers;
+            _activityTypeService = activityTypeService;
             _idGenerator = idGenerator;
             _contentSerializer = contentSerializer;
             _serviceProvider = serviceProvider;
@@ -136,11 +140,14 @@ namespace Elsa.Bookmarks
             // Extract bookmarks for each blocking activity.
             var bookmarkedWorkflows = new List<BookmarkedWorkflow>();
 
+            var activityTypes = (await _activityTypeService.GetActivityTypesAsync(cancellationToken)).ToDictionary(x => x.TypeName);
+
             foreach (var blockingActivity in blockingActivities)
             {
                 var activityExecutionContext = new ActivityExecutionContext(_serviceProvider, workflowExecutionContext, blockingActivity, null, false, cancellationToken);
-                var providerContext = new BookmarkProviderContext(activityExecutionContext, BookmarkIndexingMode.WorkflowInstance);
-                var providers = _providers.Where(x => x.ForActivityType == blockingActivity.Type);
+                var activityType = activityTypes[blockingActivity.Type];
+                var providerContext = new BookmarkProviderContext(activityExecutionContext, activityType, BookmarkIndexingMode.WorkflowInstance);
+                var providers = await FilterProvidersAsync(providerContext).ToListAsync(cancellationToken);
 
                 foreach (var provider in providers)
                 {
@@ -160,6 +167,13 @@ namespace Elsa.Bookmarks
             }
 
             return bookmarkedWorkflows;
+        }
+        
+        private async IAsyncEnumerable<IBookmarkProvider> FilterProvidersAsync(BookmarkProviderContext context)
+        {
+            foreach (var provider in _providers)
+                if (await provider.SupportsActivityAsync(context))
+                    yield return provider;
         }
     }
 }

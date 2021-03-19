@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using Elsa.ActivityResults;
 using Elsa.Builders;
@@ -8,6 +9,7 @@ using Newtonsoft.Json.Linq;
 
 namespace Elsa.Services
 {
+    [Browsable(false)]
     public class CompositeActivity : Activity
     {
         internal const string Enter = "Enter";

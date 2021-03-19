@@ -15,7 +15,7 @@ namespace Elsa.Models
         /// Workflow instances are persisted after the workflow completed a burst of execution.
         /// </summary>
         WorkflowBurst,
-        
+
         /// <summary>
         /// Workflow instances are persisted after the workflow executed scheduled activities.
         /// </summary>

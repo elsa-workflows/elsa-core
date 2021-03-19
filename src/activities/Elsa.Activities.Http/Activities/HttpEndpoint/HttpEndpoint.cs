@@ -41,11 +41,10 @@ namespace Elsa.Activities.Http
         public PathString Path { get; set; }
 
         /// <summary>
-        /// The HTTP method that triggers this activity.
+        /// The HTTP methods that triggers this activity.
         /// </summary>
-        [ActivityProperty(Type = ActivityPropertyTypes.Select, Hint = "The HTTP method that triggers this activity.")]
-        [SelectOptions("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD")]
-        public string? Method { get; set; }
+        [ActivityProperty(UIHint = ActivityPropertyUIHints.CheckList, Hint = "The HTTP methods that trigger this activity.", Options = new[] { "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD" })]
+        public HashSet<string> Methods { get; set; } = new();
 
         /// <summary>
         /// A value indicating whether the HTTP request content body should be read and stored as part of the HTTP request model.
@@ -61,8 +60,7 @@ namespace Elsa.Activities.Http
         [ActivityProperty]
         public Type? TargetType { get; set; }
 
-        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context) =>
-            context.WorkflowExecutionContext.IsFirstPass ? await ExecuteInternalAsync(context.CancellationToken) : Suspend();
+        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context) => context.WorkflowExecutionContext.IsFirstPass ? await ExecuteInternalAsync(context.CancellationToken) : Suspend();
 
         protected override ValueTask<IActivityExecutionResult> OnResumeAsync(ActivityExecutionContext context) => ExecuteInternalAsync(context.CancellationToken);
 

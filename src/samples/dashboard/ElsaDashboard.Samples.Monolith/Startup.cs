@@ -1,5 +1,6 @@
 using System;
 using Elsa;
+using Elsa.Activities.Telnyx.Extensions;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Sqlite;
 using ElsaDashboard.Backend.Extensions;
@@ -30,11 +31,14 @@ namespace ElsaDashboard.Samples.Monolith
             services
                 .AddElsa(options => options
                     //.UseYesSqlPersistence()
+                    //.UseMongoDbPersistence(mongo => mongo.ConnectionString = "mongodb://localhost/elsa")
                     .UseEntityFrameworkPersistence(ef => ef.UseSqlite())
                     .AddConsoleActivities()
                     .AddHttpActivities(elsaSection.GetSection("Http").Bind)
                     .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)
                     .AddQuartzTemporalActivities()
+                    .AddTelnyx(Configuration.GetSection("Telnyx").Bind)
+                    .AddJavaScriptActivities()
                     .AddWorkflowsFrom<Startup>()
                 );
 
@@ -44,7 +48,7 @@ namespace ElsaDashboard.Samples.Monolith
             
             // Elsa Dashboard.
             services.AddRazorPages();
-            services.AddElsaDashboardUI();
+            services.AddElsaDashboardUI(options => options.ElsaServerUrl = Configuration.GetValue<Uri>("Dashboard:ElsaServerUrl"));
             services.AddElsaDashboardBackend(options => options.ServerUrl = Configuration.GetValue<Uri>("Elsa:Http:BaseUrl"));
 
             if (Program.RuntimeModel == BlazorRuntimeModel.Server) 
@@ -56,7 +60,7 @@ namespace ElsaDashboard.Samples.Monolith
             
             // Allow arbitrary client browser apps to access the API for demo purposes only.
             // In a production environment, make sure to allow only origins you trust.
-            services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()));
+            services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("Content-Disposition")));
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -67,7 +71,7 @@ namespace ElsaDashboard.Samples.Monolith
                 app.UseSwagger();
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Elsa"));
                 
-                if (Program.RuntimeModel == BlazorRuntimeModel.Browser)
+                if (Program.RuntimeModel == BlazorRuntimeModel.WebAssembly)
                     app.UseWebAssemblyDebugging();
             }
             else
@@ -76,7 +80,7 @@ namespace ElsaDashboard.Samples.Monolith
                 app.UseHsts();
             }
 
-            if (Program.RuntimeModel == BlazorRuntimeModel.Browser)
+            if (Program.RuntimeModel == BlazorRuntimeModel.WebAssembly)
                 app.UseBlazorFrameworkFiles();
             
             app.UseStaticFiles();
@@ -89,6 +93,9 @@ namespace ElsaDashboard.Samples.Monolith
             {
                 // Elsa Server uses ASP.NET Core Controllers.
                 endpoints.MapControllers();
+                
+                // Telnyx webhook endpoint.
+                endpoints.MapTelnyxWebhook();
                 
                 if (Program.RuntimeModel == BlazorRuntimeModel.Server)
                     endpoints.MapBlazorHub();

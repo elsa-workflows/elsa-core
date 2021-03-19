@@ -4,19 +4,24 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.ActivityProviders;
+using Elsa.Events;
 using Elsa.Exceptions;
+using Elsa.Metadata;
 using Elsa.Services.Models;
+using MediatR;
 
 namespace Elsa.Services
 {
     public class ActivityTypeService : IActivityTypeService
     {
         private readonly IEnumerable<IActivityTypeProvider> _providers;
+        private readonly IMediator _mediator;
         private IDictionary<string, ActivityType>? _activityTypeDictionary;
 
-        public ActivityTypeService(IEnumerable<IActivityTypeProvider> providers)
+        public ActivityTypeService(IEnumerable<IActivityTypeProvider> providers, IMediator mediator)
         {
             _providers = providers;
+            _mediator = mediator;
         }
 
         public async ValueTask<IEnumerable<ActivityType>> GetActivityTypesAsync(CancellationToken cancellationToken) => (await GetDictionaryAsync(cancellationToken)).Values;
@@ -45,12 +50,20 @@ namespace Elsa.Services
             };
         }
 
+        public async ValueTask<ActivityDescriptor> DescribeActivityType(ActivityType activityType, CancellationToken cancellationToken)
+        {
+            var descriptor = activityType.Describe();
+            await _mediator.Publish(new DescribingActivityType(activityType, descriptor), cancellationToken);
+            return descriptor;
+        }
+
         private async ValueTask<IDictionary<string, ActivityType>> GetDictionaryAsync(CancellationToken cancellationToken)
         {
             if (_activityTypeDictionary != null)
                 return _activityTypeDictionary;
             
             _activityTypeDictionary = await GetActivityTypesInternalAsync(cancellationToken).ToDictionaryAsync(x => x.TypeName, cancellationToken);
+
             return _activityTypeDictionary;
         }
 

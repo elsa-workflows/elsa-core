@@ -42,9 +42,9 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IHttpResponseBodyParser, JsonHttpResponseBodyParser>()
                 .AddSingleton<IActionContextAccessor, ActionContextAccessor>()
                 .AddSingleton<IAbsoluteUrlProvider, DefaultAbsoluteUrlProvider>()
-                .AddBookmarkProvider<HttpRequestReceivedTriggerProvider>()
+                .AddBookmarkProvider<HttpEndpointBookmarkProvider>()
                 .AddHttpContextAccessor()
-                .AddNotificationHandlers(typeof(HttpJavaScriptHandler))
+                .AddNotificationHandlers(typeof(ConfigureJavaScriptEngine))
                 .AddDataProtection();
             
             return services

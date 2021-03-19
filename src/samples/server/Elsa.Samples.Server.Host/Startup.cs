@@ -1,3 +1,4 @@
+using Elsa.Activities.Telnyx.Extensions;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Sqlite;
 using Microsoft.AspNetCore.Builder;
@@ -30,16 +31,17 @@ namespace Elsa.Samples.Server.Host
                     .AddHttpActivities(elsaSection.GetSection("Http").Bind)
                     .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)
                     .AddQuartzTemporalActivities()
+                    .AddTelnyx()
                     .AddWorkflowsFrom<Startup>()
                 );
 
             services
                 .AddElsaApiEndpoints()
                 .AddElsaSwagger();
-            
+
             // Allow arbitrary client browser apps to access the API for demo purposes only.
             // In a production environment, make sure to allow only origins you trust.
-            services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()));
+            services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("Content-Disposition")));
         }
 
         public void Configure(IApplicationBuilder app)
@@ -54,8 +56,13 @@ namespace Elsa.Samples.Server.Host
             app
                 .UseCors()
                 .UseHttpActivities()
+                .UseCors()
                 .UseRouting()
-                .UseEndpoints(configure => configure.MapControllers());
+                .UseEndpoints(endpoints =>
+                {
+                    endpoints.MapControllers();
+                    endpoints.MapTelnyxWebhook();
+                });
         }
     }
 }

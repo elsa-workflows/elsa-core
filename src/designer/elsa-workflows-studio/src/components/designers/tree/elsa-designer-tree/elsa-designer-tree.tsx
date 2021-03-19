@@ -1,10 +1,11 @@
-import {Component, Host, h, Prop, State, Event, EventEmitter, Listen, Watch} from '@stencil/core';
-import {addConnection, findActivity, getChildActivities, getInboundConnections, getOutboundConnections, removeActivity} from '../../../../utils/utils';
+import {Component, Host, h, Prop, State, Event, EventEmitter, Listen, Watch, Method} from '@stencil/core';
+import {Map, addConnection, findActivity, getChildActivities, getInboundConnections, getOutboundConnections, removeActivity} from '../../../../utils/utils';
 import {cleanup, destroy, updateConnections} from '../../../../utils/jsplumb-helper';
-import {ActivityDescriptor, ActivityModel, ConnectionModel, EventTypes, WorkflowModel} from "../../../../models";
-import {eventBus} from '../../../../utils/event-bus';
+import {ActivityDescriptor, ActivityDesignDisplayContext, ActivityModel, ConnectionModel, EventTypes, WorkflowModel, WorkflowPersistenceBehavior} from "../../../../models";
+import {eventBus} from '../../../../services/event-bus';
 import jsPlumb from "jsplumb";
 import uuid = jsPlumb.jsPlumbUtil.uuid;
+import {ActivityIcon} from "../../../icons/activity-icon";
 
 @Component({
   tag: 'elsa-designer-tree',
@@ -14,17 +15,23 @@ import uuid = jsPlumb.jsPlumbUtil.uuid;
 })
 export class ElsaWorkflowDesigner {
 
-  @Prop() model: WorkflowModel = {activities: [], connections: []};
+  @Prop() model: WorkflowModel = { activities: [], connections: [], persistenceBehavior: WorkflowPersistenceBehavior.WorkflowBurst };
   @Event({eventName: 'workflow-changed', bubbles: true, composed: true, cancelable: true}) workflowChanged: EventEmitter<WorkflowModel>
   @State() workflowModel: WorkflowModel
   el: HTMLElement
   canvasElement: HTMLElement;
   parentActivityId?: string;
   parentActivityOutcome?: string;
+  activityDisplayContexts: Map<ActivityDesignDisplayContext> = {};
 
   @Watch('model')
   handleModelChanged(newValue: WorkflowModel) {
     this.workflowModel = newValue;
+  }
+
+  @Method()
+  async destroyJsPlumb(){
+    destroy();
   }
 
   @Listen('edit-activity')
@@ -42,7 +49,10 @@ export class ElsaWorkflowDesigner {
 
     eventBus.on(EventTypes.ActivityPicked, async args => {
       const activityDescriptor = (args as ActivityDescriptor);
-      const activityModel = this.addActivity(activityDescriptor, this.parentActivityId, null, this.parentActivityOutcome);
+      const connectFromRoot = !this.parentActivityOutcome || this.parentActivityOutcome == "";
+      const sourceId = connectFromRoot ? null : this.parentActivityId;
+      const targetId = connectFromRoot ? this.parentActivityId : null;
+      const activityModel = this.addActivity(activityDescriptor, sourceId, targetId, this.parentActivityOutcome);
 
       if (activityDescriptor.properties.length > 0)
         this.showActivityEditor(activityModel, false);
@@ -56,6 +66,23 @@ export class ElsaWorkflowDesigner {
 
   componentWillRender() {
     destroy();
+
+    const activityModels = this.workflowModel.activities;
+    const displayContexts: Map<ActivityDesignDisplayContext> = {};
+
+    for (const model of activityModels) {
+      const displayContext: ActivityDesignDisplayContext = {
+        activityModel: model,
+        activityIcon: <ActivityIcon/>,
+        bodyDisplay: null,
+        outcomes: [...model.outcomes]
+      };
+
+      eventBus.emit(EventTypes.ActivityDesignDisplaying, this, displayContext);
+      displayContexts[model.activityId] = displayContext;
+    }
+
+    this.activityDisplayContexts = displayContexts;
   }
 
   componentDidRender() {
@@ -64,7 +91,15 @@ export class ElsaWorkflowDesigner {
     const sourceEndpoints = this.getJsPlumbSourceEndpoints();
     const targets = this.getJsPlumbTargets();
 
-    updateConnections(canvasElement, connections, sourceEndpoints, targets);
+    const invalidConnections = updateConnections(
+      canvasElement,
+      connections,
+      sourceEndpoints,
+      targets,
+      connection => this.onConnectionCreated(connection),
+      connection => this.onConnectionDetached(connection));
+
+    this.removeInvalidConnections(invalidConnections);
   }
 
   disconnectedCallback() {
@@ -179,6 +214,110 @@ export class ElsaWorkflowDesigner {
     this.workflowChanged.emit(model);
   }
 
+  removeInvalidConnections(invalidConnections: Array<ConnectionModel>){
+    if (invalidConnections.length > 0) {
+
+      const isValid = (connection: ConnectionModel): boolean => invalidConnections.findIndex(x => x.targetId == connection.targetId && x.sourceId == connection.sourceId && x.outcome == connection.outcome) < 0;
+      const workflowModel = {...this.workflowModel};
+
+      workflowModel.connections = workflowModel.connections.filter(isValid);
+      this.updateWorkflowModel(workflowModel);
+    }
+  }
+
+  getJsPlumbConnections(): Array<any> {
+    const rootActivities = getChildActivities(this.workflowModel, null);
+
+    const rootConnections = rootActivities.flatMap(x => {
+      return [
+        {
+          sourceId: `start-button`,
+          sourceActivityId: undefined,
+          targetId: `start-button-plus-${x.activityId}`,
+          targetActivityId: x.activityId,
+          outcome: undefined
+        },
+        {
+          sourceId: `start-button-plus-${x.activityId}`,
+          sourceActivityId: undefined,
+          targetId: `activity-${x.activityId}`,
+          targetActivityId: x.activityId,
+          outcome: undefined
+        }]
+    });
+
+    const sourceConnections = this.workflowModel.activities.flatMap(activity => {
+      const displayContext = this.activityDisplayContexts[activity.activityId];
+      return displayContext.outcomes.map(x =>
+        ({
+          sourceId: `activity-${activity.activityId}`,
+          sourceActivityId: activity.activityId,
+          targetId: `${activity.activityId}-${x}`,
+          targetActivityId: undefined,
+          outcome: x
+        }));
+    });
+
+    const connections = this.workflowModel.connections.flatMap(x => [
+      {
+        sourceId: `${x.sourceId}-${x.outcome}`,
+        sourceActivityId: x.sourceId,
+        targetId: `activity-${x.targetId}`,
+        targetActivityId: x.targetId,
+        outcome: x.outcome
+      }]
+    );
+
+    return [...rootConnections, ...connections, ...sourceConnections];
+  }
+
+  getJsPlumbSourceEndpoints(): Array<any> {
+    const rootActivities = getChildActivities(this.workflowModel, null);
+
+    const rootSourceEndpoints = rootActivities.map(x =>
+      ({
+        sourceId: `start-button-plus-${x.activityId}`,
+        sourceActivityId: x.activityId,
+        outcome: undefined
+      }));
+
+    const otherSourceEndpoints = this.workflowModel.activities.flatMap(activity => {
+      const displayContext = this.activityDisplayContexts[activity.activityId];
+
+      return displayContext.outcomes.map(x =>
+        ({
+          sourceId: `${activity.activityId}-${x}`,
+          sourceActivityId: activity.activityId,
+          outcome: x
+        }));
+    });
+
+    return [...rootSourceEndpoints, ...otherSourceEndpoints];
+  }
+
+  getJsPlumbTargets() {
+    return this.workflowModel.activities.map(x =>
+      ({
+          targetId: `activity-${x.activityId}`,
+          targetActivityId: x.activityId
+        }
+      ));
+  }
+
+  onConnectionCreated(connection: ConnectionModel) {
+    const workflowModel = {...this.workflowModel};
+    workflowModel.connections = [...workflowModel.connections, connection];
+
+    this.updateWorkflowModel(workflowModel);
+  }
+
+  onConnectionDetached(connection: ConnectionModel) {
+    const workflowModel = {...this.workflowModel};
+    workflowModel.connections = workflowModel.connections.filter(x => !(x.sourceId == connection.sourceId && x.targetId == connection.targetId && x.outcome == connection.outcome));
+
+    this.updateWorkflowModel(workflowModel);
+  }
+
   onAddButtonClick() {
     this.showActivityPicker();
   }
@@ -188,6 +327,63 @@ export class ElsaWorkflowDesigner {
     this.parentActivityId = activityId;
     this.parentActivityOutcome = outcome;
     this.showActivityPicker();
+  }
+
+  async onDragStartActivity(e: DragEvent, activityDisplayContext: ActivityDesignDisplayContext) {
+    const activityModel = activityDisplayContext.activityModel;
+    e.dataTransfer.setData("text", activityModel.activityId);
+    e.dataTransfer.effectAllowed = 'move';
+  }
+
+  onDragOverOutcome(e: DragEvent, outcome: string, sourceActivityId: string) {
+    e.preventDefault();
+  }
+
+  onDropOnOutcome(e: DragEvent, outcome: string, sourceActivityId) {
+    const targetActivityId = e.dataTransfer.getData('text');
+
+    if (sourceActivityId === targetActivityId)
+      return;
+
+    e.preventDefault();
+
+    const workflowModel = {...this.workflowModel};
+    const targetActivityDisplayContext = this.activityDisplayContexts[targetActivityId];
+    let connections = [...workflowModel.connections];
+
+    // Remove current connection where dropped activity is target.
+    connections = connections.filter(x => x.targetId !== targetActivityId)
+
+    // Check if there is already a connection.
+    const existingConnection = connections.find(x => x.sourceId == sourceActivityId && x.outcome == outcome);
+
+    if (existingConnection) {
+      // Try to find a matching outcome on the dropped activity to attach the existing activity to.
+      const newOutcome = targetActivityDisplayContext.outcomes.find(x => x == existingConnection.outcome) || targetActivityDisplayContext.outcomes[0];
+
+      existingConnection.sourceId = targetActivityId;
+      existingConnection.outcome = newOutcome;
+
+      // Create new connection.
+      const newConnection: ConnectionModel = {
+        sourceId: sourceActivityId,
+        targetId: targetActivityId,
+        outcome: outcome
+      };
+
+      workflowModel.connections = [...connections, newConnection];
+    } else {
+      // Create new connection.
+      const newConnection: ConnectionModel = {
+        sourceId: sourceActivityId,
+        targetId: targetActivityId,
+        outcome: outcome
+      };
+
+      workflowModel.connections = [...connections, newConnection];
+    }
+
+    this.updateWorkflowModel(workflowModel);
   }
 
   render() {
@@ -235,12 +431,13 @@ export class ElsaWorkflowDesigner {
         {activities.map(x => {
           const activityId = x.activityId;
           const children = getChildActivities(this.workflowModel, activityId);
+          const displayContext = this.activityDisplayContexts[activityId];
 
           return <li key={x.activityId}>
             <div class="inline-flex flex flex-col items-center">
-              {isRoot ? this.renderOutcomeButton(`start-button-plus-${x.activityId}`, '', e => this.onOutcomeButtonClick(e, null, null)) : undefined}
-              {this.renderActivity(x)}
-              {this.renderOutcomeButtons(x)}
+              {isRoot ? this.renderOutcomeButton(`start-button-plus-${x.activityId}`, '', activityId, e => this.onOutcomeButtonClick(e, null, activityId)) : undefined}
+              {this.renderActivity(displayContext)}
+              {this.renderOutcomeButtons(displayContext)}
             </div>
             {children.length > 0 ? this.renderTree(children, false, renderedActivities) : undefined}
           </li>;
@@ -249,22 +446,25 @@ export class ElsaWorkflowDesigner {
     );
   }
 
-  renderOutcomeButtons(activity: ActivityModel) {
-    const activityId = activity.activityId;
+  renderOutcomeButtons(displayContext: ActivityDesignDisplayContext) {
+    const activityId = displayContext.activityModel.activityId;
 
     return (
       <div class="flex flex-row space-x-6">
-        {activity.outcomes.map(x => this.renderOutcomeButton(`${activityId}-${x}`, x, e => this.onOutcomeButtonClick(e, x, activityId)))}
+        {displayContext.outcomes.map(x => this.renderOutcomeButton(`${activityId}-${x}`, x, activityId, e => this.onOutcomeButtonClick(e, x, activityId)))}
       </div>
     );
   }
 
-  renderOutcomeButton(id: string, outcome: string, clickHandler: (e: MouseEvent) => void) {
+  renderOutcomeButton(id: string, outcome: string, activityId: string, clickHandler: (e: MouseEvent) => void) {
     return (
       <div class="my-6 flex flex-col items-center">
         {outcome && outcome.length > 0 ? <div
           class="mb-4 relative z-10 px-2.5 py-0.5 rounded-full text-xs font-medium leading-4 bg-cool-gray-100 text-cool-gray-800 capitalize">{outcome}</div> : undefined}
-        <a key={id} id={id} href="#" onClick={e => clickHandler(e)}>
+        <a key={id} id={id} href="#" onClick={e => clickHandler(e)}
+           onDragOver={e => this.onDragOverOutcome(e, outcome, activityId)}
+           onDrop={e => this.onDropOnOutcome(e, outcome, activityId)}
+        >
           <svg class="h-8 w-8 text-gray-400 hover:text-blue-500 cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
           </svg>
@@ -273,79 +473,9 @@ export class ElsaWorkflowDesigner {
     );
   }
 
-  renderActivity(activity: ActivityModel) {
-    return <elsa-designer-tree-activity activityModel={activity}/>;
-  }
-
-  getJsPlumbConnections(): Array<any> {
-    const rootActivities = getChildActivities(this.workflowModel, null);
-
-    const rootConnections = rootActivities.flatMap(x => {
-      return [
-        {
-          sourceId: `start-button`,
-          sourceActivityId: undefined,
-          targetId: `start-button-plus-${x.activityId}`,
-          targetActivityId: x.activityId,
-          outcome: undefined
-        },
-        {
-          sourceId: `start-button-plus-${x.activityId}`,
-          sourceActivityId: undefined,
-          targetId: `activity-${x.activityId}`,
-          targetActivityId: x.activityId,
-          outcome: undefined
-        }]
-    });
-
-    const sourceConnections = this.workflowModel.activities.flatMap(activity => activity.outcomes.map(x =>
-      ({
-        sourceId: `activity-${activity.activityId}`,
-        sourceActivityId: activity.activityId,
-        targetId: `${activity.activityId}-${x}`,
-        targetActivityId: undefined,
-        outcome: x
-      })));
-
-    const connections = this.workflowModel.connections.flatMap(x => [
-      {
-        sourceId: `${x.sourceId}-${x.outcome}`,
-        sourceActivityId: x.sourceId,
-        targetId: `activity-${x.targetId}`,
-        targetActivityId: x.targetId,
-        outcome: x.outcome
-      }]
-    );
-
-    return [...rootConnections, ...connections, ...sourceConnections];
-  }
-
-  getJsPlumbSourceEndpoints(): Array<any> {
-    const rootActivities = getChildActivities(this.workflowModel, null);
-
-    const rootSourceEndpoints = rootActivities.map(x =>
-      ({
-        sourceId: `start-button-plus-${x.activityId}`,
-        sourceActivityId: x.activityId,
-        outcome: undefined
-      }));
-
-    const otherSourceEndpoints = this.workflowModel.activities.flatMap(activity => activity.outcomes.map(x =>
-      ({
-        sourceId: `${activity.activityId}-${x}`,
-        sourceActivityId: activity.activityId,
-        outcome: x
-      })));
-
-    return [...rootSourceEndpoints, ...otherSourceEndpoints];
-  }
-
-  getJsPlumbTargets() {
-    return this.workflowModel.activities.map(x =>
-      ({
-          targetId: `activity-${x.activityId}`,
-          targetActivityId: x.activityId
-        }
-      ));
+  renderActivity(displayContext: ActivityDesignDisplayContext) {
+    return <elsa-designer-tree-activity displayContext={displayContext} draggable={true}
+                                        onDragStart={e => this.onDragStartActivity(e, displayContext)}
+    />;
   }
 }

@@ -16,15 +16,25 @@
     <link rel="icon" type="image/png" sizes="32x32" href="_content/ElsaDashboard.Application/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="_content/ElsaDashboard.Application/favicon-16x16.png">
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
-    <link href="_content/ElsaDashboard.Application/tailwind.css" rel="stylesheet" />
-    <link href="_content/Blazored.Modal/blazored-modal.css" rel="stylesheet" />
+    <link href="_content/ElsaDashboard.Application/tailwind.css" rel="stylesheet"/>
+    <link href="_content/Blazored.Modal/blazored-modal.css" rel="stylesheet"/>
     <link href="ElsaDashboard.Samples.Monolith.styles.css" rel="stylesheet"/>
     <script src="https://cdn.jsdelivr.net/npm/@@ryangjchandler/spruce@2.0.1/dist/spruce.umd.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.x.x/dist/alpine.js"></script>
+
+    <!--  Until I figure out why the ESM loader doesn't work properly, we need to include these scripts manually. -->
+    <script src="https://unpkg.com/monaco-editor@latest/min/vs/loader.js"></script>
 </head>
 <body class="antialiased font-sans bg-gray-200">
 
-<component type="typeof(App)" render-mode="@Program.RenderMode"/>
+@if (Program.RuntimeModel == BlazorRuntimeModel.Server)
+{
+    <component type="typeof(App)" render-mode="@Program.RenderMode"/>
+}
+else
+{
+    <div id="app">Loading...</div>
+}
 
 <div id="blazor-error-ui">
     <environment include="Staging,Production">

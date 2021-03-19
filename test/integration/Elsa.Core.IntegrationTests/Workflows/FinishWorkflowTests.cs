@@ -1,5 +1,4 @@
 using System.Threading.Tasks;
-using AutoFixture;
 using AutoFixture.Xunit2;
 using Elsa.Models;
 using Elsa.Testing.Shared.Unit;

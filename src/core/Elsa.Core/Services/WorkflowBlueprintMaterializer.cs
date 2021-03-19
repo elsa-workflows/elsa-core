@@ -5,16 +5,20 @@ using System.Threading.Tasks;
 using Elsa.ActivityProviders;
 using Elsa.Models;
 using Elsa.Services.Models;
+using Microsoft.Extensions.Logging;
+using NetBox.Extensions;
 
 namespace Elsa.Services
 {
     public class WorkflowBlueprintMaterializer : IWorkflowBlueprintMaterializer
     {
         private readonly IActivityTypeService _activityTypeService;
+        private readonly ILogger _logger;
 
-        public WorkflowBlueprintMaterializer(IActivityTypeService activityTypeService)
+        public WorkflowBlueprintMaterializer(IActivityTypeService activityTypeService, ILogger<WorkflowBlueprintMaterializer> logger)
         {
             _activityTypeService = activityTypeService;
+            _logger = logger;
         }
         
         public async Task<IWorkflowBlueprint> CreateWorkflowBlueprintAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken)
@@ -25,15 +29,14 @@ namespace Elsa.Services
             var connections = compositeActivityBlueprints.SelectMany(x => x.Connections).Distinct().ToList();
             var propertyProviders = compositeActivityBlueprints.SelectMany(x => x.ActivityPropertyProviders).ToList();
             
-            connections.AddRange(workflowDefinition.Connections.Select(x => ResolveConnection(x, activityBlueprints)));
+            connections.AddRange(workflowDefinition.Connections.Select(x => ResolveConnection(x, activityBlueprints)).Where(x => x != null).Select(x => x!));
             propertyProviders.AddRange(await CreatePropertyProviders(workflowDefinition, cancellationToken));
 
             return new WorkflowBlueprint(
-                workflowDefinition.Id,
+                workflowDefinition.DefinitionId,
                 workflowDefinition.Version,
                 workflowDefinition.TenantId,
                 workflowDefinition.IsSingleton,
-                workflowDefinition.IsEnabled,
                 workflowDefinition.Name,
                 workflowDefinition.DisplayName,
                 workflowDefinition.Description,
@@ -63,7 +66,14 @@ namespace Elsa.Services
                 
                 foreach (var property in activityDefinition.Properties)
                 {
-                    var prop = props.First(x => x.Name == property.Name);
+                    var prop = props.FirstOrDefault(x => x.Name == property.Name);
+
+                    if (prop == null)
+                    {
+                        _logger.LogWarning("Could not find the specified property '{PropertyName}' for activity type {ActivityTypeName}. Was the activity property renamed/removed/refactored after the workflow definition was created?", property.Name, activityType.Type.Name);
+                        continue;
+                    }
+                    
                     var provider = new ExpressionActivityPropertyValueProvider(property.Expression, property.Syntax, prop.PropertyType);
                     propertyProviders.AddProvider(activityDefinition.ActivityId, property.Name, provider);
                 }
@@ -72,13 +82,18 @@ namespace Elsa.Services
             return propertyProviders;
         }
 
-        private static IConnection ResolveConnection(
+        private static IConnection? ResolveConnection(
             ConnectionDefinition connectionDefinition,
             IReadOnlyDictionary<string, IActivityBlueprint> activityDictionary)
         {
-            var source = activityDictionary[connectionDefinition.SourceActivityId!];
-            var target = activityDictionary[connectionDefinition.TargetActivityId!];
+            var sourceActivityId = connectionDefinition.SourceActivityId;
+            var targetActivityId = connectionDefinition.TargetActivityId;
+            var source = sourceActivityId != null ? activityDictionary.GetValueOrDefault(sourceActivityId) : default;
+            var target = targetActivityId != null ? activityDictionary.GetValueOrDefault(targetActivityId) : default;
             var outcome = connectionDefinition.Outcome;
+
+            if (source == null || target == null)
+                return default;
 
             return new Connection(source, target, outcome!);
         }
@@ -93,20 +108,26 @@ namespace Elsa.Services
                 var activityBlueprints = manyActivityBlueprints.SelectMany(x => x).ToDictionary(x => x.Id);
                 
                 list.AddRange(activityBlueprints.Values);
-                
-                list.Add(new CompositeActivityBlueprint
+
+                var compositeActivityBlueprint = new CompositeActivityBlueprint
                 {
                     Id = activityDefinition.ActivityId,
                     Type = activityDefinition.Type,
                     Activities = activityBlueprints.Values,
-                    Connections = compositeActivityDefinition.Connections.Select(x => ResolveConnection(x, activityBlueprints)).ToList(),
+                    Connections = compositeActivityDefinition.Connections.Select(x => ResolveConnection(x, activityBlueprints)).Where(x => x != null).Select(x => x!).ToList(),
                     Name = activityDefinition.Name,
                     PersistOutput = activityDefinition.PersistOutput,
                     PersistWorkflow = activityDefinition.PersistWorkflow,
                     LoadWorkflowContext = activityDefinition.LoadWorkflowContext,
                     SaveWorkflowContext = activityDefinition.SaveWorkflowContext,
                     ActivityPropertyProviders = await CreatePropertyProviders(compositeActivityDefinition, cancellationToken)
-                });
+                }; 
+                
+                list.Add(compositeActivityBlueprint);
+                
+                // Connect the composite activity to its starting activities.
+                var startActivities = compositeActivityBlueprint.GetStartActivities().ToList();
+                compositeActivityBlueprint.Connections.AddRange(startActivities.Select(x => new Connection(compositeActivityBlueprint, x, CompositeActivity.Enter)));
             }
             else
             {

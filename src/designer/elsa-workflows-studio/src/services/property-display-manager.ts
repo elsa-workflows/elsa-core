@@ -1,6 +1,6 @@
 ﻿import {ActivityModel, ActivityPropertyDescriptor} from "../models/";
 import {PropertyDisplayDriver} from "./property-display-driver";
-import {NullPropertyDriver, TextPropertyDriver} from "../property-display-drivers";
+import {NullPropertyDriver } from "../property-display-drivers";
 import {Map} from '../utils/utils';
 
 export type PropertyDisplayDriverMap = Map<() => PropertyDisplayDriver>;
@@ -9,19 +9,17 @@ export class PropertyDisplayManager {
 
   drivers: PropertyDisplayDriverMap = {};
 
-  constructor() {
-    this.drivers = {
-      'Text': () => new TextPropertyDriver()
-    };
+  addDriver<T extends PropertyDisplayDriver>(controlType: string, driver: T) {
+    this.drivers[controlType] = () => driver;
   }
 
   display(activity: ActivityModel, property: ActivityPropertyDescriptor) {
-    const driver = this.getDriver(property.type);
+    const driver = this.getDriver(property.uiHint);
     return driver.display(activity, property);
   }
 
   update(activity: ActivityModel, property: ActivityPropertyDescriptor, form: FormData) {
-    const driver = this.getDriver(property.type);
+    const driver = this.getDriver(property.uiHint);
     return driver.update(activity, property, form);
   }
 

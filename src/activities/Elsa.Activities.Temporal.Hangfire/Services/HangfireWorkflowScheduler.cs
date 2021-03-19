@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.Temporal.Common.Services;
 using Elsa.Activities.Temporal.Hangfire.Models;
-using Elsa.Activities.Temporal.Services;
 using Hangfire;
 using NodaTime;
 

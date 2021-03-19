@@ -49,6 +49,24 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ActivityId")
+                        .HasDatabaseName("IX_Bookmark_ActivityId");
+
+                    b.HasIndex("ActivityType")
+                        .HasDatabaseName("IX_Bookmark_ActivityType");
+
+                    b.HasIndex("Hash")
+                        .HasDatabaseName("IX_Bookmark_Hash");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_Bookmark_TenantId");
+
+                    b.HasIndex("WorkflowInstanceId")
+                        .HasDatabaseName("IX_Bookmark_WorkflowInstanceId");
+
+                    b.HasIndex("ActivityType", "TenantId", "Hash")
+                        .HasDatabaseName("IX_Bookmark_ActivityType_TenantId_Hash");
+
                     b.ToTable("Bookmarks");
                 });
 
@@ -73,9 +91,6 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
                     b.Property<string>("DisplayName")
                         .HasColumnType("TEXT");
 
-                    b.Property<bool>("IsEnabled")
-                        .HasColumnType("INTEGER");
-
                     b.Property<bool>("IsLatest")
                         .HasColumnType("INTEGER");
 
@@ -98,6 +113,24 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("IsLatest")
+                        .HasDatabaseName("IX_WorkflowDefinition_IsLatest");
+
+                    b.HasIndex("IsPublished")
+                        .HasDatabaseName("IX_WorkflowDefinition_IsPublished");
+
+                    b.HasIndex("Name")
+                        .HasDatabaseName("IX_WorkflowDefinition_Name");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_WorkflowDefinition_TenantId");
+
+                    b.HasIndex("Version")
+                        .HasDatabaseName("IX_WorkflowDefinition_Version");
+
+                    b.HasIndex("DefinitionId", "Version")
+                        .HasDatabaseName("IX_WorkflowDefinition_DefinitionId_VersionId");
 
                     b.ToTable("WorkflowDefinitions");
                 });
@@ -188,6 +221,42 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ContextId")
+                        .HasDatabaseName("IX_WorkflowInstance_ContextId");
+
+                    b.HasIndex("ContextType")
+                        .HasDatabaseName("IX_WorkflowInstance_ContextType");
+
+                    b.HasIndex("CorrelationId")
+                        .HasDatabaseName("IX_WorkflowInstance_CorrelationId");
+
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("IX_WorkflowInstance_CreatedAt");
+
+                    b.HasIndex("DefinitionId")
+                        .HasDatabaseName("IX_WorkflowInstance_DefinitionId");
+
+                    b.HasIndex("FaultedAt")
+                        .HasDatabaseName("IX_WorkflowInstance_FaultedAt");
+
+                    b.HasIndex("FinishedAt")
+                        .HasDatabaseName("IX_WorkflowInstance_FinishedAt");
+
+                    b.HasIndex("LastExecutedAt")
+                        .HasDatabaseName("IX_WorkflowInstance_LastExecutedAt");
+
+                    b.HasIndex("Name")
+                        .HasDatabaseName("IX_WorkflowInstance_Name");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_WorkflowInstance_TenantId");
+
+                    b.HasIndex("WorkflowStatus")
+                        .HasDatabaseName("IX_WorkflowInstance_WorkflowStatus");
+
+                    b.HasIndex("WorkflowStatus", "DefinitionId", "Version")
+                        .HasDatabaseName("IX_WorkflowInstance_WorkflowStatus_DefinitionId_Version");
 
                     b.ToTable("WorkflowInstances");
                 });
