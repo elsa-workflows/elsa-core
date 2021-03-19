@@ -53,6 +53,9 @@ namespace Elsa.Scripting.JavaScript.Services
                 var json = JsonConvert.SerializeObject(returnValue);
                 return JsonConvert.DeserializeObject(json, returnType);
             }
+
+            if (returnType == typeof(object))
+                return returnValue;
             
             return Convert.ChangeType(returnValue, returnType);
         }
