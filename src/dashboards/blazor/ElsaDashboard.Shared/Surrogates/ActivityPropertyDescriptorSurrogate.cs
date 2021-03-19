@@ -16,6 +16,7 @@ namespace ElsaDashboard.Shared.Surrogates
             Hint = value.Hint;
             Options = value.Options?.ToString(Formatting.None);
             Category = value.Category;
+            DefaultValue = value.DefaultValue?.ToString(Formatting.None);
         }
 
         [ProtoMember(1)] public string? Name { get; }
@@ -24,6 +25,7 @@ namespace ElsaDashboard.Shared.Surrogates
         [ProtoMember(4)] public string? Hint { get; }
         [ProtoMember(5)] public string? Options { get; }
         [ProtoMember(6)] public string? Category { get; }
+        [ProtoMember(7)] public string? DefaultValue { get; }
 
         public static implicit operator ActivityPropertyDescriptor?(ActivityPropertyDescriptorSurrogate? surrogate) =>
             surrogate != null
@@ -34,7 +36,8 @@ namespace ElsaDashboard.Shared.Surrogates
                     Hint = surrogate.Hint,
                     Label = surrogate.Label,
                     Options = surrogate.Options is null or "" ? default : JToken.Parse(surrogate.Options),
-                    Category = surrogate.Category
+                    Category = surrogate.Category,
+                    DefaultValue = surrogate.DefaultValue is null or "" ? default : JToken.Parse(surrogate.DefaultValue)
                 }
                 : default;
 

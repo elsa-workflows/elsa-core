@@ -40,28 +40,28 @@ namespace Elsa.Activities.Telnyx.Activities
         [ActivityProperty(Label = "Command ID", Hint = "Use this field to avoid duplicate commands. Telnyx will ignore commands with the same Command ID.", Category = PropertyCategories.Advanced)]
         public string? CommandId { get; set; }
 
-        [ActivityProperty(Label = "Inter Digit Timeout", Hint = "The number of milliseconds to wait for input between digits.", Category = PropertyCategories.Advanced)]
+        [ActivityProperty(Label = "Inter Digit Timeout", Hint = "The number of milliseconds to wait for input between digits.", Category = PropertyCategories.Advanced, DefaultValue = 5000)]
         public int? InterDigitTimeoutMillis { get; set; } = 5000;
 
         [ActivityProperty(Label = "Invalid Audio Url", Hint = "The URL of a file to play when digits don't match the Valid Digits setting or the number of digits is not between Min and Max. The URL can point to either a WAV or MP3 file.")]
         public Uri? InvalidAudioUrl { get; set; }
 
-        [ActivityProperty(Label = "Valid Digits", Hint = "A list of all digits accepted as valid.", Category = PropertyCategories.Advanced)]
+        [ActivityProperty(Label = "Valid Digits", Hint = "A list of all digits accepted as valid.", Category = PropertyCategories.Advanced, DefaultValue = "0123456789#*")]
         public string? ValidDigits { get; set; } = "0123456789#*";
 
-        [ActivityProperty(Label = "Minimum Digits", Hint = "The minimum number of digits to fetch. This parameter has a minimum value of 1.")]
+        [ActivityProperty(Label = "Minimum Digits", Hint = "The minimum number of digits to fetch. This parameter has a minimum value of 1.", DefaultValue = 1)]
         public int? MinimumDigits { get; set; } = 1;
 
-        [ActivityProperty(Label = "Maximum Digits", Hint = "The maximum number of digits to fetch. This parameter has a maximum value of 128.")]
+        [ActivityProperty(Label = "Maximum Digits", Hint = "The maximum number of digits to fetch. This parameter has a maximum value of 128.", DefaultValue = 128)]
         public int? MaximumDigits { get; set; } = 128;
 
-        [ActivityProperty(Label = "Maximum Tries", Hint = "The maximum number of times the file should be played if there is no input from the user on the call.")]
+        [ActivityProperty(Label = "Maximum Tries", Hint = "The maximum number of times the file should be played if there is no input from the user on the call.", DefaultValue = 3)]
         public int? MaximumTries { get; set; } = 3;
 
-        [ActivityProperty(Label = "Terminating Digit", Hint = "The digit used to terminate input if fewer than `maximum_digits` digits have been gathered.")]
+        [ActivityProperty(Label = "Terminating Digit", Hint = "The digit used to terminate input if fewer than `maximum_digits` digits have been gathered.", DefaultValue = "#")]
         public string? TerminatingDigit { get; set; } = "#";
 
-        [ActivityProperty(Label = "Timeout", Hint = "The number of milliseconds to wait for a DTMF response after file playback ends before a replaying the sound file.", Category = PropertyCategories.Advanced)]
+        [ActivityProperty(Label = "Timeout", Hint = "The number of milliseconds to wait for a DTMF response after file playback ends before a replaying the sound file.", Category = PropertyCategories.Advanced, DefaultValue = 60000)]
         public int? TimeoutMillis { get; set; } = 60000;
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
