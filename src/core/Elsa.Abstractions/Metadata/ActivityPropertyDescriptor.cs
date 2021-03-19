@@ -6,7 +6,7 @@ namespace Elsa.Metadata
         {
         }
 
-        public ActivityPropertyDescriptor(string name, string uiHint, string label, string? hint, object? options, string? category, object? defaultValue)
+        public ActivityPropertyDescriptor(string name, string uiHint, string label, string? hint = default, object? options = default, string? category = default, object? defaultValue = default)
         {
             Name = name;
             UIHint = uiHint;
