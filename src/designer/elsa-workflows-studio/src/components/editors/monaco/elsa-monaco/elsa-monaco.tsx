@@ -45,7 +45,6 @@ export class ElsaMonaco {
       filePath: libUri
     }]);
 
-    //debugger;
     const oldModel = monaco.editor.getModel(libUri);
 
     if (oldModel)
@@ -90,6 +89,7 @@ export class ElsaMonaco {
         minimap: {
           enabled: false
         },
+        automaticLayout: true,
         lineNumbers: "on",
         theme: "vs",
         roundedSelection: true,

@@ -6,13 +6,14 @@ namespace Elsa.Metadata
         {
         }
 
-        public ActivityPropertyDescriptor(string name, string uiHint, string label, string? hint, object? options)
+        public ActivityPropertyDescriptor(string name, string uiHint, string label, string? hint, object? options, string category)
         {
             Name = name;
             UIHint = uiHint;
             Label = label;
             Hint = hint;
             Options = options;
+            Category = category;
         }
         
         public string Name { get; set; } = default!;
@@ -20,5 +21,6 @@ namespace Elsa.Metadata
         public string Label { get; set; } = default!;
         public string? Hint { get; set; }
         public object? Options { get; set; }
+        public string? Category { get; set; }
     }
 }

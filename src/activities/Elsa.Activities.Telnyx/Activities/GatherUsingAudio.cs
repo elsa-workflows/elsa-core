@@ -5,6 +5,7 @@ using Elsa.Activities.Telnyx.Client.Models;
 using Elsa.Activities.Telnyx.Client.Services;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Design;
 using Elsa.Exceptions;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -27,25 +28,25 @@ namespace Elsa.Activities.Telnyx.Activities
             _telnyxClient = telnyxClient;
         }
 
-        [ActivityProperty(Label = "Call Control ID", Hint = "Unique identifier and token for controlling the call")]
+        [ActivityProperty(Label = "Call Control ID", Hint = "Unique identifier and token for controlling the call", Category = PropertyCategories.Advanced)]
         public string CallControlId { get; set; } = default!;
 
         [ActivityProperty(Label = "Audio URL", Hint = "The URL of a file to be played back at the beginning of each prompt. The URL can point to either a WAV or MP3 file.")]
         public Uri AudioUrl { get; set; } = default!;
 
-        [ActivityProperty(Label = "Client State", Hint = "Use this field to add state to every subsequent webhook. It must be a valid Base-64 encoded string.")]
+        [ActivityProperty(Label = "Client State", Hint = "Use this field to add state to every subsequent webhook. It must be a valid Base-64 encoded string.", Category = PropertyCategories.Advanced)]
         public string? ClientState { get; set; }
 
-        [ActivityProperty(Label = "Command ID", Hint = "Use this field to avoid duplicate commands. Telnyx will ignore commands with the same Command ID.")]
+        [ActivityProperty(Label = "Command ID", Hint = "Use this field to avoid duplicate commands. Telnyx will ignore commands with the same Command ID.", Category = PropertyCategories.Advanced)]
         public string? CommandId { get; set; }
 
-        [ActivityProperty(Label = "Inter Digit Timeout", Hint = "The number of milliseconds to wait for input between digits.")]
+        [ActivityProperty(Label = "Inter Digit Timeout", Hint = "The number of milliseconds to wait for input between digits.", Category = PropertyCategories.Advanced)]
         public int? InterDigitTimeoutMillis { get; set; } = 5000;
 
         [ActivityProperty(Label = "Invalid Audio Url", Hint = "The URL of a file to play when digits don't match the Valid Digits setting or the number of digits is not between Min and Max. The URL can point to either a WAV or MP3 file.")]
         public Uri? InvalidAudioUrl { get; set; }
 
-        [ActivityProperty(Label = "Valid Digits", Hint = "A list of all digits accepted as valid.")]
+        [ActivityProperty(Label = "Valid Digits", Hint = "A list of all digits accepted as valid.", Category = PropertyCategories.Advanced)]
         public string? ValidDigits { get; set; } = "0123456789#*";
 
         [ActivityProperty(Label = "Minimum Digits", Hint = "The minimum number of digits to fetch. This parameter has a minimum value of 1.")]
@@ -60,7 +61,7 @@ namespace Elsa.Activities.Telnyx.Activities
         [ActivityProperty(Label = "Terminating Digit", Hint = "The digit used to terminate input if fewer than `maximum_digits` digits have been gathered.")]
         public string? TerminatingDigit { get; set; } = "#";
 
-        [ActivityProperty(Label = "Timeout", Hint = "The number of milliseconds to wait for a DTMF response after file playback ends before a replaying the sound file.")]
+        [ActivityProperty(Label = "Timeout", Hint = "The number of milliseconds to wait for a DTMF response after file playback ends before a replaying the sound file.", Category = PropertyCategories.Advanced)]
         public int? TimeoutMillis { get; set; } = 60000;
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)

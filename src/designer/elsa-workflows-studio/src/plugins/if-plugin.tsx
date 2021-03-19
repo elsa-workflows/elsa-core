@@ -17,6 +17,8 @@ export class IfPlugin implements ElsaPlugin {
     const props = activityModel.properties || [];
     const condition = props.find(x => x.name == 'Condition') || { expression: '' };
     const expression = condition.expression || '';
-    context.bodyDisplay = <p>{expression}</p>;
+    const description = activityModel.description;
+    const bodyText = description && description.length > 0 ? description : expression;
+    context.bodyDisplay = <p>{bodyText}</p>;
   }
 }
