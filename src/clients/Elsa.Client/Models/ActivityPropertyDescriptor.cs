@@ -12,5 +12,6 @@ namespace Elsa.Client.Models
         [DataMember(Order = 4)] public string? Hint { get; set; }
         [DataMember(Order = 5)] public JToken? Options { get; set; }
         [DataMember(Order = 6)] public string? Category { get; set; }
+        [DataMember(Order = 7)] public JToken? DefaultValue { get; set; }
     }
 }
