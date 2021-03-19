@@ -57,7 +57,7 @@ namespace Elsa.Activities.Http
         /// The <see cref="Type"/> to parse the received request content into if <seealso cref="ReadContent"/> is set to true.
         /// If not set, the content will be parse into a default type, depending on the parser associated with the received content-type header.
         /// </summary>
-        [ActivityProperty]
+        [ActivityProperty(Category = PropertyCategories.Advanced)]
         public Type? TargetType { get; set; }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context) => context.WorkflowExecutionContext.IsFirstPass ? await ExecuteInternalAsync(context.CancellationToken) : Suspend();

@@ -22,7 +22,5 @@ export class RunJavascriptPlugin implements ElsaPlugin {
 
     if(context.outcomes.length == 0)
       context.outcomes = ['Done'];
-
-    context.bodyDisplay = undefined;
   }
 }
