@@ -86,11 +86,11 @@ namespace Elsa.Activities.Telnyx.Activities
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            await TransferCallAsync(context.CancellationToken);
+            await TransferCallAsync(context);
             return Done();
         }
 
-        private async ValueTask TransferCallAsync(CancellationToken cancellationToken)
+        private async ValueTask TransferCallAsync(ActivityExecutionContext context)
         {
             var request = new TransferCallRequest(
                 To,
@@ -111,9 +111,11 @@ namespace Elsa.Activities.Telnyx.Activities
                 WebhookUrlMethod
             );
 
+            var callControlId = CallControlId is not null and not "" ? CallControlId : context.CorrelationId ?? throw new InvalidOperationException("Cannot answer call without a call control ID");
+            
             try
             {
-                await _telnyxClient.Calls.TransferCallAsync(CallControlId, request, cancellationToken);
+                await _telnyxClient.Calls.TransferCallAsync(callControlId, request, context.CancellationToken);
             }
             catch (ApiException e)
             {

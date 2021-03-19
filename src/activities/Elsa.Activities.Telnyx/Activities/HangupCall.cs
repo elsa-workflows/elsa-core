@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Telnyx.Client.Models;
 using Elsa.Activities.Telnyx.Client.Services;
@@ -38,17 +39,18 @@ namespace Elsa.Activities.Telnyx.Activities
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            await HangupCallAsync(context.CancellationToken);
+            await HangupCallAsync(context);
             return Done();
         }
 
-        private async ValueTask HangupCallAsync(CancellationToken cancellationToken)
+        private async ValueTask HangupCallAsync(ActivityExecutionContext context)
         {
+            var callControlId = CallControlId is not null and not "" ? CallControlId : context.CorrelationId ?? throw new InvalidOperationException("Cannot answer call without a call control ID");
             var request = new HangupCallRequest(ClientState, CommandId);
             
             try
             {
-                await _telnyxClient.Calls.HangupCallAsync(CallControlId, request, cancellationToken);
+                await _telnyxClient.Calls.HangupCallAsync(callControlId, request, context.CancellationToken);
             }
             catch (ApiException e)
             {

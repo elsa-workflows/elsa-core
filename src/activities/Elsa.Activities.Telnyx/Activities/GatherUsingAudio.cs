@@ -66,11 +66,11 @@ namespace Elsa.Activities.Telnyx.Activities
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            await GatherUsingAudioAsync(context.CancellationToken);
+            await GatherUsingAudioAsync(context);
             return Done();
         }
 
-        private async ValueTask GatherUsingAudioAsync(CancellationToken cancellationToken)
+        private async ValueTask GatherUsingAudioAsync(ActivityExecutionContext context)
         {
             var request = new GatherUsingAudioRequest(
                 AudioUrl,
@@ -85,10 +85,12 @@ namespace Elsa.Activities.Telnyx.Activities
                 TimeoutMillis,
                 EmptyToNull(ValidDigits)
             );
+            
+            var callControlId = CallControlId is not null and not "" ? CallControlId : context.CorrelationId ?? throw new InvalidOperationException("Cannot answer call without a call control ID");
 
             try
             {
-                await _telnyxClient.Calls.GatherUsingAudiAsync(CallControlId, request, cancellationToken);
+                await _telnyxClient.Calls.GatherUsingAudiAsync(callControlId, request, context.CancellationToken);
             }
             catch (ApiException e)
             {
