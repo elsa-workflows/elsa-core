@@ -155,7 +155,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ElsaDashboard.Backend", "sr
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ElsaDashboard.WebAssembly", "src\dashboards\blazor\ElsaDashboard.WebAssembly\ElsaDashboard.WebAssembly.csproj", "{0AA2A003-C79E-4B43-803E-E1150254D2B0}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "timers", "timers", "{37D2E628-5CC1-4C8E-8C02-3B0A29E2ACAA}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "temporal", "temporal", "{37D2E628-5CC1-4C8E-8C02-3B0A29E2ACAA}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.Temporal.Quartz", "src\activities\Elsa.Activities.Temporal.Quartz\Elsa.Activities.Temporal.Quartz.csproj", "{08D9CB18-2BFB-4CF2-9763-5EE913F56D3E}"
 EndProject

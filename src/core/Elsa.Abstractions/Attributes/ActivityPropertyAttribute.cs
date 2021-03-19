@@ -34,5 +34,10 @@ namespace Elsa.Attributes
         /// The name of a static method that provides options.
         /// </summary>
         public Type? OptionsProvider { get; set; }
+
+        /// <summary>
+        /// A category to group this property with.
+        /// </summary>
+        public string? Category { get; set; }
     }
 }

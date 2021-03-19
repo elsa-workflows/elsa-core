@@ -1,8 +1,6 @@
 using Elsa.Client.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using NodaTime;
-using NodaTime.Serialization.JsonNet;
 using ProtoBuf;
 
 namespace ElsaDashboard.Shared.Surrogates
@@ -10,17 +8,6 @@ namespace ElsaDashboard.Shared.Surrogates
     [ProtoContract(IgnoreListHandling = true)]
     public class ActivityPropertyDescriptorSurrogate
     {
-        private static readonly JsonSerializerSettings SerializerSettings;
-
-        static ActivityPropertyDescriptorSurrogate()
-        {
-            SerializerSettings = new JsonSerializerSettings().ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
-        }
-
-        public ActivityPropertyDescriptorSurrogate()
-        {
-        }
-
         public ActivityPropertyDescriptorSurrogate(ActivityPropertyDescriptor value)
         {
             Name = value.Name;
@@ -28,6 +15,7 @@ namespace ElsaDashboard.Shared.Surrogates
             Label = value.Label;
             Hint = value.Hint;
             Options = value.Options?.ToString(Formatting.None);
+            Category = value.Category;
         }
 
         [ProtoMember(1)] public string? Name { get; }
@@ -35,6 +23,7 @@ namespace ElsaDashboard.Shared.Surrogates
         [ProtoMember(3)] public string? Label { get; }
         [ProtoMember(4)] public string? Hint { get; }
         [ProtoMember(5)] public string? Options { get; }
+        [ProtoMember(6)] public string? Category { get; }
 
         public static implicit operator ActivityPropertyDescriptor?(ActivityPropertyDescriptorSurrogate? surrogate) =>
             surrogate != null
@@ -44,7 +33,8 @@ namespace ElsaDashboard.Shared.Surrogates
                     UIHint = surrogate.Type!,
                     Hint = surrogate.Hint,
                     Label = surrogate.Label,
-                    Options = surrogate.Options is null or "" ? default : JToken.Parse(surrogate.Options) 
+                    Options = surrogate.Options is null or "" ? default : JToken.Parse(surrogate.Options),
+                    Category = surrogate.Category
                 }
                 : default;
 

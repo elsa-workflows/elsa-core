@@ -71,10 +71,15 @@ export class ElsaWorkflowDesigner {
     const displayContexts: Map<ActivityDesignDisplayContext> = {};
 
     for (const model of activityModels) {
+
+      const description = model.description;
+      const bodyText = description && description.length > 0 ? description : undefined;
+      const bodyDisplay = bodyText ? <p>{bodyText}</p> : undefined;
+
       const displayContext: ActivityDesignDisplayContext = {
         activityModel: model,
         activityIcon: <ActivityIcon/>,
-        bodyDisplay: null,
+        bodyDisplay: bodyDisplay,
         outcomes: [...model.outcomes]
       };
 

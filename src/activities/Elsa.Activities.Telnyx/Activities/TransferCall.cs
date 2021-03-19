@@ -29,7 +29,7 @@ namespace Elsa.Activities.Telnyx.Activities
             _telnyxClient = telnyxClient;
         }
 
-        [ActivityProperty(Label = "Call Control ID", Hint = "Unique identifier and token for controlling the call.")]
+        [ActivityProperty(Label = "Call Control ID", Hint = "Unique identifier and token for controlling the call.", Category = PropertyCategories.Advanced)]
         public string CallControlId { get; set; } = default!;
 
         [ActivityProperty(Label = "To", Hint = "The DID or SIP URI to dial out and bridge to the given call.")]
@@ -48,49 +48,49 @@ namespace Elsa.Activities.Telnyx.Activities
             Options = new[] { "disabled", "detect", "detect_beep", "detect_words", "greeting_end" })]
         public string? AnsweringMachineDetection { get; set; }
 
-        [ActivityProperty(Label = "Answering Machine Detection Configuration", Hint = "Optional configuration parameters to modify answering machine detection performance.")]
+        [ActivityProperty(Label = "Answering Machine Detection Configuration", Hint = "Optional configuration parameters to modify answering machine detection performance.", Category = PropertyCategories.Advanced)]
         public AnsweringMachineConfig? AnsweringMachineDetectionConfig { get; set; }
 
-        [ActivityProperty(Label = "Command ID", Hint = "Use this field to avoid duplicate commands. Telnyx will ignore commands with the same Command ID.")]
+        [ActivityProperty(Label = "Command ID", Hint = "Use this field to avoid duplicate commands. Telnyx will ignore commands with the same Command ID.", Category = PropertyCategories.Advanced)]
         public string? CommandId { get; set; }
 
         [ActivityProperty(Label = "Audio URL", Hint = "Audio URL to be played back when the transfer destination answers before bridging the call. The URL can point to either a WAV or MP3 file.")]
         public Uri? AudioUrl { get; set; }
 
-        [ActivityProperty(Label = "Client State", Hint = "Use this field to add state to every subsequent webhook. It must be a valid Base-64 encoded string.")]
+        [ActivityProperty(Label = "Client State", Hint = "Use this field to add state to every subsequent webhook. It must be a valid Base-64 encoded string.", Category = PropertyCategories.Advanced)]
         public string? ClientState { get; set; }
 
-        [ActivityProperty(Label = "Target Leg Client State", Hint = "Use this field to add state to every subsequent webhook for the new leg. It must be a valid Base-64 encoded string.")]
+        [ActivityProperty(Label = "Target Leg Client State", Hint = "Use this field to add state to every subsequent webhook for the new leg. It must be a valid Base-64 encoded string.", Category = PropertyCategories.Advanced)]
         public string? TargetLegClientState { get; set; }
 
-        [ActivityProperty(Label = "Custom Headers", Hint = "Custom headers to be added to the SIP INVITE.")]
+        [ActivityProperty(Label = "Custom Headers", Hint = "Custom headers to be added to the SIP INVITE.", Category = PropertyCategories.Advanced)]
         public IList<Header>? CustomHeaders { get; set; }
 
-        [ActivityProperty(Label = "SIP Authentication Username", Hint = "SIP Authentication username used for SIP challenges.")]
+        [ActivityProperty(Label = "SIP Authentication Username", Hint = "SIP Authentication username used for SIP challenges.", Category = "SIP Authentication")]
         public string? SipAuthUsername { get; set; }
 
-        [ActivityProperty(Label = "SIP Authentication Password", Hint = "SIP Authentication password used for SIP challenges.")]
+        [ActivityProperty(Label = "SIP Authentication Password", Hint = "SIP Authentication password used for SIP challenges.", Category = "SIP Authentication")]
         public string? SipAuthPassword { get; set; }
 
-        [ActivityProperty(Label = "Time Limit", Hint = "Sets the maximum duration of a Call Control Leg in seconds.")]
+        [ActivityProperty(Label = "Time Limit", Hint = "Sets the maximum duration of a Call Control Leg in seconds.", Category = PropertyCategories.Advanced)]
         public int? TimeLimitSecs { get; set; }
 
-        [ActivityProperty(Label = "Timeout", Hint = "The number of seconds that Telnyx will wait for the call to be answered by the destination to which it is being transferred.")]
+        [ActivityProperty(Label = "Timeout", Hint = "The number of seconds that Telnyx will wait for the call to be answered by the destination to which it is being transferred.", Category = PropertyCategories.Advanced)]
         public int? TimeoutSecs { get; set; }
 
-        [ActivityProperty(Label = "Webhook URL", Hint = "Use this field to override the URL for which Telnyx will send subsequent webhooks to for this call.")]
+        [ActivityProperty(Label = "Webhook URL", Hint = "Use this field to override the URL for which Telnyx will send subsequent webhooks to for this call.", Category = PropertyCategories.Advanced)]
         public string? WebhookUrl { get; set; }
 
-        [ActivityProperty(Label = "Webhook URL Method", Hint = "HTTP request type used for Webhook URL", UIHint = ActivityPropertyUIHints.Dropdown, Options = new[] { "GET", "POST" })]
+        [ActivityProperty(Label = "Webhook URL Method", Hint = "HTTP request type used for Webhook URL", UIHint = ActivityPropertyUIHints.Dropdown, Options = new[] { "GET", "POST" }, Category = PropertyCategories.Advanced)]
         public string? WebhookUrlMethod { get; set; }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            await TransferCallAsync(context.CancellationToken);
+            await TransferCallAsync(context);
             return Done();
         }
 
-        private async ValueTask TransferCallAsync(CancellationToken cancellationToken)
+        private async ValueTask TransferCallAsync(ActivityExecutionContext context)
         {
             var request = new TransferCallRequest(
                 To,
@@ -111,9 +111,11 @@ namespace Elsa.Activities.Telnyx.Activities
                 WebhookUrlMethod
             );
 
+            var callControlId = CallControlId is not null and not "" ? CallControlId : context.CorrelationId ?? throw new InvalidOperationException("Cannot answer call without a call control ID");
+            
             try
             {
-                await _telnyxClient.Calls.TransferCallAsync(CallControlId, request, cancellationToken);
+                await _telnyxClient.Calls.TransferCallAsync(callControlId, request, context.CancellationToken);
             }
             catch (ApiException e)
             {

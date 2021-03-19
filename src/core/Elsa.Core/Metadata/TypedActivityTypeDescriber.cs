@@ -58,7 +58,8 @@ namespace Elsa.Metadata
                     _uiHintResolver.GetUIHint(propertyInfo),
                     activityPropertyAttribute.Label ?? propertyInfo.Name.Humanize(LetterCasing.Title),
                     activityPropertyAttribute.Hint,
-                    _optionsResolver.GetOptions(propertyInfo)
+                    _optionsResolver.GetOptions(propertyInfo),
+                    activityPropertyAttribute.Category
                 );
             }
         }

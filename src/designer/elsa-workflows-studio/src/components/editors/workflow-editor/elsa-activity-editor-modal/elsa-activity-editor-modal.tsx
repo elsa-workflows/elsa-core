@@ -18,12 +18,14 @@ export class ElsaActivityPickerModal {
   dialog: HTMLElsaModalDialogElement;
   form: HTMLFormElement;
   formContext: FormContext;
+  renderProps: any;
 
   componentDidLoad() {
     eventBus.on(EventTypes.ShowActivityEditor, async (activity: ActivityModel, animate: boolean) => {
       this.activityModel = {...activity, properties: activity.properties || []};
       this.activityDescriptor = state.activityDescriptors.find(x => x.type == activity.type);
       this.formContext = new FormContext(this.activityModel, newValue => this.activityModel = newValue);
+      this.selectedTab = 'Properties';
       await this.dialog.show(animate);
     });
   }
@@ -55,13 +57,45 @@ export class ElsaActivityPickerModal {
     this.selectedTab = tab;
   }
 
+  componentWillRender(){
+    const activityDescriptor = this.activityDescriptor || {displayName: '', type: '', outcomes: [], category: '', traits: 0, browsable: false, properties: [], description: ''};
+    const propertyCategories = activityDescriptor.properties.filter(x => x.category).map(x => x.category).distinct();
+    const defaultProperties = activityDescriptor.properties.filter(x => !x.category || x.category.length == 0);
+    let tabs: Array<string> = [];
+
+    if(defaultProperties.length > 0) {
+      tabs.push('Properties');
+    }
+
+    tabs.push('Common');
+    tabs.push('Behaviors');
+    tabs = [...tabs, ...propertyCategories];
+    let selectedTab = this.selectedTab;
+
+    if(tabs.findIndex(x => x === selectedTab) < 0)
+      selectedTab = tabs[0];
+
+    const activityModel: ActivityModel = this.activityModel || {type: '', activityId: '', outcomes: [], properties: []};
+
+    this.renderProps = {
+      activityDescriptor,
+      propertyCategories,
+      defaultProperties,
+      tabs,
+      selectedTab,
+      activityModel
+    }
+  }
+
   render() {
-    const tabs = ['Properties', 'Common', 'Behaviors'];
-    const selectedTab = this.selectedTab;
+    const renderProps = this.renderProps;
+    const activityDescriptor = renderProps.activityDescriptor;
+    const propertyCategories = renderProps.propertyCategories;
+    const tabs = renderProps.tabs;
+    const selectedTab = renderProps.selectedTab;
+    const activityModel: ActivityModel = renderProps.activityModel;
     const inactiveClass = 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300';
     const selectedClass = 'border-blue-500 text-blue-600';
-    const activityModel: ActivityModel = this.activityModel || {type: '', activityId: '', outcomes: [], properties: []};
-    const activityDescriptor = this.activityDescriptor || {displayName: '', type: '', outcomes: [], category: '', traits: 0, browsable: false, properties: [], description: ''};
 
     return (
       <Host>
@@ -91,7 +125,7 @@ export class ElsaActivityPickerModal {
                     </div>
 
                     <div class="mt-8">
-                      {this.renderSelectedTab(activityModel, activityDescriptor)}
+                      {this.renderSelectedTab(activityModel, activityDescriptor, propertyCategories)}
                     </div>
                   </div>
 
@@ -119,11 +153,12 @@ export class ElsaActivityPickerModal {
     );
   }
 
-  renderSelectedTab(activityModel: ActivityModel, activityDescriptor: ActivityDescriptor) {
+  renderSelectedTab(activityModel: ActivityModel, activityDescriptor: ActivityDescriptor, categories: Array<string>) {
     return [
       this.renderWorkflowContextTab(activityModel),
       this.renderCommonTab(activityModel),
-      this.renderPropertiesTab(activityModel, activityDescriptor)
+      this.renderPropertiesTab(activityModel, activityDescriptor),
+      this.renderCategoryTabs(activityModel, activityDescriptor, categories)
     ];
   }
 
@@ -157,7 +192,11 @@ export class ElsaActivityPickerModal {
   }
 
   renderPropertiesTab(activityModel: ActivityModel, activityDescriptor: ActivityDescriptor) {
-    const propertyDescriptors: Array<ActivityPropertyDescriptor> = activityDescriptor.properties;
+    const propertyDescriptors: Array<ActivityPropertyDescriptor> = this.renderProps.defaultProperties;
+
+    if(propertyDescriptors.length == 0)
+      return undefined;
+
     const key = `activity-settings:${activityModel.activityId}`;
 
     return (
@@ -167,11 +206,25 @@ export class ElsaActivityPickerModal {
     );
   }
 
+  renderCategoryTabs(activityModel: ActivityModel, activityDescriptor: ActivityDescriptor, categories: Array<string>) {
+    const propertyDescriptors: Array<ActivityPropertyDescriptor> = activityDescriptor.properties;
+
+    return (
+      categories.map(category => {
+        const descriptors = propertyDescriptors.filter(x => x.category == category);
+        const key = `activity-settings:${activityModel.activityId}:${category}`;
+        return <div key={key} class={`grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6 ${this.getHiddenClass(category)}`}>
+          {descriptors.map(property => this.renderPropertyEditor(activityModel, property))}
+        </div>
+      })
+    );
+  }
+
   renderPropertyEditor(activity: ActivityModel, property: ActivityPropertyDescriptor) {
     return propertyDisplayManager.display(activity, property);
   }
 
   getHiddenClass(tab: string) {
-    return this.selectedTab == tab ? '' : 'hidden';
+    return this.renderProps.selectedTab == tab ? '' : 'hidden';
   }
 }

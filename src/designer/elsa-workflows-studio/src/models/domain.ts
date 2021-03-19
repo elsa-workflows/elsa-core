@@ -1,23 +1,23 @@
 ﻿import {Map} from '../utils/utils';
 
 export interface WorkflowDefinition {
-  id?: string,
-  definitionId?: string,
-  tenantId?: string,
-  name?: string,
-  displayName?: string,
-  description?: string,
-  version: number,
-  variables?: Variables,
-  customAttributes?: Variables,
-  contextOptions?: WorkflowContextOptions,
-  isSingleton?: boolean,
-  persistenceBehavior?: WorkflowPersistenceBehavior,
-  deleteCompletedInstances?: boolean,
-  isPublished?: boolean,
-  isLatest?: boolean,
-  activities: Array<ActivityDefinition>,
-  connections: Array<ConnectionDefinition>
+  id?: string;
+  definitionId?: string;
+  tenantId?: string;
+  name?: string;
+  displayName?: string;
+  description?: string;
+  version: number;
+  variables?: Variables;
+  customAttributes?: Variables;
+  contextOptions?: WorkflowContextOptions;
+  isSingleton?: boolean;
+  persistenceBehavior?: WorkflowPersistenceBehavior;
+  deleteCompletedInstances?: boolean;
+  isPublished?: boolean;
+  isLatest?: boolean;
+  activities: Array<ActivityDefinition>;
+  connections: Array<ConnectionDefinition>;
 }
 
 export interface ActivityDefinition {
@@ -106,6 +106,7 @@ export interface ActivityPropertyDescriptor {
   label?: string;
   hint?: string;
   options?: any;
+  category?: string;
 }
 
 export enum ActivityTraits {

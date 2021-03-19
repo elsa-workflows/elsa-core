@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Telnyx.Client.Models;
 using Elsa.Activities.Telnyx.Client.Services;
@@ -25,34 +26,35 @@ namespace Elsa.Activities.Telnyx.Activities
             _telnyxClient = telnyxClient;
         }
 
-        [ActivityProperty(Label = "Call Control ID", Hint = "Unique identifier and token for controlling the call")]
+        [ActivityProperty(Label = "Call Control ID", Hint = "Unique identifier and token for controlling the call", Category = PropertyCategories.Advanced)]
         public string CallControlId { get; set; } = default!;
 
-        [ActivityProperty(Label = "Billing Group ID", Hint = "Use this field to set the Billing Group ID for the call. Must be a valid and existing Billing Group ID.")]
+        [ActivityProperty(Label = "Billing Group ID", Hint = "Use this field to set the Billing Group ID for the call. Must be a valid and existing Billing Group ID.", Category = PropertyCategories.Advanced)]
         public string? BillingGroupId { get; set; }
 
-        [ActivityProperty(Label = "Client State", Hint = "Use this field to add state to every subsequent webhook. It must be a valid Base-64 encoded string.")]
+        [ActivityProperty(Label = "Client State", Hint = "Use this field to add state to every subsequent webhook. It must be a valid Base-64 encoded string.", Category = PropertyCategories.Advanced)]
         public string? ClientState { get; set; }
 
-        [ActivityProperty(Label = "Command ID", Hint = "Use this field to avoid duplicate commands. Telnyx will ignore commands with the same Command ID.")]
+        [ActivityProperty(Label = "Command ID", Hint = "Use this field to avoid duplicate commands. Telnyx will ignore commands with the same Command ID.", Category = PropertyCategories.Advanced)]
         public string? CommandId { get; set; }
 
-        [ActivityProperty(Label = "Webhook URL", Hint = "Use this field to override the URL for which Telnyx will send subsequent webhooks to for this call.")]
+        [ActivityProperty(Label = "Webhook URL", Hint = "Use this field to override the URL for which Telnyx will send subsequent webhooks to for this call.", Category = PropertyCategories.Advanced)]
         public string? WebhookUrl { get; set; }
 
-        [ActivityProperty(Label = "Webhook URL Method", Hint = "HTTP request type used for Webhook URL", UIHint = ActivityPropertyUIHints.Dropdown, Options = new[] { "GET", "POST" })]
+        [ActivityProperty(Label = "Webhook URL Method", Hint = "HTTP request type used for Webhook URL", UIHint = ActivityPropertyUIHints.Dropdown, Options = new[] { "GET", "POST" }, Category = PropertyCategories.Advanced)]
         public string? WebhookUrlMethod { get; set; }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            await AnswerCallAsync(context.CancellationToken);
+            await AnswerCallAsync(context);
             return Done();
         }
 
-        private async ValueTask AnswerCallAsync(CancellationToken cancellationToken)
+        private async ValueTask AnswerCallAsync(ActivityExecutionContext context)
         {
+            var callControlId = CallControlId is not null and not "" ? CallControlId : context.CorrelationId ?? throw new InvalidOperationException("Cannot answer call without a call control ID");
             var request = new AnswerCallRequest(BillingGroupId, ClientState, CommandId, WebhookUrl, WebhookUrlMethod);
-            await _telnyxClient.Calls.AnswerCallAsync(CallControlId, request, cancellationToken);
+            await _telnyxClient.Calls.AnswerCallAsync(callControlId, request, context.CancellationToken);
         }
     }
 }
