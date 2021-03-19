@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO.Compression;
 using Elsa.Client.Extensions;
 using Elsa.Client.Options;
@@ -24,6 +24,7 @@ namespace ElsaDashboard.Backend.Extensions
             services.AddScoped<IWorkflowDefinitionService, WorkflowDefinitionService>();
             services.AddScoped<IWorkflowRegistryService, WorkflowRegistryService>();
             services.AddScoped<IWorkflowInstanceService, WorkflowInstanceService>();
+            services.AddScoped<IWebhookDefinitionService, WebhookDefinitionService>();
 
             return services;
         }

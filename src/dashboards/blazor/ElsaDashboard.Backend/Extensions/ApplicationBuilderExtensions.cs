@@ -1,4 +1,4 @@
-﻿using ElsaDashboard.Shared.Rpc;
+using ElsaDashboard.Shared.Rpc;
 using Microsoft.AspNetCore.Builder;
 
 namespace ElsaDashboard.Backend.Extensions
@@ -15,6 +15,7 @@ namespace ElsaDashboard.Backend.Extensions
                     .MapGrpcEndpoint<IWorkflowDefinitionService>()
                     .MapGrpcEndpoint<IWorkflowRegistryService>()
                     .MapGrpcEndpoint<IWorkflowInstanceService>()
+                    .MapGrpcEndpoint<IWebhookDefinitionService>()
                 );
         }
     }

@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Activities.Webhooks.Models
 {
-    public class Webhook : Entity, ITenantScope
+    public class WebhookDefinition : Entity, ITenantScope
     {
         public string Name { get; set; } = default!;
 

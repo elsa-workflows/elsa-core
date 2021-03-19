@@ -19,4 +19,8 @@
       <PackageReference Include="Refit.HttpClientFactory" Version="5.2.4" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\..\activities\Elsa.Activities.Webhooks\Elsa.Activities.Webhooks.csproj" />
+    </ItemGroup>
+
 </Project>
