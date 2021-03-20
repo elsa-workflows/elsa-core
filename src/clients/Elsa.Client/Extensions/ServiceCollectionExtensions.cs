@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Net.Http;
 using Elsa.Client.Converters;
 using Elsa.Client.Options;
@@ -27,7 +27,8 @@ namespace Elsa.Client.Extensions
                 .AddApiClient<IActivitiesApi>(refitSettings, httpClientFactory)
                 .AddApiClient<IWorkflowDefinitionsApi>(refitSettings, httpClientFactory)
                 .AddApiClient<IWorkflowRegistryApi>(refitSettings, httpClientFactory)
-                .AddApiClient<IWorkflowInstancesApi>(refitSettings, httpClientFactory);
+                .AddApiClient<IWorkflowInstancesApi>(refitSettings, httpClientFactory)
+                .AddApiClient<IWebhookDefinitionsApi>(refitSettings, httpClientFactory);
 
             return services
                 .AddTransient<IElsaClient, ElsaClient>();

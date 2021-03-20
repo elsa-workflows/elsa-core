@@ -6,11 +6,11 @@ using Elsa.Activities.Http;
 using Elsa.Activities.Webhooks.Models;
 using Elsa.Activities.Webhooks.Persistence;
 using Elsa.ActivityProviders;
+using Elsa.Design;
 using Elsa.Metadata;
 using Elsa.Persistence.Specifications;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Newtonsoft.Json.Linq;
 
 namespace Elsa.Activities.Webhooks.ActivityTypes
 {
@@ -60,27 +60,22 @@ namespace Elsa.Activities.Webhooks.ActivityTypes
                 {
                     new ActivityPropertyDescriptor(
                         "RequestMethod",
-                        "select",
+                        ActivityPropertyUIHints.Dropdown,
                         "Request Method",
                         "Specify what request method this webhook should handle. Leave empty to handle both GET and POST requests",
-                        JObject.FromObject(new { Options = new[] { "", "GET", "POST" } }))
+                        new { Options = new[] { "", "GET", "POST" } })
                 }
             };
 
             async ValueTask<IActivity> ActivateActivityAsync(ActivityExecutionContext context, WebhookDefinition webhook)
             {
-                var activity = await _activityActivator.ActivateActivityAsync(context, typeof(HttpEndpoint));
-
-                if (activity is HttpEndpoint httpEndpointActivity)
-                {
-                    httpEndpointActivity.Path = webhook.Path;
-                    httpEndpointActivity.ReadContent = true;
-                    httpEndpointActivity.TargetType = webhook.PayloadTypeName is not null and not ""
-                        ? Type.GetType(webhook.PayloadTypeName)
-                        : default;
-                }
-
-                return activity;
+                var httpEndpointActivity = (HttpEndpoint) await _activityActivator.ActivateActivityAsync(context, typeof(HttpEndpoint));
+                httpEndpointActivity.Path = webhook.Path;
+                httpEndpointActivity.ReadContent = true;
+                httpEndpointActivity.TargetType = webhook.PayloadTypeName is not null and not ""
+                    ? Type.GetType(webhook.PayloadTypeName)
+                    : default;
+                return httpEndpointActivity;
             }
 
             return new ActivityType

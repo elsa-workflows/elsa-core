@@ -11,10 +11,6 @@
         </Description>      
         <PackageTags>elsa, workflows</PackageTags>
     </PropertyGroup>
-    
-    <ItemGroup>
-      <PackageReference Include="Refit" Version="5.2.4" />
-    </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />

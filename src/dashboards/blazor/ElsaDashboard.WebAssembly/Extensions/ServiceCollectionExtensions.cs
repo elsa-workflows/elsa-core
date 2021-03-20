@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using ElsaDashboard.Shared.Rpc;
 using ElsaDashboard.Shared.Surrogates;
 using ElsaDashboard.WebAssembly.Options;
@@ -22,7 +22,8 @@ namespace ElsaDashboard.WebAssembly.Extensions
                 .AddGrpcClient<IActivityService>()
                 .AddGrpcClient<IWorkflowDefinitionService>()
                 .AddGrpcClient<IWorkflowInstanceService>()
-                .AddGrpcClient<IWorkflowRegistryService>();
+                .AddGrpcClient<IWorkflowRegistryService>()
+                .AddGrpcClient<IWebhookDefinitionService>();
         }
     }
 }
