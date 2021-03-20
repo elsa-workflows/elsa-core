@@ -10,6 +10,8 @@ namespace Elsa
             GetActivityById(this WorkflowDefinition workflowDefinition, string activityId) =>
             workflowDefinition.Activities.First(x => x.ActivityId == activityId);
 
+        // TODO: Consider adding this as an overload for IGetsStartActivitiesForCompositeActivityBlueprint
+        // The intent is the same and the logic is near-identical.
         public static IEnumerable<ActivityDefinition> GetStartActivities(this WorkflowDefinition workflowDefinition)
         {
             var targetActivities = workflowDefinition.Connections
