@@ -14,13 +14,19 @@ namespace Elsa.Services
         private readonly IWorkflowQueue _workflowQueue;
         private readonly IWorkflowRegistry _workflowRegistry;
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
+        private readonly IGetsStartActivitiesForCompositeActivityBlueprint startingActivitiesProvider;
 
-        public WorkflowReviver(IWorkflowRunner workflowRunner, IWorkflowQueue workflowQueue, IWorkflowRegistry workflowRegistry, IWorkflowInstanceStore workflowInstanceStore)
+        public WorkflowReviver(IWorkflowRunner workflowRunner,
+                               IWorkflowQueue workflowQueue,
+                               IWorkflowRegistry workflowRegistry,
+                               IWorkflowInstanceStore workflowInstanceStore,
+                               IGetsStartActivitiesForCompositeActivityBlueprint startingActivitiesProvider)
         {
             _workflowRunner = workflowRunner;
             _workflowQueue = workflowQueue;
             _workflowRegistry = workflowRegistry;
             _workflowInstanceStore = workflowInstanceStore;
+            this.startingActivitiesProvider = startingActivitiesProvider ?? throw new ArgumentNullException(nameof(startingActivitiesProvider));
         }
         
         public async Task<WorkflowInstance> ReviveAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken)
@@ -81,7 +87,7 @@ namespace Elsa.Services
             if (workflowBlueprint == null)
                 throw new WorkflowException($"Could not find associated workflow definition {workflowInstance.DefinitionId} with version {workflowInstance.Version}");
             
-            var startActivity = workflowBlueprint.GetStartActivities().FirstOrDefault();
+            var startActivity = startingActivitiesProvider.GetStartActivities(workflowBlueprint).FirstOrDefault();
 
             if (startActivity == null)
                 throw new WorkflowException($"Cannot revive workflow {workflowInstance.Id} because it has no start activities");

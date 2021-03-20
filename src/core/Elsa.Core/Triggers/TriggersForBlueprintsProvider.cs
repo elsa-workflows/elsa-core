@@ -1,0 +1,70 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Elsa.ActivityProviders;
+using Elsa.Services;
+using Elsa.Services.Models;
+
+namespace Elsa.Triggers
+{
+    /// <summary>
+    /// Default implementation of <see cref="IGetsTriggersForWorkflowBlueprints"/> which
+    /// gets all of the workflow triggers for a collection of workflow blueprints.
+    /// </summary>
+    public class TriggersForBlueprintsProvider : IGetsTriggersForWorkflowBlueprints
+    {
+        readonly IActivityTypeService activityTypeService;
+        readonly ICreatesWorkflowExecutionContextForWorkflowBlueprint workflowExecutionContextFactory;
+        readonly IGetsTriggersForActivityBlueprintAndWorkflow triggerProvider;
+        readonly IGetsStartActivitiesForCompositeActivityBlueprint startingActivitiesProvider;
+
+        public TriggersForBlueprintsProvider(IActivityTypeService activityTypeService,
+                                             ICreatesWorkflowExecutionContextForWorkflowBlueprint workflowExecutionContextFactory,
+                                             IGetsTriggersForActivityBlueprintAndWorkflow triggerProvider,
+                                             IGetsStartActivitiesForCompositeActivityBlueprint startingActivitiesProvider)
+        {
+            this.activityTypeService = activityTypeService ?? throw new ArgumentNullException(nameof(activityTypeService));
+            this.workflowExecutionContextFactory = workflowExecutionContextFactory ?? throw new ArgumentNullException(nameof(workflowExecutionContextFactory));
+            this.triggerProvider = triggerProvider ?? throw new ArgumentNullException(nameof(triggerProvider));
+            this.startingActivitiesProvider = startingActivitiesProvider ?? throw new ArgumentNullException(nameof(startingActivitiesProvider));
+        }
+
+        /// <summary>
+        /// Gets the triggers for all of the specified workflow blueprints.
+        /// </summary>
+        /// <param name="workflowBlueprints">The workflow blueprints for which to get triggers.</param>
+        /// <param name="cancellationToken">An optional cancellation token.</param>
+        /// <returns>A task which exposes an enumerable collection of workflow triggers.</returns>
+        public async Task<IEnumerable<WorkflowTrigger>> GetTriggersAsync(IEnumerable<IWorkflowBlueprint> workflowBlueprints,
+                                                                         CancellationToken cancellationToken = default)
+        {
+            var activityTypes = (await activityTypeService.GetActivityTypesAsync(cancellationToken))
+                .ToDictionary(x => x.TypeName);
+
+            var tasksOfListsOfTriggers = workflowBlueprints
+                .Select(workflowBlueprint => GetWorkflowTriggersForWorkflowBlueprintAsync(workflowBlueprint, activityTypes, cancellationToken));
+            
+            return (await Task.WhenAll(tasksOfListsOfTriggers))
+                .SelectMany(x => x)
+                .ToList();
+        }
+
+        async Task<IList<WorkflowTrigger>> GetWorkflowTriggersForWorkflowBlueprintAsync(IWorkflowBlueprint workflowBlueprint,
+                                                                                        IDictionary<string, ActivityType> activityTypes,
+                                                                                        CancellationToken cancellationToken)
+        {
+            var startingActivityBlueprints = startingActivitiesProvider.GetStartActivities(workflowBlueprint);
+            var workflowExecutionContext = await workflowExecutionContextFactory.CreateWorkflowExecutionContextAsync(workflowBlueprint, cancellationToken);
+            var tasksOfCollectionsOfTriggers = startingActivityBlueprints
+                .Select(async activityBlueprint => await triggerProvider.GetTriggersForActivityBlueprintAsync(activityBlueprint,
+                                                                                                                workflowExecutionContext,
+                                                                                                                activityTypes,
+                                                                                                                cancellationToken));
+            return (await Task.WhenAll(tasksOfCollectionsOfTriggers))
+                .SelectMany(x => x)
+                .ToList();
+        }
+    }
+}

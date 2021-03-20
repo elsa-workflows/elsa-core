@@ -14,9 +14,12 @@ namespace Elsa.Builders
     public class CompositeActivityBuilder : ActivityBuilder, ICompositeActivityBuilder
     {
         private readonly Func<ICompositeActivityBuilder> _compositeActivityBuilderFactory;
+        private readonly IGetsStartActivitiesForCompositeActivityBlueprint startingActivitiesProvider;
 
-        public CompositeActivityBuilder(IServiceProvider serviceProvider)
+        public CompositeActivityBuilder(IServiceProvider serviceProvider, IGetsStartActivitiesForCompositeActivityBlueprint startingActivitiesProvider)
         {
+            this.startingActivitiesProvider = startingActivitiesProvider ?? throw new ArgumentNullException(nameof(startingActivitiesProvider));
+
             ServiceProvider = serviceProvider;
             ActivityBuilders = new List<IActivityBuilder>();
             ConnectionBuilders = new List<IConnectionBuilder>();
@@ -58,7 +61,7 @@ namespace Elsa.Builders
 
             var valueProviders = propertyValuesBuilder.ValueProviders.ToDictionary(
                 x => x.Key,
-                x => (IActivityPropertyValueProvider) new DelegateActivityPropertyValueProvider(x.Value));
+                x => (IActivityPropertyValueProvider)new DelegateActivityPropertyValueProvider(x.Value));
 
             return New<T>(valueProviders, lineNumber, sourceFile);
         }
@@ -181,7 +184,7 @@ namespace Elsa.Builders
             using var scope = ServiceProvider.CreateScope();
             foreach (var activityBuilder in compositeActivityBuilders)
             {
-                var compositeActivity = (CompositeActivity) ActivatorUtilities.CreateInstance(scope.ServiceProvider, activityBuilder.ActivityType);
+                var compositeActivity = (CompositeActivity)ActivatorUtilities.CreateInstance(scope.ServiceProvider, activityBuilder.ActivityType);
                 var compositeActivityBuilder = _compositeActivityBuilderFactory();
                 compositeActivityBuilder.ActivityId = activityBuilder.ActivityId;
                 compositeActivity.Build(compositeActivityBuilder);
@@ -198,7 +201,7 @@ namespace Elsa.Builders
                 compositeActivityBlueprint.ActivityPropertyProviders = compositeActivityBlueprint.ActivityPropertyProviders;
 
                 // Connect the composite activity to its starting activities.
-                var startActivities = compositeActivityBlueprint.GetStartActivities().ToList();
+                var startActivities = startingActivitiesProvider.GetStartActivities(compositeActivityBlueprint).ToList();
                 connections.AddRange(startActivities.Select(x => new Connection(compositeActivityBlueprint, x, CompositeActivity.Enter)));
             }
         }

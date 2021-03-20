@@ -109,6 +109,9 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddTransient<IActivityTypeService, ActivityTypeService>()
                 .AddActivityTypeProvider<TypeBasedActivityProvider>()
                 .AddScoped<IWorkflowExecutionLog, WorkflowExecutionLog>()
+                .AddTransient<ICreatesWorkflowExecutionContextForWorkflowBlueprint, WorkflowExecutionContextForWorkflowBlueprintFactory>()
+                .AddTransient<ICreatesActivityExecutionContextForActivityBlueprint, ActivityExecutionContextForActivityBlueprintFactory>()
+                .AddTransient<IGetsStartActivitiesForCompositeActivityBlueprint, StartActivitiesForCompositeActivityBlueprintProvider>()
                 ;
 
             // Serialization.
@@ -143,6 +146,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddScoped<IBookmarkIndexer, BookmarkIndexer>()
                 .AddScoped<IBookmarkFinder, BookmarkFinder>()
                 .AddScoped<ITriggerIndexer, TriggerIndexer>()
+                .AddScoped<IGetsTriggersForWorkflowBlueprints, TriggersForBlueprintsProvider>()
+                .AddTransient<IGetsTriggersForActivityBlueprintAndWorkflow, TriggersForActivityBlueprintAndWorkflowProvider>()
                 .AddSingleton<ITriggerStore, TriggerStore>()
                 .AddScoped<ITriggerFinder, TriggerFinder>()
                 .AddBookmarkProvider<SignalReceivedBookmarkProvider>()

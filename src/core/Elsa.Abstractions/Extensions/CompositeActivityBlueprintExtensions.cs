@@ -9,21 +9,6 @@ namespace Elsa
 {
     public static class CompositeActivityBlueprintExtensions
     {
-        public static IEnumerable<IActivityBlueprint> GetStartActivities(this ICompositeActivityBlueprint workflowBlueprint)
-        {
-            var targetActivityIds = workflowBlueprint.Connections.Select(x => x.Target.Activity?.Id).Distinct().ToLookup(x => x);
-
-            var query =
-                from activity in workflowBlueprint.Activities
-                where !targetActivityIds.Contains(activity.Id)
-                select activity;
-
-            return query;
-        }
-
-        public static IEnumerable<IActivityBlueprint> GetStartActivities(this ICompositeActivityBlueprint workflowBlueprint, string activityType) => workflowBlueprint.GetStartActivities().Where(x => x.Type == activityType);
-        public static IEnumerable<IActivityBlueprint> GetStartActivities(this ICompositeActivityBlueprint workflowBlueprint, Type activityType) => workflowBlueprint.GetStartActivities(activityType.Name);
-        public static IEnumerable<IActivityBlueprint> GetStartActivities<T>(this ICompositeActivityBlueprint workflowBlueprint) where T : IActivity => workflowBlueprint.GetStartActivities(typeof(T));
         public static IEnumerable<IActivityBlueprint> GetEndActivities(this ICompositeActivityBlueprint workflowBlueprint) => workflowBlueprint.Activities.Where(x => !workflowBlueprint.GetOutboundConnections(x.Id).Any());
         public static IActivityBlueprint? GetActivity(this ICompositeActivityBlueprint workflowBlueprint, string id) => workflowBlueprint.Activities.FirstOrDefault(x => x.Id == id);
         public static IEnumerable<IActivityBlueprint> GetActivities(this ICompositeActivityBlueprint workflowBlueprint, IEnumerable<string> ids) => workflowBlueprint.Activities.Where(x => ids.Contains(x.Id));

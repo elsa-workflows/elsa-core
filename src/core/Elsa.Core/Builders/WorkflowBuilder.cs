@@ -10,7 +10,7 @@ namespace Elsa.Builders
 {
     public class WorkflowBuilder : CompositeActivityBuilder, IWorkflowBuilder
     {
-        public WorkflowBuilder(IIdGenerator idGenerator, IServiceProvider serviceProvider) : base(serviceProvider)
+        public WorkflowBuilder(IIdGenerator idGenerator, IServiceProvider serviceProvider, IGetsStartActivitiesForCompositeActivityBlueprint startingActivitiesProvider) : base(serviceProvider, startingActivitiesProvider)
         {
             Version = 1;
             Variables = new Variables();

@@ -37,6 +37,7 @@ namespace Elsa.Services
         private readonly IMediator _mediator;
         private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly ILogger _logger;
+        private readonly IGetsStartActivitiesForCompositeActivityBlueprint startingActivitiesProvider;
 
         public WorkflowRunner(
             IWorkflowRegistry workflowRegistry,
@@ -48,7 +49,8 @@ namespace Elsa.Services
             Func<IWorkflowBuilder> workflowBuilderFactory,
             IMediator mediator,
             IServiceScopeFactory serviceScopeFactory,
-            ILogger<WorkflowRunner> logger)
+            ILogger<WorkflowRunner> logger,
+            IGetsStartActivitiesForCompositeActivityBlueprint startingActivitiesProvider)
         {
             _workflowRegistry = workflowRegistry;
             _workflowFactory = workflowFactory;
@@ -56,6 +58,7 @@ namespace Elsa.Services
             _mediator = mediator;
             _serviceScopeFactory = serviceScopeFactory;
             _logger = logger;
+            this.startingActivitiesProvider = startingActivitiesProvider ?? throw new ArgumentNullException(nameof(startingActivitiesProvider));
             _workflowInstanceManager = workflowInstanceStore;
             _workflowContextManager = workflowContextManager;
             _bookmarkFinder = bookmarkFinder;
@@ -284,7 +287,7 @@ namespace Elsa.Services
         private async Task<bool> BeginWorkflow(WorkflowExecutionContext workflowExecutionContext, IActivityBlueprint? activity, object? input, CancellationToken cancellationToken)
         {
             if (activity == null)
-                activity = workflowExecutionContext.WorkflowBlueprint.GetStartActivities().FirstOrDefault() ?? workflowExecutionContext.WorkflowBlueprint.Activities.First();
+                activity = startingActivitiesProvider.GetStartActivities(workflowExecutionContext.WorkflowBlueprint).FirstOrDefault() ?? workflowExecutionContext.WorkflowBlueprint.Activities.First();
 
             if (!await CanExecuteAsync(workflowExecutionContext, activity, input, false, cancellationToken))
                 return false;
