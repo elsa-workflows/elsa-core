@@ -6,7 +6,7 @@ namespace Elsa.Metadata
         {
         }
 
-        public ActivityPropertyDescriptor(string name, string uiHint, string label, string? hint = default, object? options = default, string? category = default)
+        public ActivityPropertyDescriptor(string name, string uiHint, string label, string? hint = default, object? options = default, string? category = default, object? defaultValue = default)
         {
             Name = name;
             UIHint = uiHint;
@@ -14,6 +14,7 @@ namespace Elsa.Metadata
             Hint = hint;
             Options = options;
             Category = category;
+            DefaultValue = defaultValue;
         }
         
         public string Name { get; set; } = default!;
@@ -22,5 +23,6 @@ namespace Elsa.Metadata
         public string? Hint { get; set; }
         public object? Options { get; set; }
         public string? Category { get; set; }
+        public object? DefaultValue { get; set; }
     }
 }

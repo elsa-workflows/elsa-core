@@ -24,7 +24,15 @@ export class ElsaTextProperty {
 
   async componentWillLoad() {
     this.selectedSyntax = this.propertyModel.syntax;
-    this.currentValue = this.propertyModel.expression;
+
+    let currentValue = this.propertyModel.expression;
+
+    if(currentValue == undefined) {
+      const defaultValue = this.propertyDescriptor.defaultValue;
+      currentValue = defaultValue ? defaultValue.toString() : undefined;
+    }
+
+    this.currentValue = currentValue;
   }
 
   async componentDidLoad() {

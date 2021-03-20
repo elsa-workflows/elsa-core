@@ -63,30 +63,27 @@ namespace Elsa.Activities.Webhooks.ActivityTypes
                         ActivityPropertyUIHints.Dropdown,
                         "Request Method",
                         "Specify what request method this webhook should handle. Leave empty to handle both GET and POST requests",
-                        new { Options = new[] { "", "GET", "POST" } })
+                        new[] { "", "GET", "POST" })
                 }
             };
 
-            async ValueTask<IActivity> ActivateActivityAsync(ActivityExecutionContext context, WebhookDefinition webhook)
+            async ValueTask<IActivity> ActivateActivityAsync(ActivityExecutionContext context)
             {
-                var httpEndpointActivity = (HttpEndpoint) await _activityActivator.ActivateActivityAsync(context, typeof(HttpEndpoint));
-                httpEndpointActivity.Path = webhook.Path;
-                httpEndpointActivity.ReadContent = true;
-                httpEndpointActivity.TargetType = webhook.PayloadTypeName is not null and not ""
-                    ? Type.GetType(webhook.PayloadTypeName)
-                    : default;
-                return httpEndpointActivity;
+                var activity = await _activityActivator.ActivateActivityAsync<HttpEndpoint>(context);
+
+                activity.Path = webhook.Path;
+                activity.ReadContent = true;
+                activity.TargetType = webhook.PayloadTypeName is not null and not "" ? Type.GetType(webhook.PayloadTypeName) : throw new Exception($"Type {webhook.PayloadTypeName} not found");
+                return activity;
             }
 
             return new ActivityType
             {
                 TypeName = webhook.Name,
                 Type = typeof(HttpEndpoint),
-                Description = webhook.Description is not null and not ""
-                    ? webhook.Description
-                    : $"A webhook at {webhook.Path}",
+                Description = webhook.Description is not null and not "" ? webhook.Description : $"A webhook at {webhook.Path}",
                 DisplayName = webhook.Name,
-                ActivateAsync = context => ActivateActivityAsync(context, webhook),
+                ActivateAsync = ActivateActivityAsync,
                 Describe = () => descriptor
             };
         }
