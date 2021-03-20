@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using Elsa.Activities.Webhooks.Models;
 using Elsa.Client.Models;
 using ProtoBuf.Meta;
 
@@ -16,7 +17,8 @@ namespace ElsaDashboard.Shared.Surrogates
             [typeof(VersionOptions)] = typeof(VersionOptionsSurrogate),
             [typeof(WorkflowInstance)] = typeof(WorkflowInstanceSurrogate),
             [typeof(WorkflowDefinition)] = typeof(WorkflowDefinitionSurrogate),
-            [typeof(WorkflowBlueprint)] = typeof(WorkflowBlueprintSurrogate)
+            [typeof(WorkflowBlueprint)] = typeof(WorkflowBlueprintSurrogate),
+            [typeof(WebhookDefinition)] = typeof(WebhookDefinitionSurrogate),
         };
 
         /// <summary>

@@ -1,5 +1,6 @@
 using ProtoBuf;
 
+// ReSharper disable once CheckNamespace
 namespace ElsaDashboard.Shared.Rpc
 {
     [ProtoContract]

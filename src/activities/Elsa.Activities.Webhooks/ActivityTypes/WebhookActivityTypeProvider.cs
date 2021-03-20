@@ -11,7 +11,6 @@ using Elsa.Metadata;
 using Elsa.Persistence.Specifications;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Newtonsoft.Json.Linq;
 
 namespace Elsa.Activities.Webhooks.ActivityTypes
 {

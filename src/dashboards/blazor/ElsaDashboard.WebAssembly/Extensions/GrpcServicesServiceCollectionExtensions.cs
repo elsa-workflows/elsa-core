@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Net.Http;
+using System.Threading.Tasks;
 using ElsaDashboard.WebAssembly.Options;
 using Grpc.Core;
 using Grpc.Net.Client;
@@ -26,13 +27,15 @@ namespace ElsaDashboard.WebAssembly.Extensions
             //var tokenManager = sp.GetRequiredService<ITokenManager>();
 
             var credentials = CallCredentials.FromInterceptor(
-                async (context, metadata) =>
+                (context, metadata) =>
                 {
                     //var accessToken = await tokenManager.GetAccessTokenAsync();
                     var accessToken = "";
 
                     if (!string.IsNullOrEmpty(accessToken))
                         metadata.Add("Authorization", $"Bearer {accessToken}");
+
+                    return Task.CompletedTask;
                 });
 
             var channel = GrpcChannel.ForAddress(

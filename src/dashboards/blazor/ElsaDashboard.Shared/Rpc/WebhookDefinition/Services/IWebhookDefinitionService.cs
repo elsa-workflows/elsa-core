@@ -4,6 +4,7 @@ using Elsa.Activities.Webhooks.Models;
 using ProtoBuf.Grpc;
 using ProtoBuf.Grpc.Configuration;
 
+// ReSharper disable once CheckNamespace
 namespace ElsaDashboard.Shared.Rpc
 {
     [Service]
