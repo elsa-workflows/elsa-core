@@ -27,12 +27,6 @@ namespace Elsa.Activities.ControlFlow
         [ActivityProperty(Hint = "The conditions to evaluate.")]
         public SwitchMode Mode { get; set; } = SwitchMode.MatchFirst;
         
-        private bool Evaluated
-        {
-            get => GetState<bool>();
-            set => SetState(value);
-        }
-        
         public bool EnteredScope
         {
             get => GetState<bool>();
@@ -51,22 +45,14 @@ namespace Elsa.Activities.ControlFlow
                 else
                 {
                     EnteredScope = false;
-                    Evaluated = false;
                     return Done();
                 }
-            }
-            
-            if (Evaluated)
-            {
-                Evaluated = false;
-                return Done();
             }
             
             var matches = Cases.Where(x => x.Condition).Select(x => x.Name).ToList();
             var results = Mode == SwitchMode.MatchFirst ? matches.Any() ? new[] { matches.First() } : new string[0] : matches.ToArray();
             var outcomes = results;
             
-            Evaluated = true;
             return Outcomes(outcomes);
         }
 
@@ -77,7 +63,7 @@ namespace Elsa.Activities.ControlFlow
             
             var data = notification.WorkflowExecutionContext.WorkflowInstance.ActivityData.GetItem(notification.EvictedScope.Id, () => new JObject());
             data.SetState(nameof(EnteredScope), false);
-            data.SetState(nameof(Evaluated), false);
+            data.SetState("Unwinding", false);
             
             return Task.CompletedTask;
         }
