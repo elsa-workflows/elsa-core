@@ -51,6 +51,7 @@ namespace Elsa.Activities.ControlFlow
                 else
                 {
                     EnteredScope = false;
+                    Evaluated = false;
                     return Done();
                 }
             }
@@ -76,6 +77,7 @@ namespace Elsa.Activities.ControlFlow
             
             var data = notification.WorkflowExecutionContext.WorkflowInstance.ActivityData.GetItem(notification.EvictedScope.Id, () => new JObject());
             data.SetState(nameof(EnteredScope), false);
+            data.SetState(nameof(Evaluated), false);
             
             return Task.CompletedTask;
         }
