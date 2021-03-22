@@ -113,6 +113,15 @@ namespace Elsa.Services.Models
         public ActivityScope GetNamedScope(string activityName) => WorkflowExecutionContext.GetNamedScope(activityName);
 
         public void SetVariable(string name, object? value) => WorkflowExecutionContext.SetVariable(name, value);
+        
+        public T? SetVariable<T>(string name, Func<T?, T?> updater)
+        {
+            var value = GetVariable<T>(name);
+            value = updater(value);
+            SetVariable(name, value);
+            return value;
+        }
+
         public object? GetVariable(string name) => WorkflowExecutionContext.GetVariable(name);
         public T? GetVariable<T>(string name) => WorkflowExecutionContext.GetVariable<T>(name);
         public T? GetVariable<T>() => GetVariable<T>(typeof(T).Name);
