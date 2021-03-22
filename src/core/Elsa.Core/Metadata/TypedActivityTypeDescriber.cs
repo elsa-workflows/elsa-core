@@ -11,11 +11,13 @@ namespace Elsa.Metadata
     {
         private readonly IActivityPropertyOptionsResolver _optionsResolver;
         private readonly IActivityPropertyUIHintResolver _uiHintResolver;
+        private readonly IActivityPropertyDefaultValueResolver _defaultValueResolver;
 
-        public TypedActivityTypeDescriber(IActivityPropertyOptionsResolver optionsResolver, IActivityPropertyUIHintResolver uiHintResolver)
+        public TypedActivityTypeDescriber(IActivityPropertyOptionsResolver optionsResolver, IActivityPropertyUIHintResolver uiHintResolver, IActivityPropertyDefaultValueResolver defaultValueResolver)
         {
             _optionsResolver = optionsResolver;
             _uiHintResolver = uiHintResolver;
+            _defaultValueResolver = defaultValueResolver;
         }
 
         public ActivityDescriptor? Describe(Type activityType)
@@ -60,7 +62,7 @@ namespace Elsa.Metadata
                     activityPropertyAttribute.Hint,
                     _optionsResolver.GetOptions(propertyInfo),
                     activityPropertyAttribute.Category,
-                    activityPropertyAttribute.DefaultValue
+                    _defaultValueResolver.GetDefaultValue(propertyInfo)
                 );
             }
         }

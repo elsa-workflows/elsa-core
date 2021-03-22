@@ -14,9 +14,9 @@ namespace Elsa.Samples.ProgrammaticCompositeActivitiesConsole.Activities
     [Action(Outcomes = new[] { "Left", "Right" })]
     public class NavigateActivity : CompositeActivity
     {
-        public override void Build(ICompositeActivityBuilder activity)
+        public override void Build(ICompositeActivityBuilder builder)
         {
-            activity
+            builder
                 .StartWith(GetInstructions)
                 .WriteLine(context => (string)context.Input)
                 .ReadLine()

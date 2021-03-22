@@ -38,21 +38,28 @@ namespace Elsa.Builders
 
         public IReadOnlyCollection<IActivityBuilder> Activities => ActivityBuilders.ToList().AsReadOnly();
 
-        public IActivityBuilder New(Type activityType, IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders = default, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default)
+        public IActivityBuilder New(
+            Type activityType,
+            string? activityTypeName = default,
+            IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders = default,
+            [CallerLineNumber] int lineNumber = default,
+            [CallerFilePath] string? sourceFile = default)
         {
-            var activityBuilder = new ActivityBuilder(activityType, this, propertyValueProviders, lineNumber, sourceFile);
+            var activityBuilder = new ActivityBuilder(activityType, activityTypeName, this, propertyValueProviders, lineNumber, sourceFile);
             return activityBuilder;
         }
 
         public IActivityBuilder New<T>(
+            string? activityTypeName = default,
             IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders = default,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default)
             where T : class, IActivity =>
-            New(typeof(T), propertyValueProviders, lineNumber, sourceFile);
+            New(typeof(T), activityTypeName, propertyValueProviders, lineNumber, sourceFile);
 
         public IActivityBuilder New<T>(
             Action<ISetupActivity<T>>? setup = default,
+            string? activityTypeName = default,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default) where T : class, IActivity
         {
@@ -61,61 +68,68 @@ namespace Elsa.Builders
 
             var valueProviders = propertyValuesBuilder.ValueProviders.ToDictionary(
                 x => x.Key,
-                x => (IActivityPropertyValueProvider)new DelegateActivityPropertyValueProvider(x.Value));
+                x => (IActivityPropertyValueProvider) new DelegateActivityPropertyValueProvider(x.Value));
 
-            return New<T>(valueProviders, lineNumber, sourceFile);
+            return New<T>(activityTypeName, valueProviders, lineNumber, sourceFile);
         }
 
         public IActivityBuilder StartWith<T>(
             Action<ISetupActivity<T>>? setup = default,
             Action<IActivityBuilder>? branch = default,
+            string? activityTypeName = default,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default) where T : class, IActivity
         {
-            var activityBuilder = New(setup, lineNumber, sourceFile);
+            var activityBuilder = New(setup, activityTypeName, lineNumber, sourceFile);
             return Add(activityBuilder, branch);
         }
 
-        public IActivityBuilder StartWith<T>(Action<IActivityBuilder>? branch = default, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default)
+        public IActivityBuilder StartWith<T>(Action<IActivityBuilder>? branch = default, string? activityTypeName = default, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default)
             where T : class, IActivity =>
-            Add<T>(branch, null, lineNumber, sourceFile);
+            Add<T>(branch, activityTypeName, null, lineNumber, sourceFile);
 
         public IActivityBuilder Add<T>(
             Action<ISetupActivity<T>>? setup = default,
             Action<IActivityBuilder>? branch = default,
+            string? activityType = default,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default) where T : class, IActivity
         {
-            var activityBuilder = New(setup, lineNumber, sourceFile);
+            var activityBuilder = New(setup, activityType, lineNumber, sourceFile);
             return Add(activityBuilder, branch);
         }
 
         public IActivityBuilder Add<T>(
             Action<IActivityBuilder>? branch = default,
+            string? activityType = default,
             IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders = default,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default)
             where T : class, IActivity
         {
-            var activityBuilder = new ActivityBuilder(typeof(T), this, propertyValueProviders, lineNumber, sourceFile);
+            var activityBuilder = new ActivityBuilder(typeof(T), activityType, this, propertyValueProviders, lineNumber, sourceFile);
             return Add(activityBuilder, branch);
         }
 
-        public IActivityBuilder Add(
-            IActivityBuilder activityBuilder,
-            Action<IActivityBuilder>? branch = default)
+        public IActivityBuilder Add(IActivityBuilder activityBuilder, Action<IActivityBuilder>? branch = default)
         {
             branch?.Invoke(activityBuilder);
             ActivityBuilders.Add(activityBuilder);
             return activityBuilder;
         }
 
-        public override IActivityBuilder Then<T>(Action<ISetupActivity<T>>? setup = null, Action<IActivityBuilder>? branch = null, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
-            StartWith(setup, branch, lineNumber, sourceFile);
+        public override IActivityBuilder Then<T>(
+            Action<ISetupActivity<T>>? setup = null,
+            Action<IActivityBuilder>? branch = null,
+            string? activityTypeName = default,
+            [CallerLineNumber] int lineNumber = default,
+            [CallerFilePath] string? sourceFile = default) =>
+            StartWith(setup, branch, activityTypeName, lineNumber, sourceFile);
 
         public override IActivityBuilder Then(IActivityBuilder targetActivity) => Add(targetActivity);
 
-        public override IActivityBuilder Then<T>(Action<IActivityBuilder>? branch = null, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) => StartWith<T>(branch, lineNumber, sourceFile);
+        public override IActivityBuilder Then<T>(Action<IActivityBuilder>? branch = null, string? activityTypeName = default, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default)
+            where T : class, IActivity => StartWith<T>(branch, activityTypeName, lineNumber, sourceFile);
 
         public IConnectionBuilder Connect(
             IActivityBuilder source,
@@ -184,7 +198,7 @@ namespace Elsa.Builders
             using var scope = ServiceProvider.CreateScope();
             foreach (var activityBuilder in compositeActivityBuilders)
             {
-                var compositeActivity = (CompositeActivity)ActivatorUtilities.CreateInstance(scope.ServiceProvider, activityBuilder.ActivityType);
+                var compositeActivity = (CompositeActivity) ActivatorUtilities.CreateInstance(scope.ServiceProvider, activityBuilder.ActivityType);
                 var compositeActivityBuilder = _compositeActivityBuilderFactory();
                 compositeActivityBuilder.ActivityId = activityBuilder.ActivityId;
                 compositeActivity.Build(compositeActivityBuilder);

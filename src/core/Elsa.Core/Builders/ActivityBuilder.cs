@@ -12,12 +12,14 @@ namespace Elsa.Builders
     {
         public ActivityBuilder(
             Type activityType,
+            string? activityTypeName,
             ICompositeActivityBuilder workflowBuilder,
             IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders,
             int lineNumber,
             string? sourceFile)
         {
             ActivityType = activityType;
+            ActivityTypeName = activityTypeName ?? activityType.Name;
             WorkflowBuilder = workflowBuilder;
             PropertyValueProviders = propertyValueProviders;
             LineNumber = lineNumber;
@@ -29,6 +31,7 @@ namespace Elsa.Builders
         }
 
         public Type ActivityType { get; protected set; } = default!;
+        public string ActivityTypeName { get; set; } = default!;
         public ICompositeActivityBuilder WorkflowBuilder { get; set; } = default!;
         public string ActivityId { get; set; } = default!;
         public string? Name { get; set; }
@@ -45,22 +48,24 @@ namespace Elsa.Builders
 
         public IActivityBuilder Add<T>(
             Action<ISetupActivity<T>>? setup = default,
+            string? activityType = default,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default)
             where T : class, IActivity =>
-            WorkflowBuilder.Add(setup, null, lineNumber, sourceFile);
+            WorkflowBuilder.Add(setup, null, activityType, lineNumber, sourceFile);
 
         public IOutcomeBuilder When(string outcome) => new OutcomeBuilder(WorkflowBuilder, this, outcome);
 
         public virtual IActivityBuilder Then<T>(
             Action<ISetupActivity<T>>? setup = null,
             Action<IActivityBuilder>? branch = null,
+            string? activityType = default,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default)
             where T : class, IActivity =>
-            When(OutcomeNames.Done).Then(setup, branch, lineNumber, sourceFile);
+            When(OutcomeNames.Done).Then(setup, branch, act, lineNumber, sourceFile);
 
-        public virtual IActivityBuilder Then<T>(Action<IActivityBuilder>? branch = null, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default)
+        public virtual IActivityBuilder Then<T>(Action<IActivityBuilder>? branch = null, string? activityTypeName = default, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default)
             where T : class, IActivity =>
             When(OutcomeNames.Done).Then<T>(branch, lineNumber, sourceFile);
 

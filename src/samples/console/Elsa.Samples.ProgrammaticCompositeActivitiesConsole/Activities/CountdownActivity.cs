@@ -20,9 +20,9 @@ namespace Elsa.Samples.ProgrammaticCompositeActivitiesConsole.Activities
             set => SetState(value);
         }
 
-        public override void Build(ICompositeActivityBuilder activity)
+        public override void Build(ICompositeActivityBuilder builder)
         {
-            activity
+            builder
                 .For(() => Start, () => 0, () => -1, iterate =>
                 {
                     iterate.WriteLine(context => $"{context.ForScope().CurrentValue}...");

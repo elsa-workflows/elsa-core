@@ -23,10 +23,11 @@ namespace Elsa.Builders
         public IActivityBuilder Then<T>(
             Action<ISetupActivity<T>>? setup = default,
             Action<IActivityBuilder>? branch = default,
+            string? activityType = default,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default) where T : class, IActivity
         {
-            var activityBuilder = WorkflowBuilder.Add(setup, null, lineNumber, sourceFile);
+            var activityBuilder = WorkflowBuilder.Add(setup, default, activityType, lineNumber, sourceFile);
             Then(activityBuilder, branch);
             return activityBuilder;
         }

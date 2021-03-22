@@ -17,11 +17,11 @@ namespace Elsa.Builders
 
     public static class SetupActivityExtensions
     {
-        public static ISetupActivity<T> Set<T, TProperty>(
-            this ISetupActivity<T> builder,
-            Expression<Func<T, TProperty?>> propertyAccessor,
-            Func<ActivityExecutionContext, ValueTask<TProperty?>> valueFactory) where T : IActivity =>
-            builder.Set(propertyAccessor, async context => await valueFactory(context));
+        // public static ISetupActivity<T> Set<T, TProperty>(
+        //     this ISetupActivity<T> builder,
+        //     Expression<Func<T, TProperty?>> propertyAccessor,
+        //     Func<ActivityExecutionContext, ValueTask<TProperty?>> valueFactory) where T : IActivity =>
+        //     builder.Set(propertyAccessor, async context => await valueFactory(context));
         
         public static ISetupActivity<T> Set<T, TProperty>(
             this ISetupActivity<T> builder,
