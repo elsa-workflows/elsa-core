@@ -138,6 +138,7 @@ namespace Microsoft.Extensions.DependencyInjection
             services
                 .AddSingleton<IDescribeActivityType, TypedActivityTypeDescriber>()
                 .AddSingleton<IActivityPropertyOptionsResolver, ActivityPropertyOptionsResolver>()
+                .AddSingleton<IActivityPropertyDefaultValueResolver, ActivityPropertyDefaultValueResolver>()
                 .AddSingleton<IActivityPropertyUIHintResolver, ActivityPropertyUIHintResolver>();
 
             // Bookmarks.

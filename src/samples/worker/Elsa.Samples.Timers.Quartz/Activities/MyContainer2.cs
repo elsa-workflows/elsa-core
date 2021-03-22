@@ -9,9 +9,9 @@ namespace Elsa.Samples.Temporal.Activities
 {
     public class MyContainer2 : CompositeActivity
     {
-        public override void Build(ICompositeActivityBuilder activity)
+        public override void Build(ICompositeActivityBuilder builder)
         {
-            activity
+            builder
                 .StartWith<Fork>(fork => fork.WithBranches("D", "E"), fork =>
                 {
                     fork

@@ -37,4 +37,22 @@ namespace Elsa.Activities.Telnyx.Client.Models
         string? WebhookUrl,
         string? WebhookUrlMethod
     );
+    
+    public record DialRequest(
+        string ConnectionId,
+        string To,
+        string? From,
+        string? FromDisplayName,
+        string? AnsweringMachineDetection,
+        AnsweringMachineConfig? AnsweringMachineConfig,
+        string? ClientState,
+        string? CommandId,
+        IList<Header>? CustomHeaders,
+        string? SipAuthUsername,
+        string? SipAuthPassword,
+        int? TimeLimitSecs,
+        int? TimeoutSecs,
+        string? WebhookUrl,
+        string? WebhookUrlMethod
+    );
 }

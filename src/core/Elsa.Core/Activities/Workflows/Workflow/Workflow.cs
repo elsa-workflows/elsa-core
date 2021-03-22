@@ -7,7 +7,7 @@ namespace Elsa.Activities.Workflows.Workflow
     [Browsable(false)]
     public class Workflow : CompositeActivity
     {
-        public override void Build(ICompositeActivityBuilder activity)
+        public override void Build(ICompositeActivityBuilder builder)
         {
         }
     }

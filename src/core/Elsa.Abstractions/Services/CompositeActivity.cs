@@ -14,7 +14,7 @@ namespace Elsa.Services
     {
         internal const string Enter = "Enter";
         
-        public virtual void Build(ICompositeActivityBuilder activity)
+        public virtual void Build(ICompositeActivityBuilder builder)
         {
         }
 

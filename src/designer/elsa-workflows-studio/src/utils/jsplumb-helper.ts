@@ -4,7 +4,6 @@ import {ConnectionModel} from "../models";
 let jsPlumbInstance = null;
 
 function onConnectionCreated(e, callback) {
-  debugger;
   const connection: ConnectionModel = {
     sourceId: e.connection.getParameter('sourceActivityId'),
     targetId: e.connection.getParameter('targetActivityId'),

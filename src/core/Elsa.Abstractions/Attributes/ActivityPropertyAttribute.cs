@@ -31,7 +31,7 @@ namespace Elsa.Attributes
         public object? Options { get; set; }
         
         /// <summary>
-        /// The name of a static method that provides options.
+        /// The type that provides options.
         /// </summary>
         public Type? OptionsProvider { get; set; }
 
@@ -44,5 +44,10 @@ namespace Elsa.Attributes
         /// The default value to set.
         /// </summary>
         public object? DefaultValue { get; set; }
+        
+        /// <summary>
+        /// The type that provides a default value.
+        /// </summary>
+        public Type? DefaultValueProvider { get; set; }
     }
 }
