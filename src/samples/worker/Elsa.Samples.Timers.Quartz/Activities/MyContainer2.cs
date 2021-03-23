@@ -18,14 +18,14 @@ namespace Elsa.Samples.Temporal.Activities
                         .When("D")
                         .Timer(Duration.FromSeconds(20))
                         .WriteLine("Timer D went off. Exiting fork")
-                        .Then("Join2");
+                        .ThenNamed("Join2");
 
                     fork
                         .When("E")
                         .While(true, iterate => iterate
                             .Timer(Duration.FromSeconds(5))
                             .WriteLine("Timer E went off. Looping."))
-                        .Then("Join2");
+                        .ThenNamed("Join2");
                 })
                 .Add<Join>(join => join.WithMode(Join.JoinMode.WaitAny)).WithName("Join2")
                 .WriteLine("Container 2 Joined!")

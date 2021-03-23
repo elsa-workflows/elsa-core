@@ -20,7 +20,7 @@ namespace Elsa.Samples.Temporal.Workflows
                                 .When("A")
                                 .Timer(Duration.FromSeconds(5)).WithId("timer-a")
                                 .WriteLine("Timer A went off. Exiting fork").WithId("write-line-a")
-                                .Then("Join2");
+                                .ThenNamed("Join2");
 
                             fork
                                 .When("B")
@@ -29,7 +29,7 @@ namespace Elsa.Samples.Temporal.Workflows
                                         .Timer(Duration.FromSeconds(1)).WithId("timer-b")
                                         .WriteLine("Timer B went off. Looping.").WithId("write-line-b"))
                                 ).WithId("while-true")
-                                .Then("Join2");
+                                .ThenNamed("Join2");
                         })
                         .Add<Join>(join => join.WithMode(Join.JoinMode.WaitAny)).WithName("Join2")
                     ).WithId("for-2"))

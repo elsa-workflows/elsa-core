@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Reflection;
 using Elsa.Activities.ControlFlow;
+using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
 using Elsa.Attributes;
 using Elsa.Builders;
 using Elsa.Design;
@@ -85,7 +86,7 @@ namespace Elsa.Activities.Telnyx.Activities
                     .WithFrom(() => From)
                     .WithFromDisplayName(() => FromDisplayName)
                 )
-                .Then();
+                .ThenTypeNamed(CallAnsweredPayload.ActivityTypeName);
         }
 
         object IActivityPropertyDefaultValueProvider.GetDefaultValue(PropertyInfo property) => Duration.FromSeconds(20);

@@ -17,17 +17,17 @@ namespace Elsa.Samples.UserTaskConsole
                         userTask
                             .When("Accept")
                             .WriteLine("Great! Your work has been accepted.")
-                            .Then("Exit");
+                            .ThenNamed("Exit");
 
                         userTask
                             .When("Reject")
                             .WriteLine("Sorry! Your work has been rejected.")
-                            .Then("Exit");
+                            .ThenNamed("Exit");
                         
                         userTask
                             .When("Needs Work")
                             .WriteLine("So close! Your work needs a little bit more work.")
-                            .Then("Exit");
+                            .ThenNamed("Exit");
                     }
                 )
                 .WriteLine("Workflow finished.").WithName("Exit");
