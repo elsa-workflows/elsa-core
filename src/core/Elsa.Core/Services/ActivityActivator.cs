@@ -39,13 +39,16 @@ namespace Elsa.Services
             }
             
             if (IsReturningSwitch(activity))
+            {
+                activity.Data.SetState("Unwinding", false);
                 return false;
+            }
 
             return true;
         }
         
         private bool IsReturningComposite(IActivity activity) => activity is CompositeActivity && activity.Data.GetState<bool>(nameof(CompositeActivity.IsScheduled));
         private bool IsReturningIf(IActivity activity) => activity is If && activity.Data.GetState<bool>("Unwinding");
-        private bool IsReturningSwitch(IActivity activity) => activity is Switch && activity.Data.GetState<bool>(nameof(Switch.EnteredScope));
+        private bool IsReturningSwitch(IActivity activity) => activity is Switch && activity.Data.GetState<bool>("Unwinding");
     }
 }
