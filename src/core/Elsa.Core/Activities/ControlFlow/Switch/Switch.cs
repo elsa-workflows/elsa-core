@@ -56,7 +56,7 @@ namespace Elsa.Activities.ControlFlow
             return Outcomes(outcomes);
         }
 
-        public Task Handle(ScopeEvicted notification, CancellationToken cancellationToken)
+        Task INotificationHandler<ScopeEvicted>.Handle(ScopeEvicted notification, CancellationToken cancellationToken)
         {
             if (notification.EvictedScope.Type != nameof(Switch)) 
                 return Task.CompletedTask;

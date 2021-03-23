@@ -8,7 +8,7 @@ namespace Elsa.Builders
         ICompositeActivityBuilder WorkflowBuilder { get; }
         IActivityBuilder Source { get; }
         string? Outcome { get; }
-        IConnectionBuilder Then(string activityName);
+        IConnectionBuilder ThenNamed(string activityName);
         IConnectionBuilder Then(IActivityBuilder targetActivity, Action<IActivityBuilder>? branch = default);
         IWorkflowBlueprint Build();
     }

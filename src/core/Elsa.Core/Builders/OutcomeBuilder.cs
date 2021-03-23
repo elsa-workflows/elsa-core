@@ -40,7 +40,7 @@ namespace Elsa.Builders
             return activityBuilder;
         }
 
-        public IConnectionBuilder Then(string activityName)
+        public IConnectionBuilder ThenNamed(string activityName)
         {
             return WorkflowBuilder.Connect(
                 () => Source,
