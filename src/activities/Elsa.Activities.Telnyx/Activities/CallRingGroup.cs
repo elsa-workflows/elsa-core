@@ -34,6 +34,13 @@ namespace Elsa.Activities.Telnyx.Activities
             get => GetState<RingGroupStrategy>();
             set => SetState(value);
         }
+        
+        [ActivityProperty]
+        public RingGroupStrategy? StrategyTest
+        {
+            get => GetState<RingGroupStrategy?>();
+            set => SetState(value);
+        }
 
         [ActivityProperty(Hint =
             "The 'from' number to be used as the caller id presented to the destination ('To' number). The number should be in +E164 format. This attribute will default to the 'From' number of the original call if omitted.")]
