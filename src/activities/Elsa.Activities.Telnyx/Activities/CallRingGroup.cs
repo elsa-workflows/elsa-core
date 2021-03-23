@@ -69,7 +69,27 @@ namespace Elsa.Activities.Telnyx.Activities
         private void BuildSerialFlow(IOutcomeBuilder builder)
         {
             builder
-                .ForEach(() => Extensions, DialExtension);
+                .ForEach(() => Extensions, iterate => iterate
+                    .Then<ResolveExtension>(a => a.WithExtension(context => context.GetInput<string>()))
+                    .Then<Dial>(a => a
+                        .WithTo(context => context.GetInput<string>())
+                        .WithTimeoutSecs(() => (int) RingTime.TotalSeconds)
+                        .WithFrom(() => From)
+                        .WithFromDisplayName(() => FromDisplayName)
+                    )
+                    .Then<Fork>(fork => fork.WithBranches("Answered", "No Answer"), fork =>
+                    {
+                        fork
+                            .When("Answered")
+                            .ThenTypeNamed(CallAnsweredPayload.ActivityTypeName)
+                            .ThenNamed("")
+                            ;
+
+                        fork
+                            .When("No Answer")
+                            .ThenTypeNamed(CallHangupPayload.ActivityTypeName);
+                    })
+                );
         }
 
         private void BuildRingAllFlow(IOutcomeBuilder builder)
@@ -77,8 +97,7 @@ namespace Elsa.Activities.Telnyx.Activities
             builder.Then(() => Console.Write("Let's do parallel"));
         }
 
-        private void DialExtension(IOutcomeBuilder builder)
-        {
+        private IActivityBuilder DialExtension(IOutcomeBuilder builder) =>
             builder
                 .Then<ResolveExtension>(a => a.WithExtension(context => context.GetInput<string>()))
                 .Then<Dial>(a => a
@@ -87,7 +106,6 @@ namespace Elsa.Activities.Telnyx.Activities
                     .WithFromDisplayName(() => FromDisplayName)
                 )
                 .ThenTypeNamed(CallAnsweredPayload.ActivityTypeName);
-        }
 
         object IActivityPropertyDefaultValueProvider.GetDefaultValue(PropertyInfo property) => Duration.FromSeconds(20);
     }
