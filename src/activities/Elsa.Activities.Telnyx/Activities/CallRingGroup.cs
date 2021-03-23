@@ -1,8 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Reflection;
 using Elsa.Activities.ControlFlow;
+using Elsa.Activities.Telnyx.Webhooks.Models;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
+using Elsa.Activities.Temporal;
 using Elsa.Attributes;
 using Elsa.Builders;
 using Elsa.Design;
@@ -15,7 +16,7 @@ namespace Elsa.Activities.Telnyx.Activities
     [Action(
         Category = Constants.Category,
         Description = "Call a ring group.",
-        Outcomes = new[] { "Connected", "NoResponse" },
+        Outcomes = new[] { "Connected", "No Response" },
         DisplayName = "Call Ring Group"
     )]
     public class CallRingGroup : CompositeActivity, IActivityPropertyDefaultValueProvider
@@ -57,17 +58,14 @@ namespace Elsa.Activities.Telnyx.Activities
             set => SetState(value);
         }
 
-        public override void Build(ICompositeActivityBuilder builder)
-        {
+        public override void Build(ICompositeActivityBuilder builder) =>
             builder.Switch(cases =>
             {
-                cases.Add(RingGroupStrategy.PrioritizedHunt.ToString(), () => Strategy == RingGroupStrategy.PrioritizedHunt, BuildSerialFlow);
+                cases.Add(RingGroupStrategy.PrioritizedHunt.ToString(), () => Strategy == RingGroupStrategy.PrioritizedHunt, BuildPrioritizedHuntFlow);
                 cases.Add(RingGroupStrategy.RingAll.ToString(), () => Strategy == RingGroupStrategy.RingAll, BuildRingAllFlow);
             });
-        }
 
-        private void BuildSerialFlow(IOutcomeBuilder builder)
-        {
+        private void BuildPrioritizedHuntFlow(IOutcomeBuilder builder) =>
             builder
                 .ForEach(() => Extensions, iterate => iterate
                     .Then<ResolveExtension>(a => a.WithExtension(context => context.GetInput<string>()))
@@ -77,35 +75,46 @@ namespace Elsa.Activities.Telnyx.Activities
                         .WithFrom(() => From)
                         .WithFromDisplayName(() => FromDisplayName)
                     )
-                    .Then<Fork>(fork => fork.WithBranches("Answered", "No Answer"), fork =>
+                    .Then<Fork>(fork => fork.WithBranches("Connected", "No Response"), fork =>
                     {
                         fork
-                            .When("Answered")
+                            .When("Connected")
                             .ThenTypeNamed(CallAnsweredPayload.ActivityTypeName)
-                            .ThenNamed("")
-                            ;
+                            .Then<Finish>(finish => finish.WithOutcome("Connected").WithOutput(context => context.GetInput<TelnyxWebhook>()!.Data.Payload));
 
                         fork
-                            .When("No Answer")
+                            .When("No Response")
                             .ThenTypeNamed(CallHangupPayload.ActivityTypeName);
                     })
-                );
-        }
-
-        private void BuildRingAllFlow(IOutcomeBuilder builder)
-        {
-            builder.Then(() => Console.Write("Let's do parallel"));
-        }
-
-        private IActivityBuilder DialExtension(IOutcomeBuilder builder) =>
-            builder
-                .Then<ResolveExtension>(a => a.WithExtension(context => context.GetInput<string>()))
-                .Then<Dial>(a => a
-                    .WithTo(context => context.GetInput<string>())
-                    .WithFrom(() => From)
-                    .WithFromDisplayName(() => FromDisplayName)
                 )
-                .ThenTypeNamed(CallAnsweredPayload.ActivityTypeName);
+                .Finish("No Response");
+
+        private void BuildRingAllFlow(IOutcomeBuilder builder) =>
+            builder
+                .Then<Fork>(fork => fork.WithBranches("Connected", "Timeout", "Dial Everyone"), fork =>
+                {
+                    fork
+                        .When("Connected")
+                        .ThenTypeNamed(CallAnsweredPayload.ActivityTypeName)
+                        .Then<Finish>(finish => finish.WithOutcome("Connected").WithOutput(context => context.GetInput<TelnyxWebhook>()!.Data.Payload));
+
+                    fork
+                        .When("Timeout")
+                        .StartIn(RingTime)
+                        .Finish("No Response");
+
+                    fork
+                        .When("Dial Everyone")
+                        .ParallelForEach(() => Extensions, iterate => iterate
+                            .Then<ResolveExtension>(a => a.WithExtension(context => context.GetInput<string>()))
+                            .Then<Dial>(a => a
+                                .WithTo(context => context.GetInput<string>())
+                                .WithTimeoutSecs(() => (int) RingTime.TotalSeconds)
+                                .WithFrom(() => From)
+                                .WithFromDisplayName(() => FromDisplayName)
+                            ));
+
+                });
 
         object IActivityPropertyDefaultValueProvider.GetDefaultValue(PropertyInfo property) => Duration.FromSeconds(20);
     }
