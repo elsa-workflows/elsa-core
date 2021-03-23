@@ -24,6 +24,9 @@ namespace Elsa.Metadata
 
             if (typeof(IEnumerable).IsAssignableFrom(type))
                 return ActivityPropertyUIHints.Dropdown;
+            
+            if (type.IsEnum)
+                return ActivityPropertyUIHints.Dropdown;
 
             return ActivityPropertyUIHints.SingleLine;
         }
