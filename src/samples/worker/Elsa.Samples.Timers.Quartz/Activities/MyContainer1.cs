@@ -19,20 +19,20 @@ namespace Elsa.Samples.Temporal.Activities
                         .While(true, @while => @while
                             .Timer(Duration.FromSeconds(1))
                             .WriteLine("Timer A went off"))
-                        .Then("Join1");
+                        .ThenNamed("Join1");
 
                     fork
                         .When("B")
                         .While(true, @while => @while
                             .Timer(Duration.FromSeconds(5))
                             .WriteLine("Timer B went off"))
-                        .Then("Join1");
+                        .ThenNamed("Join1");
 
                     fork
                         .When("C")
                         .Timer(Duration.FromSeconds(6))
                         .WriteLine("Timer C went off")
-                        .Then("Join1");
+                        .ThenNamed("Join1");
                 })
                 .Add<Join>(join => join.WithMode(Join.JoinMode.WaitAny)).WithName("Join1")
                 .WriteLine("Container 1 Joined!")

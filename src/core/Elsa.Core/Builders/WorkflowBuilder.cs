@@ -17,6 +17,7 @@ namespace Elsa.Builders
             CustomAttributes = new Variables();
             ActivityId = idGenerator.Generate();
             ActivityType = typeof(Workflow);
+            ActivityTypeName = nameof(Workflow);
             WorkflowBuilder = this;
             PropertyValueProviders = new Dictionary<string, IActivityPropertyValueProvider>();
             PersistenceBehavior = WorkflowPersistenceBehavior.WorkflowBurst;

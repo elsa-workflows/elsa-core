@@ -35,13 +35,13 @@ namespace Elsa.Samples.ForkJoinTimerAndSignalHttp.Workflows
                             .When("Timer")
                             .Timer(_timeOut)
                             .SetVariable("CompletedVia", "Timer")
-                            .Then("Join");
+                            .ThenNamed("Join");
 
                         fork
                             .When("Signal")
                             .SignalReceived("hurry")
                             .SetVariable("CompletedVia", "Signal")
-                            .Then("Join");
+                            .ThenNamed("Join");
                     })
                 .Add<Join>(x => x.WithMode(Join.JoinMode.WaitAny)).WithName("Join")
                 .WriteLine(context => $"Demo {GetCorrelationId(context)} completed successfully via {context.GetVariable<string>("CompletedVia")}!");

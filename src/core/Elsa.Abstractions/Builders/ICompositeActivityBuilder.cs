@@ -12,34 +12,37 @@ namespace Elsa.Builders
         IReadOnlyCollection<IActivityBuilder> Activities { get; }
 
         IActivityBuilder New<T>(
+            string activityTypeName, 
             IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders = default,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default)
             where T : class, IActivity;
 
         IActivityBuilder New<T>(
+            string activityTypeName, 
             Action<ISetupActivity<T>>? setup,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default) where T : class, IActivity;
 
         IActivityBuilder StartWith<T>(
+            string activityTypeName, 
             Action<ISetupActivity<T>>? setup,
             Action<IActivityBuilder>? branch = default,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default) where T : class, IActivity;
 
-        IActivityBuilder StartWith<T>(Action<IActivityBuilder>? branch = default, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) where T : class, IActivity;
+        IActivityBuilder StartWith<T>(string activityTypeName, Action<IActivityBuilder>? branch = default, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) where T : class, IActivity;
 
         IActivityBuilder Add<T>(
+            string activityTypeName, 
             Action<ISetupActivity<T>>? setup,
             Action<IActivityBuilder>? branch = default,
-            string? activityType = default,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default) where T : class, IActivity;
 
         IActivityBuilder Add<T>(
+            string activityTypeName, 
             Action<IActivityBuilder>? branch = default,
-            string? activityType = default,
             IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders = default,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default)

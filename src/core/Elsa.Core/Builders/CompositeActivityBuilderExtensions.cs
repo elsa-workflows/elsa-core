@@ -1,72 +1,52 @@
-using System;
+﻿using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
-using Elsa.Activities.Primitives;
-using Elsa.ActivityResults;
-using Elsa.Services.Models;
+using Elsa.Services;
 
 // ReSharper disable ExplicitCallerInfoArgument
 namespace Elsa.Builders
 {
     public static class CompositeActivityBuilderExtensions
     {
-        public static IActivityBuilder StartWith(this ICompositeActivityBuilder builder, Action action) => builder.StartWith<Inline>(inline => inline.Set(x => x.Function, RunInline(action)));
-
-        public static IActivityBuilder
-            StartWith(this ICompositeActivityBuilder builder, Action<ActivityExecutionContext> action, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
-            builder.StartWith<Inline>(inline => inline.Set(x => x.Function, RunInline(action)), null, lineNumber, sourceFile);
-
-        public static IActivityBuilder StartWith(
-            this ICompositeActivityBuilder builder,
-            Func<ActivityExecutionContext, ValueTask> action,
+        public static IActivityBuilder New<T>(
+            this ICompositeActivityBuilder compositeActivityBuilder,
+            IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders = default,
             [CallerLineNumber] int lineNumber = default,
-            [CallerFilePath] string? sourceFile = default) =>
-            builder.StartWith<Inline>(inline => inline.Set(x => x.Function, RunInline(action)), null, lineNumber, sourceFile);
+            [CallerFilePath] string? sourceFile = default)
+            where T : class, IActivity => compositeActivityBuilder.New<T>(typeof(T).Name, propertyValueProviders, lineNumber, sourceFile);
 
-        public static IActivityBuilder StartWith(
-            this ICompositeActivityBuilder builder,
-            Func<ActivityExecutionContext, ValueTask<IActivityExecutionResult>> action,
+        public static IActivityBuilder New<T>(
+            this ICompositeActivityBuilder compositeActivityBuilder,
+            Action<ISetupActivity<T>>? setup,
             [CallerLineNumber] int lineNumber = default,
-            [CallerFilePath] string? sourceFile = default) =>
-            builder.StartWith<Inline>(inline => inline.Set(x => x.Function, RunInline(action)), null, lineNumber, sourceFile);
+            [CallerFilePath] string? sourceFile = default) where T : class, IActivity => compositeActivityBuilder.New<T>(typeof(T).Name, setup, lineNumber, sourceFile);
 
-        public static IActivityBuilder SetVariable(this ICompositeActivityBuilder builder, string variableName, object? value, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
-            builder.StartWith<SetVariable>(
-                activity =>
-                {
-                    activity.Set(x => x.VariableName, _ => variableName);
-                    activity.Set(x => x.Value, _ => value);
-                }, null, lineNumber, sourceFile);
-
-        public static IActivityBuilder SetVariable(
-            this ICompositeActivityBuilder builder,
-            string variableName,
-            Func<object?> value,
+        public static IActivityBuilder StartWith<T>(
+            this ICompositeActivityBuilder compositeActivityBuilder,
+            Action<ISetupActivity<T>>? setup,
+            Action<IActivityBuilder>? branch = default,
             [CallerLineNumber] int lineNumber = default,
-            [CallerFilePath] string? sourceFile = default) =>
-            builder.SetVariable(variableName, value(), lineNumber, sourceFile);
+            [CallerFilePath] string? sourceFile = default) where T : class, IActivity => compositeActivityBuilder.StartWith(typeof(T).Name, setup, branch, lineNumber, sourceFile);
 
-        private static Func<ActivityExecutionContext, ValueTask<IActivityExecutionResult>> RunInline(Action action) =>
-            _ =>
-            {
-                action();
-                return new ValueTask<IActivityExecutionResult>(new DoneResult());
-            };
+        public static IActivityBuilder StartWith<T>(
+            this ICompositeActivityBuilder compositeActivityBuilder,
+            Action<IActivityBuilder>? branch = default,
+            [CallerLineNumber] int lineNumber = default,
+            [CallerFilePath] string? sourceFile = default) where T : class, IActivity => compositeActivityBuilder.StartWith<T>(typeof(T).Name, branch, lineNumber, sourceFile);
 
-        private static Func<ActivityExecutionContext, ValueTask<IActivityExecutionResult>> RunInline(Action<ActivityExecutionContext> action) =>
-            context =>
-            {
-                action(context);
-                return new ValueTask<IActivityExecutionResult>(new DoneResult());
-            };
+        public static IActivityBuilder Add<T>(
+            this ICompositeActivityBuilder compositeActivityBuilder,
+            Action<ISetupActivity<T>>? setup,
+            Action<IActivityBuilder>? branch = default,
+            [CallerLineNumber] int lineNumber = default,
+            [CallerFilePath] string? sourceFile = default) where T : class, IActivity => compositeActivityBuilder.Add(typeof(T).Name, setup, branch, lineNumber, sourceFile);
 
-        private static Func<ActivityExecutionContext, ValueTask<IActivityExecutionResult>> RunInline(Func<ActivityExecutionContext, ValueTask> action) =>
-            async context =>
-            {
-                await action(context);
-                return new DoneResult();
-            };
-
-        private static Func<ActivityExecutionContext, ValueTask<IActivityExecutionResult>> RunInline(Func<ActivityExecutionContext, ValueTask<IActivityExecutionResult>> action) => async context => await action(context);
+        public static IActivityBuilder Add<T>(
+            this ICompositeActivityBuilder compositeActivityBuilder,
+            Action<IActivityBuilder>? branch = default,
+            IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders = default,
+            [CallerLineNumber] int lineNumber = default,
+            [CallerFilePath] string? sourceFile = default)
+            where T : class, IActivity => compositeActivityBuilder.Add<T>(typeof(T).Name, branch, propertyValueProviders, lineNumber, sourceFile);
     }
 }

@@ -14,12 +14,11 @@ namespace Elsa.Builders
     public class CompositeActivityBuilder : ActivityBuilder, ICompositeActivityBuilder
     {
         private readonly Func<ICompositeActivityBuilder> _compositeActivityBuilderFactory;
-        private readonly IGetsStartActivitiesForCompositeActivityBlueprint startingActivitiesProvider;
+        private readonly IGetsStartActivitiesForCompositeActivityBlueprint _startingActivitiesProvider;
 
         public CompositeActivityBuilder(IServiceProvider serviceProvider, IGetsStartActivitiesForCompositeActivityBlueprint startingActivitiesProvider)
         {
-            this.startingActivitiesProvider = startingActivitiesProvider ?? throw new ArgumentNullException(nameof(startingActivitiesProvider));
-
+            _startingActivitiesProvider = startingActivitiesProvider ?? throw new ArgumentNullException(nameof(startingActivitiesProvider));
             ServiceProvider = serviceProvider;
             ActivityBuilders = new List<IActivityBuilder>();
             ConnectionBuilders = new List<IConnectionBuilder>();
@@ -40,7 +39,7 @@ namespace Elsa.Builders
 
         public IActivityBuilder New(
             Type activityType,
-            string? activityTypeName = default,
+            string activityTypeName,
             IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders = default,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default)
@@ -50,7 +49,7 @@ namespace Elsa.Builders
         }
 
         public IActivityBuilder New<T>(
-            string? activityTypeName = default,
+            string activityTypeName,
             IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders = default,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default)
@@ -58,8 +57,8 @@ namespace Elsa.Builders
             New(typeof(T), activityTypeName, propertyValueProviders, lineNumber, sourceFile);
 
         public IActivityBuilder New<T>(
+            string activityTypeName,
             Action<ISetupActivity<T>>? setup = default,
-            string? activityTypeName = default,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default) where T : class, IActivity
         {
@@ -74,62 +73,58 @@ namespace Elsa.Builders
         }
 
         public IActivityBuilder StartWith<T>(
+            string activityTypeName,
             Action<ISetupActivity<T>>? setup = default,
             Action<IActivityBuilder>? branch = default,
-            string? activityTypeName = default,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default) where T : class, IActivity
         {
-            var activityBuilder = New(setup, activityTypeName, lineNumber, sourceFile);
+            var activityBuilder = New(activityTypeName, setup, lineNumber, sourceFile);
             return Add(activityBuilder, branch);
         }
 
-        public IActivityBuilder StartWith<T>(Action<IActivityBuilder>? branch = default, string? activityTypeName = default, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default)
+        public IActivityBuilder StartWith<T>(string activityTypeName, Action<IActivityBuilder>? branch = default, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default)
             where T : class, IActivity =>
-            Add<T>(branch, activityTypeName, null, lineNumber, sourceFile);
+            Add<T>(activityTypeName, branch, null, lineNumber, sourceFile);
 
         public IActivityBuilder Add<T>(
+            string activityTypeName,
             Action<ISetupActivity<T>>? setup = default,
             Action<IActivityBuilder>? branch = default,
-            string? activityType = default,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default) where T : class, IActivity
         {
-            var activityBuilder = New(setup, activityType, lineNumber, sourceFile);
+            var activityBuilder = New(activityTypeName, setup, lineNumber, sourceFile);
             return Add(activityBuilder, branch);
         }
 
         public IActivityBuilder Add<T>(
+            string activityTypeName,
             Action<IActivityBuilder>? branch = default,
-            string? activityType = default,
             IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders = default,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default)
             where T : class, IActivity
         {
-            var activityBuilder = new ActivityBuilder(typeof(T), activityType, this, propertyValueProviders, lineNumber, sourceFile);
+            var activityBuilder = new ActivityBuilder( typeof(T), activityTypeName, this, propertyValueProviders, lineNumber, sourceFile);
             return Add(activityBuilder, branch);
         }
 
-        public IActivityBuilder Add(IActivityBuilder activityBuilder, Action<IActivityBuilder>? branch = default)
+        public IActivityBuilder Add(
+            IActivityBuilder activityBuilder,
+            Action<IActivityBuilder>? branch = default)
         {
             branch?.Invoke(activityBuilder);
             ActivityBuilders.Add(activityBuilder);
             return activityBuilder;
         }
 
-        public override IActivityBuilder Then<T>(
-            Action<ISetupActivity<T>>? setup = null,
-            Action<IActivityBuilder>? branch = null,
-            string? activityTypeName = default,
-            [CallerLineNumber] int lineNumber = default,
-            [CallerFilePath] string? sourceFile = default) =>
-            StartWith(setup, branch, activityTypeName, lineNumber, sourceFile);
+        public override IActivityBuilder Then<T>(string activityTypeName, Action<ISetupActivity<T>>? setup = null, Action<IActivityBuilder>? branch = null, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
+            StartWith(activityTypeName,setup, branch, lineNumber, sourceFile);
 
         public override IActivityBuilder Then(IActivityBuilder targetActivity) => Add(targetActivity);
 
-        public override IActivityBuilder Then<T>(Action<IActivityBuilder>? branch = null, string? activityTypeName = default, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default)
-            where T : class, IActivity => StartWith<T>(branch, activityTypeName, lineNumber, sourceFile);
+        public override IActivityBuilder Then<T>(string activityTypeName, Action<IActivityBuilder>? branch = null, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) => StartWith<T>(activityTypeName, branch, lineNumber, sourceFile);
 
         public IConnectionBuilder Connect(
             IActivityBuilder source,
@@ -215,18 +210,18 @@ namespace Elsa.Builders
                 compositeActivityBlueprint.ActivityPropertyProviders = compositeActivityBlueprint.ActivityPropertyProviders;
 
                 // Connect the composite activity to its starting activities.
-                var startActivities = startingActivitiesProvider.GetStartActivities(compositeActivityBlueprint).ToList();
+                var startActivities = _startingActivitiesProvider.GetStartActivities(compositeActivityBlueprint).ToList();
                 connections.AddRange(startActivities.Select(x => new Connection(compositeActivityBlueprint, x, CompositeActivity.Enter)));
             }
         }
 
-        private IActivityBlueprint BuildActivityBlueprint(IActivityBuilder builder, ICompositeActivityBlueprint parent)
+        private static IActivityBlueprint BuildActivityBlueprint(IActivityBuilder builder, ICompositeActivityBlueprint parent)
         {
             var isComposite = typeof(CompositeActivity).IsAssignableFrom(builder.ActivityType);
             return isComposite
-                ? new CompositeActivityBlueprint(builder.ActivityId, parent, builder.Name, builder.DisplayName, builder.Description, builder.ActivityType.Name, builder.PersistWorkflowEnabled, builder.LoadWorkflowContextEnabled,
+                ? new CompositeActivityBlueprint(builder.ActivityId, parent, builder.Name, builder.DisplayName, builder.Description, builder.ActivityTypeName, builder.PersistWorkflowEnabled, builder.LoadWorkflowContextEnabled,
                     builder.SaveWorkflowContextEnabled, builder.PersistOutputEnabled, builder.Source)
-                : new ActivityBlueprint(builder.ActivityId, parent, builder.Name, builder.DisplayName, builder.Description, builder.ActivityType.Name, builder.PersistWorkflowEnabled, builder.LoadWorkflowContextEnabled,
+                : new ActivityBlueprint(builder.ActivityId, parent, builder.Name, builder.DisplayName, builder.Description, builder.ActivityTypeName, builder.PersistWorkflowEnabled, builder.LoadWorkflowContextEnabled,
                     builder.SaveWorkflowContextEnabled, builder.PersistOutputEnabled, builder.Source);
         }
     }

@@ -20,9 +20,9 @@ namespace Elsa.Core.IntegrationTests.Workflows
                     activity => activity.Set(x => x.Branches, new HashSet<string>(new[] { "Branch 1", "Branch 2", "Branch 3" })),
                     fork =>
                     {
-                        fork.When("Branch 1").SignalReceived("Signal1").WriteLine("Branch 1 executed").WithName("WriteLine1").Then("Join");
-                        fork.When("Branch 2").SignalReceived("Signal2").WriteLine("Branch 2 executed").WithName("WriteLine2").Then("Join");
-                        fork.When("Branch 3").SignalReceived("Signal3").WriteLine("Branch 3 executed").WithName("WriteLine3").Then("Join");
+                        fork.When("Branch 1").SignalReceived("Signal1").WriteLine("Branch 1 executed").WithName("WriteLine1").ThenNamed("Join");
+                        fork.When("Branch 2").SignalReceived("Signal2").WriteLine("Branch 2 executed").WithName("WriteLine2").ThenNamed("Join");
+                        fork.When("Branch 3").SignalReceived("Signal3").WriteLine("Branch 3 executed").WithName("WriteLine3").ThenNamed("Join");
                     })
                 .Add<Join>(join => join.Set(x => x.Mode, _joinMode)).WithName("Join")
                 .WriteLine("Finished").WithName("Finished");
