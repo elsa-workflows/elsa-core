@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Reflection;
+using AutoMapper.Internal;
 using Elsa.Attributes;
 using Elsa.Design;
 
@@ -25,7 +26,7 @@ namespace Elsa.Metadata
             if (typeof(IEnumerable).IsAssignableFrom(type))
                 return ActivityPropertyUIHints.Dropdown;
             
-            if (type.IsEnum)
+            if (type.IsEnum || type.IsNullableType() && type.GetTypeOfNullable().IsEnum)
                 return ActivityPropertyUIHints.Dropdown;
 
             return ActivityPropertyUIHints.SingleLine;
