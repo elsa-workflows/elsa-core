@@ -33,7 +33,7 @@ namespace Elsa.Activities.JavaScript
         public string? Script { get; set; }
 
         [ActivityProperty(Hint = "The possible outcomes that can be set by the script.", UIHint = ActivityPropertyUIHints.MultiText)]
-        public ICollection<string> Outcomes { get; set; } = new List<string> { OutcomeNames.Done };
+        public ICollection<string> PossibleOutcomes { get; set; } = new List<string> { OutcomeNames.Done };
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {

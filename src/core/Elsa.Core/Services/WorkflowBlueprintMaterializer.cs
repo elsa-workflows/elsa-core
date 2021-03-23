@@ -78,7 +78,7 @@ namespace Elsa.Services
                         continue;
                     }
 
-                    var provider = new ExpressionActivityPropertyValueProvider(property.Expression, property.Syntax, prop.PropertyType);
+                    var provider = new ExpressionActivityPropertyValueProvider(property.Expression!, property.Syntax!, prop.PropertyType);
                     propertyProviders.AddProvider(activityDefinition.ActivityId, property.Name, provider);
                 }
             }

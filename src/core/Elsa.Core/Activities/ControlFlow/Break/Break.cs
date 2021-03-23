@@ -30,7 +30,7 @@ namespace Elsa.Activities.ControlFlow
             var supportedScope = query.FirstOrDefault();
             
             if(supportedScope != null)
-                context.WorkflowInstance.ActivityData[supportedScope.ActivityId].SetState("Break", true);
+                context.GetActivityData(supportedScope.ActivityId).SetState("Break", true);
 
             return Done();
         }
