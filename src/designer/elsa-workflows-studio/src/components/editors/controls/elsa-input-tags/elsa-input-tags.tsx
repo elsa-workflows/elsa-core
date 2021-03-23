@@ -1,4 +1,4 @@
-import {Component, h, Prop, State} from '@stencil/core';
+import {Component, h, Prop, Event, EventEmitter} from '@stencil/core';
 
 @Component({
   tag: 'elsa-input-tags',
@@ -11,8 +11,9 @@ export class ElsaInputTags {
   @Prop() fieldId?: string;
   @Prop() placeHolder?: string = 'Add tag';
   @Prop() values?: Array<string> = [];
+  @Event({bubbles: true}) valueChanged: EventEmitter<Array<string>>;
 
-  onInputKeyDown(e: KeyboardEvent) {
+  async onInputKeyDown(e: KeyboardEvent) {
     if (e.key != "Enter")
       return;
 
@@ -28,6 +29,7 @@ export class ElsaInputTags {
     values.push(value);
     this.values = values.distinct();
     input.value = '';
+    await this.valueChanged.emit(values);
   }
 
   onDeleteTagClick(e: Event, tag: string) {

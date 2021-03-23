@@ -256,6 +256,7 @@ declare namespace LocalJSX {
     interface ElsaInputTags {
         "fieldId"?: string;
         "fieldName"?: string;
+        "onValueChanged"?: (event: CustomEvent<Array<string>>) => void;
         "placeHolder"?: string;
         "values"?: Array<string>;
     }
