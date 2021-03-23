@@ -4,6 +4,6 @@ namespace ElsaDashboard.Application.Options
 {
     public class ElsaDashboardOptions
     {
-        public Uri ElsaServerUrl { get; set; }
+        public Uri ElsaServerUrl { get; set; } = default!;
     }
 }
