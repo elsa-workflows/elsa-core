@@ -6,14 +6,8 @@ import {getProperty, setActivityModelProperty} from "../utils/utils";
 export class SingleLineDriver implements PropertyDisplayDriver {
 
   display(activity: ActivityModel, property: ActivityPropertyDescriptor) {
-    const key = `${activity.activityId}:${property.name}`;
     const prop = getProperty(activity.properties, property.name);
-
-    return (
-      <div class="sm:col-span-6">
-        <elsa-text-property propertyDescriptor={property} propertyModel={prop} editor-height="2em" single-line={true}/>
-      </div>
-    )
+    return <elsa-text-property propertyDescriptor={property} propertyModel={prop} editor-height="2em" single-line={true}/>;
   }
 
   update(activity: ActivityModel, property: ActivityPropertyDescriptor, form: FormData) {

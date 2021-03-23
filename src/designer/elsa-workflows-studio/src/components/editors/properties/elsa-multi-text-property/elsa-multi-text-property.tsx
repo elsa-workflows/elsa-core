@@ -11,11 +11,15 @@ export class ElsaMultiTextProperty {
 
   @Prop() propertyDescriptor: ActivityPropertyDescriptor;
   @Prop() propertyModel: ActivityDefinitionProperty;
-  @State() values?: Array<string>
+  @State() currentValue?: Array<string>
 
   async componentWillLoad() {
     const expression = this.propertyModel.expression || '[]';
-    this.values = parseJson(expression) ?? [];
+    this.currentValue = parseJson(expression) ?? [];
+  }
+
+  onValueChanged(newValue: Array<string>){
+    this.currentValue = newValue;
   }
 
   render() {
@@ -25,7 +29,7 @@ export class ElsaMultiTextProperty {
     const fieldName = propertyName;
     const fieldLabel = propertyDescriptor.label || propertyName;
     const fieldHint = propertyDescriptor.hint;
-    const values = this.values.map(x => x ? x.trim() : '').filter(x => x.length > 0);
+    const values = this.currentValue.map(x => x ? x.trim() : '').filter(x => x.length > 0);
 
     return (
       <div>
@@ -33,7 +37,7 @@ export class ElsaMultiTextProperty {
           {fieldLabel}
         </label>
         <div class="mt-1">
-          <elsa-input-tags values={values} fieldId={fieldId} fieldName={fieldName}/>
+          <elsa-input-tags values={values} fieldId={fieldId} fieldName={fieldName} onValueChanged={e => this.onValueChanged(e.detail)}/>
         </div>
         {fieldHint ? <p class="mt-2 text-sm text-gray-500">{fieldHint}</p> : undefined}
       </div>

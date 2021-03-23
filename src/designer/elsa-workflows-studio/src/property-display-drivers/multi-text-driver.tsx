@@ -6,14 +6,8 @@ import {getProperty, setActivityModelProperty} from "../utils/utils";
 export class MultiTextDriver implements PropertyDisplayDriver {
 
   display(activity: ActivityModel, property: ActivityPropertyDescriptor) {
-    const key = `${activity.activityId}:${property.name}`;
     const prop = getProperty(activity.properties, property.name);
-
-    return (
-      <div class="sm:col-span-6">
-        <elsa-multi-text-property propertyDescriptor={property} propertyModel={prop} />
-      </div>
-    )
+    return <elsa-multi-text-property propertyDescriptor={property} propertyModel={prop} />;
   }
 
   update(activity: ActivityModel, property: ActivityPropertyDescriptor, form: FormData) {

@@ -221,7 +221,8 @@ export class ElsaActivityPickerModal {
   }
 
   renderPropertyEditor(activity: ActivityModel, property: ActivityPropertyDescriptor) {
-    return propertyDisplayManager.display(activity, property);
+    const key = `activity-property-input:${activity.activityId}:${property.name}`;
+    return <div key={key} class="sm:col-span-6">{propertyDisplayManager.display(activity, property)}</div>;
   }
 
   getHiddenClass(tab: string) {
