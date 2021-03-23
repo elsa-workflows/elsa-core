@@ -6,17 +6,12 @@ import {getProperty, setActivityModelProperty} from "../utils/utils";
 export class MultilineDriver implements PropertyDisplayDriver {
 
   display(activity: ActivityModel, property: ActivityPropertyDescriptor) {
-    const key = `${activity.activityId}:${property.name}`;
     const prop = getProperty(activity.properties, property.name);
     const options = property.options || {};
     const editorHeight = this.getEditorHeight(options);
     const context: string = options.context;
 
-    return (
-      <div class="sm:col-span-6">
-        <elsa-text-property propertyDescriptor={property} propertyModel={prop} editor-height={editorHeight} context={context}/>
-      </div>
-    );
+    return <elsa-text-property propertyDescriptor={property} propertyModel={prop} editor-height={editorHeight} context={context}/>;
   }
 
   update(activity: ActivityModel, property: ActivityPropertyDescriptor, form: FormData) {
