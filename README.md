@@ -20,6 +20,13 @@ Workflows can be defined not only using code but also as JSON, YAML or XML.
   <img src="./doc/elsa-2-dashboard-plus-designer.gif" alt="Elsa 2 Preview">
 </p>
 
+## UNDER CONSTRUCTION
+
+Elsa 2.0 is currently under heavy construction. The biggest items are those of the dashboard and workflow designer.
+[This issue](https://github.com/elsa-workflows/elsa-core/issues/721) keeps track of these items' progress.
+
+If you think something is missing there, please let us know in the comments section.
+
 ## Get Started
 
 Follow the [Getting Started](https://elsa-workflows.github.io/elsa-core/docs/installing-elsa-core) instructions on the [Elsa Workflows documentation site](https://elsa-workflows.github.io/elsa-core).
