@@ -2,7 +2,7 @@
 
 namespace Elsa.Activities.Telnyx.Webhooks.Payloads.Call
 {
-    [Payload(EventType, ActivityTypeName, "Call Playback Ended", "Triggered when an audio playback has ended.")]
+    [Webhook(EventType, ActivityTypeName, "Call Playback Ended", "Triggered when an audio playback has ended.")]
     public sealed record CallPlaybackEndedPayload : CallPlayback
     {
         public const string EventType = "call.playback.ended";

@@ -7,18 +7,28 @@ using System.Threading.Tasks;
 using Elsa.Activities.Telnyx.Webhooks.Attributes;
 using Elsa.Activities.Telnyx.Webhooks.Models;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Abstract;
+using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
+using Elsa.Activities.Telnyx.Webhooks.Services;
 using Elsa.ActivityProviders;
 using Elsa.ActivityResults;
 using Elsa.Metadata;
 using Elsa.Services.Models;
+using Microsoft.AspNetCore.Authorization.Policy;
 
 namespace Elsa.Activities.Telnyx.ActivityTypes
 {
-    public class NotificationActivityTypeProvider : IActivityTypeProvider
+    internal class NotificationActivityTypeProvider : IActivityTypeProvider
     {
+        private readonly IWebhookFilterService _webhookFilterService;
+
+        public NotificationActivityTypeProvider(IWebhookFilterService webhookFilterService)
+        {
+            _webhookFilterService = webhookFilterService;
+        }
+
         public const string NotificationAttribute = "TelnyxNotification";
         public const string EventTypeAttribute = "EventType";
-        
+
         public ValueTask<IEnumerable<ActivityType>> GetActivityTypesAsync(CancellationToken cancellationToken = default)
         {
             var activityTypes = GetActivityTypes();
@@ -27,20 +37,31 @@ namespace Elsa.Activities.Telnyx.ActivityTypes
 
         private IEnumerable<ActivityType> GetActivityTypes()
         {
-            var types = GetType().Assembly.GetAllWithBaseClass<Payload>().Where(x => x.GetCustomAttribute<PayloadAttribute>() != null);
-            return types.Select(CreateWebhookActivityType);
+            var payloadTypes = GetType().Assembly.GetAllWithBaseClass<Payload>().Where(x => x.GetCustomAttribute<WebhookAttribute>() != null).ToList();
+            var activityTypes = payloadTypes.Select(CreateWebhookActivityType).ToList();
+
+            // Add variations on the same webhooks. The webhook filters will conditionally select the appropriate one.
+            var hangupWebhookAttribute = payloadTypes.First(x => x == typeof(CallHangupPayload)).GetCustomAttribute<WebhookAttribute>()!;
+            activityTypes.Add(CreateWebhookActivityType(new WebhookAttribute(hangupWebhookAttribute.EventType, "OriginatorCallHangup", "Originator Call Hangup", "Triggered when an incoming call was hangup by the originator.")));
+
+            return activityTypes;
         }
-        
+
         private static ActivityType CreateWebhookActivityType(Type payloadType)
         {
-            var payloadAttribute = payloadType.GetCustomAttribute<PayloadAttribute>();
+            var webhookAttribute = payloadType.GetCustomAttribute<WebhookAttribute>();
 
-            if (payloadAttribute == null)
-                throw new InvalidOperationException($"Make sure that the payload type is annotated with the ${nameof(PayloadAttribute)} attribute");
+            if (webhookAttribute == null)
+                throw new InvalidOperationException($"Make sure that the payload type is annotated with the ${nameof(WebhookAttribute)} attribute");
 
-            var typeName = payloadAttribute.ActivityType;
-            var displayName = payloadAttribute.DisplayName;
-            var description = payloadAttribute.Description;
+            return CreateWebhookActivityType(webhookAttribute);
+        }
+
+        private static ActivityType CreateWebhookActivityType(WebhookAttribute webhookAttribute)
+        {
+            var typeName = webhookAttribute.ActivityType;
+            var displayName = webhookAttribute.DisplayName;
+            var description = webhookAttribute.Description;
 
             return new ActivityType
             {
@@ -59,18 +80,24 @@ namespace Elsa.Activities.Telnyx.ActivityTypes
                 Attributes = new Dictionary<string, object>
                 {
                     [NotificationAttribute] = true,
-                    [EventTypeAttribute] = payloadAttribute.EventType
+                    [EventTypeAttribute] = webhookAttribute.EventType
                 },
                 CanExecuteAsync = _ => new ValueTask<bool>(true),
                 ExecuteAsync = context => context.WorkflowExecutionContext.IsFirstPass ? ExecuteInternal(context) : new ValueTask<IActivityExecutionResult>(new SuspendResult()),
                 ResumeAsync = ExecuteInternal,
             };
         }
-        
+
         private static ValueTask<IActivityExecutionResult> ExecuteInternal(ActivityExecutionContext context)
         {
-            var webhook = (TelnyxWebhook) context.Input!; 
-            context.WorkflowExecutionContext.CorrelationId ??= (webhook.Data.Payload as ICorrelationId)?.CorrelationId;
+            var webhook = (TelnyxWebhook) context.Input!;
+
+            if (webhook.Data.Payload is CallPayload callPayload)
+            {
+                context.WorkflowExecutionContext.CorrelationId ??= callPayload.CallSessionId;
+                context.SetVariable("CallControlId", callPayload.CallControlId);
+            }
+
             return new(new CombinedResult(new OutputResult(context.Input), new DoneResult()));
         }
     }

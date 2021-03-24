@@ -28,6 +28,13 @@ namespace Elsa.Activities.Telnyx.Activities
             set => SetState(value);
         }
 
+        [ActivityProperty(Label = "Call Control ID", Hint = "Unique identifier and token for controlling the call.", Category = PropertyCategories.Advanced)]
+        public string? CallControlId
+        {
+            get => GetState<string>();
+            set => SetState(value);
+        }
+
         [ActivityProperty]
         public RingGroupStrategy Strategy
         {
@@ -69,7 +76,8 @@ namespace Elsa.Activities.Telnyx.Activities
             builder
                 .ForEach(() => Extensions, iterate => iterate
                     .Then<ResolveExtension>(a => a.WithExtension(context => context.GetInput<string>()))
-                    .Then<Dial>(a => a
+                    .Then<TransferCall>(a => a
+                        .WithCallControlAppId(() => CallControlId)
                         .WithTo(context => context.GetInput<string>())
                         .WithTimeoutSecs(() => (int) RingTime.TotalSeconds)
                         .WithFrom(() => From)
@@ -107,7 +115,8 @@ namespace Elsa.Activities.Telnyx.Activities
                         .When("Dial Everyone")
                         .ParallelForEach(() => Extensions, iterate => iterate
                             .Then<ResolveExtension>(a => a.WithExtension(context => context.GetInput<string>()))
-                            .Then<Dial>(a => a
+                            .Then<TransferCall>(a => a
+                                .WithCallControlAppId(() => CallControlId)
                                 .WithTo(context => context.GetInput<string>())
                                 .WithTimeoutSecs(() => (int) RingTime.TotalSeconds)
                                 .WithFrom(() => From)

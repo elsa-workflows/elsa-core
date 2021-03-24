@@ -1,10 +1,14 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Elsa.Activities.Telnyx.Bookmarks;
 using Elsa.Activities.Telnyx.Webhooks.Attributes;
 using Elsa.Activities.Telnyx.Webhooks.Events;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Abstract;
+using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
+using Elsa.Activities.Telnyx.Webhooks.Services;
 using Elsa.DistributedLock;
 using Elsa.Models;
 using Elsa.Persistence;
@@ -24,14 +28,22 @@ namespace Elsa.Activities.Telnyx.Webhooks.Consumers
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
         private readonly IDistributedLockProvider _distributedLockProvider;
         private readonly ICommandSender _commandSender;
+        private readonly IWebhookFilterService _webhookFilterService;
         private readonly ILogger<TriggerWorkflows> _logger;
 
-        public TriggerWorkflows(IWorkflowRunner workflowRunner, IWorkflowInstanceStore workflowInstanceStore, IDistributedLockProvider distributedLockProvider, ICommandSender commandSender, ILogger<TriggerWorkflows> logger)
+        public TriggerWorkflows(
+            IWorkflowRunner workflowRunner,
+            IWorkflowInstanceStore workflowInstanceStore,
+            IDistributedLockProvider distributedLockProvider,
+            ICommandSender commandSender,
+            IWebhookFilterService webhookFilterService,
+            ILogger<TriggerWorkflows> logger)
         {
             _workflowRunner = workflowRunner;
             _workflowInstanceStore = workflowInstanceStore;
             _distributedLockProvider = distributedLockProvider;
             _commandSender = commandSender;
+            _webhookFilterService = webhookFilterService;
             _logger = logger;
         }
 
@@ -40,18 +52,17 @@ namespace Elsa.Activities.Telnyx.Webhooks.Consumers
             var webhook = message.Webhook;
             var eventType = webhook.Data.EventType;
             var payload = message.Webhook.Data.Payload;
-            var payloadAttribute = payload.GetType().GetCustomAttribute<PayloadAttribute>();
+            var activityType = _webhookFilterService.GetActivityTypeName(payload);
 
-            if (payloadAttribute == null)
+            if (activityType == null)
             {
-                _logger.LogWarning("The received payload type '{PayloadTypeName}' does not have a PayloadAttribute containing metadata, which means it's an unsupported event", payload.GetType().Name);
+                _logger.LogWarning("The received event '{EventType}' is an unsupported event", webhook.Data.EventType);
                 return;
             }
             
-            var activityType = payloadAttribute.ActivityType;
-            var correlationId = (payload as ICorrelationId)?.CorrelationId;
+            var correlationId = GetCorrelationId(payload);
             var lockKey = $"telnyx:trigger-workflows:correlation-{correlationId}";
-            
+
             if (!await _distributedLockProvider.AcquireLockAsync(lockKey))
             {
                 _logger.LogDebug("Lock {LockKey} already taken", lockKey);
@@ -74,6 +85,14 @@ namespace Elsa.Activities.Telnyx.Webhooks.Consumers
             {
                 await _distributedLockProvider.ReleaseLockAsync(lockKey);
             }
+        }
+
+        private string GetCorrelationId(Payload payload)
+        {
+            if (payload is CallPayload callPayload)
+                return callPayload.CallSessionId;
+
+            throw new NotSupportedException($"The received payload type {payload.GetType().Name} is not supported yet.");
         }
     }
 }

@@ -39,7 +39,7 @@ namespace ElsaDashboard.Samples.Monolith
                     .AddQuartzTemporalActivities()
                     .AddTelnyx(Configuration.GetSection("Telnyx").Bind)
                     .AddJavaScriptActivities()
-                    .AddWorkflowsFrom<Startup>()
+                    //.AddWorkflowsFrom<Startup>()
                 );
 
             services

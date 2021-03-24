@@ -9,9 +9,9 @@ using Elsa.Activities.Telnyx.ActivityTypes;
 using Elsa.Activities.Telnyx.Bookmarks;
 using Elsa.Activities.Telnyx.Client.Services;
 using Elsa.Activities.Telnyx.Options;
-using Elsa.Activities.Telnyx.Services;
 using Elsa.Activities.Telnyx.Webhooks.Consumers;
 using Elsa.Activities.Telnyx.Webhooks.Events;
+using Elsa.Activities.Telnyx.Webhooks.Filters;
 using Elsa.Activities.Telnyx.Webhooks.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -46,6 +46,9 @@ namespace Elsa.Activities.Telnyx.Extensions
                 .AddBookmarkProvider<NotificationBookmarkProvider>()
                 .AddNotificationHandlers(typeof(TriggerWorkflows))
                 .AddScoped<IWebhookHandler, WebhookHandler>()
+                .AddSingleton<IWebhookFilterService, WebhookFilterService>()
+                .AddSingleton<IWebhookFilter, AttributeBasedWebhookFilter>()
+                .AddSingleton<IWebhookFilter, HangupWebhookFilter>()
                 .AddScoped(telnyxOptions.ExtensionProviderFactory);
 
             // Telnyx API Client.

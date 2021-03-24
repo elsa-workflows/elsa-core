@@ -1,10 +1,14 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.ActivityProviders;
+using Elsa.Builders;
 using Elsa.Models;
 using Elsa.Services.Models;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NetBox.Extensions;
 
@@ -13,14 +17,18 @@ namespace Elsa.Services
     public class WorkflowBlueprintMaterializer : IWorkflowBlueprintMaterializer
     {
         private readonly IActivityTypeService _activityTypeService;
+        private readonly IGetsStartActivitiesForCompositeActivityBlueprint _startingActivitiesProvider;
+        private readonly IServiceProvider _serviceProvider;
         private readonly ILogger _logger;
-        private readonly IGetsStartActivitiesForCompositeActivityBlueprint startingActivitiesProvider;
 
-        public WorkflowBlueprintMaterializer(IActivityTypeService activityTypeService,
-                                             ILogger<WorkflowBlueprintMaterializer> logger,
-                                             IGetsStartActivitiesForCompositeActivityBlueprint startingActivitiesProvider)
+        public WorkflowBlueprintMaterializer(
+            IActivityTypeService activityTypeService,
+            IGetsStartActivitiesForCompositeActivityBlueprint startingActivitiesProvider,
+            IServiceProvider serviceProvider,
+            ILogger<WorkflowBlueprintMaterializer> logger)
         {
-            this.startingActivitiesProvider = startingActivitiesProvider ?? throw new System.ArgumentNullException(nameof(startingActivitiesProvider));
+            _startingActivitiesProvider = startingActivitiesProvider;
+            _serviceProvider = serviceProvider;
             _activityTypeService = activityTypeService;
             _logger = logger;
         }
@@ -105,7 +113,8 @@ namespace Elsa.Services
         private async Task<IEnumerable<IActivityBlueprint>> CreateBlueprintsAsync(ActivityDefinition activityDefinition, CancellationToken cancellationToken)
         {
             var list = new List<IActivityBlueprint>();
-
+            var activityType = await _activityTypeService.GetActivityTypeAsync(activityDefinition.Type, cancellationToken);
+            
             if (activityDefinition is CompositeActivityDefinition compositeActivityDefinition)
             {
                 var manyActivityBlueprints = await Task.WhenAll(compositeActivityDefinition.Activities.Select(async x => await CreateBlueprintsAsync(x, cancellationToken)));
@@ -130,7 +139,33 @@ namespace Elsa.Services
                 list.Add(compositeActivityBlueprint);
 
                 // Connect the composite activity to its starting activities.
-                var startActivities = startingActivitiesProvider.GetStartActivities(compositeActivityBlueprint).ToList();
+                var startActivities = _startingActivitiesProvider.GetStartActivities(compositeActivityBlueprint).ToList();
+                compositeActivityBlueprint.Connections.AddRange(startActivities.Select(x => new Connection(compositeActivityBlueprint, x, CompositeActivity.Enter)));
+            }
+            else if (typeof(CompositeActivity).IsAssignableFrom(activityType.Type))
+            {
+                var compositeActivity = (CompositeActivity) ActivatorUtilities.CreateInstance(_serviceProvider, activityType.Type);
+                var compositeActivityBuilder = new CompositeActivityBuilder(_serviceProvider, _startingActivitiesProvider, activityType.Type, activityType.TypeName)
+                {
+                    ActivityId = activityDefinition.ActivityId,
+                    Name = activityDefinition.Name,
+                    DisplayName = activityDefinition.DisplayName,
+                    PersistOutputEnabled = activityDefinition.PersistOutput,
+                    PersistWorkflowEnabled = activityDefinition.PersistWorkflow,
+                    LoadWorkflowContextEnabled = activityDefinition.LoadWorkflowContext,
+                    SaveWorkflowContextEnabled = activityDefinition.SaveWorkflowContext,
+                    Description = activityDefinition.Description
+                };
+                
+                compositeActivity.Build(compositeActivityBuilder);
+
+                var compositeActivityBlueprint = compositeActivityBuilder.Build($"{activityDefinition.ActivityId}:activity");
+
+                list.Add(compositeActivityBlueprint);
+                list.AddRange(compositeActivityBlueprint.Activities);
+                
+                // Connect the composite activity to its starting activities.
+                var startActivities = _startingActivitiesProvider.GetStartActivities(compositeActivityBlueprint).ToList();
                 compositeActivityBlueprint.Connections.AddRange(startActivities.Select(x => new Connection(compositeActivityBlueprint, x, CompositeActivity.Enter)));
             }
             else

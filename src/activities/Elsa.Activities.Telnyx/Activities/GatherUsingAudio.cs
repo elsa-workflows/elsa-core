@@ -1,8 +1,8 @@
 ﻿using System;
-using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Telnyx.Client.Models;
 using Elsa.Activities.Telnyx.Client.Services;
+using Elsa.Activities.Telnyx.Extensions;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Design;
@@ -86,11 +86,11 @@ namespace Elsa.Activities.Telnyx.Activities
                 EmptyToNull(ValidDigits)
             );
             
-            var callControlId = CallControlId is not null and not "" ? CallControlId : context.CorrelationId ?? throw new InvalidOperationException("Cannot answer call without a call control ID");
+            var callControlId = context.GetCallControlId(CallControlId);
 
             try
             {
-                await _telnyxClient.Calls.GatherUsingAudiAsync(callControlId, request, context.CancellationToken);
+                await _telnyxClient.Calls.GatherUsingAudioAsync(callControlId, request, context.CancellationToken);
             }
             catch (ApiException e)
             {

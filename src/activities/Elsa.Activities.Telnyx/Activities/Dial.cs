@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Telnyx.Client.Models;
 using Elsa.Activities.Telnyx.Client.Services;
-using Elsa.Activities.Telnyx.Options;
+using Elsa.Activities.Telnyx.Extensions;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Builders;
@@ -25,19 +24,17 @@ namespace Elsa.Activities.Telnyx.Activities
     public class Dial : Activity
     {
         private readonly ITelnyxClient _telnyxClient;
-        private readonly TelnyxOptions _telnyxOptions;
 
-        public Dial(ITelnyxClient telnyxClient, TelnyxOptions telnyxOptions)
+        public Dial(ITelnyxClient telnyxClient)
         {
             _telnyxClient = telnyxClient;
-            _telnyxOptions = telnyxOptions;
         }
 
-        [ActivityProperty(Label = "Connection ID", Hint = "The ID of the Call Control App (formerly ID of the connection) to be used when dialing the destination.", Category = PropertyCategories.Advanced)]
-        public string CallControlAppId { get; set; } = default!;
+        [ActivityProperty(Label = "Call Control ID", Hint = "The ID of the Call Control App (formerly ID of the connection) to be used when dialing the destination.", Category = PropertyCategories.Advanced)]
+        public string CallControlId { get; set; } = default!;
 
         [ActivityProperty(Label = "To", Hint = "The DID or SIP URI to dial out and bridge to the given call.")]
-        public string To { get; set; }
+        public string To { get; set; } = default!;
 
         [ActivityProperty(Label = "From",
             Hint = "The 'from' number to be used as the caller id presented to the destination ('To' number). The number should be in +E164 format. This attribute will default to the 'From' number of the original call if omitted.")]
@@ -90,10 +87,10 @@ namespace Elsa.Activities.Telnyx.Activities
 
         private async ValueTask DialAsync(ActivityExecutionContext context)
         {
-            var connectionId = CallControlAppId is not null and not "" ? CallControlAppId : _telnyxOptions.CallControlAppId ?? throw new Exception("No Call Control ID specified and no default value configured");
+            var callControlId = context.GetCallControlId(CallControlId);
             
             var request = new DialRequest(
-                connectionId,
+                callControlId,
                 To,
                 From,
                 FromDisplayName,
@@ -123,11 +120,11 @@ namespace Elsa.Activities.Telnyx.Activities
     
     public static class DialExtensions
     {
-        public static ISetupActivity<Dial> WithCallControlAppId(this ISetupActivity<Dial> setup, Func<ActivityExecutionContext, ValueTask<string?>> value) => setup.Set(x => x.CallControlAppId, value);
-        public static ISetupActivity<Dial> WithCallControlAppId(this ISetupActivity<Dial> setup, Func<ActivityExecutionContext, string?> value) => setup.Set(x => x.CallControlAppId, value);
-        public static ISetupActivity<Dial> WithCallControlAppId(this ISetupActivity<Dial> setup, Func<ValueTask<string?>> value) => setup.Set(x => x.CallControlAppId, value);
-        public static ISetupActivity<Dial> WithCallControlAppId(this ISetupActivity<Dial> setup, Func<string?> value) => setup.Set(x => x.CallControlAppId, value);
-        public static ISetupActivity<Dial> WithCallControlAppId(this ISetupActivity<Dial> setup, string? value) => setup.Set(x => x.CallControlAppId, value);
+        public static ISetupActivity<Dial> WithCallControlAppId(this ISetupActivity<Dial> setup, Func<ActivityExecutionContext, ValueTask<string?>> value) => setup.Set(x => x.CallControlId, value);
+        public static ISetupActivity<Dial> WithCallControlAppId(this ISetupActivity<Dial> setup, Func<ActivityExecutionContext, string?> value) => setup.Set(x => x.CallControlId, value);
+        public static ISetupActivity<Dial> WithCallControlAppId(this ISetupActivity<Dial> setup, Func<ValueTask<string?>> value) => setup.Set(x => x.CallControlId, value);
+        public static ISetupActivity<Dial> WithCallControlAppId(this ISetupActivity<Dial> setup, Func<string?> value) => setup.Set(x => x.CallControlId, value);
+        public static ISetupActivity<Dial> WithCallControlAppId(this ISetupActivity<Dial> setup, string? value) => setup.Set(x => x.CallControlId, value);
         
         public static ISetupActivity<Dial> WithTo(this ISetupActivity<Dial> setup, Func<ActivityExecutionContext, ValueTask<string?>> value) => setup.Set(x => x.To, value);
         public static ISetupActivity<Dial> WithTo(this ISetupActivity<Dial> setup, Func<ActivityExecutionContext, string?> value) => setup.Set(x => x.To, value);

@@ -3,7 +3,7 @@ using NodaTime;
 
 namespace Elsa.Activities.Telnyx.Webhooks.Payloads.Call
 {
-    [Payload(EventType, ActivityTypeName, "Call Hangup", "Triggered when an incoming call was hangup.")]
+    [Webhook(EventType, ActivityTypeName, "Call Hangup", "Triggered when an incoming call was hangup.")]
     public sealed record CallHangupPayload : CallPayload
     {
         public const string EventType = "call.hangup";

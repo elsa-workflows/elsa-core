@@ -2,7 +2,7 @@
 
 namespace Elsa.Activities.Telnyx.Webhooks.Payloads.Call
 {
-    [Payload(EventType, ActivityTypeName, "Call Initiated", "Triggered when an incoming call is received.")]
+    [Webhook(EventType, ActivityTypeName, "Call Initiated", "Triggered when an incoming call is received.")]
     public sealed record CallInitiatedPayload : CallPayload
     {
         public const string EventType = "call.initiated";

@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Telnyx.Client.Models;
 using Elsa.Activities.Telnyx.Client.Services;
+using Elsa.Activities.Telnyx.Extensions;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Builders;
 using Elsa.Design;
 using Elsa.Exceptions;
 using Elsa.Services;
@@ -33,7 +34,7 @@ namespace Elsa.Activities.Telnyx.Activities
         public string CallControlId { get; set; } = default!;
 
         [ActivityProperty(Label = "To", Hint = "The DID or SIP URI to dial out and bridge to the given call.")]
-        public string To { get; set; }
+        public string To { get; set; } = default!;
 
         [ActivityProperty(Label = "From",
             Hint = "The 'from' number to be used as the caller id presented to the destination ('To' number). The number should be in +E164 format. This attribute will default to the 'From' number of the original call if omitted.")]
@@ -111,7 +112,7 @@ namespace Elsa.Activities.Telnyx.Activities
                 WebhookUrlMethod
             );
 
-            var callControlId = CallControlId is not null and not "" ? CallControlId : context.CorrelationId ?? throw new InvalidOperationException("Cannot answer call without a call control ID");
+            var callControlId = context.GetCallControlId(CallControlId);
             
             try
             {
@@ -122,5 +123,98 @@ namespace Elsa.Activities.Telnyx.Activities
                 throw new WorkflowException(e.Content ?? e.Message, e);
             }
         }
+    }
+    
+    public static class TransferCallExtensions
+    {
+        public static ISetupActivity<TransferCall> WithCallControlAppId(this ISetupActivity<TransferCall> setup, Func<ActivityExecutionContext, ValueTask<string?>> value) => setup.Set(x => x.CallControlId, value);
+        public static ISetupActivity<TransferCall> WithCallControlAppId(this ISetupActivity<TransferCall> setup, Func<ActivityExecutionContext, string?> value) => setup.Set(x => x.CallControlId, value);
+        public static ISetupActivity<TransferCall> WithCallControlAppId(this ISetupActivity<TransferCall> setup, Func<ValueTask<string?>> value) => setup.Set(x => x.CallControlId, value);
+        public static ISetupActivity<TransferCall> WithCallControlAppId(this ISetupActivity<TransferCall> setup, Func<string?> value) => setup.Set(x => x.CallControlId, value);
+        public static ISetupActivity<TransferCall> WithCallControlAppId(this ISetupActivity<TransferCall> setup, string? value) => setup.Set(x => x.CallControlId, value);
+        
+        public static ISetupActivity<TransferCall> WithTo(this ISetupActivity<TransferCall> setup, Func<ActivityExecutionContext, ValueTask<string?>> value) => setup.Set(x => x.To, value);
+        public static ISetupActivity<TransferCall> WithTo(this ISetupActivity<TransferCall> setup, Func<ActivityExecutionContext, string?> value) => setup.Set(x => x.To, value);
+        public static ISetupActivity<TransferCall> WithTo(this ISetupActivity<TransferCall> setup, Func<ValueTask<string?>> value) => setup.Set(x => x.To, value);
+        public static ISetupActivity<TransferCall> WithTo(this ISetupActivity<TransferCall> setup, Func<string?> value) => setup.Set(x => x.To, value);
+        public static ISetupActivity<TransferCall> WithTo(this ISetupActivity<TransferCall> setup, string? value) => setup.Set(x => x.To, value);
+        
+        public static ISetupActivity<TransferCall> WithFrom(this ISetupActivity<TransferCall> setup, Func<ActivityExecutionContext, ValueTask<string?>> value) => setup.Set(x => x.From, value);
+        public static ISetupActivity<TransferCall> WithFrom(this ISetupActivity<TransferCall> setup, Func<ActivityExecutionContext, string?> value) => setup.Set(x => x.From, value);
+        public static ISetupActivity<TransferCall> WithFrom(this ISetupActivity<TransferCall> setup, Func<ValueTask<string?>> value) => setup.Set(x => x.From, value);
+        public static ISetupActivity<TransferCall> WithFrom(this ISetupActivity<TransferCall> setup, Func<string?> value) => setup.Set(x => x.From, value);
+        public static ISetupActivity<TransferCall> WithFrom(this ISetupActivity<TransferCall> setup, string? value) => setup.Set(x => x.From, value);
+        
+        public static ISetupActivity<TransferCall> WithFromDisplayName(this ISetupActivity<TransferCall> setup, Func<ActivityExecutionContext, ValueTask<string?>> value) => setup.Set(x => x.FromDisplayName, value);
+        public static ISetupActivity<TransferCall> WithFromDisplayName(this ISetupActivity<TransferCall> setup, Func<ActivityExecutionContext, string?> value) => setup.Set(x => x.FromDisplayName, value);
+        public static ISetupActivity<TransferCall> WithFromDisplayName(this ISetupActivity<TransferCall> setup, Func<ValueTask<string?>> value) => setup.Set(x => x.FromDisplayName, value);
+        public static ISetupActivity<TransferCall> WithFromDisplayName(this ISetupActivity<TransferCall> setup, Func<string?> value) => setup.Set(x => x.FromDisplayName, value);
+        public static ISetupActivity<TransferCall> WithFromDisplayName(this ISetupActivity<TransferCall> setup, string? value) => setup.Set(x => x.FromDisplayName, value);
+        
+        public static ISetupActivity<TransferCall> WithAnsweringMachineDetection(this ISetupActivity<TransferCall> setup, Func<ActivityExecutionContext, ValueTask<string?>> value) => setup.Set(x => x.AnsweringMachineDetection, value);
+        public static ISetupActivity<TransferCall> WithAnsweringMachineDetection(this ISetupActivity<TransferCall> setup, Func<ActivityExecutionContext, string?> value) => setup.Set(x => x.AnsweringMachineDetection, value);
+        public static ISetupActivity<TransferCall> WithAnsweringMachineDetection(this ISetupActivity<TransferCall> setup, Func<ValueTask<string?>> value) => setup.Set(x => x.AnsweringMachineDetection, value);
+        public static ISetupActivity<TransferCall> WithAnsweringMachineDetection(this ISetupActivity<TransferCall> setup, Func<string?> value) => setup.Set(x => x.AnsweringMachineDetection, value);
+        public static ISetupActivity<TransferCall> WithAnsweringMachineDetection(this ISetupActivity<TransferCall> setup, string? value) => setup.Set(x => x.AnsweringMachineDetection, value);
+        
+        public static ISetupActivity<TransferCall> WithAnsweringMachineDetectionConfig(this ISetupActivity<TransferCall> setup, Func<ActivityExecutionContext, ValueTask<AnsweringMachineConfig?>> value) => setup.Set(x => x.AnsweringMachineDetectionConfig, value);
+        public static ISetupActivity<TransferCall> WithAnsweringMachineDetectionConfig(this ISetupActivity<TransferCall> setup, Func<ActivityExecutionContext, AnsweringMachineConfig?> value) => setup.Set(x => x.AnsweringMachineDetectionConfig, value);
+        public static ISetupActivity<TransferCall> WithAnsweringMachineDetectionConfig(this ISetupActivity<TransferCall> setup, Func<ValueTask<AnsweringMachineConfig?>> value) => setup.Set(x => x.AnsweringMachineDetectionConfig, value);
+        public static ISetupActivity<TransferCall> WithAnsweringMachineDetectionConfig(this ISetupActivity<TransferCall> setup, Func<AnsweringMachineConfig?> value) => setup.Set(x => x.AnsweringMachineDetectionConfig, value);
+        public static ISetupActivity<TransferCall> WithAnsweringMachineDetectionConfig(this ISetupActivity<TransferCall> setup, AnsweringMachineConfig? value) => setup.Set(x => x.AnsweringMachineDetectionConfig, value);
+        
+        public static ISetupActivity<TransferCall> WithCommandId(this ISetupActivity<TransferCall> setup, Func<ActivityExecutionContext, ValueTask<string?>> value) => setup.Set(x => x.CommandId, value);
+        public static ISetupActivity<TransferCall> WithCommandId(this ISetupActivity<TransferCall> setup, Func<ActivityExecutionContext, string?> value) => setup.Set(x => x.CommandId, value);
+        public static ISetupActivity<TransferCall> WithCommandId(this ISetupActivity<TransferCall> setup, Func<ValueTask<string?>> value) => setup.Set(x => x.CommandId, value);
+        public static ISetupActivity<TransferCall> WithCommandId(this ISetupActivity<TransferCall> setup, Func<string?> value) => setup.Set(x => x.CommandId, value);
+        public static ISetupActivity<TransferCall> WithCommandId(this ISetupActivity<TransferCall> setup, string? value) => setup.Set(x => x.CommandId, value);
+        
+        public static ISetupActivity<TransferCall> WithClientState(this ISetupActivity<TransferCall> setup, Func<ActivityExecutionContext, ValueTask<string?>> value) => setup.Set(x => x.ClientState, value);
+        public static ISetupActivity<TransferCall> WithClientState(this ISetupActivity<TransferCall> setup, Func<ActivityExecutionContext, string?> value) => setup.Set(x => x.ClientState, value);
+        public static ISetupActivity<TransferCall> WithClientState(this ISetupActivity<TransferCall> setup, Func<ValueTask<string?>> value) => setup.Set(x => x.ClientState, value);
+        public static ISetupActivity<TransferCall> WithClientState(this ISetupActivity<TransferCall> setup, Func<string?> value) => setup.Set(x => x.ClientState, value);
+        public static ISetupActivity<TransferCall> WithClientState(this ISetupActivity<TransferCall> setup, string? value) => setup.Set(x => x.ClientState, value);
+        
+        public static ISetupActivity<TransferCall> WithCustomHeaders(this ISetupActivity<TransferCall> setup, Func<ActivityExecutionContext, ValueTask<IList<Header>?>> value) => setup.Set(x => x.CustomHeaders, value);
+        public static ISetupActivity<TransferCall> WithCustomHeaders(this ISetupActivity<TransferCall> setup, Func<ActivityExecutionContext, IList<Header>?> value) => setup.Set(x => x.CustomHeaders, value);
+        public static ISetupActivity<TransferCall> WithCustomHeaders(this ISetupActivity<TransferCall> setup, Func<ValueTask<IList<Header>?>> value) => setup.Set(x => x.CustomHeaders, value);
+        public static ISetupActivity<TransferCall> WithCustomHeaders(this ISetupActivity<TransferCall> setup, Func<IList<Header>?> value) => setup.Set(x => x.CustomHeaders, value);
+        public static ISetupActivity<TransferCall> WithCustomHeaders(this ISetupActivity<TransferCall> setup, IList<Header>? value) => setup.Set(x => x.CustomHeaders, value);
+        
+        public static ISetupActivity<TransferCall> WithSipAuthUsername(this ISetupActivity<TransferCall> setup, Func<ActivityExecutionContext, ValueTask<string?>> value) => setup.Set(x => x.SipAuthUsername, value);
+        public static ISetupActivity<TransferCall> WithSipAuthUsername(this ISetupActivity<TransferCall> setup, Func<ActivityExecutionContext, string?> value) => setup.Set(x => x.SipAuthUsername, value);
+        public static ISetupActivity<TransferCall> WithSipAuthUsername(this ISetupActivity<TransferCall> setup, Func<ValueTask<string?>> value) => setup.Set(x => x.SipAuthUsername, value);
+        public static ISetupActivity<TransferCall> WithSipAuthUsername(this ISetupActivity<TransferCall> setup, Func<string?> value) => setup.Set(x => x.SipAuthUsername, value);
+        public static ISetupActivity<TransferCall> WithSipAuthUsername(this ISetupActivity<TransferCall> setup, string? value) => setup.Set(x => x.SipAuthUsername, value);
+        
+        public static ISetupActivity<TransferCall> WithSipAuthPassword(this ISetupActivity<TransferCall> setup, Func<ActivityExecutionContext, ValueTask<string?>> value) => setup.Set(x => x.SipAuthPassword, value);
+        public static ISetupActivity<TransferCall> WithSipAuthPassword(this ISetupActivity<TransferCall> setup, Func<ActivityExecutionContext, string?> value) => setup.Set(x => x.SipAuthPassword, value);
+        public static ISetupActivity<TransferCall> WithSipAuthPassword(this ISetupActivity<TransferCall> setup, Func<ValueTask<string?>> value) => setup.Set(x => x.SipAuthPassword, value);
+        public static ISetupActivity<TransferCall> WithSipAuthPassword(this ISetupActivity<TransferCall> setup, Func<string?> value) => setup.Set(x => x.SipAuthPassword, value);
+        public static ISetupActivity<TransferCall> WithSipAuthPassword(this ISetupActivity<TransferCall> setup, string? value) => setup.Set(x => x.SipAuthPassword, value);
+        
+        public static ISetupActivity<TransferCall> WithTimeLimitSecs(this ISetupActivity<TransferCall> setup, Func<ActivityExecutionContext, ValueTask<int?>> value) => setup.Set(x => x.TimeLimitSecs, value);
+        public static ISetupActivity<TransferCall> WithTimeLimitSecs(this ISetupActivity<TransferCall> setup, Func<ActivityExecutionContext, int?> value) => setup.Set(x => x.TimeLimitSecs, value);
+        public static ISetupActivity<TransferCall> WithTimeLimitSecs(this ISetupActivity<TransferCall> setup, Func<ValueTask<int?>> value) => setup.Set(x => x.TimeLimitSecs, value);
+        public static ISetupActivity<TransferCall> WithTimeLimitSecs(this ISetupActivity<TransferCall> setup, Func<int?> value) => setup.Set(x => x.TimeLimitSecs, value);
+        public static ISetupActivity<TransferCall> WithTimeLimitSecs(this ISetupActivity<TransferCall> setup, int? value) => setup.Set(x => x.TimeLimitSecs, value);
+        
+        public static ISetupActivity<TransferCall> WithTimeoutSecs(this ISetupActivity<TransferCall> setup, Func<ActivityExecutionContext, ValueTask<int?>> value) => setup.Set(x => x.TimeoutSecs, value);
+        public static ISetupActivity<TransferCall> WithTimeoutSecs(this ISetupActivity<TransferCall> setup, Func<ActivityExecutionContext, int?> value) => setup.Set(x => x.TimeoutSecs, value);
+        public static ISetupActivity<TransferCall> WithTimeoutSecs(this ISetupActivity<TransferCall> setup, Func<ValueTask<int?>> value) => setup.Set(x => x.TimeoutSecs, value);
+        public static ISetupActivity<TransferCall> WithTimeoutSecs(this ISetupActivity<TransferCall> setup, Func<int?> value) => setup.Set(x => x.TimeoutSecs, value);
+        public static ISetupActivity<TransferCall> WithTimeoutSecs(this ISetupActivity<TransferCall> setup, int? value) => setup.Set(x => x.TimeoutSecs, value);
+        
+        public static ISetupActivity<TransferCall> WithWebhookUrl(this ISetupActivity<TransferCall> setup, Func<ActivityExecutionContext, ValueTask<string?>> value) => setup.Set(x => x.WebhookUrl, value);
+        public static ISetupActivity<TransferCall> WithWebhookUrl(this ISetupActivity<TransferCall> setup, Func<ActivityExecutionContext, string?> value) => setup.Set(x => x.WebhookUrl, value);
+        public static ISetupActivity<TransferCall> WithWebhookUrl(this ISetupActivity<TransferCall> setup, Func<ValueTask<string?>> value) => setup.Set(x => x.WebhookUrl, value);
+        public static ISetupActivity<TransferCall> WithWebhookUrl(this ISetupActivity<TransferCall> setup, Func<string?> value) => setup.Set(x => x.WebhookUrl, value);
+        public static ISetupActivity<TransferCall> WithWebhookUrl(this ISetupActivity<TransferCall> setup, string? value) => setup.Set(x => x.WebhookUrl, value);
+        
+        public static ISetupActivity<TransferCall> WithWebhookUrlMethod(this ISetupActivity<TransferCall> setup, Func<ActivityExecutionContext, ValueTask<string?>> value) => setup.Set(x => x.WebhookUrlMethod, value);
+        public static ISetupActivity<TransferCall> WithWebhookUrlMethod(this ISetupActivity<TransferCall> setup, Func<ActivityExecutionContext, string?> value) => setup.Set(x => x.WebhookUrlMethod, value);
+        public static ISetupActivity<TransferCall> WithWebhookUrlMethod(this ISetupActivity<TransferCall> setup, Func<ValueTask<string?>> value) => setup.Set(x => x.WebhookUrlMethod, value);
+        public static ISetupActivity<TransferCall> WithWebhookUrlMethod(this ISetupActivity<TransferCall> setup, Func<string?> value) => setup.Set(x => x.WebhookUrlMethod, value);
+        public static ISetupActivity<TransferCall> WithWebhookUrlMethod(this ISetupActivity<TransferCall> setup, string? value) => setup.Set(x => x.WebhookUrlMethod, value);
     }
 }
