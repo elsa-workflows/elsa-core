@@ -43,7 +43,7 @@ namespace Elsa.Activities.ControlFlow
             var collection = Items.ToList();
             var currentIndex = CurrentIndex ?? 0;
 
-            if (currentIndex < collection.Count - 1)
+            if (currentIndex < collection.Count)
             {
                 var currentValue = collection[currentIndex];
                 var scope = context.CreateScope();

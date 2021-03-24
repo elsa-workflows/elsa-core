@@ -20,6 +20,9 @@ namespace Elsa.Expressions
             if (returnType == typeof(string))
                 return Task.FromResult<object?>(expression);
 
+            if (string.IsNullOrWhiteSpace(expression))
+                return Task.FromResult((object?) null);
+            
             var converter = TypeDescriptor.GetConverter(returnType);
             var value = converter.CanConvertFrom(typeof(string)) ? converter.ConvertFrom(expression) : default;
             return Task.FromResult(value)!;

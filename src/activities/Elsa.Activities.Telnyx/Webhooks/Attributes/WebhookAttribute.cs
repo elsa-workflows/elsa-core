@@ -3,9 +3,9 @@
 namespace Elsa.Activities.Telnyx.Webhooks.Attributes
 {
     [AttributeUsage(AttributeTargets.Class)]
-    public class PayloadAttribute : Attribute
+    public class WebhookAttribute : Attribute
     {
-        public PayloadAttribute(string eventType, string activityType, string displayName, string description)
+        public WebhookAttribute(string eventType, string activityType, string displayName, string description)
         {
             EventType = eventType;
             ActivityType = activityType;

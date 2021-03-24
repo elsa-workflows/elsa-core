@@ -2,7 +2,7 @@
 
 namespace Elsa.Activities.Telnyx.Webhooks.Payloads.Call
 {
-    [Payload(EventType, ActivityTypeName, "Call DTMF Received", "Triggered when DTMF input is received.")]
+    [Webhook(EventType, ActivityTypeName, "Call DTMF Received", "Triggered when DTMF input is received.")]
     public sealed record CallDtmfReceivedPayload : CallPayload
     {
         public const string EventType = "call.dtmf.received";

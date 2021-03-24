@@ -19,7 +19,7 @@ namespace Elsa.Activities.Telnyx.Webhooks.Converters
 
             var query =
                 from payloadType in payloadTypes
-                let payloadAttribute = payloadType.GetCustomAttribute<PayloadAttribute>()
+                let payloadAttribute = payloadType.GetCustomAttribute<WebhookAttribute>()
                 where payloadAttribute != null
                 select (payloadType, payloadAttribute);
 

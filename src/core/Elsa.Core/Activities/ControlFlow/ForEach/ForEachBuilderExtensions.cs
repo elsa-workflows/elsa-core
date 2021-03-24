@@ -33,7 +33,7 @@ namespace Elsa.Activities.ControlFlow
             Action<IOutcomeBuilder> iterate,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default) =>
-            builder.ForEach(activity => activity.Set(x => x.Items, () => items().Cast<object>()), iterate, lineNumber, sourceFile);
+            builder.ForEach(activity => activity.Set(x => x.Items, () => items().Select(x => (object)x!).ToList()), iterate, lineNumber, sourceFile);
 
         public static IActivityBuilder ForEach<T>(
             this IBuilder builder,

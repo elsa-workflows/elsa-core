@@ -2,7 +2,7 @@
 
 namespace Elsa.Activities.Telnyx.Webhooks.Payloads.Call
 {
-    [Payload(EventType, ActivityTypeName, "Call Playback Started", "Triggered when an audio playback has started.")]
+    [Webhook(EventType, ActivityTypeName, "Call Playback Started", "Triggered when an audio playback has started.")]
     public sealed record CallPlaybackStartedPayload : CallPlayback
     {
         public const string EventType = "call.playback.started";

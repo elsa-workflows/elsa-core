@@ -2,7 +2,7 @@
 
 namespace Elsa.Activities.Telnyx.Webhooks.Payloads.Call
 {
-    [Payload(EventType, ActivityTypeName, "Call Gather Ended", "Triggered when an call gather has ended.")]
+    [Webhook(EventType, ActivityTypeName, "Call Gather Ended", "Triggered when an call gather has ended.")]
     public sealed record CallGatherEndedPayload : CallPayload
     {
         public const string EventType = "call.gather.ended";

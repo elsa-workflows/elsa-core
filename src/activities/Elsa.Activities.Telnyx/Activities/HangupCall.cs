@@ -1,8 +1,7 @@
-﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Elsa.Activities.Telnyx.Client.Models;
 using Elsa.Activities.Telnyx.Client.Services;
+using Elsa.Activities.Telnyx.Extensions;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Design;
@@ -45,7 +44,7 @@ namespace Elsa.Activities.Telnyx.Activities
 
         private async ValueTask HangupCallAsync(ActivityExecutionContext context)
         {
-            var callControlId = CallControlId is not null and not "" ? CallControlId : context.CorrelationId ?? throw new InvalidOperationException("Cannot answer call without a call control ID");
+            var callControlId = context.GetCallControlId(CallControlId);
             var request = new HangupCallRequest(ClientState, CommandId);
             
             try
