@@ -8,7 +8,7 @@ namespace Elsa.Activities.Telnyx.Client.Services
     public interface ICallsApi
     {
         [Post("/v2/calls")]
-        Task DialAsync([Body]DialRequest request, CancellationToken cancellationToken = default);
+        Task<DialResponse> DialAsync([Body]DialRequest request, CancellationToken cancellationToken = default);
         
         [Post("/v2/calls/{callControlId}/actions/answer")]
         Task AnswerCallAsync(string callControlId, [Body]AnswerCallRequest request, CancellationToken cancellationToken = default);

@@ -127,11 +127,11 @@ namespace Elsa.Activities.Telnyx.Activities
     
     public static class TransferCallExtensions
     {
-        public static ISetupActivity<TransferCall> WithCallControlAppId(this ISetupActivity<TransferCall> setup, Func<ActivityExecutionContext, ValueTask<string?>> value) => setup.Set(x => x.CallControlId, value);
-        public static ISetupActivity<TransferCall> WithCallControlAppId(this ISetupActivity<TransferCall> setup, Func<ActivityExecutionContext, string?> value) => setup.Set(x => x.CallControlId, value);
-        public static ISetupActivity<TransferCall> WithCallControlAppId(this ISetupActivity<TransferCall> setup, Func<ValueTask<string?>> value) => setup.Set(x => x.CallControlId, value);
-        public static ISetupActivity<TransferCall> WithCallControlAppId(this ISetupActivity<TransferCall> setup, Func<string?> value) => setup.Set(x => x.CallControlId, value);
-        public static ISetupActivity<TransferCall> WithCallControlAppId(this ISetupActivity<TransferCall> setup, string? value) => setup.Set(x => x.CallControlId, value);
+        public static ISetupActivity<TransferCall> WithCallControlId(this ISetupActivity<TransferCall> setup, Func<ActivityExecutionContext, ValueTask<string?>> value) => setup.Set(x => x.CallControlId, value);
+        public static ISetupActivity<TransferCall> WithCallControlId(this ISetupActivity<TransferCall> setup, Func<ActivityExecutionContext, string?> value) => setup.Set(x => x.CallControlId, value);
+        public static ISetupActivity<TransferCall> WithCallControlId(this ISetupActivity<TransferCall> setup, Func<ValueTask<string?>> value) => setup.Set(x => x.CallControlId, value);
+        public static ISetupActivity<TransferCall> WithCallControlId(this ISetupActivity<TransferCall> setup, Func<string?> value) => setup.Set(x => x.CallControlId, value);
+        public static ISetupActivity<TransferCall> WithCallControlId(this ISetupActivity<TransferCall> setup, string? value) => setup.Set(x => x.CallControlId, value);
         
         public static ISetupActivity<TransferCall> WithTo(this ISetupActivity<TransferCall> setup, Func<ActivityExecutionContext, ValueTask<string?>> value) => setup.Set(x => x.To, value);
         public static ISetupActivity<TransferCall> WithTo(this ISetupActivity<TransferCall> setup, Func<ActivityExecutionContext, string?> value) => setup.Set(x => x.To, value);

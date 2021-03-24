@@ -58,7 +58,6 @@ namespace Elsa.Services
             }
 
             IsScheduled = false;
-            await OnExitAsync(context);
 
             var finishOutput = context.Input as FinishOutput;
             var outcomes = new List<string> { OutcomeNames.Done };
@@ -70,6 +69,8 @@ namespace Elsa.Services
                 output = finishOutput.Output;
             }
             
+            await OnExitAsync(context, output);
+            
             return Combine(Outcomes(outcomes), Output(output));
         }
 
@@ -79,9 +80,9 @@ namespace Elsa.Services
             return new();
         }
 
-        protected virtual ValueTask OnExitAsync(ActivityExecutionContext context)
+        protected virtual ValueTask OnExitAsync(ActivityExecutionContext context, object? output)
         {
-            OnExit(context);
+            OnExit(context, output);
             return new();
         }
 
@@ -89,7 +90,7 @@ namespace Elsa.Services
         {
         }
         
-        protected virtual void OnExit(ActivityExecutionContext context)
+        protected virtual void OnExit(ActivityExecutionContext context, object? output)
         {
         }
     }

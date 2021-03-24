@@ -81,11 +81,11 @@ namespace Elsa.Activities.Telnyx.Activities
         
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            await DialAsync(context);
-            return Done();
+            var response = await DialAsync(context);
+            return Done(response);
         }
 
-        private async ValueTask DialAsync(ActivityExecutionContext context)
+        private async Task<DialResponse> DialAsync(ActivityExecutionContext context)
         {
             var callControlId = context.GetCallControlId(CallControlId);
             
@@ -109,7 +109,7 @@ namespace Elsa.Activities.Telnyx.Activities
 
             try
             {
-                await _telnyxClient.Calls.DialAsync(request, context.CancellationToken);
+                return await _telnyxClient.Calls.DialAsync(request, context.CancellationToken);
             }
             catch (ApiException e)
             {
@@ -120,11 +120,11 @@ namespace Elsa.Activities.Telnyx.Activities
     
     public static class DialExtensions
     {
-        public static ISetupActivity<Dial> WithCallControlAppId(this ISetupActivity<Dial> setup, Func<ActivityExecutionContext, ValueTask<string?>> value) => setup.Set(x => x.CallControlId, value);
-        public static ISetupActivity<Dial> WithCallControlAppId(this ISetupActivity<Dial> setup, Func<ActivityExecutionContext, string?> value) => setup.Set(x => x.CallControlId, value);
-        public static ISetupActivity<Dial> WithCallControlAppId(this ISetupActivity<Dial> setup, Func<ValueTask<string?>> value) => setup.Set(x => x.CallControlId, value);
-        public static ISetupActivity<Dial> WithCallControlAppId(this ISetupActivity<Dial> setup, Func<string?> value) => setup.Set(x => x.CallControlId, value);
-        public static ISetupActivity<Dial> WithCallControlAppId(this ISetupActivity<Dial> setup, string? value) => setup.Set(x => x.CallControlId, value);
+        public static ISetupActivity<Dial> WithCallControlId(this ISetupActivity<Dial> setup, Func<ActivityExecutionContext, ValueTask<string?>> value) => setup.Set(x => x.CallControlId, value);
+        public static ISetupActivity<Dial> WithCallControlId(this ISetupActivity<Dial> setup, Func<ActivityExecutionContext, string?> value) => setup.Set(x => x.CallControlId, value);
+        public static ISetupActivity<Dial> WithCallControlId(this ISetupActivity<Dial> setup, Func<ValueTask<string?>> value) => setup.Set(x => x.CallControlId, value);
+        public static ISetupActivity<Dial> WithCallControlId(this ISetupActivity<Dial> setup, Func<string?> value) => setup.Set(x => x.CallControlId, value);
+        public static ISetupActivity<Dial> WithCallControlId(this ISetupActivity<Dial> setup, string? value) => setup.Set(x => x.CallControlId, value);
         
         public static ISetupActivity<Dial> WithTo(this ISetupActivity<Dial> setup, Func<ActivityExecutionContext, ValueTask<string?>> value) => setup.Set(x => x.To, value);
         public static ISetupActivity<Dial> WithTo(this ISetupActivity<Dial> setup, Func<ActivityExecutionContext, string?> value) => setup.Set(x => x.To, value);
