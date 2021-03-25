@@ -13,7 +13,6 @@ using Elsa.ActivityProviders;
 using Elsa.ActivityResults;
 using Elsa.Metadata;
 using Elsa.Services.Models;
-using Microsoft.AspNetCore.Authorization.Policy;
 
 namespace Elsa.Activities.Telnyx.ActivityTypes
 {
@@ -41,10 +40,16 @@ namespace Elsa.Activities.Telnyx.ActivityTypes
             var activityTypes = payloadTypes.Select(CreateWebhookActivityType).ToList();
 
             // Add variations on the same webhooks. The webhook filters will conditionally select the appropriate one.
-            var hangupWebhookAttribute = payloadTypes.First(x => x == typeof(CallHangupPayload)).GetCustomAttribute<WebhookAttribute>()!;
-            activityTypes.Add(CreateWebhookActivityType(new WebhookAttribute(hangupWebhookAttribute.EventType, "OriginatorCallHangup", "Originator Call Hangup", "Triggered when an incoming call was hangup by the originator.")));
+            activityTypes.Add(CreateWebhookActivityTypeVariation<CallInitiatedPayload>("BridgeCallInitiated", "Bridge Call Initiated", "Triggered when an incoming bridging call was received."));
+            activityTypes.Add(CreateWebhookActivityTypeVariation<CallHangupPayload>("OriginatorCallHangup", "Originator Call Hangup", "Triggered when an incoming call was hangup by the originator."));
 
             return activityTypes;
+        }
+
+        private ActivityType CreateWebhookActivityTypeVariation<T>(string activityType, string displayName, string description)
+        {
+            var hangupWebhookAttribute = typeof(T).GetCustomAttribute<WebhookAttribute>()!;
+            return CreateWebhookActivityType(new WebhookAttribute(hangupWebhookAttribute.EventType, activityType, displayName, description));
         }
 
         private static ActivityType CreateWebhookActivityType(Type payloadType)
@@ -92,11 +97,8 @@ namespace Elsa.Activities.Telnyx.ActivityTypes
         {
             var webhook = (TelnyxWebhook) context.Input!;
 
-            if (webhook.Data.Payload is CallPayload callPayload)
-            {
+            if (webhook.Data.Payload is CallPayload callPayload) 
                 context.WorkflowExecutionContext.CorrelationId ??= callPayload.CallSessionId;
-                context.SetVariable("CallControlId", callPayload.CallControlId);
-            }
 
             return new(new CombinedResult(new OutputResult(context.Input), new DoneResult()));
         }

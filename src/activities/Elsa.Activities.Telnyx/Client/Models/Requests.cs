@@ -55,4 +55,11 @@ namespace Elsa.Activities.Telnyx.Client.Models
         string? WebhookUrl,
         string? WebhookUrlMethod
     );
+    
+    public record BridgeCallsRequest(
+        string CallControlId,
+        string? ClientState,
+        string? CommandId,
+        string? ParkAfterUnbridge
+    );
 }

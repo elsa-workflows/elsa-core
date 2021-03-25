@@ -15,7 +15,7 @@ namespace Elsa.Activities.Telnyx.Activities
     [Action(
         Category = Constants.Category,
         Description = "Hang up the call.",
-        Outcomes = new[] { OutcomeNames.Done },
+        Outcomes = new[] { OutcomeNames.Done, TelnyxOutcomeNames.CallIsNoLongerActive },
         DisplayName = "Hangup Call"
     )]
     public class HangupCall : Activity
@@ -29,7 +29,7 @@ namespace Elsa.Activities.Telnyx.Activities
 
         [ActivityProperty(Label = "Call Control ID", Hint = "Unique identifier and token for controlling the call", Category = PropertyCategories.Advanced)]
         public string CallControlId { get; set; } = default!;
-        
+
         [ActivityProperty(Label = "Client State", Hint = "Use this field to add state to every subsequent webhook. It must be a valid Base-64 encoded string.", Category = PropertyCategories.Advanced)]
         public string? ClientState { get; set; }
 
@@ -38,21 +38,19 @@ namespace Elsa.Activities.Telnyx.Activities
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            await HangupCallAsync(context);
-            return Done();
-        }
-
-        private async ValueTask HangupCallAsync(ActivityExecutionContext context)
-        {
             var callControlId = context.GetCallControlId(CallControlId);
             var request = new HangupCallRequest(ClientState, CommandId);
-            
+
             try
             {
                 await _telnyxClient.Calls.HangupCallAsync(callControlId, request, context.CancellationToken);
+                return Done();
             }
             catch (ApiException e)
             {
+                if (await e.CallIsNoLongerActiveAsync())
+                    return Outcome(TelnyxOutcomeNames.CallIsNoLongerActive);
+
                 throw new WorkflowException(e.Content ?? e.Message, e);
             }
         }

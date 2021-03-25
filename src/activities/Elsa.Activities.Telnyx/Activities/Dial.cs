@@ -109,7 +109,8 @@ namespace Elsa.Activities.Telnyx.Activities
 
             try
             {
-                return await _telnyxClient.Calls.DialAsync(request, context.CancellationToken);
+                var response = await _telnyxClient.Calls.DialAsync(request, context.CancellationToken);
+                return response.Data;
             }
             catch (ApiException e)
             {

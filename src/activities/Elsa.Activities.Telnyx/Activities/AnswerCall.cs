@@ -5,15 +5,17 @@ using Elsa.Activities.Telnyx.Extensions;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Design;
+using Elsa.Exceptions;
 using Elsa.Services;
 using Elsa.Services.Models;
+using Refit;
 
 namespace Elsa.Activities.Telnyx.Activities
 {
     [Action(
         Category = Constants.Category,
         Description = "Answer an incoming call. You must issue this command before executing subsequent commands on an incoming call",
-        Outcomes = new[] { OutcomeNames.Done },
+        Outcomes = new[] { OutcomeNames.Done, TelnyxOutcomeNames.CallIsNoLongerActive },
         DisplayName = "Answer Call"
     )]
     public class AnswerCall : Activity
@@ -44,16 +46,21 @@ namespace Elsa.Activities.Telnyx.Activities
         public string? WebhookUrlMethod { get; set; }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
-        {
-            await AnswerCallAsync(context);
-            return Done();
-        }
-
-        private async ValueTask AnswerCallAsync(ActivityExecutionContext context)
-        {
-            var callControlId = context.GetCallControlId(CallControlId);
-            var request = new AnswerCallRequest(BillingGroupId, ClientState, CommandId, WebhookUrl, WebhookUrlMethod);
-            await _telnyxClient.Calls.AnswerCallAsync(callControlId, request, context.CancellationToken);
+        {   
+            try
+            {
+                var callControlId = context.GetCallControlId(CallControlId);
+                var request = new AnswerCallRequest(BillingGroupId, ClientState, CommandId, WebhookUrl, WebhookUrlMethod);
+                await _telnyxClient.Calls.AnswerCallAsync(callControlId, request, context.CancellationToken);
+                return Done();
+            }
+            catch (ApiException e)
+            {
+                if (await e.CallIsNoLongerActiveAsync())
+                    return Outcome(TelnyxOutcomeNames.CallIsNoLongerActive);
+                
+                throw new WorkflowException(e.Content ?? e.Message, e);
+            }
         }
     }
 }

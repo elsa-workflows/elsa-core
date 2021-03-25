@@ -9,5 +9,6 @@ namespace Elsa.Activities.Telnyx.Webhooks.Payloads.Call
         public const string ActivityTypeName = "CallInitiated";
         public string Direction { get; init; } = default!;
         public string State { get; init; } = default!;
+        public string To { get; init; } = default!;
     }
 }

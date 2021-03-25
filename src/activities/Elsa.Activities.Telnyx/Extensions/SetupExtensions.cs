@@ -49,6 +49,7 @@ namespace Elsa.Activities.Telnyx.Extensions
                 .AddSingleton<IWebhookFilterService, WebhookFilterService>()
                 .AddSingleton<IWebhookFilter, AttributeBasedWebhookFilter>()
                 .AddSingleton<IWebhookFilter, HangupWebhookFilter>()
+                .AddSingleton<IWebhookFilter, CallInitiatedWebhookFilter>()
                 .AddScoped(telnyxOptions.ExtensionProviderFactory);
 
             // Telnyx API Client.
@@ -139,7 +140,9 @@ namespace Elsa.Activities.Telnyx.Extensions
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             var json = await (request.Content as StringContent)?.ReadAsStringAsync(cancellationToken)!;
-            return await base.SendAsync(request, cancellationToken);
+            var response = await base.SendAsync(request, cancellationToken);
+            var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
+            return response;
         }
     }
 

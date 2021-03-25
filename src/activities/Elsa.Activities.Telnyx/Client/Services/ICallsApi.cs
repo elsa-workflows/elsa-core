@@ -8,7 +8,7 @@ namespace Elsa.Activities.Telnyx.Client.Services
     public interface ICallsApi
     {
         [Post("/v2/calls")]
-        Task<DialResponse> DialAsync([Body]DialRequest request, CancellationToken cancellationToken = default);
+        Task<TelnyxResponse<DialResponse>> DialAsync([Body]DialRequest request, CancellationToken cancellationToken = default);
         
         [Post("/v2/calls/{callControlId}/actions/answer")]
         Task AnswerCallAsync(string callControlId, [Body]AnswerCallRequest request, CancellationToken cancellationToken = default);
@@ -21,5 +21,8 @@ namespace Elsa.Activities.Telnyx.Client.Services
         
         [Post("/v2/calls/{callControlId}/actions/gather_using_audio")]
         Task GatherUsingAudioAsync(string callControlId, [Body]GatherUsingAudioRequest request, CancellationToken cancellationToken = default);
+        
+        [Post("/v2/calls/{callControlId}/actions/bridge")]
+        Task BridgeCallsAsync(string callControlId, [Body]BridgeCallsRequest request, CancellationToken cancellationToken = default);
     }
 }

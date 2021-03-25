@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Elsa.Activities.Telnyx.Client.Models;
 using Elsa.Activities.Telnyx.Client.Services;
@@ -16,7 +18,7 @@ namespace Elsa.Activities.Telnyx.Activities
     [Action(
         Category = Constants.Category,
         Description = "Play an audio file on the call until the required DTMF signals are gathered to build interactive menus",
-        Outcomes = new[] { OutcomeNames.Done },
+        Outcomes = new[] { OutcomeNames.Done, TelnyxOutcomeNames.CallIsNoLongerActive },
         DisplayName = "Gather Using Audio"
     )]
     public class GatherUsingAudio : Activity
@@ -66,12 +68,6 @@ namespace Elsa.Activities.Telnyx.Activities
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            await GatherUsingAudioAsync(context);
-            return Done();
-        }
-
-        private async ValueTask GatherUsingAudioAsync(ActivityExecutionContext context)
-        {
             var request = new GatherUsingAudioRequest(
                 AudioUrl,
                 EmptyToNull(ClientState),
@@ -91,9 +87,13 @@ namespace Elsa.Activities.Telnyx.Activities
             try
             {
                 await _telnyxClient.Calls.GatherUsingAudioAsync(callControlId, request, context.CancellationToken);
+                return Done();
             }
             catch (ApiException e)
             {
+                if (await e.CallIsNoLongerActiveAsync())
+                    return Outcome(TelnyxOutcomeNames.CallIsNoLongerActive);
+                
                 throw new WorkflowException(e.Content ?? e.Message, e);
             }
         }

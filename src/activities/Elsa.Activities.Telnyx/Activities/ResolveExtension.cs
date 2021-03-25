@@ -31,7 +31,7 @@ namespace Elsa.Activities.Telnyx.Activities
         {
             var resolvedNumber = await _extensionProvider.GetAsync(Extension, context.CancellationToken);
             var result = resolvedNumber != null ? Outcome("Resolved", resolvedNumber) : Outcome("Unresolved", Extension);
-            return Combine(result, Done());
+            return Combine(result);
         }
     }
 
