@@ -14,10 +14,10 @@ namespace Elsa.Activities.Telnyx.Extensions
             if (!string.IsNullOrWhiteSpace(callControlId))
                 return callControlId;
 
-            callControlId = context.GetVariable<string>("CallControlId");
-
-            if (!string.IsNullOrWhiteSpace(callControlId))
-                return callControlId;
+            // callControlId = context.GetVariable<string>("CallControlId");
+            //
+            // if (!string.IsNullOrWhiteSpace(callControlId))
+            //     return callControlId;
 
             var options = context.GetService<TelnyxOptions>();
             callControlId = options.CallControlAppId;

@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 using Elsa.Activities.Telnyx.Bookmarks;
-using Elsa.Activities.Telnyx.Webhooks.Attributes;
+using Elsa.Activities.Telnyx.Models;
 using Elsa.Activities.Telnyx.Webhooks.Events;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Abstract;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
@@ -89,6 +86,12 @@ namespace Elsa.Activities.Telnyx.Webhooks.Consumers
 
         private string GetCorrelationId(Payload payload)
         {
+            if (!string.IsNullOrWhiteSpace(payload.ClientState))
+            {
+                var clientStatePayload = ClientStatePayload.FromBase64(payload.ClientState);
+                return clientStatePayload.CorrelationId;
+            }
+            
             if (payload is CallPayload callPayload)
                 return callPayload.CallSessionId;
 

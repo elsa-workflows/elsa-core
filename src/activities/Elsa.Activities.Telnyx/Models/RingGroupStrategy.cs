@@ -1,4 +1,4 @@
-﻿namespace Elsa.Activities.Telnyx.Activities
+﻿namespace Elsa.Activities.Telnyx.Models
 {
     public enum RingGroupStrategy
     {
