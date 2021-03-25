@@ -25,7 +25,7 @@ namespace Elsa.Activities.ControlFlow
             Action<IOutcomeBuilder> iterate,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default) =>
-            builder.ParallelForEach(activity => activity.Set(x => x.Items, context => items(context).Cast<object>()), iterate, lineNumber, sourceFile);
+            builder.ParallelForEach(activity => activity.Set(x => x.Items, context => items(context).Select(x => (object)x!).ToList()), iterate, lineNumber, sourceFile);
 
         public static IActivityBuilder ParallelForEach<T>(
             this IBuilder builder,
@@ -33,7 +33,7 @@ namespace Elsa.Activities.ControlFlow
             Action<IOutcomeBuilder> iterate,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default) =>
-            builder.ParallelForEach(activity => activity.Set(x => x.Items, () => items().Cast<object>()), iterate, lineNumber, sourceFile);
+            builder.ParallelForEach(activity => activity.Set(x => x.Items, () => items().Select(x => (object)x!).ToList()), iterate, lineNumber, sourceFile);
 
         public static IActivityBuilder ParallelForEach<T>(
             this IBuilder builder,
@@ -41,6 +41,6 @@ namespace Elsa.Activities.ControlFlow
             Action<IOutcomeBuilder> iterate,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default) =>
-            builder.ParallelForEach(activity => activity.Set(x => x.Items, items.Cast<object>()), iterate, lineNumber, sourceFile);
+            builder.ParallelForEach(activity => activity.Set(x => x.Items, items.Select(x => (object)x!).ToList()), iterate, lineNumber, sourceFile);
     }
 }
