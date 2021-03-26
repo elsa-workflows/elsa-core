@@ -1,5 +1,6 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.Telnyx.Client.Models;
 using Elsa.Activities.Telnyx.Models;
 using Elsa.Activities.Telnyx.Webhooks.Models;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
@@ -28,10 +29,15 @@ namespace Elsa.Activities.Telnyx.Liquid
             memberAccessStrategy.Register<CallPlaybackEndedPayload>();
             memberAccessStrategy.Register<CallPlaybackStartedPayload>();
             
+            memberAccessStrategy.Register<DialResponse>();
+            memberAccessStrategy.Register<ErrorResponse>();
+            memberAccessStrategy.Register<Error>();
+
             memberAccessStrategy.Register<TelnyxRecord>();
             memberAccessStrategy.Register<TelnyxWebhook>();
             memberAccessStrategy.Register<TelnyxWebhookData>();
             memberAccessStrategy.Register<TelnyxWebhookMeta>();
+            memberAccessStrategy.Register<ClientStatePayload>();
             
             return Task.CompletedTask;
         }

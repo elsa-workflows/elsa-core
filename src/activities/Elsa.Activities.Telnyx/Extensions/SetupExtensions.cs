@@ -8,11 +8,13 @@ using Elsa.Activities.Telnyx.Activities;
 using Elsa.Activities.Telnyx.ActivityTypes;
 using Elsa.Activities.Telnyx.Bookmarks;
 using Elsa.Activities.Telnyx.Client.Services;
+using Elsa.Activities.Telnyx.Liquid;
 using Elsa.Activities.Telnyx.Options;
 using Elsa.Activities.Telnyx.Webhooks.Consumers;
 using Elsa.Activities.Telnyx.Webhooks.Events;
 using Elsa.Activities.Telnyx.Webhooks.Filters;
 using Elsa.Activities.Telnyx.Webhooks.Services;
+using Elsa.Scripting.Liquid.Extensions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -51,6 +53,9 @@ namespace Elsa.Activities.Telnyx.Extensions
                 .AddSingleton<IWebhookFilter, HangupWebhookFilter>()
                 .AddSingleton<IWebhookFilter, CallInitiatedWebhookFilter>()
                 .AddScoped(telnyxOptions.ExtensionProviderFactory);
+            
+            // Liquid.
+            services.RegisterLiquidTag(parser => parser.RegisterEmptyTag("telnyx_client_state", TelnyxClientStateTag.WriteToAsync));
 
             // Telnyx API Client.
             var refitSettings = CreateRefitSettings();
