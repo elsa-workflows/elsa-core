@@ -31,7 +31,7 @@ namespace Elsa.Activities.Telnyx.Activities
         }
 
         [ActivityProperty(Label = "Call Control ID", Hint = "The ID of the Call Control App (formerly ID of the connection) to be used when dialing the destination.", Category = PropertyCategories.Advanced)]
-        public string CallControlId { get; set; } = default!;
+        public string ConnectionId { get; set; } = default!;
 
         [ActivityProperty(Label = "To", Hint = "The DID or SIP URI to dial out and bridge to the given call.")]
         public string To { get; set; } = default!;
@@ -87,10 +87,10 @@ namespace Elsa.Activities.Telnyx.Activities
 
         private async Task<DialResponse> DialAsync(ActivityExecutionContext context)
         {
-            var callControlId = context.GetCallControlId(CallControlId);
+            var connectionId = context.GetCallControlAppId(ConnectionId);
             
             var request = new DialRequest(
-                callControlId,
+                connectionId,
                 To,
                 From,
                 FromDisplayName,
@@ -121,11 +121,11 @@ namespace Elsa.Activities.Telnyx.Activities
     
     public static class DialExtensions
     {
-        public static ISetupActivity<Dial> WithCallControlId(this ISetupActivity<Dial> setup, Func<ActivityExecutionContext, ValueTask<string?>> value) => setup.Set(x => x.CallControlId, value);
-        public static ISetupActivity<Dial> WithCallControlId(this ISetupActivity<Dial> setup, Func<ActivityExecutionContext, string?> value) => setup.Set(x => x.CallControlId, value);
-        public static ISetupActivity<Dial> WithCallControlId(this ISetupActivity<Dial> setup, Func<ValueTask<string?>> value) => setup.Set(x => x.CallControlId, value);
-        public static ISetupActivity<Dial> WithCallControlId(this ISetupActivity<Dial> setup, Func<string?> value) => setup.Set(x => x.CallControlId, value);
-        public static ISetupActivity<Dial> WithCallControlId(this ISetupActivity<Dial> setup, string? value) => setup.Set(x => x.CallControlId, value);
+        public static ISetupActivity<Dial> WithConnectionId(this ISetupActivity<Dial> setup, Func<ActivityExecutionContext, ValueTask<string?>> value) => setup.Set(x => x.ConnectionId, value);
+        public static ISetupActivity<Dial> WithConnectionId(this ISetupActivity<Dial> setup, Func<ActivityExecutionContext, string?> value) => setup.Set(x => x.ConnectionId, value);
+        public static ISetupActivity<Dial> WithConnectionId(this ISetupActivity<Dial> setup, Func<ValueTask<string?>> value) => setup.Set(x => x.ConnectionId, value);
+        public static ISetupActivity<Dial> WithConnectionId(this ISetupActivity<Dial> setup, Func<string?> value) => setup.Set(x => x.ConnectionId, value);
+        public static ISetupActivity<Dial> WithConnectionId(this ISetupActivity<Dial> setup, string? value) => setup.Set(x => x.ConnectionId, value);
         
         public static ISetupActivity<Dial> WithTo(this ISetupActivity<Dial> setup, Func<ActivityExecutionContext, ValueTask<string?>> value) => setup.Set(x => x.To, value);
         public static ISetupActivity<Dial> WithTo(this ISetupActivity<Dial> setup, Func<ActivityExecutionContext, string?> value) => setup.Set(x => x.To, value);
