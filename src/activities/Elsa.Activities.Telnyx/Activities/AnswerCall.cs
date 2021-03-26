@@ -49,7 +49,7 @@ namespace Elsa.Activities.Telnyx.Activities
         {   
             try
             {
-                var callControlId = context.GetCallControlId(CallControlId);
+                var callControlId = context.GetCallControlAppId(CallControlId);
                 var request = new AnswerCallRequest(BillingGroupId, ClientState, CommandId, WebhookUrl, WebhookUrlMethod);
                 await _telnyxClient.Calls.AnswerCallAsync(callControlId, request, context.CancellationToken);
                 return Done();

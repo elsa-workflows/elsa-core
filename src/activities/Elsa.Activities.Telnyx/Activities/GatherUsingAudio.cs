@@ -80,7 +80,7 @@ namespace Elsa.Activities.Telnyx.Activities
                 EmptyToNull(ValidDigits)
             );
             
-            var callControlId = context.GetCallControlId(CallControlId);
+            var callControlId = context.GetCallControlAppId(CallControlId);
 
             try
             {

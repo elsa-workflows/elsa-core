@@ -112,7 +112,7 @@ namespace Elsa.Activities.Telnyx.Activities
                 WebhookUrlMethod
             );
 
-            var callControlId = context.GetCallControlId(CallControlId);
+            var callControlId = context.GetCallControlAppId(CallControlId);
             
             try
             {

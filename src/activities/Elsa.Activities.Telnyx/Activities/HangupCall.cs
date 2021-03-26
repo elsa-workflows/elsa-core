@@ -38,7 +38,7 @@ namespace Elsa.Activities.Telnyx.Activities
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            var callControlId = context.GetCallControlId(CallControlId);
+            var callControlId = context.GetCallControlAppId(CallControlId);
             var request = new HangupCallRequest(ClientState, CommandId);
 
             try
