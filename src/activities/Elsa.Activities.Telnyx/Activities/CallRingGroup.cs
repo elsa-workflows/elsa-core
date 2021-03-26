@@ -44,7 +44,14 @@ namespace Elsa.Activities.Telnyx.Activities
         }
 
         [ActivityProperty(Label = "Call Control ID", Hint = "Unique identifier and token for controlling the call.")]
-        public string? CallControlId
+        public string CallControlId
+        {
+            get => GetState<string>();
+            set => SetState(value);
+        }
+        
+        [ActivityProperty(Label = "Call Control App ID", Hint = "The ID of the Call Control App (formerly ID of the connection) to be used when dialing the destination.", Category = PropertyCategories.Advanced)]
+        public string? CallControlAppId
         {
             get => GetState<string>();
             set => SetState(value);
@@ -113,12 +120,9 @@ namespace Elsa.Activities.Telnyx.Activities
 
         protected override async ValueTask OnExitAsync(ActivityExecutionContext context, object? output)
         {
-            string? answeredCallControlId = null;
-
-            if (output is CallAnsweredPayload callAnsweredPayload)
-                answeredCallControlId = callAnsweredPayload.CallControlId;
-
             // Hang up any pending calls.
+            
+            var answeredCallControlId = CallAnsweredPayload?.CallControlId;
             var outgoingCalls = CollectedDialResponses.Where(x => x.CallControlId != answeredCallControlId).ToList();
             var client = context.GetService<ITelnyxClient>();
 
@@ -140,7 +144,7 @@ namespace Elsa.Activities.Telnyx.Activities
                 .ForEach(() => Extensions, iterate => iterate
                     .Then<ResolveExtension>(a => a.WithExtension(context => context.GetInput<string>()))
                     .Then<Dial>(a => a
-                        .WithCallControlId(() => CallControlId)
+                        .WithConnectionId(() => CallControlAppId)
                         .WithTo(context => context.GetInput<string>())
                         .WithTimeoutSecs(() => (int) RingTime.TotalSeconds)
                         .WithFrom(() => From)
@@ -155,8 +159,10 @@ namespace Elsa.Activities.Telnyx.Activities
                             .ThenTypeNamed(CallAnsweredPayload.ActivityTypeName)
                             .Then(context => CallAnsweredPayload = (CallAnsweredPayload) context.GetInput<TelnyxWebhook>()!.Data.Payload)
                             .Then<BridgeCalls>(bridge => bridge
-                                .WithCallControlIdA(() => DialedControlId)
-                                .WithCallControlIdB(() => CallAnsweredPayload!.CallControlId))
+                                .WithCallControlIdA(() => CallControlId)
+                                .WithCallControlIdB(() => DialedControlId))
+                            .ThenTypeNamed(CallBridgedPayload.ActivityTypeName)
+                            .ThenTypeNamed(CallBridgedPayload.ActivityTypeName)
                             .Then<Finish>(finish => finish.WithOutcome("Connected").WithOutput(() => CallAnsweredPayload));
 
                         fork
@@ -175,13 +181,10 @@ namespace Elsa.Activities.Telnyx.Activities
                         .ThenTypeNamed(CallAnsweredPayload.ActivityTypeName)
                         .Then(context => CallAnsweredPayload = (CallAnsweredPayload) context.GetInput<TelnyxWebhook>()!.Data.Payload)
                         .Then<BridgeCalls>(bridge => bridge
-                            .WithCallControlIdA(() =>
-                            {
-                                var answeredPayload = CallAnsweredPayload!;
-                                var dialedResponse = CollectedDialResponses.First(x => x.CallLegId == answeredPayload.CallLegId);
-                                return dialedResponse.CallControlId;
-                            })
+                            .WithCallControlIdA(() => CallControlId)
                             .WithCallControlIdB(() => CallAnsweredPayload!.CallControlId))
+                        .ThenTypeNamed(CallBridgedPayload.ActivityTypeName)
+                        .ThenTypeNamed(CallBridgedPayload.ActivityTypeName)
                         .Then<Finish>(finish => finish.WithOutcome("Connected").WithOutput(() => CallAnsweredPayload));
 
                     fork
@@ -194,7 +197,7 @@ namespace Elsa.Activities.Telnyx.Activities
                         .ParallelForEach(() => Extensions, iterate => iterate
                             .Then<ResolveExtension>(a => a.WithExtension(context => context.GetInput<string>()))
                             .Then<Dial>(a => a
-                                .WithCallControlId(() => CallControlId)
+                                .WithConnectionId(() => CallControlAppId)
                                 .WithTo(context => context.GetInput<string>())
                                 .WithTimeoutSecs(() => (int) RingTime.TotalSeconds)
                                 .WithFrom(() => From)
