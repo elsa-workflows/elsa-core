@@ -9,15 +9,10 @@ namespace Elsa.Activities.Telnyx.Extensions
         /// <summary>
         /// Returns the default call control app ID if the specified value is null or empty.
         /// </summary>
-        public static string GetCallControlId(this ActivityExecutionContext context, string? callControlId)
+        public static string GetCallControlAppId(this ActivityExecutionContext context, string? callControlId)
         {
             if (!string.IsNullOrWhiteSpace(callControlId))
                 return callControlId;
-
-            // callControlId = context.GetVariable<string>("CallControlId");
-            //
-            // if (!string.IsNullOrWhiteSpace(callControlId))
-            //     return callControlId;
 
             var options = context.GetService<TelnyxOptions>();
             callControlId = options.CallControlAppId;

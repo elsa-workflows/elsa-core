@@ -24,5 +24,8 @@ namespace Elsa.Activities.Telnyx.Client.Services
         
         [Post("/v2/calls/{callControlId}/actions/bridge")]
         Task BridgeCallsAsync(string callControlId, [Body]BridgeCallsRequest request, CancellationToken cancellationToken = default);
+        
+        [Post("/v2/calls/{callControlId}/actions/playback_start")]
+        Task PlayAudioAsync(string callControlId, [Body]PlayAudioRequest request, CancellationToken cancellationToken = default);
     }
 }
