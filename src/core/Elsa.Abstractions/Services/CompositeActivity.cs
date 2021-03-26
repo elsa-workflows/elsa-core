@@ -71,7 +71,7 @@ namespace Elsa.Services
             
             await OnExitAsync(context, output);
             
-            return Combine(Outcomes(outcomes), Output(output));
+            return Combine(Output(output), Outcomes(outcomes));
         }
 
         protected virtual ValueTask OnEnterAsync(ActivityExecutionContext context)
