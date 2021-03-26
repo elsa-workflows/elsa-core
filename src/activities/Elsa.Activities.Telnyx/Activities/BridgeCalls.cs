@@ -46,7 +46,7 @@ namespace Elsa.Activities.Telnyx.Activities
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            var callControlIdA = context.GetCallControlId(CallControlIdA);
+            var callControlIdA = context.GetCallControlAppId(CallControlIdA);
 
             var request = new BridgeCallsRequest(
                 CallControlIdB,
