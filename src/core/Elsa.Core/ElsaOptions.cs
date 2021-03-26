@@ -77,7 +77,14 @@ namespace Elsa
         internal Action<IServiceProvider, JsonSerializer> JsonSerializerConfigurer { get; private set; }
         internal Action AddAutoMapper { get; private set; }
         internal Action<ServiceBusEndpointConfigurationContext> ConfigureServiceBusEndpoint { get; private set; }
-        
+        internal bool WithCoreActivities { get; private set; } = true;
+
+        public ElsaOptions NoCoreActivities()
+        {
+            WithCoreActivities = false;
+            return this;
+        }
+
         public ElsaOptions AddActivity<T>() where T : IActivity => AddActivity(typeof(T));
 
         public ElsaOptions AddActivity(Type activityType)
