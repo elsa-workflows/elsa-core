@@ -100,7 +100,10 @@ namespace Elsa.Handlers
         {
             _logger.LogTrace("Persisting workflow instance {instanceId}", workflowExecutionContext.WorkflowInstance.Id);
 
-            workflowExecutionContext.PruneActivityData();
+            // Can't prune data - we need to figure out a better way to remove activity output data.
+            // Doing it right now causes issues when transferring output data from composite activities.
+            //workflowExecutionContext.PruneActivityData();
+            
             var workflowInstance = workflowExecutionContext.WorkflowInstance;
             await _workflowInstanceStore.SaveAsync(workflowInstance, cancellationToken);
 
