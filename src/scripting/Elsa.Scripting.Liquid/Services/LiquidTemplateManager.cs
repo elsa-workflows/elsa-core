@@ -11,12 +11,14 @@ namespace Elsa.Scripting.Liquid.Services
 {
     public class LiquidTemplateManager : ILiquidTemplateManager
     {
+        private readonly LiquidParser _parser;
         private readonly IMemoryCache _memoryCache;
         private readonly IServiceProvider _serviceProvider;
         private readonly LiquidOptions _options;
 
-        public LiquidTemplateManager(IMemoryCache memoryCache, IOptions<LiquidOptions> options, IServiceProvider serviceProvider)
+        public LiquidTemplateManager(LiquidParser parser, IMemoryCache memoryCache, IOptions<LiquidOptions> options, IServiceProvider serviceProvider)
         {
+            _parser = parser;
             _memoryCache = memoryCache;
             _serviceProvider = serviceProvider;
             _options = options.Value;
@@ -52,6 +54,6 @@ namespace Elsa.Scripting.Liquid.Services
 
         public bool Validate(string template, out string error) => TryParse(template, out _, out error);
         
-        private static bool TryParse(string template, out IFluidTemplate result, out string error) => new FluidParser().TryParse(template, out result, out error);
+        private bool TryParse(string template, out IFluidTemplate result, out string error) => _parser.TryParse(template, out result, out error);
     }
 }
