@@ -87,15 +87,21 @@ namespace Elsa.Activities.Telnyx.Activities
             set => SetState(value);
         }
         
+        private IList<string> DialedControlIds
+        {
+            get => GetState(() => new List<string>());
+            set => SetState(value);
+        }
+        
         private CallAnsweredPayload? CallAnsweredPayload
         {
             get => GetState<CallAnsweredPayload?>();
             set => SetState(value);
         }
         
-        private IList<string> CollectedCallControlIds
+        private IList<DialResponse> CollectedDialResponses
         {
-            get => GetState(() => new List<string>());
+            get => GetState(() => new List<DialResponse>());
             set => SetState(value);
         }
 
@@ -114,14 +120,14 @@ namespace Elsa.Activities.Telnyx.Activities
                 answeredCallControlId = callAnsweredPayload.CallControlId;
 
             // Hang up any pending calls.
-            var outgoingCalls = CollectedCallControlIds.Where(x => x != answeredCallControlId).ToList();
+            var outgoingCalls = CollectedDialResponses.Where(x => x.CallControlId != answeredCallControlId).ToList();
             var client = context.GetService<ITelnyxClient>();
 
             foreach (var outgoingCall in outgoingCalls)
             {
                 try
                 {
-                    await client.Calls.HangupCallAsync(outgoingCall, new HangupCallRequest(null, null), context.CancellationToken);
+                    await client.Calls.HangupCallAsync(outgoingCall.CallControlId, new HangupCallRequest(null, null), context.CancellationToken);
                 }
                 catch (ApiException e)
                 {
@@ -170,7 +176,12 @@ namespace Elsa.Activities.Telnyx.Activities
                         .ThenTypeNamed(CallAnsweredPayload.ActivityTypeName)
                         .Then(context => CallAnsweredPayload = (CallAnsweredPayload) context.GetInput<TelnyxWebhook>()!.Data.Payload)
                         .Then<BridgeCalls>(bridge => bridge
-                            .WithCallControlIdA(() => DialedControlId)
+                            .WithCallControlIdA(() =>
+                            {
+                                var answeredPayload = CallAnsweredPayload!;
+                                var dialedResponse = CollectedDialResponses.First(x => x.CallLegId == answeredPayload.CallLegId);
+                                return dialedResponse.CallControlId;
+                            })
                             .WithCallControlIdB(() => CallAnsweredPayload!.CallControlId))
                         .Then<Finish>(finish => finish.WithOutcome("Connected").WithOutput(() => CallAnsweredPayload));
 
@@ -191,17 +202,15 @@ namespace Elsa.Activities.Telnyx.Activities
                                 .WithFromDisplayName(() => FromDisplayName)
                                 .WithClientState(context => new ClientStatePayload(context.CorrelationId!).ToBase64())
                             )
-                            // TODO: Store list of dial results so we can pick correct one from Call Answered Payload webhook.
-                            //.Then(context => DialedControlId = context.GetInput<DialResponse>()!.CallControlId)
                             .Then(CollectCallControlIds));
                 });
 
         private void CollectCallControlIds(ActivityExecutionContext context)
         {
-            var collection = CollectedCallControlIds;
-            var callControlId = context.GetInput<DialResponse>()!.CallControlId;
-            collection.Add(callControlId);
-            CollectedCallControlIds = collection;
+            var collection = CollectedDialResponses;
+            var dialResponse = context.GetInput<DialResponse>()!;
+            collection.Add(dialResponse);
+            CollectedDialResponses = collection;
         }
 
         object IActivityPropertyDefaultValueProvider.GetDefaultValue(PropertyInfo property) => Duration.FromSeconds(20);
