@@ -1,3 +1,4 @@
+using System;
 using Elsa.Expressions;
 using Elsa.Scripting.Liquid.Filters;
 using Elsa.Scripting.Liquid.Options;
@@ -15,13 +16,21 @@ namespace Elsa.Scripting.Liquid.Extensions
                 .AddMemoryCache()
                 .AddNotificationHandlers(typeof(LiquidServiceCollectionExtensions))
                 .AddScoped<ILiquidTemplateManager, LiquidTemplateManager>()
-                .AddLiquidFilter<JsonFilter>("json");
+                .AddSingleton<LiquidParser>()
+                .AddLiquidFilter<JsonFilter>("json")
+                .AddLiquidFilter<Base64Filter>("base64");
         }
         
         public static IServiceCollection AddLiquidFilter<T>(this IServiceCollection services, string name) where T : class, ILiquidFilter
         {
             services.Configure<LiquidOptions>(options => options.FilterRegistrations.Add(name, typeof(T)));
             services.AddScoped<T>();
+            return services;
+        }
+        
+        public static IServiceCollection RegisterLiquidTag(this IServiceCollection services, Action<LiquidParser> configure)
+        {
+            services.Configure<LiquidOptions>(options => options.ParserConfiguration.Add(configure));
             return services;
         }
     }
