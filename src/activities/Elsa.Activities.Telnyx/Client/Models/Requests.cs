@@ -4,8 +4,9 @@ using System.Collections.Generic;
 namespace Elsa.Activities.Telnyx.Client.Models
 {
     public record AnswerCallRequest(string? BillingGroupId, string? ClientState, string? CommandId, string? WebhookUrl, string? WebhookUrlMethod);
+
     public record HangupCallRequest(string? ClientState, string? CommandId);
-    
+
     public record GatherUsingAudioRequest(
         Uri AudioUrl,
         string? ClientState,
@@ -17,8 +18,9 @@ namespace Elsa.Activities.Telnyx.Client.Models
         int? MinimumDigits,
         string? TerminatingDigit,
         int? TimeoutMillis,
-        string? ValidDigits);
-    
+        string? ValidDigits
+    );
+
     public record TransferCallRequest(
         string To,
         string? From,
@@ -37,7 +39,7 @@ namespace Elsa.Activities.Telnyx.Client.Models
         string? WebhookUrl,
         string? WebhookUrlMethod
     );
-    
+
     public record DialRequest(
         string ConnectionId,
         string To,
@@ -55,11 +57,19 @@ namespace Elsa.Activities.Telnyx.Client.Models
         string? WebhookUrl,
         string? WebhookUrlMethod
     );
-    
+
     public record BridgeCallsRequest(
         string CallControlId,
         string? ClientState,
         string? CommandId,
         string? ParkAfterUnbridge
     );
+
+    public record PlayAudioRequest(
+        Uri AudioUrl,
+        string? ClientState,
+        string? CommandId,
+        object? Loop,
+        bool Overlay,
+        string? TargetLegs);
 }
