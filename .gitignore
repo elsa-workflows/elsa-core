@@ -29,6 +29,10 @@ _ReSharper*/
 [Tt]est[Rr]esult*
 .vs/
 
+# VS Code/Omnisharp crash dumps
+mono_crash.mem*.blob
+
+
 #Nuget packages folder
 packages/
 

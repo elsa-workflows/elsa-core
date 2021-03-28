@@ -1,10 +1,12 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
+using Elsa.Exceptions;
 using Elsa.Services.Models;
 
 namespace Elsa.Services
@@ -56,8 +58,16 @@ namespace Elsa.Services
                 if (!providers.TryGetValue(property.Name, out var provider))
                     continue;
 
-                var value = await provider.GetValueAsync(activityExecutionContext, cancellationToken);
-                property.SetValue(activity, value);
+                try
+                {
+                    var value = await provider.GetValueAsync(activityExecutionContext, cancellationToken);
+                    property.SetValue(activity, value);
+                }
+                catch(Exception e)
+                {
+                    throw new CannotSetActivityPropertyValueException($@"An exception was thrown whilst setting '{activity?.GetType().Name}.{property.Name}'.
+See the inner exception for further details.", e);
+                }
             }
         }
 
