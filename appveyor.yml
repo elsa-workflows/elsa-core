@@ -121,6 +121,8 @@ deploy:
     on:
       APPVEYOR_REPO_TAG: true
 
-deploy_script:
-  - docker login -u="$env:docker_user" -p="$env:docker_pass"
-  - docker push elsaworkflows/elsadashboard-samples-monolith
+# Docker deployments temporarily disabled due to authentication issue
+# this is causing failing builds.
+#deploy_script:
+#  - docker login -u="$env:docker_user" -p="$env:docker_pass"
+#  - docker push elsaworkflows/elsadashboard-samples-monolith
