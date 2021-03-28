@@ -48,7 +48,7 @@ namespace Elsa.Scripting.JavaScript.Services
             if (converter.CanConvertTo(returnType))
                 converter.ConvertTo(returnValue, returnType);
 
-            if (returnValue is IEnumerable)
+            if (returnValue is IEnumerable && !(returnValue is System.Dynamic.ExpandoObject))
             {
                 var json = JsonConvert.SerializeObject(returnValue);
                 return JsonConvert.DeserializeObject(json, returnType);
