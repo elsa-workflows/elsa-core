@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Dynamic;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Scripting.JavaScript.Converters;
@@ -48,7 +50,8 @@ namespace Elsa.Scripting.JavaScript.Services
             if (converter.CanConvertTo(returnType))
                 converter.ConvertTo(returnValue, returnType);
 
-            if (returnValue is IEnumerable && !(returnValue is System.Dynamic.ExpandoObject))
+            returnType = (returnValue is ExpandoObject && returnType == typeof(object))? typeof(Dictionary<string,object>) : returnType;
+            if (returnValue is IEnumerable)
             {
                 var json = JsonConvert.SerializeObject(returnValue);
                 return JsonConvert.DeserializeObject(json, returnType);

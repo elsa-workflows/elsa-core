@@ -33,5 +33,25 @@ namespace Elsa.Scripting.JavaScript.Services
 
             Assert.Equal(@"{""foo"":""bar""}", result);
         }
+
+        [Theory(DisplayName = "The EvaluateAsync method should be able to access a property of an object which was created via JSON.parse"), AutoMoqData]
+        public async Task EvaluateAsyncShouldBeAbleToAccessAPropertyWhichWasParsed([Frozen] IMediator mediator,
+                                                                                   [Frozen] IOptions<ScriptOptions> options,
+                                                                                   JavaScriptService sut,
+                                                                                   [StubActivityExecutionContext] ActivityExecutionContext context1,
+                                                                                   [StubActivityExecutionContext] ActivityExecutionContext context2)
+        {
+            object returnedValue = null;
+            Mock.Get(mediator)
+                .Setup(x => x.Publish(It.Is<EvaluatingJavaScriptExpression>(e => e.ActivityExecutionContext == context2), It.IsAny<CancellationToken>()))
+                .Callback((EvaluatingJavaScriptExpression expression, CancellationToken t) => {
+                    expression.Engine.SetValue("MyVariable", returnedValue);
+                });
+
+            returnedValue = await sut.EvaluateAsync(@"JSON.parse(""{\""foo\"":\""bar\""}"")", typeof(object), context1);
+            var result = await sut.EvaluateAsync("MyVariable.foo", typeof(object), context2);
+
+            Assert.Equal("bar", result);
+        }
     }
 }
