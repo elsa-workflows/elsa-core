@@ -71,5 +71,25 @@ namespace Elsa.Activities.Telnyx.Client.Models
         string? CommandId,
         object? Loop,
         bool Overlay,
-        string? TargetLegs);
+        string? TargetLegs
+    );
+
+    public record StartRecordingRequest(
+        string Channels,
+        string Format,
+        string? ClientState,
+        string? CommandId,
+        bool? PlayBeep
+    );
+    
+    public record SpeakTextRequest(
+        string Language,
+        string Voice,
+        string Payload,
+        string? PayloadType,
+        string? ClientState,
+        string? CommandId,
+        string? ServiceLevel,
+        string? Stop
+    );
 }

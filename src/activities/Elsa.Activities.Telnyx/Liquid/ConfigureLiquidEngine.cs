@@ -28,6 +28,10 @@ namespace Elsa.Activities.Telnyx.Liquid
             memberAccessStrategy.Register<CallPlayback>();
             memberAccessStrategy.Register<CallPlaybackEndedPayload>();
             memberAccessStrategy.Register<CallPlaybackStartedPayload>();
+            memberAccessStrategy.Register<CallRecordingSaved>();
+            memberAccessStrategy.Register<CallRecordingUrls>();
+            memberAccessStrategy.Register<CallSpeakStarted>();
+            memberAccessStrategy.Register<CallSpeakEnded>();
             
             memberAccessStrategy.Register<DialResponse>();
             memberAccessStrategy.Register<ErrorResponse>();
