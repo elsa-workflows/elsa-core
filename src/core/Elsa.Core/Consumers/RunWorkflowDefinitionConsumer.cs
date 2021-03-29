@@ -1,5 +1,7 @@
+using System;
 using System.Threading.Tasks;
 using Elsa.DistributedLock;
+using Elsa.DistributedLocking;
 using Elsa.Messages;
 using Elsa.Models;
 using Elsa.Persistence;
@@ -12,6 +14,7 @@ using Rebus.Handlers;
 
 namespace Elsa.Consumers
 {
+    [Obsolete]
     public class RunWorkflowDefinitionConsumer : IHandleMessages<RunWorkflowDefinition>
     {
         private readonly IWorkflowRunner _workflowRunner;

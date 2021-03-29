@@ -7,6 +7,7 @@ using Elsa.Activities.Telnyx.Webhooks.Payloads.Abstract;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
 using Elsa.Activities.Telnyx.Webhooks.Services;
 using Elsa.DistributedLock;
+using Elsa.DistributedLocking;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications;

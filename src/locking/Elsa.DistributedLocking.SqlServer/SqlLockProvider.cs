@@ -5,6 +5,7 @@ using System.Data.SqlClient;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.DistributedLock;
+using Elsa.DistributedLocking;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa
