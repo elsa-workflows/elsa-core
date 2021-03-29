@@ -6,6 +6,7 @@ using AutoMapper;
 using Elsa.Builders;
 using Elsa.Caching;
 using Elsa.DistributedLock;
+using Elsa.DistributedLocking;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.InMemory;

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.DistributedLock;
+using Elsa.DistributedLocking;
 using Microsoft.Extensions.Logging;
 using RedLockNet;
 

@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Elsa.DistributedLock
+namespace Elsa.DistributedLocking
 {
     /// <summary>
     /// Provides functionality to acquire and release locks which are distributed across all instances in a web farm.

@@ -1,18 +1,16 @@
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using Elsa.DistributedLock;
 using Elsa.DistributedLocking;
-using Elsa.Messages;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services;
 using Microsoft.Extensions.Logging;
 using Rebus.Handlers;
 
-namespace Elsa.Consumers
+namespace Elsa.Dispatch.Consumers
 {
-    public class RunWorkflowInstanceConsumer : IHandleMessages<RunWorkflowInstance>
+    public class ExecuteWorkflowRequestConsumer : IHandleMessages<ExecuteWorkflowInstanceRequest>
     {
         private readonly IWorkflowRunner _workflowRunner;
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
@@ -21,12 +19,12 @@ namespace Elsa.Consumers
         private readonly ILogger _logger;
         private readonly Stopwatch _stopwatch = new();
 
-        public RunWorkflowInstanceConsumer(
+        public ExecuteWorkflowRequestConsumer(
             IWorkflowRunner workflowRunner, 
             IWorkflowInstanceStore workflowInstanceStore, 
             IDistributedLockProvider distributedLockProvider,
             ICommandSender commandSender,
-            ILogger<RunWorkflowInstanceConsumer> logger)
+            ILogger<ExecuteWorkflowRequestConsumer> logger)
         {
             _workflowRunner = workflowRunner;
             _workflowInstanceStore = workflowInstanceStore;
@@ -35,7 +33,7 @@ namespace Elsa.Consumers
             _logger = logger;
         }
 
-        public async Task Handle(RunWorkflowInstance message)
+        public async Task Handle(ExecuteWorkflowInstanceRequest message)
         {
             var workflowInstanceId = message.WorkflowInstanceId;
             var lockKey = workflowInstanceId;

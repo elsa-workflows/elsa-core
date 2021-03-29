@@ -7,6 +7,7 @@ using Elsa.Activities.AzureServiceBus.Models;
 using Elsa.Activities.AzureServiceBus.Options;
 using Elsa.Bookmarks;
 using Elsa.DistributedLock;
+using Elsa.DistributedLocking;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications;
