@@ -191,8 +191,13 @@ namespace Microsoft.Extensions.DependencyInjection
             return options;
         }
 
-        private static ElsaOptions AddCoreActivities(this ElsaOptions services) => services
-            .AddActivitiesFrom<ElsaOptions>()
-            .AddActivitiesFrom<CompositeActivity>();
+        private static ElsaOptions AddCoreActivities(this ElsaOptions services)
+        {
+            if (services.WithCoreActivities)
+                return services
+                    .AddActivitiesFrom<ElsaOptions>()
+                    .AddActivitiesFrom<CompositeActivity>();
+            return services;
+        }
     }
 }
