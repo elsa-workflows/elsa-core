@@ -41,7 +41,7 @@ namespace Elsa.Activities.Http
         /// The URL to invoke. 
         /// </summary>
         [ActivityProperty(Hint = "The URL to send the HTTP request to.")]
-        public PathString? Url { get; set; }
+        public Uri? Url { get; set; }
 
         /// <summary>
         /// The HTTP method to use.
@@ -65,7 +65,7 @@ namespace Elsa.Activities.Http
         [ActivityProperty(
             UIHint = ActivityPropertyUIHints.Dropdown,
             Hint = "The content type to send with the request.",
-            Options = new[] { "text/plain", "text/html", "application/json", "application/xml" }
+            Options = new[] { "text/plain", "text/html", "application/json", "application/xml", "application/x-www-form-urlencoded" }
         )]
         public string? ContentType { get; set; }
 
