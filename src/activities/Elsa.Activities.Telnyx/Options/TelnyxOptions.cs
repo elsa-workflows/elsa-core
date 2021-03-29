@@ -23,5 +23,11 @@ namespace Elsa.Activities.Telnyx.Options
         public string ApiKey { get; set; } = default!;
         public string? CallControlAppId { get; set; }
         internal Func<IServiceProvider, IExtensionProvider> ExtensionProviderFactory { get; set; }
+
+        public TelnyxOptions UseExtensionProvider(Func<IServiceProvider, IExtensionProvider> factory)
+        {
+            ExtensionProviderFactory = factory;
+            return this;
+        }
     }
 }
