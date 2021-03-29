@@ -29,7 +29,7 @@ namespace Elsa.Activities.Telnyx.Activities
             Hint = "Unique identifier and token for controlling the call",
             Category = PropertyCategories.Advanced
         )]
-        public string CallControlId { get; set; } = default!;
+        public string? CallControlId { get; set; } = default!;
 
         [ActivityProperty(
             Hint = "The language you want spoken.",
@@ -89,7 +89,7 @@ namespace Elsa.Activities.Telnyx.Activities
                 null
             );
 
-            var callControlId = CallControlId;
+            var callControlId = context.GetCallControlId(CallControlId);
 
             try
             {

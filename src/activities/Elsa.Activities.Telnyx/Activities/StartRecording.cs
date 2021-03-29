@@ -28,7 +28,7 @@ namespace Elsa.Activities.Telnyx.Activities
             Hint = "Unique identifier and token for controlling the call",
             Category = PropertyCategories.Advanced
         )]
-        public string CallControlId { get; set; } = default!;
+        public string? CallControlId { get; set; } = default!;
 
         [ActivityProperty(
             Hint = "When 'dual', final audio file will be stereo recorded with the first leg on channel A, and the rest on channel B.",
@@ -70,7 +70,7 @@ namespace Elsa.Activities.Telnyx.Activities
                 PlayBeep
             );
 
-            var callControlId = CallControlId;
+            var callControlId = context.GetCallControlId(CallControlId);
 
             try
             {

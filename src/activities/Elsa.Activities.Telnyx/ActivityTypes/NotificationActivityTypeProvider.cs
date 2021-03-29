@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.Telnyx.Extensions;
 using Elsa.Activities.Telnyx.Webhooks.Attributes;
 using Elsa.Activities.Telnyx.Webhooks.Models;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Abstract;
@@ -97,8 +98,17 @@ namespace Elsa.Activities.Telnyx.ActivityTypes
         {
             var webhook = (TelnyxWebhook) context.Input!;
 
-            if (webhook.Data.Payload is CallPayload callPayload) 
+            if (webhook.Data.Payload is CallPayload callPayload)
+            {
                 context.WorkflowExecutionContext.CorrelationId ??= callPayload.CallSessionId;
+
+                if (!context.HasCallControlId())
+                    context.SetCallControlId(callPayload.CallControlId);
+
+                if (callPayload is CallInitiatedPayload callInitiatedPayload)
+                    if (!context.HasFromNumber())
+                        context.SetFromNumber(callInitiatedPayload.To);
+            }
 
             return new(new CombinedResult(new OutputResult(context.Input), new DoneResult()));
         }

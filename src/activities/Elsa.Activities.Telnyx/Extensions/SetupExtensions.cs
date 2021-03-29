@@ -81,7 +81,7 @@ namespace Elsa.Activities.Telnyx.Extensions
                     var options = sp.GetRequiredService<TelnyxOptions>();
                     client.BaseAddress = options.ApiUrl;
                     client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", options.ApiKey);
-                }).AddHttpMessageHandler(() => new Spy());
+                });
             }
             else
             {
@@ -137,18 +137,5 @@ namespace Elsa.Activities.Telnyx.Extensions
             var webhookHandler = services.GetRequiredService<IWebhookHandler>();
             await webhookHandler.HandleAsync(context);
         }
-        
     }
-
-    class Spy : DelegatingHandler
-    {
-        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-        {
-            var json = await (request.Content as StringContent)?.ReadAsStringAsync(cancellationToken)!;
-            var response = await base.SendAsync(request, cancellationToken);
-            var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
-            return response;
-        }
-    }
-
 }

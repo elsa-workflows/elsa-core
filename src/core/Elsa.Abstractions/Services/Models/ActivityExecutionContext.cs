@@ -125,6 +125,7 @@ namespace Elsa.Services.Models
         public object? GetVariable(string name) => WorkflowExecutionContext.GetVariable(name);
         public T? GetVariable<T>(string name) => WorkflowExecutionContext.GetVariable<T>(name);
         public T? GetVariable<T>() => GetVariable<T>(typeof(T).Name);
+        public bool HasVariable(string name) => WorkflowExecutionContext.HasVariable(name);
 
         /// <summary>
         /// Clears all of the variables associated with the current <see cref="Elsa.Models.WorkflowInstance"/>.

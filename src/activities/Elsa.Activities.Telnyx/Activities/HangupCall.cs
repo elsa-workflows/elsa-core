@@ -28,7 +28,7 @@ namespace Elsa.Activities.Telnyx.Activities
         }
 
         [ActivityProperty(Label = "Call Control ID", Hint = "Unique identifier and token for controlling the call", Category = PropertyCategories.Advanced)]
-        public string CallControlId { get; set; } = default!;
+        public string? CallControlId { get; set; } = default!;
 
         [ActivityProperty(Label = "Client State", Hint = "Use this field to add state to every subsequent webhook. It must be a valid Base-64 encoded string.", Category = PropertyCategories.Advanced)]
         public string? ClientState { get; set; }
@@ -38,7 +38,7 @@ namespace Elsa.Activities.Telnyx.Activities
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            var callControlId = context.GetCallControlAppId(CallControlId);
+            var callControlId = context.GetCallControlId(CallControlId);
             var request = new HangupCallRequest(ClientState, CommandId);
 
             try
