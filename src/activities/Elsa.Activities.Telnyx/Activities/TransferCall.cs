@@ -31,7 +31,7 @@ namespace Elsa.Activities.Telnyx.Activities
         }
 
         [ActivityProperty(Label = "Call Control ID", Hint = "Unique identifier and token for controlling the call.", Category = PropertyCategories.Advanced)]
-        public string CallControlId { get; set; } = default!;
+        public string? CallControlId { get; set; } = default!;
 
         [ActivityProperty(Label = "To", Hint = "The DID or SIP URI to dial out and bridge to the given call.")]
         public string To { get; set; } = default!;
@@ -112,7 +112,7 @@ namespace Elsa.Activities.Telnyx.Activities
                 WebhookUrlMethod
             );
 
-            var callControlId = context.GetCallControlAppId(CallControlId);
+            var callControlId = context.GetCallControlId(CallControlId);
             
             try
             {

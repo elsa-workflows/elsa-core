@@ -43,10 +43,10 @@ namespace Elsa.Activities.Telnyx.Activities
             set => SetState(value);
         }
 
-        [ActivityProperty(Label = "Call Control ID", Hint = "Unique identifier and token for controlling the call.")]
+        [ActivityProperty(Label = "Call Control ID", Hint = "Unique identifier and token for controlling the call.", Category = PropertyCategories.Advanced)]
         public string CallControlId
         {
-            get => GetState<string>();
+            get => GetState<string>()!;
             set => SetState(value);
         }
         

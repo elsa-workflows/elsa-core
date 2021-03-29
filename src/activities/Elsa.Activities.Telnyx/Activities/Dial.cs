@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Elsa.Activities.Telnyx.Client.Models;
 using Elsa.Activities.Telnyx.Client.Services;
+using Elsa.Activities.Telnyx.Exceptions;
 using Elsa.Activities.Telnyx.Extensions;
+using Elsa.Activities.Telnyx.Options;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Builders;
@@ -24,10 +26,12 @@ namespace Elsa.Activities.Telnyx.Activities
     public class Dial : Activity
     {
         private readonly ITelnyxClient _telnyxClient;
+        private readonly TelnyxOptions _telnyxOptions;
 
-        public Dial(ITelnyxClient telnyxClient)
+        public Dial(ITelnyxClient telnyxClient, TelnyxOptions telnyxOptions)
         {
             _telnyxClient = telnyxClient;
+            _telnyxOptions = telnyxOptions;
         }
 
         [ActivityProperty(Label = "Call Control ID", Hint = "The ID of the Call Control App (formerly ID of the connection) to be used when dialing the destination.", Category = PropertyCategories.Advanced)]
@@ -87,12 +91,17 @@ namespace Elsa.Activities.Telnyx.Activities
 
         private async Task<DialResponse> DialAsync(ActivityExecutionContext context)
         {
-            var connectionId = context.GetCallControlAppId(ConnectionId);
+            var connectionId = string.IsNullOrWhiteSpace(ConnectionId) ? _telnyxOptions.CallControlAppId : ConnectionId;
+            
+            if(connectionId == null)
+                throw new MissingCallControlAppIdException("No Call Control ID specified and no default value configured");
+
+            var fromNumber = context.GetFromNumber(From);
             
             var request = new DialRequest(
                 connectionId,
                 To,
-                From,
+                fromNumber,
                 FromDisplayName,
                 AnsweringMachineDetection,
                 AnsweringMachineDetectionConfig,
@@ -118,7 +127,7 @@ namespace Elsa.Activities.Telnyx.Activities
             }
         }
     }
-    
+
     public static class DialExtensions
     {
         public static ISetupActivity<Dial> WithConnectionId(this ISetupActivity<Dial> setup, Func<ActivityExecutionContext, ValueTask<string?>> value) => setup.Set(x => x.ConnectionId, value);

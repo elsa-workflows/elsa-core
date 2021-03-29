@@ -29,7 +29,7 @@ namespace Elsa.Activities.Telnyx.Activities
         }
 
         [ActivityProperty(Label = "Call Control ID", Hint = "Unique identifier and token for controlling the call", Category = PropertyCategories.Advanced)]
-        public string CallControlId { get; set; } = default!;
+        public string? CallControlId { get; set; } = default!;
 
         [ActivityProperty(Label = "Audio URL", Hint = "The URL of a file to be played back at the beginning of each prompt. The URL can point to either a WAV or MP3 file.")]
         public Uri AudioUrl { get; set; } = default!;
@@ -80,7 +80,7 @@ namespace Elsa.Activities.Telnyx.Activities
                 EmptyToNull(ValidDigits)
             );
             
-            var callControlId = context.GetCallControlAppId(CallControlId);
+            var callControlId = context.GetCallControlId(CallControlId);
 
             try
             {

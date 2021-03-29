@@ -110,6 +110,7 @@ namespace Elsa.Services.Models
         public void SetVariable(string name, object? value) => WorkflowInstance.Variables.Set(name, value);
         public T? GetVariable<T>() => GetVariable<T>(typeof(T).Name);
         public T? GetVariable<T>(string name) => WorkflowInstance.Variables.Get<T>(name);
+        public bool HasVariable(string name) => WorkflowInstance.Variables.Has(name);
 
         /// <summary>
         /// Gets a variable from across all scopes, starting with the current scope, going up each scope until the requested variable is found.

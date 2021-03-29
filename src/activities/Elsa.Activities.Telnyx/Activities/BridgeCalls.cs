@@ -30,7 +30,7 @@ namespace Elsa.Activities.Telnyx.Activities
         }
 
         [ActivityProperty(Label = "Call Control ID A", Hint = "Unique identifier and token for controlling the call.")]
-        public string CallControlIdA { get; set; } = default!;
+        public string? CallControlIdA { get; set; } = default!;
 
         [ActivityProperty(Label = "Call Control ID B", Hint = "The Call Control ID of the call you want to bridge with.")]
         public string CallControlIdB { get; set; } = default!;
@@ -46,7 +46,7 @@ namespace Elsa.Activities.Telnyx.Activities
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            var callControlIdA = context.GetCallControlAppId(CallControlIdA);
+            var callControlIdA = context.GetCallControlId(CallControlIdA);
 
             var request = new BridgeCallsRequest(
                 CallControlIdB,

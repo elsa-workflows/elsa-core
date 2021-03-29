@@ -29,7 +29,7 @@ namespace Elsa.Activities.Telnyx.Activities
             Hint = "Unique identifier and token for controlling the call",
             Category = PropertyCategories.Advanced
         )]
-        public string CallControlId { get; set; } = default!;
+        public string? CallControlId { get; set; } = default!;
 
         [ActivityProperty(
             Label = "Audio URL",
@@ -83,7 +83,7 @@ namespace Elsa.Activities.Telnyx.Activities
                 EmptyToNull(TargetLegs)
             );
 
-            var callControlId = context.GetCallControlAppId(CallControlId);
+            var callControlId = context.GetCallControlId(CallControlId);
 
             try
             {
