@@ -43,7 +43,6 @@ cache:
 install:
   - docker version
   - ps: >-
-      Install-Product node $env:nodejs_version
 
       cd .\src\dashboards\blazor\ElsaDashboard.Application
 

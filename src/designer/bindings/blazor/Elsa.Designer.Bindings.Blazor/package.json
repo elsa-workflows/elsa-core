@@ -6,7 +6,6 @@
         "build:debug": "cross-env webpack --mode=development --env configuration=Debug",
         "watch": "cross-env webpack --watch --mode=development --env configuration=Debug"
     },
-    
     "types": "dist/types/components.d.ts",
     "devDependencies": {
         "@babel/core": "^7.12.16",
