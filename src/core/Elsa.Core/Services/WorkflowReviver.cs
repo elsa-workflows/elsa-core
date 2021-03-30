@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Dispatch;
 using Elsa.Exceptions;
 using Elsa.Models;
 using Elsa.Persistence;
@@ -11,24 +12,25 @@ namespace Elsa.Services
     public class WorkflowReviver : IWorkflowReviver
     {
         private readonly IWorkflowRunner _workflowRunner;
-        private readonly IWorkflowQueue _workflowQueue;
+        private readonly IWorkflowInstanceDispatcher _workflowInstanceDispatcher;
         private readonly IWorkflowRegistry _workflowRegistry;
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
-        private readonly IGetsStartActivitiesForCompositeActivityBlueprint startingActivitiesProvider;
+        private readonly IGetsStartActivitiesForCompositeActivityBlueprint _startingActivitiesProvider;
 
-        public WorkflowReviver(IWorkflowRunner workflowRunner,
-                               IWorkflowQueue workflowQueue,
-                               IWorkflowRegistry workflowRegistry,
-                               IWorkflowInstanceStore workflowInstanceStore,
-                               IGetsStartActivitiesForCompositeActivityBlueprint startingActivitiesProvider)
+        public WorkflowReviver(
+            IWorkflowRunner workflowRunner,
+            IWorkflowInstanceDispatcher workflowInstanceDispatcher,
+            IWorkflowRegistry workflowRegistry,
+            IWorkflowInstanceStore workflowInstanceStore,
+            IGetsStartActivitiesForCompositeActivityBlueprint startingActivitiesProvider)
         {
             _workflowRunner = workflowRunner;
-            _workflowQueue = workflowQueue;
+            _workflowInstanceDispatcher = workflowInstanceDispatcher;
             _workflowRegistry = workflowRegistry;
             _workflowInstanceStore = workflowInstanceStore;
-            this.startingActivitiesProvider = startingActivitiesProvider ?? throw new ArgumentNullException(nameof(startingActivitiesProvider));
+            _startingActivitiesProvider = startingActivitiesProvider ?? throw new ArgumentNullException(nameof(startingActivitiesProvider));
         }
-        
+
         public async Task<WorkflowInstance> ReviveAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken)
         {
             if (workflowInstance.WorkflowStatus != WorkflowStatus.Faulted)
@@ -38,7 +40,7 @@ namespace Elsa.Services
 
             if (fault == null)
                 throw new WorkflowException("Cannot revive a workflow with no fault");
-            
+
             var faultedActivityId = fault.FaultedActivityId;
 
             if (faultedActivityId == null)
@@ -66,12 +68,12 @@ namespace Elsa.Services
             workflowInstance = await ReviveAsync(workflowInstance, cancellationToken);
             return await _workflowRunner.RunWorkflowAsync(workflowInstance, null, null, cancellationToken);
         }
-        
+
         public async Task<WorkflowInstance> ReviveAndQueueAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken)
         {
             workflowInstance = await ReviveAsync(workflowInstance, cancellationToken);
-            var currentActivity = await GetActivityToScheduleAsync(workflowInstance, cancellationToken); 
-            await _workflowQueue.EnqueueWorkflowInstance(workflowInstance.Id, currentActivity.ActivityId, currentActivity.Input, cancellationToken);
+            var currentActivity = await GetActivityToScheduleAsync(workflowInstance, cancellationToken);
+            await _workflowInstanceDispatcher.DispatchAsync(new ExecuteWorkflowInstanceRequest(workflowInstance.Id, currentActivity.ActivityId, currentActivity.Input), cancellationToken);
             return workflowInstance;
         }
 
@@ -86,8 +88,8 @@ namespace Elsa.Services
 
             if (workflowBlueprint == null)
                 throw new WorkflowException($"Could not find associated workflow definition {workflowInstance.DefinitionId} with version {workflowInstance.Version}");
-            
-            var startActivity = startingActivitiesProvider.GetStartActivities(workflowBlueprint).FirstOrDefault();
+
+            var startActivity = _startingActivitiesProvider.GetStartActivities(workflowBlueprint).FirstOrDefault();
 
             if (startActivity == null)
                 throw new WorkflowException($"Cannot revive workflow {workflowInstance.Id} because it has no start activities");
