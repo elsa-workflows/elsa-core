@@ -86,8 +86,9 @@ namespace Elsa.Activities.Http
 
         private IHttpRequestBodyParser SelectContentParser(string contentType)
         {
+            string? simpleContentType = contentType?.Split(';').First();
             var formatters = _parsers.OrderByDescending(x => x.Priority).ToList();
-            return formatters.FirstOrDefault(x => x.SupportedContentTypes.Contains(contentType, StringComparer.OrdinalIgnoreCase)) ?? formatters.Last();
+            return formatters.FirstOrDefault(x => x.SupportedContentTypes.Contains(simpleContentType, StringComparer.OrdinalIgnoreCase)) ?? formatters.Last();
         }
     }
 }
