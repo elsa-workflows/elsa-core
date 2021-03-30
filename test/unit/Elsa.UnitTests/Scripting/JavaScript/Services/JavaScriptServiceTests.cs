@@ -34,6 +34,66 @@ namespace Elsa.Scripting.JavaScript.Services
             Assert.Equal(@"{""foo"":""bar""}", result);
         }
 
+        [Theory(DisplayName = "The EvaluateAsync method should be able to roundtrip a JSON object (which contains an embedded object) via JSON.parse and then JSON.stringify"), AutoMoqData]
+        public async Task EvaluateAsyncShouldBeAbleToRoundtripAJsonStringWithAnEmbeddedObjectViaJsonStringify([Frozen] IMediator mediator,
+                                                                                                              [Frozen] IOptions<ScriptOptions> options,
+                                                                                                              JavaScriptService sut,
+                                                                                                              [StubActivityExecutionContext] ActivityExecutionContext context1,
+                                                                                                              [StubActivityExecutionContext] ActivityExecutionContext context2)
+        {
+            object returnedValue = null;
+            Mock.Get(mediator)
+                .Setup(x => x.Publish(It.Is<EvaluatingJavaScriptExpression>(e => e.ActivityExecutionContext == context2), It.IsAny<CancellationToken>()))
+                .Callback((EvaluatingJavaScriptExpression expression, CancellationToken t) => {
+                    expression.Engine.SetValue("MyVariable", returnedValue);
+                });
+
+            returnedValue = await sut.EvaluateAsync(@"JSON.parse(""{\""foo\"":\""bar\"", \""child\"":{\""one\"":\""two\""}}"")", typeof(object), context1);
+            var result = await sut.EvaluateAsync("JSON.stringify(MyVariable)", typeof(object), context2);
+
+            Assert.Equal(@"{""foo"":""bar"",""child"":{""one"":""two""}}", result);
+        }
+        
+        [Theory(DisplayName = "The EvaluateAsync method should be able to roundtrip a JSON object (which contains an embedded array) via JSON.parse and then JSON.stringify"), AutoMoqData]
+        public async Task EvaluateAsyncShouldBeAbleToRoundtripAJsonStringWithAnEmbeddedArrayViaJsonStringify([Frozen] IMediator mediator,
+                                                                                                             [Frozen] IOptions<ScriptOptions> options,
+                                                                                                             JavaScriptService sut,
+                                                                                                             [StubActivityExecutionContext] ActivityExecutionContext context1,
+                                                                                                             [StubActivityExecutionContext] ActivityExecutionContext context2)
+        {
+            object returnedValue = null;
+            Mock.Get(mediator)
+                .Setup(x => x.Publish(It.Is<EvaluatingJavaScriptExpression>(e => e.ActivityExecutionContext == context2), It.IsAny<CancellationToken>()))
+                .Callback((EvaluatingJavaScriptExpression expression, CancellationToken t) => {
+                    expression.Engine.SetValue("MyVariable", returnedValue);
+                });
+
+            returnedValue = await sut.EvaluateAsync(@"JSON.parse(""{\""foo\"":\""bar\"", \""child\"":[\""one\"",\""two\""]}"")", typeof(object), context1);
+            var result = await sut.EvaluateAsync("JSON.stringify(MyVariable)", typeof(object), context2);
+
+            Assert.Equal(@"{""foo"":""bar"",""child"":[""one"",""two""]}", result);
+        }
+        
+        [Theory(DisplayName = "The EvaluateAsync method should be able to roundtrip a JSON array via JSON.parse and then JSON.stringify"), AutoMoqData]
+        public async Task EvaluateAsyncShouldBeAbleToRoundtripAJsonStringOfAnArrayViaJsonStringify([Frozen] IMediator mediator,
+                                                                                                   [Frozen] IOptions<ScriptOptions> options,
+                                                                                                   JavaScriptService sut,
+                                                                                                   [StubActivityExecutionContext] ActivityExecutionContext context1,
+                                                                                                   [StubActivityExecutionContext] ActivityExecutionContext context2)
+        {
+            object returnedValue = null;
+            Mock.Get(mediator)
+                .Setup(x => x.Publish(It.Is<EvaluatingJavaScriptExpression>(e => e.ActivityExecutionContext == context2), It.IsAny<CancellationToken>()))
+                .Callback((EvaluatingJavaScriptExpression expression, CancellationToken t) => {
+                    expression.Engine.SetValue("MyVariable", returnedValue);
+                });
+
+            returnedValue = await sut.EvaluateAsync(@"JSON.parse(""[\""foo\"",\""bar\""]"")", typeof(object), context1);
+            var result = await sut.EvaluateAsync("JSON.stringify(MyVariable)", typeof(object), context2);
+
+            Assert.Equal(@"[""foo"",""bar""]", result);
+        }
+
         [Theory(DisplayName = "The EvaluateAsync method should be able to access a property of an object which was created via JSON.parse"), AutoMoqData]
         public async Task EvaluateAsyncShouldBeAbleToAccessAPropertyWhichWasParsed([Frozen] IMediator mediator,
                                                                                    [Frozen] IOptions<ScriptOptions> options,
