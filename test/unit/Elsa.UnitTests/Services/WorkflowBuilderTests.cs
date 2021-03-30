@@ -10,9 +10,9 @@ namespace Elsa.Services
     public class WorkflowBuilderTests
     {
         [Theory(DisplayName = "The Build method should return a workflow blueprint with the WorkflowBurst persistence behaviour if no behaviour was specified"), AutoMoqData]
-        public void BuildShouldReturnWorkflowBlueprintWithWorkflowBurstPersistenceBehaviourIfNoBehaviourSpecified([AutofixtureServiceProvider, Frozen] IServiceProvider serviceProvider,
-                                                                                                                  WorkflowBuilder sut,
-                                                                                                                  string idPrefix)
+        public void BuildShouldReturnWorkflowBlueprintWithWorkflowBurstPersistenceBehaviourIfNoBehaviourSpecified(
+            WorkflowBuilder sut,
+            string idPrefix)
         {
             var workflow = new NoOpWorkflow();
 
@@ -23,7 +23,9 @@ namespace Elsa.Services
 
         class NoOpWorkflow : IWorkflow
         {
-            public void Build(IWorkflowBuilder builder) { }
+            public void Build(IWorkflowBuilder builder)
+            {
+            }
         }
     }
 }

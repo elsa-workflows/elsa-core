@@ -46,7 +46,7 @@ namespace Elsa.Activities.Telnyx.Activities
         public string Voice { get; set; } = default!;
 
         [ActivityProperty(Hint = "The text or SSML to be converted into speech. There is a 5,000 character limit.")]
-        public string Payload { get; set; }
+        public string Payload { get; set; } = default!;
 
         [ActivityProperty(
             Hint = "The type of the provided payload. The payload can either be plain text, or Speech Synthesis Markup Language (SSML).",

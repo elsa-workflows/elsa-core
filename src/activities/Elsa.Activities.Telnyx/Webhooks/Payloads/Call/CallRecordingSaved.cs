@@ -8,9 +8,9 @@ namespace Elsa.Activities.Telnyx.Webhooks.Payloads.Call
     {
         public const string EventType = "call.recording.saved";
         public const string ActivityTypeName = "CallRecordingSaved";
-        public string Channels { get; set; }
-        public CallRecordingUrls PublicRecordingUrls { get; set; }
-        public CallRecordingUrls RecordingUrls { get; set; }
+        public string Channels { get; set; } = default!;
+        public CallRecordingUrls PublicRecordingUrls { get; set; } = default!;
+        public CallRecordingUrls RecordingUrls { get; set; } = default!;
         public Instant RecordingEndedAt { get; set; }
         public Instant RecordingStartedAt { get; set; }
     }
