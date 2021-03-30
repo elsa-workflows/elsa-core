@@ -67,7 +67,6 @@ namespace Elsa.Activities.AzureServiceBus.Services
                 ScheduledEnqueueTimeUtc = message.ScheduledEnqueueTimeUtc
             };
             
-            var queueName = ReceiverClient.Path;
             var bookmark = CreateBookmark(message);
             var trigger = CreateTrigger(message);
             await _workflowDispatcher.DispatchAsync(new ExecuteCorrelatedWorkflowRequest(correlationId, bookmark, trigger, ActivityType, model, TenantId: TenantId), cancellationToken);

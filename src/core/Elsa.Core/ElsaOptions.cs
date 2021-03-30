@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using AutoMapper;
 using Elsa.Builders;
 using Elsa.Caching;
+using Elsa.Dispatch;
 using Elsa.DistributedLock;
 using Elsa.DistributedLocking;
 using Elsa.Models;
@@ -33,6 +33,9 @@ namespace Elsa
             WorkflowInstanceStoreFactory = sp => ActivatorUtilities.CreateInstance<InMemoryWorkflowInstanceStore>(sp);
             WorkflowExecutionLogStoreFactory = sp => ActivatorUtilities.CreateInstance<InMemoryWorkflowExecutionLogStore>(sp);
             WorkflowTriggerStoreFactory = sp => ActivatorUtilities.CreateInstance<InMemoryBookmarkStore>(sp);
+            WorkflowDefinitionDispatcherFactory = sp => ActivatorUtilities.CreateInstance<QueuingWorkflowDispatcher>(sp);
+            WorkflowInstanceDispatcherFactory = sp => ActivatorUtilities.CreateInstance<QueuingWorkflowDispatcher>(sp);
+            CorrelatingWorkflowDispatcherFactory = sp => ActivatorUtilities.CreateInstance<QueuingWorkflowDispatcher>(sp);
             StorageFactory = sp => Storage.Net.StorageFactory.Blobs.InMemory();
             DistributedLockProviderFactory = sp => new DefaultLockProvider();
             SignalFactory = sp => new Signal();
@@ -76,6 +79,9 @@ namespace Elsa
         internal Func<IServiceProvider, ISignal> SignalFactory { get; private set; }
         internal Func<IServiceProvider, JsonSerializer> CreateJsonSerializer { get; private set; }
         internal Action<IServiceProvider, JsonSerializer> JsonSerializerConfigurer { get; private set; }
+        internal Func<IServiceProvider, IWorkflowDefinitionDispatcher> WorkflowDefinitionDispatcherFactory { get; set; }
+        internal Func<IServiceProvider, IWorkflowInstanceDispatcher> WorkflowInstanceDispatcherFactory { get; set; }
+        internal Func<IServiceProvider, ICorrelatingWorkflowDispatcher> CorrelatingWorkflowDispatcherFactory { get; set; }
         internal Action AddAutoMapper { get; private set; }
         internal Action<ServiceBusEndpointConfigurationContext> ConfigureServiceBusEndpoint { get; private set; }
         internal bool WithCoreActivities { get; private set; } = true;
@@ -138,7 +144,7 @@ namespace Elsa
         
         public ElsaOptions AddWorkflow<T>(Func<IServiceProvider, T> workflow) where T: class, IWorkflow
         {
-            Services.AddSingleton<T>(workflow);
+            Services.AddSingleton(workflow);
             Services.AddSingleton<IWorkflow>(sp => sp.GetRequiredService<T>());
             WorkflowFactory.Add(typeof(T), sp => sp.GetRequiredService<T>());
             
