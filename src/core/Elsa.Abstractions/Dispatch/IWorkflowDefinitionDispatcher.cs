@@ -8,6 +8,6 @@ namespace Elsa.Dispatch
     /// </summary>
     public interface IWorkflowDefinitionDispatcher
     {
-        Task DispatchAsync(ExecuteWorkflowDefinitionRequest request, CancellationToken? cancellationToken = default);
+        Task DispatchAsync(ExecuteWorkflowDefinitionRequest request, CancellationToken cancellationToken = default);
     }
 }

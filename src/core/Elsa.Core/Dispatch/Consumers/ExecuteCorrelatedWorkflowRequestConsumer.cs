@@ -67,7 +67,6 @@ namespace Elsa.Dispatch.Consumers
                 }
                 else
                 {
-                    // Trigger new workflow.
                     _logger.LogDebug("No existing workflows found with correlation ID '{CorrelationId}'. Starting new workflow", correlationId);
                     await TriggerNewWorkflowAsync(message);
                 }

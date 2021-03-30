@@ -9,6 +9,6 @@ namespace Elsa.Dispatch
     /// </summary>
     public interface ICorrelatingWorkflowDispatcher
     {
-        Task DispatchAsync(ExecuteCorrelatedWorkflowRequest request, CancellationToken? cancellationToken = default);
+        Task DispatchAsync(ExecuteCorrelatedWorkflowRequest request, CancellationToken cancellationToken = default);
     }
 }

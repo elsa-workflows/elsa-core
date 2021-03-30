@@ -1,6 +1,7 @@
 using Elsa.Activities.Telnyx.Extensions;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Sqlite;
+using Elsa.Server.Orleans.Extensions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -27,6 +28,7 @@ namespace Elsa.Samples.Server.Host
             services
                 .AddElsa(elsa => elsa
                     .UseEntityFrameworkPersistence(ef => ef.UseSqlite())
+                    .UseOrleansDispatchers()
                     .AddConsoleActivities()
                     .AddHttpActivities(elsaSection.GetSection("Http").Bind)
                     .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)

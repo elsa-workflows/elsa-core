@@ -245,6 +245,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.Telnyx", "s
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.Webhooks", "src\activities\Elsa.Activities.Webhooks\Elsa.Activities.Webhooks.csproj", "{2B67E954-3B04-402D-A9A7-AAAB1D6C3215}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Server.Orleans", "src\server\Elsa.Server.Orleans\Elsa.Server.Orleans.csproj", "{76BD888E-F0FD-40DD-B025-2ED773C1C50B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -591,6 +593,10 @@ Global
 		{2B67E954-3B04-402D-A9A7-AAAB1D6C3215}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2B67E954-3B04-402D-A9A7-AAAB1D6C3215}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2B67E954-3B04-402D-A9A7-AAAB1D6C3215}.Release|Any CPU.Build.0 = Release|Any CPU
+		{76BD888E-F0FD-40DD-B025-2ED773C1C50B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{76BD888E-F0FD-40DD-B025-2ED773C1C50B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{76BD888E-F0FD-40DD-B025-2ED773C1C50B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{76BD888E-F0FD-40DD-B025-2ED773C1C50B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -708,6 +714,7 @@ Global
 		{E3EA6449-28EC-48E4-91C4-E82DE08A7DD9} = {C865B0FD-E505-48F0-BFAF-0D4D7C1B5CA1}
 		{93878BAD-855D-48D1-97ED-C776EC54E19E} = {B43B546E-23F3-46E8-ACB7-D04F05CDA180}
 		{2B67E954-3B04-402D-A9A7-AAAB1D6C3215} = {B43B546E-23F3-46E8-ACB7-D04F05CDA180}
+		{76BD888E-F0FD-40DD-B025-2ED773C1C50B} = {468E498C-59DB-4541-8D8A-0D89DE9083AB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}
