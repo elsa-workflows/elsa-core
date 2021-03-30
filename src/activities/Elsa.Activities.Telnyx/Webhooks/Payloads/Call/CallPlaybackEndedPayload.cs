@@ -7,6 +7,6 @@ namespace Elsa.Activities.Telnyx.Webhooks.Payloads.Call
     {
         public const string EventType = "call.playback.ended";
         public const string ActivityTypeName = "CallPlaybackEnded";
-        public string Status { get; set; }
+        public string Status { get; set; } = default!;
     }
 }

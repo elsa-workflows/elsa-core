@@ -25,7 +25,7 @@ namespace Elsa.Activities.Telnyx.Activities
         }
 
         [ActivityProperty(Hint = "The extension to resolve. If the extension could not be resolved, it is returned as-is.")]
-        public string Extension { get; set; }
+        public string Extension { get; set; } = default!;
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {

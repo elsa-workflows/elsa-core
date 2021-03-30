@@ -9,7 +9,7 @@ namespace Elsa.Activities.Telnyx.Models
         /// <summary>
         /// The DID or SIP URL
         /// </summary>
-        public string Destination { get; init; }
+        public string Destination { get; init; } = default!;
 
         /// <summary>
         /// An URL to a sound wave to play as a voicemail message when the recipient doesn't pick up.

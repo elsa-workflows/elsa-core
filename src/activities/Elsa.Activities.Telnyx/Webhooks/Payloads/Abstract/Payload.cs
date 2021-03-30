@@ -2,6 +2,6 @@
 {
     public abstract record Payload
     {
-        public string ClientState { get; set; }
+        public string? ClientState { get; set; }
     }
 }

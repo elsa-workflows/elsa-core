@@ -2,6 +2,6 @@
 {
     public abstract class TelnyxRecord
     {
-        public string RecordType { get; set; }
+        public string RecordType { get; set; } = default!;
     }
 }

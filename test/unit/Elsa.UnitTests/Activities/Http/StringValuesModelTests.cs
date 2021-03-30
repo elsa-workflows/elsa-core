@@ -15,7 +15,7 @@ namespace Elsa.Activities.Http
             Assert.Equal(sut.ToString(), result);
         }
 
-        [Theory(DisplayName = "It should be possible to use Convert.ToInt32 to convert an instance to a number if the value is a valid string representation of a number.  This is primarily to support usage via Jint."), AutoMoqData]
+        [Fact(DisplayName = "It should be possible to use Convert.ToInt32 to convert an instance to a number if the value is a valid string representation of a number.  This is primarily to support usage via Jint.")]
         public void ItShouldBePossibleToConvertAStringValuesModelToInt32IfValid()
         {
             var sut = new StringValuesModel(new StringValues("3"));
