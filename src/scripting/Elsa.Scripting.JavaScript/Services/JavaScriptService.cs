@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Dynamic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Scripting.JavaScript.Converters;
@@ -50,9 +51,12 @@ namespace Elsa.Scripting.JavaScript.Services
             if (converter.CanConvertTo(returnType))
                 converter.ConvertTo(returnValue, returnType);
 
-            returnType = (returnValue is ExpandoObject && returnType == typeof(object))? typeof(Dictionary<string,object>) : returnType;
-            if (returnValue is IEnumerable)
+            if(returnValue is ExpandoObject expando && returnType == typeof(object))
+                return RecursivelyPrepareExpandoObjectForReturn(expando);
+
+            if (returnValue is IEnumerable && !(returnValue is string))
             {
+                returnType = (returnType == typeof(object))? typeof(object[]) : returnType;
                 var json = JsonConvert.SerializeObject(returnValue);
                 return JsonConvert.DeserializeObject(json, returnType);
             }
@@ -61,6 +65,38 @@ namespace Elsa.Scripting.JavaScript.Services
                 return returnValue;
             
             return Convert.ChangeType(returnValue, returnType);
+        }
+
+        static object? RecursivelyPrepareExpandoObjectForReturn(ExpandoObject obj)
+        {
+            IDictionary<string,object?> ExpandoToDictionary(ExpandoObject expando)
+            {
+                var json = JsonConvert.SerializeObject(expando);
+                return (IDictionary<string,object?>) JsonConvert.DeserializeObject(json, typeof(Dictionary<string,object?>))!;
+            }
+
+            object? EnumerableToObject(IEnumerable enumerable)
+            {
+                var json = JsonConvert.SerializeObject(enumerable);
+                return JsonConvert.DeserializeObject(json, typeof(object[]));
+            }
+
+            var expandoDictionary = obj as IDictionary<string,object>;
+
+            var allValuesToReplace = (from kvp in expandoDictionary
+                                      where kvp.Value is IEnumerable && !(kvp.Value is string)
+                                      let val = (IEnumerable) kvp.Value
+                                      let replacementValue = (val is ExpandoObject expando)
+                                            ? RecursivelyPrepareExpandoObjectForReturn(expando)
+                                            : EnumerableToObject(val)
+                                      select new { Key = kvp.Key, Value = replacementValue })
+                .ToDictionary(k => k.Key, v => v.Value);
+
+            var output = ExpandoToDictionary(obj);
+            foreach(var kvp in allValuesToReplace)
+                output[kvp.Key] = kvp.Value;
+
+            return output;
         }
         
         private void ConfigureJintEngine(Jint.Options options)
