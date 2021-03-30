@@ -11,8 +11,8 @@ namespace Elsa.Dispatch
     {
         private readonly ICommandSender _commandSender;
         public QueuingWorkflowDispatcher(ICommandSender commandSender) => _commandSender = commandSender;
-        public async Task DispatchAsync(ExecuteWorkflowInstanceRequest request, CancellationToken? cancellationToken = default) => await _commandSender.SendAsync(request);
-        public async Task DispatchAsync(ExecuteCorrelatedWorkflowRequest request, CancellationToken? cancellationToken = default) => await _commandSender.SendAsync(request);
-        public async Task DispatchAsync(ExecuteWorkflowDefinitionRequest request, CancellationToken? cancellationToken = default) => await _commandSender.SendAsync(request);
+        public async Task DispatchAsync(ExecuteWorkflowInstanceRequest request, CancellationToken cancellationToken = default) => await _commandSender.SendAsync(request);
+        public async Task DispatchAsync(ExecuteCorrelatedWorkflowRequest request, CancellationToken cancellationToken = default) => await _commandSender.SendAsync(request);
+        public async Task DispatchAsync(ExecuteWorkflowDefinitionRequest request, CancellationToken cancellationToken = default) => await _commandSender.SendAsync(request);
     }
 }
