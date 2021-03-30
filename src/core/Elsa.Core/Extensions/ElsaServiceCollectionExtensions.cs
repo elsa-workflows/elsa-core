@@ -51,6 +51,9 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton(options.DistributedLockProviderFactory)
                 .AddSingleton(options.SignalFactory)
                 .AddSingleton(options.StorageFactory)
+                .AddSingleton(options.WorkflowDefinitionDispatcherFactory)
+                .AddSingleton(options.WorkflowInstanceDispatcherFactory)
+                .AddSingleton(options.CorrelatingWorkflowDispatcherFactory)
                 .AddStartupTask<ContinueRunningWorkflows>()
                 .AddStartupTask<IndexTriggers>();
 
@@ -191,11 +194,12 @@ namespace Microsoft.Extensions.DependencyInjection
 
         private static ElsaOptions AddCoreActivities(this ElsaOptions services)
         {
-            if (services.WithCoreActivities)
-                return services
-                    .AddActivitiesFrom<ElsaOptions>()
-                    .AddActivitiesFrom<CompositeActivity>();
-            return services;
+            if (!services.WithCoreActivities) 
+                return services;
+            
+            return services
+                .AddActivitiesFrom<ElsaOptions>()
+                .AddActivitiesFrom<CompositeActivity>();
         }
     }
 }
