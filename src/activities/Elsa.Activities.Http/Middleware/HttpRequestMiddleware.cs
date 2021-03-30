@@ -17,7 +17,7 @@ namespace Elsa.Activities.Http.Middleware
 {
     public class HttpEndpointMiddleware
     {
-        // TODO: Figure out how to start jobs across multiple tenants / how to get a list of all tenants. 
+        // TODO: Design multi-tenancy. 
         private const string TenantId = default;
         private readonly RequestDelegate _next;
 

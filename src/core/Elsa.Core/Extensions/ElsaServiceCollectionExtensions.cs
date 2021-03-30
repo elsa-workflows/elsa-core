@@ -7,13 +7,13 @@ using Elsa.ActivityProviders;
 using Elsa.ActivityTypeProviders;
 using Elsa.Bookmarks;
 using Elsa.Builders;
-using Elsa.Consumers;
 using Elsa.Decorators;
+using Elsa.Dispatch;
+using Elsa.Dispatch.Consumers;
 using Elsa.Expressions;
 using Elsa.Handlers;
 using Elsa.HostedServices;
 using Elsa.Mapping;
-using Elsa.Messages;
 using Elsa.Metadata;
 using Elsa.Persistence;
 using Elsa.Persistence.Decorators;
@@ -59,8 +59,6 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddCoreActivities();
 
             options.AddAutoMapper();
-            options.AddConsumer<RunWorkflowDefinitionConsumer, RunWorkflowDefinition>();
-            options.AddConsumer<RunWorkflowInstanceConsumer, RunWorkflowInstance>();
 
             services.Decorate<IWorkflowDefinitionStore, InitializingWorkflowDefinitionStore>();
             services.Decorate<IWorkflowDefinitionStore, EventPublishingWorkflowDefinitionStore>();
@@ -160,15 +158,15 @@ namespace Microsoft.Extensions.DependencyInjection
 
             // Service Bus.
             services
-                .AddScoped<IWorkflowQueue, WorkflowQueue>()
                 .AddSingleton<ServiceBusFactory>()
                 .AddSingleton<IServiceBusFactory, ServiceBusFactory>()
                 .AddSingleton<ICommandSender, CommandSender>()
                 .AddSingleton<IEventPublisher, EventPublisher>();
 
             options
-                .AddConsumer<RunWorkflowDefinitionConsumer, RunWorkflowDefinition>()
-                .AddConsumer<RunWorkflowInstanceConsumer, RunWorkflowInstance>();
+                .AddConsumer<ExecuteCorrelatedWorkflowRequestConsumer, ExecuteCorrelatedWorkflowRequest>()
+                .AddConsumer<ExecuteWorkflowDefinitionRequestConsumer, ExecuteWorkflowDefinitionRequest>()
+                .AddConsumer<ExecuteWorkflowInstanceRequestConsumer, ExecuteWorkflowInstanceRequest>();
 
             // AutoMapper.
             services

@@ -10,7 +10,7 @@ using Rebus.Handlers;
 
 namespace Elsa.Dispatch.Consumers
 {
-    public class ExecuteWorkflowRequestConsumer : IHandleMessages<ExecuteWorkflowInstanceRequest>
+    public class ExecuteWorkflowInstanceRequestConsumer : IHandleMessages<ExecuteWorkflowInstanceRequest>
     {
         private readonly IWorkflowRunner _workflowRunner;
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
@@ -19,12 +19,12 @@ namespace Elsa.Dispatch.Consumers
         private readonly ILogger _logger;
         private readonly Stopwatch _stopwatch = new();
 
-        public ExecuteWorkflowRequestConsumer(
+        public ExecuteWorkflowInstanceRequestConsumer(
             IWorkflowRunner workflowRunner, 
             IWorkflowInstanceStore workflowInstanceStore, 
             IDistributedLockProvider distributedLockProvider,
             ICommandSender commandSender,
-            ILogger<ExecuteWorkflowRequestConsumer> logger)
+            ILogger<ExecuteWorkflowInstanceRequestConsumer> logger)
         {
             _workflowRunner = workflowRunner;
             _workflowInstanceStore = workflowInstanceStore;
