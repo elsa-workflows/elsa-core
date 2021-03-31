@@ -39,7 +39,7 @@ namespace Elsa.Server.Orleans.Grains
             _logger = logger;
         }
 
-        public async Task ExecutedCorrelatedWorkflowAsync(ExecuteCorrelatedWorkflowRequest request, CancellationToken cancellationToken = default)
+        public async Task ExecutedCorrelatedWorkflowAsync(TriggerWorkflowsRequest request, CancellationToken cancellationToken = default)
         {
             var correlationId = request.CorrelationId;
             var correlatedWorkflowInstanceCount = await _workflowInstanceStore.CountAsync(new CorrelationIdSpecification<WorkflowInstance>(correlationId), cancellationToken);
@@ -57,7 +57,7 @@ namespace Elsa.Server.Orleans.Grains
             }
         }
 
-        private async Task StartWorkflowsAsync(ExecuteCorrelatedWorkflowRequest request, CancellationToken cancellationToken)
+        private async Task StartWorkflowsAsync(TriggerWorkflowsRequest request, CancellationToken cancellationToken)
         {
             var filter = request.Trigger;
             var triggers = await _triggerFinder.FindTriggersAsync(request.ActivityType, filter, request.TenantId, cancellationToken);

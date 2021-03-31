@@ -10,6 +10,7 @@ using Microsoft.Azure.Storage;
 using Microsoft.Azure.Storage.Blob;
 using Microsoft.Azure.Storage.RetryPolicies;
 using Microsoft.Extensions.Logging;
+using NodaTime;
 
 namespace Elsa
 {
@@ -22,9 +23,9 @@ namespace Elsa
         private const string ContainerName = "elsa-lock-container";
         private const int MaxLeaseTime = 60;
         private const int MinLeaseTime = 15;
-        private static readonly object SyncRoot = new object();
-        private readonly AutoResetEvent _leaseSemaphore = new AutoResetEvent(true);
-        private readonly List<LockedBlob> _lockedBlobs = new List<LockedBlob>();
+        private static readonly object SyncRoot = new();
+        private readonly AutoResetEvent _leaseSemaphore = new(true);
+        private readonly List<LockedBlob> _lockedBlobs = new();
         private readonly string _connectionString;
         private readonly TimeSpan _leaseTime;
         private readonly ILogger _logger;
@@ -43,7 +44,7 @@ namespace Elsa
             
             if (leaseTime >= TimeSpan.FromSeconds(MaxLeaseTime) || leaseTime <= TimeSpan.FromSeconds(MinLeaseTime))
             {
-                _logger.LogInformation("Lease time must be between 15 Seconds and 60 seconds, Found {leaseTime.TotalSeconds} seconds. Setting default value of 60 seconds", leaseTime.TotalSeconds);
+                _logger.LogInformation("Lease time must be between 15 Seconds and 60 seconds, Found {LeaseTime} seconds. Setting default value of 60 seconds", leaseTime.TotalSeconds);
                 _leaseTime = TimeSpan.FromSeconds(MaxLeaseTime);
             }
             else
@@ -53,22 +54,24 @@ namespace Elsa
 
             if (renewInterval > leaseTime)
             {
-                _logger.LogError("Renew Interval can not be greater than  LeaseTime {leaseTime.TotalSeconds}.", leaseTime.TotalSeconds);
-                throw new InvalidDataException($"Renew Interval can not be greater than  LeaseTime {leaseTime.TotalSeconds}.");
+                _logger.LogError("Renew Interval can not be greater than LeaseTime {LeaseTime}", leaseTime.TotalSeconds);
+                throw new InvalidDataException($"Renew Interval can not be greater than LeaseTime {leaseTime.TotalSeconds}.");
             }
 
             _renewInterval = renewInterval;
         }
 
-        public Task<bool> AcquireLockAsync(string name, CancellationToken cancellationToken = default) => CreateLockAsync(name, cancellationToken);
+        public Task<bool> AcquireLockAsync(string name, Duration? timeout = default, CancellationToken cancellationToken = default) => CreateLockAsync(name, timeout, cancellationToken);
 
-        private async Task<bool> CreateLockAsync(string name, CancellationToken cancellationToken = default)
+        private async Task<bool> CreateLockAsync(string name, Duration? duration, CancellationToken cancellationToken)
         {
+            // TODO: Figure out how to wait for the amount of time as specified by `duration` before giving up on acquiring a lease.
+            
             var resourceName = $"{Prefix}:{name}";
             var blob = CloudBlobContainer.GetBlockBlobReference(resourceName);
 
-            if (!await blob.ExistsAsync(cancellationToken).ConfigureAwait(false))
-                await blob.UploadTextAsync(string.Empty, cancellationToken).ConfigureAwait(false);
+            if (!await blob.ExistsAsync(cancellationToken))
+                await blob.UploadTextAsync(string.Empty, cancellationToken);
 
             _renewTimer = new Timer(RenewLeases, null, _renewInterval, _renewInterval);
             _logger.LogInformation("Lock provider will try to acquire lock for {resourceName}", resourceName);
@@ -77,7 +80,7 @@ namespace Elsa
             {
                 try
                 {
-                    var leaseId = await blob.AcquireLeaseAsync(_leaseTime, null, cancellationToken).ConfigureAwait(false);
+                    var leaseId = await blob.AcquireLeaseAsync(_leaseTime, null, cancellationToken);
                     _lockedBlobs.Add(new LockedBlob { Blob = blob, LeaseId = leaseId, Identifier = resourceName });
 
                     _logger.LogInformation("Lock provider acquired lock for {resourceName}", resourceName);
@@ -97,15 +100,7 @@ namespace Elsa
             return false;
         }
 
-        public Task ReleaseLockAsync(string name, CancellationToken cancellationToken = default)
-        {
-            if (name == null)
-            {
-                throw new ArgumentNullException(nameof(name));
-            }
-
-            return ReleaseLeaseAsync(name, cancellationToken);
-        }
+        public Task ReleaseLockAsync(string name, CancellationToken cancellationToken = default) => ReleaseLeaseAsync(name, cancellationToken);
 
         private async Task ReleaseLeaseAsync(string name, CancellationToken cancellationToken = default)
         {
@@ -139,7 +134,7 @@ namespace Elsa
                 finally
                 {
                     _leaseSemaphore.Set();
-                    _renewTimer?.Dispose();
+                    await _renewTimer.DisposeAsync();
                 }
             }
         }
@@ -148,22 +143,21 @@ namespace Elsa
         {
             get
             {
-                if (_cloudBlobContainer == null)
+                if (_cloudBlobContainer != null) 
+                    return _cloudBlobContainer;
+                
+                lock (SyncRoot)
                 {
-                    lock (SyncRoot)
-                    {
-                        if (_cloudBlobContainer == null)
-                        {
-                            var blobClient = CloudStorageAccount.Parse(_connectionString)
-                                .CreateCloudBlobClient();
-                            blobClient.DefaultRequestOptions.RetryPolicy = new ExponentialRetry(TimeSpan.FromSeconds(2.0), 3);
-                            _cloudBlobContainer = blobClient.GetContainerReference(ContainerName);
-                            if (!_cloudBlobContainer.Exists())
-                            {
-                                _cloudBlobContainer.CreateIfNotExists(BlobContainerPublicAccessType.Off);
-                            }
-                        }
-                    }
+                    if (_cloudBlobContainer != null) 
+                        return _cloudBlobContainer;
+                    
+                    var blobClient = CloudStorageAccount.Parse(_connectionString).CreateCloudBlobClient();
+                    blobClient.DefaultRequestOptions.RetryPolicy = new ExponentialRetry(TimeSpan.FromSeconds(2.0), 3);
+                    
+                    _cloudBlobContainer = blobClient.GetContainerReference(ContainerName);
+                    
+                    if (!_cloudBlobContainer.Exists()) 
+                        _cloudBlobContainer.CreateIfNotExists(BlobContainerPublicAccessType.Off);
                 }
 
                 return _cloudBlobContainer;

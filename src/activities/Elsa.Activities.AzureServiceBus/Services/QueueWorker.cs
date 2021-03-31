@@ -13,7 +13,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
     {
         public QueueWorker(
             IReceiverClient messageReceiver,
-            ICorrelatingWorkflowDispatcher workflowDispatcher,
+            IWorkflowDispatcher workflowDispatcher,
             IOptions<AzureServiceBusOptions> options,
             ILogger<QueueWorker> logger) : base(messageReceiver, workflowDispatcher, options, logger)
         {

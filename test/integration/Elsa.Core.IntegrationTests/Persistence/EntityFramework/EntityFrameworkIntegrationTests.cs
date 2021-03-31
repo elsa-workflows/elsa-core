@@ -78,12 +78,12 @@ namespace Elsa.Core.IntegrationTests.Persistence.EntityFramework
 
         class HostedWorkflowRunner : IHostedService
         {
-            readonly IWorkflowRunner _workflowRunner;
+            readonly IBuildsAndStartsWorkflow _workflowRunner;
             readonly IWorkflowInstanceStore _instanceStore;
 
             public async Task StartAsync(CancellationToken cancellationToken)
             {
-                var instance = await _workflowRunner.RunWorkflowAsync<PersistableWorkflow>(cancellationToken: cancellationToken);
+                var instance = await _workflowRunner.BuildAndStartWorkflowAsync<PersistableWorkflow>(cancellationToken: cancellationToken);
                 var retrievedInstance = await _instanceStore.FindByIdAsync(instance.Id, cancellationToken);
 
                 Assert.NotNull(retrievedInstance);
@@ -91,7 +91,7 @@ namespace Elsa.Core.IntegrationTests.Persistence.EntityFramework
 
             public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
-            public HostedWorkflowRunner(IWorkflowRunner workflowRunner, IWorkflowInstanceStore instanceStore)
+            public HostedWorkflowRunner(IBuildsAndStartsWorkflow workflowRunner, IWorkflowInstanceStore instanceStore)
             {
                 _workflowRunner = workflowRunner ?? throw new System.ArgumentNullException(nameof(workflowRunner));
                 _instanceStore = instanceStore ?? throw new System.ArgumentNullException(nameof(instanceStore));

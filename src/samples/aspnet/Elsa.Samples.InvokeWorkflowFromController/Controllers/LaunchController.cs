@@ -9,9 +9,9 @@ namespace Elsa.Samples.InvokeWorkflowFromController.Controllers
     [Route("launch")]
     public class LaunchController : Controller
     {
-        private readonly IWorkflowRunner _workflowRunner;
+        private readonly IBuildsAndStartsWorkflow _workflowRunner;
 
-        public LaunchController(IWorkflowRunner workflowRunner)
+        public LaunchController(IBuildsAndStartsWorkflow workflowRunner)
         {
             _workflowRunner = workflowRunner;
         }
@@ -19,7 +19,7 @@ namespace Elsa.Samples.InvokeWorkflowFromController.Controllers
         [HttpGet]
         public async Task<IActionResult> Launch()
         {
-            await _workflowRunner.RunWorkflowAsync<RocketWorkflow>();
+            await _workflowRunner.BuildAndStartWorkflowAsync<RocketWorkflow>();
             
             // Returning empty (the workflow will write an HTTP response).
             return new EmptyResult();

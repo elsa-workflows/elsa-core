@@ -19,9 +19,8 @@ namespace Elsa.Samples.BreakLoop
                                 .AddConsoleActivities()
                                 .AddQuartzTemporalActivities()
                                 .AddActivitiesFrom<Program>()
-                                .AddWorkflowsFrom<Program>());
-
-                        services.StartWorkflow<BreakoutWorkflow>();
+                                .AddWorkflowsFrom<Program>().StartWorkflow<BreakoutWorkflow>()
+                            );
                     });
     }
 }

@@ -19,20 +19,19 @@ namespace Elsa.Samples.Temporal
                     {
                         services
                             .AddElsa(options => options
-                                    .UseEntityFrameworkPersistence(ef => ef.UseSqlite())
-                                    .AddConsoleActivities()
-                                    .AddQuartzTemporalActivities()
-                                    .AddActivity<MyContainer1>()
-                                    .AddActivity<MyContainer2>()
-                                    //.AddWorkflow<SingletonTimerWorkflow>()
-                                    //.AddWorkflow<TimerWorkflow>()
-                                    .AddWorkflow<ComplicatedWorkflow>()
+                                .UseEntityFrameworkPersistence(ef => ef.UseSqlite())
+                                .AddConsoleActivities()
+                                .AddQuartzTemporalActivities()
+                                .AddActivity<MyContainer1>()
+                                .AddActivity<MyContainer2>()
+                                //.AddWorkflow<SingletonTimerWorkflow>()
+                                //.AddWorkflow<TimerWorkflow>()
+                                .AddWorkflow<ComplicatedWorkflow>()
                                 //.AddWorkflow<CancelTimerWorkflow>()
                                 //.AddWorkflow<CronTaskWorkflow>()
                                 //.AddWorkflow(sp => ActivatorUtilities.CreateInstance<OneOffWorkflow>(sp, sp.GetRequiredService<IClock>().GetCurrentInstant().Plus(Duration.FromSeconds(5))))
-                            )
-                            .StartWorkflow<ComplicatedWorkflow>()
-                            ;
+                                .StartWorkflow<ComplicatedWorkflow>()
+                            );
                     });
     }
 }

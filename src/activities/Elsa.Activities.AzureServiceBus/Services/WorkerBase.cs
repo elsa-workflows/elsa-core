@@ -17,12 +17,12 @@ namespace Elsa.Activities.AzureServiceBus.Services
         // TODO: Design multi-tenancy. 
         private const string TenantId = default;
 
-        private readonly ICorrelatingWorkflowDispatcher _workflowDispatcher;
+        private readonly IWorkflowDispatcher _workflowDispatcher;
         private readonly ILogger _logger;
 
         protected WorkerBase(
             IReceiverClient receiverClient,
-            ICorrelatingWorkflowDispatcher workflowDispatcher,
+            IWorkflowDispatcher workflowDispatcher,
             IOptions<AzureServiceBusOptions> options,
             ILogger logger)
         {
@@ -36,7 +36,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
                 MaxConcurrentCalls = options.Value.MaxConcurrentCalls
             });
         }
-        
+
         protected IReceiverClient ReceiverClient { get; }
         protected abstract string ActivityType { get; }
 
@@ -66,10 +66,10 @@ namespace Elsa.Activities.AzureServiceBus.Services
                 ReplyToSessionId = message.ReplyToSessionId,
                 ScheduledEnqueueTimeUtc = message.ScheduledEnqueueTimeUtc
             };
-            
+
             var bookmark = CreateBookmark(message);
             var trigger = CreateTrigger(message);
-            await _workflowDispatcher.DispatchAsync(new ExecuteCorrelatedWorkflowRequest(correlationId, bookmark, trigger, ActivityType, model, TenantId: TenantId), cancellationToken);
+            await _workflowDispatcher.DispatchAsync(new TriggerWorkflowsRequest(ActivityType, bookmark, trigger, model, correlationId, TenantId: TenantId), cancellationToken);
         }
 
         private Task ExceptionReceivedHandler(ExceptionReceivedEventArgs e)
@@ -89,7 +89,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
 
             return Task.CompletedTask;
         }
-        
+
         private async Task OnMessageReceived(Message message, CancellationToken cancellationToken)
         {
             _logger.LogDebug("Message received with ID {MessageId}", message.MessageId);

@@ -6,13 +6,14 @@ using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services;
 using Microsoft.Extensions.Logging;
+using NodaTime;
 using Rebus.Handlers;
 
 namespace Elsa.Dispatch.Consumers
 {
     public class ExecuteWorkflowInstanceRequestConsumer : IHandleMessages<ExecuteWorkflowInstanceRequest>
     {
-        private readonly IWorkflowRunner _workflowRunner;
+        private readonly IResumesWorkflow _workflowRunner;
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
         private readonly IDistributedLockProvider _distributedLockProvider;
         private readonly ICommandSender _commandSender;
@@ -20,7 +21,7 @@ namespace Elsa.Dispatch.Consumers
         private readonly Stopwatch _stopwatch = new();
 
         public ExecuteWorkflowInstanceRequestConsumer(
-            IWorkflowRunner workflowRunner, 
+            IResumesWorkflow workflowRunner, 
             IWorkflowInstanceStore workflowInstanceStore, 
             IDistributedLockProvider distributedLockProvider,
             ICommandSender commandSender,
@@ -36,12 +37,12 @@ namespace Elsa.Dispatch.Consumers
         public async Task Handle(ExecuteWorkflowInstanceRequest message)
         {
             var workflowInstanceId = message.WorkflowInstanceId;
-            var lockKey = workflowInstanceId;
+            var lockKey = $"execute-workflow-instance:{workflowInstanceId}";
             
             _logger.LogDebug("Acquiring lock on workflow instance {WorkflowInstanceId}", workflowInstanceId);
             _stopwatch.Restart();
 
-            if (!await _distributedLockProvider.AcquireLockAsync(lockKey))
+            if (!await _distributedLockProvider.AcquireLockAsync(lockKey, Duration.FromSeconds(10)))
             {
                 _logger.LogDebug("Failed to acquire lock on workflow instance {WorkflowInstanceId}. Re-queueing message", workflowInstanceId);
                 await _commandSender.SendAsync(message);
@@ -55,7 +56,7 @@ namespace Elsa.Dispatch.Consumers
                 if (!ValidatePreconditions(workflowInstanceId, workflowInstance, message.ActivityId))
                     return;
 
-                await _workflowRunner.RunWorkflowAsync(
+                await _workflowRunner.ResumeWorkflowAsync(
                     workflowInstance!,
                     message.ActivityId,
                     message.Input);

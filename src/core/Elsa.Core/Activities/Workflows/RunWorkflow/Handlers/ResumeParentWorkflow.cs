@@ -1,5 +1,6 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Dispatch;
 using Elsa.Events;
 using Elsa.Services;
 using MediatR;
@@ -7,22 +8,22 @@ using MediatR;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.Workflows
 {
-    public class ResumeWorkflow : INotificationHandler<WorkflowCompleted>
+    public class ResumeParentWorkflow : INotificationHandler<WorkflowCompleted>
     {
-        private readonly IWorkflowRunner _workflowScheduler;
+        private readonly IFindsAndResumesWorkflows _workflowScheduler;
 
-        public ResumeWorkflow(IWorkflowRunner workflowScheduler)
+        public ResumeParentWorkflow(IFindsAndResumesWorkflows workflowScheduler)
         {
             _workflowScheduler = workflowScheduler;
         }
-        
+
         public async Task Handle(WorkflowCompleted notification, CancellationToken cancellationToken)
         {
             var workflowExecutionContext = notification.WorkflowExecutionContext;
             var workflowInstanceId = workflowExecutionContext.WorkflowInstance.Id;
             var output = workflowExecutionContext.WorkflowInstance.Output;
             var tenantId = workflowExecutionContext.WorkflowInstance.TenantId;
-            
+
             var input = new FinishedWorkflowModel
             {
                 WorkflowInstanceId = workflowInstanceId,
@@ -33,8 +34,8 @@ namespace Elsa.Activities.Workflows
             {
                 ChildWorkflowInstanceId = workflowInstanceId
             };
-            
-            await _workflowScheduler.TriggerWorkflowsAsync<RunWorkflow>(trigger, tenantId, input, cancellationToken: cancellationToken);
+
+            await _workflowScheduler.FindAndResumeWorkflowsAsync(nameof(RunWorkflow), trigger, tenantId, input, cancellationToken: cancellationToken);
         }
     }
 }

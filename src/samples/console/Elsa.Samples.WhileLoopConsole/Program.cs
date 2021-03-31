@@ -22,10 +22,10 @@ namespace Elsa.Samples.WhileLoopConsole
             await startupRunner.StartupAsync();
 
             // Get a workflow runner.
-            var workflowRunner = services.GetRequiredService<IWorkflowRunner>();
+            var workflowRunner = services.GetRequiredService<IBuildsAndStartsWorkflow>();
 
             // Execute the workflow.
-            await workflowRunner.RunWorkflowAsync(new WhileLoopWorkflow(3));
+            await workflowRunner.BuildAndStartWorkflowAsync(new WhileLoopWorkflow(3));
         }
     }
 }

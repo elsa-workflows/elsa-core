@@ -55,25 +55,25 @@ namespace Elsa.Core.IntegrationTests.Persistence
             var host = await hostBuilder.StartAsync();
         }
 
-        class HostedWorkflowRunner<TWorkflow> : IHostedService where TWorkflow : DuplicateActivitiesWorkflow
+        private class HostedWorkflowRunner<TWorkflow> : IHostedService where TWorkflow : DuplicateActivitiesWorkflow
         {
-            readonly IWorkflowRunner workflowRunner;
-            readonly IWorkflowInstanceStore instanceStore;
+            private readonly IBuildsAndStartsWorkflow _workflowRunner;
+            private readonly IWorkflowInstanceStore _instanceStore;
 
             public async Task StartAsync(CancellationToken cancellationToken)
             {
-                var instance = await workflowRunner.RunWorkflowAsync<TWorkflow>();
-                var retrievedInstance = await instanceStore.FindByIdAsync(instance.Id);
+                var instance = await _workflowRunner.BuildAndStartWorkflowAsync<TWorkflow>(cancellationToken: cancellationToken);
+                var retrievedInstance = await _instanceStore.FindByIdAsync(instance.Id, cancellationToken);
 
                 Assert.NotNull(retrievedInstance);
             }
 
             public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
-            public HostedWorkflowRunner(IWorkflowRunner workflowRunner, IWorkflowInstanceStore instanceStore)
+            public HostedWorkflowRunner(IBuildsAndStartsWorkflow workflowRunner, IWorkflowInstanceStore instanceStore)
             {
-                this.workflowRunner = workflowRunner ?? throw new System.ArgumentNullException(nameof(workflowRunner));
-                this.instanceStore = instanceStore ?? throw new System.ArgumentNullException(nameof(instanceStore));
+                _workflowRunner = workflowRunner ?? throw new System.ArgumentNullException(nameof(workflowRunner));
+                _instanceStore = instanceStore ?? throw new System.ArgumentNullException(nameof(instanceStore));
             }
         }
     }

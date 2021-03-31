@@ -6,6 +6,7 @@ using Elsa.Activities.Telnyx.Webhooks.Events;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Abstract;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
 using Elsa.Activities.Telnyx.Webhooks.Services;
+using Elsa.Dispatch;
 using Elsa.DistributedLock;
 using Elsa.DistributedLocking;
 using Elsa.Models;
@@ -19,28 +20,19 @@ namespace Elsa.Activities.Telnyx.Webhooks.Consumers
 {
     internal class TriggerWorkflows : IHandleMessages<TelnyxWebhookReceived>
     {
-        // TODO: Figure out how to start jobs across multiple tenants / how to get a list of all tenants. 
+        // TODO: Design multi-tenancy. 
         private const string TenantId = default;
 
-        private readonly IWorkflowRunner _workflowRunner;
-        private readonly IWorkflowInstanceStore _workflowInstanceStore;
-        private readonly IDistributedLockProvider _distributedLockProvider;
-        private readonly ICommandSender _commandSender;
+        private readonly IWorkflowDispatcher _workflowDispatcher;
         private readonly IWebhookFilterService _webhookFilterService;
         private readonly ILogger<TriggerWorkflows> _logger;
 
         public TriggerWorkflows(
-            IWorkflowRunner workflowRunner,
-            IWorkflowInstanceStore workflowInstanceStore,
-            IDistributedLockProvider distributedLockProvider,
-            ICommandSender commandSender,
+            IWorkflowDispatcher workflowDispatcher,
             IWebhookFilterService webhookFilterService,
             ILogger<TriggerWorkflows> logger)
         {
-            _workflowRunner = workflowRunner;
-            _workflowInstanceStore = workflowInstanceStore;
-            _distributedLockProvider = distributedLockProvider;
-            _commandSender = commandSender;
+            _workflowDispatcher = workflowDispatcher;
             _webhookFilterService = webhookFilterService;
             _logger = logger;
         }
@@ -57,32 +49,13 @@ namespace Elsa.Activities.Telnyx.Webhooks.Consumers
                 _logger.LogWarning("The received event '{EventType}' is an unsupported event", webhook.Data.EventType);
                 return;
             }
-            
+
             var correlationId = GetCorrelationId(payload);
-            var lockKey = $"telnyx:trigger-workflows:correlation-{correlationId}";
 
-            if (!await _distributedLockProvider.AcquireLockAsync(lockKey))
-            {
-                _logger.LogDebug("Lock {LockKey} already taken", lockKey);
+            var bookmark = new NotificationBookmark(eventType, correlationId);
+            var trigger = new NotificationBookmark(eventType);
 
-                await Task.Delay(TimeSpan.FromSeconds(5));
-                await _commandSender.SendAsync(message);
-                return;
-            }
-
-            try
-            {
-                var correlatedWorkflowInstanceCount = await _workflowInstanceStore.CountAsync(new CorrelationIdSpecification<WorkflowInstance>(correlationId));
-
-                if (correlatedWorkflowInstanceCount > 0)
-                    await _workflowRunner.ResumeWorkflowsAsync(activityType, new NotificationBookmark(eventType, correlationId), TenantId, webhook, correlationId);
-                else
-                    await _workflowRunner.StartWorkflowsAsync(activityType, new NotificationBookmark(eventType), TenantId, webhook);
-            }
-            finally
-            {
-                await _distributedLockProvider.ReleaseLockAsync(lockKey);
-            }
+            await _workflowDispatcher.DispatchAsync(new TriggerWorkflowsRequest(activityType, bookmark, trigger, webhook, correlationId, TenantId: TenantId));
         }
 
         private string GetCorrelationId(Payload payload)
@@ -92,7 +65,7 @@ namespace Elsa.Activities.Telnyx.Webhooks.Consumers
                 var clientStatePayload = ClientStatePayload.FromBase64(payload.ClientState);
                 return clientStatePayload.CorrelationId;
             }
-            
+
             if (payload is CallPayload callPayload)
                 return callPayload.CallSessionId;
 

@@ -6,13 +6,13 @@ namespace Elsa.Activities.Http.Models
         {
         }
 
-        public Signal(string name, string workflowInstanceId)
+        public Signal(string name, string correlationId)
         {
             Name = name;
-            WorkflowInstanceId = workflowInstanceId;
+            CorrelationId = correlationId;
         }
 
         public string Name { get; set; } = default!;
-        public string WorkflowInstanceId { get; set; } = default!;
+        public string CorrelationId { get; set; } = default!;
     }
 }
