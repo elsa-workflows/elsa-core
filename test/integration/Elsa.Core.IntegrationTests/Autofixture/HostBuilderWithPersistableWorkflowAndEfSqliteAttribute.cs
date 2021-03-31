@@ -16,7 +16,7 @@ namespace Elsa.Core.IntegrationTests.Autofixture
         {
             var tempFolder = new TemporaryFolder();
 
-            return new HostBubilderUsingServicesCustomization(services => {
+            return new HostBuilderUsingServicesCustomization(services => {
                 services
                     .AddElsa(elsa => {
                         elsa
