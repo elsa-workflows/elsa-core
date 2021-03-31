@@ -13,9 +13,9 @@ namespace Elsa.Activities.AzureServiceBus.Services
     {
         public TopicWorker(
             IReceiverClient receiverClient,
-            ICorrelatingWorkflowDispatcher correlatingWorkflowDispatcher,
+            IWorkflowDispatcher workflowDispatcher,
             IOptions<AzureServiceBusOptions> options,
-            ILogger<TopicWorker> logger) : base(receiverClient, correlatingWorkflowDispatcher, options, logger)
+            ILogger<TopicWorker> logger) : base(receiverClient, workflowDispatcher, options, logger)
         {
         }
 

@@ -7,7 +7,7 @@ using Orleans;
 
 namespace Elsa.Server.Orleans.Dispatch
 {
-    public class GrainWorkflowDispatcher : IWorkflowDefinitionDispatcher, IWorkflowInstanceDispatcher, ICorrelatingWorkflowDispatcher
+    public class GrainWorkflowDispatcher : IWorkflowDefinitionDispatcher, IWorkflowInstanceDispatcher, IWorkflowDispatcher
     {
         private readonly IClusterClient  _clusterClient;
 
@@ -28,7 +28,7 @@ namespace Elsa.Server.Orleans.Dispatch
             await grain.ExecuteWorkflowAsync(request, cancellationToken);
         }
 
-        public async Task DispatchAsync(ExecuteCorrelatedWorkflowRequest request, CancellationToken cancellationToken = default)
+        public async Task DispatchAsync(TriggerWorkflowsRequest request, CancellationToken cancellationToken = default)
         {
             var grain = _clusterClient.GetGrain<ICorrelatedWorkflowGrain>(request.CorrelationId);
             await grain.ExecutedCorrelatedWorkflowAsync(request, cancellationToken);

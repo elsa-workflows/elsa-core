@@ -23,10 +23,10 @@ namespace Elsa.Samples.SwitchConsole
             await startupRunner.StartupAsync();
 
             // Get a workflow runner.
-            var workflowRunner = services.GetRequiredService<IWorkflowRunner>();
+            var workflowRunner = services.GetRequiredService<IBuildsAndStartsWorkflow>();
 
             // Execute the workflow.
-            await workflowRunner.RunWorkflowAsync<GrayscaleWorkflow>();
+            await workflowRunner.BuildAndStartWorkflowAsync<GrayscaleWorkflow>();
         }
     }
 }

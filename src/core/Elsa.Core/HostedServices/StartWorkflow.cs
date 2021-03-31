@@ -19,8 +19,8 @@ namespace Elsa.HostedServices
         public async Task StartAsync(CancellationToken cancellationToken)
         {
             using var scope = _serviceProvider.CreateScope();
-            var workflowRunner = scope.ServiceProvider.GetRequiredService<IWorkflowRunner>();
-            await workflowRunner.RunWorkflowAsync<T>(cancellationToken: cancellationToken);
+            var workflowRunner = scope.ServiceProvider.GetRequiredService<IBuildsAndStartsWorkflow>();
+            await workflowRunner.BuildAndStartWorkflowAsync<T>(cancellationToken: cancellationToken);
         }
 
         public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;

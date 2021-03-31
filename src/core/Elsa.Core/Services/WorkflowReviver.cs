@@ -11,20 +11,20 @@ namespace Elsa.Services
 {
     public class WorkflowReviver : IWorkflowReviver
     {
-        private readonly IWorkflowRunner _workflowRunner;
+        private readonly IResumesWorkflow _resumesWorkflow;
         private readonly IWorkflowInstanceDispatcher _workflowInstanceDispatcher;
         private readonly IWorkflowRegistry _workflowRegistry;
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
         private readonly IGetsStartActivitiesForCompositeActivityBlueprint _startingActivitiesProvider;
 
         public WorkflowReviver(
-            IWorkflowRunner workflowRunner,
+            IResumesWorkflow resumesWorkflow,
             IWorkflowInstanceDispatcher workflowInstanceDispatcher,
             IWorkflowRegistry workflowRegistry,
             IWorkflowInstanceStore workflowInstanceStore,
             IGetsStartActivitiesForCompositeActivityBlueprint startingActivitiesProvider)
         {
-            _workflowRunner = workflowRunner;
+            _resumesWorkflow = resumesWorkflow;
             _workflowInstanceDispatcher = workflowInstanceDispatcher;
             _workflowRegistry = workflowRegistry;
             _workflowInstanceStore = workflowInstanceStore;
@@ -66,7 +66,7 @@ namespace Elsa.Services
         public async Task<WorkflowInstance> ReviveAndRunAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken)
         {
             workflowInstance = await ReviveAsync(workflowInstance, cancellationToken);
-            return await _workflowRunner.RunWorkflowAsync(workflowInstance, null, null, cancellationToken);
+            return await _resumesWorkflow.ResumeWorkflowAsync(workflowInstance, null, null, cancellationToken);
         }
 
         public async Task<WorkflowInstance> ReviveAndQueueAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken)

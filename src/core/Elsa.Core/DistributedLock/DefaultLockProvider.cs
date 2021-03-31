@@ -1,7 +1,9 @@
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.DistributedLocking;
+using NodaTime;
 
 namespace Elsa.DistributedLock
 {
@@ -11,18 +13,37 @@ namespace Elsa.DistributedLock
     /// </summary>
     public class DefaultLockProvider : IDistributedLockProvider
     {
-        private readonly HashSet<string> _locks = new HashSet<string>();
+        private readonly IClock _clock;
+        private readonly HashSet<string> _locks = new();
 
-        public Task<bool> AcquireLockAsync(string name, CancellationToken cancellationToken = default)
+        public DefaultLockProvider(IClock clock)
         {
-            lock (_locks)
+            _clock = clock;
+        }
+
+        public async Task<bool> AcquireLockAsync(string name, Duration? timeout = default, CancellationToken cancellationToken = default)
+        {
+            timeout ??= Duration.Zero;
+            var start = _clock.GetCurrentInstant();
+            
+            Monitor.Enter(_locks);
+            try
             {
-                if (_locks.Contains(name))
-                    return Task.FromResult(false);
+                while (_locks.Contains(name))
+                {
+                    await Task.Delay(TimeSpan.FromMilliseconds(500), cancellationToken);
+                        
+                    if(_clock.GetCurrentInstant() - start >= timeout)
+                        return false;
+                }
 
                 _locks.Add(name);
 
-                return Task.FromResult(true);
+                return true;
+            }
+            finally
+            {
+                Monitor.Exit(_locks);
             }
         }
 

@@ -25,7 +25,7 @@ namespace Elsa.Samples.ContextualWorkflowHttp.Workflows
                 .WithContextType<Document>()
 
                 // Accept HTTP requests to submit new documents.
-                .ReceiveHttpPostRequest<Document>("/documents")
+                .HttpEndpoint<Document>("/documents")
 
                 // Store the document as the workflow context. It will be saved automatically when the workflow gets suspended.
                 .Then(context => context.SetWorkflowContext(context.GetInput<HttpRequestModel>()!.GetBody<Document>())).LoadWorkflowContext()
@@ -44,12 +44,12 @@ namespace Elsa.Samples.ContextualWorkflowHttp.Workflows
                     {
                         var approveBranch = fork
                             .When("Approve")
-                            .ReceiveHttpPostRequest<Comment>(context => $"/documents/{GetDocumentId(context)}/approve")
+                            .HttpEndpoint<Comment>(context => $"/documents/{GetDocumentId(context)}/approve")
                             .Then(StoreComment);
 
                         var rejectBranch = fork
                             .When("Reject")
-                            .ReceiveHttpPostRequest<Comment>(context => $"/documents/{GetDocumentId(context)}/reject")
+                            .HttpEndpoint<Comment>(context => $"/documents/{GetDocumentId(context)}/reject")
                             .Then(StoreComment);
 
                         WriteResponse(approveBranch, document => $"Thanks for approving document {document!.DocumentId}!").Then(join);

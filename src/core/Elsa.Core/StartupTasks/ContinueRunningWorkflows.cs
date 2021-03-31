@@ -42,7 +42,7 @@ namespace Elsa.StartupTasks
         {
             var lockKey = GetType().Name;
 
-            if (!await _distributedLockProvider.AcquireLockAsync(lockKey, cancellationToken))
+            if (!await _distributedLockProvider.AcquireLockAsync(lockKey, default, cancellationToken))
                 return;
 
             try

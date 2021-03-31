@@ -14,6 +14,7 @@ using Elsa.Serialization;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
+using NodaTime;
 using Rebus.DataBus.InMem;
 using Rebus.Persistence.InMem;
 using Rebus.Transport.InMem;
@@ -37,7 +38,7 @@ namespace Elsa
             WorkflowInstanceDispatcherFactory = sp => ActivatorUtilities.CreateInstance<QueuingWorkflowDispatcher>(sp);
             CorrelatingWorkflowDispatcherFactory = sp => ActivatorUtilities.CreateInstance<QueuingWorkflowDispatcher>(sp);
             StorageFactory = sp => Storage.Net.StorageFactory.Blobs.InMemory();
-            DistributedLockProviderFactory = sp => new DefaultLockProvider();
+            DistributedLockProviderFactory = sp => ActivatorUtilities.CreateInstance<DefaultLockProvider>(sp);
             SignalFactory = sp => new Signal();
             JsonSerializerConfigurer = (sp, serializer) => { };
 
@@ -70,6 +71,11 @@ namespace Elsa
         public IEnumerable<Type> MessageTypes => _messageTypes.ToList();
         public ServiceBusOptions ServiceBusOptions { get; } = new();
 
+        /// <summary>
+        /// The amount of time to wait before giving up on trying to acquire a lock.
+        /// </summary>
+        public Duration DistributedLockTimeout { get; set; } = Duration.FromHours(1);
+
         internal Func<IServiceProvider, IBlobStorage> StorageFactory { get; set; }
         internal Func<IServiceProvider, IWorkflowDefinitionStore> WorkflowDefinitionStoreFactory { get; set; }
         internal Func<IServiceProvider, IWorkflowInstanceStore> WorkflowInstanceStoreFactory { get; set; }
@@ -81,7 +87,7 @@ namespace Elsa
         internal Action<IServiceProvider, JsonSerializer> JsonSerializerConfigurer { get; private set; }
         internal Func<IServiceProvider, IWorkflowDefinitionDispatcher> WorkflowDefinitionDispatcherFactory { get; set; }
         internal Func<IServiceProvider, IWorkflowInstanceDispatcher> WorkflowInstanceDispatcherFactory { get; set; }
-        internal Func<IServiceProvider, ICorrelatingWorkflowDispatcher> CorrelatingWorkflowDispatcherFactory { get; set; }
+        internal Func<IServiceProvider, IWorkflowDispatcher> CorrelatingWorkflowDispatcherFactory { get; set; }
         internal Action AddAutoMapper { get; private set; }
         internal Action<ServiceBusEndpointConfigurationContext> ConfigureServiceBusEndpoint { get; private set; }
         internal bool WithCoreActivities { get; private set; } = true;
@@ -129,6 +135,9 @@ namespace Elsa
 
         public ElsaOptions AddWorkflow(Type workflowType)
         {
+            if (WorkflowFactory.Types.Contains(workflowType))
+                return this;
+            
             Services.AddSingleton(workflowType);
             Services.AddSingleton(sp => (IWorkflow)sp.GetRequiredService(workflowType));
             WorkflowFactory.Add(workflowType, provider => (IWorkflow)ActivatorUtilities.GetServiceOrCreateInstance(provider, workflowType));

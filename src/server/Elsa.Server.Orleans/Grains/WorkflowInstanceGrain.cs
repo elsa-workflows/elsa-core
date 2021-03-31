@@ -12,10 +12,10 @@ namespace Elsa.Server.Orleans.Grains
     public class WorkflowInstanceGrain : Grain, IWorkflowInstanceGrain
     {
         private readonly IWorkflowInstanceStore _store;
-        private readonly IWorkflowRunner _workflowRunner;
+        private readonly IResumesWorkflow _workflowRunner;
         private readonly ILogger<WorkflowInstanceGrain> _logger;
 
-        public WorkflowInstanceGrain(IWorkflowInstanceStore store, IWorkflowRunner workflowRunner, ILogger<WorkflowInstanceGrain> logger)
+        public WorkflowInstanceGrain(IWorkflowInstanceStore store, IResumesWorkflow workflowRunner, ILogger<WorkflowInstanceGrain> logger)
         {
             _store = store;
             _workflowRunner = workflowRunner;
@@ -32,7 +32,7 @@ namespace Elsa.Server.Orleans.Grains
                 return;
             }
             
-            await _workflowRunner.RunWorkflowAsync(workflowInstance, request.ActivityId, request.Input, cancellationToken);
+            await _workflowRunner.ResumeWorkflowAsync(workflowInstance, request.ActivityId, request.Input, cancellationToken);
         }
     }
 }

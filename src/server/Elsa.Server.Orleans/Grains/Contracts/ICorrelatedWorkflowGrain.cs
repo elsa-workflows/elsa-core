@@ -7,6 +7,6 @@ namespace Elsa.Server.Orleans.Grains.Contracts
 {
     public interface ICorrelatedWorkflowGrain : IGrainWithStringKey
     {
-        Task ExecutedCorrelatedWorkflowAsync(ExecuteCorrelatedWorkflowRequest request, CancellationToken cancellationToken = default);
+        Task ExecutedCorrelatedWorkflowAsync(TriggerWorkflowsRequest request, CancellationToken cancellationToken = default);
     }
 }

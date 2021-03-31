@@ -16,7 +16,7 @@ namespace Elsa.Dispatch
             return options;
         }
         
-        public static ElsaOptions UseCorrelatingWorkflowDispatcher(this ElsaOptions options, Func<IServiceProvider, ICorrelatingWorkflowDispatcher> factory)
+        public static ElsaOptions UseCorrelatingWorkflowDispatcher(this ElsaOptions options, Func<IServiceProvider, IWorkflowDispatcher> factory)
         {
             options.CorrelatingWorkflowDispatcherFactory = factory;
             return options;

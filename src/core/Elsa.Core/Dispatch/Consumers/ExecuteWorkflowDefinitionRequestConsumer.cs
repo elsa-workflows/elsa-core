@@ -12,18 +12,18 @@ namespace Elsa.Dispatch.Consumers
 {
     public class ExecuteWorkflowDefinitionRequestConsumer : IHandleMessages<ExecuteWorkflowDefinitionRequest>
     {
-        private readonly IWorkflowRunner _workflowRunner;
+        private readonly IStartsWorkflow _startsWorkflow;
         private readonly IWorkflowRegistry _workflowRegistry;
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
         private readonly ILogger _logger;
 
         public ExecuteWorkflowDefinitionRequestConsumer(
-            IWorkflowRunner workflowRunner,
+            IStartsWorkflow startsWorkflow,
             IWorkflowRegistry workflowRegistry,
             IWorkflowInstanceStore workflowInstanceStore,
             ILogger<ExecuteWorkflowDefinitionRequestConsumer> logger)
         {
-            _workflowRunner = workflowRunner;
+            _startsWorkflow = startsWorkflow;
             _workflowRegistry = workflowRegistry;
             _workflowInstanceStore = workflowInstanceStore;
             _logger = logger;
@@ -39,7 +39,7 @@ namespace Elsa.Dispatch.Consumers
                 return;
             
             if (!workflowBlueprint!.IsSingleton || await GetWorkflowIsAlreadyExecutingAsync(tenantId, workflowDefinitionId) == false)
-                await _workflowRunner.RunWorkflowAsync(workflowBlueprint, message.ActivityId, message.Input, message.CorrelationId, message.ContextId);
+                await _startsWorkflow.StartWorkflowAsync(workflowBlueprint, message.ActivityId, message.Input, message.CorrelationId, message.ContextId);
         }
 
         private bool ValidatePreconditions(string? workflowDefinitionId, IWorkflowBlueprint? workflowBlueprint)

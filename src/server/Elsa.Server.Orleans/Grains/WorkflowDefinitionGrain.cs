@@ -12,13 +12,13 @@ namespace Elsa.Server.Orleans.Grains
     public class WorkflowDefinitionGrain : Grain, IWorkflowDefinitionGrain
     {
         private readonly IWorkflowRegistry _workflowRegistry;
-        private readonly IWorkflowRunner _workflowRunner;
+        private readonly IStartsWorkflow _startsWorkflow;
         private readonly ILogger<WorkflowDefinitionGrain> _logger;
 
-        public WorkflowDefinitionGrain(IWorkflowRegistry workflowRegistry, IWorkflowRunner workflowRunner, ILogger<WorkflowDefinitionGrain> logger)
+        public WorkflowDefinitionGrain(IWorkflowRegistry workflowRegistry, IStartsWorkflow startsWorkflow, ILogger<WorkflowDefinitionGrain> logger)
         {
             _workflowRegistry = workflowRegistry;
-            _workflowRunner = workflowRunner;
+            _startsWorkflow = startsWorkflow;
             _logger = logger;
         }
         
@@ -32,7 +32,7 @@ namespace Elsa.Server.Orleans.Grains
                 return;
             }
 
-            await _workflowRunner.RunWorkflowAsync(workflowBlueprint, request.ActivityId, request.Input, request.CorrelationId, request.ContextId, cancellationToken);
+            await _startsWorkflow.StartWorkflowAsync(workflowBlueprint, request.ActivityId, request.Input, request.CorrelationId, request.ContextId, cancellationToken);
         }
     }
 }

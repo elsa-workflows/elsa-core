@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using Elsa.Activities.Webhooks.Models;
 using Elsa.Client.Models;
+using Elsa.Client.Webhooks.Models;
 using ProtoBuf.Meta;
 
 namespace ElsaDashboard.Shared.Surrogates

@@ -26,7 +26,7 @@ namespace Elsa.Testing.Shared.Unit
             configureServices?.Invoke(services);
             ServiceProvider = services.BuildServiceProvider();
             ServiceScope = ServiceProvider.CreateScope();
-            WorkflowRunner = ServiceScope.ServiceProvider.GetRequiredService<IWorkflowRunner>();
+            WorkflowRunner = ServiceScope.ServiceProvider.GetRequiredService<IBuildsAndStartsWorkflow>();
             WorkflowBlueprintMaterializer = ServiceScope.ServiceProvider.GetRequiredService<IWorkflowBlueprintMaterializer>();
             WorkflowBuilder = ServiceScope.ServiceProvider.GetRequiredService<IWorkflowBuilder>();
             WorkflowRegistry = ServiceScope.ServiceProvider.GetRequiredService<IWorkflowRegistry>();
@@ -36,7 +36,7 @@ namespace Elsa.Testing.Shared.Unit
         protected ITestOutputHelper TestOutputHelper { get; }
         protected ServiceProvider ServiceProvider { get; }
         protected IServiceScope ServiceScope { get; }
-        protected IWorkflowRunner WorkflowRunner { get; }
+        protected IBuildsAndStartsWorkflow WorkflowRunner { get; }
         protected IWorkflowBlueprintMaterializer WorkflowBlueprintMaterializer { get; }
         protected IWorkflowBuilder WorkflowBuilder { get; }
         protected IWorkflowRegistry WorkflowRegistry { get; }

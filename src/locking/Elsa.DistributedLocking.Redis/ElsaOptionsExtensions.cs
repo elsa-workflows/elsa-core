@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using RedLockNet;
@@ -11,14 +9,13 @@ namespace Elsa
 {
     public static class ElsaOptionsExtensions
     {
-        public static ElsaOptions UseRedisLockProvider(this ElsaOptions options, string connectionString, TimeSpan? lockTimeout = null)
+        public static ElsaOptions UseRedisLockProvider(this ElsaOptions options, string connectionString)
         {
             options.UseStackExchangeConnectionMultiplexer(connectionString)
                 .UseRedLockFactory()
                 .UseDistributedLockProvider(
                     sp => new RedisLockProvider(
                         sp.GetRequiredService<IDistributedLockFactory>(),
-                        lockTimeout ?? TimeSpan.FromMinutes(1),
                         sp.GetRequiredService<ILogger<RedisLockProvider>>()));
 
             return options;
@@ -26,13 +23,7 @@ namespace Elsa
 
         private static ElsaOptions UseStackExchangeConnectionMultiplexer(this ElsaOptions options, string connectionString)
         {
-            if (string.IsNullOrWhiteSpace(connectionString))
-            {
-                throw new ArgumentNullException(nameof(connectionString));
-            }
-
             options.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(connectionString));
-
             return options;
         }
 
@@ -40,7 +31,7 @@ namespace Elsa
         {
             options.Services.AddSingleton<IDistributedLockFactory, RedLockFactory>(
                 sp => RedLockFactory.Create(
-                    new List<RedLockMultiplexer>
+                    new[]
                     {
                         new RedLockMultiplexer(sp.GetRequiredService<IConnectionMultiplexer>())
                     }));

@@ -3,16 +3,17 @@ using System.Linq;
 using System.Threading.Tasks;
 using Elsa.Activities.Entity;
 using Elsa.Activities.Entity.Extensions;
+using Elsa.Dispatch;
 using Elsa.Services;
 
 namespace Elsa.Samples.EntityChanged
 {
     public class SomeRepository
     {
-        private readonly IWorkflowRunner _workflowRunner;
-        private ICollection<Entity> _collection = new List<Entity>();
+        private readonly IWorkflowDispatcher _workflowRunner;
+        private readonly ICollection<Entity> _collection = new List<Entity>();
 
-        public SomeRepository(IWorkflowRunner workflowRunner) => _workflowRunner = workflowRunner;
+        public SomeRepository(IWorkflowDispatcher workflowRunner) => _workflowRunner = workflowRunner;
         public Task AddAsync(Entity entity)
         {
             _collection.Add(entity);

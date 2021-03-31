@@ -66,6 +66,7 @@ namespace Microsoft.Extensions.DependencyInjection
             services.Decorate<IWorkflowDefinitionStore, InitializingWorkflowDefinitionStore>();
             services.Decorate<IWorkflowDefinitionStore, EventPublishingWorkflowDefinitionStore>();
             services.Decorate<IWorkflowInstanceStore, EventPublishingWorkflowInstanceStore>();
+            services.Decorate<IWorkflowRunner, LockingWorkflowRunner>();
 
             return services;
         }
@@ -73,7 +74,11 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <summary>
         /// Starts the specified workflow upon application startup.
         /// </summary>
-        public static IServiceCollection StartWorkflow<T>(this IServiceCollection services) where T : class, IWorkflow => services.AddHostedService<StartWorkflow<T>>();
+        public static IServiceCollection StartWorkflow<T>(this ElsaOptions elsaOptions) where T : class, IWorkflow
+        {
+            elsaOptions.AddWorkflow<T>();
+            return elsaOptions.Services.AddHostedService<StartWorkflow<T>>();
+        }
 
         public static ElsaOptions AddConsumer<TConsumer, TMessage>(this ElsaOptions elsaOptions) where TConsumer : class, IHandleMessages<TMessage>
         {
@@ -167,7 +172,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IEventPublisher, EventPublisher>();
 
             options
-                .AddConsumer<ExecuteCorrelatedWorkflowRequestConsumer, ExecuteCorrelatedWorkflowRequest>()
+                .AddConsumer<TriggerWorkflowsRequestConsumer, TriggerWorkflowsRequest>()
                 .AddConsumer<ExecuteWorkflowDefinitionRequestConsumer, ExecuteWorkflowDefinitionRequest>()
                 .AddConsumer<ExecuteWorkflowInstanceRequestConsumer, ExecuteWorkflowInstanceRequest>();
 

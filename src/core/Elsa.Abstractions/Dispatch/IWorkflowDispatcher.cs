@@ -5,10 +5,10 @@ namespace Elsa.Dispatch
 {
     /// <summary>
     /// The correlating dispatcher is responsible for finding workflows correlated by the specified correlation ID.
-    /// If no correlated workflows are found, a new one is started.
+    /// If no correlated workflows are found, a new ones are started and existing ones are resumed.
     /// </summary>
-    public interface ICorrelatingWorkflowDispatcher
+    public interface IWorkflowDispatcher
     {
-        Task DispatchAsync(ExecuteCorrelatedWorkflowRequest request, CancellationToken cancellationToken = default);
+        Task DispatchAsync(TriggerWorkflowsRequest request, CancellationToken cancellationToken = default);
     }
 }

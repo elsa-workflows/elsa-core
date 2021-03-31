@@ -35,10 +35,10 @@ namespace Elsa.Samples.FileBasedWorkflow
             var sampleWorkflow = await workflowRegistry.GetWorkflowAsync("SampleWorkflow", VersionOptions.Published);
 
             // Get a workflow runner.
-            var workflowRunner = services.GetRequiredService<IWorkflowRunner>();
+            var workflowRunner = services.GetRequiredService<IStartsWorkflow>();
 
             // Execute the workflow.
-            await workflowRunner.RunWorkflowAsync(sampleWorkflow!);
+            await workflowRunner.StartWorkflowAsync(sampleWorkflow!);
         }
     }
 }
