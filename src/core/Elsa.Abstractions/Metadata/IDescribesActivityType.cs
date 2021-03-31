@@ -2,7 +2,7 @@ using System;
 
 namespace Elsa.Metadata
 {
-    public interface IDescribeActivityType
+    public interface IDescribesActivityType
     {
         ActivityDescriptor? Describe(Type activityType);
     }

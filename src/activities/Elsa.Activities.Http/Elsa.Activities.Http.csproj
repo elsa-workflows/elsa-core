@@ -27,7 +27,6 @@
         <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.2.2" />
         <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.2.5" />
-        <PackageReference Include="Microsoft.AspNetCore.Mvc.Versioning" Version="5.0.0" />
         <PackageReference Include="Microsoft.Extensions.Http" Version="5.0.0" />
         <PackageReference Include="Open.Linq.AsyncExtensions" Version="1.2.0" />
     </ItemGroup>

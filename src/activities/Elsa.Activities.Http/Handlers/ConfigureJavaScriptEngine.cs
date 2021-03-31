@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.Http.Extensions;
 using Elsa.Activities.Http.Models;
 using Elsa.Activities.Http.Services;
 using Elsa.Scripting.JavaScript.Messages;
@@ -12,16 +13,13 @@ namespace Elsa.Activities.Http.Handlers
 {
     public class ConfigureJavaScriptEngine : INotificationHandler<EvaluatingJavaScriptExpression>
     {
-        private readonly ITokenService _tokenService;
         private readonly IAbsoluteUrlProvider _absoluteUrlProvider;
         private readonly IHttpContextAccessor _httpContextAccessor;
 
         public ConfigureJavaScriptEngine(
-            ITokenService tokenService,
             IAbsoluteUrlProvider absoluteUrlProvider,
             IHttpContextAccessor httpContextAccessor)
         {
-            _tokenService = tokenService;
             _absoluteUrlProvider = absoluteUrlProvider;
             _httpContextAccessor = httpContextAccessor;
         }
@@ -33,7 +31,7 @@ namespace Elsa.Activities.Http.Handlers
 
             engine.SetValue(
                 "queryString",
-                (Func<string, string>)(key => _httpContextAccessor.HttpContext.Request.Query[key].ToString())
+                (Func<string, string>)(key => _httpContextAccessor.HttpContext!.Request.Query[key].ToString())
             );
             engine.SetValue(
                 "absoluteUrl",
@@ -41,22 +39,10 @@ namespace Elsa.Activities.Http.Handlers
             );
             engine.SetValue(
                 "signalUrl",
-                (Func<string, string>)(signal => GenerateUrl(signal, activityExecutionContext))
+                (Func<string, string>)(signal => activityExecutionContext.GenerateSignalUrl(signal))
             );
 
             return Task.CompletedTask;
-        }
-
-        private string GenerateUrl(string signal, ActivityExecutionContext activityExecutionContext)
-        {
-            var workflowInstanceId =
-                activityExecutionContext.WorkflowExecutionContext.WorkflowInstance.Id;
-            
-            var payload = new Signal(signal, workflowInstanceId);
-            var token = _tokenService.CreateToken(payload);
-            var url = $"/workflows/signal?token={token}";
-
-            return _absoluteUrlProvider.ToAbsoluteUrl(url).ToString();
         }
     }
 }
