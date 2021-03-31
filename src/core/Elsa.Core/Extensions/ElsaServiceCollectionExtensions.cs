@@ -104,6 +104,16 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddScoped<IWorkflowRegistry, WorkflowRegistry>()
                 .AddSingleton<IActivityActivator, ActivityActivator>()
                 .AddScoped<IWorkflowRunner, WorkflowRunner>()
+                .AddScoped<WorkflowStarter>()
+                .AddScoped<WorkflowResumer>()
+                .AddScoped<IStartsWorkflow>(sp => sp.GetRequiredService<WorkflowStarter>())
+                .AddScoped<IStartsWorkflows>(sp => sp.GetRequiredService<WorkflowStarter>())
+                .AddScoped<IFindsAndStartsWorkflows>(sp => sp.GetRequiredService<WorkflowStarter>())
+                .AddScoped<IBuildsAndStartsWorkflow>(sp => sp.GetRequiredService<WorkflowStarter>())
+                .AddScoped<IFindsAndResumesWorkflows>(sp => sp.GetRequiredService<WorkflowResumer>())
+                .AddScoped<IResumesWorkflow>(sp => sp.GetRequiredService<WorkflowResumer>())
+                .AddScoped<IResumesWorkflows>(sp => sp.GetRequiredService<WorkflowResumer>())
+                .AddScoped<IBuildsAndResumesWorkflow>(sp => sp.GetRequiredService<WorkflowResumer>())
                 .AddScoped<IWorkflowTriggerInterruptor, WorkflowTriggerInterruptor>()
                 .AddScoped<IWorkflowReviver, WorkflowReviver>()
                 .AddSingleton<IWorkflowFactory, WorkflowFactory>()
@@ -199,9 +209,9 @@ namespace Microsoft.Extensions.DependencyInjection
 
         private static ElsaOptions AddCoreActivities(this ElsaOptions services)
         {
-            if (!services.WithCoreActivities) 
+            if (!services.WithCoreActivities)
                 return services;
-            
+
             return services
                 .AddActivitiesFrom<ElsaOptions>()
                 .AddActivitiesFrom<CompositeActivity>();
