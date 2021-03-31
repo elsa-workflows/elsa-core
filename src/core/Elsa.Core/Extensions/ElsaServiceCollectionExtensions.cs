@@ -106,6 +106,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddScoped<IWorkflowRunner, WorkflowRunner>()
                 .AddScoped<WorkflowStarter>()
                 .AddScoped<WorkflowResumer>()
+                .AddScoped<ITriggersWorkflows, TriggersWorkflows>()
                 .AddScoped<IStartsWorkflow>(sp => sp.GetRequiredService<WorkflowStarter>())
                 .AddScoped<IStartsWorkflows>(sp => sp.GetRequiredService<WorkflowStarter>())
                 .AddScoped<IFindsAndStartsWorkflows>(sp => sp.GetRequiredService<WorkflowStarter>())
