@@ -6,14 +6,14 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Testing.Shared.AutoFixture.Customizations
 {
-    public class HostBubilderUsingServicesCustomization : SpecimenBuilderForParameterCustomization
+    public class HostBuilderUsingServicesCustomization : SpecimenBuilderForParameterCustomization
     {
         readonly Action<IServiceCollection> serviceConfig;
 
         protected override ISpecimenBuilder GetUnfilteredSpecimenBuilder()
             => new HostBubilderUsingServicesSpecimenBuilder(serviceConfig);
 
-        public HostBubilderUsingServicesCustomization(Action<IServiceCollection> serviceConfig,
+        public HostBuilderUsingServicesCustomization(Action<IServiceCollection> serviceConfig,
                                                       ParameterInfo? parameter) : base(parameter)
         {
             this.serviceConfig = serviceConfig ?? throw new ArgumentNullException(nameof(serviceConfig));

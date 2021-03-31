@@ -10,7 +10,7 @@ namespace Elsa.Core.IntegrationTests.Autofixture
     {
         public override ICustomization GetCustomization(ParameterInfo parameter)
         {
-            return new HostBubilderUsingServicesCustomization(services => {
+            return new HostBuilderUsingServicesCustomization(services => {
                 services.AddElsa().AddJavaScriptExpressionEvaluator();
             }, parameter);
         }
