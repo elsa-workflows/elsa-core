@@ -8,8 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Elsa.Activities.Http.Endpoints.Signals
 {
     [ApiController]
-    [ApiVersion("1")]
-    [Route("v{version:apiVersion}/signals/dispatch/{token}")]
+    [Route("signals/dispatch/{token}")]
     [Produces("application/json")]
     public class DispatchEndpoint : ControllerBase
     {

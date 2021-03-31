@@ -8,8 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Elsa.Activities.Http.Endpoints.Signals
 {
     [ApiController]
-    [ApiVersion("1")]
-    [Route("v{version:apiVersion}/signals/trigger/{token}")]
+    [Route("signals/trigger/{token}")]
     [Produces("application/json")]
     public class TriggerEndpoint : ControllerBase
     {
