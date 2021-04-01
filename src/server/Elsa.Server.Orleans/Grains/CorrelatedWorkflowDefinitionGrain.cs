@@ -11,9 +11,11 @@ using Elsa.Triggers;
 using Microsoft.Extensions.Logging;
 using Open.Linq.AsyncExtensions;
 using Orleans;
+using Orleans.Concurrency;
 
 namespace Elsa.Server.Orleans.Grains
 {
+    [StatelessWorker]
     public class CorrelatedWorkflowDefinitionGrain : Grain, ICorrelatedWorkflowGrain
     {
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
