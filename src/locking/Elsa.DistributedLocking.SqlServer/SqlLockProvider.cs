@@ -47,6 +47,7 @@ namespace Elsa
                 command.Parameters.AddWithValue("@LockOwner", $"Session");
                 command.Parameters.AddWithValue("@LockMode", $"Exclusive");
                 command.Parameters.AddWithValue("@LockTimeout", timeoutMils);
+                command.CommandTimeout = Math.Max((int?)timeout?.TotalSeconds ?? 30, 30);
 
                 var returnParameter = command.Parameters.Add("RetVal", SqlDbType.Int);
                 returnParameter.Direction = ParameterDirection.ReturnValue;
