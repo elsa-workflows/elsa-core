@@ -5,19 +5,22 @@ services:
     elsa-dashboard:
         build:
             context: ../
-            dockerfile: ./docker/ElsaDashboard.Samples.Monolith.Dockerfile
+            dockerfile: ./docker/Dockerfile
+        image: elsadashboard:latest
+        container_name: elsa-dashboard
         environment:
             - ASPNETCORE_ENVIRONMENT=Development
             - Elsa:Http:BaseUrl=http://localhost
             - Elsa:Smtp:Host=smtp4dev
-            - Dashboard:ElsaServerUrl=http://localhost:22174
+            - Dashboard:ElsaServerUrl=http://localhost:6868
         ports:
-            - "22174:80"
+            - "6868:80"
         depends_on:
             - smtp4dev
     
     smtp4dev:
-        image: rnwood/smtp4dev:linux-amd64-3.1.0-ci0856
+        image: rnwood/smtp4dev:latest
+        container_name: elsa-smtp4dev
         ports:
             - "3000:80"
             - "2525:25"

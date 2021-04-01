@@ -70,18 +70,15 @@ before_build:
       /d:sonar.cs.opencover.reportsPaths=$env:APPVEYOR_BUILD_FOLDER\**\TestResults\*\coverage.opencover.xml
       /d:sonar.branch.name=$env:APPVEYOR_REPO_BRANCH
       }
-
+      
 build_script:
-  - docker build -t elsaworkflows/elsadashboard-samples-monolith -f ./docker/ElsaDashboard.Samples.Monolith.Dockerfile .
   - ps: >-
       cd .\src\dashboards\blazor\ElsaDashboard.Application
-
       npm run build:css
         
       cd ..\..\..\designer\bindings\blazor\Elsa.Designer.Bindings.Blazor
         
       npm run build
-
       cd ..\..\..\..\..\
       
       dotnet build

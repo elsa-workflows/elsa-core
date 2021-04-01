@@ -11,7 +11,7 @@ namespace Elsa.Core.IntegrationTests.Extensions
     {
         public override ICustomization GetCustomization(ParameterInfo parameter)
         {
-            return new HostBubilderUsingServicesCustomization(services => {
+            return new HostBuilderUsingServicesCustomization(services => {
                 services.AddElsa(elsa => {
                     CommonTemporalActivityServices.AddCommonTemporalActivities(elsa);
                 });

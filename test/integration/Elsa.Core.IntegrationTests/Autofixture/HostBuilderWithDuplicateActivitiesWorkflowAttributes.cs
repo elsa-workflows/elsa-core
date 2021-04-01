@@ -19,7 +19,7 @@ namespace Elsa.Core.IntegrationTests.Autofixture
     {
         public override ICustomization GetCustomization(ParameterInfo parameter)
         {
-            return new HostBubilderUsingServicesCustomization(services => {
+            return new HostBuilderUsingServicesCustomization(services => {
                 services
                     .AddElsa(elsa => {
                         elsa.AddWorkflow<DuplicateActivitiesWorkflow>();
@@ -32,7 +32,7 @@ namespace Elsa.Core.IntegrationTests.Autofixture
     {
         public override ICustomization GetCustomization(ParameterInfo parameter)
         {
-            return new HostBubilderUsingServicesCustomization(services => {
+            return new HostBuilderUsingServicesCustomization(services => {
                 services
                     .AddElsa(elsa => {
                         elsa.AddWorkflow<DuplicateActivitiesWorkflow>();
@@ -51,7 +51,7 @@ namespace Elsa.Core.IntegrationTests.Autofixture
         {
             var tempFolder = new TemporaryFolder();
 
-            return new HostBubilderUsingServicesCustomization(services => {
+            return new HostBuilderUsingServicesCustomization(services => {
                 services
                     .AddElsa(elsa => {
                         elsa
@@ -68,7 +68,7 @@ namespace Elsa.Core.IntegrationTests.Autofixture
     {
         public override ICustomization GetCustomization(ParameterInfo parameter)
         {
-            return new HostBubilderUsingServicesCustomization(services => {
+            return new HostBuilderUsingServicesCustomization(services => {
                 services
                     .AddElsa(elsa => {
                         elsa
