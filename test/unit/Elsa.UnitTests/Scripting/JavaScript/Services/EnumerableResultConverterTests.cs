@@ -9,10 +9,8 @@ namespace Elsa.Scripting.JavaScript.Services
     public class EnumerableResultConverterTests
     {
         [Theory(DisplayName = "The ConvertToDesiredType method should be able to convert a JS array of string/number objects to a List of single-item string/double dictionaries."), AutoMoqData]
-        public void ConvertToDesiredTypeCanConvertArrayOfStringAndNumberObjectsToAListOfDictionaries([ServiceProviderForConverters] IServiceProvider serviceProvider)
+        public void ConvertToDesiredTypeCanConvertArrayOfStringAndNumberObjectsToAListOfDictionaries(EnumerableResultConverter sut)
         {
-            var sut = new EnumerableResultConverter(serviceProvider.GetRequiredService<Lazy<IConvertsExpandoToObject>>());
-
             var engine = new Engine();
             engine.Execute(@"[{""foo"":5},{""bar"":15}]");
             var tuples = engine.GetCompletionValue().ToObject();
@@ -25,9 +23,8 @@ namespace Elsa.Scripting.JavaScript.Services
         }
 
         [Theory(DisplayName = "The ConvertToDesiredType method should be able to convert a JS array of strings to a List of strings."), AutoMoqData]
-        public void ConvertToDesiredTypeCanConvertArrayOfStringsToAListOfStrings([ServiceProviderForConverters] IServiceProvider serviceProvider)
+        public void ConvertToDesiredTypeCanConvertArrayOfStringsToAListOfStrings(EnumerableResultConverter sut)
         {
-            var sut = new EnumerableResultConverter(serviceProvider.GetRequiredService<Lazy<IConvertsExpandoToObject>>());
 
             var engine = new Engine();
             engine.Execute(@"[""foo"",""bar""]");
@@ -38,9 +35,8 @@ namespace Elsa.Scripting.JavaScript.Services
         }
 
         [Theory(DisplayName = "The ConvertToDesiredType method should convert a JS array of strings to an array of strings if the desired type is object."), AutoMoqData]
-        public void ConvertToDesiredTypeShouldConvertArrayOfStringsToArrayOfStringsWhenNoDesiredTypeIsSpecified([ServiceProviderForConverters] IServiceProvider serviceProvider)
+        public void ConvertToDesiredTypeShouldConvertArrayOfStringsToArrayOfStringsWhenNoDesiredTypeIsSpecified(EnumerableResultConverter sut)
         {
-            var sut = new EnumerableResultConverter(serviceProvider.GetRequiredService<Lazy<IConvertsExpandoToObject>>());
 
             var engine = new Engine();
             engine.Execute(@"[""foo"",""bar""]");
