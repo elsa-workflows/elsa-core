@@ -72,7 +72,7 @@ before_build:
       }
 
 build_script:
-  - docker build -t elsaworkflows/elsadashboard-samples-monolith -f ./docker/ElsaDashboard.Samples.Monolith.Dockerfile .
+  - docker build -t elsaworkflows/elsadashboard-samples-monolith -f ./docker/Dockerfile .
   - ps: >-
       cd .\src\dashboards\blazor\ElsaDashboard.Application
 
