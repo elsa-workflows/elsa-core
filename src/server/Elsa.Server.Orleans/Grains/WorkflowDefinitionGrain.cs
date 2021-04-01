@@ -6,9 +6,11 @@ using Elsa.Server.Orleans.Grains.Contracts;
 using Elsa.Services;
 using Microsoft.Extensions.Logging;
 using Orleans;
+using Orleans.Concurrency;
 
 namespace Elsa.Server.Orleans.Grains
 {
+    [StatelessWorker]
     public class WorkflowDefinitionGrain : Grain, IWorkflowDefinitionGrain
     {
         private readonly IWorkflowRegistry _workflowRegistry;
