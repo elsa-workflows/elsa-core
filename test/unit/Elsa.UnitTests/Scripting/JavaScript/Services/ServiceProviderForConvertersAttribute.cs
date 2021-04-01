@@ -18,11 +18,8 @@ namespace Elsa.Scripting.JavaScript.Services
             {
                 var serviceProvider = fixture.Freeze<IServiceProvider>();
                 Mock.Get(serviceProvider)
-                    .Setup(x => x.GetService(typeof(Lazy<IConvertsEnumerableToObject>)))
-                    .Returns(() => new Lazy<IConvertsEnumerableToObject>(() => new EnumerableResultConverter(serviceProvider.GetRequiredService<Lazy<IConvertsExpandoToObject>>())));
-                Mock.Get(serviceProvider)
-                    .Setup(x => x.GetService(typeof(Lazy<IConvertsExpandoToObject>)))
-                    .Returns(() => new Lazy<IConvertsExpandoToObject>(() => new ExpandoObjectToDictionaryWhenNoDesiredTypeResultConverter(serviceProvider.GetRequiredService<Lazy<IConvertsEnumerableToObject>>())));
+                    .Setup(x => x.GetService(typeof(IConvertsEnumerableToObject)))
+                    .Returns(() => new EnumerableResultConverter(default));
             }
         }
     }
