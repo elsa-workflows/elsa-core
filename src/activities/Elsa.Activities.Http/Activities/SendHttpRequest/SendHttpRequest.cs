@@ -94,13 +94,13 @@ namespace Elsa.Activities.Http
         {
             var request = CreateRequest();
             var cancellationToken = context.CancellationToken;
-            var response = await _httpClient.SendAsync(request, cancellationToken);
-            var hasContent = response.Content != null;
-            var contentType = response.Content?.Headers.ContentType.MediaType;
+            var response = (await _httpClient.SendAsync(request, cancellationToken))!;
+            var hasContent = response.Content != null!;
+            var contentType = response?.Content?.Headers?.ContentType?.MediaType;
 
             var responseModel = new HttpResponseModel
             {
-                StatusCode = response.StatusCode,
+                StatusCode = response!.StatusCode,
                 Headers = new Dictionary<string, string[]>(
                     response.Headers.ToDictionary(x => x.Key, x => x.Value.ToArray())
                 )
