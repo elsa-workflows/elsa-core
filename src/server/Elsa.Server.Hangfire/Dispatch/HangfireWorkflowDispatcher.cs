@@ -6,7 +6,6 @@ using Elsa.Dispatch;
 using Elsa.Server.Hangfire.Jobs;
 using Hangfire;
 using Hangfire.States;
-using Humanizer;
 
 namespace Elsa.Server.Hangfire.Dispatch
 {
