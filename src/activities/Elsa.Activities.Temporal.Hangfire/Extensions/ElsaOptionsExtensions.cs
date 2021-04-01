@@ -13,8 +13,9 @@ namespace Elsa
         /// <param name="options">Elsa options</param>
         /// <param name="configure">A Hangfire configuration callback</param>
         /// <returns>The Elsa options, enabling method chaining</returns>
-        public static ElsaOptions AddHangfireTemporalActivities(this ElsaOptions options,
-                                                                Action<IGlobalConfiguration> configure)
+        public static ElsaOptions AddHangfireTemporalActivities(
+            this ElsaOptions options,
+            Action<IGlobalConfiguration> configure)
         {
             CommonTemporalActivityServices.AddCommonTemporalActivities(options, timer => timer.UseHangfire(configure));
             return options;

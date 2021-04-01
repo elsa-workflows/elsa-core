@@ -1,10 +1,5 @@
-using System.Net;
-using Elsa.Server.Orleans.Grains.Contracts;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
-using Orleans;
-using Orleans.Configuration;
-using Orleans.Hosting;
 
 namespace Elsa.Samples.Server.Host
 {
@@ -18,14 +13,15 @@ namespace Elsa.Samples.Server.Host
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder(args)
                 .ConfigureWebHostDefaults(webBuilder => webBuilder.UseStartup<Startup>())
-                .UseOrleans(siloBuilder => siloBuilder
-                    .UseLocalhostClustering()
-                    .Configure<ClusterOptions>(options =>
-                    {
-                        options.ClusterId = "localhost";
-                        options.ServiceId = "elsa-workflows";
-                    })
-                    .ConfigureApplicationParts(parts => parts.AddApplicationPart(typeof(IWorkflowDefinitionGrain).Assembly).WithReferences())
-                    .Configure<EndpointOptions>(options => options.AdvertisedIPAddress = IPAddress.Loopback));
+                // .UseOrleans(siloBuilder => siloBuilder
+                //     .UseLocalhostClustering()
+                //     .Configure<ClusterOptions>(options =>
+                //     {
+                //         options.ClusterId = "localhost";
+                //         options.ServiceId = "elsa-workflows";
+                //     })
+                //     .ConfigureApplicationParts(parts => parts.AddApplicationPart(typeof(IWorkflowDefinitionGrain).Assembly).WithReferences())
+                //     .Configure<EndpointOptions>(options => options.AdvertisedIPAddress = IPAddress.Loopback))
+            ;
     }
 }
