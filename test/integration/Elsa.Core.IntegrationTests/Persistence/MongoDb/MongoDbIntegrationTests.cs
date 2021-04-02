@@ -23,23 +23,23 @@ namespace Elsa.Core.IntegrationTests.Persistence.MongoDb
 
         class HostedWorkflowRunner : IHostedService
         {
-            readonly IWorkflowRunner workflowRunner;
-            readonly IWorkflowInstanceStore instanceStore;
+            readonly IBuildsAndStartsWorkflow _workflowRunner;
+            readonly IWorkflowInstanceStore _instanceStore;
 
             public async Task StartAsync(CancellationToken cancellationToken)
             {
-                var instance = await workflowRunner.RunWorkflowAsync<PersistableWorkflow>();
-                var retrievedInstance = await instanceStore.FindByIdAsync(instance.Id);
+                var instance = await _workflowRunner.BuildAndStartWorkflowAsync<PersistableWorkflow>(cancellationToken: cancellationToken);
+                var retrievedInstance = await _instanceStore.FindByIdAsync(instance.Id, cancellationToken);
 
                 Assert.NotNull(retrievedInstance);
             }
 
             public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
-            public HostedWorkflowRunner(IWorkflowRunner workflowRunner, IWorkflowInstanceStore instanceStore)
+            public HostedWorkflowRunner(IBuildsAndStartsWorkflow workflowRunner, IWorkflowInstanceStore instanceStore)
             {
-                this.workflowRunner = workflowRunner ?? throw new System.ArgumentNullException(nameof(workflowRunner));
-                this.instanceStore = instanceStore ?? throw new System.ArgumentNullException(nameof(instanceStore));
+                _workflowRunner = workflowRunner ?? throw new System.ArgumentNullException(nameof(workflowRunner));
+                _instanceStore = instanceStore ?? throw new System.ArgumentNullException(nameof(instanceStore));
             }
         }
     }

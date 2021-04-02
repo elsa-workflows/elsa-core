@@ -15,13 +15,9 @@
     <ItemGroup>
         <PackageReference Include="NodaTime" Version="3.0.5" />
         <PackageReference Include="NodaTime.Serialization.JsonNet" Version="3.0.0" />
-        <PackageReference Include="Refit" Version="6.0.24" />
-        <PackageReference Include="Refit.HttpClientFactory" Version="6.0.24" />
-        <PackageReference Include="Refit.Newtonsoft.Json" Version="6.0.24" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <ProjectReference Include="..\..\activities\Elsa.Activities.Webhooks\Elsa.Activities.Webhooks.csproj" />
+        <PackageReference Include="Refit" Version="6.0.38" />
+        <PackageReference Include="Refit.HttpClientFactory" Version="6.0.38" />
+        <PackageReference Include="Refit.Newtonsoft.Json" Version="6.0.38" />
     </ItemGroup>
 
 </Project>

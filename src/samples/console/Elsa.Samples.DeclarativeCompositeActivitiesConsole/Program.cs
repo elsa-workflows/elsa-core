@@ -69,8 +69,8 @@ namespace Elsa.Samples.DeclarativeCompositeActivitiesConsole
             var workflowBlueprint = await materializer.CreateWorkflowBlueprintAsync(deserializedWorkflowDefinition);
 
             // Execute workflow.
-            var workflowRunner = services.GetRequiredService<IWorkflowRunner>();
-            await workflowRunner.RunWorkflowAsync(workflowBlueprint);
+            var workflowRunner = services.GetRequiredService<IStartsWorkflow>();
+            await workflowRunner.StartWorkflowAsync(workflowBlueprint);
         }
 
         private static ActivityDefinition WriteLine(string id, string text) =>

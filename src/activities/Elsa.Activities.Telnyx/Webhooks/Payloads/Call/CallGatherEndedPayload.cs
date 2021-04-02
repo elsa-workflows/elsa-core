@@ -7,9 +7,9 @@ namespace Elsa.Activities.Telnyx.Webhooks.Payloads.Call
     {
         public const string EventType = "call.gather.ended";
         public const string ActivityTypeName = "CallGatherEnded";
-        public string Digits { get; set; }
-        public string From { get; set; }
-        public string To { get; set; }
-        public string Status { get; set; }
+        public string Digits { get; set; } = default!;
+        public string From { get; set; } = default!;
+        public string To { get; set; } = default!;
+        public string Status { get; set; } = default!;
     }
 }

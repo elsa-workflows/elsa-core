@@ -11,39 +11,51 @@ namespace Elsa
 {
     public static class TimersOptionsExtensions
     {
-        public static void UseQuartzProvider(this TimersOptions timersOptions, Action<QuartzOptions>? configureOptions = default, Action<IServiceCollectionQuartzConfigurator>? configureQuartz = default)
+        /// <summary>
+        /// Add Elsa Quartz services and Quartz services.
+        /// </summary>
+        /// <param name="timersOptions">The timer options being configured.</param>
+        /// <param name="registerQuartz">True to automatically register Quartz services. When false, make sure to register Quartz yourself.</param>
+        /// <param name="configureQuartzOptions">When <see cref="registerQuartz"/> is true, you can use this callback to further configure Quartz options.</param>
+        /// <param name="configureQuartz">When <see cref="registerQuartz"/> is true, you can use this callback to further configure Quartz.</param>
+        /// <param name="configureQuartzHostedService">When <see cref="registerQuartz"/> is true, you can use this callback to further configure the Quartz hosted service.</param>
+        public static void UseQuartzProvider(
+            this TimersOptions timersOptions,
+            bool registerQuartz = true,
+            Action<QuartzOptions>? configureQuartzOptions = default,
+            Action<IServiceCollectionQuartzConfigurator>? configureQuartz = default,
+            Action<QuartzHostedServiceOptions>? configureQuartzHostedService = default)
         {
-            if (configureOptions != null)
-                timersOptions.Services.Configure(configureOptions);
-            else
-                timersOptions.Services.AddOptions<QuartzOptions>();
-
-            timersOptions.Services.AddQuartz(configure => ConfigureQuartz(configure, configureQuartz))
-                .AddQuartzHostedService(ConfigureQuartzHostedService)
+            timersOptions.Services
                 .AddSingleton<IWorkflowScheduler, QuartzWorkflowScheduler>()
                 .AddSingleton<ICrontabParser, QuartzCrontabParser>()
                 .AddTransient<RunQuartzWorkflowJob>();
+
+            if (registerQuartz)
+            {
+                if (configureQuartzOptions != null)
+                    timersOptions.Services.Configure(configureQuartzOptions);
+                
+                timersOptions.Services
+                    .AddQuartz(configure => ConfigureQuartz(configure, configureQuartz))
+                    .AddQuartzHostedService(options => ConfigureQuartzHostedService(options, configureQuartzHostedService));
+            }
         }
 
-        private static void ConfigureQuartzHostedService(QuartzHostedServiceOptions options)
+        private static void ConfigureQuartzHostedService(QuartzHostedServiceOptions options, Action<QuartzHostedServiceOptions>? configureQuartzHostedService)
         {
             options.WaitForJobsToComplete = true;
+            configureQuartzHostedService?.Invoke(options);
         }
 
         private static void ConfigureQuartz(IServiceCollectionQuartzConfigurator quartz, Action<IServiceCollectionQuartzConfigurator>? configureQuartz)
         {
             quartz.UseMicrosoftDependencyInjectionScopedJobFactory(options => options.AllowDefaultConstructor = true);
             quartz.AddJob<RunQuartzWorkflowJob>(job => job.StoreDurably().WithIdentity(nameof(RunQuartzWorkflowJob)));
+            quartz.UseSimpleTypeLoader();
+            quartz.UseInMemoryStore();
 
-            if (configureQuartz != null)
-            {
-                configureQuartz(quartz);
-            }
-            else
-            {
-                quartz.UseSimpleTypeLoader();
-                quartz.UseInMemoryStore();
-            }
+            configureQuartz?.Invoke(quartz);
         }
     }
 }

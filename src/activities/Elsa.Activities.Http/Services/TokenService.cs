@@ -26,8 +26,7 @@ namespace Elsa.Activities.Http.Services
             try
             {
                 var json = _dataProtector.Unprotect(token);
-
-                payload = JsonConvert.DeserializeObject<T>(json);
+                payload = JsonConvert.DeserializeObject<T>(json)!;
                 return true;
             }
             catch

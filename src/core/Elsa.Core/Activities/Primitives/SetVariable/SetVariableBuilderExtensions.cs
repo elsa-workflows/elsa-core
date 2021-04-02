@@ -17,25 +17,25 @@ namespace Elsa.Activities.Primitives
             builder.SetVariable(
                 activity => activity
                     .Set(x => x.VariableName, name)
-                    .Set(x => x.Value, value), lineNumber, sourceFile);
+                    .Set(x => x.Value, x => value(x)), lineNumber, sourceFile);
 
         public static IActivityBuilder SetVariable<T>(this IBuilder builder, string name, Func<ActivityExecutionContext, T?> value, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
             builder.SetVariable(
                 activity => activity
                     .Set(x => x.VariableName, name)
-                    .Set(x => x.Value, value), lineNumber, sourceFile);
+                    .Set(x => x.Value, x => value(x)), lineNumber, sourceFile);
 
         public static IActivityBuilder SetVariable<T>(this IBuilder builder, string name, Func<ValueTask<T?>> value, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
             builder.SetVariable(
                 activity => activity
                     .Set(x => x.VariableName, name)
-                    .Set(x => x.Value, value), lineNumber, sourceFile);
+                    .Set(x => x.Value, () => value()), lineNumber, sourceFile);
 
         public static IActivityBuilder SetVariable<T>(this IBuilder builder, string name, Func<T?> value, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
             builder.SetVariable(
                 activity => activity
                     .Set(x => x.VariableName, name)
-                    .Set(x => x.Value, value), lineNumber, sourceFile);
+                    .Set(x => x.Value, () => value()), lineNumber, sourceFile);
 
         public static IActivityBuilder SetVariable<T>(this IBuilder builder, string name, T? value, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
             builder.SetVariable(

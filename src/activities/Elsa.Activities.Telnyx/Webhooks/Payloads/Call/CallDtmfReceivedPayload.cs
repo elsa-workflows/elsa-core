@@ -7,8 +7,8 @@ namespace Elsa.Activities.Telnyx.Webhooks.Payloads.Call
     {
         public const string EventType = "call.dtmf.received";
         public const string ActivityTypeName = "CallDtmfReceived";
-        public string Digit { get; set; }
-        public string From { get; set; }
-        public string To { get; set; }
+        public string Digit { get; set; } = default!;
+        public string From { get; set; } = default!;
+        public string To { get; set; } = default!;
     }
 }

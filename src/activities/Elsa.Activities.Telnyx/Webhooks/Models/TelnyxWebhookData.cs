@@ -9,9 +9,9 @@ namespace Elsa.Activities.Telnyx.Webhooks.Models
     [JsonConverter(typeof(TelnyxWebhookDataJsonConverter))]
     public class TelnyxWebhookData : TelnyxRecord
     {
-        public string EventType { get; set; }
+        public string EventType { get; set; } = default!;
         public Guid Id { get; set; }
         public Instant OccurredAt { get; set; }
-        public Payload Payload { get; set; }
+        public Payload Payload { get; set; } = default!;
     }
 }

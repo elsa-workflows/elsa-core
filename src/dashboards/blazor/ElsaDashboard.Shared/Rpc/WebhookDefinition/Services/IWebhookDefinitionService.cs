@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Elsa.Activities.Webhooks.Models;
+using Elsa.Client.Webhooks.Models;
 using ProtoBuf.Grpc;
 using ProtoBuf.Grpc.Configuration;
 

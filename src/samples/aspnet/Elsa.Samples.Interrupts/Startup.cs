@@ -11,16 +11,17 @@ namespace Elsa.Samples.Interrupts
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
-            
+
             services
                 .AddElsa(options => options
-                .AddConsoleActivities()
-                .AddHttpActivities()
-                .AddQuartzTemporalActivities()
-                .AddActivity<Sleep>())
-                .StartWorkflow<InterruptableWorkflow>();
+                    .AddConsoleActivities()
+                    .AddHttpActivities()
+                    .AddQuartzTemporalActivities()
+                    .AddActivity<Sleep>()
+                    .StartWorkflow<InterruptableWorkflow>()
+                );
         }
-        
+
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             app.UseDeveloperExceptionPage();

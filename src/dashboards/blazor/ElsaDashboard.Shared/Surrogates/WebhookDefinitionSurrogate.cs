@@ -1,4 +1,4 @@
-using Elsa.Activities.Webhooks.Models;
+using Elsa.Client.Webhooks.Models;
 using ProtoBuf;
 
 namespace ElsaDashboard.Shared.Surrogates

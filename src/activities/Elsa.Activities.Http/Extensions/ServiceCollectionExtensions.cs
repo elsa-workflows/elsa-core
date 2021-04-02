@@ -5,7 +5,6 @@ using Elsa.Activities.Http.Bookmarks;
 using Elsa.Activities.Http.Handlers;
 using Elsa.Activities.Http.Options;
 using Elsa.Activities.Http.Parsers;
-using Elsa.Activities.Http.RequestHandlers.Handlers;
 using Elsa.Activities.Http.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
@@ -46,9 +45,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddHttpContextAccessor()
                 .AddNotificationHandlers(typeof(ConfigureJavaScriptEngine))
                 .AddDataProtection();
-            
-            return services
-                .AddRequestHandler<SignalRequestHandler>();
+
+            return services;
         }
 
         private static ElsaOptions AddHttpActivitiesInternal(this ElsaOptions options) =>
@@ -57,7 +55,5 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddActivity<WriteHttpResponse>()
                 .AddActivity<SendHttpRequest>()
                 .AddActivity<Redirect>();
-
-        public static IServiceCollection AddRequestHandler<THandler>(this IServiceCollection services) where THandler : class, IRequestHandler => services.AddScoped<THandler>();
     }
 }

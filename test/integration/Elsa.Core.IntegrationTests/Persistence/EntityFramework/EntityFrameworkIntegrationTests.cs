@@ -14,6 +14,7 @@ using Microsoft.EntityFrameworkCore.Internal;
 using Moq;
 using Elsa.Testing.Shared.Helpers;
 
+// ReSharper disable EF1001
 namespace Elsa.Core.IntegrationTests.Persistence.EntityFramework
 {
     public class EntityFrameworkIntegrationTests
@@ -27,16 +28,16 @@ namespace Elsa.Core.IntegrationTests.Persistence.EntityFramework
         }
 
         [Theory(DisplayName = "A resolved context should come from the pool when set up with pooling"), AutoMoqData]
-        public void DbContextShouldBeCreatedFromPoolWhenSetUpWithPooling(ServiceCollection serviceCollection,
-                                                                         [StubElsaContext] ElsaContext pooledContext,
-                                                                         IDbContextPool<ElsaContext> pool)
+        public void DbContextShouldBeCreatedFromPoolWhenSetUpWithPooling(
+            ServiceCollection serviceCollection,
+            [StubElsaContext] ElsaContext pooledContext,
+            IDbContextPool<ElsaContext> pool)
         {
             serviceCollection
-                .AddElsa(elsa => {
+                .AddElsa(elsa =>
+                {
                     elsa
-                        .UseEntityFrameworkPersistence(opts => {
-                            opts.UseSqlite("Data Source=:memory:;Mode=Memory;");
-                        });
+                        .UseEntityFrameworkPersistence(opts => { opts.UseSqlite("Data Source=:memory:;Mode=Memory;"); });
                 })
                 .AddSingleton(pool);
 
@@ -45,24 +46,24 @@ namespace Elsa.Core.IntegrationTests.Persistence.EntityFramework
             var serviceProvider = serviceCollection.BuildServiceProvider();
             var contextFactory = serviceProvider.GetRequiredService<IDbContextFactory<ElsaContext>>();
 
-            using(var context = contextFactory.CreateDbContext())
+            using (var context = contextFactory.CreateDbContext())
             {
                 Assert.Same(pooledContext, context);
             }
         }
 
         [Theory(DisplayName = "A resolved context should not come from the pool when set up without pooling"), AutoMoqData]
-        public void DbContextShouldNotBeCreatedFromPoolWhenSetUpWithoutPooling(ServiceCollection serviceCollection,
-                                                                               [StubElsaContext] ElsaContext pooledContext,
-                                                                               IDbContextPool<ElsaContext> pool)
+        public void DbContextShouldNotBeCreatedFromPoolWhenSetUpWithoutPooling(
+            ServiceCollection serviceCollection,
+            [StubElsaContext] ElsaContext pooledContext,
+            IDbContextPool<ElsaContext> pool)
         {
             serviceCollection
-                .AddElsa(elsa => {
+                .AddElsa(elsa =>
+                {
                     elsa
-                        .UseNonPooledEntityFrameworkPersistence((services, opts) => {
-                            opts.UseSqlite("Data Source=:memory:;Mode=Memory;");
-                        },
-                        ServiceLifetime.Transient);
+                        .UseNonPooledEntityFrameworkPersistence((services, opts) => { opts.UseSqlite("Data Source=:memory:;Mode=Memory;"); },
+                            ServiceLifetime.Transient);
                 })
                 .AddSingleton(pool);
 
@@ -71,31 +72,29 @@ namespace Elsa.Core.IntegrationTests.Persistence.EntityFramework
             var serviceProvider = serviceCollection.BuildServiceProvider();
             var contextFactory = serviceProvider.GetRequiredService<IDbContextFactory<ElsaContext>>();
 
-            using(var context = contextFactory.CreateDbContext())
-            {
-                Assert.NotSame(pooledContext, context);
-            }
+            using var context = contextFactory.CreateDbContext();
+            Assert.NotSame(pooledContext, context);
         }
 
         class HostedWorkflowRunner : IHostedService
         {
-            readonly IWorkflowRunner workflowRunner;
-            readonly IWorkflowInstanceStore instanceStore;
+            readonly IBuildsAndStartsWorkflow _workflowRunner;
+            readonly IWorkflowInstanceStore _instanceStore;
 
             public async Task StartAsync(CancellationToken cancellationToken)
             {
-                var instance = await workflowRunner.RunWorkflowAsync<PersistableWorkflow>();
-                var retrievedInstance = await instanceStore.FindByIdAsync(instance.Id);
+                var instance = await _workflowRunner.BuildAndStartWorkflowAsync<PersistableWorkflow>(cancellationToken: cancellationToken);
+                var retrievedInstance = await _instanceStore.FindByIdAsync(instance.Id, cancellationToken);
 
                 Assert.NotNull(retrievedInstance);
             }
 
             public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
-            public HostedWorkflowRunner(IWorkflowRunner workflowRunner, IWorkflowInstanceStore instanceStore)
+            public HostedWorkflowRunner(IBuildsAndStartsWorkflow workflowRunner, IWorkflowInstanceStore instanceStore)
             {
-                this.workflowRunner = workflowRunner ?? throw new System.ArgumentNullException(nameof(workflowRunner));
-                this.instanceStore = instanceStore ?? throw new System.ArgumentNullException(nameof(instanceStore));
+                _workflowRunner = workflowRunner ?? throw new System.ArgumentNullException(nameof(workflowRunner));
+                _instanceStore = instanceStore ?? throw new System.ArgumentNullException(nameof(instanceStore));
             }
         }
     }

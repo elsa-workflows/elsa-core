@@ -23,10 +23,10 @@ namespace Elsa.Samples.AutoConnectNextActivityConsole
             await startupRunner.StartupAsync();
 
             // Get a workflow runner.
-            var workflowRunner = services.GetRequiredService<IWorkflowRunner>();
+            var workflowRunner = services.GetRequiredService<IBuildsAndStartsWorkflow>();
 
             // Run the workflow.
-            await workflowRunner.RunWorkflowAsync<Demoworkflow>();
+            await workflowRunner.BuildAndStartWorkflowAsync<Demoworkflow>();
         }
     }
 }

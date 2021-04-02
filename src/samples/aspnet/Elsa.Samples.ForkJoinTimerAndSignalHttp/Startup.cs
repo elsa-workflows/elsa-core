@@ -1,12 +1,19 @@
-using Elsa.Samples.ForkJoinTimerAndSignalHttp.BackgroundTasks;
 using Elsa.Samples.ForkJoinTimerAndSignalHttp.Workflows;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Samples.ForkJoinTimerAndSignalHttp
 {
     public class Startup
     {
+        public Startup(IConfiguration configuration)
+        {
+            Configuration = configuration;
+        }
+        
+        public IConfiguration Configuration { get; }
+
         public void ConfigureServices(IServiceCollection services)
         {
             services
@@ -15,10 +22,10 @@ namespace Elsa.Samples.ForkJoinTimerAndSignalHttp
             services
                 .AddElsa(options => options
                     .AddConsoleActivities()
+                    .AddHttpActivities(httpOptions => Configuration.GetSection("Elsa:Http").Bind(httpOptions))
                     .AddQuartzTemporalActivities()
-                    .AddWorkflow<DemoWorkflow>()         
-                )
-                .AddHostedService<WorkflowStarter<DemoWorkflow>>();
+                    .StartWorkflow<DemoWorkflow>()         
+                );
         }
 
         public void Configure(IApplicationBuilder app)

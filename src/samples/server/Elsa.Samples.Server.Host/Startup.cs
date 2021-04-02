@@ -1,11 +1,16 @@
 using Elsa.Activities.Telnyx.Extensions;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Sqlite;
+using Elsa.Server.Hangfire.Extensions;
+using Elsa.Server.Orleans.Extensions;
+using Hangfire;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using NodaTime;
+using NodaTime.Serialization.JsonNet;
 
 namespace Elsa.Samples.Server.Host
 {
@@ -23,10 +28,20 @@ namespace Elsa.Samples.Server.Host
         public void ConfigureServices(IServiceCollection services)
         {
             var elsaSection = Configuration.GetSection("Elsa");
+            var hangfireSection = Configuration.GetSection("Hangfire");
+
+            services
+                .AddHangfire(configuration => configuration
+                    .UseSimpleAssemblyNameTypeSerializer()
+                    .UseRecommendedSerializerSettings(settings => settings.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb))
+                    .UseInMemoryStorage())
+                .AddHangfireServer(options => hangfireSection.GetSection("Server").Bind(options));
 
             services
                 .AddElsa(elsa => elsa
                     .UseEntityFrameworkPersistence(ef => ef.UseSqlite())
+                    //.UseOrleansDispatchers()
+                    .UseHangfireDispatchers()
                     .AddConsoleActivities()
                     .AddHttpActivities(elsaSection.GetSection("Http").Bind)
                     .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)

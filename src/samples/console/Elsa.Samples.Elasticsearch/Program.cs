@@ -33,10 +33,10 @@ namespace Elsa.Samples.Elasticsearch
             await startupRunner.StartupAsync();
 
             // Get a workflow runner.
-            var workflowRunner = services.GetRequiredService<IWorkflowRunner>();
+            var workflowRunner = services.GetRequiredService<IBuildsAndStartsWorkflow>();
 
             // Run the workflow.
-            await workflowRunner.RunWorkflowAsync<HelloWorld>();
+            await workflowRunner.BuildAndStartWorkflowAsync<HelloWorld>();
 
             var instanceSearcher = services.GetRequiredService<IWorkflowInstanceSearch>();
 

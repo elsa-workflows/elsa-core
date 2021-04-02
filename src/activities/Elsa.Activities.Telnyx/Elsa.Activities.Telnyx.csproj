@@ -23,9 +23,9 @@
     </ItemGroup>
     
     <ItemGroup>
-      <PackageReference Include="Refit" Version="6.0.24" />
-      <PackageReference Include="Refit.HttpClientFactory" Version="6.0.24" />
-      <PackageReference Include="Refit.Newtonsoft.Json" Version="6.0.24" />
+      <PackageReference Include="Refit" Version="6.0.38" />
+      <PackageReference Include="Refit.HttpClientFactory" Version="6.0.38" />
+      <PackageReference Include="Refit.Newtonsoft.Json" Version="6.0.38" />
     </ItemGroup>
 
 </Project>

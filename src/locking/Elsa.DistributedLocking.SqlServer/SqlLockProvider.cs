@@ -5,7 +5,9 @@ using System.Data.SqlClient;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.DistributedLock;
+using Elsa.DistributedLocking;
 using Microsoft.Extensions.Logging;
+using NodaTime;
 
 namespace Elsa
 {
@@ -30,10 +32,12 @@ namespace Elsa
             _connectionString = connectionStringBuilder.ToString();
         }
 
-        public async Task<bool> AcquireLockAsync(string name, CancellationToken cancellationToken)
+        public async Task<bool> AcquireLockAsync(string name, Duration? timeout = default, CancellationToken cancellationToken = default)
         {
             var connection = new SqlConnection(_connectionString);
             await connection.OpenAsync(cancellationToken);
+            var timeoutMils = timeout?.TotalMilliseconds ?? 0d;
+            
             try
             {
                 var command = connection.CreateCommand();
@@ -42,7 +46,8 @@ namespace Elsa
                 command.Parameters.AddWithValue("@Resource", $"{Prefix}:{name}");
                 command.Parameters.AddWithValue("@LockOwner", $"Session");
                 command.Parameters.AddWithValue("@LockMode", $"Exclusive");
-                command.Parameters.AddWithValue("@LockTimeout", 0);
+                command.Parameters.AddWithValue("@LockTimeout", timeoutMils);
+                command.CommandTimeout = Math.Max((int?)timeout?.TotalSeconds ?? 30, 30);
 
                 var returnParameter = command.Parameters.Add("RetVal", SqlDbType.Int);
                 returnParameter.Direction = ParameterDirection.ReturnValue;

@@ -7,7 +7,7 @@ using Humanizer;
 
 namespace Elsa.Metadata
 {
-    public class TypedActivityTypeDescriber : IDescribeActivityType
+    public class TypedActivityTypeDescriber : IDescribesActivityType
     {
         private readonly IActivityPropertyOptionsResolver _optionsResolver;
         private readonly IActivityPropertyUIHintResolver _uiHintResolver;

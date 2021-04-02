@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Elsa.Activities.Webhooks.Models;
 using Elsa.Client;
+using Elsa.Client.Webhooks.Models;
 using ElsaDashboard.Shared.Rpc;
 using ProtoBuf.Grpc;
 

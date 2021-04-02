@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.DistributedLock;
+using Elsa.DistributedLocking;
 using Microsoft.Extensions.Logging;
+using NodaTime;
 using RedLockNet;
 
 namespace Elsa
@@ -12,53 +14,47 @@ namespace Elsa
     {
         private const string Prefix = "elsa";
         private readonly ILogger _logger;
-        private readonly TimeSpan _lockTimeout;
         private readonly IDistributedLockFactory _distributedLockFactory;
-        private readonly List<IRedLock> _redLockInstance = new List<IRedLock>();
+        private readonly List<IRedLock> _redLockInstance = new();
 
-        public RedisLockProvider(IDistributedLockFactory distributedLockFactory, TimeSpan lockTimeout, ILogger<RedisLockProvider> logger)
+        public RedisLockProvider(IDistributedLockFactory distributedLockFactory, ILogger<RedisLockProvider> logger)
         {
             _logger = logger;
             _distributedLockFactory = distributedLockFactory;
-            _lockTimeout = lockTimeout;
         }
-        public Task<bool> AcquireLockAsync(string name, CancellationToken cancellationToken = default)
-        {
-            if (name == null)
-            {
-                throw new ArgumentNullException(nameof(name));
-            }
 
-            return CreateLockAsync(name, cancellationToken);
-        }
-        private async Task<bool> CreateLockAsync(string name, CancellationToken cancellationToken = default)
+        public Task<bool> AcquireLockAsync(string name, Duration? timeout = default, CancellationToken cancellationToken = default) => CreateLockAsync(name, timeout, cancellationToken);
+
+        private async Task<bool> CreateLockAsync(string name, Duration? timeout = default, CancellationToken cancellationToken = default)
         {
             var resourceName = $"{Prefix}:{name}";
-            _logger.LogInformation("Lock provider will try to acquire lock for {resourceName}",resourceName);
+            _logger.LogInformation("Lock provider will try to acquire lock for {ResourceName}", resourceName);
+            
+            timeout ??= Duration.Zero;
+            
             try
             {
-                var redLock = await _distributedLockFactory.CreateLockAsync(resourceName, _lockTimeout,
-                                                                           TimeSpan.FromSeconds(1),
-                                                                           TimeSpan.FromMilliseconds(10),
-                                                                           cancellationToken)
-                                                           .ConfigureAwait(false);
+                var redLock = await _distributedLockFactory.CreateLockAsync(
+                        resourceName, 
+                        timeout.Value.ToTimeSpan(),
+                        TimeSpan.FromSeconds(1),
+                        TimeSpan.FromMilliseconds(10),
+                        cancellationToken);
 
-                if (redLock.IsAcquired)
-                {
-                    
-                    lock (_redLockInstance)
-                    {
-                        _redLockInstance.Add(redLock);
-                    }
-                    _logger.LogInformation("Lock provider acquired lock for {resourceName}",resourceName);
+                if (!redLock.IsAcquired) 
+                    return false;
+                
+                lock (_redLockInstance) 
+                    _redLockInstance.Add(redLock);
 
-                    return true;
-                }
-                return false;
+                _logger.LogInformation("Lock provider acquired lock for {ResourceName}", resourceName);
+
+                return true;
+
             }
             catch (Exception ex)
             {
-                _logger.LogWarning("Failed to acquire lock for {resourceName}. Reason > {ex}",resourceName,ex);
+                _logger.LogWarning(ex, "Failed to acquire lock for {ResourceName}", resourceName);
                 return false;
             }
         }
@@ -69,10 +65,11 @@ namespace Elsa
             {
                 throw new ArgumentNullException(nameof(name));
             }
+
             var resourceName = $"{Prefix}:{name}";
 
             _logger.LogInformation("Lock provider will try to release lock for {resourceName}", resourceName);
-                
+
             try
             {
                 lock (_redLockInstance)
@@ -83,7 +80,7 @@ namespace Elsa
                         {
                             redLock.Dispose();
                             _redLockInstance.Remove(redLock);
-                            _logger.LogInformation("Lock provider released lock for {resourceName}",resourceName);
+                            _logger.LogInformation("Lock provider released lock for {resourceName}", resourceName);
 
                             break;
                         }
@@ -92,10 +89,10 @@ namespace Elsa
             }
             catch (Exception ex)
             {
-                _logger.LogWarning("Failed to release lock for {resourceName}. Reason > {ex}",resourceName,ex);
+                _logger.LogWarning("Failed to release lock for {resourceName}. Reason > {ex}", resourceName, ex);
             }
+
             return Task.CompletedTask;
         }
-
     }
 }

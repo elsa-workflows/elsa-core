@@ -25,14 +25,14 @@ namespace Elsa.Samples.SignalingConsole
             await startupRunner.StartupAsync();
 
             // Get a workflow runner.
-            var workflowRunner = services.GetRequiredService<IWorkflowRunner>();
+            var workflowRunner = services.GetRequiredService<IBuildsAndStartsWorkflow>();
 
             // Define a couple of cars so we can correlate workflows with them.
             var cars = new[] {"Car 1", "Car 2"};
 
             // Execute a workflow for each car.
             foreach (var car in cars)
-                await workflowRunner.RunWorkflowAsync<TrafficLightWorkflow>(correlationId: car);
+                await workflowRunner.BuildAndStartWorkflowAsync<TrafficLightWorkflow>(correlationId: car);
 
             Console.WriteLine("Hit enter to signal green light for Car 2.");
             Console.ReadLine();
@@ -40,7 +40,7 @@ namespace Elsa.Samples.SignalingConsole
             // The workflows are now suspended at the red light.
             // Trigger a green light signal for the first car.
             var signaler = services.GetRequiredService<ISignaler>();
-            await signaler.SendSignalAsync("Green", correlationId: "Car 2");
+            await signaler.TriggerSignalAsync("Green", correlationId: "Car 2");
 
             // Notice that only the workflow correlated to the second car executed.
 

@@ -25,16 +25,16 @@ namespace Elsa.Core.IntegrationTests.Scripting.JavaScript
             var host = await hostBuilder.StartAsync();
         }
 
-        class HostedWorkflowRunner : IHostedService
+        private class HostedWorkflowRunner : IHostedService
         {
-            readonly IWorkflowRunner workflowRunner;
-            readonly IContentSerializer serializer;
-            readonly IWorkflowBlueprintMaterializer materializer;
+            private readonly IStartsWorkflow _workflowRunner;
+            private readonly IContentSerializer _serializer;
+            private readonly IWorkflowBlueprintMaterializer _materializer;
 
             public async Task StartAsync(CancellationToken cancellationToken)
             {
                 var workflow = await GetWorkflowBlueprintAsync(GetWorkflowDefinition());
-                var workflowInstance = await workflowRunner.RunWorkflowAsync(workflow);
+                var workflowInstance = await _workflowRunner.StartWorkflowAsync(workflow, cancellationToken: cancellationToken);
 
                 Assert.NotNull(workflowInstance);
                 Assert.Null(workflowInstance.Fault);
@@ -42,16 +42,16 @@ namespace Elsa.Core.IntegrationTests.Scripting.JavaScript
 
             public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
-            async Task<IWorkflowBlueprint> GetWorkflowBlueprintAsync(WorkflowDefinition workflowDefinition)
+            private async Task<IWorkflowBlueprint> GetWorkflowBlueprintAsync(WorkflowDefinition workflowDefinition)
             {
-                var json = serializer.Serialize(workflowDefinition);
-                var deserializedWorkflowDefinition = serializer.Deserialize<WorkflowDefinition>(json);
-                return await materializer.CreateWorkflowBlueprintAsync(deserializedWorkflowDefinition);
+                var json = _serializer.Serialize(workflowDefinition);
+                var deserializedWorkflowDefinition = _serializer.Deserialize<WorkflowDefinition>(json);
+                return await _materializer.CreateWorkflowBlueprintAsync(deserializedWorkflowDefinition);
             }
 
-            WorkflowDefinition GetWorkflowDefinition()
+            private static WorkflowDefinition GetWorkflowDefinition()
             {
-                return  new WorkflowDefinition
+                return new()
                 {
                     Id = "1",
                     DefinitionId = "SampleWorkflow",
@@ -61,7 +61,8 @@ namespace Elsa.Core.IntegrationTests.Scripting.JavaScript
                     PersistenceBehavior = WorkflowPersistenceBehavior.Suspended,
                     Activities = new[]
                     {
-                        new ActivityDefinition {
+                        new ActivityDefinition
+                        {
                             ActivityId = "1",
                             Type = nameof(SetVariable),
                             Properties = new List<ActivityDefinitionProperty>
@@ -70,7 +71,8 @@ namespace Elsa.Core.IntegrationTests.Scripting.JavaScript
                                 ActivityDefinitionProperty.JavaScript(nameof(SetVariable.Value), @"JSON.parse(""{\""foo\"":\""bar\""}"")"),
                             }
                         },
-                        new ActivityDefinition {
+                        new ActivityDefinition
+                        {
                             ActivityId = "2",
                             Type = nameof(SetVariable),
                             Properties = new List<ActivityDefinitionProperty>
@@ -87,11 +89,11 @@ namespace Elsa.Core.IntegrationTests.Scripting.JavaScript
                 };
             }
 
-            public HostedWorkflowRunner(IWorkflowRunner workflowRunner, IContentSerializer serializer, IWorkflowBlueprintMaterializer materializer)
+            public HostedWorkflowRunner(IStartsWorkflow workflowRunner, IContentSerializer serializer, IWorkflowBlueprintMaterializer materializer)
             {
-                this.workflowRunner = workflowRunner ?? throw new System.ArgumentNullException(nameof(workflowRunner));
-                this.serializer = serializer ?? throw new System.ArgumentNullException(nameof(serializer));
-                this.materializer = materializer ?? throw new System.ArgumentNullException(nameof(materializer));
+                _workflowRunner = workflowRunner ?? throw new System.ArgumentNullException(nameof(workflowRunner));
+                _serializer = serializer ?? throw new System.ArgumentNullException(nameof(serializer));
+                _materializer = materializer ?? throw new System.ArgumentNullException(nameof(materializer));
             }
         }
     }

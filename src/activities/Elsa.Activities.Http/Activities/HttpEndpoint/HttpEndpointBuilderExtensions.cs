@@ -29,13 +29,13 @@ namespace Elsa.Activities.Http
         public static IActivityBuilder HttpEndpoint(this IBuilder builder, PathString path, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
             builder.HttpEndpoint(setup => setup.Set(x => x.Path, path), lineNumber, sourceFile);
 
-        public static IActivityBuilder ReceiveHttpPostRequest<T>(this IBuilder builder, Func<ActivityExecutionContext, PathString> path, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
+        public static IActivityBuilder HttpEndpoint<T>(this IBuilder builder, Func<ActivityExecutionContext, PathString> path, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
             builder.HttpEndpoint(activity => activity.WithPath(path).WithMethod(HttpMethods.Post).WithTargetType<T>(), lineNumber, sourceFile);
 
-        public static IActivityBuilder ReceiveHttpPostRequest<T>(this IBuilder builder, Func<PathString> path, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
+        public static IActivityBuilder HttpEndpoint<T>(this IBuilder builder, Func<PathString> path, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
             builder.HttpEndpoint(activity => activity.WithPath(path).WithMethod(HttpMethods.Post).WithTargetType<T>(), lineNumber, sourceFile);
 
-        public static IActivityBuilder ReceiveHttpPostRequest<T>(this IBuilder builder, PathString path, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
+        public static IActivityBuilder HttpEndpoint<T>(this IBuilder builder, PathString path, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
             builder.HttpEndpoint(activity => activity.WithPath(path).WithMethod(HttpMethods.Post).WithTargetType<T>(), lineNumber, sourceFile);
     }
 }

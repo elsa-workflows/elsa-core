@@ -7,13 +7,13 @@ using Elsa.ActivityProviders;
 using Elsa.ActivityTypeProviders;
 using Elsa.Bookmarks;
 using Elsa.Builders;
-using Elsa.Consumers;
 using Elsa.Decorators;
+using Elsa.Dispatch;
+using Elsa.Dispatch.Consumers;
 using Elsa.Expressions;
 using Elsa.Handlers;
 using Elsa.HostedServices;
 using Elsa.Mapping;
-using Elsa.Messages;
 using Elsa.Metadata;
 using Elsa.Persistence;
 using Elsa.Persistence.Decorators;
@@ -51,6 +51,9 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton(options.DistributedLockProviderFactory)
                 .AddSingleton(options.SignalFactory)
                 .AddSingleton(options.StorageFactory)
+                .AddSingleton(options.WorkflowDefinitionDispatcherFactory)
+                .AddSingleton(options.WorkflowInstanceDispatcherFactory)
+                .AddSingleton(options.CorrelatingWorkflowDispatcherFactory)
                 .AddStartupTask<ContinueRunningWorkflows>()
                 .AddStartupTask<IndexTriggers>();
 
@@ -59,12 +62,11 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddCoreActivities();
 
             options.AddAutoMapper();
-            options.AddConsumer<RunWorkflowDefinitionConsumer, RunWorkflowDefinition>();
-            options.AddConsumer<RunWorkflowInstanceConsumer, RunWorkflowInstance>();
 
             services.Decorate<IWorkflowDefinitionStore, InitializingWorkflowDefinitionStore>();
             services.Decorate<IWorkflowDefinitionStore, EventPublishingWorkflowDefinitionStore>();
             services.Decorate<IWorkflowInstanceStore, EventPublishingWorkflowInstanceStore>();
+            services.Decorate<IWorkflowRunner, LockingWorkflowRunner>();
 
             return services;
         }
@@ -72,7 +74,11 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <summary>
         /// Starts the specified workflow upon application startup.
         /// </summary>
-        public static IServiceCollection StartWorkflow<T>(this IServiceCollection services) where T : class, IWorkflow => services.AddHostedService<StartWorkflow<T>>();
+        public static IServiceCollection StartWorkflow<T>(this ElsaOptions elsaOptions) where T : class, IWorkflow
+        {
+            elsaOptions.AddWorkflow<T>();
+            return elsaOptions.Services.AddHostedService<StartWorkflow<T>>();
+        }
 
         public static ElsaOptions AddConsumer<TConsumer, TMessage>(this ElsaOptions elsaOptions) where TConsumer : class, IHandleMessages<TMessage>
         {
@@ -98,6 +104,17 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddScoped<IWorkflowRegistry, WorkflowRegistry>()
                 .AddSingleton<IActivityActivator, ActivityActivator>()
                 .AddScoped<IWorkflowRunner, WorkflowRunner>()
+                .AddScoped<WorkflowStarter>()
+                .AddScoped<WorkflowResumer>()
+                .AddScoped<ITriggersWorkflows, TriggersWorkflows>()
+                .AddScoped<IStartsWorkflow>(sp => sp.GetRequiredService<WorkflowStarter>())
+                .AddScoped<IStartsWorkflows>(sp => sp.GetRequiredService<WorkflowStarter>())
+                .AddScoped<IFindsAndStartsWorkflows>(sp => sp.GetRequiredService<WorkflowStarter>())
+                .AddScoped<IBuildsAndStartsWorkflow>(sp => sp.GetRequiredService<WorkflowStarter>())
+                .AddScoped<IFindsAndResumesWorkflows>(sp => sp.GetRequiredService<WorkflowResumer>())
+                .AddScoped<IResumesWorkflow>(sp => sp.GetRequiredService<WorkflowResumer>())
+                .AddScoped<IResumesWorkflows>(sp => sp.GetRequiredService<WorkflowResumer>())
+                .AddScoped<IBuildsAndResumesWorkflow>(sp => sp.GetRequiredService<WorkflowResumer>())
                 .AddScoped<IWorkflowTriggerInterruptor, WorkflowTriggerInterruptor>()
                 .AddScoped<IWorkflowReviver, WorkflowReviver>()
                 .AddSingleton<IWorkflowFactory, WorkflowFactory>()
@@ -136,7 +153,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
             // Metadata.
             services
-                .AddSingleton<IDescribeActivityType, TypedActivityTypeDescriber>()
+                .AddSingleton<IDescribesActivityType, TypedActivityTypeDescriber>()
                 .AddSingleton<IActivityPropertyOptionsResolver, ActivityPropertyOptionsResolver>()
                 .AddSingleton<IActivityPropertyDefaultValueResolver, ActivityPropertyDefaultValueResolver>()
                 .AddSingleton<IActivityPropertyUIHintResolver, ActivityPropertyUIHintResolver>();
@@ -160,15 +177,15 @@ namespace Microsoft.Extensions.DependencyInjection
 
             // Service Bus.
             services
-                .AddScoped<IWorkflowQueue, WorkflowQueue>()
                 .AddSingleton<ServiceBusFactory>()
                 .AddSingleton<IServiceBusFactory, ServiceBusFactory>()
                 .AddSingleton<ICommandSender, CommandSender>()
                 .AddSingleton<IEventPublisher, EventPublisher>();
 
             options
-                .AddConsumer<RunWorkflowDefinitionConsumer, RunWorkflowDefinition>()
-                .AddConsumer<RunWorkflowInstanceConsumer, RunWorkflowInstance>();
+                .AddConsumer<TriggerWorkflowsRequestConsumer, TriggerWorkflowsRequest>()
+                .AddConsumer<ExecuteWorkflowDefinitionRequestConsumer, ExecuteWorkflowDefinitionRequest>()
+                .AddConsumer<ExecuteWorkflowInstanceRequestConsumer, ExecuteWorkflowInstanceRequest>();
 
             // AutoMapper.
             services
@@ -193,11 +210,12 @@ namespace Microsoft.Extensions.DependencyInjection
 
         private static ElsaOptions AddCoreActivities(this ElsaOptions services)
         {
-            if (services.WithCoreActivities)
-                return services
-                    .AddActivitiesFrom<ElsaOptions>()
-                    .AddActivitiesFrom<CompositeActivity>();
-            return services;
+            if (!services.WithCoreActivities)
+                return services;
+
+            return services
+                .AddActivitiesFrom<ElsaOptions>()
+                .AddActivitiesFrom<CompositeActivity>();
         }
     }
 }

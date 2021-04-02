@@ -8,7 +8,7 @@ namespace Elsa.Samples.ReadLineEchoConsole
 {
     class Program
     {
-        static async Task Main(string[] args)
+        static async Task Main()
         {
             // Create a service container with Elsa services.
             var services = new ServiceCollection()
@@ -28,10 +28,10 @@ namespace Elsa.Samples.ReadLineEchoConsole
                 .Build();
 
             // Get a workflow runner.
-            var workflowRunner = services.GetRequiredService<IWorkflowRunner>();
+            var workflowRunner = services.GetRequiredService<IStartsWorkflow>();
 
             // Execute the workflow.
-            await workflowRunner.RunWorkflowAsync(workflow);
+            await workflowRunner.StartWorkflowAsync(workflow);
         }
     }
 }

@@ -18,12 +18,12 @@ namespace Elsa.Activities.Workflows
     )]
     public class RunWorkflow : Activity
     {
-        private readonly IWorkflowRunner _workflowScheduler;
+        private readonly IStartsWorkflow _startsWorkflow;
         private readonly IWorkflowRegistry _workflowRegistry;
 
-        public RunWorkflow(IWorkflowRunner workflowScheduler, IWorkflowRegistry workflowRegistry)
+        public RunWorkflow(IStartsWorkflow startsWorkflow, IWorkflowRegistry workflowRegistry)
         {
-            _workflowScheduler = workflowScheduler;
+            _startsWorkflow = startsWorkflow;
             _workflowRegistry = workflowRegistry;
         }
 
@@ -45,7 +45,7 @@ namespace Elsa.Activities.Workflows
         {
             var cancellationToken = context.CancellationToken;
             var workflowBlueprint = await FindWorkflowBlueprintAsync(cancellationToken);
-            var workflowInstance = await _workflowScheduler.RunWorkflowAsync(workflowBlueprint!, TenantId, Input, CorrelationId, ContextId, cancellationToken);
+            var workflowInstance = await _startsWorkflow.StartWorkflowAsync(workflowBlueprint!, TenantId, Input, CorrelationId, ContextId, cancellationToken);
             var workflowStatus = workflowInstance.WorkflowStatus;
             
             ChildWorkflowInstanceId = workflowInstance.Id;
