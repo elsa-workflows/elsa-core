@@ -12,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 using Elsa.Persistence.EntityFramework.Core;
 using Microsoft.EntityFrameworkCore.Internal;
 using Moq;
+using Elsa.Testing.Shared.Helpers;
 
 // ReSharper disable EF1001
 namespace Elsa.Core.IntegrationTests.Persistence.EntityFramework
@@ -19,10 +20,9 @@ namespace Elsa.Core.IntegrationTests.Persistence.EntityFramework
     public class EntityFrameworkIntegrationTests
     {
         [Theory(DisplayName = "A persistable workflow instance with default persistence behaviour should be persisted-to and readable-from an Entity Framework store after being run"), AutoMoqData]
-        public async Task APersistableWorkflowInstanceWithDefaultPersistenceBehaviourShouldBeRoundTrippable(
-            [HostBuilderWithPersistableWorkflowAndEfSqlite]
-            IHostBuilder hostBuilder)
+        public async Task APersistableWorkflowInstanceWithDefaultPersistenceBehaviourShouldBeRoundTrippable([WithPersistableWorkflow,WithEntityFramework] ElsaHostBuilderBuilder hostBuilderBuilder)
         {
+            var hostBuilder = hostBuilderBuilder.GetHostBuilder();
             hostBuilder.ConfigureServices((ctx, services) => services.AddHostedService<HostedWorkflowRunner>());
             var host = await hostBuilder.StartAsync();
         }

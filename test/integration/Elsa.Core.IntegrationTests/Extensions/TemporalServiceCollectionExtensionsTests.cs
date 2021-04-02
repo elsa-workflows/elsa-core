@@ -4,15 +4,17 @@ using Xunit;
 using System.Threading.Tasks;
 using System.Threading;
 using Elsa.Core.IntegrationTests.Autofixture;
-using Elsa.Core.IntegrationTests.Extensions;
+using Elsa.Testing.Shared.Helpers;
 
 namespace Elsa.UnitTests.Extensions
 {
     public class TemporalServiceCollectionExtensionsTests
     {
         [Theory(DisplayName = "Starting a hosted app which uses only AddCommonTemporalActivities should throw InvalidOperationException because of the missing impl"), AutoMoqData]
-        public void AddCommonTemporalActivitiesThrowsDuringStartupIfNoTemporalImplementationPresent([HostBuilderWithElsaAndCommonTemporalActivities] IHostBuilder hostBuilder)
+        public void AddCommonTemporalActivitiesThrowsDuringStartupIfNoTemporalImplementationPresent([WithCommonTemporalActivities] ElsaHostBuilderBuilder hostBuilderBuilder)
         {
+            var hostBuilder = hostBuilderBuilder.GetHostBuilder();
+
             var cancellationSource = new CancellationTokenSource();
             try
             {
@@ -27,8 +29,10 @@ namespace Elsa.UnitTests.Extensions
         }
 
         [Theory(DisplayName = "Starting a hosted app which uses AddHangfireTemporalActivities should not throw"), AutoMoqData]
-        public void AddHangfireTemporalActivitiesDoesNotThrowDuringStartup([HostBuilderWithElsaAndHangfire] IHostBuilder hostBuilder)
+        public void AddHangfireTemporalActivitiesDoesNotThrowDuringStartup([WithHangfire] ElsaHostBuilderBuilder hostBuilderBuilder)
         {
+            var hostBuilder = hostBuilderBuilder.GetHostBuilder();
+            
             var cancellationSource = new CancellationTokenSource();
             try
             {
@@ -45,8 +49,10 @@ namespace Elsa.UnitTests.Extensions
         }
 
         [Theory(DisplayName = "Starting a hosted app which uses AddQuartzTemporalActivities should not throw"), AutoMoqData]
-        public void AddQuartzTemporalActivitiesDoesNotThrowDuringStartup([HostBuilderWithElsaAndQuartz] IHostBuilder hostBuilder)
+        public void AddQuartzTemporalActivitiesDoesNotThrowDuringStartup([WithQuartz] ElsaHostBuilderBuilder hostBuilderBuilder)
         {
+            var hostBuilder = hostBuilderBuilder.GetHostBuilder();
+            
             var cancellationSource = new CancellationTokenSource();
             try
             {

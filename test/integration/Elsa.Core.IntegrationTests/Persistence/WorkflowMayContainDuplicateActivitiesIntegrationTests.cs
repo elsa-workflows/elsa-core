@@ -7,6 +7,7 @@ using System.Threading;
 using Elsa.Services;
 using Elsa.Core.IntegrationTests.Workflows;
 using Elsa.Persistence;
+using Elsa.Testing.Shared.Helpers;
 
 namespace Elsa.Core.IntegrationTests.Persistence
 {
@@ -20,35 +21,33 @@ namespace Elsa.Core.IntegrationTests.Persistence
          */
 
         [Theory(DisplayName = "A workflow that contains duplicate activities may be run & persisted to an in-memory store"), AutoMoqData]
-        public async Task ADuplicateActivitiesWorkflowInstanceShouldBeRoundTrippableInMemory([HostBuilderWithDuplicateActivitiesWorkflow] IHostBuilder hostBuilder)
+        public async Task ADuplicateActivitiesWorkflowInstanceShouldBeRoundTrippableInMemory([WithDuplicateActivitiesWorkflow] ElsaHostBuilderBuilder hostBuilderBuilder)
         {
-            hostBuilder.ConfigureServices((ctx, services) => {
-                services.AddHostedService<HostedWorkflowRunner<DuplicateActivitiesWorkflow>>();
-            });
-            var host = await hostBuilder.StartAsync();
+            await PerformTest(hostBuilderBuilder);
         }
 
         [Theory(DisplayName = "A workflow that contains duplicate activities may be run & persisted to an EF Sqlite store"), AutoMoqData]
-        public async Task ADuplicateActivitiesWorkflowInstanceShouldBeRoundTrippableWithEntityFramework([HostBuilderWithDuplicateActivitiesWorkflowAndEntityFramework] IHostBuilder hostBuilder)
+        public async Task ADuplicateActivitiesWorkflowInstanceShouldBeRoundTrippableWithEntityFramework([WithDuplicateActivitiesWorkflow,WithEntityFramework] ElsaHostBuilderBuilder hostBuilderBuilder)
         {
-            hostBuilder.ConfigureServices((ctx, services) => {
-                services.AddHostedService<HostedWorkflowRunner<DuplicateActivitiesWorkflow>>();
-            });
-            var host = await hostBuilder.StartAsync();
+            await PerformTest(hostBuilderBuilder);
         }
 
         [Theory(DisplayName = "A workflow that contains duplicate activities may be run & persisted to a MongoDb store"), AutoMoqData]
-        public async Task ADuplicateActivitiesWorkflowInstanceShouldBeRoundTrippableWithMongoDb([HostBuilderWithDuplicateActivitiesWorkflowAndMongoDb] IHostBuilder hostBuilder)
+        public async Task ADuplicateActivitiesWorkflowInstanceShouldBeRoundTrippableWithMongoDb([WithDuplicateActivitiesWorkflow,WithMongoDb] ElsaHostBuilderBuilder hostBuilderBuilder)
         {
-            hostBuilder.ConfigureServices((ctx, services) => {
-                services.AddHostedService<HostedWorkflowRunner<DuplicateActivitiesWorkflow>>();
-            });
-            var host = await hostBuilder.StartAsync();
+            await PerformTest(hostBuilderBuilder);
         }
 
         [Theory(DisplayName = "A workflow that contains duplicate activities may be run & persisted to a YesSQL store"), AutoMoqData]
-        public async Task ADuplicateActivitiesWorkflowInstanceShouldBeRoundTrippableWithYesSql([HostBuilderWithDuplicateActivitiesWorkflowAndYesSql] IHostBuilder hostBuilder)
+        public async Task ADuplicateActivitiesWorkflowInstanceShouldBeRoundTrippableWithYesSql([WithDuplicateActivitiesWorkflow,WithSqliteYesSql] ElsaHostBuilderBuilder hostBuilderBuilder)
         {
+            await PerformTest(hostBuilderBuilder);
+        }
+
+        async Task PerformTest(ElsaHostBuilderBuilder hostBuilderBuilder)
+        {
+            var hostBuilder = hostBuilderBuilder.GetHostBuilder();
+            
             hostBuilder.ConfigureServices((ctx, services) => {
                 services.AddHostedService<HostedWorkflowRunner<DuplicateActivitiesWorkflow>>();
             });

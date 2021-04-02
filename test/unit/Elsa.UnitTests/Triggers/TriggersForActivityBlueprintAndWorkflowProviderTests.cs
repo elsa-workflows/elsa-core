@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoFixture.Xunit2;
 using Elsa.ActivityProviders;
 using Elsa.Bookmarks;
 using Elsa.Models;
@@ -21,10 +22,12 @@ namespace Elsa.Triggers
                                                                                                                          IBookmarkProvider unsupportedBookmarkProvider,
                                                                                                                          IBookmarkProvider bookmarkProvider2,
                                                                                                                          ICreatesActivityExecutionContextForActivityBlueprint activityExecutionContextFactory,
-                                                                                                                         IActivityBlueprint activityBlueprint,
-                                                                                                                         [AutofixtureServiceProvider] IServiceProvider serviceProvider,
-                                                                                                                         IWorkflowBlueprint workflowBlueprint,
-                                                                                                                         [OmitOnRecursion] WorkflowInstance workflowInstance,
+                                                                                                                         [Frozen] IActivityBlueprint activityBlueprint,
+                                                                                                                         [WithAutofixtureResolution, Frozen] IServiceProvider serviceProvider,
+                                                                                                                         [Frozen] IWorkflowBlueprint workflowBlueprint,
+                                                                                                                         [OmitOnRecursion, Frozen] WorkflowInstance workflowInstance,
+                                                                                                                         [Frozen] WorkflowExecutionContext workflowExecutionContext,
+                                                                                                                         [NoAutoProperties] ActivityExecutionContext activityExecutionContext,
                                                                                                                          ActivityType activityType,
                                                                                                                          IBookmark bookmark1,
                                                                                                                          IBookmark bookmark2,
@@ -34,8 +37,6 @@ namespace Elsa.Triggers
             var sut = new TriggersForActivityBlueprintAndWorkflowProvider(bookmarkHasher,
                                                                           new[] { bookmarkProvider1, unsupportedBookmarkProvider, bookmarkProvider2 },
                                                                           activityExecutionContextFactory);
-            var workflowExecutionContext = new WorkflowExecutionContext(serviceProvider, workflowBlueprint, workflowInstance);
-            var activityExecutionContext = new ActivityExecutionContext(serviceProvider, workflowExecutionContext, activityBlueprint, default, default, default);
 
             Mock.Get(activityExecutionContextFactory)
                 .Setup(x => x.CreateActivityExecutionContext(activityBlueprint, workflowExecutionContext, default))

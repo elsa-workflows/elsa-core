@@ -11,8 +11,7 @@ namespace Elsa.Services
     public class WorkflowExecutionContextForWorkflowBlueprintFactoryTests
     {
         [Theory(DisplayName = "The CreateWorkflowExecutionContextAsync method returns an execution context using the blueprint, an instance and the service provider"), AutoMoqData]
-        public async Task CreateWorkflowExecutionContextAsyncReturnsContextWithBlueprintInstanceAndServiceProvider(
-            [AutofixtureServiceProvider] IServiceProvider serviceProvider,
+        public async Task CreateWorkflowExecutionContextAsyncReturnsContextWithBlueprintInstanceAndServiceProvider([WithAutofixtureResolution] IServiceProvider serviceProvider,
             IWorkflowFactory workflowFactory,
             IWorkflowBlueprint workflowBlueprint,
             [OmitOnRecursion] WorkflowInstance instance)

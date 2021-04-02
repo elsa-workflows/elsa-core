@@ -8,6 +8,7 @@ using Elsa.Models;
 using Elsa.Serialization;
 using Elsa.Services;
 using Elsa.Services.Models;
+using Elsa.Testing.Shared.Helpers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Xunit;
@@ -17,10 +18,9 @@ namespace Elsa.Core.IntegrationTests.Scripting.JavaScript
     public class JavaScriptExpressionsIntegrationTests
     {
         [Theory(DisplayName = "Running a workflow which uses JSON.stringify upon a JSON.parse'd object should not throw"), AutoMoqData]
-        public async Task RunningAWorkflowThatIncludesJsonStringifyAParsedObjectShouldNotThrow(
-            [HostBuilderWithElsaAndJavaScriptExpressions]
-            IHostBuilder hostBuilder)
+        public async Task RunningAWorkflowThatIncludesJsonStringifyAParsedObjectShouldNotThrow([WithJavaScriptExpressions] ElsaHostBuilderBuilder hostBuilderBuilder)
         {
+            var hostBuilder = hostBuilderBuilder.GetHostBuilder();
             hostBuilder.ConfigureServices((ctx, services) => services.AddHostedService<HostedWorkflowRunner>());
             var host = await hostBuilder.StartAsync();
         }

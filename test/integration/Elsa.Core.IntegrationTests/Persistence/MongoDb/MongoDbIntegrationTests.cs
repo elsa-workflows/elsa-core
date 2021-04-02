@@ -7,16 +7,16 @@ using System.Threading;
 using Elsa.Services;
 using Elsa.Core.IntegrationTests.Workflows;
 using Elsa.Persistence;
+using Elsa.Testing.Shared.Helpers;
 
 namespace Elsa.Core.IntegrationTests.Persistence.MongoDb
 {
     public class MongoDbIntegrationTests
     {
         [Theory(DisplayName = "A persistable workflow instance with default persistence behaviour should be persisted-to and readable-from a MongoDb store after being run"), AutoMoqData]
-        public async Task APersistableWorkflowInstanceWithDefaultPersistenceBehaviourShouldBeRoundTrippable(
-            [HostBuilderWithPersistableWorkflowAndMongoDbAttribute]
-            IHostBuilder hostBuilder)
+        public async Task APersistableWorkflowInstanceWithDefaultPersistanceBehaviourShouldBeRoundTrippable([WithPersistableWorkflow,WithMongoDb] ElsaHostBuilderBuilder hostBuilderBuilder)
         {
+            var hostBuilder = hostBuilderBuilder.GetHostBuilder();
             hostBuilder.ConfigureServices((ctx, services) => services.AddHostedService<HostedWorkflowRunner>());
             var host = await hostBuilder.StartAsync();
         }

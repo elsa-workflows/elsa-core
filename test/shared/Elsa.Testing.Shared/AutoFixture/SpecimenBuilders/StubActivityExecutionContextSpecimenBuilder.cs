@@ -25,7 +25,7 @@ namespace Elsa.Testing.Shared.AutoFixture.SpecimenBuilders
         }
 
         static IServiceProvider GetServiceProvider(ISpecimenContext context)
-            => (IServiceProvider) new AutofixtureServiceProviderSpecimenBuilder().Create(typeof(IServiceProvider), context);
+            => (IServiceProvider) new AutofixtureResolutionServiceProviderSpecimenBuilder().Create(typeof(IServiceProvider), context);
 
         static WorkflowExecutionContext GetWorkflowExecutionContext(ISpecimenContext context, IServiceProvider serviceProvider)
             => new WorkflowExecutionContext(serviceProvider, Mock.Of<IWorkflowBlueprint>(), new WorkflowInstance());
