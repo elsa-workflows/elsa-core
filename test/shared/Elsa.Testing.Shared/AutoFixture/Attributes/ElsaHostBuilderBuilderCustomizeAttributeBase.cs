@@ -36,7 +36,7 @@ namespace Elsa.Testing.Shared.AutoFixture.Attributes
             
             public ISpecimenBuilderNode Transform(ISpecimenBuilder builder)
             {
-                return new Postprocessor(builder, new ElsaHostBuilderBuilderCommand(builderCustomizer), new IsAnElsaHostBuilderBuilderSpec());
+                return new Postprocessor(builder, new ElsaHostBuilderBuilderCommand(builderCustomizer), IsInstanceOf.Type<ElsaHostBuilderBuilder>());
             }
 
             public ElsaHostBuilderBuilderTransformation(Action<ElsaHostBuilderBuilder> builderCustomizer)

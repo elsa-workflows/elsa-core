@@ -20,7 +20,11 @@ namespace Elsa.Testing.Shared.Helpers
         /// </summary>
         /// <param name="relativePath">The relative path, within the temporary folder.</param>
         /// <returns>A path for content within the temporary folder.</returns>
-        public string GetContainedPath(string relativePath) => Path.Combine(Folder, relativePath);
+        public string GetContainedPath(string relativePath)
+        {
+            Directory.CreateDirectory(Folder);
+            return Path.Combine(Folder, relativePath);
+        }
 
         public void Dispose()
         {

@@ -8,7 +8,7 @@ namespace Elsa.Services.Models
     public class ActivityExecutionContextTests
     {
         [Theory(DisplayName = "The PurgeVariables method should clear the Variables instance associated with the WorkflowInstance associated with the Workflow Execution Context"), AutoMoqData]
-        public void PurgeVariables_clears_workflow_execution_context_workflow_instance_variables([AutofixtureServiceProvider, Frozen] IServiceProvider serviceProvider,
+        public void PurgeVariables_clears_workflow_execution_context_workflow_instance_variables([WithAutofixtureResolution, Frozen] IServiceProvider serviceProvider,
                                                                                                  [OmitOnRecursion,NoAutoProperties] ActivityExecutionContext sut,
                                                                                                  string variableName,
                                                                                                  object variableValue)

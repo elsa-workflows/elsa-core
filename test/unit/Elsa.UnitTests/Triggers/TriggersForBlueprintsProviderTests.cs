@@ -38,7 +38,7 @@ namespace Elsa.UnitTests.Triggers
                                                                                                                WorkflowTrigger trigger4,
                                                                                                                WorkflowTrigger trigger5,
                                                                                                                WorkflowTrigger trigger6,
-                                                                                                               [AutofixtureServiceProvider] IServiceProvider serviceProvider,
+                                                                                                               [WithAutofixtureResolution] IServiceProvider serviceProvider,
                                                                                                                [NoAutoProperties] WorkflowInstance workflowInstance)
         {
             Mock.Get(activityTypeService)
