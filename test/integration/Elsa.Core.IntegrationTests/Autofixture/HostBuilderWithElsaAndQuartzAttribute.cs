@@ -4,7 +4,7 @@ using AutoFixture.Xunit2;
 using Elsa.Testing.Shared.AutoFixture.Customizations;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Core.IntegrationTests.Extensions
+namespace Elsa.Core.IntegrationTests.Autofixture
 {
     public class HostBuilderWithElsaAndQuartzAttribute : CustomizeAttribute
     {
