@@ -9,7 +9,7 @@ namespace Elsa.Activities.Signaling
     public class SignalReceivedBookmark : IBookmark
     {
         public string Signal { get; set; } = default!;
-        public string? CorrelationId { get; set; }
+        public string? WorkflowInstanceId { get; set; }
     }
 
     public class SignalReceivedBookmarkProvider : BookmarkProvider<SignalReceivedBookmark, SignalReceived>
@@ -20,7 +20,7 @@ namespace Elsa.Activities.Signaling
                 new SignalReceivedBookmark
                 {
                     Signal = (await context.Activity.GetPropertyValueAsync(x => x.Signal, cancellationToken))!,
-                    CorrelationId = context.ActivityExecutionContext.WorkflowExecutionContext.CorrelationId
+                    WorkflowInstanceId = context.ActivityExecutionContext.WorkflowInstance.Id
                 }
             };
     }

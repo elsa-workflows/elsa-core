@@ -27,7 +27,7 @@ namespace Elsa.Activities.Http.Endpoints.Signals
             if (!_tokenService.TryDecryptToken(token, out Signal signal))
                 return NotFound();
 
-            await _signaler.DispatchSignalAsync(signal.Name, null, signal.CorrelationId, cancellationToken);
+            await _signaler.DispatchSignalAsync(signal.Name, null, signal.WorkflowInstanceId, cancellationToken);
             return Accepted();
         }
     }

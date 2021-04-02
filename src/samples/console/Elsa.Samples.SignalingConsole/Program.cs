@@ -40,7 +40,7 @@ namespace Elsa.Samples.SignalingConsole
             // The workflows are now suspended at the red light.
             // Trigger a green light signal for the first car.
             var signaler = services.GetRequiredService<ISignaler>();
-            await signaler.TriggerSignalAsync("Green", correlationId: "Car 2");
+            await signaler.TriggerSignalAsync("Green", workflowInstanceId: "Car 2");
 
             // Notice that only the workflow correlated to the second car executed.
 

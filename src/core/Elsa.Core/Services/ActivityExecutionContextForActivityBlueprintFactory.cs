@@ -9,11 +9,11 @@ namespace Elsa.Services
     /// </summary>
     public class ActivityExecutionContextForActivityBlueprintFactory : ICreatesActivityExecutionContextForActivityBlueprint
     {
-        readonly IServiceProvider serviceProvider;
+        private readonly IServiceProvider _serviceProvider;
 
         public ActivityExecutionContextForActivityBlueprintFactory(IServiceProvider serviceProvider)
         {
-            this.serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
         }
 
         /// <summary>
@@ -23,11 +23,10 @@ namespace Elsa.Services
         /// <param name="workflowExecutionContext">A workflow execution context</param>
         /// <param name="cancellationToken">A cancellation token</param>
         /// <returns>An activity execution context</returns>
-        public ActivityExecutionContext CreateActivityExecutionContext(IActivityBlueprint activityBlueprint,
-                                                                       WorkflowExecutionContext workflowExecutionContext,
-                                                                       CancellationToken cancellationToken)
-        {
-            return new ActivityExecutionContext(serviceProvider, workflowExecutionContext, activityBlueprint, null, false, cancellationToken);
-        }
+        public ActivityExecutionContext CreateActivityExecutionContext(
+            IActivityBlueprint activityBlueprint,
+            WorkflowExecutionContext workflowExecutionContext,
+            CancellationToken cancellationToken) =>
+            new(_serviceProvider, workflowExecutionContext, activityBlueprint, null, false, cancellationToken);
     }
 }

@@ -8,11 +8,11 @@ namespace Elsa.Activities.Signaling.Services
         /// <summary>
         /// Runs all workflows that start with or are blocked on the <see cref="SignalReceived"/> activity.
         /// </summary>
-        Task TriggerSignalAsync(string signal, object? input = default, string? correlationId = default, CancellationToken cancellationToken = default);
+        Task TriggerSignalAsync(string signal, object? input = default, string? workflowInstanceId = default, CancellationToken cancellationToken = default);
         
         /// <summary>
         /// Dispatches all workflows that start with or are blocked on the <see cref="SignalReceived"/> activity.
         /// </summary>
-        Task DispatchSignalAsync(string signal, object? input = default, string? correlationId = default, CancellationToken cancellationToken = default);
+        Task DispatchSignalAsync(string signal, object? input = default, string? workflowInstanceId = default, CancellationToken cancellationToken = default);
     }
 }
