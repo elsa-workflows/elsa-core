@@ -10,13 +10,13 @@ namespace Elsa.Services
     /// </summary>
     public class WorkflowExecutionContextForWorkflowBlueprintFactory : ICreatesWorkflowExecutionContextForWorkflowBlueprint
     {
-        readonly IServiceProvider serviceProvider;
-        readonly IWorkflowFactory workflowFactory;
+        private readonly IServiceProvider _serviceProvider;
+        private readonly IWorkflowFactory _workflowFactory;
 
         public WorkflowExecutionContextForWorkflowBlueprintFactory(IServiceProvider serviceProvider, IWorkflowFactory workflowFactory)
         {
-            this.serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
-            this.workflowFactory = workflowFactory ?? throw new ArgumentNullException(nameof(workflowFactory));
+            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+            _workflowFactory = workflowFactory ?? throw new ArgumentNullException(nameof(workflowFactory));
         }
 
         /// <summary>
@@ -27,8 +27,8 @@ namespace Elsa.Services
         /// <returns>A task for a workflow execution context</returns>
         public async Task<WorkflowExecutionContext> CreateWorkflowExecutionContextAsync(IWorkflowBlueprint workflowBlueprint, CancellationToken cancellationToken = default)
         {
-            var workflowInstance = await workflowFactory.InstantiateAsync(workflowBlueprint, cancellationToken: cancellationToken);
-            return new WorkflowExecutionContext(serviceProvider, workflowBlueprint, workflowInstance);
+            var workflowInstance = await _workflowFactory.InstantiateAsync(workflowBlueprint, cancellationToken: cancellationToken);
+            return new WorkflowExecutionContext(_serviceProvider, workflowBlueprint, workflowInstance);
         }
     }
 }
