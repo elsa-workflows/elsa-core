@@ -20,7 +20,7 @@ namespace Elsa.Core.IntegrationTests.Persistence.EntityFramework
     public class EntityFrameworkIntegrationTests
     {
         [Theory(DisplayName = "A persistable workflow instance with default persistence behaviour should be persisted-to and readable-from an Entity Framework store after being run"), AutoMoqData]
-        public async Task APersistableWorkflowInstanceWithDefaultPersistanceBehaviourShouldBeRoundTrippable([WithPersistableWorkflow,WithEntityFramework] ElsaHostBuilderBuilder hostBuilderBuilder)
+        public async Task APersistableWorkflowInstanceWithDefaultPersistenceBehaviourShouldBeRoundTrippable([WithPersistableWorkflow,WithEntityFramework] ElsaHostBuilderBuilder hostBuilderBuilder)
         {
             var hostBuilder = hostBuilderBuilder.GetHostBuilder();
             hostBuilder.ConfigureServices((ctx, services) => services.AddHostedService<HostedWorkflowRunner>());
