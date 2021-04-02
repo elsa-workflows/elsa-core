@@ -14,34 +14,19 @@ namespace Elsa.Activities.Primitives
             builder.Then(setup, null, lineNumber, sourceFile);
 
         public static IActivityBuilder SetVariable<T>(this IBuilder builder, string name, Func<ActivityExecutionContext, ValueTask<T?>> value, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
-            builder.SetVariable(
-                activity => activity
-                    .Set(x => x.VariableName, name)
-                    .Set(x => x.Value, x => value(x)), lineNumber, sourceFile);
+            builder.SetVariable(activity => activity.WithVariableName(name).WithValue(async x => (object?) await value(x)), lineNumber, sourceFile);
 
         public static IActivityBuilder SetVariable<T>(this IBuilder builder, string name, Func<ActivityExecutionContext, T?> value, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
-            builder.SetVariable(
-                activity => activity
-                    .Set(x => x.VariableName, name)
-                    .Set(x => x.Value, x => value(x)), lineNumber, sourceFile);
+            builder.SetVariable(activity => activity.WithVariableName(name).WithValue(x => (object?) value(x)), lineNumber, sourceFile);
 
         public static IActivityBuilder SetVariable<T>(this IBuilder builder, string name, Func<ValueTask<T?>> value, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
-            builder.SetVariable(
-                activity => activity
-                    .Set(x => x.VariableName, name)
-                    .Set(x => x.Value, () => value()), lineNumber, sourceFile);
+            builder.SetVariable(activity => activity.WithVariableName(name).WithValue(async () => (object?) await value()), lineNumber, sourceFile);
 
         public static IActivityBuilder SetVariable<T>(this IBuilder builder, string name, Func<T?> value, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
-            builder.SetVariable(
-                activity => activity
-                    .Set(x => x.VariableName, name)
-                    .Set(x => x.Value, () => value()), lineNumber, sourceFile);
+            builder.SetVariable(activity => activity.WithVariableName(name).WithValue(() => (object?) value()), lineNumber, sourceFile);
 
         public static IActivityBuilder SetVariable<T>(this IBuilder builder, string name, T? value, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
-            builder.SetVariable(
-                activity => activity
-                    .Set(x => x.VariableName, name)
-                    .Set(x => x.Value, value), lineNumber, sourceFile);
+            builder.SetVariable(activity => activity.WithVariableName(name).WithValue(() => (object?)value), lineNumber, sourceFile);
 
         public static IActivityBuilder SetVariable<T>(this IBuilder builder, Func<ActivityExecutionContext, ValueTask<T?>> value, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
             builder.SetVariable(typeof(T).Name, async context => await value(context), lineNumber, sourceFile);
