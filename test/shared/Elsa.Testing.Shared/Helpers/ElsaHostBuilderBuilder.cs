@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Testing.Shared.Helpers
 {
@@ -19,7 +20,9 @@ namespace Elsa.Testing.Shared.Helpers
         /// the host builder as it is created.
         /// </summary>
         /// <returns>The services callbacks</returns>
-        public IList<Action<IServiceCollection>> ServiceCallbacks { get; } = new List<Action<IServiceCollection>>();
+        public IList<Action<IServiceCollection>> ServiceCallbacks { get; } = new List<Action<IServiceCollection>> {
+            services => services.AddLogging(l => l.SetMinimumLevel(LogLevel.Warning)),
+        };
         
         /// <summary>
         /// Gets a collection of the callbacks to be executed upon the <see cref="ElsaOptions"/> of
