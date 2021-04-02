@@ -3,6 +3,7 @@ using Microsoft.Extensions.Hosting;
 using Xunit;
 using System.Threading.Tasks;
 using System.Threading;
+using Elsa.Core.IntegrationTests.Autofixture;
 using Elsa.Core.IntegrationTests.Extensions;
 
 namespace Elsa.UnitTests.Extensions

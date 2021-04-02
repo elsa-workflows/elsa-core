@@ -9,10 +9,11 @@ namespace Elsa.Services
     public class ActivityExecutionContextForActivityBlueprintFactoryTests
     {
         [Theory(DisplayName = "The CreateActivityExecutionContext method should create a context using the activity blueprint, the workflow execution context, cancellation token and injected service provider."), AutoMoqData]
-        public void CreateActivityExecutionContextCreatesContextUsingBlueprintExecutionContextCancellationTokenAndServiceProvider([AutofixtureServiceProvider] IServiceProvider serviceProvider,
-                                                                                                                                  IActivityBlueprint activityBlueprint,
-                                                                                                                                  [OmitOnRecursion] WorkflowExecutionContext workflowExecutionContext,
-                                                                                                                                  CancellationToken cancellationToken)
+        public void CreateActivityExecutionContextCreatesContextUsingBlueprintExecutionContextCancellationTokenAndServiceProvider(
+            [AutofixtureServiceProvider] IServiceProvider serviceProvider,
+            IActivityBlueprint activityBlueprint,
+            [OmitOnRecursion] WorkflowExecutionContext workflowExecutionContext,
+            CancellationToken cancellationToken)
         {
             var sut = new ActivityExecutionContextForActivityBlueprintFactory(serviceProvider);
 
