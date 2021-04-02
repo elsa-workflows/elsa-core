@@ -48,15 +48,18 @@ namespace Elsa.Services
             string? tenantId = default,
             CancellationToken cancellationToken = default)
         {
-            // Find correlated workflows.
-            var correlatedWorkflowInstances = await _workflowInstanceStore.FindManyAsync(new CorrelationIdSpecification<WorkflowInstance>(correlationId), cancellationToken: cancellationToken).ToList();
-
-            if (correlatedWorkflowInstances.Count > 0)
+            if (!string.IsNullOrWhiteSpace(correlationId))
             {
-                _logger.LogDebug("{WorkflowInstanceCount} existing workflows found with correlation ID '{CorrelationId}' will be queued for execution", correlatedWorkflowInstances.Count, correlationId);
-                var correlatedWorkflowInstanceIds = correlatedWorkflowInstances.Select(x => x.Id).ToHashSet();
-                var bookmarkFinderResults = await _bookmarkFinder.FindBookmarksAsync(activityType, bookmark, tenantId, cancellationToken).Where(x => correlatedWorkflowInstanceIds.Contains(x.WorkflowInstanceId)).ToList();
-                return await ResumeWorkflowsAsync(bookmarkFinderResults, input, cancellationToken).ToListAsync(cancellationToken);
+                // Find correlated workflows.
+                var correlatedWorkflowInstances = await _workflowInstanceStore.FindManyAsync(new CorrelationIdSpecification<WorkflowInstance>(correlationId), cancellationToken: cancellationToken).ToList();
+
+                if (correlatedWorkflowInstances.Count > 0)
+                {
+                    _logger.LogDebug("{WorkflowInstanceCount} existing workflows found with correlation ID '{CorrelationId}' will executed", correlatedWorkflowInstances.Count, correlationId);
+                    var correlatedWorkflowInstanceIds = correlatedWorkflowInstances.Select(x => x.Id).ToHashSet();
+                    var bookmarkFinderResults = await _bookmarkFinder.FindBookmarksAsync(activityType, bookmark, tenantId, cancellationToken).Where(x => correlatedWorkflowInstanceIds.Contains(x.WorkflowInstanceId)).ToList();
+                    return await ResumeWorkflowsAsync(bookmarkFinderResults, input, cancellationToken).ToListAsync(cancellationToken);
+                }
             }
 
             // No correlated workflows found, so go ahead and start new & resume existing workflows. 
