@@ -23,13 +23,13 @@ namespace Elsa
         }
 
         /// <summary>
-        /// Add Elsa Hangfire Services for background processing and Hangfire Services
+        /// Add Elsa Hangfire Services for background processing and Hangfire services.
         /// </summary>
         /// <remarks>
-        /// Only if Hangfire is not already registered in DI
+        /// Use only if Hangfire is not already registered in DI.
         /// </remarks>
-        /// <param name="timersOptions"></param>
-        /// <param name="configure">Hangfire settings</param>
+        /// <param name="timersOptions">The TimersOptions being configured</param>
+        /// <param name="configure">Configure Hangfire settings</param>
         public static void UseHangfire(this TimersOptions timersOptions, Action<IGlobalConfiguration> configure)
         {
             timersOptions.UseHangfire();
