@@ -7,14 +7,16 @@ using System.Threading;
 using Elsa.Services;
 using Elsa.Core.IntegrationTests.Workflows;
 using Elsa.Persistence;
+using Elsa.Testing.Shared.Helpers;
 
 namespace Elsa.Core.IntegrationTests.Persistence.InMemory
 {
     public class InMemoryStoreIntegrationTests
     {
         [Theory(DisplayName = "A persistable workflow instance with default persistence behaviour should be persisted-to and readable-from an in-memory store after being run"), AutoMoqData]
-        public async Task APersistableWorkflowInstanceWithDefaultPersistanceBehaviourShouldBeRoundTrippable([HostBuilderWithPersistableWorkflow] IHostBuilder hostBuilder)
+        public async Task APersistableWorkflowInstanceWithDefaultPersistanceBehaviourShouldBeRoundTrippable([WithPersistableWorkflow] ElsaHostBuilderBuilder hostBuilderBuilder)
         {
+            var hostBuilder = hostBuilderBuilder.GetHostBuilder();
             hostBuilder.ConfigureServices((ctx, services) => {
                 services.AddHostedService<HostedWorkflowRunner<PersistableWorkflow>>();
             });
@@ -22,8 +24,9 @@ namespace Elsa.Core.IntegrationTests.Persistence.InMemory
         }
 
         [Theory(DisplayName = "A persistable-on-suspend workflow instance should be persisted-to and readable-from an in-memory store after being run"), AutoMoqData]
-        public async Task APersistableOnSuspendWorkflowInstanceShouldBeRoundTrippable([HostBuilderWithPersistableWorkflow] IHostBuilder hostBuilder)
+        public async Task APersistableOnSuspendWorkflowInstanceShouldBeRoundTrippable([WithPersistableWorkflow] ElsaHostBuilderBuilder hostBuilderBuilder)
         {
+            var hostBuilder = hostBuilderBuilder.GetHostBuilder();
             hostBuilder.ConfigureServices((ctx, services) => {
                 services.AddHostedService<HostedWorkflowRunner<PersistableWorkflow.OnSuspend>>();
             });
@@ -31,8 +34,9 @@ namespace Elsa.Core.IntegrationTests.Persistence.InMemory
         }
 
         [Theory(DisplayName = "A persistable-on-activity-executed workflow instance should be persisted-to and readable-from an in-memory store after being run"), AutoMoqData]
-        public async Task APersistableOnActivityExecutedWorkflowInstanceShouldBeRoundTrippable([HostBuilderWithPersistableWorkflow] IHostBuilder hostBuilder)
+        public async Task APersistableOnActivityExecutedWorkflowInstanceShouldBeRoundTrippable([WithPersistableWorkflow] ElsaHostBuilderBuilder hostBuilderBuilder)
         {
+            var hostBuilder = hostBuilderBuilder.GetHostBuilder();
             hostBuilder.ConfigureServices((ctx, services) => {
                 services.AddHostedService<HostedWorkflowRunner<PersistableWorkflow.OnActivityExecuted>>();
             });
@@ -40,8 +44,9 @@ namespace Elsa.Core.IntegrationTests.Persistence.InMemory
         }
 
         [Theory(DisplayName = "A persistable-on-workflow-burst workflow instance should be persisted-to and readable-from an in-memory store after being run"), AutoMoqData]
-        public async Task APersistableOnWorkflowBurstWorkflowInstanceShouldBeRoundTrippable([HostBuilderWithPersistableWorkflow] IHostBuilder hostBuilder)
+        public async Task APersistableOnWorkflowBurstWorkflowInstanceShouldBeRoundTrippable([WithPersistableWorkflow] ElsaHostBuilderBuilder hostBuilderBuilder)
         {
+            var hostBuilder = hostBuilderBuilder.GetHostBuilder();
             hostBuilder.ConfigureServices((ctx, services) => {
                 services.AddHostedService<HostedWorkflowRunner<PersistableWorkflow.OnWorkflowBurst>>();
             });
@@ -49,8 +54,9 @@ namespace Elsa.Core.IntegrationTests.Persistence.InMemory
         }
 
         [Theory(DisplayName = "A persistable-on-workflow-pass-completed workflow instance should be persisted-to and readable-from an in-memory store after being run"), AutoMoqData]
-        public async Task APersistableOnWorkflowPassCompletedWorkflowInstanceShouldBeRoundTrippable([HostBuilderWithPersistableWorkflow] IHostBuilder hostBuilder)
+        public async Task APersistableOnWorkflowPassCompletedWorkflowInstanceShouldBeRoundTrippable([WithPersistableWorkflow] ElsaHostBuilderBuilder hostBuilderBuilder)
         {
+            var hostBuilder = hostBuilderBuilder.GetHostBuilder();
             hostBuilder.ConfigureServices((ctx, services) => {
                 services.AddHostedService<HostedWorkflowRunner<PersistableWorkflow.OnWorkflowPassCompleted>>();
             });
