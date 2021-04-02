@@ -6,7 +6,7 @@ namespace Elsa.Activities.Http.Models
     public class HttpResponseModel
     {
         public HttpStatusCode StatusCode { get; set; }
-        public Dictionary<string, string[]> Headers { get; set; } = new Dictionary<string, string[]>();
+        public Dictionary<string, string[]> Headers { get; set; } = new();
         public object? Content { get; set; }
     }
 }

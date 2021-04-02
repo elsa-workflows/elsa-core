@@ -13,6 +13,7 @@ using Elsa.Design;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Primitives;
 using HttpRequestHeaders = Elsa.Activities.Http.Models.HttpRequestHeaders;
 
 // ReSharper disable once CheckNamespace
@@ -139,7 +140,7 @@ namespace Elsa.Activities.Http
             var url = Url;
             var request = new HttpRequestMessage(new HttpMethod(Method), url);
             var authorizationHeaderValue = Authorization;
-            var requestHeaders = new HeaderDictionary(RequestHeaders);
+            var requestHeaders = new HeaderDictionary(RequestHeaders.ToDictionary(x => x.Key, x => new StringValues(x.Value.Split(','))));
 
             if (methodSupportsBody)
             {

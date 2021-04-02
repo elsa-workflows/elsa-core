@@ -70,8 +70,8 @@ namespace Elsa.Activities.Http
             var model = new HttpRequestModel
             {
                 Path = new Uri(request.Path.ToString(), UriKind.Relative),
-                QueryString = request.Query.ToDictionary(x => x.Key, x => new StringValuesModel(x.Value)),
-                Headers = request.Headers.ToDictionary(x => x.Key, x => new StringValuesModel(x.Value)),
+                QueryString = request.Query.ToDictionary(x => x.Key, x => x.Value.ToString()),
+                Headers = request.Headers.ToDictionary(x => x.Key, x => x.Value.ToString()),
                 Method = request.Method
             };
 
