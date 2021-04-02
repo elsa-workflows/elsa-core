@@ -12,7 +12,7 @@ namespace Elsa.Testing.Shared.AutoFixture.Customizations
     {
         readonly ParameterInfo? parameter;
 
-        public void Customize(IFixture fixture)
+        public virtual void Customize(IFixture fixture)
         {
             fixture.Customizations.Insert(0, GetSpecimenBuilder());
         }
