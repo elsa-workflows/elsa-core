@@ -11,7 +11,11 @@ export class MultilineDriver implements PropertyDisplayDriver {
     const editorHeight = this.getEditorHeight(options);
     const context: string = options.context;
 
-    return <elsa-text-property propertyDescriptor={property} propertyModel={prop} editor-height={editorHeight} context={context}/>;
+    return (
+      <elsa-property-editor propertyDescriptor={property} propertyModel={prop} editor-height={editorHeight} context={context}>
+        <elsa-text-property propertyDescriptor={property} propertyModel={prop}/>
+      </elsa-property-editor>
+    );
   }
 
   update(activity: ActivityModel, property: ActivityPropertyDescriptor, form: FormData) {
