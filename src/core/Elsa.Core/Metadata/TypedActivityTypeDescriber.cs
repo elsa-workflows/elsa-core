@@ -57,12 +57,15 @@ namespace Elsa.Metadata
                 yield return new ActivityPropertyDescriptor
                 (
                     (activityPropertyAttribute.Name ?? propertyInfo.Name).Pascalize(),
+                    propertyInfo.PropertyType,
                     _uiHintResolver.GetUIHint(propertyInfo),
                     activityPropertyAttribute.Label ?? propertyInfo.Name.Humanize(LetterCasing.Title),
                     activityPropertyAttribute.Hint,
                     _optionsResolver.GetOptions(propertyInfo),
                     activityPropertyAttribute.Category,
-                    _defaultValueResolver.GetDefaultValue(propertyInfo)
+                    _defaultValueResolver.GetDefaultValue(propertyInfo),
+                    activityPropertyAttribute.DefaultSyntax,
+                    activityPropertyAttribute.SupportedSyntaxes
                 );
             }
         }
