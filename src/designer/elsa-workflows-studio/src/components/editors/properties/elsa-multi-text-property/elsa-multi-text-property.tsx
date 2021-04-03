@@ -11,36 +11,37 @@ export class ElsaMultiTextProperty {
 
   @Prop() propertyDescriptor: ActivityPropertyDescriptor;
   @Prop() propertyModel: ActivityDefinitionProperty;
-  @State() currentValue?: Array<string>
+  @State() currentValue?: string
 
   async componentWillLoad() {
-    const expression = this.propertyModel.expression || '[]';
-    this.currentValue = parseJson(expression) ?? [];
+    this.currentValue = this.propertyModel.expressions['Literal'] || '[]';
   }
 
   onValueChanged(newValue: Array<string>){
-    this.currentValue = newValue;
+    this.currentValue = JSON.stringify(newValue);
+    this.propertyModel.expressions['Literal'] = this.currentValue;
+  }
+
+  onLiteralValueChanged(e: CustomEvent) {
+    this.currentValue = e.detail;
   }
 
   render() {
     const propertyDescriptor = this.propertyDescriptor;
+    const propertyModel = this.propertyModel;
     const propertyName = propertyDescriptor.name;
     const fieldId = propertyName;
     const fieldName = propertyName;
-    const fieldLabel = propertyDescriptor.label || propertyName;
-    const fieldHint = propertyDescriptor.hint;
-    const values = this.currentValue.map(x => x ? x.trim() : '').filter(x => x.length > 0);
+    const values = parseJson(this.currentValue);
 
     return (
-      <div>
-        <label htmlFor={fieldId} class="block text-sm font-medium text-gray-700">
-          {fieldLabel}
-        </label>
-        <div class="mt-1">
-          <elsa-input-tags values={values} fieldId={fieldId} fieldName={fieldName} onValueChanged={e => this.onValueChanged(e.detail)}/>
-        </div>
-        {fieldHint ? <p class="mt-2 text-sm text-gray-500">{fieldHint}</p> : undefined}
-      </div>
+      <elsa-property-editor propertyDescriptor={propertyDescriptor}
+                            propertyModel={propertyModel}
+                            onLiteralValueChanged={e => this.onLiteralValueChanged(e)}
+                            editor-height="2em"
+                            single-line={true}>
+        <elsa-input-tags values={values} fieldId={fieldId} fieldName={fieldName} onValueChanged={e => this.onValueChanged(e.detail)}/>
+      </elsa-property-editor>
     )
   }
 }

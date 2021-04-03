@@ -16,8 +16,8 @@ export class RunJavascriptPlugin implements ElsaPlugin {
       return;
 
     const props = activityModel.properties || [];
-    const outcomes = props.find(x => x.name == 'PossibleOutcomes') || { expression: '' };
-    const expression = outcomes.expression;
+    const outcomes = props.find(x => x.name == 'PossibleOutcomes') || { expressions: {'Literal': ''}, syntax: 'Literal' };
+    const expression = outcomes.expressions['Literal'];
     context.outcomes = parseJson(expression) || ['Done'];
 
     if(context.outcomes.length == 0)

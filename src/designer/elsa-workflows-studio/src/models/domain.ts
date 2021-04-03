@@ -41,8 +41,8 @@ export interface ConnectionDefinition {
 
 export interface ActivityDefinitionProperty {
   name: string;
-  syntax: string;
-  expression: string;
+  syntax?: string;
+  expressions: Map<string>;
 }
 
 export interface Variables {

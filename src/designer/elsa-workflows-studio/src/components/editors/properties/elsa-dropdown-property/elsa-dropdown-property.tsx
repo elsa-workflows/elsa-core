@@ -13,7 +13,7 @@ export class ElsaDropdownProperty {
   @State() currentValue?: string;
 
   async componentWillLoad() {
-    this.currentValue = this.propertyModel.expression || '';
+    this.currentValue = this.propertyModel.expressions['Literal'] || '';
   }
 
   onChanged(e: Event) {

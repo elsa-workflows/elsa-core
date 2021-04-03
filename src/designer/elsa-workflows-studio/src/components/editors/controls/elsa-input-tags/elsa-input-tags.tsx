@@ -39,7 +39,7 @@ export class ElsaInputTags {
   }
 
   render() {
-    const values = this.values;
+    const values = this.values || [];
     const valuesJson = JSON.stringify(values);
 
     return (

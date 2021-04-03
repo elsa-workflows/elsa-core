@@ -15,7 +15,7 @@ export class ElsaCheckListProperty {
   monacoEditor: HTMLElsaMonacoElement;
 
   async componentWillLoad() {
-    const expression = this.propertyModel.expression || '[]';
+    const expression = this.propertyModel.expressions['Literal'] || '[]';
     this.currentValues = parseJson(expression) ?? [];
   }
 
