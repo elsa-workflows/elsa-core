@@ -38,6 +38,15 @@ export class ElsaMonaco {
   }
 
   @Method()
+  async setValue(value: string) {
+    if (!this.editor)
+      return;
+
+    const model = this.editor.getModel();
+    model.setValue(value || '');
+  }
+
+  @Method()
   async addJavaScriptLib(libSource: string, libUri: string) {
     const monaco = this.monaco;
     monaco.languages.typescript.javascriptDefaults.setExtraLibs([{
@@ -153,18 +162,6 @@ export class ElsaMonaco {
 
   disconnectedCallback() {
     this.editor.dispose();
-  }
-
-  mapSyntaxToLanguage(syntax: string): any {
-    switch (syntax) {
-      case 'JavaScript':
-        return 'javascript';
-      case 'Liquid':
-        return 'handlebars';
-      case 'Literal':
-      default:
-        return 'plaintext';
-    }
   }
 
   registerLiquid() {

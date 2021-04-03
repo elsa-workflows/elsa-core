@@ -23,7 +23,7 @@ export class ElsaScriptProperty {
   monacoEditor: HTMLElsaMonacoElement;
 
   async componentWillLoad() {
-    this.currentValue = this.propertyModel.expression;
+    this.currentValue = this.propertyModel.expressions['Literal'];
   }
 
   async componentDidLoad() {

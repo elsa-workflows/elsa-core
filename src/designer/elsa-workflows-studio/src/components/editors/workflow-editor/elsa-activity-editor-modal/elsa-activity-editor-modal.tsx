@@ -10,7 +10,7 @@ import {checkBox, FormContext, textArea, textInput} from "../../../../utils/form
   styleUrl: 'elsa-activity-editor-modal.css',
   shadow: false,
 })
-export class ElsaActivityPickerModal {
+export class ElsaActivityEditorModal {
 
   @State() activityModel: ActivityModel;
   @State() activityDescriptor: ActivityDescriptor;
@@ -22,7 +22,7 @@ export class ElsaActivityPickerModal {
 
   componentDidLoad() {
     eventBus.on(EventTypes.ShowActivityEditor, async (activity: ActivityModel, animate: boolean) => {
-      this.activityModel = {...activity, properties: activity.properties || []};
+      this.activityModel = JSON.parse(JSON.stringify(activity));
       this.activityDescriptor = state.activityDescriptors.find(x => x.type == activity.type);
       this.formContext = new FormContext(this.activityModel, newValue => this.activityModel = newValue);
       this.selectedTab = 'Properties';

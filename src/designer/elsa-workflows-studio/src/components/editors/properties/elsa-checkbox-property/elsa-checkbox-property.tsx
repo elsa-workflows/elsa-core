@@ -14,7 +14,7 @@ export class ElsaCheckBoxProperty {
   monacoEditor: HTMLElsaMonacoElement;
 
   async componentWillLoad() {
-    this.isChecked = (this.propertyModel.expression || '').toLowerCase() == 'true';
+    this.isChecked = (this.propertyModel.expressions['Literal'] || '').toLowerCase() == 'true';
   }
 
   onCheckChanged(e: Event) {

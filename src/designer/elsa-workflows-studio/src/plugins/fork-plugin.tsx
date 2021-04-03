@@ -16,8 +16,8 @@ export class ForkPlugin implements ElsaPlugin {
       return;
 
     const props = activityModel.properties || [];
-    const branches = props.find(x => x.name == 'Branches') || { expression: '' };
-    const expression = branches.expression;
+    const branches = props.find(x => x.name == 'Branches') || { expressions: {'Literal': ''}, syntax: 'Literal' };
+    const expression = branches.expressions[branches.syntax];
     context.outcomes = parseJson(expression) || [];
   }
 }

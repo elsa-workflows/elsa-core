@@ -15,7 +15,7 @@ export class HttpEndpointPlugin implements ElsaPlugin {
       return;
 
     const props = activityModel.properties || [];
-    const path = props.find(x => x.name == 'Path') || { expression: '' };
-    context.bodyDisplay = <p>{path.expression}</p>;
+    const path = props.find(x => x.name == 'Path') || { name: 'Path', expressions: { 'Literal': '', syntax: 'Literal' } };
+    context.bodyDisplay = <p>{path.expressions[path.syntax]}</p>;
   }
 }

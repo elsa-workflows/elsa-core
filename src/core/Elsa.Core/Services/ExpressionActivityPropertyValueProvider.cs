@@ -8,11 +8,11 @@ namespace Elsa.Services
 {
     public class ExpressionActivityPropertyValueProvider : IActivityPropertyValueProvider
     {
-        private readonly string _expression;
+        private readonly string? _expression;
         private readonly string _syntax;
         private readonly Type _type;
 
-        public ExpressionActivityPropertyValueProvider(string expression, string syntax, Type type)
+        public ExpressionActivityPropertyValueProvider(string? expression, string syntax, Type type)
         {
             _expression = expression;
             _syntax = syntax;
@@ -21,6 +21,9 @@ namespace Elsa.Services
         
         public async ValueTask<object?> GetValueAsync(ActivityExecutionContext context, CancellationToken cancellationToken = default)
         {
+            if (_expression == null)
+                return default;
+            
             var evaluator = context.GetService<IExpressionEvaluator>();
             return await evaluator.EvaluateAsync(_expression, _syntax, _type, context, cancellationToken);
         }

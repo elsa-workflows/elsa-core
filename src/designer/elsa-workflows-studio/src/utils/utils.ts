@@ -98,23 +98,37 @@ export function setActivityModelProperty(activityModel: ActivityModel, name: str
   setProperty(activityModel.properties, name, expression, syntax);
 }
 
-export function setProperty(properties: Array<ActivityDefinitionProperty>, name: string, expression: string, syntax: string) {
+export function setProperty(properties: Array<ActivityDefinitionProperty>, name: string, expression: string, syntax?: string) {
   let property: ActivityDefinitionProperty = properties.find(x => x.name == name);
 
+  if(!syntax)
+    syntax = 'Literal';
+
   if (!property) {
-    property = {name: name, expression: expression, syntax: syntax};
+    const expressions = {};
+    expressions[syntax] = expression;
+    property = {name: name, expressions: expressions, syntax: syntax};
     properties.push(property);
   } else {
-    property.expression = expression;
+    property.expressions[syntax] = expression;
     property.syntax = syntax;
   }
 }
 
-export function getProperty(properties: Array<ActivityDefinitionProperty>, name: string, defaultExpression?: () => string, defaultSyntax?: () => string): ActivityDefinitionProperty {
-  let property: ActivityDefinitionProperty = properties.find(x => x.name == name);
+export function getOrCreateProperty(activity: ActivityModel , name: string, defaultExpression?: () => string, defaultSyntax?: () => string): ActivityDefinitionProperty {
+  let property: ActivityDefinitionProperty = activity.properties.find(x => x.name == name);
 
-  if (!property)
-    property = {name: name, expression: defaultExpression ? defaultExpression() : null, syntax: defaultSyntax ? defaultSyntax() : 'Literal'};
+  if (!property) {
+    const expressions = {};
+    let syntax = defaultSyntax ? defaultSyntax() : undefined;
+
+    if(!syntax)
+      syntax = 'Literal';
+
+    expressions[syntax] = defaultExpression ? defaultExpression() : undefined;
+    property = {name: name, expressions: expressions, syntax: null};
+    activity.properties.push(property);
+  }
 
   return property;
 }

@@ -15,10 +15,10 @@ export class SendEmailPlugin implements ElsaPlugin {
       return;
 
     const props = activityModel.properties || [];
-    const condition = props.find(x => x.name == 'To') || { expression: '' };
-    const expression = condition.expression || '';
+    const to = props.find(x => x.name == 'To') || { expressions: {'Literal': ''}, syntax: 'Literal' };
+    const expression = to.expressions[to.syntax || 'Literal'] || '';
     const description = activityModel.description;
     const bodyText = description && description.length > 0 ? description : expression;
-    context.bodyDisplay = <p>{bodyText}</p>;
+    context.bodyDisplay = <p>To: {bodyText}</p>;
   }
 }

@@ -1,12 +1,12 @@
 ﻿import {PropertyDisplayDriver} from "../services/property-display-driver";
 import {ActivityModel, ActivityPropertyDescriptor} from "../models";
 import {h, State} from "@stencil/core";
-import {getProperty, setActivityModelProperty} from "../utils/utils";
+import {getOrCreateProperty, setActivityModelProperty} from "../utils/utils";
 
 export class CheckboxDriver implements PropertyDisplayDriver {
 
   display(activity: ActivityModel, property: ActivityPropertyDescriptor) {
-    const prop = getProperty(activity.properties, property.name);
+    const prop = getOrCreateProperty(activity, property.name);
     return <elsa-checkbox-property propertyDescriptor={property} propertyModel={prop} />;
   }
 

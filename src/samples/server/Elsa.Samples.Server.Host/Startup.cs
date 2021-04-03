@@ -46,6 +46,7 @@ namespace Elsa.Samples.Server.Host
                     .AddHttpActivities(elsaSection.GetSection("Http").Bind)
                     .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)
                     .AddQuartzTemporalActivities()
+                    .AddJavaScriptActivities()
                     .AddTelnyx()
                     .AddWorkflowsFrom<Startup>()
                 );

@@ -1,6 +1,6 @@
 ﻿import {ElsaPlugin} from "../services/elsa-plugin";
 import {eventBus} from '../services/event-bus';
-import {ActivityDesignDisplayContext, EventTypes} from "../models";
+import {ActivityDefinitionProperty, ActivityDesignDisplayContext, EventTypes} from "../models";
 import {h} from "@stencil/core";
 
 export class IfPlugin implements ElsaPlugin {
@@ -15,8 +15,8 @@ export class IfPlugin implements ElsaPlugin {
       return;
 
     const props = activityModel.properties || [];
-    const condition = props.find(x => x.name == 'Condition') || { expression: '' };
-    const expression = condition.expression || '';
+    const condition: ActivityDefinitionProperty = props.find(x => x.name == 'Condition') || { name: 'Condition', expressions: {'Literal': ''}, syntax: 'Literal' };
+    const expression = condition.expressions[condition.syntax] || '';
     const description = activityModel.description;
     const bodyText = description && description.length > 0 ? description : expression;
     context.bodyDisplay = <p>{bodyText}</p>;
