@@ -32,7 +32,7 @@ namespace Elsa.Activities.Http
         [ActivityProperty(Hint = "The URL to redirect to (HTTP 302).", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public Uri Location { get; set; } = default!;
 
-        [ActivityProperty(Hint = "Whether or not the redirect is permanent (HTTP 301).", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityProperty(Hint = "Whether or not the redirect is permanent (HTTP 301).", SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public bool Permanent { get; set; }
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
