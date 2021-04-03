@@ -8,6 +8,7 @@ using Elsa.Activities.Http.Services;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Design;
+using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
@@ -37,20 +38,28 @@ namespace Elsa.Activities.Http
         /// <summary>
         /// The path that triggers this activity. 
         /// </summary>
-        [ActivityProperty(Hint = "The relative path that triggers this activity.")]
+        [ActivityProperty(Hint = "The relative path that triggers this activity.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public PathString Path { get; set; }
 
         /// <summary>
         /// The HTTP methods that triggers this activity.
         /// </summary>
-        [ActivityProperty(UIHint = ActivityPropertyUIHints.CheckList, Hint = "The HTTP methods that trigger this activity.", Options = new[] { "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD" }, DefaultValue = new[] { "GET" })]
+        [ActivityProperty(
+            UIHint = ActivityPropertyUIHints.CheckList,
+            Hint = "The HTTP methods that trigger this activity.",
+            Options = new[] { "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD" },
+            DefaultValue = new[] { "GET" },
+            DefaultSyntax = SyntaxNames.Json,
+            SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public HashSet<string> Methods { get; set; } = new(new[] { "GET" });
 
         /// <summary>
         /// A value indicating whether the HTTP request content body should be read and stored as part of the HTTP request model.
         /// The stored format depends on the content-type header.
         /// </summary>
-        [ActivityProperty(Hint = "A value indicating whether the HTTP request content body should be read and stored as part of the HTTP request model. The stored format depends on the content-type header.")]
+        [ActivityProperty(
+            Hint = "A value indicating whether the HTTP request content body should be read and stored as part of the HTTP request model. The stored format depends on the content-type header.",
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public bool ReadContent { get; set; }
 
         /// <summary>
@@ -67,6 +76,7 @@ namespace Elsa.Activities.Http
         private async ValueTask<IActivityExecutionResult> ExecuteInternalAsync(CancellationToken cancellationToken)
         {
             var request = _httpContextAccessor.HttpContext.Request;
+
             var model = new HttpRequestModel
             {
                 Path = new Uri(request.Path.ToString(), UriKind.Relative),
@@ -86,7 +96,7 @@ namespace Elsa.Activities.Http
 
         private IHttpRequestBodyParser SelectContentParser(string contentType)
         {
-            string? simpleContentType = contentType?.Split(';').First();
+            var simpleContentType = contentType?.Split(';').First();
             var formatters = _parsers.OrderByDescending(x => x.Priority).ToList();
             return formatters.FirstOrDefault(x => x.SupportedContentTypes.Contains(simpleContentType, StringComparer.OrdinalIgnoreCase)) ?? formatters.Last();
         }
