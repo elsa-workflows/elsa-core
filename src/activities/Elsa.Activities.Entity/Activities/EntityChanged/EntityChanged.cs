@@ -1,6 +1,7 @@
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Design;
+using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -15,13 +16,14 @@ namespace Elsa.Activities.Entity
     )]
     public class EntityChanged : Activity
     {
-        [ActivityProperty(UIHint = ActivityPropertyUIHints.SingleLine, Hint = "The Entity Name to observe. Matches any entity if no value is specified.")]
+        [ActivityProperty(UIHint = ActivityPropertyUIHints.SingleLine, Hint = "The Entity Name to observe. Matches any entity if no value is specified.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string? EntityName { get; set; }
 
         [ActivityProperty(
             UIHint = ActivityPropertyUIHints.Dropdown,
             Hint = "The Entity Changed Action to observe. Matches any action if no value is specified.",
-            Options = new[] { "Added", "Updated", "Deleted" }
+            Options = new[] { "Added", "Updated", "Deleted" },
+            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public EntityChangedAction? Action { get; set; }
 
