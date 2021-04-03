@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Expressions;
 using Elsa.Services.Models;
 using MassTransit;
 
@@ -18,7 +19,7 @@ namespace Elsa.Activities.MassTransit
         {
         }
 
-        [ActivityProperty(Hint = "An expression that evaluates to the event to publish.")]
+        [ActivityProperty(Hint = "An expression that evaluates to the event to publish.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public object? Message { get; set; }
 
         protected override bool OnCanExecute(ActivityExecutionContext context) => Message != null;

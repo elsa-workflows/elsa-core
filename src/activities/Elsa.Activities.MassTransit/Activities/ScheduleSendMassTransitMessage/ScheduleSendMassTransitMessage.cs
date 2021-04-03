@@ -4,6 +4,7 @@ using Elsa.Activities.MassTransit.Activities.ScheduleSendMassTransitMessage;
 using Elsa.Activities.MassTransit.Options;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Expressions;
 using Elsa.Services.Models;
 using MassTransit;
 using Microsoft.Extensions.Options;
@@ -30,17 +31,16 @@ namespace Elsa.Activities.MassTransit
             _options = options.Value;
         }
 
-        [ActivityProperty(Hint = "An expression that evaluates to the message to be delivered.")]
+        [ActivityProperty(Hint = "An expression that evaluates to the message to be delivered.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public object? Message { get; set; }
 
-        [ActivityProperty(Hint = "The address of a specific endpoint to deliver the message to.")]
+        [ActivityProperty(Hint = "The address of a specific endpoint to deliver the message to.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public Uri EndpointAddress { get; set; } = default!;
 
-        [ActivityProperty(Hint = "An expression that evaluates to the date and time to deliver the message.")]
+        [ActivityProperty(Hint = "An expression that evaluates to the date and time to deliver the message.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public Instant ScheduledTime { get; set; }
 
-        protected override bool OnCanExecute(ActivityExecutionContext context) =>
-            Message != null && _options.SchedulerAddress != null;
+        protected override bool OnCanExecute(ActivityExecutionContext context) => Message != null && _options.SchedulerAddress != null;
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
