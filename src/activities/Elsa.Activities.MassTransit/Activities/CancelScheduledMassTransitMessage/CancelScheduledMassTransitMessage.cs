@@ -2,6 +2,7 @@ using System.Threading.Tasks;
 using Elsa.Activities.MassTransit.Options;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Expressions;
 using Elsa.Services.Models;
 using MassTransit;
 using Microsoft.Extensions.Options;
@@ -24,7 +25,7 @@ namespace Elsa.Activities.MassTransit
             _options = options.Value;
         }
 
-        [ActivityProperty(Hint = "Expression that returns the tokenId of a scheduled message to cancel.")]
+        [ActivityProperty(Hint = "Expression that returns the tokenId of a scheduled message to cancel.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string? TokenId { get; set; }
 
         protected override bool OnCanExecute(ActivityExecutionContext context) => TokenId != null && _options.SchedulerAddress != null;
