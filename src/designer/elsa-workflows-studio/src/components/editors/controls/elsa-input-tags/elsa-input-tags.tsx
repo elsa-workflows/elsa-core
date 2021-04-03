@@ -1,4 +1,4 @@
-import {Component, h, Prop, Event, EventEmitter} from '@stencil/core';
+import {Component, h, Prop, Event, EventEmitter, State, Watch} from '@stencil/core';
 
 @Component({
   tag: 'elsa-input-tags',
@@ -12,6 +12,16 @@ export class ElsaInputTags {
   @Prop() placeHolder?: string = 'Add tag';
   @Prop() values?: Array<string> = [];
   @Event({bubbles: true}) valueChanged: EventEmitter<Array<string>>;
+  @State() currentValues?: Array<string> = [];
+
+  @Watch('values')
+  valuesChangedHandler(newValue: Array<string>) {
+    this.currentValues = newValue || [];
+  }
+
+  componentWillLoad() {
+    this.currentValues = this.values;
+  }
 
   async onInputKeyDown(e: KeyboardEvent) {
     if (e.key != "Enter")
@@ -25,21 +35,22 @@ export class ElsaInputTags {
     if (value.length == 0)
       return;
 
-    const values = [...this.values];
+    const values = [...this.currentValues];
     values.push(value);
-    this.values = values.distinct();
+    this.currentValues = values.distinct();
     input.value = '';
     await this.valueChanged.emit(values);
   }
 
-  onDeleteTagClick(e: Event, tag: string) {
+  async onDeleteTagClick(e: Event, tag: string) {
     e.preventDefault();
 
-    this.values = this.values.filter(x => x !== tag);
+    this.currentValues = this.currentValues.filter(x => x !== tag);
+    await this.valueChanged.emit(this.currentValues);
   }
 
   render() {
-    const values = this.values || [];
+    const values = this.currentValues || [];
     const valuesJson = JSON.stringify(values);
 
     return (

@@ -108,10 +108,21 @@ export interface ActivityPropertyDescriptor {
   options?: any;
   category?: string;
   defaultValue?: any;
+  defaultSyntax?: string;
+  supportedSyntaxes: Array<string>
 }
 
 export enum ActivityTraits {
   Action = 1,
   Trigger = 2,
   Job = 4
+}
+
+export class SyntaxNames {
+  static readonly Literal = 'Literal';
+  static readonly JavaScript = 'JavaScript';
+  static readonly Liquid = 'Liquid';
+  static readonly Json = 'Json';
+  static Variable = 'Variable';
+  static Output = 'Output';
 }

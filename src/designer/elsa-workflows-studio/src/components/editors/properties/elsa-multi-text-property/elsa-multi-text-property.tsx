@@ -1,5 +1,5 @@
 import {Component, h, Prop, State} from '@stencil/core';
-import {ActivityDefinitionProperty, ActivityPropertyDescriptor} from "../../../../models";
+import {ActivityDefinitionProperty, ActivityPropertyDescriptor, SyntaxNames} from "../../../../models";
 import {parseJson} from "../../../../utils/utils";
 
 @Component({
@@ -14,12 +14,12 @@ export class ElsaMultiTextProperty {
   @State() currentValue?: string
 
   async componentWillLoad() {
-    this.currentValue = this.propertyModel.expressions['Literal'] || '[]';
+    this.currentValue = this.propertyModel.expressions[SyntaxNames.Json] || '[]';
   }
 
   onValueChanged(newValue: Array<string>){
     this.currentValue = JSON.stringify(newValue);
-    this.propertyModel.expressions['Literal'] = this.currentValue;
+    this.propertyModel.expressions[SyntaxNames.Json] = this.currentValue;
   }
 
   onLiteralValueChanged(e: CustomEvent) {

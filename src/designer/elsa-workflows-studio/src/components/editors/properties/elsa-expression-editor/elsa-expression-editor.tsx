@@ -29,7 +29,7 @@ export class ElsaExpressionEditor {
   }
 
   @Method()
-  async setExpression(value: string){
+  async setExpression(value: string) {
     await this.monacoEditor.setValue(value);
   }
 
@@ -56,14 +56,12 @@ export class ElsaExpressionEditor {
 
     return (
       <Host>
-        <div class="mt-1">
-          <elsa-monaco value={value}
-                       language={language}
-                       editor-height={this.editorHeight}
-                       single-line={this.singleLineMode}
-                       onValueChanged={e => this.onMonacoValueChanged(e.detail)}
-                       ref={el => this.monacoEditor = el}/>
-        </div>
+        <elsa-monaco value={value}
+                     language={language}
+                     editor-height={this.editorHeight}
+                     single-line={this.singleLineMode}
+                     onValueChanged={e => this.onMonacoValueChanged(e.detail)}
+                     ref={el => this.monacoEditor = el}/>
         <input type="hidden" name={fieldName} value={value}/>
       </Host>
     )

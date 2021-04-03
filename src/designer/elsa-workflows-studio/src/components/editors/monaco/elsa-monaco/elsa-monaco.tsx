@@ -200,7 +200,7 @@ export class ElsaMonaco {
 
   render() {
     return (
-      <Host class="monaco-editor-host border border-gray-200 rounded p-4" style={{'min-height': this.editorHeight}}>
+      <Host class="monaco-editor-host border focus:ring-blue-500 focus:border-blue-500 block w-full min-w-0 rounded-md sm:text-sm border-gray-300 p-4" style={{'min-height': this.editorHeight}}>
         <div ref={el => this.container = el} class="monaco-editor-container"/>
       </Host>
     )

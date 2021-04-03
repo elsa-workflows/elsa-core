@@ -54,8 +54,7 @@ export class ElsaWorkflowDesigner {
       const targetId = connectFromRoot ? this.parentActivityId : null;
       const activityModel = this.addActivity(activityDescriptor, sourceId, targetId, this.parentActivityOutcome);
 
-      if (activityDescriptor.properties.length > 0)
-        this.showActivityEditor(activityModel, false);
+      this.showActivityEditor(activityModel, false);
     });
 
     eventBus.on(EventTypes.UpdateActivity, async args => {
