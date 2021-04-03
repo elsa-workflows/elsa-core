@@ -1,5 +1,5 @@
 import {Component, h, Prop, State} from '@stencil/core';
-import {ActivityDefinitionProperty, ActivityPropertyDescriptor} from "../../../../models";
+import {ActivityDefinitionProperty, ActivityPropertyDescriptor, SyntaxNames} from "../../../../models";
 import {parseJson} from "../../../../utils/utils";
 
 @Component({
@@ -11,42 +11,45 @@ export class ElsaCheckListProperty {
 
   @Prop() propertyDescriptor: ActivityPropertyDescriptor;
   @Prop() propertyModel: ActivityDefinitionProperty;
-  @State() currentValues?: Array<string>
+  @State() currentValue?: string;
   monacoEditor: HTMLElsaMonacoElement;
 
   async componentWillLoad() {
-    const expression = this.propertyModel.expressions['Literal'] || '[]';
-    this.currentValues = parseJson(expression) ?? [];
+    this.currentValue = this.propertyModel.expressions[SyntaxNames.Json] || '[]';
   }
 
   onCheckChanged(e: Event) {
     const checkbox = (e.target as HTMLInputElement);
     const checked = checkbox.checked;
     const value = checkbox.value;
+    let newValue = parseJson(this.currentValue);
 
     if(checked)
-      this.currentValues = [...this.currentValues, value].distinct();
+      newValue = [...newValue, value].distinct();
     else
-      this.currentValues = this.currentValues.filter(x => x !== value);
+      newValue = newValue.filter(x => x !== value);
+
+    this.currentValue = JSON.stringify(newValue);
+    this.propertyModel.expressions[SyntaxNames.Json] = this.currentValue;
+  }
+
+  onDefaultSyntaxValueChanged(e: CustomEvent) {
+    this.currentValue = e.detail;
   }
 
   render() {
     const propertyDescriptor = this.propertyDescriptor;
-    const propertyName = propertyDescriptor.name;
-    const fieldId = propertyName;
-    const fieldName = propertyName;
-    const fieldLabel = propertyDescriptor.label || propertyName;
-    const fieldHint = propertyDescriptor.hint;
+    const propertyModel = this.propertyModel;
+    const fieldId = propertyDescriptor.name;
     const options = propertyDescriptor.options as Array<any>;
-    const values = this.currentValues.map(x => x ? x.trim() : '').filter(x => x.length > 0);
-    const valuesJson = JSON.stringify(values);
+    const values = parseJson(this.currentValue) || [];
 
     return (
-      <div>
-        <label htmlFor={fieldId} class="block text-sm font-medium text-gray-700">
-          {fieldLabel}
-        </label>
-
+      <elsa-property-editor propertyDescriptor={propertyDescriptor}
+                            propertyModel={propertyModel}
+                            onDefaultSyntaxValueChanged={e => this.onDefaultSyntaxValueChanged(e)}
+                            editor-height="2.75em"
+                            single-line={true}>
         <div class="max-w-lg space-y-3 my-4">
           {options.map((option, index) => {
             const inputId = `${fieldId}_${index}`;
@@ -64,10 +67,7 @@ export class ElsaCheckListProperty {
             );
           })}
         </div>
-
-        {fieldHint ? <p class="mt-2 text-sm text-gray-500">{fieldHint}</p> : undefined}
-        <input type="hidden" name={fieldName} value={valuesJson}/>
-      </div>
-    )
+      </elsa-property-editor>
+    );
   }
 }

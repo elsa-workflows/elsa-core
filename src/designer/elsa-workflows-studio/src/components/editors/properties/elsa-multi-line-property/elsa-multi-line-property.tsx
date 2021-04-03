@@ -29,7 +29,7 @@ export class ElsaMultiLineProperty {
     this.propertyModel.expressions['Literal'] = this.currentValue = input.value;
   }
 
-  onLiteralValueChanged(e: CustomEvent) {
+  onDefaultSyntaxValueChanged(e: CustomEvent) {
     this.currentValue = e.detail;
   }
 
@@ -52,7 +52,7 @@ export class ElsaMultiLineProperty {
     return (
       <elsa-property-editor propertyDescriptor={propertyDescriptor}
                             propertyModel={propertyModel}
-                            onLiteralValueChanged={e => this.onLiteralValueChanged(e)}
+                            onDefaultSyntaxValueChanged={e => this.onDefaultSyntaxValueChanged(e)}
                             editor-height={editorHeight.propertyEditor}
                             context={context}>
         <textarea id={fieldId} name={fieldName} value={value} onChange={e => this.onChange(e)} class="focus:ring-blue-500 focus:border-blue-500 block w-full min-w-0 rounded-md sm:text-sm border-gray-300" rows={editorHeight.textArea}/>

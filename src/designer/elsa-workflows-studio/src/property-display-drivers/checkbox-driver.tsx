@@ -11,7 +11,5 @@ export class CheckboxDriver implements PropertyDisplayDriver {
   }
 
   update(activity: ActivityModel, property: ActivityPropertyDescriptor, form: FormData) {
-    const value = form.get(property.name) as string || 'false';
-    setActivityModelProperty(activity, property.name, value, 'Literal');
   }
 }

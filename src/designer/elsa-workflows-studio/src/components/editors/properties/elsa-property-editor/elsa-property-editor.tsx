@@ -10,12 +10,13 @@ import {enter, leave, toggle} from 'el-transition'
 })
 export class ElsaPropertyEditor {
 
-  @Event() literalValueChanged: EventEmitter<string>;
+  @Event() defaultSyntaxValueChanged: EventEmitter<string>;
   @Prop() propertyDescriptor: ActivityPropertyDescriptor;
   @Prop() propertyModel: ActivityDefinitionProperty;
   @Prop({attribute: 'editor-height', reflect: true}) editorHeight: string = '6em';
   @Prop({attribute: 'single-line', reflect: true}) singleLineMode: boolean = false;
   @Prop({attribute: 'context', reflect: true}) context?: string;
+  @Prop() showLabel: boolean = true;
   @State() selectedSyntax?: string;
   @State() currentValue?: string;
 
@@ -95,23 +96,18 @@ export class ElsaPropertyEditor {
     if (this.selectedSyntax != this.defaultSyntax)
       return;
 
-    this.literalValueChanged.emit(e.detail);
+    this.defaultSyntaxValueChanged.emit(e.detail);
   }
 
   render() {
     const propertyDescriptor = this.propertyDescriptor;
-    const propertyName = propertyDescriptor.name;
-    const fieldId = propertyName;
-    const fieldLabel = propertyDescriptor.label || propertyName;
     const fieldHint = propertyDescriptor.hint;
 
     return <div>
       <div class="mb-1">
         <div class="flex">
           <div class="flex-1">
-            <label htmlFor={fieldId} class="block text-sm font-medium text-gray-700">
-              {fieldLabel}
-            </label>
+            {this.renderLabel()}
           </div>
           {this.renderContextMenuWidget()}
         </div>
@@ -119,6 +115,20 @@ export class ElsaPropertyEditor {
       {this.renderEditor()}
       {fieldHint ? <p class="mt-2 text-sm text-gray-500">{fieldHint}</p> : undefined}
     </div>
+  }
+
+  renderLabel() {
+    if (!this.showLabel)
+      return undefined;
+
+    const propertyDescriptor = this.propertyDescriptor;
+    const propertyName = propertyDescriptor.name;
+    const fieldId = propertyName;
+    const fieldLabel = propertyDescriptor.label || propertyName;
+
+    return <label htmlFor={fieldId} class="block text-sm font-medium text-gray-700">
+      {fieldLabel}
+    </label>;
   }
 
   renderContextMenuWidget() {

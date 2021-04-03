@@ -75,6 +75,7 @@ export namespace Components {
         "editorHeight": string;
         "propertyDescriptor": ActivityPropertyDescriptor;
         "propertyModel": ActivityDefinitionProperty;
+        "showLabel": boolean;
         "singleLineMode": boolean;
     }
     interface ElsaScriptProperty {
@@ -330,9 +331,10 @@ declare namespace LocalJSX {
     interface ElsaPropertyEditor {
         "context"?: string;
         "editorHeight"?: string;
-        "onLiteralValueChanged"?: (event: CustomEvent<string>) => void;
+        "onDefaultSyntaxValueChanged"?: (event: CustomEvent<string>) => void;
         "propertyDescriptor"?: ActivityPropertyDescriptor;
         "propertyModel"?: ActivityDefinitionProperty;
+        "showLabel"?: boolean;
         "singleLineMode"?: boolean;
     }
     interface ElsaScriptProperty {
