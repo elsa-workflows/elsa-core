@@ -59,7 +59,8 @@ namespace Elsa.Activities.Webhooks.ActivityTypes
                 Properties = new[]
                 {
                     new ActivityPropertyDescriptor(
-                        "RequestMethod",
+                        nameof(HttpEndpoint.Methods),
+                        typeof(HashSet<string>),
                         ActivityPropertyUIHints.Dropdown,
                         "Request Method",
                         "Specify what request method this webhook should handle. Leave empty to handle both GET and POST requests",
