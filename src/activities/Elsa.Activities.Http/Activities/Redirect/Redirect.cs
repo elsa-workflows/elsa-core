@@ -2,6 +2,7 @@ using System;
 using Elsa.Activities.Http.Results;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
@@ -25,13 +26,13 @@ namespace Elsa.Activities.Http
             T = localizer;
             _httpContextAccessor = httpContextAccessor;
         }
-        
+
         private IStringLocalizer<Redirect> T { get; }
 
-        [ActivityProperty(Hint = "The URL to redirect to (HTTP 302).")]
+        [ActivityProperty(Hint = "The URL to redirect to (HTTP 302).", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public Uri Location { get; set; } = default!;
-        
-        [ActivityProperty(Hint = "Whether or not the redirect is permanent (HTTP 301).")]
+
+        [ActivityProperty(Hint = "Whether or not the redirect is permanent (HTTP 301).", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public bool Permanent { get; set; }
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
@@ -40,7 +41,7 @@ namespace Elsa.Activities.Http
 
             if (response.HasStarted)
                 return Fault(T["Response has already started"]!);
-            
+
             return new RedirectResult(_httpContextAccessor, Location, Permanent);
         }
     }

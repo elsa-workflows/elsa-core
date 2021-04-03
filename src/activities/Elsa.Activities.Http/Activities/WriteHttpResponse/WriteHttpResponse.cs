@@ -4,6 +4,7 @@ using Elsa.Activities.Http.Models;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Design;
+using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
@@ -36,14 +37,15 @@ namespace Elsa.Activities.Http
         [ActivityProperty(
             UIHint = ActivityPropertyUIHints.Dropdown,
             Hint = "The HTTP status code to write.",
-            Options = new[] { HttpStatusCode.OK, HttpStatusCode.Created, HttpStatusCode.Accepted, HttpStatusCode.NoContent, HttpStatusCode.Redirect, HttpStatusCode.BadRequest, HttpStatusCode.NotFound, HttpStatusCode.Conflict }
+            Options = new[] { HttpStatusCode.OK, HttpStatusCode.Created, HttpStatusCode.Accepted, HttpStatusCode.NoContent, HttpStatusCode.Redirect, HttpStatusCode.BadRequest, HttpStatusCode.NotFound, HttpStatusCode.Conflict },
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public HttpStatusCode StatusCode { get; set; }
 
         /// <summary>
         /// The content to send along with the response
         /// </summary>
-        [ActivityProperty(Hint = "The HTTP content to write.", UIHint = ActivityPropertyUIHints.MultiLine)]
+        [ActivityProperty(Hint = "The HTTP content to write.", UIHint = ActivityPropertyUIHints.MultiLine, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string? Content { get; set; }
 
         /// <summary>
@@ -52,7 +54,8 @@ namespace Elsa.Activities.Http
         [ActivityProperty(
             UIHint = ActivityPropertyUIHints.Dropdown,
             Hint = "The HTTP content type header to write.",
-            Options = new[]{ "text/plain", "text/html", "application/json", "application/xml" }
+            Options = new[] { "text/plain", "text/html", "application/json", "application/xml" },
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string? ContentType { get; set; }
 

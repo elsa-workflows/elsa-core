@@ -10,6 +10,7 @@ using Elsa.Activities.Http.Services;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Design;
+using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
@@ -41,7 +42,7 @@ namespace Elsa.Activities.Http
         /// <summary>
         /// The URL to invoke. 
         /// </summary>
-        [ActivityProperty(Hint = "The URL to send the HTTP request to.")]
+        [ActivityProperty(Hint = "The URL to send the HTTP request to.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public Uri? Url { get; set; }
 
         /// <summary>
@@ -50,14 +51,15 @@ namespace Elsa.Activities.Http
         [ActivityProperty(
             UIHint = ActivityPropertyUIHints.Dropdown,
             Hint = "The HTTP method to use when making the request.",
-            Options = new[] { "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD" }
+            Options = new[] { "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD" },
+            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string? Method { get; set; }
 
         /// <summary>
         /// The body to send along with the request.
         /// </summary>
-        [ActivityProperty(Hint = "The HTTP content to send along with the request.", UIHint = ActivityPropertyUIHints.MultiLine)]
+        [ActivityProperty(Hint = "The HTTP content to send along with the request.", UIHint = ActivityPropertyUIHints.MultiLine, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string? Content { get; set; }
 
         /// <summary>
@@ -66,11 +68,12 @@ namespace Elsa.Activities.Http
         [ActivityProperty(
             UIHint = ActivityPropertyUIHints.Dropdown,
             Hint = "The content type to send with the request.",
-            Options = new[] { "text/plain", "text/html", "application/json", "application/xml", "application/x-www-form-urlencoded" }
+            Options = new[] { "text/plain", "text/html", "application/json", "application/xml", "application/x-www-form-urlencoded" },
+            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string? ContentType { get; set; }
 
-        [ActivityProperty(Hint = "The Authorization header value to send.")]
+        [ActivityProperty(Hint = "The Authorization header value to send.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string? Authorization { get; set; }
 
         /// <summary>
@@ -79,15 +82,17 @@ namespace Elsa.Activities.Http
         [ActivityProperty(Hint = "Additional headers to send along with the request.", UIHint = ActivityPropertyUIHints.Json)]
         public HttpRequestHeaders RequestHeaders { get; set; } = new();
 
-        [ActivityProperty(Hint = "Read the content of the response.")]
+        [ActivityProperty(Hint = "Read the content of the response.", SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public bool ReadContent { get; set; }
 
         /// <summary>
         /// A list of HTTP status codes this activity can handle.
         /// </summary>
         [ActivityProperty(
-            Hint = "A list of possible HTTP status codes to handle, comma-separated. Example: 200, 400, 404",
-            UIHint = ActivityPropertyUIHints.DynamicList
+            Hint = "A list of possible HTTP status codes to handle.",
+            UIHint = ActivityPropertyUIHints.MultiText,
+            DefaultSyntax = SyntaxNames.Json,
+            SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public ICollection<int> SupportedStatusCodes { get; set; } = new HashSet<int>(new[] { 200 });
 
