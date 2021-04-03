@@ -2,6 +2,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -27,7 +28,7 @@ namespace Elsa.Activities.Console
             _output = output;
         }
 
-        [ActivityProperty(Hint = "The text to write.")]
+        [ActivityProperty(Hint = "The text to write.", SupportedSyntaxes = new[]{ SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string? Text { get; set; }
 
         private readonly TextWriter _output;
