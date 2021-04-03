@@ -3,6 +3,7 @@ using Elsa.Activities.AzureServiceBus.Extensions;
 using Elsa.Activities.AzureServiceBus.Models;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Expressions;
 using Elsa.Serialization;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -19,8 +20,11 @@ namespace Elsa.Activities.AzureServiceBus
             _serializer = serializer;
         }
 
-        [ActivityProperty] public string QueueName { get; set; } = default!;
-        [ActivityProperty] public Type MessageType { get; set; } = default!;
+        [ActivityProperty(SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        public string QueueName { get; set; } = default!;
+
+        [ActivityProperty]
+        public Type MessageType { get; set; } = default!;
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => context.WorkflowExecutionContext.IsFirstPass ? ExecuteInternal(context) : Suspend();
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context) => ExecuteInternal(context);
