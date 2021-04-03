@@ -6,6 +6,7 @@ using Elsa.Activities.Email.Services;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Design;
+using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.Options;
@@ -27,22 +28,22 @@ namespace Elsa.Activities.Email
             _options = options.Value;
         }
 
-        [ActivityProperty(Hint = "The sender's email address.")]
+        [ActivityProperty(Hint = "The sender's email address.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string? From { get; set; }
 
-        [ActivityProperty(Hint = "The recipients email addresses.", UIHint = ActivityPropertyUIHints.MultiText)]
+        [ActivityProperty(Hint = "The recipients email addresses.", UIHint = ActivityPropertyUIHints.MultiText, DefaultSyntax = SyntaxNames.Json, SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript })]
         public ICollection<string> To { get; set; } = new List<string>();
 
-        [ActivityProperty(Hint = "The cc recipients email addresses. (Optional)", UIHint = ActivityPropertyUIHints.MultiText)]
+        [ActivityProperty(Hint = "The cc recipients email addresses. (Optional)", UIHint = ActivityPropertyUIHints.MultiText, DefaultSyntax = SyntaxNames.Json, SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript })]
         public ICollection<string> Cc { get; set; } = new List<string>();
 
-        [ActivityProperty(Hint = "The Bcc recipients email addresses. (Optional)", UIHint = ActivityPropertyUIHints.MultiText)]
+        [ActivityProperty(Hint = "The Bcc recipients email addresses. (Optional)", UIHint = ActivityPropertyUIHints.MultiText, DefaultSyntax = SyntaxNames.Json, SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript })]
         public ICollection<string> Bcc { get; set; } = new List<string>();
 
-        [ActivityProperty(Hint = "The subject of the email message.")]
+        [ActivityProperty(Hint = "The subject of the email message.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string? Subject { get; set; }
 
-        [ActivityProperty(Hint = "The body of the email message.", UIHint = ActivityPropertyUIHints.MultiLine)]
+        [ActivityProperty(Hint = "The body of the email message.", UIHint = ActivityPropertyUIHints.MultiLine, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string? Body { get; set; }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
