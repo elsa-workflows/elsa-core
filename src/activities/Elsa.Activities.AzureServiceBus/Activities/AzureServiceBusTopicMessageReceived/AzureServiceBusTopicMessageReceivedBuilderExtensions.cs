@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using Elsa.Builders;
 
 // ReSharper disable ExplicitCallerInfoArgument
+// ReSharper disable once CheckNamespace
 namespace Elsa.Activities.AzureServiceBus
 {
     public static class AzureServiceBusTopicMessageReceivedBuilderExtensions

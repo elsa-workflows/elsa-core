@@ -13,22 +13,22 @@ namespace Elsa.Activities.AzureServiceBus.Extensions
         public static object ReadBody(this MessageModel message, Type type, IContentSerializer serializer)
         {
             if (type == typeof(string))
-                return UTF8Encoding.UTF8.GetString(message.Body);
+                return Encoding.UTF8.GetString(message.Body);
 
             var bytes = message.Body;
             var json = Encoding.UTF8.GetString(bytes);
             return serializer.Deserialize(json, type)!;
         }
 
-        public static Message CreateMessage(IContentSerializer serializer, object Message)
+        public static Message CreateMessage(IContentSerializer serializer, object message)
         {
             byte[] messageBytes;    
 
-            if (Message.GetType() == typeof(string))
-                messageBytes = UTF8Encoding.UTF8.GetBytes(Message as string);
+            if (message is string s)
+                messageBytes = Encoding.UTF8.GetBytes(s);
             else
             {
-                var json = serializer.Serialize(Message);
+                var json = serializer.Serialize(message);
                 messageBytes = Encoding.UTF8.GetBytes(json);
             }
 
