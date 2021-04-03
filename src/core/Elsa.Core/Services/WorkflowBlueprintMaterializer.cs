@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.ActivityProviders;
 using Elsa.Builders;
+using Elsa.Expressions;
 using Elsa.Models;
 using Elsa.Services.Models;
 using Microsoft.Extensions.DependencyInjection;
@@ -73,20 +74,21 @@ namespace Elsa.Services
             foreach (var activityDefinition in activityDefinitions)
             {
                 var activityType = await _activityTypeService.GetActivityTypeAsync(activityDefinition.Type, cancellationToken);
-                var type = activityType.Type;
-                var props = type.GetProperties();
+                var activityDescriptor = activityType.Describe();
+                var propertyDescriptors = activityDescriptor.Properties;
 
                 foreach (var property in activityDefinition.Properties)
                 {
-                    var prop = props.FirstOrDefault(x => x.Name == property.Name);
-
-                    if (prop == null)
+                    var propertyDescriptor = propertyDescriptors.FirstOrDefault(x => x.Name == property.Name);
+                    
+                    if (propertyDescriptor == null)
                     {
-                        _logger.LogWarning("Could not find the specified property '{PropertyName}' for activity type {ActivityTypeName}. Was the activity property renamed/removed/refactored after the workflow definition was created?", property.Name, activityType.Type.Name);
+                        _logger.LogWarning("Could not find the specified property '{PropertyName}' for activity type {ActivityTypeName}", property.Name, activityType.TypeName);
                         continue;
                     }
 
-                    var provider = new ExpressionActivityPropertyValueProvider(property.Expression, property.Syntax ?? "Literal", prop.PropertyType);
+                    var syntax = property.Syntax ?? propertyDescriptor.DefaultSyntax ?? SyntaxNames.Literal;
+                    var provider = new ExpressionActivityPropertyValueProvider(property.Expression, syntax, propertyDescriptor.Type);
                     propertyProviders.AddProvider(activityDefinition.ActivityId, property.Name, provider);
                 }
             }

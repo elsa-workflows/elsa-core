@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Elsa.Attributes
 {
@@ -49,5 +50,15 @@ namespace Elsa.Attributes
         /// The type that provides a default value.
         /// </summary>
         public Type? DefaultValueProvider { get; set; }
+        
+        /// <summary>
+        /// The syntax to use by default when evaluating the value. Only used when the property definition doesn't have a syntax specified. 
+        /// </summary>
+        public string? DefaultSyntax { get; set; }
+        
+        /// <summary>
+        /// The syntax to use by default when evaluating the value. Only used when the property definition doesn't have a syntax specified. 
+        /// </summary>
+        public string[]? SupportedSyntaxes { get; set; }
     }
 }
