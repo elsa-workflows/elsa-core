@@ -1,5 +1,5 @@
 import {Component, h, Prop, State} from '@stencil/core';
-import {ActivityDefinitionProperty, ActivityPropertyDescriptor} from "../../../../models";
+import {ActivityDefinitionProperty, ActivityPropertyDescriptor, SyntaxNames} from "../../../../models";
 
 @Component({
   tag: 'elsa-single-line-property',
@@ -14,11 +14,13 @@ export class ElsaSingleLineProperty {
 
   onChange(e: Event) {
     const input = e.currentTarget as HTMLInputElement;
-    this.propertyModel.expressions['Literal'] = this.currentValue = input.value;
+    const defaultSyntax = this.propertyDescriptor.defaultSyntax || SyntaxNames.Literal;
+    this.propertyModel.expressions[defaultSyntax] = this.currentValue = input.value;
   }
 
   componentWillLoad() {
-    this.currentValue = this.propertyModel.expressions['Literal'] || '';
+    const defaultSyntax = this.propertyDescriptor.defaultSyntax || SyntaxNames.Literal;
+    this.currentValue = this.propertyModel.expressions[defaultSyntax] || '';
   }
 
   onLiteralValueChanged(e: CustomEvent) {
@@ -42,7 +44,7 @@ export class ElsaSingleLineProperty {
       <elsa-property-editor propertyDescriptor={propertyDescriptor}
                             propertyModel={propertyModel}
                             onLiteralValueChanged={e => this.onLiteralValueChanged(e)}
-                            editor-height="2em"
+                            editor-height="2.75em"
                             single-line={true}>
         <input type="text" id={fieldId} name={fieldName} value={value} onChange={e => this.onChange(e)} class="focus:ring-blue-500 focus:border-blue-500 block w-full min-w-0 rounded-md sm:text-sm border-gray-300"/>
       </elsa-property-editor>
