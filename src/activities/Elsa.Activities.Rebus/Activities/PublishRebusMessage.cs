@@ -2,6 +2,8 @@
 using System.Threading.Tasks;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Design;
+using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -17,10 +19,10 @@ namespace Elsa.Activities.Rebus
             _eventPublisher = eventPublisher;
         }
 
-        [ActivityProperty(Hint = "The message to publish.")]
+        [ActivityProperty(Hint = "The message to publish.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public object Message { get; set; } = default!;
 
-        [ActivityProperty(Hint = "Optional headers to send along with the message.")]
+        [ActivityProperty(Hint = "Optional headers to send along with the message.", UIHint = ActivityPropertyUIHints.Json)]
         public IDictionary<string, string>? Headers { get; set; }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
