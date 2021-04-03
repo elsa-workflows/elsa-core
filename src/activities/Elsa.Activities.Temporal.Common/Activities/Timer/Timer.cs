@@ -1,6 +1,7 @@
 using Elsa.Activities.Temporal.Common.ActivityResults;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.Logging;
@@ -21,7 +22,7 @@ namespace Elsa.Activities.Temporal
             _logger = logger;
         }
 
-        [ActivityProperty(Hint = "The time interval at which this activity should tick.")]
+        [ActivityProperty(Hint = "The time interval at which this activity should tick.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public Duration Timeout { get; set; } = default!;
 
         public Instant? ExecuteAt

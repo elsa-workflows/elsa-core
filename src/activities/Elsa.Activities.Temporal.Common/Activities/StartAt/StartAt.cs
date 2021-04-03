@@ -1,6 +1,7 @@
 using Elsa.Activities.Temporal.Common.ActivityResults;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.Logging;
@@ -27,7 +28,7 @@ namespace Elsa.Activities.Temporal
             _logger = logger;
         }
 
-        [ActivityProperty(Hint = "An instant in the future at which this activity should execute.")]
+        [ActivityProperty(Hint = "An instant in the future at which this activity should execute.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public Instant Instant { get; set; }
 
         public Instant? ExecuteAt
