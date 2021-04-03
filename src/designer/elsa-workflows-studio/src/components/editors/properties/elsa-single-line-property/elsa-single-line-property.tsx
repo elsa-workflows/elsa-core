@@ -23,7 +23,7 @@ export class ElsaSingleLineProperty {
     this.currentValue = this.propertyModel.expressions[defaultSyntax] || '';
   }
 
-  onLiteralValueChanged(e: CustomEvent) {
+  onDefaultSyntaxValueChanged(e: CustomEvent) {
     this.currentValue = e.detail;
   }
 
@@ -43,7 +43,7 @@ export class ElsaSingleLineProperty {
     return (
       <elsa-property-editor propertyDescriptor={propertyDescriptor}
                             propertyModel={propertyModel}
-                            onLiteralValueChanged={e => this.onLiteralValueChanged(e)}
+                            onDefaultSyntaxValueChanged={e => this.onDefaultSyntaxValueChanged(e)}
                             editor-height="2.75em"
                             single-line={true}>
         <input type="text" id={fieldId} name={fieldName} value={value} onChange={e => this.onChange(e)} class="focus:ring-blue-500 focus:border-blue-500 block w-full min-w-0 rounded-md sm:text-sm border-gray-300"/>

@@ -22,7 +22,7 @@ export class ElsaMultiTextProperty {
     this.propertyModel.expressions[SyntaxNames.Json] = this.currentValue;
   }
 
-  onLiteralValueChanged(e: CustomEvent) {
+  onDefaultSyntaxValueChanged(e: CustomEvent) {
     this.currentValue = e.detail;
   }
 
@@ -37,7 +37,7 @@ export class ElsaMultiTextProperty {
     return (
       <elsa-property-editor propertyDescriptor={propertyDescriptor}
                             propertyModel={propertyModel}
-                            onLiteralValueChanged={e => this.onLiteralValueChanged(e)}
+                            onDefaultSyntaxValueChanged={e => this.onDefaultSyntaxValueChanged(e)}
                             editor-height="2em"
                             single-line={true}>
         <elsa-input-tags values={values} fieldId={fieldId} fieldName={fieldName} onValueChanged={e => this.onValueChanged(e.detail)}/>

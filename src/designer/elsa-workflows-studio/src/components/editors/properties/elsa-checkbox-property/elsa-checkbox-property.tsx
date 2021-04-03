@@ -1,5 +1,5 @@
 import {Component, h, Prop, State} from '@stencil/core';
-import {ActivityDefinitionProperty, ActivityPropertyDescriptor} from "../../../../models";
+import {ActivityDefinitionProperty, ActivityPropertyDescriptor, SyntaxNames} from "../../../../models";
 
 @Component({
   tag: 'elsa-checkbox-property',
@@ -11,29 +11,39 @@ export class ElsaCheckBoxProperty {
   @Prop() propertyDescriptor: ActivityPropertyDescriptor;
   @Prop() propertyModel: ActivityDefinitionProperty;
   @State() isChecked: boolean
-  monacoEditor: HTMLElsaMonacoElement;
 
   async componentWillLoad() {
-    this.isChecked = (this.propertyModel.expressions['Literal'] || '').toLowerCase() == 'true';
+    this.isChecked = (this.propertyModel.expressions[SyntaxNames.Literal] || '').toLowerCase() == 'true';
   }
 
   onCheckChanged(e: Event) {
     const checkbox = (e.target as HTMLInputElement);
     this.isChecked = checkbox.checked;
+    const defaultSyntax = this.propertyDescriptor.defaultSyntax || SyntaxNames.Literal;
+    this.propertyModel.expressions[defaultSyntax] = this.isChecked.toString();
+  }
+
+  onDefaultSyntaxValueChanged(e: CustomEvent) {
+    this.isChecked = (e.detail || '').toLowerCase() == 'true';
   }
 
   render() {
     const propertyDescriptor = this.propertyDescriptor;
+    const propertyModel = this.propertyModel;
     const propertyName = propertyDescriptor.name;
     const fieldId = propertyName;
     const fieldName = propertyName;
     const fieldLabel = propertyDescriptor.label || propertyName;
-    const fieldHint = propertyDescriptor.hint;
     const isChecked = this.isChecked;
 
     return (
-      <div>
-        <div class="max-w-lg space-y-3 my-4">
+      <elsa-property-editor propertyDescriptor={propertyDescriptor}
+                            propertyModel={propertyModel}
+                            onDefaultSyntaxValueChanged={e => this.onDefaultSyntaxValueChanged(e)}
+                            editor-height="2.75em"
+                            single-line={true}
+                            showLabel={false}>
+        <div class="max-w-lg">
           <div class="relative flex items-start">
             <div class="flex items-center h-5">
               <input id={fieldId} name={fieldName} type="checkbox" checked={isChecked} value={'true'} onChange={e => this.onCheckChanged(e)} class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded"/>
@@ -43,9 +53,7 @@ export class ElsaCheckBoxProperty {
             </div>
           </div>
         </div>
-
-        {fieldHint ? <p class="mt-2 text-sm text-gray-500">{fieldHint}</p> : undefined}
-      </div>
+      </elsa-property-editor>
     )
   }
 }

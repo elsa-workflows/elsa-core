@@ -11,7 +11,5 @@ export class CheckListDriver implements PropertyDisplayDriver {
   }
 
   update(activity: ActivityModel, property: ActivityPropertyDescriptor, form: FormData) {
-    const value = form.get(property.name) as string;
-    setActivityModelProperty(activity, property.name, value, 'Json');
   }
 }
