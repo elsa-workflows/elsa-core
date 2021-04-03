@@ -8,8 +8,7 @@ namespace Elsa.Expressions
 {
     public class JsonHandler : IExpressionHandler
     {
-        public const string SyntaxName = "Json";
-        public string Syntax => SyntaxName;
+        public string Syntax => SyntaxNames.Json;
 
         public Task<object?> EvaluateAsync(string expression, Type returnType, ActivityExecutionContext context, CancellationToken cancellationToken)
         {

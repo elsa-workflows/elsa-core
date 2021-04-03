@@ -7,7 +7,7 @@ namespace Elsa.Expressions
 {
     public class VariableHandler : IExpressionHandler
     {
-        public string Syntax => "Variable";
+        public string Syntax => SyntaxNames.Variable;
 
         public Task<object?> EvaluateAsync(
             string expression,

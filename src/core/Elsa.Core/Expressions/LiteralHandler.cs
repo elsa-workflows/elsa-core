@@ -8,8 +8,7 @@ namespace Elsa.Expressions
 {
     public class LiteralHandler : IExpressionHandler
     {
-        public const string SyntaxName = "Literal";
-        public string Syntax => SyntaxName;
+        public string Syntax => SyntaxNames.Literal;
 
         public Task<object?> EvaluateAsync(
             string expression,
