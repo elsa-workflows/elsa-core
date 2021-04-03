@@ -3,6 +3,7 @@ using Elsa.Activities.Dropbox.Models;
 using Elsa.Activities.Dropbox.Services;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -22,10 +23,10 @@ namespace Elsa.Activities.Dropbox.Activities
             _filesApi = filesApi;
         }
 
-        [ActivityProperty(Hint = "An expression evaluating to a byte array to store.")]
+        [ActivityProperty(Hint = "The file to store.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public byte[] FileData { get; set; } = default!;
 
-        [ActivityProperty(Hint = "An expression evaluating to the path to which the file should be saved.")]
+        [ActivityProperty(Hint = "The path to which the file should be saved.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string Path { get; set; } = default!;
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
