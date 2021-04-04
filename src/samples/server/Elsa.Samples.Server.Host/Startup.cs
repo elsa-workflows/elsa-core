@@ -1,4 +1,5 @@
 using Elsa.Activities.Telnyx.Extensions;
+using Elsa.Activities.UserTask.Extensions;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Sqlite;
 using Elsa.Server.Hangfire.Extensions;
@@ -30,6 +31,8 @@ namespace Elsa.Samples.Server.Host
             var elsaSection = Configuration.GetSection("Elsa");
             var hangfireSection = Configuration.GetSection("Hangfire");
 
+            services.AddControllers();
+
             services
                 .AddHangfire(configuration => configuration
                     .UseSimpleAssemblyNameTypeSerializer()
@@ -47,6 +50,7 @@ namespace Elsa.Samples.Server.Host
                     .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)
                     .AddQuartzTemporalActivities()
                     .AddJavaScriptActivities()
+                    .AddUserTaskActivities()
                     .AddTelnyx()
                     .AddWorkflowsFrom<Startup>()
                 );

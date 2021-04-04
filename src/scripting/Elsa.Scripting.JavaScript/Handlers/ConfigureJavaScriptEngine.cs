@@ -39,7 +39,7 @@ namespace Elsa.Scripting.JavaScript.Handlers
             RegisterType<LocalTime>(engine);
             RegisterType<LocalDateTime>(engine);
 
-            var variables = workflowExecutionContext.WorkflowInstance.Variables;
+            var variables = workflowExecutionContext.GetMergedVariables();
 
             // Add workflow variables.
             foreach (var variable in variables.Data)

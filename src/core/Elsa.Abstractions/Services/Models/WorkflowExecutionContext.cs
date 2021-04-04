@@ -118,15 +118,24 @@ namespace Elsa.Services.Models
         /// <remarks>Use <see cref="GetWorkflowVariable"/>if you want to access a workflow variable directly without going through the scopes.</remarks>
         public object? GetVariable(string name)
         {
+            var mergedVariables = GetMergedVariables();
+            return mergedVariables.Get(name);
+        }
+        
+        /// <summary>
+        /// Gets all variables merged across all scopes.
+        /// </summary>
+        public Variables GetMergedVariables()
+        {
             var scopes = WorkflowInstance.Scopes.ToList();
 
-            var mergedVariables = scopes.Select(x => x.Variables).Aggregate(new Variables(), (current, next) =>
+            var mergedVariables = scopes.Select(x => x.Variables).Aggregate(WorkflowInstance.Variables, (current, next) =>
             {
                 var combined = current.Data.MergedWith(next.Data);
                 return new Variables(combined);
             });
 
-            return mergedVariables.Get(name);
+            return mergedVariables;
         }
 
         /// <summary>
