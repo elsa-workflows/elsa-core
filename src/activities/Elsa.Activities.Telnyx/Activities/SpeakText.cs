@@ -37,8 +37,7 @@ namespace Elsa.Activities.Telnyx.Activities
             Hint = "The language you want spoken.",
             UIHint = ActivityPropertyUIHints.Dropdown,
             Options = new[] { "en-US", "en-AU", "nl-NL", "es-ES", "ru-RU" },
-            DefaultSyntax = SyntaxNames.Json,
-            SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid }
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string Language { get; set; } = default!;
 
@@ -46,8 +45,7 @@ namespace Elsa.Activities.Telnyx.Activities
             Hint = "The gender of the voice used to speak back the text.",
             UIHint = ActivityPropertyUIHints.Dropdown,
             Options = new[] { "female", "male" },
-            DefaultSyntax = SyntaxNames.Json,
-            SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid }
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string Voice { get; set; } = default!;
 
@@ -58,8 +56,7 @@ namespace Elsa.Activities.Telnyx.Activities
             Hint = "The type of the provided payload. The payload can either be plain text, or Speech Synthesis Markup Language (SSML).",
             UIHint = ActivityPropertyUIHints.Dropdown,
             Options = new[] { "", "text", "ssml" },
-            DefaultSyntax = SyntaxNames.Json,
-            SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid }
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string? PayloadType { get; set; }
 
@@ -68,8 +65,7 @@ namespace Elsa.Activities.Telnyx.Activities
             UIHint = ActivityPropertyUIHints.Dropdown,
             Options = new[] { "", "basic", "premium" },
             Category = PropertyCategories.Advanced,
-            DefaultSyntax = SyntaxNames.Json,
-            SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid }
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string? ServiceLevel { get; set; }
 
