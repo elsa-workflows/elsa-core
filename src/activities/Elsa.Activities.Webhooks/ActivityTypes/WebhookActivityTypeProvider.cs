@@ -7,6 +7,7 @@ using Elsa.Activities.Webhooks.Models;
 using Elsa.Activities.Webhooks.Persistence;
 using Elsa.ActivityProviders;
 using Elsa.Design;
+using Elsa.Expressions;
 using Elsa.Metadata;
 using Elsa.Persistence.Specifications;
 using Elsa.Services;
@@ -64,7 +65,11 @@ namespace Elsa.Activities.Webhooks.ActivityTypes
                         ActivityPropertyUIHints.Dropdown,
                         "Request Method",
                         "Specify what request method this webhook should handle. Leave empty to handle both GET and POST requests",
-                        new[] { "", "GET", "POST" })
+                        new[] { "", "GET", "POST" },
+                        "Webhooks",
+                        "POST",
+                        SyntaxNames.Literal,
+                        new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })
                 }
             };
 
