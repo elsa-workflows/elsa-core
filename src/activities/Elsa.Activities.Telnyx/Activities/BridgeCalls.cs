@@ -50,12 +50,12 @@ namespace Elsa.Activities.Telnyx.Activities
         public string? ClientState { get; set; }
 
         [ActivityProperty(
-            Label = "Webhook URL Method", 
+            Label = "Park After Unbridged", 
             Hint = "HTTP request type used for Webhook URL", 
             UIHint = ActivityPropertyUIHints.Dropdown, 
             Options = new[] { "", "self" }, 
             Category = PropertyCategories.Advanced, 
-            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string? ParkAfterUnbridged { get; set; }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
