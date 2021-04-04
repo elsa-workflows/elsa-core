@@ -88,7 +88,8 @@ namespace Elsa.Services
                     }
 
                     var syntax = property.Syntax ?? propertyDescriptor.DefaultSyntax ?? SyntaxNames.Literal;
-                    var provider = new ExpressionActivityPropertyValueProvider(property.Expression, syntax, propertyDescriptor.Type);
+                    var expression = property.GetExpression(syntax);
+                    var provider = new ExpressionActivityPropertyValueProvider(expression, syntax, propertyDescriptor.Type);
                     propertyProviders.AddProvider(activityDefinition.ActivityId, property.Name, provider);
                 }
             }
