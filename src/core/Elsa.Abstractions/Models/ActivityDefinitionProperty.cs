@@ -38,13 +38,6 @@ namespace Elsa.Models
         /// </summary>
         public IDictionary<string, string?> Expressions { get; set; } = new Dictionary<string, string?>();
 
-        public string? Expression
-        {
-            get
-            {
-                var syntax = Syntax ?? "Literal";
-                return Expressions.ContainsKey(syntax) ? Expressions[syntax] : default;
-            }
-        }
+        public string? GetExpression(string syntax) => Expressions.ContainsKey(syntax) ? Expressions[syntax] : default;
     }
 }
