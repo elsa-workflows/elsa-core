@@ -1,5 +1,6 @@
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Expressions;
 using Elsa.Services;
 
 // ReSharper disable once CheckNamespace
@@ -15,7 +16,7 @@ namespace Elsa.Activities.Primitives
     )]
     public class Correlate : Activity
     {
-        [ActivityProperty(Hint = "An expression that evaluates to the value to store as the correlation ID.")]
+        [ActivityProperty(Hint = "An expression that evaluates to the value to store as the correlation ID.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string Value { get; set; } = default!;
 
         protected override IActivityExecutionResult OnExecute() => Combine(Done(Value), new CorrelateResult(Value));

@@ -1,5 +1,6 @@
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -14,7 +15,7 @@ namespace Elsa.Activities.Primitives
     )]
     public class SetName : Activity
     {
-        [ActivityProperty(Hint = "The value to set as the workflow instance's name.")]
+        [ActivityProperty(Hint = "The value to set as the workflow instance's name.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string? Value { get; set; }
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)

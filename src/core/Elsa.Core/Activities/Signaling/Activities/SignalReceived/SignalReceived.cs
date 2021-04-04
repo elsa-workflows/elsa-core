@@ -2,6 +2,7 @@ using System;
 using Elsa.Activities.Signaling.Models;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -18,7 +19,7 @@ namespace Elsa.Activities.Signaling
     )]
     public class SignalReceived : Activity
     {
-        [ActivityProperty(Hint = "The name of the signal to wait for.")]
+        [ActivityProperty(Hint = "The name of the signal to wait for.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string Signal { get; set; } = default!;
 
         protected override bool OnCanExecute(ActivityExecutionContext context)
