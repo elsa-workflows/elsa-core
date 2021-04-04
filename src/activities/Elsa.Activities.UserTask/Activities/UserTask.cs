@@ -4,6 +4,7 @@ using System.Linq;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Design;
+using Elsa.Expressions;
 using Elsa.Serialization;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -22,7 +23,12 @@ namespace Elsa.Activities.UserTask.Activities
     {
         private readonly IContentSerializer _serializer;
 
-        [ActivityProperty(UIHint = ActivityPropertyUIHints.DynamicList, Hint = "Provide a list of available actions")]
+        [ActivityProperty(
+            UIHint = ActivityPropertyUIHints.MultiText,
+            Hint = "Provide a list of available actions",
+            DefaultSyntax = SyntaxNames.Json,
+            SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid }
+        )]
         public ICollection<string> Actions { get; set; } = new List<string>();
 
         public UserTask(IContentSerializer serializer)
@@ -45,6 +51,6 @@ namespace Elsa.Activities.UserTask.Activities
             return Outcome(userAction, userAction);
         }
 
-        private string GetUserAction(ActivityExecutionContext context) => (string)context.Input!;
+        private string GetUserAction(ActivityExecutionContext context) => (string) context.Input!;
     }
 }
