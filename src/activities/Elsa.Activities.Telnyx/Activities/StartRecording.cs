@@ -36,8 +36,7 @@ namespace Elsa.Activities.Telnyx.Activities
             Hint = "When 'dual', final audio file will be stereo recorded with the first leg on channel A, and the rest on channel B.",
             UIHint = ActivityPropertyUIHints.Dropdown,
             Options = new[] { "single", "dual" },
-            DefaultSyntax = SyntaxNames.Json,
-            SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid }
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string Channels { get; set; } = default!;
 
@@ -45,8 +44,7 @@ namespace Elsa.Activities.Telnyx.Activities
             Hint = "The audio file format used when storing the call recording. Can be either 'mp3' or 'wav'.",
             UIHint = ActivityPropertyUIHints.Dropdown,
             Options = new[] { "wav", "mp3" },
-            DefaultSyntax = SyntaxNames.Json,
-            SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid }
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string Format { get; set; } = default!;
 

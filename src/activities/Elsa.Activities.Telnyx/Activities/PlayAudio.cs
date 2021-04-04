@@ -76,7 +76,7 @@ namespace Elsa.Activities.Telnyx.Activities
             UIHint = ActivityPropertyUIHints.Dropdown,
             Options = new[]{ "", "self", "opposite", "both" },
             Category = PropertyCategories.Advanced,
-            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string? TargetLegs { get; set; }
 

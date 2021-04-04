@@ -60,8 +60,7 @@ namespace Elsa.Activities.Telnyx.Activities
             Hint = "Enables Answering Machine Detection.",
             UIHint = ActivityPropertyUIHints.Dropdown,
             Options = new[] { "disabled", "detect", "detect_beep", "detect_words", "greeting_end" },
-            DefaultSyntax = SyntaxNames.Json,
-            SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid }
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string? AnsweringMachineDetection { get; set; }
 
@@ -134,8 +133,7 @@ namespace Elsa.Activities.Telnyx.Activities
             UIHint = ActivityPropertyUIHints.Dropdown,
             Options = new[] { "GET", "POST" },
             Category = PropertyCategories.Advanced,
-            DefaultSyntax = SyntaxNames.Json,
-            SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid }
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string? WebhookUrlMethod { get; set; }
 
