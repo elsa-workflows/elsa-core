@@ -65,8 +65,7 @@ namespace Elsa.Services
                 }
                 catch(Exception e)
                 {
-                    throw new CannotSetActivityPropertyValueException($@"An exception was thrown whilst setting '{activity?.GetType().Name}.{property.Name}'.
-See the inner exception for further details.", e);
+                    throw new CannotSetActivityPropertyValueException($@"An exception was thrown whilst setting '{activity?.GetType().Name}.{property.Name}'. See the inner exception for further details.", e);
                 }
             }
         }
