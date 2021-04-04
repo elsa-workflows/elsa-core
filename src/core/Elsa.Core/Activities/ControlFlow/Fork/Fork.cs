@@ -6,6 +6,7 @@ using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Events;
+using Elsa.Expressions;
 using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -19,8 +20,11 @@ namespace Elsa.Activities.ControlFlow
     public class Fork : Activity
     {
         [ActivityProperty(
+            Hint = "Enter one or more branch names.",
             UIHint = ActivityPropertyUIHints.MultiText,
-            Hint = "Enter one or more branch names.")]
+            DefaultSyntax = SyntaxNames.Json,
+            SupportedSyntaxes = new[] { SyntaxNames.Json }
+        )]
         public ISet<string> Branches { get; set; } = new HashSet<string>();
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => Outcomes(Branches);

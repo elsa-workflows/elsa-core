@@ -1,6 +1,7 @@
 using System;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -14,16 +15,16 @@ namespace Elsa.Activities.ControlFlow
     )]
     public class For : Activity
     {
-        [ActivityProperty(Hint = "The starting number.")]
+        [ActivityProperty(Hint = "The starting number.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public long Start { get; set; }
 
-        [ActivityProperty(Hint = "The ending number.")]
+        [ActivityProperty(Hint = "The ending number.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public long End { get; set; }
 
-        [ActivityProperty(Hint = "An expression that evaluates to the incrementing number on each step.")]
+        [ActivityProperty(Hint = "An expression that evaluates to the incrementing number on each step.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public long Step { get; set; } = 1;
 
-        [ActivityProperty(Hint = "The operator to use when comparing the current value against the end value.")]
+        [ActivityProperty(Hint = "The operator to use when comparing the current value against the end value.", SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public Operator Operator { get; set; } = Operator.LessThan;
 
         internal long? CurrentValue
@@ -46,9 +47,9 @@ namespace Elsa.Activities.ControlFlow
                 Break = false;
                 return Done();
             }
-            
+
             var currentValue = CurrentValue ?? Start;
-            
+
             var loop = Operator switch
             {
                 Operator.LessThan => currentValue < End,
@@ -62,7 +63,7 @@ namespace Elsa.Activities.ControlFlow
             {
                 CurrentValue = currentValue + Step;
                 var scope = context.CreateScope();
-                
+
                 scope.Variables.Set(nameof(CurrentValue), currentValue);
                 return Outcome(OutcomeNames.Iterate, currentValue);
             }
