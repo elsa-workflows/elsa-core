@@ -68,6 +68,12 @@ namespace Elsa.Activities.Email
             return Done();
         }
 
-        private void SetRecipientsEmailAddresses(InternetAddressList list, IEnumerable<string> addresses) => list.AddRange(addresses.Select(MailboxAddress.Parse));
+        private void SetRecipientsEmailAddresses(InternetAddressList list, IEnumerable<string>? addresses)
+        {
+            if(addresses == null)
+                return;
+            
+            list.AddRange(addresses.Select(MailboxAddress.Parse));
+        }
     }
 }
