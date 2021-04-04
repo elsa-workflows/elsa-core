@@ -1,5 +1,6 @@
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -14,7 +15,7 @@ namespace Elsa.Activities.Primitives
     )]
     public class SetContextId : Activity
     {
-        [ActivityProperty(Hint = "The context ID to set.")]
+        [ActivityProperty(Hint = "The context ID to set.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string ContextId { get; set; } = default!;
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)

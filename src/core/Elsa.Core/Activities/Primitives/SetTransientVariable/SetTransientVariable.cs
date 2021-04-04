@@ -1,5 +1,6 @@
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -17,7 +18,7 @@ namespace Elsa.Activities.Primitives
         [ActivityProperty(Hint = "The name of the transient variable to store the value into.")]
         public string VariableName { get; set; } = default!;
 
-        [ActivityProperty(Hint = "The value to store in the transient variable.")]
+        [ActivityProperty(Hint = "The value to store in the transient variable.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public object? Value { get; set; }
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
