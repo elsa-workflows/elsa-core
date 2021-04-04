@@ -6,6 +6,7 @@ using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Events;
+using Elsa.Expressions;
 using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -39,7 +40,8 @@ namespace Elsa.Activities.ControlFlow
         [ActivityProperty(
             UIHint = ActivityPropertyUIHints.Dropdown,
             Hint = "WaitAll: wait for all incoming activities to have executed. WaitAny: continue execution as soon as any of the incoming activity has executed.",
-            Options = new[] { "WaitAll", "WaitAny" }
+            Options = new[] { "WaitAll", "WaitAny" },
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public JoinMode Mode { get; set; }
 

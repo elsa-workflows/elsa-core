@@ -3,6 +3,8 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Design;
+using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -16,7 +18,12 @@ namespace Elsa.Activities.ControlFlow
     )]
     public class ParallelForEach : Activity
     {
-        [ActivityProperty(Hint = "A collection of items to iterate over.")]
+        [ActivityProperty(
+            Hint = "A collection of items to iterate over.",
+            UIHint = ActivityPropertyUIHints.MultiLine,
+            DefaultSyntax = SyntaxNames.Json,
+            SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid }
+        )]
         public ICollection<object> Items { get; set; } = new Collection<object>();
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)

@@ -1,6 +1,7 @@
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Design;
+using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -14,9 +15,13 @@ namespace Elsa.Activities.ControlFlow
     )]
     public class While : Activity
     {
-        [ActivityProperty(Hint = "The condition to evaluate.", UIHint = ActivityPropertyUIHints.SingleLine)]
+        [ActivityProperty(
+            Hint = "The condition to evaluate.",
+            UIHint = ActivityPropertyUIHints.SingleLine,
+            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
+        )]
         public bool Condition { get; set; }
-        
+
         private bool Break
         {
             get => GetState<bool>();
@@ -30,12 +35,12 @@ namespace Elsa.Activities.ControlFlow
                 Break = false;
                 return Done();
             }
-            
+
             var loop = Condition;
 
-            if (!loop) 
+            if (!loop)
                 return Done();
-            
+
             context.CreateScope();
             return Outcome(OutcomeNames.Iterate);
         }
