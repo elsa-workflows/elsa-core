@@ -1,8 +1,9 @@
 name: Publish Docker image
 on:
+  workflow_dispatch:
   push:
     branches: 
-      - feature/elsa-2.0
+    - feature/elsa-2.0
   #release:
   #  types: [published]
 
