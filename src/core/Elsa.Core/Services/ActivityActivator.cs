@@ -1,6 +1,8 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.ControlFlow;
+using Elsa.ActivityProviders;
 using Elsa.Services.Models;
 
 namespace Elsa.Services
@@ -14,7 +16,7 @@ namespace Elsa.Services
             _elsaOptions = options;
         }
         
-        public async Task<IActivity> ActivateActivityAsync(ActivityExecutionContext context, Type type)
+        public async Task<IActivity> ActivateActivityAsync(ActivityExecutionContext context, Type type, CancellationToken cancellationToken = default)
         {
             var activity = _elsaOptions.ActivityFactory.CreateService(type, context.ServiceProvider);
             activity.Data = context.GetData();
@@ -22,7 +24,13 @@ namespace Elsa.Services
 
             // TODO: Make extensible / apply open/closed.
             if(ShouldSetProperties(activity))
+            {
+                // TODO: Figure out how to deal with dynamically defined properties and what it means to set values to these.
+                // ActivityTypes can have dynamic properties, so they need to be able to "intercept" when values are being applied.
+                // Right now, we can only set these values on properties of the IActivity implementation.
+                //var activityType = await _activityTypeService.GetActivityTypeAsync(activity.Type, cancellationToken);
                 await context.WorkflowExecutionContext.WorkflowBlueprint.ActivityPropertyProviders.SetActivityPropertiesAsync(activity, context, context.CancellationToken);
+            }
             
             return activity;
         }
