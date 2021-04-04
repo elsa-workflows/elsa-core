@@ -64,7 +64,7 @@ namespace Elsa.Activities.Telnyx.Activities
             UIHint = ActivityPropertyUIHints.Dropdown, 
             Options = new[] { "GET", "POST" }, 
             Category = PropertyCategories.Advanced, 
-            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string? WebhookUrlMethod { get; set; }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)

@@ -4,6 +4,7 @@ using Elsa.Activities.Telnyx.Services;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Builders;
+using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -19,12 +20,9 @@ namespace Elsa.Activities.Telnyx.Activities
     {
         private readonly IExtensionProvider _extensionProvider;
 
-        public ResolveExtension(IExtensionProvider extensionProvider)
-        {
-            _extensionProvider = extensionProvider;
-        }
+        public ResolveExtension(IExtensionProvider extensionProvider) => _extensionProvider = extensionProvider;
 
-        [ActivityProperty(Hint = "The extension to resolve. If the extension could not be resolved, it is returned as-is.")]
+        [ActivityProperty(Hint = "The extension to resolve. If the extension could not be resolved, it is returned as-is.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string Extension { get; set; } = default!;
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)

@@ -1,7 +1,7 @@
-import {Component, Host, h, Prop, State, Event, EventEmitter} from '@stencil/core';
+import {Component, Event, h, Host, State} from '@stencil/core';
 import '../../../utils/utils';
 import {eventBus} from '../../../services/event-bus';
-import {ActivityDescriptor, ActivityDescriptorDisplayContext, EventTypes} from "../../../models";
+import {ActivityDescriptor, ActivityDescriptorDisplayContext, ActivityTraits, EventTypes} from "../../../models";
 import state from '../../../utils/store';
 import {ActivityIcon} from "../../icons/activity-icon";
 
@@ -46,10 +46,13 @@ export class ElsaActivityPickerModal {
           || type.toLowerCase().indexOf(searchText) >= 0;
       });
 
-    this.filteredActivityDescriptorDisplayContexts = filteredActivityDescriptors.map(x => ({
-      activityDescriptor: x,
-      activityIcon: <ActivityIcon/>
-    }));
+    this.filteredActivityDescriptorDisplayContexts = filteredActivityDescriptors.map(x => {
+      const color = (x.traits &= ActivityTraits.Trigger) == ActivityTraits.Trigger ? 'rose' : 'light-blue';
+      return {
+        activityDescriptor: x,
+        activityIcon: <ActivityIcon color={color}/>
+      };
+    });
 
     for (const context of this.filteredActivityDescriptorDisplayContexts)
       eventBus.emit(EventTypes.ActivityDescriptorDisplaying, this, context);
