@@ -2,7 +2,7 @@ import {Component, Event, h, Host, Prop, State, Watch} from '@stencil/core';
 import {eventBus} from "../../../../services/event-bus";
 import {Map} from "../../../../utils/utils";
 import {EventTypes, Variables, WorkflowContextFidelity, WorkflowContextOptions, WorkflowDefinition} from "../../../../models";
-import {MonacoValueChangedArgs} from "../../monaco/elsa-monaco/elsa-monaco";
+import {MonacoValueChangedArgs} from "../../../controls/elsa-monaco/elsa-monaco";
 import {MarkerSeverity} from "monaco-editor";
 import {checkBox, FormContext, selectField, SelectOption, textArea, textInput} from "../../../../utils/forms";
 

@@ -1,5 +1,5 @@
 import {Component, h, Prop, State, Event, EventEmitter} from '@stencil/core';
-import {ActivityDefinitionProperty, ActivityPropertyDescriptor, SyntaxNames} from "../../../../models";
+import {ActivityDefinitionProperty, ActivityPropertyDescriptor, SyntaxNames} from "../../../models";
 import {registerClickOutside} from "stencil-click-outside";
 import {enter, leave, toggle} from 'el-transition'
 

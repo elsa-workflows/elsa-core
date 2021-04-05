@@ -3,7 +3,7 @@ import {enter, leave, toggle} from 'el-transition'
 import {registerClickOutside} from "stencil-click-outside";
 import {VersionOptions, WorkflowDefinition} from "../../../../models";
 import {createElsaClient} from "../../../../services/elsa-client";
-import Tunnel from '../../../data/workflow-editor';
+import Tunnel from '../../../../data/workflow-editor';
 
 @Component({
   tag: 'elsa-workflow-publish-button',

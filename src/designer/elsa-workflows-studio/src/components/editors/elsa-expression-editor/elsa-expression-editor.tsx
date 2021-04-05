@@ -1,7 +1,7 @@
 import {Component, EventEmitter, h, Host, Method, Prop, State, Watch, Event} from '@stencil/core';
-import {createElsaClient} from "../../../../services/elsa-client";
+import {createElsaClient} from "../../../services/elsa-client";
 import Tunnel from '../../../data/workflow-editor';
-import {MonacoValueChangedArgs} from "../../monaco/elsa-monaco/elsa-monaco";
+import {MonacoValueChangedArgs} from "../../controls/elsa-monaco/elsa-monaco";
 
 @Component({
   tag: 'elsa-expression-editor',
