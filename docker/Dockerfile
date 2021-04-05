@@ -8,7 +8,7 @@ RUN dotnet restore "./src/samples/dashboard/ElsaDashboard.Samples.Monolith/ElsaD
 # copy required source code
 COPY src/. ./src
 COPY *.props ./
-COPY ./Nuget.config ./
+COPY ./Nuget.Config ./
 
 # build and publish (UseAppHost=false created platform independent binaries)
 WORKDIR /source/src/samples/dashboard/ElsaDashboard.Samples.Monolith
