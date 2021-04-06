@@ -17,7 +17,7 @@ namespace Elsa.Activities.ControlFlow
         DisplayName = "If/Else",
         Category = "Control Flow",
         Description = "Evaluate a Boolean expression and continue execution depending on the result.",
-        Outcomes = new[] { True, False, OutcomeNames.Done }
+        Outcomes = new[] { True, False }
     )]
     public class If : Activity, INotificationHandler<ScopeEvicted>
     {

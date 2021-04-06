@@ -1,8 +1,8 @@
 import {Component, h, Prop, State} from '@stencil/core';
 import {ActivityDefinitionProperty, ActivityPropertyDescriptor} from "../../../../models";
 import {createElsaClient} from "../../../../services/elsa-client";
-import Tunnel from '../../../data/workflow-editor';
-import {MonacoValueChangedArgs} from "../../monaco/elsa-monaco/elsa-monaco";
+import Tunnel from '../../../../data/workflow-editor';
+import {MonacoValueChangedArgs} from "../../../controls/elsa-monaco/elsa-monaco";
 
 @Component({
   tag: 'elsa-script-property',

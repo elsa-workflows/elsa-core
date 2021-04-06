@@ -1,7 +1,9 @@
 using System.Threading.Tasks;
 using Elsa.Activities.Rebus.Bookmarks;
+using Elsa.Dispatch;
 using Elsa.Services;
 using Humanizer;
+using MediatR;
 using Rebus.Extensions;
 using Rebus.Handlers;
 using Rebus.Messages;
@@ -13,24 +15,25 @@ namespace Elsa.Activities.Rebus.Consumers
     {
         // TODO: Design multi-tenancy. 
         private const string TenantId = default;
-
-        private readonly ITriggersWorkflows _triggersWorkflows;
-
-        public MessageConsumer(ITriggersWorkflows triggersWorkflows)
+        
+        private readonly IMediator _mediator;
+        
+        public MessageConsumer(IMediator mediator)
         {
-            _triggersWorkflows = triggersWorkflows;
+            _mediator = mediator;
         }
 
         public async Task Handle(T message)
         {
             var correlationId = MessageContext.Current.TransportMessage.Headers.GetValueOrNull(Headers.CorrelationId);
-            await _triggersWorkflows.TriggerWorkflowsAsync(
+            await _mediator.Send(new TriggerWorkflowsRequest(
                 nameof(RebusMessageReceived),
-                new MessageReceivedBookmark { MessageType = message.GetType().Name, CorrelationId = correlationId },
-                new MessageReceivedBookmark { MessageType = message.GetType().Name },
-                correlationId,
+                new MessageReceivedBookmark {MessageType = message.GetType().Name, CorrelationId = correlationId},
+                new MessageReceivedBookmark {MessageType = message.GetType().Name},
                 message,
-                tenantId: TenantId);
+                correlationId,
+                default,
+                TenantId));
         }
     }
 }

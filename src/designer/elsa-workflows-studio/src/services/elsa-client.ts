@@ -1,5 +1,17 @@
 ﻿import axios, {AxiosRequestConfig} from "axios";
-import {ActivityDefinition, ActivityDescriptor, ConnectionDefinition, getVersionOptionsString, Variables, VersionOptions, WorkflowContextOptions, WorkflowDefinition, WorkflowPersistenceBehavior} from "../models";
+import {
+  ActivityDefinition,
+  ActivityDescriptor,
+  ConnectionDefinition,
+  getVersionOptionsString,
+  PagedList,
+  Variables,
+  VersionOptions,
+  WorkflowContextOptions,
+  WorkflowDefinition,
+  WorkflowDefinitionSummary,
+  WorkflowPersistenceBehavior
+} from "../models";
 
 export const createElsaClient = function (serverUrl: string): ElsaClient {
   const config: AxiosRequestConfig = {
@@ -16,6 +28,11 @@ export const createElsaClient = function (serverUrl: string): ElsaClient {
       }
     },
     workflowDefinitionsApi: {
+      list: async (page?: number, pageSize?: number, versionOptions?: VersionOptions) => {
+        const versionOptionsString = getVersionOptionsString(versionOptions);
+        const response = await httpClient.get<PagedList<WorkflowDefinitionSummary>>(`v1/workflow-definitions?version=${versionOptionsString}`);
+        return response.data;
+      },
       getByDefinitionAndVersion: async (definitionId: string, versionOptions: VersionOptions) => {
         const versionOptionsString = getVersionOptionsString(versionOptions);
         const response = await httpClient.get<WorkflowDefinition>(`v1/workflow-definitions/${definitionId}/${versionOptionsString}`);
@@ -24,6 +41,9 @@ export const createElsaClient = function (serverUrl: string): ElsaClient {
       save: async request => {
         const response = await httpClient.post<WorkflowDefinition>('v1/workflow-definitions', request);
         return response.data;
+      },
+      delete: async definitionId => {
+        await httpClient.delete(`v1/workflow-definitions/${definitionId}`);
       },
       retract: async workflowDefinitionId => {
         const response = await httpClient.post<WorkflowDefinition>(`v1/workflow-definitions/${workflowDefinitionId}/retract`);
@@ -78,7 +98,11 @@ export interface ActivitiesApi {
 export interface WorkflowDefinitionsApi {
   getByDefinitionAndVersion(definitionId: string, versionOptions: VersionOptions): Promise<WorkflowDefinition>
 
+  list(page?: number, pageSize?: number, versionOptions?: VersionOptions): Promise<PagedList<WorkflowDefinitionSummary>>
+
   save(request: SaveWorkflowDefinitionRequest): Promise<WorkflowDefinition>
+
+  delete(definitionId: string): Promise<void>
 
   retract(workflowDefinitionId: string): Promise<WorkflowDefinition>
 

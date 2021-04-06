@@ -34,7 +34,7 @@ namespace Elsa.Activities.Telnyx.Webhooks.Converters
         public override object ReadJson(JsonReader reader, Type objectType, object? existingValue, JsonSerializer serializer)
         {
             var dataModel = JObject.Load(reader);
-            var eventType = (dataModel["event_type"]?.ToString() ?? dataModel["eventType"]?.ToString())!;
+            var eventType = (dataModel["event_type"]?.ToString() ?? dataModel["eventType"]?.ToString() ?? dataModel["EventType"]?.ToString())!;
             var payloadType = PayloadTypeDictionary.ContainsKey(eventType) ? PayloadTypeDictionary[eventType] : typeof(UnsupportedPayload);
             var payload = (Payload) Activator.CreateInstance(payloadType)!;
 

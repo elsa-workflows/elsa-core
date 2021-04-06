@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.DistributedLock;
 using Elsa.DistributedLocking;
+using Medallion.Threading.SqlServer;
 using Microsoft.Extensions.Logging;
 using NodaTime;
 
@@ -16,9 +17,8 @@ namespace Elsa
     public class SqlLockProvider : IDistributedLockProvider
     {
         private readonly ILogger _logger;
-        private const string Prefix = "elsa";
         private readonly string _connectionString;
-        private readonly ConcurrentDictionary<string, SqlConnection> _locks = new();
+        private readonly ConcurrentDictionary<string, SqlDistributedLockHandle> _locks = new();
 
         public SqlLockProvider(string connectionString, ILogger<SqlLockProvider> logger)
         {
@@ -34,94 +34,41 @@ namespace Elsa
 
         public async Task<bool> AcquireLockAsync(string name, Duration? timeout = default, CancellationToken cancellationToken = default)
         {
-            var connection = new SqlConnection(_connectionString);
-            await connection.OpenAsync(cancellationToken);
-            var timeoutMils = timeout?.TotalMilliseconds ?? 0d;
+            var distributedLock = new SqlDistributedLock(name, _connectionString);
+            var timeoutTimeSpan = timeout?.ToTimeSpan() ?? TimeSpan.Zero;
             
-            try
-            {
-                var command = connection.CreateCommand();
-                command.CommandText = "sp_getapplock";
-                command.CommandType = CommandType.StoredProcedure;
-                command.Parameters.AddWithValue("@Resource", $"{Prefix}:{name}");
-                command.Parameters.AddWithValue("@LockOwner", $"Session");
-                command.Parameters.AddWithValue("@LockMode", $"Exclusive");
-                command.Parameters.AddWithValue("@LockTimeout", timeoutMils);
-                command.CommandTimeout = Math.Max((int?)timeout?.TotalSeconds ?? 30, 30);
+            _logger.LogDebug("Acquiring a lock on {LockName}", name);
 
-                var returnParameter = command.Parameters.Add("RetVal", SqlDbType.Int);
-                returnParameter.Direction = ParameterDirection.ReturnValue;
+            if (_locks.ContainsKey(name))
+                _logger.LogDebug("Waiting for existing lock {LockName} to be released", name);
 
-                await command.ExecuteNonQueryAsync(cancellationToken);
-                var result = Convert.ToInt32(returnParameter.Value);
-
-                switch (result)
-                {
-                    case -1:
-                        _logger.LogDebug("The lock request timed out for {LockName}", name);
-                        break;
-
-                    case -2:
-                        _logger.LogDebug("The lock request was canceled for {LockName}", name);
-                        break;
-
-                    case -3:
-                        _logger.LogDebug("The lock request was chosen as a deadlock victim for {LockName}", name);
-                        break;
-
-                    case -999:
-                        _logger.LogError("Lock provider error for {LockName}", name);
-                        break;
-                }
-
-                if (result >= 0)
-                {
-                    _locks[name] = connection;
-                    return true;
-                }
-
-                connection.Close();
+            await using var handle = await distributedLock.AcquireAsync(timeoutTimeSpan, cancellationToken);
+            
+            if (handle == null!)
                 return false;
-            }
-            catch (Exception)
-            {
-                connection.Close();
-                throw;
-            }
+
+            _locks[name] = handle;
+            _logger.LogDebug("Lock acquired on {LockName}", name);
+            
+            return true;
         }
 
         public async Task ReleaseLockAsync(string name, CancellationToken cancellationToken)
         {
             if (!_locks.ContainsKey(name))
+            {
+                _logger.LogDebug("Failed to release lock that wasn't captured");
+                return;
+            }
+
+            var handle = _locks[name];
+
+            if (handle == null)
                 return;
 
-            var connection = _locks[name];
-
-            if (connection == null)
-                return;
-
-            try
-            {
-                var command = connection.CreateCommand();
-                command.CommandText = "sp_releaseapplock";
-                command.CommandType = CommandType.StoredProcedure;
-                command.Parameters.AddWithValue("@Resource", $"{Prefix}:{name}");
-                command.Parameters.AddWithValue("@LockOwner", $"Session");
-
-                var returnParameter = command.Parameters.Add("RetVal", SqlDbType.Int);
-                returnParameter.Direction = ParameterDirection.ReturnValue;
-
-                await command.ExecuteNonQueryAsync(cancellationToken);
-                var result = Convert.ToInt32(returnParameter.Value);
-
-                if (result < 0)
-                    _logger.LogError("Unable to release lock for {LockName}", name);
-            }
-            finally
-            {
-                connection.Close();
-                _locks.TryRemove(name, out _);
-            }
+            await handle.DisposeAsync();
+            _locks.TryRemove(name, out _);
+            _logger.LogDebug("Released lock on {LockName}", name);
         }
     }
 }

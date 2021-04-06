@@ -1,5 +1,8 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.DistributedLocking;
+using Elsa.Exceptions;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications;
@@ -16,17 +19,23 @@ namespace Elsa.Dispatch.Handlers
         private readonly IStartsWorkflow _startsWorkflow;
         private readonly IWorkflowRegistry _workflowRegistry;
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
+        private readonly IDistributedLockProvider _distributedLockProvider;
+        private readonly ElsaOptions _elsaOptions;
         private readonly ILogger _logger;
 
         public ExecuteWorkflowDefinition(
             IStartsWorkflow startsWorkflow,
             IWorkflowRegistry workflowRegistry,
             IWorkflowInstanceStore workflowInstanceStore,
+            IDistributedLockProvider distributedLockProvider,
+            ElsaOptions elsaOptions,
             ILogger<ExecuteWorkflowDefinition> logger)
         {
             _startsWorkflow = startsWorkflow;
             _workflowRegistry = workflowRegistry;
             _workflowInstanceStore = workflowInstanceStore;
+            _distributedLockProvider = distributedLockProvider;
+            _elsaOptions = elsaOptions;
             _logger = logger;
         }
 
@@ -38,9 +47,21 @@ namespace Elsa.Dispatch.Handlers
 
             if (!ValidatePreconditions(workflowDefinitionId, workflowBlueprint))
                 return Unit.Value;
-            
-            if (!workflowBlueprint!.IsSingleton || await GetWorkflowIsAlreadyExecutingAsync(tenantId, workflowDefinitionId) == false)
-                await _startsWorkflow.StartWorkflowAsync(workflowBlueprint, request.ActivityId, request.Input, request.CorrelationId, request.ContextId, cancellationToken);
+
+            var lockKey = $"execute-workflow-definition:tenant:{tenantId}:workflow-definition:{workflowDefinitionId}";
+
+            if (!await _distributedLockProvider.AcquireLockAsync(lockKey, _elsaOptions.DistributedLockTimeout, cancellationToken))
+                throw new LockAcquisitionException($"Failed to acquire a lock on {lockKey}");
+
+            try
+            {
+                if (!workflowBlueprint!.IsSingleton || await GetWorkflowIsAlreadyExecutingAsync(tenantId, workflowDefinitionId) == false)
+                    await _startsWorkflow.StartWorkflowAsync(workflowBlueprint, request.ActivityId, request.Input, request.CorrelationId, request.ContextId, cancellationToken);
+            }
+            finally
+            {
+                await _distributedLockProvider.ReleaseLockAsync(lockKey, cancellationToken);
+            }
             
             return Unit.Value;
         }
