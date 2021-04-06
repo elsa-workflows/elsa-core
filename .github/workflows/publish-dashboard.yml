@@ -1,11 +1,10 @@
-name: Publish Docker image
+name: Build elsa-dashboard:[tag] and :stable
 on:
-  workflow_dispatch:
   push:
+    tags:
+      - 'v*.*.*'
     branches: 
-    - feature/elsa-2.0
-  #release:
-  #  types: [published]
+      - master
 
 jobs:
   push_to_registry:
@@ -15,6 +14,10 @@ jobs:
     steps:          
       - name: Checkout
         uses: actions/checkout@v2
+        
+      - name: Generate Docker tag
+        id: docker-tag
+        uses: yuya-takeyama/docker-tag-from-github-ref-action@v1
         
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
@@ -49,7 +52,7 @@ jobs:
           file: ./docker/Dockerfile
           platforms: linux/amd64,linux/arm64,linux/arm/v7
           push: true
-          tags: ghcr.io/elsa-workflows/elsa-core/elsa-dashboard:latest
+          tags: ghcr.io/elsa-workflows/elsa-core/elsa-dashboard:${{ steps.docker-tag.outputs.tag }}, ghcr.io/elsa-workflows/elsa-core/elsa-dashboard:stable
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
           
