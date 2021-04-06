@@ -1,6 +1,7 @@
 image: Previous Visual Studio 2019
 
 environment:
+  nodejs_version: "14.6.0"
   # AppVeyor installs Java on its build agents by default, but it
   # picks an old version that's not compatible with SonarQube.
   # This brings it up to date.
@@ -69,12 +70,15 @@ install:
 build_script:
   - ps: >-
       cd .\src\designer\bindings\blazor\Elsa.Designer.Bindings.Blazor
+      
       npm run build
         
       cd ..\..\..\..\dashboards\blazor\ElsaDashboard.Application
+      
       npm run build
         
       cd ..\..\..\..\
+      
       dotnet build
 
 test_script:
