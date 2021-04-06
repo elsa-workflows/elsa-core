@@ -82,11 +82,7 @@ test_script:
 
 after_test:
   - ps: >-
-#      if(-Not $env:APPVEYOR_PULL_REQUEST_NUMBER) {
-#      & dotnet-sonarscanner end /d:sonar.login=$env:sonarcloud_api_key
-#      }
-
-       dotnet pack Elsa.sln --include-symbols /p:Version="$env:APPVEYOR_BUILD_VERSION"
+      dotnet pack Elsa.sln --include-symbols /p:Version="$env:APPVEYOR_BUILD_VERSION"
 
 artifacts:
   - path: '**/*.nupkg'
