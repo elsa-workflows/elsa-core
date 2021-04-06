@@ -32,7 +32,7 @@ namespace Elsa.Dispatch.Consumers
         public async Task Handle(ExecuteWorkflowInstanceRequest message)
         {
             var workflowInstanceId = message.WorkflowInstanceId;
-            var lockKey = $"execute-workflow-instance:{workflowInstanceId}";
+            var lockKey = $"execute-workflow-instance-consumer:{workflowInstanceId}";
             
             _logger.LogDebug("Acquiring lock on workflow instance {WorkflowInstanceId}", workflowInstanceId);
             _stopwatch.Restart();
