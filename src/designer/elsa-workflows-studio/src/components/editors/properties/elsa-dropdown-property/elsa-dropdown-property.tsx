@@ -44,8 +44,10 @@ export class ElsaDropdownProperty {
                             single-line={true}>
         <select id={fieldId} name={fieldName} onChange={e => this.onChange(e)} class="mt-1 block focus:ring-blue-500 focus:border-blue-500 w-full shadow-sm sm:max-w-xs sm:text-sm border-gray-300 rounded-md">
           {options.map(option => {
-            const value = option.value || option;
-            const text = option.text || option;
+            const optionIsString = typeof(option) == 'string';
+            const value = optionIsString ? option : option.value;
+            const text = optionIsString ? option : option.text;
+            debugger;
             return <option value={value} selected={value === currentValue}>{text}</option>;
           })}
         </select>

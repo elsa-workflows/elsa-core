@@ -33,7 +33,7 @@ export class ElsaMultiTextProperty {
     const fieldId = propertyName;
     const fieldName = propertyName;
     const values = parseJson(this.currentValue);
-
+    
     return (
       <elsa-property-editor propertyDescriptor={propertyDescriptor}
                             propertyModel={propertyModel}
