@@ -3,8 +3,6 @@ on:
   push:
     tags:
       - 'v*.*.*'
-    branches: 
-      - master
 
 jobs:
   push_to_registry:
