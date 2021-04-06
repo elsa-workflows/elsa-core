@@ -33,22 +33,26 @@ dotnet_csproj:
   informational_version: '{version}'
 
 cache:
+  - src\designer\elsa-workflows-studio\node_modules
+  - src\designer\bindings\blazor\Elsa.Designer.Bindings.Blazor\node_modules
   - src\dashboards\blazor\ElsaDashboard.Application\node_modules
-  - src\deigner\bindings\blazor\Elsa.Designer.Bindings.Blazor\node_modules
   - '%APPDATA%\npm-cache'
 
 install:
   - ps: >-
-
-      cd .\src\dashboards\blazor\ElsaDashboard.Application
+      cd .\src\designer\elsa-workflows-studio
 
       npm install --force
 
-      cd ..\..\..\designer\bindings\blazor\Elsa.Designer.Bindings.Blazor
-        
+      cd ..\bindings\blazor\Elsa.Designer.Bindings.Blazor
+
       npm install --force
 
-      cd ..\..\..\..\..\
+      cd ..\..\..\..\dashboards\blazor\ElsaDashboard.Application
+
+      npm install --force
+
+      cd ..\..\..\..
 
 #      dotnet tool install --global dotnet-sonarscanner
 
@@ -69,7 +73,11 @@ install:
       
 build_script:
   - ps: >-
-      cd .\src\designer\bindings\blazor\Elsa.Designer.Bindings.Blazor
+      cd .\src\designer\elsa-workflows-studio
+
+      npm run build
+      
+      cd ..\bindings\blazor\Elsa.Designer.Bindings.Blazor
       
       npm run build
         

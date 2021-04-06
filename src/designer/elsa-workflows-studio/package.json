@@ -16,7 +16,7 @@
   ],
   "scripts": {
     "push:preview": "npm publish --access-public --tag preview",
-    "build:prod": "stencil build --dev",
+    "build": "npm run build:tailwind:prod & stencil build --dev",
     "build:dev": "stencil build --dev --tailwind:dev",
     "start:dev": "stencil build --dev --tailwind:dev --watch --serve",
     "start": "stencil build --watch --serve",
