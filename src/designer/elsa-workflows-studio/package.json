@@ -16,7 +16,7 @@
   ],
   "scripts": {
     "push:preview": "npm publish --access-public --tag preview",
-    "build:prod": "stencil build --dev",
+    "build": "npm run build:tailwind:prod & stencil build --dev",
     "build:dev": "stencil build --dev --tailwind:dev",
     "start:dev": "stencil build --dev --tailwind:dev --watch --serve",
     "start": "stencil build --watch --serve",
@@ -50,7 +50,7 @@
     "postcss-import": "^14.0.0",
     "postcss-preset-env": "^6.7.0",
     "stencil-click-outside": "^1.7.1",
-    "tailwindcss": "2.0.4",
+    "tailwindcss": "2.1.1",
     "tslint": "6.1.3",
     "tslint-stencil": "1.0.1",
     "typescript": "4.2.3",

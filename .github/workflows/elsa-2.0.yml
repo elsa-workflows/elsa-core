@@ -1,0 +1,21 @@
+name: Elsa 2.0
+
+on:
+  push:
+    branches: [ feature/elsa-2.0 ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 3.1.102
+    - name: Install dependencies
+      run: dotnet restore Elsa.sln
+    - name: Build
+      run: dotnet pack Elsa.sln --include-symbols
