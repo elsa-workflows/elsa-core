@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Elsa.Activities.Signaling.Models;
 using Elsa.Dispatch;
 using Elsa.Services;
+using MediatR;
 
 namespace Elsa.Activities.Signaling.Services
 {
@@ -10,32 +11,33 @@ namespace Elsa.Activities.Signaling.Services
     {
         // TODO: Design multi-tenancy. 
         private const string TenantId = default;
-
-        private readonly ITriggersWorkflows _triggersWorkflows;
+        
+        private readonly IMediator _mediator;
         private readonly IWorkflowDispatcher _workflowDispatcher;
 
-        public Signaler(ITriggersWorkflows triggersWorkflows, IWorkflowDispatcher workflowDispatcher)
+        public Signaler(IMediator mediator, IWorkflowDispatcher workflowDispatcher)
         {
-            _triggersWorkflows = triggersWorkflows;
+            _mediator = mediator;
             _workflowDispatcher = workflowDispatcher;
         }
 
         public async Task TriggerSignalAsync(string signal, object? input = default, string? workflowInstanceId = default, CancellationToken cancellationToken = default) =>
-            await _triggersWorkflows.TriggerWorkflowsAsync(
-                nameof(SignalReceived),
-                new SignalReceivedBookmark { Signal = signal, WorkflowInstanceId = workflowInstanceId },
-                new SignalReceivedBookmark { Signal = signal },
-                default,
-                new Signal(signal, input),
-                tenantId: TenantId,
-                cancellationToken: cancellationToken
+            await _mediator.Send(new TriggerWorkflowsRequest(
+                    nameof(SignalReceived),
+                    new SignalReceivedBookmark {Signal = signal, WorkflowInstanceId = workflowInstanceId},
+                    new SignalReceivedBookmark {Signal = signal},
+                    new Signal(signal, input),
+                    default,
+                    default,
+                    TenantId),
+                cancellationToken
             );
 
         public async Task DispatchSignalAsync(string signal, object? input = default, string? workflowInstanceId = default, CancellationToken cancellationToken = default) =>
             await _workflowDispatcher.DispatchAsync(new TriggerWorkflowsRequest(
                     nameof(SignalReceived),
-                    new SignalReceivedBookmark { Signal = signal, WorkflowInstanceId = workflowInstanceId },
-                    new SignalReceivedBookmark { Signal = signal },
+                    new SignalReceivedBookmark {Signal = signal, WorkflowInstanceId = workflowInstanceId},
+                    new SignalReceivedBookmark {Signal = signal},
                     new Signal(signal, input)),
                 cancellationToken);
     }
