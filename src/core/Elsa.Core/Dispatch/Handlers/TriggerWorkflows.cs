@@ -34,6 +34,7 @@ namespace Elsa.Dispatch.Handlers
             IDistributedLockProvider distributedLockProvider,
             IWorkflowDefinitionDispatcher workflowDefinitionDispatcher,
             IWorkflowInstanceDispatcher workflowInstanceDispatcher,
+            IMediator mediator,
             ElsaOptions elsaOptions,
             ILogger<TriggerWorkflows> logger)
         {
@@ -43,6 +44,7 @@ namespace Elsa.Dispatch.Handlers
             _distributedLockProvider = distributedLockProvider;
             _workflowDefinitionDispatcher = workflowDefinitionDispatcher;
             _workflowInstanceDispatcher = workflowInstanceDispatcher;
+            _mediator = mediator;
             _elsaOptions = elsaOptions;
             _logger = logger;
         }
@@ -56,15 +58,15 @@ namespace Elsa.Dispatch.Handlers
                 var lockKey = $"trigger-workflows:correlation:{correlationId}";
 
                 await using var handle = await _distributedLockProvider.AcquireLockAsync(lockKey, _elsaOptions.DistributedLockTimeout, cancellationToken);
-                
-                if(handle == null)
+
+                if (handle == null)
                     throw new LockAcquisitionException($"Failed to acquire a lock on {lockKey}");
 
                 var correlatedWorkflowInstanceCount = !string.IsNullOrWhiteSpace(correlationId) ? await _workflowInstanceStore.CountAsync(new CorrelationIdSpecification<WorkflowInstance>(correlationId), cancellationToken) : 0;
 
                 // Release lock before executing workflows. If we don't, we potentially enter a deadlock. 
                 await handle.DisposeAsync();
-                
+
                 if (correlatedWorkflowInstanceCount > 0)
                 {
                     _logger.LogDebug("{WorkflowInstanceCount} existing workflows found with correlation ID '{CorrelationId}' will be queued for execution", correlatedWorkflowInstanceCount, correlationId);
@@ -87,8 +89,9 @@ namespace Elsa.Dispatch.Handlers
             foreach (var trigger in triggers)
             {
                 var workflowBlueprint = trigger.WorkflowBlueprint;
-                
-                await _workflowDefinitionDispatcher.DispatchAsync(new ExecuteWorkflowDefinitionRequest(workflowBlueprint.Id, trigger.ActivityId, request.Input, request.CorrelationId, request.ContextId, workflowBlueprint.TenantId),
+
+                await _mediator.Send(
+                    new ExecuteWorkflowDefinitionRequest(workflowBlueprint.Id, trigger.ActivityId, request.Input, request.CorrelationId, request.ContextId, workflowBlueprint.TenantId),
                     cancellationToken);
             }
 
@@ -98,7 +101,7 @@ namespace Elsa.Dispatch.Handlers
         private async Task ResumeWorkflowsAsync(IEnumerable<BookmarkFinderResult> results, object? input, CancellationToken cancellationToken)
         {
             foreach (var result in results)
-                await _workflowInstanceDispatcher.DispatchAsync(new ExecuteWorkflowInstanceRequest(result.WorkflowInstanceId, result.ActivityId, input), cancellationToken);
+                await _mediator.Send(new ExecuteWorkflowInstanceRequest(result.WorkflowInstanceId, result.ActivityId, input), cancellationToken);
         }
     }
 }
