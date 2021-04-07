@@ -27,8 +27,10 @@ namespace Elsa.Activities.BlobStorage
         [ActivityProperty(Hint = "The ID to be assigned to the blob. It's needed to retrieve the blob")]
         [Required]
         public string BlobID { get; set; }
+
         [ActivityProperty(Hint = "The bytes")]
         public byte[] Bytes { get; set; }
+
         [ActivityProperty(Hint = "The file path")]
         public string FilePath { get; set; }
 

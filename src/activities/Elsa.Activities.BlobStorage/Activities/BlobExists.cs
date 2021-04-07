@@ -24,14 +24,14 @@ namespace Elsa.Activities.BlobStorage
         }
         private readonly IBlobStorage _storage;
 
-        [ActivityProperty(Hint = "The ID of the blob")]
-        public string BlobID { get; set; }
+        [ActivityProperty(Hint = "The Id of the blob")]
+        public string BlobId { get; set; }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            if (string.IsNullOrWhiteSpace(BlobID))
-                throw new System.Exception($"BlobID must have a value");
-            if (await _storage.ExistsAsync(BlobID))
+            if (string.IsNullOrWhiteSpace(BlobId))
+                throw new System.Exception($"BlobId must have a value");
+            if (await _storage.ExistsAsync(BlobId))
                 return Outcome(OutcomeNames.True);
             else
                 return Outcome(OutcomeNames.False);

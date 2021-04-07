@@ -5,6 +5,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Design;
+using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Storage.Net.Blobs;
@@ -24,18 +26,17 @@ namespace Elsa.Activities.BlobStorage
         }
         private readonly IBlobStorage _storage;
 
-        [ActivityProperty(Hint = "The ID of the blob")]
-        public string BlobID { get; set; }
-        [ActivityProperty(Hint = "The IDs of the blob")]
-        public List<string> BlobIDs { get; set; } = new List<string>();
+        [ActivityProperty(Hint = "The Ids of the blobs", 
+            UIHint = ActivityPropertyUIHints.MultiText, 
+            DefaultSyntax = SyntaxNames.Json,
+            SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        public IList<string> BlobIds { get; set; } = new List<string>();
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            if (string.IsNullOrWhiteSpace(BlobID) && (BlobIDs==default || !BlobIDs.Any()))
-                throw new System.Exception($"BlobID or BlobIds must have a value");
-            if (BlobID != default)
-                BlobIDs.Add(BlobID);
-            await _storage.DeleteAsync(BlobIDs);
+            if (BlobIds==default || !BlobIds.Any())
+                throw new System.Exception($"BlobID or BlobIds must have a value");            
+            await _storage.DeleteAsync(BlobIds);
             return Done();
         }
     }
