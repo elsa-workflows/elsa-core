@@ -22,7 +22,7 @@ namespace Elsa.Scripting.Liquid.Handlers
 
             options.MemberAccessStrategy.Register<ExpandoObject>();
             options.MemberAccessStrategy.Register<JObject>();
-            options.MemberAccessStrategy.Register<JValue>(o => FluidValue.Create(o.Value, options));
+            options.MemberAccessStrategy.Register<JValue>(o => o.Value);
 
             options.MemberAccessStrategy.Register<LiquidActivityModel>();
             options.MemberAccessStrategy.Register<LiquidPropertyAccessor, FluidValue>((x, name) => x.GetValueAsync(name));
