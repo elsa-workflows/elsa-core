@@ -91,7 +91,10 @@ build_script:
       dotnet build
 
 before_test:
-  - cmd: createdb "elsa-yessql"
+  - cmd: >-
+      PATH=C:\Program Files\PostgreSQL\10;%PATH%
+      
+      createdb "elsa-yessql"
 
 test_script:
   - ps: dotnet test --collect:"XPlat Code Coverage" --logger:xunit -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
