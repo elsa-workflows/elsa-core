@@ -1,4 +1,5 @@
 using Elsa.Client.Services;
+using Elsa.Client.Webhooks.Services;
 
 namespace Elsa.Client
 {

@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.Threading.Tasks;
-using Elsa.DistributedLocking;
 using Elsa.Services;
 using MediatR;
 using Microsoft.Extensions.Logging;

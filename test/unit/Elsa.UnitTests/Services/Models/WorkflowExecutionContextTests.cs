@@ -3,6 +3,7 @@ using Elsa.Testing.Shared.AutoFixture.Attributes;
 using AutoFixture.Xunit2;
 using System;
 using System.Threading;
+using Elsa.Testing.Shared;
 
 namespace Elsa.Services.Models
 {

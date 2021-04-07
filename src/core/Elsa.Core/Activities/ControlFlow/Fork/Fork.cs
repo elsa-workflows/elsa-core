@@ -1,17 +1,10 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Design;
-using Elsa.Events;
 using Elsa.Expressions;
-using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
-using MediatR;
-using Newtonsoft.Json.Linq;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.ControlFlow

@@ -3,7 +3,7 @@ using Elsa.Activities.Temporal;
 using Elsa.Builders;
 using NodaTime;
 
-namespace Elsa.Samples.Temporal
+namespace Elsa.Samples.Timers
 {
     public class RecurringTaskWorkflow : IWorkflow
     {

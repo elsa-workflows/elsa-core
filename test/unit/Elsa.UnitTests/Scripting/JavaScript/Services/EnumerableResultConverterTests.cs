@@ -1,7 +1,6 @@
-using System;
 using System.Collections.Generic;
+using Elsa.Testing.Shared;
 using Jint;
-using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace Elsa.Scripting.JavaScript.Services

@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Elsa.Client.Webhooks.Models;
 using Refit;
 
-namespace Elsa.Client.Services
+namespace Elsa.Client.Webhooks.Services
 {
     public interface IWebhookDefinitionsApi
     {

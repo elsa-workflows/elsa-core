@@ -1,6 +1,5 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Dispatch;
 using Elsa.Events;
 using Elsa.Services;
 using MediatR;

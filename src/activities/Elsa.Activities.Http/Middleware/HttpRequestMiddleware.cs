@@ -1,20 +1,9 @@
-using System.Linq;
-using System.Net;
-using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Bookmarks;
 using Elsa.Activities.Http.Extensions;
-using Elsa.Bookmarks;
 using Elsa.Dispatch;
-using Elsa.Dispatch.Handlers;
-using Elsa.Models;
-using Elsa.Persistence;
-using Elsa.Serialization;
-using Elsa.Services;
-using Elsa.Triggers;
 using MediatR;
 using Microsoft.AspNetCore.Http;
-using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Activities.Http.Middleware
 {

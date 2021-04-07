@@ -2,7 +2,7 @@ using AutoFixture;
 using AutoFixture.AutoMoq;
 using AutoFixture.Xunit2;
 
-namespace Elsa
+namespace Elsa.Testing.Shared
 {
     public class AutoMoqDataAttribute : AutoDataAttribute
     {

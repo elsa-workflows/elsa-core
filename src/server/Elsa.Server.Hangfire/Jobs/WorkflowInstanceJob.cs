@@ -1,10 +1,7 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Dispatch;
-using Elsa.Persistence;
-using Elsa.Services;
 using MediatR;
-using Microsoft.Extensions.Logging;
 
 namespace Elsa.Server.Hangfire.Jobs
 {

@@ -2,7 +2,6 @@
 using System.Threading.Tasks;
 using Elsa.Activities.Signaling.Models;
 using Elsa.Dispatch;
-using Elsa.Services;
 using MediatR;
 
 namespace Elsa.Activities.Signaling.Services

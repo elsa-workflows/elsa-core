@@ -1,10 +1,10 @@
 using System.Threading.Tasks;
+using Hangfire;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NodaTime;
-using Hangfire;
 
-namespace Elsa.Samples.Temporal
+namespace Elsa.Samples.Timers
 {
     internal class Program
     {
