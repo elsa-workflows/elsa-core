@@ -4,9 +4,9 @@ namespace Elsa
 {
     public static class DistributedLockingOptionsExtensions
     {
-        public static DistributedLockingOptions UseSqlServerLockProvider(this DistributedLockingOptions options, string connectionString)
+        public static DistributedLockingOptionsBuilder UseSqlServerLockProvider(this DistributedLockingOptionsBuilder options, string connectionString)
         {
-            options.DistributedLockProviderFactory = sp => name => new SqlDistributedLock(name, connectionString);
+            options.UseProviderFactory(sp => name => new SqlDistributedLock(name, connectionString));
             return options;
         }
     }

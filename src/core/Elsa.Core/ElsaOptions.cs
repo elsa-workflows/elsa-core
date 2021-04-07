@@ -50,7 +50,7 @@ namespace Elsa
         public IList<Type> WorkflowTypes { get; } = new List<Type>();
         public IList<Type> MessageTypes { get; } = new List<Type>();
         public ServiceBusOptions ServiceBusOptions { get; } = new();
-        public DistributedLockingOptions DistributedLockingOptions { get; }
+        public DistributedLockingOptions DistributedLockingOptions { get; set; }
 
         /// <summary>
         /// The amount of time to wait before giving up on trying to acquire a lock.

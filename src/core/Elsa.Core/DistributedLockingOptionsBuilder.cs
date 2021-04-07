@@ -8,15 +8,14 @@ namespace Elsa
 {
     public class DistributedLockingOptionsBuilder
     {
-        public DistributedLockingOptionsBuilder(ElsaOptionsBuilder elsaOptions)
+        public DistributedLockingOptionsBuilder(ElsaOptionsBuilder elsaOptionsBuilder) => ElsaOptionsBuilder = elsaOptionsBuilder;
+        public ElsaOptionsBuilder ElsaOptionsBuilder { get; }
+        public IServiceCollection Services => ElsaOptionsBuilder.Services;
+
+        public DistributedLockingOptionsBuilder UseProviderFactory(Func<IServiceProvider, Func<string, IDistributedLock>> factory)
         {
-            ElsaOptions = elsaOptions;
-            DistributedLockProviderFactory = sp => name => new FileDistributedLock(new DirectoryInfo(Environment.CurrentDirectory), name);
+            ElsaOptionsBuilder.ElsaOptions.DistributedLockingOptions.DistributedLockProviderFactory = factory;
+            return this;
         }
-
-        public ElsaOptionsBuilder ElsaOptions { get; }
-        public IServiceCollection Services => ElsaOptions.Services;
-
-        public Func<IServiceProvider, Func<string, IDistributedLock>> DistributedLockProviderFactory { get; set; }
     }
 }

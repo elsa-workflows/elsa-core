@@ -18,7 +18,7 @@ namespace Elsa
                 .UseStackExchangeConnectionMultiplexer(connectionString)
                 .UseRedLockFactory();
 
-            options.DistributedLockProviderFactory = CreateRedisDistributedLockFactory;
+            options.UseProviderFactory(CreateRedisDistributedLockFactory);
 
             return options;
         }
