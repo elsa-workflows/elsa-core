@@ -39,7 +39,7 @@ namespace Elsa.Activities.BlobStorage
                 await _storage.ReadToFileAsync(BlobId, FilePath, context.CancellationToken);
             else
             {
-                Done(await _storage.ReadBytesAsync(BlobId));
+                Done(await _storage.ReadBytesAsync(BlobId, context.CancellationToken));
             }
             return Done();
         }

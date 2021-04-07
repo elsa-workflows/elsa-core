@@ -36,7 +36,7 @@ namespace Elsa.Activities.BlobStorage
         {
             if (BlobIds==default || !BlobIds.Any())
                 throw new System.Exception($"BlobID or BlobIds must have a value");            
-            await _storage.DeleteAsync(BlobIds);
+            await _storage.DeleteAsync(BlobIds, context.CancellationToken);
             return Done();
         }
     }
