@@ -3,6 +3,7 @@ using System.Net.Http;
 using Elsa.Client.Converters;
 using Elsa.Client.Options;
 using Elsa.Client.Services;
+using Elsa.Client.Webhooks.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;

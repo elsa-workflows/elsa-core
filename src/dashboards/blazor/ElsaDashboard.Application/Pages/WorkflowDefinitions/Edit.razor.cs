@@ -4,7 +4,6 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using Elsa.Client.Models;
-using Elsa.Client.Options;
 using ElsaDashboard.Application.Extensions;
 using ElsaDashboard.Application.Models;
 using ElsaDashboard.Application.Options;

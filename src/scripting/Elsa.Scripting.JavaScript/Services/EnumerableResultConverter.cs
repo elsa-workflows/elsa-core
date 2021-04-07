@@ -1,8 +1,6 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Dynamic;
-using System.Linq;
 using Newtonsoft.Json;
 
 namespace Elsa.Scripting.JavaScript.Services

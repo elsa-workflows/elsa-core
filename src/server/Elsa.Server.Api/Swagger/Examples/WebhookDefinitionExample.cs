@@ -1,6 +1,5 @@
 using System;
 using Elsa.Activities.Webhooks.Models;
-using Elsa.Server.Api.Endpoints.WorkflowDefinitions;
 using Swashbuckle.AspNetCore.Filters;
 
 namespace Elsa.Server.Api.Swagger.Examples

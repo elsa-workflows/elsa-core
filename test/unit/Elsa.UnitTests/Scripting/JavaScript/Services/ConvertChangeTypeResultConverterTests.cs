@@ -1,3 +1,4 @@
+using Elsa.Testing.Shared;
 using Xunit;
 
 namespace Elsa.Scripting.JavaScript.Services

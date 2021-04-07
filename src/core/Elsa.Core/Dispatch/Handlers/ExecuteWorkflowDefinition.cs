@@ -1,7 +1,5 @@
-using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.DistributedLocking;
 using Elsa.Exceptions;
 using Elsa.Models;
 using Elsa.Persistence;

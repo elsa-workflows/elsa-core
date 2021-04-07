@@ -2,7 +2,6 @@ using System;
 using System.Reflection;
 using AutoFixture;
 using AutoFixture.Xunit2;
-using Microsoft.Extensions.DependencyInjection;
 using Moq;
 
 namespace Elsa.Scripting.JavaScript.Services

@@ -24,11 +24,13 @@ using Elsa.Services;
 using Elsa.StartupTasks;
 using Elsa.Triggers;
 using Elsa.WorkflowProviders;
+using Medallion.Threading;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Newtonsoft.Json;
 using NodaTime;
 using Rebus.Handlers;
+using IDistributedLockProvider = Elsa.Services.IDistributedLockProvider;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -57,6 +59,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton(options.WorkflowDefinitionDispatcherFactory)
                 .AddSingleton(options.WorkflowInstanceDispatcherFactory)
                 .AddSingleton(options.CorrelatingWorkflowDispatcherFactory)
+                .AddSingleton<IDistributedLockProvider, DistributedLockProvider>()
                 .AddStartupTask<ContinueRunningWorkflows>()
                 .AddStartupTask<IndexTriggers>();
 

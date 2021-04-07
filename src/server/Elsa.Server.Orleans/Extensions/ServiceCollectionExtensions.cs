@@ -1,6 +1,5 @@
 ﻿using Elsa.Dispatch;
 using Elsa.Server.Orleans.Dispatch;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Server.Orleans.Extensions
 {

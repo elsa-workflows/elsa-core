@@ -7,6 +7,7 @@ using System.Threading;
 using Elsa.Services;
 using Elsa.Core.IntegrationTests.Workflows;
 using Elsa.Persistence;
+using Elsa.Testing.Shared;
 using Elsa.Testing.Shared.Helpers;
 
 namespace Elsa.Core.IntegrationTests.Persistence.InMemory

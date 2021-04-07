@@ -1,12 +1,13 @@
 using System;
+using System.Threading;
+using System.Threading.Tasks;
+using Elsa.Core.IntegrationTests.Autofixture;
+using Elsa.Testing.Shared;
+using Elsa.Testing.Shared.Helpers;
 using Microsoft.Extensions.Hosting;
 using Xunit;
-using System.Threading.Tasks;
-using System.Threading;
-using Elsa.Core.IntegrationTests.Autofixture;
-using Elsa.Testing.Shared.Helpers;
 
-namespace Elsa.UnitTests.Extensions
+namespace Elsa.Core.IntegrationTests.Extensions
 {
     public class TemporalServiceCollectionExtensionsTests
     {

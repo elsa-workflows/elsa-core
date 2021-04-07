@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 using AutoFixture.Xunit2;
 using Elsa.Models;
+using Elsa.Testing.Shared;
 using Elsa.Testing.Shared.Unit;
 using Xunit;
 using Xunit.Abstractions;

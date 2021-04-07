@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Medallion.Threading;
 using NodaTime;
 
-namespace Elsa.DistributedLocking
+namespace Elsa.Services
 {
     /// <summary>
     /// Provides functionality to acquire and release locks which are distributed across all instances in a web farm.
