@@ -11,9 +11,6 @@ using Storage.Net.Blobs;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.BlobStorage
 {
-    /// <summary>
-    /// Writes a text string to the console.
-    /// </summary>
     [Action(
         Category = "BlobStorage",
         Description = "Reads a blob from the storage engine",
@@ -27,7 +24,7 @@ namespace Elsa.Activities.BlobStorage
         }
         private readonly IBlobStorage _storage;
 
-        [ActivityProperty(Hint = "The ID to be assigned to the blob. It's needed to retrieve the blob")]
+        [ActivityProperty(Hint = "The ID assigned to the blob.")]
         [Required]
         public string BlobID { get; set; }
         [ActivityProperty(Hint = "The bytes")]

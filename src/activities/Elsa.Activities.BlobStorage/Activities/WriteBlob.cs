@@ -11,9 +11,6 @@ using Storage.Net.Blobs;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.BlobStorage
 {
-    /// <summary>
-    /// Writes a text string to the console.
-    /// </summary>
     [Action(
         Category = "BlobStorage",
         Description = "Write a blob to the storage engine",
