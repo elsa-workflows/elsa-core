@@ -9,7 +9,7 @@ namespace Microsoft.Extensions.DependencyInjection
 {
     public static class ServiceCollectionExtensions
     {
-        public static ElsaOptions AddEmailActivities(this ElsaOptions options, Action<SmtpOptions>? configureOptions = null)
+        public static ElsaOptionsBuilder AddEmailActivities(this ElsaOptionsBuilder options, Action<SmtpOptions>? configureOptions = null)
         {
             options.Services.AddEmailServices(configureOptions);
             options.AddEmailActivitiesInternal();
@@ -24,6 +24,6 @@ namespace Microsoft.Extensions.DependencyInjection
             return services.AddSingleton<ISmtpService, SmtpService>();
         }
 
-        private static ElsaOptions AddEmailActivitiesInternal(this ElsaOptions services) => services.AddActivity<SendEmail>();
+        private static ElsaOptionsBuilder AddEmailActivitiesInternal(this ElsaOptionsBuilder services) => services.AddActivity<SendEmail>();
     }
 }

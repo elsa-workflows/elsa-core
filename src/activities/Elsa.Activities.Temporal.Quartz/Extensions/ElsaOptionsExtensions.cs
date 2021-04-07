@@ -15,14 +15,11 @@ namespace Elsa
         /// <param name="configureQuartz">An optional service collection Quartz configuration callback</param>
         /// <param name="configureQuartzHostedService">Use this callback to further configure the Quartz hosted service</param>
         /// <returns>The Elsa options, enabling method chaining</returns>
-        public static ElsaOptions AddQuartzTemporalActivities(
-            this ElsaOptions options,
+        public static ElsaOptionsBuilder AddQuartzTemporalActivities(
+            this ElsaOptionsBuilder options,
             Action<QuartzOptions>? configureQuartzOptions = default,
             Action<IServiceCollectionQuartzConfigurator>? configureQuartz = default,
-            Action<QuartzHostedServiceOptions>? configureQuartzHostedService = default)
-        {
-            CommonTemporalActivityServices.AddCommonTemporalActivities(options, timer => timer.UseQuartzProvider(true, configureQuartzOptions, configureQuartz, configureQuartzHostedService));
-            return options;
-        }
+            Action<QuartzHostedServiceOptions>? configureQuartzHostedService = default) =>
+            options.AddCommonTemporalActivities(timer => timer.UseQuartzProvider(true, configureQuartzOptions, configureQuartz, configureQuartzHostedService));
     }
 }

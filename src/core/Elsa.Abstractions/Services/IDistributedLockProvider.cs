@@ -1,5 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Medallion.Threading;
 using NodaTime;
 
 namespace Elsa.DistributedLocking
@@ -12,8 +13,6 @@ namespace Elsa.DistributedLocking
     /// </remarks>
     public interface IDistributedLockProvider
     {
-        Task<bool> AcquireLockAsync(string name, Duration? timeout = default, CancellationToken cancellationToken = default);
-
-        Task ReleaseLockAsync(string name, CancellationToken cancellationToken = default);
+        Task<IDistributedSynchronizationHandle?> AcquireLockAsync(string name, Duration? timeout = default, CancellationToken cancellationToken = default);
     }
 }

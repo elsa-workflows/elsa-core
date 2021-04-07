@@ -4,7 +4,7 @@ namespace Elsa.Activities.UserTask.Extensions
     
     public static class ServiceCollectionExtensions
     {        
-        public static ElsaOptions AddUserTaskActivities(this ElsaOptions services)
+        public static ElsaOptionsBuilder AddUserTaskActivities(this ElsaOptionsBuilder services)
         {
             return services.AddActivity<UserTask>();
         }

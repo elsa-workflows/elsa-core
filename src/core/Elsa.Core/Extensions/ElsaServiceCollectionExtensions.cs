@@ -37,10 +37,13 @@ namespace Microsoft.Extensions.DependencyInjection
     {
         public static IServiceCollection AddElsaCore(
             this IServiceCollection services,
-            Action<ElsaOptions>? configure = default)
+            Action<ElsaOptionsBuilder>? configure = default)
         {
-            var options = new ElsaOptions(services);
-            configure?.Invoke(options);
+            var optionsBuilder = new ElsaOptionsBuilder(services);
+            configure?.Invoke(optionsBuilder);
+            optionsBuilder.AddAutoMapper();
+
+            var options = optionsBuilder.ElsaOptions;
 
             services
                 .AddSingleton(options)
@@ -48,7 +51,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddScoped(options.WorkflowInstanceStoreFactory)
                 .AddScoped(options.WorkflowExecutionLogStoreFactory)
                 .AddScoped(options.WorkflowTriggerStoreFactory)
-                .AddSingleton(options.DistributedLockProviderFactory)
+                .AddSingleton(options.DistributedLockingOptions.DistributedLockProviderFactory)
                 .AddSingleton(options.SignalFactory)
                 .AddSingleton(options.StorageFactory)
                 .AddSingleton(options.WorkflowDefinitionDispatcherFactory)
@@ -57,11 +60,9 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddStartupTask<ContinueRunningWorkflows>()
                 .AddStartupTask<IndexTriggers>();
 
-            options
+            optionsBuilder
                 .AddWorkflowsCore()
                 .AddCoreActivities();
-
-            options.AddAutoMapper();
 
             services.Decorate<IWorkflowDefinitionStore, InitializingWorkflowDefinitionStore>();
             services.Decorate<IWorkflowDefinitionStore, EventPublishingWorkflowDefinitionStore>();
@@ -74,13 +75,13 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <summary>
         /// Starts the specified workflow upon application startup.
         /// </summary>
-        public static IServiceCollection StartWorkflow<T>(this ElsaOptions elsaOptions) where T : class, IWorkflow
+        public static IServiceCollection StartWorkflow<T>(this ElsaOptionsBuilder elsaOptions) where T : class, IWorkflow
         {
             elsaOptions.AddWorkflow<T>();
             return elsaOptions.Services.AddHostedService<StartWorkflow<T>>();
         }
 
-        public static ElsaOptions AddConsumer<TConsumer, TMessage>(this ElsaOptions elsaOptions) where TConsumer : class, IHandleMessages<TMessage>
+        public static ElsaOptionsBuilder AddConsumer<TConsumer, TMessage>(this ElsaOptionsBuilder elsaOptions) where TConsumer : class, IHandleMessages<TMessage>
         {
             elsaOptions.Services.AddTransient<IHandleMessages<TMessage>, TConsumer>();
             elsaOptions.AddMessageType<TMessage>();
@@ -90,7 +91,7 @@ namespace Microsoft.Extensions.DependencyInjection
         public static IServiceCollection AddActivityPropertyOptionsProvider<T>(this IServiceCollection services) where T : class, IActivityPropertyOptionsProvider => services.AddSingleton<IActivityPropertyOptionsProvider, T>();
         public static IServiceCollection AddActivityTypeProvider<T>(this IServiceCollection services) where T : class, IActivityTypeProvider => services.AddSingleton<IActivityTypeProvider, T>();
 
-        private static ElsaOptions AddWorkflowsCore(this ElsaOptions options)
+        private static ElsaOptionsBuilder AddWorkflowsCore(this ElsaOptionsBuilder options)
         {
             var services = options.Services;
 
@@ -207,7 +208,7 @@ namespace Microsoft.Extensions.DependencyInjection
             return options;
         }
 
-        private static ElsaOptions AddCoreActivities(this ElsaOptions services)
+        private static ElsaOptionsBuilder AddCoreActivities(this ElsaOptionsBuilder services)
         {
             if (!services.WithCoreActivities)
                 return services;

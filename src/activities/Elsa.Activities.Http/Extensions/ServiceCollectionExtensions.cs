@@ -15,7 +15,7 @@ namespace Microsoft.Extensions.DependencyInjection
 {
     public static class ServiceCollectionExtensions
     {
-        public static ElsaOptions AddHttpActivities(this ElsaOptions options, Action<HttpActivityOptions>? configureOptions = null)
+        public static ElsaOptionsBuilder AddHttpActivities(this ElsaOptionsBuilder options, Action<HttpActivityOptions>? configureOptions = null)
         {
             options.Services.AddHttpServices(configureOptions);
             options.AddHttpActivitiesInternal();
@@ -49,7 +49,7 @@ namespace Microsoft.Extensions.DependencyInjection
             return services;
         }
 
-        private static ElsaOptions AddHttpActivitiesInternal(this ElsaOptions options) =>
+        private static ElsaOptionsBuilder AddHttpActivitiesInternal(this ElsaOptionsBuilder options) =>
             options
                 .AddActivity<HttpEndpoint>()
                 .AddActivity<WriteHttpResponse>()

@@ -56,19 +56,16 @@ namespace Elsa.Dispatch.Handlers
             {
                 var lockKey = $"trigger-workflows:correlation:{correlationId}";
 
-                if (!await _distributedLockProvider.AcquireLockAsync(lockKey, _elsaOptions.DistributedLockTimeout, cancellationToken))
+                await using var handle = await _distributedLockProvider.AcquireLockAsync(lockKey, _elsaOptions.DistributedLockTimeout, cancellationToken);
+                
+                if(handle == null)
                     throw new LockAcquisitionException($"Failed to acquire a lock on {lockKey}");
 
-                int correlatedWorkflowInstanceCount;
-                try
-                {
-                    correlatedWorkflowInstanceCount = !string.IsNullOrWhiteSpace(correlationId) ? await _workflowInstanceStore.CountAsync(new CorrelationIdSpecification<WorkflowInstance>(correlationId), cancellationToken) : 0;
-                }
-                finally
-                {
-                    await _distributedLockProvider.ReleaseLockAsync(lockKey, cancellationToken);
-                }
+                var correlatedWorkflowInstanceCount = !string.IsNullOrWhiteSpace(correlationId) ? await _workflowInstanceStore.CountAsync(new CorrelationIdSpecification<WorkflowInstance>(correlationId), cancellationToken) : 0;
 
+                // Release lock before executing workflows. If we don't, we potentially enter a deadlock. 
+                await handle.DisposeAsync();
+                
                 if (correlatedWorkflowInstanceCount > 0)
                 {
                     _logger.LogDebug("{WorkflowInstanceCount} existing workflows found with correlation ID '{CorrelationId}' will be queued for execution", correlatedWorkflowInstanceCount, correlationId);

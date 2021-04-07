@@ -13,7 +13,7 @@ namespace Elsa.Activities.AzureServiceBus.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        public static ElsaOptions AddAzureServiceBusActivities(this ElsaOptions options, Action<AzureServiceBusOptions>? configure)
+        public static ElsaOptionsBuilder AddAzureServiceBusActivities(this ElsaOptionsBuilder options, Action<AzureServiceBusOptions>? configure)
         {
             if (configure != null)
                 options.Services.Configure(configure);
@@ -40,7 +40,6 @@ namespace Elsa.Activities.AzureServiceBus.Extensions
                 .AddActivity<SendAzureServiceBusQueueMessage>()
                 .AddActivity<SendAzureServiceBusTopicMessage>()
                 .AddActivity<AzureServiceBusTopicMessageReceived>()
-
                 ;
             
             return options;
