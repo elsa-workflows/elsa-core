@@ -7,12 +7,6 @@ using Elsa.Activities.Telnyx.Webhooks.Payloads.Abstract;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
 using Elsa.Activities.Telnyx.Webhooks.Services;
 using Elsa.Dispatch;
-using Elsa.DistributedLock;
-using Elsa.DistributedLocking;
-using Elsa.Models;
-using Elsa.Persistence;
-using Elsa.Persistence.Specifications;
-using Elsa.Services;
 using Microsoft.Extensions.Logging;
 using Rebus.Handlers;
 

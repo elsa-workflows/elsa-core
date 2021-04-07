@@ -22,9 +22,9 @@ namespace Elsa.Persistence.EntityFramework.Core.Extensions
         /// <param name="configure">A configuration builder callback</param>
         /// <param name="autoRunMigrations">If <c>true</c> then migration scripts will auto-run on application startup; if <c>false</c> then they will not</param>
         /// <returns>The Elsa options builder, so calls may be chained</returns>
-        public static ElsaOptions UseEntityFrameworkPersistence(this ElsaOptions elsa,
-                                                                Action<DbContextOptionsBuilder> configure,
-                                                                bool autoRunMigrations = true) =>
+        public static ElsaOptionsBuilder UseEntityFrameworkPersistence(this ElsaOptionsBuilder elsa,
+            Action<DbContextOptionsBuilder> configure,
+            bool autoRunMigrations = true) =>
             elsa.UseEntityFrameworkPersistence((_, builder) => configure(builder), autoRunMigrations);
 
         /// <summary>
@@ -40,9 +40,9 @@ namespace Elsa.Persistence.EntityFramework.Core.Extensions
         /// <param name="configure">A configuration builder callback, which also provides access to a service provider</param>
         /// <param name="autoRunMigrations">If <c>true</c> then migration scripts will auto-run on application startup; if <c>false</c> then they will not</param>
         /// <returns>The Elsa options builder, so calls may be chained</returns>
-        public static ElsaOptions UseEntityFrameworkPersistence(this ElsaOptions elsa,
-                                                                Action<IServiceProvider, DbContextOptionsBuilder> configure,
-                                                                bool autoRunMigrations = true) =>
+        public static ElsaOptionsBuilder UseEntityFrameworkPersistence(this ElsaOptionsBuilder elsa,
+            Action<IServiceProvider, DbContextOptionsBuilder> configure,
+            bool autoRunMigrations = true) =>
             UseEntityFrameworkPersistence(elsa, configure, autoRunMigrations, true, ServiceLifetime.Singleton);
 
         /// <summary>
@@ -64,9 +64,9 @@ namespace Elsa.Persistence.EntityFramework.Core.Extensions
         /// <param name="configure">A configuration builder callback</param>
         /// <param name="serviceLifetime">The service lifetime which will be used for each DB Context instance</param>
         /// <returns>The Elsa options builder, so calls may be chained</returns>
-        public static ElsaOptions UseNonPooledEntityFrameworkPersistence(this ElsaOptions elsa,
-                                                                         Action<DbContextOptionsBuilder> configure,
-                                                                         ServiceLifetime serviceLifetime = ServiceLifetime.Singleton) =>
+        public static ElsaOptionsBuilder UseNonPooledEntityFrameworkPersistence(this ElsaOptionsBuilder elsa,
+            Action<DbContextOptionsBuilder> configure,
+            ServiceLifetime serviceLifetime = ServiceLifetime.Singleton) =>
             elsa.UseNonPooledEntityFrameworkPersistence((_, builder) => configure(builder), serviceLifetime);
 
         /// <summary>
@@ -88,16 +88,16 @@ namespace Elsa.Persistence.EntityFramework.Core.Extensions
         /// <param name="configure">A configuration builder callback, which also provides access to a service provider</param>
         /// <param name="serviceLifetime">The service lifetime which will be used for each DB Context instance</param>
         /// <returns>The Elsa options builder, so calls may be chained</returns>
-        public static ElsaOptions UseNonPooledEntityFrameworkPersistence(this ElsaOptions elsa,
-                                                                         Action<IServiceProvider, DbContextOptionsBuilder> configure,
-                                                                         ServiceLifetime serviceLifetime = ServiceLifetime.Singleton) =>
+        public static ElsaOptionsBuilder UseNonPooledEntityFrameworkPersistence(this ElsaOptionsBuilder elsa,
+            Action<IServiceProvider, DbContextOptionsBuilder> configure,
+            ServiceLifetime serviceLifetime = ServiceLifetime.Singleton) =>
             UseEntityFrameworkPersistence(elsa, configure, false, false, serviceLifetime);
 
-        static ElsaOptions UseEntityFrameworkPersistence(ElsaOptions elsa,
-                                                         Action<IServiceProvider, DbContextOptionsBuilder> configure,
-                                                         bool autoRunMigrations,
-                                                         bool useContextPooling,
-                                                         ServiceLifetime serviceLifetime)
+        static ElsaOptionsBuilder UseEntityFrameworkPersistence(ElsaOptionsBuilder elsa,
+            Action<IServiceProvider, DbContextOptionsBuilder> configure,
+            bool autoRunMigrations,
+            bool useContextPooling,
+            ServiceLifetime serviceLifetime)
         {
             /* Auto-running migrations is intentionally unavailable when not using context pooling.
              * When we aren't using pooling then it probably means that each DB Context is different
@@ -110,7 +110,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Extensions
              * They can run their own migrations in line with their own logic.
              */
 
-            if(useContextPooling)
+            if (useContextPooling)
                 elsa.Services.AddPooledDbContextFactory<ElsaContext>(configure);
             else
                 elsa.Services.AddDbContextFactory<ElsaContext>(configure, serviceLifetime);

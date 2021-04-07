@@ -37,23 +37,18 @@ namespace Elsa.Dispatch.Consumers
             _logger.LogDebug("Acquiring lock on workflow instance {WorkflowInstanceId}", workflowInstanceId);
             _stopwatch.Restart();
 
-            if (!await _distributedLockProvider.AcquireLockAsync(lockKey, Duration.FromSeconds(10)))
+            await using var handle = await _distributedLockProvider.AcquireLockAsync(lockKey, Duration.FromSeconds(10));
+            
+            if(handle == null)
             {
                 _logger.LogDebug("Failed to acquire lock on workflow instance {WorkflowInstanceId}. Re-queueing message", workflowInstanceId);
                 await _commandSender.SendAsync(message);
                 return;
             }
             
-            try
-            {
-                await _mediator.Send(message);
-            }
-            finally
-            {
-                await _distributedLockProvider.ReleaseLockAsync(lockKey);
-                _stopwatch.Stop();
-                _logger.LogDebug("Held lock on workflow instance {WorkflowInstanceId} for {ElapsedTime}", workflowInstanceId, _stopwatch.Elapsed);
-            }
+            await _mediator.Send(message);
+            _stopwatch.Stop();
+            _logger.LogDebug("Held lock on workflow instance {WorkflowInstanceId} for {ElapsedTime}", workflowInstanceId, _stopwatch.Elapsed);
         }
     }
 }

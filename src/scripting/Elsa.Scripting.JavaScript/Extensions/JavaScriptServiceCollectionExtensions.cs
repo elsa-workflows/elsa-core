@@ -32,7 +32,7 @@ namespace Microsoft.Extensions.DependencyInjection
             return services;
         }
 
-        public static ElsaOptions AddJavaScriptActivities(this ElsaOptions options)
+        public static ElsaOptionsBuilder AddJavaScriptActivities(this ElsaOptionsBuilder options)
         {
             return options.AddActivitiesFrom<RunJavaScript>();
         }

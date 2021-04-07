@@ -18,7 +18,7 @@ namespace Elsa.Samples.DistributedLock
                     (_, services) =>
                     {
                         services
-                            .AddElsa(options => options.UseRedisLockProvider("localhost:6379,abortConnect=false")
+                            .AddElsa(elsa => elsa.ConfigureDistributedLockProvider(options => options.UseRedisLockProvider("localhost:6379,abortConnect=false"))
                                 .AddConsoleActivities()
                                 .AddQuartzTemporalActivities()
                                 .AddWorkflow<RecurringWorkflow>());

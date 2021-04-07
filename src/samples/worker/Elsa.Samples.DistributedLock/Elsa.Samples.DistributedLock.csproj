@@ -7,6 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="DistributedLock.Redis" Version="1.0.1" />
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0" />
     </ItemGroup>
 
@@ -17,11 +18,11 @@
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.Temporal.Common\Elsa.Activities.Temporal.Common.csproj" />
         <ProjectReference Include="..\..\..\locking\Elsa.DistributedLocking.Redis\Elsa.DistributedLocking.Redis.csproj" />
         <ProjectReference Include="..\..\..\locking\Elsa.DistributedLocking.SqlServer\Elsa.DistributedLocking.SqlServer.csproj" />
-        <ProjectReference Include="..\..\..\core\Elsa\Elsa.csproj"/>
-        <ProjectReference Include="..\..\..\activities\Elsa.Activities.Temporal.Common\Elsa.Activities.Temporal.Common.csproj"/>
-        <ProjectReference Include="..\..\..\locking\Elsa.DistributedLocking.AzureBlob\Elsa.DistributedLocking.AzureBlob.csproj"/>
-        <ProjectReference Include="..\..\..\locking\Elsa.DistributedLocking.Redis\Elsa.DistributedLocking.Redis.csproj"/>
-        <ProjectReference Include="..\..\..\locking\Elsa.DistributedLocking.SqlServer\Elsa.DistributedLocking.SqlServer.csproj"/>
+        <ProjectReference Include="..\..\..\core\Elsa\Elsa.csproj" />
+        <ProjectReference Include="..\..\..\activities\Elsa.Activities.Temporal.Common\Elsa.Activities.Temporal.Common.csproj" />
+        <ProjectReference Include="..\..\..\locking\Elsa.DistributedLocking.AzureBlob\Elsa.DistributedLocking.AzureBlob.csproj" />
+        <ProjectReference Include="..\..\..\locking\Elsa.DistributedLocking.Redis\Elsa.DistributedLocking.Redis.csproj" />
+        <ProjectReference Include="..\..\..\locking\Elsa.DistributedLocking.SqlServer\Elsa.DistributedLocking.SqlServer.csproj" />
     </ItemGroup>
 
 </Project>

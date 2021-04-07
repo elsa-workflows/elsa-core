@@ -33,17 +33,12 @@ namespace Elsa.Decorators
         {
             var key = $"locking-workflow-runner:{workflowInstance.Id}";
 
-            if (!await _distributedLockProvider.AcquireLockAsync(key, _elsaOptions.DistributedLockTimeout, cancellationToken))
+            await using var handle = await _distributedLockProvider.AcquireLockAsync(key, _elsaOptions.DistributedLockTimeout, cancellationToken);
+
+            if (handle == null)
                 throw new LockAcquisitionException("Could not acquire a lock within the configured amount of time");
 
-            try
-            {
-                return await _workflowRunner.RunWorkflowAsync(workflowBlueprint, workflowInstance, activityId, input, cancellationToken);
-            }
-            finally
-            {
-                await _distributedLockProvider.ReleaseLockAsync(key, cancellationToken);
-            }
+            return await _workflowRunner.RunWorkflowAsync(workflowBlueprint, workflowInstance, activityId, input, cancellationToken);
         }
     }
 }
