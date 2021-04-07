@@ -84,7 +84,7 @@ namespace Elsa.Persistence.YesSql.Services
 
             // Apply update methods to migration class.
 
-            var schemaBuilder = new SchemaBuilder(_store.Configuration, await _session.DemandAsync());
+            var schemaBuilder = new SchemaBuilder(_store.Configuration, await _session.BeginTransactionAsync());
             dataMigration.SchemaBuilder = schemaBuilder;
 
             // Copy the object for the Linq query.
@@ -131,7 +131,7 @@ namespace Elsa.Persistence.YesSql.Services
                 while (lookupTable.TryGetValue(current, out var methodInfo))
                 {
                     _logger.LogInformation(
-                        "Applying migration '{MigrationName}' from version {Version}.",
+                        "Applying migration '{MigrationName}' from version {Version}",
                         migrationName,
                         current);
 
@@ -152,11 +152,11 @@ namespace Elsa.Persistence.YesSql.Services
             {
                 _logger.LogError(
                     ex,
-                    "Error while running migration version {Version} for '{MigrationName}'.",
+                    "Error while running migration version {Version} for '{MigrationName}'",
                     current,
                     migrationName);
 
-                _session.Cancel();
+                await _session.CancelAsync();
             }
             finally
             {

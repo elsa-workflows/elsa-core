@@ -29,7 +29,7 @@ namespace Elsa.Scripting.Liquid.Services
             if (string.IsNullOrWhiteSpace(source))
                 return default!;
 
-            context.AddAsyncFilters(_options, _serviceProvider);
+            context.AddFilters(_options, _serviceProvider);
             var result = GetCachedTemplate(source);
 
             return await result.RenderAsync(context, encoder);

@@ -15,33 +15,31 @@ namespace Elsa.Scripting.Liquid.Handlers
 {
     public class ConfigureLiquidEngine : INotificationHandler<EvaluatingLiquidExpression>
     {
-        static ConfigureLiquidEngine()
-        {
-            FluidValue.SetTypeMapping<ExpandoObject>(x => new ObjectValue(x));
-            FluidValue.SetTypeMapping<JObject>(o => new ObjectValue(o));
-            FluidValue.SetTypeMapping<JValue>(o => FluidValue.Create(o.Value));
-        }
-
         public Task Handle(EvaluatingLiquidExpression notification, CancellationToken cancellationToken)
         {
             var context = notification.TemplateContext;
+            var options = context.Options;
 
-            context.MemberAccessStrategy.Register<LiquidActivityModel>();
-            context.MemberAccessStrategy.Register<LiquidPropertyAccessor, FluidValue>((x, name) => x.GetValueAsync(name));
-            context.MemberAccessStrategy.Register<ActivityExecutionContext, FluidValue>("Input", x => ToFluidValue(x.Input));
-            context.MemberAccessStrategy.Register<ActivityExecutionContext, FluidValue>("CorrelationId", x => ToFluidValue(x.CorrelationId));
-            context.MemberAccessStrategy.Register<ActivityExecutionContext, LiquidPropertyAccessor>("Variables", x => new LiquidPropertyAccessor(name => ToFluidValue(x.WorkflowExecutionContext.GetMergedVariables(), name)));
-            context.MemberAccessStrategy.Register<ActivityExecutionContext, LiquidPropertyAccessor>("Activities", x => new LiquidPropertyAccessor(name => ToFluidValue(GetActivityModelAsync(x, name))));
-            context.MemberAccessStrategy.Register<LiquidActivityModel, object?>("Output", GetActivityOutput);
-            context.MemberAccessStrategy.Register<LiquidObjectAccessor<object>, object>((x, name) => x.GetValueAsync(name));
-            context.MemberAccessStrategy.Register<ExpandoObject, object>((x, name) => ((IDictionary<string, object>) x)[name]);
-            context.MemberAccessStrategy.Register<JObject, object?>((source, name) => source[name]);
+            options.MemberAccessStrategy.Register<ExpandoObject>();
+            options.MemberAccessStrategy.Register<JObject>();
+            options.MemberAccessStrategy.Register<JValue>(o => FluidValue.Create(o.Value, options));
+
+            options.MemberAccessStrategy.Register<LiquidActivityModel>();
+            options.MemberAccessStrategy.Register<LiquidPropertyAccessor, FluidValue>((x, name) => x.GetValueAsync(name));
+            options.MemberAccessStrategy.Register<ActivityExecutionContext, FluidValue>("Input", x => ToFluidValue(x.Input, options));
+            options.MemberAccessStrategy.Register<ActivityExecutionContext, FluidValue>("CorrelationId", x => ToFluidValue(x.CorrelationId, options));
+            options.MemberAccessStrategy.Register<ActivityExecutionContext, LiquidPropertyAccessor>("Variables", x => new LiquidPropertyAccessor(name => ToFluidValue(x.WorkflowExecutionContext.GetMergedVariables(), name, options)));
+            options.MemberAccessStrategy.Register<ActivityExecutionContext, LiquidPropertyAccessor>("Activities", x => new LiquidPropertyAccessor(name => ToFluidValue(GetActivityModelAsync(x, name), options)!));
+            options.MemberAccessStrategy.Register<LiquidActivityModel, object?>("Output", GetActivityOutput);
+            options.MemberAccessStrategy.Register<LiquidObjectAccessor<object>, object>((x, name) => x.GetValueAsync(name));
+            options.MemberAccessStrategy.Register<ExpandoObject, object>((x, name) => ((IDictionary<string, object>) x)[name]);
+            options.MemberAccessStrategy.Register<JObject, object?>((source, name) => source[name]);
 
             return Task.CompletedTask;
         }
 
-        private Task<FluidValue> ToFluidValue(object? input) => Task.FromResult(FluidValue.Create(input));
-        private Task<FluidValue?> ToFluidValue(Variables dictionary, string key) => Task.FromResult(!dictionary.Has(key) ? default : FluidValue.Create(dictionary.Get(key)));
+        private Task<FluidValue> ToFluidValue(object? input, TemplateOptions options) => Task.FromResult(FluidValue.Create(input, options));
+        private Task<FluidValue?> ToFluidValue(Variables dictionary, string key, TemplateOptions options) => Task.FromResult(!dictionary.Has(key) ? default : FluidValue.Create(dictionary.Get(key), options));
         private LiquidActivityModel GetActivityModelAsync(ActivityExecutionContext context, string name) => new(context, name);
 
         private Task<object?> GetActivityOutput(LiquidActivityModel activityModel)

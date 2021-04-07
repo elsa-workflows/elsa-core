@@ -7,6 +7,7 @@ using Elsa.Persistence;
 using Elsa.Persistence.Specifications.WorkflowInstances;
 using Elsa.Services;
 using Microsoft.Extensions.Logging;
+using NodaTime;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.StartupTasks
@@ -40,7 +41,7 @@ namespace Elsa.StartupTasks
         {
             var lockKey = GetType().Name;
 
-            await using var handle = await _distributedLockProvider.AcquireLockAsync(lockKey, default, cancellationToken);
+            await using var handle = await _distributedLockProvider.AcquireLockAsync(lockKey, Duration.FromSeconds(10), cancellationToken);
 
             if (handle == null)
                 return;

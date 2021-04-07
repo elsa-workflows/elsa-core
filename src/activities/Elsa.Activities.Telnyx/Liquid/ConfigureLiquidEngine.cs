@@ -15,7 +15,8 @@ namespace Elsa.Activities.Telnyx.Liquid
         public Task Handle(EvaluatingLiquidExpression notification, CancellationToken cancellationToken)
         {
             var context = notification.TemplateContext;
-            var memberAccessStrategy = context.MemberAccessStrategy;
+            var options = context.Options;
+            var memberAccessStrategy = options.MemberAccessStrategy;
 
             memberAccessStrategy.Register<Extension>();
             memberAccessStrategy.Register<CallAnsweredPayload>();

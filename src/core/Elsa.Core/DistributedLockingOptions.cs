@@ -9,7 +9,7 @@ namespace Elsa
     {
         public DistributedLockingOptions()
         {
-            DistributedLockProviderFactory = sp => name => new FileDistributedLock(new DirectoryInfo(Environment.CurrentDirectory), name);
+            DistributedLockProviderFactory = sp => name => new FileDistributedLock(new DirectoryInfo(Path.GetTempPath()), name);
         }
 
         public Func<IServiceProvider, Func<string, IDistributedLock>> DistributedLockProviderFactory { get; set; }
