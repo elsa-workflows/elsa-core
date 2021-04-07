@@ -90,6 +90,9 @@ build_script:
       
       dotnet build
 
+before_test:
+  - ps: createdb "elsa-yessql"
+
 test_script:
   - ps: dotnet test --collect:"XPlat Code Coverage" --logger:xunit -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
 
