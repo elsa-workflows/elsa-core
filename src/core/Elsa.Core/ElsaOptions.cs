@@ -45,7 +45,7 @@ namespace Elsa
         
         public ServiceFactory<IActivity> ActivityFactory { get; } = new();
         public ServiceFactory<IWorkflow> WorkflowFactory { get; } = new();
-        public IList<Type> ActivityTypes { get; } = new List<Type>();
+        public IEnumerable<Type> ActivityTypes => ActivityFactory.Types;
 
         public IList<Type> WorkflowTypes { get; } = new List<Type>();
         public IList<Type> MessageTypes { get; } = new List<Type>();
