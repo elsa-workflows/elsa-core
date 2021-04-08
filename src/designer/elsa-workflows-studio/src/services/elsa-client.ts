@@ -6,7 +6,7 @@ import {
   getVersionOptionsString,
   PagedList,
   Variables,
-  VersionOptions,
+  VersionOptions, WorkflowBlueprintSummary,
   WorkflowContextOptions,
   WorkflowDefinition,
   WorkflowDefinitionSummary,
@@ -75,6 +75,13 @@ export const createElsaClient = function (serverUrl: string): ElsaClient {
         return response.data;
       }
     },
+    workflowRegistryApi: {
+      list: async (page?: number, pageSize?: number, versionOptions?: VersionOptions): Promise<PagedList<WorkflowBlueprintSummary>> => {
+        const versionOptionsString = getVersionOptionsString(versionOptions);
+        const response = await httpClient.get<PagedList<WorkflowBlueprintSummary>>(`v1/workflow-registry?version=${versionOptionsString}`);
+        return response.data;
+      }
+    },
     scriptingApi: {
       getJavaScriptTypeDefinitions: async (workflowDefinitionId: string, context?: string): Promise<string> => {
         context = context || '';
@@ -88,6 +95,7 @@ export const createElsaClient = function (serverUrl: string): ElsaClient {
 export interface ElsaClient {
   activitiesApi: ActivitiesApi;
   workflowDefinitionsApi: WorkflowDefinitionsApi;
+  workflowRegistryApi: WorkflowRegistryApi;
   scriptingApi: ScriptingApi;
 }
 
@@ -109,6 +117,10 @@ export interface WorkflowDefinitionsApi {
   export(workflowDefinitionId: string, versionOptions: VersionOptions): Promise<ExportWorkflowResponse>
 
   import(workflowDefinitionId: string, file: File): Promise<WorkflowDefinition>
+}
+
+export interface WorkflowRegistryApi {
+  list(page?: number, pageSize?: number, versionOptions?: VersionOptions): Promise<PagedList<WorkflowBlueprintSummary>>
 }
 
 export interface ScriptingApi {

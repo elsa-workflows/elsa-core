@@ -1,4 +1,5 @@
 import {Component, h, Prop, State} from '@stencil/core';
+import {RouterHistory} from "@stencil/router";
 
 @Component({
   tag: 'app-workflow-definitions-list',
@@ -6,7 +7,7 @@ import {Component, h, Prop, State} from '@stencil/core';
   shadow: false,
 })
 export class AppWorkflowDefinitionsList {
-
+  @Prop() history: RouterHistory;
   @Prop() serverUrl: string;
 
   render() {
@@ -26,7 +27,7 @@ export class AppWorkflowDefinitionsList {
           </div>
         </div>
 
-        <elsa-workflow-definitions-list-screen serverUrl={this.serverUrl} />
+        <elsa-workflow-definitions-list-screen history={this.history} serverUrl={this.serverUrl} />
       </div>
     );
   }
