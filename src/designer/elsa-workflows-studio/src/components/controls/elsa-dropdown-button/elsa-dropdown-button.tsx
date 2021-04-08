@@ -67,7 +67,13 @@ export class ElsaContextMenu {
 
         const originClass = this.getOriginClass();
 
-        return <div ref={el => this.contextMenu = el} class={`hidden ${originClass} z-10 absolute mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5`}>
+        return <div ref={el => this.contextMenu = el}
+                    data-transition-enter="transition ease-out duration-100"
+                    data-transition-enter-start="transform opacity-0 scale-95"
+                    data-transition-leave="transition ease-in duration-75"
+                    data-transition-leave-start="transform opacity-100 scale-100"
+                    data-transition-leave-end="transform opacity-0 scale-95"            
+                    class={`hidden ${originClass} z-10 absolute mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5`}>
             <div class="py-1" role="menu" aria-orientation="vertical">
                 {this.renderItems()}
             </div>
@@ -79,7 +85,7 @@ export class ElsaContextMenu {
             const selectedCssClass = item.isSelected ? "bg-blue-600 hover:bg-blue-700 text-white" : "hover:bg-gray-100 text-gray-700 hover:text-gray-900";
 
             return !!item.url
-                ? <stencil-route-link onClick={e => this.closeContextMenu()} url={item.url} class={`block px-4 py-2 text-sm ${selectedCssClass}`} role="menuitem">{item.text}</stencil-route-link>
+                ? <stencil-route-link onClick={e => this.closeContextMenu()} url={item.url} anchorClass={`block px-4 py-2 text-sm ${selectedCssClass} cursor-pointer`} role="menuitem">{item.text}</stencil-route-link>
                 : <a href="#" onClick={e => this.onItemClick(e, item)} class={`block px-4 py-2 text-sm ${selectedCssClass}`} role="menuitem">{item.text}</a>;
         })
     }
