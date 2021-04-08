@@ -30,7 +30,7 @@ namespace Elsa.Persistence.YesSql
                     .Column<string?>(nameof(WorkflowInstanceIndex.ContextId))
                     .Column<string?>(nameof(WorkflowInstanceIndex.ContextType))
                     .Column<string?>(nameof(WorkflowInstanceIndex.Name))
-                    .Column<string>(nameof(WorkflowInstanceIndex.WorkflowStatus))
+                    .Column<int>(nameof(WorkflowInstanceIndex.WorkflowStatus))
                     .Column<DateTime>(nameof(WorkflowInstanceIndex.CreatedAt))
                     .Column<DateTime>(nameof(WorkflowInstanceIndex.LastExecutedAt))
                     .Column<DateTime>(nameof(WorkflowInstanceIndex.FinishedAt))
