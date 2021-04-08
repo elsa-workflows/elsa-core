@@ -52,6 +52,7 @@ export class AppRoot {
               <stencil-route url="/workflow-registry" component="app-workflow-registry"/>
               <stencil-route url="/workflow-definitions" component="app-workflow-definitions-list" componentProps={{'serverUrl': serverUrl}} exact={true}/>
               <stencil-route url="/workflow-definitions/:id" component="app-workflow-definitions-edit" componentProps={{'serverUrl': serverUrl}} />
+              <stencil-route url="/workflow-instances" component="app-workflow-instances-list" componentProps={{'serverUrl': serverUrl}} exact={true}/>
             </stencil-route-switch>
           </stencil-router>
           {/*</Tunnel.Provider>*/}

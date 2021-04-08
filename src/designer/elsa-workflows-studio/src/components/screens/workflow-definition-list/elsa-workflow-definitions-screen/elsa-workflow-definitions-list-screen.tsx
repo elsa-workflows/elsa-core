@@ -3,6 +3,7 @@ import * as collection from 'lodash/collection';
 import * as object from 'lodash/object';
 import {createElsaClient} from "../../../../services/elsa-client";
 import {PagedList, VersionOptions, WorkflowDefinitionSummary} from "../../../../models";
+import {RouterHistory} from "@stencil/router";
 
 @Component({
   tag: 'elsa-workflow-definitions-list-screen',
@@ -10,7 +11,7 @@ import {PagedList, VersionOptions, WorkflowDefinitionSummary} from "../../../../
   shadow: false,
 })
 export class ElsaWorkflowDefinitionsListScreen {
-
+  @Prop() history?: RouterHistory;
   @Prop() serverUrl: string;
   @State() workflowDefinitions: PagedList<WorkflowDefinitionSummary> = {items: [], page: 1, pageSize: 50, totalCount: 0};
 
@@ -121,7 +122,7 @@ export class ElsaWorkflowDefinitionsListScreen {
                   <td class="hidden md:table-cell px-6 py-3 whitespace-no-wrap text-sm leading-5 text-gray-500 text-right">{latestVersionNumber}</td>
                   <td class="hidden md:table-cell px-6 py-3 whitespace-no-wrap text-sm leading-5 text-gray-500 text-right">{publishedVersionNumber}</td>
                   <td class="pr-6">
-                    <elsa-context-menu menuItems={[
+                    <elsa-context-menu history={this.history} menuItems={[
                       {text: 'Edit', anchorUrl: editUrl, icon: editIcon},
                       {text: 'Delete', clickHandler: e => this.onDeleteClick(e, workflowDefinition), icon: deleteIcon}
                     ]}/>

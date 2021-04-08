@@ -9,12 +9,20 @@ import {MenuItem} from "./models";
   styleUrl: 'elsa-context-menu.css',
   shadow: false,
 })
-export class AppContextMenu {
+export class ElsaContextMenu {
   @Prop() history: RouterHistory;
   @Prop() menuItems: Array<MenuItem> = [];
 
+  navigate: (path: string) => void;
   contextMenu: HTMLElement;
 
+  componentWillLoad(){
+    if(!!this.history)
+      this.navigate = this.history.push;
+    else
+      this.navigate = path => document.location.href = path;
+  }
+  
   closeContextMenu() {
     leave(this.contextMenu);
   }
@@ -26,8 +34,9 @@ export class AppContextMenu {
   async onMenuItemClick(e: Event, menuItem: MenuItem) {
     e.preventDefault();
 
-    if (!!menuItem.anchorUrl)
-      this.history.push(menuItem.anchorUrl);
+    if (!!menuItem.anchorUrl) {
+      this.navigate(menuItem.anchorUrl);
+    }
     else if (!!menuItem.clickHandler) {
       menuItem.clickHandler(e);
     }
