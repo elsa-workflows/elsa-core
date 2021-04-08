@@ -46,6 +46,24 @@ export interface WorkflowBlueprintSummary {
     isLatest: boolean;
 }
 
+export interface WorkflowInstanceSummary
+{
+    id: string;
+    definitionId: string;
+    tenantId?: string;
+    version: number;
+    workflowStatus: WorkflowStatus;
+    correlationId?: string;
+    contextType?: string;
+    contextId?: string;
+    name?: string;
+    createdAt?: Date
+    lastExecutedAt?: Date;
+    finishedAt?: Date;
+    cancelledAt?: Date;
+    faultedAt?: Date;
+}
+
 export interface ActivityDefinition {
     activityId: string;
     type: string;

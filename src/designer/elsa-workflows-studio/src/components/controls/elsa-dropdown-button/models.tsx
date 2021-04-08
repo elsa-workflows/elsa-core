@@ -5,7 +5,8 @@
 }
 
 export interface DropdownButtonItem {
-  name: string;
+  name?: string;
+  value?: any;
   text: string;
   url?: string;
   isSelected?: boolean;
