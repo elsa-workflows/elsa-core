@@ -25,7 +25,7 @@ namespace Elsa.Services
             
             _logger.LogDebug("Acquiring a lock on {LockName}", name);
 
-            var handle = await distributedLock.AcquireAsync(timeoutTimeSpan, cancellationToken);
+            var handle = await distributedLock.TryAcquireAsync(timeoutTimeSpan, cancellationToken);
             
             if (handle == null!)
                 return null;
