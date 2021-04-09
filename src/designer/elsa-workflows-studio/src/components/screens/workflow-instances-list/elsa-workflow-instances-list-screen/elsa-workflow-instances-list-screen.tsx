@@ -22,6 +22,8 @@ export class ElsaWorkflowInstancesListScreen {
     @State() selectedOrderBy?: OrderBy = OrderBy.Started;
     @State() selectedWorkflowInstanceIds: Array<string> = [];
     @State() selectAllChecked: boolean;
+    @State() page: number = 0;
+    @State() pageSize: number = 25;
 
     confirmDialog: HTMLElsaConfirmDialogElement;
 
@@ -50,10 +52,7 @@ export class ElsaWorkflowInstancesListScreen {
 
     async loadWorkflowInstances() {
         const elsaClient = this.createClient();
-        const page = 1;
-        const pageSize = 25;
-
-        this.workflowInstances = await elsaClient.workflowInstancesApi.list(page, pageSize, this.selectedWorkflowId, this.selectedWorkflowStatus, this.selectedOrderBy);
+        this.workflowInstances = await elsaClient.workflowInstancesApi.list(this.page, this.pageSize, this.selectedWorkflowId, this.selectedWorkflowStatus, this.selectedOrderBy);
     }
 
     createClient() {
@@ -140,8 +139,8 @@ export class ElsaWorkflowInstancesListScreen {
         await elsaClient.workflowInstancesApi.delete(workflowInstance.id);
         await this.loadWorkflowInstances();
     }
-    
-    async onBulkDelete(){
+
+    async onBulkDelete() {
         const result = await this.confirmDialog.show('Delete Selected Workflow Instances', 'Are you sure you wish to permanently delete all selected workflow instances?');
 
         if (!result)
@@ -154,9 +153,8 @@ export class ElsaWorkflowInstancesListScreen {
 
     async onBulkActionSelected(e: CustomEvent<DropdownButtonItem>) {
         const action = e.detail;
-        
-        switch(action.name)
-        {
+
+        switch (action.name) {
             case 'Delete':
                 await this.onBulkDelete();
         }
@@ -293,7 +291,7 @@ export class ElsaWorkflowInstancesListScreen {
                             })}
                             </tbody>
                         </table>
-                        <elsa-pager page="@WorkflowInstances.Page" pageSize="@WorkflowInstances.PageSize" totalCount="@WorkflowInstances.TotalCount"/>
+                        <elsa-pager page={this.page} pageSize={this.pageSize} totalCount={this.workflowInstances.totalCount}/>
                     </div>
                     <elsa-confirm-dialog ref={el => this.confirmDialog = el}/>
                 </div>
