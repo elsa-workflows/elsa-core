@@ -132,6 +132,23 @@ export namespace Components {
         "propertyDescriptor": ActivityPropertyDescriptor;
         "propertyModel": ActivityDefinitionProperty;
     }
+    interface ElsaStudioRoot {
+        "serverUrl": string;
+    }
+    interface ElsaStudioWorkflowDefinitionsEdit {
+        "match": MatchResults;
+        "serverUrl": string;
+    }
+    interface ElsaStudioWorkflowDefinitionsList {
+        "history": RouterHistory;
+        "serverUrl": string;
+    }
+    interface ElsaStudioWorkflowInstancesList {
+        "history": RouterHistory;
+        "serverUrl": string;
+    }
+    interface ElsaStudioWorkflowRegistry {
+    }
     interface ElsaToastNotification {
         "hide": () => Promise<void>;
         "show": (options: ToastNotificationOptions) => Promise<void>;
@@ -314,6 +331,36 @@ declare global {
         prototype: HTMLElsaSingleLinePropertyElement;
         new (): HTMLElsaSingleLinePropertyElement;
     };
+    interface HTMLElsaStudioRootElement extends Components.ElsaStudioRoot, HTMLStencilElement {
+    }
+    var HTMLElsaStudioRootElement: {
+        prototype: HTMLElsaStudioRootElement;
+        new (): HTMLElsaStudioRootElement;
+    };
+    interface HTMLElsaStudioWorkflowDefinitionsEditElement extends Components.ElsaStudioWorkflowDefinitionsEdit, HTMLStencilElement {
+    }
+    var HTMLElsaStudioWorkflowDefinitionsEditElement: {
+        prototype: HTMLElsaStudioWorkflowDefinitionsEditElement;
+        new (): HTMLElsaStudioWorkflowDefinitionsEditElement;
+    };
+    interface HTMLElsaStudioWorkflowDefinitionsListElement extends Components.ElsaStudioWorkflowDefinitionsList, HTMLStencilElement {
+    }
+    var HTMLElsaStudioWorkflowDefinitionsListElement: {
+        prototype: HTMLElsaStudioWorkflowDefinitionsListElement;
+        new (): HTMLElsaStudioWorkflowDefinitionsListElement;
+    };
+    interface HTMLElsaStudioWorkflowInstancesListElement extends Components.ElsaStudioWorkflowInstancesList, HTMLStencilElement {
+    }
+    var HTMLElsaStudioWorkflowInstancesListElement: {
+        prototype: HTMLElsaStudioWorkflowInstancesListElement;
+        new (): HTMLElsaStudioWorkflowInstancesListElement;
+    };
+    interface HTMLElsaStudioWorkflowRegistryElement extends Components.ElsaStudioWorkflowRegistry, HTMLStencilElement {
+    }
+    var HTMLElsaStudioWorkflowRegistryElement: {
+        prototype: HTMLElsaStudioWorkflowRegistryElement;
+        new (): HTMLElsaStudioWorkflowRegistryElement;
+    };
     interface HTMLElsaToastNotificationElement extends Components.ElsaToastNotification, HTMLStencilElement {
     }
     var HTMLElsaToastNotificationElement: {
@@ -382,6 +429,11 @@ declare global {
         "elsa-property-editor": HTMLElsaPropertyEditorElement;
         "elsa-script-property": HTMLElsaScriptPropertyElement;
         "elsa-single-line-property": HTMLElsaSingleLinePropertyElement;
+        "elsa-studio-root": HTMLElsaStudioRootElement;
+        "elsa-studio-workflow-definitions-edit": HTMLElsaStudioWorkflowDefinitionsEditElement;
+        "elsa-studio-workflow-definitions-list": HTMLElsaStudioWorkflowDefinitionsListElement;
+        "elsa-studio-workflow-instances-list": HTMLElsaStudioWorkflowInstancesListElement;
+        "elsa-studio-workflow-registry": HTMLElsaStudioWorkflowRegistryElement;
         "elsa-toast-notification": HTMLElsaToastNotificationElement;
         "elsa-workflow-definition-editor-screen": HTMLElsaWorkflowDefinitionEditorScreenElement;
         "elsa-workflow-definitions-list-screen": HTMLElsaWorkflowDefinitionsListScreenElement;
@@ -512,6 +564,23 @@ declare namespace LocalJSX {
         "propertyDescriptor"?: ActivityPropertyDescriptor;
         "propertyModel"?: ActivityDefinitionProperty;
     }
+    interface ElsaStudioRoot {
+        "serverUrl"?: string;
+    }
+    interface ElsaStudioWorkflowDefinitionsEdit {
+        "match"?: MatchResults;
+        "serverUrl"?: string;
+    }
+    interface ElsaStudioWorkflowDefinitionsList {
+        "history"?: RouterHistory;
+        "serverUrl"?: string;
+    }
+    interface ElsaStudioWorkflowInstancesList {
+        "history"?: RouterHistory;
+        "serverUrl"?: string;
+    }
+    interface ElsaStudioWorkflowRegistry {
+    }
     interface ElsaToastNotification {
     }
     interface ElsaWorkflowDefinitionEditorScreen {
@@ -567,6 +636,11 @@ declare namespace LocalJSX {
         "elsa-property-editor": ElsaPropertyEditor;
         "elsa-script-property": ElsaScriptProperty;
         "elsa-single-line-property": ElsaSingleLineProperty;
+        "elsa-studio-root": ElsaStudioRoot;
+        "elsa-studio-workflow-definitions-edit": ElsaStudioWorkflowDefinitionsEdit;
+        "elsa-studio-workflow-definitions-list": ElsaStudioWorkflowDefinitionsList;
+        "elsa-studio-workflow-instances-list": ElsaStudioWorkflowInstancesList;
+        "elsa-studio-workflow-registry": ElsaStudioWorkflowRegistry;
         "elsa-toast-notification": ElsaToastNotification;
         "elsa-workflow-definition-editor-screen": ElsaWorkflowDefinitionEditorScreen;
         "elsa-workflow-definitions-list-screen": ElsaWorkflowDefinitionsListScreen;
@@ -605,6 +679,11 @@ declare module "@stencil/core" {
             "elsa-property-editor": LocalJSX.ElsaPropertyEditor & JSXBase.HTMLAttributes<HTMLElsaPropertyEditorElement>;
             "elsa-script-property": LocalJSX.ElsaScriptProperty & JSXBase.HTMLAttributes<HTMLElsaScriptPropertyElement>;
             "elsa-single-line-property": LocalJSX.ElsaSingleLineProperty & JSXBase.HTMLAttributes<HTMLElsaSingleLinePropertyElement>;
+            "elsa-studio-root": LocalJSX.ElsaStudioRoot & JSXBase.HTMLAttributes<HTMLElsaStudioRootElement>;
+            "elsa-studio-workflow-definitions-edit": LocalJSX.ElsaStudioWorkflowDefinitionsEdit & JSXBase.HTMLAttributes<HTMLElsaStudioWorkflowDefinitionsEditElement>;
+            "elsa-studio-workflow-definitions-list": LocalJSX.ElsaStudioWorkflowDefinitionsList & JSXBase.HTMLAttributes<HTMLElsaStudioWorkflowDefinitionsListElement>;
+            "elsa-studio-workflow-instances-list": LocalJSX.ElsaStudioWorkflowInstancesList & JSXBase.HTMLAttributes<HTMLElsaStudioWorkflowInstancesListElement>;
+            "elsa-studio-workflow-registry": LocalJSX.ElsaStudioWorkflowRegistry & JSXBase.HTMLAttributes<HTMLElsaStudioWorkflowRegistryElement>;
             "elsa-toast-notification": LocalJSX.ElsaToastNotification & JSXBase.HTMLAttributes<HTMLElsaToastNotificationElement>;
             "elsa-workflow-definition-editor-screen": LocalJSX.ElsaWorkflowDefinitionEditorScreen & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionEditorScreenElement>;
             "elsa-workflow-definitions-list-screen": LocalJSX.ElsaWorkflowDefinitionsListScreen & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionsListScreenElement>;

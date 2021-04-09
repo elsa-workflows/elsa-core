@@ -2,11 +2,10 @@ import {Component, Prop, h} from '@stencil/core';
 import {MatchResults} from '@stencil/router';
 
 @Component({
-  tag: 'app-workflow-definitions-edit',
-  styleUrl: 'app-workflow-definitions-edit.css',
+  tag: 'elsa-studio-workflow-definitions-edit',
   shadow: false,
 })
-export class AppWorkflowDefinitionsEdit {
+export class ElsaStudioWorkflowDefinitionsEdit {
   @Prop() match: MatchResults;
   @Prop() serverUrl: string;
 
