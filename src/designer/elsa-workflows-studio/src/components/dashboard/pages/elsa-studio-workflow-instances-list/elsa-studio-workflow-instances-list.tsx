@@ -2,11 +2,10 @@ import {Component, h, Prop, State} from '@stencil/core';
 import {RouterHistory} from "@stencil/router";
 
 @Component({
-  tag: 'app-workflow-instances-list',
-  styleUrl: 'app-workflow-instances-list.css',
+  tag: 'elsa-studio-workflow-instances-list',
   shadow: false,
 })
-export class AppWorkflowInstancesList {
+export class ElsaStudioWorkflowInstancesList {
   @Prop() history: RouterHistory;
   @Prop() serverUrl: string;
 

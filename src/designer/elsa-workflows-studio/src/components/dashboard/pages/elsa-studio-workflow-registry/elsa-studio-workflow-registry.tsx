@@ -1,11 +1,10 @@
 import {Component, h} from '@stencil/core';
 
 @Component({
-  tag: 'app-workflow-registry',
-  styleUrl: 'app-workflow-registry.css',
+  tag: 'elsa-studio-workflow-registry',
   shadow: false,
 })
-export class AppHome {
+export class ElsaStudioWorkflowRegistry {
   render() {
     return (
       <div>
