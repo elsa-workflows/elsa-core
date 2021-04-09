@@ -104,6 +104,11 @@ export namespace Components {
         "propertyDescriptor": ActivityPropertyDescriptor;
         "propertyModel": ActivityDefinitionProperty;
     }
+    interface ElsaPager {
+        "page": number;
+        "pageSize": number;
+        "totalCount": number;
+    }
     interface ElsaPropertyEditor {
         "context"?: string;
         "editorHeight": string;
@@ -284,6 +289,12 @@ declare global {
         prototype: HTMLElsaMultiTextPropertyElement;
         new (): HTMLElsaMultiTextPropertyElement;
     };
+    interface HTMLElsaPagerElement extends Components.ElsaPager, HTMLStencilElement {
+    }
+    var HTMLElsaPagerElement: {
+        prototype: HTMLElsaPagerElement;
+        new (): HTMLElsaPagerElement;
+    };
     interface HTMLElsaPropertyEditorElement extends Components.ElsaPropertyEditor, HTMLStencilElement {
     }
     var HTMLElsaPropertyEditorElement: {
@@ -366,6 +377,7 @@ declare global {
         "elsa-monaco": HTMLElsaMonacoElement;
         "elsa-multi-line-property": HTMLElsaMultiLinePropertyElement;
         "elsa-multi-text-property": HTMLElsaMultiTextPropertyElement;
+        "elsa-pager": HTMLElsaPagerElement;
         "elsa-property-editor": HTMLElsaPropertyEditorElement;
         "elsa-script-property": HTMLElsaScriptPropertyElement;
         "elsa-single-line-property": HTMLElsaSingleLinePropertyElement;
@@ -470,6 +482,11 @@ declare namespace LocalJSX {
         "propertyDescriptor"?: ActivityPropertyDescriptor;
         "propertyModel"?: ActivityDefinitionProperty;
     }
+    interface ElsaPager {
+        "page"?: number;
+        "pageSize"?: number;
+        "totalCount"?: number;
+    }
     interface ElsaPropertyEditor {
         "context"?: string;
         "editorHeight"?: string;
@@ -544,6 +561,7 @@ declare namespace LocalJSX {
         "elsa-monaco": ElsaMonaco;
         "elsa-multi-line-property": ElsaMultiLineProperty;
         "elsa-multi-text-property": ElsaMultiTextProperty;
+        "elsa-pager": ElsaPager;
         "elsa-property-editor": ElsaPropertyEditor;
         "elsa-script-property": ElsaScriptProperty;
         "elsa-single-line-property": ElsaSingleLineProperty;
@@ -581,6 +599,7 @@ declare module "@stencil/core" {
             "elsa-monaco": LocalJSX.ElsaMonaco & JSXBase.HTMLAttributes<HTMLElsaMonacoElement>;
             "elsa-multi-line-property": LocalJSX.ElsaMultiLineProperty & JSXBase.HTMLAttributes<HTMLElsaMultiLinePropertyElement>;
             "elsa-multi-text-property": LocalJSX.ElsaMultiTextProperty & JSXBase.HTMLAttributes<HTMLElsaMultiTextPropertyElement>;
+            "elsa-pager": LocalJSX.ElsaPager & JSXBase.HTMLAttributes<HTMLElsaPagerElement>;
             "elsa-property-editor": LocalJSX.ElsaPropertyEditor & JSXBase.HTMLAttributes<HTMLElsaPropertyEditorElement>;
             "elsa-script-property": LocalJSX.ElsaScriptProperty & JSXBase.HTMLAttributes<HTMLElsaScriptPropertyElement>;
             "elsa-single-line-property": LocalJSX.ElsaSingleLineProperty & JSXBase.HTMLAttributes<HTMLElsaSingleLinePropertyElement>;
