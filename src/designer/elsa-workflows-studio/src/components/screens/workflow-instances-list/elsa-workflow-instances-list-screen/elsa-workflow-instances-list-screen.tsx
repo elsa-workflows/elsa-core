@@ -21,6 +21,7 @@ export class ElsaWorkflowInstancesListScreen {
     @State() selectedWorkflowStatus?: WorkflowStatus;
     @State() selectedOrderBy?: OrderBy = OrderBy.Started;
     @State() selectedWorkflowInstanceIds: Array<string> = [];
+    @State() selectAllChecked: boolean;
 
     confirmDialog: HTMLElsaConfirmDialogElement;
 
@@ -29,14 +30,6 @@ export class ElsaWorkflowInstancesListScreen {
         this.applyQueryString(this.history.location.search);
 
         await this.loadWorkflowBlueprints();
-        await this.loadWorkflowInstances();
-    }
-
-    async routeChanged(e: LocationSegments) {
-        if(!e.pathname.toLowerCase().indexOf('workflow-instances'))
-            return;
-        
-        this.applyQueryString(e.search);
         await this.loadWorkflowInstances();
     }
     
@@ -106,6 +99,37 @@ export class ElsaWorkflowInstancesListScreen {
         }
     }
 
+    async routeChanged(e: LocationSegments) {
+        if(!e.pathname.toLowerCase().indexOf('workflow-instances'))
+            return;
+
+        this.applyQueryString(e.search);
+        await this.loadWorkflowInstances();
+    }
+
+    onSelectAllCheckChange(e: Event){
+        const checkBox = e.target as HTMLInputElement;
+        const isChecked = checkBox.checked;
+
+        this.selectAllChecked = isChecked;
+        this.selectedWorkflowInstanceIds = [];
+        
+        if(isChecked)
+            this.selectedWorkflowInstanceIds = this.workflowInstances.items.map(x => x.id);
+    }
+
+    onWorkflowInstanceCheckChange(e: Event, workflowInstance: WorkflowInstanceSummary){
+        const checkBox = e.target as HTMLInputElement;
+        const isChecked = checkBox.checked;
+
+        if (isChecked)
+            this.selectedWorkflowInstanceIds = [...this.selectedWorkflowInstanceIds, workflowInstance.id];
+        else
+            this.selectedWorkflowInstanceIds = this.selectedWorkflowInstanceIds.filter(x => x != workflowInstance.id);
+
+        this.selectAllChecked = this.workflowInstances.items.findIndex(x => this.selectedWorkflowInstanceIds.findIndex(id => id == x.id) < 0) < 0;
+    }
+
     render() {
         const workflowInstances = this.workflowInstances.items;
         const workflowBlueprints = this.workflowBlueprints;
@@ -130,7 +154,7 @@ export class ElsaWorkflowInstancesListScreen {
                             <thead>
                             <tr class="border-t border-gray-200">
                                 <th class="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
-                                    <input type="checkbox" value="true" checked={false} class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded"/>
+                                    <input type="checkbox" value="true" checked={this.selectAllChecked} onChange={e => this.onSelectAllCheckChange(e)} class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded"/>
                                 </th>
                                 <th class="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
                                     <span class="lg:pl-2">ID</span>
@@ -175,7 +199,7 @@ export class ElsaWorkflowInstancesListScreen {
 
                                 return <tr>
                                     <td class="px-6 py-3 whitespace-no-wrap text-sm leading-5 font-medium text-gray-900">
-                                        <input type="checkbox" value={workflowInstance.id} checked={isSelected} class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded"/>
+                                        <input type="checkbox" value={workflowInstance.id} checked={isSelected} onChange={e => this.onWorkflowInstanceCheckChange(e, workflowInstance)} class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded"/>
                                     </td>
                                     <td class="px-6 py-3 whitespace-no-wrap text-sm leading-5 font-medium text-gray-900">
                                         <a href={viewUrl} class="truncate hover:text-gray-600">{workflowInstance.id}</a>
