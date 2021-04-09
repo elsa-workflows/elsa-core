@@ -1,11 +1,14 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
+using EFCore.BulkExtensions;
 using Elsa.Models;
+using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.Specifications;
 using Microsoft.EntityFrameworkCore;
 
@@ -34,7 +37,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
                 {
                     var dbSet = dbContext.Set<T>();
                     var existingEntity = await dbSet.FindAsync(new object[] { entity.Id }, cancellationToken);
-                    
+
                     if (existingEntity == null)
                     {
                         await dbSet.AddAsync(entity, cancellationToken);
@@ -44,7 +47,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
                     {
                         // Can't use the approach on the next line because we explicitly ignore certain properties (in order for them to be stored in the Data shadow property).
                         // dbContext.Entry(existingEntity).CurrentValues.SetValues(entity);
-                        
+
                         // Therefore using AutoMapper to copy properties instead.
                         existingEntity = _mapper.Map(entity, existingEntity);
                     }
@@ -94,12 +97,12 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
             }, cancellationToken);
         }
 
-        public virtual async Task DeleteAsync(T entity, CancellationToken cancellationToken = default) => await DoWorkOnSet(async dbSet => await dbSet.DeleteByKeyAsync(cancellationToken, entity.Id), cancellationToken);
+        public virtual async Task DeleteAsync(T entity, CancellationToken cancellationToken = default) => await DoWorkOnSet(async dbSet => await dbSet.AsQueryable().Where(x => x.Id == entity.Id).BatchDeleteAsync(cancellationToken), cancellationToken);
 
         public virtual async Task<int> DeleteManyAsync(ISpecification<T> specification, CancellationToken cancellationToken = default)
         {
             var filter = MapSpecification(specification);
-            return await DoWorkOnSet(async dbSet => await dbSet.Where(filter).DeleteFromQueryAsync(cancellationToken), cancellationToken);
+            return await DoWorkOnSet(async dbSet => await dbSet.Where(filter).BatchDeleteAsync(cancellationToken), cancellationToken);
         }
 
         public async Task<IEnumerable<T>> FindManyAsync(ISpecification<T> specification, IOrderBy<T>? orderBy = default, IPaging? paging = default, CancellationToken cancellationToken = default)
@@ -169,7 +172,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
             work(dbContext);
             await dbContext.SaveChangesAsync(cancellationToken);
         }
-        
+
         protected virtual void OnSaving(ElsaContext dbContext, T entity) => OnSaving(entity);
 
         protected virtual void OnSaving(T entity)

@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using Elsa.Models;
 using Elsa.Persistence.EntityFramework.Core.Configuration;
+using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
 
@@ -21,7 +22,7 @@ namespace Elsa.Persistence.EntityFramework.Core
         {
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(ElsaContext).Assembly);
 
-            if (Database.ProviderName == "Microsoft.EntityFrameworkCore.Sqlite")
+            if (Database.IsSqlite())
             {
                 // SQLite does not have proper support for DateTimeOffset via Entity Framework Core, see the limitations
                 // here: https://docs.microsoft.com/en-us/ef/core/providers/sqlite/limitations#query-limitations

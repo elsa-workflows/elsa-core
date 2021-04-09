@@ -82,26 +82,35 @@ export const createElsaClient = function (serverUrl: string): ElsaClient {
                 const response = await httpClient.get<PagedList<WorkflowBlueprintSummary>>(`v1/workflow-registry?version=${versionOptionsString}`);
                 return response.data;
             }
-        }, 
+        },
         workflowInstancesApi: {
             list: async (page?: number, pageSize?: number, workflowDefinitionId?: string, workflowStatus?: WorkflowStatus, orderBy?: OrderBy, searchTerm?: string): Promise<PagedList<WorkflowInstanceSummary>> => {
                 const queryString = {};
-                
-                if(!!workflowDefinitionId)
+
+                if (!!workflowDefinitionId)
                     queryString['workflow'] = workflowDefinitionId;
-                
-                if(workflowStatus != null)
+
+                if (workflowStatus != null)
                     queryString['status'] = workflowStatus;
-                
-                if(!!orderBy)
+
+                if (!!orderBy)
                     queryString['orderBy'] = orderBy;
-                
-                if(!!searchTerm)
+
+                if (!!searchTerm)
                     queryString['searchTerm'] = searchTerm;
-                
+
                 const queryStringItems = collection.map(queryString, (v, k) => `${k}=${v}`);
                 const queryStringText = queryStringItems.length > 0 ? `?${queryStringItems.join('&')}` : '';
                 const response = await httpClient.get<PagedList<WorkflowInstanceSummary>>(`v1/workflow-instances${queryStringText}`);
+                return response.data;
+            },
+            delete: async id => {
+                await httpClient.delete(`v1/workflow-instances/${id}`);
+            },
+            bulkDelete: async request => {
+                const response = await httpClient.delete(`v1/workflow-instances/bulk`, {
+                    data: request
+                });
                 return response.data;
             }
         },
@@ -128,27 +137,39 @@ export interface ActivitiesApi {
 }
 
 export interface WorkflowDefinitionsApi {
-    getByDefinitionAndVersion(definitionId: string, versionOptions: VersionOptions): Promise<WorkflowDefinition>
+    getByDefinitionAndVersion(definitionId: string, versionOptions: VersionOptions): Promise<WorkflowDefinition>;
 
-    list(page?: number, pageSize?: number, versionOptions?: VersionOptions): Promise<PagedList<WorkflowDefinitionSummary>>
+    list(page?: number, pageSize?: number, versionOptions?: VersionOptions): Promise<PagedList<WorkflowDefinitionSummary>>;
 
-    save(request: SaveWorkflowDefinitionRequest): Promise<WorkflowDefinition>
+    save(request: SaveWorkflowDefinitionRequest): Promise<WorkflowDefinition>;
 
-    delete(definitionId: string): Promise<void>
+    delete(definitionId: string): Promise<void>;
 
-    retract(workflowDefinitionId: string): Promise<WorkflowDefinition>
+    retract(workflowDefinitionId: string): Promise<WorkflowDefinition>;
 
-    export(workflowDefinitionId: string, versionOptions: VersionOptions): Promise<ExportWorkflowResponse>
+    export(workflowDefinitionId: string, versionOptions: VersionOptions): Promise<ExportWorkflowResponse>;
 
-    import(workflowDefinitionId: string, file: File): Promise<WorkflowDefinition>
+    import(workflowDefinitionId: string, file: File): Promise<WorkflowDefinition>;
 }
 
 export interface WorkflowRegistryApi {
-    list(page?: number, pageSize?: number, versionOptions?: VersionOptions): Promise<PagedList<WorkflowBlueprintSummary>>
+    list(page?: number, pageSize?: number, versionOptions?: VersionOptions): Promise<PagedList<WorkflowBlueprintSummary>>;
 }
 
 export interface WorkflowInstancesApi {
-    list(page?: number, pageSize?: number, workflowDefinitionId?: string, workflowStatus?: WorkflowStatus, orderBy?: OrderBy, searchTerm?: string): Promise<PagedList<WorkflowInstanceSummary>>
+    list(page?: number, pageSize?: number, workflowDefinitionId?: string, workflowStatus?: WorkflowStatus, orderBy?: OrderBy, searchTerm?: string): Promise<PagedList<WorkflowInstanceSummary>>;
+
+    delete(id: string): Promise<void>;
+
+    bulkDelete(request: BulkDeleteWorkflowsRequest): Promise<BulkDeleteWorkflowsResponse>;
+}
+
+export interface BulkDeleteWorkflowsRequest {
+    workflowInstanceIds: Array<string>;
+}
+
+export interface BulkDeleteWorkflowsResponse {
+    deletedWorkflowCount: number;
 }
 
 export interface ScriptingApi {
@@ -156,18 +177,18 @@ export interface ScriptingApi {
 }
 
 export interface SaveWorkflowDefinitionRequest {
-    workflowDefinitionId?: string
-    name?: string
-    displayName?: string
-    description?: string
-    variables?: Variables
-    contextOptions?: WorkflowContextOptions
-    isSingleton?: boolean
-    persistenceBehavior?: WorkflowPersistenceBehavior
-    deleteCompletedInstances?: boolean
-    publish?: boolean
-    activities: Array<ActivityDefinition>
-    connections: Array<ConnectionDefinition>
+    workflowDefinitionId?: string;
+    name?: string;
+    displayName?: string;
+    description?: string;
+    variables?: Variables;
+    contextOptions?: WorkflowContextOptions;
+    isSingleton?: boolean;
+    persistenceBehavior?: WorkflowPersistenceBehavior;
+    deleteCompletedInstances?: boolean;
+    publish?: boolean;
+    activities: Array<ActivityDefinition>;
+    connections: Array<ConnectionDefinition>;
 }
 
 export interface ExportWorkflowResponse {
