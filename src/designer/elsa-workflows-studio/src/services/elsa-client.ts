@@ -99,6 +99,12 @@ export const createElsaClient = function (serverUrl: string): ElsaClient {
                 if (!!searchTerm)
                     queryString['searchTerm'] = searchTerm;
 
+                if (!!page)
+                    queryString['page'] = page;
+
+                if (!!pageSize)
+                    queryString['pageSize'] = pageSize;
+
                 const queryStringItems = collection.map(queryString, (v, k) => `${k}=${v}`);
                 const queryStringText = queryStringItems.length > 0 ? `?${queryStringItems.join('&')}` : '';
                 const response = await httpClient.get<PagedList<WorkflowInstanceSummary>>(`v1/workflow-instances${queryStringText}`);

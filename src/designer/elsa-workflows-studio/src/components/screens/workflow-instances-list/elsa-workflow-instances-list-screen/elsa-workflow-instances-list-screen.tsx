@@ -41,6 +41,8 @@ export class ElsaWorkflowInstancesListScreen {
         this.selectedWorkflowId = query.workflow;
         this.selectedWorkflowStatus = query.status;
         this.selectedOrderBy = query.orderBy ?? OrderBy.Started;
+        this.page = !!query.page ? parseInt(query.page) : 0;
+        this.pageSize = !!query.pageSize ? parseInt(query.pageSize) : 25;
     }
 
     async loadWorkflowBlueprints() {
@@ -75,6 +77,12 @@ export class ElsaWorkflowInstancesListScreen {
 
         if (!!orderBy)
             filters['orderBy'] = orderBy;
+        
+        if(!!this.page)
+            filters['page'] = this.page.toString();
+
+        if(!!this.pageSize)
+            filters['pageSize'] = this.pageSize.toString();
 
         const queryString = collection.map(filters, (v, k) => `${k}=${v}`).join('&');
         return `/workflow-instances?${queryString}`;
@@ -99,7 +107,9 @@ export class ElsaWorkflowInstancesListScreen {
     }
 
     async routeChanged(e: LocationSegments) {
-        if (!e.pathname.toLowerCase().indexOf('workflow-instances'))
+        debugger;
+        
+        if (e.pathname.toLowerCase().indexOf('workflow-instances') < 0)
             return;
 
         this.applyQueryString(e.search);
@@ -164,23 +174,27 @@ export class ElsaWorkflowInstancesListScreen {
         const workflowInstances = this.workflowInstances.items;
         const workflowBlueprints = this.workflowBlueprints;
 
-        const viewIcon = (
-            <svg class="h-5 w-5 text-gray-500" width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-            </svg>
-        );
+        const renderViewIcon = function () {
+            return (
+                <svg class="h-5 w-5 text-gray-500" width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+            );
+        };
 
-        const deleteIcon = (
-            <svg class="h-5 w-5 text-gray-500" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                <path stroke="none" d="M0 0h24v24H0z"/>
-                <line x1="4" y1="7" x2="20" y2="7"/>
-                <line x1="10" y1="11" x2="10" y2="17"/>
-                <line x1="14" y1="11" x2="14" y2="17"/>
-                <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"/>
-                <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"/>
-            </svg>
-        );
+        const renderDeleteIcon = function () {
+            return (
+                <svg class="h-5 w-5 text-gray-500" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z"/>
+                    <line x1="4" y1="7" x2="20" y2="7"/>
+                    <line x1="10" y1="11" x2="10" y2="17"/>
+                    <line x1="14" y1="11" x2="14" y2="17"/>
+                    <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"/>
+                    <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"/>
+                </svg>
+            );
+        };
 
         return (
             <div>
@@ -283,15 +297,15 @@ export class ElsaWorkflowInstancesListScreen {
                                     </td>
                                     <td class="pr-6">
                                         <elsa-context-menu history={this.history} menuItems={[
-                                            {text: 'View', anchorUrl: viewUrl, icon: viewIcon},
-                                            {text: 'Delete', clickHandler: e => this.onDeleteClick(e, workflowInstance), icon: deleteIcon}
+                                            {text: 'View', anchorUrl: viewUrl, icon: renderViewIcon()},
+                                            {text: 'Delete', clickHandler: e => this.onDeleteClick(e, workflowInstance), icon: renderDeleteIcon()}
                                         ]}/>
                                     </td>
                                 </tr>
                             })}
                             </tbody>
                         </table>
-                        <elsa-pager page={this.page} pageSize={this.pageSize} totalCount={this.workflowInstances.totalCount}/>
+                        <elsa-pager page={this.page} pageSize={this.pageSize} totalCount={this.workflowInstances.totalCount} history={this.history}/>
                     </div>
                     <elsa-confirm-dialog ref={el => this.confirmDialog = el}/>
                 </div>
@@ -323,15 +337,17 @@ export class ElsaWorkflowInstancesListScreen {
 
         items = [{text: 'All', value: null, url: this.buildFilterUrl(null, selectedWorkflowStatus, SelectedOrderBy), isSelected: !selectedWorkflowId}, ...items];
 
-        const icon = <svg class="mr-3 h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke="none" d="M0 0h24v24H0z"/>
-            <rect x="4" y="4" width="6" height="6" rx="1"/>
-            <rect x="14" y="4" width="6" height="6" rx="1"/>
-            <rect x="4" y="14" width="6" height="6" rx="1"/>
-            <rect x="14" y="14" width="6" height="6" rx="1"/>
-        </svg>;
+        const renderIcon = function () {
+            return <svg class="mr-3 h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke="none" d="M0 0h24v24H0z"/>
+                <rect x="4" y="4" width="6" height="6" rx="1"/>
+                <rect x="14" y="4" width="6" height="6" rx="1"/>
+                <rect x="4" y="14" width="6" height="6" rx="1"/>
+                <rect x="14" y="14" width="6" height="6" rx="1"/>
+            </svg>;
+        };
 
-        return <elsa-dropdown-button text={selectedWorkflowText} items={items} icon={icon} origin={DropdownButtonOrigin.TopRight} onItemSelected={e => this.selectedWorkflowId = e.detail.value as string}/>
+        return <elsa-dropdown-button text={selectedWorkflowText} items={items} icon={renderIcon()} origin={DropdownButtonOrigin.TopRight} onItemSelected={e => this.selectedWorkflowId = e.detail.value as string}/>
     }
 
     renderStatusFilter() {
@@ -344,26 +360,31 @@ export class ElsaWorkflowInstancesListScreen {
             return ({text: text, url: this.buildFilterUrl(this.selectedWorkflowId, x, this.selectedOrderBy), isSelected: x == selectedWorkflowStatus});
         });
 
-        const icon = <svg class="mr-3 h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <circle cx="12" cy="12" r="10"/>
-            <polygon points="10 8 16 12 10 16 10 8"/>
-        </svg>;
+        const renderIcon = function () {
+            return <svg class="mr-3 h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <circle cx="12" cy="12" r="10"/>
+                <polygon points="10 8 16 12 10 16 10 8"/>
+            </svg>
+        };
 
-        return <elsa-dropdown-button text={selectedWorkflowStatusText} items={items} icon={icon} origin={DropdownButtonOrigin.TopRight}/>
+        return <elsa-dropdown-button text={selectedWorkflowStatusText} items={items} icon={renderIcon()} origin={DropdownButtonOrigin.TopRight}/>
     }
 
     renderOrderByFilter() {
         const selectedOrderBy = this.selectedOrderBy;
         const selectedOrderByText = !!selectedOrderBy ? `Sort by: ${selectedOrderBy}` : 'Sort';
         const orderByValues: Array<OrderBy> = [OrderBy.Finished, OrderBy.LastExecuted, OrderBy.Started];
+
         const items: Array<DropdownButtonItem> = orderByValues.map(x => {
             return ({text: x, url: this.buildFilterUrl(this.selectedWorkflowId, this.selectedWorkflowStatus, x), isSelected: x == selectedOrderBy});
         });
 
-        const icon = <svg class="mr-3 h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"/>
-        </svg>;
+        const renderIcon = function () {
+            return <svg class="mr-3 h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"/>
+            </svg>
+        };
 
-        return <elsa-dropdown-button text={selectedOrderByText} items={items} icon={icon} origin={DropdownButtonOrigin.TopRight}/>
+        return <elsa-dropdown-button text={selectedOrderByText} items={items} icon={renderIcon()} origin={DropdownButtonOrigin.TopRight}/>
     }
 }

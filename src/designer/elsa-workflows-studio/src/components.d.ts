@@ -105,6 +105,7 @@ export namespace Components {
         "propertyModel": ActivityDefinitionProperty;
     }
     interface ElsaPager {
+        "history"?: RouterHistory;
         "page": number;
         "pageSize": number;
         "totalCount": number;
@@ -483,6 +484,7 @@ declare namespace LocalJSX {
         "propertyModel"?: ActivityDefinitionProperty;
     }
     interface ElsaPager {
+        "history"?: RouterHistory;
         "page"?: number;
         "pageSize"?: number;
         "totalCount"?: number;
