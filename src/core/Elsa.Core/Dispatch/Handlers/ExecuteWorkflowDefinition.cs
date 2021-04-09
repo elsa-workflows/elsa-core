@@ -57,38 +57,39 @@ namespace Elsa.Dispatch.Handlers
             {
                 _logger.LogDebug("Acquiring lock on correlation ID {CorrelationId}", correlationId);
                 correlationLockHandle = await _distributedLockProvider.AcquireLockAsync(correlationId, _elsaOptions.DistributedLockTimeout, cancellationToken);
+
+                if (correlationLockHandle == null)
+                    throw new LockAcquisitionException($"Failed to acquire a lock on correlation ID {correlationId}");
             }
 
-            if(correlationLockHandle == null)
-                throw new LockAcquisitionException($"Failed to acquire a lock on correlation ID {correlationId}");
-            
             try
             {
                 await using var handle = await _distributedLockProvider.AcquireLockAsync(lockKey, _elsaOptions.DistributedLockTimeout, cancellationToken);
-            
-            if(handle == null)
-                throw new LockAcquisitionException($"Failed to acquire a lock on {lockKey}");
 
-            if (!workflowBlueprint!.IsSingleton || await GetWorkflowIsAlreadyExecutingAsync(tenantId, workflowDefinitionId) == false)
-                await _startsWorkflow.StartWorkflowAsync(workflowBlueprint, request.ActivityId, request.Input, request.CorrelationId, request.ContextId, cancellationToken);
+                if (handle == null)
+                    throw new LockAcquisitionException($"Failed to acquire a lock on {lockKey}");
+
+                if (!workflowBlueprint!.IsSingleton || await GetWorkflowIsAlreadyExecutingAsync(tenantId, workflowDefinitionId) == false)
+                    await _startsWorkflow.StartWorkflowAsync(workflowBlueprint, request.ActivityId, request.Input, request.CorrelationId, request.ContextId, cancellationToken);
             }
             finally
             {
-                await correlationLockHandle.DisposeAsync();
+                if (correlationLockHandle != null)
+                    await correlationLockHandle.DisposeAsync();
             }
-            
+
             return Unit.Value;
         }
 
         private bool ValidatePreconditions(string? workflowDefinitionId, IWorkflowBlueprint? workflowBlueprint)
         {
-            if (workflowBlueprint != null) 
+            if (workflowBlueprint != null)
                 return true;
-            
+
             _logger.LogWarning("No workflow definition {WorkflowDefinitionId} found. Make sure the scheduled workflow definition is published and enabled", workflowDefinitionId);
             return false;
         }
-        
+
         private async Task<bool> GetWorkflowIsAlreadyExecutingAsync(string? tenantId, string workflowDefinitionId)
         {
             var specification = new TenantSpecification<WorkflowInstance>(tenantId).WithWorkflowDefinition(workflowDefinitionId).And(new WorkflowIsAlreadyExecutingSpecification());
