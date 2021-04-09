@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Exceptions;
@@ -7,8 +8,10 @@ using Elsa.Persistence.Specifications;
 using Elsa.Persistence.Specifications.WorkflowInstances;
 using Elsa.Services;
 using Elsa.Services.Models;
+using Medallion.Threading;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using IDistributedLockProvider = Elsa.Services.IDistributedLockProvider;
 
 namespace Elsa.Dispatch.Handlers
 {
@@ -47,14 +50,32 @@ namespace Elsa.Dispatch.Handlers
                 return Unit.Value;
 
             var lockKey = $"execute-workflow-definition:tenant:{tenantId}:workflow-definition:{workflowDefinitionId}";
+            var correlationId = request.CorrelationId;
+            var correlationLockHandle = default(IDistributedSynchronizationHandle?);
 
-            await using var handle = await _distributedLockProvider.AcquireLockAsync(lockKey, _elsaOptions.DistributedLockTimeout, cancellationToken);
+            if (!string.IsNullOrWhiteSpace(correlationId))
+            {
+                _logger.LogDebug("Acquiring lock on correlation ID {CorrelationId}", correlationId);
+                correlationLockHandle = await _distributedLockProvider.AcquireLockAsync(correlationId, _elsaOptions.DistributedLockTimeout, cancellationToken);
+            }
+
+            if(correlationLockHandle == null)
+                throw new LockAcquisitionException($"Failed to acquire a lock on correlation ID {correlationId}");
+            
+            try
+            {
+                await using var handle = await _distributedLockProvider.AcquireLockAsync(lockKey, _elsaOptions.DistributedLockTimeout, cancellationToken);
             
             if(handle == null)
                 throw new LockAcquisitionException($"Failed to acquire a lock on {lockKey}");
 
             if (!workflowBlueprint!.IsSingleton || await GetWorkflowIsAlreadyExecutingAsync(tenantId, workflowDefinitionId) == false)
                 await _startsWorkflow.StartWorkflowAsync(workflowBlueprint, request.ActivityId, request.Input, request.CorrelationId, request.ContextId, cancellationToken);
+            }
+            finally
+            {
+                await correlationLockHandle.DisposeAsync();
+            }
             
             return Unit.Value;
         }

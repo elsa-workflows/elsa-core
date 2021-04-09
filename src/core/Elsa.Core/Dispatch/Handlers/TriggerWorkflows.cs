@@ -56,8 +56,9 @@ namespace Elsa.Dispatch.Handlers
 
             if (!string.IsNullOrWhiteSpace(correlationId))
             {
-                var lockKey = $"trigger-workflows:correlation:{correlationId}";
+                var lockKey = correlationId;
 
+                _logger.LogDebug("Acquiring lock on correlation ID {CorrelationId}", correlationId);
                 await using var handle = await _distributedLockProvider.AcquireLockAsync(lockKey, _elsaOptions.DistributedLockTimeout, cancellationToken);
 
                 if (handle == null)
@@ -66,6 +67,8 @@ namespace Elsa.Dispatch.Handlers
                 var correlatedWorkflowInstanceCount = !string.IsNullOrWhiteSpace(correlationId)
                     ? await _workflowInstanceStore.CountAsync(new CorrelationIdSpecification<WorkflowInstance>(correlationId).WithStatus(WorkflowStatus.Suspended), cancellationToken)
                     : 0;
+                
+                _logger.LogDebug("Found {CorrelatedWorkflowCount} correlated workflows,", correlatedWorkflowInstanceCount);
                 
                 if (correlatedWorkflowInstanceCount > 0)
                 {
