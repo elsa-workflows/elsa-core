@@ -11,7 +11,8 @@ using System.Threading.Tasks;
 namespace Elsa.Activities.File
 {
     [Action(Category = "File",
-        Description = "Output input value to specified location")]
+        Description = "Output input value to specified location",
+        Outcomes = new[] { OutcomeNames.Done })]
     public class OutFile : Activity
     {
         [ActivityProperty(Hint = "Path to create file at.")]
