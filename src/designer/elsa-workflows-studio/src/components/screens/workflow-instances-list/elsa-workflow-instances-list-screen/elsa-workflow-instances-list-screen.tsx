@@ -6,7 +6,6 @@ import {createElsaClient} from "../../../../services/elsa-client";
 import {OrderBy, PagedList, VersionOptions, WorkflowBlueprintSummary, WorkflowInstanceSummary, WorkflowStatus} from "../../../../models";
 import {DropdownButtonItem, DropdownButtonOrigin} from "../../../controls/elsa-dropdown-button/models";
 import {Map, parseQuery} from '../../../../utils/utils';
-import {parseQueryString} from "@stencil/router/dist/types/utils/path-utils";
 
 @Component({
     tag: 'elsa-workflow-instances-list-screen',
@@ -20,7 +19,7 @@ export class ElsaWorkflowInstancesListScreen {
     @State() workflowInstances: PagedList<WorkflowInstanceSummary> = {items: [], page: 1, pageSize: 50, totalCount: 0};
     @State() selectedWorkflowId?: string;
     @State() selectedWorkflowStatus?: WorkflowStatus;
-    @State() selectedOrderBy?: OrderBy;
+    @State() selectedOrderBy?: OrderBy = OrderBy.Started;
     @State() selectedWorkflowInstanceIds: Array<string> = [];
 
     confirmDialog: HTMLElsaConfirmDialogElement;
@@ -44,8 +43,9 @@ export class ElsaWorkflowInstancesListScreen {
     applyQueryString(queryString?: string){
         const query = parseQuery(queryString);
         
-        this.selectedWorkflowId = !!query.workflow ? query.workflow : null;
-        this.selectedWorkflowStatus = !!query.status ? this.parseStatusText(query.status) : null;
+        this.selectedWorkflowId = query.workflow;
+        this.selectedWorkflowStatus = query.status;
+        this.selectedOrderBy = query.orderBy ?? OrderBy.Started;
     }
 
     async loadWorkflowBlueprints() {
@@ -73,19 +73,16 @@ export class ElsaWorkflowInstancesListScreen {
     }
 
     buildFilterUrl(workflowId?: string, workflowStatus?: WorkflowStatus, orderBy?: OrderBy) {
-        const workflowStatusText = workflowStatus != null ? this.getStatusText(workflowStatus) : null;
-        const orderByText = !!orderBy ? orderBy.toString() : null;
-
         const filters: Map<string> = {};
 
         if (!!workflowId)
             filters['workflow'] = workflowId;
 
-        if (!!workflowStatusText)
-            filters['status'] = workflowStatusText;
+        if (!!workflowStatus)
+            filters['status'] = workflowStatus;
 
-        if (!!orderByText)
-            filters['orderBy'] = orderByText;
+        if (!!orderBy)
+            filters['orderBy'] = orderBy;
 
         const queryString = collection.map(filters, (v, k) => `${k}=${v}`).join('&');
         return `/workflow-instances?${queryString}`;
@@ -108,45 +105,6 @@ export class ElsaWorkflowInstancesListScreen {
                 return "yellow";
         }
     }
-    
-    getStatusText(status: WorkflowStatus){
-        switch (status) {
-            default:
-            case WorkflowStatus.Idle:
-                return "Idle";
-            case WorkflowStatus.Running:
-                return "Running";
-            case WorkflowStatus.Suspended:
-                return "Suspended";
-            case WorkflowStatus.Finished:
-                return "Finished";
-            case WorkflowStatus.Faulted:
-                return "Faulted";
-            case WorkflowStatus.Cancelled:
-                return "Cancelled";
-        }
-    }
-
-    parseStatusText(status?: string): WorkflowStatus {
-        if(!status)
-            return null;
-            
-        switch (status.toLowerCase()) {
-            default:
-            case 'idle':
-                return WorkflowStatus.Idle;
-            case 'running':
-                return WorkflowStatus.Running;
-            case 'suspended':
-                return WorkflowStatus.Suspended;
-            case 'finished':
-                return WorkflowStatus.Finished;
-            case 'faulted':
-                return WorkflowStatus.Faulted;
-            case 'cancelled':
-                return WorkflowStatus.Cancelled;
-        }
-    }
 
     render() {
         const workflowInstances = this.workflowInstances.items;
@@ -163,7 +121,7 @@ export class ElsaWorkflowInstancesListScreen {
                     </div>
                     {this.renderWorkflowFilter()}
                     {this.renderStatusFilter()}
-                    <elsa-dropdown-button text="@SelectedOrderByText" items={[]} icon={null} origin={DropdownButtonOrigin.TopRight}/>
+                    {this.renderOrderByFilter()}
                 </div>
                 
                 <div class="mt-8 sm:block">
@@ -209,6 +167,7 @@ export class ElsaWorkflowInstancesListScreen {
                                 const workflowBlueprint = workflowBlueprints.find(x => x.id == workflowInstance.definitionId && x.version == workflowInstance.version) ?? {displayName: '(Workflow definition not found)'};
                                 const displayName = workflowBlueprint.displayName;
                                 const statusColor = this.getStatusColor(workflowInstance.workflowStatus);
+                                debugger;
                                 const viewUrl = `/workflow-instances/${workflowInstance.id}/viewer`;
                                 const instanceName = !workflowInstance.name ? '' : workflowInstance.name;
                                 const isSelected = this.selectedWorkflowInstanceIds.findIndex(x => x === workflowInstance.id) >= 0;
@@ -234,7 +193,7 @@ export class ElsaWorkflowInstancesListScreen {
                                     </td>
                                     <td class="hidden md:table-cell px-6 py-3 whitespace-no-wrap text-sm leading-5 text-gray-500 text-right">
                                         <div class="flex items-center space-x-3 lg:pl-2">
-                                            <div class="flex-shrink-0 w-2.5 h-2.5 rounded-full bg-@statusColor-600"/>
+                                            <div class={`flex-shrink-0 w-2.5 h-2.5 rounded-full bg-${statusColor}-600`}/>
                                             <span>{workflowInstance.workflowStatus}</span>
                                         </div>
                                     </td>
@@ -288,20 +247,47 @@ export class ElsaWorkflowInstancesListScreen {
         let items: Array<DropdownButtonItem> = latestWorkflowBlueprints.map(x => ({text: x.displayName!, value: x.id, url: this.buildFilterUrl(x.id, selectedWorkflowStatus, SelectedOrderBy), isSelected: x.id == selectedWorkflowId}));
 
         items = [{text: 'All', value: null, url: this.buildFilterUrl(null, selectedWorkflowStatus, SelectedOrderBy), isSelected: !selectedWorkflowId}, ...items];
+        
+        const icon = <svg class="mr-3 h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke="none" d="M0 0h24v24H0z"/>
+            <rect x="4" y="4" width="6" height="6" rx="1"/>
+            <rect x="14" y="4" width="6" height="6" rx="1"/>
+            <rect x="4" y="14" width="6" height="6" rx="1"/>
+            <rect x="14" y="14" width="6" height="6" rx="1"/>
+        </svg>;
 
-        return <elsa-dropdown-button text={selectedWorkflowText} items={items} icon={null} origin={DropdownButtonOrigin.TopRight} onItemSelected={e => this.selectedWorkflowId = e.detail.value as string}/>
+        return <elsa-dropdown-button text={selectedWorkflowText} items={items} icon={icon} origin={DropdownButtonOrigin.TopRight} onItemSelected={e => this.selectedWorkflowId = e.detail.value as string}/>
     }
     
     renderStatusFilter(){
         const selectedWorkflowStatus = this.selectedWorkflowStatus;
-        const selectedWorkflowStatusText = selectedWorkflowStatus != null ? this.getStatusText(selectedWorkflowStatus) : 'Status';
+        const selectedWorkflowStatusText = !!selectedWorkflowStatus ? selectedWorkflowStatus : 'Status';
         const statuses: Array<WorkflowStatus> = [null, WorkflowStatus.Running, WorkflowStatus.Suspended, WorkflowStatus.Finished, WorkflowStatus.Faulted, WorkflowStatus.Cancelled, WorkflowStatus.Idle];
+        
         const items: Array<DropdownButtonItem> = statuses.map(x => {
-            const enumText = x != null ? this.getStatusText(x) : null;
-            const text = !!enumText ? enumText : 'All';
+            const text = x ?? 'All';
             return ({text: text, url: this.buildFilterUrl(this.selectedWorkflowId, x, this.selectedOrderBy), isSelected: x == selectedWorkflowStatus});
         });
         
-        return <elsa-dropdown-button text={selectedWorkflowStatusText} items={items} icon={null} origin={DropdownButtonOrigin.TopRight}/>
+        const icon = <svg class="mr-3 h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <circle cx="12" cy="12" r="10"/> <polygon points="10 8 16 12 10 16 10 8"/>
+        </svg>;
+        
+        return <elsa-dropdown-button text={selectedWorkflowStatusText} items={items} icon={icon} origin={DropdownButtonOrigin.TopRight}/>
+    }
+
+    renderOrderByFilter(){
+        const selectedOrderBy = this.selectedOrderBy;
+        const selectedOrderByText = !!selectedOrderBy ? `Sort by: ${selectedOrderBy}` : 'Sort';
+        const orderByValues: Array<OrderBy> = [OrderBy.Finished, OrderBy.LastExecuted, OrderBy.Started];
+        const items: Array<DropdownButtonItem> = orderByValues.map(x => {
+            return ({text: x, url: this.buildFilterUrl(this.selectedWorkflowId, this.selectedWorkflowStatus, x), isSelected: x == selectedOrderBy});
+        });
+        
+        const icon = <svg class="mr-3 h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"/>
+        </svg>;
+
+        return <elsa-dropdown-button text={selectedOrderByText} items={items} icon={icon} origin={DropdownButtonOrigin.TopRight}/>
     }
 }

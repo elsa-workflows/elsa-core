@@ -156,10 +156,6 @@ export namespace Components {
     interface ElsaWorkflowSettingsModal {
         "workflowDefinition": WorkflowDefinition;
     }
-    interface WorkflowInstancesListScreen {
-        "history"?: RouterHistory;
-        "serverUrl": string;
-    }
 }
 declare global {
     interface HTMLAppRootElement extends Components.AppRoot, HTMLStencilElement {
@@ -348,12 +344,6 @@ declare global {
         prototype: HTMLElsaWorkflowSettingsModalElement;
         new (): HTMLElsaWorkflowSettingsModalElement;
     };
-    interface HTMLWorkflowInstancesListScreenElement extends Components.WorkflowInstancesListScreen, HTMLStencilElement {
-    }
-    var HTMLWorkflowInstancesListScreenElement: {
-        prototype: HTMLWorkflowInstancesListScreenElement;
-        new (): HTMLWorkflowInstancesListScreenElement;
-    };
     interface HTMLElementTagNameMap {
         "app-root": HTMLAppRootElement;
         "app-workflow-definitions-edit": HTMLAppWorkflowDefinitionsEditElement;
@@ -386,7 +376,6 @@ declare global {
         "elsa-workflow-instances-list-screen": HTMLElsaWorkflowInstancesListScreenElement;
         "elsa-workflow-publish-button": HTMLElsaWorkflowPublishButtonElement;
         "elsa-workflow-settings-modal": HTMLElsaWorkflowSettingsModalElement;
-        "workflow-instances-list-screen": HTMLWorkflowInstancesListScreenElement;
     }
 }
 declare namespace LocalJSX {
@@ -533,10 +522,6 @@ declare namespace LocalJSX {
     interface ElsaWorkflowSettingsModal {
         "workflowDefinition"?: WorkflowDefinition;
     }
-    interface WorkflowInstancesListScreen {
-        "history"?: RouterHistory;
-        "serverUrl"?: string;
-    }
     interface IntrinsicElements {
         "app-root": AppRoot;
         "app-workflow-definitions-edit": AppWorkflowDefinitionsEdit;
@@ -569,7 +554,6 @@ declare namespace LocalJSX {
         "elsa-workflow-instances-list-screen": ElsaWorkflowInstancesListScreen;
         "elsa-workflow-publish-button": ElsaWorkflowPublishButton;
         "elsa-workflow-settings-modal": ElsaWorkflowSettingsModal;
-        "workflow-instances-list-screen": WorkflowInstancesListScreen;
     }
 }
 export { LocalJSX as JSX };
@@ -607,7 +591,6 @@ declare module "@stencil/core" {
             "elsa-workflow-instances-list-screen": LocalJSX.ElsaWorkflowInstancesListScreen & JSXBase.HTMLAttributes<HTMLElsaWorkflowInstancesListScreenElement>;
             "elsa-workflow-publish-button": LocalJSX.ElsaWorkflowPublishButton & JSXBase.HTMLAttributes<HTMLElsaWorkflowPublishButtonElement>;
             "elsa-workflow-settings-modal": LocalJSX.ElsaWorkflowSettingsModal & JSXBase.HTMLAttributes<HTMLElsaWorkflowSettingsModalElement>;
-            "workflow-instances-list-screen": LocalJSX.WorkflowInstancesListScreen & JSXBase.HTMLAttributes<HTMLWorkflowInstancesListScreenElement>;
         }
     }
 }
