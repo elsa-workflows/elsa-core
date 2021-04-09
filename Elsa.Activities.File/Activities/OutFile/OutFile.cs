@@ -36,7 +36,7 @@ namespace Elsa.Activities.File
                     fs = new FileStream(Path, FileMode.CreateNew, FileAccess.ReadWrite);
                     break;
                 default:
-                    throw new ApplicationException("Unimplemented copy mode");
+                    throw new ApplicationException("Not implemented copy mode");
             }
 
             using var sw = new StreamWriter(fs);
