@@ -99,15 +99,15 @@ export interface WorkflowContextOptions {
 }
 
 export enum WorkflowContextFidelity {
-    Burst,
-    Activity
+    Burst= 'Burst',
+    Activity = 'Activity'
 }
 
 export enum WorkflowPersistenceBehavior {
-    Suspended,
-    WorkflowBurst,
-    WorkflowPassCompleted,
-    ActivityExecuted
+    Suspended= 'Suspended',
+    WorkflowBurst= ' WorkflowBurst',
+    WorkflowPassCompleted = 'WorkflowPassCompleted',
+    ActivityExecuted = 'ActivityExecuted'
 }
 
 export interface VersionOptions {
@@ -120,18 +120,18 @@ export interface VersionOptions {
 }
 
 export enum WorkflowStatus {
-    Idle,
-    Running,
-    Finished,
-    Suspended,
-    Faulted,
-    Cancelled
+    Idle= 'Idle',
+    Running = 'Running',
+    Finished = 'Finished',
+    Suspended = 'Suspended',
+    Faulted = 'Faulted',
+    Cancelled = 'Cancelled'
 }
 
 export enum OrderBy {
-    Started,
-    LastExecuted,
-    Finished
+    Started= 'Started',
+    LastExecuted = 'LastExecuted',
+    Finished = 'Finished'
 }
 
 export const getVersionOptionsString = (versionOptions?: VersionOptions) => {
