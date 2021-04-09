@@ -7,6 +7,7 @@ using Elsa.Exceptions;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications;
+using Elsa.Persistence.Specifications.WorkflowInstances;
 using Elsa.Services;
 using Elsa.Triggers;
 using MediatR;
@@ -62,11 +63,10 @@ namespace Elsa.Dispatch.Handlers
                 if (handle == null)
                     throw new LockAcquisitionException($"Failed to acquire a lock on {lockKey}");
 
-                var correlatedWorkflowInstanceCount = !string.IsNullOrWhiteSpace(correlationId) ? await _workflowInstanceStore.CountAsync(new CorrelationIdSpecification<WorkflowInstance>(correlationId), cancellationToken) : 0;
-
-                // Release lock before executing workflows. If we don't, we potentially enter a deadlock. 
-                await handle.DisposeAsync();
-
+                var correlatedWorkflowInstanceCount = !string.IsNullOrWhiteSpace(correlationId)
+                    ? await _workflowInstanceStore.CountAsync(new CorrelationIdSpecification<WorkflowInstance>(correlationId).WithStatus(WorkflowStatus.Suspended), cancellationToken)
+                    : 0;
+                
                 if (correlatedWorkflowInstanceCount > 0)
                 {
                     _logger.LogDebug("{WorkflowInstanceCount} existing workflows found with correlation ID '{CorrelationId}' will be queued for execution", correlatedWorkflowInstanceCount, correlationId);
