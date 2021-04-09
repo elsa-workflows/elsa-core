@@ -25,6 +25,7 @@
     </PackageReference>
     <PackageReference Include="YesSql.Core" Version="3.0.2" />
     <PackageReference Include="YesSql.Provider.Sqlite" Version="3.0.2" />
+    <PackageReference Include="YesSql.Provider.PostgreSql" Version="3.0.2" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0" />
     <PackageReference Include="Hangfire.AspNetCore" Version="1.7.20" />
     <PackageReference Include="Hangfire.InMemory" Version="0.3.4" />
