@@ -23,7 +23,8 @@ export class ElsaWorkflowInstancesListScreen {
     @State() selectedWorkflowInstanceIds: Array<string> = [];
     @State() selectAllChecked: boolean;
     @State() page: number = 0;
-    @State() pageSize: number = 25;
+    @State() pageSize: number = 15;
+    @State() searchTerm?: string;
 
     confirmDialog: HTMLElsaConfirmDialogElement;
 
@@ -42,7 +43,7 @@ export class ElsaWorkflowInstancesListScreen {
         this.selectedWorkflowStatus = query.status;
         this.selectedOrderBy = query.orderBy ?? OrderBy.Started;
         this.page = !!query.page ? parseInt(query.page) : 0;
-        this.pageSize = !!query.pageSize ? parseInt(query.pageSize) : 25;
+        this.pageSize = !!query.pageSize ? parseInt(query.pageSize) : 15;
     }
 
     async loadWorkflowBlueprints() {
@@ -54,7 +55,7 @@ export class ElsaWorkflowInstancesListScreen {
 
     async loadWorkflowInstances() {
         const elsaClient = this.createClient();
-        this.workflowInstances = await elsaClient.workflowInstancesApi.list(this.page, this.pageSize, this.selectedWorkflowId, this.selectedWorkflowStatus, this.selectedOrderBy);
+        this.workflowInstances = await elsaClient.workflowInstancesApi.list(this.page, this.pageSize, this.selectedWorkflowId, this.selectedWorkflowStatus, this.selectedOrderBy, this.searchTerm);
     }
 
     createClient() {
@@ -77,11 +78,11 @@ export class ElsaWorkflowInstancesListScreen {
 
         if (!!orderBy)
             filters['orderBy'] = orderBy;
-        
-        if(!!this.page)
+
+        if (!!this.page)
             filters['page'] = this.page.toString();
 
-        if(!!this.pageSize)
+        if (!!this.pageSize)
             filters['pageSize'] = this.pageSize.toString();
 
         const queryString = collection.map(filters, (v, k) => `${k}=${v}`).join('&');
@@ -108,7 +109,7 @@ export class ElsaWorkflowInstancesListScreen {
 
     async routeChanged(e: LocationSegments) {
         debugger;
-        
+
         if (e.pathname.toLowerCase().indexOf('workflow-instances') < 0)
             return;
 
@@ -170,6 +171,16 @@ export class ElsaWorkflowInstancesListScreen {
         }
     }
 
+    async onSearch(e: Event) {
+        e.preventDefault();
+        const form = e.currentTarget as HTMLFormElement;
+        const formData = new FormData(form);
+        const searchTerm: FormDataEntryValue = formData.get('searchTerm');
+
+        this.searchTerm = searchTerm.toString();
+        await this.loadWorkflowInstances();
+    }
+
     render() {
         const workflowInstances = this.workflowInstances.items;
         const workflowBlueprints = this.workflowBlueprints;
@@ -198,6 +209,28 @@ export class ElsaWorkflowInstancesListScreen {
 
         return (
             <div>
+
+                <div class="relative z-10 flex-shrink-0 flex h-16 bg-white border-b border-gray-200">
+                    <div class="flex-1 px-4 flex justify-between sm:px-6 lg:px-8">
+                        <div class="flex-1 flex">
+                            <form class="w-full flex md:ml-0" onSubmit={e => this.onSearch(e)}>
+                                <label htmlFor="search_field" class="sr-only">Search</label>
+                                <div class="relative w-full text-cool-gray-400 focus-within:text-cool-gray-600">
+                                    <div class="absolute inset-y-0 left-0 flex items-center pointer-events-none">
+                                        <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" clip-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"/>
+                                        </svg>
+                                    </div>
+                                    <input name="searchTerm"
+                                           class="block w-full h-full pl-8 pr-3 py-2 rounded-md text-cool-gray-900 placeholder-cool-gray-500 focus:placeholder-cool-gray-400 sm:text-sm border-0 focus:outline-none focus:ring-0"
+                                           placeholder="Search"
+                                           type="search"/>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="p-8 flex content-end justify-right bg-white space-x-4">
                     <div class="flex-shrink-0">
                         {this.renderBulkActions()}

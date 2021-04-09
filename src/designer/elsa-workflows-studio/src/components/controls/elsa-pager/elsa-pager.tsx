@@ -42,7 +42,7 @@ export class ElsaPager {
 
         const from = page * pageSize + 1;
         const to = Math.min(from + pageSize, totalCount);
-        const pageCount = Math.round(((totalCount - 1) / pageSize) + 1);
+        const pageCount = Math.round(((totalCount - 1) / pageSize) + 0.5);
 
         const maxPageButtons = 10;
         const fromPage = Math.max(0, page - maxPageButtons / 2);
