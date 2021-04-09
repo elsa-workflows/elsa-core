@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
 
-    <Import Project="..\..\..\..\common.props" />
-    <Import Project="..\..\..\..\configureawait.props" />
+    <Import Project="..\..\..\..\..\common.props" />
+    <Import Project="..\..\..\..\..\configureawait.props" />
     
     <PropertyGroup>
         <GenerateMvcApplicationPartsAssemblyAttributes>false</GenerateMvcApplicationPartsAssemblyAttributes>
@@ -16,8 +16,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\..\dashboards\blazor\ElsaDashboard.Application\ElsaDashboard.Application.csproj" />
-        <ProjectReference Include="..\..\..\dashboards\blazor\ElsaDashboard.WebAssembly\ElsaDashboard.WebAssembly.csproj" />
+        <ProjectReference Include="..\..\..\..\dashboards\blazor\ElsaDashboard.Application\ElsaDashboard.Application.csproj" />
+        <ProjectReference Include="..\..\..\..\dashboards\blazor\ElsaDashboard.WebAssembly\ElsaDashboard.WebAssembly.csproj" />
     </ItemGroup>
 
 </Project>
