@@ -61,6 +61,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton(options.CorrelatingWorkflowDispatcherFactory)
                 .AddSingleton<IDistributedLockProvider, DistributedLockProvider>()
                 .AddStartupTask<ContinueRunningWorkflows>()
+                .AddStartupTask<CreateSubscriptions>()
                 .AddStartupTask<IndexTriggers>();
 
             optionsBuilder
