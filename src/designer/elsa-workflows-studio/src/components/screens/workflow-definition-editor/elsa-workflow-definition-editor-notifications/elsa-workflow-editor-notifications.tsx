@@ -3,8 +3,7 @@ import {eventBus} from '../../../../services/event-bus';
 import {EventTypes, WorkflowDefinition} from "../../../../models";
 
 @Component({
-  tag: 'elsa-workflow-editor-notifications',
-  styleUrl: 'elsa-workflow-editor-notifications.css',
+  tag: 'elsa-workflow-definition-editor-notifications',
   shadow: false,
 })
 export class ElsaWorkflowEditorNotifications {
@@ -28,7 +27,7 @@ export class ElsaWorkflowEditorNotifications {
   render() {
 
     return (
-      <Host>
+      <Host class="block">
         <elsa-toast-notification ref={el => this.toastNotificationElement = el}/>
       </Host>
     );

@@ -322,7 +322,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
         <elsa-designer-tree model={this.workflowModel} class="flex-1" ref={el => this.designer = el}/>
         {this.renderWorkflowSettingsButton()}
         <elsa-workflow-settings-modal workflowDefinition={this.workflowDefinition}/>
-        <elsa-workflow-editor-notifications/>
+        <elsa-workflow-definition-editor-notifications/>
         <div class="fixed bottom-10 right-12">
           <div class="flex items-center space-x-4">
             {this.renderSavingIndicator()}
