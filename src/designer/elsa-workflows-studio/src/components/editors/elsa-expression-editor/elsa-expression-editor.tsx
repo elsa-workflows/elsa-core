@@ -11,7 +11,6 @@ import {MonacoValueChangedArgs} from "../../controls/elsa-monaco/elsa-monaco";
 export class ElsaExpressionEditor {
 
   @Event() expressionChanged: EventEmitter<string>;
-  @Prop() fieldName: string;
   @Prop() language: string;
   @Prop() expression: string;
   @Prop({attribute: 'editor-height', reflect: true}) editorHeight: string = '6em';
@@ -25,6 +24,7 @@ export class ElsaExpressionEditor {
 
   @Watch("expression")
   expressionChangedHandler(newValue: string) {
+    debugger;
     this.currentExpression = newValue;
   }
 
@@ -51,7 +51,6 @@ export class ElsaExpressionEditor {
 
   render() {
     const language = this.language;
-    const fieldName = this.fieldName;
     const value = this.currentExpression;
 
     return (
@@ -62,7 +61,6 @@ export class ElsaExpressionEditor {
                      single-line={this.singleLineMode}
                      onValueChanged={e => this.onMonacoValueChanged(e.detail)}
                      ref={el => this.monacoEditor = el}/>
-        <input type="hidden" name={fieldName} value={value}/>
       </Host>
     )
   }
