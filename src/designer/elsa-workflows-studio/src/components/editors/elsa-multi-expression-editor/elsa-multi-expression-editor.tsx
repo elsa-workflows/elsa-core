@@ -2,7 +2,7 @@ import {Component, Event, EventEmitter, h, Prop, State} from '@stencil/core';
 import {SyntaxNames} from "../../../models";
 import {registerClickOutside} from "stencil-click-outside";
 import {enter, leave, toggle} from 'el-transition'
-import {Map} from "../../../utils/utils";
+import {Map, mapSyntaxToLanguage} from "../../../utils/utils";
 
 @Component({
   tag: 'elsa-multi-expression-editor',
@@ -11,7 +11,7 @@ import {Map} from "../../../utils/utils";
 export class ElsaMultiExpressionEditor {
   
   @Prop() label: string;
-  @Prop() fieldName: string;
+  @Prop() fieldName?: string;
   @Prop() syntax?: string;
   @Prop() defaultSyntax: string = SyntaxNames.Literal;
   @Prop() expressions: Map<string> = {};
@@ -63,20 +63,6 @@ export class ElsaMultiExpressionEditor {
     await this.expressionEditor.setExpression(this.currentValue);
     
     this.closeContextMenu();
-  }
-
-  mapSyntaxToLanguage(syntax: string): any {
-    switch (syntax) {
-      case 'Json':
-        return 'json';
-      case 'JavaScript':
-        return 'javascript';
-      case 'Liquid':
-        return 'handlebars';
-      case 'Literal':
-      default:
-        return 'plaintext';
-    }
   }
 
   onSettingsClick(e: Event) {
@@ -166,8 +152,7 @@ export class ElsaMultiExpressionEditor {
 
   renderEditor() {
     const selectedSyntax = this.selectedSyntax;
-    const monacoLanguage = this.mapSyntaxToLanguage(selectedSyntax);
-    const fieldName = this.fieldName;
+    const monacoLanguage = mapSyntaxToLanguage(selectedSyntax);
     const value = this.currentValue;
     const expressionEditorClass = selectedSyntax ? 'block' : 'hidden';
     const defaultEditorClass = selectedSyntax ? 'hidden' : 'block';
@@ -177,7 +162,6 @@ export class ElsaMultiExpressionEditor {
         <div class={expressionEditorClass}>
           <elsa-expression-editor ref={el => this.expressionEditor = el}
                                   onExpressionChanged={e => this.onExpressionChanged(e)}
-                                  fieldName={fieldName}
                                   expression={value}
                                   language={monacoLanguage}
                                   editorHeight={this.editorHeight}

@@ -134,6 +134,9 @@ export function getOrCreateProperty(activity: ActivityModel, name: string, defau
 }
 
 export function parseJson(json: string): any {
+    if(!json)
+        return null;
+    
     try {
         return JSON.parse(json);
     } catch (e) {
@@ -154,6 +157,20 @@ export function parseQuery(queryString?: string): any {
         query[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1] || '');
     }
     return query;
+}
+
+export function mapSyntaxToLanguage(syntax: string): any {
+    switch (syntax) {
+        case 'Json':
+            return 'json';
+        case 'JavaScript':
+            return 'javascript';
+        case 'Liquid':
+            return 'handlebars';
+        case 'Literal':
+        default:
+            return 'plaintext';
+    }
 }
 
 export function timeSince(time) {

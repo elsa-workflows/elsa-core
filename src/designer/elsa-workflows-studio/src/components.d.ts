@@ -55,7 +55,6 @@ export namespace Components {
         "context"?: string;
         "editorHeight": string;
         "expression": string;
-        "fieldName": string;
         "language": string;
         "serverUrl": string;
         "setExpression": (value: string) => Promise<void>;
@@ -85,7 +84,7 @@ export namespace Components {
         "defaultSyntax": string;
         "editorHeight": string;
         "expressions": Map<string>;
-        "fieldName": string;
+        "fieldName"?: string;
         "label": string;
         "singleLineMode": boolean;
         "supportedSyntaxes": Array<string>;
@@ -465,7 +464,6 @@ declare namespace LocalJSX {
         "context"?: string;
         "editorHeight"?: string;
         "expression"?: string;
-        "fieldName"?: string;
         "language"?: string;
         "onExpressionChanged"?: (event: CustomEvent<string>) => void;
         "serverUrl"?: string;

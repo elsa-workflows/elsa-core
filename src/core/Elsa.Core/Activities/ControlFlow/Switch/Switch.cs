@@ -22,7 +22,7 @@ namespace Elsa.Activities.ControlFlow
     )]
     public class Switch : Activity, INotificationHandler<ScopeEvicted>
     {
-        [ActivityProperty(Hint = "The conditions to evaluate.")]
+        [ActivityProperty(Hint = "The conditions to evaluate.", UIHint = "switch-case-builder", DefaultSyntax = "Switch")]
         public ICollection<SwitchCase> Cases { get; set; } = new List<SwitchCase>();
 
         [ActivityProperty(

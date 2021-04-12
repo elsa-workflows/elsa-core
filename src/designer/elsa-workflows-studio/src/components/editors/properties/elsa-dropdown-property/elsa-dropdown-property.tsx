@@ -47,7 +47,6 @@ export class ElsaDropdownProperty {
             const optionIsString = typeof(option) == 'string';
             const value = optionIsString ? option : option.value;
             const text = optionIsString ? option : option.text;
-            debugger;
             return <option value={value} selected={value === currentValue}>{text}</option>;
           })}
         </select>
