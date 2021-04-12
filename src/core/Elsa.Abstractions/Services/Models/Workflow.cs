@@ -25,7 +25,7 @@ namespace Elsa.Services.Models
             CorrelationId = correlationId;
             Activities = activities.ToList();
             Connections = connections.ToList();
-            Input = new Variables(input ?? Variables.Empty);
+            Input = new Variables().SetVariables(definition.Variables).SetVariables(new Variables(input ?? Variables.Empty));
         }
 
         public Workflow()
