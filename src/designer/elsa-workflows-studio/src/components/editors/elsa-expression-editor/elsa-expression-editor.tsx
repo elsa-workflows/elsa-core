@@ -24,7 +24,6 @@ export class ElsaExpressionEditor {
 
   @Watch("expression")
   expressionChangedHandler(newValue: string) {
-    debugger;
     this.currentExpression = newValue;
   }
 
