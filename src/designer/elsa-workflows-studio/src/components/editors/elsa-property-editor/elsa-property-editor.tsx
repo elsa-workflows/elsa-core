@@ -34,11 +34,10 @@ export class ElsaPropertyEditor {
     render() {
         const propertyDescriptor = this.propertyDescriptor;
         const propertyModel = this.propertyModel;
-        const defaultSyntax = propertyDescriptor.defaultSyntax || SyntaxNames.Literal;
         const fieldHint = propertyDescriptor.hint;
         const fieldName = propertyDescriptor.name;
-        const label = this.showLabel ? fieldHint : null;
-
+        const label = this.showLabel ? propertyDescriptor.label : null;
+        
         return <div>
             <elsa-multi-expression-editor
                 onSyntaxChanged={e => this.onSyntaxChanged(e)}
