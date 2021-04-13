@@ -1,7 +1,7 @@
-import {Component, Event, h, Host, Prop, State, Watch} from '@stencil/core';
+import {Component, Event, Host, Prop, State, Watch, h} from '@stencil/core';
 import {eventBus} from "../../../../services/event-bus";
 import {Map} from "../../../../utils/utils";
-import {EventTypes, Variables, WorkflowContextFidelity, WorkflowContextOptions, WorkflowDefinition} from "../../../../models";
+import {EventTypes, Variables, WorkflowContextFidelity, WorkflowContextOptions, WorkflowDefinition, WorkflowPersistenceBehavior} from "../../../../models";
 import {MonacoValueChangedArgs} from "../../../controls/elsa-monaco/elsa-monaco";
 import {MarkerSeverity} from "monaco-editor";
 import {checkBox, FormContext, selectField, SelectOption, textArea, textInput} from "../../../../utils/forms";
@@ -160,7 +160,7 @@ export class ElsaWorkflowDefinitionSettingsModal {
           {textInput(formContext, 'name', 'Name', workflowDefinition.name, 'The technical name of the workflow.', 'workflowName')}
           {textInput(formContext, 'displayName', 'Display Name', workflowDefinition.displayName, 'A user-friendly display name of the workflow.', 'workflowDisplayName')}
           {textArea(formContext, 'description', 'Description', workflowDefinition.description, null, 'workflowDescription')}
-          {selectField(formContext, 'persistenceBehavior', 'Persistence Behavior', workflowDefinition.persistenceBehavior.toString(), persistenceBehaviorOptions, 'The persistence behavior controls how often a workflow instance is persisted during workflow execution.', 'workflowContextFidelity')}
+          {selectField(formContext, 'persistenceBehavior', 'Persistence Behavior', workflowDefinition.persistenceBehavior, persistenceBehaviorOptions, 'The persistence behavior controls how often a workflow instance is persisted during workflow execution.', 'workflowContextFidelity')}
           {checkBox(formContext, 'isSingleton', 'Singleton', workflowDefinition.isSingleton, 'Singleton workflows will only have one active instance executing at a time.')}
         </div>
       </div>
