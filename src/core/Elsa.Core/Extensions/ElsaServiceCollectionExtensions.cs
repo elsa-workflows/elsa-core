@@ -8,9 +8,11 @@ using Elsa.ActivityProviders;
 using Elsa.ActivityTypeProviders;
 using Elsa.Bookmarks;
 using Elsa.Builders;
+using Elsa.Consumers;
 using Elsa.Decorators;
 using Elsa.Dispatch;
 using Elsa.Dispatch.Consumers;
+using Elsa.Events;
 using Elsa.Expressions;
 using Elsa.Handlers;
 using Elsa.HostedServices;
@@ -191,7 +193,9 @@ namespace Microsoft.Extensions.DependencyInjection
             options
                 .AddConsumer<TriggerWorkflowsRequestConsumer, TriggerWorkflowsRequest>()
                 .AddConsumer<ExecuteWorkflowDefinitionRequestConsumer, ExecuteWorkflowDefinitionRequest>()
-                .AddConsumer<ExecuteWorkflowInstanceRequestConsumer, ExecuteWorkflowInstanceRequest>();
+                .AddConsumer<ExecuteWorkflowInstanceRequestConsumer, ExecuteWorkflowInstanceRequest>()
+                .AddConsumer<UpdateWorkflowTriggersIndexConsumer, WorkflowDefinitionPublished>()
+                .AddConsumer<UpdateWorkflowTriggersIndexConsumer, WorkflowDefinitionRetracted>();
 
             // AutoMapper.
             services

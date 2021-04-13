@@ -1,9 +1,10 @@
 using System;
 using Elsa.Activities.AzureServiceBus.Bookmarks;
-using Elsa.Activities.AzureServiceBus.Handlers;
+using Elsa.Activities.AzureServiceBus.Consumers;
 using Elsa.Activities.AzureServiceBus.Options;
 using Elsa.Activities.AzureServiceBus.Services;
 using Elsa.Activities.AzureServiceBus.StartupTasks;
+using Elsa.Events;
 using Elsa.Runtime;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Management;
@@ -33,10 +34,14 @@ namespace Elsa.Activities.AzureServiceBus.Extensions
                 .AddSingleton<IServiceBusTopicsStarter, ServiceBusTopicsStarter>()
                 .AddStartupTask<StartServiceBusQueues>()
                 .AddStartupTask<StartServiceBusTopics>()
-                .AddNotificationHandlers(typeof(RestartServiceBusQueues))
                 .AddBookmarkProvider<QueueMessageReceivedBookmarkProvider>()
                 .AddBookmarkProvider<TopicMessageReceivedBookmarkProvider>()
                 ;
+
+            options.AddConsumer<RestartServiceBusQueuesConsumer, WorkflowDefinitionPublished>();
+            options.AddConsumer<RestartServiceBusQueuesConsumer, WorkflowDefinitionRetracted>();
+            options.AddConsumer<RestartServiceBusTopicsConsumer, WorkflowDefinitionPublished>();
+            options.AddConsumer<RestartServiceBusTopicsConsumer, WorkflowDefinitionRetracted>();
 
             options
                 .AddActivity<AzureServiceBusQueueMessageReceived>()
