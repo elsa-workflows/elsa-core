@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,23 +8,21 @@ using Microsoft.Azure.ServiceBus.Management;
 
 namespace Elsa.Activities.AzureServiceBus.Services
 {
-    public class MessageBusFactory : IMessageSenderFactory, IMessageReceiverFactory, ITopicMessageReceiverFactory, ITopicMessageSenderFactory
+    public class BusClientFactory : IQueueMessageSenderFactory, IQueueMessageReceiverClientFactory, ITopicMessageReceiverFactory, ITopicMessageSenderFactory
     {
         private readonly ServiceBusConnection _connection;
         private readonly ManagementClient _managementClient;
-        private readonly IDictionary<string, IMessageSender> _senders = new Dictionary<string, IMessageSender>();
-        private readonly IDictionary<string, IMessageReceiver> _receivers = new Dictionary<string, IMessageReceiver>();
-
-        private readonly IDictionary<(string topicName, string queueName), IReceiverClient> _topicReceivers = new Dictionary<(string topicName, string queueName), IReceiverClient>();
+        private readonly IDictionary<string, ISenderClient> _senders = new Dictionary<string, ISenderClient>();
+        private readonly IDictionary<string, IReceiverClient> _receivers = new Dictionary<string, IReceiverClient>();
         private readonly SemaphoreSlim _semaphore = new(1);
 
-        public MessageBusFactory(ServiceBusConnection connection, ManagementClient managementClient)
+        public BusClientFactory(ServiceBusConnection connection, ManagementClient managementClient)
         {
             _connection = connection;
             _managementClient = managementClient;
         }
 
-        public async Task<IMessageSender> GetSenderAsync(string queueName, CancellationToken cancellationToken)
+        public async Task<ISenderClient> GetSenderAsync(string queueName, CancellationToken cancellationToken)
         {
             await _semaphore.WaitAsync(cancellationToken);
 
@@ -43,7 +42,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
             }
         }
 
-        public async Task<IMessageReceiver> GetReceiverAsync(string queueName, CancellationToken cancellationToken)
+        public async Task<IReceiverClient> GetReceiverAsync(string queueName, CancellationToken cancellationToken)
         {
             await _semaphore.WaitAsync(cancellationToken);
 
@@ -63,6 +62,24 @@ namespace Elsa.Activities.AzureServiceBus.Services
             }
         }
 
+        public async Task DisposeReceiverAsync(IReceiverClient receiverClient, CancellationToken cancellationToken = default)
+        {
+            await _semaphore.WaitAsync(cancellationToken);
+
+            var key = GetKeyFor(receiverClient);
+
+            try
+            {
+                _receivers.Remove(key);
+                await receiverClient.UnregisterMessageHandlerAsync(TimeSpan.FromSeconds(1));
+                await receiverClient.CloseAsync();
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
+        }
+
         private async Task EnsureQueueExistsAsync(string queueName, CancellationToken cancellationToken)
         {
             if (await _managementClient.QueueExistsAsync(queueName, cancellationToken))
@@ -71,7 +88,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
             await _managementClient.CreateQueueAsync(queueName, cancellationToken);
         }
 
-        public async Task<IMessageSender> GetTopicSenderAsync(string topicName, CancellationToken cancellationToken)
+        public async Task<ISenderClient> GetTopicSenderAsync(string topicName, CancellationToken cancellationToken)
         {
             await _semaphore.WaitAsync(cancellationToken);
 
@@ -95,7 +112,9 @@ namespace Elsa.Activities.AzureServiceBus.Services
         {
             await _semaphore.WaitAsync(cancellationToken);
 
-            if (_topicReceivers.TryGetValue((topicName,subscriptionName), out var messageReceiver))
+            var key = $"{topicName}:{subscriptionName}";
+
+            if (_receivers.TryGetValue(key, out var messageReceiver))
                 return messageReceiver;
 
             try
@@ -104,9 +123,12 @@ namespace Elsa.Activities.AzureServiceBus.Services
 
                 var newTopicMessageReceiver = new SubscriptionClient(
                     _connection,
-                    topicPath: topicName, subscriptionName,ReceiveMode.PeekLock,RetryPolicy.Default) ;
-                
-                _topicReceivers.Add((topicName, subscriptionName), newTopicMessageReceiver);
+                    topicName, 
+                    subscriptionName, 
+                    ReceiveMode.PeekLock, 
+                    RetryPolicy.Default);
+
+                _receivers.Add(key, newTopicMessageReceiver);
                 return newTopicMessageReceiver;
             }
             finally
@@ -121,12 +143,20 @@ namespace Elsa.Activities.AzureServiceBus.Services
                 await _managementClient.CreateTopicAsync(topicName, cancellationToken);
         }
 
-        private async Task EnsureTopicAndSubscriptionExistsAsync(string topicName, string subscriptionName ,CancellationToken cancellationToken)
+        private async Task EnsureTopicAndSubscriptionExistsAsync(string topicName, string subscriptionName, CancellationToken cancellationToken)
         {
             await EnsureTopicExistsAsync(topicName, cancellationToken);
 
-            if(!await _managementClient.SubscriptionExistsAsync(topicName, subscriptionName, cancellationToken))
+            if (!await _managementClient.SubscriptionExistsAsync(topicName, subscriptionName, cancellationToken))
                 await _managementClient.CreateSubscriptionAsync(topicName, subscriptionName, cancellationToken);
         }
+        
+        private static string GetKeyFor(IReceiverClient receiverClient) =>
+            receiverClient switch
+            {
+                IMessageReceiver messageReceiver => messageReceiver.Path,
+                ISubscriptionClient subscriptionClient => $"{subscriptionClient.TopicPath}:{subscriptionClient.SubscriptionName}",
+                _ => throw new ArgumentOutOfRangeException(nameof(receiverClient), receiverClient, null)
+            };
     }
 }

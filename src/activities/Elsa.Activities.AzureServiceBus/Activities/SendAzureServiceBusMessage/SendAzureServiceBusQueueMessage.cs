@@ -12,12 +12,12 @@ namespace Elsa.Activities.AzureServiceBus
     [Action(Category = "Azure Service Bus", DisplayName = "Send Service Bus Message", Description = "Sends a message to the specified queue", Outcomes = new[] { OutcomeNames.Done })]
     public class SendAzureServiceBusQueueMessage : Activity
     {
-        private readonly IMessageSenderFactory _messageSenderFactory;
+        private readonly IQueueMessageSenderFactory _queueMessageSenderFactory;
         private readonly IContentSerializer _serializer;
 
-        public SendAzureServiceBusQueueMessage(IMessageSenderFactory messageSenderFactory, IContentSerializer serializer)
+        public SendAzureServiceBusQueueMessage(IQueueMessageSenderFactory queueMessageSenderFactory, IContentSerializer serializer)
         {
-            _messageSenderFactory = messageSenderFactory;
+            _queueMessageSenderFactory = queueMessageSenderFactory;
             _serializer = serializer;
         }
 
@@ -29,7 +29,7 @@ namespace Elsa.Activities.AzureServiceBus
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            var sender = await _messageSenderFactory.GetSenderAsync(QueueName, context.CancellationToken);
+            var sender = await _queueMessageSenderFactory.GetSenderAsync(QueueName, context.CancellationToken);
             var message = Extensions.MessageBodyExtensions.CreateMessage(_serializer, Message);
 
             if (!string.IsNullOrWhiteSpace(context.WorkflowExecutionContext.CorrelationId))

@@ -18,18 +18,21 @@ namespace Elsa.Activities.AzureServiceBus.Services
         private const string TenantId = default;
 
         private readonly IWorkflowDispatcher _workflowDispatcher;
+        private readonly Func<IReceiverClient, Task> _disposeReceiverAction;
         private readonly ILogger _logger;
 
         protected WorkerBase(
             IReceiverClient receiverClient,
             IWorkflowDispatcher workflowDispatcher,
             IOptions<AzureServiceBusOptions> options,
+            Func<IReceiverClient, Task> disposeReceiverAction, 
             ILogger logger)
         {
             ReceiverClient = receiverClient;
             _workflowDispatcher = workflowDispatcher;
+            _disposeReceiverAction = disposeReceiverAction;
             _logger = logger;
-
+            
             ReceiverClient.RegisterMessageHandler(OnMessageReceived, new MessageHandlerOptions(ExceptionReceivedHandler)
             {
                 AutoComplete = false,
@@ -39,8 +42,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
 
         protected IReceiverClient ReceiverClient { get; }
         protected abstract string ActivityType { get; }
-
-        public async ValueTask DisposeAsync() => await ReceiverClient.CloseAsync();
+        public async ValueTask DisposeAsync() => await _disposeReceiverAction(ReceiverClient);
 
         protected abstract IBookmark CreateBookmark(Message message);
         protected abstract IBookmark CreateTrigger(Message message);

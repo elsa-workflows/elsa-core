@@ -6,6 +6,6 @@ namespace Elsa.Activities.AzureServiceBus.Services
 {
     public interface ITopicMessageSenderFactory
     {
-        Task<IMessageSender> GetTopicSenderAsync(string topicName, CancellationToken cancellationToken = default);
+        Task<ISenderClient> GetTopicSenderAsync(string topicName, CancellationToken cancellationToken = default);
     }
 }

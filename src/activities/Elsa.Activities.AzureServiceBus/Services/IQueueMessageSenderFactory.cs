@@ -4,8 +4,8 @@ using Microsoft.Azure.ServiceBus.Core;
 
 namespace Elsa.Activities.AzureServiceBus.Services
 {
-    public interface IMessageSenderFactory
+    public interface IQueueMessageSenderFactory
     {
-        Task<IMessageSender> GetSenderAsync(string queueName, CancellationToken cancellationToken = default);
+        Task<ISenderClient> GetSenderAsync(string queueName, CancellationToken cancellationToken = default);
     }
 }

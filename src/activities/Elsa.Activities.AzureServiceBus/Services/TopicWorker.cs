@@ -1,3 +1,5 @@
+using System;
+using System.Threading.Tasks;
 using Elsa.Activities.AzureServiceBus.Bookmarks;
 using Elsa.Activities.AzureServiceBus.Options;
 using Elsa.Bookmarks;
@@ -15,7 +17,8 @@ namespace Elsa.Activities.AzureServiceBus.Services
             IReceiverClient receiverClient,
             IWorkflowDispatcher workflowDispatcher,
             IOptions<AzureServiceBusOptions> options,
-            ILogger<TopicWorker> logger) : base(receiverClient, workflowDispatcher, options, logger)
+            Func<IReceiverClient, Task> disposeReceiverAction,
+            ILogger<TopicWorker> logger) : base(receiverClient, workflowDispatcher, options, disposeReceiverAction, logger)
         {
         }
 
