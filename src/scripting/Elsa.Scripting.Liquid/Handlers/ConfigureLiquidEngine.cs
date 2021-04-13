@@ -9,12 +9,20 @@ using Elsa.Services.Models;
 using Fluid;
 using Fluid.Values;
 using MediatR;
+using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json.Linq;
 
 namespace Elsa.Scripting.Liquid.Handlers
 {
     public class ConfigureLiquidEngine : INotificationHandler<EvaluatingLiquidExpression>
     {
+        private readonly IConfiguration _configuration;
+
+        public ConfigureLiquidEngine(IConfiguration configuration)
+        {
+            _configuration = configuration;
+        }
+        
         public Task Handle(EvaluatingLiquidExpression notification, CancellationToken cancellationToken)
         {
             var context = notification.TemplateContext;
@@ -23,7 +31,6 @@ namespace Elsa.Scripting.Liquid.Handlers
             options.MemberAccessStrategy.Register<ExpandoObject>();
             options.MemberAccessStrategy.Register<JObject>();
             options.MemberAccessStrategy.Register<JValue>(o => o.Value);
-
             options.MemberAccessStrategy.Register<LiquidActivityModel>();
             options.MemberAccessStrategy.Register<LiquidPropertyAccessor, FluidValue>((x, name) => x.GetValueAsync(name));
             options.MemberAccessStrategy.Register<ActivityExecutionContext, FluidValue>("Input", x => ToFluidValue(x.Input, options));
@@ -34,10 +41,13 @@ namespace Elsa.Scripting.Liquid.Handlers
             options.MemberAccessStrategy.Register<LiquidObjectAccessor<object>, object>((x, name) => x.GetValueAsync(name));
             options.MemberAccessStrategy.Register<ExpandoObject, object>((x, name) => ((IDictionary<string, object>) x)[name]);
             options.MemberAccessStrategy.Register<JObject, object?>((source, name) => source[name]);
+            options.MemberAccessStrategy.Register<ActivityExecutionContext, LiquidPropertyAccessor>("Configuration", x => new LiquidPropertyAccessor(name => ToFluidValue(GetConfigurationValue(name), options)!));
+            options.MemberAccessStrategy.Register<ConfigurationSectionWrapper, ConfigurationSectionWrapper?>((source, name) => source.GetSection(name));
 
             return Task.CompletedTask;
         }
 
+        private ConfigurationSectionWrapper GetConfigurationValue(string name) => new(_configuration.GetSection(name));
         private Task<FluidValue> ToFluidValue(object? input, TemplateOptions options) => Task.FromResult(FluidValue.Create(input, options));
         private Task<FluidValue?> ToFluidValue(Variables dictionary, string key, TemplateOptions options) => Task.FromResult(!dictionary.Has(key) ? default : FluidValue.Create(dictionary.Get(key), options));
         private LiquidActivityModel GetActivityModelAsync(ActivityExecutionContext context, string name) => new(context, name);
