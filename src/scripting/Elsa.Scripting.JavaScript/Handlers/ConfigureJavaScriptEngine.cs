@@ -39,6 +39,7 @@ namespace Elsa.Scripting.JavaScript.Handlers
             engine.SetValue("input", activityContext.Input);
             engine.SetValue("correlationId", workflowInstance.CorrelationId);
             engine.SetValue("currentCulture", CultureInfo.InvariantCulture);
+            engine.SetValue("workflowContext", activityContext.GetWorkflowContext());
 
             // NodaTime types.
             RegisterType<Instant>(engine);

@@ -157,6 +157,7 @@ namespace Elsa.Services.Models
         public T? GetOutputFrom<T>(string activityName, Func<T?> defaultValue) => (T?) GetOutputFrom(activityName, defaultValue())!;
         public T? GetOutputFrom<T>(string activityName, T? defaultValue) => (T?) GetOutputFrom(activityName, () => defaultValue)!;
         public void SetWorkflowContext(object? value) => WorkflowExecutionContext.SetWorkflowContext(value);
+        public object? GetWorkflowContext() => WorkflowExecutionContext.GetWorkflowContext();
         public T GetWorkflowContext<T>() => WorkflowExecutionContext.GetWorkflowContext<T>();
 
         public JObject GetActivityData(string activityId)
