@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Elsa.Activities.AzureServiceBus.Services;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Activities.AzureServiceBus.StartupTasks
 {
@@ -15,12 +16,14 @@ namespace Elsa.Activities.AzureServiceBus.StartupTasks
         private readonly IWorkflowBlueprintReflector _workflowBlueprintReflector;
         private readonly IMessageReceiverFactory _messageReceiverFactory;
         private readonly IServiceProvider _serviceProvider;
+        private readonly ILogger<StartServiceBusQueues> _logger;
 
-        public StartServiceBusQueues(IWorkflowBlueprintReflector workflowBlueprintReflector, IMessageReceiverFactory messageReceiverFactory, IServiceProvider serviceProvider)
+        public StartServiceBusQueues(IWorkflowBlueprintReflector workflowBlueprintReflector, IMessageReceiverFactory messageReceiverFactory, IServiceProvider serviceProvider, ILogger<StartServiceBusQueues> logger)
         {
             _workflowBlueprintReflector = workflowBlueprintReflector;
             _messageReceiverFactory = messageReceiverFactory;
             _serviceProvider = serviceProvider;
+            _logger = logger;
         }
 
         public int Order => 2000;
@@ -55,6 +58,17 @@ namespace Elsa.Activities.AzureServiceBus.StartupTasks
                 foreach (var activity in workflowBlueprintWrapper.Filter<AzureServiceBusQueueMessageReceived>())
                 {
                     var queueName = await activity.GetPropertyValueAsync(x => x.QueueName, cancellationToken);
+
+                    if (string.IsNullOrWhiteSpace(queueName))
+                    {
+                        _logger.LogWarning(
+                            "Encountered a queue name that is null or empty in activity {ActivityType}:{ActivityId} in workflow {WorkflowDefinitionId}", 
+                            activity.ActivityBlueprint.Type, 
+                            activity.ActivityBlueprint.Id,
+                            workflow.Id);
+                        continue;
+                    }
+
                     yield return queueName!;
                 }
             }
