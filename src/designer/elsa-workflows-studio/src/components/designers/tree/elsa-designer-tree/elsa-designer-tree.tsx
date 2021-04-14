@@ -96,7 +96,7 @@ export class ElsaWorkflowDesigner {
       eventBus.emit(EventTypes.ActivityDesignDisplaying, this, displayContext);
       displayContexts[model.activityId] = displayContext;
     }
-
+    
     this.activityDisplayContexts = displayContexts;
   }
 
@@ -106,15 +106,17 @@ export class ElsaWorkflowDesigner {
     const sourceEndpoints = this.getJsPlumbSourceEndpoints();
     const targets = this.getJsPlumbTargets();
 
-    const invalidConnections = updateConnections(
-      canvasElement,
-      connections,
-      sourceEndpoints,
-      targets,
-      connection => this.onConnectionCreated(connection),
-      connection => this.onConnectionDetached(connection));
+    setTimeout(() => {
+      const invalidConnections = updateConnections(
+        canvasElement,
+        connections,
+        sourceEndpoints,
+        targets,
+        connection => this.onConnectionCreated(connection),
+        connection => this.onConnectionDetached(connection));
 
-    this.removeInvalidConnections(invalidConnections);
+      this.removeInvalidConnections(invalidConnections);
+    }, 100)
   }
 
   showActivityPicker() {
@@ -431,8 +433,8 @@ export class ElsaWorkflowDesigner {
     const list = activities.filter(x => !renderedActivities.has(x.activityId));
     const cssClass = isRoot ? "root" : undefined;
 
-    for (const activity of list)
-      renderedActivities.add(activity.activityId);
+    // for (const activity of list)
+    //   renderedActivities.add(activity.activityId);
 
     if (list.length == 0)
       return null;
@@ -443,6 +445,11 @@ export class ElsaWorkflowDesigner {
           const activityId = x.activityId;
           const children = getChildActivities(this.workflowModel, activityId);
           const displayContext = this.activityDisplayContexts[activityId];
+
+          if(renderedActivities.has(displayContext.activityModel.activityId))
+            return;
+
+          renderedActivities.add(displayContext.activityModel.activityId);
 
           return <li key={x.activityId}>
             <div class="inline-flex flex flex-col items-center">
