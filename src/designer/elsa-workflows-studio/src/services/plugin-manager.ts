@@ -9,6 +9,7 @@ import {ForkPlugin} from "../plugins/fork-plugin";
 import {RunJavascriptPlugin} from "../plugins/run-javascript-plugin";
 import {ActivityIconProviderPlugin} from "../plugins/activity-icon-provider-plugin";
 import {SwitchPlugin} from "../plugins/switch-plugin";
+import {WhilePlugin} from "../plugins/while-plugin";
 
 export class PluginManager {
 
@@ -19,6 +20,7 @@ export class PluginManager {
       new DefaultDriversPlugin(),
       new ActivityIconProviderPlugin(),
       new IfPlugin(),
+      new WhilePlugin(),
       new ForkPlugin(),
       new SwitchPlugin(),
       new HttpEndpointPlugin(),
