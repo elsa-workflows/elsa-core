@@ -54,14 +54,17 @@ export class ElsaCheckListProperty {
           {options.map((option, index) => {
             const inputId = `${fieldId}_${index}`;
             const isSelected = values.findIndex(x => x == option) >= 0;
+            const optionIsString = typeof(option) == 'string';
+            const value = optionIsString ? option : option.value;
+            const text = optionIsString ? option : option.text;
 
             return (
               <div class="relative flex items-start">
                 <div class="flex items-center h-5">
-                  <input id={inputId} type="checkbox" checked={isSelected} value={option} onChange={e => this.onCheckChanged(e)} class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded"/>
+                  <input id={inputId} type="checkbox" checked={isSelected} value={value} onChange={e => this.onCheckChanged(e)} class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded"/>
                 </div>
                 <div class="ml-3 mt-1 text-sm">
-                  <label htmlFor={inputId} class="font-medium text-gray-700">{option}</label>
+                  <label htmlFor={inputId} class="font-medium text-gray-700">{text}</label>
                 </div>
               </div>
             );
