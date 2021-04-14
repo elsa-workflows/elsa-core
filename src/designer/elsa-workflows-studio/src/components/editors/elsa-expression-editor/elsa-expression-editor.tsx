@@ -5,7 +5,6 @@ import {MonacoValueChangedArgs} from "../../controls/elsa-monaco/elsa-monaco";
 
 @Component({
   tag: 'elsa-expression-editor',
-  styleUrl: 'elsa-expression-editor.css',
   shadow: false,
 })
 export class ElsaExpressionEditor {
@@ -15,6 +14,7 @@ export class ElsaExpressionEditor {
   @Prop() expression: string;
   @Prop({attribute: 'editor-height', reflect: true}) editorHeight: string = '6em';
   @Prop({attribute: 'single-line', reflect: true}) singleLineMode: boolean = false;
+  @Prop() padding: string;
   @Prop({attribute: 'context', reflect: true}) context?: string;
   @Prop({mutable: true}) serverUrl: string;
   @Prop({mutable: true}) workflowDefinitionId: string;
@@ -53,14 +53,13 @@ export class ElsaExpressionEditor {
     const value = this.currentExpression;
 
     return (
-      <Host>
-        <elsa-monaco value={value}
-                     language={language}
-                     editor-height={this.editorHeight}
-                     single-line={this.singleLineMode}
-                     onValueChanged={e => this.onMonacoValueChanged(e.detail)}
-                     ref={el => this.monacoEditor = el}/>
-      </Host>
+      <elsa-monaco value={value}
+                   language={language}
+                   editor-height={this.editorHeight}
+                   single-line={this.singleLineMode}
+                   padding={this.padding}
+                   onValueChanged={e => this.onMonacoValueChanged(e.detail)}
+                   ref={el => this.monacoEditor = el}/>
     )
   }
 }

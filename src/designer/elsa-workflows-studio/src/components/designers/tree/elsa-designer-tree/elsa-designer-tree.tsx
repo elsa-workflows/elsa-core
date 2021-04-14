@@ -1,11 +1,12 @@
 import {Component, Host, h, Prop, State, Event, EventEmitter, Listen, Watch, Method} from '@stencil/core';
 import {Map, addConnection, findActivity, getChildActivities, getInboundConnections, getOutboundConnections, removeActivity} from '../../../../utils/utils';
 import {cleanup, destroy, updateConnections} from '../../../../utils/jsplumb-helper';
-import {ActivityDescriptor, ActivityDesignDisplayContext, ActivityModel, ConnectionModel, EventTypes, WorkflowModel, WorkflowPersistenceBehavior} from "../../../../models";
+import {ActivityDescriptor, ActivityDesignDisplayContext, ActivityModel, ActivityTraits, ConnectionModel, EventTypes, WorkflowModel, WorkflowPersistenceBehavior} from "../../../../models";
 import {eventBus} from '../../../../services/event-bus';
 import jsPlumb from "jsplumb";
 import uuid = jsPlumb.jsPlumbUtil.uuid;
 import {ActivityIcon} from "../../../icons/activity-icon";
+import state from "../../../../utils/store";
 
 @Component({
   tag: 'elsa-designer-tree',
@@ -79,16 +80,19 @@ export class ElsaWorkflowDesigner {
 
     const activityModels = this.workflowModel.activities;
     const displayContexts: Map<ActivityDesignDisplayContext> = {};
+    const activityDescriptors: Array<ActivityDescriptor> = state.activityDescriptors;
 
     for (const model of activityModels) {
 
+      const descriptor = activityDescriptors.find(x => x.type == model.type);
       const description = model.description;
       const bodyText = description && description.length > 0 ? description : undefined;
       const bodyDisplay = bodyText ? <p>{bodyText}</p> : undefined;
+      const color = (descriptor.traits &= ActivityTraits.Trigger) == ActivityTraits.Trigger ? 'rose' : 'light-blue';
 
       const displayContext: ActivityDesignDisplayContext = {
         activityModel: model,
-        activityIcon: <ActivityIcon/>,
+        activityIcon: <ActivityIcon color={color}/>,
         bodyDisplay: bodyDisplay,
         outcomes: [...model.outcomes]
       };
@@ -386,6 +390,7 @@ export class ElsaWorkflowDesigner {
 
       workflowModel.connections = [...connections, newConnection];
     } else {
+      
       // Create new connection.
       const newConnection: ConnectionModel = {
         sourceId: sourceActivityId,
@@ -432,9 +437,6 @@ export class ElsaWorkflowDesigner {
   renderTree(activities: Array<ActivityModel>, isRoot: boolean, renderedActivities: Set<string>): any {
     const list = activities.filter(x => !renderedActivities.has(x.activityId));
     const cssClass = isRoot ? "root" : undefined;
-
-    // for (const activity of list)
-    //   renderedActivities.add(activity.activityId);
 
     if (list.length == 0)
       return null;

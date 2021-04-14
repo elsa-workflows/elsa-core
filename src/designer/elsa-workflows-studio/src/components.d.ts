@@ -56,6 +56,7 @@ export namespace Components {
         "editorHeight": string;
         "expression": string;
         "language": string;
+        "padding": string;
         "serverUrl": string;
         "setExpression": (value: string) => Promise<void>;
         "singleLineMode": boolean;
@@ -75,6 +76,7 @@ export namespace Components {
         "addJavaScriptLib": (libSource: string, libUri: string) => Promise<void>;
         "editorHeight": string;
         "language": string;
+        "padding": string;
         "setValue": (value: string) => Promise<void>;
         "singleLineMode": boolean;
         "value": string;
@@ -466,6 +468,7 @@ declare namespace LocalJSX {
         "expression"?: string;
         "language"?: string;
         "onExpressionChanged"?: (event: CustomEvent<string>) => void;
+        "padding"?: string;
         "serverUrl"?: string;
         "singleLineMode"?: boolean;
         "workflowDefinitionId"?: string;
@@ -483,6 +486,7 @@ declare namespace LocalJSX {
         "editorHeight"?: string;
         "language"?: string;
         "onValueChanged"?: (event: CustomEvent<MonacoValueChangedArgs>) => void;
+        "padding"?: string;
         "singleLineMode"?: boolean;
         "value"?: string;
     }

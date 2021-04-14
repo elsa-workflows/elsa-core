@@ -10,6 +10,8 @@ import {RunJavascriptPlugin} from "../plugins/run-javascript-plugin";
 import {ActivityIconProviderPlugin} from "../plugins/activity-icon-provider-plugin";
 import {SwitchPlugin} from "../plugins/switch-plugin";
 import {WhilePlugin} from "../plugins/while-plugin";
+import {StartAtPlugin} from "../plugins/start-at-plugin";
+import {CronPlugin} from "../plugins/cron-plugin";
 
 export class PluginManager {
 
@@ -25,6 +27,8 @@ export class PluginManager {
       new SwitchPlugin(),
       new HttpEndpointPlugin(),
       new TimerPlugin(),
+      new StartAtPlugin(),
+      new CronPlugin(),
       new WriteLinePlugin(),
       new RunJavascriptPlugin(),
       new SendEmailPlugin()

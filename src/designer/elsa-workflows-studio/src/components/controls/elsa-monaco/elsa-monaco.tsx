@@ -23,6 +23,7 @@ export class ElsaMonaco {
   @Prop() value: string;
   @Prop() language: string;
   @Prop({attribute: 'single-line', reflect: true}) singleLineMode: boolean = false;
+  @Prop() padding: string;
   @Event({eventName: 'valueChanged'}) valueChanged: EventEmitter<MonacoValueChangedArgs>;
 
   container: HTMLElement;
@@ -199,9 +200,10 @@ export class ElsaMonaco {
   }
 
   render() {
+    const padding = this.padding || 'pt-1.5 pl-1';
     return (
       <Host class="monaco-editor-host border focus:ring-blue-500 focus:border-blue-500 block w-full min-w-0 rounded-md sm:text-sm border-gray-300 p-4" style={{'min-height': this.editorHeight}}>
-        <div ref={el => this.container = el} class="monaco-editor-container"/>
+        <div ref={el => this.container = el} class={`monaco-editor-container ${padding}`}/>
       </Host>
     )
   }
