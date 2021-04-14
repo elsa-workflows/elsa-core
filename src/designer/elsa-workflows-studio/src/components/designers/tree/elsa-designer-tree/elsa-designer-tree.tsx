@@ -44,24 +44,35 @@ export class ElsaWorkflowDesigner {
     this.removeActivity(e.detail.activityId);
   }
 
+  connectedCallback() {
+    eventBus.on(EventTypes.ActivityPicked, this.onActivityPicked);
+    eventBus.on(EventTypes.UpdateActivity, this.onUpdateActivity);
+  }
+
+  disconnectedCallback() {
+    eventBus.off(EventTypes.ActivityPicked, this.onActivityPicked);
+    eventBus.off(EventTypes.UpdateActivity, this.onUpdateActivity);
+    cleanup();
+  }
+
   componentWillLoad() {
     this.workflowModel = this.model;
-
-    eventBus.on(EventTypes.ActivityPicked, async args => {
-      const activityDescriptor = (args as ActivityDescriptor);
-      const connectFromRoot = !this.parentActivityOutcome || this.parentActivityOutcome == "";
-      const sourceId = connectFromRoot ? null : this.parentActivityId;
-      const targetId = connectFromRoot ? this.parentActivityId : null;
-      const activityModel = this.addActivity(activityDescriptor, sourceId, targetId, this.parentActivityOutcome);
-
-      this.showActivityEditor(activityModel, false);
-    });
-
-    eventBus.on(EventTypes.UpdateActivity, async args => {
-      const activityModel = (args as ActivityModel);
-      this.updateActivity(activityModel);
-    });
   }
+  
+  onActivityPicked = async (args) =>{
+    const activityDescriptor = (args as ActivityDescriptor);
+    const connectFromRoot = !this.parentActivityOutcome || this.parentActivityOutcome == "";
+    const sourceId = connectFromRoot ? null : this.parentActivityId;
+    const targetId = connectFromRoot ? this.parentActivityId : null;
+    const activityModel = this.addActivity(activityDescriptor, sourceId, targetId, this.parentActivityOutcome);
+
+    this.showActivityEditor(activityModel, false);
+  };
+  
+  onUpdateActivity = args => {
+    const activityModel = (args as ActivityModel);
+    this.updateActivity(activityModel);
+  };
 
   componentWillRender() {
     destroy();
@@ -104,10 +115,6 @@ export class ElsaWorkflowDesigner {
       connection => this.onConnectionDetached(connection));
 
     this.removeInvalidConnections(invalidConnections);
-  }
-
-  disconnectedCallback() {
-    cleanup();
   }
 
   showActivityPicker() {
