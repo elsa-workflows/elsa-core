@@ -1,7 +1,8 @@
 ﻿@page "/"
+@inject IConfiguration Configuration;
 @{
     ViewData["Title"] = "Home page";
-    var serverUrl = "/";
+    var serverUrl = Configuration["Elsa:Server:BaseAddress"];
 }
 <!DOCTYPE html>
 <html lang="en">
