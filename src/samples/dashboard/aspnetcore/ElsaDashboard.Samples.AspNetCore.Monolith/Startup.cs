@@ -54,7 +54,6 @@ namespace ElsaDashboard.Samples.AspNetCore.Monolith
                 app.UseHsts();
             }
 
-            app.UseHttpsRedirection();
             app.UseStaticFiles();
             app.UseHttpActivities();
             app.UseRouting();
