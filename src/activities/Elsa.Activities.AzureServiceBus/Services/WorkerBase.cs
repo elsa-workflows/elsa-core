@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.AzureServiceBus.Models;
@@ -66,7 +67,8 @@ namespace Elsa.Activities.AzureServiceBus.Services
                 ExpiresAtUtc = message.ExpiresAtUtc,
                 TimeToLive = message.TimeToLive,
                 ReplyToSessionId = message.ReplyToSessionId,
-                ScheduledEnqueueTimeUtc = message.ScheduledEnqueueTimeUtc
+                ScheduledEnqueueTimeUtc = message.ScheduledEnqueueTimeUtc,
+                UserProperties = new Dictionary<string, object>(message.UserProperties),
             };
 
             var bookmark = CreateBookmark(message);
