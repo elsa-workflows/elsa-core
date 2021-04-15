@@ -1,10 +1,10 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Expressions;
 using Elsa.Extensions;
 using Elsa.Results;
-using Elsa.Scripting.JavaScript;
+using Elsa.Scripting.JavaScript.Services;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -29,7 +29,7 @@ namespace Elsa.Activities.ControlFlow.Activities
         [ActivityProperty(Hint = "The expression to evaluate. The evaluated value will be used to switch on.")]
         public WorkflowExpression<bool> ConditionExpression
         {
-            get => GetState(() => new JavaScriptExpression<bool>("true"));
+            get => GetState(() => new WorkflowExpression<bool>(JavaScriptExpressionEvaluator.SyntaxName, "true"));
             set => SetState(value);
         }
 

@@ -31,7 +31,7 @@ namespace Elsa.Activities.Timers.Activities
         [ActivityProperty(Hint = "Specify a CRON expression. See https://crontab.guru/ for help.")]
         public WorkflowExpression<string> CronExpression
         {
-            get => GetState(() => new LiteralExpression("* * * * *"));
+            get => GetState(() => new WorkflowExpression<string>(LiteralEvaluator.SyntaxName, "* * * * *"));
             set => SetState(value);
         }
 

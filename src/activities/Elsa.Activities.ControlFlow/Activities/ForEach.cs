@@ -5,7 +5,7 @@ using Elsa.Attributes;
 using Elsa.Expressions;
 using Elsa.Extensions;
 using Elsa.Results;
-using Elsa.Scripting.JavaScript;
+using Elsa.Scripting.JavaScript.Services;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -24,7 +24,7 @@ namespace Elsa.Activities.ControlFlow.Activities
         [ActivityProperty(Hint = "Enter an expression that evaluates to an array of items to iterate over.")]
         public WorkflowExpression<IList> CollectionExpression
         {
-            get => GetState(() => new JavaScriptExpression<IList>("[]"));
+            get => GetState(() => new WorkflowExpression<IList>(JavaScriptExpressionEvaluator.SyntaxName, "[]"));
             set => SetState(value);
         }
 
