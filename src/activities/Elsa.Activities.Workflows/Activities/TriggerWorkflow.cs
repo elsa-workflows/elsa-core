@@ -6,7 +6,7 @@ using Elsa.Expressions;
 using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Results;
-using Elsa.Scripting.JavaScript;
+using Elsa.Scripting.JavaScript.Services;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -31,7 +31,7 @@ namespace Elsa.Activities.Workflows.Activities
         [ActivityProperty(Hint = "An expression that evaluates to the activity type to use when triggering workflows.")]
         public WorkflowExpression<string> ActivityType
         {
-            get => GetState(() => new LiteralExpression(""));
+            get => GetState(() => new WorkflowExpression<string>(LiteralEvaluator.SyntaxName, ""));
             set => SetState(value);
         }
 
@@ -40,14 +40,14 @@ namespace Elsa.Activities.Workflows.Activities
         )]
         public WorkflowExpression<Variables> Input
         {
-            get => GetState(() => new JavaScriptExpression<Variables>("{}"));
+            get => GetState(() => new WorkflowExpression<Variables>(JavaScriptExpressionEvaluator.SyntaxName, "{}"));
             set => SetState(value);
         }
 
         [ActivityProperty(Hint = "An expression that evaluates to the correlation ID to use when triggering workflows.")]
         public WorkflowExpression<string> CorrelationId
         {
-            get => GetState(() => new LiteralExpression(Guid.NewGuid().ToString()));
+            get => GetState(() => new WorkflowExpression<string>(LiteralEvaluator.SyntaxName, Guid.NewGuid().ToString()));
             set => SetState(value);
         }
 

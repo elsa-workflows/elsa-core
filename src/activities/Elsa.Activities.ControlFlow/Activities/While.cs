@@ -4,7 +4,7 @@ using Elsa.Attributes;
 using Elsa.Expressions;
 using Elsa.Extensions;
 using Elsa.Results;
-using Elsa.Scripting.JavaScript;
+using Elsa.Scripting.JavaScript.Services;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -23,7 +23,7 @@ namespace Elsa.Activities.ControlFlow.Activities
         [ActivityProperty(Hint = "Enter an expression that evaluates to a boolean value.")]
         public WorkflowExpression<bool> ConditionExpression
         {
-            get => GetState(() => new JavaScriptExpression<bool>("true"));
+            get => GetState(() => new WorkflowExpression<bool>(JavaScriptExpressionEvaluator.SyntaxName, "true"));
             set => SetState(value);
         }
         
