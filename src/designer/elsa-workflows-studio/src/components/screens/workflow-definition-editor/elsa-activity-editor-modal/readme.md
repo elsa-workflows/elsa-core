@@ -9,7 +9,7 @@
 
 ### Used by
 
- - [elsa-workflow-editor](../elsa-workflow-editor)
+ - [elsa-workflow-definition-editor-screen](../elsa-workflow-definition-editor-screen)
 
 ### Depends on
 
@@ -19,7 +19,7 @@
 ```mermaid
 graph TD;
   elsa-activity-editor-modal --> elsa-modal-dialog
-  elsa-workflow-editor --> elsa-activity-editor-modal
+  elsa-workflow-definition-editor-screen --> elsa-activity-editor-modal
   style elsa-activity-editor-modal fill:#f9f,stroke:#333,stroke-width:4px
 ```
 

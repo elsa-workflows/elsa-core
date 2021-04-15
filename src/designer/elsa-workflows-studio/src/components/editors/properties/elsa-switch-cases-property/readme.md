@@ -1,4 +1,4 @@
-# elsa-dropdown-property
+# elsa-switch-cases-property
 
 
 
@@ -17,17 +17,18 @@
 
 ### Depends on
 
-- [elsa-property-editor](../../elsa-property-editor)
+- [elsa-expression-editor](../../elsa-expression-editor)
+- [elsa-multi-expression-editor](../../elsa-multi-expression-editor)
 
 ### Graph
 ```mermaid
 graph TD;
-  elsa-dropdown-property --> elsa-property-editor
-  elsa-property-editor --> elsa-multi-expression-editor
-  elsa-multi-expression-editor --> elsa-expression-editor
+  elsa-switch-cases-property --> elsa-expression-editor
+  elsa-switch-cases-property --> elsa-multi-expression-editor
   elsa-expression-editor --> elsa-monaco
   elsa-expression-editor --> context-consumer
-  style elsa-dropdown-property fill:#f9f,stroke:#333,stroke-width:4px
+  elsa-multi-expression-editor --> elsa-expression-editor
+  style elsa-switch-cases-property fill:#f9f,stroke:#333,stroke-width:4px
 ```
 
 ----------------------------------------------

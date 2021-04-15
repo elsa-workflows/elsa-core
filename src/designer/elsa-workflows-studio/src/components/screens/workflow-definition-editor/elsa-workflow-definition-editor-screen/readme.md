@@ -9,11 +9,29 @@
 
 | Property               | Attribute                | Description | Type     | Default     |
 | ---------------------- | ------------------------ | ----------- | -------- | ----------- |
+| `monacoLibPath`        | `monaco-lib-path`        |             | `string` | `undefined` |
 | `serverUrl`            | `server-url`             |             | `string` | `undefined` |
 | `workflowDefinitionId` | `workflow-definition-id` |             | `string` | `undefined` |
 
 
+## Events
+
+| Event           | Description | Type                              |
+| --------------- | ----------- | --------------------------------- |
+| `workflowSaved` |             | `CustomEvent<WorkflowDefinition>` |
+
+
 ## Methods
+
+### `exportWorkflow() => Promise<void>`
+
+
+
+#### Returns
+
+Type: `Promise<void>`
+
+
 
 ### `getServerUrl() => Promise<string>`
 
@@ -35,14 +53,28 @@ Type: `Promise<string>`
 
 
 
+### `importWorkflow(file: File) => Promise<void>`
+
+
+
+#### Returns
+
+Type: `Promise<void>`
+
+
+
 
 ## Dependencies
+
+### Used by
+
+ - [elsa-studio-workflow-definitions-edit](../../../dashboard/pages/elsa-studio-workflow-definitions-edit)
 
 ### Depends on
 
 - [elsa-designer-tree](../../../designers/tree/elsa-designer-tree)
 - [elsa-workflow-settings-modal](../elsa-workflow-settings-modal)
-- [elsa-workflow-editor-notifications](../elsa-workflow-editor-notifications)
+- [elsa-workflow-definition-editor-notifications](../elsa-workflow-definition-editor-notifications)
 - [elsa-activity-picker-modal](../../../pickers/elsa-activity-picker-modal)
 - [elsa-activity-editor-modal](../elsa-activity-editor-modal)
 - [elsa-workflow-publish-button](../elsa-workflow-publish-button)
@@ -51,20 +83,22 @@ Type: `Promise<string>`
 ### Graph
 ```mermaid
 graph TD;
-  elsa-workflow-editor --> elsa-designer-tree
-  elsa-workflow-editor --> elsa-workflow-settings-modal
-  elsa-workflow-editor --> elsa-workflow-editor-notifications
-  elsa-workflow-editor --> elsa-activity-picker-modal
-  elsa-workflow-editor --> elsa-activity-editor-modal
-  elsa-workflow-editor --> elsa-workflow-publish-button
-  elsa-workflow-editor --> context-consumer
+  elsa-workflow-definition-editor-screen --> elsa-designer-tree
+  elsa-workflow-definition-editor-screen --> elsa-workflow-settings-modal
+  elsa-workflow-definition-editor-screen --> elsa-workflow-definition-editor-notifications
+  elsa-workflow-definition-editor-screen --> elsa-activity-picker-modal
+  elsa-workflow-definition-editor-screen --> elsa-activity-editor-modal
+  elsa-workflow-definition-editor-screen --> elsa-workflow-publish-button
+  elsa-workflow-definition-editor-screen --> context-consumer
   elsa-designer-tree --> elsa-designer-tree-activity
   elsa-workflow-settings-modal --> elsa-modal-dialog
   elsa-workflow-settings-modal --> elsa-monaco
-  elsa-workflow-editor-notifications --> elsa-toast-notification
+  elsa-workflow-definition-editor-notifications --> elsa-toast-notification
   elsa-activity-picker-modal --> elsa-modal-dialog
   elsa-activity-editor-modal --> elsa-modal-dialog
-  style elsa-workflow-editor fill:#f9f,stroke:#333,stroke-width:4px
+  elsa-workflow-publish-button --> context-consumer
+  elsa-studio-workflow-definitions-edit --> elsa-workflow-definition-editor-screen
+  style elsa-workflow-definition-editor-screen fill:#f9f,stroke:#333,stroke-width:4px
 ```
 
 ----------------------------------------------

@@ -23,7 +23,7 @@
 
 ### Depends on
 
-- [elsa-monaco](../../monaco/elsa-monaco)
+- [elsa-monaco](../../../controls/elsa-monaco)
 - context-consumer
 
 ### Graph

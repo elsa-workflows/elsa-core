@@ -15,11 +15,18 @@
 | `values`      | --             |             | `string[]` | `[]`        |
 
 
+## Events
+
+| Event          | Description | Type                    |
+| -------------- | ----------- | ----------------------- |
+| `valueChanged` |             | `CustomEvent<string[]>` |
+
+
 ## Dependencies
 
 ### Used by
 
- - [elsa-multi-text-property](../../properties/elsa-multi-text-property)
+ - [elsa-multi-text-property](../../editors/properties/elsa-multi-text-property)
 
 ### Graph
 ```mermaid

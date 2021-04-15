@@ -9,7 +9,7 @@
 
 ### Used by
 
- - [elsa-workflow-editor](../elsa-workflow-editor)
+ - [elsa-workflow-definition-editor-screen](../elsa-workflow-definition-editor-screen)
 
 ### Depends on
 
@@ -18,9 +18,9 @@
 ### Graph
 ```mermaid
 graph TD;
-  elsa-workflow-editor-notifications --> elsa-toast-notification
-  elsa-workflow-editor --> elsa-workflow-editor-notifications
-  style elsa-workflow-editor-notifications fill:#f9f,stroke:#333,stroke-width:4px
+  elsa-workflow-definition-editor-notifications --> elsa-toast-notification
+  elsa-workflow-definition-editor-screen --> elsa-workflow-definition-editor-notifications
+  style elsa-workflow-definition-editor-notifications fill:#f9f,stroke:#333,stroke-width:4px
 ```
 
 ----------------------------------------------

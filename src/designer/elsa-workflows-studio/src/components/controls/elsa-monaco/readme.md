@@ -11,6 +11,7 @@
 | ---------------- | --------------- | ----------- | --------- | ----------- |
 | `editorHeight`   | `editor-height` |             | `string`  | `'6em'`     |
 | `language`       | `language`      |             | `string`  | `undefined` |
+| `padding`        | `padding`       |             | `string`  | `undefined` |
 | `singleLineMode` | `single-line`   |             | `boolean` | `false`     |
 | `value`          | `value`         |             | `string`  | `undefined` |
 
@@ -34,20 +35,30 @@ Type: `Promise<void>`
 
 
 
+### `setValue(value: string) => Promise<void>`
+
+
+
+#### Returns
+
+Type: `Promise<void>`
+
+
+
 
 ## Dependencies
 
 ### Used by
 
- - [elsa-script-property](../../properties/elsa-script-property)
- - [elsa-text-property](../../properties/elsa-text-property)
- - [elsa-workflow-settings-modal](../../workflow-editor/elsa-workflow-settings-modal)
+ - [elsa-expression-editor](../../editors/elsa-expression-editor)
+ - [elsa-script-property](../../editors/properties/elsa-script-property)
+ - [elsa-workflow-settings-modal](../../screens/workflow-definition-editor/elsa-workflow-settings-modal)
 
 ### Graph
 ```mermaid
 graph TD;
+  elsa-expression-editor --> elsa-monaco
   elsa-script-property --> elsa-monaco
-  elsa-text-property --> elsa-monaco
   elsa-workflow-settings-modal --> elsa-monaco
   style elsa-monaco fill:#f9f,stroke:#333,stroke-width:4px
 ```

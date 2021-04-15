@@ -1,4 +1,4 @@
-# elsa-dropdown-property
+# elsa-multi-line-property
 
 
 
@@ -22,12 +22,12 @@
 ### Graph
 ```mermaid
 graph TD;
-  elsa-dropdown-property --> elsa-property-editor
+  elsa-multi-line-property --> elsa-property-editor
   elsa-property-editor --> elsa-multi-expression-editor
   elsa-multi-expression-editor --> elsa-expression-editor
   elsa-expression-editor --> elsa-monaco
   elsa-expression-editor --> context-consumer
-  style elsa-dropdown-property fill:#f9f,stroke:#333,stroke-width:4px
+  style elsa-multi-line-property fill:#f9f,stroke:#333,stroke-width:4px
 ```
 
 ----------------------------------------------

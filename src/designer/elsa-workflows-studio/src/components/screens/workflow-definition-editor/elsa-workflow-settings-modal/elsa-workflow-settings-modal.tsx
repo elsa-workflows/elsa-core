@@ -204,7 +204,7 @@ export class ElsaWorkflowDefinitionSettingsModal {
       <div class="flex px-8">
         <div class="space-y-8 w-full">
           {textInput(formContext, 'contextOptions.contextType', 'Type', contextOptions.contextType, 'The fully qualified workflow context type name.', 'workflowContextType')}
-          {selectField(formContext, 'contextOptions.contextFidelity', 'Fidelity', contextOptions.contextFidelity.toString(), fidelityOptions, 'The workflow context refresh fidelity controls the behavior of when to load and persist the workflow context.', 'workflowContextFidelity')}
+          {selectField(formContext, 'contextOptions.contextFidelity', 'Fidelity', contextOptions.contextFidelity, fidelityOptions, 'The workflow context refresh fidelity controls the behavior of when to load and persist the workflow context.', 'workflowContextFidelity')}
         </div>
       </div>
     );
