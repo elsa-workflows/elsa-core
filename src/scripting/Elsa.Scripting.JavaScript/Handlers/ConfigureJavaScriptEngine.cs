@@ -34,6 +34,8 @@ namespace Elsa.Scripting.JavaScript.Handlers
             engine.SetValue("setVariable", (Action<string, object>) ((name, value) => activityContext.SetVariable(name, value)));
             engine.SetValue("getVariable", (Func<string, object?>) (name => activityContext.GetVariable(name)));
             engine.SetValue("getConfig", (Func<string, object?>) (name => _configuration.GetSection(name).Value));
+            engine.SetValue("isNullOrWhiteSpace", (Func<string, bool>) (string.IsNullOrWhiteSpace));
+            engine.SetValue("isNullOrEmpty", (Func<string, bool>) (string.IsNullOrEmpty));
 
             // Global variables.
             engine.SetValue("input", activityContext.Input);
