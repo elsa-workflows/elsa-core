@@ -1,6 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
@@ -13,34 +11,30 @@ namespace Elsa.Activities.BlobStorage
 {
     [Action(
         Category = "BlobStorage",
-        Description = "Reads a blob from the storage engine",
+        Description = "Reads a blob from the storage engine.",
         Outcomes = new[] { OutcomeNames.Done }
     )]
     public class ReadBlob : Activity
     {
-        public ReadBlob(IBlobStorage storage)
-        {
-            _storage = storage;
-        }
         private readonly IBlobStorage _storage;
+        public ReadBlob(IBlobStorage storage) => _storage = storage;
 
         [ActivityProperty(Hint = "The Id assigned to the blob.")]
         [Required]
-        public string BlobId { get; set; }
+        public string BlobId { get; set; } = default!;
 
-        [ActivityProperty(Hint = "If set, the output of this activity is written into the specified file, alternatively the outcome contains the bytes of the blob")]
-        public string FilePath { get; set; }
+        [ActivityProperty(Hint = "If set, the output of this activity is written to the specified file. Otherwise, the bytes of the blob will be set as the activity output.")]
+        public string? DestinationFilePath { get; set; }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
             if (string.IsNullOrWhiteSpace(BlobId))
-                throw new System.Exception($"BlobId must have a value");
-            if (!string.IsNullOrWhiteSpace(FilePath))
-                await _storage.ReadToFileAsync(BlobId, FilePath, context.CancellationToken);
-            else
-            {
-                Done(await _storage.ReadBytesAsync(BlobId, context.CancellationToken));
-            }
+                throw new System.Exception($"{nameof(BlobId)} must have a value");
+
+            if (string.IsNullOrWhiteSpace(DestinationFilePath))
+                return Done(await _storage.ReadBytesAsync(BlobId, context.CancellationToken));
+
+            await _storage.ReadToFileAsync(BlobId, DestinationFilePath, context.CancellationToken);
             return Done();
         }
     }
