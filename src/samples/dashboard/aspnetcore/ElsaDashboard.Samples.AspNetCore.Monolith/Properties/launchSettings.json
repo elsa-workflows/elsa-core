@@ -1,9 +1,10 @@
-﻿{
+{
   "iisSettings": {
     "windowsAuthentication": false,
     "anonymousAuthentication": true,
     "iisExpress": {
-      "applicationUrl": "https://localhost:15265"
+      "applicationUrl": "https://localhost:15265",
+      "sslPort": 0
     }
   },
   "profiles": {
@@ -16,12 +17,24 @@
     },
     "ElsaDashboard.Samples.AspNetCore": {
       "commandName": "Project",
-      "dotnetRunMessages": "true",
       "launchBrowser": true,
-      "applicationUrl": "https://localhost:15265",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
-      }
+      },
+      "dotnetRunMessages": "true",
+      "applicationUrl": "https://localhost:15265"
+    },
+    "Docker": {
+        "commandName": "Docker",
+        "launchBrowser": true,
+        "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
+        "environmentVariables": {
+            "ASPNETCORE_ENVIRONMENT": "Development",
+            "ASPNETCORE_URLS": "http://+:80"
+        },
+        "publishAllPorts": true,
+        "useSSL": false,
+        "httpPort": 5000
     }
   }
 }
