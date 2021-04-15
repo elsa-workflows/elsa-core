@@ -162,7 +162,10 @@ export class ElsaMonaco {
   }
 
   disconnectedCallback() {
-    this.editor.dispose();
+    const editor = this.editor;
+
+    if (!!editor)
+      editor.dispose();
   }
 
   registerLiquid() {
