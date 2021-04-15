@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Dynamic;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Elsa.Scripting.JavaScript.Services
 {
@@ -20,6 +21,7 @@ namespace Elsa.Scripting.JavaScript.Services
         object? ConvertEnumerable(IEnumerable enumerable, Type? desiredType = null)
         {
             if(enumerable is string) return enumerable;
+            if(enumerable is JObject) return enumerable;
 
             var destinationType = GetDestinationType(desiredType);
             var json = JsonConvert.SerializeObject(enumerable);
