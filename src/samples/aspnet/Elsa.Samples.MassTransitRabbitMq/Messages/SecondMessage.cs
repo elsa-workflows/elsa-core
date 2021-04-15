@@ -2,7 +2,7 @@ using System;
 
 namespace Elsa.Samples.MassTransitRabbitMq.Messages
 {
-    public class FirstMessage
+    public class SecondMessage
     {    
         public Guid CorrelationId { get; private set; }
 
