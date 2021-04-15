@@ -83,6 +83,14 @@ export interface ConnectionDefinition {
     outcome?: string;
 }
 
+export interface ConnectionDefinitionMapped {
+    sourceId: string;
+    sourceActivityId: string;
+    targetId: string;
+    targetActivityId: string;
+    outcome: string;
+}
+
 export interface ActivityDefinitionProperty {
     name: string;
     syntax?: string;

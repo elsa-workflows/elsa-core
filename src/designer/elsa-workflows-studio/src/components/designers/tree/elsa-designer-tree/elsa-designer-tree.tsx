@@ -1,7 +1,7 @@
 import {Component, Host, h, Prop, State, Event, EventEmitter, Listen, Watch, Method} from '@stencil/core';
 import {Map, addConnection, findActivity, getChildActivities, getInboundConnections, getOutboundConnections, removeActivity} from '../../../../utils/utils';
 import {cleanup, destroy, updateConnections} from '../../../../utils/jsplumb-helper';
-import {ActivityDescriptor, ActivityDesignDisplayContext, ActivityModel, ActivityTraits, ConnectionModel, EventTypes, WorkflowModel, WorkflowPersistenceBehavior} from "../../../../models";
+import {ActivityDescriptor, ActivityDesignDisplayContext, ActivityModel, ActivityTraits, ConnectionModel, EventTypes, WorkflowModel, WorkflowPersistenceBehavior, ConnectionDefinitionMapped} from "../../../../models";
 import {eventBus} from '../../../../services/event-bus';
 import jsPlumb from "jsplumb";
 import uuid = jsPlumb.jsPlumbUtil.uuid;
@@ -434,9 +434,51 @@ export class ElsaWorkflowDesigner {
     );
   }
 
+  sortActivitiesByOutputs(list: Array<ActivityModel>): Array<ActivityModel> {
+    let sortedActivities: Array<ActivityModel> = [];
+    let activity: ActivityModel = undefined;
+    const connections: Array<ConnectionDefinitionMapped> = this.getJsPlumbConnections();
+
+    if (list.length === 0)
+      return list;
+      
+    const sourceActivityConnection: ConnectionDefinitionMapped = connections.find(x => x.targetActivityId === list[0].activityId);
+
+    if (!sourceActivityConnection)
+      return list;
+
+    const sourceActivityId: string = sourceActivityConnection.sourceActivityId;
+    const sourceActivity: ActivityModel = this.workflowModel.activities.find(x => x.activityId === sourceActivityId);
+
+    if (!sourceActivity)
+      return list;
+
+    const sourceActivityConnections: Array<ConnectionDefinitionMapped> = connections.filter(x => x.sourceActivityId === sourceActivityId);
+    const sourceActivityDisplayContext = this.activityDisplayContexts[sourceActivity.activityId];
+    
+    if (sourceActivityDisplayContext.outcomes) {
+      sourceActivity.outcomes = sourceActivityDisplayContext.outcomes;
+    }
+
+    sourceActivity.outcomes.forEach(outcome => {
+      sourceActivityConnections.forEach(conn => {
+        if (outcome === conn.outcome) {
+          activity = this.workflowModel.activities.find(x => x.activityId === conn.targetActivityId);
+
+          if (activity)
+            sortedActivities.push(activity);
+        }
+      })
+    })
+    return sortedActivities;
+  }
+
   renderTree(activities: Array<ActivityModel>, isRoot: boolean, renderedActivities: Set<string>): any {
-    const list = activities.filter(x => !renderedActivities.has(x.activityId));
+    let list = activities.filter(x => !renderedActivities.has(x.activityId));
     const cssClass = isRoot ? "root" : undefined;
+
+    list = this.sortActivitiesByOutputs(list);
+    activities = list;
 
     if (list.length == 0)
       return null;
