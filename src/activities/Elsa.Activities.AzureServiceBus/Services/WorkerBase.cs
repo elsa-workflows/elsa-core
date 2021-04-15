@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.AzureServiceBus.Models;
@@ -18,18 +19,21 @@ namespace Elsa.Activities.AzureServiceBus.Services
         private const string TenantId = default;
 
         private readonly IWorkflowDispatcher _workflowDispatcher;
+        private readonly Func<IReceiverClient, Task> _disposeReceiverAction;
         private readonly ILogger _logger;
 
         protected WorkerBase(
             IReceiverClient receiverClient,
             IWorkflowDispatcher workflowDispatcher,
             IOptions<AzureServiceBusOptions> options,
+            Func<IReceiverClient, Task> disposeReceiverAction, 
             ILogger logger)
         {
             ReceiverClient = receiverClient;
             _workflowDispatcher = workflowDispatcher;
+            _disposeReceiverAction = disposeReceiverAction;
             _logger = logger;
-
+            
             ReceiverClient.RegisterMessageHandler(OnMessageReceived, new MessageHandlerOptions(ExceptionReceivedHandler)
             {
                 AutoComplete = false,
@@ -39,8 +43,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
 
         protected IReceiverClient ReceiverClient { get; }
         protected abstract string ActivityType { get; }
-
-        public async ValueTask DisposeAsync() => await ReceiverClient.CloseAsync();
+        public async ValueTask DisposeAsync() => await _disposeReceiverAction(ReceiverClient);
 
         protected abstract IBookmark CreateBookmark(Message message);
         protected abstract IBookmark CreateTrigger(Message message);
@@ -64,7 +67,8 @@ namespace Elsa.Activities.AzureServiceBus.Services
                 ExpiresAtUtc = message.ExpiresAtUtc,
                 TimeToLive = message.TimeToLive,
                 ReplyToSessionId = message.ReplyToSessionId,
-                ScheduledEnqueueTimeUtc = message.ScheduledEnqueueTimeUtc
+                ScheduledEnqueueTimeUtc = message.ScheduledEnqueueTimeUtc,
+                UserProperties = new Dictionary<string, object>(message.UserProperties),
             };
 
             var bookmark = CreateBookmark(message);

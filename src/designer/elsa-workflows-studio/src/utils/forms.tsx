@@ -80,7 +80,8 @@ export function selectField(context: FormContext, fieldName: string, label: stri
 
 export function updateField<T>(context: FormContext, fieldName: string, value: T) {
   const fieldNameHierarchy = fieldName.split('.');
-  let current = {...context.model};
+  let clone = {...context.model};
+  let current = clone;
 
   for (const name of fieldNameHierarchy.slice(0, fieldNameHierarchy.length - 1)) {
     if (!current[name])
@@ -92,8 +93,8 @@ export function updateField<T>(context: FormContext, fieldName: string, value: T
   const leafFieldName = fieldNameHierarchy.last();
   current[leafFieldName] = value;
 
-  context.model = current;
-  context.updater(current);
+  context.model = clone;
+  context.updater(clone);
 }
 
 export function onTextInputChange(e: Event, context: FormContext) {

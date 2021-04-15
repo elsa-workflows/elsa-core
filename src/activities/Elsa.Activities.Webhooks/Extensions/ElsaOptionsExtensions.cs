@@ -11,8 +11,8 @@ namespace Microsoft.Extensions.DependencyInjection
 {
     public static class ElsaOptionsExtensions
     {
-        public static ElsaOptions AddWebhooks(
-            this ElsaOptions elsaOptions,
+        public static ElsaOptionsBuilder AddWebhooks(
+            this ElsaOptionsBuilder elsaOptions,
             Action<WebhookOptions>? configure = default)
         {
             var services = elsaOptions.Services;

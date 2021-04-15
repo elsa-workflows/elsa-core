@@ -1,9 +1,7 @@
 import {Component, Event, EventEmitter, h, Host, Prop, State} from '@stencil/core';
 import {leave, toggle} from 'el-transition'
 import {registerClickOutside} from "stencil-click-outside";
-import {ActivityIcon} from '../../../icons/activity-icon';
 import {ActivityModel, ActivityDesignDisplayContext, EventTypes} from "../../../../models";
-import {eventBus} from '../../../../services/event-bus';
 
 @Component({
   tag: 'elsa-designer-tree-activity',
@@ -49,8 +47,8 @@ export class ElsaDesignerTreeActivity {
     const displayName = activity.displayName && activity.displayName.length > 0 ? activity.displayName : activity.name && activity.name.length > 0 ? activity.name : activity.type
 
     return (
-      <Host id={`activity-${activityId}`} 
-            onDblClick={e => this.onEditActivityClick(e)} 
+      <Host id={`activity-${activityId}`}
+            onDblClick={e => this.onEditActivityClick(e)}
             class="activity border-2 border-solid border-white rounded bg-white text-left text-black text-lg hover:border-blue-600 select-none max-w-md shadow-sm relative">
         <div class="p-5">
           <div class="flex justify-between space-x-8">

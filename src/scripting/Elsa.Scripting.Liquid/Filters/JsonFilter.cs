@@ -21,7 +21,7 @@ namespace Elsa.Scripting.Liquid.Filters
                     return new ValueTask<FluidValue>(new StringValue(JsonConvert.SerializeObject(input.ToBooleanValue())));
 
                 case FluidValues.Nil:
-                    return new ValueTask<FluidValue>(FluidValue.Create("null"));
+                    return new ValueTask<FluidValue>(FluidValue.Create("null", context.Options));
 
                 case FluidValues.Number:
                     return new ValueTask<FluidValue>(new StringValue(JsonConvert.SerializeObject(input.ToNumberValue())));

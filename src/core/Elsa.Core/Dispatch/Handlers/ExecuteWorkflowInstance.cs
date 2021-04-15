@@ -25,7 +25,7 @@ namespace Elsa.Dispatch.Handlers
         public async Task<Unit> Handle(ExecuteWorkflowInstanceRequest request, CancellationToken cancellationToken)
         {
             var workflowInstanceId = request.WorkflowInstanceId;
-            var workflowInstance = await _workflowInstanceStore.FindByIdAsync(request.WorkflowInstanceId, cancellationToken: cancellationToken);
+            var workflowInstance = await _workflowInstanceStore.FindByIdAsync(request.WorkflowInstanceId, cancellationToken);
 
             if (!ValidatePreconditions(workflowInstanceId, workflowInstance, request.ActivityId))
                 return Unit.Value;

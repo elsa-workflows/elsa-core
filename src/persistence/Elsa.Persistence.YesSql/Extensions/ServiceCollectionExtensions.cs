@@ -16,10 +16,10 @@ namespace Elsa.Persistence.YesSql
 {
     public static class ServiceCollectionExtensions
     {
-        public static ElsaOptions UseYesSqlPersistence(this ElsaOptions elsa) => elsa.UseYesSqlPersistence(config => config.UseSqLite("Data Source=elsa.db;Cache=Shared", IsolationLevel.ReadUncommitted));
-        public static ElsaOptions UseYesSqlPersistence(this ElsaOptions elsa, Action<IConfiguration> configure) => elsa.UseYesSqlPersistence((_, config) => configure(config));
+        public static ElsaOptionsBuilder UseYesSqlPersistence(this ElsaOptionsBuilder elsa) => elsa.UseYesSqlPersistence(config => config.UseSqLite("Data Source=elsa.db;Cache=Shared", IsolationLevel.ReadUncommitted));
+        public static ElsaOptionsBuilder UseYesSqlPersistence(this ElsaOptionsBuilder elsa, Action<IConfiguration> configure) => elsa.UseYesSqlPersistence((_, config) => configure(config));
 
-        public static ElsaOptions UseYesSqlPersistence(this ElsaOptions elsa, Action<IServiceProvider, IConfiguration> configure)
+        public static ElsaOptionsBuilder UseYesSqlPersistence(this ElsaOptionsBuilder elsa, Action<IServiceProvider, IConfiguration> configure)
         {
             elsa.Services
                 .AddScoped<YesSqlWorkflowDefinitionStore>()

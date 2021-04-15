@@ -18,11 +18,11 @@ namespace Elsa.Activities.ControlFlow
         DisplayName = "Switch",
         Category = "Control Flow",
         Description = "Evaluate multiple conditions and continue execution depending on the results.",
-        Outcomes = new[] { OutcomeNames.Done }
+        Outcomes = new[] { OutcomeNames.Default }
     )]
     public class Switch : Activity, INotificationHandler<ScopeEvicted>
     {
-        [ActivityProperty(Hint = "The conditions to evaluate.")]
+        [ActivityProperty(Hint = "The conditions to evaluate.", UIHint = "switch-case-builder", DefaultSyntax = "Switch")]
         public ICollection<SwitchCase> Cases { get; set; } = new List<SwitchCase>();
 
         [ActivityProperty(
@@ -55,8 +55,9 @@ namespace Elsa.Activities.ControlFlow
             }
 
             var matches = Cases.Where(x => x.Condition).Select(x => x.Name).ToList();
-            var results = Mode == SwitchMode.MatchFirst ? matches.Any() ? new[] { matches.First() } : new string[0] : matches.ToArray();
-            var outcomes = results;
+            var hasAnyMatches = matches.Any();
+            var results = Mode == SwitchMode.MatchFirst ? hasAnyMatches ? new[] { matches.First() } : new string[0] : matches.ToArray();
+            var outcomes = hasAnyMatches ? results : new[] { OutcomeNames.Default };
 
             return Outcomes(outcomes);
         }

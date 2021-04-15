@@ -1,13 +1,13 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Activities.Console;
 using Elsa.Activities.Primitives;
 using Elsa.Core.IntegrationTests.Autofixture;
 using Elsa.Models;
 using Elsa.Serialization;
 using Elsa.Services;
 using Elsa.Services.Models;
+using Elsa.Testing.Shared;
 using Elsa.Testing.Shared.Helpers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

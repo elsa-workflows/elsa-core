@@ -1,0 +1,28 @@
+# elsa-activity-picker-modal
+
+
+
+<!-- Auto Generated Below -->
+
+
+## Dependencies
+
+### Used by
+
+ - [elsa-workflow-definition-editor-screen](../elsa-workflow-definition-editor-screen)
+
+### Depends on
+
+- [elsa-toast-notification](../../../shared/elsa-toast-notification)
+
+### Graph
+```mermaid
+graph TD;
+  elsa-workflow-definition-editor-notifications --> elsa-toast-notification
+  elsa-workflow-definition-editor-screen --> elsa-workflow-definition-editor-notifications
+  style elsa-workflow-definition-editor-notifications fill:#f9f,stroke:#333,stroke-width:4px
+```
+
+----------------------------------------------
+
+*Built with [StencilJS](https://stenciljs.com/)*

@@ -1,6 +1,6 @@
 ﻿import {ActivityModel, ActivityPropertyDescriptor} from "../models/";
 import {PropertyDisplayDriver} from "./property-display-driver";
-import {NullPropertyDriver } from "../property-display-drivers";
+import {NullPropertyDriver } from "../drivers";
 import {Map} from '../utils/utils';
 
 export type PropertyDisplayDriverMap = Map<() => PropertyDisplayDriver>;

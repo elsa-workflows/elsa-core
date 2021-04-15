@@ -1,5 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Elsa.Activities.Telnyx.Client.Models;
 using Elsa.Activities.Telnyx.Client.Services;
 using Elsa.Activities.Telnyx.Extensions;

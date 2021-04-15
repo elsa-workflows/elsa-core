@@ -61,8 +61,8 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
             if (workflowStatus != null)
                 specification = specification.WithStatus(workflowStatus.Value);
             
-            if (!string.IsNullOrWhiteSpace(searchTerm))
-                specification = specification.WithWorkflowName(searchTerm);
+            if (!string.IsNullOrWhiteSpace(searchTerm)) 
+                specification = specification.WithSearchTerm(searchTerm);
 
             var orderBySpecification = default(OrderBy<WorkflowInstance>);
             

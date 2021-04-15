@@ -3,7 +3,7 @@
 }
 
 .workflow-canvas {
-  background-image: url(build/assets/tile.png);
+  background-image: url(/build/assets/tile.png);
   background-repeat: repeat;
   background-size: 30px 30px;
   background-color: #FBFBFB;

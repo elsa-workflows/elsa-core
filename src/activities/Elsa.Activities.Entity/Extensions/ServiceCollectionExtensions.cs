@@ -7,7 +7,7 @@ namespace Microsoft.Extensions.DependencyInjection
 {
     public static class ServiceCollectionExtensions
     {
-        public static ElsaOptions AddEntityActivities(this ElsaOptions options)
+        public static ElsaOptionsBuilder AddEntityActivities(this ElsaOptionsBuilder options)
         {
             options.AddActivity<EntityChanged>();
             options.Services.AddBookmarkProvider<EntityChangedWorkflowTriggerProvider>();

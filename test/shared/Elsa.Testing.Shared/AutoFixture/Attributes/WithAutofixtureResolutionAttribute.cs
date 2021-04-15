@@ -4,7 +4,6 @@ using AutoFixture;
 using AutoFixture.Xunit2;
 using Elsa.Testing.Shared.AutoFixture.Behaviors;
 using Elsa.Testing.Shared.AutoFixture.SpecimenBuilders;
-using Moq;
 
 namespace Elsa.Testing.Shared.AutoFixture.Attributes
 {

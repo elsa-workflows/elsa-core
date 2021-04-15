@@ -10,9 +10,9 @@ namespace Elsa.Persistence.MongoDb.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        public static ElsaOptions UseMongoDbPersistence(this ElsaOptions elsa, Action<ElsaMongoDbOptions> configureOptions) => UseMongoDbPersistence<ElsaMongoDbContext>(elsa, configureOptions);
+        public static ElsaOptionsBuilder UseMongoDbPersistence(this ElsaOptionsBuilder elsa, Action<ElsaMongoDbOptions> configureOptions) => UseMongoDbPersistence<ElsaMongoDbContext>(elsa, configureOptions);
         
-        public static ElsaOptions UseMongoDbPersistence<TDbContext>(this ElsaOptions elsa, Action<ElsaMongoDbOptions> configureOptions) where TDbContext: ElsaMongoDbContext
+        public static ElsaOptionsBuilder UseMongoDbPersistence<TDbContext>(this ElsaOptionsBuilder elsa, Action<ElsaMongoDbOptions> configureOptions) where TDbContext: ElsaMongoDbContext
         {
             AddCore<TDbContext>(elsa);
             elsa.Services.Configure(configureOptions);
@@ -20,16 +20,16 @@ namespace Elsa.Persistence.MongoDb.Extensions
             return elsa;
         }
 
-        public static ElsaOptions UseMongoDbPersistence(this ElsaOptions elsa, IConfiguration configuration) => UseMongoDbPersistence<ElsaMongoDbContext>(elsa, configuration);
+        public static ElsaOptionsBuilder UseMongoDbPersistence(this ElsaOptionsBuilder elsa, IConfiguration configuration) => UseMongoDbPersistence<ElsaMongoDbContext>(elsa, configuration);
 
-        public static ElsaOptions UseMongoDbPersistence<TDbContext>(this ElsaOptions elsa, IConfiguration configuration) where TDbContext: ElsaMongoDbContext
+        public static ElsaOptionsBuilder UseMongoDbPersistence<TDbContext>(this ElsaOptionsBuilder elsa, IConfiguration configuration) where TDbContext: ElsaMongoDbContext
         {
             AddCore<TDbContext>(elsa);
             elsa.Services.Configure<ElsaMongoDbOptions>(configuration);
             return elsa;
         }
 
-        private static void AddCore<TDbContext>(ElsaOptions elsa) where TDbContext : ElsaMongoDbContext
+        private static void AddCore<TDbContext>(ElsaOptionsBuilder elsa) where TDbContext : ElsaMongoDbContext
         {
             elsa.Services
                 .AddSingleton<MongoDbWorkflowDefinitionStore>()

@@ -53,6 +53,25 @@ namespace Elsa.Persistence.YesSql.Services
                     _logger.LogError(ex, "Could not run migrations automatically on '{FeatureName}'", migration);
                 }
             }
+
+            try
+            {
+                var commitTask = _session.CurrentTransaction?.CommitAsync() ?? Task.CompletedTask;
+                await commitTask;
+            }
+            catch(InvalidOperationException)
+            {
+                // TODO: Improve on this ugly hack/workaround!
+                // 
+                // The commit can throw this exception because it's already been committed.  But if
+                // we don't explicitly commit here then it never gets committed and it's as if the
+                // migrations never took place!
+                // 
+                // I suspect that either this method is being called more than once, or perhaps (IMO
+                // more likely) an async operation (somewhere) isn't being awaited.  That could mean
+                // that the connection is closed/killed-off before the commit actually completes,
+                // with the effect that it doesn't happen.
+            }
         }
 
         public async Task<IEnumerable<IDataMigration>> GetMigrationsThatNeedUpdateAsync()
@@ -84,7 +103,7 @@ namespace Elsa.Persistence.YesSql.Services
 
             // Apply update methods to migration class.
 
-            var schemaBuilder = new SchemaBuilder(_store.Configuration, await _session.DemandAsync());
+            var schemaBuilder = new SchemaBuilder(_store.Configuration, await _session.BeginTransactionAsync());
             dataMigration.SchemaBuilder = schemaBuilder;
 
             // Copy the object for the Linq query.
@@ -131,7 +150,7 @@ namespace Elsa.Persistence.YesSql.Services
                 while (lookupTable.TryGetValue(current, out var methodInfo))
                 {
                     _logger.LogInformation(
-                        "Applying migration '{MigrationName}' from version {Version}.",
+                        "Applying migration '{MigrationName}' from version {Version}",
                         migrationName,
                         current);
 
@@ -152,11 +171,11 @@ namespace Elsa.Persistence.YesSql.Services
             {
                 _logger.LogError(
                     ex,
-                    "Error while running migration version {Version} for '{MigrationName}'.",
+                    "Error while running migration version {Version} for '{MigrationName}'",
                     current,
                     migrationName);
 
-                _session.Cancel();
+                await _session.CancelAsync();
             }
             finally
             {

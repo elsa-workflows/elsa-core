@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using Elsa.Activities.MassTransit.Bookmarks;
 using Elsa.Activities.MassTransit.Consumers;
 using Elsa.Activities.MassTransit.Options;
+using Elsa.Bookmarks;
 using MassTransit;
 using MassTransit.ConsumeConfigurators;
 using Microsoft.Extensions.DependencyInjection;
@@ -10,12 +12,14 @@ namespace Elsa.Activities.MassTransit.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        public static ElsaOptions AddMassTransitActivities(this ElsaOptions options)
+        public static ElsaOptionsBuilder AddMassTransitActivities(this ElsaOptionsBuilder options)
         {
             if (options == null)
             {
                 throw new ArgumentNullException(nameof(options));
             }
+
+            options.Services.AddBookmarkProvider<MessageReceivedTriggerProvider>();
 
             return options
                 .AddActivity<PublishMassTransitMessage>()
@@ -23,7 +27,7 @@ namespace Elsa.Activities.MassTransit.Extensions
                 .AddActivity<SendMassTransitMessage>();
         }
 
-        public static ElsaOptions AddMassTransitSchedulingActivities(this ElsaOptions options, Action<MessageScheduleOptions>? configureOptions)
+        public static ElsaOptionsBuilder AddMassTransitSchedulingActivities(this ElsaOptionsBuilder options, Action<MessageScheduleOptions>? configureOptions)
         {
             options.AddMassTransitActivities()
                 .AddActivity<CancelScheduledMassTransitMessage>()
@@ -35,7 +39,7 @@ namespace Elsa.Activities.MassTransit.Extensions
             return options;
         }
 
-        public static ElsaOptions AddRabbitMqActivities(this ElsaOptions options, Action<RabbitMqOptions>? configureOptions = null, params Type[] messageTypes)
+        public static ElsaOptionsBuilder AddRabbitMqActivities(this ElsaOptionsBuilder options, Action<RabbitMqOptions>? configureOptions = null, params Type[] messageTypes)
         {
             if (configureOptions != null) 
                 options.Services.Configure(configureOptions);

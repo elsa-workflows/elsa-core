@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Elsa.Activities.ControlFlow;
 using Elsa.Activities.Primitives;
 using Elsa.Activities.Signaling;
-using Elsa.Activities.UserTask.Activities;
 using Elsa.Builders;
 using Elsa.Models;
 using Elsa.Persistence;

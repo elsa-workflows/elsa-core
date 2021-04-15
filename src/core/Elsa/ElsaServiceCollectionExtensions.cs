@@ -10,7 +10,7 @@ namespace Microsoft.Extensions.DependencyInjection
     {
         public static IServiceCollection AddElsa(
             this IServiceCollection services,
-            Action<ElsaOptions>? configure = default) =>
+            Action<ElsaOptionsBuilder>? configure = default) =>
             services
                 .AddElsaCore(configure)
                 .AddStartupRunner()

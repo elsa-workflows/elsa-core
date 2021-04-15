@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Elsa.Bookmarks;
 using Elsa.Builders;
 using Elsa.Models;
+using Elsa.Persistence;
 using Elsa.Services.Models;
 using Elsa.Triggers;
 using Open.Linq.AsyncExtensions;
@@ -17,13 +18,15 @@ namespace Elsa.Services
         private readonly IWorkflowFactory _workflowFactory;
         private readonly Func<IWorkflowBuilder> _workflowBuilderFactory;
         private readonly IWorkflowRunner _workflowRunner;
+        private readonly IWorkflowInstanceStore _workflowInstanceStore;
 
-        public WorkflowStarter(ITriggerFinder triggerFinder, IWorkflowFactory workflowFactory, Func<IWorkflowBuilder> workflowBuilderFactory, IWorkflowRunner workflowRunner)
+        public WorkflowStarter(ITriggerFinder triggerFinder, IWorkflowFactory workflowFactory, Func<IWorkflowBuilder> workflowBuilderFactory, IWorkflowRunner workflowRunner, IWorkflowInstanceStore workflowInstanceStore)
         {
             _triggerFinder = triggerFinder;
             _workflowFactory = workflowFactory;
             _workflowBuilderFactory = workflowBuilderFactory;
             _workflowRunner = workflowRunner;
+            _workflowInstanceStore = workflowInstanceStore;
         }
 
         public async Task FindAndStartWorkflowsAsync(string activityType, IBookmark bookmark, string? tenantId, object? input = default, string? contextId = default, CancellationToken cancellationToken = default)
@@ -71,6 +74,7 @@ namespace Elsa.Services
                 contextId,
                 cancellationToken);
 
+            await _workflowInstanceStore.SaveAsync(workflowInstance, cancellationToken);
             return await _workflowRunner.RunWorkflowAsync(workflowBlueprint, workflowInstance, activityId, input, cancellationToken);
         }
 

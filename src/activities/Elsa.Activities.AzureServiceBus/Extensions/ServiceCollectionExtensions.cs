@@ -1,8 +1,10 @@
 using System;
 using Elsa.Activities.AzureServiceBus.Bookmarks;
+using Elsa.Activities.AzureServiceBus.Consumers;
 using Elsa.Activities.AzureServiceBus.Options;
 using Elsa.Activities.AzureServiceBus.Services;
 using Elsa.Activities.AzureServiceBus.StartupTasks;
+using Elsa.Events;
 using Elsa.Runtime;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Management;
@@ -13,7 +15,7 @@ namespace Elsa.Activities.AzureServiceBus.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        public static ElsaOptions AddAzureServiceBusActivities(this ElsaOptions options, Action<AzureServiceBusOptions>? configure)
+        public static ElsaOptionsBuilder AddAzureServiceBusActivities(this ElsaOptionsBuilder options, Action<AzureServiceBusOptions>? configure)
         {
             if (configure != null)
                 options.Services.Configure(configure);
@@ -23,26 +25,31 @@ namespace Elsa.Activities.AzureServiceBus.Extensions
             options.Services
                 .AddSingleton(CreateServiceBusConnection)
                 .AddSingleton(CreateServiceBusManagementClient)
-                .AddSingleton<MessageBusFactory>()
-                .AddSingleton<IMessageSenderFactory>(sp => sp.GetRequiredService<MessageBusFactory>())
-                .AddSingleton<IMessageReceiverFactory>(sp => sp.GetRequiredService<MessageBusFactory>())
+                .AddSingleton<BusClientFactory>()
+                .AddSingleton<IQueueMessageSenderFactory>(sp => sp.GetRequiredService<BusClientFactory>())
+                .AddSingleton<IQueueMessageReceiverClientFactory>(sp => sp.GetRequiredService<BusClientFactory>())
+                .AddSingleton<ITopicMessageSenderFactory>(sp => sp.GetRequiredService<BusClientFactory>())
+                .AddSingleton<ITopicMessageReceiverFactory>(sp => sp.GetRequiredService<BusClientFactory>())
+                .AddSingleton<IServiceBusQueuesStarter, ServiceBusQueuesStarter>()
+                .AddSingleton<IServiceBusTopicsStarter, ServiceBusTopicsStarter>()
                 .AddStartupTask<StartServiceBusQueues>()
+                .AddStartupTask<StartServiceBusTopics>()
                 .AddBookmarkProvider<QueueMessageReceivedBookmarkProvider>()
-
-                 .AddSingleton<ITopicMessageSenderFactory>(sp => sp.GetRequiredService<MessageBusFactory>())
-                .AddSingleton<ITopicMessageReceiverFactory>(sp => sp.GetRequiredService<MessageBusFactory>())
-                .AddStartupTask<StartServiceBusSubscription>()
                 .AddBookmarkProvider<TopicMessageReceivedBookmarkProvider>()
                 ;
+
+            options.AddConsumer<RestartServiceBusQueuesConsumer, WorkflowDefinitionPublished>();
+            options.AddConsumer<RestartServiceBusQueuesConsumer, WorkflowDefinitionRetracted>();
+            options.AddConsumer<RestartServiceBusTopicsConsumer, WorkflowDefinitionPublished>();
+            options.AddConsumer<RestartServiceBusTopicsConsumer, WorkflowDefinitionRetracted>();
 
             options
                 .AddActivity<AzureServiceBusQueueMessageReceived>()
                 .AddActivity<SendAzureServiceBusQueueMessage>()
                 .AddActivity<SendAzureServiceBusTopicMessage>()
                 .AddActivity<AzureServiceBusTopicMessageReceived>()
-
                 ;
-            
+
             return options;
         }
 
@@ -52,7 +59,7 @@ namespace Elsa.Activities.AzureServiceBus.Extensions
             var connectionString = options.ConnectionString;
             return new ServiceBusConnection(connectionString, RetryPolicy.Default);
         }
-        
+
         private static ManagementClient CreateServiceBusManagementClient(IServiceProvider serviceProvider)
         {
             var options = serviceProvider.GetRequiredService<IOptions<AzureServiceBusOptions>>().Value;

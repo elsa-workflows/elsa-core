@@ -11,6 +11,9 @@ namespace Elsa.Scripting.JavaScript.Services
             if(desiredType == typeof(object))
                 return evaluationResult;
 
+            if (evaluationResult.GetType() == desiredType || desiredType.IsAssignableFrom(evaluationResult.GetType()))
+                return evaluationResult;
+
             return wrapped.ConvertToDesiredType(evaluationResult, desiredType);
         }
 

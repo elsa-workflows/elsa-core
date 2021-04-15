@@ -17,7 +17,7 @@
         <PackageReference Include="Humanizer.Core" Version="2.8.26" />
         <PackageReference Include="MediatR" Version="9.0.0" />
         <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="9.0.0" />
-        <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="5.0.4" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="5.0.5" />
         <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="2.2.0" />
     </ItemGroup>
 

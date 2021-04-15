@@ -45,7 +45,7 @@ namespace Elsa.Persistence.YesSql.Stores
                 var existingDocument = await FindDocumentAsync(entity, cancellationToken);
                 var document = Mapper.Map(entity, existingDocument);
                 Session.Save(document, CollectionName);
-                await Session.CommitAsync();
+                await Session.SaveChangesAsync();
             }
             finally
             {
@@ -59,7 +59,7 @@ namespace Elsa.Persistence.YesSql.Stores
         {
             var document = Mapper.Map<TDocument>(entity);
             Session.Save(document, CollectionName);
-            await Session.CommitAsync();
+            await Session.SaveChangesAsync();
         }
 
         public async Task AddManyAsync(IEnumerable<T> entities, CancellationToken cancellationToken = default)
@@ -69,14 +69,14 @@ namespace Elsa.Persistence.YesSql.Stores
             foreach (var document in documents) 
                 Session.Save(document, CollectionName);
             
-            await Session.CommitAsync();
+            await Session.SaveChangesAsync();
         }
 
         public async Task DeleteAsync(T entity, CancellationToken cancellationToken = default)
         {
             var document = await FindDocumentAsync(entity, cancellationToken);
             Session.Delete(document, CollectionName);
-            await Session.CommitAsync();
+            await Session.SaveChangesAsync();
         }
 
         public async Task<int> DeleteManyAsync(ISpecification<T> specification, CancellationToken cancellationToken = default)
@@ -95,7 +95,7 @@ namespace Elsa.Persistence.YesSql.Stores
             }
 
             _stopwatch.Restart();
-            await Session.CommitAsync();
+            await Session.SaveChangesAsync();
             _stopwatch.Stop();
             _logger.LogDebug("Committing deleted documents took {TimeElapsed}", _stopwatch.Elapsed);
             

@@ -12,12 +12,12 @@ namespace Microsoft.Extensions.DependencyInjection
 {
     public static class ServiceCollectionExtensions
     {
-        public static ElsaOptions AddDropbox(this ElsaOptions services, Action<DropboxOptions>? configureOptions = null) =>
+        public static ElsaOptionsBuilder AddDropbox(this ElsaOptionsBuilder services, Action<DropboxOptions>? configureOptions = null) =>
             services
                 .AddDropboxServices(configureOptions)
                 .AddDropboxActivities();
 
-        public static ElsaOptions AddDropboxServices(this ElsaOptions options, Action<DropboxOptions>? configureOptions = null)
+        public static ElsaOptionsBuilder AddDropboxServices(this ElsaOptionsBuilder options, Action<DropboxOptions>? configureOptions = null)
         {
             if (configureOptions != null) 
                 options.Services.Configure(configureOptions);
@@ -29,7 +29,7 @@ namespace Microsoft.Extensions.DependencyInjection
             return options;
         }
         
-        public static ElsaOptions AddDropboxActivities(this ElsaOptions services) => services.AddActivity<SaveToDropbox>();
+        public static ElsaOptionsBuilder AddDropboxActivities(this ElsaOptionsBuilder services) => services.AddActivity<SaveToDropbox>();
 
         private static void ConfigureHttpClient(IServiceProvider services, HttpClient httpClient)
         {

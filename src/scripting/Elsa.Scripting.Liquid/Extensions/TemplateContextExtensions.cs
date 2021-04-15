@@ -8,11 +8,11 @@ namespace Elsa.Scripting.Liquid.Extensions
 {
     public static class TemplateContextExtensions
     {
-        internal static void AddAsyncFilters(this TemplateContext templateContext, LiquidOptions options, IServiceProvider services)
+        internal static void AddFilters(this TemplateContext templateContext, LiquidOptions options, IServiceProvider services)
         {
             foreach (var registration in options.FilterRegistrations)
             {
-                templateContext.Filters.AddAsyncFilter(registration.Key, (input, arguments, ctx) =>
+                templateContext.Options.Filters.AddFilter(registration.Key, (input, arguments, ctx) =>
                 {
                     var filter = (ILiquidFilter) services.GetRequiredService(registration.Value);
                     return filter.ProcessAsync(input, arguments, ctx);

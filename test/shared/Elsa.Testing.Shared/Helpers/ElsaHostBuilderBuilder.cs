@@ -29,9 +29,9 @@ namespace Elsa.Testing.Shared.Helpers
         /// the host builder's services as it is created.
         /// </summary>
         /// <returns>The Elsa callbacks</returns>
-        public IList<Action<ElsaOptions>> ElsaCallbacks { get; } = new List<Action<ElsaOptions>>();
+        public IList<Action<ElsaOptionsBuilder>> ElsaCallbacks { get; } = new List<Action<ElsaOptionsBuilder>>();
 
-        Action<ElsaOptions> ElsaConfiguration
+        Action<ElsaOptionsBuilder> ElsaConfiguration
             => ElsaCallbacks
                 .Where(x => !(x is null))
                 .Aggregate(EmptyElsaAction, (acc, next) => o => { acc(o); next(o); });
@@ -41,7 +41,7 @@ namespace Elsa.Testing.Shared.Helpers
                 .Where(x => !(x is null))
                 .Aggregate(EmptyServicesAction, (acc, next) => o => { acc(o); next(o); });
 
-        static Action<ElsaOptions> EmptyElsaAction => o => {};
+        static Action<ElsaOptionsBuilder> EmptyElsaAction => o => {};
 
         static Action<IServiceCollection> EmptyServicesAction => s => {};
 

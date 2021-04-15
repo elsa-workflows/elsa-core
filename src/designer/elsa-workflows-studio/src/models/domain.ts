@@ -20,6 +20,49 @@ export interface WorkflowDefinition {
   connections: Array<ConnectionDefinition>;
 }
 
+export interface WorkflowDefinitionSummary {
+  id?: string;
+  definitionId?: string;
+  tenantId?: string;
+  name?: string;
+  displayName?: string;
+  description?: string;
+  version: number;
+  isSingleton?: boolean;
+  persistenceBehavior?: WorkflowPersistenceBehavior;
+  isPublished?: boolean;
+  isLatest?: boolean;
+}
+
+export interface WorkflowBlueprintSummary {
+  id: string;
+  name?: string;
+  displayName?: string;
+  description?: string;
+  version: number;
+  tenantId?: string;
+  isSingleton: boolean;
+  isPublished: boolean;
+  isLatest: boolean;
+}
+
+export interface WorkflowInstanceSummary {
+  id: string;
+  definitionId: string;
+  tenantId?: string;
+  version: number;
+  workflowStatus: WorkflowStatus;
+  correlationId?: string;
+  contextType?: string;
+  contextId?: string;
+  name?: string;
+  createdAt?: Date
+  lastExecutedAt?: Date;
+  finishedAt?: Date;
+  cancelledAt?: Date;
+  faultedAt?: Date;
+}
+
 export interface ActivityDefinition {
   activityId: string;
   type: string;
@@ -39,6 +82,14 @@ export interface ConnectionDefinition {
   outcome?: string;
 }
 
+export interface ConnectionDefinitionMapped {
+    sourceId: string;
+    sourceActivityId: string;
+    targetId: string;
+    targetActivityId: string;
+    outcome: string;
+}
+
 export interface ActivityDefinitionProperty {
   name: string;
   syntax?: string;
@@ -55,15 +106,15 @@ export interface WorkflowContextOptions {
 }
 
 export enum WorkflowContextFidelity {
-  Burst,
-  Activity
+  Burst = 'Burst',
+  Activity = 'Activity'
 }
 
 export enum WorkflowPersistenceBehavior {
-  Suspended,
-  WorkflowBurst,
-  WorkflowPassCompleted,
-  ActivityExecuted
+  Suspended = 'Suspended',
+  WorkflowBurst = ' WorkflowBurst',
+  WorkflowPassCompleted = 'WorkflowPassCompleted',
+  ActivityExecuted = 'ActivityExecuted'
 }
 
 export interface VersionOptions {
@@ -75,17 +126,36 @@ export interface VersionOptions {
   version?: number;
 }
 
-export const getVersionOptionsString = (versionOptions: VersionOptions) => {
+export enum WorkflowStatus {
+  Idle = 'Idle',
+  Running = 'Running',
+  Finished = 'Finished',
+  Suspended = 'Suspended',
+  Faulted = 'Faulted',
+  Cancelled = 'Cancelled'
+}
+
+export enum OrderBy {
+  Started = 'Started',
+  LastExecuted = 'LastExecuted',
+  Finished = 'Finished'
+}
+
+export const getVersionOptionsString = (versionOptions?: VersionOptions) => {
+
+  if (!versionOptions)
+    return '';
+
   return versionOptions.allVersions
-    ? "AllVersions"
+    ? 'AllVersions'
     : versionOptions.isDraft
-      ? "Draft"
+      ? 'Draft'
       : versionOptions.isLatest
-        ? "Latest"
+        ? 'Latest'
         : versionOptions.isPublished
-          ? "Published"
+          ? 'Published'
           : versionOptions.isLatestOrPublished
-            ? "LatestOrPublished"
+            ? 'LatestOrPublished'
             : versionOptions.version.toString();
 };
 
@@ -110,6 +180,13 @@ export interface ActivityPropertyDescriptor {
   defaultValue?: any;
   defaultSyntax?: string;
   supportedSyntaxes: Array<string>
+}
+
+export interface PagedList<T> {
+  items: Array<T>;
+  page: number;
+  pageSize: number;
+  totalCount: number;
 }
 
 export enum ActivityTraits {

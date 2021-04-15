@@ -23,13 +23,14 @@
     "test": "stencil test --spec --e2e",
     "test.watch": "stencil test --spec --e2e --watchAll",
     "generate": "stencil generate",
-    "build:tailwind:dev": "cross-env NODE_ENV=development tailwind build ./tailwind.css -o ./src/globals/tailwind.css & copyfiles -u 2 \"./src/globals/tailwind.css\" \"./src/assets\"",
-    "build:tailwind:prod": "cross-env NODE_ENV=production tailwind build ./tailwind.css -o ./src/globals/tailwind.css & copyfiles -u 2 \"./src/globals/tailwind.css\" \"./src/assets\""
+    "build:tailwind:dev": "cross-env NODE_ENV=development tailwind build ./tailwind.css -o ./src/globals/tailwind.css & copyfiles -u 2 \"./src/globals/tailwind.css\" \"./src/assets/styles\"",
+    "build:tailwind:prod": "cross-env NODE_ENV=production tailwind build ./tailwind.css -o ./src/globals/tailwind.css & copyfiles -u 2 \"./src/globals/tailwind.css\" \"./src/assets/styles\""
   },
   "dependencies": {
     "@fullhuman/postcss-purgecss": "^4.0.3",
     "@stencil/core": "^2.5.2",
     "@stencil/postcss": "^2.0.0",
+    "@stencil/router": "^1.0.1",
     "@stencil/state-tunnel": "^1.0.1",
     "@stencil/store": "^1.4.1",
     "@tailwindcss/aspect-ratio": "^0.2.0",
@@ -43,6 +44,7 @@
     "eslint": "7.23.0",
     "js-event-bus": "^1.0.3",
     "jsplumb": "2.15.5",
+    "lodash": "^4.17.21",
     "monaco-editor": "^0.23.0",
     "postcss": "^8.2.9",
     "postcss-import": "^14.0.0",

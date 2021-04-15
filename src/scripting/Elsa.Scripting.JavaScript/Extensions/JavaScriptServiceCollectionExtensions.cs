@@ -19,7 +19,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddScoped<ITypeDefinitionProvider, EnumTypeDefinitionProvider>()
                 .AddScoped<ITypeDefinitionProvider, EnumerableTypeDefinitionProvider>()
                 .AddScoped<IJavaScriptService, JintJavaScriptEvaluator>()
-                .AddTransient<IConvertsJintEvaluationResult>(s => new JintEvaluationResultConverterFactory(s).GetConverter())
+                .AddTransient(s => new JintEvaluationResultConverterFactory(s).GetConverter())
                 .AddTransient<IConvertsEnumerableToObject>(s => new EnumerableResultConverter(default))
                 .TryAddProvider<IExpressionHandler, JavaScriptExpressionHandler>(ServiceLifetime.Scoped)
                 .AddNotificationHandlers(typeof(JavaScriptServiceCollectionExtensions));
@@ -32,7 +32,7 @@ namespace Microsoft.Extensions.DependencyInjection
             return services;
         }
 
-        public static ElsaOptions AddJavaScriptActivities(this ElsaOptions options)
+        public static ElsaOptionsBuilder AddJavaScriptActivities(this ElsaOptionsBuilder options)
         {
             return options.AddActivitiesFrom<RunJavaScript>();
         }

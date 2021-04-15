@@ -15,6 +15,7 @@ version: 2.0.0-preview7.{build}
 
 services:
   - mongodb
+  - postgresql101
 
 init:
   - cmd: git config --global core.autocrlf true
@@ -88,6 +89,16 @@ build_script:
       cd ..\..\..\..\
       
       dotnet build
+
+before_test:
+  - cmd: >-
+      SET PGUSER=postgres
+      
+      SET PGPASSWORD=Password12!
+
+      PATH=C:\Program Files\PostgreSQL\10\bin\;%PATH%
+      
+      createdb "elsa-yessql"
 
 test_script:
   - ps: dotnet test --collect:"XPlat Code Coverage" --logger:xunit -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover

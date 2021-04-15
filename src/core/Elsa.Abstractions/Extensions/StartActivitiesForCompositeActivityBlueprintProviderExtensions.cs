@@ -4,7 +4,7 @@ using System.Linq;
 using Elsa.Services;
 using Elsa.Services.Models;
 
-namespace Elsa.Extensions
+namespace Elsa
 {
     public static class StartActivitiesForCompositeActivityBlueprintProviderExtensions
     {

@@ -13,16 +13,10 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="YesSql.Core" Version="2.0.0-beta-1637" />
-      <PackageReference Include="YesSql.Provider.Sqlite" Version="1.0.0-beta-1637" />
+      <PackageReference Include="YesSql.Core" Version="3.0.2" />
+      <PackageReference Include="YesSql.Provider.Sqlite" Version="3.0.2" />
+      <PackageReference Include="YesSql.Provider.PostgreSql" Version="3.0.2" />
     </ItemGroup>
-
-<!--    <ItemGroup>-->
-<!--      <ProjectReference Include="..\..\..\..\..\..\yessql\src\YesSql.Abstractions\YesSql.Abstractions.csproj" />-->
-<!--      <ProjectReference Include="..\..\..\..\..\..\yessql\src\YesSql.Core\YesSql.Core.csproj" />-->
-<!--      <ProjectReference Include="..\..\..\..\..\..\yessql\src\YesSql.Provider.Common\YesSql.Provider.Common.csproj" />-->
-<!--      <ProjectReference Include="..\..\..\..\..\..\yessql\src\YesSql.Provider.Sqlite\YesSql.Provider.Sqlite.csproj" />-->
-<!--    </ItemGroup>-->
     
     <ItemGroup>
       <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />

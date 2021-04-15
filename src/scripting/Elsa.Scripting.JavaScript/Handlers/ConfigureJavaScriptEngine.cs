@@ -7,12 +7,20 @@ using Elsa.Scripting.JavaScript.Messages;
 using Jint;
 using Jint.Runtime.Interop;
 using MediatR;
+using Microsoft.Extensions.Configuration;
 using NodaTime;
 
 namespace Elsa.Scripting.JavaScript.Handlers
 {
     public class ConfigureJavaScriptEngine : INotificationHandler<EvaluatingJavaScriptExpression>
     {
+        private readonly IConfiguration _configuration;
+
+        public ConfigureJavaScriptEngine(IConfiguration configuration)
+        {
+            _configuration = configuration;
+        }
+        
         public Task Handle(EvaluatingJavaScriptExpression notification, CancellationToken cancellationToken)
         {
             var activityContext = notification.ActivityExecutionContext;
@@ -25,11 +33,15 @@ namespace Elsa.Scripting.JavaScript.Handlers
             engine.SetValue("guid", (Func<string>) (() => Guid.NewGuid().ToString()));
             engine.SetValue("setVariable", (Action<string, object>) ((name, value) => activityContext.SetVariable(name, value)));
             engine.SetValue("getVariable", (Func<string, object?>) (name => activityContext.GetVariable(name)));
+            engine.SetValue("getConfig", (Func<string, object?>) (name => _configuration.GetSection(name).Value));
+            engine.SetValue("isNullOrWhiteSpace", (Func<string, bool>) (string.IsNullOrWhiteSpace));
+            engine.SetValue("isNullOrEmpty", (Func<string, bool>) (string.IsNullOrEmpty));
 
             // Global variables.
             engine.SetValue("input", activityContext.Input);
             engine.SetValue("correlationId", workflowInstance.CorrelationId);
             engine.SetValue("currentCulture", CultureInfo.InvariantCulture);
+            engine.SetValue("workflowContext", activityContext.GetWorkflowContext());
 
             // NodaTime types.
             RegisterType<Instant>(engine);

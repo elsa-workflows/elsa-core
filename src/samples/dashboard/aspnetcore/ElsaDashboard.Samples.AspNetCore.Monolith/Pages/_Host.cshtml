@@ -1,0 +1,18 @@
+﻿@page "/"
+@inject IConfiguration Configuration;
+@{
+    ViewData["Title"] = "Home page";
+    var serverUrl = Configuration["Elsa:Server:BaseAddress"];
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Elsa Workflows</title>
+    <script type="module" src="_content/Elsa.Designer.Bindings.Blazor/elsa-workflows.js" monaco-lib-path="_content/Elsa.Designer.Bindings.Blazor"></script>
+</head>
+<body>
+<elsa-studio-root server-url="@serverUrl"></elsa-studio-root>
+</body>
+</html>

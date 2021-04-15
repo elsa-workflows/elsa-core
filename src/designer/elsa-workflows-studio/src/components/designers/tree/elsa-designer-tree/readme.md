@@ -7,9 +7,9 @@
 
 ## Properties
 
-| Property | Attribute | Description | Type            | Default                             |
-| -------- | --------- | ----------- | --------------- | ----------------------------------- |
-| `model`  | --        |             | `WorkflowModel` | `{activities: [], connections: []}` |
+| Property | Attribute | Description | Type            | Default                                                                                               |
+| -------- | --------- | ----------- | --------------- | ----------------------------------------------------------------------------------------------------- |
+| `model`  | --        |             | `WorkflowModel` | `{ activities: [], connections: [], persistenceBehavior: WorkflowPersistenceBehavior.WorkflowBurst }` |
 
 
 ## Events
@@ -19,11 +19,24 @@
 | `workflow-changed` |             | `CustomEvent<WorkflowModel>` |
 
 
+## Methods
+
+### `destroyJsPlumb() => Promise<void>`
+
+
+
+#### Returns
+
+Type: `Promise<void>`
+
+
+
+
 ## Dependencies
 
 ### Used by
 
- - [elsa-workflow-editor](../../../editors/workflow-editor/elsa-workflow-editor)
+ - [elsa-workflow-definition-editor-screen](../../../screens/workflow-definition-editor/elsa-workflow-definition-editor-screen)
 
 ### Depends on
 
@@ -33,7 +46,7 @@
 ```mermaid
 graph TD;
   elsa-designer-tree --> elsa-designer-tree-activity
-  elsa-workflow-editor --> elsa-designer-tree
+  elsa-workflow-definition-editor-screen --> elsa-designer-tree
   style elsa-designer-tree fill:#f9f,stroke:#333,stroke-width:4px
 ```
 

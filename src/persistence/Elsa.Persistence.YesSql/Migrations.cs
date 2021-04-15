@@ -1,3 +1,4 @@
+using System;
 using System.Data;
 using Elsa.Persistence.YesSql.Data;
 using Elsa.Persistence.YesSql.Indexes;
@@ -29,12 +30,12 @@ namespace Elsa.Persistence.YesSql
                     .Column<string?>(nameof(WorkflowInstanceIndex.ContextId))
                     .Column<string?>(nameof(WorkflowInstanceIndex.ContextType))
                     .Column<string?>(nameof(WorkflowInstanceIndex.Name))
-                    .Column(nameof(WorkflowInstanceIndex.WorkflowStatus), DbType.String)
-                    .Column(nameof(WorkflowInstanceIndex.CreatedAt), DbType.DateTime)
-                    .Column(nameof(WorkflowInstanceIndex.LastExecutedAt), DbType.DateTime)
-                    .Column(nameof(WorkflowInstanceIndex.FinishedAt), DbType.DateTime)
-                    .Column(nameof(WorkflowInstanceIndex.CancelledAt), DbType.DateTime)
-                    .Column(nameof(WorkflowInstanceIndex.FaultedAt), DbType.DateTime)
+                    .Column<int>(nameof(WorkflowInstanceIndex.WorkflowStatus))
+                    .Column<DateTime>(nameof(WorkflowInstanceIndex.CreatedAt))
+                    .Column<DateTime>(nameof(WorkflowInstanceIndex.LastExecutedAt))
+                    .Column<DateTime>(nameof(WorkflowInstanceIndex.FinishedAt))
+                    .Column<DateTime>(nameof(WorkflowInstanceIndex.CancelledAt))
+                    .Column<DateTime>(nameof(WorkflowInstanceIndex.FaultedAt))
                 ,
                 CollectionNames.WorkflowInstances);
 
@@ -44,8 +45,8 @@ namespace Elsa.Persistence.YesSql
                     .Column<string>(nameof(WorkflowInstanceBlockingActivitiesIndex.ActivityId))
                     .Column<string>(nameof(WorkflowInstanceBlockingActivitiesIndex.ActivityType))
                     .Column<string?>(nameof(WorkflowInstanceBlockingActivitiesIndex.CorrelationId))
-                    .Column(nameof(WorkflowInstanceBlockingActivitiesIndex.WorkflowStatus), DbType.String)
-                    .Column(nameof(WorkflowInstanceBlockingActivitiesIndex.CreatedAt), DbType.DateTime),
+                    .Column<string>(nameof(WorkflowInstanceBlockingActivitiesIndex.WorkflowStatus))
+                    .Column<DateTime>(nameof(WorkflowInstanceBlockingActivitiesIndex.CreatedAt)),
                 CollectionNames.WorkflowInstances);
 
             SchemaBuilder.CreateMapIndexTable<WorkflowExecutionLogRecordIndex>(
@@ -53,7 +54,7 @@ namespace Elsa.Persistence.YesSql
                     .Column<string?>(nameof(WorkflowExecutionLogRecordIndex.RecordId))
                     .Column<string?>(nameof(WorkflowExecutionLogRecordIndex.TenantId))
                     .Column<string>(nameof(WorkflowExecutionLogRecordIndex.WorkflowInstanceId))
-                    .Column(nameof(WorkflowExecutionLogRecordIndex.Timestamp), DbType.DateTime),
+                    .Column<DateTime>(nameof(WorkflowExecutionLogRecordIndex.Timestamp)),
                 CollectionNames.WorkflowExecutionLog);
 
             SchemaBuilder.CreateMapIndexTable<BookmarkIndex>(

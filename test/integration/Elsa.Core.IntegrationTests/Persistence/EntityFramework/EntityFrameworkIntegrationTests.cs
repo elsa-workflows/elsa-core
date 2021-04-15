@@ -10,6 +10,7 @@ using Elsa.Persistence;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Elsa.Persistence.EntityFramework.Core;
+using Elsa.Testing.Shared;
 using Microsoft.EntityFrameworkCore.Internal;
 using Moq;
 using Elsa.Testing.Shared.Helpers;

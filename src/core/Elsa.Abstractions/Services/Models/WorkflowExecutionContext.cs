@@ -203,6 +203,7 @@ namespace Elsa.Services.Models
 
         public T GetOutputFrom<T>(string activityName) => (T) GetOutputFrom(activityName)!;
         public void SetWorkflowContext(object? value) => WorkflowContext = value;
+        public object? GetWorkflowContext() => WorkflowContext;
         public T GetWorkflowContext<T>() => (T) WorkflowContext!;
 
         /// <summary>
