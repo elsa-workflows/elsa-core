@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:6.0-bullseye-slim-amd64 AS build
+FROM mcr.microsoft.com/dotnet/sdk:5.0-buster-slim-amd64 AS build
 WORKDIR /source
 
 # restore packages
@@ -17,9 +17,10 @@ RUN dotnet publish "ElsaDashboard.Samples.AspNetCore.Monolith.csproj" -c Release
 
 
 # move binaries into smaller base image
-FROM mcr.microsoft.com/dotnet/aspnet:6.0-bullseye-slim AS base
+FROM mcr.microsoft.com/dotnet/aspnet:5.0-buster-slim AS base
 WORKDIR /app
 COPY --from=build /app/publish ./
 
 EXPOSE 80/tcp
+EXPOSE 443/tcp
 ENTRYPOINT ["dotnet", "ElsaDashboard.Samples.AspNetCore.Monolith.dll"]
