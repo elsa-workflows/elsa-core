@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel;
 using Elsa;
 using Elsa.Activities.ControlFlow;
 using Elsa.Activities.Signaling;
@@ -9,6 +10,7 @@ using Elsa.ActivityTypeProviders;
 using Elsa.Bookmarks;
 using Elsa.Builders;
 using Elsa.Consumers;
+using Elsa.Converters;
 using Elsa.Decorators;
 using Elsa.Dispatch;
 using Elsa.Dispatch.Consumers;
@@ -27,12 +29,12 @@ using Elsa.Services;
 using Elsa.StartupTasks;
 using Elsa.Triggers;
 using Elsa.WorkflowProviders;
-using Medallion.Threading;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Newtonsoft.Json;
 using NodaTime;
 using Rebus.Handlers;
+using BackgroundWorker = Elsa.Services.BackgroundWorker;
 using IDistributedLockProvider = Elsa.Services.IDistributedLockProvider;
 
 // ReSharper disable once CheckNamespace
@@ -40,6 +42,11 @@ namespace Microsoft.Extensions.DependencyInjection
 {
     public static class ElsaServiceCollectionExtensions
     {
+        static ElsaServiceCollectionExtensions()
+        {
+            TypeDescriptor.AddAttributes(typeof(Type), new TypeConverterAttribute(typeof(TypeTypeConverter)));
+        }
+        
         public static IServiceCollection AddElsaCore(
             this IServiceCollection services,
             Action<ElsaOptionsBuilder>? configure = default)
