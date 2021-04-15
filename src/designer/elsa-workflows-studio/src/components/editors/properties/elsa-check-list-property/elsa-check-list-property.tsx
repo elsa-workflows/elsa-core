@@ -53,10 +53,10 @@ export class ElsaCheckListProperty {
         <div class="max-w-lg space-y-3 my-4">
           {options.map((option, index) => {
             const inputId = `${fieldId}_${index}`;
-            const isSelected = values.findIndex(x => x == option) >= 0;
             const optionIsString = typeof(option) == 'string';
             const value = optionIsString ? option : option.value;
             const text = optionIsString ? option : option.text;
+            const isSelected = values.findIndex(x => x == value) >= 0;
 
             return (
               <div class="relative flex items-start">
