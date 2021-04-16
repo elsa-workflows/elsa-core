@@ -3,6 +3,8 @@ using System;
 using Elsa.Persistence.EntityFramework.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
 {
@@ -13,9 +15,9 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .UseIdentityColumns()
                 .HasAnnotation("Relational:MaxIdentifierLength", 128)
-                .HasAnnotation("ProductVersion", "5.0.2");
+                .HasAnnotation("ProductVersion", "5.0.5")
+                .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
             modelBuilder.Entity("Elsa.Models.Bookmark", b =>
                 {
@@ -144,11 +146,11 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
 
                     b.Property<string>("ActivityId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("ActivityType")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Data")
                         .HasColumnType("nvarchar(max)");
@@ -160,16 +162,31 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("TenantId")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTimeOffset>("Timestamp")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ActivityId")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_ActivityId");
+
+                    b.HasIndex("ActivityType")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_ActivityType");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_TenantId");
+
+                    b.HasIndex("Timestamp")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_Timestamp");
+
+                    b.HasIndex("WorkflowInstanceId")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_WorkflowInstanceId");
 
                     b.ToTable("WorkflowExecutionLogRecords");
                 });

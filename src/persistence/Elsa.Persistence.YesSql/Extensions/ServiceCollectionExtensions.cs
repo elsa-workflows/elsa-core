@@ -27,10 +27,11 @@ namespace Elsa.Persistence.YesSql
                 .AddScoped<YesSqlWorkflowExecutionLogStore>()
                 .AddScoped<YesSqlBookmarkStore>()
                 .AddSingleton(sp => CreateStore(sp, configure))
+                .AddSingleton<ISessionProvider, SessionProvider>()
                 .AddScoped(CreateSession)
                 .AddScoped<IDataMigrationManager, DataMigrationManager>()
                 .AddStartupTask<DatabaseInitializer>()
-                .AddStartupTask<DataMigrationsRunner>()
+                .AddStartupTask<RunMigrations>()
                 .AddDataMigration<Migrations>()
                 .AddAutoMapperProfile<AutoMapperProfile>()
                 .AddIndexProvider<WorkflowDefinitionIndexProvider>()
@@ -71,13 +72,8 @@ namespace Elsa.Persistence.YesSql
 
         private static ISession CreateSession(IServiceProvider serviceProvider)
         {
-            var store = serviceProvider.GetRequiredService<IStore>();
-            var session = store.CreateSession();
-            var scopedServices = serviceProvider.GetServices<IScopedIndexProvider>().Cast<IIndexProvider>().ToArray();
-
-            session.RegisterIndexes(scopedServices);
-
-            return session;
+            var provider = serviceProvider.GetRequiredService<ISessionProvider>();
+            return provider.CreateSession();
         }
     }
 }

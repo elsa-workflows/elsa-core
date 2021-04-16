@@ -261,6 +261,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElsaDashboard.Samples.WebAs
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElsaDashboard.Samples.AspNetCore.Monolith", "src\samples\dashboard\aspnetcore\ElsaDashboard.Samples.AspNetCore.Monolith\ElsaDashboard.Samples.AspNetCore.Monolith.csproj", "{F1EF5639-021A-4D22-9D4A-73D57C88EBFA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.Persistence.YesSql", "src\samples\persistence\Elsa.Samples.Persistence.YesSql\Elsa.Samples.Persistence.YesSql.csproj", "{3A30EFFE-32D8-40B8-9C62-427037BB5424}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -627,6 +629,10 @@ Global
 		{F1EF5639-021A-4D22-9D4A-73D57C88EBFA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F1EF5639-021A-4D22-9D4A-73D57C88EBFA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F1EF5639-021A-4D22-9D4A-73D57C88EBFA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3A30EFFE-32D8-40B8-9C62-427037BB5424}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3A30EFFE-32D8-40B8-9C62-427037BB5424}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3A30EFFE-32D8-40B8-9C62-427037BB5424}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3A30EFFE-32D8-40B8-9C62-427037BB5424}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -752,6 +758,7 @@ Global
 		{9B56C09A-E4D5-4FDD-AD41-EDD1F52B7B9B} = {D86B94DC-A53C-4A67-A820-828DD359C49B}
 		{84876EBC-8109-475E-8C4E-A5CB714DB429} = {D86B94DC-A53C-4A67-A820-828DD359C49B}
 		{F1EF5639-021A-4D22-9D4A-73D57C88EBFA} = {C869CC72-9A98-4246-9A76-6A50F48AFD85}
+		{3A30EFFE-32D8-40B8-9C62-427037BB5424} = {EEBEA8AF-C8A8-4C71-A96C-D5836DE24359}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}

@@ -15,10 +15,10 @@ namespace Elsa.Persistence.YesSql.Mapping
                 .ForMember(d => d.Id, d => d.MapFrom(s => s.InstanceId));
             
             CreateMap<WorkflowDefinition, WorkflowDefinitionDocument>()
-                .ForMember(d => d.DefinitionId, d => d.MapFrom(s => s.Id))
+                .ForMember(d => d.DefinitionVersionId, d => d.MapFrom(s => s.Id))
                 .ForMember(d => d.Id, d => d.Ignore())
                 .ReverseMap()
-                .ForMember(d => d.Id, d => d.MapFrom(s => s.DefinitionId));
+                .ForMember(d => d.Id, d => d.MapFrom(s => s.DefinitionVersionId));
             
             CreateMap<WorkflowExecutionLogRecord, WorkflowExecutionLogRecordDocument>()
                 .ForMember(d => d.RecordId, d => d.MapFrom(s => s.Id))
