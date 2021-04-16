@@ -3,6 +3,8 @@ using System;
 using Elsa.Persistence.EntityFramework.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace Elsa.Persistence.EntityFramework.PostgreSql.Migrations
 {
@@ -13,9 +15,9 @@ namespace Elsa.Persistence.EntityFramework.PostgreSql.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .UseIdentityByDefaultColumns()
                 .HasAnnotation("Relational:MaxIdentifierLength", 63)
-                .HasAnnotation("ProductVersion", "5.0.2");
+                .HasAnnotation("ProductVersion", "5.0.5")
+                .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
             modelBuilder.Entity("Elsa.Models.Bookmark", b =>
                 {
@@ -170,6 +172,21 @@ namespace Elsa.Persistence.EntityFramework.PostgreSql.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ActivityId")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_ActivityId");
+
+                    b.HasIndex("ActivityType")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_ActivityType");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_TenantId");
+
+                    b.HasIndex("Timestamp")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_Timestamp");
+
+                    b.HasIndex("WorkflowInstanceId")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_WorkflowInstanceId");
 
                     b.ToTable("WorkflowExecutionLogRecords");
                 });
