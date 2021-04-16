@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Elsa.Activities.Http;
 using Elsa.Activities.Webhooks.Models;
 using Elsa.Activities.Webhooks.Persistence;
-using Elsa.ActivityProviders;
 using Elsa.Design;
 using Elsa.Expressions;
 using Elsa.Metadata;

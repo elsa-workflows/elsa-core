@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.ActivityProviders;
 using Elsa.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Linq;

@@ -4,7 +4,7 @@ using Elsa.Activities.Webhooks.ActivityTypes;
 using Elsa.Activities.Webhooks.Options;
 using Elsa.Activities.Webhooks.Persistence;
 using Elsa.Activities.Webhooks.Persistence.Decorators;
-using Elsa.ActivityProviders;
+using Elsa.Services;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection

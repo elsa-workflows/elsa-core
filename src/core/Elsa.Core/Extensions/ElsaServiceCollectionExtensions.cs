@@ -5,7 +5,6 @@ using Elsa.Activities.ControlFlow;
 using Elsa.Activities.Signaling;
 using Elsa.Activities.Signaling.Services;
 using Elsa.Activities.Workflows;
-using Elsa.ActivityProviders;
 using Elsa.ActivityTypeProviders;
 using Elsa.Bookmarks;
 using Elsa.Builders;

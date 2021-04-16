@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoFixture.Xunit2;
-using Elsa.ActivityProviders;
 using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;

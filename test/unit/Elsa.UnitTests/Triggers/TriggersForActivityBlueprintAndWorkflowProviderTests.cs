@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AutoFixture.Xunit2;
-using Elsa.ActivityProviders;
 using Elsa.Bookmarks;
 using Elsa.Models;
 using Elsa.Services;

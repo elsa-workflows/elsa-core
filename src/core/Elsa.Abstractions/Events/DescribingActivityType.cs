@@ -1,5 +1,5 @@
-﻿using Elsa.ActivityProviders;
-using Elsa.Metadata;
+﻿using Elsa.Metadata;
+using Elsa.Services.Models;
 using MediatR;
 
 namespace Elsa.Events
