@@ -25,11 +25,11 @@ jobs:
             src/designer/bindings/blazor/Elsa.Designer.Bindings.Blazor     
      
       - name: Build NPM packages for elsa-workflows-studio
-        run: npm build
+        run: npm run build
         working-directory: src/designer/elsa-workflows-studio
         
       - name: Build NPM packages for Elsa.Designer.Bindings.Blazor
-        run: npm build
+        run: npm run build
         working-directory: src/designer/bindings/blazor/Elsa.Designer.Bindings.Blazor
         
       - name: Set up QEMU
