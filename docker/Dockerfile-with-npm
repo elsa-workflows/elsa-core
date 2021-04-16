@@ -1,4 +1,16 @@
-# This dockerfile requires that all NPM packages there installed and build. 
+FROM node:15-alpine as client-build
+
+WORKDIR /app
+COPY /src .
+
+WORKDIR /app/designer/elsa-workflows-studio
+RUN npm install --force
+RUN npm run build
+
+WORKDIR /app/designer/bindings/blazor/Elsa.Designer.Bindings.Blazor
+RUN npm install --force
+RUN npm run build
+
 
 FROM mcr.microsoft.com/dotnet/sdk:5.0-buster-slim-amd64 AS build
 WORKDIR /source
@@ -11,6 +23,8 @@ RUN dotnet restore "./src/samples/dashboard/aspnetcore/ElsaDashboard.Samples.Asp
 COPY src/. ./src
 COPY *.props ./
 COPY ./Nuget.Config ./
+COPY --from=client-build /app/designer/elsa-workflows-studio ./src/designer/elsa-workflows-studio
+COPY --from=client-build /app/designer/bindings/blazor/Elsa.Designer.Bindings.Blazor ./src/designer/bindings/blazor/Elsa.Designer.Bindings.Blazor
 
 
 # build and publish (UseAppHost=false created platform independent binaries)
