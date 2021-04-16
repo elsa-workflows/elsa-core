@@ -13,16 +13,32 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
         
+      - name: Install NPM dependencies
+        uses: bahmutov/npm-install@v1
+        with:
+          useRollingCache: true
+          working-directory: |
+            src/designer/elsa-workflows-studio
+            src/designer/bindings/blazor/Elsa.Designer.Bindings.Blazor     
+     
+      - name: Build NPM packages for elsa-workflows-studio
+        run: npm build
+        working-directory: src/designer/elsa-workflows-studio
+        
+      - name: Build NPM packages for Elsa.Designer.Bindings.Blazor
+        run: npm build
+        working-directory: src/designer/bindings/blazor/Elsa.Designer.Bindings.Blazor
+     
       - name: Generate Docker tag
         id: docker-tag
         uses: yuya-takeyama/docker-tag-from-github-ref-action@v1
         
-      - name: Set up QEMU
+      - name: Setup QEMU
         uses: docker/setup-qemu-action@v1
         with:
           platforms: all
         
-      - name: Set up Docker Buildx
+      - name: Setup Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v1    
       
@@ -39,8 +55,8 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
-          password: ${{ secrets.CR_PAT }}
-      
+          password: ${{ secrets.CR_PAT }}      
+          
       - name: Build and push
         id: docker_build
         uses: docker/build-push-action@v2
