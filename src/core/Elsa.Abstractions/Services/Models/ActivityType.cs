@@ -3,10 +3,8 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Elsa.ActivityResults;
 using Elsa.Metadata;
-using Elsa.Services;
-using Elsa.Services.Models;
 
-namespace Elsa.ActivityProviders
+namespace Elsa.Services.Models
 {
     public class ActivityType
     {

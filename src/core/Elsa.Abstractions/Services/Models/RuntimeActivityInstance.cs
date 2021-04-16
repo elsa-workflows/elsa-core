@@ -1,4 +1,4 @@
-﻿namespace Elsa.ActivityProviders
+﻿namespace Elsa.Services.Models
 {
     public class RuntimeActivityInstance
     {
