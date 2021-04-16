@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.ActivityProviders;
 using Elsa.ActivityResults;
 using Elsa.Events;
 using Elsa.Models;
@@ -240,9 +239,11 @@ namespace Elsa.Services
                     return;
 
                 await _mediator.Publish(new ActivityExecuted(resuming, activityExecutionContext), cancellationToken);
+                await _mediator.Publish(new ActivityExecutionResultExecuting(result, activityExecutionContext), cancellationToken);
                 await result.ExecuteAsync(activityExecutionContext, cancellationToken);
                 workflowExecutionContext.WorkflowInstance.Output = activityExecutionContext.Output;
                 workflowExecutionContext.CompletePass();
+                await _mediator.Publish(new ActivityExecutionResultExecuted(result, activityExecutionContext), cancellationToken);
                 await _mediator.Publish(new WorkflowExecutionPassCompleted(workflowExecutionContext, activityExecutionContext), cancellationToken);
 
                 if (!workflowExecutionContext.HasScheduledActivities)
