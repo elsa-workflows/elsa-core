@@ -1,3 +1,4 @@
+using System;
 using MassTransit;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -31,6 +32,18 @@ namespace Elsa.Samples.MassTransitRabbitMq.Controllers
         {
             var message = new SecondMessage();
             await _publishEndpoint.Publish(message);
+            return Ok();
+        }
+
+        [Route("interface")]
+        [HttpPost]
+        public async Task<IActionResult> TriggerInterface()
+        {
+            var message = new
+            {
+                CorrelationId = Guid.Parse("e9ca46dd-36b9-4fc4-b7db-3bb7190e4488")
+            };
+            await _publishEndpoint.Publish<IInterfaceMessage>(message);
             return Ok();
         }
     }

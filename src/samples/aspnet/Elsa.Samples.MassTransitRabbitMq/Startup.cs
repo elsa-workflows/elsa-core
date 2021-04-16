@@ -23,6 +23,7 @@ namespace Elsa.Samples.MassTransitRabbitMq
                     // Add workflow consumer for message
                     x.AddConsumer(CreateWorkflowConsumer(typeof(FirstMessage)));
                     x.AddConsumer(CreateWorkflowConsumer(typeof(SecondMessage)));
+                    x.AddConsumer(CreateWorkflowConsumer(typeof(IInterfaceMessage)));
 
                     // Configure rabbitmq
                     x.UsingRabbitMq((ctx, cfg) =>
@@ -38,6 +39,7 @@ namespace Elsa.Samples.MassTransitRabbitMq
                     .AddConsoleActivities()
                     .AddMassTransitActivities()
                     .AddWorkflow<TestWorkflow>()
+                    .AddWorkflow<InterfaceTestWorkflow>()
                 );
         }
 
