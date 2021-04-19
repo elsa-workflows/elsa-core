@@ -39,13 +39,17 @@ namespace Elsa.Samples.Server.Host
                     .UseSimpleAssemblyNameTypeSerializer()
                     .UseRecommendedSerializerSettings(settings => settings.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb))
                     .UseInMemoryStorage())
-                .AddHangfireServer(options => hangfireSection.GetSection("Server").Bind(options));
+                .AddHangfireServer(options =>
+                {
+                    options.ConfigureForElsaDispatchers();
+                    hangfireSection
+                        .GetSection("Server")
+                        .Bind(options);
+                });
 
             services
                 .AddElsa(elsa => elsa
-                    //.UseEntityFrameworkPersistence(ef => ef.UseSqlite())
-                    .UseYesSqlPersistence()
-                    //.UseOrleansDispatchers()
+                    .UseEntityFrameworkPersistence(ef => ef.UseSqlite())
                     .UseHangfireDispatchers()
                     .AddConsoleActivities()
                     .AddHttpActivities(elsaSection.GetSection("Http").Bind)
