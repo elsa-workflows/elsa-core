@@ -12,8 +12,8 @@ namespace Microsoft.Extensions.DependencyInjection
             this IServiceCollection services,
             Action<ElsaOptionsBuilder>? configure = default) =>
             services
-                .AddElsaCore(configure)
                 .AddStartupRunner()
+                .AddElsaCore(configure)
                 .AddJavaScriptExpressionEvaluator()
                 .AddLiquidExpressionEvaluator();
     }
