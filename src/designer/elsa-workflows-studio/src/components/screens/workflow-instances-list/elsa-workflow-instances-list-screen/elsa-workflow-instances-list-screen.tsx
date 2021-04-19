@@ -108,7 +108,6 @@ export class ElsaWorkflowInstancesListScreen {
     }
 
     async routeChanged(e: LocationSegments) {
-        debugger;
 
         if (e.pathname.toLowerCase().indexOf('workflow-instances') < 0)
             return;
@@ -286,7 +285,7 @@ export class ElsaWorkflowInstancesListScreen {
                                 const workflowBlueprint = workflowBlueprints.find(x => x.id == workflowInstance.definitionId && x.version == workflowInstance.version) ?? {displayName: '(Workflow definition not found)'};
                                 const displayName = workflowBlueprint.displayName;
                                 const statusColor = this.getStatusColor(workflowInstance.workflowStatus);
-                                const viewUrl = `/workflow-instances/${workflowInstance.id}/viewer`;
+                                const viewUrl = `/workflow-instances/${workflowInstance.id}`;
                                 const instanceName = !workflowInstance.name ? '' : workflowInstance.name;
                                 const isSelected = this.selectedWorkflowInstanceIds.findIndex(x => x === workflowInstance.id) >= 0;
                                 //var displayContext = WorkflowInstanceDisplayContexts[workflowInstance];
@@ -297,7 +296,7 @@ export class ElsaWorkflowInstancesListScreen {
                                                class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded"/>
                                     </td>
                                     <td class="px-6 py-3 whitespace-no-wrap text-sm leading-5 font-medium text-gray-900">
-                                        <a href={viewUrl} class="truncate hover:text-gray-600">{workflowInstance.id}</a>
+                                        <stencil-route-link url={viewUrl} anchorClass="truncate hover:text-gray-600">{workflowInstance.id}</stencil-route-link>
                                     </td>
                                     <td class="px-6 py-3 whitespace-no-wrap text-sm leading-5 font-medium text-gray-900 text-left">
                                         <a href={`/workflow-registry/${workflowInstance.definitionId}/viewer`} class="truncate hover:text-gray-600">
@@ -308,7 +307,7 @@ export class ElsaWorkflowInstancesListScreen {
                                         {workflowInstance.version}
                                     </td>
                                     <td class="px-6 py-3 whitespace-no-wrap text-sm leading-5 font-medium text-gray-900 text-left">
-                                        <a href={`"@($" workflow-registry/{workflowInstance.DefinitionId}/viewer")"`} class="truncate hover:text-gray-600">{instanceName}</a>
+                                        <stencil-route-link url={`"@($" workflow-registry/{workflowInstance.definitionId}/viewer")"`} anchorClass="truncate hover:text-gray-600">{instanceName}</stencil-route-link>
                                     </td>
                                     <td class="hidden md:table-cell px-6 py-3 whitespace-no-wrap text-sm leading-5 text-gray-500 text-right">
                                         <div class="flex items-center space-x-3 lg:pl-2">

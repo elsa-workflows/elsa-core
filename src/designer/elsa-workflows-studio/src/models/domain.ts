@@ -34,6 +34,43 @@ export interface WorkflowDefinitionSummary {
   isLatest?: boolean;
 }
 
+export interface ActivityBlueprint {
+  id: string;
+  name?: string;
+  displayName?: string;
+  description?: string;
+  type: string;
+  persistWorkflow: boolean;
+  loadWorkflowContext: boolean;
+  saveWorkflowContext: boolean;
+  persistOutput: boolean;
+  source?: string;
+  properties: Variables;
+}
+
+export interface Connection {
+  sourceActivityId: string;
+  targetActivityId: string;
+  outcome: string;
+}
+
+export interface CompositeActivityBlueprint extends ActivityBlueprint {
+  activities: Array<ActivityBlueprint>;
+  connections: Array<Connection>;
+}
+
+export interface WorkflowBlueprint extends CompositeActivityBlueprint {
+  version: number;
+  tenantId?: string;
+  isSingleton: boolean;
+  isPublished: boolean;
+  isLatest: boolean;
+  contextOptions?: WorkflowContextOptions;
+  variables: Variables;
+  customAttributes: Variables;
+  persistenceBehavior: WorkflowPersistenceBehavior;
+}
+
 export interface WorkflowBlueprintSummary {
   id: string;
   name?: string;
@@ -44,6 +81,31 @@ export interface WorkflowBlueprintSummary {
   isSingleton: boolean;
   isPublished: boolean;
   isLatest: boolean;
+}
+
+export interface WorkflowInstance {
+  id: string;
+  definitionId: string;
+  tenantId?: string;
+  version: number;
+  workflowStatus: WorkflowStatus;
+  correlationId?: string;
+  contextType?: string;
+  contextId?: string;
+  name?: string;
+  createdAt?: Date
+  lastExecutedAt?: Date;
+  finishedAt?: Date;
+  faultedAt?: Date;
+  variables: Variables;
+  output?: any;
+  activityData?: Map<any>;
+  activityOutput?: Map<any>;
+  blockingActivities: Array<BlockingActivity>;
+  fault?: WorkflowFault;
+  scheduledActivities: Array<ScheduledActivity>;
+  scopes: Array<ActivityScope>;
+  currentActivity: ScheduledActivity;
 }
 
 export interface WorkflowInstanceSummary {
@@ -83,17 +145,33 @@ export interface ConnectionDefinition {
 }
 
 export interface ConnectionDefinitionMapped {
-    sourceId: string;
-    sourceActivityId: string;
-    targetId: string;
-    targetActivityId: string;
-    outcome: string;
+  sourceId: string;
+  sourceActivityId: string;
+  targetId: string;
+  targetActivityId: string;
+  outcome: string;
 }
 
 export interface ActivityDefinitionProperty {
   name: string;
   syntax?: string;
   expressions: Map<string>;
+}
+
+interface BlockingActivity {
+  activityId: string;
+  activityType: string;
+  tag?: string;
+}
+
+interface ScheduledActivity {
+  activityId: string;
+  input?: any;
+}
+
+interface ActivityScope {
+  activityId: string;
+  variables: Variables;
 }
 
 export interface Variables {
@@ -141,23 +219,20 @@ export enum OrderBy {
   Finished = 'Finished'
 }
 
-export const getVersionOptionsString = (versionOptions?: VersionOptions) => {
+interface SimpleException {
+  type: string;
+  message: string;
+  stackTrace: string;
+  innerException?: SimpleException;
+}
 
-  if (!versionOptions)
-    return '';
-
-  return versionOptions.allVersions
-    ? 'AllVersions'
-    : versionOptions.isDraft
-      ? 'Draft'
-      : versionOptions.isLatest
-        ? 'Latest'
-        : versionOptions.isPublished
-          ? 'Published'
-          : versionOptions.isLatestOrPublished
-            ? 'LatestOrPublished'
-            : versionOptions.version.toString();
-};
+interface WorkflowFault {
+  exception?: SimpleException;
+  message: string;
+  faultedActivityId?: string;
+  activityInput?: any;
+  resuming: boolean;
+}
 
 export interface ActivityDescriptor {
   type: string;
@@ -203,3 +278,21 @@ export class SyntaxNames {
   static Variable = 'Variable';
   static Output = 'Output';
 }
+
+export const getVersionOptionsString = (versionOptions?: VersionOptions) => {
+
+  if (!versionOptions)
+    return '';
+
+  return versionOptions.allVersions
+    ? 'AllVersions'
+    : versionOptions.isDraft
+      ? 'Draft'
+      : versionOptions.isLatest
+        ? 'Latest'
+        : versionOptions.isPublished
+          ? 'Published'
+          : versionOptions.isLatestOrPublished
+            ? 'LatestOrPublished'
+            : versionOptions.version.toString();
+};
