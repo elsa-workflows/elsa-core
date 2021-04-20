@@ -139,10 +139,6 @@ export namespace Components {
         "history": RouterHistory;
         "serverUrl": string;
     }
-    interface ElsaStudioWorkflowInstanceView {
-        "match": MatchResults;
-        "serverUrl": string;
-    }
     interface ElsaStudioWorkflowInstancesList {
         "history": RouterHistory;
         "serverUrl": string;
@@ -338,12 +334,6 @@ declare global {
         prototype: HTMLElsaStudioWorkflowDefinitionsListElement;
         new (): HTMLElsaStudioWorkflowDefinitionsListElement;
     };
-    interface HTMLElsaStudioWorkflowInstanceViewElement extends Components.ElsaStudioWorkflowInstanceView, HTMLStencilElement {
-    }
-    var HTMLElsaStudioWorkflowInstanceViewElement: {
-        prototype: HTMLElsaStudioWorkflowInstanceViewElement;
-        new (): HTMLElsaStudioWorkflowInstanceViewElement;
-    };
     interface HTMLElsaStudioWorkflowInstancesListElement extends Components.ElsaStudioWorkflowInstancesList, HTMLStencilElement {
     }
     var HTMLElsaStudioWorkflowInstancesListElement: {
@@ -441,7 +431,6 @@ declare global {
         "elsa-studio-root": HTMLElsaStudioRootElement;
         "elsa-studio-workflow-definitions-edit": HTMLElsaStudioWorkflowDefinitionsEditElement;
         "elsa-studio-workflow-definitions-list": HTMLElsaStudioWorkflowDefinitionsListElement;
-        "elsa-studio-workflow-instance-view": HTMLElsaStudioWorkflowInstanceViewElement;
         "elsa-studio-workflow-instances-list": HTMLElsaStudioWorkflowInstancesListElement;
         "elsa-studio-workflow-instances-view": HTMLElsaStudioWorkflowInstancesViewElement;
         "elsa-studio-workflow-registry": HTMLElsaStudioWorkflowRegistryElement;
@@ -585,10 +574,6 @@ declare namespace LocalJSX {
         "history"?: RouterHistory;
         "serverUrl"?: string;
     }
-    interface ElsaStudioWorkflowInstanceView {
-        "match"?: MatchResults;
-        "serverUrl"?: string;
-    }
     interface ElsaStudioWorkflowInstancesList {
         "history"?: RouterHistory;
         "serverUrl"?: string;
@@ -661,7 +646,6 @@ declare namespace LocalJSX {
         "elsa-studio-root": ElsaStudioRoot;
         "elsa-studio-workflow-definitions-edit": ElsaStudioWorkflowDefinitionsEdit;
         "elsa-studio-workflow-definitions-list": ElsaStudioWorkflowDefinitionsList;
-        "elsa-studio-workflow-instance-view": ElsaStudioWorkflowInstanceView;
         "elsa-studio-workflow-instances-list": ElsaStudioWorkflowInstancesList;
         "elsa-studio-workflow-instances-view": ElsaStudioWorkflowInstancesView;
         "elsa-studio-workflow-registry": ElsaStudioWorkflowRegistry;
@@ -704,7 +688,6 @@ declare module "@stencil/core" {
             "elsa-studio-root": LocalJSX.ElsaStudioRoot & JSXBase.HTMLAttributes<HTMLElsaStudioRootElement>;
             "elsa-studio-workflow-definitions-edit": LocalJSX.ElsaStudioWorkflowDefinitionsEdit & JSXBase.HTMLAttributes<HTMLElsaStudioWorkflowDefinitionsEditElement>;
             "elsa-studio-workflow-definitions-list": LocalJSX.ElsaStudioWorkflowDefinitionsList & JSXBase.HTMLAttributes<HTMLElsaStudioWorkflowDefinitionsListElement>;
-            "elsa-studio-workflow-instance-view": LocalJSX.ElsaStudioWorkflowInstanceView & JSXBase.HTMLAttributes<HTMLElsaStudioWorkflowInstanceViewElement>;
             "elsa-studio-workflow-instances-list": LocalJSX.ElsaStudioWorkflowInstancesList & JSXBase.HTMLAttributes<HTMLElsaStudioWorkflowInstancesListElement>;
             "elsa-studio-workflow-instances-view": LocalJSX.ElsaStudioWorkflowInstancesView & JSXBase.HTMLAttributes<HTMLElsaStudioWorkflowInstancesViewElement>;
             "elsa-studio-workflow-registry": LocalJSX.ElsaStudioWorkflowRegistry & JSXBase.HTMLAttributes<HTMLElsaStudioWorkflowRegistryElement>;

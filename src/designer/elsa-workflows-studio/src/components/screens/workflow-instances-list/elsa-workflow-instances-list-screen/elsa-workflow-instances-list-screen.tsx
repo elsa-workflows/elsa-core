@@ -48,7 +48,7 @@ export class ElsaWorkflowInstancesListScreen {
 
     async loadWorkflowBlueprints() {
         const elsaClient = this.createClient();
-        const versionOptions: VersionOptions = {isLatest: true};
+        const versionOptions: VersionOptions = {isLatestOrPublished: true};
         const workflowBlueprintPagedList = await elsaClient.workflowRegistryApi.list(null, null, versionOptions);
         this.workflowBlueprints = workflowBlueprintPagedList.items;
     }
@@ -365,7 +365,16 @@ export class ElsaWorkflowInstancesListScreen {
         const selectedWorkflowText = !selectedWorkflowId ? "Workflow" : !!selectedWorkflow ? (selectedWorkflow.displayName || selectedWorkflow.name) : "Workflow";
         const selectedWorkflowStatus = this.selectedWorkflowStatus;
         const SelectedOrderBy = this.selectedOrderBy;
-        let items: Array<DropdownButtonItem> = latestWorkflowBlueprints.map(x => ({text: x.displayName!, value: x.id, url: this.buildFilterUrl(x.id, selectedWorkflowStatus, SelectedOrderBy), isSelected: x.id == selectedWorkflowId}));
+        
+        let items: Array<DropdownButtonItem> = latestWorkflowBlueprints.map(x => {
+            const displayName = !!x.displayName && x.displayName.length > 0 ? x.displayName : x.name || 'Untitled';
+            
+            return ({
+                text: displayName,
+                value: x.id,
+                url: this.buildFilterUrl(x.id, selectedWorkflowStatus, SelectedOrderBy), isSelected: x.id == selectedWorkflowId
+            });
+        });
 
         items = [{text: 'All', value: null, url: this.buildFilterUrl(null, selectedWorkflowStatus, SelectedOrderBy), isSelected: !selectedWorkflowId}, ...items];
 
