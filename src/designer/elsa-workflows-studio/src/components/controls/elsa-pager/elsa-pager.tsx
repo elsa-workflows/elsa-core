@@ -109,8 +109,8 @@ export class ElsaPager {
                 const isCurrent = page == i;
                 const isFirst = i == fromPage;
                 const isLast = i == toPage - 1;
-                const leftRoundedClass = isFirst && isCurrent ? "rounded-l-md" : "";
-                const rightRoundedClass = isLast && isCurrent ? "rounded-r-md" : "";
+                const leftRoundedClass = isFirst && isCurrent ? 'rounded-l-md' : '';
+                const rightRoundedClass = isLast && isCurrent ? 'rounded-r-md' : '';
 
                 if (isCurrent) {
                     buttons.push(<span class={`-ml-px relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm leading-5 font-medium bg-blue-600 text-white ${leftRoundedClass} ${rightRoundedClass}`}>
