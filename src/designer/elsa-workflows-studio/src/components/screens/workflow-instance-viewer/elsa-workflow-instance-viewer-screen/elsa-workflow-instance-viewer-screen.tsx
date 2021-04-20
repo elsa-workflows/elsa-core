@@ -158,16 +158,18 @@ export class ElsaWorkflowInstanceViewerScreen {
   }
 
   render() {
+    const descriptors: Array<ActivityDescriptor> = state.activityDescriptors;
     return (
-      <Host class="flex flex-col w-full" ref={el => this.el = el}>
+      <Host class="flex flex-col w-full relative" ref={el => this.el = el}>
         {this.renderCanvas()}
+        <elsa-workflow-instance-journal workflowInstanceId={this.workflowInstanceId} serverUrl={this.serverUrl} activityDescriptors={descriptors}/>
       </Host>
     );
   }
 
   renderCanvas() {
     return (
-      <div class="flex-1 flex relative">
+      <div class="flex-1 flex">
         <elsa-designer-tree model={this.workflowModel} class="flex-1" ref={el => this.designer = el}/>
       </div>
     );

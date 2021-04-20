@@ -5,7 +5,7 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
-import { ActivityDefinitionProperty, ActivityDesignDisplayContext, ActivityModel, ActivityPropertyDescriptor, VersionOptions, WorkflowDefinition, WorkflowModel } from "./models";
+import { ActivityDefinitionProperty, ActivityDescriptor, ActivityDesignDisplayContext, ActivityModel, ActivityPropertyDescriptor, VersionOptions, WorkflowDefinition, WorkflowModel } from "./models";
 import { MatchResults, RouterHistory } from "@stencil/router";
 import { MenuItem } from "./components/controls/elsa-context-menu/models";
 import { DropdownButtonItem, DropdownButtonOrigin } from "./components/controls/elsa-dropdown-button/models";
@@ -171,6 +171,12 @@ export namespace Components {
     interface ElsaWorkflowDefinitionsListScreen {
         "history"?: RouterHistory;
         "serverUrl": string;
+    }
+    interface ElsaWorkflowInstanceJournal {
+        "activityDescriptors": Array<ActivityDescriptor>;
+        "getServerUrl": () => Promise<string>;
+        "serverUrl": string;
+        "workflowInstanceId": string;
     }
     interface ElsaWorkflowInstanceViewerScreen {
         "getServerUrl": () => Promise<string>;
@@ -382,6 +388,12 @@ declare global {
         prototype: HTMLElsaWorkflowDefinitionsListScreenElement;
         new (): HTMLElsaWorkflowDefinitionsListScreenElement;
     };
+    interface HTMLElsaWorkflowInstanceJournalElement extends Components.ElsaWorkflowInstanceJournal, HTMLStencilElement {
+    }
+    var HTMLElsaWorkflowInstanceJournalElement: {
+        prototype: HTMLElsaWorkflowInstanceJournalElement;
+        new (): HTMLElsaWorkflowInstanceJournalElement;
+    };
     interface HTMLElsaWorkflowInstanceViewerScreenElement extends Components.ElsaWorkflowInstanceViewerScreen, HTMLStencilElement {
     }
     var HTMLElsaWorkflowInstanceViewerScreenElement: {
@@ -439,6 +451,7 @@ declare global {
         "elsa-workflow-definition-editor-notifications": HTMLElsaWorkflowDefinitionEditorNotificationsElement;
         "elsa-workflow-definition-editor-screen": HTMLElsaWorkflowDefinitionEditorScreenElement;
         "elsa-workflow-definitions-list-screen": HTMLElsaWorkflowDefinitionsListScreenElement;
+        "elsa-workflow-instance-journal": HTMLElsaWorkflowInstanceJournalElement;
         "elsa-workflow-instance-viewer-screen": HTMLElsaWorkflowInstanceViewerScreenElement;
         "elsa-workflow-instances-list-screen": HTMLElsaWorkflowInstancesListScreenElement;
         "elsa-workflow-publish-button": HTMLElsaWorkflowPublishButtonElement;
@@ -602,6 +615,11 @@ declare namespace LocalJSX {
         "history"?: RouterHistory;
         "serverUrl"?: string;
     }
+    interface ElsaWorkflowInstanceJournal {
+        "activityDescriptors"?: Array<ActivityDescriptor>;
+        "serverUrl"?: string;
+        "workflowInstanceId"?: string;
+    }
     interface ElsaWorkflowInstanceViewerScreen {
         "serverUrl"?: string;
         "workflowInstanceId"?: string;
@@ -654,6 +672,7 @@ declare namespace LocalJSX {
         "elsa-workflow-definition-editor-notifications": ElsaWorkflowDefinitionEditorNotifications;
         "elsa-workflow-definition-editor-screen": ElsaWorkflowDefinitionEditorScreen;
         "elsa-workflow-definitions-list-screen": ElsaWorkflowDefinitionsListScreen;
+        "elsa-workflow-instance-journal": ElsaWorkflowInstanceJournal;
         "elsa-workflow-instance-viewer-screen": ElsaWorkflowInstanceViewerScreen;
         "elsa-workflow-instances-list-screen": ElsaWorkflowInstancesListScreen;
         "elsa-workflow-publish-button": ElsaWorkflowPublishButton;
@@ -696,6 +715,7 @@ declare module "@stencil/core" {
             "elsa-workflow-definition-editor-notifications": LocalJSX.ElsaWorkflowDefinitionEditorNotifications & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionEditorNotificationsElement>;
             "elsa-workflow-definition-editor-screen": LocalJSX.ElsaWorkflowDefinitionEditorScreen & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionEditorScreenElement>;
             "elsa-workflow-definitions-list-screen": LocalJSX.ElsaWorkflowDefinitionsListScreen & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionsListScreenElement>;
+            "elsa-workflow-instance-journal": LocalJSX.ElsaWorkflowInstanceJournal & JSXBase.HTMLAttributes<HTMLElsaWorkflowInstanceJournalElement>;
             "elsa-workflow-instance-viewer-screen": LocalJSX.ElsaWorkflowInstanceViewerScreen & JSXBase.HTMLAttributes<HTMLElsaWorkflowInstanceViewerScreenElement>;
             "elsa-workflow-instances-list-screen": LocalJSX.ElsaWorkflowInstancesListScreen & JSXBase.HTMLAttributes<HTMLElsaWorkflowInstancesListScreenElement>;
             "elsa-workflow-publish-button": LocalJSX.ElsaWorkflowPublishButton & JSXBase.HTMLAttributes<HTMLElsaWorkflowPublishButtonElement>;

@@ -53,7 +53,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
             CancellationToken cancellationToken = default)
         {
             _stopwatch.Restart();
-            var specification = Specification<WorkflowInstance>.All;
+            var specification = Specification<WorkflowInstance>.Identity;
 
             if (!string.IsNullOrWhiteSpace(workflowDefinitionId))
                 specification = specification.WithWorkflowDefinition(workflowDefinitionId);

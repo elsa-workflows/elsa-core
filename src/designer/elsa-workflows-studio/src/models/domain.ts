@@ -138,6 +138,18 @@ export interface ActivityDefinition {
   properties: Array<ActivityDefinitionProperty>;
 }
 
+export interface WorkflowExecutionLogRecord {
+  id: string;
+  workflowInstanceId: string;
+  activityId: string;
+  activityType: string;
+  timestamp: Date;
+  eventName: string;
+  message?: string;
+  source?: string;
+  data?: any;
+}
+
 export interface ConnectionDefinition {
   sourceActivityId?: string;
   targetActivityId?: string;
@@ -259,8 +271,8 @@ export interface ActivityPropertyDescriptor {
 
 export interface PagedList<T> {
   items: Array<T>;
-  page: number;
-  pageSize: number;
+  page?: number;
+  pageSize?: number;
   totalCount: number;
 }
 

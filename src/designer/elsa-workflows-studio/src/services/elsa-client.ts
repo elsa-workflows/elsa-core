@@ -10,7 +10,7 @@ import {
   VersionOptions, WorkflowBlueprint, WorkflowBlueprintSummary,
   WorkflowContextOptions,
   WorkflowDefinition,
-  WorkflowDefinitionSummary, WorkflowInstance, WorkflowInstanceSummary,
+  WorkflowDefinitionSummary, WorkflowExecutionLogRecord, WorkflowInstance, WorkflowInstanceSummary,
   WorkflowPersistenceBehavior, WorkflowStatus
 } from "../models";
 
@@ -130,6 +130,22 @@ export const createElsaClient = function (serverUrl: string): ElsaClient {
         return response.data;
       }
     },
+    workflowExecutionLogApi: {
+      get: async (workflowInstanceId: string, page?: number, pageSize?: number): Promise<PagedList<WorkflowExecutionLogRecord>> => {
+        const queryString = {};
+
+        if (!!page)
+          queryString['page'] = page;
+
+        if (!!pageSize)
+          queryString['pageSize'] = pageSize;
+
+        const queryStringItems = collection.map(queryString, (v, k) => `${k}=${v}`);
+        const queryStringText = queryStringItems.length > 0 ? `?${queryStringItems.join('&')}` : '';
+        const response = await httpClient.get(`v1/workflow-instances/${workflowInstanceId}/execution-log${queryStringText}`);
+        return response.data;
+      }
+    },
     scriptingApi: {
       getJavaScriptTypeDefinitions: async (workflowDefinitionId: string, context?: string): Promise<string> => {
         context = context || '';
@@ -145,6 +161,7 @@ export interface ElsaClient {
   workflowDefinitionsApi: WorkflowDefinitionsApi;
   workflowRegistryApi: WorkflowRegistryApi;
   workflowInstancesApi: WorkflowInstancesApi;
+  workflowExecutionLogApi: WorkflowExecutionLogApi;
   scriptingApi: ScriptingApi;
 }
 
@@ -183,6 +200,12 @@ export interface WorkflowInstancesApi {
   delete(id: string): Promise<void>;
 
   bulkDelete(request: BulkDeleteWorkflowsRequest): Promise<BulkDeleteWorkflowsResponse>;
+}
+
+export interface WorkflowExecutionLogApi {
+
+  get(workflowInstanceId: string, page?: number, pageSize?: number): Promise<PagedList<WorkflowExecutionLogRecord>>;
+  
 }
 
 export interface BulkDeleteWorkflowsRequest {
