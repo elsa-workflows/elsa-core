@@ -11,8 +11,8 @@ namespace Elsa.Persistence.Specifications
     /// </summary>
     public abstract class Specification<T> : ISpecification<T>
     {
-        public static readonly ISpecification<T> All = new IdentitySpecification<T>();
-        public static readonly ISpecification<T> None = All.Not();
+        public static readonly ISpecification<T> Identity = new IdentitySpecification<T>();
+        public static readonly ISpecification<T> None = Identity.Not();
         private Func<T, bool>? _predicate;
 
         public virtual bool IsSatisfiedBy(T entity)
