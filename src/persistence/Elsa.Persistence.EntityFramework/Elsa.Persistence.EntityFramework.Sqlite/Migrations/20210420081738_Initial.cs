@@ -58,6 +58,7 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
                     ActivityId = table.Column<string>(type: "TEXT", nullable: false),
                     ActivityType = table.Column<string>(type: "TEXT", nullable: false),
                     Timestamp = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    EventName = table.Column<string>(type: "TEXT", nullable: true),
                     Message = table.Column<string>(type: "TEXT", nullable: true),
                     Source = table.Column<string>(type: "TEXT", nullable: true),
                     Data = table.Column<string>(type: "TEXT", nullable: true)

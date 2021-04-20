@@ -10,7 +10,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Elsa.Persistence.EntityFramework.PostgreSql.Migrations
 {
     [DbContext(typeof(ElsaContext))]
-    [Migration("20210416134539_Initial")]
+    [Migration("20210420081700_Initial")]
     partial class Initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -155,6 +155,9 @@ namespace Elsa.Persistence.EntityFramework.PostgreSql.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("Data")
+                        .HasColumnType("text");
+
+                    b.Property<string>("EventName")
                         .HasColumnType("text");
 
                     b.Property<string>("Message")

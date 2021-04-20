@@ -54,6 +54,7 @@ namespace Elsa.Persistence.YesSql
                     .Column<string?>(nameof(WorkflowExecutionLogRecordIndex.RecordId))
                     .Column<string?>(nameof(WorkflowExecutionLogRecordIndex.TenantId))
                     .Column<string>(nameof(WorkflowExecutionLogRecordIndex.WorkflowInstanceId))
+                    .Column<string>(nameof(WorkflowExecutionLogRecordIndex.EventName))
                     .Column<DateTime>(nameof(WorkflowExecutionLogRecordIndex.Timestamp)),
                 CollectionNames.WorkflowExecutionLog);
 

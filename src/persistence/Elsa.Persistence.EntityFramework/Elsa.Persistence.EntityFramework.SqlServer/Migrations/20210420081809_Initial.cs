@@ -1,7 +1,7 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
-namespace Elsa.Persistence.EntityFramework.PostgreSql.Migrations
+namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
 {
     public partial class Initial : Migration
     {
@@ -11,14 +11,14 @@ namespace Elsa.Persistence.EntityFramework.PostgreSql.Migrations
                 name: "Bookmarks",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "text", nullable: false),
-                    TenantId = table.Column<string>(type: "text", nullable: true),
-                    Hash = table.Column<string>(type: "text", nullable: false),
-                    Model = table.Column<string>(type: "text", nullable: false),
-                    ModelType = table.Column<string>(type: "text", nullable: false),
-                    ActivityType = table.Column<string>(type: "text", nullable: false),
-                    ActivityId = table.Column<string>(type: "text", nullable: false),
-                    WorkflowInstanceId = table.Column<string>(type: "text", nullable: false)
+                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    TenantId = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    Hash = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Model = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ModelType = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ActivityType = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ActivityId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    WorkflowInstanceId = table.Column<string>(type: "nvarchar(450)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -29,19 +29,19 @@ namespace Elsa.Persistence.EntityFramework.PostgreSql.Migrations
                 name: "WorkflowDefinitions",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "text", nullable: false),
-                    DefinitionId = table.Column<string>(type: "text", nullable: false),
-                    TenantId = table.Column<string>(type: "text", nullable: true),
-                    Name = table.Column<string>(type: "text", nullable: true),
-                    DisplayName = table.Column<string>(type: "text", nullable: true),
-                    Description = table.Column<string>(type: "text", nullable: true),
-                    Version = table.Column<int>(type: "integer", nullable: false),
-                    IsSingleton = table.Column<bool>(type: "boolean", nullable: false),
-                    PersistenceBehavior = table.Column<int>(type: "integer", nullable: false),
-                    DeleteCompletedInstances = table.Column<bool>(type: "boolean", nullable: false),
-                    IsPublished = table.Column<bool>(type: "boolean", nullable: false),
-                    IsLatest = table.Column<bool>(type: "boolean", nullable: false),
-                    Data = table.Column<string>(type: "text", nullable: true)
+                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    DefinitionId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    TenantId = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    Name = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    DisplayName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Version = table.Column<int>(type: "int", nullable: false),
+                    IsSingleton = table.Column<bool>(type: "bit", nullable: false),
+                    PersistenceBehavior = table.Column<int>(type: "int", nullable: false),
+                    DeleteCompletedInstances = table.Column<bool>(type: "bit", nullable: false),
+                    IsPublished = table.Column<bool>(type: "bit", nullable: false),
+                    IsLatest = table.Column<bool>(type: "bit", nullable: false),
+                    Data = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -52,15 +52,16 @@ namespace Elsa.Persistence.EntityFramework.PostgreSql.Migrations
                 name: "WorkflowExecutionLogRecords",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "text", nullable: false),
-                    TenantId = table.Column<string>(type: "text", nullable: true),
-                    WorkflowInstanceId = table.Column<string>(type: "text", nullable: false),
-                    ActivityId = table.Column<string>(type: "text", nullable: false),
-                    ActivityType = table.Column<string>(type: "text", nullable: false),
-                    Timestamp = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    Message = table.Column<string>(type: "text", nullable: true),
-                    Source = table.Column<string>(type: "text", nullable: true),
-                    Data = table.Column<string>(type: "text", nullable: true)
+                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    TenantId = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    WorkflowInstanceId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ActivityId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ActivityType = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Timestamp = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    EventName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Message = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Source = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Data = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -71,21 +72,21 @@ namespace Elsa.Persistence.EntityFramework.PostgreSql.Migrations
                 name: "WorkflowInstances",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "text", nullable: false),
-                    DefinitionId = table.Column<string>(type: "text", nullable: false),
-                    TenantId = table.Column<string>(type: "text", nullable: true),
-                    Version = table.Column<int>(type: "integer", nullable: false),
-                    WorkflowStatus = table.Column<int>(type: "integer", nullable: false),
-                    CorrelationId = table.Column<string>(type: "text", nullable: true),
-                    ContextType = table.Column<string>(type: "text", nullable: true),
-                    ContextId = table.Column<string>(type: "text", nullable: true),
-                    Name = table.Column<string>(type: "text", nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    LastExecutedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    FinishedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    CancelledAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    FaultedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    Data = table.Column<string>(type: "text", nullable: true)
+                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    DefinitionId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    TenantId = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    Version = table.Column<int>(type: "int", nullable: false),
+                    WorkflowStatus = table.Column<int>(type: "int", nullable: false),
+                    CorrelationId = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    ContextType = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    ContextId = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    Name = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    LastExecutedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    FinishedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    CancelledAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    FaultedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    Data = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {

@@ -20,11 +20,11 @@ namespace Elsa.Services
             _clock = clock;
         }
         
-        public async Task AddEntryAsync(string message, string workflowInstanceId, string activityId, string activityType, string? tenantId, string? source, JObject? data, CancellationToken cancellationToken)
+        public async Task AddEntryAsync(string workflowInstanceId, string activityId, string activityType, string eventName, string? message, string? tenantId, string? source, JObject? data, CancellationToken cancellationToken = default)
         {
             var id = _idGenerator.Generate();
             var timeStamp = _clock.GetCurrentInstant();
-            var record = new WorkflowExecutionLogRecord(id, tenantId, workflowInstanceId, activityId, activityType, timeStamp, message, source, data);
+            var record = new WorkflowExecutionLogRecord(id, tenantId, workflowInstanceId, activityId, activityType, timeStamp, eventName, message, source, data);
             await _store.SaveAsync(record, cancellationToken);
         }
     }

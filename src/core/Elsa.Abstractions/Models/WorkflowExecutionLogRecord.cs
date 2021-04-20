@@ -9,7 +9,7 @@ namespace Elsa.Models
         {
         }
 
-        public WorkflowExecutionLogRecord(string id, string? tenantId, string workflowInstanceId, string activityId, string activityType, Instant timestamp, string? message, string? source = default, JObject? data = default)
+        public WorkflowExecutionLogRecord(string id, string? tenantId, string workflowInstanceId, string activityId, string activityType, Instant timestamp, string eventName, string? message, string? source = default, JObject? data = default)
         {
             Id = id;
             TenantId = tenantId;
@@ -17,6 +17,7 @@ namespace Elsa.Models
             ActivityId = activityId;
             ActivityType = activityType;
             Timestamp = timestamp;
+            EventName = eventName;
             Message = message;
             Source = source;
             Data = data;
@@ -27,6 +28,7 @@ namespace Elsa.Models
         public string ActivityId { get; set; } = default!;
         public string ActivityType { get; set; } = default!;
         public Instant Timestamp { get; set; } = default!;
+        public string? EventName { get; set; }
         public string? Message { get; set; }
         public string? Source { get; set; }
         public JObject? Data { get; set; }

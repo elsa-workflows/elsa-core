@@ -155,6 +155,9 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
                     b.Property<string>("Data")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("EventName")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Message")
                         .HasColumnType("nvarchar(max)");
 

@@ -155,6 +155,9 @@ namespace Elsa.Persistence.EntityFramework.PostgreSql.Migrations
                     b.Property<string>("Data")
                         .HasColumnType("text");
 
+                    b.Property<string>("EventName")
+                        .HasColumnType("text");
+
                     b.Property<string>("Message")
                         .HasColumnType("text");
 

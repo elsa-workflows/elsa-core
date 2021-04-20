@@ -152,6 +152,9 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
                     b.Property<string>("Data")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("EventName")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Message")
                         .HasColumnType("TEXT");
 
