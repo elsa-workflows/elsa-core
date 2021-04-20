@@ -20,6 +20,12 @@ namespace Elsa
 
         public static async Task AddEntryAsync(this IWorkflowExecutionLog log, string eventName, ActivityExecutionContext activityExecutionContext, string? message, CancellationToken cancellationToken = default, [CallerLineNumber] int line = default, [CallerFilePath] string? sourceFile = default) =>
             await log.AddEntryAsync(eventName, activityExecutionContext, message, default, cancellationToken, line, sourceFile);
+        
+        public static async Task AddEntryAsync(this IWorkflowExecutionLog log, string eventName, ActivityExecutionContext activityExecutionContext, JObject? data, CancellationToken cancellationToken = default, [CallerLineNumber] int line = default, [CallerFilePath] string? sourceFile = default) =>
+            await log.AddEntryAsync(eventName, activityExecutionContext, default, data, cancellationToken, line, sourceFile);
+        
+        public static async Task AddEntryAsync(this IWorkflowExecutionLog log, string eventName, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken = default, [CallerLineNumber] int line = default, [CallerFilePath] string? sourceFile = default) =>
+            await log.AddEntryAsync(eventName, activityExecutionContext, default, default, cancellationToken, line, sourceFile);
 
         public static async Task AddEntryAsync(this IWorkflowExecutionLog log, string eventName, WorkflowInstance workflowInstance, IActivityBlueprint activity, string? message, JObject? data, string? source, CancellationToken cancellationToken = default)
         {
