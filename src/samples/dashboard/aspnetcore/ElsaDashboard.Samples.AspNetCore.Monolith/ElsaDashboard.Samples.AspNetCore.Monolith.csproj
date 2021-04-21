@@ -17,6 +17,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\..\..\..\activities\Elsa.Activities.Email\Elsa.Activities.Email.csproj" />
       <ProjectReference Include="..\..\..\..\activities\Elsa.Activities.Temporal.Quartz\Elsa.Activities.Temporal.Quartz.csproj" />
       <ProjectReference Include="..\..\..\..\core\Elsa\Elsa.csproj" />
       <ProjectReference Include="..\..\..\..\designer\bindings\blazor\Elsa.Designer.Bindings.Blazor\Elsa.Designer.Bindings.Blazor.csproj" />

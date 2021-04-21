@@ -2,7 +2,6 @@ using Elsa.Activities.Telnyx.Extensions;
 using Elsa.Activities.UserTask.Extensions;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Sqlite;
-using Elsa.Persistence.YesSql;
 using Elsa.Server.Hangfire.Extensions;
 using Hangfire;
 using Microsoft.AspNetCore.Builder;
@@ -12,7 +11,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NodaTime;
 using NodaTime.Serialization.JsonNet;
-using YesSql.Provider.Sqlite;
 
 namespace Elsa.Samples.Server.Host
 {
