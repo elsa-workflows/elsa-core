@@ -17,6 +17,7 @@ import state from "../../../../utils/store";
 export class ElsaWorkflowDesigner {
 
   @Prop() model: WorkflowModel = { activities: [], connections: [], persistenceBehavior: WorkflowPersistenceBehavior.WorkflowBurst };
+  @Prop() selectedActivityId?: string;
   @Event({eventName: 'workflow-changed', bubbles: true, composed: true, cancelable: true}) workflowChanged: EventEmitter<WorkflowModel>
   @State() workflowModel: WorkflowModel
   el: HTMLElement
@@ -536,7 +537,10 @@ export class ElsaWorkflowDesigner {
   }
 
   renderActivity(displayContext: ActivityDesignDisplayContext) {
-    return <elsa-designer-tree-activity displayContext={displayContext} draggable={true}
+    const selected = this.selectedActivityId == displayContext.activityModel.activityId;
+    return <elsa-designer-tree-activity displayContext={displayContext} 
+                                        draggable={true}
+                                        selected={selected}
                                         onDragStart={e => this.onDragStartActivity(e, displayContext)}
     />;
   }

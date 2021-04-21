@@ -14,6 +14,7 @@ export class ElsaDesignerTreeActivity {
 
   @Prop() displayContext: ActivityDesignDisplayContext
   @Prop() icon: string
+  @Prop() selected: boolean;
   @Event({eventName: 'remove-activity', bubbles: true}) removeActivityEmitter: EventEmitter<ActivityModel>;
   @Event({eventName: 'edit-activity', bubbles: true}) editActivityEmitter: EventEmitter<ActivityModel>;
   @State() showMenu: boolean
@@ -45,11 +46,12 @@ export class ElsaDesignerTreeActivity {
     const activity = displayContext.activityModel;
     const activityId = activity.activityId;
     const displayName = activity.displayName && activity.displayName.length > 0 ? activity.displayName : activity.name && activity.name.length > 0 ? activity.name : activity.type
+    const activityClass = this.selected ? 'border-blue-600' : 'border-white hover:border-blue-600';
 
     return (
       <Host id={`activity-${activityId}`}
             onDblClick={e => this.onEditActivityClick(e)}
-            class="activity border-2 border-solid border-white rounded bg-white text-left text-black text-lg hover:border-blue-600 select-none max-w-md shadow-sm relative">
+            class={`${activityClass} activity border-2 border-solid rounded bg-white text-left text-black text-lg select-none max-w-md shadow-sm relative`}>
         <div class="p-5">
           <div class="flex justify-between space-x-8">
             <div class="flex-shrink-0">

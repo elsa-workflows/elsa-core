@@ -7,7 +7,7 @@ import {
   ActivityModel, Connection,
   ConnectionModel,
   EventTypes, SyntaxNames,
-  WorkflowBlueprint,
+  WorkflowBlueprint, WorkflowExecutionLogRecord,
   WorkflowInstance,
   WorkflowModel,
   WorkflowPersistenceBehavior,
@@ -32,6 +32,7 @@ export class ElsaWorkflowInstanceViewerScreen {
   @State() workflowInstance: WorkflowInstance;
   @State() workflowBlueprint: WorkflowBlueprint;
   @State() workflowModel: WorkflowModel;
+  @State() selectedActivityId?: string;
   el: HTMLElement;
   designer: HTMLElsaDesignerTreeElement;
 
@@ -157,12 +158,20 @@ export class ElsaWorkflowInstanceViewerScreen {
     eventBus.emit(EventTypes.ShowWorkflowSettings);
   }
 
+  onRecordSelected(e: CustomEvent<WorkflowExecutionLogRecord>) {
+    this.selectedActivityId = e.detail.activityId;
+  }
+
   render() {
     const descriptors: Array<ActivityDescriptor> = state.activityDescriptors;
     return (
       <Host class="flex flex-col w-full relative" ref={el => this.el = el}>
         {this.renderCanvas()}
-        <elsa-workflow-instance-journal workflowInstanceId={this.workflowInstanceId} serverUrl={this.serverUrl} activityDescriptors={descriptors} workflowBlueprint={this.workflowBlueprint}/>
+        <elsa-workflow-instance-journal workflowInstanceId={this.workflowInstanceId}
+                                        serverUrl={this.serverUrl}
+                                        activityDescriptors={descriptors}
+                                        workflowBlueprint={this.workflowBlueprint}
+                                        onRecordSelected={e => this.onRecordSelected(e)}/>
       </Host>
     );
   }
@@ -170,7 +179,7 @@ export class ElsaWorkflowInstanceViewerScreen {
   renderCanvas() {
     return (
       <div class="flex-1 flex">
-        <elsa-designer-tree model={this.workflowModel} class="flex-1" ref={el => this.designer = el}/>
+        <elsa-designer-tree model={this.workflowModel} class="flex-1" ref={el => this.designer = el} selectedActivityId={this.selectedActivityId}/>
       </div>
     );
   }

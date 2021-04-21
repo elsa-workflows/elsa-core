@@ -5,7 +5,7 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
-import { ActivityDefinitionProperty, ActivityDescriptor, ActivityDesignDisplayContext, ActivityModel, ActivityPropertyDescriptor, VersionOptions, WorkflowBlueprint, WorkflowDefinition, WorkflowModel } from "./models";
+import { ActivityDefinitionProperty, ActivityDescriptor, ActivityDesignDisplayContext, ActivityModel, ActivityPropertyDescriptor, VersionOptions, WorkflowBlueprint, WorkflowDefinition, WorkflowExecutionLogRecord, WorkflowModel } from "./models";
 import { MatchResults, RouterHistory } from "@stencil/router";
 import { MenuItem } from "./components/controls/elsa-context-menu/models";
 import { DropdownButtonItem, DropdownButtonOrigin } from "./components/controls/elsa-dropdown-button/models";
@@ -36,10 +36,12 @@ export namespace Components {
     interface ElsaDesignerTree {
         "destroyJsPlumb": () => Promise<void>;
         "model": WorkflowModel;
+        "selectedActivityId"?: string;
     }
     interface ElsaDesignerTreeActivity {
         "displayContext": ActivityDesignDisplayContext;
         "icon": string;
+        "selected": boolean;
     }
     interface ElsaDropdownButton {
         "icon"?: any;
@@ -482,12 +484,14 @@ declare namespace LocalJSX {
     interface ElsaDesignerTree {
         "model"?: WorkflowModel;
         "onWorkflow-changed"?: (event: CustomEvent<WorkflowModel>) => void;
+        "selectedActivityId"?: string;
     }
     interface ElsaDesignerTreeActivity {
         "displayContext"?: ActivityDesignDisplayContext;
         "icon"?: string;
         "onEdit-activity"?: (event: CustomEvent<ActivityModel>) => void;
         "onRemove-activity"?: (event: CustomEvent<ActivityModel>) => void;
+        "selected"?: boolean;
     }
     interface ElsaDropdownButton {
         "icon"?: any;
@@ -619,6 +623,7 @@ declare namespace LocalJSX {
     }
     interface ElsaWorkflowInstanceJournal {
         "activityDescriptors"?: Array<ActivityDescriptor>;
+        "onRecordSelected"?: (event: CustomEvent<WorkflowExecutionLogRecord>) => void;
         "serverUrl"?: string;
         "workflowBlueprint"?: WorkflowBlueprint;
         "workflowInstanceId"?: string;

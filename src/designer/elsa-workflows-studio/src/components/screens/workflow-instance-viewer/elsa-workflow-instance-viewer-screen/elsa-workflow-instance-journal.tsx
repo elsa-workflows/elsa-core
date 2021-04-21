@@ -1,4 +1,4 @@
-import {Component, h, Host, Method, Prop, State, Watch} from '@stencil/core';
+import {Component, EventEmitter, h, Host, Method, Prop, State, Watch, Event} from '@stencil/core';
 import moment from 'moment';
 import {enter, leave, toggle} from 'el-transition'
 import {registerClickOutside} from "stencil-click-outside";
@@ -19,8 +19,10 @@ export class ElsaWorkflowInstanceJournal {
   @Prop() serverUrl: string;
   @Prop() activityDescriptors: Array<ActivityDescriptor> = [];
   @Prop() workflowBlueprint: WorkflowBlueprint;
+  @Event() recordSelected: EventEmitter<WorkflowExecutionLogRecord>;
   @State() isVisible: boolean = true;
   @State() records: PagedList<WorkflowExecutionLogRecord> = {items: [], totalCount: 0};
+  @State() selectedRecordId?: string;
 
   el: HTMLElement;
 
@@ -54,6 +56,18 @@ export class ElsaWorkflowInstanceJournal {
     await this.workflowInstanceIdChangedHandler(this.workflowInstanceId);
   }
 
+  getEventColor(eventName: string) {
+    const map = {
+      'Executing': 'blue',
+      'Executed': 'green',
+      'Faulted': 'rose',
+      'Warning': 'yellow',
+      'Information': 'blue',
+    };
+
+    return map[eventName] || 'gray';
+  }
+
   onCloseClick() {
     this.hide();
   }
@@ -62,12 +76,18 @@ export class ElsaWorkflowInstanceJournal {
     this.show();
   }
 
+  onRecordClick(record: WorkflowExecutionLogRecord) {
+    this.selectedRecordId = record.id;
+    this.recordSelected.emit(record);
+  }
+
   render() {
     const records = this.records;
     const items = records.items;
     const activityDescriptors = this.activityDescriptors;
     const workflowBlueprint = this.workflowBlueprint;
     const activityBlueprints: Array<ActivityBlueprint> = workflowBlueprint.activities || [];
+    const selectedRecordId = this.selectedRecordId;
 
     const renderRecord = (record: WorkflowExecutionLogRecord, index: number) => {
       const isLastItem = index == items.length - 1;
@@ -80,6 +100,9 @@ export class ElsaWorkflowInstanceJournal {
       const activityDescriptor = activityDescriptors.find(x => x.type === activityType);
       const activityBlueprint = activityBlueprints.find(x => x.id === record.activityId) || {name: null, displayName: null};
       const activityName = activityBlueprint.displayName || activityBlueprint.name || activityDescriptor.displayName || activityDescriptor.type;
+      const eventName = record.eventName;
+      const eventColor = this.getEventColor(eventName);
+      const recordClass = record.id === selectedRecordId ? 'border-blue-600' : 'hover:bg-gray-100 border-transparent';
 
       const deltaTimeText = !!deltaTime ? deltaTime.asHours() > 1
         ? `${deltaTime.asHours()} h`
@@ -92,7 +115,7 @@ export class ElsaWorkflowInstanceJournal {
 
       return (
         <li>
-          <div class="hover:bg-gray-100 cursor-pointer p-4 rounded">
+          <div onClick={() => this.onRecordClick(record)} class={`${recordClass} border-2 cursor-pointer p-4 rounded`}>
             <div class="relative pb-10">
               {isLastItem ? undefined : <div class="flex absolute top-8 left-4 -ml-px h-full w-0.5 bg-gray-200">
                 <div class="flex flex-1 items-center relative -left-5">
@@ -112,9 +135,12 @@ export class ElsaWorkflowInstanceJournal {
                     </h3>
                   </div>
                   <div>
-                  <span class="relative inline-flex items-center rounded-full border border-gray-300 px-3 py-0.5 text-sm">
-                    <span class="font-medium text-gray-900">{record.eventName}</span>
-                  </span>
+                    <span class="relative inline-flex items-center rounded-full border border-gray-300 px-3 py-0.5 text-sm">
+                      <span class="absolute flex-shrink-0 flex items-center justify-center">
+                        <span class={`h-1.5 w-1.5 rounded-full bg-${eventColor}-500`} aria-hidden="true"/>
+                      </span>
+                      <span class="ml-3.5 font-medium text-gray-900">{eventName}</span>
+                    </span>
                   </div>
                   <div class="text-right text-sm whitespace-nowrap text-gray-500">
                     <span>{currentTimestamp.format('DD-MM-YYYY HH:mm:ss')}</span>
