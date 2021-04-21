@@ -162,7 +162,7 @@ export class ElsaWorkflowInstanceViewerScreen {
     return (
       <Host class="flex flex-col w-full relative" ref={el => this.el = el}>
         {this.renderCanvas()}
-        <elsa-workflow-instance-journal workflowInstanceId={this.workflowInstanceId} serverUrl={this.serverUrl} activityDescriptors={descriptors}/>
+        <elsa-workflow-instance-journal workflowInstanceId={this.workflowInstanceId} serverUrl={this.serverUrl} activityDescriptors={descriptors} workflowBlueprint={this.workflowBlueprint}/>
       </Host>
     );
   }

@@ -5,7 +5,7 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
-import { ActivityDefinitionProperty, ActivityDescriptor, ActivityDesignDisplayContext, ActivityModel, ActivityPropertyDescriptor, VersionOptions, WorkflowDefinition, WorkflowModel } from "./models";
+import { ActivityDefinitionProperty, ActivityDescriptor, ActivityDesignDisplayContext, ActivityModel, ActivityPropertyDescriptor, VersionOptions, WorkflowBlueprint, WorkflowDefinition, WorkflowModel } from "./models";
 import { MatchResults, RouterHistory } from "@stencil/router";
 import { MenuItem } from "./components/controls/elsa-context-menu/models";
 import { DropdownButtonItem, DropdownButtonOrigin } from "./components/controls/elsa-dropdown-button/models";
@@ -174,8 +174,10 @@ export namespace Components {
     }
     interface ElsaWorkflowInstanceJournal {
         "activityDescriptors": Array<ActivityDescriptor>;
-        "getServerUrl": () => Promise<string>;
+        "hide": () => Promise<void>;
         "serverUrl": string;
+        "show": () => Promise<void>;
+        "workflowBlueprint": WorkflowBlueprint;
         "workflowInstanceId": string;
     }
     interface ElsaWorkflowInstanceViewerScreen {
@@ -618,6 +620,7 @@ declare namespace LocalJSX {
     interface ElsaWorkflowInstanceJournal {
         "activityDescriptors"?: Array<ActivityDescriptor>;
         "serverUrl"?: string;
+        "workflowBlueprint"?: WorkflowBlueprint;
         "workflowInstanceId"?: string;
     }
     interface ElsaWorkflowInstanceViewerScreen {
