@@ -9,11 +9,29 @@ import {
 import {activityIconProvider} from "../../../../services/activity-icon-provider";
 import {createElsaClient} from "../../../../services/elsa-client";
 
+interface Tab {
+  id: string;
+  text: string;
+  view: () => any;
+}
+
 @Component({
   tag: 'elsa-workflow-instance-journal',
   shadow: false,
 })
 export class ElsaWorkflowInstanceJournal {
+
+  constructor() {
+    this.tabs = [{
+      id: 'journal',
+      text: 'Journal',
+      view: this.renderJournalTab
+    }, {
+      id: 'activityState',
+      text: 'Activity State',
+      view: this.renderActivityStateTab
+    }];
+  }
 
   @Prop() workflowInstanceId: string;
   @Prop() serverUrl: string;
@@ -23,8 +41,11 @@ export class ElsaWorkflowInstanceJournal {
   @State() isVisible: boolean = true;
   @State() records: PagedList<WorkflowExecutionLogRecord> = {items: [], totalCount: 0};
   @State() selectedRecordId?: string;
+  @State() selectedTabId: string = 'journal';
 
   el: HTMLElement;
+
+  tabs: Array<Tab> = [];
 
   @Method()
   async show() {
@@ -80,8 +101,97 @@ export class ElsaWorkflowInstanceJournal {
     this.selectedRecordId = record.id;
     this.recordSelected.emit(record);
   }
+  
+  onTabClick(e: Event, tab: Tab) {
+    e.preventDefault();
+    
+    this.selectedTabId = tab.id;
+  }
 
   render() {
+    return (
+      <Host>
+        
+        {this.renderPanel()}
+      </Host>
+    );
+  }
+
+  renderJournalButton() {
+    return (
+      <button onClick={() => this.onShowClick()} type="button"
+                    class="workflow-settings-button fixed top-20 right-12 inline-flex items-center p-2 rounded-full border border-transparent bg-white shadow text-gray-400 hover:text-blue-500 focus:text-blue-500 hover:ring-2 hover:ring-offset-2 hover:ring-blue-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor" fill="none" class="h-8 w-8">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+      </svg>
+    </button>
+    );
+  }
+
+  renderPanel() {
+    
+    const panelHiddenClass = this.isVisible ? '' : 'hidden';
+    const tabs = this.tabs;
+    const selectedTabId = this.selectedTabId;
+    const selectedTab = tabs.find(x => x.id === selectedTabId);
+
+    return (
+      <section class={`${panelHiddenClass} fixed top-0 right-0 bottom-0 overflow-hidden`} aria-labelledby="slide-over-title" role="dialog" aria-modal="true">
+        <div class="absolute inset-0 overflow-hidden">
+          <div class="absolute inset-0" aria-hidden="true"/>
+          <div class="fixed inset-y-0 right-0 pl-10 max-w-full flex sm:pl-16">
+
+            <div ref={el => this.el = el}
+                 data-transition-enter="transform transition ease-in-out duration-500 sm:duration-700"
+                 data-transition-enter-start="translate-x-full"
+                 data-transition-enter-end="translate-x-0"
+                 data-transition-leave="transform transition ease-in-out duration-500 sm:duration-700"
+                 data-transition-leave-start="translate-x-0"
+                 data-transition-leave-end="translate-x-full"
+                 class="w-screen max-w-2xl">
+              <div class="h-full flex flex-col py-6 bg-white shadow-xl overflow-y-scroll">
+                <div class="px-4 sm:px-6">
+                  <div class="flex flex-col items-end ">
+                    <div class="ml-3 h-7 flex items-center">
+                      <button type="button" onClick={e => this.onCloseClick()} class="bg-white rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        <span class="sr-only">Close panel</span>
+                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div>
+                      <div class="border-b border-gray-200">
+                        <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                          {tabs.map(tab => {
+                            const className = tab.id == selectedTabId ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300';
+                            return <a href="#" onClick={e => this.onTabClick(e, tab)} class={`${className} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}>{tab.text}</a>;
+                          })}
+                        </nav>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+                <div class="mt-6 relative flex-1 px-4 sm:px-6">
+                  <div class="absolute inset-0 px-4 sm:px-6">
+                    {selectedTab.view()}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  renderJournalTab = () => {
     const records = this.records;
     const items = records.items;
     const activityDescriptors = this.activityDescriptors;
@@ -175,71 +285,20 @@ export class ElsaWorkflowInstanceJournal {
       );
     };
 
-    const hiddenClass = this.isVisible ? '' : 'hidden';
-
     return (
-      <Host>
-        {this.renderJournalButton()}
-        <section class={`${hiddenClass} fixed top-0 right-0 bottom-0 overflow-hidden`} aria-labelledby="slide-over-title" role="dialog" aria-modal="true">
-          <div class="absolute inset-0 overflow-hidden">
-            <div class="absolute inset-0" aria-hidden="true"/>
-            <div class="fixed inset-y-0 right-0 pl-10 max-w-full flex sm:pl-16">
-
-              <div ref={el => this.el = el}
-                   data-transition-enter="transform transition ease-in-out duration-500 sm:duration-700"
-                   data-transition-enter-start="translate-x-full"
-                   data-transition-enter-end="translate-x-0"
-                   data-transition-leave="transform transition ease-in-out duration-500 sm:duration-700"
-                   data-transition-leave-start="translate-x-0"
-                   data-transition-leave-end="translate-x-full"
-                   class="w-screen max-w-2xl">
-                <div class="h-full flex flex-col py-6 bg-white shadow-xl overflow-y-scroll">
-                  <div class="px-4 sm:px-6">
-                    <div class="flex items-start justify-between">
-                      <h2 class="text-lg font-medium text-gray-900" id="slide-over-title">
-                        Workflow Journal
-                      </h2>
-                      <div class="ml-3 h-7 flex items-center">
-                        <button type="button" onClick={e => this.onCloseClick()} class="bg-white rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                          <span class="sr-only">Close panel</span>
-
-                          <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="mt-6 relative flex-1 px-4 sm:px-6">
-
-                    <div class="absolute inset-0 px-4 sm:px-6">
-
-                      <div class="flow-root">
-                        <ul class="-mb-8">
-                          {items.map(renderRecord)}
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      </Host>
+      <div class="flow-root">
+        <ul class="-mb-8">
+          {items.map(renderRecord)}
+        </ul>
+      </div>
     );
-  }
+  };
 
-  renderJournalButton() {
+  renderActivityStateTab = () => {
     return (
-      <button onClick={() => this.onShowClick()} type="button"
-              class="workflow-settings-button fixed top-20 right-12 inline-flex items-center p-2 rounded-full border border-transparent bg-white shadow text-gray-400 hover:text-blue-500 focus:text-blue-500 hover:ring-2 hover:ring-offset-2 hover:ring-blue-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor" fill="none" class="h-8 w-8">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-        </svg>
-      </button>
+      <div>
+        <pre>Code formatted activity state goes here...</pre>
+      </div>
     );
-  }
+  };
 }
