@@ -2,6 +2,7 @@ using Elsa.Activities.Telnyx.Extensions;
 using Elsa.Activities.UserTask.Extensions;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Sqlite;
+using Elsa.Persistence.YesSql;
 using Elsa.Server.Hangfire.Extensions;
 using Hangfire;
 using Microsoft.AspNetCore.Builder;
@@ -32,6 +33,7 @@ namespace Elsa.Samples.Server.Host
 
             services.AddControllers();
 
+            // Hangfire is required when using Hangfire Dispatchers.
             services
                 .AddHangfire(configuration => configuration
                     .UseSimpleAssemblyNameTypeSerializer()
@@ -47,8 +49,12 @@ namespace Elsa.Samples.Server.Host
 
             services
                 .AddElsa(elsa => elsa
-                    .UseEntityFrameworkPersistence(ef => ef.UseSqlite())
+                    //.UseEntityFrameworkPersistence(ef => ef.UseSqlite())
+                    .UseYesSqlPersistence()
+                    
+                    // Using Hangfire as the dispatcher for workflow execution in the background.
                     .UseHangfireDispatchers()
+                    
                     .AddConsoleActivities()
                     .AddHttpActivities(elsaSection.GetSection("Http").Bind)
                     .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)
