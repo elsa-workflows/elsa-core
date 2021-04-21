@@ -20,7 +20,7 @@ namespace Elsa.Persistence.YesSql.Stores
         {
         }
 
-        protected override async Task<WorkflowDefinitionDocument?> FindDocumentAsync(ISession session, WorkflowDefinition entity, CancellationToken cancellationToken) => await Query<WorkflowDefinitionIndex>(session, x => x.DefinitionId == entity.DefinitionId).FirstOrDefaultAsync();
+        protected override async Task<WorkflowDefinitionDocument?> FindDocumentAsync(ISession session, WorkflowDefinition entity, CancellationToken cancellationToken) => await Query<WorkflowDefinitionIndex>(session, x => x.DefinitionVersionId == entity.VersionId).FirstOrDefaultAsync();
 
         protected override IQuery<WorkflowDefinitionDocument> MapSpecification(ISession session, ISpecification<WorkflowDefinition> specification)
         {
