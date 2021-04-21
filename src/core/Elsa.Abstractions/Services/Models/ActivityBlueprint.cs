@@ -34,8 +34,8 @@
         public string Id { get; set; } = default!;
         public ICompositeActivityBlueprint? Parent { get; set; }
         public string? Name { get; set; }
-        public string? DisplayName { get; }
-        public string? Description { get; }
+        public string? DisplayName { get; set; }
+        public string? Description { get; set; }
         public string Type { get; set; } = default!;
         public bool PersistWorkflow { get; set; }
         public bool LoadWorkflowContext { get; set; }
