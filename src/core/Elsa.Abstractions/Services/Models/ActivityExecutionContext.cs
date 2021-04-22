@@ -159,6 +159,8 @@ namespace Elsa.Services.Models
         public object? GetWorkflowContext() => WorkflowExecutionContext.GetWorkflowContext();
         public T GetWorkflowContext<T>() => WorkflowExecutionContext.GetWorkflowContext<T>();
 
+        public JObject GetActivityData() => GetActivityData(ActivityId);
+        
         public JObject GetActivityData(string activityId)
         {
             var activityData = WorkflowInstance.ActivityData;

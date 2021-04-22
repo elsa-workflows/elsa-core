@@ -1,4 +1,5 @@
 import {Component, EventEmitter, h, Host, Method, Prop, State, Watch, Event} from '@stencil/core';
+import * as collection from 'lodash/collection';
 import moment from 'moment';
 import {enter, leave, toggle} from 'el-transition'
 import {registerClickOutside} from "stencil-click-outside";
@@ -49,9 +50,9 @@ export class ElsaWorkflowInstanceJournal {
 
   @Method()
   async show() {
-    if(this.isVisible)
+    if (this.isVisible)
       return;
-    
+
     this.isVisible = true;
 
     enter(this.el);
@@ -59,9 +60,9 @@ export class ElsaWorkflowInstanceJournal {
 
   @Method()
   async hide() {
-    if(!this.isVisible)
+    if (!this.isVisible)
       return;
-    
+
     leave(this.el).then(() => this.isVisible = false);
   }
 
@@ -114,17 +115,17 @@ export class ElsaWorkflowInstanceJournal {
     this.selectedRecordId = record.id;
     this.recordSelected.emit(record);
   }
-  
+
   onTabClick(e: Event, tab: Tab) {
     e.preventDefault();
-    
+
     this.selectedTabId = tab.id;
   }
 
   render() {
     return (
       <Host>
-        
+        {this.renderJournalButton()}
         {this.renderPanel()}
       </Host>
     );
@@ -133,18 +134,18 @@ export class ElsaWorkflowInstanceJournal {
   renderJournalButton() {
     return (
       <button onClick={() => this.onShowClick()} type="button"
-                    class="workflow-settings-button fixed top-20 right-12 inline-flex items-center p-2 rounded-full border border-transparent bg-white shadow text-gray-400 hover:text-blue-500 focus:text-blue-500 hover:ring-2 hover:ring-offset-2 hover:ring-blue-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor" fill="none" class="h-8 w-8">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-      </svg>
-    </button>
+              class="workflow-settings-button fixed top-20 right-12 inline-flex items-center p-2 rounded-full border border-transparent bg-white shadow text-gray-400 hover:text-blue-500 focus:text-blue-500 hover:ring-2 hover:ring-offset-2 hover:ring-blue-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor" fill="none" class="h-8 w-8">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+      </button>
     );
   }
 
   renderPanel() {
-    
+
     const panelHiddenClass = this.isVisible ? '' : 'hidden';
     const tabs = this.tabs;
     const selectedTabId = this.selectedTabId;
@@ -226,6 +227,24 @@ export class ElsaWorkflowInstanceJournal {
       const eventName = record.eventName;
       const eventColor = this.getEventColor(eventName);
       const recordClass = record.id === selectedRecordId ? 'border-blue-600' : 'hover:bg-gray-100 border-transparent';
+      const recordData = record.data || {};
+      const filteredRecordData = {};
+
+      for (const key in recordData) {
+
+        if (!recordData.hasOwnProperty(key))
+          continue;
+
+        if (key.toLowerCase() == 'state')
+          continue;
+
+        const value = recordData[key];
+
+        if (!value)
+          continue;
+
+        filteredRecordData[key] = value;
+      }
 
       const deltaTimeText = !!deltaTime ? deltaTime.asHours() > 1
         ? `${deltaTime.asHours()} h`
@@ -272,16 +291,18 @@ export class ElsaWorkflowInstanceJournal {
               </div>
               <div class="ml-12 mt-2">
                 <dl class="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
-                  <div class="sm:col-span-2">
-                    <dt class="text-sm font-medium text-gray-500">
-                      Activity ID
-                    </dt>
-                    <dd class="mt-1 text-sm text-gray-900">
-                      {record.activityId}
-                    </dd>
+                  <div class="sm:col-span-1">
+                    <dt class="text-sm font-medium text-gray-500">Activity ID</dt>
+                    <dd class="mt-1 text-sm text-gray-900 mb-2">{record.activityId}</dd>
                   </div>
+                  {collection.map(filteredRecordData, (v, k) => (
+                    <div class="sm:col-span-1">
+                      <dt class="text-sm font-medium text-gray-500">{k}</dt>
+                      <dd class="mt-1 text-sm text-gray-900 mb-2">{v}</dd>
+                    </div>
+                  ))}
                   {record.message ? (
-                    <div class="sm:col-span-2">
+                    <div class="sm:col-span-1">
                       <dt class="text-sm font-medium text-gray-500">
                         Message
                       </dt>
