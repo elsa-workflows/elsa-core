@@ -185,6 +185,7 @@ export class ElsaWorkflowInstanceViewerScreen {
                                         serverUrl={this.serverUrl}
                                         activityDescriptors={descriptors}
                                         workflowBlueprint={this.workflowBlueprint}
+                                        workflowModel={this.workflowModel}
                                         onRecordSelected={e => this.onRecordSelected(e)}/>
       </Host>
     );

@@ -5,7 +5,7 @@ import {enter, leave, toggle} from 'el-transition'
 import {registerClickOutside} from "stencil-click-outside";
 import {
   ActivityBlueprint,
-  ActivityDescriptor, PagedList, WorkflowBlueprint, WorkflowExecutionLogRecord,
+  ActivityDescriptor, PagedList, WorkflowBlueprint, WorkflowExecutionLogRecord, WorkflowModel,
 } from "../../../../models";
 import {activityIconProvider} from "../../../../services/activity-icon-provider";
 import {createElsaClient} from "../../../../services/elsa-client";
@@ -38,10 +38,12 @@ export class ElsaWorkflowInstanceJournal {
   @Prop() serverUrl: string;
   @Prop() activityDescriptors: Array<ActivityDescriptor> = [];
   @Prop() workflowBlueprint: WorkflowBlueprint;
+  @Prop() workflowModel: WorkflowModel;
   @Event() recordSelected: EventEmitter<WorkflowExecutionLogRecord>;
   @State() isVisible: boolean = true;
   @State() records: PagedList<WorkflowExecutionLogRecord> = {items: [], totalCount: 0};
   @State() selectedRecordId?: string;
+  @State() selectedActivityId?: string;
   @State() selectedTabId: string = 'journal';
 
   el: HTMLElement;
@@ -70,6 +72,7 @@ export class ElsaWorkflowInstanceJournal {
   async selectActivityRecord(activityId?: string) {
     const record = !!activityId ? this.records.items.find(x => x.activityId == activityId) : null;
     this.selectedRecordId = !!record ? record.id : null;
+    this.selectedActivityId = activityId;
     await this.show();
   }
 
@@ -113,6 +116,7 @@ export class ElsaWorkflowInstanceJournal {
 
   onRecordClick(record: WorkflowExecutionLogRecord) {
     this.selectedRecordId = record.id;
+    this.selectedActivityId = record.activityId;
     this.recordSelected.emit(record);
   }
 
@@ -329,9 +333,15 @@ export class ElsaWorkflowInstanceJournal {
   };
 
   renderActivityStateTab = () => {
+    
+    const activityModel = !!this.workflowModel && this.selectedActivityId ? this.workflowModel.activities.find(x => x.activityId === this.selectedActivityId) : null;
+    
+    if(!activityModel)
+      return <p>No activity selected</p>;
+    
     return (
       <div>
-        <pre>Code formatted activity state goes here...</pre>
+        <pre>{JSON.stringify(activityModel, null, 2)}</pre>
       </div>
     );
   };

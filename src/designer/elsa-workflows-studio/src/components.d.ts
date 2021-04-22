@@ -182,6 +182,7 @@ export namespace Components {
         "show": () => Promise<void>;
         "workflowBlueprint": WorkflowBlueprint;
         "workflowInstanceId": string;
+        "workflowModel": WorkflowModel;
     }
     interface ElsaWorkflowInstanceViewerScreen {
         "getServerUrl": () => Promise<string>;
@@ -632,6 +633,7 @@ declare namespace LocalJSX {
         "serverUrl"?: string;
         "workflowBlueprint"?: WorkflowBlueprint;
         "workflowInstanceId"?: string;
+        "workflowModel"?: WorkflowModel;
     }
     interface ElsaWorkflowInstanceViewerScreen {
         "serverUrl"?: string;
