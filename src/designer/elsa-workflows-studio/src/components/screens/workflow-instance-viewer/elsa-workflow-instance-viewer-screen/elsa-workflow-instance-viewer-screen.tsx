@@ -35,6 +35,7 @@ export class ElsaWorkflowInstanceViewerScreen {
   @State() selectedActivityId?: string;
   el: HTMLElement;
   designer: HTMLElsaDesignerTreeElement;
+  journal: HTMLElsaWorkflowInstanceJournalElement;
 
   @Method()
   async getServerUrl(): Promise<string> {
@@ -162,12 +163,25 @@ export class ElsaWorkflowInstanceViewerScreen {
     this.selectedActivityId = e.detail.activityId;
   }
 
+  onActivitySelected(e: CustomEvent<ActivityModel>) {
+    this.selectedActivityId = e.detail.activityId;
+    this.journal.selectActivityRecord(this.selectedActivityId);
+  }
+
+  onActivityDeselected(e: CustomEvent<ActivityModel>) {
+    if(this.selectedActivityId == e.detail.activityId)
+      this.selectedActivityId = null;
+
+    this.journal.selectActivityRecord(this.selectedActivityId);
+  }
+
   render() {
     const descriptors: Array<ActivityDescriptor> = state.activityDescriptors;
     return (
       <Host class="flex flex-col w-full relative" ref={el => this.el = el}>
         {this.renderCanvas()}
-        <elsa-workflow-instance-journal workflowInstanceId={this.workflowInstanceId}
+        <elsa-workflow-instance-journal ref={el => this.journal = el} 
+                                        workflowInstanceId={this.workflowInstanceId}
                                         serverUrl={this.serverUrl}
                                         activityDescriptors={descriptors}
                                         workflowBlueprint={this.workflowBlueprint}
@@ -179,7 +193,12 @@ export class ElsaWorkflowInstanceViewerScreen {
   renderCanvas() {
     return (
       <div class="flex-1 flex">
-        <elsa-designer-tree model={this.workflowModel} class="flex-1" ref={el => this.designer = el} selectedActivityId={this.selectedActivityId}/>
+        <elsa-designer-tree model={this.workflowModel}
+                            class="flex-1" ref={el => this.designer = el}
+                            selectedActivityId={this.selectedActivityId}
+                            onActivitySelected={e => this.onActivitySelected(e)}
+                            onActivityDeselected={e => this.onActivityDeselected(e)}
+        />
       </div>
     );
   }

@@ -49,6 +49,9 @@ export class ElsaWorkflowInstanceJournal {
 
   @Method()
   async show() {
+    if(this.isVisible)
+      return;
+    
     this.isVisible = true;
 
     enter(this.el);
@@ -56,7 +59,17 @@ export class ElsaWorkflowInstanceJournal {
 
   @Method()
   async hide() {
+    if(!this.isVisible)
+      return;
+    
     leave(this.el).then(() => this.isVisible = false);
+  }
+
+  @Method()
+  async selectActivityRecord(activityId?: string) {
+    const record = !!activityId ? this.records.items.find(x => x.activityId == activityId) : null;
+    this.selectedRecordId = !!record ? record.id : null;
+    await this.show();
   }
 
   @Watch('workflowInstanceId')
@@ -68,7 +81,7 @@ export class ElsaWorkflowInstanceJournal {
       try {
         this.records = await client.workflowExecutionLogApi.get(workflowInstanceId);
       } catch {
-        console.warn(`The specified workflow definition does not exist. Creating a new one.`);
+        console.warn('The specified workflow instance does not exist.');
       }
     }
   }

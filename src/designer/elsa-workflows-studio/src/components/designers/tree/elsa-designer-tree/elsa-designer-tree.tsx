@@ -16,9 +16,11 @@ import state from "../../../../utils/store";
 })
 export class ElsaWorkflowDesigner {
 
-  @Prop() model: WorkflowModel = { activities: [], connections: [], persistenceBehavior: WorkflowPersistenceBehavior.WorkflowBurst };
+  @Prop() model: WorkflowModel = {activities: [], connections: [], persistenceBehavior: WorkflowPersistenceBehavior.WorkflowBurst};
   @Prop() selectedActivityId?: string;
   @Event({eventName: 'workflow-changed', bubbles: true, composed: true, cancelable: true}) workflowChanged: EventEmitter<WorkflowModel>
+  @Event() activitySelected: EventEmitter<ActivityModel>;
+  @Event() activityDeselected: EventEmitter<ActivityModel>;
   @State() workflowModel: WorkflowModel
   el: HTMLElement
   canvasElement: HTMLElement;
@@ -32,7 +34,7 @@ export class ElsaWorkflowDesigner {
   }
 
   @Method()
-  async destroyJsPlumb(){
+  async destroyJsPlumb() {
     destroy();
   }
 
@@ -60,8 +62,8 @@ export class ElsaWorkflowDesigner {
   componentWillLoad() {
     this.workflowModel = this.model;
   }
-  
-  onActivityPicked = async (args) =>{
+
+  onActivityPicked = async (args) => {
     const activityDescriptor = (args as ActivityDescriptor);
     const connectFromRoot = !this.parentActivityOutcome || this.parentActivityOutcome == "";
     const sourceId = connectFromRoot ? null : this.parentActivityId;
@@ -70,7 +72,7 @@ export class ElsaWorkflowDesigner {
 
     this.showActivityEditor(activityModel, false);
   };
-  
+
   onUpdateActivity = args => {
     const activityModel = (args as ActivityModel);
     this.updateActivity(activityModel);
@@ -101,7 +103,7 @@ export class ElsaWorkflowDesigner {
       eventBus.emit(EventTypes.ActivityDesignDisplaying, this, displayContext);
       displayContexts[model.activityId] = displayContext;
     }
-    
+
     this.activityDisplayContexts = displayContexts;
   }
 
@@ -232,7 +234,7 @@ export class ElsaWorkflowDesigner {
     this.workflowChanged.emit(model);
   }
 
-  removeInvalidConnections(invalidConnections: Array<ConnectionModel>){
+  removeInvalidConnections(invalidConnections: Array<ConnectionModel>) {
     if (invalidConnections.length > 0) {
 
       const isValid = (connection: ConnectionModel): boolean => invalidConnections.findIndex(x => x.targetId == connection.targetId && x.sourceId == connection.sourceId && x.outcome == connection.outcome) < 0;
@@ -391,7 +393,7 @@ export class ElsaWorkflowDesigner {
 
       workflowModel.connections = [...connections, newConnection];
     } else {
-      
+
       // Create new connection.
       const newConnection: ConnectionModel = {
         sourceId: sourceActivityId,
@@ -403,6 +405,14 @@ export class ElsaWorkflowDesigner {
     }
 
     this.updateWorkflowModel(workflowModel);
+  }
+
+  private onActivitySelected(e: CustomEvent<ActivityModel>) {
+    this.activitySelected.emit(e.detail);
+  }
+
+  private onActivityDeselected(e: CustomEvent<ActivityModel>) {
+    this.activityDeselected.emit(e.detail);
   }
 
   render() {
@@ -442,7 +452,7 @@ export class ElsaWorkflowDesigner {
 
     if (list.length === 0)
       return list;
-      
+
     const sourceActivityConnection: ConnectionDefinitionMapped = connections.find(x => x.targetActivityId === list[0].activityId);
 
     if (!sourceActivityConnection)
@@ -456,7 +466,7 @@ export class ElsaWorkflowDesigner {
 
     const sourceActivityConnections: Array<ConnectionDefinitionMapped> = connections.filter(x => x.sourceActivityId === sourceActivityId);
     const sourceActivityDisplayContext = this.activityDisplayContexts[sourceActivity.activityId];
-    
+
     if (sourceActivityDisplayContext.outcomes) {
       sourceActivity.outcomes = sourceActivityDisplayContext.outcomes;
     }
@@ -491,7 +501,7 @@ export class ElsaWorkflowDesigner {
           const children = getChildActivities(this.workflowModel, activityId);
           const displayContext = this.activityDisplayContexts[activityId];
 
-          if(renderedActivities.has(displayContext.activityModel.activityId))
+          if (renderedActivities.has(displayContext.activityModel.activityId))
             return;
 
           renderedActivities.add(displayContext.activityModel.activityId);
@@ -538,10 +548,12 @@ export class ElsaWorkflowDesigner {
 
   renderActivity(displayContext: ActivityDesignDisplayContext) {
     const selected = this.selectedActivityId == displayContext.activityModel.activityId;
-    return <elsa-designer-tree-activity displayContext={displayContext} 
+    return <elsa-designer-tree-activity displayContext={displayContext}
                                         draggable={true}
-                                        selected={selected}
+                                        isSelected={selected}
                                         onDragStart={e => this.onDragStartActivity(e, displayContext)}
+                                        onSelected={e => this.onActivitySelected(e)}
+                                        onDeselected={e => this.onActivityDeselected(e)}
     />;
   }
 }

@@ -41,7 +41,7 @@ export namespace Components {
     interface ElsaDesignerTreeActivity {
         "displayContext": ActivityDesignDisplayContext;
         "icon": string;
-        "selected": boolean;
+        "isSelected": boolean;
     }
     interface ElsaDropdownButton {
         "icon"?: any;
@@ -177,6 +177,7 @@ export namespace Components {
     interface ElsaWorkflowInstanceJournal {
         "activityDescriptors": Array<ActivityDescriptor>;
         "hide": () => Promise<void>;
+        "selectActivityRecord": (activityId?: string) => Promise<void>;
         "serverUrl": string;
         "show": () => Promise<void>;
         "workflowBlueprint": WorkflowBlueprint;
@@ -483,15 +484,19 @@ declare namespace LocalJSX {
     }
     interface ElsaDesignerTree {
         "model"?: WorkflowModel;
+        "onActivityDeselected"?: (event: CustomEvent<ActivityModel>) => void;
+        "onActivitySelected"?: (event: CustomEvent<ActivityModel>) => void;
         "onWorkflow-changed"?: (event: CustomEvent<WorkflowModel>) => void;
         "selectedActivityId"?: string;
     }
     interface ElsaDesignerTreeActivity {
         "displayContext"?: ActivityDesignDisplayContext;
         "icon"?: string;
+        "isSelected"?: boolean;
+        "onDeselected"?: (event: CustomEvent<ActivityModel>) => void;
         "onEdit-activity"?: (event: CustomEvent<ActivityModel>) => void;
         "onRemove-activity"?: (event: CustomEvent<ActivityModel>) => void;
-        "selected"?: boolean;
+        "onSelected"?: (event: CustomEvent<ActivityModel>) => void;
     }
     interface ElsaDropdownButton {
         "icon"?: any;
