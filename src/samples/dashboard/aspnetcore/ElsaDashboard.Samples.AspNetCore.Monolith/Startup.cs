@@ -1,6 +1,7 @@
 using Elsa;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Sqlite;
+using ElsaDashboard.Samples.AspNetCore.Monolith.Workflows;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -34,10 +35,15 @@ namespace ElsaDashboard.Samples.AspNetCore.Monolith
                         .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)
                         .AddQuartzTemporalActivities()
                         .AddJavaScriptActivities()
+                        .AddWorkflow<HeartbeatWorkflow>()
                 );
 
             services
                 .AddElsaApiEndpoints();
+            
+            // Allow arbitrary client browser apps to access the API for demo purposes only.
+            // In a production environment, make sure to allow only origins you trust.
+            services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("Content-Disposition")));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -56,6 +62,7 @@ namespace ElsaDashboard.Samples.AspNetCore.Monolith
 
             app.UseStaticFiles();
             app.UseHttpActivities();
+            app.UseCors();
             app.UseRouting();
             app.UseAuthorization();
             app.UseEndpoints(endpoints =>

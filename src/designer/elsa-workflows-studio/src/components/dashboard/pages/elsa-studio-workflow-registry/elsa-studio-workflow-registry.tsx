@@ -1,10 +1,14 @@
-import {Component, h} from '@stencil/core';
+import {Component, h, Prop} from '@stencil/core';
+import {RouterHistory} from "@stencil/router";
 
 @Component({
   tag: 'elsa-studio-workflow-registry',
   shadow: false,
 })
 export class ElsaStudioWorkflowRegistry {
+  @Prop() history: RouterHistory;
+  @Prop() serverUrl: string;
+  
   render() {
     return (
       <div>
@@ -21,47 +25,7 @@ export class ElsaStudioWorkflowRegistry {
           </div>
         </div>
 
-        <div class="align-middle inline-block min-w-full border-b border-gray-200">
-          <table class="min-w-full">
-            <thead>
-            <tr class="border-t border-gray-200">
-              <th class="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider"><span class="lg:pl-2">Name</span></th>
-              <th class="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
-                Instances
-              </th>
-              <th class="hidden md:table-cell px-6 py-3 border-b border-gray-200 bg-gray-50 text-right text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
-                Latest Version
-              </th>
-              <th class="hidden md:table-cell px-6 py-3 border-b border-gray-200 bg-gray-50 text-right text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
-                Published Version
-              </th>
-              <th class="pr-6 py-3 border-b border-gray-200 bg-gray-50 text-right text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider"/>
-            </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-100">
-            <tr>
-              <td class="px-6 py-3 whitespace-no-wrap text-sm leading-5 font-medium text-gray-900">
-                <div class="flex items-center space-x-3 lg:pl-2"><a href="/workflow-registry/7eed1333c2674370a1e9b300aa94fda2/viewer" class="truncate hover:text-gray-600"><span>Customer Call Flow</span></a></div>
-              </td>
-
-              <td class="px-6 py-3 text-sm leading-5 text-gray-500 font-medium">
-                <div class="flex items-center space-x-2">
-                  <div class="flex items-center space-x-2">
-                    <div class="flex flex-shrink-0 -space-x-1"><a class="max-w-none h-9 w-9 rounded-full text-white shadow-solid p-2 text-xs bg-blue-500 hover:bg-blue-400" href="#">4</a>
-                      <a class="max-w-none h-9 w-9 rounded-full text-white shadow-solid p-2 text-xs bg-green-500 hover:bg-green-400" href="#">999</a>
-                      <a class="max-w-none h-9 w-9 rounded-full text-white shadow-solid p-2 text-xs bg-red-500 hover:bg-red-400" href="#">75</a></div>
-                  </div>
-                </div>
-              </td>
-              <td class="hidden md:table-cell px-6 py-3 whitespace-no-wrap text-sm leading-5 text-gray-500 text-right">47</td>
-              <td class="hidden md:table-cell px-6 py-3 whitespace-no-wrap text-sm leading-5 text-gray-500 text-right">47</td>
-              <td class="pr-6">
-                <elsa-context-menu/>
-              </td>
-            </tr>
-            </tbody>
-          </table>
-        </div>
+        <elsa-workflow-registry-list-screen history={this.history} serverUrl={this.serverUrl} />
       </div>
     );
   }

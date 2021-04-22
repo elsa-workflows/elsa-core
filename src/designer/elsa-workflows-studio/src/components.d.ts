@@ -150,6 +150,8 @@ export namespace Components {
         "serverUrl": string;
     }
     interface ElsaStudioWorkflowRegistry {
+        "history": RouterHistory;
+        "serverUrl": string;
     }
     interface ElsaSwitchCasesProperty {
         "propertyDescriptor": ActivityPropertyDescriptor;
@@ -196,6 +198,10 @@ export namespace Components {
     interface ElsaWorkflowPublishButton {
         "publishing": boolean;
         "workflowDefinition": WorkflowDefinition;
+    }
+    interface ElsaWorkflowRegistryListScreen {
+        "history"?: RouterHistory;
+        "serverUrl": string;
     }
     interface ElsaWorkflowSettingsModal {
         "workflowDefinition": WorkflowDefinition;
@@ -418,6 +424,12 @@ declare global {
         prototype: HTMLElsaWorkflowPublishButtonElement;
         new (): HTMLElsaWorkflowPublishButtonElement;
     };
+    interface HTMLElsaWorkflowRegistryListScreenElement extends Components.ElsaWorkflowRegistryListScreen, HTMLStencilElement {
+    }
+    var HTMLElsaWorkflowRegistryListScreenElement: {
+        prototype: HTMLElsaWorkflowRegistryListScreenElement;
+        new (): HTMLElsaWorkflowRegistryListScreenElement;
+    };
     interface HTMLElsaWorkflowSettingsModalElement extends Components.ElsaWorkflowSettingsModal, HTMLStencilElement {
     }
     var HTMLElsaWorkflowSettingsModalElement: {
@@ -461,6 +473,7 @@ declare global {
         "elsa-workflow-instance-viewer-screen": HTMLElsaWorkflowInstanceViewerScreenElement;
         "elsa-workflow-instances-list-screen": HTMLElsaWorkflowInstancesListScreenElement;
         "elsa-workflow-publish-button": HTMLElsaWorkflowPublishButtonElement;
+        "elsa-workflow-registry-list-screen": HTMLElsaWorkflowRegistryListScreenElement;
         "elsa-workflow-settings-modal": HTMLElsaWorkflowSettingsModalElement;
     }
 }
@@ -608,6 +621,8 @@ declare namespace LocalJSX {
         "serverUrl"?: string;
     }
     interface ElsaStudioWorkflowRegistry {
+        "history"?: RouterHistory;
+        "serverUrl"?: string;
     }
     interface ElsaSwitchCasesProperty {
         "propertyDescriptor"?: ActivityPropertyDescriptor;
@@ -651,6 +666,10 @@ declare namespace LocalJSX {
         "publishing"?: boolean;
         "workflowDefinition"?: WorkflowDefinition;
     }
+    interface ElsaWorkflowRegistryListScreen {
+        "history"?: RouterHistory;
+        "serverUrl"?: string;
+    }
     interface ElsaWorkflowSettingsModal {
         "workflowDefinition"?: WorkflowDefinition;
     }
@@ -691,6 +710,7 @@ declare namespace LocalJSX {
         "elsa-workflow-instance-viewer-screen": ElsaWorkflowInstanceViewerScreen;
         "elsa-workflow-instances-list-screen": ElsaWorkflowInstancesListScreen;
         "elsa-workflow-publish-button": ElsaWorkflowPublishButton;
+        "elsa-workflow-registry-list-screen": ElsaWorkflowRegistryListScreen;
         "elsa-workflow-settings-modal": ElsaWorkflowSettingsModal;
     }
 }
@@ -734,6 +754,7 @@ declare module "@stencil/core" {
             "elsa-workflow-instance-viewer-screen": LocalJSX.ElsaWorkflowInstanceViewerScreen & JSXBase.HTMLAttributes<HTMLElsaWorkflowInstanceViewerScreenElement>;
             "elsa-workflow-instances-list-screen": LocalJSX.ElsaWorkflowInstancesListScreen & JSXBase.HTMLAttributes<HTMLElsaWorkflowInstancesListScreenElement>;
             "elsa-workflow-publish-button": LocalJSX.ElsaWorkflowPublishButton & JSXBase.HTMLAttributes<HTMLElsaWorkflowPublishButtonElement>;
+            "elsa-workflow-registry-list-screen": LocalJSX.ElsaWorkflowRegistryListScreen & JSXBase.HTMLAttributes<HTMLElsaWorkflowRegistryListScreenElement>;
             "elsa-workflow-settings-modal": LocalJSX.ElsaWorkflowSettingsModal & JSXBase.HTMLAttributes<HTMLElsaWorkflowSettingsModalElement>;
         }
     }
