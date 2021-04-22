@@ -1,7 +1,7 @@
 ﻿@using Microsoft.JSInterop
 @inject IJSRuntime JS;
 
-<elsa-workflow-definition-editor-screen server-url="@ServerUrl" workflow-definition-id="@WorkflowDefinitionId" monaco-lib-path="_content/Elsa.Designer.Bindings.Blazor"></elsa-workflow-definition-editor-screen>
+<elsa-workflow-definition-editor-screen server-url="@ServerUrl" workflow-definition-id="@WorkflowDefinitionId" monaco-lib-path="_content/Elsa.Designer.Components.Web"></elsa-workflow-definition-editor-screen>
 
 @code{
 
@@ -16,7 +16,7 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (_designerModule == null!)
-            _designerModule = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/Elsa.Designer.Bindings.Blazor/elsa-workflows.js");
+            _designerModule = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/Elsa.Designer.Components.Web/elsa-workflows.js");
     }
 
 }
