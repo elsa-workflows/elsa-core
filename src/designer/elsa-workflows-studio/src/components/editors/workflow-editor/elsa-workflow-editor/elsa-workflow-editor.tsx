@@ -62,7 +62,7 @@ export class ElsaWorkflowDefinitionEditor {
     this.networkError = null;
 
     // A small hack to make sure JS Plumb is cleaned up before HTML elements get removed.
-    await this.designer.destroyJsPlumb();
+    // await this.designer.destroyJsPlumb();
 
     try {
       const workflowDefinition = await client.workflowDefinitionsApi.import(this.workflowDefinition.definitionId, file);

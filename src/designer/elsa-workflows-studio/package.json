@@ -18,7 +18,7 @@
     "push:preview": "npm publish --access-public --tag preview",
     "build:prod": "stencil build --dev",
     "build:dev": "stencil build --dev --tailwind:dev",
-    "start:dev": "stencil build --dev --tailwind:dev --watch --serve",
+    "start:dev": "node --max_old_space_size=8192 --optimize_for_size --stack_size=8192 ./node_modules/.bin/stencil build --dev --tailwind:dev --watch --serve",
     "start": "stencil build --watch --serve",
     "test": "stencil test --spec --e2e",
     "test.watch": "stencil test --spec --e2e --watchAll",
@@ -39,6 +39,8 @@
     "autoprefixer": "10.2.5",
     "axios": "^0.21.1",
     "cssnano": "^4.1.10",
+    "d3": "^6.6.2",
+    "dagre-d3": "^0.6.4",
     "el-transition": "^0.0.7",
     "eslint": "7.23.0",
     "js-event-bus": "^1.0.3",
@@ -55,6 +57,8 @@
     "typescript-tslint-plugin": "1.0.1"
   },
   "devDependencies": {
+    "@types/d3": "^6.3.0",
+    "@types/dagre-d3": "^0.6.2",
     "copyfiles": "^2.4.1",
     "cross-env": "^7.0.3"
   },

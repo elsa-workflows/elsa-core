@@ -22,7 +22,6 @@ export namespace Components {
         "propertyModel": ActivityDefinitionProperty;
     }
     interface ElsaDesignerTree {
-        "destroyJsPlumb": () => Promise<void>;
         "model": WorkflowModel;
     }
     interface ElsaDesignerTreeActivity {

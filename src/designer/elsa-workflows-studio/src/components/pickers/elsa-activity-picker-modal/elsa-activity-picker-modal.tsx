@@ -145,9 +145,8 @@ export class ElsaActivityPickerModal {
                           {displayContexts.map(displayContext => (
                             <a href="#" onClick={e => this.onActivityClick(e, displayContext.activityDescriptor)} class="relative rounded group p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-blue-500">
                               <div class="flex space-x-10">
-                                <div class="flex-0">
-                                  <div>
-                                    {displayContext.activityIcon}
+                                <div class="flex flex-0 items-center">
+                                  <div innerHTML={displayContext.activityIcon}>
                                   </div>
                                 </div>
                                 <div class="flex-1 mt-2">

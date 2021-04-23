@@ -2,7 +2,7 @@
 
 export const SwitchIcon = props =>
   (
-    <span class={`rounded-lg inline-flex p-3 bg-green-50 text-green-700 ring-4 ring-white`}>
+    `<span class="${`rounded-lg inline-flex p-3 bg-green-50 text-green-700 ring-4 ring-white`}">
       <svg class="h-6 w-6" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
         <path stroke="none" d="M0 0h24v24H0z"/>
         <polyline points="15 4 19 4 19 8"/>
@@ -11,5 +11,5 @@ export const SwitchIcon = props =>
         <polyline points="15 19 19 19 19 15"/>
         <line x1="5" y1="5" x2="19" y2="19"/>
       </svg>
-    </span>
+    </span>`
   );
