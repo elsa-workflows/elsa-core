@@ -23,6 +23,8 @@ namespace Elsa.Samples.Persistence.EntityFramework
                         
                         //ef.UsePostgreSql("Server=127.0.0.1;Port=5432;Database=elsa;User Id=postgres;Password=password;");
 
+                        //ef.UseMySql("Server=localhost;Port=3306;Database=elsa;User=root;Password=password;");
+
                         ef.UseSqlServer("Server=localhost;Database=Elsa;Integrated Security=true");
                     })
                     .AddConsoleActivities()
