@@ -225,6 +225,7 @@ export interface SaveWorkflowDefinitionRequest {
   name?: string;
   displayName?: string;
   description?: string;
+  tag?: string;
   variables?: Variables;
   contextOptions?: WorkflowContextOptions;
   isSingleton?: boolean;

@@ -184,6 +184,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
             displayName: workflowDefinition.displayName,
             isSingleton: workflowDefinition.isSingleton,
             name: workflowDefinition.name,
+            tag: workflowDefinition.tag,
             persistenceBehavior: workflowDefinition.persistenceBehavior,
             publish: publish || false,
             variables: workflowDefinition.variables,
