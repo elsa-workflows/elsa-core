@@ -17,9 +17,6 @@ namespace Elsa.Scripting.Liquid.Filters
 
         public async ValueTask<FluidValue> ProcessAsync(FluidValue input, FilterArguments arguments, TemplateContext context)
         {
-            if (input.Type != FluidValues.String)
-                throw new NotSupportedException("Unrecognized FluidValue");
-
             var queryType = arguments.Values.FirstOrDefault()?.ToStringValue() ?? "name";
             var queryValue = input.ToStringValue().ToLowerInvariant();
 
