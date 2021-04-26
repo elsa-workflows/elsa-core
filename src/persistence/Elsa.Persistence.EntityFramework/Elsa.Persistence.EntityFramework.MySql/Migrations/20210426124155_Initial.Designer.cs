@@ -9,8 +9,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Elsa.Persistence.EntityFramework.MySql.Migrations
 {
     [DbContext(typeof(ElsaContext))]
-    [Migration("20210423213120_InitialContext")]
-    partial class InitialContext
+    [Migration("20210426124155_Initial")]
+    partial class Initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -110,6 +110,9 @@ namespace Elsa.Persistence.EntityFramework.MySql.Migrations
                     b.Property<int>("PersistenceBehavior")
                         .HasColumnType("int");
 
+                    b.Property<string>("Tag")
+                        .HasColumnType("varchar(255)");
+
                     b.Property<string>("TenantId")
                         .HasColumnType("varchar(255)");
 
@@ -126,6 +129,9 @@ namespace Elsa.Persistence.EntityFramework.MySql.Migrations
 
                     b.HasIndex("Name")
                         .HasDatabaseName("IX_WorkflowDefinition_Name");
+
+                    b.HasIndex("Tag")
+                        .HasDatabaseName("IX_WorkflowDefinition_Tag");
 
                     b.HasIndex("TenantId")
                         .HasDatabaseName("IX_WorkflowDefinition_TenantId");

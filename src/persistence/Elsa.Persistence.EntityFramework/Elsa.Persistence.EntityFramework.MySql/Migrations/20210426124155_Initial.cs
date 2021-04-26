@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Elsa.Persistence.EntityFramework.MySql.Migrations
 {
-    public partial class InitialContext : Migration
+    public partial class Initial : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -44,6 +44,7 @@ namespace Elsa.Persistence.EntityFramework.MySql.Migrations
                     DeleteCompletedInstances = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     IsPublished = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     IsLatest = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    Tag = table.Column<string>(type: "varchar(255)", nullable: true),
                     Data = table.Column<string>(type: "longtext", nullable: true)
                 },
                 constraints: table =>
@@ -145,6 +146,11 @@ namespace Elsa.Persistence.EntityFramework.MySql.Migrations
                 name: "IX_WorkflowDefinition_Name",
                 table: "WorkflowDefinitions",
                 column: "Name");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowDefinition_Tag",
+                table: "WorkflowDefinitions",
+                column: "Tag");
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowDefinition_TenantId",

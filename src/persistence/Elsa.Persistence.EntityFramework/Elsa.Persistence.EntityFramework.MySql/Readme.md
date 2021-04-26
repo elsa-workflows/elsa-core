@@ -25,25 +25,18 @@ These commands are used by the package developer.
 **Generate Migrations**
 
 ```
-dotnet ef migrations add Initial
-dotnet ef migrations add Update1
-dotnet ef migrations add Update2
+dotnet ef migrations add Initial -- "Server=localhost;Port=3306;Database=elsa;User=root;Password=password;"
+dotnet ef migrations add Update1 -- "Server=localhost;Port=3306;Database=elsa;User=root;Password=password;"
+dotnet ef migrations add Update2 -- "Server=localhost;Port=3306;Database=elsa;User=root;Password=password;"
 ```
 
-etc..
+etc...
 
-Optionally, specify a connection string:
+Optionally provide a server version explicitly if you don't have MySql running locally:
 
-```
-dotnet ef migrations add Initial -- "{connection string}"
-dotnet ef migrations add Update1 -- "{connection string}"
-dotnet ef migrations add Update2 -- "{connection string}"
-```
+`dotnet ef migrations add Initial -- "Server=localhost;Port=3306;Database=elsa;User=root;Password=password;" "8.0.22"`
 
 **Apply Migrations**
 
-
-This 
-
-`dotnet ef database update -- "{connection string}"`
+`dotnet ef database update -- "Server=localhost;Port=3306;Database=elsa;User=root;Password=password;"`
 

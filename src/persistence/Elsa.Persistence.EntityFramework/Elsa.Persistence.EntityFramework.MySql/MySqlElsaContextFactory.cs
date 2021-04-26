@@ -13,10 +13,11 @@ namespace Elsa.Persistence.EntityFramework.MySql
         {
             var builder = new DbContextOptionsBuilder<ElsaContext>();
             var connectionString = args.Any() ? args[0] : throw new InvalidOperationException("Please specify a connection string. E.g. dotnet ef database update -- \"Server=localhost;Port=3306;Database=elsa;User=root;Password=password\"");
+            var serverVersion = args.Length >= 2 ? args[1] : null;
             
             builder.UseMySql(
                 connectionString,
-                ServerVersion.AutoDetect(args[0]),
+                serverVersion != null ? ServerVersion.FromString(serverVersion) : ServerVersion.AutoDetect(connectionString),
                 db => db.MigrationsAssembly(typeof(MySqlElsaContextFactory).Assembly.GetName().Name));
             
             return new ElsaContext(builder.Options);
