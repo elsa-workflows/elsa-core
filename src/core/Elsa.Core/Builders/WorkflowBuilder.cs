@@ -5,6 +5,7 @@ using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.DependencyInjection;
+using Storage.Net.Blobs;
 
 namespace Elsa.Builders
 {
@@ -26,6 +27,7 @@ namespace Elsa.Builders
         public int Version { get; private set; }
         public string? TenantId { get; private set; }
         public bool IsSingleton { get; private set; }
+        public string? Tag { get; private set; }
 
         public Variables Variables { get; }
         public Variables CustomAttributes { get; }
@@ -76,6 +78,12 @@ namespace Elsa.Builders
         public IWorkflowBuilder WithVersion(int value)
         {
             Version = value;
+            return this;
+        }
+        
+        public IWorkflowBuilder WithTag(string value)
+        {
+            Tag = value;
             return this;
         }
 
@@ -155,6 +163,7 @@ namespace Elsa.Builders
                 Description,
                 true,
                 true,
+                Tag,
                 Variables,
                 CustomAttributes,
                 ContextOptions,

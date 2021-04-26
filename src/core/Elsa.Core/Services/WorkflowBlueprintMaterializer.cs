@@ -53,6 +53,7 @@ namespace Elsa.Services
                 workflowDefinition.Description,
                 workflowDefinition.IsLatest,
                 workflowDefinition.IsPublished,
+                workflowDefinition.Tag,
                 workflowDefinition.Variables,
                 workflowDefinition.CustomAttributes,
                 workflowDefinition.ContextOptions,
