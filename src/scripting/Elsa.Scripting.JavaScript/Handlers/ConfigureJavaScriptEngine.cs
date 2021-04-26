@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Scripting.JavaScript.Messages;
+using Elsa.Services;
+using Elsa.Services.Models;
 using Jint;
 using Jint.Runtime.Interop;
 using MediatR;
@@ -36,6 +38,8 @@ namespace Elsa.Scripting.JavaScript.Handlers
             engine.SetValue("getConfig", (Func<string, object?>) (name => _configuration.GetSection(name).Value));
             engine.SetValue("isNullOrWhiteSpace", (Func<string, bool>) (string.IsNullOrWhiteSpace));
             engine.SetValue("isNullOrEmpty", (Func<string, bool>) (string.IsNullOrEmpty));
+            engine.SetValue("getWorkflowDefinitionIdByName", (Func<string, string?>) (name => GetWorkflowDefinitionIdByName(activityContext, name)));
+            engine.SetValue("getWorkflowDefinitionIdByTag", (Func<string, string?>) (tag => GetWorkflowDefinitionIdByTag(activityContext, tag)));
 
             // Global variables.
             engine.SetValue("input", activityContext.Input);
@@ -65,6 +69,16 @@ namespace Elsa.Scripting.JavaScript.Handlers
             }
 
             return Task.CompletedTask;
+        }
+
+        private string? GetWorkflowDefinitionIdByTag(ActivityExecutionContext activityExecutionContext, string tag) => GetWorkflowDefinitionId(activityExecutionContext, x => string.Equals(x.Tag, tag, StringComparison.OrdinalIgnoreCase));
+        private string? GetWorkflowDefinitionIdByName(ActivityExecutionContext activityExecutionContext, string name) => GetWorkflowDefinitionId(activityExecutionContext, x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase));
+        
+        private string? GetWorkflowDefinitionId(ActivityExecutionContext activityExecutionContext, Func<IWorkflowBlueprint, bool> filter)
+        {
+            var workflowRegistry = activityExecutionContext.GetService<IWorkflowRegistry>();
+            var workflowBlueprint = workflowRegistry.FindAsync(filter).Result;
+            return workflowBlueprint?.Id;
         }
 
         private void RegisterType<T>(Engine engine) => engine.SetValue(typeof(T).Name, TypeReference.CreateTypeReference(engine, typeof(T)));
