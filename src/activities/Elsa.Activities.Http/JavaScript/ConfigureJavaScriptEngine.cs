@@ -7,7 +7,7 @@ using Elsa.Scripting.JavaScript.Messages;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 
-namespace Elsa.Activities.Http.Handlers
+namespace Elsa.Activities.Http.JavaScript
 {
     public class ConfigureJavaScriptEngine : INotificationHandler<EvaluatingJavaScriptExpression>
     {
