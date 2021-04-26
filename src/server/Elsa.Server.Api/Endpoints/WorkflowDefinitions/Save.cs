@@ -58,6 +58,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             workflowDefinition.DeleteCompletedInstances = request.DeleteCompletedInstances;
             workflowDefinition.ContextOptions = request.ContextOptions;
             workflowDefinition.DisplayName = request.DisplayName?.Trim();
+            workflowDefinition.Tag = request.Tag?.Trim();
 
             if (request.Publish)
                 workflowDefinition = await _workflowPublisher.PublishAsync(workflowDefinition, cancellationToken);
