@@ -35,7 +35,7 @@ dotnet_csproj:
 
 cache:
   - src\designer\elsa-workflows-studio\node_modules
-  - src\designer\bindings\blazor\Elsa.Designer.Bindings.Blazor\node_modules
+  - src\designer\bindings\aspnet\Elsa.Designer.Components.Web\node_modules
   - src\dashboards\blazor\ElsaDashboard.Application\node_modules
   - '%APPDATA%\npm-cache'
 
@@ -45,7 +45,7 @@ install:
 
       npm install --force
 
-      cd ..\bindings\blazor\Elsa.Designer.Bindings.Blazor
+      cd ..\bindings\aspnet\Elsa.Designer.Components.Web
 
       npm install --force
 
@@ -78,7 +78,7 @@ build_script:
 
       npm run build
       
-      cd ..\bindings\blazor\Elsa.Designer.Bindings.Blazor
+      cd ..\bindings\aspnet\Elsa.Designer.Components.Web
       
       npm run build
         
