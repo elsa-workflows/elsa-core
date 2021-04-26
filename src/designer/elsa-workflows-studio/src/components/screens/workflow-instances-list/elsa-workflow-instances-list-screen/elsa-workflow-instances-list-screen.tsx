@@ -48,7 +48,7 @@ export class ElsaWorkflowInstancesListScreen {
 
     async loadWorkflowBlueprints() {
         const elsaClient = this.createClient();
-        const versionOptions: VersionOptions = {isLatestOrPublished: true};
+        const versionOptions: VersionOptions = {allVersions: true};
         const workflowBlueprintPagedList = await elsaClient.workflowRegistryApi.list(null, null, versionOptions);
         this.workflowBlueprints = workflowBlueprintPagedList.items;
     }
