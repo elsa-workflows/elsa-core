@@ -41,6 +41,7 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
                     DeleteCompletedInstances = table.Column<bool>(type: "bit", nullable: false),
                     IsPublished = table.Column<bool>(type: "bit", nullable: false),
                     IsLatest = table.Column<bool>(type: "bit", nullable: false),
+                    Tag = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     Data = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
@@ -142,6 +143,11 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
                 name: "IX_WorkflowDefinition_Name",
                 table: "WorkflowDefinitions",
                 column: "Name");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowDefinition_Tag",
+                table: "WorkflowDefinitions",
+                column: "Tag");
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowDefinition_TenantId",

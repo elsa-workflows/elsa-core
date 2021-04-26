@@ -13,24 +13,30 @@ namespace Elsa.Client.Models
         [DataMember(Order = 6)] public bool IsLatest { get; set; }
 
         /// <summary>
-        /// An initial set of variables available to workflow instances.
+        /// Allows for applications to store an application-specific, queryable value to associate with the workflow.
         /// </summary>
         [DataMember(Order = 7)]
+        public string? Tag { get; set; }
+
+        /// <summary>
+        /// An initial set of variables available to workflow instances.
+        /// </summary>
+        [DataMember(Order = 8)]
         public Variables Variables { get; set; } = new();
 
         /// <summary>
         /// An optional context type around which this workflow revolves. For example, a document, a leave request or a job application.
         /// </summary>
-        [DataMember(Order = 8)]
+        [DataMember(Order = 9)]
         public WorkflowContextOptions? ContextOptions { get; set; }
 
-        [DataMember(Order = 9)] public WorkflowPersistenceBehavior PersistenceBehavior { get; set; }
-        [DataMember(Order = 10)] public bool DeleteCompletedInstances { get; set; }
+        [DataMember(Order = 10)] public WorkflowPersistenceBehavior PersistenceBehavior { get; set; }
+        [DataMember(Order = 11)] public bool DeleteCompletedInstances { get; set; }
 
         /// <summary>
         /// A dictionary to store application-specific properties for a given workflow. 
         /// </summary>
-        [DataMember(Order = 11)]
+        [DataMember(Order = 12)]
         public Variables CustomAttributes { get; set; } = new();
     }
 }

@@ -110,6 +110,9 @@ namespace Elsa.Persistence.EntityFramework.PostgreSql.Migrations
                     b.Property<int>("PersistenceBehavior")
                         .HasColumnType("integer");
 
+                    b.Property<string>("Tag")
+                        .HasColumnType("text");
+
                     b.Property<string>("TenantId")
                         .HasColumnType("text");
 
@@ -126,6 +129,9 @@ namespace Elsa.Persistence.EntityFramework.PostgreSql.Migrations
 
                     b.HasIndex("Name")
                         .HasDatabaseName("IX_WorkflowDefinition_Name");
+
+                    b.HasIndex("Tag")
+                        .HasDatabaseName("IX_WorkflowDefinition_Tag");
 
                     b.HasIndex("TenantId")
                         .HasDatabaseName("IX_WorkflowDefinition_TenantId");

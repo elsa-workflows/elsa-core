@@ -107,6 +107,9 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
                     b.Property<int>("PersistenceBehavior")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("Tag")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("TenantId")
                         .HasColumnType("TEXT");
 
@@ -123,6 +126,9 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
 
                     b.HasIndex("Name")
                         .HasDatabaseName("IX_WorkflowDefinition_Name");
+
+                    b.HasIndex("Tag")
+                        .HasDatabaseName("IX_WorkflowDefinition_Tag");
 
                     b.HasIndex("TenantId")
                         .HasDatabaseName("IX_WorkflowDefinition_TenantId");
