@@ -87,11 +87,11 @@ div.tree {
 }
  */
 
-.node.activity {
+.node.activity, .node.start{
   fill: transparent;
 }
 
-.node.activity .label-container {
+.node.activity .label-container, .node.start .label-container{
   stroke: none;
 }
 
