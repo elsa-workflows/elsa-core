@@ -16,7 +16,7 @@ namespace Elsa.Expressions
             ActivityExecutionContext context,
             CancellationToken cancellationToken)
         {
-            if (returnType == typeof(string))
+            if (returnType == typeof(string) || returnType == typeof(object))
                 return Task.FromResult<object?>(expression);
 
             if (string.IsNullOrWhiteSpace(expression))
