@@ -18,7 +18,7 @@
     "push:preview": "npm publish --access-public --tag preview",
     "build": "npm run build:tailwind:prod & stencil build",
     "build:dev": "stencil build --dev --tailwind:dev",
-    "start:dev": "node --max_old_space_size=8192 --optimize_for_size --stack_size=8192 ./node_modules/.bin/stencil build --dev --tailwind:dev --watch --serve",
+    "start:dev": "stencil build --dev --tailwind:dev --watch --serve",
     "start": "stencil build --watch --serve",
     "test": "stencil test --spec --e2e",
     "test.watch": "stencil test --spec --e2e --watchAll",
