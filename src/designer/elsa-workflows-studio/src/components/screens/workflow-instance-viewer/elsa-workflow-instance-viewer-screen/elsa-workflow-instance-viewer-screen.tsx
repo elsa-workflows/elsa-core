@@ -196,9 +196,9 @@ export class ElsaWorkflowInstanceViewerScreen {
       <div class="flex-1 flex">
         <elsa-designer-tree model={this.workflowModel}
                             class="flex-1" ref={el => this.designer = el}
-                            selectedActivityId={this.selectedActivityId}
-                            onActivitySelected={e => this.onActivitySelected(e)}
-                            onActivityDeselected={e => this.onActivityDeselected(e)}
+                            // selectedActivityId={this.selectedActivityId}
+                            // onActivitySelected={e => this.onActivitySelected(e)}
+                            // onActivityDeselected={e => this.onActivityDeselected(e)}
         />
       </div>
     );

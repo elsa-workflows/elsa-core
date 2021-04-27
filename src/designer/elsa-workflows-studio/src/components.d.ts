@@ -35,7 +35,6 @@ export namespace Components {
     }
     interface ElsaDesignerTree {
         "model": WorkflowModel;
-        "selectedActivityId"?: string;
     }
     interface ElsaDesignerTreeActivity {
         "displayContext": ActivityDesignDisplayContext;
@@ -497,10 +496,7 @@ declare namespace LocalJSX {
     }
     interface ElsaDesignerTree {
         "model"?: WorkflowModel;
-        "onActivityDeselected"?: (event: CustomEvent<ActivityModel>) => void;
-        "onActivitySelected"?: (event: CustomEvent<ActivityModel>) => void;
         "onWorkflow-changed"?: (event: CustomEvent<WorkflowModel>) => void;
-        "selectedActivityId"?: string;
     }
     interface ElsaDesignerTreeActivity {
         "displayContext"?: ActivityDesignDisplayContext;
