@@ -37,7 +37,9 @@ export const config: Config = {
       type: 'www',
       serviceWorker: null, // disable service workers,
       copy: [
-        {src: 'assets', dest: 'build/assets'}
+        {src: 'assets', dest: 'build/assets'},
+        {src: '../node_modules/monaco-editor/min', dest: 'build/assets/js/monaco-editor/min'},
+        {src: '../node_modules/monaco-editor/min-maps', dest: 'build/assets/js/monaco-editor/min-maps'}
       ]
     },
   ],
