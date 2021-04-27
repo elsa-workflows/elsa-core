@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Elsa.Activities.MassTransit.Bookmarks;
 using Elsa.Activities.MassTransit.Consumers.MessageCorrelation;
+using Elsa.Dispatch;
 using Elsa.Services;
 using MassTransit;
+using MediatR;
 
 namespace Elsa.Activities.MassTransit.Consumers
 {
@@ -18,11 +21,11 @@ namespace Elsa.Activities.MassTransit.Consumers
                 new PropertyCorrelationIdSelector<T>("CommandId")
             };
 
-        private readonly IWorkflowRunner _workflowRunner;
+        private readonly IMediator _mediator;
 
-        public WorkflowConsumer(IWorkflowRunner workflowRunner)
+        public WorkflowConsumer(IMediator mediator)
         {
-            _workflowRunner = workflowRunner;
+            _mediator = mediator;
         }
 
         public async Task Consume(ConsumeContext<T> context)
@@ -34,11 +37,21 @@ namespace Elsa.Activities.MassTransit.Consumers
                 if (item.TryGetCorrelationId(message, out correlationId))
                     break;
 
-            throw new NotImplementedException();
-            // await _workflowScheduler.TriggerWorkflowsAsync<ReceiveMassTransitMessage>(
-            //     message,
-            //     correlationId?.ToString(),
-            //     cancellationToken: context.CancellationToken);
+            var bookmark = new MessageReceivedBookmark {
+                MessageType = message.GetType().Name,
+                CorrelationId = correlationId.ToString()
+            };
+            var trigger = new MessageReceivedBookmark {
+                MessageType = message.GetType().Name
+            };
+
+            await _mediator.Send(new TriggerWorkflowsRequest(
+                nameof(ReceiveMassTransitMessage),
+                bookmark,
+                trigger,
+                message,
+                correlationId.ToString()
+            ));
         }
     }
 }

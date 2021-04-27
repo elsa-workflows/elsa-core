@@ -5,7 +5,7 @@ namespace Elsa.Server.Hangfire.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        public static ElsaOptions UseHangfireDispatchers(this ElsaOptions elsaOptions)
+        public static ElsaOptionsBuilder UseHangfireDispatchers(this ElsaOptionsBuilder elsaOptions)
         {
             return elsaOptions.UseDispatcher<HangfireWorkflowDispatcher>();
         }

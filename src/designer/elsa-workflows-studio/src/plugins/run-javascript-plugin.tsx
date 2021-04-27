@@ -1,6 +1,6 @@
 ﻿import {ElsaPlugin} from "../services/elsa-plugin";
 import {eventBus} from '../services/event-bus';
-import {ActivityDesignDisplayContext, EventTypes} from "../models";
+import {ActivityDesignDisplayContext, EventTypes, SyntaxNames} from "../models";
 import {h} from "@stencil/core";
 import {parseJson} from "../utils/utils";
 
@@ -16,8 +16,8 @@ export class RunJavascriptPlugin implements ElsaPlugin {
       return;
 
     const props = activityModel.properties || [];
-    const outcomes = props.find(x => x.name == 'PossibleOutcomes') || { expressions: {'Literal': ''}, syntax: 'Literal' };
-    const expression = outcomes.expressions['Literal'];
+    const outcomes = props.find(x => x.name == 'PossibleOutcomes') || { expressions: {'Json': ''}, syntax: SyntaxNames.Json };
+    const expression = outcomes.expressions[SyntaxNames.Json];
     context.outcomes = parseJson(expression) || ['Done'];
 
     if(context.outcomes.length == 0)

@@ -24,7 +24,7 @@ namespace Elsa.Activities.Temporal
         /// </remarks>
         /// <param name="options">Elsa options</param>
         /// <param name="configure">The configuration for temporal activity options</param>
-        public static void AddCommonTemporalActivities(ElsaOptions options, Action<TimersOptions>? configure = default)
+        public static ElsaOptionsBuilder AddCommonTemporalActivities(this ElsaOptionsBuilder options, Action<TimersOptions>? configure = default)
         {
             var timersOptions = new TimersOptions(options.Services);
             configure?.Invoke(timersOptions);
@@ -41,6 +41,8 @@ namespace Elsa.Activities.Temporal
                 .AddActivity<Timer>()
                 .AddActivity<StartAt>()
                 .AddActivity<ClearTimer>();
+
+            return options;
         }
     }
 }

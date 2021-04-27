@@ -7,6 +7,7 @@ using Elsa.Persistence.Specifications.WorkflowInstances;
 using Elsa.Persistence.YesSql.Data;
 using Elsa.Persistence.YesSql.Documents;
 using Elsa.Persistence.YesSql.Indexes;
+using Elsa.Persistence.YesSql.Services;
 using Microsoft.Extensions.Logging;
 using NodaTime;
 using YesSql;
@@ -18,20 +19,20 @@ namespace Elsa.Persistence.YesSql.Stores
     {
         private readonly IClock _clock;
 
-        public YesSqlWorkflowInstanceStore(ISession session, IIdGenerator idGenerator, IMapper mapper, IClock clock, ILogger<YesSqlWorkflowInstanceStore> logger) : base(session, idGenerator, mapper, logger, CollectionNames.WorkflowInstances)
+        public YesSqlWorkflowInstanceStore(ISessionProvider sessionProvider, IIdGenerator idGenerator, IMapper mapper, IClock clock, ILogger<YesSqlWorkflowInstanceStore> logger) : base(sessionProvider, idGenerator, mapper, logger, CollectionNames.WorkflowInstances)
         {
             _clock = clock;
         }
 
-        protected override async Task<WorkflowInstanceDocument?> FindDocumentAsync(WorkflowInstance entity, CancellationToken cancellationToken) => await Query<WorkflowInstanceIndex>(x => x.InstanceId == entity.Id).FirstOrDefaultAsync();
+        protected override async Task<WorkflowInstanceDocument?> FindDocumentAsync(ISession session, WorkflowInstance entity, CancellationToken cancellationToken) => await Query<WorkflowInstanceIndex>(session, x => x.InstanceId == entity.Id).FirstOrDefaultAsync();
 
-        protected override IQuery<WorkflowInstanceDocument> MapSpecification(ISpecification<WorkflowInstance> specification) =>
+        protected override IQuery<WorkflowInstanceDocument> MapSpecification(ISession session, ISpecification<WorkflowInstance> specification) =>
             specification switch
             {
-                EntityIdSpecification<WorkflowInstance> spec => Query<WorkflowInstanceIndex>(x => x.InstanceId == spec.Id),
-                WorkflowInstanceIdSpecification spec => Query<WorkflowInstanceIndex>(x => x.InstanceId == spec.Id),
-                BlockingActivityTypeSpecification spec => Query<WorkflowInstanceBlockingActivitiesIndex>(x => x.ActivityType == spec.ActivityType),
-                _ => AutoMapSpecification<WorkflowInstanceIndex>(specification)
+                EntityIdSpecification<WorkflowInstance> spec => Query<WorkflowInstanceIndex>(session, x => x.InstanceId == spec.Id),
+                WorkflowInstanceIdSpecification spec => Query<WorkflowInstanceIndex>(session, x => x.InstanceId == spec.Id),
+                BlockingActivityTypeSpecification spec => Query<WorkflowInstanceBlockingActivitiesIndex>(session, x => x.ActivityType == spec.ActivityType),
+                _ => AutoMapSpecification<WorkflowInstanceIndex>(session, specification)
             };
 
         protected override IQuery<WorkflowInstanceDocument> OrderBy(IQuery<WorkflowInstanceDocument> query, IOrderBy<WorkflowInstance> orderBy, ISpecification<WorkflowInstance> specification)

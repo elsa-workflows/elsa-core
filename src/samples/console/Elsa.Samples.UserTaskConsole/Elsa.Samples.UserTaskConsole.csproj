@@ -12,6 +12,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\..\..\activities\Elsa.Activities.UserTask\Elsa.Activities.UserTask.csproj" />
         <ProjectReference Include="..\..\..\core\Elsa\Elsa.csproj" />
     </ItemGroup>
 

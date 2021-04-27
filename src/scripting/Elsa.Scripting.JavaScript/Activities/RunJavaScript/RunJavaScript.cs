@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Design;
+using Elsa.Expressions;
 using Elsa.Metadata;
 using Elsa.Scripting.JavaScript.Events;
 using Elsa.Scripting.JavaScript.Services;
@@ -32,8 +33,13 @@ namespace Elsa.Activities.JavaScript
         [ActivityProperty(Hint = "The JavaScript to run.", UIHint = ActivityPropertyUIHints.CodeEditor, OptionsProvider = typeof(RunJavaScript))]
         public string? Script { get; set; }
 
-        [ActivityProperty(Hint = "The possible outcomes that can be set by the script.", UIHint = ActivityPropertyUIHints.MultiText)]
-        public ICollection<string> PossibleOutcomes { get; set; } = new List<string> { OutcomeNames.Done };
+        [ActivityProperty(
+            Hint = "The possible outcomes that can be set by the script.",
+            UIHint = ActivityPropertyUIHints.MultiText,
+            DefaultSyntax = SyntaxNames.Json,
+            SupportedSyntaxes = new[] {SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid}
+        )]
+        public ICollection<string> PossibleOutcomes { get; set; } = new List<string> {OutcomeNames.Done};
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {

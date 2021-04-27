@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 using Elsa.Activities.Telnyx.Models;

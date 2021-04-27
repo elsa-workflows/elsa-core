@@ -29,6 +29,12 @@ namespace Elsa.Models
         public bool DeleteCompletedInstances { get; set; }
         public bool IsPublished { get; set; }
         public bool IsLatest { get; set; }
+        
+        /// <summary>
+        /// Allows for applications to store an application-specific, queryable value to associate with the workflow.
+        /// </summary>
+        public string? Tag { get; set; }
+        
         public ICollection<ActivityDefinition> Activities { get; set; }
         public ICollection<ConnectionDefinition> Connections { get; set; }
     }

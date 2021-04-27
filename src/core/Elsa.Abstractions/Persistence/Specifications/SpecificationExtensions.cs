@@ -4,20 +4,20 @@
     {
         public static ISpecification<T> And<T>(this ISpecification<T> @this, ISpecification<T> specification)
         {
-            var all = Specification<T>.All;
+            var identity = Specification<T>.Identity;
 
-            if (@this == all)
+            if (@this == identity)
                 return specification;
 
-            return specification == all ? @this : new AndSpecification<T>(@this, specification);
+            return specification == identity ? @this : new AndSpecification<T>(@this, specification);
         }
 
         public static ISpecification<T> Or<T>(this ISpecification<T> @this, ISpecification<T> specification)
         {
-            var all = Specification<T>.All;
+            var identity = Specification<T>.Identity;
 
-            if (@this == all || specification == all)
-                return all;
+            if (@this == identity || specification == identity)
+                return identity;
 
             return new OrSpecification<T>(@this, specification);
         }

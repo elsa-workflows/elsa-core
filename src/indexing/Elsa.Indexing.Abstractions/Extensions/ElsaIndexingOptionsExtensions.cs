@@ -6,7 +6,7 @@ namespace Elsa.Indexing.Extensions
 {
     public static class ElsaIndexingOptionsExtensions
     {
-        public static ElsaOptions UseIndexing(this ElsaOptions options, Action<ElsaIndexingOptions> configure)
+        public static ElsaOptionsBuilder UseIndexing(this ElsaOptionsBuilder options, Action<ElsaIndexingOptions> configure)
         {
             var indexingOptions = new ElsaIndexingOptions(options.Services);
             configure.Invoke(indexingOptions);

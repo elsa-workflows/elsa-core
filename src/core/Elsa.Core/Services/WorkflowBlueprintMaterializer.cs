@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.ActivityProviders;
 using Elsa.Builders;
 using Elsa.Expressions;
 using Elsa.Models;
@@ -55,6 +53,7 @@ namespace Elsa.Services
                 workflowDefinition.Description,
                 workflowDefinition.IsLatest,
                 workflowDefinition.IsPublished,
+                workflowDefinition.Tag,
                 workflowDefinition.Variables,
                 workflowDefinition.CustomAttributes,
                 workflowDefinition.ContextOptions,
@@ -132,6 +131,8 @@ namespace Elsa.Services
                     Activities = activityBlueprints.Values,
                     Connections = compositeActivityDefinition.Connections.Select(x => ResolveConnection(x, activityBlueprints)).Where(x => x != null).Select(x => x!).ToList(),
                     Name = activityDefinition.Name,
+                    DisplayName = activityDefinition.DisplayName,
+                    Description = activityDefinition.Description,
                     PersistOutput = activityDefinition.PersistOutput,
                     PersistWorkflow = activityDefinition.PersistWorkflow,
                     LoadWorkflowContext = activityDefinition.LoadWorkflowContext,
@@ -178,6 +179,8 @@ namespace Elsa.Services
                     Id = activityDefinition.ActivityId,
                     Type = activityDefinition.Type,
                     Name = activityDefinition.Name,
+                    DisplayName = activityDefinition.DisplayName,
+                    Description = activityDefinition.Description,
                     PersistOutput = activityDefinition.PersistOutput,
                     PersistWorkflow = activityDefinition.PersistWorkflow,
                     LoadWorkflowContext = activityDefinition.LoadWorkflowContext,

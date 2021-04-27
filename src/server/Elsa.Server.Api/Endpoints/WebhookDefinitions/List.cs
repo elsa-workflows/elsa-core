@@ -42,7 +42,7 @@ namespace Elsa.Server.Api.Endpoints.WebhookDefinitions
         ]
         public async Task<ActionResult<PagedList<WorkflowDefinition>>> Handle(CancellationToken cancellationToken = default)
         {
-            var specification = Specification<WebhookDefinition>.All;
+            var specification = Specification<WebhookDefinition>.Identity;
             var items = await _webhookDefinitionStore.FindManyAsync(specification, cancellationToken: cancellationToken);
 
             return Json(items, _serializer.GetSettings());

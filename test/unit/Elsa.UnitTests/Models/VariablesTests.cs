@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Elsa.Testing.Shared;
 using Xunit;
 
 namespace Elsa.Models

@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
 
 namespace Elsa.Activities.AzureServiceBus.Models
 {
@@ -18,5 +19,6 @@ namespace Elsa.Activities.AzureServiceBus.Models
         public TimeSpan TimeToLive { get; set; }
         public string? ReplyToSessionId { get; set; }
         public DateTime ScheduledEnqueueTimeUtc { get; set; }
+        public IDictionary<string, object> UserProperties { get; set; } = new Dictionary<string,object>();
     }
 }

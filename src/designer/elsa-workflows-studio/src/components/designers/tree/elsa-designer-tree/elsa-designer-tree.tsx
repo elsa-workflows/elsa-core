@@ -162,8 +162,8 @@ export class ElsaWorkflowDesigner {
     }
 
     this.updateWorkflowModel(workflowModel);
-    this.parentActivityId = null
-    this.parentActivityOutcome = null
+    this.parentActivityId = null;
+    this.parentActivityOutcome = null;
     return activity;
   }
 
@@ -176,8 +176,8 @@ export class ElsaWorkflowDesigner {
     const connection: ConnectionModel = { sourceId: sourceActivityId, targetId: targetActivityId, outcome: outcome };
     workflowModel.connections.push(connection);
     this.updateWorkflowModel(workflowModel);
-    this.parentActivityId = null
-    this.parentActivityOutcome = null
+    this.parentActivityId = null;
+    this.parentActivityOutcome = null;
   }
 
   updateActivity(activity: ActivityModel) {
@@ -222,9 +222,10 @@ export class ElsaWorkflowDesigner {
       eventBus.emit(EventTypes.ActivityDesignDisplaying, this, displayContext);
       displayContexts[model.activityId] = displayContext;
     }
-
     this.activityDisplayContexts = displayContexts;
   }
+
+  componentDidRender() {}
 
   showActivityPicker() {
     eventBus.emit(EventTypes.ShowActivityPicker);
@@ -351,7 +352,7 @@ export class ElsaWorkflowDesigner {
     d3.selectAll('.node.activity').each((n: any) => {
       const node = this.graph.node(n) as any;
       d3.select(node.elem).on('click', () => {
-        if(this.parentActivityId && this.parentActivityOutcome){
+        if (this.parentActivityId && this.parentActivityOutcome) {
           this.addConnection(this.parentActivityId, node.activity.activityId, this.parentActivityOutcome);
         }
       });
@@ -429,10 +430,18 @@ ${this.renderActivityBody(activity.description)}
             </div>`;
   }
 
+  // private onActivitySelected(e: CustomEvent<ActivityModel>) {
+  //   this.activitySelected.emit(e.detail);
+  // }
+
+  // private onActivityDeselected(e: CustomEvent<ActivityModel>) {
+  //   this.activityDeselected.emit(e.detail);
+  // }
+
   render() {
     return (
       <Host class="workflow-canvas flex-1 flex" ref={el => (this.el = el)}>
-        <svg ref={el => (this.svg = el)}  id="svg" style={{ height: '100vh', width: '100vw', pointerEvents: this.contextMenu.shown ? 'none' : '' }}>
+        <svg ref={el => (this.svg = el)} id="svg" style={{ height: '100vh', width: '100vw', pointerEvents: this.contextMenu.shown ? 'none' : '' }}>
           <g ref={el => (this.inner = el)} />
         </svg>
         <div

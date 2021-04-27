@@ -10,6 +10,8 @@ namespace Elsa.Persistence.Specifications.WorkflowDefinitions
         public VersionOptionsSpecification(VersionOptions versionOptions) => VersionOptions = versionOptions;
         public override Expression<Func<WorkflowDefinition, bool>> ToExpression()
         {
+            if (VersionOptions.AllVersions)
+                return x => true;
             if (VersionOptions.IsDraft)
                 return x => !x.IsPublished;
             if (VersionOptions.IsLatest)

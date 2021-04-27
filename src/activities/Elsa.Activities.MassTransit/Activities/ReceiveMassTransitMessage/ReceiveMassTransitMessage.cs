@@ -17,10 +17,13 @@ namespace Elsa.Activities.MassTransit
         [ActivityProperty(Hint = "The assembly-qualified type name of the message to receive.")]
         public Type? MessageType { get; set; }
 
-        protected override bool OnCanExecute(ActivityExecutionContext context) => context.Input?.GetType() == MessageType;
-        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => Suspend();
+        protected override bool OnCanExecute(ActivityExecutionContext context) => MessageType?.IsAssignableFrom(context.Input?.GetType()) ?? false;
 
-        protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
+        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => context.WorkflowExecutionContext.IsFirstPass ? ExecuteInternal(context) : Suspend();
+
+        protected override IActivityExecutionResult OnResume(ActivityExecutionContext context) => ExecuteInternal(context);
+
+        private IActivityExecutionResult ExecuteInternal(ActivityExecutionContext context)
         {
             var message = context.Input;
             return Done(message);

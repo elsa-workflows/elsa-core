@@ -19,6 +19,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <PackageReference Include="DistributedLock.SqlServer" Version="1.0.0" />
       <PackageReference Include="System.Data.SqlClient" Version="4.8.2" />
     </ItemGroup>
 

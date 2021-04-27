@@ -27,10 +27,10 @@ namespace Elsa.ActivityResults
             var workflowExecutionContext = activityExecutionContext.WorkflowExecutionContext;
             var nextConnections = GetNextConnections(workflowExecutionContext, activityExecutionContext.ActivityBlueprint.Id, outcomes).ToList();
 
-            // Always try if we got a "default" connection (from the current activity to the next activity via the default "Done" outcome).
+            // See if we got a "default" connection (from the current activity to the next activity via the default "Done" outcome).
             if (!outcomes.Contains(OutcomeNames.Done) && !nextConnections.Any())
                 nextConnections = GetNextConnections(workflowExecutionContext, activityExecutionContext.ActivityBlueprint.Id, new[] { OutcomeNames.Done }).ToList();
-
+            
             var nextActivities =
                 (
                     from connection in nextConnections
@@ -47,15 +47,15 @@ namespace Elsa.ActivityResults
         }
 
         public static IEnumerable<string> GetNextActivities(
-            WorkflowExecutionContext workflowContext,
+            WorkflowExecutionContext workflowExecutionContext,
             string sourceId,
             IEnumerable<string> outcomes)
         {
-            var nextConnections = GetNextConnections(workflowContext, sourceId, outcomes);
+            var nextConnections = GetNextConnections(workflowExecutionContext, sourceId, outcomes);
 
             var query =
                 from connection in nextConnections
-                from activityBlueprint in workflowContext.WorkflowBlueprint.Activities
+                from activityBlueprint in workflowExecutionContext.WorkflowBlueprint.Activities
                 where activityBlueprint.Id == connection.Target.Activity.Id
                 select activityBlueprint.Id;
 

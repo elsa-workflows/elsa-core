@@ -6,6 +6,6 @@ namespace Elsa.Services
 {
     public interface IWorkflowExecutionLog
     {
-        Task AddEntryAsync(string message, string workflowInstanceId, string activityId, string activityType, string? tenantId, string? source, JObject? data, CancellationToken cancellationToken);
+        Task AddEntryAsync(string workflowInstanceId, string activityId, string activityType, string eventName, string? message, string? tenantId, string? source, JObject? data, CancellationToken cancellationToken = default);
     }
 }

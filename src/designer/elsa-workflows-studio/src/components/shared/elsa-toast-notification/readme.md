@@ -32,12 +32,12 @@ Type: `Promise<void>`
 
 ### Used by
 
- - [elsa-workflow-editor-notifications](../../editors/workflow-editor/elsa-workflow-editor-notifications)
+ - [elsa-workflow-definition-editor-notifications](../../screens/workflow-definition-editor/elsa-workflow-definition-editor-notifications)
 
 ### Graph
 ```mermaid
 graph TD;
-  elsa-workflow-editor-notifications --> elsa-toast-notification
+  elsa-workflow-definition-editor-notifications --> elsa-toast-notification
   style elsa-toast-notification fill:#f9f,stroke:#333,stroke-width:4px
 ```
 

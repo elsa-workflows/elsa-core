@@ -1,4 +1,3 @@
-using System;
 using Elsa.Activities.Webhooks.Models;
 using Elsa.Persistence;
 

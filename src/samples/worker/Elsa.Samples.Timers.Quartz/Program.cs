@@ -1,12 +1,12 @@
 using System.Threading.Tasks;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Sqlite;
-using Elsa.Samples.Temporal.Activities;
-using Elsa.Samples.Temporal.Workflows;
+using Elsa.Samples.Timers.Activities;
+using Elsa.Samples.Timers.Workflows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-namespace Elsa.Samples.Temporal
+namespace Elsa.Samples.Timers
 {
     internal static class Program
     {

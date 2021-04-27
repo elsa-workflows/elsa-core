@@ -3,6 +3,7 @@ using System;
 using Elsa.Persistence.EntityFramework.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
 {
@@ -13,7 +14,7 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "5.0.2");
+                .HasAnnotation("ProductVersion", "5.0.5");
 
             modelBuilder.Entity("Elsa.Models.Bookmark", b =>
                 {
@@ -106,6 +107,9 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
                     b.Property<int>("PersistenceBehavior")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("Tag")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("TenantId")
                         .HasColumnType("TEXT");
 
@@ -122,6 +126,9 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
 
                     b.HasIndex("Name")
                         .HasDatabaseName("IX_WorkflowDefinition_Name");
+
+                    b.HasIndex("Tag")
+                        .HasDatabaseName("IX_WorkflowDefinition_Tag");
 
                     b.HasIndex("TenantId")
                         .HasDatabaseName("IX_WorkflowDefinition_TenantId");
@@ -151,6 +158,9 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
                     b.Property<string>("Data")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("EventName")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Message")
                         .HasColumnType("TEXT");
 
@@ -160,7 +170,7 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
                     b.Property<string>("TenantId")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTimeOffset>("Timestamp")
+                    b.Property<DateTime>("Timestamp")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("WorkflowInstanceId")
@@ -168,6 +178,21 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ActivityId")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_ActivityId");
+
+                    b.HasIndex("ActivityType")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_ActivityType");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_TenantId");
+
+                    b.HasIndex("Timestamp")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_Timestamp");
+
+                    b.HasIndex("WorkflowInstanceId")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_WorkflowInstanceId");
 
                     b.ToTable("WorkflowExecutionLogRecords");
                 });
@@ -177,7 +202,7 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTimeOffset?>("CancelledAt")
+                    b.Property<DateTime?>("CancelledAt")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ContextId")
@@ -189,7 +214,7 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
                     b.Property<string>("CorrelationId")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
+                    b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Data")
@@ -199,13 +224,13 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTimeOffset?>("FaultedAt")
+                    b.Property<DateTime?>("FaultedAt")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTimeOffset?>("FinishedAt")
+                    b.Property<DateTime?>("FinishedAt")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTimeOffset?>("LastExecutedAt")
+                    b.Property<DateTime?>("LastExecutedAt")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Name")

@@ -8,7 +8,7 @@ namespace Microsoft.Extensions.DependencyInjection
 {
     public static class ServiceCollectionExtensions
     {
-        public static ElsaOptions AddConsoleActivities(this ElsaOptions options, TextReader? standardIn = default, TextWriter? standardOut = default)
+        public static ElsaOptionsBuilder AddConsoleActivities(this ElsaOptionsBuilder options, TextReader? standardIn = default, TextWriter? standardOut = default)
         {
             options.Services
                 .AddSingleton(standardIn ?? Console.In)

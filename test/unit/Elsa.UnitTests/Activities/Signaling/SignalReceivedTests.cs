@@ -4,6 +4,7 @@ using Elsa.Activities.Signaling.Models;
 using Xunit;
 using Elsa.ActivityResults;
 using System.Linq;
+using Elsa.Testing.Shared;
 
 namespace Elsa.Activities.Signaling
 {

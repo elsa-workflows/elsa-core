@@ -2,7 +2,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.ControlFlow;
-using Elsa.ActivityProviders;
 using Elsa.Services.Models;
 
 namespace Elsa.Services

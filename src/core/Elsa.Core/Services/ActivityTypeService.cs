@@ -3,7 +3,6 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.ActivityProviders;
 using Elsa.Events;
 using Elsa.Exceptions;
 using Elsa.Metadata;

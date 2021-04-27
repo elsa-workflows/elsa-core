@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Runtime.Serialization;
 using Elsa.Client.Comparers;
+using Newtonsoft.Json.Linq;
 using NodaTime;
 
 namespace Elsa.Client.Models
@@ -13,7 +14,6 @@ namespace Elsa.Client.Models
         public WorkflowInstance()
         {
             Variables = new Variables();
-            Activities = new List<ActivityInstance>();
             ScheduledActivities = new SimpleStack<ScheduledActivity>();
             Scopes = new SimpleStack<ActivityScope>();
         }
@@ -27,21 +27,24 @@ namespace Elsa.Client.Models
         [DataMember(Order = 7)] public string? Name { get; set; }
         [DataMember(Order = 8)] public Instant CreatedAt { get; set; }
         [DataMember(Order = 9)] public Instant? LastExecutedAt { get; set; }
-        [DataMember(Order = 10)] public Instant? LastBurstAt { get; set; }
         [DataMember(Order = 11)] public Instant? FinishedAt { get; set; }
-        [DataMember(Order = 12)] public Variables Variables { get; set; }
-        [DataMember(Order = 13)] public object? Output { get; set; }
-        [DataMember(Order = 14)] public ICollection<ActivityInstance> Activities { get; set; }
+        [DataMember(Order = 12)] public Instant? CancelledAt { get; set; }
+        [DataMember(Order = 13)] public Instant? FaultedAt { get; set; }
+        [DataMember(Order = 14)] public Variables Variables { get; set; }
+        [DataMember(Order = 15)] public object? Output { get; set; }
+        [DataMember(Order = 16)] public IDictionary<string, JObject> ActivityData { get; set; } = new Dictionary<string, JObject>();
+        [DataMember(Order = 17)] public IDictionary<string, object> ActivityOutput { get; set; } = new Dictionary<string, object>();
 
-        [DataMember(Order = 15)]
+        [DataMember(Order = 18)]
         public HashSet<BlockingActivity> BlockingActivities
         {
             get => _blockingActivities;
             set => _blockingActivities = new HashSet<BlockingActivity>(value, BlockingActivityEqualityComparer.Instance);
         }
-        
-        [DataMember(Order = 16)] public WorkflowFault? Fault { get; set; }
-        [DataMember(Order = 17)] public SimpleStack<ScheduledActivity> ScheduledActivities { get; set; }
-        [DataMember(Order = 18)]public SimpleStack<ActivityScope> Scopes { get; set; }
+
+        [DataMember(Order = 19)] public WorkflowFault? Fault { get; set; }
+        [DataMember(Order = 20)] public SimpleStack<ScheduledActivity> ScheduledActivities { get; set; }
+        [DataMember(Order = 21)] public SimpleStack<ActivityScope> Scopes { get; set; }
+        [DataMember(Order = 22)] public ScheduledActivity? CurrentActivity { get; set; }
     }
 }

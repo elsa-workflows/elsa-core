@@ -19,9 +19,17 @@ export class ElsaActivityPickerModal {
   categories: Array<string> = [];
   filteredActivityDescriptorDisplayContexts: Array<ActivityDescriptorDisplayContext> = [];
 
-  componentDidLoad() {
-    eventBus.on(EventTypes.ShowActivityPicker, async () => await this.dialog.show(true));
+  connectedCallback(){
+    eventBus.on(EventTypes.ShowActivityPicker, this.onShowActivityPicker);
   }
+
+  disconnectedCallback() {
+    eventBus.off(EventTypes.ShowActivityPicker, this.onShowActivityPicker);
+  }
+  
+  onShowActivityPicker = async () => {
+    await this.dialog.show(true);
+  };
 
   componentWillRender() {
     const activityDescriptors: Array<ActivityDescriptor> = state.activityDescriptors;

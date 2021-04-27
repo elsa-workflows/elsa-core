@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Telnyx.Activities;
 using Elsa.Activities.Telnyx.ActivityTypes;
@@ -29,7 +28,7 @@ namespace Elsa.Activities.Telnyx.Extensions
 {
     public static class SetupExtensions
     {
-        public static ElsaOptions AddTelnyx(this ElsaOptions elsaOptions, Action<TelnyxOptions>? configure = default, Func<IServiceProvider, HttpClient>? httpClientFactory = default)
+        public static ElsaOptionsBuilder AddTelnyx(this ElsaOptionsBuilder elsaOptions, Action<TelnyxOptions>? configure = default, Func<IServiceProvider, HttpClient>? httpClientFactory = default)
         {
             var services = elsaOptions.Services;
 

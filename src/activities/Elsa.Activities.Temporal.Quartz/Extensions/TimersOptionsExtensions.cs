@@ -1,6 +1,7 @@
 using System;
 using Elsa.Activities.Temporal.Common.Options;
 using Elsa.Activities.Temporal.Common.Services;
+using Elsa.Activities.Temporal.Quartz.Handlers;
 using Elsa.Activities.Temporal.Quartz.Jobs;
 using Elsa.Activities.Temporal.Quartz.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,7 +30,8 @@ namespace Elsa
             timersOptions.Services
                 .AddSingleton<IWorkflowScheduler, QuartzWorkflowScheduler>()
                 .AddSingleton<ICrontabParser, QuartzCrontabParser>()
-                .AddTransient<RunQuartzWorkflowJob>();
+                .AddTransient<RunQuartzWorkflowJob>()
+                .AddNotificationHandlers(typeof(ConfigureCronProperty));
 
             if (registerQuartz)
             {

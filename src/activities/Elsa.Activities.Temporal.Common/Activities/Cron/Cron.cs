@@ -31,7 +31,7 @@ namespace Elsa.Activities.Temporal
             _crontabParser = crontabParser;
         }
 
-        [ActivityProperty(Hint = "Specify a CRON expression. See https://crontab.guru/ for help.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityProperty(Hint = "Specify a CRON expression.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string CronExpression { get; set; } = "* * * * *";
 
         public Instant? ExecuteAt

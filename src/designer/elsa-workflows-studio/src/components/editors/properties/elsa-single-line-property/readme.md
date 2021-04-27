@@ -7,30 +7,27 @@
 
 ## Properties
 
-| Property               | Attribute                | Description | Type                         | Default     |
-| ---------------------- | ------------------------ | ----------- | ---------------------------- | ----------- |
-| `context`              | `context`                |             | `string`                     | `undefined` |
-| `editorHeight`         | `editor-height`          |             | `string`                     | `'6em'`     |
-| `propertyDescriptor`   | --                       |             | `ActivityPropertyDescriptor` | `undefined` |
-| `propertyModel`        | --                       |             | `ActivityDefinitionProperty` | `undefined` |
-| `serverUrl`            | `server-url`             |             | `string`                     | `undefined` |
-| `singleLineMode`       | `single-line`            |             | `boolean`                    | `false`     |
-| `workflowDefinitionId` | `workflow-definition-id` |             | `string`                     | `undefined` |
+| Property             | Attribute | Description | Type                         | Default     |
+| -------------------- | --------- | ----------- | ---------------------------- | ----------- |
+| `propertyDescriptor` | --        |             | `ActivityPropertyDescriptor` | `undefined` |
+| `propertyModel`      | --        |             | `ActivityDefinitionProperty` | `undefined` |
 
 
 ## Dependencies
 
 ### Depends on
 
-- [elsa-monaco](../../monaco/elsa-monaco)
-- context-consumer
+- [elsa-property-editor](../../elsa-property-editor)
 
 ### Graph
 ```mermaid
 graph TD;
-  elsa-text-property --> elsa-monaco
-  elsa-text-property --> context-consumer
-  style elsa-text-property fill:#f9f,stroke:#333,stroke-width:4px
+  elsa-single-line-property --> elsa-property-editor
+  elsa-property-editor --> elsa-multi-expression-editor
+  elsa-multi-expression-editor --> elsa-expression-editor
+  elsa-expression-editor --> elsa-monaco
+  elsa-expression-editor --> context-consumer
+  style elsa-single-line-property fill:#f9f,stroke:#333,stroke-width:4px
 ```
 
 ----------------------------------------------

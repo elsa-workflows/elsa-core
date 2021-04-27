@@ -1,9 +1,7 @@
 import {Component, Event, EventEmitter, h, Host, Prop, State} from '@stencil/core';
 import {leave, toggle} from 'el-transition'
 import {registerClickOutside} from "stencil-click-outside";
-import {ActivityIcon} from '../../../icons/activity-icon';
 import {ActivityModel, ActivityDesignDisplayContext, EventTypes} from "../../../../models";
-import {eventBus} from '../../../../services/event-bus';
 
 @Component({
   tag: 'elsa-designer-tree-activity',
@@ -16,8 +14,11 @@ export class ElsaDesignerTreeActivity {
 
   @Prop() displayContext: ActivityDesignDisplayContext
   @Prop() icon: string
+  @Prop({attribute:"selected"}) isSelected: boolean;
   @Event({eventName: 'remove-activity', bubbles: true}) removeActivityEmitter: EventEmitter<ActivityModel>;
   @Event({eventName: 'edit-activity', bubbles: true}) editActivityEmitter: EventEmitter<ActivityModel>;
+  @Event() selected: EventEmitter<ActivityModel>;
+  @Event() deselected: EventEmitter<ActivityModel>;
   @State() showMenu: boolean
   contextMenu: HTMLElement;
   el: HTMLElement;
@@ -42,16 +43,27 @@ export class ElsaDesignerTreeActivity {
     this.removeActivityEmitter.emit(this.displayContext.activityModel);
   }
 
+  onSelectActivity(e: Event) {
+    this.isSelected = !this.isSelected;
+    
+    if(this.selected)
+      this.selected.emit(this.displayContext.activityModel);
+    else
+      this.deselected.emit(this.displayContext.activityModel);
+  }
+
   render() {
     const displayContext = this.displayContext;
     const activity = displayContext.activityModel;
     const activityId = activity.activityId;
     const displayName = activity.displayName && activity.displayName.length > 0 ? activity.displayName : activity.name && activity.name.length > 0 ? activity.name : activity.type
+    const activityClass = this.isSelected ? 'border-blue-600' : 'border-white hover:border-blue-600';
 
     return (
-      <Host id={`activity-${activityId}`} 
-            onDblClick={e => this.onEditActivityClick(e)} 
-            class="activity border-2 border-solid border-white rounded bg-white text-left text-black text-lg hover:border-blue-600 select-none max-w-md shadow-sm relative">
+      <Host id={`activity-${activityId}`}
+            onDblClick={e => this.onEditActivityClick(e)}
+            onClick={e => this.onSelectActivity(e)}
+            class={`${activityClass} activity border-2 border-solid rounded bg-white text-left text-black text-lg select-none max-w-md shadow-sm relative`}>
         <div class="p-5">
           <div class="flex justify-between space-x-8">
             <div class="flex-shrink-0">

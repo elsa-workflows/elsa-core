@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Elsa.Models;
 using Elsa.Persistence.Specifications;
+using Elsa.Persistence.YesSql.Services;
 using Microsoft.Extensions.Logging;
 using Open.Linq.AsyncExtensions;
 using YesSql;
@@ -18,22 +19,22 @@ namespace Elsa.Persistence.YesSql.Stores
 {
     public abstract class YesSqlStore<T, TDocument> : IStore<T> where T : class, IEntity where TDocument : class
     {
-        private readonly ILogger _logger;
         private readonly SemaphoreSlim _semaphore = new(1);
         private readonly Stopwatch _stopwatch = new();
 
-        public YesSqlStore(ISession session, IIdGenerator idGenerator, IMapper mapper, ILogger<YesSqlStore<T, TDocument>> logger, string collectionName)
+        public YesSqlStore(ISessionProvider sessionProvider, IIdGenerator idGenerator, IMapper mapper, ILogger<YesSqlStore<T, TDocument>> logger, string collectionName)
         {
-            _logger = logger;
+            SessionProvider = sessionProvider;
+            Logger = logger;
             IdGenerator = idGenerator;
             Mapper = mapper;
             CollectionName = collectionName;
-            Session = session;
         }
-
-        protected ISession Session { get; }
+        
+        protected ISessionProvider SessionProvider { get; }
         protected IIdGenerator IdGenerator { get; }
         protected IMapper Mapper { get; }
+        protected ILogger Logger { get; }
         protected string CollectionName { get; }
 
         public virtual async Task SaveAsync(T entity, CancellationToken cancellationToken = default)
@@ -42,10 +43,11 @@ namespace Elsa.Persistence.YesSql.Stores
 
             try
             {
-                var existingDocument = await FindDocumentAsync(entity, cancellationToken);
+                await using var session = SessionProvider.CreateSession();
+                var existingDocument = await FindDocumentAsync(session, entity, cancellationToken);
                 var document = Mapper.Map(entity, existingDocument);
-                Session.Save(document, CollectionName);
-                await Session.CommitAsync();
+                session.Save(document, CollectionName);
+                await session.SaveChangesAsync();
             }
             finally
             {
@@ -57,47 +59,52 @@ namespace Elsa.Persistence.YesSql.Stores
 
         public async Task AddAsync(T entity, CancellationToken cancellationToken = default)
         {
+            await using var session = SessionProvider.CreateSession();
             var document = Mapper.Map<TDocument>(entity);
-            Session.Save(document, CollectionName);
-            await Session.CommitAsync();
+            session.Save(document, CollectionName);
+            await session.SaveChangesAsync();
         }
 
         public async Task AddManyAsync(IEnumerable<T> entities, CancellationToken cancellationToken = default)
         {
             var documents = entities.Select(x => Mapper.Map<TDocument>(x));
 
-            foreach (var document in documents) 
-                Session.Save(document, CollectionName);
+            await using var session = SessionProvider.CreateSession();
             
-            await Session.CommitAsync();
+            foreach (var document in documents) 
+                session.Save(document, CollectionName);
+            
+            await session.SaveChangesAsync();
         }
 
         public async Task DeleteAsync(T entity, CancellationToken cancellationToken = default)
         {
-            var document = await FindDocumentAsync(entity, cancellationToken);
-            Session.Delete(document, CollectionName);
-            await Session.CommitAsync();
+            await using var session = SessionProvider.CreateSession();
+            var document = await FindDocumentAsync(session, entity, cancellationToken);
+            session.Delete(document, CollectionName);
+            await session.SaveChangesAsync();
         }
 
         public async Task<int> DeleteManyAsync(ISpecification<T> specification, CancellationToken cancellationToken = default)
         {
             _stopwatch.Restart();
-            var documents = await Query(specification).ListAsync().ToList();
+            await using var session = SessionProvider.CreateSession();
+            var documents = await Query(session, specification).ListAsync().ToList();
             _stopwatch.Stop();
-            _logger.LogDebug("Loading documents to delete took {TimeElapsed}", _stopwatch.Elapsed);
+            Logger.LogDebug("Loading documents to delete took {TimeElapsed}", _stopwatch.Elapsed);
 
             foreach (var document in documents)
             {
                 _stopwatch.Restart();
-                Session.Delete(document, CollectionName);
+                session.Delete(document, CollectionName);
                 _stopwatch.Stop();
-                _logger.LogDebug("Deleting document took {TimeElapsed}", _stopwatch.Elapsed);
+                Logger.LogDebug("Deleting document took {TimeElapsed}", _stopwatch.Elapsed);
             }
 
             _stopwatch.Restart();
-            await Session.CommitAsync();
+            await session.SaveChangesAsync();
             _stopwatch.Stop();
-            _logger.LogDebug("Committing deleted documents took {TimeElapsed}", _stopwatch.Elapsed);
+            Logger.LogDebug("Committing deleted documents took {TimeElapsed}", _stopwatch.Elapsed);
             
             return documents.Count;
         }
@@ -105,31 +112,34 @@ namespace Elsa.Persistence.YesSql.Stores
         public async Task<int> CountAsync(ISpecification<T> specification, CancellationToken cancellationToken = default)
         {
             _stopwatch.Restart();
-            var count = await Query(specification).CountAsync();
+            await using var session = SessionProvider.CreateSession();
+            var count = await Query(session, specification).CountAsync();
             _stopwatch.Stop();
-            _logger.LogDebug("CountAsync took {TimeElapsed}", _stopwatch.Elapsed);
+            Logger.LogDebug("CountAsync took {TimeElapsed}", _stopwatch.Elapsed);
             return count;
         }
 
         public async Task<T?> FindAsync(ISpecification<T> specification, CancellationToken cancellationToken = default)
         {
-            var document = await Query(specification).FirstOrDefaultAsync()!;
+            await using var session = SessionProvider.CreateSession();
+            var document = await Query(session, specification).FirstOrDefaultAsync()!;
             return Map(document);
         }
 
         public virtual async Task<IEnumerable<T>> FindManyAsync(ISpecification<T> specification, IOrderBy<T>? orderBy = default, IPaging? paging = default, CancellationToken cancellationToken = default)
         {
+            await using var session = SessionProvider.CreateSession();
             _stopwatch.Restart();
-            var documents = await Query(specification, orderBy, paging, cancellationToken).ListAsync();
+            var documents = await Query(session, specification, orderBy, paging, cancellationToken).ListAsync();
             var mappedDocuments = Map(documents);
             _stopwatch.Stop();
-            _logger.LogDebug("FindManyAsync took {TimeElapsed}", _stopwatch.Elapsed);
+            Logger.LogDebug("FindManyAsync took {TimeElapsed}", _stopwatch.Elapsed);
             return mappedDocuments;
         }
 
-        protected virtual IQuery<TDocument> Query(ISpecification<T> specification, IOrderBy<T>? orderBy = default, IPaging? paging = default, CancellationToken cancellationToken = default)
+        protected virtual IQuery<TDocument> Query(ISession session, ISpecification<T> specification, IOrderBy<T>? orderBy = default, IPaging? paging = default, CancellationToken cancellationToken = default)
         {
-            var query = ToQuery(specification);
+            var query = ToQuery(session, specification);
 
             if (orderBy != null)
                 query = OrderBy(query, orderBy, specification);
@@ -139,30 +149,23 @@ namespace Elsa.Persistence.YesSql.Stores
 
             return query;
         }
-
-        protected abstract Task<TDocument?> FindDocumentAsync(T entity, CancellationToken cancellationToken);
-
+        
+        protected abstract Task<TDocument?> FindDocumentAsync(ISession session, T entity, CancellationToken cancellationToken);
         protected virtual IQuery<TDocument> OrderBy(IQuery<TDocument> query, IOrderBy<T> orderBy, ISpecification<T> specification) => query;
+        protected virtual IQuery<TDocument> ToQuery(ISession session, ISpecification<T> specification) => MapSpecification(session, specification);
+        protected abstract IQuery<TDocument> MapSpecification(ISession session, ISpecification<T> specification);
 
-        protected virtual IQuery<TDocument> ToQuery(ISpecification<T> specification)
-        {
-            return MapSpecification(specification);
-        }
-
-        protected abstract IQuery<TDocument> MapSpecification(ISpecification<T> specification);
-
-        protected IQuery<TDocument> AutoMapSpecification<TIndex>(ISpecification<T> specification) where TIndex : class, IIndex
+        protected IQuery<TDocument> AutoMapSpecification<TIndex>(ISession session, ISpecification<T> specification) where TIndex : class, IIndex
         {
             var expression = specification.ToExpression().ConvertType<T, TDocument>().ConvertType<TDocument, TIndex>();
-            return Query<TIndex>(expression);
+            return Query(session, expression);
         }
 
         protected TDocument Map(T source) => Mapper.Map<TDocument>(source);
         protected T Map(TDocument source) => Mapper.Map<T>(source);
         protected IEnumerable<T> Map(IEnumerable<TDocument> source) => Mapper.Map<IEnumerable<T>>(source);
-
-        protected IQuery<TDocument> Query() => Session.Query<TDocument>(CollectionName);
-        protected IQuery<TDocument, TIndex> Query<TIndex>(Expression<Func<TIndex, bool>> predicate) where TIndex : class, IIndex => Session.Query<TDocument, TIndex>(predicate, CollectionName);
-        protected IQuery<TDocument, TIndex> Query<TIndex>() where TIndex : class, IIndex => Session.Query<TDocument, TIndex>(CollectionName);
+        protected IQuery<TDocument> Query(ISession session) => session.Query<TDocument>(CollectionName);
+        protected IQuery<TDocument, TIndex> Query<TIndex>(ISession session, Expression<Func<TIndex, bool>> predicate) where TIndex : class, IIndex => session.Query<TDocument, TIndex>(predicate, CollectionName);
+        protected IQuery<TDocument, TIndex> Query<TIndex>(ISession session) where TIndex : class, IIndex => session.Query<TDocument, TIndex>(CollectionName);
     }
 }

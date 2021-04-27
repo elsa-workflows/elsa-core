@@ -2,8 +2,9 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.ActivityProviders;
 using Elsa.Metadata;
+using Elsa.Services;
+using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;

@@ -2,8 +2,8 @@ using System;
 using AutoFixture.Xunit2;
 using Elsa.Builders;
 using Elsa.Models;
+using Elsa.Testing.Shared;
 using Elsa.Testing.Shared.AutoFixture.Attributes;
-using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace Elsa.Services

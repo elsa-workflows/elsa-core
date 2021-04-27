@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Elsa.Activities.Http;
 using Elsa.Activities.Webhooks.Models;
 using Elsa.Activities.Webhooks.Persistence;
-using Elsa.ActivityProviders;
 using Elsa.Design;
 using Elsa.Expressions;
 using Elsa.Metadata;
@@ -32,7 +31,7 @@ namespace Elsa.Activities.Webhooks.ActivityTypes
 
         public async ValueTask<IEnumerable<ActivityType>> GetActivityTypesAsync(CancellationToken cancellationToken = default)
         {
-            var specification = Specification<WebhookDefinition>.All;
+            var specification = Specification<WebhookDefinition>.Identity;
             var definitions = await _webhookDefinitionStore.FindManyAsync(specification, cancellationToken: cancellationToken);
 
             var activityTypes = new List<ActivityType>();

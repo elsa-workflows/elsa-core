@@ -21,7 +21,7 @@ namespace Elsa.Services
         
         public async ValueTask<object?> LoadContext(LoadWorkflowContext context, CancellationToken cancellationToken = default)
         {
-            var provider = GetRefresher(context.ContextType);
+            var provider = context.ContextType != null ? GetRefresher(context.ContextType) : null;
             return provider == null ? null : await provider.LoadAsync(context, cancellationToken);
         }
 

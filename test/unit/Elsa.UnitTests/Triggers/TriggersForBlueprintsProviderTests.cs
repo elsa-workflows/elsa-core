@@ -1,20 +1,17 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoFixture.Xunit2;
-using Elsa.ActivityProviders;
-using Elsa.Bookmarks;
 using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
+using Elsa.Testing.Shared;
 using Elsa.Testing.Shared.AutoFixture.Attributes;
-using Elsa.Triggers;
 using Moq;
 using Xunit;
 
-namespace Elsa.UnitTests.Triggers
+namespace Elsa.Triggers
 {
     public class TriggersForBlueprintsProviderTests
     {

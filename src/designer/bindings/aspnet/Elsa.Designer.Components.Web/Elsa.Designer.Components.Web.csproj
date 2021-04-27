@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+    <Import Project="..\..\..\..\..\common.props" />
+    <Import Project="..\..\..\..\..\configureawait.props" />
+    
+    <PropertyGroup>
+        <TargetFramework>net5.0</TargetFramework>
+        <Description>
+            Elsa is a set of workflow libraries and tools that enable lean and mean workflowing capabilities in any .NET Core application.
+            This package provides ASP.NET Core component bindings for the Elsa Designer web component.
+        </Description>
+        <PackageTags>elsa, workflows, aspnet, aspnetcore, blazor, html</PackageTags>
+    </PropertyGroup>
+    
+    <ItemGroup>
+        <SupportedPlatform Include="browser" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="5.0.5" />
+    </ItemGroup>
+
+</Project>

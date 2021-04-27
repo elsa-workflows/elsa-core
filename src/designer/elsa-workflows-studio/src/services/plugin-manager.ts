@@ -8,6 +8,10 @@ import {DefaultDriversPlugin} from "../plugins/default-drivers-plugin";
 import {ForkPlugin} from "../plugins/fork-plugin";
 import {RunJavascriptPlugin} from "../plugins/run-javascript-plugin";
 import {ActivityIconProviderPlugin} from "../plugins/activity-icon-provider-plugin";
+import {SwitchPlugin} from "../plugins/switch-plugin";
+import {WhilePlugin} from "../plugins/while-plugin";
+import {StartAtPlugin} from "../plugins/start-at-plugin";
+import {CronPlugin} from "../plugins/cron-plugin";
 
 export class PluginManager {
 
@@ -18,9 +22,13 @@ export class PluginManager {
       new DefaultDriversPlugin(),
       new ActivityIconProviderPlugin(),
       new IfPlugin(),
+      new WhilePlugin(),
       new ForkPlugin(),
+      new SwitchPlugin(),
       new HttpEndpointPlugin(),
       new TimerPlugin(),
+      new StartAtPlugin(),
+      new CronPlugin(),
       new WriteLinePlugin(),
       new RunJavascriptPlugin(),
       new SendEmailPlugin()

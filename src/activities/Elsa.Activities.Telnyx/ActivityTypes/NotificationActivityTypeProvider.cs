@@ -10,9 +10,9 @@ using Elsa.Activities.Telnyx.Webhooks.Models;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Abstract;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
 using Elsa.Activities.Telnyx.Webhooks.Services;
-using Elsa.ActivityProviders;
 using Elsa.ActivityResults;
 using Elsa.Metadata;
+using Elsa.Services;
 using Elsa.Services.Models;
 
 namespace Elsa.Activities.Telnyx.ActivityTypes

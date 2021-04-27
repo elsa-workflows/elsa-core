@@ -23,8 +23,13 @@ export function destroy() {
 
     jsPlumbInstance.batch(() => {
       jsPlumbInstance.unbind("connection", onConnectionCreated);
-      jsPlumbInstance.unmakeEverySource(); // Ensures all mouse event handlers are removed.
-      jsPlumbInstance.unmakeEveryTarget();
+
+      try {
+        jsPlumbInstance.unmakeEverySource(); // Ensures all mouse event handlers are removed.
+        jsPlumbInstance.unmakeEveryTarget();
+      } catch {
+      }
+
       jsPlumbInstance.reset();
     });
 
@@ -65,8 +70,7 @@ export function updateConnections(container, connections, sourceEndpoints, targe
         if (!jsPlumbConnection) {
           console.warn(`Unable to connect ${connection.sourceId} to ${connection.targetId} via ${connection.outcome}`);
           //invalidConnections.push({sourceId: connection.sourceActivityId, targetId: connection.targetActivityId, outcome: connection.outcome});
-        }
-        else
+        } else
           jsPlumbConnection.setData(connection);
       }
 

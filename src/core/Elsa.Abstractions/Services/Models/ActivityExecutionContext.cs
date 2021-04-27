@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.ActivityProviders;
 using Elsa.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Linq;
@@ -157,8 +156,11 @@ namespace Elsa.Services.Models
         public T? GetOutputFrom<T>(string activityName, Func<T?> defaultValue) => (T?) GetOutputFrom(activityName, defaultValue())!;
         public T? GetOutputFrom<T>(string activityName, T? defaultValue) => (T?) GetOutputFrom(activityName, () => defaultValue)!;
         public void SetWorkflowContext(object? value) => WorkflowExecutionContext.SetWorkflowContext(value);
+        public object? GetWorkflowContext() => WorkflowExecutionContext.GetWorkflowContext();
         public T GetWorkflowContext<T>() => WorkflowExecutionContext.GetWorkflowContext<T>();
 
+        public JObject GetActivityData() => GetActivityData(ActivityId);
+        
         public JObject GetActivityData(string activityId)
         {
             var activityData = WorkflowInstance.ActivityData;

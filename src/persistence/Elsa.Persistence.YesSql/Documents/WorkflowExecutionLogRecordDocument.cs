@@ -11,6 +11,7 @@ namespace Elsa.Persistence.YesSql.Documents
         public string ActivityId { get; set; } = default!;
         public string ActivityType { get; set; } = default!;
         public Instant Timestamp { get; set; }
+        public string EventName { get; set; } = default!;
         public string? Message { get; set; }
         public string? Source { get; set; }
         public JObject? Data { get; set; }

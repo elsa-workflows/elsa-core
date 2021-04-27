@@ -5,7 +5,7 @@ using Elsa.Activities.Temporal;
 using Elsa.Builders;
 using NodaTime;
 
-namespace Elsa.Samples.Temporal.Workflows
+namespace Elsa.Samples.Timers.Workflows
 {
     public class CancelTimerWorkflow : IWorkflow
     {

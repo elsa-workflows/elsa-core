@@ -16,7 +16,7 @@ namespace Elsa.Activities.Workflows
     [Activity(
         Category = "Workflows",
         Description = "Runs a child workflow.",
-        Outcomes = new[] { OutcomeNames.Done }
+        Outcomes = new[] { OutcomeNames.Done, "Not Found" }
     )]
     public class RunWorkflow : Activity
     {
@@ -84,6 +84,10 @@ namespace Elsa.Activities.Workflows
         {
             var cancellationToken = context.CancellationToken;
             var workflowBlueprint = await FindWorkflowBlueprintAsync(cancellationToken);
+
+            if (workflowBlueprint == null || workflowBlueprint.Id == context.WorkflowInstance.DefinitionId)
+                return Outcome("Not Found");
+
             var workflowInstance = await _startsWorkflow.StartWorkflowAsync(workflowBlueprint!, TenantId, Input, CorrelationId, ContextId, cancellationToken);
             var workflowStatus = workflowInstance.WorkflowStatus;
 

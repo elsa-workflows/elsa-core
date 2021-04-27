@@ -4,6 +4,7 @@ using AutoFixture.Xunit2;
 using Elsa.Scripting.JavaScript.Messages;
 using Elsa.Scripting.JavaScript.Options;
 using Elsa.Services.Models;
+using Elsa.Testing.Shared;
 using Elsa.Testing.Shared.AutoFixture.Attributes;
 using MediatR;
 using Microsoft.Extensions.Options;

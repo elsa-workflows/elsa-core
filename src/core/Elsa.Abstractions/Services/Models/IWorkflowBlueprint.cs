@@ -9,6 +9,7 @@ namespace Elsa.Services.Models
         bool IsSingleton { get; }
         bool IsPublished { get; }
         bool IsLatest { get; }
+        string? Tag { get; }
         
         /// <summary>
         /// An initial set of variables available to workflow instances.

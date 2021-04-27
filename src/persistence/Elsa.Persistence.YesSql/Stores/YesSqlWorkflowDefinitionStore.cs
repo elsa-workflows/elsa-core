@@ -7,6 +7,7 @@ using Elsa.Persistence.Specifications.WorkflowDefinitions;
 using Elsa.Persistence.YesSql.Data;
 using Elsa.Persistence.YesSql.Documents;
 using Elsa.Persistence.YesSql.Indexes;
+using Elsa.Persistence.YesSql.Services;
 using Microsoft.Extensions.Logging;
 using YesSql;
 using IIdGenerator = Elsa.Services.IIdGenerator;
@@ -15,19 +16,19 @@ namespace Elsa.Persistence.YesSql.Stores
 {
     public class YesSqlWorkflowDefinitionStore : YesSqlStore<WorkflowDefinition, WorkflowDefinitionDocument>, IWorkflowDefinitionStore
     {
-        public YesSqlWorkflowDefinitionStore(ISession session, IIdGenerator idGenerator, IMapper mapper, ILogger<YesSqlWorkflowDefinitionStore> logger) : base(session, idGenerator, mapper, logger, CollectionNames.WorkflowDefinitions)
+        public YesSqlWorkflowDefinitionStore(ISessionProvider sessionProvider, IIdGenerator idGenerator, IMapper mapper, ILogger<YesSqlWorkflowDefinitionStore> logger) : base(sessionProvider, idGenerator, mapper, logger, CollectionNames.WorkflowDefinitions)
         {
         }
 
-        protected override async Task<WorkflowDefinitionDocument?> FindDocumentAsync(WorkflowDefinition entity, CancellationToken cancellationToken) => await Query<WorkflowDefinitionIndex>(x => x.DefinitionId == entity.Id).FirstOrDefaultAsync();
+        protected override async Task<WorkflowDefinitionDocument?> FindDocumentAsync(ISession session, WorkflowDefinition entity, CancellationToken cancellationToken) => await Query<WorkflowDefinitionIndex>(session, x => x.DefinitionVersionId == entity.VersionId).FirstOrDefaultAsync();
 
-        protected override IQuery<WorkflowDefinitionDocument> MapSpecification(ISpecification<WorkflowDefinition> specification)
+        protected override IQuery<WorkflowDefinitionDocument> MapSpecification(ISession session, ISpecification<WorkflowDefinition> specification)
         {
             return specification switch
             {
-                EntityIdSpecification<WorkflowDefinition> s => Query<WorkflowDefinitionIndex>(x => x.DefinitionId == s.Id),
-                VersionOptionsSpecification s => Query<WorkflowDefinitionIndex>().WithVersion(s.VersionOptions),
-                _ => AutoMapSpecification<WorkflowDefinitionIndex>(specification)
+                EntityIdSpecification<WorkflowDefinition> s => Query<WorkflowDefinitionIndex>(session, x => x.DefinitionId == s.Id),
+                VersionOptionsSpecification s => Query<WorkflowDefinitionIndex>(session).WithVersion(s.VersionOptions),
+                _ => AutoMapSpecification<WorkflowDefinitionIndex>(session, specification)
             };
         }
 
