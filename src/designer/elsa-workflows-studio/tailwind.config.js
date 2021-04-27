@@ -8,7 +8,7 @@ module.exports = {
     enabled: !dev,
     content: ['./src/**/*.tsx', './src/**/*.html'],
     options: {
-      safelist: ['jtk-connector', 'rose', 'light-blue', 'bg-gray-600', 'bg-pink-600', 'bg-blue-600', 'bg-green-600', 'bg-red-600', 'bg-yellow-600']
+      safelist: ['jtk-connector', 'rose', 'light-blue', /gray$/, /pink$/, /blue$/, /green$/, /red$/, /yellow$/]
     },
   },
   theme: {

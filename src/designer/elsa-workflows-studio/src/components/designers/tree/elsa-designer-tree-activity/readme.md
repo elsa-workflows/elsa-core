@@ -7,18 +7,21 @@
 
 ## Properties
 
-| Property         | Attribute | Description | Type                           | Default     |
-| ---------------- | --------- | ----------- | ------------------------------ | ----------- |
-| `displayContext` | --        |             | `ActivityDesignDisplayContext` | `undefined` |
-| `icon`           | `icon`    |             | `string`                       | `undefined` |
+| Property         | Attribute  | Description | Type                           | Default     |
+| ---------------- | ---------- | ----------- | ------------------------------ | ----------- |
+| `displayContext` | --         |             | `ActivityDesignDisplayContext` | `undefined` |
+| `icon`           | `icon`     |             | `string`                       | `undefined` |
+| `isSelected`     | `selected` |             | `boolean`                      | `undefined` |
 
 
 ## Events
 
 | Event             | Description | Type                         |
 | ----------------- | ----------- | ---------------------------- |
+| `deselected`      |             | `CustomEvent<ActivityModel>` |
 | `edit-activity`   |             | `CustomEvent<ActivityModel>` |
 | `remove-activity` |             | `CustomEvent<ActivityModel>` |
+| `selected`        |             | `CustomEvent<ActivityModel>` |
 
 
 ## Dependencies

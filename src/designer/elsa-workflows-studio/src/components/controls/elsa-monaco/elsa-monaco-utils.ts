@@ -9,7 +9,7 @@ export function initializeMonacoWorker(libPath?: string) {
     return;
 
   if (!libPath)
-    libPath = 'build/assets/js';
+    libPath = 'assets/js';
 
   const origin = document.location.origin;
   const baseUrl = `${origin}/${libPath}/monaco-editor/min`;

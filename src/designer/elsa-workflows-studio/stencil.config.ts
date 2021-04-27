@@ -4,7 +4,10 @@ import postcssImport from 'postcss-import';
 import tailwindcss from 'tailwindcss';
 import cssnano from 'cssnano';
 
+// @ts-ignore
 const dev: boolean = process.argv && process.argv.indexOf('--dev') > -1;
+
+// @ts-ignore
 const tailwindDev: boolean = process.argv && process.argv.indexOf('--tailwind:dev') > -1;
 
 // @ts-ignore
@@ -20,6 +23,9 @@ export const config: Config = {
     {
       type: 'dist',
       esmLoaderPath: '../loader',
+      copy: [
+        {src: 'assets', dest: 'assets'}
+      ]
     },
     {
       type: 'dist-custom-elements-bundle',
@@ -31,9 +37,7 @@ export const config: Config = {
       type: 'www',
       serviceWorker: null, // disable service workers,
       copy: [
-        {src: 'assets', dest: 'build/assets'},
-        {src: '../node_modules/monaco-editor/min', dest: 'build/assets/js/monaco-editor/min'},
-        {src: '../node_modules/monaco-editor/min-maps', dest: 'build/assets/js/monaco-editor/min-maps'}
+        {src: 'assets', dest: 'build/assets'}
       ]
     },
   ],
