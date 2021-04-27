@@ -7,9 +7,10 @@
 
 ## Properties
 
-| Property    | Attribute    | Description | Type     | Default     |
-| ----------- | ------------ | ----------- | -------- | ----------- |
-| `serverUrl` | `server-url` |             | `string` | `undefined` |
+| Property        | Attribute         | Description | Type     | Default     |
+| --------------- | ----------------- | ----------- | -------- | ----------- |
+| `monacoLibPath` | `monaco-lib-path` |             | `string` | `undefined` |
+| `serverUrl`     | `server-url`      |             | `string` | `undefined` |
 
 
 ## Dependencies

@@ -136,7 +136,7 @@ export class ElsaPager {
                 </div>
                 <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                     <div>
-                        <p class="text-sm leading-5 text-gray-700 space-x-0.5">
+                        <p class="text-sm leading-5 text-gray-700 space-x-0-5">
                             <span>Showing</span>
                             <span class="font-medium">{from}</span>
                             <span>to</span>

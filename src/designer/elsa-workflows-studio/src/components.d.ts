@@ -131,10 +131,12 @@ export namespace Components {
         "propertyModel": ActivityDefinitionProperty;
     }
     interface ElsaStudioRoot {
+        "monacoLibPath": string;
         "serverUrl": string;
     }
     interface ElsaStudioWorkflowDefinitionsEdit {
         "match": MatchResults;
+        "monacoLibPath": string;
         "serverUrl": string;
     }
     interface ElsaStudioWorkflowDefinitionsList {
@@ -602,10 +604,12 @@ declare namespace LocalJSX {
         "propertyModel"?: ActivityDefinitionProperty;
     }
     interface ElsaStudioRoot {
+        "monacoLibPath"?: string;
         "serverUrl"?: string;
     }
     interface ElsaStudioWorkflowDefinitionsEdit {
         "match"?: MatchResults;
+        "monacoLibPath"?: string;
         "serverUrl"?: string;
     }
     interface ElsaStudioWorkflowDefinitionsList {

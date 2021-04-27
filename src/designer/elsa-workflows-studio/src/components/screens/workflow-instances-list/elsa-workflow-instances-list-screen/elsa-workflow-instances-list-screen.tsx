@@ -9,7 +9,6 @@ import {Map, parseQuery} from '../../../../utils/utils';
 
 @Component({
     tag: 'elsa-workflow-instances-list-screen',
-    styleUrl: 'elsa-workflow-instances-list-screen.css',
     shadow: false,
 })
 export class ElsaWorkflowInstancesListScreen {
@@ -311,7 +310,7 @@ export class ElsaWorkflowInstancesListScreen {
                                     </td>
                                     <td class="hidden md:table-cell px-6 py-3 whitespace-no-wrap text-sm leading-5 text-gray-500 text-right">
                                         <div class="flex items-center space-x-3 lg:pl-2">
-                                            <div class={`flex-shrink-0 w-2.5 h-2.5 rounded-full bg-${statusColor}-600`}/>
+                                            <div class={`flex-shrink-0 w-2-5 h-2-5 rounded-full bg-${statusColor}-600`}/>
                                             <span>{workflowInstance.workflowStatus}</span>
                                         </div>
                                     </td>

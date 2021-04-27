@@ -1,4 +1,4 @@
-# elsa-studio-workflow-registry
+# elsa-workflow-registry-list-screen
 
 
 
@@ -15,19 +15,22 @@
 
 ## Dependencies
 
+### Used by
+
+ - [elsa-studio-workflow-registry](../../../dashboard/pages/elsa-studio-workflow-registry)
+
 ### Depends on
 
 - stencil-route-link
-- [elsa-workflow-registry-list-screen](../../../screens/workflow-registry-list/elsa-workflow-registry-list-screen)
+- [elsa-context-menu](../../../controls/elsa-context-menu)
 
 ### Graph
 ```mermaid
 graph TD;
-  elsa-studio-workflow-registry --> stencil-route-link
-  elsa-studio-workflow-registry --> elsa-workflow-registry-list-screen
   elsa-workflow-registry-list-screen --> stencil-route-link
   elsa-workflow-registry-list-screen --> elsa-context-menu
-  style elsa-studio-workflow-registry fill:#f9f,stroke:#333,stroke-width:4px
+  elsa-studio-workflow-registry --> elsa-workflow-registry-list-screen
+  style elsa-workflow-registry-list-screen fill:#f9f,stroke:#333,stroke-width:4px
 ```
 
 ----------------------------------------------
