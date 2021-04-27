@@ -4,7 +4,10 @@ import postcssImport from 'postcss-import';
 import tailwindcss from 'tailwindcss';
 import cssnano from 'cssnano';
 
+// @ts-ignore
 const dev: boolean = process.argv && process.argv.indexOf('--dev') > -1;
+
+// @ts-ignore
 const tailwindDev: boolean = process.argv && process.argv.indexOf('--tailwind:dev') > -1;
 
 // @ts-ignore

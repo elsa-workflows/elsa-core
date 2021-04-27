@@ -6,7 +6,7 @@
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
 import { ActivityDefinitionProperty, ActivityDescriptor, ActivityDesignDisplayContext, ActivityModel, ActivityPropertyDescriptor, VersionOptions, WorkflowBlueprint, WorkflowDefinition, WorkflowExecutionLogRecord, WorkflowModel } from "./models";
-import { MatchResults, RouterHistory } from "@stencil/router";
+import { LocationSegments, MatchResults, RouterHistory } from "@stencil/router";
 import { MenuItem } from "./components/controls/elsa-context-menu/models";
 import { DropdownButtonItem, DropdownButtonOrigin } from "./components/controls/elsa-dropdown-button/models";
 import { MonacoValueChangedArgs } from "./components/controls/elsa-monaco/elsa-monaco";
@@ -104,6 +104,7 @@ export namespace Components {
     }
     interface ElsaPager {
         "history"?: RouterHistory;
+        "location": LocationSegments;
         "page": number;
         "pageSize": number;
         "totalCount": number;
@@ -576,6 +577,7 @@ declare namespace LocalJSX {
     }
     interface ElsaPager {
         "history"?: RouterHistory;
+        "location"?: LocationSegments;
         "page"?: number;
         "pageSize"?: number;
         "totalCount"?: number;

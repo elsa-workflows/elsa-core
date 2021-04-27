@@ -1,5 +1,6 @@
 import {Component, Event, EventEmitter, h, Prop} from '@stencil/core';
-import {RouterHistory} from "@stencil/router";
+import {LocationSegments, RouterHistory, injectHistory } from "@stencil/router";
+import {parseQuery, queryToString} from "../../../utils/utils";
 
 @Component({
     tag: 'elsa-pager',
@@ -10,12 +11,13 @@ export class ElsaPager {
     @Prop() page: number;
     @Prop() pageSize: number;
     @Prop() totalCount: number;
+    @Prop() location: LocationSegments;
     @Prop() history?: RouterHistory;
 
     basePath: string;
 
     componentWillLoad() {
-        this.basePath = !!this.history ? this.history.location.pathname : document.location.pathname;
+        this.basePath = !!this.location ? this.location.pathname : document.location.pathname;
     }
 
     navigate(path: string) {
@@ -48,12 +50,20 @@ export class ElsaPager {
         const fromPage = Math.max(0, page - maxPageButtons / 2);
         const toPage = Math.min(pageCount, fromPage + maxPageButtons);
         const self = this;
+        const currentQuery = parseQuery(this.history.location.search);
+
+        currentQuery['pageSize'] = pageSize;
+        
+        const getNavUrl = (page: number) => {
+            const query = {...currentQuery, 'page': page};
+            return `${basePath}?${queryToString(query)}`;
+        };
 
         const renderPreviousButton = function () {
             if (page <= 0)
                 return;
-
-            return <a href={`${basePath}?page=${(page - 1)}&pageSize=${pageSize}`}
+            
+            return <a href={`${getNavUrl(page - 1)}`}
                       onClick={e => self.onNavigateClick(e)}
                       class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm leading-5 font-medium rounded-md text-gray-700 bg-white hover:text-gray-500 focus:outline-none focus:shadow-outline-blue focus:border-blue-300 active:bg-gray-100 active:text-gray-700 transition ease-in-out duration-150">
                 Previous
@@ -64,7 +74,7 @@ export class ElsaPager {
             if (page >= pageCount)
                 return;
 
-            return <a href={`/${basePath}?page=${page + 1}&pageSize=${pageSize}`}
+            return <a href={`/${getNavUrl(page + 1)}`}
                       onClick={e => self.onNavigateClick(e)}
                       class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm leading-5 font-medium rounded-md text-gray-700 bg-white hover:text-gray-500 focus:outline-none focus:shadow-outline-blue focus:border-blue-300 active:bg-gray-100 active:text-gray-700 transition ease-in-out duration-150">
                 Next
@@ -76,7 +86,7 @@ export class ElsaPager {
                 return;
 
             return (
-                <a href={`${basePath}?page=${(page - 1)}&pageSize=${pageSize}`}
+                <a href={`${getNavUrl(page - 1)}`}
                    onClick={e => self.onNavigateClick(e)}
                    class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm leading-5 font-medium text-gray-500 hover:text-gray-400 focus:z-10 focus:outline-none focus:border-blue-300 focus:shadow-outline-blue active:bg-gray-100 active:text-gray-500 transition ease-in-out duration-150"
                    aria-label="Previous">
@@ -91,7 +101,7 @@ export class ElsaPager {
                 return;
 
             return (
-                <a href={`${basePath}?page=${page + 1}&pageSize=${pageSize}`}
+                <a href={`${getNavUrl(page + 1)}`}
                    onClick={e => self.onNavigateClick(e)}
                    class="-ml-px relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm leading-5 font-medium text-gray-500 hover:text-gray-400 focus:z-10 focus:outline-none focus:border-blue-300 focus:shadow-outline-blue active:bg-gray-100 active:text-gray-500 transition ease-in-out duration-150"
                    aria-label="Next">
@@ -117,7 +127,7 @@ export class ElsaPager {
                         {i + 1}
                     </span>);
                 } else {
-                    buttons.push(<a href={`${basePath}?page=${i}&pageSize=${pageSize}`}
+                    buttons.push(<a href={`${getNavUrl(i)}`}
                                     onClick={e => self.onNavigateClick(e)}
                                     class={`-ml-px relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm leading-5 font-medium text-gray-700 hover:text-gray-500 focus:z-10 focus:outline-none active:bg-gray-100 active:text-gray-700 transition ease-in-out duration-150 ${leftRoundedClass}`}>
                         {i + 1}
@@ -158,3 +168,5 @@ export class ElsaPager {
         );
     }
 }
+
+injectHistory(ElsaPager);
