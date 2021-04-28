@@ -27,12 +27,7 @@ namespace Elsa.Metadata
                 return null;
 
             if (activityPropertyAttribute.OptionsProvider == null)
-            {
-                if (TryGetEnumOptions(activityPropertyInfo, out var items))
-                    return items;
-
-                return activityPropertyAttribute.Options;
-            }
+                return activityPropertyAttribute.Options ?? (TryGetEnumOptions(activityPropertyInfo, out var items) ? items : null);
 
             var providerType = activityPropertyAttribute.OptionsProvider;
 
