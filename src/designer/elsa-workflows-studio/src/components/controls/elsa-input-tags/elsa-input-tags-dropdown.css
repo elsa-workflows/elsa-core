@@ -1,17 +1,3 @@
 :host {
     display: block;
 }
-
-.tag-input:focus {
-    outline: none !important;
-    box-shadow: none !important;
-}
-
-.pr-8 {
-    padding-right: 2rem !important;
-}
-
-.bg-green-350 {
-    --tw-bg-opacity: 1;
-    background-color: rgba(52,191,113,var(--tw-bg-opacity));
-}
