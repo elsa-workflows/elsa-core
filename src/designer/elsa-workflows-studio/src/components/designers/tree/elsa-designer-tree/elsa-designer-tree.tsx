@@ -195,9 +195,9 @@ export class ElsaWorkflowDesigner {
   componentDidLoad() {
     this.svgD3Selected = d3.select(this.svg);
     this.innerD3Selected = d3.select(this.inner);
-    this.applyZoom();
-    this.setEnities();
-    this.renderNodes();
+    setTimeout(() => {
+      this.rerenderTree()
+    }, 400)
   }
 
   componentWillRender() {
@@ -441,7 +441,7 @@ ${this.renderActivityBody(activity.description)}
   render() {
     return (
       <Host class="workflow-canvas flex-1 flex" ref={el => (this.el = el)}>
-        <svg ref={el => (this.svg = el)} id="svg" style={{ height: '100vh', width: '100vw', pointerEvents: this.contextMenu.shown ? 'none' : '' }}>
+        <svg ref={el => (this.svg = el)} id="svg" style={{ height: 'calc(100vh - 64px)', width: '100%', pointerEvents: this.contextMenu.shown ? 'none' : '' }}>
           <g ref={el => (this.inner = el)} />
         </svg>
         <div
@@ -452,7 +452,7 @@ ${this.renderActivityBody(activity.description)}
           data-transition-leave-start="transform opacity-100 scale-100"
           data-transition-leave-end="transform opacity-0 scale-95"
           class={`${this.contextMenu.shown ? '' : 'hidden'} context-menu z-10 mx-3 w-48 mt-1 rounded-md shadow-lg`}
-          style={{ position: 'absolute', left: `${this.contextMenu.x}px`, top: `${this.contextMenu.y}px` }}
+          style={{ position: 'absolute', left: `${this.contextMenu.x}px`, top: `${this.contextMenu.y - 64}px` }}
           ref={el =>
             registerClickOutside(this, el, () => {
               this.handleContextMenuChange(0, 0, false, null);
@@ -483,7 +483,7 @@ ${this.renderActivityBody(activity.description)}
             </div>
           </div>
         </div>
-        <div innerHTML={<ActivityIcon />} />
+        {/* <div innerHTML={<ActivityIcon />} /> */}
       </Host>
     );
   }
