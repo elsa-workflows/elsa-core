@@ -95,7 +95,7 @@ export class ElsaInputTagsDropdown {
                     </a>
                 ))}
 
-                <select id={this.fieldId} class="inline-block text-xs bg-green-350 text-white py-2 px-3 mr-1 mb-1 pr-8 rounded" onChange={(e) => this.onTagSelected(e)}>
+                <select id={this.fieldId} class="inline-block text-xs bg-green-400 text-white py-2 px-3 mr-1 mb-1 pr-8 rounded" onChange={(e) => this.onTagSelected(e)}>
                     <option value="Add" disabled selected>{this.placeHolder}</option>
                     {this.dropdownTags.map(tag =>
                     (
