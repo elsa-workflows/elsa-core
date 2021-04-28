@@ -4,7 +4,10 @@ import postcssImport from 'postcss-import';
 import tailwindcss from 'tailwindcss';
 import cssnano from 'cssnano';
 
+// @ts-ignore
 const dev: boolean = process.argv && process.argv.indexOf('--dev') > -1;
+
+// @ts-ignore
 const tailwindDev: boolean = process.argv && process.argv.indexOf('--tailwind:dev') > -1;
 
 // @ts-ignore
@@ -20,6 +23,9 @@ export const config: Config = {
     {
       type: 'dist',
       esmLoaderPath: '../loader',
+      copy: [
+        {src: 'assets', dest: 'assets'}
+      ]
     },
     {
       type: 'dist-custom-elements-bundle',
@@ -37,7 +43,7 @@ export const config: Config = {
       ]
     },
   ],
-  globalStyle: 'src/globals/styles.css',
+  globalStyle: 'src/globals/tailwind.css',
   plugins: tailwindDev
     ? []
     : [
@@ -47,9 +53,6 @@ export const config: Config = {
           tailwindcss,
           purgecss,
           cssnano
-        ],
-        injectGlobalPaths: [
-          'src/globals/tailwind.css'
         ]
       })
     ],

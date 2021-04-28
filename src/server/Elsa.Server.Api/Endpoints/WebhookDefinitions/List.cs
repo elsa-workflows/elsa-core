@@ -8,6 +8,7 @@ using Elsa.Models;
 using Elsa.Persistence.Specifications;
 using Elsa.Serialization;
 using Elsa.Server.Api.Models;
+using Elsa.Server.Api.Services;
 using Elsa.Server.Api.Swagger.Examples;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -23,12 +24,12 @@ namespace Elsa.Server.Api.Endpoints.WebhookDefinitions
     public class List : Controller
     {
         private readonly IWebhookDefinitionStore _webhookDefinitionStore;
-        private readonly IContentSerializer _serializer;
+        private readonly IEndpointContentSerializerSettingsProvider _serializerSettingsProvider;
 
-        public List(IWebhookDefinitionStore webhookDefinitionStore, IContentSerializer serializer)
+        public List(IWebhookDefinitionStore webhookDefinitionStore, IEndpointContentSerializerSettingsProvider serializerSettingsProvider)
         {
             _webhookDefinitionStore = webhookDefinitionStore;
-            _serializer = serializer;
+            _serializerSettingsProvider = serializerSettingsProvider;
         }
 
         [HttpGet]
@@ -45,7 +46,7 @@ namespace Elsa.Server.Api.Endpoints.WebhookDefinitions
             var specification = Specification<WebhookDefinition>.Identity;
             var items = await _webhookDefinitionStore.FindManyAsync(specification, cancellationToken: cancellationToken);
 
-            return Json(items, _serializer.GetSettings());
+            return Json(items, _serializerSettingsProvider.GetSettings());
         }
     }
 }

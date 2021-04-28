@@ -21,6 +21,7 @@
 
 ### Depends on
 
+- stencil-route-link
 - [elsa-context-menu](../../../controls/elsa-context-menu)
 - [elsa-pager](../../../controls/elsa-pager)
 - [elsa-confirm-dialog](../../../shared/elsa-confirm-dialog)
@@ -29,6 +30,7 @@
 ### Graph
 ```mermaid
 graph TD;
+  elsa-workflow-instances-list-screen --> stencil-route-link
   elsa-workflow-instances-list-screen --> elsa-context-menu
   elsa-workflow-instances-list-screen --> elsa-pager
   elsa-workflow-instances-list-screen --> elsa-confirm-dialog

@@ -63,7 +63,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
         this.networkError = null;
 
         // A small hack to make sure JS Plumb is cleaned up before HTML elements get removed.
-        await this.designer.destroyJsPlumb();
+        // await this.designer.destroyJsPlumb();
 
         try {
             const workflowDefinition = await client.workflowDefinitionsApi.import(this.workflowDefinition.definitionId, file);
@@ -184,6 +184,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
             displayName: workflowDefinition.displayName,
             isSingleton: workflowDefinition.isSingleton,
             name: workflowDefinition.name,
+            tag: workflowDefinition.tag,
             persistenceBehavior: workflowDefinition.persistenceBehavior,
             publish: publish || false,
             variables: workflowDefinition.variables,
@@ -328,7 +329,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
     renderCanvas() {
         return (
             <div class="flex-1 flex relative">
-                <elsa-designer-tree model={this.workflowModel} class="flex-1" ref={el => this.designer = el}/>
+                <elsa-designer-tree model={this.workflowModel} editMode={true} class="flex-1" ref={el => this.designer = el}/>
                 {this.renderWorkflowSettingsButton()}
                 <elsa-workflow-settings-modal workflowDefinition={this.workflowDefinition}/>
                 <elsa-workflow-definition-editor-notifications/>

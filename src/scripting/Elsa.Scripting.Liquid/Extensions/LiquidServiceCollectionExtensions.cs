@@ -18,7 +18,8 @@ namespace Elsa.Scripting.Liquid.Extensions
                 .AddScoped<ILiquidTemplateManager, LiquidTemplateManager>()
                 .AddSingleton<LiquidParser>()
                 .AddLiquidFilter<JsonFilter>("json")
-                .AddLiquidFilter<Base64Filter>("base64");
+                .AddLiquidFilter<Base64Filter>("base64")
+                .AddLiquidFilter<WorkflowDefinitionIdFilter>("workflow_definition_id");
         }
         
         public static IServiceCollection AddLiquidFilter<T>(this IServiceCollection services, string name) where T : class, ILiquidFilter

@@ -18,6 +18,7 @@ export interface WorkflowDefinition {
   isLatest?: boolean;
   activities: Array<ActivityDefinition>;
   connections: Array<ConnectionDefinition>;
+  tag?: string;
 }
 
 export interface WorkflowDefinitionSummary {
@@ -32,6 +33,7 @@ export interface WorkflowDefinitionSummary {
   persistenceBehavior?: WorkflowPersistenceBehavior;
   isPublished?: boolean;
   isLatest?: boolean;
+  tag?: string;
 }
 
 export interface ActivityBlueprint {
@@ -65,6 +67,7 @@ export interface WorkflowBlueprint extends CompositeActivityBlueprint {
   isSingleton: boolean;
   isPublished: boolean;
   isLatest: boolean;
+  tag?: string;
   contextOptions?: WorkflowContextOptions;
   variables: Variables;
   customAttributes: Variables;
@@ -81,6 +84,7 @@ export interface WorkflowBlueprintSummary {
   isSingleton: boolean;
   isPublished: boolean;
   isLatest: boolean;
+  tag?: string;
 }
 
 export interface WorkflowInstance {

@@ -90,9 +90,10 @@ namespace Elsa.Handlers
 
         public async Task Handle(ActivityExecuted notification, CancellationToken cancellationToken)
         {
-            var behavior = notification.WorkflowExecutionContext.WorkflowBlueprint.PersistenceBehavior;
+            var workflowPersistenceBehavior = notification.WorkflowExecutionContext.WorkflowBlueprint.PersistenceBehavior;
+            var activityPersistenceBehavior = notification.Activity.PersistWorkflow;
 
-            if (behavior == WorkflowPersistenceBehavior.ActivityExecuted)
+            if (workflowPersistenceBehavior == WorkflowPersistenceBehavior.ActivityExecuted || activityPersistenceBehavior)
                 await SaveWorkflowAsync(notification.WorkflowExecutionContext, cancellationToken);
         }
 

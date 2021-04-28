@@ -7,10 +7,11 @@
 
 ## Properties
 
-| Property    | Attribute    | Description | Type           | Default     |
-| ----------- | ------------ | ----------- | -------------- | ----------- |
-| `match`     | --           |             | `MatchResults` | `undefined` |
-| `serverUrl` | `server-url` |             | `string`       | `undefined` |
+| Property        | Attribute         | Description | Type           | Default     |
+| --------------- | ----------------- | ----------- | -------------- | ----------- |
+| `match`         | --                |             | `MatchResults` | `undefined` |
+| `monacoLibPath` | `monaco-lib-path` |             | `string`       | `undefined` |
+| `serverUrl`     | `server-url`      |             | `string`       | `undefined` |
 
 
 ## Dependencies
@@ -30,7 +31,6 @@ graph TD;
   elsa-workflow-definition-editor-screen --> elsa-activity-editor-modal
   elsa-workflow-definition-editor-screen --> elsa-workflow-publish-button
   elsa-workflow-definition-editor-screen --> context-consumer
-  elsa-designer-tree --> elsa-designer-tree-activity
   elsa-workflow-settings-modal --> elsa-modal-dialog
   elsa-workflow-settings-modal --> elsa-monaco
   elsa-workflow-definition-editor-notifications --> elsa-toast-notification

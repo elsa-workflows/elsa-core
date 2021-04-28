@@ -17,7 +17,8 @@ namespace Elsa.Persistence.YesSql
                     .Column<string>(nameof(WorkflowDefinitionIndex.DefinitionVersionId))
                     .Column<int>(nameof(WorkflowDefinitionIndex.Version))
                     .Column<bool>(nameof(WorkflowDefinitionIndex.IsLatest))
-                    .Column<bool>(nameof(WorkflowDefinitionIndex.IsPublished)),
+                    .Column<bool>(nameof(WorkflowDefinitionIndex.IsPublished))
+                    .Column<string>(nameof(WorkflowDefinitionIndex.Tag)),
                 CollectionNames.WorkflowDefinitions);
 
             SchemaBuilder.CreateMapIndexTable<WorkflowInstanceIndex>(

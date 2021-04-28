@@ -2,7 +2,7 @@ using System;
 using Elsa;
 using Elsa.Activities.Http;
 using Elsa.Activities.Http.Bookmarks;
-using Elsa.Activities.Http.Handlers;
+using Elsa.Activities.Http.JavaScript;
 using Elsa.Activities.Http.Options;
 using Elsa.Activities.Http.Parsers;
 using Elsa.Activities.Http.Services;

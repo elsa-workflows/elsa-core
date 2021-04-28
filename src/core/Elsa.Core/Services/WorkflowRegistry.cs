@@ -41,18 +41,8 @@ namespace Elsa.Services
             foreach (var provider in providers)
             await foreach (var workflow in provider.GetWorkflowsAsync(cancellationToken).WithCancellation(cancellationToken))
             {
-                // If a workflow is not published, only consider it for processing if it has at least one non-ended workflow instance.
-                if (!workflow.IsPublished && !await WorkflowHasNonFinishedWorkflowsAsync(workflow, cancellationToken))
-                    continue;
-                
                 yield return workflow;
             }
-        }
-        
-        private async Task<bool> WorkflowHasNonFinishedWorkflowsAsync(IWorkflowBlueprint workflowBlueprint, CancellationToken cancellationToken)
-        {
-            var count = await _workflowInstanceStore.CountAsync(new NonFinalizedWorkflowSpecification().WithWorkflowDefinition(workflowBlueprint.Id), cancellationToken);
-            return count > 0;
         }
     }
 }

@@ -110,6 +110,9 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
                     b.Property<int>("PersistenceBehavior")
                         .HasColumnType("int");
 
+                    b.Property<string>("Tag")
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<string>("TenantId")
                         .HasColumnType("nvarchar(450)");
 
@@ -126,6 +129,9 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
 
                     b.HasIndex("Name")
                         .HasDatabaseName("IX_WorkflowDefinition_Name");
+
+                    b.HasIndex("Tag")
+                        .HasDatabaseName("IX_WorkflowDefinition_Tag");
 
                     b.HasIndex("TenantId")
                         .HasDatabaseName("IX_WorkflowDefinition_TenantId");

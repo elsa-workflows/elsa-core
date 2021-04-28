@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Metadata;
+using Elsa.Server.Api.Services;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
@@ -18,10 +19,12 @@ namespace Elsa.Server.Api.Endpoints.Activities
     public class List : Controller
     {
         private readonly IActivityTypeService _activityTypeService;
+        private readonly IEndpointContentSerializerSettingsProvider _serializerSettingsProvider;
 
-        public List(IActivityTypeService activityTypeService)
+        public List(IActivityTypeService activityTypeService, IEndpointContentSerializerSettingsProvider serializerSettingsProvider)
         {
             _activityTypeService = activityTypeService;
+            _serializerSettingsProvider = serializerSettingsProvider;
         }
 
         [HttpGet]
@@ -37,7 +40,7 @@ namespace Elsa.Server.Api.Endpoints.Activities
             var activityTypes = await _activityTypeService.GetActivityTypesAsync(cancellationToken);
             var tasks = activityTypes.Where(x => x.IsBrowsable).Select(x => DescribeActivity(x, cancellationToken)).ToList();
             var descriptors = await Task.WhenAll(tasks);
-            return Json(descriptors);
+            return Json(descriptors, _serializerSettingsProvider.GetSettings());
         }
 
         private async Task<ActivityDescriptor> DescribeActivity(ActivityType activityType, CancellationToken cancellationToken) => await _activityTypeService.DescribeActivityType(activityType, cancellationToken);
