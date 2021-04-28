@@ -45,7 +45,6 @@
     "el-transition": "^0.0.7",
     "eslint": "7.23.0",
     "js-event-bus": "^1.0.3",
-    "jsplumb": "2.15.5",
     "lodash": "^4.17.21",
     "moment": "^2.29.1",
     "monaco-editor": "^0.23.0",
