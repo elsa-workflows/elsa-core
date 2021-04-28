@@ -17,7 +17,9 @@ import dagreD3 from 'dagre-d3';
 import { registerClickOutside } from 'stencil-click-outside';
 import state from '../../../../utils/store';
 import uuid = jsPlumb.jsPlumbUtil.uuid;
-import { ActivityIcon } from '../../../icons/activity-icon';
+import {ActivityIcon} from '../../../icons/activity-icon';
+import {languages} from "monaco-editor";
+import css = languages.css;
 
 @Component({
   tag: 'elsa-designer-tree',
@@ -26,8 +28,11 @@ import { ActivityIcon } from '../../../icons/activity-icon';
   shadow: false,
 })
 export class ElsaWorkflowDesigner {
-  @Prop() model: WorkflowModel = { activities: [], connections: [], persistenceBehavior: WorkflowPersistenceBehavior.WorkflowBurst };
-  @Event({ eventName: 'workflow-changed', bubbles: true, composed: true, cancelable: true }) workflowChanged: EventEmitter<WorkflowModel>;
+  @Prop() model: WorkflowModel = {activities: [], connections: [], persistenceBehavior: WorkflowPersistenceBehavior.WorkflowBurst};
+  @Prop() selectedActivityIds: Array<string> = [];
+  @Event({eventName: 'workflow-changed', bubbles: true, composed: true, cancelable: true}) workflowChanged: EventEmitter<WorkflowModel>;
+  @Event() activitySelected: EventEmitter<ActivityModel>;
+  @Event() activityDeselected: EventEmitter<ActivityModel>;
   @State() workflowModel: WorkflowModel;
 
   el: HTMLElement;
@@ -43,6 +48,7 @@ export class ElsaWorkflowDesigner {
   parentActivityId?: string;
   parentActivityOutcome?: string;
   activityDisplayContexts: Map<ActivityDesignDisplayContext> = {};
+  selectedActivities: Map<ActivityModel> = {};
 
   @State() contextMenu: {
     shown: boolean;
@@ -68,6 +74,20 @@ export class ElsaWorkflowDesigner {
   @Watch('model')
   handleModelChanged(newValue: WorkflowModel) {
     this.workflowModel = newValue;
+  }
+
+  @Watch('selectedActivityIds')
+  handleSelectedActivityIdsChanged(newValue: Array<string>) {
+    debugger;
+    const ids = newValue || [];
+    const selectedActivities = this.workflowModel.activities.filter(x => ids.includes(x.activityId));
+    const map: Map<ActivityModel> = {};
+
+    for (const activity of selectedActivities)
+      map[activity.activityId] = activity;
+
+    this.selectedActivities = map;
+    this.rerenderTree();
   }
 
   handleEditActivity(activity: ActivityModel) {
@@ -363,9 +383,27 @@ export class ElsaWorkflowDesigner {
 
     d3.selectAll('.node.activity').each((n: any) => {
       const node = this.graph.node(n) as any;
+      const activity = node.activity;
+      const activityId = activity.activityId;
+
       d3.select(node.elem).on('click', () => {
+        // If a parent activity was selected to connect to:
         if (this.parentActivityId && this.parentActivityOutcome) {
-          this.addConnection(this.parentActivityId, node.activity.activityId, this.parentActivityOutcome);
+          this.addConnection(this.parentActivityId, activityId, this.parentActivityOutcome);
+        } else {
+          // When clicking an activity:
+          if (!!this.selectedActivities[activityId])
+            delete this.selectedActivities[activityId];
+          else {
+            for (const key in this.selectedActivities) {
+              this.activityDeselected.emit(this.selectedActivities[key]);
+            }
+            this.selectedActivities = {};
+            this.selectedActivities[activityId] = activity;
+            this.activitySelected.emit(activity);
+          }
+
+          this.rerenderTree();
         }
       });
       d3.select(node.elem)
@@ -427,8 +465,9 @@ export class ElsaWorkflowDesigner {
 
   renderActivity(activity: ActivityModel) {
     const displayContext = this.activityDisplayContexts[activity.activityId] || undefined;
+    const cssClass = !!this.selectedActivities[activity.activityId] ? 'border-blue-600' : 'border-white hover:border-blue-600'
     return `<div id=${`activity-${activity.activityId}`} 
-    class="activity border-2 border-solid border-white rounded bg-white text-left text-black text-lg hover:border-blue-600 select-none max-w-md shadow-sm relative">
+    class="activity border-2 border-solid rounded bg-white text-left text-black text-lg select-none max-w-md shadow-sm relative ${cssClass}">
       <div class="p-5">
         <div class="flex justify-between space-x-8">
           <div class="flex-shrink-0">
@@ -457,9 +496,11 @@ export class ElsaWorkflowDesigner {
 
   renderActivityBody(description: string | null) {
     if (!description) return '';
-    return `<div class="p-6 text-gray-400 text-sm border-t border-t-solid">
-              ${description}
-            </div>`;
+    return (
+      `<div class="p-6 text-gray-400 text-sm border-t border-t-solid">
+        ${description}
+      </div>`
+    );
   }
 
   // private onActivitySelected(e: CustomEvent<ActivityModel>) {
@@ -473,8 +514,8 @@ export class ElsaWorkflowDesigner {
   render() {
     return (
       <Host class="workflow-canvas flex-1 flex" ref={el => (this.el = el)}>
-        <svg ref={el => (this.svg = el)} id="svg" style={{ height: 'calc(100vh - 64px)', width: '100%', pointerEvents: this.contextMenu.shown ? 'none' : '' }}>
-          <g ref={el => (this.inner = el)} />
+        <svg ref={el => (this.svg = el)} id="svg" style={{height: 'calc(100vh - 64px)', width: '100%', pointerEvents: this.contextMenu.shown ? 'none' : ''}}>
+          <g ref={el => (this.inner = el)}/>
         </svg>
         <div
           data-transition-enter="transition ease-out duration-100"
@@ -484,7 +525,7 @@ export class ElsaWorkflowDesigner {
           data-transition-leave-start="transform opacity-100 scale-100"
           data-transition-leave-end="transform opacity-0 scale-95"
           class={`${this.contextMenu.shown ? '' : 'hidden'} context-menu z-10 mx-3 w-48 mt-1 rounded-md shadow-lg`}
-          style={{ position: 'absolute', left: `${this.contextMenu.x}px`, top: `${this.contextMenu.y - 64}px` }}
+          style={{position: 'absolute', left: `${this.contextMenu.x}px`, top: `${this.contextMenu.y - 64}px`}}
           ref={el =>
             registerClickOutside(this, el, () => {
               this.handleContextMenuChange(0, 0, false, null);
@@ -515,7 +556,6 @@ export class ElsaWorkflowDesigner {
             </div>
           </div>
         </div>
-        {/* <div innerHTML={<ActivityIcon />} /> */}
       </Host>
     );
   }
