@@ -42,7 +42,6 @@ Type: `Promise<string>`
 graph TD;
   elsa-workflow-instance-viewer-screen --> elsa-workflow-instance-journal
   elsa-workflow-instance-viewer-screen --> elsa-designer-tree
-  elsa-designer-tree --> elsa-designer-tree-activity
   elsa-studio-workflow-instances-view --> elsa-workflow-instance-viewer-screen
   style elsa-workflow-instance-viewer-screen fill:#f9f,stroke:#333,stroke-width:4px
 ```

@@ -7,12 +7,13 @@
 
 ## Properties
 
-| Property     | Attribute     | Description | Type            | Default     |
-| ------------ | ------------- | ----------- | --------------- | ----------- |
-| `history`    | --            |             | `RouterHistory` | `undefined` |
-| `page`       | `page`        |             | `number`        | `undefined` |
-| `pageSize`   | `page-size`   |             | `number`        | `undefined` |
-| `totalCount` | `total-count` |             | `number`        | `undefined` |
+| Property     | Attribute     | Description | Type               | Default     |
+| ------------ | ------------- | ----------- | ------------------ | ----------- |
+| `history`    | --            |             | `RouterHistory`    | `undefined` |
+| `location`   | --            |             | `LocationSegments` | `undefined` |
+| `page`       | `page`        |             | `number`           | `undefined` |
+| `pageSize`   | `page-size`   |             | `number`           | `undefined` |
+| `totalCount` | `total-count` |             | `number`           | `undefined` |
 
 
 ## Dependencies
