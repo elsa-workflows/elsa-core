@@ -1,4 +1,5 @@
 import {Component, Host, h, Prop, State, Event, EventEmitter, Watch} from '@stencil/core';
+import { v4 as uuid } from 'uuid';
 import {Map, addConnection, findActivity, getChildActivities, getInboundConnections, getOutboundConnections, removeActivity, removeConnection} from '../../../../utils/utils';
 import {
   ActivityDescriptor,
@@ -11,15 +12,11 @@ import {
   WorkflowPersistenceBehavior,
 } from '../../../../models';
 import {eventBus} from '../../../../services/event-bus';
-import jsPlumb from 'jsplumb';
 import * as d3 from 'd3';
 import dagreD3 from 'dagre-d3';
 import {registerClickOutside} from 'stencil-click-outside';
 import state from '../../../../utils/store';
-import uuid = jsPlumb.jsPlumbUtil.uuid;
 import {ActivityIcon} from '../../../icons/activity-icon';
-import {languages} from "monaco-editor";
-import css = languages.css;
 
 @Component({
   tag: 'elsa-designer-tree',
