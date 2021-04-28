@@ -1,6 +1,6 @@
 ﻿import {ElsaPlugin} from "../services/elsa-plugin";
 import {eventBus} from '../services/event-bus';
-import {ActivityDesignDisplayContext, EventTypes} from "../models";
+import {ActivityDesignDisplayContext, EventTypes, SyntaxNames} from "../models";
 import {h} from "@stencil/core";
 import {parseJson} from "../utils/utils";
 
@@ -11,13 +11,14 @@ export class ForkPlugin implements ElsaPlugin {
 
   onActivityDesignDisplaying(context: ActivityDesignDisplayContext) {
     const activityModel = context.activityModel;
-
+    
     if (activityModel.type !== 'Fork')
       return;
 
     const props = activityModel.properties || [];
-    const branches = props.find(x => x.name == 'Branches') || { expressions: {'Literal': ''}, syntax: 'Literal' };
-    const expression = branches.expressions[branches.syntax];
+    const syntax = SyntaxNames.Json;
+    const branches = props.find(x => x.name == 'Branches') || { expressions: {'Json': '[]'}, syntax: syntax };
+    const expression = branches.expressions[syntax];
     context.outcomes = parseJson(expression) || [];
   }
 }

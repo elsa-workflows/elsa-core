@@ -1,16 +1,20 @@
-import {Component, h, Prop} from '@stencil/core';
+import {Component, h, Prop, getAssetPath} from '@stencil/core';
 
 @Component({
   tag: 'elsa-studio-root',
   shadow: false,
+  assetsDirs: ['assets']
 })
 export class ElsaStudioRoot {
 
   @Prop({attribute: 'server-url', reflect: true}) serverUrl: string;
+  @Prop({attribute: 'monaco-lib-path', reflect: true}) monacoLibPath: string;
 
   render() {
 
     const serverUrl = this.serverUrl;
+    const monacoLibPath = this.monacoLibPath;
+    const logoPath = getAssetPath('./assets/logo.png');
 
     // TODO: Tunneling doesn't appear to be working in combination with the router.
     // const tunnelState: DashboardState = {
@@ -24,7 +28,7 @@ export class ElsaStudioRoot {
             <div class="flex items-center justify-between h-16">
               <div class="flex items-center">
                 <div class="flex-shrink-0">
-                  <img class="h-8 w-8" src="/build/assets/images/logo.png" alt="Workflow"/>
+                  <img class="h-8 w-8" src={logoPath} alt="Workflow"/>
                 </div>
                 <div class="hidden md:block">
                   <div class="ml-10 flex items-baseline space-x-4">
@@ -49,7 +53,7 @@ export class ElsaStudioRoot {
               <stencil-route url="/" routeRender={props => <stencil-route-redirect url="/workflow-registry"/>} exact={true}/>
               <stencil-route url="/workflow-registry" component="elsa-studio-workflow-registry" componentProps={{'serverUrl': serverUrl}} exact={true}/>
               <stencil-route url="/workflow-definitions" component="elsa-studio-workflow-definitions-list" componentProps={{'serverUrl': serverUrl}} exact={true}/>
-              <stencil-route url="/workflow-definitions/:id" component="elsa-studio-workflow-definitions-edit" componentProps={{'serverUrl': serverUrl}}/>
+              <stencil-route url="/workflow-definitions/:id" component="elsa-studio-workflow-definitions-edit" componentProps={{'serverUrl': serverUrl, 'monacoLibPath': monacoLibPath}}/>
               <stencil-route url="/workflow-instances" component="elsa-studio-workflow-instances-list" componentProps={{'serverUrl': serverUrl}} exact={true}/>
               <stencil-route url="/workflow-instances/:id" component="elsa-studio-workflow-instances-view" componentProps={{'serverUrl': serverUrl}}/>
             </stencil-route-switch>

@@ -7,7 +7,7 @@ WORKDIR /app/designer/elsa-workflows-studio
 RUN npm install --force
 RUN npm run build
 
-WORKDIR /app/designer/bindings/blazor/Elsa.Designer.Bindings.Blazor
+WORKDIR /app/designer/bindings/aspnet/Elsa.Designer.Components.Web
 RUN npm install --force
 RUN npm run build
 
@@ -24,7 +24,7 @@ COPY src/. ./src
 COPY *.props ./
 COPY ./Nuget.Config ./
 COPY --from=client-build /app/designer/elsa-workflows-studio ./src/designer/elsa-workflows-studio
-COPY --from=client-build /app/designer/bindings/blazor/Elsa.Designer.Bindings.Blazor ./src/designer/bindings/blazor/Elsa.Designer.Bindings.Blazor
+COPY --from=client-build /app/designer/bindings/aspnet/Elsa.Designer.Components.Web ./src/designer/bindings/aspnet/Elsa.Designer.Components.Web
 
 
 # build and publish (UseAppHost=false created platform independent binaries)

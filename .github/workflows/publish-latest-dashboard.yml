@@ -22,15 +22,15 @@ jobs:
           useRollingCache: true
           working-directory: |
             src/designer/elsa-workflows-studio
-            src/designer/bindings/blazor/Elsa.Designer.Bindings.Blazor     
+            src/designer/bindings/aspnet/Elsa.Designer.Components.Web
      
       - name: Build NPM packages for elsa-workflows-studio
         run: npm run build
         working-directory: src/designer/elsa-workflows-studio
         
-      - name: Build NPM packages for Elsa.Designer.Bindings.Blazor
+      - name: Build NPM packages for Elsa.Designer.Components.Web
         run: npm run build
-        working-directory: src/designer/bindings/blazor/Elsa.Designer.Bindings.Blazor
+        working-directory: src/designer/bindings/aspnet/Elsa.Designer.Components.Web
         
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
@@ -39,7 +39,7 @@ jobs:
         
       - name: Set up Docker Buildx
         id: buildx
-        uses: docker/setup-buildx-action@v1    
+        uses: docker/setup-buildx-action@v1
       
       - name: Cache Docker layers
         uses: actions/cache@v2

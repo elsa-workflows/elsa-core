@@ -5,8 +5,8 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
-import { ActivityDefinitionProperty, ActivityDescriptor, ActivityDesignDisplayContext, ActivityModel, ActivityPropertyDescriptor, VersionOptions, WorkflowBlueprint, WorkflowDefinition, WorkflowExecutionLogRecord, WorkflowModel } from "./models";
-import { MatchResults, RouterHistory } from "@stencil/router";
+import { ActivityDefinitionProperty, ActivityDescriptor, ActivityPropertyDescriptor, VersionOptions, WorkflowBlueprint, WorkflowDefinition, WorkflowExecutionLogRecord, WorkflowModel } from "./models";
+import { LocationSegments, MatchResults, RouterHistory } from "@stencil/router";
 import { MenuItem } from "./components/controls/elsa-context-menu/models";
 import { DropdownButtonItem, DropdownButtonOrigin } from "./components/controls/elsa-dropdown-button/models";
 import { MonacoValueChangedArgs } from "./components/controls/elsa-monaco/elsa-monaco";
@@ -35,11 +35,6 @@ export namespace Components {
     }
     interface ElsaDesignerTree {
         "model": WorkflowModel;
-    }
-    interface ElsaDesignerTreeActivity {
-        "displayContext": ActivityDesignDisplayContext;
-        "icon": string;
-        "isSelected": boolean;
     }
     interface ElsaDropdownButton {
         "icon"?: any;
@@ -102,6 +97,7 @@ export namespace Components {
     }
     interface ElsaPager {
         "history"?: RouterHistory;
+        "location": LocationSegments;
         "page": number;
         "pageSize": number;
         "totalCount": number;
@@ -129,10 +125,12 @@ export namespace Components {
         "propertyModel": ActivityDefinitionProperty;
     }
     interface ElsaStudioRoot {
+        "monacoLibPath": string;
         "serverUrl": string;
     }
     interface ElsaStudioWorkflowDefinitionsEdit {
         "match": MatchResults;
+        "monacoLibPath": string;
         "serverUrl": string;
     }
     interface ElsaStudioWorkflowDefinitionsList {
@@ -247,12 +245,6 @@ declare global {
     var HTMLElsaDesignerTreeElement: {
         prototype: HTMLElsaDesignerTreeElement;
         new (): HTMLElsaDesignerTreeElement;
-    };
-    interface HTMLElsaDesignerTreeActivityElement extends Components.ElsaDesignerTreeActivity, HTMLStencilElement {
-    }
-    var HTMLElsaDesignerTreeActivityElement: {
-        prototype: HTMLElsaDesignerTreeActivityElement;
-        new (): HTMLElsaDesignerTreeActivityElement;
     };
     interface HTMLElsaDropdownButtonElement extends Components.ElsaDropdownButton, HTMLStencilElement {
     }
@@ -442,7 +434,6 @@ declare global {
         "elsa-confirm-dialog": HTMLElsaConfirmDialogElement;
         "elsa-context-menu": HTMLElsaContextMenuElement;
         "elsa-designer-tree": HTMLElsaDesignerTreeElement;
-        "elsa-designer-tree-activity": HTMLElsaDesignerTreeActivityElement;
         "elsa-dropdown-button": HTMLElsaDropdownButtonElement;
         "elsa-dropdown-property": HTMLElsaDropdownPropertyElement;
         "elsa-expression-editor": HTMLElsaExpressionEditorElement;
@@ -497,15 +488,6 @@ declare namespace LocalJSX {
     interface ElsaDesignerTree {
         "model"?: WorkflowModel;
         "onWorkflow-changed"?: (event: CustomEvent<WorkflowModel>) => void;
-    }
-    interface ElsaDesignerTreeActivity {
-        "displayContext"?: ActivityDesignDisplayContext;
-        "icon"?: string;
-        "isSelected"?: boolean;
-        "onDeselected"?: (event: CustomEvent<ActivityModel>) => void;
-        "onEdit-activity"?: (event: CustomEvent<ActivityModel>) => void;
-        "onRemove-activity"?: (event: CustomEvent<ActivityModel>) => void;
-        "onSelected"?: (event: CustomEvent<ActivityModel>) => void;
     }
     interface ElsaDropdownButton {
         "icon"?: any;
@@ -569,6 +551,7 @@ declare namespace LocalJSX {
     }
     interface ElsaPager {
         "history"?: RouterHistory;
+        "location"?: LocationSegments;
         "page"?: number;
         "pageSize"?: number;
         "totalCount"?: number;
@@ -597,10 +580,12 @@ declare namespace LocalJSX {
         "propertyModel"?: ActivityDefinitionProperty;
     }
     interface ElsaStudioRoot {
+        "monacoLibPath"?: string;
         "serverUrl"?: string;
     }
     interface ElsaStudioWorkflowDefinitionsEdit {
         "match"?: MatchResults;
+        "monacoLibPath"?: string;
         "serverUrl"?: string;
     }
     interface ElsaStudioWorkflowDefinitionsList {
@@ -676,7 +661,6 @@ declare namespace LocalJSX {
         "elsa-confirm-dialog": ElsaConfirmDialog;
         "elsa-context-menu": ElsaContextMenu;
         "elsa-designer-tree": ElsaDesignerTree;
-        "elsa-designer-tree-activity": ElsaDesignerTreeActivity;
         "elsa-dropdown-button": ElsaDropdownButton;
         "elsa-dropdown-property": ElsaDropdownProperty;
         "elsa-expression-editor": ElsaExpressionEditor;
@@ -720,7 +704,6 @@ declare module "@stencil/core" {
             "elsa-confirm-dialog": LocalJSX.ElsaConfirmDialog & JSXBase.HTMLAttributes<HTMLElsaConfirmDialogElement>;
             "elsa-context-menu": LocalJSX.ElsaContextMenu & JSXBase.HTMLAttributes<HTMLElsaContextMenuElement>;
             "elsa-designer-tree": LocalJSX.ElsaDesignerTree & JSXBase.HTMLAttributes<HTMLElsaDesignerTreeElement>;
-            "elsa-designer-tree-activity": LocalJSX.ElsaDesignerTreeActivity & JSXBase.HTMLAttributes<HTMLElsaDesignerTreeActivityElement>;
             "elsa-dropdown-button": LocalJSX.ElsaDropdownButton & JSXBase.HTMLAttributes<HTMLElsaDropdownButtonElement>;
             "elsa-dropdown-property": LocalJSX.ElsaDropdownProperty & JSXBase.HTMLAttributes<HTMLElsaDropdownPropertyElement>;
             "elsa-expression-editor": LocalJSX.ElsaExpressionEditor & JSXBase.HTMLAttributes<HTMLElsaExpressionEditorElement>;

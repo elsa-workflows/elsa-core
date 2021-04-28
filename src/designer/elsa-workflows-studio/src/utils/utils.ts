@@ -1,4 +1,5 @@
 import {ActivityDefinition, ActivityDefinitionProperty, ActivityModel, ConnectionModel, WorkflowModel} from "../models";
+import * as collection from 'lodash/collection';
 
 declare global {
     interface Array<T> {
@@ -157,6 +158,11 @@ export function parseQuery(queryString?: string): any {
         query[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1] || '');
     }
     return query;
+}
+
+export function queryToString(query: any): string {
+    const q = query || {};
+    return collection.map(q, (v, k) => `${k}=${v}`).join('&');
 }
 
 export function mapSyntaxToLanguage(syntax: string): any {

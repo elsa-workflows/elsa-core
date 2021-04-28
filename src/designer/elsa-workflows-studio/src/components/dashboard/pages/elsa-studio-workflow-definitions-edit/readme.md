@@ -7,10 +7,11 @@
 
 ## Properties
 
-| Property    | Attribute    | Description | Type           | Default     |
-| ----------- | ------------ | ----------- | -------------- | ----------- |
-| `match`     | --           |             | `MatchResults` | `undefined` |
-| `serverUrl` | `server-url` |             | `string`       | `undefined` |
+| Property        | Attribute         | Description | Type           | Default     |
+| --------------- | ----------------- | ----------- | -------------- | ----------- |
+| `match`         | --                |             | `MatchResults` | `undefined` |
+| `monacoLibPath` | `monaco-lib-path` |             | `string`       | `undefined` |
+| `serverUrl`     | `server-url`      |             | `string`       | `undefined` |
 
 
 ## Dependencies
