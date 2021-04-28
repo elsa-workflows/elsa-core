@@ -246,8 +246,19 @@ export class ElsaWorkflowInstanceJournal {
 
         if (!value)
           continue;
+        
+        let valueText = null;
 
-        filteredRecordData[key] = value;
+        if (typeof value == 'string')
+          valueText = value;
+        else if (typeof value == 'object')
+          valueText = JSON.stringify(value);
+        else if (typeof value == 'undefined')
+          valueText = null;
+        else
+          valueText = value.toString();
+
+        filteredRecordData[key] = valueText;
       }
 
       const deltaTimeText = !!deltaTime ? deltaTime.asHours() > 1
@@ -331,12 +342,12 @@ export class ElsaWorkflowInstanceJournal {
   };
 
   renderActivityStateTab = () => {
-    
+
     const activityModel = !!this.workflowModel && this.selectedActivityId ? this.workflowModel.activities.find(x => x.activityId === this.selectedActivityId) : null;
-    
-    if(!activityModel)
+
+    if (!activityModel)
       return <p>No activity selected</p>;
-    
+
     return (
       <div>
         <pre>{JSON.stringify(activityModel, null, 2)}</pre>

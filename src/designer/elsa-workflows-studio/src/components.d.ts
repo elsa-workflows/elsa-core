@@ -34,6 +34,7 @@ export namespace Components {
         "menuItems": Array<MenuItem>;
     }
     interface ElsaDesignerTree {
+        "editMode": boolean;
         "model": WorkflowModel;
         "selectedActivityIds": Array<string>;
     }
@@ -487,6 +488,7 @@ declare namespace LocalJSX {
         "menuItems"?: Array<MenuItem>;
     }
     interface ElsaDesignerTree {
+        "editMode"?: boolean;
         "model"?: WorkflowModel;
         "onActivityDeselected"?: (event: CustomEvent<ActivityModel>) => void;
         "onActivitySelected"?: (event: CustomEvent<ActivityModel>) => void;
