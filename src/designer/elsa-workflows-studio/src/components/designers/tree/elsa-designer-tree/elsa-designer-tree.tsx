@@ -338,7 +338,15 @@ export class ElsaWorkflowDesigner {
     });
 
     this.workflowModel.connections.forEach(({sourceId, targetId, outcome}) => {
-      this.graph.setEdge(`${sourceId}/${outcome}`, targetId, {arrowhead: 'undirected'});
+      const sourceName = `${sourceId}/${outcome}`;
+      
+      if(!this.graph.hasNode(sourceName))
+      {
+        console.warn(`No source node with ID '${sourceName}' exists.`);
+        return;
+      }
+      
+      this.graph.setEdge(sourceName, targetId, {arrowhead: 'undirected'});
     });
   }
 
