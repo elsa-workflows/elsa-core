@@ -135,7 +135,7 @@ export class ElsaWorkflowInstanceViewerScreen {
     return {
       activityId: source.id,
       description: source.description,
-      displayName: source.displayName,
+      displayName: source.displayName || source.name || source.type,
       name: source.name,
       type: source.type,
       properties: properties,

@@ -78,7 +78,6 @@ export class ElsaWorkflowDesigner {
 
   @Watch('selectedActivityIds')
   handleSelectedActivityIdsChanged(newValue: Array<string>) {
-    debugger;
     const ids = newValue || [];
     const selectedActivities = this.workflowModel.activities.filter(x => ids.includes(x.activityId));
     const map: Map<ActivityModel> = {};
