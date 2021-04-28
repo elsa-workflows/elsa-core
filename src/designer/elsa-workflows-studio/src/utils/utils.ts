@@ -75,6 +75,14 @@ export function removeActivity(workflowModel: WorkflowModel, activityId: string)
     };
 }
 
+export function removeConnection(workflowModel: WorkflowModel, sourceId: string, outcome: string): WorkflowModel {
+    return {
+        ...workflowModel,
+        connections: workflowModel.connections.filter(x => !(x.sourceId === sourceId && x.outcome === outcome))
+    };
+}
+
+
 export function findActivity(workflowModel: WorkflowModel, activityId: string) {
     return workflowModel.activities.find(x => x.activityId === activityId);
 }

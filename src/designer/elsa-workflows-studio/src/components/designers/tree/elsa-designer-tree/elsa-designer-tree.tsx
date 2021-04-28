@@ -1,5 +1,5 @@
-import {Component, Host, h, Prop, State, Event, EventEmitter, Watch} from '@stencil/core';
-import {Map, addConnection, findActivity, getChildActivities, getInboundConnections, getOutboundConnections, removeActivity} from '../../../../utils/utils';
+import { Component, Host, h, Prop, State, Event, EventEmitter, Watch } from '@stencil/core';
+import { Map, addConnection, findActivity, getChildActivities, getInboundConnections, getOutboundConnections, removeActivity, removeConnection } from '../../../../utils/utils';
 import {
   ActivityDescriptor,
   ActivityDesignDisplayContext,
@@ -10,14 +10,14 @@ import {
   WorkflowModel,
   WorkflowPersistenceBehavior,
 } from '../../../../models';
-import {eventBus} from '../../../../services/event-bus';
+import { eventBus } from '../../../../services/event-bus';
 import jsPlumb from 'jsplumb';
 import * as d3 from 'd3';
 import dagreD3 from 'dagre-d3';
-import {registerClickOutside} from 'stencil-click-outside';
+import { registerClickOutside } from 'stencil-click-outside';
 import state from '../../../../utils/store';
 import uuid = jsPlumb.jsPlumbUtil.uuid;
-import {ActivityIcon} from '../../../icons/activity-icon';
+import { ActivityIcon } from '../../../icons/activity-icon';
 
 @Component({
   tag: 'elsa-designer-tree',
@@ -26,8 +26,8 @@ import {ActivityIcon} from '../../../icons/activity-icon';
   shadow: false,
 })
 export class ElsaWorkflowDesigner {
-  @Prop() model: WorkflowModel = {activities: [], connections: [], persistenceBehavior: WorkflowPersistenceBehavior.WorkflowBurst};
-  @Event({eventName: 'workflow-changed', bubbles: true, composed: true, cancelable: true}) workflowChanged: EventEmitter<WorkflowModel>;
+  @Prop() model: WorkflowModel = { activities: [], connections: [], persistenceBehavior: WorkflowPersistenceBehavior.WorkflowBurst };
+  @Event({ eventName: 'workflow-changed', bubbles: true, composed: true, cancelable: true }) workflowChanged: EventEmitter<WorkflowModel>;
   @State() workflowModel: WorkflowModel;
 
   el: HTMLElement;
@@ -35,7 +35,7 @@ export class ElsaWorkflowDesigner {
   inner: SVGElement;
   svgD3Selected: d3.Selection<SVGElement, unknown, null, undefined>;
   innerD3Selected: d3.Selection<SVGElement, unknown, null, undefined>;
-  zoomParams: { x: number; y: number; scale: number } = {x: 0, y: 0, scale: 1};
+  zoomParams: { x: number; y: number; scale: number } = { x: 0, y: 0, scale: 1 };
   dagreD3Renderer: dagreD3.Render = new dagreD3.render();
 
   graph: dagreD3.graphlib.Graph = new dagreD3.graphlib.Graph().setGraph({});
@@ -88,6 +88,9 @@ export class ElsaWorkflowDesigner {
   disconnectedCallback() {
     eventBus.off(EventTypes.ActivityPicked, this.onActivityPicked);
     eventBus.off(EventTypes.UpdateActivity, this.onUpdateActivity);
+    d3.selectAll('.node').on('click', null);
+    d3.selectAll('.edgePath').on('contextmenu', null);
+    
   }
 
   onActivityPicked = async args => {
@@ -122,7 +125,7 @@ export class ElsaWorkflowDesigner {
       };
     }
 
-    const workflowModel = {...this.workflowModel, activities: [...this.workflowModel.activities, activity]};
+    const workflowModel = { ...this.workflowModel, activities: [...this.workflowModel.activities, activity] };
 
     if (targetActivityId) {
       const existingConnection = workflowModel.connections.find(x => x.targetId == targetActivityId && x.outcome == outcome);
@@ -137,7 +140,7 @@ export class ElsaWorkflowDesigner {
 
         workflowModel.connections.push(replacementConnection);
       } else {
-        workflowModel.connections.push({sourceId: activity.activityId, targetId: targetActivityId, outcome: outcome});
+        workflowModel.connections.push({ sourceId: activity.activityId, targetId: targetActivityId, outcome: outcome });
       }
     }
 
@@ -153,10 +156,10 @@ export class ElsaWorkflowDesigner {
         };
 
         workflowModel.connections.push(replacementConnection);
-        const connection: ConnectionModel = {sourceId: activity.activityId, targetId: existingConnection.targetId, outcome};
+        const connection: ConnectionModel = { sourceId: activity.activityId, targetId: existingConnection.targetId, outcome };
         workflowModel.connections.push(connection);
       } else {
-        const connection: ConnectionModel = {sourceId: sourceActivityId, targetId: activity.activityId, outcome: outcome};
+        const connection: ConnectionModel = { sourceId: sourceActivityId, targetId: activity.activityId, outcome: outcome };
         workflowModel.connections.push(connection);
       }
     }
@@ -172,8 +175,8 @@ export class ElsaWorkflowDesigner {
   }
 
   addConnection(sourceActivityId: string, targetActivityId: string, outcome: string) {
-    const workflowModel = {...this.workflowModel};
-    const connection: ConnectionModel = {sourceId: sourceActivityId, targetId: targetActivityId, outcome: outcome};
+    const workflowModel = { ...this.workflowModel };
+    const connection: ConnectionModel = { sourceId: sourceActivityId, targetId: targetActivityId, outcome: outcome };
     workflowModel.connections.push(connection);
     this.updateWorkflowModel(workflowModel);
     this.parentActivityId = null;
@@ -181,11 +184,11 @@ export class ElsaWorkflowDesigner {
   }
 
   updateActivity(activity: ActivityModel) {
-    let workflowModel = {...this.workflowModel};
+    let workflowModel = { ...this.workflowModel };
     const activities = [...workflowModel.activities];
     const index = activities.findIndex(x => x.activityId === activity.activityId);
     activities[index] = activity;
-    this.updateWorkflowModel({...workflowModel, activities: activities});
+    this.updateWorkflowModel({ ...workflowModel, activities: activities });
   }
 
   componentWillLoad() {
@@ -196,8 +199,8 @@ export class ElsaWorkflowDesigner {
     this.svgD3Selected = d3.select(this.svg);
     this.innerD3Selected = d3.select(this.inner);
     setTimeout(() => {
-      this.rerenderTree()
-    }, 400)
+      this.rerenderTree();
+    }, 400);
   }
 
   componentWillRender() {
@@ -214,7 +217,7 @@ export class ElsaWorkflowDesigner {
 
       const displayContext: ActivityDesignDisplayContext = {
         activityModel: model,
-        activityIcon: <ActivityIcon color={color}/>,
+        activityIcon: <ActivityIcon color={color} />,
         bodyDisplay: bodyDisplay,
         outcomes: [...model.outcomes],
       };
@@ -222,12 +225,11 @@ export class ElsaWorkflowDesigner {
       eventBus.emit(EventTypes.ActivityDesignDisplaying, this, displayContext);
       displayContexts[model.activityId] = displayContext;
     }
-    
+
     this.activityDisplayContexts = displayContexts;
   }
 
-  componentDidRender() {
-  }
+  componentDidRender() {}
 
   showActivityPicker() {
     eventBus.emit(EventTypes.ShowActivityPicker);
@@ -238,7 +240,7 @@ export class ElsaWorkflowDesigner {
   }
 
   removeActivity(activity: ActivityModel) {
-    let workflowModel = {...this.workflowModel};
+    let workflowModel = { ...this.workflowModel };
     const incomingConnections = getInboundConnections(workflowModel, activity.activityId);
     const outgoingConnections = getOutboundConnections(workflowModel, activity.activityId);
 
@@ -255,9 +257,15 @@ export class ElsaWorkflowDesigner {
     this.updateWorkflowModel(workflowModel);
   }
 
+  removeConnection(sourceId: string, outcome: string) {
+    let workflowModel = { ...this.workflowModel };
+    workflowModel = removeConnection(workflowModel, sourceId, outcome);
+    this.updateWorkflowModel(workflowModel);
+  }
+
   applyZoom() {
     this.zoom = d3.zoom().on('zoom', event => {
-      const {transform} = event;
+      const { transform } = event;
       this.innerD3Selected.attr('transform', transform);
       this.zoomParams = {
         x: transform.x,
@@ -286,8 +294,8 @@ export class ElsaWorkflowDesigner {
       this.graph.setEdge('start', `${activity.activityId}/start`, {
         arrowhead: 'undirected',
       });
-      this.graph.setNode(`${activity.activityId}/start`, {shape: 'rect', activity, label: this.renderOutcomeButton(), labelType: 'html', class: 'add'});
-      this.graph.setEdge(`${activity.activityId}/start`, activity.activityId, {arrowhead: 'undirected'});
+      this.graph.setNode(`${activity.activityId}/start`, { shape: 'rect', activity, label: this.renderOutcomeButton(), labelType: 'html', class: 'add' });
+      this.graph.setEdge(`${activity.activityId}/start`, activity.activityId, { arrowhead: 'undirected' });
     });
 
     this.workflowModel.activities.forEach(activity => {
@@ -296,7 +304,7 @@ export class ElsaWorkflowDesigner {
       const outcomes = !!displayContext ? displayContext.outcomes : activity.outcomes || [];
 
       outcomes.forEach(outcome => {
-        this.graph.setNode(`${activity.activityId}/${outcome}`, {shape: 'rect', outcome, activity, label: this.renderOutcomeButton(), labelType: 'html', class: 'add'});
+        this.graph.setNode(`${activity.activityId}/${outcome}`, { shape: 'rect', outcome, activity, label: this.renderOutcomeButton(), labelType: 'html', class: 'add' });
         this.graph.setEdge(activity.activityId, `${activity.activityId}/${outcome}`, {
           label: `<p class="outcome mb-4 relative z-10 px-2.5 py-0.5 rounded-full text-xs font-medium leading-4 bg-cool-gray-100 text-cool-gray-800 capitalize">${outcome}</p>`,
           labelpos: 'c',
@@ -306,8 +314,8 @@ export class ElsaWorkflowDesigner {
       });
     });
 
-    this.workflowModel.connections.forEach(({sourceId, targetId, outcome}) => {
-      this.graph.setEdge(`${sourceId}/${outcome}`, targetId, {arrowhead: 'undirected'});
+    this.workflowModel.connections.forEach(({ sourceId, targetId, outcome }) => {
+      this.graph.setEdge(`${sourceId}/${outcome}`, targetId, { arrowhead: 'undirected' });
     });
   }
 
@@ -361,10 +369,30 @@ export class ElsaWorkflowDesigner {
         }
       });
       d3.select(node.elem)
-      .select('button')
-      .on('click', evt => {
-        evt.stopPropagation();
-        this.handleContextMenuChange(evt.clientX, evt.clientY, true, node.activity);
+        .select('button')
+        .on('click', evt => {
+          evt.stopPropagation();
+          this.handleContextMenuChange(evt.clientX, evt.clientY, true, node.activity);
+        });
+    });
+
+    d3.selectAll('.edgePath').append(appendClickableEl).attr('class', 'label-clickable');
+    function appendClickableEl() {
+      const originalD = this.querySelector('.path').getAttribute('d');
+      const newPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      newPath.setAttribute('d', originalD);
+      return this.appendChild(newPath);
+    }
+
+    d3.selectAll('.edgePath').each((edg: any) => {
+      const edge = this.graph.edge(edg) as any;
+      d3.select(edge.elem).on('contextmenu', e => {
+        e.preventDefault();
+        const from = edg.v.split('/');
+        const to = edg.w.split('/');
+        const fromActivityId = from[0];
+        const outcome = from[1] || to[1];
+        this.removeConnection(fromActivityId, outcome);
       });
     });
   }
@@ -388,7 +416,7 @@ export class ElsaWorkflowDesigner {
   }
 
   createOutcomeActivityOptions() {
-    return {shape: 'circle', label: this.renderOutcomeButton(), labelType: 'html', class: 'add', width: 32, height: 32};
+    return { shape: 'circle', label: this.renderOutcomeButton(), labelType: 'html', class: 'add', width: 32, height: 32 };
   }
 
   renderOutcomeButton() {
@@ -474,7 +502,7 @@ export class ElsaWorkflowDesigner {
                 Edit
               </a>
             </div>
-            <div class="border-t border-gray-100"/>
+            <div class="border-t border-gray-100" />
             <div class="py-1">
               <a
                 onClick={e => this.onDeleteActivityClick(e)}

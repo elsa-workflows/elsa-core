@@ -23,8 +23,28 @@
 
 .edgePath {
   stroke: black;
+  cursor: pointer;
+  /* z-index: -1; */
 }
 
 .outcome {
   background-color: #fbfbfb;
+}
+
+.edgePath path.path {
+  stroke: #333;
+  fill: transparent  !important;
+  stroke-width: 0.5px;
+}
+
+.label-clickable {
+  fill: transparent !important;
+  stroke: #4677f8;
+  stroke-width: 12.5px  !important;
+  opacity: 0;
+}
+
+
+.edgePath:hover path.path {
+  stroke: red;
 }
