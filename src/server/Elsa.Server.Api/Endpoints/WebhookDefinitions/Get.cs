@@ -6,6 +6,7 @@ using Elsa.Activities.Webhooks.Persistence;
 using Elsa.Models;
 using Elsa.Persistence.Specifications;
 using Elsa.Serialization;
+using Elsa.Server.Api.Services;
 using Elsa.Server.Api.Swagger.Examples;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -21,12 +22,12 @@ namespace Elsa.Server.Api.Endpoints.WebhookDefinitions
     public class Get : Controller
     {
         private readonly IWebhookDefinitionStore _webhookDefinitionStore;
-        private readonly IContentSerializer _serializer;
+        private readonly IEndpointContentSerializerSettingsProvider _serializerSettingsProvider;
 
-        public Get(IWebhookDefinitionStore webhookDefinitionStore, IContentSerializer serializer)
+        public Get(IWebhookDefinitionStore webhookDefinitionStore, IEndpointContentSerializerSettingsProvider serializerSettingsProvider)
         {
             _webhookDefinitionStore = webhookDefinitionStore;
-            _serializer = serializer;
+            _serializerSettingsProvider = serializerSettingsProvider;
         }
 
         [HttpGet]
@@ -42,7 +43,7 @@ namespace Elsa.Server.Api.Endpoints.WebhookDefinitions
         public async Task<IActionResult> Handle(string webhookDefinitionId, CancellationToken cancellationToken = default)
         {
             var webhookDefinition = await _webhookDefinitionStore.FindAsync(new EntityIdSpecification<WebhookDefinition>(webhookDefinitionId), cancellationToken);
-            return webhookDefinition == null ? (IActionResult) NotFound() : Json(webhookDefinition, _serializer.GetSettings());
+            return webhookDefinition == null ? (IActionResult) NotFound() : Json(webhookDefinition, _serializerSettingsProvider.GetSettings());
         }
     }
 }

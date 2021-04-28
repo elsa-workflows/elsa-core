@@ -19,7 +19,6 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             setupNewtonsoftJson ??= _ => { }; 
             services.AddControllers().AddNewtonsoftJson(setupNewtonsoftJson);
-                
             services.AddRouting(options => options.LowercaseUrls = true);
 
             services.AddVersionedApiExplorer(o =>
@@ -39,6 +38,7 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddSingleton<ConnectionConverter>();
             services.AddSingleton<ActivityBlueprintConverter>();
             services.AddSingleton<IWorkflowBlueprintMapper, WorkflowBlueprintMapper>();
+            services.AddSingleton<IEndpointContentSerializerSettingsProvider, EndpointContentSerializerSettingsProvider>();
             services.AddAutoMapperProfile<AutoMapperProfile>();
             return services;
         }
