@@ -43,7 +43,7 @@ export const config: Config = {
       ]
     },
   ],
-  globalStyle: 'src/globals/styles.css',
+  globalStyle: 'src/globals/tailwind.css',
   plugins: tailwindDev
     ? []
     : [
@@ -53,9 +53,6 @@ export const config: Config = {
           tailwindcss,
           purgecss,
           cssnano
-        ],
-        injectGlobalPaths: [
-          'src/globals/tailwind.css'
         ]
       })
     ],
