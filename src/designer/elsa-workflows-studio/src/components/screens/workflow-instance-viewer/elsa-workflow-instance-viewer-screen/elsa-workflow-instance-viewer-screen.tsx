@@ -169,7 +169,7 @@ export class ElsaWorkflowInstanceViewerScreen {
   }
 
   onActivityDeselected(e: CustomEvent<ActivityModel>) {
-    if(this.selectedActivityId == e.detail.activityId)
+    if (this.selectedActivityId == e.detail.activityId)
       this.selectedActivityId = null;
 
     this.journal.selectActivityRecord(this.selectedActivityId);
@@ -180,7 +180,7 @@ export class ElsaWorkflowInstanceViewerScreen {
     return (
       <Host class="flex flex-col w-full relative" ref={el => this.el = el}>
         {this.renderCanvas()}
-        <elsa-workflow-instance-journal ref={el => this.journal = el} 
+        <elsa-workflow-instance-journal ref={el => this.journal = el}
                                         workflowInstanceId={this.workflowInstanceId}
                                         serverUrl={this.serverUrl}
                                         activityDescriptors={descriptors}
@@ -196,9 +196,9 @@ export class ElsaWorkflowInstanceViewerScreen {
       <div class="flex-1 flex">
         <elsa-designer-tree model={this.workflowModel}
                             class="flex-1" ref={el => this.designer = el}
-                            // selectedActivityId={this.selectedActivityId}
-                            // onActivitySelected={e => this.onActivitySelected(e)}
-                            // onActivityDeselected={e => this.onActivityDeselected(e)}
+                            selectedActivityIds={[this.selectedActivityId]}
+                            onActivitySelected={e => this.onActivitySelected(e)}
+                            onActivityDeselected={e => this.onActivityDeselected(e)}
         />
       </div>
     );
