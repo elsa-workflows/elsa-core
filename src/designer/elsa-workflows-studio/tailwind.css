@@ -26,3 +26,11 @@ svg.jtk-connector.jtk-hover path {
   margin-right: calc(0.125rem * var(--tw-space-x-reverse));
   margin-left: calc(0.125rem * calc(1 - var(--tw-space-x-reverse)));
 }
+
+.node.activity, .node.start, .node.add .label-container {
+  fill: transparent;
+}
+
+.node.activity .label-container, .node.start .label-container {
+  stroke: none;
+}

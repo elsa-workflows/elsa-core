@@ -14,7 +14,7 @@ namespace ElsaDashboard.Samples.AspNetCore.Monolith.Workflows
         {
             builder
                 .WithDisplayName("Timer")
-                .Timer(Duration.FromSeconds(10))
+                .Timer(Duration.FromSeconds(30))
                 .WriteLine(() => $"Heartbeat at {_clock.GetCurrentInstant()}");
         }
     }

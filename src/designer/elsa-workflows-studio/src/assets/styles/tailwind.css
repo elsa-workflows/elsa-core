@@ -2415,6 +2415,14 @@ svg.jtk-connector.jtk-hover path {
   margin-left: calc(0.125rem * calc(1 - var(--tw-space-x-reverse)));
 }
 
+.node.activity, .node.start, .node.add .label-container {
+  fill: transparent;
+}
+
+.node.activity .label-container, .node.start .label-container {
+  stroke: none;
+}
+
 @media (min-width: 640px) {
   .sm\:prose-red a {
     color: #dc2626;
