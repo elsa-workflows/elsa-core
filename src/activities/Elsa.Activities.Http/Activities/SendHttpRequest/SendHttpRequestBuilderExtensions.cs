@@ -23,7 +23,7 @@ namespace Elsa.Activities.Http
             Func<ActivityExecutionContext, string?> authorization,
             Func<ActivityExecutionContext, HttpRequestHeaders> requestHeaders,
             Func<ActivityExecutionContext, bool> readContent,
-            Func<ActivityExecutionContext, ICollection<int>> supportedHttpCodes,
+            Func<ActivityExecutionContext, ICollection<int>> supportedStatusCodes,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default) => 
             builder.SendHttpRequest(
@@ -35,7 +35,7 @@ namespace Elsa.Activities.Http
                     .Set(x => x.Authorization, authorization)
                     .Set(x => x.RequestHeaders, requestHeaders)
                     .Set(x => x.ReadContent, readContent)
-                    .Set(x => x.SupportedStatusCodes, supportedHttpCodes),
+                    .Set(x => x.SupportedStatusCodes, supportedStatusCodes),
                 lineNumber,
                 sourceFile);
 
@@ -47,7 +47,7 @@ namespace Elsa.Activities.Http
             Func<string?> authorization,
             Func<HttpRequestHeaders> requestHeaders,
             Func<bool> readContent,
-            Func<ICollection<int>> supportedHttpCodes,
+            Func<ICollection<int>> supportedStatusCodes,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default) =>
             builder.SendHttpRequest(
@@ -59,7 +59,7 @@ namespace Elsa.Activities.Http
                     .Set(x => x.Authorization, authorization)
                     .Set(x => x.RequestHeaders, requestHeaders)
                     .Set(x => x.ReadContent, readContent)
-                    .Set(x => x.SupportedStatusCodes, supportedHttpCodes),
+                    .Set(x => x.SupportedStatusCodes, supportedStatusCodes),
                 lineNumber,
                 sourceFile);
 
@@ -71,7 +71,7 @@ namespace Elsa.Activities.Http
             string? authorization,
             HttpRequestHeaders requestHeaders,
             bool readContent,
-            ICollection<int> supportedHttpCodes,
+            ICollection<int> supportedStatusCodes,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default) =>
             builder.SendHttpRequest(
@@ -83,7 +83,7 @@ namespace Elsa.Activities.Http
                     .Set(x => x.Authorization, authorization)
                     .Set(x => x.RequestHeaders, requestHeaders)
                     .Set(x => x.ReadContent, readContent)
-                    .Set(x => x.SupportedStatusCodes, supportedHttpCodes),
+                    .Set(x => x.SupportedStatusCodes, supportedStatusCodes),
                 lineNumber,
                 sourceFile);
     }

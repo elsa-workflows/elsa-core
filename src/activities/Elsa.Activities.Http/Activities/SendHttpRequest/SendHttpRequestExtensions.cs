@@ -94,15 +94,15 @@ namespace Elsa.Activities.Http
         public static ISetupActivity<SendHttpRequest> WithReadContent(this ISetupActivity<SendHttpRequest> activity, bool? readContent) => activity.Set(x => x.ReadContent, readContent);
 
 
-        public static ISetupActivity<SendHttpRequest> WithSupportedHttpCodes(this ISetupActivity<SendHttpRequest> activity, Func<ActivityExecutionContext, ValueTask<ICollection<int>>> supportedHttpCodes
-            ) => activity.Set(x => x.SupportedStatusCodes, supportedHttpCodes);
+        public static ISetupActivity<SendHttpRequest> WithSupportedHttpCodes(this ISetupActivity<SendHttpRequest> activity, Func<ActivityExecutionContext, ValueTask<ICollection<int>?>> supportedStatusCodes
+            ) => activity.Set(x => x.SupportedStatusCodes, supportedStatusCodes);
 
-        public static ISetupActivity<SendHttpRequest> WithSupportedHttpCodes(this ISetupActivity<SendHttpRequest> activity, Func<ValueTask<ICollection<int>>> supportedHttpCodes) => activity.Set(x => x.SupportedStatusCodes, supportedHttpCodes);
+        public static ISetupActivity<SendHttpRequest> WithSupportedHttpCodes(this ISetupActivity<SendHttpRequest> activity, Func<ValueTask<ICollection<int>?>> supportedStatusCodes) => activity.Set(x => x.SupportedStatusCodes, supportedStatusCodes);
 
-        public static ISetupActivity<SendHttpRequest> WithSupportedHttpCodes(this ISetupActivity<SendHttpRequest> activity, Func<ActivityExecutionContext, ICollection<int>> supportedHttpCodes) => activity.Set(x => x.SupportedStatusCodes, supportedHttpCodes);
+        public static ISetupActivity<SendHttpRequest> WithSupportedHttpCodes(this ISetupActivity<SendHttpRequest> activity, Func<ActivityExecutionContext, ICollection<int>> supportedStatusCodes) => activity.Set(x => x.SupportedStatusCodes, supportedStatusCodes);
 
-        public static ISetupActivity<SendHttpRequest> WithSupportedHttpCodes(this ISetupActivity<SendHttpRequest> activity, Func<ICollection<int>> supportedHttpCodes) => activity.Set(x => x.SupportedStatusCodes, supportedHttpCodes);
+        public static ISetupActivity<SendHttpRequest> WithSupportedHttpCodes(this ISetupActivity<SendHttpRequest> activity, Func<ICollection<int>> supportedStatusCodes) => activity.Set(x => x.SupportedStatusCodes, supportedStatusCodes);
 
-        public static ISetupActivity<SendHttpRequest> WithSupportedHttpCodes(this ISetupActivity<SendHttpRequest> activity, ICollection<int> supportedHttpCodes) => activity.Set(x => x.SupportedStatusCodes, supportedHttpCodes);
+        public static ISetupActivity<SendHttpRequest> WithSupportedHttpCodes(this ISetupActivity<SendHttpRequest> activity, ICollection<int> supportedStatusCodes) => activity.Set(x => x.SupportedStatusCodes, supportedStatusCodes);
     }
 }
