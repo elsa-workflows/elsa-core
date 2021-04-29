@@ -271,6 +271,8 @@ EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.EntityFramework.MySql", "src\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.MySql\Elsa.Persistence.EntityFramework.MySql.csproj", "{D55BC08B-CA82-478A-99F7-EDE90AC33160}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.SendHttp", "src\samples\aspnet\Elsa.Samples.SendHttp\Elsa.Samples.SendHttp.csproj", "{775EFD59-F99C-4D38-B54E-9734C9D9649A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -645,6 +647,18 @@ Global
 		{D55BC08B-CA82-478A-99F7-EDE90AC33160}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D55BC08B-CA82-478A-99F7-EDE90AC33160}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D55BC08B-CA82-478A-99F7-EDE90AC33160}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BE284508-9582-4FCB-B0DD-0761AB940AD7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BE284508-9582-4FCB-B0DD-0761AB940AD7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BE284508-9582-4FCB-B0DD-0761AB940AD7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BE284508-9582-4FCB-B0DD-0761AB940AD7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3EB488DF-3C28-4DAD-B43E-6062E39629AB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3EB488DF-3C28-4DAD-B43E-6062E39629AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3EB488DF-3C28-4DAD-B43E-6062E39629AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3EB488DF-3C28-4DAD-B43E-6062E39629AB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{775EFD59-F99C-4D38-B54E-9734C9D9649A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{775EFD59-F99C-4D38-B54E-9734C9D9649A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{775EFD59-F99C-4D38-B54E-9734C9D9649A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{775EFD59-F99C-4D38-B54E-9734C9D9649A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -771,6 +785,9 @@ Global
 		{3A30EFFE-32D8-40B8-9C62-427037BB5424} = {EEBEA8AF-C8A8-4C71-A96C-D5836DE24359}
 		{3DF05CFC-AC77-489F-9A42-C4FDB599AA69} = {8B6B40A8-DF21-4CD2-BABD-474B79D0C3AF}
 		{D55BC08B-CA82-478A-99F7-EDE90AC33160} = {C865B0FD-E505-48F0-BFAF-0D4D7C1B5CA1}
+		{BE284508-9582-4FCB-B0DD-0761AB940AD7} = {B43B546E-23F3-46E8-ACB7-D04F05CDA180}
+		{3EB488DF-3C28-4DAD-B43E-6062E39629AB} = {FC9F520F-BA51-4AD2-BFEE-EF787798E734}
+		{775EFD59-F99C-4D38-B54E-9734C9D9649A} = {22E75696-6FE9-436A-9097-EE21C603F818}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}
