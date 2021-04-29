@@ -46,6 +46,7 @@ export class ElsaMultiTextProperty {
     const fieldId = propertyName;
     const fieldName = propertyName;
     const values = parseJson(this.currentValue);
+    propertyDescriptor.options = propertyDescriptor.options || null;
     const valueType = propertyDescriptor.options !== null ? 'dropdown' : 'multi-text';
     const propertyOptions = this.createKeyValueOptions(propertyDescriptor.options);
 
