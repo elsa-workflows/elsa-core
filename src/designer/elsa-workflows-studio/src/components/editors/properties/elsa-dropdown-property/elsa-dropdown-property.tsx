@@ -1,5 +1,7 @@
 import {Component, h, Prop, State} from '@stencil/core';
-import {ActivityDefinitionProperty, ActivityPropertyDescriptor, SyntaxNames} from "../../../../models";
+import {ActivityDefinitionProperty, ActivityPropertyDescriptor, RuntimeSelectListItemsProviderSettings, SelectListItem, SyntaxNames} from "../../../../models";
+import Tunnel from "../../../../data/workflow-editor";
+import {createElsaClient} from "../../../../services/elsa-client";
 
 @Component({
   tag: 'elsa-dropdown-property',
@@ -10,7 +12,10 @@ export class ElsaDropdownProperty {
 
   @Prop() propertyDescriptor: ActivityPropertyDescriptor;
   @Prop() propertyModel: ActivityDefinitionProperty;
+  @Prop({mutable: true}) serverUrl: string;
   @State() currentValue?: string;
+  
+  items: any[];
 
   async componentWillLoad() {
     const defaultSyntax = this.propertyDescriptor.defaultSyntax || SyntaxNames.Literal;
@@ -26,6 +31,25 @@ export class ElsaDropdownProperty {
   onDefaultSyntaxValueChanged(e: CustomEvent) {
     this.currentValue = e.detail;
   }
+  
+  async componentWillRender(){
+    const propertyDescriptor = this.propertyDescriptor;
+    const options = propertyDescriptor.options;
+    let items = [];
+
+    if (!!options.runtimeSelectListItemsProviderType) {
+      items = await this.fetchRuntimeItems(options);
+    } else {
+      items = options as Array<any> || [];
+    }
+    
+    this.items = items;
+  }
+  
+  async fetchRuntimeItems(options: RuntimeSelectListItemsProviderSettings): Promise<Array<SelectListItem>>{
+    const elsaClient = createElsaClient(this.serverUrl);
+    return await elsaClient.designerApi.runtimeSelectItemsApi.get(options.runtimeSelectListItemsProviderType, options.context || {});
+  }
 
   render() {
     const propertyDescriptor = this.propertyDescriptor;
@@ -33,8 +57,8 @@ export class ElsaDropdownProperty {
     const propertyName = propertyDescriptor.name;
     const fieldId = propertyName;
     const fieldName = propertyName;
-    const options = propertyDescriptor.options as Array<any> || [];
     const currentValue = this.currentValue;
+    const items = this.items;
 
     return (
       <elsa-property-editor propertyDescriptor={propertyDescriptor}
@@ -43,10 +67,10 @@ export class ElsaDropdownProperty {
                             editor-height="2.75em"
                             single-line={true}>
         <select id={fieldId} name={fieldName} onChange={e => this.onChange(e)} class="mt-1 block focus:ring-blue-500 focus:border-blue-500 w-full shadow-sm sm:max-w-xs sm:text-sm border-gray-300 rounded-md">
-          {options.map(option => {
-            const optionIsObject = typeof (option) == 'object';
-            const value = optionIsObject ? option.value : option.toString();
-            const text = optionIsObject ? option.text : option.toString();
+          {items.map(item => {
+            const optionIsObject = typeof (item) == 'object';
+            const value = optionIsObject ? item.value : item.toString();
+            const text = optionIsObject ? item.text : item.toString();
             return <option value={value} selected={value === currentValue}>{text}</option>;
           })}
         </select>
@@ -54,3 +78,5 @@ export class ElsaDropdownProperty {
     );
   }
 }
+
+Tunnel.injectProps(ElsaDropdownProperty, ['serverUrl']);

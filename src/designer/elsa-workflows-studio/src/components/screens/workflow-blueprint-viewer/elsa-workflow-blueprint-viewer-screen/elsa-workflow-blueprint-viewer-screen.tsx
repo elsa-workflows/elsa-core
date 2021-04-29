@@ -1,17 +1,13 @@
 import {Component, h, Host, Method, Prop, State, Watch} from '@stencil/core';
-import {eventBus} from '../../../../services/event-bus';
 import * as collection from 'lodash/collection';
 import {
   ActivityBlueprint, ActivityDefinitionProperty,
   ActivityDescriptor,
   ActivityModel, Connection,
   ConnectionModel,
-  EventTypes, getVersionOptionsString, SyntaxNames,
-  WorkflowBlueprint, WorkflowExecutionLogRecord,
-  WorkflowInstance,
-  WorkflowModel,
-  WorkflowPersistenceBehavior,
-  WorkflowStatus
+  SyntaxNames,
+  WorkflowBlueprint, WorkflowModel,
+  WorkflowPersistenceBehavior
 } from "../../../../models";
 import {createElsaClient} from "../../../../services/elsa-client";
 import {pluginManager} from '../../../../services/plugin-manager';

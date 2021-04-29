@@ -3,6 +3,7 @@ using Elsa.Activities.UserTask.Extensions;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Sqlite;
 using Elsa.Persistence.YesSql;
+using Elsa.Samples.Server.Host.Activities;
 using Elsa.Server.Hangfire.Extensions;
 using Hangfire;
 using Microsoft.AspNetCore.Builder;
@@ -48,6 +49,8 @@ namespace Elsa.Samples.Server.Host
                 });
 
             services
+                .AddActivityPropertyOptionsProvider<VehicleActivity>()
+                .AddRuntimeSelectItemsProvider<VehicleActivity>()
                 .AddElsa(elsa => elsa
                     //.UseEntityFrameworkPersistence(ef => ef.UseSqlite())
                     .UseYesSqlPersistence()
@@ -62,9 +65,11 @@ namespace Elsa.Samples.Server.Host
                     .AddJavaScriptActivities()
                     .AddUserTaskActivities()
                     .AddTelnyx()
+                    .AddActivitiesFrom<VehicleActivity>()
                     .AddWorkflowsFrom<Startup>()
                 );
 
+            // Elsa API endpoints.
             services
                 .AddElsaApiEndpoints()
                 .AddElsaSwagger();

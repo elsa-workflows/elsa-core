@@ -291,6 +291,16 @@ export enum ActivityTraits {
   Job = 4
 }
 
+export interface SelectListItem {
+  text: string;
+  value: string;
+}
+
+export interface RuntimeSelectListItemsProviderSettings {
+  runtimeSelectListItemsProviderType: string;
+  context?: any;
+}
+
 export class SyntaxNames {
   static readonly Literal = 'Literal';
   static readonly JavaScript = 'JavaScript';

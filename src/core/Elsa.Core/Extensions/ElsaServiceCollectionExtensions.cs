@@ -11,6 +11,7 @@ using Elsa.Builders;
 using Elsa.Consumers;
 using Elsa.Converters;
 using Elsa.Decorators;
+using Elsa.Design;
 using Elsa.Dispatch;
 using Elsa.Dispatch.Consumers;
 using Elsa.Events;
@@ -102,6 +103,7 @@ namespace Microsoft.Extensions.DependencyInjection
         }
 
         public static IServiceCollection AddActivityPropertyOptionsProvider<T>(this IServiceCollection services) where T : class, IActivityPropertyOptionsProvider => services.AddSingleton<IActivityPropertyOptionsProvider, T>();
+        public static IServiceCollection AddRuntimeSelectItemsProvider<T>(this IServiceCollection services) where T : class, IRuntimeSelectListItemsProvider => services.AddScoped<IRuntimeSelectListItemsProvider, T>();
         public static IServiceCollection AddActivityTypeProvider<T>(this IServiceCollection services) where T : class, IActivityTypeProvider => services.AddSingleton<IActivityTypeProvider, T>();
 
         private static ElsaOptionsBuilder AddWorkflowsCore(this ElsaOptionsBuilder options)

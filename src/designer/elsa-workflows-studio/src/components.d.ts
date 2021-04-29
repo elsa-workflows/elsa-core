@@ -48,6 +48,7 @@ export namespace Components {
     interface ElsaDropdownProperty {
         "propertyDescriptor": ActivityPropertyDescriptor;
         "propertyModel": ActivityDefinitionProperty;
+        "serverUrl": string;
     }
     interface ElsaExpressionEditor {
         "context"?: string;
@@ -543,6 +544,7 @@ declare namespace LocalJSX {
     interface ElsaDropdownProperty {
         "propertyDescriptor"?: ActivityPropertyDescriptor;
         "propertyModel"?: ActivityDefinitionProperty;
+        "serverUrl"?: string;
     }
     interface ElsaExpressionEditor {
         "context"?: string;
