@@ -4,6 +4,7 @@ using Elsa.Builders;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace Elsa.Samples.SendHttp
@@ -22,7 +23,7 @@ namespace Elsa.Samples.SendHttp
                     .WithReadContent(true))
                 .WithName("TestHttpRequest")
                 .WriteHttpResponse(setup => setup.WithStatusCode(System.Net.HttpStatusCode.OK)
-                    .WithContent(x => System.Text.Json.JsonSerializer.Serialize(x.GetOutputFrom<HttpResponseModel>("TestHttpRequest").Content)));
+                    .WithContent(x => JsonSerializer.Serialize(x.GetOutputFrom<HttpResponseModel>("TestHttpRequest").Content)));
         }
     }
 }
