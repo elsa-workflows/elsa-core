@@ -9,6 +9,7 @@ import { ActivityDefinitionProperty, ActivityDescriptor, ActivityModel, Activity
 import { LocationSegments, MatchResults, RouterHistory } from "@stencil/router";
 import { MenuItem } from "./components/controls/elsa-context-menu/models";
 import { DropdownButtonItem, DropdownButtonOrigin } from "./components/controls/elsa-dropdown-button/models";
+import { MultiTextDefinition } from "./models/domain";
 import { MonacoValueChangedArgs } from "./components/controls/elsa-monaco/elsa-monaco";
 import { Map } from "./utils/utils";
 import { ToastNotificationOptions } from "./components/shared/elsa-toast-notification/elsa-toast-notification";
@@ -64,6 +65,13 @@ export namespace Components {
         "fieldName"?: string;
         "placeHolder"?: string;
         "values"?: Array<string>;
+    }
+    interface ElsaInputTagsDropdown {
+        "dropdownValues"?: Array<MultiTextDefinition>;
+        "fieldId"?: string;
+        "fieldName"?: string;
+        "placeHolder"?: string;
+        "values"?: Array<string | MultiTextDefinition>;
     }
     interface ElsaModalDialog {
         "hide": (animate: boolean) => Promise<void>;
@@ -272,6 +280,12 @@ declare global {
         prototype: HTMLElsaInputTagsElement;
         new (): HTMLElsaInputTagsElement;
     };
+    interface HTMLElsaInputTagsDropdownElement extends Components.ElsaInputTagsDropdown, HTMLStencilElement {
+    }
+    var HTMLElsaInputTagsDropdownElement: {
+        prototype: HTMLElsaInputTagsDropdownElement;
+        new (): HTMLElsaInputTagsDropdownElement;
+    };
     interface HTMLElsaModalDialogElement extends Components.ElsaModalDialog, HTMLStencilElement {
     }
     var HTMLElsaModalDialogElement: {
@@ -440,6 +454,7 @@ declare global {
         "elsa-dropdown-property": HTMLElsaDropdownPropertyElement;
         "elsa-expression-editor": HTMLElsaExpressionEditorElement;
         "elsa-input-tags": HTMLElsaInputTagsElement;
+        "elsa-input-tags-dropdown": HTMLElsaInputTagsDropdownElement;
         "elsa-modal-dialog": HTMLElsaModalDialogElement;
         "elsa-monaco": HTMLElsaMonacoElement;
         "elsa-multi-expression-editor": HTMLElsaMultiExpressionEditorElement;
@@ -523,6 +538,14 @@ declare namespace LocalJSX {
         "onValueChanged"?: (event: CustomEvent<Array<string>>) => void;
         "placeHolder"?: string;
         "values"?: Array<string>;
+    }
+    interface ElsaInputTagsDropdown {
+        "dropdownValues"?: Array<MultiTextDefinition>;
+        "fieldId"?: string;
+        "fieldName"?: string;
+        "onValueChanged"?: (event: CustomEvent<Array<string | MultiTextDefinition>>) => void;
+        "placeHolder"?: string;
+        "values"?: Array<string | MultiTextDefinition>;
     }
     interface ElsaModalDialog {
     }
@@ -671,6 +694,7 @@ declare namespace LocalJSX {
         "elsa-dropdown-property": ElsaDropdownProperty;
         "elsa-expression-editor": ElsaExpressionEditor;
         "elsa-input-tags": ElsaInputTags;
+        "elsa-input-tags-dropdown": ElsaInputTagsDropdown;
         "elsa-modal-dialog": ElsaModalDialog;
         "elsa-monaco": ElsaMonaco;
         "elsa-multi-expression-editor": ElsaMultiExpressionEditor;
@@ -714,6 +738,7 @@ declare module "@stencil/core" {
             "elsa-dropdown-property": LocalJSX.ElsaDropdownProperty & JSXBase.HTMLAttributes<HTMLElsaDropdownPropertyElement>;
             "elsa-expression-editor": LocalJSX.ElsaExpressionEditor & JSXBase.HTMLAttributes<HTMLElsaExpressionEditorElement>;
             "elsa-input-tags": LocalJSX.ElsaInputTags & JSXBase.HTMLAttributes<HTMLElsaInputTagsElement>;
+            "elsa-input-tags-dropdown": LocalJSX.ElsaInputTagsDropdown & JSXBase.HTMLAttributes<HTMLElsaInputTagsDropdownElement>;
             "elsa-modal-dialog": LocalJSX.ElsaModalDialog & JSXBase.HTMLAttributes<HTMLElsaModalDialogElement>;
             "elsa-monaco": LocalJSX.ElsaMonaco & JSXBase.HTMLAttributes<HTMLElsaMonacoElement>;
             "elsa-multi-expression-editor": LocalJSX.ElsaMultiExpressionEditor & JSXBase.HTMLAttributes<HTMLElsaMultiExpressionEditorElement>;

@@ -19,13 +19,18 @@ export class ElsaActivityEditorModal {
   form: HTMLFormElement;
   formContext: FormContext;
   renderProps: any;
+  
+  // Force a new key every time we show the editor to make sure Stencil creates new components.
+  // This prevents the issue where the designer has e.g. one activity where the user edits the properties, cancels out, then opens the editor again, seeing the entered value still there.
+  timestamp: Date = new Date();
 
   componentDidLoad() {
     eventBus.on(EventTypes.ShowActivityEditor, async (activity: ActivityModel, animate: boolean) => {
       this.activityModel = JSON.parse(JSON.stringify(activity));
       this.activityDescriptor = state.activityDescriptors.find(x => x.type == activity.type);
       this.formContext = new FormContext(this.activityModel, newValue => this.activityModel = newValue);
-      this.selectedTab = 'Properties';
+      this.selectedTab = 'Properties'; 
+      this.timestamp = new Date();
       await this.dialog.show(animate);
     });
   }
@@ -99,9 +104,9 @@ export class ElsaActivityEditorModal {
 
     return (
       <Host>
-        <elsa-modal-dialog ref={el => this.dialog = el}>
+        <elsa-modal-dialog ref={el => this.dialog = el} >
           <div slot="content" class="py-8 pb-0">
-            <form onSubmit={e => this.onSubmit(e)} ref={el => this.form = el}>
+            <form onSubmit={e => this.onSubmit(e)} ref={el => this.form = el} key={this.timestamp.getTime().toString()}>
               <div class="flex px-8">
                 <div class="space-y-8 divide-y divide-gray-200 w-full">
                   <div>
