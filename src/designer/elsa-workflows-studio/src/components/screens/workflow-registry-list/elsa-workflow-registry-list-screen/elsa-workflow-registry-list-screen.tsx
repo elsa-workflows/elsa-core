@@ -67,7 +67,7 @@ export class ElsaWorkflowRegistryListScreen {
               if (!workflowDisplayName || workflowDisplayName.trim().length == 0)
                 workflowDisplayName = 'Untitled';
 
-              const editUrl = `/workflow-definitions/${workflowBlueprint.id}`;
+              const editUrl = `/workflow-registry/${workflowBlueprint.id}`;
               const instancesUrl = `/workflow-instances?workflow=${workflowBlueprint.id}`;
 
               const editIcon = (

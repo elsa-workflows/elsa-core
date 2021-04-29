@@ -2,7 +2,6 @@ import {Component, EventEmitter, h, Host, Method, Prop, State, Watch, Event} fro
 import * as collection from 'lodash/collection';
 import moment from 'moment';
 import {enter, leave, toggle} from 'el-transition'
-import {registerClickOutside} from "stencil-click-outside";
 import {
   ActivityBlueprint,
   ActivityDescriptor, PagedList, WorkflowBlueprint, WorkflowExecutionLogRecord, WorkflowModel,

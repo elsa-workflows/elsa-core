@@ -138,6 +138,10 @@ export namespace Components {
         "monacoLibPath": string;
         "serverUrl": string;
     }
+    interface ElsaStudioWorkflowBlueprintView {
+        "match": MatchResults;
+        "serverUrl": string;
+    }
     interface ElsaStudioWorkflowDefinitionsEdit {
         "match": MatchResults;
         "monacoLibPath": string;
@@ -166,6 +170,11 @@ export namespace Components {
     interface ElsaToastNotification {
         "hide": () => Promise<void>;
         "show": (options: ToastNotificationOptions) => Promise<void>;
+    }
+    interface ElsaWorkflowBlueprintViewerScreen {
+        "getServerUrl": () => Promise<string>;
+        "serverUrl": string;
+        "workflowDefinitionId": string;
     }
     interface ElsaWorkflowDefinitionEditorNotifications {
     }
@@ -346,6 +355,12 @@ declare global {
         prototype: HTMLElsaStudioRootElement;
         new (): HTMLElsaStudioRootElement;
     };
+    interface HTMLElsaStudioWorkflowBlueprintViewElement extends Components.ElsaStudioWorkflowBlueprintView, HTMLStencilElement {
+    }
+    var HTMLElsaStudioWorkflowBlueprintViewElement: {
+        prototype: HTMLElsaStudioWorkflowBlueprintViewElement;
+        new (): HTMLElsaStudioWorkflowBlueprintViewElement;
+    };
     interface HTMLElsaStudioWorkflowDefinitionsEditElement extends Components.ElsaStudioWorkflowDefinitionsEdit, HTMLStencilElement {
     }
     var HTMLElsaStudioWorkflowDefinitionsEditElement: {
@@ -387,6 +402,12 @@ declare global {
     var HTMLElsaToastNotificationElement: {
         prototype: HTMLElsaToastNotificationElement;
         new (): HTMLElsaToastNotificationElement;
+    };
+    interface HTMLElsaWorkflowBlueprintViewerScreenElement extends Components.ElsaWorkflowBlueprintViewerScreen, HTMLStencilElement {
+    }
+    var HTMLElsaWorkflowBlueprintViewerScreenElement: {
+        prototype: HTMLElsaWorkflowBlueprintViewerScreenElement;
+        new (): HTMLElsaWorkflowBlueprintViewerScreenElement;
     };
     interface HTMLElsaWorkflowDefinitionEditorNotificationsElement extends Components.ElsaWorkflowDefinitionEditorNotifications, HTMLStencilElement {
     }
@@ -465,6 +486,7 @@ declare global {
         "elsa-script-property": HTMLElsaScriptPropertyElement;
         "elsa-single-line-property": HTMLElsaSingleLinePropertyElement;
         "elsa-studio-root": HTMLElsaStudioRootElement;
+        "elsa-studio-workflow-blueprint-view": HTMLElsaStudioWorkflowBlueprintViewElement;
         "elsa-studio-workflow-definitions-edit": HTMLElsaStudioWorkflowDefinitionsEditElement;
         "elsa-studio-workflow-definitions-list": HTMLElsaStudioWorkflowDefinitionsListElement;
         "elsa-studio-workflow-instances-list": HTMLElsaStudioWorkflowInstancesListElement;
@@ -472,6 +494,7 @@ declare global {
         "elsa-studio-workflow-registry": HTMLElsaStudioWorkflowRegistryElement;
         "elsa-switch-cases-property": HTMLElsaSwitchCasesPropertyElement;
         "elsa-toast-notification": HTMLElsaToastNotificationElement;
+        "elsa-workflow-blueprint-viewer-screen": HTMLElsaWorkflowBlueprintViewerScreenElement;
         "elsa-workflow-definition-editor-notifications": HTMLElsaWorkflowDefinitionEditorNotificationsElement;
         "elsa-workflow-definition-editor-screen": HTMLElsaWorkflowDefinitionEditorScreenElement;
         "elsa-workflow-definitions-list-screen": HTMLElsaWorkflowDefinitionsListScreenElement;
@@ -612,6 +635,10 @@ declare namespace LocalJSX {
         "monacoLibPath"?: string;
         "serverUrl"?: string;
     }
+    interface ElsaStudioWorkflowBlueprintView {
+        "match"?: MatchResults;
+        "serverUrl"?: string;
+    }
     interface ElsaStudioWorkflowDefinitionsEdit {
         "match"?: MatchResults;
         "monacoLibPath"?: string;
@@ -638,6 +665,10 @@ declare namespace LocalJSX {
         "propertyModel"?: ActivityDefinitionProperty;
     }
     interface ElsaToastNotification {
+    }
+    interface ElsaWorkflowBlueprintViewerScreen {
+        "serverUrl"?: string;
+        "workflowDefinitionId"?: string;
     }
     interface ElsaWorkflowDefinitionEditorNotifications {
     }
@@ -705,6 +736,7 @@ declare namespace LocalJSX {
         "elsa-script-property": ElsaScriptProperty;
         "elsa-single-line-property": ElsaSingleLineProperty;
         "elsa-studio-root": ElsaStudioRoot;
+        "elsa-studio-workflow-blueprint-view": ElsaStudioWorkflowBlueprintView;
         "elsa-studio-workflow-definitions-edit": ElsaStudioWorkflowDefinitionsEdit;
         "elsa-studio-workflow-definitions-list": ElsaStudioWorkflowDefinitionsList;
         "elsa-studio-workflow-instances-list": ElsaStudioWorkflowInstancesList;
@@ -712,6 +744,7 @@ declare namespace LocalJSX {
         "elsa-studio-workflow-registry": ElsaStudioWorkflowRegistry;
         "elsa-switch-cases-property": ElsaSwitchCasesProperty;
         "elsa-toast-notification": ElsaToastNotification;
+        "elsa-workflow-blueprint-viewer-screen": ElsaWorkflowBlueprintViewerScreen;
         "elsa-workflow-definition-editor-notifications": ElsaWorkflowDefinitionEditorNotifications;
         "elsa-workflow-definition-editor-screen": ElsaWorkflowDefinitionEditorScreen;
         "elsa-workflow-definitions-list-screen": ElsaWorkflowDefinitionsListScreen;
@@ -749,6 +782,7 @@ declare module "@stencil/core" {
             "elsa-script-property": LocalJSX.ElsaScriptProperty & JSXBase.HTMLAttributes<HTMLElsaScriptPropertyElement>;
             "elsa-single-line-property": LocalJSX.ElsaSingleLineProperty & JSXBase.HTMLAttributes<HTMLElsaSingleLinePropertyElement>;
             "elsa-studio-root": LocalJSX.ElsaStudioRoot & JSXBase.HTMLAttributes<HTMLElsaStudioRootElement>;
+            "elsa-studio-workflow-blueprint-view": LocalJSX.ElsaStudioWorkflowBlueprintView & JSXBase.HTMLAttributes<HTMLElsaStudioWorkflowBlueprintViewElement>;
             "elsa-studio-workflow-definitions-edit": LocalJSX.ElsaStudioWorkflowDefinitionsEdit & JSXBase.HTMLAttributes<HTMLElsaStudioWorkflowDefinitionsEditElement>;
             "elsa-studio-workflow-definitions-list": LocalJSX.ElsaStudioWorkflowDefinitionsList & JSXBase.HTMLAttributes<HTMLElsaStudioWorkflowDefinitionsListElement>;
             "elsa-studio-workflow-instances-list": LocalJSX.ElsaStudioWorkflowInstancesList & JSXBase.HTMLAttributes<HTMLElsaStudioWorkflowInstancesListElement>;
@@ -756,6 +790,7 @@ declare module "@stencil/core" {
             "elsa-studio-workflow-registry": LocalJSX.ElsaStudioWorkflowRegistry & JSXBase.HTMLAttributes<HTMLElsaStudioWorkflowRegistryElement>;
             "elsa-switch-cases-property": LocalJSX.ElsaSwitchCasesProperty & JSXBase.HTMLAttributes<HTMLElsaSwitchCasesPropertyElement>;
             "elsa-toast-notification": LocalJSX.ElsaToastNotification & JSXBase.HTMLAttributes<HTMLElsaToastNotificationElement>;
+            "elsa-workflow-blueprint-viewer-screen": LocalJSX.ElsaWorkflowBlueprintViewerScreen & JSXBase.HTMLAttributes<HTMLElsaWorkflowBlueprintViewerScreenElement>;
             "elsa-workflow-definition-editor-notifications": LocalJSX.ElsaWorkflowDefinitionEditorNotifications & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionEditorNotificationsElement>;
             "elsa-workflow-definition-editor-screen": LocalJSX.ElsaWorkflowDefinitionEditorScreen & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionEditorScreenElement>;
             "elsa-workflow-definitions-list-screen": LocalJSX.ElsaWorkflowDefinitionsListScreen & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionsListScreenElement>;
