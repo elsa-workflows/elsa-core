@@ -1,4 +1,5 @@
 using Elsa.Activities.Http;
+using Elsa.Activities.Http.Models;
 using Elsa.Builders;
 using System;
 using System.Collections.Generic;
@@ -19,8 +20,9 @@ namespace Elsa.Samples.SendHttp
                 .SendHttpRequest(setup => setup.WithUrl(new Uri("https://jsonplaceholder.typicode.com/todos/3"))
                     .WithMethod("GET")
                     .WithReadContent(true))
+                .WithName("TestHttpRequest")
                 .WriteHttpResponse(setup => setup.WithStatusCode(System.Net.HttpStatusCode.OK)
-                    .WithContent("Hello World"));
+                    .WithContent(x => System.Text.Json.JsonSerializer.Serialize(x.GetOutputFrom<HttpResponseModel>("TestHttpRequest").Content)));
         }
     }
 }
