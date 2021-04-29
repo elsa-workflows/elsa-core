@@ -41,11 +41,21 @@ namespace Elsa.Activities.AzureServiceBus.Services
             await DisposeExistingWorkersAsync();
             var queueNames = (await GetQueueNamesAsync(cancellationToken).ToListAsync(cancellationToken)).Distinct();
 
-            foreach (var queueName in queueNames)
+            foreach (var queueName in queueNames) 
+                await CreateAndAddWorkerAsync(queueName, cancellationToken);
+        }
+
+        private async Task CreateAndAddWorkerAsync(string queueName, CancellationToken cancellationToken)
+        {
+            try
             {
                 var receiver = await _messageReceiverClientFactory.GetReceiverAsync(queueName, cancellationToken);
                 var worker = ActivatorUtilities.CreateInstance<QueueWorker>(_serviceProvider, receiver, (Func<IReceiverClient, Task>) DisposeReceiverAsync);
                 _workers.Add(worker);
+            }
+            catch (Exception e)
+            {
+                _logger.LogWarning(e, "Failed to create a receiver for queue {QueueName}", queueName);
             }
         }
 
@@ -65,7 +75,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
             using var scope = _scopeFactory.CreateScope();
             var workflowRegistry = scope.ServiceProvider.GetRequiredService<IWorkflowRegistry>();
             var workflowBlueprintReflector = scope.ServiceProvider.GetRequiredService<IWorkflowBlueprintReflector>();
-            var workflows = await workflowRegistry.ListAsync(cancellationToken);
+            var workflows = await workflowRegistry.ListActiveAsync(cancellationToken);
 
             var query =
                 from workflow in workflows
