@@ -19,6 +19,6 @@ export class WhilePlugin implements ElsaPlugin {
     const expression = condition.expressions[condition.syntax] || '';
     const description = activityModel.description;
     const bodyText = description && description.length > 0 ? description : expression;
-    context.bodyDisplay = <p>{bodyText}</p>;
+    context.bodyDisplay = `<p>${bodyText}</p>`;
   }
 }

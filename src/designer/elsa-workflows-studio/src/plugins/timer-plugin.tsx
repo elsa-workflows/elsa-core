@@ -17,6 +17,6 @@ export class TimerPlugin implements ElsaPlugin {
     const props = activityModel.properties || [];
     const condition = props.find(x => x.name == 'Timeout') || { name: 'Timeout', expressions: {'Literal': ''}, syntax: 'Literal'};
     const expression = condition.expressions[condition.syntax] || '';
-    context.bodyDisplay = <p>{expression}</p>;
+    context.bodyDisplay = `<p>${expression}</p>`;
   }
 }

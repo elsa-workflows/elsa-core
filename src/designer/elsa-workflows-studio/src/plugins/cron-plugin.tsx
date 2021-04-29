@@ -17,6 +17,6 @@ export class CronPlugin implements ElsaPlugin {
     const props = activityModel.properties || [];
     const condition = props.find(x => x.name == 'CronExpression') || { name: 'CronExpression', expressions: {'Literal': ''}, syntax: 'Literal'};
     const expression = condition.expressions[condition.syntax] || '';
-    context.bodyDisplay = <p>{expression}</p>;
+    context.bodyDisplay = `<p>${expression}</p>`;
   }
 }

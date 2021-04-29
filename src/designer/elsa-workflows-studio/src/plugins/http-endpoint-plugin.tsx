@@ -1,6 +1,6 @@
 ﻿import {ElsaPlugin} from "../services/elsa-plugin";
 import {eventBus} from '../services/event-bus';
-import {ActivityDesignDisplayContext, EventTypes} from "../models";
+import {ActivityDesignDisplayContext, EventTypes, SyntaxNames} from "../models";
 import {h} from "@stencil/core";
 
 export class HttpEndpointPlugin implements ElsaPlugin {
@@ -15,7 +15,8 @@ export class HttpEndpointPlugin implements ElsaPlugin {
       return;
 
     const props = activityModel.properties || [];
-    const path = props.find(x => x.name == 'Path') || { name: 'Path', expressions: { 'Literal': '', syntax: 'Literal' } };
-    context.bodyDisplay = <p>{path.expressions[path.syntax]}</p>;
+    const path = props.find(x => x.name == 'Path') || { name: 'Path', expressions: { 'Literal': '', syntax: SyntaxNames.Literal } };
+    const syntax = path.syntax || SyntaxNames.Literal;
+    context.bodyDisplay = `<p>${path.expressions[syntax]}</p>`;
   }
 }
