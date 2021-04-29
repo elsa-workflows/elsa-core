@@ -14,18 +14,38 @@ namespace Elsa.Activities.File
         public static IActivityBuilder OutFile(this IBuilder builder, Action<ISetupActivity<OutFile>> setup, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) => builder.Then(setup, null, lineNumber, sourceFile);
 
         public static IActivityBuilder OutFile(this IBuilder builder, Func<ActivityExecutionContext, string> path, Func<ActivityExecutionContext, CopyMode> mode, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
-            builder.OutFile(activity => activity.WithPath(path!).WithMode(mode!), lineNumber, sourceFile);
+            builder.OutFile(activity => activity
+                    .Set(x => x.Path, path)
+                    .Set(x => x.Mode, mode), 
+                lineNumber, 
+                sourceFile);
 
         public static IActivityBuilder OutFile(this IBuilder builder, Func<ActivityExecutionContext, ValueTask<string>> path, Func<ActivityExecutionContext, ValueTask<CopyMode>> mode, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
-            builder.OutFile(activity => activity.WithPath(path!).WithMode(mode!), lineNumber, sourceFile);
+            builder.OutFile(activity => activity
+                    .Set(x => x.Path, path)
+                    .Set(x => x.Mode, mode),
+                lineNumber,
+                sourceFile);
 
         public static IActivityBuilder OutFile(this IBuilder builder, Func<string> path, Func<CopyMode> mode, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
-            builder.OutFile(activity => activity.WithPath(path!).WithMode(mode!), lineNumber, sourceFile);
+            builder.OutFile(activity => activity
+                    .Set(x => x.Path, path)
+                    .Set(x => x.Mode, mode),
+                lineNumber,
+                sourceFile);
 
         public static IActivityBuilder OutFile(this IBuilder builder, Func<ValueTask<string>> path, Func<ValueTask<CopyMode>> mode, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
-            builder.OutFile(activity => activity.WithPath(path!).WithMode(mode!), lineNumber, sourceFile);
+            builder.OutFile(activity => activity
+                    .Set(x => x.Path, path)
+                    .Set(x => x.Mode, mode),
+                lineNumber,
+                sourceFile);
 
         public static IActivityBuilder OutFile(this IBuilder builder, string path, CopyMode mode, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
-            builder.OutFile(activity => activity.WithPath(path!).WithMode(mode!), lineNumber, sourceFile);
+            builder.OutFile(activity => activity
+                    .Set(x => x.Path, path)
+                    .Set(x => x.Mode, mode),
+                lineNumber,
+                sourceFile);
     }
 }
