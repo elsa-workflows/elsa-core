@@ -3,9 +3,11 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Design;
+using Elsa.Serialization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
 using Swashbuckle.AspNetCore.Annotations;
 
 namespace Elsa.Server.Api.Endpoints.Designer.RuntimeSelectListItems
@@ -17,10 +19,12 @@ namespace Elsa.Server.Api.Endpoints.Designer.RuntimeSelectListItems
     public class Get : Controller
     {
         private readonly IServiceProvider _serviceProvider;
+        private readonly IContentSerializer _contentSerializer;
 
-        public Get(IServiceProvider serviceProvider)
+        public Get(IServiceProvider serviceProvider, IContentSerializer contentSerializer)
         {
             _serviceProvider = serviceProvider;
+            _contentSerializer = contentSerializer;
         }
 
         [HttpPost]
@@ -31,13 +35,23 @@ namespace Elsa.Server.Api.Endpoints.Designer.RuntimeSelectListItems
             OperationId = "Designer.RuntimeSelectListItems.Get",
             Tags = new[] { "Designer.RuntimeSelectListItems" })
         ]
-        public async Task<IActionResult> Handle(string providerTypeName, object? context = default, CancellationToken cancellationToken = default)
+        public async Task<IActionResult> Handle([FromBody]RuntimeSelectListItemsContextHolder model, CancellationToken cancellationToken = default)
         {
-            var type = Type.GetType(providerTypeName)!;
-            var provider = (IRuntimeSelectListItemsProvider)ActivatorUtilities.GetServiceOrCreateInstance(_serviceProvider, type);
+            var type = Type.GetType(model.ProviderTypeName)!;
+            var provider = (IRuntimeSelectListItemsProvider) ActivatorUtilities.GetServiceOrCreateInstance(_serviceProvider, type);
+            var context = model?.Context;
             var items = (await provider.GetItemsAsync(context, cancellationToken)).ToList();
+            var serializerSettings = _contentSerializer.GetSettings();
 
-            return Ok(items);
+            return Json(items, serializerSettings);
         }
     }
+
+    public record RuntimeSelectListItemsContextHolder
+    {
+        [FromRoute] public string ProviderTypeName { get; set; } = default!;
+
+        [JsonProperty(TypeNameHandling = TypeNameHandling.All)]
+        public object? Context { get; set; }
+    };
 }

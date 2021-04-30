@@ -1,5 +1,5 @@
 import { Component, h, Prop, Event, EventEmitter, State, Watch } from '@stencil/core';
-import { MultiTextDefinition } from '../../../models/domain';
+import { SelectListItem } from '../../../models';
 
 @Component({
     tag: 'elsa-input-tags-dropdown',
@@ -11,15 +11,15 @@ export class ElsaInputTagsDropdown {
     @Prop() fieldName?: string;
     @Prop() fieldId?: string;
     @Prop() placeHolder?: string = 'Add tag';
-    @Prop() values?: Array<string | MultiTextDefinition> = [];
-    @Prop() dropdownValues?: Array<MultiTextDefinition> = [];
-    @Event({ bubbles: true }) valueChanged: EventEmitter<Array<string | MultiTextDefinition>>;
-    @State() currentValues?: Array<MultiTextDefinition> = [];
-    @State() dropdownTags?: Array<MultiTextDefinition> = [];
+    @Prop() values?: Array<string | SelectListItem> = [];
+    @Prop() dropdownValues?: Array<SelectListItem> = [];
+    @Event({ bubbles: true }) valueChanged: EventEmitter<Array<string | SelectListItem>>;
+    @State() currentValues?: Array<SelectListItem> = [];
+    @State() dropdownTags?: Array<SelectListItem> = [];
 
     @Watch('values')
-    valuesChangedHandler(newValue: Array<string | MultiTextDefinition>) {
-        let values: Array<MultiTextDefinition> = [];
+    valuesChangedHandler(newValue: Array<string | SelectListItem>) {
+        let values: Array<SelectListItem> = [];
 
         newValue.forEach(value => {
             this.dropdownValues.forEach(tag => {
@@ -33,7 +33,7 @@ export class ElsaInputTagsDropdown {
 
     componentWillLoad() {
         this.dropdownTags = this.dropdownValues;
-        let values: Array<MultiTextDefinition> = [];
+        let values: Array<SelectListItem> = [];
 
         this.values.forEach(value => {
             this.dropdownValues.forEach(tag => {
@@ -52,7 +52,7 @@ export class ElsaInputTagsDropdown {
         e.preventDefault();
 
         const input = e.target as HTMLSelectElement;
-        const currentTag: MultiTextDefinition = {
+        const currentTag: SelectListItem = {
             text: input.options[input.selectedIndex].text.trim(),
             value: input.value
         }
@@ -60,7 +60,7 @@ export class ElsaInputTagsDropdown {
         if (currentTag.value.length == 0)
             return;
 
-        const values: Array<MultiTextDefinition> = [...this.currentValues];
+        const values: Array<SelectListItem> = [...this.currentValues];
         values.push(currentTag);
         this.currentValues = values.distinct();
         input.value = "Add";
@@ -68,7 +68,7 @@ export class ElsaInputTagsDropdown {
         await this.valueChanged.emit(values);
     }
 
-    async onDeleteTagClick(e: any, currentTag: MultiTextDefinition) {
+    async onDeleteTagClick(e: any, currentTag: SelectListItem) {
         e.preventDefault();
 
         this.currentValues = this.currentValues.filter(tag => tag.value !== currentTag.value);
@@ -77,7 +77,7 @@ export class ElsaInputTagsDropdown {
     }
 
     render() {
-        let values: Array<MultiTextDefinition> = this.currentValues || [];
+        let values: Array<SelectListItem> = this.currentValues || [];
 
         if (!Array.isArray(values))
             values = [];
