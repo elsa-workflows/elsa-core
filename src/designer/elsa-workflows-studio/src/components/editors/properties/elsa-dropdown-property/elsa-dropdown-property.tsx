@@ -2,6 +2,7 @@ import {Component, h, Prop, State} from '@stencil/core';
 import {ActivityDefinitionProperty, ActivityPropertyDescriptor, RuntimeSelectListItemsProviderSettings, SelectListItem, SyntaxNames} from "../../../../models";
 import Tunnel from "../../../../data/workflow-editor";
 import {createElsaClient} from "../../../../services/elsa-client";
+import {getSelectListItems} from "../../../../utils/select-list-items";
 
 @Component({
   tag: 'elsa-dropdown-property',
@@ -33,22 +34,7 @@ export class ElsaDropdownProperty {
   }
   
   async componentWillRender(){
-    const propertyDescriptor = this.propertyDescriptor;
-    const options = propertyDescriptor.options;
-    let items = [];
-
-    if (!!options.runtimeSelectListItemsProviderType) {
-      items = await this.fetchRuntimeItems(options);
-    } else {
-      items = options as Array<any> || [];
-    }
-    
-    this.items = items;
-  }
-  
-  async fetchRuntimeItems(options: RuntimeSelectListItemsProviderSettings): Promise<Array<SelectListItem>>{
-    const elsaClient = createElsaClient(this.serverUrl);
-    return await elsaClient.designerApi.runtimeSelectItemsApi.get(options.runtimeSelectListItemsProviderType, options.context || {});
+    this.items = await getSelectListItems(this.serverUrl, this.propertyDescriptor);
   }
 
   render() {

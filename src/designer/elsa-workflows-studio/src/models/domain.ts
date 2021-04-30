@@ -168,11 +168,6 @@ export interface ConnectionDefinitionMapped {
   outcome: string;
 }
 
-export interface MultiTextDefinition {
-  text: string;
-  value: string;
-}
-
 export interface ActivityDefinitionProperty {
   name: string;
   syntax?: string;

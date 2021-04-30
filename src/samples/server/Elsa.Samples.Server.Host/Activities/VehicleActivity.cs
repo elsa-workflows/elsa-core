@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -15,6 +16,13 @@ namespace Elsa.Samples.Server.Host.Activities
     [Action]
     public class VehicleActivity : Activity, IActivityPropertyOptionsProvider, IRuntimeSelectListItemsProvider
     {
+        private Random _random;
+        
+        public VehicleActivity()
+        {
+            _random = new Random();
+        }
+        
         [ActivityProperty(
             UIHint = ActivityPropertyUIHints.Dropdown,
             OptionsProvider = typeof(VehicleActivity),
@@ -23,15 +31,18 @@ namespace Elsa.Samples.Server.Host.Activities
         )]
         public string? Brand { get; set; }
 
-        public object GetOptions(PropertyInfo property) => new RuntimeSelectListItemsProviderSettings(GetType());
+        public object GetOptions(PropertyInfo property) => new RuntimeSelectListItemsProviderSettings(GetType(), new VehicleContext(_random.Next(100)));
 
         public ValueTask<IEnumerable<SelectListItem>> GetItemsAsync(object? context, CancellationToken cancellationToken = default)
         {
-            var brands = new[] { "BMW", "Peugot", "Tesla" };
+            var vehicleContext = (VehicleContext) context!;
+            var brands = new[] { "BMW", "Peugot", "Tesla", vehicleContext.RandomNumber.ToString() };
             var items = brands.Select(x => new SelectListItem(x)).ToList();
             return new ValueTask<IEnumerable<SelectListItem>>(items);
         }
 
         protected override IActivityExecutionResult OnExecute() => Done(Brand);
     }
+
+    public record VehicleContext(int RandomNumber);
 }

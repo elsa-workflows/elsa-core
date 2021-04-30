@@ -24,6 +24,7 @@ namespace Elsa.Design
         /// <summary>
         /// Optionally provide an object containing useful information for the list select items provider to determine what items to provide.
         /// </summary>
+        [JsonProperty(TypeNameHandling = TypeNameHandling.All)]
         public object? Context { get; }
     }
 }

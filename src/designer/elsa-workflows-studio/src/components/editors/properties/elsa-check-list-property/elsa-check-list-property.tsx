@@ -1,6 +1,9 @@
 import {Component, h, Prop, State} from '@stencil/core';
 import {ActivityDefinitionProperty, ActivityPropertyDescriptor, SyntaxNames} from "../../../../models";
 import {parseJson} from "../../../../utils/utils";
+import {getSelectListItems} from "../../../../utils/select-list-items";
+import Tunnel from "../../../../data/workflow-editor";
+import {ElsaDropdownProperty} from "../elsa-dropdown-property/elsa-dropdown-property";
 
 @Component({
   tag: 'elsa-check-list-property',
@@ -11,8 +14,11 @@ export class ElsaCheckListProperty {
 
   @Prop() propertyDescriptor: ActivityPropertyDescriptor;
   @Prop() propertyModel: ActivityDefinitionProperty;
+  @Prop({mutable: true}) serverUrl: string;
   @State() currentValue?: string;
+  
   monacoEditor: HTMLElsaMonacoElement;
+  items: any[];
 
   async componentWillLoad() {
     this.currentValue = this.propertyModel.expressions[SyntaxNames.Json] || '[]';
@@ -37,11 +43,15 @@ export class ElsaCheckListProperty {
     this.currentValue = e.detail;
   }
 
+  async componentWillRender(){
+    this.items = await getSelectListItems(this.serverUrl, this.propertyDescriptor);
+  }
+
   render() {
     const propertyDescriptor = this.propertyDescriptor;
     const propertyModel = this.propertyModel;
     const fieldId = propertyDescriptor.name;
-    const options = propertyDescriptor.options as Array<any>;
+    const items = this.items;
     const values = parseJson(this.currentValue) || [];
 
     return (
@@ -51,11 +61,11 @@ export class ElsaCheckListProperty {
                             editor-height="2.75em"
                             single-line={true}>
         <div class="max-w-lg space-y-3 my-4">
-          {options.map((option, index) => {
+          {items.map((item, index) => {
             const inputId = `${fieldId}_${index}`;
-            const optionIsString = typeof(option) == 'string';
-            const value = optionIsString ? option : option.value;
-            const text = optionIsString ? option : option.text;
+            const optionIsString = typeof(item) == 'string';
+            const value = optionIsString ? item : item.value;
+            const text = optionIsString ? item : item.text;
             const isSelected = values.findIndex(x => x == value) >= 0;
 
             return (
@@ -74,3 +84,5 @@ export class ElsaCheckListProperty {
     );
   }
 }
+
+Tunnel.injectProps(ElsaCheckListProperty, ['serverUrl']);
