@@ -390,11 +390,11 @@ export class ElsaWorkflowDesigner {
           this.showActivityPicker();
         })
         .on("mouseover", e => {
-          if(this.editMode && e.shiftKey)
+          if (this.editMode && e.shiftKey)
             d3.select(node.elem).select('svg').classed('text-green-400', true).classed('hover:text-blue-500', false);
         })
         .on("mouseout", e => {
-          if(this.editMode)
+          if (this.editMode)
             d3.select(node.elem).select('svg').classed('text-green-400', false).classed('hover:text-blue-500', true);
         });
       });
@@ -533,7 +533,8 @@ export class ElsaWorkflowDesigner {
   renderActivityBody(displayContext: ActivityDesignDisplayContext) {
     return (
       `<div class="p-6 text-gray-400 text-sm border-t border-t-solid">
-        ${displayContext.bodyDisplay}
+        <div>${displayContext.activityModel.activityId}</div>
+        <div>${displayContext.bodyDisplay}</div>
       </div>`
     );
   }
