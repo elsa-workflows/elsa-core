@@ -15,6 +15,12 @@ namespace Elsa.Serialization.Converters
 
         public override Exception ReadJson(JsonReader reader, Type objectType, Exception existingValue, bool hasExistingValue, JsonSerializer serializer)
         {
+            // Fix to allow null values in exceptions
+            if (reader.TokenType == JsonToken.Null)
+            {
+                return null;
+            }
+
             //reader will throw exception if not read to end
             var jObject = JObject.Load(reader);
             var ex = System.Text.Json.JsonSerializer.Deserialize<Exception>(jObject.ToString());
