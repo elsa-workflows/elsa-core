@@ -42,6 +42,7 @@ export interface ActivityBlueprint {
   displayName?: string;
   description?: string;
   type: string;
+  parentId?: string;
   persistWorkflow: boolean;
   loadWorkflowContext: boolean;
   saveWorkflowContext: boolean;

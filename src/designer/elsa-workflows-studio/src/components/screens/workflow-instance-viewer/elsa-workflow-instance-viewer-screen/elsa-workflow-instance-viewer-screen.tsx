@@ -121,7 +121,7 @@ export class ElsaWorkflowInstanceViewerScreen {
 
   mapWorkflowModel(workflowBlueprint: WorkflowBlueprint): WorkflowModel {
     return {
-      activities: workflowBlueprint.activities.map(this.mapActivityModel),
+      activities: workflowBlueprint.activities.filter(x => x.parentId == null).map(this.mapActivityModel),
       connections: workflowBlueprint.connections.map(this.mapConnectionModel),
       persistenceBehavior: workflowBlueprint.persistenceBehavior,
     };
@@ -160,7 +160,9 @@ export class ElsaWorkflowInstanceViewerScreen {
   }
 
   onRecordSelected(e: CustomEvent<WorkflowExecutionLogRecord>) {
-    this.selectedActivityId = e.detail.activityId;
+    const record = e.detail;
+    const activity = !!record ? this.workflowBlueprint.activities.find(x => x.id === record.activityId) : null;
+    this.selectedActivityId = activity != null ? activity.parentId != null ? activity.parentId : activity.id : null;
   }
 
   onActivitySelected(e: CustomEvent<ActivityModel>) {
