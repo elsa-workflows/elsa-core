@@ -12,12 +12,10 @@ namespace Elsa.Samples.ReadLineToFile
     {
         public void Build(IWorkflowBuilder builder)
         {
-            var temp = "C:\\Temp\\Test.txt";
-
             builder
                 .WriteLine("Enter text to write to file")
                 .ReadLine()
-                .OutFile(temp, CopyMode.Overwrite);
+                .OutFile(Path.GetTempFileName(), CopyMode.Overwrite);
         }
     }
 }
