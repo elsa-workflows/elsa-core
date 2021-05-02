@@ -16,6 +16,8 @@ import {
 import {createElsaClient} from "../../../../services/elsa-client";
 import {pluginManager} from '../../../../services/plugin-manager';
 import state from '../../../../utils/store';
+import {ActivityContextMenuState, WorkflowDesignerMode} from "../../../designers/tree/elsa-designer-tree/models";
+import {registerClickOutside} from "stencil-click-outside";
 
 @Component({
   tag: 'elsa-workflow-instance-viewer-screen',
@@ -33,6 +35,14 @@ export class ElsaWorkflowInstanceViewerScreen {
   @State() workflowBlueprint: WorkflowBlueprint;
   @State() workflowModel: WorkflowModel;
   @State() selectedActivityId?: string;
+
+  @State() activityContextMenuState: ActivityContextMenuState = {
+    shown: false,
+    x: 0,
+    y: 0,
+    activity: null,
+  };
+
   el: HTMLElement;
   designer: HTMLElsaDesignerTreeElement;
   journal: HTMLElsaWorkflowInstanceJournalElement;
@@ -155,6 +165,15 @@ export class ElsaWorkflowInstanceViewerScreen {
     }
   }
 
+  handleContextMenuChange(x: number, y: number, shown: boolean, activity: ActivityModel) {
+    this.activityContextMenuState = {
+      shown,
+      x,
+      y,
+      activity,
+    };
+  }
+
   onShowWorkflowSettingsClick() {
     eventBus.emit(EventTypes.ShowWorkflowSettings);
   }
@@ -177,6 +196,10 @@ export class ElsaWorkflowInstanceViewerScreen {
     this.journal.selectActivityRecord(this.selectedActivityId);
   }
 
+  onActivityContextMenuButtonClicked(e: CustomEvent<ActivityContextMenuState>) {
+    this.activityContextMenuState = e.detail;
+  }
+
   render() {
     const descriptors: Array<ActivityDescriptor> = state.activityDescriptors;
     return (
@@ -194,16 +217,172 @@ export class ElsaWorkflowInstanceViewerScreen {
   }
 
   renderCanvas() {
+    const activityStatsButton =
+      `<div class="context-menu-wrapper flex-shrink-0">
+            <button aria-haspopup="true"
+                    class="w-8 h-8 inline-flex items-center justify-center text-gray-400 rounded-full bg-transparent hover:text-gray-500 focus:outline-none focus:text-gray-500 focus:bg-gray-100 transition ease-in-out duration-150">
+              <svg class="h-6 w-6 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10" /> 
+                <line x1="12" y1="16" x2="12" y2="12" />
+                <line x1="12" y1="8" x2="12.01" y2="8" />
+              </svg>
+            </button>
+          </div>`;
+
     return (
       <div class="flex-1 flex">
         <elsa-designer-tree model={this.workflowModel}
                             class="flex-1" ref={el => this.designer = el}
-                            editMode={false}
+                            mode={WorkflowDesignerMode.Instance}
+                            activityContextMenuButton={activityStatsButton}
+                            activityContextMenu={this.activityContextMenuState}
                             selectedActivityIds={[this.selectedActivityId]}
                             onActivitySelected={e => this.onActivitySelected(e)}
                             onActivityDeselected={e => this.onActivityDeselected(e)}
+                            onActivityContextMenuButtonClicked={e => this.onActivityContextMenuButtonClicked(e)}
         />
+        {this.renderActivityPerformanceMenu()}
       </div>
     );
+  }
+
+  renderActivityPerformanceMenu() {
+    return <div
+      data-transition-enter="transition ease-out duration-100"
+      data-transition-enter-start="transform opacity-0 scale-95"
+      data-transition-enter-end="transform opacity-100 scale-100"
+      data-transition-leave="transition ease-in duration-75"
+      data-transition-leave-start="transform opacity-100 scale-100"
+      data-transition-leave-end="transform opacity-0 scale-95"
+      class={`${this.activityContextMenuState.shown ? '' : 'hidden'} absolute z-10 mt-3 px-2 w-screen max-w-xl sm:px-0`}
+      style={{left: `${this.activityContextMenuState.x + 64}px`, top: `${this.activityContextMenuState.y - 256}px`}}
+      ref={el =>
+        registerClickOutside(this, el, () => {
+          this.handleContextMenuChange(0, 0, false, null);
+        })
+      }
+    >
+      <div class="rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 overflow-hidden">
+
+        <div>
+          <table class="min-w-full divide-y divide-gray-200 border-b border-gray-200">
+            <thead class="bg-gray-50">
+            <tr>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Event
+              </th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Count
+              </th>
+            </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+            <tr>
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                Executing
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                1
+              </td>
+            </tr>
+            <tr>
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                Executed
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                1
+              </td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="relative grid gap-6 bg-white px-5 py-6 sm:gap-8 sm:p-8">
+          <a href="#" class="-m-3 p-3 flex items-start rounded-lg hover:bg-gray-50 transition ease-in-out duration-150">
+            <svg class="flex-shrink-0 h-6 w-6 text-red-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <div class="ml-4">
+              <p class="text-base font-medium text-gray-900">
+                Fault
+              </p>
+              <p class="mt-1 text-sm text-gray-500">
+                Get all of your questions answered in our forums or contact support.
+              </p>
+            </div>
+          </a>
+
+          <a href="#" class="-m-3 p-3 flex items-start rounded-lg hover:bg-gray-50 transition ease-in-out duration-150">
+            <svg class="flex-shrink-0 h-6 w-6 text-indigo-500" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path stroke="none" d="M0 0h24v24H0z"/>
+              <circle cx="12" cy="12" r="9"/>
+              <polyline points="12 7 12 12 15 15"/>
+            </svg>
+            <div class="ml-4">
+              <p class="text-base font-medium text-gray-900">
+                Average Execution Time
+              </p>
+              <p class="mt-1 text-sm text-gray-500">
+                100ms
+              </p>
+            </div>
+          </a>
+
+          <a href="#" class="-m-3 p-3 flex items-start rounded-lg hover:bg-gray-50 transition ease-in-out duration-150">
+            <svg class="flex-shrink-0 h-6 w-6 text-green-500" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path stroke="none" d="M0 0h24v24H0z"/>
+              <circle cx="12" cy="12" r="9"/>
+              <polyline points="12 7 12 12 15 15"/>
+            </svg>
+            <div class="ml-4">
+              <p class="text-base font-medium text-gray-900">
+                Fastest Execution Time
+              </p>
+              <p class="mt-1 text-sm text-gray-500">
+                10ms
+              </p>
+            </div>
+          </a>
+
+          <a href="#" class="-m-3 p-3 flex items-start rounded-lg hover:bg-gray-50 transition ease-in-out duration-150">
+            <svg class="flex-shrink-0 h-6 w-6 text-yellow-500" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path stroke="none" d="M0 0h24v24H0z"/>
+              <circle cx="12" cy="12" r="9"/>
+              <polyline points="12 7 12 12 15 15"/>
+            </svg>
+            <div class="ml-4">
+              <p class="text-base font-medium text-gray-900">
+                Slowest Execution Time
+              </p>
+              <p class="mt-1 text-sm text-gray-500">
+                200ms
+              </p>
+            </div>
+          </a>
+
+          <a href="#" class="-m-3 p-3 flex items-start rounded-lg hover:bg-gray-50 transition ease-in-out duration-150">
+            <svg class="flex-shrink-0 h-6 w-6 text-blue-600" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path stroke="none" d="M0 0h24v24H0z"/>
+              <rect x="4" y="5" width="16" height="16" rx="2"/>
+              <line x1="16" y1="3" x2="16" y2="7"/>
+              <line x1="8" y1="3" x2="8" y2="7"/>
+              <line x1="4" y1="11" x2="20" y2="11"/>
+              <line x1="11" y1="15" x2="12" y2="15"/>
+              <line x1="12" y1="15" x2="12" y2="18"/>
+            </svg>
+            <div class="ml-4">
+              <p class="text-base font-medium text-gray-900">
+                Last Executed At
+              </p>
+              <p class="mt-1 text-sm text-gray-500">
+                10-05-2021 15:09:10
+              </p>
+            </div>
+          </a>
+        </div>
+      </div>
+    </div>
   }
 }

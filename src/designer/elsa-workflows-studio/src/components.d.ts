@@ -8,6 +8,7 @@ import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
 import { ActivityDefinitionProperty, ActivityDescriptor, ActivityModel, ActivityPropertyDescriptor, SelectListItem, VersionOptions, WorkflowBlueprint, WorkflowDefinition, WorkflowExecutionLogRecord, WorkflowModel } from "./models";
 import { LocationSegments, MatchResults, RouterHistory } from "@stencil/router";
 import { MenuItem } from "./components/controls/elsa-context-menu/models";
+import { ActivityContextMenuState, WorkflowDesignerMode } from "./components/designers/tree/elsa-designer-tree/models";
 import { DropdownButtonItem, DropdownButtonOrigin } from "./components/controls/elsa-dropdown-button/models";
 import { MonacoValueChangedArgs } from "./components/controls/elsa-monaco/elsa-monaco";
 import { Map } from "./utils/utils";
@@ -35,9 +36,13 @@ export namespace Components {
         "menuItems": Array<MenuItem>;
     }
     interface ElsaDesignerTree {
-        "editMode": boolean;
+        "activityContextMenu"?: ActivityContextMenuState;
+        "activityContextMenuButton"?: string;
+        "mode": WorkflowDesignerMode;
         "model": WorkflowModel;
+        "removeActivity": (activity: ActivityModel) => Promise<void>;
         "selectedActivityIds": Array<string>;
+        "showActivityEditor": (activity: ActivityModel, animate: boolean) => Promise<void>;
     }
     interface ElsaDropdownButton {
         "icon"?: any;
@@ -529,8 +534,11 @@ declare namespace LocalJSX {
         "menuItems"?: Array<MenuItem>;
     }
     interface ElsaDesignerTree {
-        "editMode"?: boolean;
+        "activityContextMenu"?: ActivityContextMenuState;
+        "activityContextMenuButton"?: string;
+        "mode"?: WorkflowDesignerMode;
         "model"?: WorkflowModel;
+        "onActivityContextMenuButtonClicked"?: (event: CustomEvent<ActivityContextMenuState>) => void;
         "onActivityDeselected"?: (event: CustomEvent<ActivityModel>) => void;
         "onActivitySelected"?: (event: CustomEvent<ActivityModel>) => void;
         "onWorkflow-changed"?: (event: CustomEvent<WorkflowModel>) => void;
