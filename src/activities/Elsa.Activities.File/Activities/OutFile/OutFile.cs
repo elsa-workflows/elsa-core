@@ -24,19 +24,21 @@ namespace Elsa.Activities.File
         protected async override ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
             FileStream fs;
-            switch (Mode)
             {
-                case CopyMode.Append:
-                    fs = new FileStream(Path, FileMode.Append, FileAccess.Write);
-                    break;
-                case CopyMode.Overwrite:
-                    fs = new FileStream(Path, FileMode.Create, FileAccess.ReadWrite);
-                    break;
-                case CopyMode.CreateNew:
-                    fs = new FileStream(Path, FileMode.CreateNew, FileAccess.ReadWrite);
-                    break;
-                default:
-                    throw new ApplicationException("Not implemented copy mode");
+                switch (Mode)
+                {
+                    case CopyMode.Append:
+                        fs = new FileStream(Path, FileMode.Append, FileAccess.Write);
+                        break;
+                    case CopyMode.Overwrite:
+                        fs = new FileStream(Path, FileMode.Create, FileAccess.ReadWrite);
+                        break;
+                    case CopyMode.CreateNew:
+                        fs = new FileStream(Path, FileMode.CreateNew, FileAccess.ReadWrite);
+                        break;
+                    default:
+                        throw new ApplicationException("Unsupported copy mode");
+                }
             }
 
             using var sw = new StreamWriter(fs);
