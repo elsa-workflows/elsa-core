@@ -1,5 +1,5 @@
 import {Component, Host, h, Prop, State, Event, EventEmitter, Watch} from '@stencil/core';
-import { v4 as uuid } from 'uuid';
+import {v4 as uuid} from 'uuid';
 import {Map, addConnection, findActivity, getChildActivities, getInboundConnections, getOutboundConnections, removeActivity, removeConnection} from '../../../../utils/utils';
 import {
   ActivityDescriptor,
@@ -94,7 +94,9 @@ export class ElsaWorkflowDesigner {
   updateWorkflowModel(model: WorkflowModel) {
     this.workflowModel = model;
     this.workflowChanged.emit(model);
-    this.rerenderTree();
+    setTimeout(() => {
+      this.rerenderTree();
+    }, 50);
   }
 
   connectedCallback() {
@@ -339,13 +341,12 @@ export class ElsaWorkflowDesigner {
 
     this.workflowModel.connections.forEach(({sourceId, targetId, outcome}) => {
       const sourceName = `${sourceId}/${outcome}`;
-      
-      if(!this.graph.hasNode(sourceName))
-      {
+
+      if (!this.graph.hasNode(sourceName)) {
         console.warn(`No source node with ID '${sourceName}' exists.`);
         return;
       }
-      
+
       this.graph.setEdge(sourceName, targetId, {arrowhead: 'undirected'});
     });
   }
@@ -373,7 +374,9 @@ export class ElsaWorkflowDesigner {
     if (this.editMode) {
       d3.selectAll('.node.add').each((n: any) => {
         const node = this.graph.node(n) as any;
-        d3.select(node.elem).on('click', e => {
+
+        d3.select(node.elem)
+        .on('click', e => {
           e.preventDefault();
           d3.selectAll('.node.add svg').classed('text-green-400', false).classed('text-gray-400', true).classed('hover:text-blue-500', true);
           this.parentActivityId = node.activity.activityId;
@@ -385,6 +388,14 @@ export class ElsaWorkflowDesigner {
           }
 
           this.showActivityPicker();
+        })
+        .on("mouseover", e => {
+          if (this.editMode && e.shiftKey)
+            d3.select(node.elem).select('svg').classed('text-green-400', true).classed('hover:text-blue-500', false);
+        })
+        .on("mouseout", e => {
+          if (this.editMode)
+            d3.select(node.elem).select('svg').classed('text-green-400', false).classed('hover:text-blue-500', true);
         });
       });
 
@@ -515,26 +526,18 @@ export class ElsaWorkflowDesigner {
           ${contextButton}
         </div>
       </div>
-      ${this.renderActivityBody(activity.description)}
+      ${this.renderActivityBody(displayContext)}
       </div>`;
   }
 
-  renderActivityBody(description: string | null) {
-    if (!description) return '';
+  renderActivityBody(displayContext: ActivityDesignDisplayContext) {
     return (
       `<div class="p-6 text-gray-400 text-sm border-t border-t-solid">
-        ${description}
+        <div>${displayContext.activityModel.activityId}</div>
+        <div>${displayContext.bodyDisplay}</div>
       </div>`
     );
   }
-
-  // private onActivitySelected(e: CustomEvent<ActivityModel>) {
-  //   this.activitySelected.emit(e.detail);
-  // }
-
-  // private onActivityDeselected(e: CustomEvent<ActivityModel>) {
-  //   this.activityDeselected.emit(e.detail);
-  // }
 
   render() {
     return (

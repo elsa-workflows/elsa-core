@@ -19,6 +19,6 @@ export class SendEmailPlugin implements ElsaPlugin {
     const expression = to.expressions[to.syntax || SyntaxNames.Json] || '';
     const description = activityModel.description;
     const bodyText = description && description.length > 0 ? description : expression;
-    context.bodyDisplay = <p>To: {bodyText}</p>;
+    context.bodyDisplay = `<p>To: ${bodyText}</p>`;
   }
 }

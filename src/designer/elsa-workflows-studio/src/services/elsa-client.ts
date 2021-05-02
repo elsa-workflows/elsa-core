@@ -5,7 +5,7 @@ import {
   ActivityDescriptor,
   ConnectionDefinition,
   getVersionOptionsString, OrderBy,
-  PagedList,
+  PagedList, SelectListItem,
   Variables,
   VersionOptions, WorkflowBlueprint, WorkflowBlueprintSummary,
   WorkflowContextOptions,
@@ -152,6 +152,14 @@ export const createElsaClient = function (serverUrl: string): ElsaClient {
         const response = await httpClient.get<string>(`v1/scripting/javascript/type-definitions/${workflowDefinitionId}?t=${new Date().getTime()}&context=${context}`);
         return response.data;
       }
+    },
+    designerApi:{
+      runtimeSelectItemsApi:{
+        get: async (providerTypeName: string, context?: any): Promise<Array<SelectListItem>> => {
+          const response = await httpClient.post('v1/designer/runtime-select-list-items', { providerTypeName: providerTypeName, context: context });
+          return response.data;  
+        }
+      }
     }
   }
 }
@@ -163,6 +171,7 @@ export interface ElsaClient {
   workflowInstancesApi: WorkflowInstancesApi;
   workflowExecutionLogApi: WorkflowExecutionLogApi;
   scriptingApi: ScriptingApi;
+  designerApi: DesignerApi;
 }
 
 export interface ActivitiesApi {
@@ -218,6 +227,14 @@ export interface BulkDeleteWorkflowsResponse {
 
 export interface ScriptingApi {
   getJavaScriptTypeDefinitions(workflowDefinitionId: string, context?: string): Promise<string>
+}
+
+export interface DesignerApi {
+  runtimeSelectItemsApi: RuntimeSelectItemsApi;
+}
+
+export interface RuntimeSelectItemsApi {
+  get(providerTypeName: string, context?: any): Promise<Array<SelectListItem>>
 }
 
 export interface SaveWorkflowDefinitionRequest {

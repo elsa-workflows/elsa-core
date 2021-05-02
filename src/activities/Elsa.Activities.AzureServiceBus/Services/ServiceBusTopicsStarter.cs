@@ -10,6 +10,7 @@ using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Activities.AzureServiceBus.Services
 {
@@ -19,16 +20,19 @@ namespace Elsa.Activities.AzureServiceBus.Services
         private readonly ITopicMessageReceiverFactory _receiverFactory;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IServiceProvider _serviceProvider;
+        private readonly ILogger<ServiceBusTopicsStarter> _logger;
         private readonly ICollection<TopicWorker> _workers;
 
         public ServiceBusTopicsStarter(
             ITopicMessageReceiverFactory receiverFactory,
             IServiceScopeFactory scopeFactory,
-            IServiceProvider serviceProvider)
+            IServiceProvider serviceProvider,
+            ILogger<ServiceBusTopicsStarter> logger)
         {
             _receiverFactory = receiverFactory;
             _scopeFactory = scopeFactory;
             _serviceProvider = serviceProvider;
+            _logger = logger;
             _workers = new List<TopicWorker>();
         }
 
@@ -38,11 +42,21 @@ namespace Elsa.Activities.AzureServiceBus.Services
             await DisposeExistingWorkersAsync();
             var entities = (await GetTopicSubscriptionNamesAsync(cancellationToken).ToListAsync(cancellationToken)).Distinct();
 
-            foreach (var entity in entities)
+            foreach (var entity in entities) 
+                await CreateAndAddWorkerAsync(entity.topicName, entity.subscriptionName, cancellationToken);
+        }
+
+        private async Task CreateAndAddWorkerAsync(string topicName, string subscriptionName, CancellationToken cancellationToken)
+        {
+            try
             {
-                var receiver = await _receiverFactory.GetTopicReceiverAsync(entity.topicName, entity.subscriptionName, cancellationToken);
+                var receiver = await _receiverFactory.GetTopicReceiverAsync(topicName, subscriptionName, cancellationToken);
                 var worker = ActivatorUtilities.CreateInstance<TopicWorker>(_serviceProvider, receiver, (Func<IReceiverClient, Task>) DisposeReceiverAsync);
                 _workers.Add(worker);
+            }
+            catch (Exception e)
+            {
+                _logger.LogWarning(e, "Failed to create a receiver for topic {TopicName} and subscription {SubscriptionName}", topicName, subscriptionName);
             }
         }
 
@@ -63,7 +77,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
             var workflowRegistry = scope.ServiceProvider.GetRequiredService<IWorkflowRegistry>();
             var workflowBlueprintReflector = scope.ServiceProvider.GetRequiredService<IWorkflowBlueprintReflector>();
             var workflowInstanceStore = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
-            var workflows = await workflowRegistry.ListAsync(cancellationToken);
+            var workflows = await workflowRegistry.ListActiveAsync(cancellationToken);
 
             var query =
                 from workflow in workflows

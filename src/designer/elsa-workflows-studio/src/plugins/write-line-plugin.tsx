@@ -17,6 +17,6 @@ export class WriteLinePlugin implements ElsaPlugin {
     const props = activityModel.properties || [];
     const condition = props.find(x => x.name == 'Text') || { name: 'Text', expressions: {'Literal': ''}, syntax: SyntaxNames.Literal };
     const expression = condition.expressions[condition.syntax || 'Literal'] || '';
-    context.bodyDisplay = <p>{expression}</p>;
+    context.bodyDisplay = `<p>${expression}</p>`;
   }
 }

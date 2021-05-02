@@ -42,6 +42,7 @@ export interface ActivityBlueprint {
   displayName?: string;
   description?: string;
   type: string;
+  parentId?: string;
   persistWorkflow: boolean;
   loadWorkflowContext: boolean;
   saveWorkflowContext: boolean;
@@ -284,6 +285,16 @@ export enum ActivityTraits {
   Action = 1,
   Trigger = 2,
   Job = 4
+}
+
+export interface SelectListItem {
+  text: string;
+  value: string;
+}
+
+export interface RuntimeSelectListItemsProviderSettings {
+  runtimeSelectListItemsProviderType: string;
+  context?: any;
 }
 
 export class SyntaxNames {

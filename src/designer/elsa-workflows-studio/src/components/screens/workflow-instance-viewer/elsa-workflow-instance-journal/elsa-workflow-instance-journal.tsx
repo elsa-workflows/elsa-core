@@ -2,7 +2,6 @@ import {Component, EventEmitter, h, Host, Method, Prop, State, Watch, Event} fro
 import * as collection from 'lodash/collection';
 import moment from 'moment';
 import {enter, leave, toggle} from 'el-transition'
-import {registerClickOutside} from "stencil-click-outside";
 import {
   ActivityBlueprint,
   ActivityDescriptor, PagedList, WorkflowBlueprint, WorkflowExecutionLogRecord, WorkflowModel,
@@ -71,8 +70,7 @@ export class ElsaWorkflowInstanceJournal {
   @Method()
   async selectActivityRecord(activityId?: string) {
     const record = !!activityId ? this.records.items.find(x => x.activityId == activityId) : null;
-    this.selectedRecordId = !!record ? record.id : null;
-    this.selectedActivityId = activityId;
+    this.selectActivityRecordInternal(record);
     await this.show();
   }
 
@@ -92,6 +90,12 @@ export class ElsaWorkflowInstanceJournal {
 
   async componentWillLoad() {
     await this.workflowInstanceIdChangedHandler(this.workflowInstanceId);
+  }
+
+  selectActivityRecordInternal(record?: WorkflowExecutionLogRecord) {
+    const activity = !!record ? this.workflowBlueprint.activities.find(x => x.id === record.activityId) : null;
+    this.selectedRecordId = !!record ? record.id : null;
+    this.selectedActivityId = activity != null ? activity.parentId != null ? activity.parentId : activity.id : null;
   }
 
   getEventColor(eventName: string) {
@@ -115,8 +119,7 @@ export class ElsaWorkflowInstanceJournal {
   }
 
   onRecordClick(record: WorkflowExecutionLogRecord) {
-    this.selectedRecordId = record.id;
-    this.selectedActivityId = record.activityId;
+    this.selectActivityRecordInternal(record);
     this.recordSelected.emit(record);
   }
 
@@ -246,7 +249,7 @@ export class ElsaWorkflowInstanceJournal {
 
         if (!value)
           continue;
-        
+
         let valueText = null;
 
         if (typeof value == 'string')

@@ -63,7 +63,7 @@ namespace Elsa.Bookmarks
             var workflowInstanceIds = workflowInstanceList.Select(x => x.Id).ToList();
             await DeleteBookmarksAsync(workflowInstanceIds, cancellationToken);
 
-            var workflowBlueprints = await _workflowRegistry.ListAsync(cancellationToken);
+            var workflowBlueprints = await _workflowRegistry.ListActiveAsync(cancellationToken);
             var workflowBlueprintsDictionary = workflowBlueprints.ToDictionary(x => (x.Id, x.Version));
             var entities = new List<Bookmark>();
             

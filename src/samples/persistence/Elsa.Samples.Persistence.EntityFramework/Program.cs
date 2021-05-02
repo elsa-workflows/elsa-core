@@ -6,6 +6,7 @@ using Elsa.Persistence.Specifications.WorkflowInstances;
 using Elsa.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Elsa.Persistence.EntityFramework.SqlServer;
 
 namespace Elsa.Samples.Persistence.EntityFramework
 {
