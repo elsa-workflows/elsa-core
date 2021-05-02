@@ -236,14 +236,14 @@ export enum OrderBy {
   Finished = 'Finished'
 }
 
-interface SimpleException {
+export interface SimpleException {
   type: string;
   message: string;
   stackTrace: string;
   innerException?: SimpleException;
 }
 
-interface WorkflowFault {
+export interface WorkflowFault {
   exception?: SimpleException;
   message: string;
   faultedActivityId?: string;
