@@ -14,7 +14,7 @@ namespace Elsa.Server.Api.Endpoints.Designer.RuntimeSelectListItems
 {
     [ApiController]
     [ApiVersion("1")]
-    [Route("v{apiVersion:apiVersion}/designer/runtime-select-list-items/{providerTypeName}")]
+    [Route("v{apiVersion:apiVersion}/designer/runtime-select-list-items")]
     [Produces("application/json")]
     public class Get : Controller
     {
@@ -47,11 +47,11 @@ namespace Elsa.Server.Api.Endpoints.Designer.RuntimeSelectListItems
         }
     }
 
+    [JsonObject(ItemTypeNameHandling = TypeNameHandling.All)]
     public record RuntimeSelectListItemsContextHolder
     {
-        [FromRoute] public string ProviderTypeName { get; set; } = default!;
-
-        [JsonProperty(TypeNameHandling = TypeNameHandling.All)]
+        public string ProviderTypeName { get; set; } = default!;
+        
         public object? Context { get; set; }
     };
 }

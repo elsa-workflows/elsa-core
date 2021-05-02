@@ -5,11 +5,10 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
-import { ActivityDefinitionProperty, ActivityDescriptor, ActivityModel, ActivityPropertyDescriptor, VersionOptions, WorkflowBlueprint, WorkflowDefinition, WorkflowExecutionLogRecord, WorkflowModel } from "./models";
+import { ActivityDefinitionProperty, ActivityDescriptor, ActivityModel, ActivityPropertyDescriptor, SelectListItem, VersionOptions, WorkflowBlueprint, WorkflowDefinition, WorkflowExecutionLogRecord, WorkflowModel } from "./models";
 import { LocationSegments, MatchResults, RouterHistory } from "@stencil/router";
 import { MenuItem } from "./components/controls/elsa-context-menu/models";
 import { DropdownButtonItem, DropdownButtonOrigin } from "./components/controls/elsa-dropdown-button/models";
-import { MultiTextDefinition } from "./models/domain";
 import { MonacoValueChangedArgs } from "./components/controls/elsa-monaco/elsa-monaco";
 import { Map } from "./utils/utils";
 import { ToastNotificationOptions } from "./components/shared/elsa-toast-notification/elsa-toast-notification";
@@ -21,6 +20,7 @@ export namespace Components {
     interface ElsaCheckListProperty {
         "propertyDescriptor": ActivityPropertyDescriptor;
         "propertyModel": ActivityDefinitionProperty;
+        "serverUrl": string;
     }
     interface ElsaCheckboxProperty {
         "propertyDescriptor": ActivityPropertyDescriptor;
@@ -68,11 +68,11 @@ export namespace Components {
         "values"?: Array<string>;
     }
     interface ElsaInputTagsDropdown {
-        "dropdownValues"?: Array<MultiTextDefinition>;
+        "dropdownValues"?: Array<SelectListItem>;
         "fieldId"?: string;
         "fieldName"?: string;
         "placeHolder"?: string;
-        "values"?: Array<string | MultiTextDefinition>;
+        "values"?: Array<string | SelectListItem>;
     }
     interface ElsaModalDialog {
         "hide": (animate: boolean) => Promise<void>;
@@ -105,6 +105,7 @@ export namespace Components {
     interface ElsaMultiTextProperty {
         "propertyDescriptor": ActivityPropertyDescriptor;
         "propertyModel": ActivityDefinitionProperty;
+        "serverUrl": string;
     }
     interface ElsaPager {
         "history"?: RouterHistory;
@@ -515,6 +516,7 @@ declare namespace LocalJSX {
     interface ElsaCheckListProperty {
         "propertyDescriptor"?: ActivityPropertyDescriptor;
         "propertyModel"?: ActivityDefinitionProperty;
+        "serverUrl"?: string;
     }
     interface ElsaCheckboxProperty {
         "propertyDescriptor"?: ActivityPropertyDescriptor;
@@ -565,12 +567,12 @@ declare namespace LocalJSX {
         "values"?: Array<string>;
     }
     interface ElsaInputTagsDropdown {
-        "dropdownValues"?: Array<MultiTextDefinition>;
+        "dropdownValues"?: Array<SelectListItem>;
         "fieldId"?: string;
         "fieldName"?: string;
-        "onValueChanged"?: (event: CustomEvent<Array<string | MultiTextDefinition>>) => void;
+        "onValueChanged"?: (event: CustomEvent<Array<string | SelectListItem>>) => void;
         "placeHolder"?: string;
-        "values"?: Array<string | MultiTextDefinition>;
+        "values"?: Array<string | SelectListItem>;
     }
     interface ElsaModalDialog {
     }
@@ -602,6 +604,7 @@ declare namespace LocalJSX {
     interface ElsaMultiTextProperty {
         "propertyDescriptor"?: ActivityPropertyDescriptor;
         "propertyModel"?: ActivityDefinitionProperty;
+        "serverUrl"?: string;
     }
     interface ElsaPager {
         "history"?: RouterHistory;
