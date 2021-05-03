@@ -96,7 +96,7 @@ export class ElsaWorkflowInstanceJournal {
   selectActivityRecordInternal(record?: WorkflowExecutionLogRecord) {
     const activity = !!record ? this.workflowBlueprint.activities.find(x => x.id === record.activityId) : null;
     this.selectedRecordId = !!record ? record.id : null;
-    this.selectedActivityId = activity != null ? activity.parentId != this.workflowBlueprint.id ? activity.parentId : activity.id : null;
+    this.selectedActivityId = activity != null ? !!activity.parentId && activity.parentId != this.workflowBlueprint.id ? activity.parentId : activity.id : null;
   }
 
   getEventColor(eventName: string) {

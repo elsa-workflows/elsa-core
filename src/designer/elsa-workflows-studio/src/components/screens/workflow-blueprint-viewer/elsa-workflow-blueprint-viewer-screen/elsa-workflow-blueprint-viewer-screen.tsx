@@ -101,7 +101,7 @@ export class ElsaWorkflowBlueprintViewerScreen {
 
   mapWorkflowModel(workflowBlueprint: WorkflowBlueprint): WorkflowModel {
     return {
-      activities: workflowBlueprint.activities.filter(x => x.parentId == workflowBlueprint.id).map(this.mapActivityModel),
+      activities: workflowBlueprint.activities.filter(x => x.parentId == workflowBlueprint.id || !x.parentId).map(this.mapActivityModel),
       connections: workflowBlueprint.connections.map(this.mapConnectionModel),
       persistenceBehavior: workflowBlueprint.persistenceBehavior,
     };
