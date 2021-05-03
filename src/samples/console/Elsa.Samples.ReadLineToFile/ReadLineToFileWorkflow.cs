@@ -1,5 +1,6 @@
 using Elsa.Activities.Console;
 using Elsa.Activities.File;
+using Elsa.Activities.Primitives;
 using Elsa.Builders;
 using System;
 using System.Collections.Generic;
@@ -15,7 +16,16 @@ namespace Elsa.Samples.ReadLineToFile
             builder
                 .WriteLine("Enter text to write to file")
                 .ReadLine()
-                .OutFile(Path.GetTempFileName(), CopyMode.Overwrite);
+                .WithName("ReadLine")
+                .TempFile()
+                .WithName("TempFile")
+                .OutFile(setup =>
+                {
+                    setup.WithContent(context => context.GetOutputFrom<string>("ReadLine"));
+                    setup.WithPath(context => context.GetOutputFrom<string>("TempFile"));
+                    setup.WithMode(CopyMode.Overwrite);
+                })
+                .DeleteFile(setup => setup.WithPath(context => context.GetOutputFrom<string>("TempFile")));
         }
     }
 }
