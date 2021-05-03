@@ -45,6 +45,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             workflowDefinition.Connections = postedModel.Connections;
             workflowDefinition.Description = postedModel.Description;
             workflowDefinition.Name = postedModel.Name;
+            workflowDefinition.Tag = postedModel.Tag;
             workflowDefinition.Variables = postedModel.Variables;
             workflowDefinition.ContextOptions = postedModel.ContextOptions;
             workflowDefinition.CustomAttributes = postedModel.CustomAttributes;
