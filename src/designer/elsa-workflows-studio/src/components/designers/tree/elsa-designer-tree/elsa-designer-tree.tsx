@@ -512,7 +512,7 @@ export class ElsaWorkflowDesigner {
     return (
       `<div class="p-6 text-gray-400 text-sm border-t border-t-solid">
         <div>${displayContext.activityModel.activityId}</div>
-        <div>${displayContext.bodyDisplay}</div>
+        <div>${!!displayContext.bodyDisplay ? displayContext.bodyDisplay : ''}</div>
       </div>`
     );
   }
