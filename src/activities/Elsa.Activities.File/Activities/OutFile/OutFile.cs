@@ -1,5 +1,7 @@
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Design;
+using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
 using System;
@@ -15,44 +17,44 @@ namespace Elsa.Activities.File
         Outcomes = new[] { OutcomeNames.Done })]
     public class OutFile : Activity
     {
-        [ActivityProperty(Hint = "Path to create file at.")]
+        [ActivityProperty(Hint = "Content of the file.", UIHint = ActivityPropertyUIHints.MultiLine, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        public string Content { get; set; }
+
+        [ActivityProperty(Hint = "Path to create file at.", UIHint = ActivityPropertyUIHints.SingleLine, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string Path { get; set; }
 
-        [ActivityProperty(Hint = "How the output file should be written to.")]
+        [ActivityProperty(Hint = "How the output file should be written to.", UIHint = ActivityPropertyUIHints.Dropdown)]
         public CopyMode Mode { get; set; } = CopyMode.CreateNew;
 
         protected async override ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            FileStream fs;
+            FileMode fileMode;
+            FileAccess fileAccess;
             switch (Mode)
             {
                 case CopyMode.Append:
-                    fs = new FileStream(Path, FileMode.Append, FileAccess.Write);
+                    fileMode = FileMode.Append;
+                    fileAccess = FileAccess.Write;
                     break;
                 case CopyMode.Overwrite:
-                    fs = new FileStream(Path, FileMode.Create, FileAccess.ReadWrite);
+                    fileMode = FileMode.Create;
+                    fileAccess = FileAccess.ReadWrite;
                     break;
                 case CopyMode.CreateNew:
-                    fs = new FileStream(Path, FileMode.CreateNew, FileAccess.ReadWrite);
+                    fileMode = FileMode.CreateNew;
+                    fileAccess = FileAccess.ReadWrite;
                     break;
                 default:
                     throw new ApplicationException("Unsupported copy mode");
             }
 
-            try
-            {
-                using var sw = new StreamWriter(fs);
-                await sw.WriteLineAsync((string)context.Input);
-                await sw.FlushAsync();
-                await fs.FlushAsync();
+            using var fs = new FileStream(Path, fileMode, fileAccess);
+            using var sw = new StreamWriter(fs);
+            await sw.WriteLineAsync((string)Content);
+            await sw.FlushAsync();
+            await fs.FlushAsync();
 
-                return Done();
-            }
-            finally
-            {
-                if (fs != null)
-                    await fs.DisposeAsync();
-            }
+            return Done();
         }
     }
 }
