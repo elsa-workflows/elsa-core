@@ -8,6 +8,7 @@ import {
 } from "../../../../models";
 import {activityIconProvider} from "../../../../services/activity-icon-provider";
 import {createElsaClient} from "../../../../services/elsa-client";
+import {durationToString} from "../../../../utils/utils";
 
 interface Tab {
   id: string;
@@ -95,7 +96,7 @@ export class ElsaWorkflowInstanceJournal {
   selectActivityRecordInternal(record?: WorkflowExecutionLogRecord) {
     const activity = !!record ? this.workflowBlueprint.activities.find(x => x.id === record.activityId) : null;
     this.selectedRecordId = !!record ? record.id : null;
-    this.selectedActivityId = activity != null ? activity.parentId != null ? activity.parentId : activity.id : null;
+    this.selectedActivityId = activity != null ? !!activity.parentId && activity.parentId != this.workflowBlueprint.id ? activity.parentId : activity.id : null;
   }
 
   getEventColor(eventName: string) {
@@ -264,14 +265,7 @@ export class ElsaWorkflowInstanceJournal {
         filteredRecordData[key] = valueText;
       }
 
-      const deltaTimeText = !!deltaTime ? deltaTime.asHours() > 1
-        ? `${deltaTime.asHours()} h`
-        : deltaTime.asMinutes() > 1
-          ? `${deltaTime.asMinutes()} m`
-          : deltaTime.asSeconds() > 1
-            ? `${deltaTime.asSeconds()} s`
-            : `${deltaTime.asMilliseconds()} ms`
-        : null;
+      const deltaTimeText = durationToString(deltaTime);
 
       return (
         <li>

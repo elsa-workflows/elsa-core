@@ -14,6 +14,8 @@ namespace Elsa.Builders
         public WorkflowBuilder(IIdGenerator idGenerator, IServiceProvider serviceProvider, IGetsStartActivitiesForCompositeActivityBlueprint startingActivitiesProvider) : base(serviceProvider, startingActivitiesProvider)
         {
             Version = 1;
+            IsLatest = true;
+            IsPublished = true;
             Variables = new Variables();
             CustomAttributes = new Variables();
             ActivityId = idGenerator.Generate();
@@ -25,6 +27,8 @@ namespace Elsa.Builders
         }
         
         public int Version { get; private set; }
+        public bool IsLatest { get; private set; }
+        public bool IsPublished { get; private set; }
         public string? TenantId { get; private set; }
         public bool IsSingleton { get; private set; }
         public string? Tag { get; private set; }
@@ -75,9 +79,11 @@ namespace Elsa.Builders
             return this;
         }
 
-        public IWorkflowBuilder WithVersion(int value)
+        public IWorkflowBuilder WithVersion(int value, bool isLatest = true, bool isPublished = true)
         {
             Version = value;
+            IsLatest = isLatest;
+            isPublished = isPublished;
             return this;
         }
         
@@ -161,8 +167,8 @@ namespace Elsa.Builders
                 Name,
                 DisplayName,
                 Description,
-                true,
-                true,
+                IsLatest,
+                IsPublished,
                 Tag,
                 Variables,
                 CustomAttributes,

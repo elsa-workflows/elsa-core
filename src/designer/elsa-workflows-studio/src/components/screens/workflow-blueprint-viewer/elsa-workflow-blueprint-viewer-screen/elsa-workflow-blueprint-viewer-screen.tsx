@@ -12,6 +12,7 @@ import {
 import {createElsaClient} from "../../../../services/elsa-client";
 import {pluginManager} from '../../../../services/plugin-manager';
 import state from '../../../../utils/store';
+import {WorkflowDesignerMode} from "../../../designers/tree/elsa-designer-tree/models";
 
 @Component({
   tag: 'elsa-workflow-blueprint-viewer-screen',
@@ -96,12 +97,11 @@ export class ElsaWorkflowBlueprintViewerScreen {
   updateModels(workflowBlueprint: WorkflowBlueprint) {
     this.workflowBlueprint = workflowBlueprint;
     this.workflowModel = this.mapWorkflowModel(workflowBlueprint);
-    debugger;
   }
 
   mapWorkflowModel(workflowBlueprint: WorkflowBlueprint): WorkflowModel {
     return {
-      activities: workflowBlueprint.activities.filter(x => x.parentId == null).map(this.mapActivityModel),
+      activities: workflowBlueprint.activities.filter(x => x.parentId == workflowBlueprint.id || !x.parentId).map(this.mapActivityModel),
       connections: workflowBlueprint.connections.map(this.mapConnectionModel),
       persistenceBehavior: workflowBlueprint.persistenceBehavior,
     };
@@ -146,7 +146,7 @@ export class ElsaWorkflowBlueprintViewerScreen {
   renderCanvas() {
     return (
       <div class="flex-1 flex">
-        <elsa-designer-tree model={this.workflowModel} class="flex-1" ref={el => this.designer = el} editMode={false}/>
+        <elsa-designer-tree model={this.workflowModel} class="flex-1" ref={el => this.designer = el} mode={WorkflowDesignerMode.Blueprint}/>
       </div>
     );
   }

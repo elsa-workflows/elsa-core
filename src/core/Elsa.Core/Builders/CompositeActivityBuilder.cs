@@ -178,7 +178,7 @@ namespace Elsa.Builders
             var connections = new List<IConnection>();
             var activityPropertyProviders = new Dictionary<string, IDictionary<string, IActivityPropertyValueProvider>>();
 
-            // Assign automatic ids to activity builders
+            // Assign automatic ids to activity builders.
             var index = 0;
 
             foreach (var activityBuilder in activityBuilders)

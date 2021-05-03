@@ -40,15 +40,15 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             var json = await file.OpenReadStream().ReadStringToEndAsync(cancellationToken);
             var workflowDefinition = await _workflowPublisher.GetDraftAsync(workflowDefinitionId, cancellationToken) ?? _workflowPublisher.New();
             var postedModel = _contentSerializer.Deserialize<WorkflowDefinition>(json);
-
+            
             workflowDefinition.Activities = postedModel.Activities;
             workflowDefinition.Connections = postedModel.Connections;
             workflowDefinition.Description = postedModel.Description;
             workflowDefinition.Name = postedModel.Name;
+            workflowDefinition.Tag = postedModel.Tag;
             workflowDefinition.Variables = postedModel.Variables;
             workflowDefinition.ContextOptions = postedModel.ContextOptions;
             workflowDefinition.CustomAttributes = postedModel.CustomAttributes;
-            workflowDefinition.DefinitionId = postedModel.DefinitionId is not null! && postedModel.DefinitionId is not "" ? postedModel.DefinitionId : workflowDefinition.DefinitionId;
             workflowDefinition.DisplayName = postedModel.DisplayName;
             workflowDefinition.IsSingleton = postedModel.IsSingleton;
             workflowDefinition.DeleteCompletedInstances = postedModel.DeleteCompletedInstances;
