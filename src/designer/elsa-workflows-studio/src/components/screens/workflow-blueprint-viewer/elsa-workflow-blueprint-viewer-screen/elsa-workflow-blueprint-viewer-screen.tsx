@@ -97,12 +97,11 @@ export class ElsaWorkflowBlueprintViewerScreen {
   updateModels(workflowBlueprint: WorkflowBlueprint) {
     this.workflowBlueprint = workflowBlueprint;
     this.workflowModel = this.mapWorkflowModel(workflowBlueprint);
-    debugger;
   }
 
   mapWorkflowModel(workflowBlueprint: WorkflowBlueprint): WorkflowModel {
     return {
-      activities: workflowBlueprint.activities.filter(x => x.parentId == null).map(this.mapActivityModel),
+      activities: workflowBlueprint.activities.filter(x => x.parentId == workflowBlueprint.id).map(this.mapActivityModel),
       connections: workflowBlueprint.connections.map(this.mapConnectionModel),
       persistenceBehavior: workflowBlueprint.persistenceBehavior,
     };

@@ -10,7 +10,7 @@ import {
   VersionOptions, WorkflowBlueprint, WorkflowBlueprintSummary,
   WorkflowContextOptions,
   WorkflowDefinition,
-  WorkflowDefinitionSummary, WorkflowExecutionLogRecord, WorkflowInstance, WorkflowInstanceSummary,
+  WorkflowDefinitionSummary, WorkflowExecutionLogRecord, WorkflowFault, WorkflowInstance, WorkflowInstanceSummary,
   WorkflowPersistenceBehavior, WorkflowStatus
 } from "../models";
 
@@ -153,12 +153,18 @@ export const createElsaClient = function (serverUrl: string): ElsaClient {
         return response.data;
       }
     },
-    designerApi:{
-      runtimeSelectItemsApi:{
+    designerApi: {
+      runtimeSelectItemsApi: {
         get: async (providerTypeName: string, context?: any): Promise<Array<SelectListItem>> => {
-          const response = await httpClient.post('v1/designer/runtime-select-list-items', { providerTypeName: providerTypeName, context: context });
-          return response.data;  
+          const response = await httpClient.post('v1/designer/runtime-select-list-items', {providerTypeName: providerTypeName, context: context});
+          return response.data;
         }
+      }
+    },
+    activityStatsApi: {
+      get: async (workflowInstanceId: string, activityId?: any): Promise<ActivityStats> => {
+        const response = await httpClient.get(`v1/workflow-instances/${workflowInstanceId}/activity-stats/${activityId}`);
+        return response.data;
       }
     }
   }
@@ -172,6 +178,7 @@ export interface ElsaClient {
   workflowExecutionLogApi: WorkflowExecutionLogApi;
   scriptingApi: ScriptingApi;
   designerApi: DesignerApi;
+  activityStatsApi: ActivityStatsApi;
 }
 
 export interface ActivitiesApi {
@@ -214,7 +221,7 @@ export interface WorkflowInstancesApi {
 export interface WorkflowExecutionLogApi {
 
   get(workflowInstanceId: string, page?: number, pageSize?: number): Promise<PagedList<WorkflowExecutionLogRecord>>;
-  
+
 }
 
 export interface BulkDeleteWorkflowsRequest {
@@ -237,6 +244,10 @@ export interface RuntimeSelectItemsApi {
   get(providerTypeName: string, context?: any): Promise<Array<SelectListItem>>
 }
 
+export interface ActivityStatsApi {
+  get(workflowInstanceId: string, activityId: string): Promise<ActivityStats>;
+}
+
 export interface SaveWorkflowDefinitionRequest {
   workflowDefinitionId?: string;
   name?: string;
@@ -256,4 +267,22 @@ export interface SaveWorkflowDefinitionRequest {
 export interface ExportWorkflowResponse {
   fileName: string;
   data: Blob;
+}
+
+export interface ActivityStats {
+  fault?: ActivityFault;
+  averageExecutionTime: string;
+  fastestExecutionTime: string;
+  slowestExecutionTime: string;
+  lastExecutedAt: Date;
+  eventCounts: Array<ActivityEventCount>;
+}
+
+interface ActivityEventCount {
+  eventName: string;
+  count: number;
+}
+
+interface ActivityFault{
+  message: string;
 }

@@ -497,7 +497,7 @@ export class ElsaWorkflowDesigner {
             <p>${activity.displayName}</p>
           </div>
           <div class="context-menu-button-container">
-            ${this.activityContextMenuButton}
+            ${!!this.activityContextMenuButton ? this.activityContextMenuButton : ''}
           </div>
         </div>
       </div>
