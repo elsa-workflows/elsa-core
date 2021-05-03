@@ -16,7 +16,9 @@ namespace Microsoft.Extensions.DependencyInjection
 
         public static ElsaOptionsBuilder AddFileActivities(this ElsaOptionsBuilder builder)
         {
+            builder.AddActivity<DeleteFile>();
             builder.AddActivity<OutFile>();
+            builder.AddActivity<TempFile>();
 
             return builder;
         }
