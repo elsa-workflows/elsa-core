@@ -10,6 +10,8 @@ namespace Elsa.Persistence.YesSql.Indexes
         public string? TenantId { get; set; }
         public string RecordId { get; set; } = default!;
         public string WorkflowInstanceId { get; set; } = default!;
+        public string ActivityId { get; set; } = default!;
+        public string ActivityType { get; set; } = default!;
         public string EventName { get; set; } = default!;
         public DateTime Timestamp { get; set; }
     }
@@ -27,6 +29,8 @@ namespace Elsa.Persistence.YesSql.Indexes
                         RecordId = record.RecordId,
                         TenantId = record.TenantId,
                         WorkflowInstanceId = record.WorkflowInstanceId,
+                        ActivityId = record.ActivityId,
+                        ActivityType = record.ActivityType,
                         EventName = record.EventName,
                         Timestamp = record.Timestamp.ToDateTimeUtc()
                     }
