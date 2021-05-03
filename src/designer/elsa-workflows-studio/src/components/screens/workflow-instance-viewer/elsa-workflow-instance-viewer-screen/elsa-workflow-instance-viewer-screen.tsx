@@ -13,11 +13,15 @@ import {
   WorkflowPersistenceBehavior,
   WorkflowStatus
 } from "../../../../models";
-import {createElsaClient} from "../../../../services/elsa-client";
+import {ActivityStats, createElsaClient} from "../../../../services/elsa-client";
 import {pluginManager} from '../../../../services/plugin-manager';
 import state from '../../../../utils/store';
 import {ActivityContextMenuState, WorkflowDesignerMode} from "../../../designers/tree/elsa-designer-tree/models";
 import {registerClickOutside} from "stencil-click-outside";
+import {editor} from "monaco-editor";
+import create = editor.create;
+import moment from "moment";
+import {durationToString} from "../../../../utils/utils";
 
 @Component({
   tag: 'elsa-workflow-instance-viewer-screen',
@@ -35,6 +39,7 @@ export class ElsaWorkflowInstanceViewerScreen {
   @State() workflowBlueprint: WorkflowBlueprint;
   @State() workflowModel: WorkflowModel;
   @State() selectedActivityId?: string;
+  @State() activityStats?: ActivityStats;
 
   @State() activityContextMenuState: ActivityContextMenuState = {
     shown: false,
@@ -131,7 +136,7 @@ export class ElsaWorkflowInstanceViewerScreen {
 
   mapWorkflowModel(workflowBlueprint: WorkflowBlueprint): WorkflowModel {
     return {
-      activities: workflowBlueprint.activities.filter(x => x.parentId == null).map(this.mapActivityModel),
+      activities: workflowBlueprint.activities.filter(x => x.parentId == workflowBlueprint.id).map(this.mapActivityModel),
       connections: workflowBlueprint.connections.map(this.mapConnectionModel),
       persistenceBehavior: workflowBlueprint.persistenceBehavior,
     };
@@ -184,20 +189,28 @@ export class ElsaWorkflowInstanceViewerScreen {
     this.selectedActivityId = activity != null ? activity.parentId != null ? activity.parentId : activity.id : null;
   }
 
-  onActivitySelected(e: CustomEvent<ActivityModel>) {
+  async onActivitySelected(e: CustomEvent<ActivityModel>) {
     this.selectedActivityId = e.detail.activityId;
-    this.journal.selectActivityRecord(this.selectedActivityId);
+    await this.journal.selectActivityRecord(this.selectedActivityId);
   }
 
-  onActivityDeselected(e: CustomEvent<ActivityModel>) {
+  async onActivityDeselected(e: CustomEvent<ActivityModel>) {
     if (this.selectedActivityId == e.detail.activityId)
       this.selectedActivityId = null;
 
-    this.journal.selectActivityRecord(this.selectedActivityId);
+    await this.journal.selectActivityRecord(this.selectedActivityId);
   }
 
-  onActivityContextMenuButtonClicked(e: CustomEvent<ActivityContextMenuState>) {
+  async onActivityContextMenuButtonClicked(e: CustomEvent<ActivityContextMenuState>) {
     this.activityContextMenuState = e.detail;
+    this.activityStats = null;
+
+    if (!e.detail.shown) {
+      return;
+    }
+
+    const elsaClient = createElsaClient(this.serverUrl);
+    this.activityStats = await elsaClient.activityStatsApi.get(this.workflowInstanceId, e.detail.activity.activityId);
   }
 
   render() {
@@ -247,6 +260,132 @@ export class ElsaWorkflowInstanceViewerScreen {
   }
 
   renderActivityPerformanceMenu() {
+    const activityStats: ActivityStats = this.activityStats;
+
+    const renderStats = function () {
+      return (
+        <div>
+          <div>
+            <table class="min-w-full divide-y divide-gray-200 border-b border-gray-200">
+              <thead class="bg-gray-50">
+              <tr>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Event
+                </th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Count
+                </th>
+              </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+              {activityStats.eventCounts.map(eventCount => (
+                <tr>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    {eventCount.eventName}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {eventCount.count}
+                  </td>
+                </tr>))}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="relative grid gap-6 bg-white px-5 py-6 sm:gap-8 sm:p-8">
+
+            {!!activityStats.fault ? (
+              <a href="#" class="-m-3 p-3 flex items-start rounded-lg hover:bg-gray-50 transition ease-in-out duration-150">
+                <svg class="flex-shrink-0 h-6 w-6 text-red-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="8" x2="12" y2="12"/>
+                  <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                <div class="ml-4">
+                  <p class="text-base font-medium text-gray-900">
+                    Fault
+                  </p>
+                  <p class="mt-1 text-sm text-gray-500">
+                    {activityStats.fault.message}
+                  </p>
+                </div>
+              </a>) : undefined}
+
+            <a href="#" class="-m-3 p-3 flex items-start rounded-lg hover:bg-gray-50 transition ease-in-out duration-150">
+              <svg class="flex-shrink-0 h-6 w-6 text-indigo-500" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z"/>
+                <circle cx="12" cy="12" r="9"/>
+                <polyline points="12 7 12 12 15 15"/>
+              </svg>
+              <div class="ml-4">
+                <p class="text-base font-medium text-gray-900">
+                  Average Execution Time
+                </p>
+                <p class="mt-1 text-sm text-gray-500">
+                  {durationToString(moment.duration(activityStats.averageExecutionTime))}
+                </p>
+              </div>
+            </a>
+
+            <a href="#" class="-m-3 p-3 flex items-start rounded-lg hover:bg-gray-50 transition ease-in-out duration-150">
+              <svg class="flex-shrink-0 h-6 w-6 text-green-500" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z"/>
+                <circle cx="12" cy="12" r="9"/>
+                <polyline points="12 7 12 12 15 15"/>
+              </svg>
+              <div class="ml-4">
+                <p class="text-base font-medium text-gray-900">
+                  Fastest Execution Time
+                </p>
+                <p class="mt-1 text-sm text-gray-500">
+                  {durationToString(moment.duration(activityStats.fastestExecutionTime))}
+                </p>
+              </div>
+            </a>
+
+            <a href="#" class="-m-3 p-3 flex items-start rounded-lg hover:bg-gray-50 transition ease-in-out duration-150">
+              <svg class="flex-shrink-0 h-6 w-6 text-yellow-500" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z"/>
+                <circle cx="12" cy="12" r="9"/>
+                <polyline points="12 7 12 12 15 15"/>
+              </svg>
+              <div class="ml-4">
+                <p class="text-base font-medium text-gray-900">
+                  Slowest Execution Time
+                </p>
+                <p class="mt-1 text-sm text-gray-500">
+                  {durationToString(moment.duration(activityStats.slowestExecutionTime))}
+                </p>
+              </div>
+            </a>
+
+            <a href="#" class="-m-3 p-3 flex items-start rounded-lg hover:bg-gray-50 transition ease-in-out duration-150">
+              <svg class="flex-shrink-0 h-6 w-6 text-blue-600" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z"/>
+                <rect x="4" y="5" width="16" height="16" rx="2"/>
+                <line x1="16" y1="3" x2="16" y2="7"/>
+                <line x1="8" y1="3" x2="8" y2="7"/>
+                <line x1="4" y1="11" x2="20" y2="11"/>
+                <line x1="11" y1="15" x2="12" y2="15"/>
+                <line x1="12" y1="15" x2="12" y2="18"/>
+              </svg>
+              <div class="ml-4">
+                <p class="text-base font-medium text-gray-900">
+                  Last Executed At
+                </p>
+                <p class="mt-1 text-sm text-gray-500">
+                  {moment(activityStats.lastExecutedAt).format('DD-MM-YYYY HH:mm:ss')}
+                </p>
+              </div>
+            </a>
+          </div>
+        </div>
+      )
+    };
+
+    const renderLoader = function () {
+      return <div>Loading...</div>;
+    };
+
     return <div
       data-transition-enter="transition ease-out duration-100"
       data-transition-enter-start="transform opacity-0 scale-95"
@@ -263,125 +402,8 @@ export class ElsaWorkflowInstanceViewerScreen {
       }
     >
       <div class="rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 overflow-hidden">
+        {!!activityStats ? renderStats() : renderLoader()}
 
-        <div>
-          <table class="min-w-full divide-y divide-gray-200 border-b border-gray-200">
-            <thead class="bg-gray-50">
-            <tr>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Event
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Count
-              </th>
-            </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-            <tr>
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                Executing
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                1
-              </td>
-            </tr>
-            <tr>
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                Executed
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                1
-              </td>
-            </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="relative grid gap-6 bg-white px-5 py-6 sm:gap-8 sm:p-8">
-          <a href="#" class="-m-3 p-3 flex items-start rounded-lg hover:bg-gray-50 transition ease-in-out duration-150">
-            <svg class="flex-shrink-0 h-6 w-6 text-red-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="12" y1="8" x2="12" y2="12"/>
-              <line x1="12" y1="16" x2="12.01" y2="16"/>
-            </svg>
-            <div class="ml-4">
-              <p class="text-base font-medium text-gray-900">
-                Fault
-              </p>
-              <p class="mt-1 text-sm text-gray-500">
-                Get all of your questions answered in our forums or contact support.
-              </p>
-            </div>
-          </a>
-
-          <a href="#" class="-m-3 p-3 flex items-start rounded-lg hover:bg-gray-50 transition ease-in-out duration-150">
-            <svg class="flex-shrink-0 h-6 w-6 text-indigo-500" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-              <path stroke="none" d="M0 0h24v24H0z"/>
-              <circle cx="12" cy="12" r="9"/>
-              <polyline points="12 7 12 12 15 15"/>
-            </svg>
-            <div class="ml-4">
-              <p class="text-base font-medium text-gray-900">
-                Average Execution Time
-              </p>
-              <p class="mt-1 text-sm text-gray-500">
-                100ms
-              </p>
-            </div>
-          </a>
-
-          <a href="#" class="-m-3 p-3 flex items-start rounded-lg hover:bg-gray-50 transition ease-in-out duration-150">
-            <svg class="flex-shrink-0 h-6 w-6 text-green-500" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-              <path stroke="none" d="M0 0h24v24H0z"/>
-              <circle cx="12" cy="12" r="9"/>
-              <polyline points="12 7 12 12 15 15"/>
-            </svg>
-            <div class="ml-4">
-              <p class="text-base font-medium text-gray-900">
-                Fastest Execution Time
-              </p>
-              <p class="mt-1 text-sm text-gray-500">
-                10ms
-              </p>
-            </div>
-          </a>
-
-          <a href="#" class="-m-3 p-3 flex items-start rounded-lg hover:bg-gray-50 transition ease-in-out duration-150">
-            <svg class="flex-shrink-0 h-6 w-6 text-yellow-500" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-              <path stroke="none" d="M0 0h24v24H0z"/>
-              <circle cx="12" cy="12" r="9"/>
-              <polyline points="12 7 12 12 15 15"/>
-            </svg>
-            <div class="ml-4">
-              <p class="text-base font-medium text-gray-900">
-                Slowest Execution Time
-              </p>
-              <p class="mt-1 text-sm text-gray-500">
-                200ms
-              </p>
-            </div>
-          </a>
-
-          <a href="#" class="-m-3 p-3 flex items-start rounded-lg hover:bg-gray-50 transition ease-in-out duration-150">
-            <svg class="flex-shrink-0 h-6 w-6 text-blue-600" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-              <path stroke="none" d="M0 0h24v24H0z"/>
-              <rect x="4" y="5" width="16" height="16" rx="2"/>
-              <line x1="16" y1="3" x2="16" y2="7"/>
-              <line x1="8" y1="3" x2="8" y2="7"/>
-              <line x1="4" y1="11" x2="20" y2="11"/>
-              <line x1="11" y1="15" x2="12" y2="15"/>
-              <line x1="12" y1="15" x2="12" y2="18"/>
-            </svg>
-            <div class="ml-4">
-              <p class="text-base font-medium text-gray-900">
-                Last Executed At
-              </p>
-              <p class="mt-1 text-sm text-gray-500">
-                10-05-2021 15:09:10
-              </p>
-            </div>
-          </a>
-        </div>
       </div>
     </div>
   }
