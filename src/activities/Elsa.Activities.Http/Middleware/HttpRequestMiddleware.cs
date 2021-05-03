@@ -10,7 +10,7 @@ namespace Elsa.Activities.Http.Middleware
     public class HttpEndpointMiddleware
     {
         // TODO: Design multi-tenancy. 
-        private const string TenantId = default;
+        private const string? TenantId = default;
         private readonly RequestDelegate _next;
 
         public HttpEndpointMiddleware(RequestDelegate next) => _next = next;
