@@ -57,7 +57,7 @@ export class ElsaWorkflowDesigner {
 
   @Watch('model')
   handleModelChanged(newValue: WorkflowModel) {
-    this.updateWorkflowModel(newValue);
+    this.updateWorkflowModel(newValue, false);
   }
 
   @Watch('selectedActivityIds')
@@ -96,9 +96,12 @@ export class ElsaWorkflowDesigner {
     this.showActivityEditorInternal(activity, true);
   }
 
-  updateWorkflowModel(model: WorkflowModel) {
+  updateWorkflowModel(model: WorkflowModel, emitEvent: boolean = true) {
     this.workflowModel = model;
-    this.workflowChanged.emit(model);
+    
+    if(emitEvent)
+      this.workflowChanged.emit(model);
+    
     setTimeout(() => {
       this.rerenderTree();
     }, 50);
@@ -484,7 +487,7 @@ export class ElsaWorkflowDesigner {
 
   renderActivity(activity: ActivityModel) {
     const displayContext = this.activityDisplayContexts[activity.activityId] || undefined;
-    const cssClass = !!this.selectedActivities[activity.activityId] ? 'border-blue-600' : 'border-white hover:border-blue-600'
+    const cssClass = !!this.selectedActivities[activity.activityId] ? 'border-blue-600' : 'border-gray-200 hover:border-blue-600'
 
     return `<div id=${`activity-${activity.activityId}`} 
     class="activity border-2 border-solid rounded bg-white text-left text-black text-lg select-none max-w-md shadow-sm relative ${cssClass}">
