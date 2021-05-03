@@ -5,53 +5,51 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
-namespace Elsa.Persistence.EntityFramework.PostgreSql.Migrations
+namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
 {
     [DbContext(typeof(ElsaContext))]
-    [Migration("20210426080827_Initial")]
+    [Migration("20210503201919_Initial")]
     partial class Initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("Relational:MaxIdentifierLength", 63)
-                .HasAnnotation("ProductVersion", "5.0.5")
-                .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
+                .HasDefaultSchema("Elsa")
+                .HasAnnotation("ProductVersion", "5.0.5");
 
             modelBuilder.Entity("Elsa.Models.Bookmark", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("text");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("ActivityId")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("ActivityType")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Hash")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Model")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("ModelType")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("TenantId")
-                        .HasColumnType("text");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
@@ -79,47 +77,47 @@ namespace Elsa.Persistence.EntityFramework.PostgreSql.Migrations
             modelBuilder.Entity("Elsa.Models.WorkflowDefinition", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("text");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Data")
-                        .HasColumnType("text");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("DefinitionId")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("TEXT");
 
                     b.Property<bool>("DeleteCompletedInstances")
-                        .HasColumnType("boolean");
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Description")
-                        .HasColumnType("text");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("DisplayName")
-                        .HasColumnType("text");
+                        .HasColumnType("TEXT");
 
                     b.Property<bool>("IsLatest")
-                        .HasColumnType("boolean");
+                        .HasColumnType("INTEGER");
 
                     b.Property<bool>("IsPublished")
-                        .HasColumnType("boolean");
+                        .HasColumnType("INTEGER");
 
                     b.Property<bool>("IsSingleton")
-                        .HasColumnType("boolean");
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Name")
-                        .HasColumnType("text");
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("PersistenceBehavior")
-                        .HasColumnType("integer");
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Tag")
-                        .HasColumnType("text");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("TenantId")
-                        .HasColumnType("text");
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("Version")
-                        .HasColumnType("integer");
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
@@ -150,37 +148,37 @@ namespace Elsa.Persistence.EntityFramework.PostgreSql.Migrations
             modelBuilder.Entity("Elsa.Models.WorkflowExecutionLogRecord", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("text");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("ActivityId")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("ActivityType")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Data")
-                        .HasColumnType("text");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("EventName")
-                        .HasColumnType("text");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Message")
-                        .HasColumnType("text");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Source")
-                        .HasColumnType("text");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("TenantId")
-                        .HasColumnType("text");
+                        .HasColumnType("TEXT");
 
-                    b.Property<DateTimeOffset>("Timestamp")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
@@ -205,50 +203,50 @@ namespace Elsa.Persistence.EntityFramework.PostgreSql.Migrations
             modelBuilder.Entity("Elsa.Models.WorkflowInstance", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("text");
+                        .HasColumnType("TEXT");
 
-                    b.Property<DateTimeOffset?>("CancelledAt")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<DateTime?>("CancelledAt")
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("ContextId")
-                        .HasColumnType("text");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("ContextType")
-                        .HasColumnType("text");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("CorrelationId")
-                        .HasColumnType("text");
+                        .HasColumnType("TEXT");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Data")
-                        .HasColumnType("text");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("DefinitionId")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("TEXT");
 
-                    b.Property<DateTimeOffset?>("FaultedAt")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<DateTime?>("FaultedAt")
+                        .HasColumnType("TEXT");
 
-                    b.Property<DateTimeOffset?>("FinishedAt")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<DateTime?>("FinishedAt")
+                        .HasColumnType("TEXT");
 
-                    b.Property<DateTimeOffset?>("LastExecutedAt")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<DateTime?>("LastExecutedAt")
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
-                        .HasColumnType("text");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("TenantId")
-                        .HasColumnType("text");
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("Version")
-                        .HasColumnType("integer");
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("WorkflowStatus")
-                        .HasColumnType("integer");
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 

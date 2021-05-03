@@ -2,6 +2,7 @@
 using System.Linq.Expressions;
 using AutoMapper;
 using Elsa.Models;
+using Elsa.Persistence.EntityFramework.Core.Services;
 using Elsa.Persistence.Specifications;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,7 +10,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
 {
     public class EntityFrameworkBookmarkStore : EntityFrameworkStore<Bookmark>, IBookmarkStore
     {
-        public EntityFrameworkBookmarkStore(IDbContextFactory<ElsaContext> dbContextFactory, IMapper mapper) : base(dbContextFactory, mapper)
+        public EntityFrameworkBookmarkStore(IElsaContextFactory dbContextFactory, IMapper mapper) : base(dbContextFactory, mapper)
         {
         }
 

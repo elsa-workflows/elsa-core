@@ -14,6 +14,7 @@ namespace Elsa.Persistence.EntityFramework.MySql.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
+                .HasDefaultSchema("Elsa")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64)
                 .HasAnnotation("ProductVersion", "5.0.5");
 

@@ -22,7 +22,7 @@ namespace Elsa.Samples.AzureServiceBusWorker
                 {
                     services
                         .AddElsa(options => options
-                            .UseEntityFrameworkPersistence(db => db.UseSqlite("Data Source=elsa.efcore.db;Cache=Shared", sqlite => sqlite.MigrationsAssembly(typeof(SqliteElsaContextFactory).Assembly.GetName().Name)), true)
+                            .UseNonPooledEntityFrameworkPersistence(db => db.UseSqlite("Data Source=elsa.efcore.db;Cache=Shared", sqlite => sqlite.MigrationsAssembly(typeof(SqliteElsaContextFactory).Assembly.GetName().Name)))
                             .AddConsoleActivities()
                             .AddQuartzTemporalActivities()
                             .AddAzureServiceBusActivities(o => o.ConnectionString = hostContext.Configuration.GetConnectionString("AzureServiceBus"))
