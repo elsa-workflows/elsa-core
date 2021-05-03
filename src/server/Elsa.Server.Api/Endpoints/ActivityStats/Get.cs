@@ -53,8 +53,8 @@ namespace Elsa.Server.Api.Endpoints.ActivityStats
             {
                 EventCounts = eventCounts.Select(x => new ActivityEventCount(x.Key!, x.Count())).ToList(),
                 LastExecutedAt = executions.Select(x => x.Timestamp).OrderByDescending(x => x).FirstOrDefault(),
-                SlowestExecutionTime = executionTimes.FirstOrDefault(),
-                FastestExecutionTime = executionTimes.LastOrDefault(),
+                SlowestExecutionTime = executionTimes.LastOrDefault(),
+                FastestExecutionTime = executionTimes.FirstOrDefault(),
                 AverageExecutionTime = Duration.FromTicks(executionTimes.Average(x => x.TotalTicks)),
                 Fault = activityFault
             };
