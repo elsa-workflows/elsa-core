@@ -1,28 +1,19 @@
 namespace Elsa.Services.Models
 {
-    public class Connection
+    public class Connection : IConnection
     {
-        public Connection()
+        public Connection(IActivityBlueprint sourceActivity, IActivityBlueprint targetActivity, string sourceOutcome)
+            : this(new SourceEndpoint(sourceActivity, sourceOutcome), new TargetEndpoint(targetActivity))
         {
         }
 
-        public Connection(IActivity sourceActivity, IActivity targetActivity) 
-            : this(new SourceEndpoint(sourceActivity), new TargetEndpoint(targetActivity))
-        {
-        }
-        
-        public Connection(IActivity sourceActivity, IActivity targetActivity, string sourceEndpointName) 
-            : this(new SourceEndpoint(sourceActivity, sourceEndpointName), new TargetEndpoint(targetActivity))
-        {
-        }
-
-        public Connection(SourceEndpoint source, TargetEndpoint target)
+        public Connection(ISourceEndpoint source, ITargetEndpoint target)
         {
             Source = source;
             Target = target;
         }
 
-        public SourceEndpoint Source { get; set; }
-        public TargetEndpoint Target { get; set; }
+        public ISourceEndpoint Source { get; set; }
+        public ITargetEndpoint Target { get; set; }
     }
 }

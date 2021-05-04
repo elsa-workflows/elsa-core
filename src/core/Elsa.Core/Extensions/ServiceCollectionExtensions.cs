@@ -40,17 +40,8 @@ namespace Microsoft.Extensions.DependencyInjection
             return services;
         }
 
-        public static IServiceCollection Replace<TService, TImplementation>(
-            this IServiceCollection services,
-            ServiceLifetime lifetime)
-        {
-            return services.Replace(new ServiceDescriptor(typeof(TService), typeof(TImplementation), lifetime));
-        }
-
-        public static bool HasService<T>(this IServiceCollection services) =>
-            services.Any(x => x.ServiceType == typeof(T));
-
-        public static bool HasService<T>(this ElsaBuilder configuration) =>
-            configuration.Services.HasService<T>();
+        public static IServiceCollection Replace<TService, TImplementation>(this IServiceCollection services, ServiceLifetime lifetime) => services.Replace(new ServiceDescriptor(typeof(TService), typeof(TImplementation), lifetime));
+        public static bool HasService<T>(this IServiceCollection services) => services.Any(x => x.ServiceType == typeof(T));
+        public static bool HasService<T>(this ElsaOptionsBuilder options) => options.Services.HasService<T>();
     }
 }

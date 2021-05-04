@@ -5,7 +5,7 @@ using MediatR;
 using MediatR.Registration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Extensions
+namespace Elsa
 {
     public static class MessageHandlerServiceCollectionExtensions
     {

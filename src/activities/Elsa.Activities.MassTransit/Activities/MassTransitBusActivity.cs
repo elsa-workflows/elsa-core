@@ -2,17 +2,18 @@ using System;
 using Elsa.Services;
 using MassTransit;
 
-namespace Elsa.Activities.MassTransit.Activities
+// ReSharper disable once CheckNamespace
+namespace Elsa.Activities.MassTransit
 {
     public abstract class MassTransitBusActivity : Activity
     {
-        private readonly ConsumeContext consumeContext;
-        private readonly IBus bus;
+        private readonly ConsumeContext _consumeContext;
+        private readonly IBus _bus;
 
         protected MassTransitBusActivity(IBus bus, ConsumeContext consumeContext)
         {
-            this.bus = bus ?? throw new ArgumentNullException(nameof(bus));
-            this.consumeContext = consumeContext;
+            _bus = bus ?? throw new ArgumentNullException(nameof(bus));
+            _consumeContext = consumeContext;
         }
 
         /// <summary>
@@ -23,7 +24,7 @@ namespace Elsa.Activities.MassTransit.Activities
         /// the conversation and correlation id.
         /// </remarks>
         protected IPublishEndpoint PublishEndpoint =>
-            consumeContext ?? (IPublishEndpoint)bus;
+            _consumeContext ?? (IPublishEndpoint)_bus;
 
         /// <summary>
         /// Gets the send endpoint provider to use.
@@ -33,7 +34,7 @@ namespace Elsa.Activities.MassTransit.Activities
         /// the conversation and correlation id.
         /// </remarks>
         protected ISendEndpointProvider SendEndpointProvider =>
-            consumeContext ?? (ISendEndpointProvider)bus;
+            _consumeContext ?? (ISendEndpointProvider)_bus;
 
     }
 }

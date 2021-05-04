@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 using Elsa.Scripting.Liquid.Extensions;
@@ -12,38 +11,40 @@ namespace Elsa.Scripting.Liquid.Services
 {
     public class LiquidTemplateManager : ILiquidTemplateManager
     {
-        private readonly IMemoryCache memoryCache;
-        private readonly IServiceProvider serviceProvider;
-        private readonly LiquidOptions options;
+        private readonly LiquidParser _parser;
+        private readonly IMemoryCache _memoryCache;
+        private readonly IServiceProvider _serviceProvider;
+        private readonly LiquidOptions _options;
 
-        public LiquidTemplateManager(IMemoryCache memoryCache, IOptions<LiquidOptions> options, IServiceProvider serviceProvider)
+        public LiquidTemplateManager(LiquidParser parser, IMemoryCache memoryCache, IOptions<LiquidOptions> options, IServiceProvider serviceProvider)
         {
-            this.memoryCache = memoryCache;
-            this.serviceProvider = serviceProvider;
-            this.options = options.Value;
+            _parser = parser;
+            _memoryCache = memoryCache;
+            _serviceProvider = serviceProvider;
+            _options = options.Value;
         }
 
-        public async Task<string> RenderAsync(string source, TemplateContext context, TextEncoder encoder)
+        public async Task<string?> RenderAsync(string source, TemplateContext context, TextEncoder encoder)
         {
             if (string.IsNullOrWhiteSpace(source))
-                return default;
+                return default!;
 
-            context.AddAsyncFilters(options, serviceProvider);
+            context.AddFilters(_options, _serviceProvider);
             var result = GetCachedTemplate(source);
 
             return await result.RenderAsync(context, encoder);
         }
 
-        private FluidTemplate GetCachedTemplate(string source)
+        private IFluidTemplate GetCachedTemplate(string source)
         {
-            IEnumerable<string> errors;
+            string error;
 
-            var result = memoryCache.GetOrCreate(
+            var result = _memoryCache.GetOrCreate(
                 source,
                 e =>
                 {
-                    if (!TryParse(source, out var parsed, out errors))
-                        TryParse(string.Join(Environment.NewLine, errors), out parsed, out errors);
+                    if (!TryParse(source, out var parsed, out error))
+                        TryParse(error, out parsed, out error);
 
                     e.SetSlidingExpiration(TimeSpan.FromSeconds(30));
                     return parsed;
@@ -51,7 +52,8 @@ namespace Elsa.Scripting.Liquid.Services
             return result;
         }
 
-        public bool Validate(string template, out IEnumerable<string> errors) => TryParse(template, out _, out errors);
-        private bool TryParse(string template, out FluidTemplate result, out IEnumerable<string> errors) => FluidTemplate.TryParse(template, true, out result, out errors);
+        public bool Validate(string template, out string error) => TryParse(template, out _, out error);
+        
+        private bool TryParse(string template, out IFluidTemplate result, out string error) => _parser.TryParse(template, out result, out error);
     }
 }

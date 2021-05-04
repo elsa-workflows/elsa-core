@@ -6,16 +6,16 @@ namespace Elsa.Caching
 {
     public class Signal : ISignal
     {
-        private readonly ConcurrentDictionary<string, ChangeTokenInfo> changeTokens;
+        private readonly ConcurrentDictionary<string, ChangeTokenInfo> _changeTokens;
 
         public Signal()
         {
-            changeTokens = new ConcurrentDictionary<string, ChangeTokenInfo>();
+            _changeTokens = new ConcurrentDictionary<string, ChangeTokenInfo>();
         }
 
         public IChangeToken GetToken(string key)
         {
-            return changeTokens.GetOrAdd(
+            return _changeTokens.GetOrAdd(
                 key,
                 _ =>
                 {
@@ -27,7 +27,7 @@ namespace Elsa.Caching
 
         public void Trigger(string key)
         {
-            if (changeTokens.TryRemove(key, out var changeTokenInfo)) changeTokenInfo.TokenSource.Cancel();
+            if (_changeTokens.TryRemove(key, out var changeTokenInfo)) changeTokenInfo.TokenSource.Cancel();
         }
 
         private struct ChangeTokenInfo

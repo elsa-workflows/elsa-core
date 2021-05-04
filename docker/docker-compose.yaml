@@ -1,0 +1,27 @@
+version: '3.7'
+
+services:
+
+    elsa-dashboard:
+        build:
+            context: ../
+            dockerfile: ./docker/Dockerfile-with-npm
+        image: elsadashboard:latest
+        # Use the below image if you do not like to build the image yourself
+        # image: ghcr.io/elsa-workflows/elsa-core/elsa-dashboard:latest
+        container_name: elsa-dashboard
+        environment:
+            - ASPNETCORE_ENVIRONMENT=Development
+            - Elsa:Server:BaseAddress=http://localhost:6868
+            - Elsa:Smtp:Host=smtp4dev
+        ports:
+            - "6868:80"
+        depends_on:
+            - smtp4dev
+    
+    smtp4dev:
+        image: rnwood/smtp4dev:latest
+        container_name: elsa-smtp4dev
+        ports:
+            - "3000:80"
+            - "2525:25"

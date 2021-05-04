@@ -3,111 +3,238 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Expressions;
-using Elsa.Extensions;
+using Elsa.Events;
 using Elsa.Models;
+using MediatR;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
 using NodaTime;
+using Rebus.Extensions;
 
 namespace Elsa.Services.Models
 {
     public class WorkflowExecutionContext
     {
-        private readonly IClock clock;
-        private readonly Stack<IActivity> scheduledActivities;
-        private readonly Stack<IActivity> scheduledHaltingActivities;
-
-        public WorkflowExecutionContext(Workflow workflowInstance, IClock clock, IServiceProvider serviceProvider)
+        public WorkflowExecutionContext(
+            IServiceProvider serviceProvider,
+            IWorkflowBlueprint workflowBlueprint,
+            WorkflowInstance workflowInstance,
+            object? input = default
+        )
         {
-            this.clock = clock;
-            Workflow = workflowInstance;
             ServiceProvider = serviceProvider;
+            WorkflowBlueprint = workflowBlueprint;
+            WorkflowInstance = workflowInstance;
+            Input = input;
             IsFirstPass = true;
-            scheduledActivities = new Stack<IActivity>();
-            scheduledHaltingActivities = new Stack<IActivity>();
-            ExpressionEvaluator = serviceProvider.GetRequiredService<IWorkflowExpressionEvaluator>();
+            Serializer = serviceProvider.GetRequiredService<JsonSerializer>();
+            Mediator = serviceProvider.GetRequiredService<IMediator>();
         }
 
-        public Workflow Workflow { get; }
+        public IWorkflowBlueprint WorkflowBlueprint { get; }
         public IServiceProvider ServiceProvider { get; }
-        public bool HasScheduledActivities => scheduledActivities.Any();
-        public bool HasScheduledHaltingActivities => scheduledHaltingActivities.Any();
-        public IEnumerable<IActivity> ScheduledActivities => scheduledActivities;
-        public bool IsFirstPass { get; set; }
-        public LogEntry CurrentLogEntry => Workflow.ExecutionLog.LastOrDefault();
-        public WorkflowExecutionScope CurrentScope => Workflow.Scope;
-        public Variables TransientState { get; } = new Variables();
-        public IActivity CurrentActivity { get; private set; }
-        public void ScheduleActivities(params IActivity[] activities) => ScheduleActivities((IEnumerable<IActivity>)activities);
+        public WorkflowInstance WorkflowInstance { get; }
+        public JsonSerializer Serializer { get; }
+        public IMediator Mediator { get; }
+        public object? Input { get; }
+        public bool HasScheduledActivities => WorkflowInstance.ScheduledActivities.Any();
+        public bool IsFirstPass { get; private set; }
+        public bool ContextHasChanged { get; set; }
 
-        public void ScheduleActivities(IEnumerable<IActivity> activities)
+        /// <summary>
+        /// Values stored here will exist only for the lifetime of the workflow execution context.
+        /// </summary>
+        public Variables TransientState { get; set; } = new();
+
+        public void ScheduleActivities(IEnumerable<string> activityIds, object? input = default)
+        {
+            foreach (var activityId in activityIds)
+                ScheduleActivity(activityId, input);
+        }
+
+        public void ScheduleActivities(IEnumerable<ScheduledActivity> activities)
         {
             foreach (var activity in activities)
-            {
                 ScheduleActivity(activity);
-            }
         }
 
-        public void ScheduleActivity(IActivity activity)
+        public void ScheduleActivity(string activityId, object? input = default) => ScheduleActivity(new ScheduledActivity(activityId, input));
+        public void ScheduleActivity(ScheduledActivity activity) => WorkflowInstance.ScheduledActivities.Push(activity);
+        public ScheduledActivity PopScheduledActivity() => WorkflowInstance.ScheduledActivities.Pop();
+        public ScheduledActivity PeekScheduledActivity() => WorkflowInstance.ScheduledActivities.Peek();
+
+        public string? CorrelationId
         {
-            scheduledActivities.Push(activity);
+            get => WorkflowInstance.CorrelationId;
+            set => WorkflowInstance.CorrelationId = value;
         }
 
-        public IActivity PeekScheduledActivity() => scheduledActivities.Peek();
-        public IActivity PopScheduledActivity() => CurrentActivity = scheduledActivities.Pop();
-        public void ScheduleHaltingActivity(IActivity activity) => scheduledHaltingActivities.Push(activity);
-        public IActivity PopScheduledHaltingActivity() => scheduledHaltingActivities.Pop();
-        public IWorkflowExpressionEvaluator ExpressionEvaluator { get; }
+        public bool DeleteCompletedInstances => WorkflowBlueprint.DeleteCompletedInstances;
+        public IList<IConnection> ExecutionLog { get; } = new List<IConnection>();
+        public WorkflowStatus Status => WorkflowInstance.WorkflowStatus;
+        public bool HasBlockingActivities => WorkflowInstance.BlockingActivities.Any();
+        public object? WorkflowContext { get; set; }
 
-        public void SetVariable(string name, object value) => CurrentScope.SetVariable(name, value);
-        public T GetVariable<T>(string name) => (T) GetVariable(name);
-        public object GetVariable(string name) => CurrentScope.GetVariable(name);
+        /// <summary>
+        /// A collection of tasks to execute after the workflow is suspended.
+        /// This is useful for avoiding race conditions, such as sending a message and then waiting for a message to be received using some MessageReceived activity for example. If the workflow didn't get suspended while that message is received, the workflow would get stuck.
+        /// By designing activities such as `SendMessage` to only actually send the message post-suspension using the Tasks collection, you can be sure that the workflow gets suspended and blocked on the `MessageReceived` activity before a message reply gets received.  
+        /// </summary>
+        public ICollection<Func<WorkflowExecutionContext, CancellationToken, ValueTask>> Tasks { get; private set; } = new List<Func<WorkflowExecutionContext, CancellationToken, ValueTask>>();
 
-        public Task<T> EvaluateAsync<T>(IWorkflowExpression<T> expression, CancellationToken cancellationToken) =>
-            ExpressionEvaluator.EvaluateAsync(expression, this, cancellationToken);
-
-        public void SetLastResult(object value) => SetLastResult(new Variable(value));
-        public void SetLastResult(Variable value) => CurrentScope.LastResult = value;
-
-        public void Start()
+        public string? ContextId
         {
-            Workflow.StartedAt = clock.GetCurrentInstant();
-            Workflow.Status = WorkflowStatus.Executing;
+            get => WorkflowInstance.ContextId;
+            set => WorkflowInstance.ContextId = value;
         }
 
-        public void Fault(IActivity activity, Exception exception) => Fault(activity, exception.Message, exception);
+        public void RegisterTask(Func<WorkflowExecutionContext, CancellationToken, ValueTask> task) => Tasks.Add(task);
 
-        public void Fault(IActivity activity, string errorMessage, Exception exception = null)
+        public async ValueTask ProcessRegisteredTasksAsync(CancellationToken cancellationToken = default)
         {
-            Workflow.FaultedAt = clock.GetCurrentInstant();
-            Workflow.Fault = new WorkflowFault
+            var tasks = Tasks.ToList();
+            Tasks = new List<Func<WorkflowExecutionContext, CancellationToken, ValueTask>>();
+
+            foreach (var task in tasks)
+                await task(this, cancellationToken);
+        }
+
+        public async Task RemoveBlockingActivityAsync(BlockingActivity blockingActivity)
+        {
+            WorkflowInstance.BlockingActivities.Remove(blockingActivity);
+            await Mediator.Publish(new BlockingActivityRemoved(this, blockingActivity));
+        }
+
+        public async Task EvictScopeAsync(IActivityBlueprint scope) => await Mediator.Publish(new ScopeEvicted(this, scope));
+
+        public void SetVariable(string name, object? value) => WorkflowInstance.Variables.Set(name, value);
+        public T? GetVariable<T>() => GetVariable<T>(typeof(T).Name);
+        public T? GetVariable<T>(string name) => WorkflowInstance.Variables.Get<T>(name);
+        public bool HasVariable(string name) => WorkflowInstance.Variables.Has(name);
+
+        /// <summary>
+        /// Gets a variable from across all scopes, starting with the current scope, going up each scope until the requested variable is found.
+        /// </summary>
+        /// <remarks>Use <see cref="GetWorkflowVariable"/>if you want to access a workflow variable directly without going through the scopes.</remarks>
+        public object? GetVariable(string name)
+        {
+            var mergedVariables = GetMergedVariables();
+            return mergedVariables.Get(name);
+        }
+        
+        /// <summary>
+        /// Gets all variables merged across all scopes.
+        /// </summary>
+        public Variables GetMergedVariables()
+        {
+            var scopes = WorkflowInstance.Scopes.ToList();
+
+            var mergedVariables = scopes.Select(x => x.Variables).Aggregate(WorkflowInstance.Variables, (current, next) =>
             {
-                Message = errorMessage,
-                Exception = exception,
-                FaultedActivity = activity
-            };
-            Workflow.Status = WorkflowStatus.Faulted;
+                var combined = current.Data.MergedWith(next.Data);
+                return new Variables(combined);
+            });
+
+            return mergedVariables;
         }
 
-        public void Halt(IActivity activity = null)
+        /// <summary>
+        /// Gets a workflow variable.
+        /// </summary>
+        public object? GetWorkflowVariable(string name) => WorkflowInstance.Variables.Get(name);
+
+        /// <summary>
+        /// Clears all of the variables associated with the current <see cref="WorkflowInstance"/>.
+        /// </summary>
+        /// <seealso cref="Variables.RemoveAll"/>
+        public void PurgeVariables() => WorkflowInstance.Variables.RemoveAll();
+
+
+        public ActivityScope CurrentScope => WorkflowInstance.Scopes.Peek();
+        public ActivityScope GetScope(string activityId) => WorkflowInstance.Scopes.First(x => x.ActivityId == activityId);
+
+        public ActivityScope GetNamedScope(string activityName)
         {
-            if (activity != null)
-                Workflow.BlockingActivities.Add(activity);
+            var activityBlueprint = GetActivityBlueprintByName(activityName)!;
+            return GetScope(activityBlueprint.Id);
         }
 
-        public void Finish()
+        public void SetTransientVariable(string name, object? value) => TransientState.Set(name, value);
+        public T? GetTransientVariable<T>(string name) => TransientState.Get<T>(name);
+        public object? GetTransientVariable(string name) => TransientState.Get(name);
+        public void CompletePass() => IsFirstPass = false;
+        public void Begin() => WorkflowInstance.WorkflowStatus = WorkflowStatus.Running;
+        public void Resume() => WorkflowInstance.WorkflowStatus = WorkflowStatus.Running;
+        public void Suspend() => WorkflowInstance.WorkflowStatus = WorkflowStatus.Suspended;
+
+        public void Fault(Exception ex, string? activityId, object? activityInput, bool resuming) => Fault(ex, ex.Message, activityId, activityInput, resuming);
+        public void Fault(string message, string? activityId, object? activityInput, bool resuming) => Fault(null, message, activityId, activityInput, resuming);
+
+        public void Fault(Exception? exception, string message, string? activityId, object? activityInput, bool resuming)
         {
-            Workflow.FinishedAt = clock.GetCurrentInstant();
-            Workflow.Status = WorkflowStatus.Finished;
-            Workflow.BlockingActivities.Clear();
+            var clock = ServiceProvider.GetRequiredService<IClock>();
+            WorkflowInstance.WorkflowStatus = WorkflowStatus.Faulted;
+            WorkflowInstance.FaultedAt = clock.GetCurrentInstant();
+            WorkflowInstance.Fault = new WorkflowFault(SimpleException.FromException(exception), message, activityId, activityInput, resuming);
         }
 
-        public void Abort()
+        public async Task CompleteAsync()
         {
-            Workflow.AbortedAt = clock.GetCurrentInstant();
-            Workflow.Status = WorkflowStatus.Aborted;
+            // Remove all blocking activities.
+            foreach (var blockingActivity in WorkflowInstance.BlockingActivities)
+                await RemoveBlockingActivityAsync(blockingActivity);
+
+            // Evict all scopes.
+            foreach (var scope in WorkflowInstance.Scopes.AsEnumerable().Reverse())
+                await EvictScopeAsync(scope);
+
+            WorkflowInstance.Scopes = new SimpleStack<ActivityScope>();
+            WorkflowInstance.WorkflowStatus = WorkflowStatus.Finished;
         }
 
-        public Variables GetVariables() => CurrentScope.Variables;
+        public IActivityBlueprint? GetActivityBlueprintById(string id) => WorkflowBlueprint.Activities.FirstOrDefault(x => x.Id == id);
+        public IActivityBlueprint? GetActivityBlueprintByName(string name) => WorkflowBlueprint.Activities.FirstOrDefault(x => x.Name == name);
+
+        public object? GetOutputFrom(string activityName)
+        {
+            var activityBlueprint = GetActivityBlueprintByName(activityName)!;
+            return WorkflowInstance.ActivityOutput.GetItem(activityBlueprint.Id);
+        }
+
+        public T GetOutputFrom<T>(string activityName) => (T) GetOutputFrom(activityName)!;
+        public void SetWorkflowContext(object? value) => WorkflowContext = value;
+        public object? GetWorkflowContext() => WorkflowContext;
+        public T GetWorkflowContext<T>() => (T) WorkflowContext!;
+
+        /// <summary>
+        /// Remove empty activity data to save on document size.
+        /// </summary>
+        internal void PruneActivityData()
+        {
+            WorkflowInstance.ActivityData.Prune(x => x.Value.Count == 0);
+            WorkflowInstance.ActivityOutput.Prune(x => x.Value == null || !ShouldPersistActivityOutput(x.Key));
+        }
+
+        private bool ShouldPersistActivityOutput(string activityId)
+        {
+            var activityBlueprint = WorkflowBlueprint.GetActivity(activityId);
+            return activityBlueprint != null && activityBlueprint.PersistOutput;
+        }
+
+        private async Task<IActivityBlueprint> EvictScopeAsync(ActivityScope scope)
+        {
+            var scopeActivity = WorkflowBlueprint.GetActivity(scope.ActivityId)!;
+            await EvictScopeAsync(scopeActivity);
+            return scopeActivity;
+        }
+
+        public ActivityScope CreateScope(string activityId)
+        {
+            var scope = new ActivityScope(activityId);
+            WorkflowInstance.Scopes.Push(scope);
+            return scope;
+        }
     }
+
+    public record ExecutionLogEntry(string ActivityId, string Outcome);
 }

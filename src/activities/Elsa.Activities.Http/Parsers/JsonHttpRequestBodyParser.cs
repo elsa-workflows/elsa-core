@@ -1,23 +1,35 @@
-using System.Collections.Generic;
+using System;
 using System.Dynamic;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Extensions;
 using Elsa.Activities.Http.Services;
+using Elsa.Serialization;
 using Microsoft.AspNetCore.Http;
-using Newtonsoft.Json;
 
 namespace Elsa.Activities.Http.Parsers
 {
     public class JsonHttpRequestBodyParser : IHttpRequestBodyParser
     {
-        public int Priority => 0;
-        public IEnumerable<string> SupportedContentTypes => new[] { "application/json", "text/json" };
+        private readonly IContentSerializer _serializer;
 
-        public async Task<object> ParseAsync(HttpRequest request, CancellationToken cancellationToken)
+        public JsonHttpRequestBodyParser(IContentSerializer serializer)
+        {
+            _serializer = serializer;
+        }
+        
+        public int Priority => 0;
+        public string?[] SupportedContentTypes => new[] { "application/json", "text/json" };
+        
+        public async Task<object?> ParseAsync(HttpRequest request, Type? targetType = default, CancellationToken cancellationToken = default)
         {
             var json = await request.ReadContentAsStringAsync(cancellationToken);
-            return JsonConvert.DeserializeObject<ExpandoObject>(json);
+
+            if (json == null)
+                return default;
+            
+            targetType ??= typeof(ExpandoObject);
+            return _serializer.Deserialize(json, targetType)!;
         }
     }
 }

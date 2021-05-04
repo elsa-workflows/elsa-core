@@ -11,7 +11,7 @@ namespace Elsa.Activities.Http.Parsers
     public class JsonHttpResponseBodyParser : IHttpResponseBodyParser
     {
         public int Priority => 0;
-        public IEnumerable<string> SupportedContentTypes => new[] { "application/json", "text/json" };
+        public IEnumerable<string?> SupportedContentTypes => new[] { "application/json", "text/json" };
 
         public async Task<object> ParseAsync(HttpResponseMessage response, CancellationToken cancellationToken)
         {

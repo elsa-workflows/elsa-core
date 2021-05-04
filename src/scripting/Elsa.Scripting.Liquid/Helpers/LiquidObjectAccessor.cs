@@ -8,16 +8,16 @@ namespace Elsa.Scripting.Liquid.Helpers
     /// </summary>
     public class LiquidObjectAccessor<T>
     {
-        private readonly Func<string, Task<T>> getter;
+        private readonly Func<string, Task<T>> _getter;
 
         public LiquidObjectAccessor(Func<string, Task<T>> getter)
         {
-            this.getter = getter;
+            _getter = getter;
         }
 
         public Task<T> GetValueAsync(string identifier)
         {
-            return getter(identifier);
+            return _getter(identifier);
         }
     }
 }

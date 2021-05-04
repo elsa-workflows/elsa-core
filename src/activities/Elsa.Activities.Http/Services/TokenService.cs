@@ -5,29 +5,28 @@ namespace Elsa.Activities.Http.Services
 {
     public class TokenService : ITokenService
     {
-        private readonly IDataProtector dataProtector;
+        private readonly IDataProtector _dataProtector;
 
         public TokenService(IDataProtectionProvider dataProtectionProvider)
         {
-            dataProtector = dataProtectionProvider.CreateProtector("HTTP Workflow Tokens");
+            _dataProtector = dataProtectionProvider.CreateProtector("HTTP Workflow Tokens");
         }
 
         public string CreateToken<T>(T payload)
         {
             var json = JsonConvert.SerializeObject(payload);
 
-            return dataProtector.Protect(json);
+            return _dataProtector.Protect(json);
         }
 
         public bool TryDecryptToken<T>(string token, out T payload)
         {
-            payload = default;
+            payload = default!;
 
             try
             {
-                var json = dataProtector.Unprotect(token);
-
-                payload = JsonConvert.DeserializeObject<T>(json);
+                var json = _dataProtector.Unprotect(token);
+                payload = JsonConvert.DeserializeObject<T>(json)!;
                 return true;
             }
             catch

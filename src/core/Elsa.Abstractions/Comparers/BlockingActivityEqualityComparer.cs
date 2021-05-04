@@ -5,14 +5,9 @@ namespace Elsa.Comparers
 {
     public class BlockingActivityEqualityComparer : IEqualityComparer<BlockingActivity>
     {
-        public bool Equals(BlockingActivity x, BlockingActivity y)
-        {
-            return x.ActivityId.Equals(y.ActivityId);
-        }
-
-        public int GetHashCode(BlockingActivity obj)
-        {
-            return obj.ActivityId.GetHashCode();
-        }
+        public static BlockingActivityEqualityComparer Instance { get; } = new BlockingActivityEqualityComparer();
+        
+        public bool Equals(BlockingActivity x, BlockingActivity y) => x.ActivityId.Equals(y.ActivityId);
+        public int GetHashCode(BlockingActivity obj) => obj.ActivityId.GetHashCode();
     }
 }

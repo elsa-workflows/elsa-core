@@ -1,0 +1,37 @@
+{
+    "$id": "1",
+    "EntityId": "SampleWorkflow",
+    "DefinitionVersionId": "1",
+    "version": 1,
+    "variables": {
+      "$id": "2",
+      "data": {}
+    },
+    "isEnabled": true,
+    "isPublished": true,
+    "isLatest": true,
+    "activities": {
+      "$id": "3",
+      "$values": [
+        {
+          "$id": "4",
+          "activityId": "activity-1",
+          "type": "WriteLine",
+          "properties": {
+            "$id": "5",
+            "Text": {
+              "$id": "6",
+              "type": "System.String, mscorlib",
+              "syntax": "Liquid",
+              "expression": "Hello World!"
+            }
+          }
+        }
+      ]
+    },
+    "connections": {
+      "$id": "7",
+      "$values": []
+    }
+  }
+  

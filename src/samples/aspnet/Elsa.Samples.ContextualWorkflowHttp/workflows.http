@@ -1,0 +1,31 @@
+﻿# Create document.
+POST http://localhost:7301/documents
+Content-Type: application/json
+
+{
+    "documentId": "document-1",
+    "title": "Document 1",
+    "body": "john@gmail.com"
+}
+
+###
+# Approve document.
+POST http://localhost:7301/documents/document-1/approve
+Content-Type: application/json
+
+{
+    "author": "Jason",
+    "text": "Great job!",
+    "timeStamp": "2020-10-31T20:56:49Z"
+}
+
+###
+# Reject document.
+POST http://localhost:7301/documents/document-1/reject
+Content-Type: application/json
+
+{
+    "author": "Laura",
+    "text": "Nice try.",
+    "timeStamp": "2020-11-01T20:20:20Z"
+}

@@ -14,8 +14,8 @@ namespace Elsa.Activities.Email.Services
 {
     public class SmtpService : ISmtpService
     {
-        private readonly SmtpOptions options;
-        private readonly ILogger<SmtpService> logger;
+        private readonly SmtpOptions _options;
+        private readonly ILogger<SmtpService> _logger;
         private const string EmailExtension = ".eml";
 
         public SmtpService(
@@ -23,22 +23,22 @@ namespace Elsa.Activities.Email.Services
             ILogger<SmtpService> logger
         )
         {
-            this.options = options.Value;
-            this.logger = logger;
+            _options = options.Value;
+            _logger = logger;
         }
 
         public async Task SendAsync(MimeMessage message, CancellationToken cancellationToken)
         {
-            switch (options.DeliveryMethod)
+            switch (_options.DeliveryMethod)
             {
                 case SmtpDeliveryMethod.Network:
                     await SendOnlineMessage(message, cancellationToken);
                     break;
                 case SmtpDeliveryMethod.SpecifiedPickupDirectory:
-                    await SendOfflineMessage(message, options.PickupDirectoryLocation);
+                    await SendOfflineMessage(message, _options.PickupDirectoryLocation!);
                     break;
                 default:
-                    throw new NotSupportedException($"The '{options.DeliveryMethod}' delivery method is not supported.");
+                    throw new NotSupportedException($"The '{_options.DeliveryMethod}' delivery method is not supported.");
             }
         }
 
@@ -47,7 +47,7 @@ namespace Elsa.Activities.Email.Services
             if (sslPolicyErrors == SslPolicyErrors.None)
                 return true;
 
-            logger.LogError(
+            _logger.LogError(
                 "SMTP Server's certificate {CertificateSubject} issued by {CertificateIssuer} with thumbprint {CertificateThumbprint} and expiration date {CertificateExpirationDate} is considered invalid with {SslPolicyErrors} policy errors",
                 certificate.Subject,
                 certificate.Issuer,
@@ -57,7 +57,7 @@ namespace Elsa.Activities.Email.Services
 
             if (sslPolicyErrors.HasFlag(SslPolicyErrors.RemoteCertificateChainErrors) && chain?.ChainStatus != null)
                 foreach (var chainStatus in chain.ChainStatus)
-                    logger.LogError("Status: {Status} - {StatusInformation}", chainStatus.Status, chainStatus.StatusInformation);
+                    _logger.LogError("Status: {Status} - {StatusInformation}", chainStatus.Status, chainStatus.StatusInformation);
 
             return false;
         }
@@ -68,18 +68,18 @@ namespace Elsa.Activities.Email.Services
             {
                 client.ServerCertificateValidationCallback = CertificateValidationCallback;
 
-                await client.ConnectAsync(options.Host, options.Port, options.SecureSocketOptions, cancellationToken);
+                await client.ConnectAsync(_options.Host, _options.Port, _options.SecureSocketOptions, cancellationToken);
                 
-                if (options.RequireCredentials)
+                if (_options.RequireCredentials)
                 {
-                    if (options.UseDefaultCredentials)
+                    if (_options.UseDefaultCredentials)
                     {
                         // There's no notion of 'UseDefaultCredentials' in MailKit, so empty credentials are passed in.
                         await client.AuthenticateAsync(string.Empty, string.Empty, cancellationToken);
                     }
-                    else if (!string.IsNullOrWhiteSpace(options.UserName))
+                    else if (!string.IsNullOrWhiteSpace(_options.UserName))
                     {
-                        await client.AuthenticateAsync(options.UserName, options.Password, cancellationToken);
+                        await client.AuthenticateAsync(_options.UserName, _options.Password, cancellationToken);
                     }
                 }
                 

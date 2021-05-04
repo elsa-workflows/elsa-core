@@ -1,15 +1,14 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
-using Elsa.Models;
+using Elsa.Services.Models;
 
 namespace Elsa.Services
 {
     /// <summary>
-    /// Represents a source of workflow definitions for <see cref="IWorkflowRegistry"/>
+    /// Represents a source of workflows for the <see cref="IWorkflowRegistry"/>
     /// </summary>
     public interface IWorkflowProvider
     {
-        Task<IEnumerable<WorkflowDefinitionVersion>> GetWorkflowDefinitionsAsync(CancellationToken cancellationToken);
+        IAsyncEnumerable<IWorkflowBlueprint> GetWorkflowsAsync(CancellationToken cancellationToken);
     }
 }

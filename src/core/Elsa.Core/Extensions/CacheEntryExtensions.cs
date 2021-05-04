@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Primitives;
 
-namespace Elsa.Extensions
+namespace Elsa
 {
     public static class CacheEntryExtensions
     {

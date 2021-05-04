@@ -29,6 +29,10 @@ _ReSharper*/
 [Tt]est[Rr]esult*
 .vs/
 
+# VS Code/Omnisharp crash dumps
+mono_crash.mem*.blob
+
+
 #Nuget packages folder
 packages/
 
@@ -50,6 +54,19 @@ node_modules/
 #github
 .github/
 
+#volatile
 App_Data/
-/src/samples/Elsa.Samples.HelloWorldHttp/Properties/launchSettings.json
-/src/samples/Elsa.Samples.CustomActivities/Properties/launchSettings.json
+*.db
+*.db-shm
+*.db-wal
+
+# Fody - auto-generated XML schema
+FodyWeavers.xsd
+
+# Elsa Stencil Components
+src/designer/elsa-workflows-studio/dist
+src/designer/elsa-workflows-studio/www
+src/designer/elsa-workflows-studio/loader
+
+# Created by developers using GNU/Linux
+.directory

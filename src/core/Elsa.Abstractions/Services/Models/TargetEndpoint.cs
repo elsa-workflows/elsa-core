@@ -1,12 +1,8 @@
 namespace Elsa.Services.Models
 {
-    public class TargetEndpoint : Endpoint
+    public class TargetEndpoint : Endpoint, ITargetEndpoint
     {
-        public TargetEndpoint()
-        {
-        }
-
-        public TargetEndpoint(IActivity activity) : base(activity)
+        public TargetEndpoint(IActivityBlueprint activity) : base(activity)
         {
         }
     }

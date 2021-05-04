@@ -12,7 +12,7 @@ namespace Elsa.Activities.Http.Models
             WorkflowInstanceId = workflowInstanceId;
         }
 
-        public string Name { get; set; }
-        public string WorkflowInstanceId { get; set; }
+        public string Name { get; set; } = default!;
+        public string WorkflowInstanceId { get; set; } = default!;
     }
 }

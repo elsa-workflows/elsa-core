@@ -10,11 +10,11 @@ namespace Elsa.Activities.Dropbox.Services
 {
     public class FilesApi : IFilesApi
     {
-        private readonly HttpClient httpClient;
+        private readonly HttpClient _httpClient;
 
         public FilesApi(HttpClient httpClient)
         {
-            this.httpClient = httpClient;
+            _httpClient = httpClient;
         }
         
         public async Task<UploadResponse> UploadAsync(UploadRequest request, byte[] file, CancellationToken cancellationToken)
@@ -23,13 +23,13 @@ namespace Elsa.Activities.Dropbox.Services
             content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
             content.Headers.Add("Dropbox-API-Arg", request.ToString());
             
-            var response = await httpClient.PostAsync("/2/files/upload", content, cancellationToken);
+            var response = await _httpClient.PostAsync("/2/files/upload", content, cancellationToken);
 
             response.EnsureSuccessStatusCode();
             
             var json = await response.Content.ReadAsStringAsync();
 
-            return JsonConvert.DeserializeObject<UploadResponse>(json, new JsonSerializerSettings().ConfigureForDropboxApi());
+            return JsonConvert.DeserializeObject<UploadResponse>(json, new JsonSerializerSettings().ConfigureForDropboxApi())!;
         }
     }
 }

@@ -6,3 +6,16 @@ insert_final_newline=false
 indent_style=space
 indent_size=4
 
+# ReSharper properties
+resharper_csharp_max_line_length=240
+resharper_csharp_wrap_after_declaration_lpar=true
+resharper_csharp_wrap_parameters_style=chop_if_long
+resharper_keep_user_linebreaks=true
+resharper_max_formal_parameters_on_line=10
+resharper_place_field_attribute_on_same_line=if_owner_is_single_line
+resharper_space_within_single_line_array_initializer_braces=true
+resharper_wrap_before_linq_expression=true
+
+# Microsoft .NET properties
+csharp_new_line_before_members_in_object_initializers=false
+

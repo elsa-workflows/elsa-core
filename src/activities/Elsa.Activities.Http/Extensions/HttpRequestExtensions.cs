@@ -9,7 +9,7 @@ namespace Elsa.Activities.Http.Extensions
 {
     public static class HttpRequestExtensions
     {
-        public static async Task<byte[]> ReadContentAsBytesAsync(
+        public static async Task<byte[]?> ReadContentAsBytesAsync(
             this HttpRequest request,
             CancellationToken cancellationToken = default)
         {
@@ -25,18 +25,34 @@ namespace Elsa.Activities.Http.Extensions
             return content;
         }
 
-        public static async Task<string> ReadContentAsStringAsync(
-            this HttpRequest request,
-            CancellationToken cancellationToken = default)
+        public static async Task<string?> ReadContentAsStringAsync(this HttpRequest request, CancellationToken cancellationToken = default)
         {
             var bytes = await request.ReadContentAsBytesAsync(cancellationToken);
-            return Encoding.UTF8.GetString(bytes);
+            return bytes != null ? Encoding.UTF8.GetString(bytes) : default;
         }
 
         public static Uri ToAbsoluteUrl(this HttpRequest request, string relativePath)
         {
             var absoluteUrl = $"{request.Scheme}://{request.Host}{relativePath}";
             return new Uri(absoluteUrl, UriKind.Absolute);
+        }
+
+        public static bool TryGetCorrelationId(this HttpRequest request, out string? correlationId)
+        {
+            if (request.Query.ContainsKey("correlation"))
+            {
+                correlationId = request.Query["correlation"];
+                return true;
+            }
+
+            if (request.Headers.ContainsKey("X-Correlation-Id"))
+            {
+                correlationId = request.Headers["X-Correlation-Id"].ToString();
+                return true;
+            }
+
+            correlationId = null;
+            return false;
         }
     }
 }

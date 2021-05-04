@@ -1,12 +1,7 @@
-# Note that this YML has significantly diverged from the v2 YML
-# when v2 branch comes to be merged to master, there will be
-# serious conflicts.  When that happens, you should probably just
-# take the YML for v2 and discard what was in master.
-
 image: Previous Visual Studio 2019
 
 environment:
-  nodejs_version: "11"
+  nodejs_version: "14.6.0"
   # AppVeyor installs Java on its build agents by default, but it
   # picks an old version that's not compatible with SonarQube.
   # This brings it up to date.
@@ -15,13 +10,18 @@ environment:
   sonarcloud_project_name: elsa-workflows_elsa-core
   sonarcloud_api_key:
     secure: qaE9kOVkGGFM7ZMf3YeliZxDU9udTCy6W5xXHJ9T+tXv5qXPMYlIdR7hyNgxW04A
+  
+version: 2.0.0-preview7.{build}
 
-version: 1.5.5.{build}
+services:
+  - mongodb
+  - postgresql101
+
+init:
+  - cmd: git config --global core.autocrlf true
 
 pull_requests:
   do_not_increment_build_number: true
-# skip_non_tags: true
-skip_branch_with_pr: true
 
 dotnet_csproj:
   patch: true
@@ -34,58 +34,98 @@ dotnet_csproj:
   informational_version: '{version}'
 
 cache:
-  - src\dashboard\Elsa.Dashboard\Theme\argon-dashboard\node_modules
+  - src\designer\elsa-workflows-studio\node_modules
+  - src\designer\bindings\aspnet\Elsa.Designer.Components.Web\node_modules
+  - src\dashboards\blazor\ElsaDashboard.Application\node_modules
   - '%APPDATA%\npm-cache'
-
-init:
-  - cmd: git config --global core.autocrlf true
 
 install:
   - ps: >-
-      dotnet tool install --global dotnet-sonarscanner
+      cd .\src\designer\elsa-workflows-studio
 
-before_build:
-  - ps: >-
-      if(-Not $env:APPVEYOR_PULL_REQUEST_NUMBER) {
-      & dotnet-sonarscanner begin
-      /k:$env:sonarcloud_project_name
-      /v:AppVeyor_build_$env:APPVEYOR_BUILD_VERSION
-      /o:$env:sonarcloud_org_name
-      /s:$env:APPVEYOR_BUILD_FOLDER\.SonarQube.Analysis.xml
-      /d:sonar.host.url="https://sonarcloud.io"
-      /d:sonar.login=$env:sonarcloud_api_key
-      /d:sonar.cs.xunit.reportsPaths=$env:APPVEYOR_BUILD_FOLDER\**\TestResults\TestResults.xml
-      /d:sonar.cs.opencover.reportsPaths=$env:APPVEYOR_BUILD_FOLDER\**\TestResults\*\coverage.opencover.xml
-      /d:sonar.branch.name=$env:APPVEYOR_REPO_BRANCH
-      }
+      npm install --force
 
+      cd ..\bindings\aspnet\Elsa.Designer.Components.Web
+
+      npm install --force
+
+      cd ..\..\..\..\dashboards\blazor\ElsaDashboard.Application
+
+      npm install --force
+
+      cd ..\..\..\..
+
+#      dotnet tool install --global dotnet-sonarscanner
+
+#before_build:
+#  - ps: >-
+#      if(-Not $env:APPVEYOR_PULL_REQUEST_NUMBER) {
+#      & dotnet-sonarscanner begin
+#      /k:$env:sonarcloud_project_name
+#      /v:AppVeyor_build_$env:APPVEYOR_BUILD_VERSION
+#      /o:$env:sonarcloud_org_name
+#      /s:$env:APPVEYOR_BUILD_FOLDER\.SonarQube.Analysis.xml
+#      /d:sonar.host.url="https://sonarcloud.io"
+#      /d:sonar.login=$env:sonarcloud_api_key
+#      /d:sonar.cs.xunit.reportsPaths=$env:APPVEYOR_BUILD_FOLDER\**\TestResults\TestResults.xml
+#      /d:sonar.cs.opencover.reportsPaths=$env:APPVEYOR_BUILD_FOLDER\**\TestResults\*\coverage.opencover.xml
+#      /d:sonar.branch.name=$env:APPVEYOR_REPO_BRANCH
+#      }
+      
 build_script:
   - ps: >-
-      cd .\src\dashboard\Elsa.Dashboard\Theme\argon-dashboard
+      cd .\src\designer\elsa-workflows-studio
 
-      npm install
+      npm run build
+      
+      cd ..\bindings\aspnet\Elsa.Designer.Components.Web
+      
+      npm run build
+        
+      cd ..\..\..\..\dashboards\blazor\ElsaDashboard.Application
+      
+      npm run build
+        
+      cd ..\..\..\..\
+      
+      dotnet build
 
-      npm install --global gulp-cli
+before_test:
+  - cmd: >-
+      SET PGUSER=postgres
+      
+      SET PGPASSWORD=Password12!
 
-      gulp build
+      PATH=C:\Program Files\PostgreSQL\10\bin\;%PATH%
+      
+      createdb "elsa-yessql"
 
-      cd ..\..\..\..\..\
+test_script:
+  - ps: dotnet test --collect:"XPlat Code Coverage" --logger:xunit -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
 
-  - ps: dotnet build Elsa.sln
-
-after_build:
-  - ps: if(-Not $env:APPVEYOR_PULL_REQUEST_NUMBER) { & dotnet-sonarscanner end /d:sonar.login=$env:sonarcloud_api_key }
-  - ps: dotnet pack Elsa.sln --include-symbols /p:Version="$env:APPVEYOR_BUILD_VERSION"
+after_test:
+  - ps: >-
+      dotnet pack Elsa.sln --include-symbols /p:Version="$env:APPVEYOR_BUILD_VERSION"
 
 artifacts:
   - path: '**/*.nupkg'
-    name: NuGet
+    name: Packages
+  - path: '**/TestResults/TestResults.xml'
 
 deploy:
+  # Deploy to MyGet on every build (in the appropriate branch)
+  - provider: NuGet
+    server: https://www.myget.org/F/elsa-2/api/v2/package
+    api_key:
+      secure: JfESkwmLdWU7dzvoqKPUfMemb00wX8AEYxeHCsYWTX1LfTeECdmKdZxz7IVUpebb
+    skip_symbols: true
+    on:
+      branch: feature/elsa-2.0
+  
+  # Deploy to NuGet on builds from tags only
   - provider: NuGet
     api_key:
       secure: WC5CCcM5ksWOJbv925FNjv91KsfqHfwEe0A61FMNB27IxvttwJsvBC9XYwK+wQnp
     skip_symbols: true
     on:
       APPVEYOR_REPO_TAG: true
-      branch: master

@@ -1,0 +1,7 @@
+﻿POST http://localhost:5000/contacts
+Content-Type: application/json
+
+{
+    "name": "John von Neumann",
+    "email": "john@gmail.com"
+}

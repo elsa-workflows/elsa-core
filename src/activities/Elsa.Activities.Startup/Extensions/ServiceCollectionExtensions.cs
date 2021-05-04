@@ -1,16 +1,16 @@
-using Elsa.Activities.Startup.Activities;
 using Elsa.Activities.Startup.HostedServices;
-using Microsoft.Extensions.DependencyInjection;
+using Elsa.Runtime;
 
 namespace Elsa.Activities.Startup.Extensions
 {
     public static class ServiceCollectionExtensions
     {        
-        public static IServiceCollection AddStartupActivities(this IServiceCollection services)
+        public static ElsaOptions AddStartupActivities(this ElsaOptions options)
         {
-            return services
-                .AddHostedService<StartupHostedService>()
-                .AddActivity<Activities.Startup>();
+            options.Services.AddStartupTask<RunStartupWorkflows>();
+            options.AddActivity<Activities.Startup>();
+
+            return options;
         }
     }
 }

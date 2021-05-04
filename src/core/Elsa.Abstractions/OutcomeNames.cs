@@ -7,5 +7,6 @@ namespace Elsa
         public const string True = "True";
         public const string False = "False";
         public const string Iterate = "Iterate";
+        public const string Default = "Default";
     }
 }

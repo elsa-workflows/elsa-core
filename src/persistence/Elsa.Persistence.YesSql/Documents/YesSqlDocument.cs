@@ -1,4 +1,4 @@
-namespace Elsa.Persistence.YesSql.Documents
+﻿namespace Elsa.Persistence.YesSql.Documents
 {
     public abstract class YesSqlDocument
     {

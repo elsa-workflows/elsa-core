@@ -1,5 +1,12 @@
+using System.ComponentModel;
+using Elsa.Converters;
+using Elsa.Serialization.Converters;
+using Newtonsoft.Json;
+
 namespace Elsa.Models
 {
+    [JsonConverter(typeof(VersionOptionsJsonConverter))]
+    [TypeConverter(typeof(VersionOptionsTypeConverter))]
     public struct VersionOptions
     {
         /// <summary>
@@ -31,6 +38,20 @@ namespace Elsa.Models
         /// Gets a specific version.
         /// </summary>
         public static VersionOptions SpecificVersion(int version) => new VersionOptions { Version = version };
+        
+        /// <summary>
+        /// Parses a string into a <see cref="VersionOptions"/>. 
+        /// </summary>
+        public static VersionOptions FromString(string value) =>
+            value switch
+            {
+                "AllVersions" => All,
+                "Draft" => Draft,
+                "Latest" => Latest,
+                "Published" => Published,
+                "LatestOrPublished" => LatestOrPublished,
+                _ => SpecificVersion(int.Parse(value))
+            };
 
         public bool IsLatest { get; private set; }
         public bool IsLatestOrPublished { get; private set; }
@@ -38,5 +59,10 @@ namespace Elsa.Models
         public bool IsDraft { get; private set; }
         public bool AllVersions { get; private set; }
         public int Version { get; private set; }
+
+        /// <summary>
+        /// Returns a simple string representation of this <see cref="VersionOptions"/>.
+        /// </summary>
+        public override string ToString() => AllVersions ? "AllVersions" : IsDraft ? "Draft" : IsLatest ? "Latest" : IsPublished ? "Published" : IsLatestOrPublished ? "LatestOrPublished" : Version.ToString();
     }
 }

@@ -1,0 +1,12 @@
+﻿{
+    "profiles": {
+        "Elsa.Samples.LongRunningHttp": {
+            "commandName": "Project",
+            "launchBrowser": false,
+            "environmentVariables": {
+                "ASPNETCORE_ENVIRONMENT": "Development"
+            },
+            "applicationUrl": "http://localhost:7304"
+        }
+    }
+}

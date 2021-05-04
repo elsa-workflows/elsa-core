@@ -1,0 +1,11 @@
+﻿POST http://localhost:62841/documents
+Content-Type: application/json
+
+{
+    "Id": "document-1",
+    "Author": {
+        "Name": "Amanda"
+    }
+}
+
+###

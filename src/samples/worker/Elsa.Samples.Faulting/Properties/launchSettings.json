@@ -1,0 +1,11 @@
+﻿{
+  "profiles": {
+    "Elsa.Samples.Faulting": {
+      "commandName": "Project",
+      "dotnetRunMessages": "true",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}

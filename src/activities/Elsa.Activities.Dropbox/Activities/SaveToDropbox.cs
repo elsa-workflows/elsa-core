@@ -1,60 +1,47 @@
-﻿using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Dropbox.Models;
 using Elsa.Activities.Dropbox.Services;
+using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Expressions;
-using Elsa.Results;
 using Elsa.Services;
 using Elsa.Services.Models;
 
 namespace Elsa.Activities.Dropbox.Activities
 {
-    [ActivityDefinition(
+    [Action(
         Category = "Dropbox",
         Description = "Saves a given file or byte array to a folder in Dropbox",
-        Icon = "fab fa-dropbox")]
+        Outcomes = new[] { OutcomeNames.Done }
+    )]
     public class SaveToDropbox : Activity
     {
-        private readonly IFilesApi filesApi;
+        private readonly IFilesApi _filesApi;
 
         public SaveToDropbox(IFilesApi filesApi)
         {
-            this.filesApi = filesApi;
+            _filesApi = filesApi;
         }
 
-        [ActivityProperty(Hint = "An expression evaluating to a byte array to store.")]
-        public WorkflowExpression<byte[]> DataExpression
-        {
-            get => GetState<WorkflowExpression<byte[]>>();
-            set => SetState(value);
-        }
+        [ActivityProperty(Hint = "The file to store.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        public byte[] FileData { get; set; } = default!;
 
-        [ActivityProperty(Hint = "An expression evaluating to the path to which the file should be saved.")]
-        public WorkflowExpression<string> PathExpression
-        {
-            get => GetState<WorkflowExpression<string>>();
-            set => SetState(value);
-        }
+        [ActivityProperty(Hint = "The path to which the file should be saved.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        public string Path { get; set; } = default!;
 
-        protected override async Task<ActivityExecutionResult> OnExecuteAsync(
-            WorkflowExecutionContext context,
-            CancellationToken cancellationToken)
+        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            var data = await context.EvaluateAsync(DataExpression, cancellationToken);
-            var path = await context.EvaluateAsync(PathExpression, cancellationToken);
-
-            await filesApi.UploadAsync(
+            await _filesApi.UploadAsync(
                 new UploadRequest
                 {
                     Mode = new UploadMode
                     {
                         Tag = UploadModeUnion.Overwrite
                     },
-                    Path = path,
+                    Path = Path,
                 },
-                data,
-                cancellationToken
+                FileData,
+                context.CancellationToken
             );
 
             return Done();

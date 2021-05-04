@@ -1,30 +1,35 @@
 using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using Elsa;
 using Elsa.Activities.Dropbox.Activities;
 using Elsa.Activities.Dropbox.Options;
 using Elsa.Activities.Dropbox.Services;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
-namespace Elsa.Activities.Dropbox.Extensions
+// ReSharper disable once CheckNamespace
+namespace Microsoft.Extensions.DependencyInjection
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddDropboxActivities(
-            this IServiceCollection services,
-            Action<OptionsBuilder<DropboxOptions>> options = null)
-        {
-            var optionsBuilder = services.AddOptions<DropboxOptions>();
-            options?.Invoke(optionsBuilder);
-
+        public static ElsaOptionsBuilder AddDropbox(this ElsaOptionsBuilder services, Action<DropboxOptions>? configureOptions = null) =>
             services
+                .AddDropboxServices(configureOptions)
+                .AddDropboxActivities();
+
+        public static ElsaOptionsBuilder AddDropboxServices(this ElsaOptionsBuilder options, Action<DropboxOptions>? configureOptions = null)
+        {
+            if (configureOptions != null) 
+                options.Services.Configure(configureOptions);
+
+            options.Services
                 .AddHttpClient<IFilesApi, FilesApi>()
                 .ConfigureHttpClient(ConfigureHttpClient);
 
-            return services
-                .AddActivity<SaveToDropbox>();
+            return options;
         }
+        
+        public static ElsaOptionsBuilder AddDropboxActivities(this ElsaOptionsBuilder services) => services.AddActivity<SaveToDropbox>();
 
         private static void ConfigureHttpClient(IServiceProvider services, HttpClient httpClient)
         {
@@ -36,8 +41,7 @@ namespace Elsa.Activities.Dropbox.Extensions
                     UriKind.Absolute
                 );
 
-            httpClient.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Bearer", options.AccessToken);
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", options.AccessToken);
         }
     }
 }

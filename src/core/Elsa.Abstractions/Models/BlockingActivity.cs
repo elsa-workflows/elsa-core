@@ -1,5 +1,3 @@
-using Newtonsoft.Json;
-
 namespace Elsa.Models
 {
     public class BlockingActivity
@@ -14,10 +12,8 @@ namespace Elsa.Models
             ActivityType = activityType;
         }
 
-        [JsonProperty(PropertyName = "activityId")]
-        public string ActivityId { get; set; }
-
-        [JsonProperty(PropertyName = "activityType")]
-        public string ActivityType { get; set; }
+        public string ActivityId { get; set; } = default!;
+        public string ActivityType { get; set; }= default!;
+        public string? Tag { get; set; }
     }
 }

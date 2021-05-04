@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <Import Project="..\..\..\common.props" />
+    <Import Project="..\..\..\configureawait.props" />
+    
+    <PropertyGroup>
+        <TargetFramework>net5.0</TargetFramework>
+        <Description>
+            Elsa is a set of workflow libraries and tools that enable lean and mean workflowing capabilities in any .NET Core application.
+            This package provides activities to integrate with Telnyx.
+        </Description>
+        <PackageTags>elsa, workflows, telnyx, telephony, messaging, sms</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+    
+    <ItemGroup>
+      <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
+      <ProjectReference Include="..\..\scripting\Elsa.Scripting.Liquid\Elsa.Scripting.Liquid.csproj" />
+      <ProjectReference Include="..\Elsa.Activities.Temporal.Common\Elsa.Activities.Temporal.Common.csproj" />
+    </ItemGroup>
+    
+    <ItemGroup>
+      <PackageReference Include="Refit" Version="6.0.38" />
+      <PackageReference Include="Refit.HttpClientFactory" Version="6.0.38" />
+      <PackageReference Include="Refit.Newtonsoft.Json" Version="6.0.38" />
+    </ItemGroup>
+
+</Project>

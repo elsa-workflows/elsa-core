@@ -1,23 +1,29 @@
 using System;
-using Elsa.Activities.Email.Activities;
+using Elsa;
+using Elsa.Activities.Email;
 using Elsa.Activities.Email.Options;
 using Elsa.Activities.Email.Services;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 
-namespace Elsa.Activities.Email.Extensions
+// ReSharper disable once CheckNamespace
+namespace Microsoft.Extensions.DependencyInjection
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddEmailActivities(this IServiceCollection services, Action<OptionsBuilder<SmtpOptions>> options = null)
+        public static ElsaOptionsBuilder AddEmailActivities(this ElsaOptionsBuilder options, Action<SmtpOptions>? configureOptions = null)
         {
-            var optionsBuilder = services.AddOptions<SmtpOptions>();
-            options?.Invoke(optionsBuilder);
-            
-            return services
-                .AddOptions()
-                .AddSingleton<ISmtpService, SmtpService>()
-                .AddActivity<SendEmail>();
+            options.Services.AddEmailServices(configureOptions);
+            options.AddEmailActivitiesInternal();
+            return options;
         }
+
+        public static IServiceCollection AddEmailServices(this IServiceCollection services, Action<SmtpOptions>? configureOptions = null)
+        {
+            if (configureOptions != null) 
+                services.Configure(configureOptions);
+
+            return services.AddSingleton<ISmtpService, SmtpService>();
+        }
+
+        private static ElsaOptionsBuilder AddEmailActivitiesInternal(this ElsaOptionsBuilder services) => services.AddActivity<SendEmail>();
     }
 }

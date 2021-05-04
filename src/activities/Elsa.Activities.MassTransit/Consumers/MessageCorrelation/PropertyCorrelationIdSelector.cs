@@ -3,9 +3,7 @@ using MassTransit.Internals.Reflection;
 
 namespace Elsa.Activities.MassTransit.Consumers.MessageCorrelation
 {
-    public class PropertyCorrelationIdSelector<T> :
-        ICorrelationIdSelector<T>
-        where T : class
+    public class PropertyCorrelationIdSelector<T> : ICorrelationIdSelector<T> where T : class
     {
         readonly string _propertyName;
 

@@ -1,15 +1,24 @@
-using Elsa.Activities.Console.Activities;
-using Microsoft.Extensions.DependencyInjection;
+using System;
+using System.IO;
+using Elsa;
+using Elsa.Activities.Console;
 
-namespace Elsa.Activities.Console.Extensions
+// ReSharper disable once CheckNamespace
+namespace Microsoft.Extensions.DependencyInjection
 {
     public static class ServiceCollectionExtensions
-    {        
-        public static IServiceCollection AddConsoleActivities(this IServiceCollection services)
+    {
+        public static ElsaOptionsBuilder AddConsoleActivities(this ElsaOptionsBuilder options, TextReader? standardIn = default, TextWriter? standardOut = default)
         {
-            return services
+            options.Services
+                .AddSingleton(standardIn ?? Console.In)
+                .AddSingleton(standardOut ?? Console.Out);
+            
+            options
                 .AddActivity<ReadLine>()
                 .AddActivity<WriteLine>();
+
+            return options;
         }
     }
 }

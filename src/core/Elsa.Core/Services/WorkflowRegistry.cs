@@ -1,83 +1,69 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Caching;
-using Elsa.Extensions;
 using Elsa.Models;
-using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.DependencyInjection;
+using Elsa.Persistence;
+using Elsa.Persistence.Specifications.WorkflowInstances;
+using Elsa.Services.Models;
+using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Services
 {
     public class WorkflowRegistry : IWorkflowRegistry
     {
-        internal const string CacheKey = "elsa:workflow-registry";
-        private readonly IServiceProvider serviceProvider;
-        private readonly IMemoryCache cache;
-        private readonly ISignal signal;
+        private readonly IEnumerable<IWorkflowProvider> _workflowProviders;
+        private readonly IWorkflowInstanceStore _workflowInstanceStore;
 
-        public WorkflowRegistry(
-            IMemoryCache cache,
-            ISignal signal,
-            IServiceProvider serviceProvider)
+        public WorkflowRegistry(IEnumerable<IWorkflowProvider> workflowProviders, IWorkflowInstanceStore workflowInstanceStore)
         {
-            this.cache = cache;
-            this.signal = signal;
-            this.serviceProvider = serviceProvider;
+            _workflowProviders = workflowProviders;
+            _workflowInstanceStore = workflowInstanceStore;
         }
 
-        public async Task<IEnumerable<(WorkflowDefinitionVersion, ActivityDefinition)>> ListByStartActivityAsync(
-            string activityType,
-            CancellationToken cancellationToken)
+        public async Task<IEnumerable<IWorkflowBlueprint>> ListAsync(CancellationToken cancellationToken) => await GetWorkflowsInternalAsync(cancellationToken).ToListAsync(cancellationToken);
+        public async Task<IEnumerable<IWorkflowBlueprint>> ListActiveAsync(CancellationToken cancellationToken) => await ListActiveWorkflowsAsync(cancellationToken).ToListAsync(cancellationToken);
+
+        public async Task<IWorkflowBlueprint?> GetAsync(string id, string? tenantId, VersionOptions version, CancellationToken cancellationToken) =>
+            await FindAsync(x => x.Id == id && x.TenantId == tenantId && x.WithVersion(version), cancellationToken);
+
+        public async Task<IEnumerable<IWorkflowBlueprint>> FindManyAsync(Func<IWorkflowBlueprint, bool> predicate, CancellationToken cancellationToken) =>
+            (await ListAsync(cancellationToken).Where(predicate).OrderByDescending(x => x.Version)).ToList();
+
+        public async Task<IWorkflowBlueprint?> FindAsync(Func<IWorkflowBlueprint, bool> predicate, CancellationToken cancellationToken) =>
+            (await ListAsync(cancellationToken).Where(predicate).OrderByDescending(x => x.Version)).FirstOrDefault();
+        
+        private async IAsyncEnumerable<IWorkflowBlueprint> ListActiveWorkflowsAsync([EnumeratorCancellation] CancellationToken cancellationToken)
         {
-            var workflowDefinitions = await ReadCacheAsync(cancellationToken);
+            var workflows = await ListAsync(cancellationToken);
 
-            var query =
-                from workflow in workflowDefinitions
-                where workflow.IsPublished
-                from activity in workflow.GetStartActivities()
-                where activity.Type == activityType
-                select (workflow, activity);
+            foreach (var workflow in workflows)
+            {
+                // If a workflow is not published, only consider it for processing if it has at least one non-ended workflow instance.
+                if (!workflow.IsPublished && !await WorkflowHasNonFinishedWorkflowsAsync(workflow, cancellationToken))
+                    continue;
 
-            return query.Distinct();
+                yield return workflow;
+            }
         }
 
-        public async Task<WorkflowDefinitionVersion> GetWorkflowDefinitionAsync(
-            string id,
-            VersionOptions version,
-            CancellationToken cancellationToken)
+        private async Task<bool> WorkflowHasNonFinishedWorkflowsAsync(IWorkflowBlueprint workflowBlueprint, CancellationToken cancellationToken)
         {
-            var workflowDefinitions = await ReadCacheAsync(cancellationToken);
-
-            return workflowDefinitions
-                .Where(x => x.DefinitionId == id)
-                .OrderByDescending(x => x.Version)
-                .WithVersion(version).FirstOrDefault();
+            var count = await _workflowInstanceStore.CountAsync(new NonFinalizedWorkflowSpecification().WithWorkflowDefinition(workflowBlueprint.Id), cancellationToken);
+            return count > 0;
         }
 
-        private async Task<ICollection<WorkflowDefinitionVersion>> ReadCacheAsync(CancellationToken cancellationToken)
+        private async IAsyncEnumerable<IWorkflowBlueprint> GetWorkflowsInternalAsync([EnumeratorCancellation] CancellationToken cancellationToken)
         {
-            return await cache.GetOrCreateAsync(
-                CacheKey,
-                async entry =>
-                {
-                    var workflowDefinitions = await LoadWorkflowDefinitionsAsync(cancellationToken);
+            var providers = _workflowProviders;
 
-                    entry.SlidingExpiration = TimeSpan.FromHours(1);
-                    entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(4);
-                    entry.Monitor(signal.GetToken(CacheKey));
-                    return workflowDefinitions;
-                });
-        }
-
-        private async Task<ICollection<WorkflowDefinitionVersion>> LoadWorkflowDefinitionsAsync(CancellationToken cancellationToken)
-        {
-            using var scope = serviceProvider.CreateScope();
-            var providers = scope.ServiceProvider.GetServices<IWorkflowProvider>();
-            var tasks = await Task.WhenAll(providers.Select(x => x.GetWorkflowDefinitionsAsync(cancellationToken)));
-            return tasks.SelectMany(x => x).ToList();
+            foreach (var provider in providers)
+            await foreach (var workflow in provider.GetWorkflowsAsync(cancellationToken).WithCancellation(cancellationToken))
+            {
+                yield return workflow;
+            }
         }
     }
 }

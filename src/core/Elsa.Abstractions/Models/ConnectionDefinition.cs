@@ -6,15 +6,15 @@ namespace Elsa.Models
         {
         }
 
-        public ConnectionDefinition(string sourceActivityId, string destinationActivityId, string outcome)
+        public ConnectionDefinition(string sourceActivityId, string targetActivityId, string outcome)
         {
             SourceActivityId = sourceActivityId;
-            DestinationActivityId = destinationActivityId;
+            TargetActivityId = targetActivityId;
             Outcome = outcome;
         }
         
-        public string SourceActivityId { get; set; }
-        public string DestinationActivityId { get; set; }
-        public string Outcome { get; set; }
+        public string? SourceActivityId { get; set; }
+        public string? TargetActivityId { get; set; }
+        public string? Outcome { get; set; }
     }
 }
