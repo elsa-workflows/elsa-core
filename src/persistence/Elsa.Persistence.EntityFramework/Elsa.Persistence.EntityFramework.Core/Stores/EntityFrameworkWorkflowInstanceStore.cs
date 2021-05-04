@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using EFCore.BulkExtensions;
 using Elsa.Models;
+using Elsa.Persistence.EntityFramework.Core.Services;
 using Elsa.Persistence.Specifications;
 using Elsa.Serialization;
 using Microsoft.EntityFrameworkCore;
@@ -17,7 +18,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
     {
         private readonly IContentSerializer _contentSerializer;
 
-        public EntityFrameworkWorkflowInstanceStore(IDbContextFactory<ElsaContext> dbContextFactory, IMapper mapper, IContentSerializer contentSerializer) : base(dbContextFactory, mapper)
+        public EntityFrameworkWorkflowInstanceStore(IElsaContextFactory dbContextFactory, IMapper mapper, IContentSerializer contentSerializer) : base(dbContextFactory, mapper)
         {
             _contentSerializer = contentSerializer;
         }

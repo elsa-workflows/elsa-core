@@ -9,6 +9,7 @@ using AutoMapper;
 using EFCore.BulkExtensions;
 using Elsa.Models;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
+using Elsa.Persistence.EntityFramework.Core.Services;
 using Elsa.Persistence.Specifications;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,13 +20,13 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
         private readonly IMapper _mapper;
         private readonly SemaphoreSlim _semaphore = new(1);
 
-        protected EntityFrameworkStore(IDbContextFactory<ElsaContext> dbContextFactory, IMapper mapper)
+        protected EntityFrameworkStore(IElsaContextFactory dbContextFactory, IMapper mapper)
         {
             _mapper = mapper;
             DbContextFactory = dbContextFactory;
         }
 
-        protected IDbContextFactory<ElsaContext> DbContextFactory { get; }
+        protected IElsaContextFactory DbContextFactory { get; }
 
         public async Task SaveAsync(T entity, CancellationToken cancellationToken)
         {

@@ -1,7 +1,6 @@
 ﻿using System.Linq;
 using Elsa.Models;
 using Elsa.Persistence.EntityFramework.Core.Configuration;
-using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
 
@@ -13,6 +12,7 @@ namespace Elsa.Persistence.EntityFramework.Core
         {
         }
 
+        public virtual string Schema => "Elsa";
         public DbSet<WorkflowDefinition> WorkflowDefinitions { get; set; } = default!;
         public DbSet<WorkflowInstance> WorkflowInstances { get; set; } = default!;
         public DbSet<WorkflowExecutionLogRecord> WorkflowExecutionLogRecords { get; set; } = default!;
@@ -20,6 +20,9 @@ namespace Elsa.Persistence.EntityFramework.Core
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            if (!string.IsNullOrWhiteSpace(Schema))
+                modelBuilder.HasDefaultSchema(Schema);
+            
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(ElsaContext).Assembly);
 
             if (Database.IsSqlite())

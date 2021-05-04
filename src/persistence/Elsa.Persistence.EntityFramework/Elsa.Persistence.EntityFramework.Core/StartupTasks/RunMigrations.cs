@@ -1,5 +1,6 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Persistence.EntityFramework.Core.Services;
 using Elsa.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,9 +11,9 @@ namespace Elsa.Persistence.EntityFramework.Core.StartupTasks
     /// </summary>
     public class RunMigrations : IStartupTask
     {
-        private readonly IDbContextFactory<ElsaContext> _dbContextFactory;
+        private readonly IElsaContextFactory _dbContextFactory;
 
-        public RunMigrations(IDbContextFactory<ElsaContext> dbContextFactoryFactory)
+        public RunMigrations(IElsaContextFactory dbContextFactoryFactory)
         {
             _dbContextFactory = dbContextFactoryFactory;
         }
