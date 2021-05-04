@@ -12,36 +12,6 @@
             Tip: reference the `Elsa` package instead of this one.
         </Description>     
         <PackageTags>elsa, workflows, orchard</PackageTags>
-        <PackageIcon>icon.png</PackageIcon>
-        <Nullable>enable</Nullable>
-    </PropertyGroup>
-
-    <ItemGroup>
-        <None Include="icon.png">
-            <Pack>True</Pack>
-            <PackagePath />
-        </None>
-    </ItemGroup>
-
-    <ItemGroup>
-        <PackageReference Include="AutoMapper" Version="10.1.1" />
-        <PackageReference Include="Humanizer.Core" Version="2.8.26" />
-        <PackageReference Include="MediatR" Version="9.0.0" />
-        <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="9.0.0" />
-        <PackageReference Include="Microsoft.AspNetCore.Hosting.Server.Abstractions" Version="2.2.0" />
-        <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-        <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="3.1.9" />
-        <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="3.1.9" />
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.9" />
-        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="3.1.9" />
-        <PackageReference Include="Microsoft.Extensions.Localization" Version="3.1.9" />
-        <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.9" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.9" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="3.1.9" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="3.1.9" />
-        <PackageReference Include="NodaTime.Serialization.JsonNet" Version="3.0.0" />
-        <PackageReference Include="Elsa.Scrutor" Version="3.0.2.27" />
-        <PackageReference Include="YamlDotNet" Version="9.1.0" />
     </PropertyGroup>
 
     <ItemGroup>

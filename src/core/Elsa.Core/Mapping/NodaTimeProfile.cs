@@ -1,11 +1,10 @@
 using System;
 using AutoMapper;
-using Elsa.Services;
 using NodaTime;
 
 namespace Elsa.Mapping
 {
-    public class NodaTimeProfile : MappingProfile,
+    public class NodaTimeProfile : Profile,
         ITypeConverter<Instant, DateTime>,
         ITypeConverter<Instant?, DateTime?>,
         ITypeConverter<DateTime, Instant>,

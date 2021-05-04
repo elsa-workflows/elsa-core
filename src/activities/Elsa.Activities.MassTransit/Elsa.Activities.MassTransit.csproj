@@ -16,18 +16,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <None Include="icon.png">
-            <Pack>True</Pack>
-            <PackagePath />
-        </None>
-    </ItemGroup>
-
-    <ItemGroup>
-      <PackageReference Include="MassTransit.AspNetCore" Version="6.0.1" />
-      <PackageReference Include="MassTransit.Azure.ServiceBus.Core" Version="6.0.1" />
-      <PackageReference Include="MassTransit.Extensions.DependencyInjection" Version="6.0.1" />
-      <PackageReference Include="MassTransit.Quartz" Version="6.0.1" />
-      <PackageReference Include="MassTransit.RabbitMQ" Version="6.0.1" />
       <PackageReference Include="MassTransit.AspNetCore" Version="7.1.7" />
       <PackageReference Include="MassTransit.Extensions.DependencyInjection" Version="7.1.7" />
       <PackageReference Include="MassTransit.Quartz" Version="7.1.7" />

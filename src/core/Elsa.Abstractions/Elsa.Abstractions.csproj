@@ -13,22 +13,6 @@
         <PackageTags>elsa, workflows</PackageTags>
     </PropertyGroup>
 
-    <ItemGroup>
-        <None Include="icon.png">
-            <Pack>True</Pack>
-            <PackagePath />
-        </None>
-    </ItemGroup>
-
-    <ItemGroup>
-      <PackageReference Include="AutoMapper" Version="10.1.1" />
-      <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="3.1.9" />
-      <PackageReference Include="Microsoft.Extensions.Localization.Abstractions" Version="3.1.9" />
-      <PackageReference Include="Microsoft.Extensions.Primitives" Version="3.1.9" />
-      <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
-      <PackageReference Include="NodaTime" Version="3.0.3" />
-      <PackageReference Include="NodaTime.Serialization.JsonNet" Version="3.0.0" />
-      <PackageReference Include="System.ComponentModel.Annotations" Version="4.7.0" />
     <ItemGroup>       
         <PackageReference Include="DistributedLock.Core" Version="1.0.0" />       
         <PackageReference Include="LinqKit.Core" Version="1.1.24" />

@@ -13,14 +13,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <None Include="icon.png">
-            <Pack>True</Pack>
-            <PackagePath />
-        </None>
-    </ItemGroup>
-
-    <ItemGroup>
-        <PackageReference Include="Fluid.Core" Version="1.0.0-beta-9693" />
         <PackageReference Include="Fluid.Core" Version="2.0.1" />
     </ItemGroup>
 
