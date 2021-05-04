@@ -11,7 +11,7 @@ environment:
   sonarcloud_api_key:
     secure: qaE9kOVkGGFM7ZMf3YeliZxDU9udTCy6W5xXHJ9T+tXv5qXPMYlIdR7hyNgxW04A
   
-version: 2.0.0-preview7.{build}
+version: 2.0.0-rc1.{build}
 
 services:
   - mongodb
@@ -120,7 +120,7 @@ deploy:
       secure: JfESkwmLdWU7dzvoqKPUfMemb00wX8AEYxeHCsYWTX1LfTeECdmKdZxz7IVUpebb
     skip_symbols: true
     on:
-      branch: feature/elsa-2.0
+      branch: master
   
   # Deploy to NuGet on builds from tags only
   - provider: NuGet
@@ -128,4 +128,5 @@ deploy:
       secure: WC5CCcM5ksWOJbv925FNjv91KsfqHfwEe0A61FMNB27IxvttwJsvBC9XYwK+wQnp
     skip_symbols: true
     on:
+      branch: master
       APPVEYOR_REPO_TAG: true
