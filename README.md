@@ -14,7 +14,7 @@
 [![Build elsa-dashboard:latest](https://github.com/elsa-workflows/elsa-core/actions/workflows/publish-latest-dashboard.yml/badge.svg)](https://github.com/elsa-workflows/elsa-core/actions/workflows/publish-latest-dashboard.yml)
 
 Elsa Core is a workflows library that enables workflow execution in any .NET Core application.
-Workflows can be defined not only using code but also as JSON, YAML or XML.
+Workflows can be defined not only using code but also visually and of course JSON.
 
 <p align="center">
   <img src="./doc/elsa-2-hello-world-http.gif" alt="Elsa 2 Preview">
