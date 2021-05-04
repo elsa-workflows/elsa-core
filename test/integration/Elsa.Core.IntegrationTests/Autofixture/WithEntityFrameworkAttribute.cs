@@ -15,7 +15,7 @@ namespace Elsa.Core.IntegrationTests.Autofixture
 
             return builder => {
                 builder.ElsaCallbacks.Add(elsa => {
-                    elsa.UseEntityFrameworkPersistence(opts => {
+                    elsa.UseNonPooledEntityFrameworkPersistence(opts => {
                         opts.UseSqlite($"Data Source={tempFolder.GetContainedPath("elsa.db")};", db => db.MigrationsAssembly(typeof(SqliteElsaContextFactory).Assembly.GetName().Name));
                     });
                 });
