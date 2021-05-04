@@ -110,7 +110,7 @@ await workflowRunner.BuildAndStartWorkflowAsync<HelloWorld>();
 
 ## Persistence
 
-Elsa abstractes away data access, which means you can use any persistence provider you prefer. 
+Elsa abstracts away data access, which means you can use any persistence provider you prefer. 
 
 ## Long Running Workflows
 
