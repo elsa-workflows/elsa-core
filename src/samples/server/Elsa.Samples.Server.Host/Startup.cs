@@ -1,8 +1,6 @@
-using Elsa.Activities.Telnyx.Extensions;
 using Elsa.Activities.UserTask.Extensions;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Sqlite;
-using Elsa.Persistence.EntityFramework.SqlServer;
 using Elsa.Samples.Server.Host.Activities;
 using Elsa.Server.Hangfire.Extensions;
 using Hangfire;
@@ -40,6 +38,7 @@ namespace Elsa.Samples.Server.Host
                     .UseSimpleAssemblyNameTypeSerializer()
                     .UseRecommendedSerializerSettings(settings => settings.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb))
                     .UseInMemoryStorage())
+                
                 .AddHangfireServer(options =>
                 {
                     options.ConfigureForElsaDispatchers();
@@ -65,7 +64,6 @@ namespace Elsa.Samples.Server.Host
                     .AddQuartzTemporalActivities()
                     .AddJavaScriptActivities()
                     .AddUserTaskActivities()
-                    .AddTelnyx()
                     .AddActivitiesFrom<VehicleActivity>()
                     .AddWorkflowsFrom<Startup>()
                 );
@@ -97,7 +95,6 @@ namespace Elsa.Samples.Server.Host
                 .UseEndpoints(endpoints =>
                 {
                     endpoints.MapControllers();
-                    endpoints.MapTelnyxWebhook();
                 });
         }
     }
