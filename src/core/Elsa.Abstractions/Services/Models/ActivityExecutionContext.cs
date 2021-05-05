@@ -107,7 +107,7 @@ namespace Elsa.Services.Models
             set => WorkflowExecutionContext.WorkflowInstance.ActivityOutput.SetItem(ActivityBlueprint.Id, value);
         }
 
-        public ActivityScope CurrentScope => WorkflowExecutionContext.CurrentScope;
+        public ActivityScope? CurrentScope => WorkflowExecutionContext.CurrentScope;
         public ActivityScope GetScope(string activityId) => WorkflowExecutionContext.GetScope(activityId);
         public ActivityScope GetNamedScope(string activityName) => WorkflowExecutionContext.GetNamedScope(activityName);
 

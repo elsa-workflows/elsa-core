@@ -17,10 +17,10 @@ namespace Elsa.Activities.ControlFlow
     
     public static class ForEachActivityScopeExtensions
     {
-        public static ForEachScope ForEachScope(this ActivityExecutionContext context) => new(context.CurrentScope);
+        public static ForEachScope ForEachScope(this ActivityExecutionContext context) => new(context.CurrentScope!);
         public static ForEachScope ForEachScope(this ActivityExecutionContext context, string activityId) => new(context.GetScope(activityId));
         public static ForEachScope ForEachNamedScope(this ActivityExecutionContext context, string activityName) => new(context.GetNamedScope(activityName));
-        public static ForEachScope<T> ForEachScope<T>(this ActivityExecutionContext context) => new(context.CurrentScope);
+        public static ForEachScope<T> ForEachScope<T>(this ActivityExecutionContext context) => new(context.CurrentScope!);
         public static ForEachScope<T> ForEachScope<T>(this ActivityExecutionContext context, string activityId) => new(context.GetScope(activityId));
         public static ForEachScope<T> ForEachNamedScope<T>(this ActivityExecutionContext context, string activityName) => new(context.GetNamedScope(activityName));
         

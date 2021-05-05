@@ -150,7 +150,7 @@ namespace Elsa.Services.Models
         public void PurgeVariables() => WorkflowInstance.Variables.RemoveAll();
 
 
-        public ActivityScope CurrentScope => WorkflowInstance.Scopes.Peek();
+        public ActivityScope? CurrentScope => WorkflowInstance.Scopes.Any() ? WorkflowInstance.Scopes.Peek() : default;
         public ActivityScope GetScope(string activityId) => WorkflowInstance.Scopes.First(x => x.ActivityId == activityId);
 
         public ActivityScope GetNamedScope(string activityName)
